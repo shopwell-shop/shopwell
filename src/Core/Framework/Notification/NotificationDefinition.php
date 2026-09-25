@@ -1,0 +1,83 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Notification;
+
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\EntityProtectionCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\ReadProtection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\WriteProtection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ListField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\LongTextField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Deprecation\BCChange\ClassMoved;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Integration\IntegrationDefinition;
+use Shopwell\Core\System\User\UserDefinition;
+
+#[Package('framework')]
+#[ClassMoved(version: 'v6.8.0', previousClassName: 'Shopwell\Administration\Notification\NotificationDefinition')]
+class NotificationDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'notification';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function getCollectionClass(): string
+    {
+        return NotificationCollection::class;
+    }
+
+    public function getEntityClass(): string
+    {
+        return NotificationEntity::class;
+    }
+
+    public function getDefaults(): array
+    {
+        return [
+            'requiredPrivileges' => [],
+            'adminOnly' => false,
+        ];
+    }
+
+    public function since(): ?string
+    {
+        return '6.4.7.0';
+    }
+
+    protected function defineProtections(): EntityProtectionCollection
+    {
+        return new EntityProtectionCollection([
+            new ReadProtection(Context::SYSTEM_SCOPE),
+            new WriteProtection(Context::SYSTEM_SCOPE),
+        ]);
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required())->setDescription('Unique identity of notification.'),
+            (new StringField('status', 'status'))->addFlags(new Required())->setDescription('When status is set, the Notification is made visible.'),
+            (new LongTextField('message', 'message'))->addFlags(new Required())->setDescription('Indicates text or content of a notification message.'),
+            (new BoolField('admin_only', 'adminOnly'))->setDescription('Parameter within a notification configuration that determines whether a notification is intended for administrators only.'),
+            (new ListField('required_privileges', 'requiredPrivileges'))->setDescription('Parameter within a notification configuration that specifies the required user privileges or permissions to access or view a particular notification.'),
+
+            (new FkField('created_by_integration_id', 'createdByIntegrationId', IntegrationDefinition::class))->setDescription('Unique identity of createdByIntegration.'),
+            (new FkField('created_by_user_id', 'createdByUserId', UserDefinition::class))->setDescription('Unique identity of createdByUser.'),
+
+            new ManyToOneAssociationField('createdByIntegration', 'created_by_integration_id', IntegrationDefinition::class, 'id', false),
+            new ManyToOneAssociationField('createdByUser', 'created_by_user_id', UserDefinition::class, 'id', false),
+        ]);
+    }
+}

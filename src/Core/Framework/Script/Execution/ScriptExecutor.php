@@ -1,0 +1,176 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Script\Execution;
+
+use Shopwell\Core\Framework\App\Event\Hooks\AppLifecycleHook;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Script\Api\AclFacadeHookFactory;
+use Shopwell\Core\Framework\Script\Debugging\Debug;
+use Shopwell\Core\Framework\Script\Debugging\ScriptTraces;
+use Shopwell\Core\Framework\Script\Execution\Awareness\AppSpecificHook;
+use Shopwell\Core\Framework\Script\Execution\Awareness\HookServiceFactory;
+use Shopwell\Core\Framework\Script\Execution\Awareness\StoppableHook;
+use Shopwell\Core\Framework\Script\ScriptException;
+use Shopwell\Core\Framework\Script\ServiceStubs;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
+
+/**
+ * @codeCoverageIgnore
+ *
+ * @see \Shopwell\Tests\Integration\Core\Framework\Script\Execution\ScriptExecutorTest
+ */
+#[Package('framework')]
+class ScriptExecutor
+{
+    public static bool $isInScriptExecutionContext = false;
+
+    /**
+     * @var list<class-string>
+     */
+    private static array $defaultServices = [
+        AclFacadeHookFactory::class,
+    ];
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly ScriptLoader $loader,
+        private readonly ScriptTraces $traces,
+        private readonly ContainerInterface $container,
+        private readonly ScriptEnvironmentFactory $scriptEnvironmentFactory,
+    ) {
+    }
+
+    public function execute(Hook $hook): void
+    {
+        if ($hook instanceof InterfaceHook) {
+            throw ScriptException::interfaceHookExecutionNotAllowed($hook::class);
+        }
+
+        $scripts = $this->loader->get($hook->getName());
+        $this->traces->initHook($hook);
+
+        foreach ($scripts as $script) {
+            $scriptAppInfo = $script->getScriptAppInformation();
+            if ($scriptAppInfo && $hook instanceof AppSpecificHook && $hook->getAppId() !== $scriptAppInfo->getAppId()) {
+                // only execute scripts from the app the hook specifies
+                continue;
+            }
+
+            if (!$hook instanceof AppLifecycleHook && !$script->isActive()) {
+                continue;
+            }
+
+            try {
+                static::$isInScriptExecutionContext = true;
+                $this->render($hook, $script);
+            } catch (\Throwable $e) {
+                throw ScriptException::scriptExecutionFailed($hook->getName(), $script->getName(), $e);
+            } finally {
+                static::$isInScriptExecutionContext = false;
+            }
+
+            if ($hook instanceof StoppableHook && $hook->isPropagationStopped()) {
+                break;
+            }
+        }
+    }
+
+    private function render(Hook $hook, Script $script): void
+    {
+        $twig = $this->scriptEnvironmentFactory->initEnv($script);
+
+        $services = $this->initServices($hook, $script);
+
+        $twig->addGlobal('services', $services);
+
+        $this->traces->trace($hook, $script, static function (Debug $debug) use ($twig, $script, $hook): void {
+            $twig->addGlobal('debug', $debug);
+
+            if ($hook instanceof DeprecatedHook) {
+                ScriptTraces::addDeprecationNotice($hook->getDeprecationNotice());
+            }
+
+            $template = $twig->load($script->getName());
+
+            if (!$hook instanceof FunctionHook) {
+                $template->render(['hook' => $hook]);
+
+                return;
+            }
+
+            $blockName = $hook->getFunctionName();
+            if ($template->hasBlock($blockName)) {
+                $template->renderBlock($blockName, ['hook' => $hook]);
+
+                return;
+            }
+
+            if (!$hook instanceof OptionalFunctionHook) {
+                throw ScriptException::requiredFunctionMissingInInterfaceHook($hook->getFunctionName(), $script->getName());
+            }
+
+            $requiredFromVersion = $hook->willBeRequiredInVersion();
+            if ($requiredFromVersion) {
+                ScriptTraces::addDeprecationNotice(\sprintf(
+                    'Function "%s" will be required from %s onward, but is not implemented in script "%s", please make sure you add the block in your script.',
+                    $hook->getFunctionName(),
+                    $requiredFromVersion,
+                    $script->getName()
+                ));
+            }
+        });
+
+        $this->callAfter($services, $hook, $script);
+    }
+
+    private function initServices(Hook $hook, Script $script): ServiceStubs
+    {
+        $services = new ServiceStubs($hook->getName());
+        $deprecatedServices = $hook->getDeprecatedServices();
+        foreach ([...self::$defaultServices, ...$hook->getServiceIds()] as $serviceId) {
+            $service = $this->getService($serviceId, $hook);
+            $services->add(
+                $service->getName(),
+                $service->factory($hook, $script),
+                $deprecatedServices[$serviceId] ?? null
+            );
+        }
+
+        return $services;
+    }
+
+    private function getService(string $serviceId, Hook $hook): HookServiceFactory
+    {
+        if (!$this->container->has($serviceId)) {
+            throw new ServiceNotFoundException($serviceId, 'Hook: ' . $hook->getName());
+        }
+
+        $service = $this->container->get($serviceId);
+        if (!$service instanceof HookServiceFactory) {
+            throw ScriptException::noHookServiceFactory($serviceId);
+        }
+
+        return $service;
+    }
+
+    private function callAfter(ServiceStubs $services, Hook $hook, Script $script): void
+    {
+        foreach ($hook->getServiceIds() as $serviceId) {
+            if (!$this->container->has($serviceId)) {
+                throw new ServiceNotFoundException($serviceId, 'Hook: ' . $hook->getName());
+            }
+
+            $factory = $this->container->get($serviceId);
+            if (!$factory instanceof HookServiceFactory) {
+                throw ScriptException::noHookServiceFactory($serviceId);
+            }
+
+            $service = $services->get($factory->getName());
+
+            $factory->after($service, $hook, $script);
+        }
+    }
+}

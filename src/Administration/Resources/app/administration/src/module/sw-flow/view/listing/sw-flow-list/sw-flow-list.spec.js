@@ -1,0 +1,295 @@
+import { mount } from '@vue/test-utils';
+import { createPinia } from 'pinia';
+
+/**
+ * @sw-package after-sales
+ */
+
+const mockBusinessEvents = [
+    {
+        name: 'checkout.customer.before.login',
+        mailAware: true,
+        aware: ['Shopwell\\Core\\Framework\\Event\\SalesChannelAware'],
+    },
+    {
+        name: 'checkout.customer.changed-payment-method',
+        mailAware: false,
+        aware: ['Shopwell\\Core\\Framework\\Event\\SalesChannelAware'],
+    },
+    {
+        name: 'checkout.order.placed',
+        mailAware: true,
+        aware: ['Shopwell\\Core\\Framework\\Event\\OrderAware'],
+    },
+];
+
+const flowData = [
+    {
+        id: '44de136acf314e7184401d36406c1e90',
+        eventName: 'checkout.order.placed',
+    },
+];
+
+let flowSearchMock;
+
+async function createWrapper(privileges = [], hasSnippetFromApp = false, customFlowData = flowData, routeQuery = {}) {
+    flowSearchMock = jest.fn(() => {
+        const result = [...customFlowData];
+        result.total = customFlowData.total ?? customFlowData.length;
+
+        return Promise.resolve(result);
+    });
+
+    return mount(await wrapTestComponent('sw-flow-list', { sync: true }), {
+        global: {
+            plugins: [createPinia()],
+            stubs: {
+                'sw-page': {
+                    template: `
+                    <div class="sw-page">
+                        <slot name="search-bar"></slot>
+                        <slot name="smart-bar-back"></slot>
+                        <slot name="smart-bar-header"></slot>
+                        <slot name="language-switch"></slot>
+                        <slot name="smart-bar-actions"></slot>
+                        <slot name="side-content"></slot>
+                        <slot name="content"></slot>
+                        <slot name="sidebar"></slot>
+                        <slot></slot>
+                    </div>
+                `,
+                },
+                'sw-entity-listing': {
+                    props: ['items', 'dataSource'],
+                    template: `
+                    <div class="sw-data-grid">
+                        <div class="sw-data-grid__row" v-for="item in (dataSource || items)">
+                            <slot name="column-eventName" v-bind="{ item }"></slot>
+                            <slot name="actions" v-bind="{ item }"></slot>
+                        </div>
+                    </div>
+                `,
+                },
+                'sw-context-menu-item': await wrapTestComponent('sw-context-menu-item'),
+                'sw-search-bar': true,
+                'sw-extension-component-section': true,
+                'sw-ai-copilot-badge': true,
+                'sw-context-button': true,
+                'sw-loader': true,
+                'router-link': true,
+            },
+            provide: {
+                repositoryFactory: {
+                    create: () => ({
+                        search: flowSearchMock,
+                        clone: jest.fn(() =>
+                            Promise.resolve({
+                                id: '0e6b005ca7a1440b8e87ac3d45ed5c9f',
+                            }),
+                        ),
+                    }),
+                },
+
+                acl: {
+                    can: (identifier) => {
+                        if (!identifier) {
+                            return true;
+                        }
+
+                        return privileges.includes(identifier);
+                    },
+                },
+
+                searchRankingService: {
+                    isValidTerm: (term) => {
+                        return term && term.trim().length >= 1;
+                    },
+                },
+            },
+            mocks: {
+                $route: {
+                    query: {
+                        page: 1,
+                        limit: 25,
+                        ...routeQuery,
+                    },
+                },
+                $t: (key) => {
+                    if (key === 'global.businessEvents.checkout_order_placed' && !hasSnippetFromApp) {
+                        return 'Check order place';
+                    }
+
+                    return key;
+                },
+
+                $te(key) {
+                    return !(key === 'global.businessEvents.checkout_order_placed' && hasSnippetFromApp);
+                },
+            },
+        },
+    });
+}
+
+describe('module/sw-flow/view/listing/sw-flow-list', () => {
+    Shopwell.Service().register('businessEventService', () => {
+        return {
+            getBusinessEvents: () => Promise.resolve(mockBusinessEvents),
+        };
+    });
+
+    it('should be able to duplicate a flow', async () => {
+        const wrapper = await createWrapper(['flow.creator']);
+        await flushPromises();
+
+        const duplicateMenuItem = wrapper.find('.sw-flow-list__item-duplicate');
+
+        expect(duplicateMenuItem.exists()).toBe(true);
+        expect(duplicateMenuItem.attributes().disabled).toBeUndefined();
+    });
+
+    it('should be not able to duplicate a flow', async () => {
+        const wrapper = await createWrapper(['flow.viewer']);
+        await flushPromises();
+
+        const editMenuItem = wrapper.find('.sw-flow-list__item-duplicate');
+
+        expect(editMenuItem.exists()).toBe(true);
+        expect(editMenuItem.text()).toContain('global.default.duplicate');
+    });
+
+    it('should be able to edit a flow', async () => {
+        const wrapper = await createWrapper(['flow.editor']);
+        await flushPromises();
+
+        const editMenuItem = wrapper.find('.sw-flow-list__item-edit');
+        expect(editMenuItem.exists()).toBe(true);
+        expect(editMenuItem.attributes().disabled).toBeUndefined();
+    });
+
+    it('should be not able to edit a flow', async () => {
+        const wrapper = await createWrapper(['flow.viewer']);
+        await flushPromises();
+
+        const editMenuItem = wrapper.find('.sw-flow-list__item-edit');
+
+        expect(editMenuItem.exists()).toBe(true);
+        expect(editMenuItem.text()).toContain('global.default.view');
+    });
+
+    it('should be able to delete a flow', async () => {
+        const wrapper = await createWrapper(['flow.deleter']);
+        await flushPromises();
+
+        const deleteMenuItem = wrapper.find('.sw-flow-list__item-delete');
+        expect(deleteMenuItem.exists()).toBe(true);
+        expect(deleteMenuItem.classes()).not.toContain('is--disabled');
+    });
+
+    it('should be not able to delete a flow', async () => {
+        const wrapper = await createWrapper(['flow.viewer']);
+
+        await flushPromises();
+
+        const deleteMenuItem = wrapper.find('.sw-flow-list__item-delete');
+
+        expect(deleteMenuItem.exists()).toBe(true);
+        expect(deleteMenuItem.classes()).toContain('is--disabled');
+    });
+
+    it('should show trigger column correctly', async () => {
+        const wrapper = await createWrapper(['flow.viewer']);
+
+        await flushPromises();
+
+        const item = wrapper.find('.sw-data-grid__row');
+        expect(item.text()).toContain('Check order place');
+    });
+
+    it('should show trigger column correctly with unknown trigger', async () => {
+        const wrapper = await createWrapper(['flow.viewer'], false, [
+            {
+                id: '44de136acf314e7184401d36406c1e90',
+                eventName: 'checkout.order.custom',
+            },
+        ]);
+
+        await flushPromises();
+
+        const item = wrapper.find('.sw-data-grid__row');
+        expect(item.text()).toContain('sw-flow.list.unknownTrigger');
+    });
+
+    it('should show custom trigger column correctly', async () => {
+        const wrapper = await createWrapper(['flow.viewer'], true);
+
+        await wrapper.vm.$nextTick();
+
+        const item = wrapper.find('.sw-data-grid__row');
+        expect(item.text()).toContain('sw-flow-custom-event.flow-list.checkout_order_placed');
+    });
+
+    it('should be show the success message after duplicate flow', async () => {
+        const wrapper = await createWrapper(['flow.creator']);
+        await flushPromises();
+        wrapper.vm.createNotificationSuccess = jest.fn();
+        const routerPush = wrapper.vm.$router.push;
+
+        await wrapper.vm.onDuplicateFlow({
+            id: '44de136acf314e7184401d36406c1e90',
+            name: 'test flow',
+        });
+        await flushPromises();
+
+        expect(wrapper.vm.createNotificationSuccess).toHaveBeenCalled();
+        wrapper.vm.createNotificationSuccess.mockRestore();
+
+        expect(routerPush).toHaveBeenLastCalledWith({
+            name: 'sw.flow.detail',
+            params: { id: '0e6b005ca7a1440b8e87ac3d45ed5c9f' },
+        });
+    });
+
+    it('should set the term of the route query to criteria', async () => {
+        await createWrapper([], false, flowData, { term: 'Order' });
+        await flushPromises();
+
+        expect(flowSearchMock).toHaveBeenLastCalledWith(expect.objectContaining({ term: 'Order' }));
+    });
+
+    it('should replace the listing with an empty state offering the create action when no flow exists', async () => {
+        const wrapper = await createWrapper(['flow.creator'], false, []);
+        await flushPromises();
+
+        expect(wrapper.find('.sw-data-grid').exists()).toBe(false);
+        expect(wrapper.find('.mt-empty-state').exists()).toBe(true);
+        expect(wrapper.find('.mt-empty-state__headline').text()).toBe('sw-flow.list.emptyStateTitle');
+
+        const createButton = wrapper.find('.mt-empty-state__button .mt-button');
+
+        expect(createButton.exists()).toBe(true);
+        expect(createButton.text()).toBe('sw-flow.list.buttonAddFlow');
+    });
+
+    it('should not offer the create action when a search has no hits', async () => {
+        const wrapper = await createWrapper(['flow.creator'], false, [], { term: 'Order' });
+        await flushPromises();
+
+        expect(wrapper.find('.mt-empty-state').exists()).toBe(true);
+        expect(wrapper.find('.mt-empty-state__button').exists()).toBe(false);
+
+        // a search without hits is not a first-time state, so it drops the "add a flow" wording
+        expect(wrapper.find('.mt-empty-state__headline').text()).toBe('sw-empty-state.messageNoResultTitle');
+        expect(wrapper.find('.mt-empty-state__description').text()).toBe('sw-empty-state.messageNoResultSubline');
+    });
+
+    it('should keep the listing when the page is out of range', async () => {
+        const outOfRangePage = [];
+        outOfRangePage.total = 50;
+
+        const wrapper = await createWrapper(['flow.creator'], false, outOfRangePage);
+        await flushPromises();
+
+        expect(wrapper.find('.mt-empty-state').exists()).toBe(false);
+        expect(wrapper.find('.sw-data-grid').exists()).toBe(true);
+    });
+});

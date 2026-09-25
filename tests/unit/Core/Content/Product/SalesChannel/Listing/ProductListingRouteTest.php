@@ -1,0 +1,303 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Product\SalesChannel\Listing;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Category\CategoryCollection;
+use Shopwell\Core\Content\Category\CategoryDefinition;
+use Shopwell\Core\Content\Product\Extension\ProductListingCriteriaExtension;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingLoader;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingRoute;
+use Shopwell\Core\Content\ProductStream\Service\ProductStreamBuilder;
+use Shopwell\Core\Content\ProductStream\Service\ProductStreamBuilderInterface;
+use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\PartialEntity;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Test\TestCaseHelper\CallableClass;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+#[CoversClass(ProductListingRoute::class)]
+class ProductListingRouteTest extends TestCase
+{
+    public function testFiltersAreSetForCategories(): void
+    {
+        $categoryId = 'categoryId';
+        /** @var StaticEntityRepository<CategoryCollection> */
+        $categoryRepository = new StaticEntityRepository([
+            new EntityCollection([
+                new PartialEntity([
+                    'id' => $categoryId,
+                    'productAssignmentType' => CategoryDefinition::PRODUCT_ASSIGNMENT_TYPE_PRODUCT,
+                ]),
+            ]),
+        ]);
+
+        $eventDispatcher = new EventDispatcher();
+        $controller = new ProductListingRoute(
+            static::createStub(ProductListingLoader::class),
+            $categoryRepository,
+            static::createStub(ProductStreamBuilder::class),
+            static::createStub(CacheTagCollector::class),
+            new ExtensionDispatcher($eventDispatcher),
+        );
+
+        $criteria = new Criteria();
+        $controller->load($categoryId, new Request(), static::createStub(SalesChannelContext::class), $criteria);
+
+        static::assertSame([
+            'product.visibilities.visibility',
+            'product.visibilities.salesChannelId',
+            'product.active',
+            'product.categoriesRo.id',
+        ], $criteria->getFilterFields());
+    }
+
+    public function testFiltersAreSetForProductStreams(): void
+    {
+        $categoryId = 'categoryId';
+        $streamId = 'streamId';
+        /** @var StaticEntityRepository<CategoryCollection> */
+        $categoryRepository = new StaticEntityRepository([new EntityCollection([
+            new PartialEntity(
+                [
+                    'id' => $categoryId,
+                    'productStreamId' => $streamId,
+                    'productAssignmentType' => CategoryDefinition::PRODUCT_ASSIGNMENT_TYPE_PRODUCT_STREAM,
+                ]
+            )])]);
+
+        $productStreamBuilder = static::createStub(ProductStreamBuilder::class);
+        $productStreamBuilder->method('enrichCriteria')
+            ->willReturnCallback(static function (Criteria $criteria, string $id, mixed ...$_): void {
+                $criteria->addFilter(new EqualsFilter('product.product_stream', $id));
+            });
+
+        $eventDispatcher = new EventDispatcher();
+        $controller = new ProductListingRoute(
+            static::createStub(ProductListingLoader::class),
+            $categoryRepository,
+            $productStreamBuilder,
+            static::createStub(CacheTagCollector::class),
+            new ExtensionDispatcher($eventDispatcher),
+        );
+
+        $criteria = new Criteria();
+        $result = $controller->load(
+            $categoryId,
+            new Request(),
+            static::createStub(SalesChannelContext::class),
+            $criteria
+        )->getResult();
+
+        static::assertSame([
+            'product.visibilities.visibility',
+            'product.visibilities.salesChannelId',
+            'product.active',
+            'product.product_stream',
+        ], $criteria->getFilterFields());
+
+        static::assertSame($streamId, $result->getStreamId());
+    }
+
+    public function testStreamTagIsAddedForProductStreams(): void
+    {
+        $categoryId = 'categoryId';
+        $streamId = 'streamId';
+        /** @var StaticEntityRepository<CategoryCollection> */
+        $categoryRepository = new StaticEntityRepository([new EntityCollection([
+            new PartialEntity(
+                [
+                    'id' => $categoryId,
+                    'productStreamId' => $streamId,
+                    'productAssignmentType' => CategoryDefinition::PRODUCT_ASSIGNMENT_TYPE_PRODUCT_STREAM,
+                ]
+            )])]);
+
+        $productStreamBuilder = static::createStub(ProductStreamBuilder::class);
+        $productStreamBuilder->method('enrichCriteria');
+
+        $cacheTagCollector = $this->createMock(CacheTagCollector::class);
+        $calls = [
+            [ProductListingRoute::buildName($categoryId)],
+            [EntityCacheKeyGenerator::buildStreamTag($streamId)],
+        ];
+        $matcher = $this->exactly(\count($calls));
+        $cacheTagCollector->expects($matcher)
+            ->method('addTag')
+            ->willReturnCallback(static function (string ...$tags) use ($matcher, $calls): void {
+                self::assertSame($calls[$matcher->numberOfInvocations() - 1], $tags);
+            });
+
+        $eventDispatcher = new EventDispatcher();
+        $controller = new ProductListingRoute(
+            static::createStub(ProductListingLoader::class),
+            $categoryRepository,
+            $productStreamBuilder,
+            $cacheTagCollector,
+            new ExtensionDispatcher($eventDispatcher),
+        );
+
+        $controller->load(
+            $categoryId,
+            new Request(),
+            static::createStub(SalesChannelContext::class),
+            new Criteria()
+        );
+    }
+
+    public function testClassIsBaseOfDecorationChain(): void
+    {
+        $eventDispatcher = new EventDispatcher();
+        $controller = new ProductListingRoute(
+            static::createStub(ProductListingLoader::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(ProductStreamBuilder::class),
+            static::createStub(CacheTagCollector::class),
+            new ExtensionDispatcher($eventDispatcher),
+        );
+
+        $this->expectException(DecorationPatternException::class);
+
+        $controller->getDecorated();
+    }
+
+    public function testExtension(): void
+    {
+        $categoryId = 'categoryId';
+        /** @var StaticEntityRepository<CategoryCollection> */
+        $categoryRepository = new StaticEntityRepository([
+            new EntityCollection([
+                new PartialEntity([
+                    'id' => $categoryId,
+                    'productAssignmentType' => CategoryDefinition::PRODUCT_ASSIGNMENT_TYPE_PRODUCT,
+                ]),
+            ]),
+        ]);
+
+        $eventDispatcher = new EventDispatcher();
+
+        $listener = $this->createMock(CallableClass::class);
+        $listener->expects($this->exactly(2))->method('__invoke');
+        $eventDispatcher->addListener(ProductListingCriteriaExtension::NAME . '.pre', $listener);
+        $eventDispatcher->addListener(ProductListingCriteriaExtension::NAME . '.post', $listener);
+
+        $controller = new ProductListingRoute(
+            static::createStub(ProductListingLoader::class),
+            $categoryRepository,
+            static::createStub(ProductStreamBuilder::class),
+            static::createStub(CacheTagCollector::class),
+            new ExtensionDispatcher($eventDispatcher),
+        );
+
+        $criteria = new Criteria();
+        $controller->load($categoryId, new Request(), static::createStub(SalesChannelContext::class), $criteria);
+
+        static::assertSame([
+            'product.visibilities.visibility',
+            'product.visibilities.salesChannelId',
+            'product.active',
+            'product.categoriesRo.id',
+        ], $criteria->getFilterFields());
+    }
+
+    public function testProductStreamWithDisplayAsGroupFalseCanEnableDirectVariantState(): void
+    {
+        $categoryId = 'categoryId';
+        $streamId = 'streamId';
+
+        /** @var StaticEntityRepository<CategoryCollection> */
+        $categoryRepository = new StaticEntityRepository([new EntityCollection([
+            new PartialEntity(
+                [
+                    'id' => $categoryId,
+                    'productStreamId' => $streamId,
+                    'productAssignmentType' => CategoryDefinition::PRODUCT_ASSIGNMENT_TYPE_PRODUCT_STREAM,
+                ]
+            )])]);
+
+        $productStreamBuilder = static::createStub(ProductStreamBuilder::class);
+        $productStreamBuilder->method('enrichCriteria')
+            ->willReturnCallback(static function (Criteria $criteria, string $id, mixed ...$_): void {
+                $criteria->addFilter(new EqualsFilter('product.product_stream', $id));
+                $criteria->addState(ProductListingLoader::STATE_SKIP_ADD_GROUPING);
+            });
+
+        $eventDispatcher = new EventDispatcher();
+        $controller = new ProductListingRoute(
+            static::createStub(ProductListingLoader::class),
+            $categoryRepository,
+            $productStreamBuilder,
+            static::createStub(CacheTagCollector::class),
+            new ExtensionDispatcher($eventDispatcher),
+        );
+
+        $criteria = new Criteria();
+        $controller->load(
+            $categoryId,
+            new Request(),
+            static::createStub(SalesChannelContext::class),
+            $criteria
+        );
+
+        static::assertTrue($criteria->hasState(ProductListingLoader::STATE_SKIP_ADD_GROUPING));
+    }
+
+    public function testProductStreamFallsBackToBuildFiltersForInterfaceOnlyBuilder(): void
+    {
+        $categoryId = 'categoryId';
+        $streamId = 'streamId';
+
+        /** @var StaticEntityRepository<CategoryCollection> */
+        $categoryRepository = new StaticEntityRepository([new EntityCollection([
+            new PartialEntity(
+                [
+                    'id' => $categoryId,
+                    'productStreamId' => $streamId,
+                    'productAssignmentType' => CategoryDefinition::PRODUCT_ASSIGNMENT_TYPE_PRODUCT_STREAM,
+                ]
+            )])]);
+
+        // A builder that only implements the deprecated interface (e.g. a decorator that has not yet
+        // adopted AbstractProductStreamBuilder). The route must fall back to buildFilters() without a
+        // TypeError, add the stream filters, and leave display-as-group enabled (no state set).
+        $productStreamBuilder = $this->createMock(ProductStreamBuilderInterface::class);
+        $productStreamBuilder->expects($this->once())
+            ->method('buildFilters')
+            ->willReturn([new EqualsFilter('product.product_stream', $streamId)]);
+
+        $eventDispatcher = new EventDispatcher();
+        $controller = new ProductListingRoute(
+            static::createStub(ProductListingLoader::class),
+            $categoryRepository,
+            $productStreamBuilder,
+            static::createStub(CacheTagCollector::class),
+            new ExtensionDispatcher($eventDispatcher),
+        );
+
+        $criteria = new Criteria();
+        $controller->load(
+            $categoryId,
+            new Request(),
+            static::createStub(SalesChannelContext::class),
+            $criteria
+        );
+
+        static::assertFalse($criteria->hasState(ProductListingLoader::STATE_SKIP_ADD_GROUPING));
+        static::assertContainsEquals(new EqualsFilter('product.product_stream', $streamId), $criteria->getFilters());
+    }
+}

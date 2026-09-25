@@ -1,0 +1,14 @@
+.quickview-minimal-top,
+.quickview-minimal-image {
+    margin-bottom: $spacer;
+}
+
+.quickview-minimal-product-manufacturer-logo {
+    width: 100%;
+}
+
+@include media-breakpoint-up(md) {
+    .quickview-minimal-top {
+        margin-bottom: $spacer-lg;
+    }
+}

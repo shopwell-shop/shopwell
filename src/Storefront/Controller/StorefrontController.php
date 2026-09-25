@@ -1,0 +1,358 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Controller;
+
+use Shopwell\Core\Checkout\Cart\Address\Error\AddressErrorInterface;
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\Error\ErrorRoute;
+use Shopwell\Core\Checkout\Promotion\Cart\Error\PromotionNotEligibleError;
+use Shopwell\Core\Content\Media\MediaUrlPlaceholderHandlerInterface;
+use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
+use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
+use Shopwell\Core\Framework\Adapter\Twig\TemplateFinder;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\RequestTransformerInterface;
+use Shopwell\Core\Framework\Script\Execution\Hook;
+use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\Profiling\Profiler;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Storefront\Controller\Exception\StorefrontException;
+use Shopwell\Storefront\Event\StorefrontRedirectEvent;
+use Shopwell\Storefront\Event\StorefrontRenderEvent;
+use Shopwell\Storefront\Framework\Routing\RequestTransformer;
+use Shopwell\Storefront\Framework\Routing\Router;
+use Shopwell\Storefront\Framework\Twig\Extension\IconCacheTwigFilter;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
+use Twig\Environment;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
+
+#[Package('discovery')]
+abstract class StorefrontController extends AbstractController
+{
+    public const SUCCESS = 'success';
+    public const DANGER = 'danger';
+    public const INFO = 'info';
+    public const WARNING = 'warning';
+
+    public static function getSubscribedServices(): array
+    {
+        $services = parent::getSubscribedServices();
+
+        $services['twig'] = Environment::class;
+        $services['event_dispatcher'] = EventDispatcherInterface::class;
+        $services[SystemConfigService::class] = SystemConfigService::class;
+        $services[TemplateFinder::class] = TemplateFinder::class;
+        $services[SeoUrlPlaceholderHandlerInterface::class] = SeoUrlPlaceholderHandlerInterface::class;
+        $services[MediaUrlPlaceholderHandlerInterface::class] = MediaUrlPlaceholderHandlerInterface::class;
+        $services[ScriptExecutor::class] = ScriptExecutor::class;
+        $services['translator'] = TranslatorInterface::class;
+        $services[RequestTransformerInterface::class] = RequestTransformerInterface::class;
+
+        return $services;
+    }
+
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    protected function renderStorefront(string $view, array $parameters = []): Response
+    {
+        $request = $this->container->get('request_stack')->getCurrentRequest();
+
+        if ($request === null) {
+            throw StorefrontException::noRequestProvided();
+        }
+
+        $salesChannelContext = $request->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT);
+
+        $event = new StorefrontRenderEvent($view, $parameters, $request, $salesChannelContext);
+
+        $this->container->get('event_dispatcher')->dispatch($event);
+
+        $iconCacheEnabled = $this->getSystemConfigService()->get(
+            'core.storefrontSettings.iconCache',
+            $event->getSalesChannelContext()->getSalesChannelId()
+        ) ?? true;
+
+        if ($iconCacheEnabled) {
+            IconCacheTwigFilter::enable();
+        }
+
+        $response = Profiler::trace('twig-rendering', fn () => $this->render($view, $event->getParameters(), new Response()));
+
+        if ($iconCacheEnabled) {
+            IconCacheTwigFilter::disable();
+        }
+
+        $host = $request->attributes->get(RequestTransformer::STOREFRONT_URL);
+
+        $seoUrlReplacer = $this->container->get(SeoUrlPlaceholderHandlerInterface::class);
+        $mediaUrlReplacer = $this->container->get(MediaUrlPlaceholderHandlerInterface::class);
+        $content = $response->getContent();
+
+        if ($content !== false) {
+            $content = $mediaUrlReplacer->replace($content);
+
+            $response->setContent(
+                $seoUrlReplacer->replace($content, $host, $salesChannelContext)
+            );
+        }
+
+        $response->headers->set('Content-Type', 'text/html');
+
+        return $response;
+    }
+
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    protected function trans(string $snippet, array $parameters = []): string
+    {
+        return $this->container
+            ->get('translator')
+            ->trans($snippet, $parameters);
+    }
+
+    protected function createActionResponse(Request $request): Response
+    {
+        if (RequestParamHelper::get($request, 'redirectTo') || RequestParamHelper::get($request, 'redirectTo') === '') {
+            $params = $this->decodeParam($request, 'redirectParameters');
+
+            $redirectTo = RequestParamHelper::get($request, 'redirectTo');
+
+            if ($redirectTo && \is_string($redirectTo)) {
+                return $this->redirectToRoute($redirectTo, $params);
+            }
+
+            return $this->redirectToRoute('frontend.home.page', $params);
+        }
+
+        if (RequestParamHelper::get($request, 'forwardTo')) {
+            $params = $this->decodeParam($request, 'forwardParameters');
+
+            return $this->forwardToRoute(RequestParamHelper::get($request, 'forwardTo'), [], $params);
+        }
+
+        return new Response();
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     * @param array<string, mixed> $routeParameters
+     */
+    protected function forwardToRoute(string $routeName, array $attributes = [], array $routeParameters = []): Response
+    {
+        $router = $this->container->get('router');
+
+        try {
+            $url = $this->generateUrl($routeName, $routeParameters, Router::PATH_INFO);
+        } catch (RouteNotFoundException $e) {
+            throw StorefrontException::routeNotFound($routeName, $e);
+        }
+
+        // for the route matching the request method is set to "GET" because
+        // this method is not ought to be used as a post passthrough
+        // rather it shall return templates or redirects to display results of the request ahead
+        $method = $router->getContext()->getMethod();
+        $router->getContext()->setMethod(Request::METHOD_GET);
+
+        $route = $router->match($url);
+        $router->getContext()->setMethod($method);
+
+        $request = $this->container->get('request_stack')->getCurrentRequest();
+
+        if ($request === null) {
+            throw StorefrontException::noRequestProvided();
+        }
+
+        $attributes = array_merge(
+            $this->container->get(RequestTransformerInterface::class)->extractInheritableAttributes($request),
+            $route,
+            $attributes,
+            // in the case of virtual urls (localhost/de) we need to skip the request transformer matching, otherwise the virtual url (/de) is stripped out, and we cannot find any sales channel
+            // so we set the `skip-transformer` attribute, which is checked in the HttpKernel before the request transformer is set
+            ['_route_params' => $routeParameters, 'sw-skip-transformer' => true]
+        );
+
+        return $this->forward($route['_controller'], $attributes, $routeParameters);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function decodeParam(Request $request, string $param): array
+    {
+        $params = RequestParamHelper::get($request, $param);
+
+        if (\is_string($params)) {
+            try {
+                $params = json_decode($params, true, flags: \JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                $params = [];
+            }
+        }
+
+        if ($params === null || \is_numeric($params)) {
+            $params = [];
+        }
+
+        return $params;
+    }
+
+    protected function addCartErrors(Cart $cart, ?\Closure $filter = null): void
+    {
+        $errors = $cart->getErrors();
+        if ($filter !== null) {
+            $errors = $errors->filter($filter);
+        }
+
+        $groups = [
+            'info' => $errors->getNotices(),
+            'warning' => $errors->getWarnings(),
+            'danger' => $errors->getErrors(),
+        ];
+
+        $request = $this->container->get('request_stack')->getMainRequest();
+        $exists = [];
+
+        /** @phpstan-ignore shopware.unsafeRequestHasSession (using $skipIfUninitialized = false as session will be started intentionally later; this can take the PHP session lock and is limited to storefront flash handling inspecting the flash bag.) */
+        if ($request && $request->hasSession() && $request->getSession() instanceof FlashBagAwareSessionInterface) {
+            $exists = $request->getSession()->getFlashBag()->peekAll();
+        }
+
+        $flat = [];
+        foreach ($exists as $messages) {
+            $flat = array_merge($flat, $messages);
+        }
+
+        foreach ($groups as $type => $errorGroup) {
+            foreach ($errorGroup as $error) {
+                $parameters = [];
+
+                foreach ($error->getParameters() as $key => $value) {
+                    $parameters['%' . $key . '%'] = $value;
+                }
+
+                Feature::callSilentIfInactive('v6.8.0.0', function () use (&$parameters, $error): void {
+                    if ($error->getRoute() instanceof ErrorRoute) {
+                        $parameters['%url%'] = $this->generateUrl(
+                            $error->getRoute()->getKey(),
+                            $error->getRoute()->getParams()
+                        );
+                    }
+                });
+
+                if ($error instanceof AddressErrorInterface && $error->getAddressId() !== null) {
+                    $parameters['%url%'] = $this->generateUrl('frontend.account.address.edit.page', [
+                        'addressId' => $error->getAddressId(),
+                        'redirectTo' => $request?->attributes->get('_route'),
+                    ]);
+                }
+
+                $translatedMessage = $this->trans('checkout.' . $error->getMessageKey(), $parameters);
+
+                if ($error instanceof PromotionNotEligibleError && $error->getRuleIds() !== []) {
+                    foreach ($error->getRuleIds() as $ruleId) {
+                        $ruleSpecificKey = 'checkout.promotion-not-eligible-' . $ruleId;
+                        $candidate = $this->trans($ruleSpecificKey, $parameters);
+                        if ($candidate !== $ruleSpecificKey) {
+                            $translatedMessage = $candidate;
+                            break;
+                        }
+                    }
+                }
+
+                $error->setTranslatedMessage($translatedMessage);
+
+                if (\in_array($translatedMessage, $flat, true)) {
+                    continue;
+                }
+
+                $this->addFlash($type, $translatedMessage);
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    protected function redirectToRoute(string $route, array $parameters = [], int $status = Response::HTTP_FOUND): RedirectResponse
+    {
+        $event = new StorefrontRedirectEvent($route, $parameters, $status);
+        $this->container->get('event_dispatcher')->dispatch($event);
+
+        try {
+            return parent::redirectToRoute($event->getRoute(), $event->getParameters(), $event->getStatus());
+        } catch (RouteNotFoundException $e) {
+            throw StorefrontException::routeNotFound($route, $e);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    protected function renderView(string $view, array $parameters = []): string
+    {
+        $view = $this->getTemplateFinder()->find($view);
+
+        try {
+            return $this->container->get('twig')->render($view, $parameters);
+        } catch (LoaderError|RuntimeError|SyntaxError $e) {
+            throw StorefrontException::renderViewException($view, $e, $parameters);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    protected function render(string $view, array $parameters = [], ?Response $response = null): Response
+    {
+        $content = $this->renderView($view, $parameters);
+
+        $response ??= new Response();
+
+        $response->setContent($content);
+
+        return $response;
+    }
+
+    protected function getTemplateFinder(): TemplateFinder
+    {
+        return $this->container->get(TemplateFinder::class);
+    }
+
+    protected function hook(Hook $hook): void
+    {
+        $this->container->get(ScriptExecutor::class)->execute($hook);
+    }
+
+    protected function getSystemConfigService(): SystemConfigService
+    {
+        return $this->container->get(SystemConfigService::class);
+    }
+
+    /**
+     * Because some email-clients try to fetch previews for links in mails,
+     * they send a HEAD-request. But because Symfony is routing HEAD-requests
+     * as GET-requests, a subscriber would be confirmed without clicking the link,
+     * only by the HEAD-request.
+     * To determine if the current request is a "HEAD" request or a "GET" request, this
+     * helper method exists.
+     *
+     * Beware: $request->getMethod() or $request->getRealMethod() will both return "GET".
+     */
+    protected function isHeadRequest(): bool
+    {
+        return isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'HEAD';
+    }
+}

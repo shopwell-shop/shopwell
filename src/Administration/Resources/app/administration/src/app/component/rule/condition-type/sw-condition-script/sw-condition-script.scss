@@ -1,0 +1,65 @@
+.sw-condition-script {
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr)) !important;
+
+    &.has--operator-first {
+        grid-template-columns: minmax(var(--scale-size-128), max-content) repeat(auto-fit, minmax(0, 1fr)) !important;
+    }
+
+    .mt-switch {
+        margin: var(--scale-size-12) 0 0 var(--scale-size-14);
+    }
+
+    .sw-media-field {
+        margin: 0 0 0 var(--scale-size-14);
+        height: 100%;
+        width: auto;
+
+        .sw-media-field__label {
+            display: none;
+        }
+
+        .sw-media-field__input-container {
+            grid-template-rows: 100%;
+            height: 100%;
+
+            .sw-media-field__input {
+                border: 0;
+                padding: 0;
+            }
+
+            .mt-button--square {
+                border: 0;
+                padding: 0;
+                height: 100%;
+                border-left: 1px solid var(--color-border-primary-default);
+            }
+        }
+    }
+
+    .sw-media-base-item.is--list {
+        grid-template-columns: auto minmax(var(--scale-size-56), 1fr);
+        grid-template-rows: 100%;
+
+        .sw-media-base-item__preview-container {
+            height: var(--scale-size-28);
+            margin: var(--scale-size-4) 0;
+        }
+    }
+
+    .sw-entity-single-select {
+        .sw-entity-single-select__selection-text {
+            max-width: 100%;
+        }
+
+        .sw-product-variant-info {
+            max-width: 100%;
+            transform: translateY(var(--scale-size-6));
+        }
+    }
+
+    .sw-field--datepicker {
+        .sw-field__hint {
+            display: none;
+        }
+    }
+}

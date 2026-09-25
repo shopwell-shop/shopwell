@@ -1,0 +1,51 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Category\Aggregate\CategoryTranslation;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @extends EntityCollection<CategoryTranslationEntity>
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('discovery')]
+class CategoryTranslationCollection extends EntityCollection
+{
+    /**
+     * @return array<string>
+     */
+    public function getCategoryIds(): array
+    {
+        return $this->fmap(static fn (CategoryTranslationEntity $categoryTranslation) => $categoryTranslation->getCategoryId());
+    }
+
+    public function filterByCategoryId(string $id): self
+    {
+        return $this->filter(static fn (CategoryTranslationEntity $categoryTranslation) => $categoryTranslation->getCategoryId() === $id);
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getLanguageIds(): array
+    {
+        return $this->fmap(static fn (CategoryTranslationEntity $categoryTranslation) => $categoryTranslation->getLanguageId());
+    }
+
+    public function filterByLanguageId(string $id): self
+    {
+        return $this->filter(static fn (CategoryTranslationEntity $categoryTranslation) => $categoryTranslation->getLanguageId() === $id);
+    }
+
+    public function getApiAlias(): string
+    {
+        return 'category_translation_collection';
+    }
+
+    protected function getExpectedClass(): string
+    {
+        return CategoryTranslationEntity::class;
+    }
+}

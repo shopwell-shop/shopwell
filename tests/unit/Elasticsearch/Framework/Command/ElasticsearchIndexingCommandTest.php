@@ -1,0 +1,95 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Elasticsearch\Framework\Command;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Elasticsearch\Framework\Command\ElasticsearchIndexingCommand;
+use Shopwell\Elasticsearch\Framework\Indexing\CreateAliasTaskHandler;
+use Shopwell\Elasticsearch\Framework\Indexing\ElasticsearchIndexer;
+use Shopwell\Elasticsearch\Framework\Indexing\ElasticsearchIndexingMessage;
+use Shopwell\Elasticsearch\Framework\Indexing\IndexingDto;
+use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Messenger\MessageBusInterface;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(ElasticsearchIndexingCommand::class)]
+class ElasticsearchIndexingCommandTest extends TestCase
+{
+    public function testExecute(): void
+    {
+        $oldIndexer = static::createStub(ElasticsearchIndexer::class);
+
+        $bus = static::createStub(MessageBusInterface::class);
+        $aliasHandler = $this->createMock(CreateAliasTaskHandler::class);
+        $aliasHandler->expects($this->never())->method('run');
+
+        $commandTester = new CommandTester(new ElasticsearchIndexingCommand($oldIndexer, $bus, $aliasHandler, true));
+        $commandTester->execute([]);
+
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    public function testExecuteQueue(): void
+    {
+        $oldIndexer = static::createStub(ElasticsearchIndexer::class);
+
+        $message = new ElasticsearchIndexingMessage(
+            new IndexingDto([], 'product', 'product'),
+            null,
+            Context::createDefaultContext(),
+            false
+        );
+
+        static::assertFalse($message->isLastMessage());
+        $oldIndexer->method('iterate')->willReturnOnConsecutiveCalls(
+            $message,
+            null
+        );
+
+        $bus = static::createStub(MessageBusInterface::class);
+        $aliasHandler = $this->createMock(CreateAliasTaskHandler::class);
+        $aliasHandler->expects($this->once())->method('run');
+
+        $commandTester = new CommandTester(new ElasticsearchIndexingCommand($oldIndexer, $bus, $aliasHandler, true));
+        $commandTester->execute(['--no-queue' => true]);
+
+        static::assertTrue($message->isLastMessage());
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    public function testEsDisabled(): void
+    {
+        $oldIndexer = static::createStub(ElasticsearchIndexer::class);
+
+        $bus = static::createStub(MessageBusInterface::class);
+        $aliasHandler = $this->createMock(CreateAliasTaskHandler::class);
+        $aliasHandler->expects($this->never())->method('run');
+
+        $commandTester = new CommandTester(new ElasticsearchIndexingCommand($oldIndexer, $bus, $aliasHandler, false));
+        $commandTester->execute(['--no-queue' => true], ['capture_stderr_separately' => true]);
+
+        $output = $commandTester->getDisplay();
+
+        static::assertStringContainsString('[ERROR] Elasticsearch indexing is disabled', $output);
+    }
+
+    public function testExecuteOnly(): void
+    {
+        $oldIndexer = static::createStub(ElasticsearchIndexer::class);
+
+        $bus = static::createStub(MessageBusInterface::class);
+        $aliasHandler = $this->createMock(CreateAliasTaskHandler::class);
+        $aliasHandler->expects($this->never())->method('run');
+
+        $commandTester = new CommandTester(new ElasticsearchIndexingCommand($oldIndexer, $bus, $aliasHandler, true));
+        $commandTester->execute(['--only' => 'product,category']);
+
+        $commandTester->assertCommandIsSuccessful();
+    }
+}

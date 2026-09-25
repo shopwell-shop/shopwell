@@ -1,0 +1,1678 @@
+/* eslint-disable sw-test-rules/test-file-max-lines-warning, sw-test-rules/test-file-max-lines-error */
+
+/**
+ * @sw-package inventory
+ */
+import BulkEditApiFactory from 'src/module/sw-bulk-edit/service/bulk-edit.api.factory';
+import BulkEditProductHandler from 'src/module/sw-bulk-edit/service/handler/bulk-edit-product.handler';
+
+const EntityDefinitionFactory = require('src/core/factory/entity-definition.factory').default;
+
+const highAssociationCount = 750;
+
+function getBulkEditApiFactory() {
+    return new BulkEditApiFactory();
+}
+
+function getBulkEditProductHandler() {
+    const factory = getBulkEditApiFactory();
+
+    const handler = factory.getHandler('product');
+
+    handler.syncService = {
+        sync: () => {
+            return true;
+        },
+    };
+
+    return handler;
+}
+
+function paginate(data, criteria) {
+    return data.slice((criteria.page - 1) * criteria.limit, criteria.page * criteria.limit);
+}
+
+describe('module/sw-bulk-edit/service/handler/bulk-edit-product.handler', () => {
+    it('is registered correctly', async () => {
+        const factory = getBulkEditApiFactory();
+
+        const handler = factory.getHandler('product');
+
+        expect(handler).toBeInstanceOf(BulkEditProductHandler);
+        expect(handler.name).toBe('bulkEditProductHandler');
+    });
+
+    it('should call buildBulkSyncPayload when using bulkEdit', async () => {
+        const handler = getBulkEditProductHandler();
+
+        const bulkEditProductHandler = jest.spyOn(handler, 'buildBulkSyncPayload').mockImplementation(() =>
+            Promise.resolve({
+                upsert: {
+                    entity: 'order',
+                },
+            }),
+        );
+
+        const result = await handler.bulkEdit(['abc', 'xyz'], []);
+
+        expect(bulkEditProductHandler).toHaveBeenCalledTimes(1);
+        expect(bulkEditProductHandler).toHaveBeenCalledWith([]);
+        expect(handler.entityName).toBe('product');
+        expect(handler.entityIds).toEqual(['abc', 'xyz']);
+        expect(result).toBe(true);
+    });
+
+    it('should call syncService sync when using bulkEditProductHandler', async () => {
+        const handler = getBulkEditProductHandler();
+        const payload = {
+            product: { operation: 'upsert', entity: 'product', payload: [] },
+        };
+
+        const buildBulkSyncPayloadMethod = jest
+            .spyOn(handler, 'buildBulkSyncPayload')
+            .mockImplementation(() => Promise.resolve(payload));
+        const syncMethod = jest.spyOn(handler.syncService, 'sync').mockImplementation(() => Promise.resolve(true));
+
+        const changes = [{ type: 'overwrite', field: 'description', value: 'test' }];
+
+        const result = await handler.bulkEdit([], changes);
+
+        expect(buildBulkSyncPayloadMethod).toHaveBeenCalledTimes(1);
+        expect(buildBulkSyncPayloadMethod).toHaveBeenCalledWith(changes);
+
+        expect(syncMethod).toHaveBeenCalledTimes(1);
+        expect(syncMethod).toHaveBeenCalledWith(
+            payload,
+            {},
+            {
+                'single-operation': 1,
+                'sw-language-id': Shopwell.Context.api.languageId,
+            },
+        );
+        expect(result).toBe(true);
+    });
+
+    it('should preserve base price fields (gross/net/linked) when only listPrice is changed', async () => {
+        const currencyId = 'b7d2554b0ce847cd82f3ac9bd1c0dfca';
+        const handler = getBulkEditProductHandler();
+        const originalBasePrice = {
+            currencyId,
+            gross: 50,
+            net: 42.02,
+            linked: true,
+            listPrice: { currencyId, gross: 80, net: 67.23, linked: true },
+        };
+
+        handler.getProducts = jest.fn().mockResolvedValue(undefined);
+        handler.products = [
+            {
+                id: 'product_1',
+                price: [originalBasePrice],
+            },
+        ];
+
+        const syncSpy = jest.spyOn(handler.syncService, 'sync').mockResolvedValue({ data: [] });
+
+        await handler.bulkEdit(
+            ['product_1'],
+            [
+                {
+                    field: 'price',
+                    type: 'overwrite',
+                    value: [
+                        {
+                            currencyId,
+                            gross: null,
+                            net: null,
+                            linked: true,
+                            listPrice: { currencyId, gross: 100, net: 84.03, linked: true },
+                            regulationPrice: null,
+                        },
+                    ],
+                },
+            ],
+        );
+
+        const syncPayload = syncSpy.mock.calls[0][0];
+        const productPayload = syncPayload['upsert-product'].payload[0];
+
+        expect(productPayload.price[0].gross).toBe(50);
+        expect(productPayload.price[0].net).toBe(42.02);
+        expect(productPayload.price[0].linked).toBe(true);
+        expect(productPayload.price[0].listPrice.gross).toBe(100);
+    });
+
+    it('should preserve base price fields (gross/net/linked) when only regulationPrice is changed', async () => {
+        const currencyId = 'b7d2554b0ce847cd82f3ac9bd1c0dfca';
+        const handler = getBulkEditProductHandler();
+        const originalBasePrice = {
+            currencyId,
+            gross: 75,
+            net: 63.03,
+            linked: true,
+            regulationPrice: { currencyId, gross: 90, net: 75.63, linked: true },
+        };
+
+        handler.getProducts = jest.fn().mockResolvedValue(undefined);
+        handler.products = [
+            {
+                id: 'product_1',
+                price: [originalBasePrice],
+            },
+        ];
+
+        const syncSpy = jest.spyOn(handler.syncService, 'sync').mockResolvedValue({ data: [] });
+
+        await handler.bulkEdit(
+            ['product_1'],
+            [
+                {
+                    field: 'price',
+                    type: 'overwrite',
+                    value: [
+                        {
+                            currencyId,
+                            gross: null,
+                            net: null,
+                            linked: true,
+                            listPrice: null,
+                            regulationPrice: { currencyId, gross: 150, net: 126.05, linked: true },
+                        },
+                    ],
+                },
+            ],
+        );
+
+        const syncPayload = syncSpy.mock.calls[0][0];
+        const productPayload = syncPayload['upsert-product'].payload[0];
+
+        expect(productPayload.price[0].gross).toBe(75);
+        expect(productPayload.price[0].net).toBe(63.03);
+        expect(productPayload.price[0].linked).toBe(true);
+        expect(productPayload.price[0].regulationPrice.gross).toBe(150);
+    });
+
+    describe('test buildBulkSyncPayload', () => {
+        let handler = null;
+
+        beforeEach(async () => {
+            handler = getBulkEditProductHandler();
+
+            handler.groupedPayload = {
+                upsert: {},
+                delete: {},
+            };
+            handler.entityName = 'product';
+            handler.entityIds = ['product_1', 'product_2'];
+        });
+
+        const cases = [
+            ['empty changes', [], {}],
+            [
+                'invalid field',
+                [
+                    {
+                        type: 'overwrite',
+                        field: 'invalid-field',
+                        value: 'test',
+                    },
+                    {
+                        type: 'clear',
+                        field: 'invalid-field-2',
+                        value: 'test',
+                    },
+                ],
+                {},
+            ],
+            [
+                'unsupported type',
+                [
+                    {
+                        type: 'not-support-type',
+                        field: 'description',
+                        value: 'test',
+                    },
+                ],
+                {},
+            ],
+            [
+                'overwrite single field',
+                [{ type: 'overwrite', field: 'description', value: 'test' }],
+                {
+                    'upsert-product': {
+                        action: 'upsert',
+                        entity: 'product',
+                        payload: [
+                            {
+                                id: 'product_1',
+                                description: 'test',
+                            },
+                            {
+                                id: 'product_2',
+                                description: 'test',
+                            },
+                        ],
+                    },
+                },
+            ],
+            [
+                'overwrite custom field',
+                [
+                    {
+                        type: 'overwrite',
+                        field: 'customFields',
+                        value: {
+                            custom_health_nostrum_facere_quo: 'lorem ipsum',
+                        },
+                    },
+                ],
+                {
+                    'upsert-product': {
+                        action: 'upsert',
+                        entity: 'product',
+                        payload: [
+                            {
+                                id: 'product_1',
+                                customFields: {
+                                    custom_health_nostrum_facere_quo: 'lorem ipsum',
+                                },
+                            },
+                            {
+                                id: 'product_2',
+                                customFields: {
+                                    custom_health_nostrum_facere_quo: 'lorem ipsum',
+                                },
+                            },
+                        ],
+                    },
+                },
+            ],
+            [
+                'clear single string field',
+                [{ type: 'clear', field: 'description' }],
+                {
+                    'upsert-product': {
+                        action: 'upsert',
+                        entity: 'product',
+                        payload: [
+                            {
+                                id: 'product_1',
+                                description: null,
+                            },
+                            {
+                                id: 'product_2',
+                                description: null,
+                            },
+                        ],
+                    },
+                },
+            ],
+            [
+                'clear multiple scalar fields',
+                [
+                    { type: 'clear', field: 'description' },
+                    { type: 'clear', field: 'stock' },
+                ],
+                {
+                    'upsert-product': {
+                        action: 'upsert',
+                        entity: 'product',
+                        payload: [
+                            {
+                                id: 'product_1',
+                                description: null,
+                                stock: 0,
+                            },
+                            {
+                                id: 'product_2',
+                                description: null,
+                                stock: 0,
+                            },
+                        ],
+                    },
+                },
+            ],
+            [
+                'overwrite multiple fields',
+                [
+                    { type: 'overwrite', field: 'description', value: 'test' },
+                    {
+                        type: 'overwrite',
+                        field: 'stock',
+                        value: 10,
+                    },
+                ],
+                {
+                    'upsert-product': {
+                        action: 'upsert',
+                        entity: 'product',
+                        payload: [
+                            {
+                                id: 'product_1',
+                                description: 'test',
+                                stock: 10,
+                            },
+                            {
+                                id: 'product_2',
+                                description: 'test',
+                                stock: 10,
+                            },
+                        ],
+                    },
+                },
+            ],
+            [
+                'changes with invalid field and unsupported type',
+                [
+                    { type: 'overwrite', field: 'description', value: 'test' },
+                    {
+                        type: 'overwrite',
+                        field: 'invalid-field',
+                        value: 10,
+                    },
+                    { type: 'un-support-type', field: 'name', value: 10 },
+                ],
+                {
+                    'upsert-product': {
+                        action: 'upsert',
+                        entity: 'product',
+                        payload: [
+                            {
+                                id: 'product_1',
+                                description: 'test',
+                            },
+                            {
+                                id: 'product_2',
+                                description: 'test',
+                            },
+                        ],
+                    },
+                },
+            ],
+            [
+                'change association with invalid field',
+                [
+                    {
+                        type: 'overwrite',
+                        field: 'invalidField',
+                        value: ['category_1', 'category_2'],
+                    },
+                ],
+                {},
+            ],
+            [
+                'overwrite an association with no duplicated',
+                [
+                    {
+                        type: 'overwrite',
+                        field: 'categories',
+                        value: [{ id: 'category_1' }, { id: 'category_2' }],
+                    },
+                ],
+                {
+                    'upsert-product_category': {
+                        action: 'upsert',
+                        entity: 'product_category',
+                        payload: [
+                            {
+                                productId: 'product_1',
+                                categoryId: 'category_1',
+                            },
+                            {
+                                productId: 'product_2',
+                                categoryId: 'category_1',
+                            },
+                            {
+                                productId: 'product_1',
+                                categoryId: 'category_2',
+                            },
+                            {
+                                productId: 'product_2',
+                                categoryId: 'category_2',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_category: [],
+                },
+            ],
+            [
+                'overwrite an association with some duplicated',
+                [
+                    {
+                        type: 'overwrite',
+                        field: 'categories',
+                        value: [{ id: 'category_1' }, { id: 'category_2' }],
+                    },
+                ],
+                {
+                    'upsert-product_category': {
+                        action: 'upsert',
+                        entity: 'product_category',
+                        payload: [
+                            {
+                                productId: 'product_2',
+                                categoryId: 'category_1',
+                            },
+                            {
+                                productId: 'product_1',
+                                categoryId: 'category_2',
+                            },
+                        ],
+                    },
+                    'delete-product_category': {
+                        action: 'delete',
+                        entity: 'product_category',
+                        payload: [
+                            {
+                                productId: 'product_1',
+                                categoryId: 'category_3',
+                            },
+                            {
+                                productId: 'product_2',
+                                categoryId: 'category_4',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_category: [
+                        {
+                            productId: 'product_1',
+                            categoryId: 'category_1',
+                        },
+                        {
+                            productId: 'product_2',
+                            categoryId: 'category_2',
+                        },
+                        {
+                            productId: 'product_1',
+                            categoryId: 'category_3',
+                        },
+                        {
+                            productId: 'product_2',
+                            categoryId: 'category_4',
+                        },
+                    ],
+                },
+            ],
+            [
+                'overwrite an oneToMany association',
+                [
+                    {
+                        type: 'overwrite',
+                        field: 'media',
+                        mappingReferenceField: 'mediaId',
+                        value: [{ mediaId: 'media_1' }, { mediaId: 'media_2' }],
+                    },
+                ],
+                {
+                    'upsert-product_media': {
+                        action: 'upsert',
+                        entity: 'product_media',
+                        payload: [
+                            {
+                                productId: 'product_1',
+                                mediaId: 'media_1',
+                            },
+                            {
+                                productId: 'product_2',
+                                mediaId: 'media_1',
+                            },
+                        ],
+                    },
+                    'delete-product_media': {
+                        action: 'delete',
+                        entity: 'product_media',
+                        payload: [
+                            {
+                                id: 'product_media_3',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_media: [
+                        {
+                            id: 'product_media_1',
+                            productId: 'product_1',
+                            mediaId: 'media_2',
+                        },
+                        {
+                            id: 'product_media_2',
+                            productId: 'product_2',
+                            mediaId: 'media_2',
+                        },
+                        {
+                            id: 'product_media_3',
+                            productId: 'product_2',
+                            mediaId: 'media_3',
+                        },
+                    ],
+                },
+            ],
+            [
+                'overwrite an oneToMany association with extra field',
+                [
+                    {
+                        type: 'overwrite',
+                        field: 'visibilities',
+                        mappingReferenceField: 'salesChannelId',
+                        value: [
+                            { salesChannelId: 'scn_1', visibility: 20 },
+                            { salesChannelId: 'scn_2', visibility: 30 },
+                        ],
+                    },
+                ],
+                {
+                    'upsert-product_visibility': {
+                        action: 'upsert',
+                        entity: 'product_visibility',
+                        payload: [
+                            {
+                                productId: 'product_2',
+                                salesChannelId: 'scn_1',
+                                visibility: 20,
+                            },
+                            {
+                                productId: 'product_1',
+                                salesChannelId: 'scn_2',
+                                visibility: 30,
+                            },
+                            {
+                                id: 'product_scn_2',
+                                visibility: 30,
+                            },
+                        ],
+                    },
+                    'delete-product_visibility': {
+                        action: 'delete',
+                        entity: 'product_visibility',
+                        payload: [
+                            {
+                                id: 'product_scn_3',
+                            },
+                            {
+                                id: 'product_scn_4',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_visibility: [
+                        {
+                            id: 'product_scn_1',
+                            productId: 'product_1',
+                            visibility: 20,
+                            salesChannelId: 'scn_1',
+                        },
+                        {
+                            id: 'product_scn_2',
+                            productId: 'product_2',
+                            visibility: 20,
+                            salesChannelId: 'scn_2',
+                        },
+                        {
+                            id: 'product_scn_3',
+                            productId: 'product_1',
+                            salesChannelId: 'scn_3',
+                        },
+                        {
+                            id: 'product_scn_4',
+                            productId: 'product_2',
+                            salesChannelId: 'scn_4',
+                        },
+                    ],
+                },
+            ],
+            [
+                'remove a variant visibility per variant (inheriting vs overriding)',
+                [
+                    {
+                        type: 'remove',
+                        field: 'visibilities',
+                        mappingReferenceField: 'salesChannelId',
+                        // The kept selection is irrelevant for the handler; it routes on the flags below.
+                        value: [
+                            { salesChannelId: 'scn_1', visibility: 30 },
+                            { salesChannelId: 'scn_2', visibility: 30 },
+                        ],
+                        removedSalesChannelIds: ['scn_3'],
+                        inheritedVisibilities: [
+                            { salesChannelId: 'scn_1', visibility: 30 },
+                            { salesChannelId: 'scn_2', visibility: 30 },
+                            { salesChannelId: 'scn_3', visibility: 20 },
+                        ],
+                    },
+                ],
+                {
+                    // product_1 inherits → materialize the inherited set minus scn_3.
+                    'upsert-product_visibility': {
+                        action: 'upsert',
+                        entity: 'product_visibility',
+                        payload: [
+                            { productId: 'product_1', salesChannelId: 'scn_1', visibility: 30 },
+                            { productId: 'product_1', salesChannelId: 'scn_2', visibility: 30 },
+                        ],
+                    },
+                    // product_2 overrides (scn_g, scn_3) → only its own scn_3 row is dropped, scn_g stays.
+                    'delete-product_visibility': {
+                        action: 'delete',
+                        entity: 'product_visibility',
+                        payload: [{ id: 'pv_2_3' }],
+                    },
+                },
+                {
+                    product_visibility: [
+                        {
+                            id: 'pv_2_g',
+                            productId: 'product_2',
+                            salesChannelId: 'scn_g',
+                            visibility: 30,
+                        },
+                        {
+                            id: 'pv_2_3',
+                            productId: 'product_2',
+                            salesChannelId: 'scn_3',
+                            visibility: 20,
+                        },
+                    ],
+                },
+            ],
+            [
+                'remove a variant visibility leaves variants untouched when nothing is removed',
+                [
+                    {
+                        type: 'remove',
+                        field: 'visibilities',
+                        mappingReferenceField: 'salesChannelId',
+                        value: [{ salesChannelId: 'scn_1', visibility: 30 }],
+                        removedSalesChannelIds: [],
+                        inheritedVisibilities: [{ salesChannelId: 'scn_1', visibility: 30 }],
+                    },
+                ],
+                {},
+            ],
+            [
+                'add a variant visibility keeps the inherited set per variant',
+                [
+                    {
+                        type: 'add',
+                        field: 'visibilities',
+                        mappingReferenceField: 'salesChannelId',
+                        value: [{ salesChannelId: 'scn_1', visibility: 30 }],
+                        removedSalesChannelIds: [],
+                        // Adding scn_1 which is already inherited must not drop scn_2.
+                        addedVisibilities: [{ salesChannelId: 'scn_1', visibility: 30 }],
+                        inheritedVisibilities: [
+                            { salesChannelId: 'scn_1', visibility: 30 },
+                            { salesChannelId: 'scn_2', visibility: 30 },
+                        ],
+                    },
+                ],
+                {
+                    'upsert-product_visibility': {
+                        action: 'upsert',
+                        entity: 'product_visibility',
+                        payload: [
+                            // product_1 inherits → materialize the whole inherited set.
+                            { productId: 'product_1', salesChannelId: 'scn_1', visibility: 30 },
+                            { productId: 'product_1', salesChannelId: 'scn_2', visibility: 30 },
+                            // product_2 overrides (owns scn_2) → only scn_1 is added, scn_2 kept.
+                            { productId: 'product_2', salesChannelId: 'scn_1', visibility: 30 },
+                        ],
+                    },
+                },
+                {
+                    product_visibility: [
+                        {
+                            id: 'pv_2_2',
+                            productId: 'product_2',
+                            salesChannelId: 'scn_2',
+                            visibility: 30,
+                        },
+                    ],
+                },
+            ],
+            [
+                'add a brand-new sales channel to a variant keeps its effective set',
+                [
+                    {
+                        type: 'add',
+                        field: 'visibilities',
+                        mappingReferenceField: 'salesChannelId',
+                        value: [{ salesChannelId: 'scn_9', visibility: 10 }],
+                        removedSalesChannelIds: [],
+                        addedVisibilities: [{ salesChannelId: 'scn_9', visibility: 10 }],
+                        inheritedVisibilities: [
+                            { salesChannelId: 'scn_1', visibility: 30 },
+                            { salesChannelId: 'scn_2', visibility: 30 },
+                        ],
+                    },
+                ],
+                {
+                    // Both variants inherit → materialize the inherited set plus the new channel.
+                    'upsert-product_visibility': {
+                        action: 'upsert',
+                        entity: 'product_visibility',
+                        payload: [
+                            { productId: 'product_1', salesChannelId: 'scn_1', visibility: 30 },
+                            { productId: 'product_1', salesChannelId: 'scn_2', visibility: 30 },
+                            { productId: 'product_1', salesChannelId: 'scn_9', visibility: 10 },
+                            { productId: 'product_2', salesChannelId: 'scn_1', visibility: 30 },
+                            { productId: 'product_2', salesChannelId: 'scn_2', visibility: 30 },
+                            { productId: 'product_2', salesChannelId: 'scn_9', visibility: 10 },
+                        ],
+                    },
+                },
+                {
+                    product_visibility: [],
+                },
+            ],
+            [
+                'remove all channels makes a variant inherit the parent again',
+                [
+                    {
+                        type: 'remove',
+                        field: 'visibilities',
+                        mappingReferenceField: 'salesChannelId',
+                        value: [
+                            { salesChannelId: 'scn_1', visibility: 30 },
+                            { salesChannelId: 'scn_2', visibility: 30 },
+                        ],
+                        removedSalesChannelIds: ['scn_1', 'scn_2'],
+                        inheritedVisibilities: [
+                            { salesChannelId: 'scn_1', visibility: 30 },
+                            { salesChannelId: 'scn_2', visibility: 30 },
+                        ],
+                    },
+                ],
+                {
+                    // The final set is empty for every variant. An inheriting variant
+                    // (product_1) already has no own rows, so nothing happens and it keeps
+                    // inheriting. An overriding variant (product_2) has its own rows deleted,
+                    // dropping to zero rows — which means it inherits the parent again.
+                    'delete-product_visibility': {
+                        action: 'delete',
+                        entity: 'product_visibility',
+                        payload: [{ id: 'pv_2_1' }, { id: 'pv_2_2' }],
+                    },
+                },
+                {
+                    product_visibility: [
+                        {
+                            id: 'pv_2_1',
+                            productId: 'product_2',
+                            salesChannelId: 'scn_1',
+                            visibility: 30,
+                        },
+                        {
+                            id: 'pv_2_2',
+                            productId: 'product_2',
+                            salesChannelId: 'scn_2',
+                            visibility: 30,
+                        },
+                    ],
+                },
+            ],
+            [
+                'add an oneToMany association with mapping reference field',
+                [
+                    {
+                        type: 'add',
+                        field: 'media',
+                        mappingReferenceField: 'mediaId',
+                        value: [{ mediaId: 'media_1' }, { mediaId: 'media_2' }],
+                    },
+                ],
+                {
+                    'upsert-product_media': {
+                        action: 'upsert',
+                        entity: 'product_media',
+                        payload: [
+                            {
+                                productId: 'product_1',
+                                mediaId: 'media_1',
+                                position: 1,
+                            },
+                            {
+                                productId: 'product_2',
+                                mediaId: 'media_1',
+                                position: 0,
+                            },
+                            {
+                                productId: 'product_2',
+                                mediaId: 'media_2',
+                                position: 1,
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_media: [
+                        {
+                            id: 'product_media_1',
+                            productId: 'product_1',
+                            mediaId: 'media_2',
+                        },
+                    ],
+                },
+            ],
+            [
+                'add an oneToMany association without mapping reference field',
+                [
+                    {
+                        type: 'add',
+                        field: 'productLocations',
+                        value: [{ name: 'location 2' }, { name: 'location 3' }],
+                    },
+                ],
+                {
+                    'upsert-product_location': {
+                        action: 'upsert',
+                        entity: 'product_location',
+                        payload: [
+                            {
+                                productId: 'product_1',
+                                name: 'location 2',
+                            },
+                            {
+                                productId: 'product_1',
+                                name: 'location 3',
+                            },
+                            {
+                                productId: 'product_2',
+                                name: 'location 2',
+                            },
+                            {
+                                productId: 'product_2',
+                                name: 'location 3',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_location: [
+                        {
+                            id: 'product_location_1',
+                            productId: 'product_1',
+                            name: 'location 1',
+                        },
+                    ],
+                },
+            ],
+            [
+                'remove an oneToMany association',
+                [
+                    {
+                        type: 'clear',
+                        field: 'media',
+                        mappingReferenceField: 'mediaId',
+                        value: [{ mediaId: 'media_1' }, { mediaId: 'media_2' }],
+                    },
+                ],
+                {
+                    'delete-product_media': {
+                        action: 'delete',
+                        entity: 'product_media',
+                        payload: [
+                            {
+                                id: 'product_media_1',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_media: [
+                        {
+                            id: 'product_media_1',
+                            productId: 'product_1',
+                            mediaId: 'media_2',
+                        },
+                    ],
+                },
+            ],
+            [
+                'clear an oneToMany association',
+                [
+                    {
+                        type: 'clear',
+                        field: 'media',
+                        mappingReferenceField: 'mediaId',
+                    },
+                ],
+                {
+                    'delete-product_media': {
+                        action: 'delete',
+                        entity: 'product_media',
+                        payload: [
+                            {
+                                id: 'product_media_1',
+                            },
+                            {
+                                id: 'product_media_2',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_media: [
+                        {
+                            id: 'product_media_1',
+                            productId: 'product_1',
+                            mediaId: 'media_1',
+                        },
+                        {
+                            id: 'product_media_2',
+                            productId: 'product_1',
+                            mediaId: 'media_2',
+                        },
+                    ],
+                },
+            ],
+            [
+                'overwrite an association with all duplicated',
+                [
+                    {
+                        type: 'overwrite',
+                        field: 'categories',
+                        value: [{ id: 'category_1' }, { id: 'category_2' }],
+                    },
+                ],
+                {},
+                {
+                    product_category: [
+                        {
+                            productId: 'product_1',
+                            categoryId: 'category_1',
+                        },
+                        {
+                            productId: 'product_1',
+                            categoryId: 'category_2',
+                        },
+                        {
+                            productId: 'product_2',
+                            categoryId: 'category_1',
+                        },
+                        {
+                            productId: 'product_2',
+                            categoryId: 'category_2',
+                        },
+                    ],
+                },
+            ],
+            [
+                'overwrite an association with duplicated',
+                [
+                    {
+                        type: 'overwrite',
+                        field: 'categories',
+                        value: [{ id: 'category_1' }, { id: 'category_2' }],
+                    },
+                ],
+                {
+                    'upsert-product_category': {
+                        action: 'upsert',
+                        entity: 'product_category',
+                        payload: [
+                            {
+                                productId: 'product_2',
+                                categoryId: 'category_1',
+                            },
+                            {
+                                productId: 'product_1',
+                                categoryId: 'category_2',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_category: [
+                        {
+                            productId: 'product_1',
+                            categoryId: 'category_1',
+                        },
+                        {
+                            productId: 'product_2',
+                            categoryId: 'category_2',
+                        },
+                    ],
+                },
+            ],
+            [
+                'add an association',
+                [
+                    {
+                        type: 'add',
+                        field: 'categories',
+                        value: [{ id: 'category_1' }, { id: 'category_2' }, { id: 'category_3' }],
+                    },
+                ],
+                {
+                    'upsert-product_category': {
+                        action: 'upsert',
+                        entity: 'product_category',
+                        payload: [
+                            {
+                                productId: 'product_2',
+                                categoryId: 'category_1',
+                            },
+                            {
+                                productId: 'product_1',
+                                categoryId: 'category_2',
+                            },
+                            {
+                                productId: 'product_2',
+                                categoryId: 'category_3',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_category: [
+                        {
+                            productId: 'product_1',
+                            categoryId: 'category_1',
+                        },
+                        {
+                            productId: 'product_2',
+                            categoryId: 'category_2',
+                        },
+                        {
+                            productId: 'product_1',
+                            categoryId: 'category_3',
+                        },
+                        {
+                            productId: 'product_2',
+                            categoryId: 'category_4',
+                        },
+                    ],
+                },
+            ],
+            [
+                'remove an association',
+                [
+                    {
+                        type: 'remove',
+                        field: 'categories',
+                        value: [{ id: 'category_1' }, { id: 'category_2' }],
+                    },
+                ],
+                {
+                    'delete-product_category': {
+                        action: 'delete',
+                        entity: 'product_category',
+                        payload: [
+                            {
+                                productId: 'product_1',
+                                categoryId: 'category_1',
+                            },
+                            {
+                                productId: 'product_2',
+                                categoryId: 'category_2',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_category: [
+                        {
+                            productId: 'product_1',
+                            categoryId: 'category_1',
+                        },
+                        {
+                            productId: 'product_2',
+                            categoryId: 'category_2',
+                        },
+                    ],
+                },
+            ],
+            [
+                'all operators at once',
+                [
+                    { type: 'overwrite', field: 'description', value: 'test' },
+                    { type: 'clear', field: 'stock' },
+                    {
+                        type: 'remove',
+                        mappingReferenceField: 'mediaId',
+                        field: 'media',
+                        value: { mediaId: 'media_1' },
+                    },
+                    {
+                        type: 'add',
+                        field: 'categories',
+                        value: [{ id: 'category_1' }, { id: 'category_2' }],
+                    },
+                ],
+                {
+                    'upsert-product': {
+                        action: 'upsert',
+                        entity: 'product',
+                        payload: [
+                            {
+                                id: 'product_1',
+                                description: 'test',
+                                stock: 0,
+                            },
+                            {
+                                id: 'product_2',
+                                description: 'test',
+                                stock: 0,
+                            },
+                        ],
+                    },
+                    'upsert-product_category': {
+                        action: 'upsert',
+                        entity: 'product_category',
+                        payload: [
+                            {
+                                productId: 'product_2',
+                                categoryId: 'category_1',
+                            },
+                            {
+                                productId: 'product_1',
+                                categoryId: 'category_2',
+                            },
+                        ],
+                    },
+                    'delete-product_media': {
+                        action: 'delete',
+                        entity: 'product_media',
+                        payload: [
+                            {
+                                id: 'product_media_1',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_category: [
+                        {
+                            productId: 'product_1',
+                            categoryId: 'category_1',
+                        },
+                        {
+                            productId: 'product_2',
+                            categoryId: 'category_2',
+                        },
+                        {
+                            productId: 'product_1',
+                            categoryId: 'category_3',
+                        },
+                        {
+                            productId: 'product_2',
+                            categoryId: 'category_4',
+                        },
+                    ],
+                    product_media: [
+                        {
+                            productId: 'product_2',
+                            mediaId: 'media_1',
+                            id: 'product_media_1',
+                        },
+                    ],
+                },
+            ],
+            [
+                'add more than 500 oneToMany association',
+                [
+                    {
+                        type: 'add',
+                        field: 'media',
+                        mappingReferenceField: 'mediaId',
+                        value: Array(highAssociationCount)
+                            .fill(0)
+                            .map((v, k) => ({ mediaId: `media_${k}` })),
+                    },
+                ],
+                {
+                    'upsert-product_media': {
+                        action: 'upsert',
+                        entity: 'product_media',
+                        payload: Array(highAssociationCount)
+                            .fill(0)
+                            .map((v, k) => ({
+                                productId: 'product_1',
+                                mediaId: `media_${k}`,
+                                position: k,
+                            })),
+                    },
+                },
+                {
+                    product_media: Array(highAssociationCount)
+                        .fill(0)
+                        .map((v, k) => ({
+                            id: `product_media_${k}`,
+                            productId: 'product_2',
+                            mediaId: `media_${k}`,
+                        })),
+                },
+            ],
+            [
+                'add more than 500 manyToMany association',
+                [
+                    {
+                        type: 'add',
+                        field: 'categories',
+                        value: Array(highAssociationCount)
+                            .fill(0)
+                            .map((v, k) => ({ id: `category_${k}` })),
+                    },
+                ],
+                {
+                    'upsert-product_category': {
+                        action: 'upsert',
+                        entity: 'product_category',
+                        payload: Array(highAssociationCount)
+                            .fill(0)
+                            .map((v, k) => ({
+                                productId: 'product_1',
+                                categoryId: `category_${k}`,
+                            })),
+                    },
+                },
+                {
+                    product_category: Array(highAssociationCount)
+                        .fill(0)
+                        .map((v, k) => ({
+                            id: `product_category_${k}`,
+                            productId: 'product_2',
+                            categoryId: `category_${k}`,
+                        })),
+                },
+            ],
+            [
+                'overwrite an oneToOne association',
+                [
+                    {
+                        type: 'overwrite',
+                        field: 'productAI',
+                        value: [{ name: 'ai 1' }],
+                    },
+                ],
+                {
+                    'upsert-product_ai': {
+                        action: 'upsert',
+                        entity: 'product_ai',
+                        payload: [
+                            {
+                                id: 'product_ai_1',
+                                name: 'ai 1',
+                            },
+                            {
+                                productId: 'product_2',
+                                name: 'ai 1',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_ai: [
+                        {
+                            id: 'product_ai_1',
+                            productId: 'product_1',
+                            name: 'b',
+                        },
+                    ],
+                },
+            ],
+            [
+                'add an oneToOne association',
+                [
+                    {
+                        type: 'add',
+                        field: 'productAI',
+                        value: [{ name: 'ai 1' }],
+                    },
+                ],
+                {
+                    'upsert-product_ai': {
+                        action: 'upsert',
+                        entity: 'product_ai',
+                        payload: [
+                            {
+                                id: 'product_ai_1',
+                                name: 'ai 1',
+                            },
+                            {
+                                productId: 'product_2',
+                                name: 'ai 1',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_ai: [
+                        {
+                            id: 'product_ai_1',
+                            productId: 'product_1',
+                            name: 'b',
+                        },
+                    ],
+                },
+            ],
+            [
+                'remove an oneToOne association',
+                [
+                    {
+                        type: 'clear',
+                        field: 'productAI',
+                        value: [{ name: 'ai 1' }],
+                    },
+                ],
+                {
+                    'delete-product_ai': {
+                        action: 'delete',
+                        entity: 'product_ai',
+                        payload: [
+                            {
+                                id: 'product_ai_1',
+                            },
+                        ],
+                    },
+                },
+                {
+                    product_ai: [
+                        {
+                            id: 'product_ai_1',
+                            productId: 'product_1',
+                            name: 'b',
+                        },
+                    ],
+                },
+            ],
+        ];
+
+        it.each(cases)('%s', async (testName, input, output, existAssociations = {}) => {
+            const mockEntitySchema = {
+                product: {
+                    entity: 'product',
+                    properties: {
+                        id: {
+                            type: 'uuid',
+                        },
+                        price: {
+                            type: 'json_object',
+                            properties: [],
+                        },
+                        cover: {
+                            type: 'association',
+                            relation: 'many_to_one',
+                            entity: 'product_media',
+                        },
+                        name: {
+                            type: 'string',
+                        },
+                        description: {
+                            type: 'string',
+                        },
+                        stock: {
+                            type: 'int',
+                        },
+                        customFields: {
+                            type: 'json_object',
+                        },
+                        media: {
+                            type: 'association',
+                            relation: 'one_to_many',
+                            entity: 'product_media',
+                            localField: 'id',
+                            referenceField: 'productId',
+                        },
+                        manufacturer: {
+                            type: 'association',
+                            relation: 'many_to_one',
+                            entity: 'product_manufacturer',
+                        },
+                        translations: {
+                            type: 'association',
+                            relation: 'one_to_many',
+                            entity: 'product_translation',
+                        },
+                        categories: {
+                            type: 'association',
+                            relation: 'many_to_many',
+                            entity: 'category',
+                            flags: {},
+                            localField: 'id',
+                            referenceField: 'id',
+                            mapping: 'product_category',
+                            local: 'productId',
+                            reference: 'categoryId',
+                        },
+                        visibilities: {
+                            type: 'association',
+                            relation: 'one_to_many',
+                            entity: 'product_visibility',
+                            localField: 'id',
+                            referenceField: 'productId',
+                        },
+                        productAI: {
+                            type: 'association',
+                            relation: 'one_to_one',
+                            entity: 'product_ai',
+                            localField: 'id',
+                            referenceField: 'productId',
+                        },
+                        productLocations: {
+                            type: 'association',
+                            relation: 'one_to_many',
+                            entity: 'product_location',
+                            localField: 'id',
+                            referenceField: 'productId',
+                        },
+                    },
+                },
+                product_category: {
+                    entity: 'product_category',
+                    relation: 'many_to_many',
+                },
+                product_visibility: {
+                    entity: 'product_visibility',
+                    properties: {
+                        id: {
+                            type: 'uuid',
+                        },
+                        productId: {
+                            type: 'uuid',
+                        },
+                        salesChannelId: {
+                            type: 'uuid',
+                        },
+                        visibility: {
+                            type: 'int',
+                        },
+                    },
+                },
+                product_manufacturer: {
+                    entity: 'product_manufacturer',
+                    properties: {
+                        id: {
+                            type: 'uuid',
+                        },
+                        name: {
+                            type: 'string',
+                        },
+                        media: {
+                            type: 'association',
+                            relation: 'many_to_one',
+                            entity: 'media',
+                        },
+                        products: {
+                            type: 'association',
+                            relation: 'one_to_many',
+                            entity: 'product',
+                        },
+                    },
+                },
+                product_media: {
+                    entity: 'product_media',
+                    properties: {
+                        id: {
+                            type: 'uuid',
+                        },
+                        position: {
+                            type: 'int',
+                        },
+                        media: {
+                            type: 'association',
+                            relation: 'many_to_one',
+                            entity: 'media',
+                        },
+                    },
+                },
+                media: {
+                    entity: 'media',
+                    properties: {
+                        id: {
+                            type: 'uuid',
+                        },
+                        translations: {
+                            type: 'association',
+                            relation: 'one_to_many',
+                            entity: 'media_translation',
+                        },
+                    },
+                },
+                product_ai: {
+                    entity: 'product_ai',
+                    relation: 'one_to_one',
+                    properties: {
+                        id: {
+                            type: 'uuid',
+                        },
+                        productId: {
+                            type: 'uuid',
+                        },
+                        name: {
+                            type: 'string',
+                        },
+                    },
+                },
+                product_location: {
+                    entity: 'product_ai',
+                    relation: 'one_to_many',
+                    properties: {
+                        id: {
+                            type: 'uuid',
+                        },
+                        productId: {
+                            type: 'uuid',
+                        },
+                        name: {
+                            type: 'string',
+                        },
+                    },
+                },
+            };
+
+            Shopwell.EntityDefinition = EntityDefinitionFactory;
+            Object.keys(mockEntitySchema).forEach((entity) => {
+                Shopwell.EntityDefinition.add(entity, mockEntitySchema[entity]);
+            });
+
+            const spy = jest.spyOn(console, 'warn').mockImplementation();
+
+            const spyRepository = jest.spyOn(handler.repositoryFactory, 'create').mockImplementation((entity) => {
+                return {
+                    search: async (criteria) => {
+                        const response = paginate(existAssociations[entity], criteria);
+                        response.total = existAssociations[entity].length;
+
+                        return Promise.resolve(response);
+                    },
+                    searchIds: async (criteria) => {
+                        const response = {
+                            data: paginate(existAssociations[entity], criteria),
+                            total: existAssociations[entity].length,
+                        };
+
+                        return Promise.resolve(response);
+                    },
+                };
+            });
+
+            expect(await handler.buildBulkSyncPayload(input)).toEqual(output);
+
+            spy.mockRestore();
+
+            spyRepository.mockRestore();
+        });
+
+        it('appends bulk-added media at each product own next position', async () => {
+            // Scenario: product_1 & product_2 have 2 images (positions 1, 2), product_3 has 3 images
+            // (positions 1, 2, 3). Adding one image via bulk edit must append it at position 3 for product_1 and
+            // product_2, but at position 4 for product_3 - a per-product position, not a single shared one.
+            const scopedHandler = getBulkEditProductHandler();
+            scopedHandler.groupedPayload = { upsert: {}, delete: {} };
+            scopedHandler.entityName = 'product';
+            scopedHandler.entityIds = ['product_1', 'product_2', 'product_3'];
+
+            Shopwell.EntityDefinition = EntityDefinitionFactory;
+            Shopwell.EntityDefinition.add('product', {
+                entity: 'product',
+                properties: {
+                    id: { type: 'uuid' },
+                    media: {
+                        type: 'association',
+                        relation: 'one_to_many',
+                        entity: 'product_media',
+                        localField: 'id',
+                        referenceField: 'productId',
+                    },
+                },
+            });
+            Shopwell.EntityDefinition.add('product_media', {
+                entity: 'product_media',
+                properties: {
+                    id: { type: 'uuid' },
+                    position: { type: 'int' },
+                    media: { type: 'association', relation: 'many_to_one', entity: 'media' },
+                },
+            });
+            Shopwell.EntityDefinition.add('media', {
+                entity: 'media',
+                properties: { id: { type: 'uuid' } },
+            });
+
+            const existingMedia = [
+                { id: 'pm_1_1', productId: 'product_1', mediaId: 'media_a', position: 1 },
+                { id: 'pm_1_2', productId: 'product_1', mediaId: 'media_b', position: 2 },
+                { id: 'pm_2_1', productId: 'product_2', mediaId: 'media_a', position: 1 },
+                { id: 'pm_2_2', productId: 'product_2', mediaId: 'media_b', position: 2 },
+                { id: 'pm_3_1', productId: 'product_3', mediaId: 'media_a', position: 1 },
+                { id: 'pm_3_2', productId: 'product_3', mediaId: 'media_b', position: 2 },
+                { id: 'pm_3_3', productId: 'product_3', mediaId: 'media_c', position: 3 },
+            ];
+
+            const spyRepository = jest.spyOn(scopedHandler.repositoryFactory, 'create').mockImplementation(() => {
+                return {
+                    search: async (criteria) => {
+                        const response = paginate(existingMedia, criteria);
+                        response.total = existingMedia.length;
+
+                        return Promise.resolve(response);
+                    },
+                };
+            });
+
+            const payload = await scopedHandler.buildBulkSyncPayload([
+                {
+                    type: 'add',
+                    field: 'media',
+                    mappingReferenceField: 'mediaId',
+                    value: [{ mediaId: 'media_new' }],
+                },
+            ]);
+
+            expect(payload['upsert-product_media'].payload).toEqual([
+                { productId: 'product_1', mediaId: 'media_new', position: 3 },
+                { productId: 'product_2', mediaId: 'media_new', position: 3 },
+                { productId: 'product_3', mediaId: 'media_new', position: 4 },
+            ]);
+
+            spyRepository.mockRestore();
+        });
+    });
+});

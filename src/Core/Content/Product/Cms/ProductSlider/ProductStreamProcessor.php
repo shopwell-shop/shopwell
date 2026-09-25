@@ -1,0 +1,268 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Product\Cms\ProductSlider;
+
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
+use Shopwell\Core\Content\Cms\DataResolver\CriteriaCollection;
+use Shopwell\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
+use Shopwell\Core\Content\Cms\DataResolver\FieldConfig;
+use Shopwell\Core\Content\Cms\DataResolver\FieldConfigCollection;
+use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopwell\Core\Content\Cms\SalesChannel\Struct\ProductSliderStruct;
+use Shopwell\Core\Content\Product\Events\ProductSliderStreamCriteriaEvent;
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Product\SalesChannel\AbstractProductCloseoutFilterFactory;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingLoader;
+use Shopwell\Core\Content\ProductStream\Service\AbstractProductStreamBuilder;
+use Shopwell\Core\Content\ProductStream\Service\ProductStreamBuilderInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Exception\EntityNotFoundException;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\NotEqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Grouping\FieldGrouping;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+#[Package('discovery')]
+class ProductStreamProcessor extends AbstractProductSliderProcessor
+{
+    private const FALLBACK_LIMIT = 50;
+
+    /**
+     * @internal
+     *
+     * @param SalesChannelRepository<ProductCollection> $productRepository
+     */
+    public function __construct(
+        private readonly ProductStreamBuilderInterface|AbstractProductStreamBuilder $productStreamBuilder,
+        private readonly SalesChannelRepository $productRepository,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly LoggerInterface $logger,
+        private readonly SystemConfigService $systemConfigService,
+        private readonly AbstractProductCloseoutFilterFactory $productCloseoutFilterFactory,
+    ) {
+    }
+
+    public function getDecorated(): AbstractProductSliderProcessor
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    public function getSource(): string
+    {
+        return 'product_stream';
+    }
+
+    public function collect(CmsSlotEntity $slot, FieldConfigCollection $config, ResolverContext $resolverContext): ?CriteriaCollection
+    {
+        $products = $config->get('products');
+        \assert($products instanceof FieldConfig);
+        $criteria = $this->collectByProductStream($resolverContext, $products, $config);
+        if ($criteria === null) {
+            return null;
+        }
+
+        $this->eventDispatcher->dispatch(new ProductSliderStreamCriteriaEvent($slot, $criteria, $resolverContext->getSalesChannelContext()));
+
+        $collection = new CriteriaCollection();
+        $collection->add(self::PRODUCT_SLIDER_ENTITY_FALLBACK . '_' . $slot->getUniqueIdentifier(), ProductDefinition::class, $criteria);
+
+        return $collection;
+    }
+
+    public function enrich(CmsSlotEntity $slot, ElementDataCollection $result, ResolverContext $resolverContext): void
+    {
+        $entitySearchResult = $result->get(self::PRODUCT_SLIDER_ENTITY_FALLBACK . '_' . $slot->getUniqueIdentifier());
+        if (!$entitySearchResult) {
+            return;
+        }
+
+        $streamResult = $entitySearchResult->getEntities();
+        if (!$streamResult instanceof ProductCollection) {
+            return;
+        }
+
+        $slider = new ProductSliderStruct();
+        $slot->setData($slider);
+
+        $context = $resolverContext->getSalesChannelContext();
+
+        $products = $this->handleProductStream(
+            $streamResult,
+            $context,
+            $entitySearchResult->getCriteria()
+        );
+
+        // Safety net: handleProductStream() can remap stream hits to their display
+        // parent or main variant, which may itself be a hidden closeout product even
+        // though the stream criteria already filtered unavailable closeout products.
+        if ($this->hideUnavailableProducts($context)) {
+            $products = $this->filterOutOutOfStockHiddenCloseoutProducts($products);
+        }
+
+        $slider->setProducts($products);
+
+        $config = $slot->getFieldConfig();
+
+        $productConfig = $config->get('products');
+        \assert($productConfig instanceof FieldConfig);
+
+        $slider->setStreamId($productConfig->getStringValue());
+    }
+
+    private function collectByProductStream(
+        ResolverContext $resolverContext,
+        FieldConfig $config,
+        FieldConfigCollection $elementConfig
+    ): ?Criteria {
+        $limit = $elementConfig->get('productStreamLimit')?->getIntValue() ?? self::FALLBACK_LIMIT;
+
+        $criteria = new Criteria();
+        $criteria->addState(Criteria::STATE_ELASTICSEARCH_AWARE);
+        $criteria->addAssociation('options.group');
+
+        try {
+            $productStreamBuilder = $this->productStreamBuilder;
+            if ($productStreamBuilder instanceof AbstractProductStreamBuilder) {
+                $productStreamBuilder->enrichCriteria(
+                    $criteria,
+                    $config->getStringValue(),
+                    $resolverContext->getSalesChannelContext()->getContext()
+                );
+            } else {
+                $criteria->addFilter(...$productStreamBuilder->buildFilters(
+                    $config->getStringValue(),
+                    $resolverContext->getSalesChannelContext()->getContext()
+                ));
+            }
+        } catch (EntityNotFoundException $exception) {
+            $this->logger->warning(
+                'Product stream configured for CMS product slider could not be found.',
+                [
+                    'productStreamId' => $config->getStringValue(),
+                    'exception' => $exception,
+                ]
+            );
+
+            return null;
+        }
+
+        // Exclude unavailable closeout products before the limit is applied, so they
+        // do not consume slider slots (same handling as listing and cross-selling).
+        $context = $resolverContext->getSalesChannelContext();
+        if ($this->hideUnavailableProducts($context)) {
+            $criteria->addFilter($this->productCloseoutFilterFactory->create($context));
+        }
+
+        $criteria->setLimit($limit);
+
+        if (!$this->shouldSkipGrouping($criteria)) {
+            $this->addGrouping($criteria);
+        }
+        $sorting = $elementConfig->get('productStreamSorting')?->getStringValue() ?? 'name:' . FieldSorting::ASCENDING;
+
+        if ($sorting === 'random') {
+            $this->addRandomSort($criteria);
+        } else {
+            $sorting = explode(':', $sorting);
+            $field = $sorting[0];
+            $direction = $sorting[1];
+
+            $criteria->addSorting(new FieldSorting($field, $direction));
+        }
+
+        return $criteria;
+    }
+
+    private function hideUnavailableProducts(SalesChannelContext $context): bool
+    {
+        return $this->systemConfigService->getBool(
+            'core.listing.hideCloseoutProductsWhenOutOfStock',
+            $context->getSalesChannelId()
+        );
+    }
+
+    private function handleProductStream(
+        ProductCollection $streamResult,
+        SalesChannelContext $context,
+        Criteria $originCriteria
+    ): ProductCollection {
+        if ($this->shouldSkipGrouping($originCriteria)) {
+            return $streamResult;
+        }
+
+        $finalProductIds = $this->collectFinalProductIds($streamResult);
+        if ($finalProductIds === []) {
+            return new ProductCollection();
+        }
+
+        $criteria = $originCriteria->cloneForRead($finalProductIds);
+
+        $products = $this->productRepository->search($criteria, $context)->getEntities();
+        $products->sortByIdArray($finalProductIds);
+
+        return $products;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function collectFinalProductIds(ProductCollection $streamResult): array
+    {
+        $finalProductIds = [];
+        foreach ($streamResult as $product) {
+            $variantConfig = $product->getVariantListingConfig();
+
+            if (!$variantConfig) {
+                $finalProductIds[] = $product->getId();
+                continue;
+            }
+
+            $productId = $variantConfig->getDisplayParent()
+                ? $product->getParentId() : $variantConfig->getMainVariantId();
+
+            $finalProductIds[] = $productId ?? $product->getId();
+        }
+
+        return array_values(array_unique($finalProductIds));
+    }
+
+    private function addGrouping(Criteria $criteria): void
+    {
+        $criteria->addGroupField(new FieldGrouping('displayGroup'));
+        $criteria->addFilter(new NotEqualsFilter('displayGroup', null));
+    }
+
+    private function addRandomSort(Criteria $criteria): void
+    {
+        // these fields should be compatible with Elasticsearch mapped fields for sorting, see: \Shopwell\Elasticsearch\Product\ElasticsearchProductDefinition::getMapping
+        $fields = [
+            'id',
+            'stock',
+            'releaseDate',
+            'manufacturerId',
+            'deliveryTimeId',
+            'taxId',
+            'coverId',
+        ];
+        shuffle($fields);
+        $fields = \array_slice($fields, 0, 2);
+        $direction = [FieldSorting::ASCENDING, FieldSorting::DESCENDING];
+        $direction = $direction[random_int(0, 1)];
+
+        foreach ($fields as $field) {
+            $criteria->addSorting(new FieldSorting($field, $direction));
+        }
+    }
+
+    private function shouldSkipGrouping(Criteria $criteria): bool
+    {
+        return $criteria->hasState(ProductListingLoader::STATE_SKIP_ADD_GROUPING);
+    }
+}

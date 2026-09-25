@@ -1,0 +1,89 @@
+import MtTextEditorOriginal from '@shopware-ag/meteor-component-library/dist/esm/MtTextEditor';
+import type { CustomButton } from '@shopware-ag/meteor-component-library/dist/esm/MtTextEditorToolbar';
+import template from './mt-text-editor.html.twig';
+import './mt-text-editor.scss';
+
+/**
+ * @sw-package framework
+ *
+ * @private
+ * @status ready
+ * @description Wrapper component for mt-text-editor. Replaces the link
+ * button with a custom implementation specific to the Shopwell admin.
+ */
+export default Shopwell.Component.wrapComponentConfig({
+    template,
+
+    components: {
+        'mt-text-editor-original': MtTextEditorOriginal,
+    },
+
+    props: {
+        modelValue: {
+            type: String,
+            required: false,
+            default: '',
+        },
+
+        /**
+         * Custom buttons to be added to the toolbar
+         */
+        customButtons: {
+            type: Array as PropType<CustomButton[]>,
+            default: () => [],
+        },
+
+        /**
+         * Excluded buttons from the toolbar
+         */
+        excludedButtons: {
+            type: Array as PropType<string[]>,
+            default: () => [],
+        },
+    },
+
+    emits: ['update:modelValue'],
+
+    computed: {
+        compatValue: {
+            get() {
+                return this.modelValue;
+            },
+            set(value: string) {
+                this.$emit('update:modelValue', value);
+            },
+        },
+
+        mergedCustomButtons() {
+            const editorButtons: CustomButton[] = [];
+
+            return [...editorButtons, ...this.customButtons];
+        },
+
+        mergedExcludedButtons() {
+            const excludedEditorButtons: string[] = [];
+
+            return [...excludedEditorButtons, ...this.excludedButtons];
+        },
+    },
+
+    methods: {
+        getSlots() {
+            return this.$slots;
+        },
+
+        onUpdateModelValue(value: string) {
+            this.$emit('update:modelValue', value);
+        },
+
+        validate(): Promise<boolean> {
+            const original = this.$refs.mtTextEditorOriginal as { validate?: () => Promise<boolean> } | undefined;
+
+            if (!original?.validate) {
+                return Promise.resolve(true);
+            }
+
+            return original.validate();
+        },
+    },
+});

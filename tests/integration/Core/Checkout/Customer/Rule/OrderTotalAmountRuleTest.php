@@ -1,0 +1,221 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Checkout\Customer\Rule;
+
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\CheckoutRuleScope;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Rule\OrderTotalAmountRule;
+use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Content\Rule\Aggregate\RuleCondition\RuleConditionCollection;
+use Shopwell\Core\Content\Rule\RuleCollection;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteException;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Rule\RuleScope;
+use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Type;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+class OrderTotalAmountRuleTest extends TestCase
+{
+    use DatabaseTransactionBehaviour;
+    use KernelTestBehaviour;
+
+    /**
+     * @var EntityRepository<RuleCollection>
+     */
+    private EntityRepository $ruleRepository;
+
+    /**
+     * @var EntityRepository<RuleConditionCollection>
+     */
+    private EntityRepository $conditionRepository;
+
+    private Context $context;
+
+    protected function setUp(): void
+    {
+        $this->ruleRepository = static::getContainer()->get('rule.repository');
+        $this->conditionRepository = static::getContainer()->get('rule_condition.repository');
+        $this->context = Context::createDefaultContext();
+    }
+
+    public function testValidateWithMissingValues(): void
+    {
+        try {
+            $this->conditionRepository->create([
+                [
+                    'type' => (new OrderTotalAmountRule())->getName(),
+                    'ruleId' => Uuid::randomHex(),
+                ],
+            ], $this->context);
+            static::fail('Exception was not thrown');
+        } catch (WriteException $stackException) {
+            $exceptions = iterator_to_array($stackException->getErrors());
+            static::assertCount(2, $exceptions);
+            static::assertSame('/0/value/amount', $exceptions[0]['source']['pointer']);
+            static::assertSame(NotBlank::IS_BLANK_ERROR, $exceptions[0]['code']);
+
+            static::assertSame('/0/value/operator', $exceptions[1]['source']['pointer']);
+            static::assertSame(NotBlank::IS_BLANK_ERROR, $exceptions[1]['code']);
+        }
+    }
+
+    public function testValidateWithEmptyValues(): void
+    {
+        try {
+            $this->conditionRepository->create([
+                [
+                    'type' => (new OrderTotalAmountRule())->getName(),
+                    'ruleId' => Uuid::randomHex(),
+                    'value' => [
+                        'operator' => OrderTotalAmountRule::OPERATOR_EQ,
+                        'amount' => null,
+                    ],
+                ],
+            ], $this->context);
+            static::fail('Exception was not thrown');
+        } catch (WriteException $stackException) {
+            $exceptions = iterator_to_array($stackException->getErrors());
+            static::assertCount(1, $exceptions);
+            static::assertSame('/0/value/amount', $exceptions[0]['source']['pointer']);
+            static::assertSame(NotBlank::IS_BLANK_ERROR, $exceptions[0]['code']);
+        }
+    }
+
+    public function testValidateWithInvalidValue(): void
+    {
+        try {
+            $this->conditionRepository->create([
+                [
+                    'type' => (new OrderTotalAmountRule())->getName(),
+                    'ruleId' => Uuid::randomHex(),
+                    'value' => [
+                        'operator' => OrderTotalAmountRule::OPERATOR_EQ,
+                        'amount' => true,
+                    ],
+                ],
+            ], $this->context);
+            static::fail('Exception was not thrown');
+        } catch (WriteException $stackException) {
+            $exceptions = iterator_to_array($stackException->getErrors());
+            static::assertCount(1, $exceptions);
+            static::assertSame('/0/value/amount', $exceptions[0]['source']['pointer']);
+            static::assertSame(Type::INVALID_TYPE_ERROR, $exceptions[0]['code']);
+        }
+    }
+
+    public function testIfRuleIsConsistent(): void
+    {
+        $ruleId = Uuid::randomHex();
+        $this->ruleRepository->create(
+            [['id' => $ruleId, 'name' => 'Demo rule', 'priority' => 1]],
+            $this->context
+        );
+
+        $id = Uuid::randomHex();
+        $this->conditionRepository->create([
+            [
+                'id' => $id,
+                'type' => (new OrderTotalAmountRule())->getName(),
+                'ruleId' => $ruleId,
+                'value' => [
+                    'operator' => OrderTotalAmountRule::OPERATOR_EQ,
+                    'amount' => 6,
+                ],
+            ],
+        ], $this->context);
+
+        static::assertNotNull($this->conditionRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id));
+        $this->ruleRepository->delete([['id' => $ruleId]], $this->context);
+        $this->conditionRepository->delete([['id' => $id]], $this->context);
+    }
+
+    public function testRuleDoesNotMatchWithWrongScope(): void
+    {
+        $rule = new OrderTotalAmountRule();
+        $rule->assign(['amount' => 2, 'operator' => Rule::OPERATOR_LT]);
+
+        $result = $rule->match(static::createStub(RuleScope::class));
+
+        static::assertFalse($result);
+    }
+
+    #[DataProvider('getMatchValues')]
+    public function testRuleMatching(string $operator, bool $isMatching, ?float $orderAmount, float $ruleOrderAmount, bool $noCustomer = false): void
+    {
+        $rule = new OrderTotalAmountRule();
+        $rule->assign(['amount' => $ruleOrderAmount, 'operator' => $operator]);
+
+        $scope = static::createStub(CheckoutRuleScope::class);
+        $salesChannelContext = static::createStub(SalesChannelContext::class);
+        $orderCollection = new OrderCollection();
+        $customer = new CustomerEntity();
+        $customer->setOrderTotalAmount($orderAmount ?? 0);
+
+        if ($noCustomer) {
+            $customer = null;
+        }
+
+        $salesChannelContext->method('getCustomer')->willReturn($customer);
+        $entity = new OrderEntity();
+        $entity->setUniqueIdentifier('foo');
+        $orderCollection->add($entity);
+
+        $scope->method('getSalesChannelContext')
+            ->willReturn($salesChannelContext);
+        $scope->method('getCustomer')->willReturn($customer);
+
+        static::assertSame($isMatching, $rule->match($scope));
+    }
+
+    /**
+     * @return \Traversable<string, array<string|int|bool>>
+     */
+    public static function getMatchValues(): \Traversable
+    {
+        yield 'operator_eq / no match / greater value' => [Rule::OPERATOR_EQ, false, 100, 50];
+        yield 'operator_eq / match / equal value' => [Rule::OPERATOR_EQ, true, 50, 50];
+        yield 'operator_eq / no match / lower value' => [Rule::OPERATOR_EQ, false, 10, 50];
+        yield 'operator_eq / no match / no customer' => [Rule::OPERATOR_EQ, false, 100, 50, true];
+
+        yield 'operator_gt / match / greater value' => [Rule::OPERATOR_GT, true, 100, 50];
+        yield 'operator_gt / no match / equal value' => [Rule::OPERATOR_GT, false, 50, 50];
+        yield 'operator_gt / no match / lower value' => [Rule::OPERATOR_GT, false, 10, 50];
+        yield 'operator_gt / no match / no customer' => [Rule::OPERATOR_GT, false, 100, 50, true];
+
+        yield 'operator_gte / match / greater value' => [Rule::OPERATOR_GTE, true, 100, 50];
+        yield 'operator_gte / match / equal value' => [Rule::OPERATOR_GTE, true, 50, 50];
+        yield 'operator_gte / no match / lower value' => [Rule::OPERATOR_GTE, false, 10, 50];
+        yield 'operator_gte / no match / no customer' => [Rule::OPERATOR_GTE, false, 100, 50, true];
+
+        yield 'operator_lt / no match / greater value' => [Rule::OPERATOR_LT, false, 100, 50];
+        yield 'operator_lt / no match / equal value' => [Rule::OPERATOR_LT, false, 50, 50];
+        yield 'operator_lt / match / lower value' => [Rule::OPERATOR_LT, true, 10, 50];
+        yield 'operator_lt / no match / no customer' => [Rule::OPERATOR_LT, false, 10, 50, true];
+
+        yield 'operator_lte / no match / greater value' => [Rule::OPERATOR_LTE, false, 100, 50];
+        yield 'operator_lte / match / equal value' => [Rule::OPERATOR_LTE, true, 50, 50];
+        yield 'operator_lte / match / lower value' => [Rule::OPERATOR_LTE, true, 10, 50];
+        yield 'operator_lte / no match / no customer' => [Rule::OPERATOR_LTE, false, 10, 50, true];
+
+        yield 'operator_neq / match / greater value' => [Rule::OPERATOR_NEQ, true, 100, 50];
+        yield 'operator_neq / no match / equal value' => [Rule::OPERATOR_NEQ, false, 50, 50];
+        yield 'operator_neq / match / lower value' => [Rule::OPERATOR_NEQ, true, 10, 50];
+
+        yield 'operator_neq / match / no customer' => [Rule::OPERATOR_NEQ, true, 100, 50, true];
+    }
+}

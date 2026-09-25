@@ -1,0 +1,80 @@
+@import "~scss/variables";
+@import "~scss/mixins";
+
+.sw-product-download-form {
+    height: 100%;
+
+    .sw-product-download-form__row {
+        border-radius: var(--border-radius-xs);
+        border: var(--scale-size-1) solid var(--color-border-secondary-default);
+        padding: var(--scale-size-8) var(--scale-size-12) var(--scale-size-8) var(--scale-size-16);
+        margin-top: var(--scale-size-16);
+        height: auto;
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        grid-column-gap: var(--scale-size-12);
+        grid-template-columns: auto 1fr min-content;
+    }
+
+    .sw-product-download-form-row__name {
+        @include truncate;
+
+        flex-shrink: 1;
+        flex-basis: min-content;
+    }
+
+    .sw-product-download-form-row__info {
+        display: inline-flex;
+        justify-self: end;
+        align-items: center;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-semibold);
+        white-space: nowrap;
+
+        span:not(:last-of-type) {
+            position: relative;
+            padding-right: var(--scale-size-24);
+        }
+
+        span:not(:last-of-type)::after {
+            position: absolute;
+            top: 50%;
+            right: var(--scale-size-10);
+            transform: translateY(-50%);
+            display: block;
+            content: "";
+            width: var(--scale-size-4);
+            height: var(--scale-size-4);
+            background-color: var(--color-text-secondary-default);
+            border-radius: 50%;
+        }
+    }
+
+    .sw-product-download-form__file-input {
+        display: none;
+    }
+
+    .sw-product-download-form__upload-button {
+        display: block;
+        margin: 0 auto var(--scale-size-20);
+    }
+
+    &.is--disabled::after {
+        content: "";
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-color: var(--color-background-tertiary-default);
+        border-radius: var(--border-radius-xs);
+        mix-blend-mode: multiply;
+    }
+
+    .sw-media-upload-v2.has--error .sw-media-upload-v2__dropzone {
+        border-color: var(--color-border-critical-default);
+    }
+}

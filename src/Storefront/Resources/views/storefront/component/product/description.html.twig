@@ -1,0 +1,31 @@
+{% sw_extends '@Storefront/storefront/utilities/offcanvas.html.twig' %}
+
+{% block utilities_offcanvas_content %}
+    {% block component_product_description_container %}
+        <div class="product-detail-description tab-pane-container">
+            {% block component_product_description_title %}
+                <h2 class="product-detail-description-title">
+                    {{ 'detail.descriptionTitle'|trans|sw_sanitize }} "{{ product.translated.name }}"
+                </h2>
+            {% endblock %}
+
+            {% block component_product_description_content %}
+                {% block component_product_description_content_text %}
+                    {# @deprecated tag:v6.8.0 - Product description microdata replaced by JSON-LD in json-ld-product.html.twig. Will be removed. #}
+                    <div class="product-detail-description-text"
+                         {% if not feature('JSON_LD_DATA') %}
+                         itemprop="description"
+                         {% endif %}>
+                        {{ product.translated.description|raw }}
+                    </div>
+                {% endblock %}
+
+                {% block component_product_description_content_properties %}
+                    {% if product.sortedProperties|length > 0 %}
+                        {% sw_include '@Storefront/storefront/component/product/properties.html.twig' %}
+                    {% endif %}
+                {% endblock %}
+            {% endblock %}
+        </div>
+    {% endblock %}
+{% endblock %}

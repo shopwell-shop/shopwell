@@ -1,0 +1,549 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\DevOps\Environment\EnvironmentHelper;
+use Shopwell\Core\Framework\Deprecation\BCChange\BecomesFinal;
+use Shopwell\Core\Framework\Feature\FeatureException;
+use Shopwell\Core\Framework\Feature\Triggerer;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Script\Debugging\ScriptTraces;
+
+/**
+ * @phpstan-type FeatureFlagConfig array{name?: string, default?: boolean, major?: boolean, majorVersion?: string, description?: string, active?: bool, static?: bool, toggleable?: bool, type?: string}
+ */
+#[Package('framework')]
+#[BecomesFinal(version: 'v6.8.0')]
+class Feature
+{
+    final public const ALL_MAJOR = 'major';
+
+    /**
+     * @internal
+     */
+    public static bool $emitDeprecations = true;
+
+    /**
+     * @internal
+     */
+    public static ?Triggerer $triggerer = null;
+
+    /**
+     * @var array<string, true>
+     */
+    private static array $silent = [];
+
+    /**
+     * @var array<string, FeatureFlagConfig>
+     */
+    private static array $registeredFeatures = [];
+
+    /**
+     * Memoization of normalizeName(). The transform is pure and deterministic, and the method is
+     * called on every Feature::isActive()/setActive()/... invocation (hundreds of times per request).
+     *
+     * @var array<string, string>
+     */
+    private static array $normalizedNames = [];
+
+    public static function normalizeName(string $name): string
+    {
+        /*
+         * Examples:
+         * - NEXT-1234
+         * - FEATURE_NEXT_1234
+         * - SAAS_321
+         * - v6.5.0.0 => v6_5_0_0
+         */
+        return self::$normalizedNames[$name] ??= \strtoupper(\str_replace(['.', ':', '-'], '_', $name));
+    }
+
+    /**
+     * @template TReturn of mixed
+     *
+     * @param array<string> $features
+     * @param \Closure(): TReturn $closure
+     *
+     * @return TReturn
+     */
+    public static function fake(array $features, \Closure $closure)
+    {
+        $before = self::$registeredFeatures;
+        $serverVarsBackup = $_SERVER;
+
+        $result = null;
+
+        try {
+            self::$registeredFeatures = [];
+            foreach ($_SERVER as $key => $value) {
+                if (str_starts_with($key, 'v6.') || str_starts_with($key, 'FEATURE_') || str_starts_with($key, 'V6_')) {
+                    // set to false so that $_ENV is not checked
+                    $_SERVER[$key] = false;
+                }
+            }
+
+            if ($features) {
+                foreach ($features as $feature) {
+                    $_SERVER[Feature::normalizeName($feature)] = true;
+                }
+            }
+
+            $result = $closure();
+        } finally {
+            self::$registeredFeatures = $before;
+            $_SERVER = $serverVarsBackup;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Temporarily enables a single feature while preserving the rest of the environment.
+     * Prefer this over {@see fake} when a test wants to flip one flag without replicating
+     * the full production baseline.
+     *
+     * @template TReturn of mixed
+     *
+     * @param \Closure(): TReturn $closure
+     *
+     * @return TReturn
+     */
+    public static function withFeatureEnabled(string $feature, \Closure $closure)
+    {
+        return self::withFeatureValue($feature, true, $closure);
+    }
+
+    /**
+     * Mirror of {@see withFeatureEnabled} — disables a single feature while preserving
+     * the rest of the environment.
+     *
+     * @template TReturn of mixed
+     *
+     * @param \Closure(): TReturn $closure
+     *
+     * @return TReturn
+     */
+    public static function withFeatureDisabled(string $feature, \Closure $closure)
+    {
+        return self::withFeatureValue($feature, false, $closure);
+    }
+
+    /**
+     * Determines weather a feature is active or not.
+     *
+     * A feature is either active by being in the environment (specified in the .env file for example)
+     * or by matching a FEATURE_ALL mode.
+     *
+     * With FEATURE_ALL you can activate either all minor or all major features.
+     * FEATURE_ALL=1, FEATURE_ALL=minor or any other truthy values except 'false' equals minor
+     * FEATURE_ALL=major puts it into major mode
+     * FEATURE_ALL=v6.8.0.0 puts it into major mode for a single target major: major flags arriving
+     * in v6.8.0.0 or earlier are active, later ones stay off. While two majors are in flight, this
+     * is what lets a test run validate one major's release state without the next one bleeding in.
+     *
+     * The specific feature configuration in the environment is always the highest priority, no matter the FEATURE_ALL configuration.
+     */
+    public static function isActive(string $feature): bool
+    {
+        $env = EnvironmentHelper::getVariable('APP_ENV', 'prod');
+        $feature = self::normalizeName($feature);
+
+        if (self::$registeredFeatures !== []
+            && !isset(self::$registeredFeatures[$feature])
+            && $env !== 'prod'
+        ) {
+            (self::$triggerer ??= new Triggerer())->error('Unknown feature "' . $feature . '"', \E_USER_WARNING);
+        }
+
+        // Specific configurations are higher priority then FEATURE_ALL
+        if (self::featureInEnv($feature)) {
+            return self::getFeatureInEnv($feature);
+        }
+
+        $featureAll = (string) EnvironmentHelper::getVariable('FEATURE_ALL', '');
+
+        // If FEATURE_ALL has any truthy value
+        if (self::isTrue($featureAll) && (self::$registeredFeatures === [] || \array_key_exists($feature, self::$registeredFeatures))) {
+            // If feature is not major and is have set active, return the active state
+            if (!self::getConfiguration($feature, 'major') && self::hasConfiguration($feature, 'active')) {
+                return self::getConfiguration($feature, 'active');
+            }
+
+            $targetMajor = self::majorVersion($featureAll);
+
+            // Should only enable major flags
+            if ($featureAll === Feature::ALL_MAJOR || $targetMajor !== null) {
+                return self::getConfiguration($feature, 'major')
+                    && ($targetMajor === null || self::arrivesInMajor($feature, $targetMajor));
+            }
+
+            // Enable all minor flags
+            if (!self::getConfiguration($feature, 'major')) {
+                return true;
+            }
+        }
+
+        if (self::hasConfiguration($feature, 'active')) {
+            return self::getConfiguration($feature, 'active');
+        }
+
+        if (!EnvironmentHelper::hasVariable($feature) && !EnvironmentHelper::hasVariable(\strtolower($feature))) {
+            $fallback = self::$registeredFeatures[$feature]['default'] ?? false;
+
+            return (bool) $fallback;
+        }
+
+        return self::isTrue(trim((string) EnvironmentHelper::getVariable($feature)));
+    }
+
+    public static function ifActive(string $flagName, \Closure $closure): void
+    {
+        self::isActive($flagName) && $closure();
+    }
+
+    public static function setActive(string $feature, bool $active): void
+    {
+        $feature = self::normalizeName($feature);
+
+        if (!isset(self::$registeredFeatures[$feature])) {
+            throw FeatureException::featureNotRegistered($feature);
+        }
+
+        self::$registeredFeatures[$feature]['active'] = $active;
+    }
+
+    public static function ifNotActive(string $flagName, \Closure $closure): void
+    {
+        !self::isActive($flagName) && $closure();
+    }
+
+    public static function callSilentIfInactive(string $flagName, \Closure $closure): void
+    {
+        $before = isset(self::$silent[$flagName]);
+        self::$silent[$flagName] = true;
+
+        try {
+            if (!self::isActive($flagName)) {
+                $closure();
+            }
+        } finally {
+            if (!$before) {
+                unset(self::$silent[$flagName]);
+            }
+        }
+    }
+
+    /**
+     * @template TReturn of mixed
+     *
+     * @param \Closure(): TReturn $closure
+     *
+     * @return TReturn
+     */
+    public static function silent(string $flagName, \Closure $closure): mixed
+    {
+        $before = isset(self::$silent[$flagName]);
+        self::$silent[$flagName] = true;
+
+        try {
+            $result = $closure();
+        } finally {
+            if (!$before) {
+                unset(self::$silent[$flagName]);
+            }
+        }
+
+        return $result;
+    }
+
+    public static function skipTestIfInActive(string $flagName, TestCase $test): void
+    {
+        if (self::isActive($flagName)) {
+            return;
+        }
+
+        $test->markTestSkipped('Skipping feature test due to inactive flag "' . $flagName . '"');
+    }
+
+    public static function skipTestIfActive(string $flagName, TestCase $test): void
+    {
+        if (!self::isActive($flagName)) {
+            return;
+        }
+
+        $test->markTestSkipped('Skipping feature test due to active flag "' . $flagName . '"');
+    }
+
+    public static function throwException(string $flag, string $message, bool $state = true): void
+    {
+        if (self::isActive($flag) === $state || (self::$registeredFeatures !== [] && !self::has($flag))) {
+            throw FeatureException::error($message);
+        }
+
+        if (\PHP_SAPI !== 'cli') {
+            ScriptTraces::addDeprecationNotice($message);
+        }
+    }
+
+    public static function triggerDeprecationOrThrow(string $majorFlag, string $message, ?string $introducedIn = null, ?string $silentUntil = null): void
+    {
+        if ($silentUntil !== null && !self::isActive($silentUntil)) {
+            return;
+        }
+
+        if (!self::$emitDeprecations) {
+            return;
+        }
+
+        if (isset(self::$silent[$majorFlag])) {
+            return;
+        }
+
+        // A silenced deprecation may name a major flag that is not registered yet, so a removal can be announced
+        // before the major that carries it exists. Enforcing the flag here would reject that pending major.
+        $majorFlagPending = $silentUntil !== null && self::$registeredFeatures !== [] && !self::has($majorFlag);
+
+        if (!$majorFlagPending) {
+            if (self::isActive($majorFlag)) {
+                throw FeatureException::error('Tried to access deprecated functionality: ' . $message);
+            }
+
+            if (self::$registeredFeatures !== [] && !self::has($majorFlag)) {
+                throw FeatureException::error('Tried to access deprecated functionality: ' . $message);
+            }
+        }
+
+        if (\PHP_SAPI !== 'cli') {
+            ScriptTraces::addDeprecationNotice($message);
+        }
+
+        if (EnvironmentHelper::getVariable('TESTS_RUNNING')) {
+            // no need to trigger deprecation in tests as we cover all cases of the feature flag behaviour
+            return;
+        }
+
+        if ($introducedIn === null) {
+            (self::$triggerer ??= new Triggerer())->deprecation('', '', $message);
+
+            return;
+        }
+
+        (self::$triggerer ??= new Triggerer())->deprecation('shopware/core', $introducedIn, $message);
+    }
+
+    public static function deprecatedMethodMessage(string $class, string $method, string $majorVersion, ?string $replacement = null): string
+    {
+        $fullQualifiedMethodName = \sprintf('%s::%s', $class, $method);
+        if (str_contains($method, '::')) {
+            $fullQualifiedMethodName = $method;
+        }
+
+        $message = \sprintf(
+            'Method "%s()" is deprecated and will be removed in %s.',
+            $fullQualifiedMethodName,
+            $majorVersion
+        );
+
+        if ($replacement) {
+            $message = \sprintf('%s Use "%s" instead.', $message, $replacement);
+        }
+
+        return $message;
+    }
+
+    public static function deprecatedClassMessage(string $class, string $majorVersion, ?string $replacement = null): string
+    {
+        $message = \sprintf(
+            'Class "%s" is deprecated and will be removed in %s.',
+            $class,
+            $majorVersion
+        );
+
+        if ($replacement) {
+            $message = \sprintf('%s Use "%s" instead.', $message, $replacement);
+        }
+
+        return $message;
+    }
+
+    public static function has(string $flag): bool
+    {
+        $flag = self::normalizeName($flag);
+
+        return isset(self::$registeredFeatures[$flag]);
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    public static function getAll(bool $denormalized = true): array
+    {
+        $resolvedFlags = [];
+
+        foreach (self::$registeredFeatures as $name => $_) {
+            $active = self::isActive($name);
+            $resolvedFlags[$name] = $active;
+
+            if (!$denormalized) {
+                continue;
+            }
+            $resolvedFlags[self::denormalize($name)] = $active;
+        }
+
+        return $resolvedFlags;
+    }
+
+    /**
+     * @param FeatureFlagConfig $metaData
+     *
+     * @internal
+     */
+    public static function registerFeature(string $name, array $metaData = []): void
+    {
+        $name = self::normalizeName($name);
+
+        // merge with existing data
+
+        /** @var FeatureFlagConfig $metaData */
+        $metaData = array_merge(
+            self::$registeredFeatures[$name] ?? [],
+            $metaData
+        );
+
+        // set defaults
+        $metaData['major'] = (bool) ($metaData['major'] ?? false);
+        $metaData['default'] = (bool) ($metaData['default'] ?? false);
+        $metaData['description'] = (string) ($metaData['description'] ?? '');
+
+        self::$registeredFeatures[$name] = $metaData;
+    }
+
+    /**
+     * @param array<string, FeatureFlagConfig>|list<string> $registeredFeatures
+     *
+     * @internal
+     */
+    public static function registerFeatures(iterable $registeredFeatures): void
+    {
+        foreach ($registeredFeatures as $flag => $data) {
+            // old format
+            if (\is_string($data)) {
+                $flag = $data;
+                $data = [];
+            }
+
+            self::registerFeature((string) $flag, $data);
+        }
+    }
+
+    /**
+     * @internal
+     */
+    public static function resetRegisteredFeatures(): void
+    {
+        self::$registeredFeatures = [];
+    }
+
+    /**
+     * @internal
+     *
+     * @return array<string, FeatureFlagConfig>
+     */
+    public static function getRegisteredFeatures(): array
+    {
+        return self::$registeredFeatures;
+    }
+
+    /**
+     * @template TReturn of mixed
+     *
+     * @param \Closure(): TReturn $closure
+     *
+     * @return TReturn
+     */
+    private static function withFeatureValue(string $feature, bool $enabled, \Closure $closure)
+    {
+        $serverVarsBackup = $_SERVER;
+
+        try {
+            $_SERVER[self::normalizeName($feature)] = $enabled;
+
+            return $closure();
+        } finally {
+            $_SERVER = $serverVarsBackup;
+        }
+    }
+
+    private static function isTrue(string $value): bool
+    {
+        return $value && $value !== 'false';
+    }
+
+    /**
+     * The major a flag arrives in is either encoded in its name (`v6.8.0.0`) or declared explicitly
+     * via `majorVersion` for flags that are not named after their major (`JSON_LD_DATA`).
+     */
+    private static function arrivesInMajor(string $feature, string $targetMajor): bool
+    {
+        $declared = self::$registeredFeatures[$feature]['majorVersion'] ?? null;
+        $arrivesIn = self::majorVersion($feature) ?? ($declared === null ? null : self::majorVersion($declared));
+
+        // A major flag that names no target major belongs to every major, so it stays on in all of them.
+        if ($arrivesIn === null) {
+            return true;
+        }
+
+        return \version_compare($arrivesIn, $targetMajor, '<=');
+    }
+
+    /**
+     * Turns a version-shaped flag name or FEATURE_ALL value (`v6.8.0.0`, `V6_8_0_0`) into a
+     * comparable version, or null when it is not version-shaped (`major`, `minor`, `1`, ...).
+     */
+    private static function majorVersion(string $value): ?string
+    {
+        if (!\preg_match('/^V?(\d+(?:_\d+){1,3})$/', self::normalizeName($value), $matches)) {
+            return null;
+        }
+
+        return \str_replace('_', '.', $matches[1]);
+    }
+
+    private static function denormalize(string $name): string
+    {
+        return \strtolower(\str_replace(['_'], '.', $name));
+    }
+
+    private static function hasConfiguration(string $feature, string $key): bool
+    {
+        return \array_key_exists($feature, self::$registeredFeatures) && \array_key_exists($key, self::$registeredFeatures[$feature]);
+    }
+
+    private static function getConfiguration(string $feature, string $key): bool
+    {
+        if (!self::hasConfiguration($feature, $key)) {
+            return false;
+        }
+
+        return (bool) (self::$registeredFeatures[$feature][$key] ?? false);
+    }
+
+    private static function featureInEnv(string $feature): bool
+    {
+        return EnvironmentHelper::hasVariable($feature) || EnvironmentHelper::hasVariable(\strtolower($feature));
+    }
+
+    private static function getFeatureInEnv(string $feature): bool
+    {
+        if (EnvironmentHelper::hasVariable($feature)) {
+            return self::isTrue((string) EnvironmentHelper::getVariable($feature));
+        }
+
+        if (EnvironmentHelper::hasVariable(\strtolower($feature))) {
+            return self::isTrue((string) EnvironmentHelper::getVariable(\strtolower($feature)));
+        }
+
+        return false;
+    }
+}

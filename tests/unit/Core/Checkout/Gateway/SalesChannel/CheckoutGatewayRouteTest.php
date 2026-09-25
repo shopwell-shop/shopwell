@@ -1,0 +1,269 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Gateway\SalesChannel;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\Delivery;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryPositionCollection;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
+use Shopwell\Core\Checkout\Cart\Error\ErrorCollection;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Checkout\Gateway\CheckoutGatewayInterface;
+use Shopwell\Core\Checkout\Gateway\CheckoutGatewayResponse;
+use Shopwell\Core\Checkout\Gateway\Command\Struct\CheckoutGatewayPayloadStruct;
+use Shopwell\Core\Checkout\Gateway\SalesChannel\CheckoutGatewayRoute;
+use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
+use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
+use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
+use Shopwell\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
+use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRouteResponse;
+use Shopwell\Core\Checkout\Shipping\SalesChannel\AbstractShippingMethodRoute;
+use Shopwell\Core\Checkout\Shipping\SalesChannel\ShippingMethodRouteResponse;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodCollection;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodDefinition;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Country\CountryEntity;
+use Shopwell\Core\Test\Generator;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(CheckoutGatewayRoute::class)]
+class CheckoutGatewayRouteTest extends TestCase
+{
+    public function testDecoratedThrows(): void
+    {
+        $route = new CheckoutGatewayRoute(
+            static::createStub(AbstractPaymentMethodRoute::class),
+            static::createStub(AbstractShippingMethodRoute::class),
+            static::createStub(CheckoutGatewayInterface::class),
+        );
+
+        $this->expectException(DecorationPatternException::class);
+
+        $route->getDecorated();
+    }
+
+    public function testLoad(): void
+    {
+        $request = new Request();
+        $cart = new Cart('hatoken');
+        $context = Generator::generateSalesChannelContext();
+
+        $paymentMethod = new PaymentMethodEntity();
+        $paymentMethod->setId(Uuid::randomHex());
+
+        $paymentMethods = new PaymentMethodRouteResponse(
+            new EntitySearchResult(
+                PaymentMethodDefinition::ENTITY_NAME,
+                1,
+                new PaymentMethodCollection([$paymentMethod]),
+                null,
+                new Criteria(),
+                $context->getContext()
+            )
+        );
+
+        $ruleId = Uuid::randomHex();
+        $context->setRuleIds([$ruleId]);
+
+        $shippingMethod = new ShippingMethodEntity();
+        $shippingMethod->setId(Uuid::randomHex());
+        $shippingMethod->setAvailabilityRuleId($ruleId);
+
+        $shippingMethods = new ShippingMethodRouteResponse(
+            new EntitySearchResult(
+                ShippingMethodDefinition::ENTITY_NAME,
+                1,
+                new ShippingMethodCollection([$shippingMethod]),
+                null,
+                new Criteria(),
+                $context->getContext()
+            )
+        );
+
+        $paymentMethodRoute = $this->createMock(AbstractPaymentMethodRoute::class);
+        $paymentMethodRoute
+            ->expects($this->once())
+            ->method('load')
+            ->with($request, $context, static::equalTo((new Criteria())->addAssociation('appPaymentMethod.app')))
+            ->willReturn($paymentMethods);
+
+        $shippingMethodRoute = $this->createMock(AbstractShippingMethodRoute::class);
+        $shippingMethodRoute
+            ->expects($this->once())
+            ->method('load')
+            ->with($request, $context, static::equalTo((new Criteria())->addAssociation('appShippingMethod.app')))
+            ->willReturn($shippingMethods);
+
+        $response = new CheckoutGatewayResponse(
+            $paymentMethods->getPaymentMethods(),
+            $shippingMethods->getShippingMethods(),
+            new ErrorCollection()
+        );
+
+        $payload = new CheckoutGatewayPayloadStruct($cart, $context, $paymentMethods->getPaymentMethods(), $shippingMethods->getShippingMethods());
+
+        $checkoutGateway = $this->createMock(CheckoutGatewayInterface::class);
+        $checkoutGateway
+            ->expects($this->once())
+            ->method('process')
+            ->with(static::equalTo($payload))
+            ->willReturn($response);
+
+        $route = new CheckoutGatewayRoute($paymentMethodRoute, $shippingMethodRoute, $checkoutGateway);
+        $result = $route->load($request, $cart, $context);
+
+        static::assertSame($paymentMethods->getPaymentMethods(), $result->getPaymentMethods());
+        static::assertSame($shippingMethods->getShippingMethods(), $result->getShippingMethods());
+        static::assertSame($response->getCartErrors(), $result->getErrors());
+    }
+
+    public function testUnavailableMethodsAddCartError(): void
+    {
+        $request = new Request();
+        $shippingMethod = new ShippingMethodEntity();
+        $shippingMethod->setId(Uuid::randomHex());
+        $shippingMethod->addTranslated('name', 'Foo');
+
+        $cart = new Cart('hatoken');
+        $cart->addDeliveries(
+            new DeliveryCollection([
+                new Delivery(
+                    new DeliveryPositionCollection(),
+                    new DeliveryDate(new \DateTimeImmutable(), new \DateTimeImmutable()),
+                    $shippingMethod,
+                    new ShippingLocation(new CountryEntity(), null, null),
+                    new CalculatedPrice(100.00, 100.00, new CalculatedTaxCollection(), new TaxRuleCollection())
+                ),
+            ])
+        );
+
+        $paymentMethod = new PaymentMethodEntity();
+        $paymentMethod->setId(Uuid::randomHex());
+        $paymentMethod->addTranslated('name', 'Bar');
+
+        $context = Generator::generateSalesChannelContext(paymentMethod: $paymentMethod);
+
+        $paymentMethods = new PaymentMethodRouteResponse(
+            new EntitySearchResult(
+                PaymentMethodDefinition::ENTITY_NAME,
+                0,
+                new PaymentMethodCollection(),
+                null,
+                new Criteria(),
+                $context->getContext()
+            )
+        );
+
+        $shippingMethods = new ShippingMethodRouteResponse(
+            new EntitySearchResult(
+                ShippingMethodDefinition::ENTITY_NAME,
+                0,
+                new ShippingMethodCollection(),
+                null,
+                new Criteria(),
+                $context->getContext()
+            )
+        );
+
+        $paymentMethodRoute = $this->createMock(AbstractPaymentMethodRoute::class);
+        $paymentMethodRoute
+            ->expects($this->once())
+            ->method('load')
+            ->with($request, $context, static::equalTo((new Criteria())->addAssociation('appPaymentMethod.app')))
+            ->willReturn($paymentMethods);
+
+        $shippingMethodRoute = $this->createMock(AbstractShippingMethodRoute::class);
+        $shippingMethodRoute
+            ->expects($this->once())
+            ->method('load')
+            ->with($request, $context, static::equalTo((new Criteria())->addAssociation('appShippingMethod.app')))
+            ->willReturn($shippingMethods);
+
+        $response = new CheckoutGatewayResponse(
+            new PaymentMethodCollection(),
+            new ShippingMethodCollection(),
+            new ErrorCollection()
+        );
+
+        $payload = new CheckoutGatewayPayloadStruct($cart, $context, $paymentMethods->getPaymentMethods(), $shippingMethods->getShippingMethods());
+
+        $checkoutGateway = $this->createMock(CheckoutGatewayInterface::class);
+        $checkoutGateway
+            ->expects($this->once())
+            ->method('process')
+            ->with(static::equalTo($payload))
+            ->willReturn($response);
+
+        $route = new CheckoutGatewayRoute(
+            $paymentMethodRoute,
+            $shippingMethodRoute,
+            $checkoutGateway,
+        );
+
+        $result = $route->load($request, $cart, $context);
+
+        static::assertCount(2, $result->getErrors());
+
+        $error = $result->getErrors()->first();
+
+        static::assertNotNull($error);
+        static::assertSame('payment-method-blocked', $error->getMessageKey());
+        static::assertSame('Payment method Bar not available. Reason: not allowed', $error->getMessage());
+
+        $error = $result->getErrors()->last();
+
+        static::assertNotNull($error);
+        static::assertSame('shipping-method-blocked', $error->getMessageKey());
+        static::assertSame('Shipping method Foo not available. Reason: not allowed', $error->getMessage());
+    }
+
+    public function testOnlyAvailableFlagIsSet(): void
+    {
+        $request = new Request(['onlyAvailable' => true]);
+        $context = Generator::generateSalesChannelContext();
+
+        $paymentMethodRoute = $this->createMock(AbstractPaymentMethodRoute::class);
+        $paymentMethodRoute
+            ->expects($this->once())
+            ->method('load')
+            ->with($request, $context, static::isInstanceOf(Criteria::class));
+
+        $shippingMethodRoute = $this->createMock(AbstractShippingMethodRoute::class);
+        $shippingMethodRoute
+            ->expects($this->once())
+            ->method('load')
+            ->with($request, $context, static::isInstanceOf(Criteria::class));
+
+        $checkoutGateway = static::createStub(CheckoutGatewayInterface::class);
+        $checkoutGateway
+            ->method('process')
+            ->willReturn(new CheckoutGatewayResponse(
+                new PaymentMethodCollection(),
+                new ShippingMethodCollection(),
+                new ErrorCollection()
+            ));
+
+        $route = new CheckoutGatewayRoute(
+            $paymentMethodRoute,
+            $shippingMethodRoute,
+            $checkoutGateway,
+        );
+
+        $route->load(new Request(), new Cart('hatoken'), $context);
+    }
+}

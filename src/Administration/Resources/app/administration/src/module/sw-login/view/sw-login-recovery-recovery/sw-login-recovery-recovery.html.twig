@@ -1,0 +1,65 @@
+{% block sw_login_recovery_recovery %}
+<div class="sw-login-recovery-recovery">
+    <template v-if="hashValid === true">
+        {% block sw_login_recovery_recovery_headline %}
+        <div class="sw-login__heading">
+            <h1 class="sw-login__content-headline">
+                {{ $t('sw-login.recovery.recovery.headline') }}
+            </h1>
+
+            {% block sw_login_recovery_recovery_text %}
+            <p class="sw-login__content-description">
+                {{ $t('sw-login.recovery.recovery.text') }}
+            </p>
+            {% endblock %}
+        </div>
+        {% endblock %}
+
+        {% block sw_login_recovery_recovery_form %}
+        <form @submit.prevent="updatePassword">
+            {% block sw_login_recovery_recovery_form_new_password_field %}
+            <mt-password-field
+                ref="swLoginRecoveryRecoveryNewPasswordField"
+                v-model="newPassword"
+                :label="$t('sw-login.recovery.recovery.newPasswordField.label')"
+                :error="userPasswordError"
+                required
+            />
+            {% endblock %}
+
+            {% block sw_login_recovery_recovery_form_password_confirm_field %}
+            <mt-password-field
+                v-model="newPasswordConfirm"
+                :label="$t('sw-login.recovery.recovery.passwordConfirmField.label')"
+                required
+            />
+            {% endblock %}
+
+            {% block sw_login_recovery_recovery_form_submit %}
+            <div class="sw-login__submit">
+                <mt-button
+                    variant="primary"
+                    size="default"
+                    :block="true"
+                    :disabled="!validatePasswords()"
+                    type="submit"
+                >
+                    {{ $t('sw-login.recovery.recovery.submit.label') }}
+                </mt-button>
+            </div>
+            {% endblock %}
+        </form>
+        {% endblock %}
+    </template>
+
+    <template v-else>
+        <div
+            class="sw-login__view-loader"
+            role="status"
+            :aria-label="$t('sw-login.general.loadingLabel')"
+        >
+            <mt-loader />
+        </div>
+    </template>
+</div>
+{% endblock %}

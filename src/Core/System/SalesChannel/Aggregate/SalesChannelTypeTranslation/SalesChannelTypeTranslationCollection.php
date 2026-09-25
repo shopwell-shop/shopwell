@@ -1,0 +1,51 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelTypeTranslation;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @extends EntityCollection<SalesChannelTypeTranslationEntity>
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('discovery')]
+class SalesChannelTypeTranslationCollection extends EntityCollection
+{
+    /**
+     * @return array<string>
+     */
+    public function getSalesChannelTypeIds(): array
+    {
+        return $this->fmap(static fn (SalesChannelTypeTranslationEntity $salesChannelTypeTranslation) => $salesChannelTypeTranslation->getSalesChannelTypeId());
+    }
+
+    public function filterBySalesChannelId(string $id): self
+    {
+        return $this->filter(static fn (SalesChannelTypeTranslationEntity $salesChannelTypeTranslation) => $salesChannelTypeTranslation->getSalesChannelTypeId() === $id);
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getLanguageIds(): array
+    {
+        return $this->fmap(static fn (SalesChannelTypeTranslationEntity $salesChannelTranslation) => $salesChannelTranslation->getLanguageId());
+    }
+
+    public function filterByLanguageId(string $id): self
+    {
+        return $this->filter(static fn (SalesChannelTypeTranslationEntity $salesChannelTranslation) => $salesChannelTranslation->getLanguageId() === $id);
+    }
+
+    public function getApiAlias(): string
+    {
+        return 'sales_channel_type_translation_collection';
+    }
+
+    protected function getExpectedClass(): string
+    {
+        return SalesChannelTypeTranslationEntity::class;
+    }
+}

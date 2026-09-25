@@ -1,0 +1,178 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Cms\Command;
+
+use Faker\Factory;
+use Shopwell\Core\Content\Category\CategoryCollection;
+use Shopwell\Core\Content\Cms\CmsException;
+use Shopwell\Core\Content\Cms\CmsPageCollection;
+use Shopwell\Core\Content\Media\MediaCollection;
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+
+#[Package('discovery')]
+#[AsCommand('cms:page:create')]
+class CreatePageCommand extends Command
+{
+    /**
+     * @var non-empty-list<string>|null
+     */
+    private ?array $products = null;
+
+    /**
+     * @var non-empty-list<string>|null
+     */
+    private ?array $categories = null;
+
+    /**
+     * @var non-empty-list<string>|null
+     */
+    private ?array $media = null;
+
+    /**
+     * @param EntityRepository<CmsPageCollection> $cmsPageRepository
+     * @param EntityRepository<ProductCollection> $productRepository
+     * @param EntityRepository<CategoryCollection> $categoryRepository
+     * @param EntityRepository<MediaCollection> $mediaRepository
+     */
+    public function __construct(
+        private readonly EntityRepository $cmsPageRepository,
+        private readonly EntityRepository $productRepository,
+        private readonly EntityRepository $categoryRepository,
+        private readonly EntityRepository $mediaRepository
+    ) {
+        parent::__construct();
+    }
+
+    protected function configure(): void
+    {
+        $this->addOption('reset', null, InputOption::VALUE_NONE, 'Reset all pages');
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $context = Context::createCLIContext();
+
+        if ($input->getOption('reset')) {
+            $this->resetPages($context);
+        }
+
+        $faker = Factory::create();
+
+        $page = [
+            'id' => Uuid::randomHex(),
+            'name' => $faker->company(),
+            'type' => 'landing_page',
+            'blocks' => [
+                [
+                    'type' => 'image-text',
+                    'slots' => [
+                        ['type' => 'product-box', 'slot' => 'left', 'config' => ['productId' => $this->getRandomProductId($context)]],
+                        ['type' => 'image', 'slot' => 'right', 'config' => ['url' => $this->getRandomImageUrl()]],
+                    ],
+                ],
+                [
+                    'type' => 'image-text',
+                    'slots' => [
+                        ['type' => 'text', 'slot' => 'left', 'config' => ['content' => $faker->realText()]],
+                        ['type' => 'product-box', 'slot' => 'right', 'config' => ['productId' => $this->getRandomProductId($context)]],
+                    ],
+                ],
+                [
+                    'type' => 'image-text',
+                    'slots' => [
+                        ['type' => 'text', 'slot' => 'right', 'config' => ['content' => $faker->realText()]],
+                        ['type' => 'image', 'slot' => 'left', 'config' => ['mediaId' => $this->getRandomMediaId($context)]],
+                    ],
+                ],
+                [
+                    'type' => 'listing',
+                    'slots' => [
+                        ['type' => 'product-listing', 'slot' => 'listing', 'config' => ['categoryId' => $this->getRandomCategoryId($context)]],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->cmsPageRepository->create([$page], $context);
+
+        $output->writeln('ID: ' . $page['id']);
+
+        return self::SUCCESS;
+    }
+
+    private function resetPages(Context $context): void
+    {
+        $criteria = new Criteria();
+        $criteria->setLimit(999);
+
+        $pages = $this->cmsPageRepository->searchIds($criteria, $context)->getPrimaryKeyData();
+        if ($pages === []) {
+            return;
+        }
+
+        $this->cmsPageRepository->delete($pages, $context);
+    }
+
+    private function getRandomImageUrl(): string
+    {
+        return 'https://source.unsplash.com/random?t=' . random_int(1, 9999);
+    }
+
+    private function getRandomProductId(Context $context): string
+    {
+        if ($this->products === null) {
+            $criteria = new Criteria();
+            $criteria->setLimit(100);
+
+            $productIds = $this->productRepository->searchIds($criteria, $context)->getIds();
+            if ($productIds === []) {
+                throw CmsException::pageCreationFailure('No products found');
+            }
+            $this->products = $productIds;
+        }
+
+        return $this->products[array_rand($this->products)];
+    }
+
+    private function getRandomCategoryId(Context $context): string
+    {
+        if ($this->categories === null) {
+            $criteria = new Criteria();
+            $criteria->setLimit(100);
+
+            $categoryIds = $this->categoryRepository->searchIds($criteria, $context)->getIds();
+            if ($categoryIds === []) {
+                throw CmsException::pageCreationFailure('No categories found');
+            }
+            $this->categories = $categoryIds;
+        }
+
+        return $this->categories[array_rand($this->categories)];
+    }
+
+    private function getRandomMediaId(Context $context): string
+    {
+        if ($this->media === null) {
+            $criteria = new Criteria();
+            $criteria->setLimit(100);
+
+            $mediaIds = $this->mediaRepository->searchIds($criteria, $context)->getIds();
+            if ($mediaIds === []) {
+                throw CmsException::pageCreationFailure('No medias found');
+            }
+            $this->media = $mediaIds;
+        }
+
+        return $this->media[array_rand($this->media)];
+    }
+}

@@ -1,0 +1,155 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Payment\Cart\Token;
+
+use Doctrine\DBAL\Connection;
+use Lcobucci\JWT\Configuration;
+use Lcobucci\JWT\UnencryptedToken;
+use Lcobucci\JWT\Validation\Constraint\LooseValidAt;
+use Psr\Clock\ClockInterface;
+use Shopwell\Core\Checkout\Payment\PaymentException;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Hasher;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+/**
+ * @deprecated tag:v6.8.0 - will be removed, use `PaymentTokenGenerator` and `PaymentTokenLifecycle` instead
+ */
+#[Package('checkout')]
+class JWTFactoryV2 implements TokenFactoryInterfaceV2
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly Configuration $configuration,
+        private readonly Connection $connection,
+        private readonly ClockInterface $clock,
+    ) {
+    }
+
+    public function generateToken(TokenStruct $tokenStruct): string
+    {
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', Feature::deprecatedClassMessage(static::class, 'v6.8.0.0', PaymentTokenGenerator::class));
+
+        $expires = new \DateTimeImmutable('@' . $this->clock->now()->getTimestamp());
+
+        // @see https://github.com/php/php-src/issues/9950
+        if ($tokenStruct->getExpires() > 0) {
+            $expires = $expires->modify(
+                \sprintf('+%d seconds', $tokenStruct->getExpires())
+            );
+        } else {
+            $expires = $expires->modify(
+                \sprintf('-%d seconds', abs($tokenStruct->getExpires()))
+            );
+        }
+
+        $jwtTokenBuilder = $this->configuration->builder()
+            ->identifiedBy(Uuid::randomHex())
+            ->issuedAt(new \DateTimeImmutable('@' . $this->clock->now()->getTimestamp()))
+            ->canOnlyBeUsedAfter(new \DateTimeImmutable('@' . $this->clock->now()->getTimestamp()))
+            ->expiresAt($expires)
+            ->withClaim('pmi', $tokenStruct->getPaymentMethodId())
+            ->withClaim('ful', $tokenStruct->getFinishUrl())
+            ->withClaim('eul', $tokenStruct->getErrorUrl());
+
+        $transactionId = $tokenStruct->getTransactionId();
+        if ($transactionId !== '' && $transactionId !== null) {
+            $jwtTokenBuilder = $jwtTokenBuilder->relatedTo($transactionId);
+        }
+
+        $token = $jwtTokenBuilder->getToken($this->configuration->signer(), $this->configuration->signingKey())->toString();
+        $this->write(
+            $token,
+            $expires
+        );
+
+        return $token;
+    }
+
+    /**
+     * @param non-empty-string $token
+     */
+    public function parseToken(string $token): TokenStruct
+    {
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', Feature::deprecatedClassMessage(static::class, 'v6.8.0.0', PaymentTokenGenerator::class));
+
+        try {
+            /** @var UnencryptedToken $jwtToken */
+            $jwtToken = $this->configuration->parser()->parse($token);
+        } catch (\Throwable $e) {
+            throw PaymentException::invalidToken($token, $e);
+        }
+
+        // Remove LooseValidAt constraint, as we want to check it manually and throw a more specific exception
+        $constraints = array_filter($this->configuration->validationConstraints(), static fn ($constraint) => !$constraint instanceof LooseValidAt);
+
+        if (!$this->configuration->validator()->validate($jwtToken, ...$constraints)) {
+            throw PaymentException::invalidToken($token);
+        }
+
+        if (!$this->getSavedToken($token)) {
+            throw PaymentException::tokenInvalidated($token);
+        }
+
+        $errorUrl = $jwtToken->claims()->get('eul');
+
+        /** @var \DateTimeImmutable $expires */
+        $expires = $jwtToken->claims()->get('exp');
+
+        return new TokenStruct(
+            $jwtToken->claims()->get('jti'),
+            $token,
+            $jwtToken->claims()->get('pmi'),
+            $jwtToken->claims()->get('sub'),
+            $jwtToken->claims()->get('ful'),
+            $expires->getTimestamp(),
+            $errorUrl,
+        );
+    }
+
+    public function invalidateToken(string $token): bool
+    {
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', Feature::deprecatedClassMessage(static::class, 'v6.8.0.0', PaymentTokenGenerator::class));
+
+        if (Feature::isActive('REPEATED_PAYMENT_FINALIZE')) {
+            $this->connection->update('payment_token', ['consumed' => 1], ['token' => self::normalize($token)]);
+        } else {
+            $this->delete($token);
+        }
+
+        return false;
+    }
+
+    private function write(string $token, \DateTimeImmutable $expires): void
+    {
+        $this->connection->insert('payment_token', [
+            'token' => self::normalize($token),
+            'expires' => $expires->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ]);
+    }
+
+    private function delete(string $token): void
+    {
+        $this->connection->executeStatement(
+            'DELETE FROM payment_token WHERE token = :token',
+            ['token' => self::normalize($token)]
+        );
+    }
+
+    private function getSavedToken(string $token): bool
+    {
+        return (bool) $this->connection->fetchOne(
+            'SELECT 1 FROM payment_token WHERE token = :token',
+            ['token' => self::normalize($token)]
+        );
+    }
+
+    private static function normalize(string $token): string
+    {
+        return substr(Hasher::hash($token, 'sha256'), 0, 32);
+    }
+}

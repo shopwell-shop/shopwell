@@ -1,0 +1,39 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Store\Struct;
+
+use Shopwell\Core\Framework\Deprecation\BCChange\ParameterNameChange;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\Struct;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('checkout')]
+class DomainVerificationRequestStruct extends Struct
+{
+    protected string $fileName;
+
+    #[ParameterNameChange(version: 'v6.8.0', parameterName: 'filename', newName: 'fileName', description: 'Will also become a promoted property.')]
+    public function __construct(
+        protected string $content,
+        string $filename,
+    ) {
+        $this->fileName = $filename;
+    }
+
+    public function getContent(): string
+    {
+        return $this->content;
+    }
+
+    public function getFileName(): string
+    {
+        return $this->fileName;
+    }
+
+    public function getApiAlias(): string
+    {
+        return 'store_domain_verification_request';
+    }
+}

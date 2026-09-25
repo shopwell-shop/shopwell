@@ -1,0 +1,107 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Shopwell\Tests\Migration\Core\V6_6;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Types\Types;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Framework\Util\Database\TableHelper;
+use Shopwell\Core\Migration\V6_6\Migration1718615305AddEuToCountryTable;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(Migration1718615305AddEuToCountryTable::class)]
+class Migration1718615305AddEuToCountryTableTest extends TestCase
+{
+    use KernelTestBehaviour;
+
+    private Connection $connection;
+
+    protected function setUp(): void
+    {
+        $this->connection = static::getContainer()->get(Connection::class);
+    }
+
+    public function testGetCreationTimestamp(): void
+    {
+        static::assertSame(1718615305, (new Migration1718615305AddEuToCountryTable())->getCreationTimestamp());
+    }
+
+    public function testCountryHasNewIsEuColumn(): void
+    {
+        $this->rollback();
+        $this->executeMigration();
+        $this->executeMigration();
+
+        $isEuColumn = TableHelper::getColumnOfTable($this->connection, 'country', 'is_eu');
+        static::assertSame(Types::BOOLEAN, $isEuColumn->type);
+        static::assertTrue($isEuColumn->isNotNull);
+        static::assertSame('0', $isEuColumn->defaultValue);
+    }
+
+    public function testEuCountriesAreMarkedAsEu(): void
+    {
+        $this->rollback();
+        $this->executeMigration();
+        $euCountryIsoCodes = $this->connection->executeQuery(
+            'SELECT `iso` FROM `country` WHERE `is_eu` = 1;'
+        )->fetchFirstColumn();
+
+        foreach ($this->getEuCountryCodes() as $euCountryCode) {
+            static::assertContains($euCountryCode, $euCountryIsoCodes);
+        }
+    }
+
+    public function executeMigration(): void
+    {
+        (new Migration1718615305AddEuToCountryTable())->update($this->connection);
+    }
+
+    public function rollback(): void
+    {
+        $this->connection->executeStatement('ALTER TABLE `country` DROP COLUMN `is_eu`');
+    }
+
+    /**
+     * @return string[]
+     */
+    private function getEuCountryCodes(): array
+    {
+        return [
+            'AT', // Austria
+            'BE', // Belgium
+            'BG', // Bulgaria
+            'CY', // Cyprus
+            'CZ', // Czech Republic
+            'DE', // Germany
+            'DK', // Denmark
+            'EE', // Estonia
+            'ES', // Spain
+            'FI', // Finland
+            'FR', // France
+            'GR', // Greece
+            'HR', // Croatia
+            'HU', // Hungary
+            'IE', // Ireland
+            'IT', // Italy
+            'LT', // Lithuania
+            'LU', // Luxembourg
+            'LV', // Latvia
+            'MT', // Malta
+            'NL', // Netherlands
+            'PL', // Poland
+            'PT', // Portugal
+            'RO', // Romania
+            'SE', // Sweden
+            'SI', // Slovenia
+            'SK', // Slovakia
+        ];
+    }
+}

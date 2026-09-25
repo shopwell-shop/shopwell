@@ -1,0 +1,58 @@
+@import "~scss/variables";
+
+.sw-product-properties {
+    &__card.mt-card .mt-card__content {
+        padding: 0;
+    }
+
+    &__card .mt-card__title {
+        margin: 0;
+        font-family: var(--font-family-body);
+        font-size: var(--font-size-m);
+        line-height: var(--font-line-height-m);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &.is--inherited:not(.sw-form-field-renderer),
+    &.is--disabled {
+        .sw-product-properties__card .mt-card__content {
+            &::after {
+                content: "";
+                position: absolute;
+                z-index: 10;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                background: var(--color-background-tertiary-default);
+                mix-blend-mode: multiply;
+            }
+
+            .sw-data-grid {
+                border-bottom-left-radius: var(--border-radius-card);
+                border-bottom-right-radius: var(--border-radius-card);
+            }
+        }
+    }
+
+    &__button-add-property {
+        width: 100%;
+    }
+
+    &__list .sw-data-grid__cell-content {
+        line-height: var(--font-line-height-xs);
+    }
+
+    .sw-product-properties-list__column-values {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--scale-size-6);
+        align-items: center;
+        min-width: 0;
+
+        .sw-label {
+            min-width: auto;
+            margin: 0;
+        }
+    }
+}

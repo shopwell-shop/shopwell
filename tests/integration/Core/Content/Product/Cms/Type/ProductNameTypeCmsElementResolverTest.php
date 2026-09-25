@@ -1,0 +1,145 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\Product\Cms\Type;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Category\CategoryDefinition;
+use Shopwell\Core\Content\Category\CategoryEntity;
+use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
+use Shopwell\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
+use Shopwell\Core\Content\Cms\DataResolver\FieldConfig;
+use Shopwell\Core\Content\Cms\DataResolver\FieldConfigCollection;
+use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
+use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopwell\Core\Content\Cms\SalesChannel\Struct\TextStruct;
+use Shopwell\Core\Content\Product\Cms\ProductNameCmsElementResolver;
+use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductDefinition;
+use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+class ProductNameTypeCmsElementResolverTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    private ProductNameCmsElementResolver $productNameCmsElementResolver;
+
+    protected function setUp(): void
+    {
+        $this->productNameCmsElementResolver = static::getContainer()->get(ProductNameCmsElementResolver::class);
+    }
+
+    public function testType(): void
+    {
+        static::assertSame('product-name', $this->productNameCmsElementResolver->getType());
+    }
+
+    public function testCollect(): void
+    {
+        $resolverContext = new ResolverContext(static::createStub(SalesChannelContext::class), new Request());
+
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('id');
+        $slot->setType('product-name');
+
+        $collection = $this->productNameCmsElementResolver->collect($slot, $resolverContext);
+
+        static::assertNull($collection);
+    }
+
+    public function testEnrichWithoutContext(): void
+    {
+        $resolverContext = new ResolverContext(static::createStub(SalesChannelContext::class), new Request());
+        $result = new ElementDataCollection();
+
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('id');
+        $slot->setType('product-name');
+
+        $this->productNameCmsElementResolver->enrich($slot, $resolverContext, $result);
+
+        /** @var TextStruct|null $textStruct */
+        $textStruct = $slot->getData();
+        static::assertInstanceOf(TextStruct::class, $textStruct);
+        static::assertNull($textStruct->getContent());
+    }
+
+    public function testEnrichEntityResolverContext(): void
+    {
+        $product = new SalesChannelProductEntity();
+        $product->setId('product_01');
+        $product->setName('Product 01');
+        $resolverContext = new EntityResolverContext(static::createStub(SalesChannelContext::class), new Request(), static::getContainer()->get(SalesChannelProductDefinition::class), $product);
+        $result = new ElementDataCollection();
+
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('id');
+        $slot->setType('product-name');
+
+        $slot->setFieldConfig(new FieldConfigCollection([new FieldConfig('content', FieldConfig::SOURCE_MAPPED, 'product.name')]));
+
+        $this->productNameCmsElementResolver->enrich($slot, $resolverContext, $result);
+
+        /** @var TextStruct|null $textStruct */
+        $textStruct = $slot->getData();
+        static::assertInstanceOf(TextStruct::class, $textStruct);
+        static::assertNotEmpty($textStruct->getContent());
+        static::assertSame('Product 01', $textStruct->getContent());
+    }
+
+    public function testWithStaticContentAndMappedVariable(): void
+    {
+        $category = new CategoryEntity();
+        $category->setName('TextCategory');
+
+        $resolverContext = new EntityResolverContext(static::createStub(SalesChannelContext::class), new Request(), static::createStub(CategoryDefinition::class), $category);
+        $result = new ElementDataCollection();
+
+        $fieldConfig = new FieldConfigCollection();
+        $fieldConfig->add(new FieldConfig('content', FieldConfig::SOURCE_STATIC, '<h1>Title {{ category.name }}</h1>'));
+
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('id');
+        $slot->setType('text');
+        $slot->setConfig([]);
+        $slot->setFieldConfig($fieldConfig);
+
+        $this->productNameCmsElementResolver->enrich($slot, $resolverContext, $result);
+
+        /** @var TextStruct|null $textStruct */
+        $textStruct = $slot->getData();
+        static::assertInstanceOf(TextStruct::class, $textStruct);
+        static::assertSame('<h1>Title ' . $category->getName() . '</h1>', $textStruct->getContent());
+    }
+
+    public function testWithStaticContentAndMappedVariableNotFound(): void
+    {
+        $category = new CategoryEntity();
+        $category->setName('TextCategory');
+
+        $resolverContext = new EntityResolverContext(static::createStub(SalesChannelContext::class), new Request(), static::createStub(CategoryDefinition::class), $category);
+        $result = new ElementDataCollection();
+
+        $fieldConfig = new FieldConfigCollection();
+        $fieldConfig->add(new FieldConfig('content', FieldConfig::SOURCE_STATIC, '<h1>Title {{ category.unknownProperty }}</h1>'));
+
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('id');
+        $slot->setType('text');
+        $slot->setConfig([]);
+        $slot->setFieldConfig($fieldConfig);
+
+        $this->productNameCmsElementResolver->enrich($slot, $resolverContext, $result);
+
+        /** @var TextStruct|null $textStruct */
+        $textStruct = $slot->getData();
+        static::assertInstanceOf(TextStruct::class, $textStruct);
+        static::assertSame('<h1>Title {{ category.unknownProperty }}</h1>', $textStruct->getContent());
+    }
+}

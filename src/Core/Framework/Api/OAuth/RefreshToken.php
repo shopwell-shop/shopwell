@@ -1,0 +1,32 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Api\OAuth;
+
+use League\OAuth2\Server\Entities\RefreshTokenEntityInterface;
+use League\OAuth2\Server\Entities\Traits\EntityTrait;
+use League\OAuth2\Server\Entities\Traits\RefreshTokenTrait;
+use Shopwell\Core\Framework\Deprecation\BCChange\BecomesInternal;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * OAuth integrations should rely on {@see RefreshTokenEntityInterface} instead of this concrete Shopwell class.
+ */
+#[Package('framework')]
+#[BecomesInternal(version: 'v6.8.0')]
+class RefreshToken implements RefreshTokenEntityInterface
+{
+    use EntityTrait;
+    use RefreshTokenTrait;
+
+    private ?string $familyId = null;
+
+    public function getFamilyId(): ?string
+    {
+        return $this->familyId;
+    }
+
+    public function setFamilyId(string $familyId): void
+    {
+        $this->familyId = $familyId;
+    }
+}

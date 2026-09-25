@@ -1,0 +1,14 @@
+@import "~scss/mixins";
+
+.sw-settings-listing-index {
+    &__sorting-options-card div.mt-card__content {
+        padding: 0;
+    }
+
+    .sw-data-grid__cell-content span.is--truncate {
+        @include truncate;
+
+        display: block;
+        max-width: 300px;
+    }
+}

@@ -1,0 +1,177 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Search;
+
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\StateAwareTrait;
+use Shopwell\Core\Framework\Struct\Struct;
+
+/**
+ * @template IDStructure of string|array<string, string> = string
+ *
+ * @final
+ */
+#[Package('framework')]
+class IdSearchResult extends Struct
+{
+    use StateAwareTrait;
+
+    /**
+     * @var array<string, array<string, mixed>>
+     */
+    protected array $data;
+
+    /**
+     * @var list<IDStructure>
+     */
+    protected array $ids;
+
+    /**
+     * @param array<string, array{primaryKey: IDStructure, data: array<string, mixed>}> $data
+     */
+    public function __construct(
+        private readonly int $total,
+        array $data,
+        private readonly Criteria $criteria,
+        private readonly Context $context
+    ) {
+        $this->ids = array_column($data, 'primaryKey');
+
+        $this->data = array_map(static fn ($row) => $row['data'], $data);
+    }
+
+    /**
+     * @param array<IDStructure> $ids
+     */
+    public static function fromIds(
+        array $ids,
+        Criteria $criteria,
+        Context $context,
+        ?int $total = null
+    ): self {
+        $mapped = [];
+        foreach ($ids as $id) {
+            $key = \is_array($id) ? implode('-', $id) : $id;
+            $mapped[$key] = ['primaryKey' => $id, 'data' => []];
+        }
+
+        return new self(
+            total: $total ?? \count($ids),
+            data: $mapped,
+            criteria: $criteria,
+            context: $context
+        );
+    }
+
+    public function firstId(): ?string
+    {
+        if ($this->ids === []) {
+            return null;
+        }
+
+        $id = $this->ids[0];
+
+        if (!\is_string($id)) {
+            throw DataAbstractionLayerException::invalidCriteriaIds(
+                $this->ids,
+                \sprintf('Calling "%s" is not supported for entities with combined primary keys. Use "getIds()" instead.', __METHOD__)
+            );
+        }
+
+        return $id;
+    }
+
+    /**
+     * @return list<IDStructure>
+     */
+    public function getIds(): array
+    {
+        return $this->ids;
+    }
+
+    /**
+     * Returns a list of associative arrays. For regular entities it will only use `id` as the key.
+     * For mapping entities which have combined primary keys, it will just return the full primary key structure.
+     *
+     * @return list<(IDStructure is string ? array{id: string} : IDStructure)>
+     */
+    public function getPrimaryKeyData(): array
+    {
+        return array_map(
+            static fn (string|array $id): array => \is_array($id) ? $id : ['id' => $id],
+            $this->ids
+        );
+    }
+
+    public function getTotal(): int
+    {
+        return $this->total;
+    }
+
+    public function getCriteria(): Criteria
+    {
+        return $this->criteria;
+    }
+
+    public function getContext(): Context
+    {
+        return $this->context;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    public function getData(): array
+    {
+        return $this->data;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getDataOfId(string $id): array
+    {
+        if (!\array_key_exists($id, $this->data)) {
+            return [];
+        }
+
+        return $this->data[$id];
+    }
+
+    public function getDataFieldOfId(string $id, string $field): mixed
+    {
+        $data = $this->getDataOfId($id);
+
+        if (\array_key_exists($field, $data)) {
+            return $data[$field];
+        }
+
+        return null;
+    }
+
+    public function getScore(string $id): float
+    {
+        $score = $this->getDataFieldOfId($id, Criteria::SCORE_FIELD);
+
+        if ($score === null) {
+            throw DataAbstractionLayerException::scoreNotFound($id);
+        }
+
+        return (float) $score;
+    }
+
+    /**
+     * @param IDStructure $primaryKey
+     */
+    public function has(string|array $primaryKey): bool
+    {
+        return \in_array($primaryKey, $this->ids, true);
+    }
+
+    public function getApiAlias(): string
+    {
+        return 'dal_id_search_result';
+    }
+}

@@ -1,0 +1,194 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Sitemap\Provider;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Content\Category\CategoryDefinition;
+use Shopwell\Core\Content\Category\CategoryEntity;
+use Shopwell\Core\Content\Category\Event\SalesChannelCategoryIdsFetchedEvent;
+use Shopwell\Core\Content\Seo\SeoUrlRoute\EntityRouteResolver;
+use Shopwell\Core\Content\Sitemap\Event\SitemapQueryEvent;
+use Shopwell\Core\Content\Sitemap\Service\ConfigHandler;
+use Shopwell\Core\Content\Sitemap\Struct\Url;
+use Shopwell\Core\Content\Sitemap\Struct\UrlResult;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\FetchModeHelper;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+
+#[Package('discovery')]
+class CategoryUrlProvider extends AbstractUrlProvider
+{
+    final public const CHANGE_FREQ = 'daily';
+
+    final public const QUERY_EVENT_NAME = 'sitemap.query.category';
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly ConfigHandler $configHandler,
+        private readonly Connection $connection,
+        private readonly CategoryDefinition $definition,
+        private readonly IteratorFactory $iteratorFactory,
+        private readonly EntityRouteResolver $entityRouteResolver,
+        private readonly EventDispatcherInterface $eventDispatcher,
+    ) {
+    }
+
+    public function getDecorated(): AbstractUrlProvider
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    public function getName(): string
+    {
+        return 'category';
+    }
+
+    public function getUrls(SalesChannelContext $context, int $limit, ?int $offset = null): UrlResult
+    {
+        $categories = $this->getCategories($context, $limit, $offset);
+
+        if ($categories === []) {
+            return new UrlResult([], null);
+        }
+
+        $keys = FetchModeHelper::keyPair($categories);
+        $autoIncrementIds = array_keys($keys);
+
+        // The next offset must be taken from all results before the event can filter any ids out to prevent fetching
+        // the same ids again
+        $nextOffset = array_pop($autoIncrementIds);
+        \assert(\is_int($nextOffset) || $nextOffset === null);
+
+        $categoryIdsFetchedEvent = $this->eventDispatcher->dispatch(
+            new SalesChannelCategoryIdsFetchedEvent(\array_column($categories, 'id'), $context)
+        );
+
+        if ($categoryIdsFetchedEvent->getIds() === []) {
+            return new UrlResult([], $nextOffset);
+        }
+
+        $availableCategories = \array_filter(
+            $categories,
+            static fn (array $category) => $categoryIdsFetchedEvent->hasId($category['id'])
+        );
+
+        $routeName = $this->entityRouteResolver->getRouteNameForEntityName(CategoryDefinition::ENTITY_NAME, $context->getSalesChannel()->getTypeId());
+        $seoUrls = $this->getSeoUrls($categoryIdsFetchedEvent->getIds(), $routeName, $context, $this->connection);
+
+        /** @var array<string, array{seo_path_info: string}> $seoUrls */
+        $seoUrls = FetchModeHelper::groupUnique($seoUrls);
+
+        $urls = [];
+        $url = new Url();
+
+        foreach ($availableCategories as $category) {
+            $lastMod = $category['updated_at'] ?: $category['created_at'];
+
+            $lastMod = (new \DateTime($lastMod))->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+
+            $newUrl = clone $url;
+
+            if (isset($seoUrls[$category['id']])) {
+                $newUrl->setLoc($seoUrls[$category['id']]['seo_path_info']);
+            } else {
+                $newUrl->setLoc($this->entityRouteResolver->generateUrl(CategoryDefinition::ENTITY_NAME, $category['id'], $context->getSalesChannel()->getTypeId()));
+            }
+
+            $newUrl->setLastmod(new \DateTime($lastMod));
+            $newUrl->setChangefreq(self::CHANGE_FREQ);
+            $newUrl->setResource(CategoryEntity::class);
+            $newUrl->setIdentifier($category['id']);
+
+            $urls[] = $newUrl;
+        }
+
+        return new UrlResult($urls, $nextOffset);
+    }
+
+    /**
+     * @return list<array{id: string, created_at: string, updated_at: string}>
+     */
+    private function getCategories(SalesChannelContext $context, int $limit, ?int $offset): array
+    {
+        $lastId = null;
+        if ($offset) {
+            $lastId = ['offset' => $offset];
+        }
+
+        $iterator = $this->iteratorFactory->createIterator($this->definition, $lastId);
+        $query = $iterator->getQuery();
+        $query->setMaxResults($limit);
+
+        $query->addSelect(
+            '`category`.created_at',
+            '`category`.updated_at',
+        );
+
+        $wheres = [];
+        $categoryIds = array_filter([
+            $context->getSalesChannel()->getNavigationCategoryId(),
+            $context->getSalesChannel()->getFooterCategoryId(),
+            $context->getSalesChannel()->getServiceCategoryId(),
+        ]);
+
+        foreach ($categoryIds as $id) {
+            $wheres[] = '`category`.path LIKE ' . $query->createNamedParameter('%|' . $id . '|%');
+        }
+
+        $query->andWhere('(' . implode(' OR ', $wheres) . ')');
+        $query->andWhere('`category`.version_id = :versionId');
+        $query->andWhere('`category`.active = 1');
+        $query->andWhere('`category`.type != :linkType');
+        $query->andWhere('`category`.type != :folderType');
+
+        $excludedCategoryIds = $this->getExcludedCategoryIds($context);
+        if ($excludedCategoryIds !== []) {
+            $query->andWhere('`category`.id NOT IN (:categoryIds)');
+            $query->setParameter('categoryIds', Uuid::fromHexToBytesList($excludedCategoryIds), ArrayParameterType::BINARY);
+        }
+
+        $query->setParameter('versionId', Uuid::fromHexToBytes(Defaults::LIVE_VERSION));
+        $query->setParameter('linkType', CategoryDefinition::TYPE_LINK);
+        $query->setParameter('folderType', CategoryDefinition::TYPE_FOLDER);
+
+        $this->eventDispatcher->dispatch(
+            new SitemapQueryEvent($query, $limit, $offset, $context, self::QUERY_EVENT_NAME)
+        );
+
+        /** @var list<array{id: string, created_at: string, updated_at: string}> $result */
+        $result = $query->executeQuery()->fetchAllAssociative();
+
+        return $result;
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getExcludedCategoryIds(SalesChannelContext $salesChannelContext): array
+    {
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
+
+        $excludedUrls = $this->configHandler->get(ConfigHandler::EXCLUDED_URLS_KEY);
+        if ($excludedUrls === []) {
+            return [];
+        }
+
+        $excludedUrls = array_filter($excludedUrls, static function (array $excludedUrl) use ($salesChannelId) {
+            if ($excludedUrl['resource'] !== CategoryEntity::class) {
+                return false;
+            }
+
+            return $excludedUrl['salesChannelId'] === $salesChannelId;
+        });
+
+        return array_column($excludedUrls, 'identifier');
+    }
+}

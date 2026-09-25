@@ -1,0 +1,1838 @@
+/* eslint-disable sw-test-rules/test-file-max-lines-warning, sw-test-rules/test-file-max-lines-error */
+
+/**
+ * @sw-package discovery
+ */
+
+import { mount } from '@vue/test-utils';
+import 'src/module/sw-sales-channel/service/sales-channel-favorites.service';
+
+const PRODUCT_COMPARISON_TYPE_ID = 'ed535e5722134ac1aa6524f73e26881b';
+const STOREFRONT_SALES_CHANNEL_TYPE_ID = '8a243080f92e4c719546314b577cf82b';
+
+const responses = global.repositoryFactoryMock.responses;
+
+responses.addResponse({
+    method: 'Post',
+    url: '/user-config',
+    status: 200,
+    response: {
+        data: [],
+    },
+});
+
+async function createWrapper(options = {}) {
+    const { props = {}, provide = {}, stubs = {} } = options;
+
+    return mount(await wrapTestComponent('sw-sales-channel-detail-base', { sync: true }), {
+        global: {
+            stubs: {
+                'mt-card': {
+                    template: '<div class="mt-card"><slot></slot></div>',
+                },
+
+                'sw-text-field': true,
+                'mt-number-field': true,
+                'sw-container': {
+                    template: '<div class="sw-container"><slot></slot></div>',
+                },
+                'sw-entity-single-select': true,
+                'sw-single-select': true,
+                'sw-sales-channel-defaults-select': {
+                    props: ['criteria', 'disabled', 'propertyName'],
+                    template: `
+                        <sw-sales-channel-defaults-select-stub
+                            :disabled="disabled"
+                            :property-name="propertyName"
+                        />
+                    `,
+                },
+                'router-link': true,
+                'sw-radio-field': true,
+                'sw-multi-tag-ip-select': true,
+                'sw-select-number-field': true,
+                'sw-select-field': true,
+                'sw-help-text': true,
+                'sw-sales-channel-detail-hreflang': true,
+                'sw-sales-channel-detail-domains': true,
+                'sw-agentic-commerce-tracking-config': true,
+                'sw-category-tree-field': true,
+                'mt-select': true,
+                'sw-custom-field-set-renderer': {
+                    name: 'sw-custom-field-set-renderer',
+                    props: ['disabled'],
+                    template: '<div class="sw-custom-field-set-renderer"></div>',
+                },
+                'sw-form-field-renderer': true,
+                'mt-banner': true,
+                'sw-sales-channel-measurement': true,
+                'sw-time-ago': true,
+                ...stubs,
+            },
+            provide: {
+                salesChannelService: {},
+                productExportService: {},
+                knownIpsService: {
+                    getKnownIps: () => Promise.resolve(),
+                },
+                systemConfigApiService: {
+                    getConfig: () => Promise.resolve([]),
+                    getValues: () => Promise.resolve({}),
+                    saveValues: () => Promise.resolve(),
+                },
+                repositoryFactory: {
+                    create: () => ({
+                        search: () => {
+                            return Promise.resolve([]);
+                        },
+                        get: () => {
+                            return Promise.resolve();
+                        },
+                        delete: () => {
+                            return Promise.resolve();
+                        },
+                    }),
+                },
+                ...provide,
+            },
+            mocks: {
+                $t: jest.fn().mockImplementation((snippet) => snippet),
+                $router: { resolve: () => ({ href: '/sw/settings/payment/overview' }) },
+            },
+        },
+        props: {
+            salesChannel: {},
+            productExport: {},
+            customFieldSets: [],
+            ...props,
+        },
+    });
+}
+
+describe('src/module/sw-sales-channel/view/sw-sales-channel-detail-base', () => {
+    beforeAll(() => {
+        Shopwell.Service().register('timezoneService', () => ({
+            getTimezoneOptions: () => [
+                {
+                    label: 'UTC',
+                    value: 'UTC',
+                },
+            ],
+        }));
+    });
+
+    beforeEach(async () => {
+        Shopwell.Store.get('session').setCurrentUser({
+            id: '8fe88c269c214ea68badf7ebe678ab96',
+        });
+        global.repositoryFactoryMock.showError = false;
+        global.activeAclRoles = [];
+    });
+
+    describe('feed label input', () => {
+        const productComparisonSalesChannel = { typeId: PRODUCT_COMPARISON_TYPE_ID };
+        const FEED_LABEL_SELECTOR = '.sw-sales-channel-detail-base__feed-label';
+
+        beforeEach(() => {
+            global.activeAclRoles = ['sales_channel.editor'];
+        });
+
+        it.each([
+            {
+                case: 'product comparison + google template',
+                salesChannel: productComparisonSalesChannel,
+                templateName: 'google-product-search-de',
+                expected: true,
+            },
+            {
+                case: 'product comparison + non-google template',
+                salesChannel: productComparisonSalesChannel,
+                templateName: 'idealo-de',
+                expected: false,
+            },
+            {
+                case: 'non-product-comparison + google template',
+                salesChannel: { typeId: STOREFRONT_SALES_CHANNEL_TYPE_ID },
+                templateName: 'google-product-search-de',
+                expected: false,
+            },
+            {
+                case: 'product comparison + no template selected',
+                salesChannel: productComparisonSalesChannel,
+                templateName: null,
+                expected: false,
+            },
+        ])('visibility on $case → $expected', async ({ salesChannel, templateName, expected }) => {
+            const wrapper = await createWrapper({
+                props: {
+                    salesChannel,
+                    productExport: { feedLabel: null },
+                    templateName,
+                },
+            });
+
+            expect(wrapper.find(FEED_LABEL_SELECTOR).exists()).toBe(expected);
+        });
+
+        it.each([
+            { case: 'null', feedLabel: null },
+            { case: 'empty string', feedLabel: '' },
+        ])('passes empty string to mt-text-field when feedLabel is $case', async ({ feedLabel }) => {
+            const wrapper = await createWrapper({
+                props: {
+                    salesChannel: productComparisonSalesChannel,
+                    productExport: { feedLabel },
+                    templateName: 'google-product-search-de',
+                },
+            });
+
+            const field = wrapper.findComponent(FEED_LABEL_SELECTOR);
+            expect(field.props('modelValue')).toBe('');
+        });
+
+        it('writes the typed value back to productExport.feedLabel', async () => {
+            const wrapper = await createWrapper({
+                props: {
+                    salesChannel: productComparisonSalesChannel,
+                    productExport: { feedLabel: null },
+                    templateName: 'google-product-search-de',
+                },
+            });
+
+            const input = wrapper.find(`${FEED_LABEL_SELECTOR} input`);
+            await input.setValue('SUMMER-2026');
+
+            expect(wrapper.vm.productExport.feedLabel).toBe('SUMMER-2026');
+        });
+
+        it.each([
+            ['summer224', 'SUMMER224'],
+            ['Summer-2026', 'SUMMER-2026'],
+            ['eu_de', 'EU_DE'],
+        ])('upper-cases letters as the merchant types (%s -> %s)', async (typed, stored) => {
+            const wrapper = await createWrapper({
+                props: {
+                    salesChannel: productComparisonSalesChannel,
+                    productExport: { feedLabel: null },
+                    templateName: 'google-product-search-de',
+                },
+            });
+
+            const input = wrapper.find(`${FEED_LABEL_SELECTOR} input`);
+            await input.setValue(typed);
+
+            expect(wrapper.vm.productExport.feedLabel).toBe(stored);
+            expect(input.element.value).toBe(stored);
+        });
+
+        it('writes null back when the input is cleared', async () => {
+            const wrapper = await createWrapper({
+                props: {
+                    salesChannel: productComparisonSalesChannel,
+                    productExport: { feedLabel: 'SUMMER-2026' },
+                    templateName: 'google-product-search-de',
+                },
+            });
+
+            const input = wrapper.find(`${FEED_LABEL_SELECTOR} input`);
+            await input.setValue('');
+
+            expect(wrapper.vm.productExport.feedLabel).toBeNull();
+        });
+    });
+
+    it('should have the select template field disabled', async () => {
+        const wrapper = await createWrapper();
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const selectField = wrapper.get(
+            'mt-select-stub[placeholder="sw-sales-channel.detail.productComparison.templates.placeholderSelectTemplate"]',
+        );
+
+        expect(selectField.attributes().disabled).toBe('true');
+    });
+
+    it('should have the select template field enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const selectField = wrapper.get(
+            'mt-select-stub[placeholder="sw-sales-channel.detail.productComparison.templates.placeholderSelectTemplate"]',
+        );
+
+        expect(selectField.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the name field disabled', async () => {
+        const wrapper = await createWrapper();
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.getComponent('.sw-field--salesChannel-name');
+
+        expect(field.props().disabled).toBe(true);
+    });
+
+    it('should have the name field enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.getComponent('.sw-field--salesChannel-name');
+
+        expect(field.props().disabled).toBe(false);
+    });
+
+    it('should have the navigation category id field disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.sw-sales-channel-detail__select-navigation-category-id');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the navigation category id field enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.sw-sales-channel-detail__select-navigation-category-id');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the business timezone field disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.sw-sales-channel-detail__select-business-time-zone');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the business timezone field enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.sw-sales-channel-detail__select-business-time-zone');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the navigation category depth field disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('mt-number-field-stub[label="sw-sales-channel.detail.navigationCategoryDepth"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the navigation category depth field enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('mt-number-field-stub[label="sw-sales-channel.detail.navigationCategoryDepth"]');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should disable the custom field renderer without sales channel edit permissions', async () => {
+        global.activeAclRoles = ['sales_channel.viewer'];
+
+        const wrapper = await createWrapper({
+            props: {
+                salesChannel: {
+                    typeId: STOREFRONT_SALES_CHANNEL_TYPE_ID,
+                },
+                customFieldSets: [{}],
+            },
+        });
+
+        expect(wrapper.getComponent('.sw-custom-field-set-renderer').props('disabled')).toBe(true);
+    });
+
+    it('should have the service category id field disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.sw-sales-channel-detail__select-service-category-id');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the service category id field enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.sw-sales-channel-detail__select-service-category-id');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the customer group id field disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.sw-sales-channel-detail__select-service-category-id');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the customer group id field enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.sw-sales-channel-detail__select-service-category-id');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the sales channel defaults select for countries field disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('sw-sales-channel-defaults-select-stub[property-name="countries"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the sales channel defaults select for countries field enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('sw-sales-channel-defaults-select-stub[property-name="countries"]');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the sales channel defaults select for languages field disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('sw-sales-channel-defaults-select-stub[property-name="languages"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the sales channel defaults select for languages field enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('sw-sales-channel-defaults-select-stub[property-name="languages"]');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the sales channel defaults select for paymentMethods field disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('sw-sales-channel-defaults-select-stub[property-name="paymentMethods"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the sales channel defaults select for paymentMethods field enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('sw-sales-channel-defaults-select-stub[property-name="paymentMethods"]');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the sales channel defaults select for shippingMethods field disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('sw-sales-channel-defaults-select-stub[property-name="shippingMethods"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the sales channel defaults select for shippingMethods field enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('sw-sales-channel-defaults-select-stub[property-name="shippingMethods"]');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the sales channel defaults select for currencies field disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('sw-sales-channel-defaults-select-stub[property-name="currencies"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the sales channel defaults select for currencies field enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('sw-sales-channel-defaults-select-stub[property-name="currencies"]');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the radio select field for taxCalculationType disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.sw-sales-channel-detail__tax-calculation');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the radio select field for taxCalculationType enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.sw-sales-channel-detail__tax-calculation');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the sales-channel-detail-hreflang component disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: STOREFRONT_SALES_CHANNEL_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get('sw-sales-channel-detail-hreflang-stub');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the sales-channel-detail-hreflang component enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: STOREFRONT_SALES_CHANNEL_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get('sw-sales-channel-detail-hreflang-stub');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the sales-channel-detail-domains component disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: STOREFRONT_SALES_CHANNEL_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get('sw-sales-channel-detail-domains-stub');
+
+        expect(field.attributes()['disable-edit']).toBe('true');
+    });
+
+    it('should have the sales-channel-detail-domains component enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: STOREFRONT_SALES_CHANNEL_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get('sw-sales-channel-detail-domains-stub');
+
+        expect(field.attributes()['disable-edit']).toBeUndefined();
+    });
+
+    it('should have the select field for product export storefront sales channel id disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get('.sw-sales-channel-detail__product-comparison-storefront');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the select field for product export storefront sales channel id enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get('.sw-sales-channel-detail__product-comparison-storefront');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the select field for product export sales channel domain id disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+            productExport: {
+                salesChannelDomainId: '1a',
+                storefrontSalesChannelId: '2b',
+            },
+        });
+
+        const field = wrapper.get('.sw-sales-channel-detail__product-comparison-domain');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the select field for product export sales channel domain id enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+            productExport: {
+                salesChannelDomainId: '1a',
+                storefrontSalesChannelId: '2b',
+            },
+        });
+
+        const field = wrapper.get('.sw-sales-channel-detail__product-comparison-domain');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the select field for product export currency id disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+            productExport: {
+                salesChannelDomain: {},
+            },
+        });
+
+        const field = wrapper.get('sw-entity-single-select-stub[entity="currency"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the select field for product export currency id enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+            productExport: {
+                salesChannelDomain: {},
+            },
+        });
+
+        const field = wrapper.get('sw-entity-single-select-stub[entity="currency"]');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the select field for product export sales channel domain language id disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+            productExport: {
+                salesChannelDomain: {},
+            },
+        });
+
+        const field = wrapper.get('sw-entity-single-select-stub[entity="language"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the select field for product export sales channel domain language id not disabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+            productExport: {
+                salesChannelDomain: {},
+            },
+        });
+
+        const field = wrapper.get('sw-entity-single-select-stub[entity="language"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the select field for product export sales channel customer group id disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+            productExport: {
+                salesChannelDomain: {},
+            },
+        });
+
+        const field = wrapper.get('sw-entity-single-select-stub[entity="customer_group"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the select field for product export sales channel customer group id not disabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+            productExport: {
+                salesChannelDomain: {},
+            },
+        });
+
+        const field = wrapper.get('sw-entity-single-select-stub[entity="customer_group"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the field for product export file name disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get(
+            '.mt-text-field input[placeholder="sw-sales-channel.detail.productComparison.placeholderFileName"]',
+        );
+
+        expect(field.attributes().disabled).toBeDefined();
+    });
+
+    it('should have the field for product export file name enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get(
+            '.mt-text-field input[placeholder="sw-sales-channel.detail.productComparison.placeholderFileName"]',
+        );
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the select field for product export encoding disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get(
+            'mt-select-stub[placeholder="sw-sales-channel.detail.productComparison.placeholderSelectEncoding"]',
+        );
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the select field for product export encoding enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get(
+            'mt-select-stub[placeholder="sw-sales-channel.detail.productComparison.placeholderSelectEncoding"]',
+        );
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the select field for product export file format disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get(
+            'mt-select-stub[placeholder="sw-sales-channel.detail.productComparison.placeholderSelectFileFormat"]',
+        );
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the select field for product export file format enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get(
+            'mt-select-stub[placeholder="sw-sales-channel.detail.productComparison.placeholderSelectFileFormat"]',
+        );
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the field for product export includeVariants disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get(
+            '.mt-switch input[aria-label="sw-sales-channel.detail.productComparison.includeVariants"]',
+        );
+
+        expect(field.attributes().disabled).toBeDefined();
+    });
+
+    it('should have the field for product export includeVariants enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get(
+            '.mt-switch input[aria-label="sw-sales-channel.detail.productComparison.includeVariants"]',
+        );
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the select number field for product export interval disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get('[label="sw-sales-channel.detail.productComparison.interval"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the select number field for product export interval enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get('[label="sw-sales-channel.detail.productComparison.interval"]');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the switch field for product export generateByCronjob disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get(
+            '.mt-switch input[aria-label="sw-sales-channel.detail.productComparison.generateByCronjob"]',
+        );
+
+        expect(field.attributes().disabled).toBeDefined();
+    });
+
+    it('should have the switch field for product export generateByCronjob enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get(
+            '.mt-switch input[aria-label="sw-sales-channel.detail.productComparison.generateByCronjob"]',
+        );
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the entity single field for product export productStreamId disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get('.sw-sales-channel-detail__product-comparison-product-stream');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the entity single field for product export productStreamId enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get('.sw-sales-channel-detail__product-comparison-product-stream');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the field for salesChannel accessKey disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {},
+        });
+
+        const field = wrapper.get('.mt-text-field input[aria-label="sw-sales-channel.detail.labelAccessKeyField"]');
+
+        expect(field.attributes().disabled).toBeDefined();
+    });
+
+    it('should have the field for salesChannel accessKey not disabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {},
+        });
+
+        const field = wrapper.get('.mt-text-field input[aria-label="sw-sales-channel.detail.labelAccessKeyField"]');
+
+        expect(field.attributes().disabled).toBeDefined();
+    });
+
+    it('should have the button for generate keys disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {},
+        });
+
+        const field = wrapper.get('.sw-sales-channel-detail-base__button-generate-keys');
+
+        expect(field.attributes('disabled')).toBeDefined();
+    });
+
+    it('should have the button for generate keys enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {},
+        });
+
+        const field = wrapper.get('.sw-sales-channel-detail-base__button-generate-keys');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the field for productExport accessKey disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get('.mt-text-field input[aria-label="sw-sales-channel.detail.productComparison.accessKey"]');
+
+        expect(field.attributes().disabled).toBeDefined();
+    });
+
+    it('should have the field for productExport accessKey not disabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        const field = wrapper.get('.mt-text-field input[aria-label="sw-sales-channel.detail.productComparison.accessKey"]');
+
+        expect(field.attributes().disabled).toBeDefined();
+    });
+
+    // eslint-disable-next-line jest/no-identical-title
+    it('should have the field for productExport accessKey disabled', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+            productExport: {
+                salesChannelDomainId: '1a2b3c',
+            },
+        });
+
+        const field = wrapper.get('.mt-text-field input[aria-label="sw-sales-channel.detail.productComparison.accessUrl"]');
+
+        expect(field.attributes().disabled).toBeDefined();
+    });
+
+    // eslint-disable-next-line jest/no-identical-title
+    it('should have the field for productExport accessKey not disabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+            productExport: {
+                salesChannelDomainId: '1a2b3c',
+            },
+        });
+
+        const field = wrapper.get('.mt-text-field input[aria-label="sw-sales-channel.detail.productComparison.accessUrl"]');
+
+        expect(field.attributes().disabled).toBeDefined();
+    });
+
+    it('should have the button for generating the keys disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.sw-sales-channel-detail-base__button-generate-keys');
+
+        expect(field.attributes('disabled')).toBeDefined();
+    });
+
+    it('should have the button for generating the keys enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.sw-sales-channel-detail-base__button-generate-keys');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the switch field for salesChannel active disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.mt-switch input[aria-label="sw-sales-channel.detail.labelInputActive"]');
+
+        expect(field.attributes().disabled).toBeDefined();
+    });
+
+    it('should have the switch field for salesChannel active enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.mt-switch input[aria-label="sw-sales-channel.detail.labelInputActive"]');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the switch field for salesChannel maintenance disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.mt-switch input[aria-label="sw-sales-channel.detail.labelMaintenanceActive"]');
+
+        expect(field.attributes().disabled).toBeDefined();
+    });
+
+    it('should have the switch field for salesChannel maintenance enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('.mt-switch input[aria-label="sw-sales-channel.detail.labelMaintenanceActive"]');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it('should have the field multi tag ip select for maintenanceIpAllowlist disabled', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('sw-multi-tag-ip-select-stub[label="sw-sales-channel.detail.ipAddressAllowlist"]');
+
+        expect(field.attributes().disabled).toBe('true');
+    });
+
+    it('should have the field multi tag ip select for maintenanceIpAllowlist enabled', async () => {
+        global.activeAclRoles = ['sales_channel.editor'];
+
+        const wrapper = await createWrapper();
+
+        const field = wrapper.get('sw-multi-tag-ip-select-stub[label="sw-sales-channel.detail.ipAddressAllowlist"]');
+
+        expect(field.attributes().disabled).toBeUndefined();
+    });
+
+    it.each([
+        ['currencies', 'name'],
+        ['shippingMethods', 'name'],
+        ['paymentMethods', 'distinguishableName'],
+        ['countries', 'name'],
+        ['languages', 'name'],
+    ])('should pass alphabetical sort criteria to %s defaults select', async (propertyName, sortField) => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.getComponent(`sw-sales-channel-defaults-select-stub[property-name="${propertyName}"]`);
+        const criteria = field.props('criteria');
+
+        expect(criteria.parse().sort[0]).toEqual({ field: sortField, order: 'ASC', naturalSorting: false });
+    });
+
+    it('should filter language criteria by active languages', async () => {
+        const wrapper = await createWrapper();
+
+        const field = wrapper.getComponent('sw-sales-channel-defaults-select-stub[property-name="languages"]');
+        const criteria = field.props('criteria');
+
+        expect(criteria.parse().filter).toEqual([{ type: 'equals', field: 'active', value: true }]);
+    });
+
+    it('should return filters from filter registry', async () => {
+        const wrapper = await createWrapper();
+
+        if (!Shopwell.Feature.isActive('V6_8_0_0')) {
+            // eslint-disable-next-line jest/no-conditional-expect
+            expect(wrapper.vm.dateFilter).toEqual(expect.any(Function));
+        }
+    });
+
+    it('"changeInterval" also updates cronjob config', async () => {
+        const wrapper = await createWrapper();
+
+        wrapper.vm.changeInterval(0);
+
+        expect(wrapper.vm.disableGenerateByCronjob).toBe(true);
+        expect(wrapper.vm.productExport.generateByCronjob).toBe(false);
+
+        wrapper.vm.changeInterval(10);
+
+        expect(wrapper.vm.disableGenerateByCronjob).toBe(false);
+        expect(wrapper.vm.productExport.generateByCronjob).toBe(true);
+    });
+
+    it('cliCommand is empty when export missing', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+            },
+        });
+
+        expect(wrapper.vm.cliCommand).toBe('');
+    });
+
+    it('cliCommand is correct when export there', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+                productExports: [
+                    {
+                        id: 'export-id',
+                        storefrontSalesChannelId: 'sc-id',
+                    },
+                ],
+            },
+        });
+
+        expect(wrapper.vm.cliCommand).toBe('php bin/console product-export:generate sc-id export-id');
+    });
+
+    describe('onStorefrontSelectionChange', () => {
+        const storefront = {
+            id: 'storefront-id',
+            languageId: 'french-id',
+            language: { id: 'french-id', name: 'French' },
+            currencyId: 'currency-id',
+        };
+
+        function createLanguagesCollection(ids) {
+            return {
+                has: (id) => ids.includes(id),
+                add: jest.fn(),
+            };
+        }
+
+        async function createStorefrontSelectionWrapper(languages, entity = storefront) {
+            return createWrapper({
+                props: {
+                    salesChannel: {
+                        typeId: PRODUCT_COMPARISON_TYPE_ID,
+                        languages,
+                    },
+                },
+                provide: {
+                    repositoryFactory: {
+                        create: () => ({
+                            get: () => Promise.resolve(entity),
+                            search: () => Promise.resolve([]),
+                        }),
+                    },
+                },
+            });
+        }
+
+        it('should add the storefront language to the sales channel languages', async () => {
+            const languages = createLanguagesCollection([]);
+            const wrapper = await createStorefrontSelectionWrapper(languages);
+
+            wrapper.vm.onStorefrontSelectionChange('storefront-id');
+            await flushPromises();
+
+            expect(wrapper.vm.salesChannel.languageId).toBe('french-id');
+            expect(languages.add).toHaveBeenCalledWith(storefront.language);
+        });
+
+        it('should not add the storefront language when it is already in the languages collection', async () => {
+            const languages = createLanguagesCollection(['french-id']);
+            const wrapper = await createStorefrontSelectionWrapper(languages);
+
+            wrapper.vm.onStorefrontSelectionChange('storefront-id');
+            await flushPromises();
+
+            expect(wrapper.vm.salesChannel.languageId).toBe('french-id');
+            expect(languages.add).not.toHaveBeenCalled();
+        });
+
+        it('should not fail when the storefront language association is not loaded', async () => {
+            const languages = createLanguagesCollection([]);
+            const wrapper = await createStorefrontSelectionWrapper(languages, {
+                ...storefront,
+                language: null,
+            });
+
+            wrapper.vm.onStorefrontSelectionChange('storefront-id');
+            await flushPromises();
+
+            expect(wrapper.vm.salesChannel.languageId).toBe('french-id');
+            expect(languages.add).not.toHaveBeenCalled();
+        });
+    });
+
+    it('should build unserved languages alert with correct pluralization for single item', async () => {
+        const wrapper = await createWrapper();
+        const collection = [
+            {
+                name: 'English',
+            },
+        ];
+
+        const snippet = 'sw-sales-channel.detail.warningUnservedLanguage';
+        const result = wrapper.vm.buildUnservedLanguagesAlert(snippet, collection);
+
+        expect(wrapper.vm.$t).toHaveBeenCalledWith(
+            snippet,
+            {
+                list: 'English',
+            },
+            1,
+        );
+
+        expect(result).toBe(snippet);
+    });
+
+    it('should build unserved languages alert with correct pluralization for multiple items', async () => {
+        const wrapper = await createWrapper();
+        const collection = [
+            {
+                name: 'English',
+            },
+            {
+                name: 'German',
+            },
+        ];
+
+        const snippet = 'sw-sales-channel.detail.warningUnservedLanguage';
+        const result = wrapper.vm.buildUnservedLanguagesAlert(snippet, collection);
+
+        expect(wrapper.vm.$t).toHaveBeenCalledWith(
+            snippet,
+            {
+                list: 'English, German',
+            },
+            2,
+        );
+
+        expect(result).toBe(snippet);
+    });
+
+    it('should build payment alert with correct pluralization for single item', async () => {
+        const wrapper = await createWrapper();
+        const collection = [{ translated: { name: 'PayPal|Invoice' } }];
+
+        const snippet = 'sw-sales-channel.detail.warningDisabledPaymentMethod';
+
+        const result = wrapper.vm.buildDisabledPaymentAlert(snippet, collection);
+
+        expect(wrapper.vm.$t).toHaveBeenCalledWith(
+            snippet,
+            {
+                separatedList: '<span>PayPal&vert;Invoice</span>',
+                paymentSettingsLink: '/sw/settings/payment/overview',
+            },
+            1,
+        );
+
+        expect(result).toBe(snippet);
+    });
+
+    it('should build payment alert with correct pluralization for multiple items', async () => {
+        const wrapper = await createWrapper();
+        const collection = [{ translated: { name: 'PayPal|Invoice' } }, { translated: { name: 'Cash on delivery' } }];
+
+        const snippet = 'sw-sales-channel.detail.warningDisabledPaymentMethod';
+
+        const result = wrapper.vm.buildDisabledPaymentAlert(snippet, collection);
+
+        expect(wrapper.vm.$t).toHaveBeenCalledWith(
+            snippet,
+            {
+                separatedList: '<span>PayPal&vert;Invoice</span>, <span>Cash on delivery</span>',
+                paymentSettingsLink: '/sw/settings/payment/overview',
+            },
+            2,
+        );
+
+        expect(result).toBe(snippet);
+    });
+
+    it('should build shipping alert with correct pluralization for single item', async () => {
+        const wrapper = await createWrapper();
+        const collection = [{ translated: { name: 'Standard' } }];
+        collection.first = () => collection[0];
+        collection.last = () => collection[0];
+
+        const snippet = 'sw-sales-channel.detail.warningDisabledShippingMethod';
+        const result = wrapper.vm.buildDisabledShippingAlert(snippet, collection);
+
+        expect(wrapper.vm.$t).toHaveBeenCalledWith(
+            snippet,
+            {
+                name: 'Standard',
+                addition: 'Standard',
+            },
+            1,
+        );
+
+        expect(result).toBe(snippet);
+    });
+
+    it('should build shipping alert with correct pluralization for multiple items', async () => {
+        const wrapper = await createWrapper();
+        const collection = [{ translated: { name: 'Standard' } }, { translated: { name: 'Express' } }];
+        collection.first = () => collection[0];
+        collection.last = () => collection[1];
+
+        const snippet = 'sw-sales-channel.detail.warningDisabledShippingMethod';
+        const result = wrapper.vm.buildDisabledShippingAlert(snippet, collection);
+
+        expect(wrapper.vm.$t).toHaveBeenCalledWith(
+            snippet,
+            {
+                name: 'Standard',
+                addition: 'Express',
+            },
+            2,
+        );
+
+        expect(result).toBe(snippet);
+    });
+
+    it('should return disabledCountryVariant "attention" if the sales channel country is in the disabled countries list', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                countryId: 'DE',
+                countries: [{ id: 'DE', active: false }],
+            },
+        });
+
+        expect(wrapper.vm.disabledCountryVariant).toBe('attention');
+
+        const banner = wrapper.get('mt-banner-stub');
+        expect(banner.attributes('variant')).toBe('attention');
+    });
+
+    it('should return disabledCountryVariant "info" if the sales channel country is NOT in the disabled countries list', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                countryId: 'DE',
+                countries: [{ id: 'DE', active: true }],
+            },
+        });
+
+        expect(wrapper.vm.disabledCountryVariant).toBe('info');
+    });
+
+    it('should return disabledPaymentMethodVariant "attention" if the sales channel payment method is in the disabled payment methods list', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                paymentMethodId: 'pm-1',
+                paymentMethods: [{ id: 'pm-1', active: false }],
+            },
+        });
+
+        expect(wrapper.vm.disabledPaymentMethodVariant).toBe('attention');
+
+        const banner = wrapper.get('mt-banner-stub');
+        expect(banner.attributes('variant')).toBe('attention');
+    });
+
+    it('should return disabledPaymentMethodVariant "info" if the sales channel payment method is NOT in the disabled payment methods list', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                paymentMethodId: 'pm-1',
+                paymentMethods: [{ id: 'pm-1', active: true }],
+            },
+        });
+
+        expect(wrapper.vm.disabledPaymentMethodVariant).toBe('info');
+    });
+
+    it('should return disabledShippingMethodVariant "attention" if the sales channel shipping method is in the disabled shipping methods list', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                shippingMethodId: 'sm-1',
+                shippingMethods: [{ id: 'sm-1', active: false }],
+            },
+        });
+
+        expect(wrapper.vm.disabledShippingMethodVariant).toBe('attention');
+
+        const banner = wrapper.get('mt-banner-stub');
+        expect(banner.attributes('variant')).toBe('attention');
+    });
+
+    it('should return disabledShippingMethodVariant "info" if the sales channel shipping method is NOT in the disabled shipping methods list', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                shippingMethodId: 'sm-1',
+                shippingMethods: [{ id: 'sm-1', active: true }],
+            },
+        });
+
+        expect(wrapper.vm.disabledShippingMethodVariant).toBe('info');
+    });
+
+    it('should return unservedLanguageVariant "attention" if the sales channel language is NOT served by any domain', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                languageId: 'language-1',
+                languages: [{ id: 'language-1' }],
+                domains: [], // no domain serves the language
+            },
+        });
+
+        expect(wrapper.vm.unservedLanguageVariant).toBe('attention');
+
+        const banner = wrapper.get('mt-banner-stub');
+        expect(banner.attributes('variant')).toBe('attention');
+    });
+
+    it('should open the domain modal for the default unserved language', async () => {
+        const openCreateDomainModal = jest.fn();
+        const scrollIntoView = jest.fn();
+
+        const wrapper = await createWrapper({
+            props: {
+                salesChannel: {
+                    typeId: STOREFRONT_SALES_CHANNEL_TYPE_ID,
+                    languageId: 'language-1',
+                    currencyId: 'currency-1',
+                    languages: [{ id: 'language-1' }, { id: 'language-2' }],
+                    domains: [{ languageId: 'language-2' }],
+                },
+            },
+            stubs: {
+                'sw-sales-channel-detail-domains': {
+                    template: '<div class="sw-sales-channel-detail-domains"></div>',
+                    methods: {
+                        onClickOpenCreateDomainModal: openCreateDomainModal,
+                    },
+                    mounted() {
+                        this.$el.scrollIntoView = scrollIntoView;
+                    },
+                },
+            },
+        });
+        await flushPromises();
+
+        wrapper.vm.onClickCreateDomainForUnservedLanguage();
+        await wrapper.vm.$nextTick();
+
+        expect(openCreateDomainModal).toHaveBeenCalledWith({
+            languageId: 'language-1',
+            currencyId: 'currency-1',
+        });
+        expect(scrollIntoView).toHaveBeenCalledWith({
+            behavior: 'smooth',
+            block: 'center',
+        });
+    });
+
+    it('should return unservedLanguageVariant "info" if the sales channel language IS served by a domain', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                languageId: 'language-1',
+                languages: [{ id: 'language-1' }],
+                domains: [{ languageId: 'language-1' }],
+            },
+        });
+
+        expect(wrapper.vm.unservedLanguageVariant).toBe('info');
+    });
+
+    it('should render agentic commerce export config from injected fallback when prop is not forwarded', async () => {
+        const wrapper = await createWrapper({
+            props: {
+                salesChannel: {
+                    typeId: Shopwell.Defaults.agenticCommerceTypeId,
+                },
+            },
+            provide: {
+                swSalesChannelDetailGetAgenticCommerceExportConfig: () => [
+                    {
+                        provider: 'open-ai',
+                        elements: [
+                            {
+                                name: 'core.openAiProductExport.returnPolicyUrl',
+                                type: 'text',
+                                config: {
+                                    label: 'Return policy URL',
+                                },
+                            },
+                        ],
+                        values: {},
+                        isLoading: false,
+                    },
+                ],
+            },
+        });
+
+        expect(wrapper.vm.isAgenticCommerce).toBe(true);
+        expect(wrapper.vm.resolvedAgenticCommerceExportConfig).toHaveLength(1);
+
+        const card = wrapper.get(
+            'div.mt-card[position-identifier="sw-sales-channel-detail-base-agentic-commerce-export-config-provider"]',
+        );
+        expect(card.exists()).toBe(true);
+        expect(wrapper.findAll('sw-form-field-renderer-stub')).toHaveLength(1);
+    });
+
+    it('should not require a theme when activating an agentic commerce sales channel', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                active: true,
+                typeId: Shopwell.Defaults.agenticCommerceTypeId,
+            },
+        });
+
+        wrapper.vm.salesChannelRepository.get = jest.fn();
+        wrapper.vm.createNotificationError = jest.fn();
+
+        wrapper.vm.onToggleActive();
+
+        expect(wrapper.vm.salesChannelRepository.get).not.toHaveBeenCalled();
+        expect(wrapper.vm.createNotificationError).not.toHaveBeenCalled();
+    });
+
+    it('should not report unserved languages for product export channels', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            salesChannel: {
+                typeId: PRODUCT_COMPARISON_TYPE_ID,
+                languageId: 'language-1',
+                languages: [{ id: 'language-1', name: 'English' }],
+                domains: [],
+            },
+        });
+
+        expect(wrapper.vm.unservedLanguages).toEqual([]);
+        expect(wrapper.find('mt-banner-stub').exists()).toBe(false);
+    });
+
+    it('should handle error if sales channel cannot be deleted due to foreign key constraint issues', async () => {
+        const wrapper = await createWrapper();
+
+        const deleteError = {
+            response: {
+                data: {
+                    errors: [
+                        {
+                            code: '1451',
+                            detail: 'Integrity constraint violation: 1451 - Cannot delete or update a parent row: a foreign key constraint fails (`test`.`order`, CONSTRAINT `fk.order.sales_channel_id` FOREIGN KEY (`sales_channel_id`) REFERENCES `sales_channel` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE)',
+                        },
+                    ],
+                },
+            },
+        };
+
+        wrapper.vm.salesChannelRepository.delete = jest.fn().mockRejectedValue(deleteError);
+        wrapper.vm.$t = jest
+            .fn()
+            .mockReturnValueOnce('Orders')
+            .mockReturnValueOnce('sw-sales-channel.detail.foreignKeyDelete');
+
+        wrapper.vm.createNotificationError = jest.fn();
+
+        const result = await wrapper.vm.deleteSalesChannel('test-id');
+
+        expect(wrapper.vm.salesChannelRepository.delete).toHaveBeenCalledWith('test-id', Shopwell.Context.api);
+        expect(wrapper.vm.$t.mock.calls).toEqual([
+            ['global.entities.order', 0],
+            ['sw-sales-channel.detail.foreignKeyDelete', { assignment: 'orders' }],
+        ]);
+        expect(wrapper.vm.createNotificationError).toHaveBeenCalledWith({
+            message: 'sw-sales-channel.detail.foreignKeyDelete',
+        });
+        expect(result).toBe(false);
+    });
+
+    it('should handle delete confirmation and navigate on success', async () => {
+        const wrapper = await createWrapper();
+        const mockPush = jest.fn();
+
+        wrapper.vm.$router = { push: mockPush };
+        wrapper.vm.$nextTick = jest.fn().mockImplementation((callback) => callback());
+        wrapper.vm.deleteSalesChannel = jest.fn().mockResolvedValue(true);
+
+        await wrapper.setProps({
+            salesChannel: { id: 'test-id' },
+        });
+
+        wrapper.vm.onConfirmDelete();
+        await flushPromises();
+
+        expect(wrapper.vm.showDeleteModal).toBe(false);
+        expect(wrapper.vm.deleteSalesChannel).toHaveBeenCalledWith('test-id');
+        expect(mockPush).toHaveBeenCalledWith({ name: 'sw.dashboard.index' });
+    });
+
+    it('should handle delete confirmation without navigation on failure', async () => {
+        const wrapper = await createWrapper();
+        const mockPush = jest.fn();
+
+        wrapper.vm.$router = { push: mockPush };
+        wrapper.vm.$nextTick = jest.fn().mockImplementation((callback) => callback());
+        wrapper.vm.deleteSalesChannel = jest.fn().mockResolvedValue(false);
+
+        await wrapper.setProps({
+            salesChannel: { id: 'test-id' },
+        });
+
+        wrapper.vm.onConfirmDelete();
+        await flushPromises();
+
+        expect(wrapper.vm.showDeleteModal).toBe(false);
+        expect(wrapper.vm.deleteSalesChannel).toHaveBeenCalledWith('test-id');
+        expect(mockPush).not.toHaveBeenCalled();
+    });
+
+    it('should render tracking config component for agentic commerce sales channel', async () => {
+        const wrapper = await createWrapper({
+            props: {
+                salesChannel: {
+                    typeId: Shopwell.Defaults.agenticCommerceTypeId,
+                    configuration: {},
+                },
+            },
+        });
+
+        expect(wrapper.find('sw-agentic-commerce-tracking-config-stub').exists()).toBe(true);
+    });
+
+    it('should not render tracking config component for non-agentic commerce sales channel', async () => {
+        const wrapper = await createWrapper({
+            props: {
+                salesChannel: {
+                    typeId: STOREFRONT_SALES_CHANNEL_TYPE_ID,
+                },
+            },
+        });
+
+        expect(wrapper.find('sw-agentic-commerce-tracking-config-stub').exists()).toBe(false);
+    });
+
+    it('should pass disabled state to tracking config component when user lacks editor permission', async () => {
+        const wrapper = await createWrapper({
+            props: {
+                salesChannel: {
+                    typeId: Shopwell.Defaults.agenticCommerceTypeId,
+                    configuration: {},
+                },
+            },
+            provide: {
+                acl: {
+                    can: (permission) => permission !== 'sales_channel.editor',
+                },
+            },
+        });
+
+        const trackingConfig = wrapper.find('sw-agentic-commerce-tracking-config-stub');
+        expect(trackingConfig.exists()).toBe(true);
+        expect(trackingConfig.attributes('disabled')).toBeDefined();
+    });
+
+    it('should update salesChannel.configuration when onTrackingConfigChange is called', async () => {
+        const salesChannel = {
+            typeId: Shopwell.Defaults.agenticCommerceTypeId,
+            configuration: {},
+        };
+        const wrapper = await createWrapper({ props: { salesChannel } });
+
+        const newConfig = { affiliateCode: 'aff-123', campaignCode: 'camp-456' };
+        wrapper.vm.onTrackingConfigChange(newConfig);
+
+        expect(wrapper.vm.salesChannel.configuration).toEqual(newConfig);
+    });
+
+    it('should reset salesChannelDomainId when storefront sales channel changes', async () => {
+        const wrapper = await createWrapper({
+            props: {
+                salesChannel: {
+                    typeId: PRODUCT_COMPARISON_TYPE_ID,
+                },
+                productExport: {
+                    salesChannelDomainId: 'old-domain-id',
+                    salesChannelDomain: { id: 'old-domain-id' },
+                    storefrontSalesChannelId: 'old-sales-channel-id',
+                },
+            },
+        });
+
+        wrapper.vm.onStorefrontSelectionChange('new-sales-channel-id');
+
+        expect(wrapper.vm.productExport.salesChannelDomainId).toBeNull();
+        expect(wrapper.vm.productExport.salesChannelDomain).toBeNull();
+    });
+});

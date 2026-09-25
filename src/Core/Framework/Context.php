@@ -1,0 +1,344 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework;
+
+use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
+use Shopwell\Core\Framework\Api\Context\ContextSource;
+use Shopwell\Core\Framework\Api\Context\SystemSource;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
+use Shopwell\Core\Framework\Deprecation\BCChange\NewOptionalParameter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\StateAwareTrait;
+use Shopwell\Core\Framework\Struct\Struct;
+use Symfony\Component\Serializer\Attribute\Ignore;
+
+#[Package('framework')]
+class Context extends Struct
+{
+    use StateAwareTrait;
+
+    final public const SYSTEM_SCOPE = 'system';
+    final public const USER_SCOPE = 'user';
+    final public const CRUD_API_SCOPE = 'crud';
+
+    final public const SKIP_TRIGGER_FLOW = 'skipTriggerFlow';
+
+    final public const ELASTICSEARCH_EXPLAIN_MODE = 'explain-mode';
+    final public const SYSTEM_SCOPE_DAL_WRITE_EVENT = 'system-scope-dal-write-event';
+
+    protected string $scope = self::USER_SCOPE;
+
+    protected bool $rulesLocked = false;
+
+    #[Ignore]
+    protected array $extensions = [];
+
+    /**
+     * @var list<list<string>>
+     */
+    private array $scopeStates = [];
+
+    /**
+     * @param array<string> $ruleIds
+     * @param non-empty-list<string> $languageIdChain
+     */
+    public function __construct(
+        protected ContextSource $source,
+        protected array $ruleIds = [],
+        protected string $currencyId = Defaults::CURRENCY,
+        protected array $languageIdChain = [Defaults::LANGUAGE_SYSTEM],
+        protected string $versionId = Defaults::LIVE_VERSION,
+        protected float $currencyFactor = 1.0,
+        protected bool $considerInheritance = false,
+        /**
+         * @see CartPrice::TAX_STATE_GROSS, CartPrice::TAX_STATE_NET, CartPrice::TAX_STATE_FREE
+         */
+        protected string $taxState = CartPrice::TAX_STATE_GROSS,
+        protected CashRoundingConfig $rounding = new CashRoundingConfig(2, 0.01, true)
+    ) {
+        if ($source instanceof SystemSource) {
+            $this->scope = self::SYSTEM_SCOPE;
+        }
+
+        // Should be already a valid language chain, but we will ensure it anyway
+        $languageIdChain = array_values(array_filter($languageIdChain));
+        if ($languageIdChain === []) {
+            throw FrameworkException::invalidArgumentException('Argument "languageIdChain" must not be empty');
+        }
+
+        $this->languageIdChain = $languageIdChain;
+    }
+
+    /**
+     * Extension are not serialized, as they could be anything and make problems during serialization,
+     * for symfony serializer they are exlcuded by the #[Exclude] attribute already
+     *
+     * @return list<mixed>
+     */
+    public function __serialize(): array
+    {
+        return [
+            $this->source,
+            $this->ruleIds,
+            $this->currencyId,
+            $this->languageIdChain,
+            $this->versionId,
+            $this->currencyFactor,
+            $this->considerInheritance,
+            $this->taxState,
+            $this->rounding,
+            $this->scope,
+            $this->states,
+        ];
+    }
+
+    /**
+     * @param list<mixed> $data
+     */
+    public function __unserialize(array $data): void
+    {
+        [
+            $this->source,
+            $this->ruleIds,
+            $this->currencyId,
+            $this->languageIdChain,
+            $this->versionId,
+            $this->currencyFactor,
+            $this->considerInheritance,
+            $this->taxState,
+            $this->rounding,
+            $this->scope,
+            $this->states,
+        ] = $data;
+    }
+
+    /**
+     * @internal
+     */
+    public static function createDefaultContext(?ContextSource $source = null): self
+    {
+        $source ??= new SystemSource();
+
+        return new self($source);
+    }
+
+    public static function createCLIContext(?ContextSource $source = null): self
+    {
+        return self::createDefaultContext($source);
+    }
+
+    public function getSource(): ContextSource
+    {
+        return $this->source;
+    }
+
+    public function getVersionId(): string
+    {
+        return $this->versionId;
+    }
+
+    public function getLanguageId(): string
+    {
+        return $this->languageIdChain[0];
+    }
+
+    public function getCurrencyId(): string
+    {
+        return $this->currencyId;
+    }
+
+    public function getCurrencyFactor(): float
+    {
+        return $this->currencyFactor;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getRuleIds(): array
+    {
+        return $this->ruleIds;
+    }
+
+    /**
+     * @return non-empty-list<string>
+     */
+    public function getLanguageIdChain(): array
+    {
+        return $this->languageIdChain;
+    }
+
+    public function createWithVersionId(string $versionId): self
+    {
+        $context = new self(
+            $this->source,
+            $this->ruleIds,
+            $this->currencyId,
+            $this->languageIdChain,
+            $versionId,
+            $this->currencyFactor,
+            $this->considerInheritance,
+            $this->taxState,
+            $this->rounding
+        );
+        $context->scope = $this->scope;
+
+        foreach ($this->getExtensions() as $key => $extension) {
+            $context->addExtension($key, $extension);
+        }
+
+        return $context;
+    }
+
+    /**
+     * @template TReturn of mixed
+     *
+     * @param \Closure(Context): TReturn $callback
+     *
+     * @return TReturn the return value of the provided callback function
+     */
+    #[NewOptionalParameter(version: 'v6.8.0', parameterName: 'states', parameterType: 'array', defaultValue: [], description: 'Temporary states that should exist only for this scope; nested scopes do not inherit them unless they pass the same states again.')]
+    public function scope(string $scope, \Closure $callback/* , array $states = [] */): mixed
+    {
+        $currentScope = $this->getScope();
+        /** @deprecated tag:v6.8.0 - Remove next line as $states will become a part of method signature */
+        /** @var list<string> $states */
+        $states = \func_get_args()[2] ?? [];
+        $states = array_values(array_unique($states));
+
+        // Merge all surrounding scope states so nested scopes can drop temporary states from every parent scope unless they opt in again.
+        $outerScopeStates = array_values(array_unique(array_merge(...$this->scopeStates)));
+        // States passed to this scope stay active; all other temporary states from parent scopes are hidden for this callback.
+        $removeScopeStates = array_values(array_diff($outerScopeStates, $states));
+        // Only states that were not already present are removed again when this scope exits.
+        $addScopeStates = array_values(array_diff($states, $this->getStates()));
+
+        $this->removeStates(...$removeScopeStates);
+        $this->addState(...$addScopeStates);
+
+        $this->scope = $scope;
+        $this->scopeStates[] = $states;
+
+        try {
+            $result = $callback($this);
+        } finally {
+            array_pop($this->scopeStates);
+
+            $this->removeStates(...$addScopeStates);
+            $this->addState(...$removeScopeStates);
+
+            $this->scope = $currentScope;
+        }
+
+        return $result;
+    }
+
+    public function getScope(): string
+    {
+        return $this->scope;
+    }
+
+    public function considerInheritance(): bool
+    {
+        return $this->considerInheritance;
+    }
+
+    public function setConsiderInheritance(bool $considerInheritance): void
+    {
+        $this->considerInheritance = $considerInheritance;
+    }
+
+    public function getTaxState(): string
+    {
+        return $this->taxState;
+    }
+
+    public function setTaxState(string $taxState): void
+    {
+        $this->taxState = $taxState;
+    }
+
+    public function isAllowed(string $privilege): bool
+    {
+        if ($this->source instanceof AdminApiSource) {
+            return $this->source->isAllowed($privilege);
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array<string> $ruleIds
+     */
+    public function setRuleIds(array $ruleIds): void
+    {
+        if ($this->rulesLocked) {
+            throw FrameworkException::contextRulesLocked();
+        }
+
+        $this->ruleIds = array_filter(array_values($ruleIds));
+    }
+
+    /**
+     * @template TReturn of mixed
+     *
+     * @param \Closure(Context): TReturn $function
+     *
+     * @return TReturn
+     */
+    public function enableInheritance(\Closure $function): mixed
+    {
+        $previous = $this->considerInheritance;
+        $this->considerInheritance = true;
+        $result = $function($this);
+        $this->considerInheritance = $previous;
+
+        return $result;
+    }
+
+    /**
+     * @template TReturn of mixed
+     *
+     * @param \Closure(Context): TReturn $function
+     *
+     * @return TReturn
+     */
+    public function disableInheritance(\Closure $function): mixed
+    {
+        $previous = $this->considerInheritance;
+        $this->considerInheritance = false;
+        $result = $function($this);
+        $this->considerInheritance = $previous;
+
+        return $result;
+    }
+
+    public function getApiAlias(): string
+    {
+        return 'context';
+    }
+
+    public function getRounding(): CashRoundingConfig
+    {
+        return $this->rounding;
+    }
+
+    public function setRounding(CashRoundingConfig $rounding): void
+    {
+        $this->rounding = $rounding;
+    }
+
+    public function lockRules(): void
+    {
+        $this->rulesLocked = true;
+    }
+
+    private function removeStates(string ...$states): void
+    {
+        foreach ($states as $state) {
+            $this->removeState($state);
+        }
+    }
+}

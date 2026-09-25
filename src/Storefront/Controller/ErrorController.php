@@ -1,0 +1,119 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Controller;
+
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Storefront\Framework\Twig\ErrorTemplateResolver;
+use Shopwell\Storefront\Page\Navigation\Error\ErrorPageLoaderInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\Validator\ConstraintViolationList;
+
+/**
+ * @internal
+ * Do not use direct or indirect repository calls in a controller. Always use a store-api route to get or put data
+ */
+#[Package('discovery')]
+class ErrorController extends StorefrontController
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly ErrorTemplateResolver $errorTemplateResolver,
+        private readonly SystemConfigService $systemConfigService,
+        private readonly ErrorPageLoaderInterface $errorPageLoader,
+    ) {
+    }
+
+    public function error(\Throwable $exception, Request $request, SalesChannelContext $context): Response
+    {
+        /** @phpstan-ignore shopware.unsafeRequestHasSession (using $skipIfUninitialized = false as session will be started intentionally later; this can take the PHP session lock and is limited to storefront error rendering reading flash messages.) */
+        $session = $request->hasSession() ? $request->getSession() : null;
+
+        try {
+            $is404StatusCode = $exception instanceof HttpException
+                && $exception->getStatusCode() === Response::HTTP_NOT_FOUND;
+
+            if (!$is404StatusCode && $session !== null && $session instanceof FlashBagAwareSessionInterface && !$session->getFlashBag()->has('danger')) {
+                $session->getFlashBag()->add('danger', $this->trans('error.message-default'));
+            }
+
+            $request->attributes->set('navigationId', $context->getSalesChannel()->getNavigationCategoryId());
+
+            $salesChannelId = $context->getSalesChannelId();
+            $cmsErrorLayoutId = $this->systemConfigService->getString('core.basicInformation.http404Page', $salesChannelId);
+            if ($cmsErrorLayoutId !== '' && $is404StatusCode) {
+                $errorPage = $this->errorPageLoader->load($cmsErrorLayoutId, $request, $context);
+
+                $response = $this->renderStorefront(
+                    '@Storefront/storefront/page/content/index.html.twig',
+                    ['page' => $errorPage]
+                );
+            } else {
+                $errorTemplate = $this->errorTemplateResolver->resolve($exception, $request);
+
+                $response = $this->renderStorefront($errorTemplate->getTemplateName(), ['page' => $errorTemplate]);
+            }
+
+            if ($exception instanceof HttpException) {
+                $response->setStatusCode($exception->getStatusCode());
+            }
+        } catch (\Exception $e) { // final Fallback
+            $response = $this->renderStorefront(
+                '@Storefront/storefront/page/error/index.html.twig',
+                ['exception' => $exception, 'followingException' => $e]
+            );
+
+            $response->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        // After this controllers content is rendered (even if the flashbag was not used e.g. on a 404 page),
+        // clear the existing flashbag messages
+
+        if ($session !== null && $session instanceof FlashBagAwareSessionInterface) {
+            $session->getFlashBag()->clear();
+        }
+
+        return $response;
+    }
+
+    public function onCaptchaFailure(
+        ConstraintViolationList $violations,
+        Request $request
+    ): Response {
+        $formViolations = new ConstraintViolationException($violations, []);
+        if (!$request->isXmlHttpRequest()) {
+            // Violations without a field render as flash messages, so every form shows them.
+            foreach ($violations as $violation) {
+                if ($violation->getPropertyPath() === '') {
+                    $this->addFlash(self::DANGER, $this->trans('error.' . $violation->getCode()));
+                }
+            }
+
+            $errorRoute = (string) $request->request->get('errorRoute');
+            $route = $errorRoute !== '' ? $errorRoute : (($fallback = $request->attributes->getString('_route')) !== '' ? $fallback : 'frontend.home.page');
+
+            // Error routes with required parameters (e.g. {customerGroupId}) need them to be carried over.
+            return $this->forwardToRoute($route, ['formViolations' => $formViolations], $this->decodeParam($request, 'errorParameters'));
+        }
+
+        $response = [];
+        $response[] = [
+            'type' => 'danger',
+            'error' => 'invalid_captcha',
+            'alert' => $this->renderView('@Storefront/storefront/utilities/alert.html.twig', [
+                'type' => 'danger',
+                'list' => [$this->trans('error.' . $formViolations->getViolations()->get(0)->getCode())],
+            ]),
+        ];
+
+        return new JsonResponse($response);
+    }
+}

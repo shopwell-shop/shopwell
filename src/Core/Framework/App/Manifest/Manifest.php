@@ -1,0 +1,397 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\App\Manifest;
+
+use Shopwell\Core\Framework\App\AppDefinition;
+use Shopwell\Core\Framework\App\AppException;
+use Shopwell\Core\Framework\App\Exception\AppXmlParsingException;
+use Shopwell\Core\Framework\App\Manifest\Xml\Administration\Admin;
+use Shopwell\Core\Framework\App\Manifest\Xml\AllowedHost\AllowedHosts;
+use Shopwell\Core\Framework\App\Manifest\Xml\Cookie\Cookies;
+use Shopwell\Core\Framework\App\Manifest\Xml\Document\Documents;
+use Shopwell\Core\Framework\App\Manifest\Xml\Gateway\CheckoutGateway;
+use Shopwell\Core\Framework\App\Manifest\Xml\Gateway\ContextGateway;
+use Shopwell\Core\Framework\App\Manifest\Xml\Gateway\Gateways;
+use Shopwell\Core\Framework\App\Manifest\Xml\Meta\Metadata;
+use Shopwell\Core\Framework\App\Manifest\Xml\PaymentMethod\Payments;
+use Shopwell\Core\Framework\App\Manifest\Xml\Permission\Permissions;
+use Shopwell\Core\Framework\App\Manifest\Xml\RuleCondition\RuleConditions;
+use Shopwell\Core\Framework\App\Manifest\Xml\Setup\Setup;
+use Shopwell\Core\Framework\App\Manifest\Xml\ShippingMethod\ShippingMethods;
+use Shopwell\Core\Framework\App\Manifest\Xml\Storefront\Storefront;
+use Shopwell\Core\Framework\App\Manifest\Xml\Tax\Tax;
+use Shopwell\Core\Framework\App\Manifest\Xml\Webhook\Webhooks;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\CustomField\Xml\CustomFields;
+use Symfony\Component\Config\Util\XmlUtils;
+
+/**
+ * @internal only for use by the app-system
+ *
+ * @phpstan-import-type SourceConfig from AppDefinition
+ */
+#[Package('framework')]
+class Manifest
+{
+    private const XSD_FILE = __DIR__ . '/Schema/manifest-3.0.xsd';
+
+    private bool $managedByComposer = false;
+
+    private ?string $sourceType = null;
+
+    /**
+     * @var SourceConfig
+     */
+    private array $sourceConfig = [];
+
+    private function __construct(
+        private string $path,
+        private readonly bool $validatesPermissions,
+        /**
+         * @var list<string> list of requirements
+         */
+        private readonly array $requirements,
+        private readonly Metadata $metadata,
+        private readonly ?Setup $setup,
+        private readonly ?Admin $admin,
+        private ?Permissions $permissions,
+        private readonly ?AllowedHosts $allowedHosts,
+        private readonly ?CustomFields $customFields,
+        private readonly ?Webhooks $webhooks,
+        private readonly ?Cookies $cookies,
+        private readonly ?Documents $documents,
+        private readonly ?Payments $payments,
+        private readonly ?RuleConditions $ruleConditions,
+        private readonly ?Storefront $storefront,
+        private readonly ?Tax $tax,
+        private readonly ?ShippingMethods $shippingMethods,
+        private readonly ?Gateways $gateways,
+    ) {
+    }
+
+    public static function validate(string $fileContent, string $file): void
+    {
+        try {
+            $doc = XmlUtils::parse($fileContent, self::XSD_FILE);
+        } catch (\Exception $e) {
+            throw AppException::xmlParsingException($file, $e->getMessage());
+        }
+
+        self::create($doc, $file);
+    }
+
+    public static function createFromXml(string $xml): self
+    {
+        try {
+            $doc = XmlUtils::parse($xml, self::XSD_FILE);
+        } catch (\Exception $e) {
+            throw AppXmlParsingException::cannotParseContent($e->getMessage());
+        }
+
+        return self::create($doc, '');
+    }
+
+    public static function createFromXmlFile(string $xmlFile): self
+    {
+        try {
+            $doc = XmlUtils::loadFile($xmlFile, self::XSD_FILE);
+        } catch (\Exception $e) {
+            throw AppException::xmlParsingException($xmlFile, $e->getMessage());
+        }
+
+        return self::create($doc, $xmlFile);
+    }
+
+    public function getPath(): string
+    {
+        return $this->path;
+    }
+
+    public function setPath(string $path): void
+    {
+        $this->path = $path;
+    }
+
+    /**
+     * This app has indicated that it validates it has permissions before using particular features. Because it has, we can request permission review separately from the app install/update process.
+     */
+    public function validatesPermissions(): bool
+    {
+        return $this->validatesPermissions;
+    }
+
+    /**
+     * @return list<string> list of requirements.
+     */
+    public function getRequirements(): array
+    {
+        return $this->requirements;
+    }
+
+    public function getMetadata(): Metadata
+    {
+        return $this->metadata;
+    }
+
+    public function getSetup(): ?Setup
+    {
+        return $this->setup;
+    }
+
+    public function getAdmin(): ?Admin
+    {
+        return $this->admin;
+    }
+
+    public function getPermissions(): ?Permissions
+    {
+        return $this->permissions;
+    }
+
+    public function getAllowedHosts(): ?AllowedHosts
+    {
+        return $this->allowedHosts;
+    }
+
+    /**
+     * @param array<string, list<string>> $permission
+     */
+    public function addPermissions(array $permission): void
+    {
+        if ($this->permissions === null) {
+            $this->permissions = Permissions::fromArray([
+                'permissions' => [],
+            ]);
+        }
+
+        $this->permissions->add($permission);
+    }
+
+    public function getCustomFields(): ?CustomFields
+    {
+        return $this->customFields;
+    }
+
+    public function getWebhooks(): ?Webhooks
+    {
+        return $this->webhooks;
+    }
+
+    public function getCookies(): ?Cookies
+    {
+        return $this->cookies;
+    }
+
+    public function getDocuments(): ?Documents
+    {
+        return $this->documents;
+    }
+
+    public function getPayments(): ?Payments
+    {
+        return $this->payments;
+    }
+
+    public function getRuleConditions(): ?RuleConditions
+    {
+        return $this->ruleConditions;
+    }
+
+    public function getStorefront(): ?Storefront
+    {
+        return $this->storefront;
+    }
+
+    public function getTax(): ?Tax
+    {
+        return $this->tax;
+    }
+
+    public function getGateways(): ?Gateways
+    {
+        return $this->gateways;
+    }
+
+    /**
+     * @return array<string> all hosts referenced in the manifest file
+     */
+    public function getAllHosts(): array
+    {
+        $hosts = $this->allowedHosts ? $this->allowedHosts->getHosts() : [];
+
+        $urls = [];
+        if ($this->setup) {
+            $urls[] = $this->setup->getRegistrationUrl();
+        }
+
+        if ($this->webhooks) {
+            $urls = \array_merge($urls, $this->webhooks->getUrls());
+        }
+
+        if ($this->admin) {
+            $urls = \array_merge($urls, $this->admin->getUrls());
+        }
+
+        if ($this->payments) {
+            $urls = \array_merge($urls, $this->payments->getUrls());
+        }
+
+        if ($this->tax) {
+            $urls = \array_merge($urls, $this->tax->getUrls());
+        }
+
+        $urls = \array_map(static fn (string $url) => (string) \parse_url($url, \PHP_URL_HOST), $urls);
+
+        return \array_values(\array_unique(\array_merge($hosts, $urls)));
+    }
+
+    public function getShippingMethods(): ?ShippingMethods
+    {
+        return $this->shippingMethods;
+    }
+
+    public function isManagedByComposer(): bool
+    {
+        return $this->managedByComposer;
+    }
+
+    public function setManagedByComposer(bool $managedByComposer): void
+    {
+        $this->managedByComposer = $managedByComposer;
+    }
+
+    public function getSourceType(): ?string
+    {
+        return $this->sourceType;
+    }
+
+    public function setSourceType(string $sourceType): void
+    {
+        $this->sourceType = $sourceType;
+    }
+
+    /**
+     * @return SourceConfig
+     */
+    public function getSourceConfig(): array
+    {
+        return $this->sourceConfig;
+    }
+
+    /**
+     * @param SourceConfig $sourceConfig
+     */
+    public function setSourceConfig(array $sourceConfig): void
+    {
+        $this->sourceConfig = $sourceConfig;
+    }
+
+    private static function create(\DOMDocument $doc, string $xmlFile): self
+    {
+        try {
+            $manifest = $doc->getElementsByTagName('manifest')->item(0);
+            \assert($manifest !== null);
+
+            $validatesPermissions = $manifest->hasAttribute('validates-permissions')
+                && XmlUtils::phpize($manifest->getAttribute('validates-permissions')) === true;
+
+            $requirements = self::buildRequirements($doc);
+
+            $meta = $doc->getElementsByTagName('meta')->item(0);
+            \assert($meta !== null);
+            $metadata = Metadata::fromXml($meta);
+            $setup = $doc->getElementsByTagName('setup')->item(0);
+            $setup = $setup === null ? null : Setup::fromXml($setup);
+            $admin = $doc->getElementsByTagName('admin')->item(0);
+            $admin = $admin === null ? null : Admin::fromXml($admin);
+            $permissions = $doc->getElementsByTagName('permissions')->item(0);
+            $permissions = $permissions === null ? null : Permissions::fromXml($permissions);
+            $allowedHosts = $doc->getElementsByTagName('allowed-hosts')->item(0);
+            $allowedHosts = $allowedHosts === null ? null : AllowedHosts::fromXml($allowedHosts);
+            $customFields = $doc->getElementsByTagName('custom-fields')->item(0);
+            $customFields = $customFields === null ? null : CustomFields::fromXml($customFields);
+            $webhooks = $doc->getElementsByTagName('webhooks')->item(0);
+            $webhooks = $webhooks === null ? null : Webhooks::fromXml($webhooks);
+            $cookies = $doc->getElementsByTagName('cookies')->item(0);
+            $cookies = $cookies === null ? null : Cookies::fromXml($cookies);
+            $documents = $doc->getElementsByTagName('documents')->item(0);
+            $documents = $documents === null ? null : Documents::fromXml($documents);
+            $payments = $doc->getElementsByTagName('payments')->item(0);
+            $payments = $payments === null ? null : Payments::fromXml($payments);
+            $ruleConditions = $doc->getElementsByTagName('rule-conditions')->item(0);
+            $ruleConditions = $ruleConditions === null ? null : RuleConditions::fromXml($ruleConditions);
+            $storefront = $doc->getElementsByTagName('storefront')->item(0);
+            $storefront = $storefront === null ? null : Storefront::fromXml($storefront);
+            $tax = $doc->getElementsByTagName('tax')->item(0);
+            $tax = $tax === null ? null : Tax::fromXml($tax);
+            $shippingMethods = $doc->getElementsByTagName('shipping-methods')->item(0);
+            $shippingMethods = $shippingMethods === null ? null : ShippingMethods::fromXml($shippingMethods);
+            $gateways = $doc->getElementsByTagName('gateways')->item(0);
+            $gateways = $gateways === null ? null : Gateways::fromXml($gateways);
+        } catch (\Exception $e) {
+            throw AppException::xmlParsingException($xmlFile, $e->getMessage());
+        }
+
+        // A declared tax provider, checkout gateway or context gateway implicitly requires the matching
+        // permission, so Shopwell only pushes cart/customer data to the handler once it is granted.
+        // Adding it to the permissions here means it flows through the normal request/consent path.
+        $capabilityPrivileges = [];
+        if ($tax?->getTaxProviders()) {
+            $capabilityPrivileges[] = Tax::PERMISSION;
+        }
+        if ($gateways?->getCheckout()) {
+            $capabilityPrivileges[] = CheckoutGateway::PERMISSION;
+        }
+        if ($gateways?->getContext()) {
+            $capabilityPrivileges[] = ContextGateway::PERMISSION;
+        }
+
+        if ($capabilityPrivileges !== []) {
+            $permissions ??= Permissions::fromArray(['permissions' => []]);
+            $permissions->addPrivileges($capabilityPrivileges);
+        }
+
+        return new self(
+            \dirname($xmlFile),
+            $validatesPermissions,
+            $requirements,
+            $metadata,
+            $setup,
+            $admin,
+            $permissions,
+            $allowedHosts,
+            $customFields,
+            $webhooks,
+            $cookies,
+            $documents,
+            $payments,
+            $ruleConditions,
+            $storefront,
+            $tax,
+            $shippingMethods,
+            $gateways
+        );
+    }
+
+    /**
+     * @return list<string> list of requirements
+     */
+    private static function buildRequirements(\DOMDocument $doc): array
+    {
+        $requirementsElement = $doc->getElementsByTagName('requirements')->item(0);
+        if ($requirementsElement === null) {
+            return [];
+        }
+
+        $requirements = [];
+
+        // Presence of child elements indicates the requirement is enabled
+        foreach ($requirementsElement->childNodes as $node) {
+            if ($node instanceof \DOMElement) {
+                $requirements[] = $node->tagName;
+            }
+        }
+
+        return $requirements;
+    }
+}

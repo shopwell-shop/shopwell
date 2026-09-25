@@ -1,0 +1,62 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\System\SystemConfig\Service;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\AppEntity;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SystemConfig\Service\AppConfigReader;
+use Shopwell\Core\System\SystemConfig\Util\ConfigReader;
+use Shopwell\Core\Test\Stub\App\StaticSourceResolver;
+use Shopwell\Core\Test\Stub\Framework\Util\StaticFilesystem;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(AppConfigReader::class)]
+class AppConfigReaderTest extends TestCase
+{
+    public function testReadConfigFromApp(): void
+    {
+        $app = (new AppEntity())->assign(['id' => Uuid::randomHex(), 'name' => 'TestApp']);
+
+        $fs = new StaticFilesystem([
+            'Resources/config/config.xml' => 'config',
+        ]);
+        $sourceResolver = new StaticSourceResolver(['TestApp' => $fs]);
+
+        $configReader = $this->createMock(ConfigReader::class);
+        $configReader->expects($this->once())
+            ->method('read')
+            ->with('/app-root/Resources/config/config.xml')
+            ->willReturn([
+                'config1' => 'value',
+            ]);
+
+        $appConfigReader = new AppConfigReader($sourceResolver, $configReader);
+        static::assertSame(
+            [
+                'config1' => 'value',
+            ],
+            $appConfigReader->read($app)
+        );
+    }
+
+    public function testReadConfigFromAppWhenItHasNone(): void
+    {
+        $app = (new AppEntity())->assign(['id' => Uuid::randomHex(), 'name' => 'TestApp']);
+
+        $fs = new StaticFilesystem();
+
+        $sourceResolver = new StaticSourceResolver(['TestApp' => $fs]);
+
+        $configReader = $this->createMock(ConfigReader::class);
+        $configReader->expects($this->never())->method('read');
+
+        $appConfigReader = new AppConfigReader($sourceResolver, $configReader);
+        static::assertNull($appConfigReader->read($app));
+    }
+}

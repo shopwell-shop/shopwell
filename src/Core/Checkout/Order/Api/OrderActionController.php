@@ -1,0 +1,240 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Order\Api;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Driver\Exception;
+use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
+use Shopwell\Core\Checkout\Payment\Cart\PaymentRefundProcessor;
+use Shopwell\Core\Checkout\Payment\PaymentException;
+use Shopwell\Core\Content\Flow\Dispatching\Action\SendMailAction;
+use Shopwell\Core\Content\MailTemplate\Subscriber\MailSendSubscriberConfig;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\FetchModeHelper;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\PlatformRequest;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Package('checkout')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [ApiRouteScope::ID]])]
+class OrderActionController extends AbstractController
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly OrderService $orderService,
+        private readonly Connection $connection,
+        private readonly PaymentRefundProcessor $paymentRefundProcessor
+    ) {
+    }
+
+    #[Route(
+        path: '/api/_action/order/{orderId}/state/{transition}',
+        name: 'api.action.order.state_machine.order.transition_state',
+        defaults: [PlatformRequest::ATTRIBUTE_ACL => ['order:update']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function orderStateTransition(
+        string $orderId,
+        string $transition,
+        Request $request,
+        Context $context
+    ): JsonResponse {
+        $documentTypes = $request->request->all('documentTypes');
+        if ($documentTypes !== []) {
+            $skipSentDocuments = (bool) $request->request->get('skipSentDocuments', false);
+            $documentIds = $this->getDocumentIds('order', $orderId, $documentTypes, $skipSentDocuments);
+        } else {
+            $documentIds = $request->request->all('documentIds');
+        }
+
+        $mediaIds = $request->request->all('mediaIds');
+
+        $context->addExtension(
+            SendMailAction::MAIL_CONFIG_EXTENSION,
+            new MailSendSubscriberConfig(
+                $request->request->get('sendMail', true) === false,
+                $documentIds,
+                $mediaIds
+            )
+        );
+
+        $toPlace = $this->orderService->orderStateTransition(
+            $orderId,
+            $transition,
+            $request->request,
+            $context
+        );
+
+        return new JsonResponse($toPlace->jsonSerialize());
+    }
+
+    #[Route(
+        path: '/api/_action/order_transaction/{orderTransactionId}/state/{transition}',
+        name: 'api.action.order.state_machine.order_transaction.transition_state',
+        defaults: [PlatformRequest::ATTRIBUTE_ACL => ['order_transaction:update']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function orderTransactionStateTransition(
+        string $orderTransactionId,
+        string $transition,
+        Request $request,
+        Context $context
+    ): JsonResponse {
+        $documentTypes = $request->request->all('documentTypes');
+        if ($documentTypes !== []) {
+            $skipSentDocuments = (bool) $request->request->get('skipSentDocuments', false);
+            $documentIds = $this->getDocumentIds('order_transaction', $orderTransactionId, $documentTypes, $skipSentDocuments);
+        } else {
+            $documentIds = $request->request->all('documentIds');
+        }
+
+        $mediaIds = $request->request->all('mediaIds');
+
+        $context->addExtension(
+            SendMailAction::MAIL_CONFIG_EXTENSION,
+            new MailSendSubscriberConfig(
+                $request->request->get('sendMail', true) === false,
+                $documentIds,
+                $mediaIds
+            )
+        );
+
+        $toPlace = $this->orderService->orderTransactionStateTransition(
+            $orderTransactionId,
+            $transition,
+            $request->request,
+            $context
+        );
+
+        return new JsonResponse($toPlace->jsonSerialize());
+    }
+
+    #[Route(
+        path: '/api/_action/order_delivery/{orderDeliveryId}/state/{transition}',
+        name: 'api.action.order.state_machine.order_delivery.transition_state',
+        defaults: [PlatformRequest::ATTRIBUTE_ACL => ['order_delivery:update']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function orderDeliveryStateTransition(
+        string $orderDeliveryId,
+        string $transition,
+        Request $request,
+        Context $context
+    ): JsonResponse {
+        $documentTypes = $request->request->all('documentTypes');
+        if ($documentTypes !== []) {
+            $skipSentDocuments = (bool) $request->request->get('skipSentDocuments', false);
+            $documentIds = $this->getDocumentIds('order_delivery', $orderDeliveryId, $documentTypes, $skipSentDocuments);
+        } else {
+            $documentIds = $request->request->all('documentIds');
+        }
+
+        $mediaIds = $request->request->all('mediaIds');
+
+        $context->addExtension(
+            SendMailAction::MAIL_CONFIG_EXTENSION,
+            new MailSendSubscriberConfig(
+                $request->request->get('sendMail', true) === false,
+                $documentIds,
+                $mediaIds
+            )
+        );
+
+        $toPlace = $this->orderService->orderDeliveryStateTransition(
+            $orderDeliveryId,
+            $transition,
+            $request->request,
+            $context
+        );
+
+        return new JsonResponse($toPlace->jsonSerialize());
+    }
+
+    /**
+     * @throws PaymentException
+     */
+    #[Route(
+        path: '/api/_action/order_transaction_capture_refund/{refundId}',
+        name: 'api.action.order.order_transaction_capture_refund',
+        defaults: [PlatformRequest::ATTRIBUTE_ACL => ['order_refund.editor']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function refundOrderTransactionCapture(string $refundId, Context $context): JsonResponse
+    {
+        $this->paymentRefundProcessor->processRefund($refundId, $context);
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @param array<string> $documentTypes
+     *
+     * @throws Exception
+     * @throws \Doctrine\DBAL\Exception
+     *
+     * @return array<string>
+     */
+    private function getDocumentIds(string $entity, string $referencedId, array $documentTypes, bool $skipSentDocuments): array
+    {
+        if (!\in_array($entity, ['order', 'order_transaction', 'order_delivery'], true)) {
+            throw new NotFoundHttpException();
+        }
+
+        $query = $this->connection->createQueryBuilder();
+        $query->select(
+            'LOWER(hex(document.document_type_id)) as doc_type',
+            'LOWER(hex(document.id)) as doc_id',
+            'document.created_at as newest_date',
+            'document.sent as sent',
+        );
+        $query->from('document', 'document');
+        $query->innerJoin('document', 'document_type', 'document_type', 'document.document_type_id = document_type.id');
+        $query->where('document.order_id = :orderId');
+
+        if ($entity === 'order') {
+            $query->setParameter('orderId', Uuid::fromHexToBytes($referencedId));
+        } else {
+            $fetchOrder = $this->connection->createQueryBuilder();
+            $fetchOrder->select('order_id')->from($entity)->where('id = :id');
+
+            $fetchOrder->setParameter('id', Uuid::fromHexToBytes($referencedId));
+
+            $orderId = $fetchOrder->executeQuery()->fetchOne();
+
+            $query->setParameter('orderId', $orderId);
+        }
+
+        $query->andWhere('document_type.technical_name IN (:documentTypes)');
+        $query->orderBy('document.created_at', 'DESC');
+
+        $query->setParameter('documentTypes', $documentTypes, ArrayParameterType::STRING);
+
+        $documents = $query->executeQuery()->fetchAllAssociative();
+
+        $documentsGroupByType = FetchModeHelper::group($documents);
+        /** @var array<string, list<array{sent: string, doc_id: string}>> $documentsGroupByType */
+        $documentIds = [];
+        foreach ($documentsGroupByType as $groupedDocuments) {
+            // Latest document of type
+            $document = $groupedDocuments[0];
+
+            if ($skipSentDocuments && $document['sent']) {
+                continue;
+            }
+
+            $documentIds[] = $document['doc_id'];
+        }
+
+        return $documentIds;
+    }
+}

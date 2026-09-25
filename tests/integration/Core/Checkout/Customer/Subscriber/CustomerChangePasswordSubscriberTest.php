@@ -1,0 +1,169 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Checkout\Customer\Subscriber;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Customer\CustomerCollection;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
+use Shopwell\Core\Framework\Util\Hasher;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Shopwell\Core\Test\TestDefaults;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+class CustomerChangePasswordSubscriberTest extends TestCase
+{
+    use AdminFunctionalTestBehaviour;
+    use SalesChannelApiTestBehaviour;
+
+    private KernelBrowser $browser;
+
+    private IdsCollection $ids;
+
+    /**
+     * @var EntityRepository<CustomerCollection>
+     */
+    private EntityRepository $customerRepository;
+
+    protected function setUp(): void
+    {
+        $this->ids = new IdsCollection();
+        $this->browser = $this->createCustomSalesChannelBrowser([
+            'id' => $this->ids->create('sales-channel'),
+        ]);
+        $this->browser->setServerParameter('HTTP_SW_CONTEXT_TOKEN', $this->ids->create('token'));
+
+        $this->customerRepository = static::getContainer()->get('customer.repository');
+    }
+
+    public function testClearLegacyWhenUserChangePassword(): void
+    {
+        $email = Uuid::randomHex() . '@shopwell.cn';
+        $password = 'ThisIsNewPassword';
+
+        $newPassword = Uuid::randomHex();
+        $customerId = $this->createCustomerWithLegacyPassword($email, $password);
+
+        $context = Context::createDefaultContext();
+
+        $this->getBrowser()->jsonRequest(
+            'PATCH',
+            '/api/customer/' . $customerId,
+            ['password' => $newPassword]
+        );
+
+        $response = $this->getBrowser()->getResponse();
+
+        static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode(), (string) $response->getContent());
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('id', $customerId));
+
+        /** @var CustomerEntity $customer */
+        $customer = $this->customerRepository->search($criteria, $context)->getEntities()->first();
+
+        static::assertNotNull($customer->getPassword());
+        static::assertNull($customer->getLegacyPassword());
+        static::assertNull($customer->getLegacyEncoder());
+
+        $this->loginUser($email, $newPassword);
+    }
+
+    public function testNotClearLegacyDataWhenUserNotChangedPassword(): void
+    {
+        $email = Uuid::randomHex() . '@shopwell.cn';
+        $password = 'ThisIsNewPassword';
+
+        $customerId = $this->createCustomerWithLegacyPassword($email, $password);
+        $context = Context::createDefaultContext();
+
+        $this->getBrowser()->jsonRequest(
+            'PATCH',
+            '/api/customer/' . $customerId,
+            ['firstName' => 'Test']
+        );
+
+        $response = $this->getBrowser()->getResponse();
+
+        static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode(), (string) $response->getContent());
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('id', $customerId));
+
+        /** @var CustomerEntity $customer */
+        $customer = $this->customerRepository->search($criteria, $context)->getEntities()->first();
+
+        static::assertNull($customer->getPassword());
+        static::assertNotNull($customer->getLegacyPassword());
+        static::assertNotNull($customer->getLegacyEncoder());
+
+        $this->loginUser($email, $password);
+    }
+
+    private function loginUser(string $email, string $password): void
+    {
+        $this->browser
+            ->jsonRequest(
+                'POST',
+                '/store-api/account/login',
+                [
+                    'email' => $email,
+                    'password' => $password,
+                ]
+            );
+
+        $response = $this->browser->getResponse();
+
+        // After login successfully, the context token will be set in the header
+        $contextToken = $response->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN) ?? '';
+        static::assertNotEmpty($contextToken);
+    }
+
+    private function createCustomerWithLegacyPassword(string $email, string $password): string
+    {
+        $customerId = Uuid::randomHex();
+        $addressId = Uuid::randomHex();
+
+        $customer = [
+            'id' => $customerId,
+            'salesChannelId' => TestDefaults::SALES_CHANNEL,
+            'defaultShippingAddress' => [
+                'id' => $addressId,
+                'firstName' => 'Max',
+                'lastName' => 'Mustermann',
+                'street' => 'Musterstraße 1',
+                'city' => 'Schoöppingen',
+                'zipcode' => '12345',
+                'salutationId' => $this->getValidSalutationId(),
+                'countryId' => $this->getValidCountryId(),
+            ],
+            'defaultBillingAddressId' => $addressId,
+            'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
+            'email' => $email,
+            'password' => null,
+            'legacyPassword' => Hasher::hash($password, 'md5'),
+            'legacyEncoder' => 'Md5',
+            'firstName' => 'encryption',
+            'lastName' => 'Mustermann',
+            'salutationId' => $this->getValidSalutationId(),
+            'customerNumber' => '12345',
+        ];
+
+        static::getContainer()->get('customer.repository')->create([$customer], Context::createDefaultContext());
+
+        return $customerId;
+    }
+}

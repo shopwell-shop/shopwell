@@ -1,0 +1,135 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Gateway\Command\Handler;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Error\ErrorCollection;
+use Shopwell\Core\Checkout\Gateway\CheckoutGatewayException;
+use Shopwell\Core\Checkout\Gateway\CheckoutGatewayResponse;
+use Shopwell\Core\Checkout\Gateway\Command\AddShippingMethodCommand;
+use Shopwell\Core\Checkout\Gateway\Command\Handler\AddShippingMethodCommandHandler;
+use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodCollection;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodDefinition;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Log\ExceptionLogger;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Generator;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(AddShippingMethodCommandHandler::class)]
+class AddShippingMethodCommandHandlerTest extends TestCase
+{
+    public function testSupportsCommands(): void
+    {
+        static::assertSame(
+            [AddShippingMethodCommand::class],
+            AddShippingMethodCommandHandler::supportedCommands()
+        );
+    }
+
+    public function testHandler(): void
+    {
+        $shippingMethod = new ShippingMethodEntity();
+        $shippingMethod->setUniqueIdentifier(Uuid::randomHex());
+        $shippingMethod->setTechnicalName('test');
+
+        $result = new EntitySearchResult(
+            ShippingMethodDefinition::ENTITY_NAME,
+            1,
+            new ShippingMethodCollection([$shippingMethod]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $repo = $this->createMock(EntityRepository::class);
+        $repo
+            ->expects($this->once())
+            ->method('search')
+            ->with(
+                static::callback(
+                    static function (Criteria $criteria): bool {
+                        static::assertCount(1, $criteria->getFilters());
+
+                        /** @var EqualsFilter $filter */
+                        $filter = $criteria->getFilters()[0];
+
+                        static::assertInstanceOf(EqualsFilter::class, $filter);
+                        static::assertSame('technicalName', $filter->getField());
+                        static::assertSame('test', $filter->getValue());
+
+                        static::assertTrue($criteria->hasAssociation('appShippingMethod'));
+                        $assoc = $criteria->getAssociation('appShippingMethod');
+                        static::assertTrue($assoc->hasAssociation('app'));
+
+                        return true;
+                    }
+                ),
+                static::isInstanceOf(Context::class)
+            )
+            ->willReturn($result);
+
+        $command = new AddShippingMethodCommand('test');
+
+        $response = new CheckoutGatewayResponse(
+            new PaymentMethodCollection(),
+            new ShippingMethodCollection(),
+            new ErrorCollection()
+        );
+
+        $context = Generator::generateSalesChannelContext();
+
+        $handler = new AddShippingMethodCommandHandler($repo, static::createStub(ExceptionLogger::class));
+        $handler->handle($command, $response, $context);
+
+        static::assertSame($shippingMethod, $response->getAvailableShippingMethods()->first());
+    }
+
+    public function testShippingMethodNotFoundThrows(): void
+    {
+        $result = new EntitySearchResult(
+            ShippingMethodDefinition::ENTITY_NAME,
+            0,
+            new ShippingMethodCollection(),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $repo = $this->createMock(EntityRepository::class);
+        $repo
+            ->expects($this->once())
+            ->method('search')
+            ->willReturn($result);
+
+        $command = new AddShippingMethodCommand('test');
+
+        $response = new CheckoutGatewayResponse(
+            new PaymentMethodCollection(),
+            new ShippingMethodCollection(),
+            new ErrorCollection()
+        );
+
+        $context = Generator::generateSalesChannelContext();
+
+        $logger = $this->createMock(ExceptionLogger::class);
+        $logger
+            ->expects($this->once())
+            ->method('logOrThrowException')
+            ->with(static::equalTo(CheckoutGatewayException::handlerException('Shipping method "{{ technicalName }}" not found', ['technicalName' => 'test'])));
+
+        $handler = new AddShippingMethodCommandHandler($repo, $logger);
+        $handler->handle($command, $response, $context);
+    }
+}

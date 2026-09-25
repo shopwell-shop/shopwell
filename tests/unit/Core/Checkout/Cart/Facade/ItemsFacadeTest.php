@@ -1,0 +1,122 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Facade;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversTrait;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Facade\CartFacadeHelper;
+use Shopwell\Core\Checkout\Cart\Facade\ContainerFacade;
+use Shopwell\Core\Checkout\Cart\Facade\ItemFacade;
+use Shopwell\Core\Checkout\Cart\Facade\ItemsFacade;
+use Shopwell\Core\Checkout\Cart\Facade\ScriptPriceStubs;
+use Shopwell\Core\Checkout\Cart\Facade\Traits\ItemsAddTrait;
+use Shopwell\Core\Checkout\Cart\Facade\Traits\ItemsCountTrait;
+use Shopwell\Core\Checkout\Cart\Facade\Traits\ItemsGetTrait;
+use Shopwell\Core\Checkout\Cart\Facade\Traits\ItemsHasTrait;
+use Shopwell\Core\Checkout\Cart\Facade\Traits\ItemsIteratorTrait;
+use Shopwell\Core\Checkout\Cart\Facade\Traits\ItemsRemoveTrait;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(ItemsFacade::class)]
+#[CoversTrait(ItemsAddTrait::class)]
+#[CoversTrait(ItemsHasTrait::class)]
+#[CoversTrait(ItemsRemoveTrait::class)]
+#[CoversTrait(ItemsCountTrait::class)]
+#[CoversTrait(ItemsGetTrait::class)]
+#[CoversTrait(ItemsIteratorTrait::class)]
+class ItemsFacadeTest extends TestCase
+{
+    public function testPublicApiAvailable(): void
+    {
+        $items = new LineItemCollection();
+
+        $stubs = static::createStub(ScriptPriceStubs::class);
+        $helper = static::createStub(CartFacadeHelper::class);
+        $context = static::createStub(SalesChannelContext::class);
+
+        $facade = new ItemsFacade($items, $stubs, $helper, $context);
+
+        $facade->add(
+            $this->item(new LineItem('item-1', 'item', 'reference'))
+        );
+
+        static::assertCount(1, $facade);
+        static::assertTrue($facade->has('item-1'));
+        static::assertInstanceOf(ItemFacade::class, $facade->get('item-1'));
+
+        $facade->remove('item-1');
+
+        static::assertCount(0, $facade);
+        static::assertFalse($facade->has('item-1'));
+        static::assertNull($facade->get('item-1'));
+
+        $facade->add(
+            $this->item((new LineItem('duplicate', 'item', 'reference'))->setStackable(true))
+        );
+        $facade->add(
+            $this->item((new LineItem('duplicate', 'item', 'reference'))->setStackable(true))
+        );
+
+        static::assertCount(1, $facade);
+        static::assertTrue($facade->has('duplicate'));
+        static::assertInstanceOf(ItemFacade::class, $facade->get('duplicate'));
+        static::assertSame(2, $facade->get('duplicate')->getQuantity());
+
+        static::assertTrue(
+            $facade->has($this->item(new LineItem('duplicate', 'item', 'reference'))),
+            'The item id should be considered when checking for an item'
+        );
+        static::assertTrue(
+            $facade->has($this->item(new LineItem('other-id', 'item', 'reference'))),
+            'The item id should be considered when checking for an item'
+        );
+        static::assertFalse(
+            $facade->has($this->item(new LineItem('other-id', 'other-item', 'reference'))),
+            'The item type should be considered when checking for an item'
+        );
+
+        $facade->remove(
+            $this->item(new LineItem('duplicate', 'item', 'reference'))
+        );
+        static::assertCount(0, $facade, 'Removing an item by its facade should remove all items with the same id');
+
+        $facade->add(
+            $this->item(new LineItem('item-1', LineItem::CONTAINER_LINE_ITEM, 'reference'))
+        );
+
+        static::assertCount(1, $facade);
+        static::assertTrue($facade->has('item-1'));
+        static::assertInstanceOf(ContainerFacade::class, $facade->get('item-1'), 'Container types should be wrapped in a ContainerFacade');
+
+        $facade->add(
+            $this->item(new LineItem('item-2', 'item', 'reference'))
+        );
+
+        $asserted = 0;
+        foreach ($facade as $item) {
+            ++$asserted;
+
+            if ($item->getId() === 'item-1') {
+                static::assertInstanceOf(ContainerFacade::class, $item);
+            }
+        }
+        static::assertSame(2, $asserted);
+    }
+
+    private function item(LineItem $item): ItemFacade
+    {
+        $stubs = static::createStub(ScriptPriceStubs::class);
+        $helper = static::createStub(CartFacadeHelper::class);
+        $context = static::createStub(SalesChannelContext::class);
+
+        return new ItemFacade($item, $stubs, $helper, $context);
+    }
+}

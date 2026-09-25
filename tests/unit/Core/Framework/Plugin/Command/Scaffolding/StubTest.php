@@ -1,0 +1,88 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Plugin\Command\Scaffolding;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Command\Scaffolding\Stub;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(Stub::class)]
+class StubTest extends TestCase
+{
+    public function testTemplateConstructor(): void
+    {
+        $destinationPath = '/path/to/destination';
+        $sourcePath = __DIR__ . '/test-with-params.stub';
+
+        $stub = Stub::template($destinationPath, $sourcePath);
+
+        static::assertSame($destinationPath, $stub->getPath());
+        static::assertSame(file_get_contents(__DIR__ . '/test-with-params.stub'), $stub->getContent());
+    }
+
+    public function testRawConstructor(): void
+    {
+        $destinationPath = '/path/to/destination';
+        $content = 'Raw Content';
+
+        $stub = Stub::raw($destinationPath, $content);
+
+        static::assertSame($destinationPath, $stub->getPath());
+        static::assertSame($content, $stub->getContent());
+    }
+
+    public function testAppendConstructor(): void
+    {
+        $stub = Stub::append('/path/to/destination', 'Appended content');
+
+        static::assertSame('/path/to/destination', $stub->getPath());
+        static::assertSame(Stub::TYPE_APPEND, $stub->getType());
+        static::assertSame('Appended content', $stub->getContent());
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    #[DataProvider('contentProvider')]
+    public function testGetContent(string $type, string $content, ?string $expectedContent, array $params = []): void
+    {
+        $stub = new Stub('/path/to/destination', $content, $type, $params);
+
+        static::assertSame($expectedContent, $stub->getContent());
+    }
+
+    public static function contentProvider(): \Generator
+    {
+        yield 'content without params raw' => [
+            'type' => Stub::TYPE_RAW,
+            'content' => 'Hello John, how are you?',
+            'expectedContent' => 'Hello John, how are you?',
+        ];
+
+        yield 'content with params raw' => [
+            'type' => Stub::TYPE_RAW,
+            'content' => 'Hello {{ param1 }}, how are you?',
+            'expectedContent' => 'Hello John, how are you?',
+            'params' => ['param1' => 'John'],
+        ];
+
+        yield 'content without params template' => [
+            'type' => Stub::TYPE_TEMPLATE,
+            'content' => __DIR__ . '/test-without-params.stub',
+            'expectedContent' => "Hello John, how are you?\n",
+        ];
+
+        yield 'content with params template' => [
+            'type' => Stub::TYPE_TEMPLATE,
+            'content' => __DIR__ . '/test-with-params.stub',
+            'expectedContent' => "Hello John, how are you?\n",
+            'params' => ['param1' => 'John'],
+        ];
+    }
+}

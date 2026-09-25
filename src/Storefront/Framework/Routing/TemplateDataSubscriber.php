@@ -1,0 +1,109 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Framework\Routing;
+
+use Shopwell\Core\Content\Seo\HreflangLoaderInterface;
+use Shopwell\Core\Content\Seo\HreflangLoaderParameter;
+use Shopwell\Core\Framework\App\ActiveAppsLoader;
+use Shopwell\Core\Framework\App\Exception\ShopIdChangeSuggestedException;
+use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\SalesChannelRequest;
+use Shopwell\Storefront\Event\StorefrontRenderEvent;
+use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\ProductPageSeoUrlRoute;
+use Shopwell\Storefront\Page\Product\ProductPage;
+use Shopwell\Storefront\Theme\ThemeRuntimeConfigService;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+class TemplateDataSubscriber implements EventSubscriberInterface
+{
+    public function __construct(
+        private readonly HreflangLoaderInterface $hreflangLoader,
+        private readonly ShopIdProvider $shopIdProvider,
+        private readonly ActiveAppsLoader $activeAppsLoader,
+        private readonly ThemeRuntimeConfigService $runtimeConfigService,
+    ) {
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            StorefrontRenderEvent::class => [
+                ['addHreflang'],
+                ['addShopIdParameter'],
+                ['addIconSetConfig'],
+            ],
+        ];
+    }
+
+    public function addHreflang(StorefrontRenderEvent $event): void
+    {
+        $request = $event->getRequest();
+
+        if ($request->attributes->getBoolean('_esi')) {
+            return;
+        }
+
+        $route = $request->attributes->get('_route');
+        if ($route === null) {
+            return;
+        }
+
+        $routeParams = $request->attributes->get('_route_params', []);
+
+        // When we have a product page, we should make sure that the hreflang matches the canonical URL, relevant if we have a dedicated canonical URL or if we are on the parent product page
+        if ($route === ProductPageSeoUrlRoute::ROUTE_NAME) {
+            $page = $event->getParameter('page');
+            if ($page instanceof ProductPage) {
+                $routeParams['productId'] = $page->getProduct()->getCanonicalProductId() ?? $page->getProduct()->getId();
+            }
+        }
+
+        $salesChannelContext = $request->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT);
+        $parameter = new HreflangLoaderParameter($route, $routeParams, $salesChannelContext, $route === 'frontend.home.page', $request->getBasePath());
+        $event->setParameter('hrefLang', $this->hreflangLoader->load($parameter));
+    }
+
+    public function addShopIdParameter(StorefrontRenderEvent $event): void
+    {
+        if (!$this->activeAppsLoader->getActiveApps()) {
+            return;
+        }
+
+        try {
+            $shopId = $this->shopIdProvider->getShopId()->id;
+        } catch (ShopIdChangeSuggestedException) {
+            return;
+        }
+
+        $event->setParameter('appShopId', $shopId);
+    }
+
+    public function addIconSetConfig(StorefrontRenderEvent $event): void
+    {
+        $request = $event->getRequest();
+
+        // get name if theme is not inherited
+        $theme = $request->attributes->get(SalesChannelRequest::ATTRIBUTE_THEME_NAME);
+        if (!$theme) {
+            // get theme name from base theme because for inherited themes the name is always null
+            $theme = $request->attributes->get(SalesChannelRequest::ATTRIBUTE_THEME_BASE_NAME);
+        }
+
+        if (!$theme) {
+            return;
+        }
+
+        $runtimeConfig = $this->runtimeConfigService->getRuntimeConfigByName($theme);
+        if (!$runtimeConfig) {
+            return;
+        }
+
+        $event->setParameter('themeIconConfig', $runtimeConfig->iconSets);
+    }
+}

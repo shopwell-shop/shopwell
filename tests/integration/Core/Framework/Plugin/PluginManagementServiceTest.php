@@ -1,0 +1,218 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\Plugin;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\DevOps\StaticAnalyze\StaticAnalyzeKernel;
+use Shopwell\Core\Framework\Adapter\Cache\CacheClearer;
+use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
+use Shopwell\Core\Framework\Adapter\Kernel\KernelFactory;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\ExtensionExtractor;
+use Shopwell\Core\Framework\Plugin\KernelPluginLoader\StaticKernelPluginLoader;
+use Shopwell\Core\Framework\Plugin\PluginManagementService;
+use Shopwell\Core\Framework\Plugin\PluginService;
+use Shopwell\Core\Framework\Plugin\PluginZipDetector;
+use Shopwell\Core\Framework\Plugin\Util\PluginFinder;
+use Shopwell\Core\Framework\Test\Plugin\PluginTestsHelper;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Kernel;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class PluginManagementServiceTest extends TestCase
+{
+    use KernelTestBehaviour;
+    use PluginTestsHelper;
+
+    private const TEST_PLUGIN_ZIP_NAME = 'SwagFashionTheme.zip';
+    private const TEST_APP_ZIP_NAME = 'App.zip';
+    private const FIXTURE_PATH = __DIR__ . '/../../../../../tests/integration/Core/Framework/Plugin/_fixtures/';
+    private const PLUGIN_ZIP_FIXTURE_PATH = self::FIXTURE_PATH . self::TEST_PLUGIN_ZIP_NAME;
+    private const APP_ZIP_FIXTURE_PATH = self::FIXTURE_PATH . self::TEST_APP_ZIP_NAME;
+    private const PLUGINS_PATH = self::FIXTURE_PATH . 'plugins';
+    private const APPS_PATH = self::FIXTURE_PATH . 'apps';
+    private const PLUGIN_FASHION_THEME_PATH = self::PLUGINS_PATH . '/SwagFashionTheme';
+    private const PLUGIN_FASHION_THEME_BASE_CLASS_PATH = self::PLUGIN_FASHION_THEME_PATH . '/SwagFashionTheme.php';
+
+    private Filesystem $filesystem;
+
+    private string $cacheDir;
+
+    protected function setUp(): void
+    {
+        $this->filesystem = static::getContainer()->get(Filesystem::class);
+
+        $this->cacheDir = $this->createTestCacheDirectory();
+
+        $this->filesystem->copy(
+            self::FIXTURE_PATH . 'archives/' . self::TEST_PLUGIN_ZIP_NAME,
+            self::PLUGIN_ZIP_FIXTURE_PATH
+        );
+        $this->filesystem->copy(
+            self::FIXTURE_PATH . 'archives/' . self::TEST_APP_ZIP_NAME,
+            self::APP_ZIP_FIXTURE_PATH
+        );
+    }
+
+    protected function tearDown(): void
+    {
+        $this->filesystem->remove(self::PLUGIN_FASHION_THEME_PATH);
+        $this->filesystem->remove(self::PLUGIN_ZIP_FIXTURE_PATH);
+        $this->filesystem->remove(self::APP_ZIP_FIXTURE_PATH);
+        // App.zip extracts into the shared fixture dir; its root must never collide with a
+        // committed fixture app (it used to be `plugin/`, silently overwriting apps/plugin)
+        $this->filesystem->remove(self::APPS_PATH . '/SwagApp');
+        $this->filesystem->remove($this->cacheDir);
+
+        Kernel::getConnection()->executeStatement('DELETE FROM plugin');
+    }
+
+    public function testUploadPlugin(): void
+    {
+        $pluginFile = $this->createUploadedFile();
+        $this->getPluginManagementService()->uploadPlugin($pluginFile, Context::createDefaultContext());
+
+        static::assertFileExists(self::PLUGIN_FASHION_THEME_PATH);
+        static::assertFileExists(self::PLUGIN_FASHION_THEME_BASE_CLASS_PATH);
+    }
+
+    public function testExtractPluginZip(): void
+    {
+        $this->getPluginManagementService()->extractPluginZip(self::PLUGIN_ZIP_FIXTURE_PATH);
+
+        $extractedPlugin = $this->filesystem->exists(self::PLUGIN_FASHION_THEME_PATH);
+        $extractedPluginBaseClass = $this->filesystem->exists(self::PLUGIN_FASHION_THEME_BASE_CLASS_PATH);
+        $pluginZipExists = $this->filesystem->exists(self::PLUGIN_ZIP_FIXTURE_PATH);
+        static::assertTrue($extractedPlugin);
+        static::assertTrue($extractedPluginBaseClass);
+        static::assertFalse($pluginZipExists);
+    }
+
+    public function testExtractPluginZipWithoutDeletion(): void
+    {
+        $this->getPluginManagementService()->extractPluginZip(self::PLUGIN_ZIP_FIXTURE_PATH, false);
+
+        $extractedPlugin = $this->filesystem->exists(self::PLUGIN_FASHION_THEME_PATH);
+        $extractedPluginBaseClass = $this->filesystem->exists(self::PLUGIN_FASHION_THEME_BASE_CLASS_PATH);
+        $pluginZipExists = $this->filesystem->exists(self::PLUGIN_ZIP_FIXTURE_PATH);
+        static::assertTrue($extractedPlugin);
+        static::assertTrue($extractedPluginBaseClass);
+        static::assertTrue($pluginZipExists);
+    }
+
+    public function testClearContainerCacheWhenStoreTypeIsPlugin(): void
+    {
+        $this->getPluginManagementService()->extractPluginZip(self::PLUGIN_ZIP_FIXTURE_PATH, true, PluginManagementService::PLUGIN);
+
+        static::assertFalse($this->containerCacheExists());
+    }
+
+    public function testDoNotClearContainerCacheWhenStoreTypeIsNotPlugin(): void
+    {
+        $this->getPluginManagementService()->extractPluginZip(self::APP_ZIP_FIXTURE_PATH, true, PluginManagementService::APP);
+
+        static::assertTrue($this->containerCacheExists());
+    }
+
+    public function testClearContainerCacheWhenPluginZipIsGiven(): void
+    {
+        $this->getPluginManagementService()->extractPluginZip(self::PLUGIN_ZIP_FIXTURE_PATH);
+
+        static::assertFalse($this->containerCacheExists());
+    }
+
+    public function testDoNotClearContainerCacheWhenAppZipIsGiven(): void
+    {
+        $this->getPluginManagementService()->extractPluginZip(self::APP_ZIP_FIXTURE_PATH);
+
+        static::assertTrue($this->containerCacheExists());
+    }
+
+    private function createTestCacheDirectory(): string
+    {
+        $previousKernelClass = KernelFactory::$kernelClass;
+
+        // We need a new fixed cache dir, therefore, we reuse the StaticAnalyzeKernel class
+        KernelFactory::$kernelClass = StaticAnalyzeKernel::class;
+
+        $newTestKernel = KernelFactory::create(
+            'test',
+            true,
+            KernelLifecycleManager::getClassLoader(),
+            new StaticKernelPluginLoader(KernelLifecycleManager::getClassLoader()),
+            static::getContainer()->get(Connection::class)
+        );
+        static::assertInstanceOf(Kernel::class, $newTestKernel);
+        // reset the kernel class for further tests
+        KernelFactory::$kernelClass = $previousKernelClass;
+        $newTestKernel->boot();
+        $cacheDir = $newTestKernel->getCacheDir();
+        $newTestKernel->shutdown();
+
+        return $cacheDir;
+    }
+
+    private function createUploadedFile(): UploadedFile
+    {
+        return new UploadedFile(self::PLUGIN_ZIP_FIXTURE_PATH, self::TEST_PLUGIN_ZIP_NAME, null, null, true);
+    }
+
+    private function getPluginManagementService(): PluginManagementService
+    {
+        return new PluginManagementService(
+            self::PLUGINS_PATH,
+            new PluginZipDetector(),
+            new ExtensionExtractor([
+                PluginManagementService::PLUGIN => self::PLUGINS_PATH,
+                PluginManagementService::APP => self::APPS_PATH,
+            ], $this->filesystem),
+            $this->getPluginService(),
+            $this->filesystem,
+            $this->getCacheClearer(),
+            static::getContainer()->get('shopware.store_download_client')
+        );
+    }
+
+    private function getPluginService(): PluginService
+    {
+        return $this->createPluginService(
+            self::FIXTURE_PATH . 'plugins',
+            static::getContainer()->getParameter('kernel.project_dir'),
+            static::getContainer()->get('plugin.repository'),
+            static::getContainer()->get('language.repository'),
+            static::getContainer()->get(PluginFinder::class)
+        );
+    }
+
+    private function getCacheClearer(): CacheClearer
+    {
+        return new CacheClearer(
+            [],
+            static::getContainer()->get('cache_clearer'),
+            null,
+            static::getContainer()->get(CacheInvalidator::class),
+            $this->filesystem,
+            $this->cacheDir,
+            'test',
+            false,
+            false,
+            static::getContainer()->get('messenger.default_bus'),
+            static::getContainer()->get('logger'),
+            static::getContainer()->get('lock.factory')
+        );
+    }
+
+    private function containerCacheExists(): bool
+    {
+        return (new Finder())->in($this->cacheDir)->name('*Container*')->depth(0)->count() !== 0;
+    }
+}

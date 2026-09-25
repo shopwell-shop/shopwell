@@ -1,0 +1,341 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Rule\DataAbstractionLayer;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use Psr\Clock\ClockInterface;
+use Shopwell\Core\Checkout\Cart\CachedRuleLoader;
+use Shopwell\Core\Content\Rule\RuleDefinition;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
+use Shopwell\Core\Framework\DataAbstractionLayer\CompiledFieldCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\QueryBuilder;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\FetchModeHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\AssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Field;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\RuleAreas;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\ChangeSetAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\DeleteCommand;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Collector\RuleConditionRegistry;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+class RuleAreaUpdater implements EventSubscriberInterface
+{
+    public function __construct(
+        private readonly Connection $connection,
+        private readonly RuleDefinition $definition,
+        private readonly RuleConditionRegistry $conditionRegistry,
+        private readonly CacheInvalidator $cacheInvalidator,
+        private readonly DefinitionInstanceRegistry $definitionRegistry,
+        private readonly ClockInterface $clock
+    ) {
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            PreWriteValidationEvent::class => 'triggerChangeSet',
+            EntityWrittenContainerEvent::class => 'onEntityWritten',
+        ];
+    }
+
+    public function triggerChangeSet(PreWriteValidationEvent $event): void
+    {
+        $associatedEntities = $this->getAssociationEntities();
+
+        foreach ($event->getCommands() as $command) {
+            $entity = $command->getEntityName();
+            $definition = $this->definitionRegistry->getByEntityName($entity);
+
+            if (!$command instanceof ChangeSetAware || !\in_array($entity, $associatedEntities, true)) {
+                continue;
+            }
+
+            if ($command instanceof DeleteCommand) {
+                $command->requestChangeSet();
+
+                continue;
+            }
+
+            foreach ($this->getForeignKeyFields($definition) as $field) {
+                if ($command->hasField($field->getStorageName())) {
+                    $command->requestChangeSet();
+                }
+            }
+        }
+    }
+
+    public function onEntityWritten(EntityWrittenContainerEvent $event): void
+    {
+        $associationFields = $this->getAssociationFields();
+        $ruleIds = [];
+        $events = $event->getEvents();
+        if ($events === null) {
+            return;
+        }
+
+        foreach ($events as $nestedEvent) {
+            if (!$nestedEvent instanceof EntityWrittenEvent) {
+                continue;
+            }
+
+            $definition = $this->getAssociationDefinitionByEntity($associationFields, $nestedEvent->getEntityName());
+
+            if (!$definition) {
+                continue;
+            }
+
+            $ruleIds = $this->hydrateRuleIds($this->getForeignKeyFields($definition), $nestedEvent, $ruleIds);
+        }
+
+        if ($ruleIds === []) {
+            return;
+        }
+
+        $this->update(array_values(Uuid::fromBytesToHexList(array_filter(array_unique($ruleIds)))));
+
+        $this->cacheInvalidator->invalidate([CachedRuleLoader::CACHE_KEY]);
+    }
+
+    /**
+     * @param array<string> $ids
+     */
+    public function update(array $ids): void
+    {
+        $associationFields = $this->getAssociationFields();
+
+        $areas = $this->getAreas($ids, $associationFields);
+
+        $now = $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+        $update = new RetryableQuery(
+            $this->connection,
+            $this->connection->prepare('UPDATE `rule` SET `areas` = :areas, `updated_at` = :updatedAt WHERE `id` = :id')
+        );
+
+        foreach ($areas as $id => $associations) {
+            $ruleAreas = [];
+
+            foreach ($associations as $propertyName => $match) {
+                if ((bool) $match === false) {
+                    continue;
+                }
+
+                if ($propertyName === 'flowCondition') {
+                    $ruleAreas[RuleAreas::FLOW_CONDITION_AREA] = RuleAreas::FLOW_CONDITION_AREA;
+
+                    continue;
+                }
+
+                $field = $associationFields->get($propertyName);
+
+                if (!$field || !$flag = $field->getFlag(RuleAreas::class)) {
+                    continue;
+                }
+
+                if ($flag instanceof RuleAreas) {
+                    foreach ($flag->getAreas() as $area) {
+                        $ruleAreas[$area] = $area;
+                    }
+                }
+            }
+
+            $update->execute([
+                'areas' => json_encode(array_values($ruleAreas), \JSON_THROW_ON_ERROR),
+                'id' => Uuid::fromHexToBytes($id),
+                'updatedAt' => $now,
+            ]);
+        }
+    }
+
+    /**
+     * @param array<FkField> $fields
+     * @param array<string> $ruleIds
+     *
+     * @return array<string>
+     */
+    private function hydrateRuleIds(array $fields, EntityWrittenEvent $nestedEvent, array $ruleIds): array
+    {
+        foreach ($nestedEvent->getWriteResults() as $result) {
+            $changeSet = $result->getChangeSet();
+            $payload = $result->getPayload();
+
+            foreach ($fields as $field) {
+                if ($changeSet && $changeSet->hasChanged($field->getStorageName())) {
+                    $ruleIds[] = $changeSet->getBefore($field->getStorageName());
+                    $ruleIds[] = $changeSet->getAfter($field->getStorageName());
+                }
+
+                if ($changeSet) {
+                    continue;
+                }
+
+                $ruleId = $payload[$field->getPropertyName()] ?? null;
+                if (!\is_string($ruleId) || $ruleId === '') {
+                    continue;
+                }
+
+                $ruleIds[] = Uuid::fromHexToBytes($ruleId);
+            }
+        }
+
+        return $ruleIds;
+    }
+
+    /**
+     * @param array<string> $ids
+     *
+     * @return array<string, array<string, string>>
+     */
+    private function getAreas(array $ids, CompiledFieldCollection $associationFields): array
+    {
+        $query = new QueryBuilder($this->connection);
+        $query->select('LOWER(HEX(`rule`.`id`)) AS array_key')
+            ->from('rule')
+            ->andWhere('`rule`.`id` IN (:ids)');
+
+        foreach ($associationFields as $associationField) {
+            \assert($associationField instanceof AssociationField);
+            $this->addSelect($query, $associationField);
+        }
+        $this->addFlowConditionSelect($query);
+
+        $query->setParameter(
+            'ids',
+            Uuid::fromHexToBytesList($ids),
+            ArrayParameterType::BINARY
+        )->setParameter(
+            'flowTypes',
+            $this->conditionRegistry->getFlowRuleNames(),
+            ArrayParameterType::STRING
+        );
+
+        /** @var array<string, array<string, string>> $result */
+        $result = FetchModeHelper::groupUnique($query->executeQuery()->fetchAllAssociative());
+
+        return $result;
+    }
+
+    private function addSelect(QueryBuilder $query, AssociationField $associationField): void
+    {
+        $template = 'EXISTS(%s) AS %s';
+        $propertyName = $associationField->getPropertyName();
+
+        if ($associationField instanceof OneToOneAssociationField || $associationField instanceof ManyToOneAssociationField) {
+            $template = 'IF(%s.%s IS NOT NULL, 1, 0) AS %s';
+            $query->addSelect(\sprintf($template, '`rule`', $this->escape($associationField->getStorageName()), $propertyName));
+
+            return;
+        }
+
+        if ($associationField instanceof ManyToManyAssociationField) {
+            $mappingTable = $this->escape($associationField->getMappingDefinition()->getEntityName());
+            $mappingLocalColumn = $this->escape($associationField->getMappingLocalColumn());
+            $localColumn = $this->escape($associationField->getLocalField());
+
+            $subQuery = (new QueryBuilder($this->connection))
+                ->select('1')
+                ->from($mappingTable)
+                ->andWhere(\sprintf('%s = `rule`.%s', $mappingLocalColumn, $localColumn));
+
+            $query->addSelect(\sprintf($template, $subQuery->getSQL(), $propertyName));
+
+            return;
+        }
+
+        if ($associationField instanceof OneToManyAssociationField) {
+            $referenceTable = $this->escape($associationField->getReferenceDefinition()->getEntityName());
+            $referenceColumn = $this->escape($associationField->getReferenceField());
+            $localColumn = $this->escape($associationField->getLocalField());
+
+            $subQuery = (new QueryBuilder($this->connection))
+                ->select('1')
+                ->from($referenceTable)
+                ->andWhere(\sprintf('%s = `rule`.%s', $referenceColumn, $localColumn));
+
+            $query->addSelect(\sprintf($template, $subQuery->getSQL(), $propertyName));
+        }
+    }
+
+    private function addFlowConditionSelect(QueryBuilder $query): void
+    {
+        $subQuery = (new QueryBuilder($this->connection))
+            ->select('1')
+            ->from('rule_condition')
+            ->andWhere('`rule_id` = `rule`.`id`')
+            ->andWhere('`type` IN (:flowTypes)');
+
+        $query->addSelect(\sprintf('EXISTS(%s) AS flowCondition', $subQuery->getSQL()));
+    }
+
+    private function escape(string $string): string
+    {
+        return EntityDefinitionQueryHelper::escape($string);
+    }
+
+    private function getAssociationFields(): CompiledFieldCollection
+    {
+        return $this->definition
+            ->getFields()
+            ->filterByFlag(RuleAreas::class);
+    }
+
+    /**
+     * @return array<FkField>
+     */
+    private function getForeignKeyFields(EntityDefinition $definition): array
+    {
+        /** @phpstan-ignore-next-line PHPStan cannot detect correctly, that the array only contains FkFields */
+        return $definition->getFields()->filterInstance(FkField::class)->filter(fn (FkField $fk): bool => $fk->getReferenceDefinition()->getEntityName() === $this->definition->getEntityName())->getElements();
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getAssociationEntities(): array
+    {
+        return $this->getAssociationFields()
+            ->fmap(static function (Field $associationField): ?string {
+                return $associationField instanceof OneToManyAssociationField || $associationField instanceof ManyToManyAssociationField ? $associationField->getReferenceDefinition()->getEntityName() : null;
+            });
+    }
+
+    private function getAssociationDefinitionByEntity(CompiledFieldCollection $collection, string $entityName): ?EntityDefinition
+    {
+        $field = $collection->firstWhere(static function (Field $associationField) use ($entityName): bool {
+            if ($associationField instanceof ManyToManyAssociationField) {
+                return $associationField->getMappingDefinition()->getEntityName() === $entityName;
+            }
+
+            if (!$associationField instanceof OneToManyAssociationField) {
+                return false;
+            }
+
+            return $associationField->getReferenceDefinition()->getEntityName() === $entityName;
+        });
+
+        if ($field instanceof ManyToManyAssociationField) {
+            return $field->getMappingDefinition();
+        }
+
+        return $field instanceof AssociationField ? $field->getReferenceDefinition() : null;
+    }
+}

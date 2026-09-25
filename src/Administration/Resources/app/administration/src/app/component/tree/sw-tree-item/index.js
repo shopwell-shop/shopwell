@@ -1,0 +1,649 @@
+import template from './sw-tree-item.html.twig';
+import './sw-tree-item.scss';
+
+/**
+ * @sw-package framework
+ *
+ * @private
+ */
+export default {
+    template,
+
+    inject: {
+        feature: {
+            from: 'feature',
+            default: null,
+        },
+        getItems: {
+            from: 'getItems',
+            default: null,
+        },
+        treeStartDrag: {
+            from: 'startDrag',
+            default: null,
+        },
+        treeEndDrag: {
+            from: 'endDrag',
+            default: null,
+        },
+        treeMoveDrag: {
+            from: 'moveDrag',
+            default: null,
+        },
+        treeOpenById: {
+            from: 'openTreeById',
+            default: null,
+        },
+        treeAddSubElement: {
+            from: 'addSubElement',
+            default: null,
+        },
+        treeAddElement: {
+            from: 'addElement',
+            default: null,
+        },
+        treeDuplicateElement: {
+            from: 'duplicateElement',
+            default: null,
+        },
+        treeOnFinishNameingElement: {
+            from: 'onFinishNameingElement',
+            default: null,
+        },
+        treeOnDeleteElements: {
+            from: 'onDeleteElements',
+            default: null,
+        },
+        treeAbortCreateElement: {
+            from: 'abortCreateElement',
+            default: null,
+        },
+    },
+
+    emits: ['check-item'],
+
+    props: {
+        item: {
+            type: Object,
+            required: true,
+            default: () => {
+                return {};
+            },
+        },
+
+        draggedItem: {
+            type: Object,
+            required: false,
+            default: () => {
+                return null;
+            },
+        },
+
+        newElementId: {
+            type: String,
+            required: false,
+            default: () => {
+                return null;
+            },
+        },
+
+        translationContext: {
+            type: String,
+            default: () => {
+                return 'sw-tree';
+            },
+        },
+
+        onChangeRoute: {
+            type: Function,
+            default: () => {
+                return null;
+            },
+        },
+
+        disableContextMenu: {
+            type: Boolean,
+            default: () => {
+                return false;
+            },
+        },
+
+        contextMenuTooltipText: {
+            type: String,
+            required: false,
+            default: () => {
+                return null;
+            },
+        },
+
+        activeParentIds: {
+            type: Array,
+            required: false,
+            default: () => {
+                return null;
+            },
+        },
+
+        activeItemIds: {
+            type: Array,
+            required: false,
+            default: () => {
+                return null;
+            },
+        },
+
+        sortable: {
+            type: Boolean,
+            required: false,
+            default: () => {
+                return true;
+            },
+        },
+
+        allowDropIntoFolder: {
+            type: Boolean,
+            required: false,
+            default: false,
+        },
+
+        markInactive: {
+            type: Boolean,
+            required: false,
+            default: false,
+        },
+
+        shouldFocus: {
+            type: Boolean,
+            required: false,
+            default: false,
+        },
+
+        shouldShowActiveState: {
+            type: Boolean,
+            required: false,
+            default: false,
+        },
+
+        activeFocusId: {
+            type: String,
+            required: false,
+            default: () => {
+                return '';
+            },
+        },
+
+        displayCheckbox: {
+            type: Boolean,
+            required: false,
+            default: () => {
+                return true;
+            },
+        },
+
+        allowNewCategories: {
+            type: Boolean,
+            required: false,
+            default: () => {
+                return true;
+            },
+        },
+
+        allowDeleteCategories: {
+            type: Boolean,
+            required: false,
+            default: () => {
+                return true;
+            },
+        },
+
+        allowCreateWithoutPosition: {
+            type: Boolean,
+            required: false,
+            default: () => {
+                return false;
+            },
+        },
+
+        allowDuplicate: {
+            type: Boolean,
+            required: false,
+            default: () => {
+                return false;
+            },
+        },
+
+        getItemUrl: {
+            type: Function,
+            required: false,
+            default: () => {
+                return null;
+            },
+        },
+
+        getIsHighlighted: {
+            type: Function,
+            required: false,
+            default: () => {
+                return false;
+            },
+        },
+    },
+
+    data() {
+        return {
+            opened: this.item.initialOpened,
+            active: this.item.active,
+            selected: false,
+            isLeaf: false,
+            isLoading: false,
+            dragEl: null,
+            dragStartX: 0,
+            dragStartY: 0,
+            mouseStartX: 0,
+            mouseStartY: 0,
+            rootParent: null,
+            checkedGhost: false,
+            currentEditElement: null,
+            dragHoverTimeout: null,
+        };
+    },
+
+    computed: {
+        checked: {
+            get() {
+                return this.item.checked;
+            },
+            set(isChecked) {
+                this.item.checked = isChecked;
+            },
+        },
+
+        activeElementId() {
+            return this.$route.params[this.item.activeElementId] || null;
+        },
+
+        dragHoverDelay() {
+            return 1200;
+        },
+
+        isOpened() {
+            if (this.item.initialOpened) {
+                this.openTreeItem(true);
+                this.getTreeItemChildren(this.item);
+                this.item.initialOpened = false;
+            }
+            return this.opened;
+        },
+
+        isDragging() {
+            if (this.draggedItem === null) {
+                return false;
+            }
+            return this.draggedItem.data.id === this.item.data.id;
+        },
+
+        styling() {
+            return {
+                'is--dragging': this.isDragging,
+                'is--active': this.active,
+                'is--opened': this.isOpened,
+                'is--no-children': this.item.childCount <= 0,
+                'is--marked-inactive': this.markInactive && !this.item.data.active,
+                'is--focus': this.shouldFocus && this.activeFocusId === this.item.id,
+                'is--no-checkbox': !this.displayCheckbox,
+                'is--highlighted': this.isHighlighted,
+                'is--disabled': this.item.disabled,
+            };
+        },
+
+        dragConf() {
+            return {
+                delay: 300,
+                validDragCls: null,
+                dragGroup: 'sw-tree-item',
+                data: this.item,
+                onDragStart: this.dragStart,
+                onDragEnter: this.onMouseEnter,
+                onDragLeave: this.onMouseLeave,
+                onDrop: this.dragEnd,
+                preventEvent: true,
+                disabled: !this.sortable,
+            };
+        },
+
+        parentScope() {
+            return {
+                addSubElement: this.treeAddSubElement,
+                addElement: this.treeAddElement,
+                duplicateElement: this.treeDuplicateElement,
+                onFinishNameingElement: this.treeOnFinishNameingElement,
+                onDeleteElements: this.treeOnDeleteElements,
+                abortCreateElement: this.treeAbortCreateElement,
+            };
+        },
+
+        toolTip() {
+            if (this.contextMenuTooltipText !== null) {
+                return {
+                    showDelay: 300,
+                    message: this.contextMenuTooltipText,
+                    disabled: !this.disableContextMenu,
+                };
+            }
+
+            return {
+                showDelay: 300,
+                message: this.$t(`${this.translationContext}.general.actions.actionsDisabledInLanguage`),
+                disabled: !this.disableContextMenu,
+            };
+        },
+
+        isDisabled() {
+            return this.currentEditElement !== null || this.disableContextMenu;
+        },
+
+        isHighlighted() {
+            return this.getIsHighlighted(this.item);
+        },
+
+        contentSlot() {
+            return this.$slots.content;
+        },
+
+        actionsSlot() {
+            return this.$slots.actions;
+        },
+    },
+
+    watch: {
+        activeElementId(newId) {
+            this.active = newId === this.item.id;
+        },
+
+        newElementId(newId) {
+            this.currentEditElement = newId;
+
+            if (newId === this.item.data.id) {
+                this.editElementName();
+            }
+        },
+
+        activeParentIds: {
+            handler() {
+                if (this.activeParentIds) {
+                    this.checkedGhost = this.activeParentIds.indexOf(this.item.id) >= 0;
+                }
+            },
+            immediate: true,
+            deep: true,
+        },
+
+        activeItemIds: {
+            handler() {
+                if (this.activeItemIds) {
+                    this.checked = this.activeItemIds.indexOf(this.item.id) >= 0;
+                }
+            },
+            immediate: true,
+            deep: true,
+        },
+    },
+
+    updated() {
+        this.updatedComponent();
+    },
+
+    mounted() {
+        this.mountedComponent();
+    },
+
+    beforeUnmount() {
+        this.beforeUnmountComponent();
+    },
+
+    methods: {
+        updatedComponent() {
+            if (this.item.children.length > 0 || this.item.childCount <= 0) {
+                this.isLoading = false;
+            }
+        },
+
+        mountedComponent() {
+            this.$el.addEventListener('keydown', this.handleKeyDown);
+
+            if (this.item.active) {
+                if (this.$el.querySelector('.sw-tree-item.is--active input')) {
+                    this.$el.querySelector('.sw-tree-item.is--active input').focus();
+                }
+            }
+
+            if (this.newElementId) {
+                this.currentEditElement = this.newElementId;
+                this.editElementName();
+            }
+
+            this.updatedComponent();
+        },
+
+        beforeUnmountComponent() {
+            this.$el.removeEventListener('keydown', this.handleKeyDown);
+        },
+
+        handleKeyDown(event) {
+            // Check if the event is fired inside the tree item
+            if (event.target !== this.$el) {
+                return;
+            }
+
+            switch (event.key) {
+                case 'ArrowRight': {
+                    // When the tree item is already open, do nothing
+                    if (this.opened) {
+                        break;
+                    }
+
+                    // Open the tree item
+                    this.openTreeItem();
+                    this.getTreeItemChildren(this.item);
+
+                    event.stopPropagation();
+                    event.preventDefault();
+
+                    break;
+                }
+
+                case 'ArrowLeft': {
+                    // Check if the tree is open
+                    if (!this.opened) {
+                        break;
+                    }
+
+                    // Close the tree item
+                    this.openTreeItem(false);
+
+                    event.stopPropagation();
+                    event.preventDefault();
+
+                    break;
+                }
+
+                default: {
+                    break;
+                }
+            }
+        },
+
+        openTreeItem(open = !this.opened) {
+            if (this.isDragging) {
+                return;
+            }
+            this.opened = open;
+        },
+
+        getTreeItemChildren(treeItem) {
+            if (this.isDragging || this.isLoading) {
+                return;
+            }
+
+            if (treeItem.children.length <= 0) {
+                this.isLoading = true;
+
+                this.getItems(treeItem.data.id, treeItem.data.schema);
+            }
+        },
+
+        dragStart(config, element, dragElement) {
+            if (this.isDragging || this.isLoading) {
+                return;
+            }
+
+            this.dragEl = dragElement;
+
+            this.treeStartDrag(this);
+        },
+
+        dragEnd() {
+            this.clearDragHoverTimeout();
+            this.treeEndDrag();
+        },
+
+        onMouseEnter(dragData, dropData) {
+            if (!dropData) {
+                return;
+            }
+
+            this.treeMoveDrag(dragData, dropData);
+            if (!this.allowDropIntoFolder) {
+                return;
+            }
+
+            this.clearDragHoverTimeout();
+            this.dragHoverTimeout = window.setTimeout(() => {
+                this.treeOpenById(dropData.id);
+                this.treeMoveDrag(dragData, dropData, true);
+            }, this.dragHoverDelay);
+        },
+
+        onMouseLeave() {
+            this.clearDragHoverTimeout();
+        },
+
+        clearDragHoverTimeout() {
+            if (this.dragHoverTimeout !== null) {
+                window.clearTimeout(this.dragHoverTimeout);
+                this.dragHoverTimeout = null;
+            }
+        },
+
+        startDrag(draggedComponent) {
+            return this.treeStartDrag(draggedComponent);
+        },
+
+        endDrag() {
+            this.treeEndDrag();
+        },
+
+        moveDrag(draggedComponent, droppedComponent, dropInto = false) {
+            return this.treeMoveDrag(draggedComponent, droppedComponent, dropInto);
+        },
+
+        // Bubbles this method to the root tree from any item depth
+        emitCheckedItem(item) {
+            this.$emit('check-item', item);
+        },
+
+        // Checks the item
+        toggleItemCheck(event, item) {
+            if (this.checkedGhost && !item.checked) {
+                this.checked = true;
+                this.item.checked = true;
+            } else {
+                this.checked = event;
+                this.item.checked = event;
+            }
+
+            this.$emit('check-item', item);
+        },
+
+        addSubElement(item) {
+            this.parentScope.addSubElement(item);
+        },
+
+        addElement(item, pos) {
+            this.parentScope.addElement(item, pos);
+        },
+
+        duplicateElement(contextItem) {
+            this.parentScope.duplicateElement(contextItem);
+        },
+
+        onDuplicate(item) {
+            this.duplicateElement(item);
+            this.openTreeItem(true);
+        },
+
+        editElementName() {
+            // The naming field is rendered too late to be focused from here, v-autofocus does that.
+            this.$nextTick(() => {
+                this.$el.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                });
+            });
+        },
+
+        onFinishNameingElement(draft, event) {
+            this.$nextTick(() => {
+                this.parentScope.onFinishNameingElement(draft, event);
+            });
+        },
+
+        onBlurTreeItemInput(item) {
+            this.abortCreateElement(item);
+        },
+
+        onCancelSubmit(item) {
+            this.abortCreateElement(item);
+        },
+
+        abortCreateElement(item) {
+            this.parentScope.abortCreateElement(item);
+        },
+
+        deleteElement(item) {
+            this.parentScope.onDeleteElements(item);
+        },
+
+        getName(item) {
+            if (item.data.translated) {
+                return item.data.name || item.data.translated.name;
+            }
+
+            return item.data.name;
+        },
+
+        getActiveIconColor(item) {
+            if (item.data?.active) {
+                return item.data.active === true ? '#37d046' : '#d1d9e0';
+            }
+
+            return '#d1d9e0';
+        },
+
+        showItemUrl(item) {
+            if (this.getItemUrl) {
+                return this.getItemUrl(item);
+            }
+
+            return false;
+        },
+
+        renderContentSlotNode({ item, openTreeItem, getName }) {
+            return this.$slots.content({ item, openTreeItem, getName });
+        },
+
+        renderActionsSlotNode({ item, openTreeItem }) {
+            return this.$slots.actions({ item, openTreeItem });
+        },
+    },
+};

@@ -1,0 +1,245 @@
+/**
+ * @sw-package inventory
+ */
+
+import template from './sw-product-stream-grid-preview.html.twig';
+import './sw-product-stream-grid-preview.scss';
+
+const { Context, Defaults } = Shopwell;
+const { Criteria } = Shopwell.Data;
+
+/**
+ * @private
+ */
+export default {
+    template,
+
+    inject: ['repositoryFactory', 'productStreamPreviewService'],
+
+    emits: ['selection-change'],
+
+    props: {
+        /**
+         * The apiFilter of a loaded product stream
+         */
+        filters: {
+            required: true,
+        },
+        columns: {
+            required: false,
+            type: Array,
+            default() {
+                return [];
+            },
+        },
+        criteria: {
+            required: false,
+            type: Object,
+            default() {
+                return new Criteria(1, 10);
+            },
+        },
+        showSelection: {
+            required: false,
+            type: Boolean,
+            default: false,
+        },
+        /**
+         * Whether matching variants are grouped, mirroring the product stream's "display as group" setting.
+         */
+        displayAsGroup: {
+            required: false,
+            type: Boolean,
+            default: true,
+        },
+    },
+
+    data() {
+        return {
+            products: [],
+            systemCurrency: null,
+            searchTerm: '',
+            page: 1,
+            total: 0,
+            limit: 10,
+            isLoading: false,
+        };
+    },
+
+    computed: {
+        productRepository() {
+            return this.repositoryFactory.create('product');
+        },
+
+        salesChannelRepository() {
+            return this.repositoryFactory.create('sales_channel');
+        },
+
+        salesChannelCriteria() {
+            return new Criteria(1, 1)
+                .addFilter(Criteria.not('OR', [Criteria.equals('typeId', Defaults.productComparisonTypeId)]))
+                .addSorting(Criteria.sort('type.iconName', 'ASC'));
+        },
+
+        defaultColumns() {
+            return [
+                {
+                    property: 'name',
+                    label: this.$t('sw-product-stream.filter.values.product'),
+                    type: 'text',
+                    routerLink: 'sw.product.detail',
+                },
+                {
+                    property: 'manufacturer.name',
+                    label: this.$t('sw-product-stream.filter.values.manufacturer'),
+                },
+                {
+                    property: 'active',
+                    label: this.$t('sw-product-stream.filter.values.active'),
+                    align: 'center',
+                    type: 'bool',
+                },
+                {
+                    property: 'price',
+                    label: this.$t('sw-product-stream.filter.values.price'),
+                },
+                {
+                    property: 'stock',
+                    label: this.$t('sw-product-stream.filter.values.stock'),
+                    align: 'right',
+                },
+            ];
+        },
+
+        productColumns() {
+            if (this.columns.length) {
+                return this.columns;
+            }
+
+            return this.defaultColumns;
+        },
+
+        emptyStateMessage() {
+            if (!this.filters) {
+                return this.$t('global.entity-components.productStreamPreview.emptyMessageNoStream');
+            }
+
+            if (this.searchTerm.length) {
+                return this.$t(
+                    'global.entity-components.productStreamPreview.emptyMessageNoSearchResults',
+                    this.searchTerm,
+                    {
+                        term: this.searchTerm,
+                    },
+                );
+            }
+
+            return this.$t('global.entity-components.productStreamPreview.emptyMessageNoProducts');
+        },
+
+        assetFilter() {
+            return Shopwell.Filter.getByName('asset');
+        },
+
+        currencyFilter() {
+            return Shopwell.Filter.getByName('currency');
+        },
+    },
+
+    watch: {
+        async filters(filtersValue) {
+            if (!filtersValue) {
+                this.total = 0;
+                return;
+            }
+
+            this.isLoading = true;
+            this.systemCurrency = await this.loadSystemDefaultCurrency();
+            this.loadProducts();
+        },
+    },
+
+    created() {
+        this.createdComponent();
+    },
+
+    methods: {
+        onSearchTermChange(searchTerm) {
+            this.searchTerm = searchTerm;
+            this.page = 1;
+            this.loadProducts();
+        },
+        async createdComponent() {
+            if (!this.filters) {
+                return;
+            }
+
+            this.isLoading = true;
+            this.systemCurrency = await this.loadSystemDefaultCurrency();
+            this.loadProducts();
+        },
+
+        loadSystemDefaultCurrency() {
+            return this.repositoryFactory
+                .create('currency')
+                .get(Shopwell.Context.app.systemCurrencyId, Shopwell.Context.api, {
+                    cacheKey: [
+                        'shared-data',
+                        'system-currency',
+                        Shopwell.Context.app.systemCurrencyId,
+                        Shopwell.Context.api.languageId ?? 'default',
+                    ],
+                    ttl: 5 * 60 * 1000,
+                });
+        },
+
+        loadProducts() {
+            this.criteria.term = this.searchTerm || null;
+            this.criteria.filters = [...this.filters];
+            this.criteria.limit = this.limit;
+            this.criteria.setPage(this.page);
+            this.criteria.addAssociation('manufacturer');
+            this.criteria.addAssociation('options.group');
+
+            return this.salesChannelRepository
+                .searchIds(this.salesChannelCriteria)
+                .then(({ data }) => {
+                    return this.productStreamPreviewService.preview(
+                        data.at(0),
+                        this.criteria,
+                        [],
+                        {
+                            'sw-currency-id': Context.app.systemCurrencyId,
+                            'sw-inheritance': true,
+                        },
+                        this.displayAsGroup,
+                    );
+                })
+                .then((result) => {
+                    this.products = Object.values(result.elements);
+                    this.total = result.total;
+                    this.isLoading = false;
+                });
+        },
+
+        onPageChange({ page = 1, limit = 25 }) {
+            this.page = page;
+            this.limit = limit;
+            this.isLoading = true;
+
+            this.loadProducts();
+        },
+
+        getPriceForDefaultCurrency(product) {
+            const price = product.price.find((productPrice) => {
+                return productPrice.currencyId === this.systemCurrency.id;
+            });
+
+            return price ? price.gross : '-';
+        },
+
+        onSelectionChange(products) {
+            this.$emit('selection-change', products);
+        },
+    },
+};

@@ -1,0 +1,261 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Storefront\Theme\Command;
+
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelFunctionalTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
+use Shopwell\Storefront\Theme\Command\ThemeChangeCommand;
+use Shopwell\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfiguration;
+use Shopwell\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfigurationCollection;
+use Shopwell\Storefront\Theme\StorefrontPluginRegistry;
+use Shopwell\Storefront\Theme\ThemeCollection;
+use Shopwell\Storefront\Theme\ThemeService;
+use Shopwell\Storefront\Theme\UnusedThemeDirectoryDeleter;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Tester\CommandTester;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+class ThemeChangeCommandTest extends TestCase
+{
+    use SalesChannelFunctionalTestBehaviour;
+
+    /**
+     * @var EntityRepository<SalesChannelCollection>
+     */
+    private EntityRepository $salesChannelRepository;
+
+    private Stub&StorefrontPluginRegistry $pluginRegistry;
+
+    private MockObject&ThemeService $themeService;
+
+    /**
+     * @var EntityRepository<ThemeCollection>
+     */
+    private EntityRepository $themeRepository;
+
+    private CommandTester $commandTester;
+
+    protected function setUp(): void
+    {
+        $this->salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+        $this->themeRepository = static::getContainer()->get('theme.repository');
+        $this->pluginRegistry = $this->getPluginRegistryMock();
+        $this->themeService = $this->createMock(ThemeService::class);
+
+        $themeChangeCommand = new ThemeChangeCommand(
+            $this->themeService,
+            $this->pluginRegistry,
+            $this->salesChannelRepository,
+            $this->themeRepository,
+            static::createStub(UnusedThemeDirectoryDeleter::class)
+        );
+
+        $this->commandTester = new CommandTester($themeChangeCommand);
+        $application = new Application();
+        $application->addCommand($themeChangeCommand);
+    }
+
+    public function testThemeChangeCommandAllSalesChannels(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $salesChannels = $this->getSalesChannelData();
+        $themes = $this->getThemeData();
+
+        foreach ($salesChannels as $salesChannel) {
+            $this->createSalesChannel($salesChannel);
+        }
+
+        $this->themeRepository->create($themes, $context);
+
+        $salesChannels = $this->salesChannelRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('typeId', Defaults::SALES_CHANNEL_TYPE_STOREFRONT)),
+            Context::createDefaultContext()
+        )->getEntities();
+
+        $this->themeService->expects($this->exactly(\count($salesChannels)))
+            ->method('assignTheme');
+
+        $this->commandTester->execute([
+            'theme-name' => $themes[0]['technicalName'],
+            '--all' => true,
+        ]);
+    }
+
+    public function testThemeChangeCommandWithOneSalesChannel(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $salesChannel = $this->getSalesChannelData()[0];
+        $themes = $this->getThemeData();
+
+        $this->createSalesChannel($salesChannel);
+
+        $this->themeRepository->create($themes, $context);
+
+        // without --sync the command defers the switch until the (background) compilation finished
+        $expectedContext = Context::createDefaultContext();
+        $expectedContext->addState(ThemeService::STATE_DEFER_ASSIGNMENT);
+
+        $this->themeService->expects($this->exactly(1))
+            ->method('assignTheme')
+            ->with($themes[0]['id'], $salesChannel['id'], $expectedContext);
+
+        $this->commandTester->execute([
+            'theme-name' => $themes[0]['technicalName'],
+            '--sales-channel' => $salesChannel['id'],
+        ]);
+    }
+
+    public function testThemeChangeCommandWithNotExistingSalesChannelAndTheme(): void
+    {
+        $this->themeService->expects($this->never())->method(static::anything());
+
+        $this->commandTester->execute(['theme-name' => 'not existing theme', '--sales-channel' => 'not existing saleschannel'], ['interactive' => true]);
+
+        static::assertStringContainsString('[ERROR] Could not find sales channel with ID not existing saleschannel', $this->commandTester->getDisplay());
+    }
+
+    public function testThemeChangeCommandWithNoSalesChannel(): void
+    {
+        $this->themeService->expects($this->never())->method(static::anything());
+
+        $this->commandTester->execute(['--all' => true, '--sales-channel' => 'foo'], ['interactive' => true]);
+
+        static::assertStringContainsString('[ERROR] You can use either --sales-channel or --all, not both at the same time.', $this->commandTester->getDisplay());
+    }
+
+    public function testThemeChangeCommandWithOneSalesChannelWithoutCompiling(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $salesChannel = $this->getSalesChannelData()[0];
+        $themes = $this->getThemeData();
+
+        $this->createSalesChannel($salesChannel);
+
+        $this->themeRepository->create($themes, $context);
+
+        $this->themeService->expects($this->exactly(1))
+            ->method('assignTheme')
+            ->with($themes[0]['id'], $salesChannel['id'], $context, true);
+
+        $this->commandTester->execute([
+            'theme-name' => $themes[0]['technicalName'],
+            '--sales-channel' => $salesChannel['id'],
+            '--no-compile' => true,
+        ]);
+    }
+
+    public function testThemeChangeCommandSync(): void
+    {
+        $context = Context::createDefaultContext();
+        $context->addState(ThemeService::STATE_NO_QUEUE);
+
+        $salesChannel = $this->getSalesChannelData()[0];
+        $themes = $this->getThemeData();
+
+        $this->createSalesChannel($salesChannel);
+
+        $this->themeRepository->create($themes, $context);
+
+        $this->themeService->expects($this->exactly(1))
+            ->method('assignTheme')
+            ->with($themes[0]['id'], $salesChannel['id'], $context, false);
+
+        $this->commandTester->execute([
+            'theme-name' => $themes[0]['technicalName'],
+            '--sales-channel' => $salesChannel['id'],
+            '--sync' => true,
+        ]);
+    }
+
+    private function getPluginRegistryMock(): Stub&StorefrontPluginRegistry
+    {
+        $storePluginConfiguration1 = new StorefrontPluginConfiguration('parentTheme');
+        $storePluginConfiguration1->setThemeConfig([
+            'any' => 'expectedConfig',
+        ]);
+
+        $storePluginConfiguration2 = new StorefrontPluginConfiguration('childTheme');
+        $storePluginConfiguration2->setThemeConfig([
+            'any' => 'unexpectedConfig',
+        ]);
+
+        $mock = static::createStub(StorefrontPluginRegistry::class);
+
+        $mock->method('getConfigurations')
+            ->willReturn(
+                new StorefrontPluginConfigurationCollection([$storePluginConfiguration1, $storePluginConfiguration2])
+            );
+
+        return $mock;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function getSalesChannelData(): array
+    {
+        return [
+            [
+                'id' => Uuid::randomHex(),
+                'domains' => [
+                    [
+                        'languageId' => Defaults::LANGUAGE_SYSTEM,
+                        'currencyId' => Defaults::CURRENCY,
+                        'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                        'url' => 'http://localhost/salesChannel1',
+                    ],
+                ],
+            ],
+            [
+                'id' => Uuid::randomHex(),
+                'domains' => [
+                    [
+                        'languageId' => Defaults::LANGUAGE_SYSTEM,
+                        'currencyId' => Defaults::CURRENCY,
+                        'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                        'url' => 'http://localhost/salesChannel2',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function getThemeData(): array
+    {
+        return [
+            [
+                'id' => Uuid::randomHex(),
+                'name' => 'Theme1',
+                'technicalName' => 'theme_1',
+                'author' => 'test',
+                'active' => true,
+            ],
+            [
+                'id' => Uuid::randomHex(),
+                'name' => 'Theme2',
+                'technicalName' => 'theme_2',
+                'author' => 'test',
+                'active' => true,
+            ],
+        ];
+    }
+}

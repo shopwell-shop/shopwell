@@ -1,0 +1,338 @@
+/**
+ * @sw-package checkout
+ */
+import template from './sw-promotion-v2-detail.html.twig';
+import errorConfig from './error-config.json';
+
+const { Mixin } = Shopwell;
+const { Criteria } = Shopwell.Data;
+const { mapPageErrors } = Shopwell.Component.getComponentHelper();
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+export default {
+    template,
+
+    inject: ['repositoryFactory', 'acl', 'feature'],
+
+    mixins: [
+        Mixin.getByName('notification'),
+        Mixin.getByName('placeholder'),
+        Mixin.getByName('discard-detail-page-changes')('promotion'),
+    ],
+
+    shortcuts: {
+        'SYSTEMKEY+S': {
+            active() {
+                return this.acl.can('promotion.editor');
+            },
+            method: 'onSave',
+        },
+        ESCAPE: 'onCancel',
+    },
+
+    props: {
+        promotionId: {
+            type: String,
+            required: false,
+            default() {
+                return null;
+            },
+        },
+    },
+
+    data() {
+        return {
+            isLoading: false,
+            promotion: null,
+            cleanUpIndividualCodes: false,
+            cleanUpFixedCode: false,
+            showCodeTypeChangeModal: false,
+            isSaveSuccessful: false,
+            saveCallbacks: [],
+        };
+    },
+
+    metaInfo() {
+        return {
+            title: this.$createTitle(this.identifier),
+        };
+    },
+
+    computed: {
+        identifier() {
+            return this.placeholder(this.promotion, 'name');
+        },
+
+        promotionRepository() {
+            return this.repositoryFactory.create('promotion');
+        },
+
+        isCreateMode() {
+            return this.$route.name === 'sw.promotion.v2.create.base';
+        },
+
+        promotionCriteria() {
+            const criteria = new Criteria(1, 1)
+                .addAssociation('discounts.promotionDiscountPrices')
+                .addAssociation('discounts.discountRules')
+                .addAssociation('personaRules')
+                .addAssociation('orderRules')
+                .addAssociation('cartRules')
+                .addAssociation('salesChannels')
+                .addAssociation('setgroups.setGroupRules');
+
+            criteria.getAssociation('discounts').addSorting(Criteria.sort('createdAt', 'ASC'));
+
+            criteria.getAssociation('individualCodes').setLimit(25);
+
+            return criteria;
+        },
+
+        tooltipSave() {
+            if (!this.acl.can('promotion.editor')) {
+                return {
+                    message: this.$t('sw-privileges.tooltip.warning'),
+                    showOnDisabledElements: true,
+                };
+            }
+
+            const systemKey = this.$device.getSystemKey();
+
+            return {
+                message: `${systemKey} + S`,
+                appearance: 'light',
+            };
+        },
+
+        tooltipCancel() {
+            return {
+                message: 'ESC',
+                appearance: 'light',
+            };
+        },
+
+        promotionGroupRepository() {
+            return this.repositoryFactory.create('promotion_setgroup');
+        },
+
+        promotionDetailTabs() {
+            const createRouteTab = (label, routeName) => {
+                const route = {
+                    name: routeName,
+                    params: { id: this.$route.params.id },
+                };
+
+                return {
+                    label: this.$t(label),
+                    name: route.name,
+                    disabled: !this.promotionId || undefined,
+                    onClick: () => {
+                        void this.$router.push(route);
+                    },
+                };
+            };
+
+            const generalTab = createRouteTab('sw-promotion-v2.detail.tabs.tabGeneral', 'sw.promotion.v2.detail.base');
+
+            generalTab.hasError = this.swPromotionV2DetailBaseError;
+
+            return [
+                generalTab,
+                createRouteTab('sw-promotion-v2.detail.tabs.tabConditions', 'sw.promotion.v2.detail.conditions'),
+                createRouteTab('sw-promotion-v2.detail.tabs.tabDiscounts', 'sw.promotion.v2.detail.discounts'),
+            ];
+        },
+
+        ...mapPageErrors(errorConfig),
+    },
+
+    watch: {
+        promotionId() {
+            this.createdComponent();
+        },
+    },
+
+    created() {
+        this.createdComponent();
+    },
+
+    beforeRouteLeave() {
+        Shopwell.Store.get('shopwareApps').selectedIds = [];
+    },
+
+    methods: {
+        createdComponent() {
+            Shopwell.ExtensionAPI.publishData({
+                id: 'sw-promotion-detail__promotion',
+                path: 'promotion',
+                scope: this,
+            });
+            this.isLoading = true;
+
+            Shopwell.Store.get('shopwareApps').selectedIds = this.promotionId ? [this.promotionId] : [];
+
+            if (!this.promotionId) {
+                // set language to system language
+                if (!Shopwell.Store.get('context').isSystemDefaultLanguage) {
+                    Shopwell.Store.get('context').resetLanguageToDefault();
+                }
+
+                this.promotion = this.promotionRepository.create();
+                this.isLoading = false;
+
+                return;
+            }
+
+            this.loadEntityData();
+        },
+
+        loadEntityData() {
+            if (!this.promotionId) {
+                return Promise.resolve();
+            }
+
+            return this.promotionRepository
+                .get(this.promotionId, Shopwell.Context.api, this.promotionCriteria)
+                .then((promotion) => {
+                    if (promotion === null) {
+                        return;
+                    }
+
+                    this.promotion = promotion;
+
+                    if (!this.promotion || !this.promotion.discounts || this.promotion.length < 1) {
+                        return;
+                    }
+
+                    // Needed to enrich the VueX state below
+                    this.promotion.hasOrders = promotion.orderCount !== null ? promotion.orderCount > 0 : false;
+
+                    Shopwell.Store.get('swPromotionDetail').promotion = this.promotion;
+                })
+                .finally(() => {
+                    this.isLoading = false;
+                });
+        },
+
+        onChangeLanguage() {
+            this.loadEntityData();
+        },
+
+        onSave() {
+            if (!this.promotionId) {
+                this.savePromotion();
+
+                return;
+            }
+
+            if (![this.cleanUpIndividualCodes, this.cleanUpFixedCode].some((check) => check)) {
+                this.savePromotion();
+
+                return;
+            }
+
+            this.showCodeTypeChangeModal = true;
+        },
+
+        onConfirmSave() {
+            this.onCloseCodeTypeChangeModal();
+            this.savePromotion();
+        },
+
+        onCloseCodeTypeChangeModal() {
+            this.showCodeTypeChangeModal = false;
+        },
+
+        async savePromotion() {
+            this.isLoading = true;
+
+            if (this.cleanUpIndividualCodes === true) {
+                this.promotion.individualCodes = this.promotion.individualCodes.filter(() => false);
+            }
+
+            if (this.cleanUpFixedCode === true) {
+                this.promotion.code = '';
+            }
+
+            if (this.promotion.discounts) {
+                this.promotion.discounts.forEach((discount) => {
+                    if (discount.type === 'free') {
+                        Object.assign(discount, {
+                            type: 'percentage',
+                            value: 100,
+                            applierKey: 'SELECT',
+                        });
+                    }
+                });
+            }
+
+            try {
+                await this.promotionRepository.save(this.promotion);
+                await this.savePromotionSetGroups();
+
+                Shopwell.Store.get('swPromotionDetail').setGroupIdsDelete = [];
+                this.isSaveSuccessful = true;
+                await this.loadEntityData();
+
+                if (this.isCreateMode) {
+                    this.$router.push({
+                        name: 'sw.promotion.v2.detail',
+                        params: { id: this.promotion.id },
+                    });
+                }
+            } catch (_e) {
+                this.isLoading = false;
+                this.createNotificationError({
+                    message: this.$t(
+                        'global.notification.notificationSaveErrorMessage',
+                        {
+                            entityName: this.promotion.name,
+                        },
+                        0,
+                    ),
+                });
+            } finally {
+                this.cleanUpCodes(false, false);
+            }
+        },
+
+        savePromotionSetGroups() {
+            const setGroupIdsDelete = Shopwell.Store.get('swPromotionDetail').setGroupIdsDelete;
+
+            if (setGroupIdsDelete !== null) {
+                const deletePromises = setGroupIdsDelete.map((groupId) => {
+                    return this.promotionGroupRepository.delete(groupId);
+                });
+
+                return Promise.all(deletePromises);
+            }
+
+            return Promise.resolve();
+        },
+
+        saveFinish() {
+            this.isSaveSuccessful = false;
+        },
+
+        onCancel() {
+            this.$router.push({ name: 'sw.promotion.v2.index' });
+        },
+
+        onCleanUpCodes(cleanUpIndividual, cleanUpFixed) {
+            this.cleanUpCodes(cleanUpIndividual, cleanUpFixed);
+        },
+
+        cleanUpCodes(cleanUpIndividual, cleanUpFixed) {
+            this.cleanUpIndividualCodes = cleanUpIndividual;
+            this.cleanUpFixedCode = cleanUpFixed;
+        },
+
+        onGenerateIndividualCodesFinish() {
+            this.savePromotion();
+        },
+
+        onDeleteIndividualCodesFinish() {
+            this.savePromotion();
+        },
+    },
+};

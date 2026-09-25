@@ -1,0 +1,56 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Promotion\Cart\Discount;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Checkout\Promotion\Cart\Discount\Composition\DiscountCompositionItem;
+use Shopwell\Core\Checkout\Promotion\Cart\Discount\DiscountCalculatorResult;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(DiscountCalculatorResult::class)]
+class DiscountCalculatorResultTest extends TestCase
+{
+    /**
+     * This test verifies that the property is correctly
+     * assigned as well as returned in the getter function.
+     */
+    #[Group('promotions')]
+    public function testGetPrice(): void
+    {
+        $price = new CalculatedPrice(29, 29, new CalculatedTaxCollection(), new TaxRuleCollection());
+
+        $result = new DiscountCalculatorResult(
+            $price,
+            []
+        );
+
+        static::assertSame(29.0, $result->getPrice()->getTotalPrice());
+    }
+
+    /**
+     * This test verifies that the property is correctly
+     * assigned as well as returned in the getter function.
+     */
+    #[Group('promotions')]
+    public function testCompositionItems(): void
+    {
+        $price = new CalculatedPrice(29, 29, new CalculatedTaxCollection(), new TaxRuleCollection());
+
+        $compositionItems = [
+            new DiscountCompositionItem('ABC', 2, 13),
+        ];
+
+        $result = new DiscountCalculatorResult($price, $compositionItems);
+
+        static::assertSame($compositionItems, $result->getCompositionItems());
+    }
+}

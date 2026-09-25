@@ -1,0 +1,148 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/search-suggest": {
+            "post": {
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Search for products (suggest)",
+                "description": "Can be used to implement search previews or suggestion listings, that don’t require any interaction.",
+                "operationId": "searchSuggest",
+                "parameters": [
+                    {
+                        "name": "p",
+                        "in": "query",
+                        "description": "The page number to fetch.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "sw-include-search-info",
+                        "in": "header",
+                        "description": "Controls whether API search information is included in the response. Default is 1 (enabled), will be 0 (disabled) in the next major version.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "0",
+                                "1"
+                            ],
+                            "default": "1"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "required": [
+                                            "search"
+                                        ],
+                                        "properties": {
+                                            "search": {
+                                                "description": "Using the search parameter, the server performs a text search on all records based on their data model and weighting as defined in the entity definition using the SearchRanking flag.",
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/ProductListingCriteria"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/ProductListingFlags"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Returns a product listing containing all products and additional fields.\n\nNote: Aggregations, currentFilters and availableSortings are empty in this response. If you need them to display a listing, use the /search route instead.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductListingResult"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Search for products (suggest)",
+                "description": "Can be used to implement search previews or suggestion listings, that don’t require any interaction.",
+                "operationId": "searchSuggestGet",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Using the search parameter, the server performs a text search on all records based on their data model and weighting as defined in the entity definition using the SearchRanking flag.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "x-parameter-group": "productListingCriteria"
+                    },
+                    {
+                        "x-parameter-group": "productListingFlags"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns a product listing containing all products and additional fields.\n\nNote: Aggregations, currentFilters and availableSortings are empty in this response. If you need them to display a listing, use the /search route instead.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductListingResult"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        }
+    }
+}

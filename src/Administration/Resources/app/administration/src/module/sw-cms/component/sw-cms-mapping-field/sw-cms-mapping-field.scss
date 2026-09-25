@@ -1,0 +1,95 @@
+.sw-cms-mapping-field {
+    .sw-cms-mapping-field__info {
+        height: 20px;
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr max-content;
+        grid-column-gap: 10px;
+        align-content: center;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+
+    .sw-cms-mapping-field__label {
+        font-size: var(--font-size-xs);
+        line-height: 16px;
+        color: var(--color-text-primary-default);
+        font-weight: normal;
+        user-select: none;
+    }
+
+    .sw-cms-mapping-field__action {
+        display: grid;
+        grid-template-columns: 18px 1fr;
+        grid-column-gap: 5px;
+        align-content: center;
+        align-items: center;
+        justify-content: end;
+        justify-items: end;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-brand-default);
+        cursor: pointer;
+
+        &:hover .sw-cms-mapping-field__action-label {
+            text-decoration: underline;
+        }
+    }
+
+    .sw-cms-mapping-field__action-remove {
+        position: absolute;
+        top: 0;
+        right: 0;
+        display: grid;
+        grid-template-columns: 18px 1fr;
+        grid-column-gap: 5px;
+        align-content: center;
+        align-items: center;
+        justify-content: end;
+        justify-items: end;
+        font-size: var(--font-size-xs);
+        cursor: pointer;
+
+        &:hover {
+            color: var(--color-text-critical-default);
+        }
+
+        .mt-icon {
+            width: 16px;
+            height: 18px;
+            margin-right: 2px;
+        }
+    }
+
+    .sw-cms-mapping-field__mapping-value {
+        padding: 30px;
+        text-align: center;
+        background: var(--color-background-tertiary-default);
+        border: 1px dashed var(--color-border-secondary-default);
+        border-radius: 4px;
+    }
+
+    .sw-cms-mapping-field__preview {
+        padding: 20px;
+        border: 1px solid var(--color-border-secondary-default);
+        margin-top: 10px;
+        margin-bottom: 22px;
+    }
+
+    .sw-cms-mapping-field__empty-demo {
+        margin: 0;
+    }
+
+    &.is--disabled {
+        .sw-cms-mapping-field__info,
+        .sw-cms-mapping-field__action-remove {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+    }
+}
+
+.sw-cms-mapping-field__options {
+    max-height: 180px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}

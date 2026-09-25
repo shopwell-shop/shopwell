@@ -1,0 +1,99 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\App;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\ActiveAppsLoader;
+use Shopwell\Core\Framework\App\Lifecycle\AppLoader;
+use Shopwell\Core\Framework\App\Manifest\Manifest;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(ActiveAppsLoader::class)]
+class ActiveAppsLoaderTest extends TestCase
+{
+    public function testLoadAppsFromDatabase(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection
+            ->expects($this->exactly(2))
+            ->method('fetchAllAssociative')
+            ->willReturn([
+                [
+                    'name' => 'test',
+                    'path' => 'test',
+                    'author' => 'test',
+                    'self_managed' => 1,
+                    'version' => '1.2.3',
+                ],
+            ]);
+
+        $activeAppsLoader = new ActiveAppsLoader(
+            $connection,
+            static::createStub(AppLoader::class),
+            '/'
+        );
+
+        $expected = [
+            [
+                'name' => 'test',
+                'path' => 'test',
+                'author' => 'test',
+                'selfManaged' => true,
+                'version' => '1.2.3',
+            ],
+        ];
+
+        // call twice to test it gets cached
+        static::assertSame($expected, $activeAppsLoader->getActiveApps());
+        static::assertSame($expected, $activeAppsLoader->getActiveApps());
+
+        // reset cache
+
+        $activeAppsLoader->reset();
+
+        static::assertSame($expected, $activeAppsLoader->getActiveApps());
+    }
+
+    public function testLoadAppsFromLocal(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection
+            ->expects($this->once())
+            ->method('fetchAllAssociative')
+            ->willThrowException(new \Exception('test'));
+
+        $appLoader = static::createStub(AppLoader::class);
+
+        $xmlFile = __DIR__ . '/_fixtures/manifest.xml';
+
+        $appLoader
+            ->method('load')
+            ->willReturn([
+                Manifest::createFromXmlFile($xmlFile),
+            ]);
+
+        $activeAppsLoader = new ActiveAppsLoader(
+            $connection,
+            $appLoader,
+            \dirname($xmlFile, 2)
+        );
+
+        $expected = [
+            [
+                'name' => 'test',
+                'path' => \basename(\dirname($xmlFile)),
+                'author' => 'shopware AG',
+                'selfManaged' => false,
+                'version' => '1.0.0',
+            ],
+        ];
+
+        static::assertSame($expected, $activeAppsLoader->getActiveApps());
+    }
+}

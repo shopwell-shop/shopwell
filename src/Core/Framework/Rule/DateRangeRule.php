@@ -1,0 +1,128 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Rule;
+
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\Validator\Constraints\DateTime as DateTimeConstraint;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotNull;
+use Symfony\Component\Validator\Constraints\Timezone;
+use Symfony\Component\Validator\Constraints\Type;
+
+/**
+ * @final
+ */
+#[Package('fundamentals@after-sales')]
+class DateRangeRule extends Rule
+{
+    final public const RULE_NAME = 'dateRange';
+
+    private const DATETIME_FORMAT = 'Y-m-d\TH:i:s';
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        protected \DateTimeInterface|string|null $fromDate = null,
+        protected \DateTimeInterface|string|null $toDate = null,
+        protected bool $useTime = false,
+        protected \DateTimeZone|string|null $timezone = null,
+    ) {
+        parent::__construct();
+    }
+
+    public function __wakeup(): void
+    {
+        if (\is_string($this->fromDate)) {
+            $this->fromDate = new \DateTime($this->fromDate);
+        }
+        if (\is_string($this->toDate)) {
+            $this->toDate = new \DateTime($this->toDate);
+        }
+
+        if (!isset($this->timezone)) {
+            $this->timezone = null;
+        } elseif (\is_string($this->timezone)) {
+            $this->timezone = new \DateTimeZone($this->timezone);
+        }
+    }
+
+    public function match(RuleScope $scope): bool
+    {
+        if (\is_string($this->toDate) || \is_string($this->fromDate) || \is_string($this->timezone)) {
+            throw RuleException::invalidDateRangeUsage('fromDate, toDate and timezone cannot be a string at this point');
+        }
+
+        $fromDate = $this->fromDate;
+        $toDate = $this->toDate;
+        $timezone = $this->timezone;
+        $now = new \DateTime($scope->getCurrentTime()->format('Y-m-d H:i:s'), $timezone);
+
+        if ($fromDate instanceof \DateTimeInterface) {
+            $fromDate = new \DateTime($fromDate->format('Y-m-d H:i:s'), $timezone);
+
+            if (!$this->useTime) {
+                $fromDate
+                    ->setTime(0, 0);
+            }
+        }
+
+        if ($toDate instanceof \DateTimeInterface) {
+            $toDate = new \DateTime($toDate->format('Y-m-d H:i:s'), $timezone);
+
+            if (!$this->useTime) {
+                $toDate
+                    ->add(new \DateInterval('P1D'))
+                    ->setTime(0, 0);
+            }
+        }
+
+        if ($fromDate && $fromDate > $now) {
+            return false;
+        }
+
+        if ($toDate && $toDate <= $now) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function getConstraints(): array
+    {
+        return [
+            'fromDate' => [new NotBlank(), new DateTimeConstraint(format: self::DATETIME_FORMAT)],
+            'toDate' => [new NotBlank(), new DateTimeConstraint(format: self::DATETIME_FORMAT)],
+            'useTime' => [new NotNull(), new Type('bool')],
+            'timezone' => [new Timezone()],
+        ];
+    }
+
+    public function assign(array $options)
+    {
+        parent::assign($options);
+
+        try {
+            // convert string dates to DateTime objects
+            $this->__wakeup();
+        } catch (\Exception) {
+            // let validators handle invalid formats
+        }
+
+        return $this;
+    }
+
+    public function jsonSerialize(): array
+    {
+        $data = parent::jsonSerialize();
+
+        if ($this->fromDate instanceof \DateTimeInterface) {
+            $data['fromDate'] = $this->fromDate->format(self::DATETIME_FORMAT);
+        }
+        if ($this->toDate instanceof \DateTimeInterface) {
+            $data['toDate'] = $this->toDate->format(self::DATETIME_FORMAT);
+        }
+
+        return $data;
+    }
+}

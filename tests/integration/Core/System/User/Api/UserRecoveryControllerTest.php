@@ -1,0 +1,145 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\System\User\Api;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
+use Shopwell\Core\Framework\Log\Monolog\DoctrineSQLHandler;
+use Shopwell\Core\Framework\Log\Monolog\ExcludeFlowEventHandler;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\EventDispatcherBehaviour;
+use Shopwell\Core\Maintenance\User\Service\UserProvisioner;
+use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryEntity;
+use Shopwell\Core\System\User\Recovery\UserRecoveryRequestEvent;
+use Shopwell\Core\System\User\Recovery\UserRecoveryService;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@framework')]
+class UserRecoveryControllerTest extends TestCase
+{
+    use AdminFunctionalTestBehaviour;
+    use EventDispatcherBehaviour;
+
+    private const VALID_EMAIL = UserProvisioner::USER_EMAIL_FALLBACK;
+
+    public function testUpdateUserPassword(): void
+    {
+        $this->createRecovery(self::VALID_EMAIL);
+
+        $this->getBrowser()->request(
+            'PATCH',
+            '/api/_action/user/user-recovery/password',
+            [
+                'hash' => $this->getHash(),
+                'password' => 'NewPassword!',
+                'passwordConfirm' => 'NewPassword!',
+            ]
+        );
+
+        static::assertSame(200, $this->getBrowser()->getResponse()->getStatusCode());
+    }
+
+    public function testUpdateUserPasswordWithInvalidHash(): void
+    {
+        $this->createRecovery(self::VALID_EMAIL);
+
+        $this->getBrowser()->request(
+            'PATCH',
+            '/api/_action/user/user-recovery/password',
+            [
+                'hash' => 'invalid',
+                'password' => 'NewPassword!',
+                'passwordConfirm' => 'NewPassword!',
+            ]
+        );
+
+        static::assertSame(400, $this->getBrowser()->getResponse()->getStatusCode());
+    }
+
+    public function testCreateUserRecovery(): void
+    {
+        $logger = static::getContainer()->get('monolog.logger.business_events');
+        $handlers = $logger->getHandlers();
+        $logger->setHandlers([
+            new ExcludeFlowEventHandler(static::getContainer()->get(DoctrineSQLHandler::class), [
+                UserRecoveryRequestEvent::EVENT_NAME,
+            ]),
+        ]);
+
+        $dispatchedEvent = null;
+
+        $this->addEventListener(
+            static::getContainer()->get('event_dispatcher'),
+            UserRecoveryRequestEvent::EVENT_NAME,
+            static function (UserRecoveryRequestEvent $event) use (&$dispatchedEvent): void {
+                $dispatchedEvent = $event;
+            },
+        );
+        $this->getBrowser()->request(
+            'POST',
+            '/api/_action/user/user-recovery',
+            [
+                'email' => self::VALID_EMAIL,
+            ]
+        );
+
+        static::assertSame(200, $this->getBrowser()->getResponse()->getStatusCode());
+
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+        $criteria->addFilter(new EqualsFilter('user.email', self::VALID_EMAIL));
+
+        $userRecovery = static::getContainer()->get('user_recovery.repository')->search(
+            $criteria,
+            Context::createDefaultContext()
+        )->getEntities()->first();
+
+        static::assertNotNull($userRecovery);
+        static::assertNotNull($dispatchedEvent);
+
+        // excluded events and its mail events should not be logged
+        $originalEvent = $dispatchedEvent->getName();
+        $logCriteria = new Criteria();
+        $logCriteria->addFilter(new OrFilter([
+            new EqualsFilter('message', $originalEvent),
+            new EqualsFilter('context.additionalData.eventName', $originalEvent),
+        ]));
+
+        $logEntries = static::getContainer()->get('log_entry.repository')->search(
+            $logCriteria,
+            Context::createDefaultContext()
+        )->getEntities();
+
+        static::assertCount(0, $logEntries);
+
+        $this->resetEventDispatcher();
+        $logger->setHandlers($handlers);
+    }
+
+    private function createRecovery(string $email): void
+    {
+        static::getContainer()->get(UserRecoveryService::class)->generateUserRecovery(
+            $email,
+            Context::createDefaultContext()
+        );
+    }
+
+    private function getHash(): string
+    {
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+
+        static::assertInstanceOf(UserRecoveryEntity::class, $recovery = static::getContainer()->get('user_recovery.repository')->search(
+            $criteria,
+            Context::createDefaultContext()
+        )->getEntities()->first());
+
+        return $recovery->getHash();
+    }
+}

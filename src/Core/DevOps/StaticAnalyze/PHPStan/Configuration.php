@@ -1,0 +1,51 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\DevOps\StaticAnalyze\PHPStan;
+
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+final readonly class Configuration
+{
+    /**
+     * @param array<string, list<string>> $parameters
+     */
+    public function __construct(private array $parameters)
+    {
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getAllowedNonDomainExceptions(): array
+    {
+        return $this->parameters['allowedNonDomainExceptions'] ?? [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getAllowedStorefrontRouteNamespaces(): array
+    {
+        return $this->parameters['allowedStorefrontRouteNamespaces'] ?? [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getAllowedUnitTestClassNamespaces(): array
+    {
+        return $this->parameters['allowedUnitTestClassNamespaces'] ?? [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getCreateMockWithoutExpectationsEnabledNamespaces(): array
+    {
+        return $this->parameters['createMockWithoutExpectationsEnabledNamespaces'] ?? [];
+    }
+}

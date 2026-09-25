@@ -1,0 +1,61 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Script;
+
+use Shopwell\Core\Framework\App\AppDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\AllowHtml;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\LongTextField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal only for use by the app-system
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('framework')]
+class ScriptDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'script';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function getEntityClass(): string
+    {
+        return ScriptEntity::class;
+    }
+
+    public function getCollectionClass(): string
+    {
+        return ScriptCollection::class;
+    }
+
+    public function since(): ?string
+    {
+        return '6.4.7.0';
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required())->setDescription('Unique identity of a script.'),
+            (new LongTextField('script', 'script'))->addFlags(new Required(), new AllowHtml(false))->setDescription('Internal field.'),
+            (new StringField('hook', 'hook'))->addFlags(new Required())->setDescription('Internal field.'),
+            (new StringField('name', 'name', 1024))->addFlags(new Required())->setDescription('Internal field.'),
+            (new BoolField('active', 'active'))->addFlags(new Required())->setDescription('Internal field.'),
+            new FkField('app_id', 'appId', AppDefinition::class),
+            new ManyToOneAssociationField('app', 'app_id', AppDefinition::class),
+        ]);
+    }
+}

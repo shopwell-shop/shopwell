@@ -1,0 +1,28 @@
+.sw-cms-el-preview-product-description-reviews {
+    background: var(--color-elevation-surface-raised);
+    color: var(--color-text-primary-default);
+    overflow: hidden;
+
+    &__tabs {
+        display: flex;
+        margin: 0 0 5px;
+    }
+
+    &__description-tab,
+    &__reviews-tab {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary-default);
+        border-bottom: 1px solid var(--color-border-secondary-default);
+        margin: auto 10px auto 0;
+        padding: 0 0 5px;
+    }
+
+    &__description-tab {
+        color: var(--color-text-primary-default);
+        border-bottom: 1px solid var(--color-border-secondary-default);
+    }
+
+    p {
+        font-size: var(--font-size-2xs);
+    }
+}

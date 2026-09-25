@@ -1,0 +1,33 @@
+.sw-flow-sequence-selector {
+    width: 20.5rem;
+    padding: var(--scale-size-24);
+    border: 2px dashed var(--color-border-secondary-default);
+    border-radius: var(--border-radius-card);
+    margin-right: var(--scale-size-32);
+
+    &__title {
+        h4 {
+            font-size: var(--font-size-s);
+            line-height: var(--font-line-height-s);
+            font-weight: var(--font-weight-medium);
+            color: var(--color-text-primary-default);
+            margin-bottom: var(--scale-size-12);
+        }
+    }
+
+    &__help-text {
+        p {
+            font-size: var(--font-size-xs);
+            line-height: var(--font-line-height-xs);
+            font-weight: var(--font-weight-regular);
+            color: var(--color-text-primary-default);
+            margin-bottom: var(--scale-size-16);
+        }
+    }
+
+    &__actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-12);
+    }
+}

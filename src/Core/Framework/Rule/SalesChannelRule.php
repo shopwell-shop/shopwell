@@ -1,0 +1,75 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Rule;
+
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
+
+/**
+ * @final
+ */
+#[Package('fundamentals@after-sales')]
+class SalesChannelRule extends Rule
+{
+    final public const RULE_NAME = 'salesChannel';
+
+    /**
+     * @param list<string>|null $salesChannelIds
+     *
+     * @internal
+     */
+    public function __construct(
+        protected string $operator = self::OPERATOR_EQ,
+        protected ?array $salesChannelIds = null
+    ) {
+        parent::__construct();
+    }
+
+    public function match(RuleScope $scope): bool
+    {
+        return RuleComparison::uuids([$scope->getSalesChannelContext()->getSalesChannelId()], $this->salesChannelIds, $this->operator);
+    }
+
+    public function getConstraints(): array
+    {
+        return [
+            'salesChannelIds' => RuleConstraints::uuids(),
+            'operator' => RuleConstraints::uuidOperators(false),
+        ];
+    }
+
+    public function getConfig(): RuleConfig
+    {
+        return (new RuleConfig())
+            ->operatorSet(RuleConfig::OPERATOR_SET_STRING)
+            ->entitySelectField(
+                'salesChannelIds',
+                SalesChannelDefinition::ENTITY_NAME,
+                true,
+                [
+                    'criteria' => [
+                        'associations' => [
+                            'type',
+                        ],
+                        'filters' => [
+                            [
+                                'type' => 'not',
+                                'operator' => 'AND',
+                                'queries' => [
+                                    [
+                                        'type' => 'equalsAny',
+                                        'field' => 'type.id',
+                                        'value' => [
+                                            Defaults::SALES_CHANNEL_TYPE_PRODUCT_COMPARISON,
+                                            Defaults::SALES_CHANNEL_TYPE_AGENTIC_COMMERCE,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]
+            );
+    }
+}

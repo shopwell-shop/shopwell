@@ -1,0 +1,17 @@
+@import "~scss/variables";
+
+.sw-settings-document-list {
+    .sw-page__smart-bar-amount {
+        color: var(--color-text-primary-default);
+        font-size: var(--font-size-m);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    .sw-document-list__label-wrapper {
+        display: flex;
+
+        .sw-label {
+            margin: 0;
+        }
+    }
+}

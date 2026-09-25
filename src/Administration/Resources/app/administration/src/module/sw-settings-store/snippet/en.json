@@ -1,0 +1,15 @@
+{
+  "sw-settings-store": {
+    "general": {
+      "mainMenuItemGeneral": "Shopwell Account",
+      "textHeadline": "Shopwell Account",
+      "description": "Change your Shopwell Account settings here.",
+      "messageSaveSuccess": "Your Shopwell Account information have been saved."
+    },
+    "detail": {
+      "titleCard": "Settings",
+      "labelHost": "Licence domain",
+      "placeholderHost": "Enter the licence domain (shop domain), specified in your Shopwell Account."
+    }
+  }
+}

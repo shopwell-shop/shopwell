@@ -1,0 +1,22 @@
+.sw-settings-search {
+    &__search-behaviour-title {
+        margin-bottom: var(--scale-size-8);
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+    }
+
+    &__search-behaviour-condition {
+        label {
+            cursor: pointer;
+        }
+
+        .sw-field__radio-option-description {
+            white-space: pre-line;
+            display: inline;
+        }
+
+        .sw-field__radio-option .sw-field__radio-option-description {
+            color: var(--color-text-primary-default);
+        }
+    }
+}

@@ -1,0 +1,183 @@
+/**
+ * @sw-package framework
+ */
+import { computed, reactive } from 'vue';
+import type { privileges } from '@shopware-ag/meteor-admin-sdk/es/_internals/privileges';
+
+type ApiAuthToken = {
+    access: string;
+    expiry: number;
+    refresh: string;
+};
+
+/**
+ * @private
+ */
+export interface ContextState {
+    app: {
+        config: {
+            adminWorker: null | {
+                enableAdminWorker: boolean;
+                enableQueueStatsWorker: boolean;
+                enableNotificationWorker: boolean;
+                transports: string[];
+            };
+            bundles: null | {
+                [BundleName: string]: {
+                    css: string | string[];
+                    js: string | string[];
+                    permissions?: privileges;
+                    sourceType?: string;
+                    integrationId?: EntityKey<'integration'>;
+                    active?: boolean;
+                };
+            };
+            settings?: {
+                appUrlReachable: boolean;
+                appsRequireAppUrl: boolean;
+                disableExtensionManagement: boolean;
+                firstMigrationDate?: string | null;
+                hideUpdateModule?: boolean;
+                minSearchTermLength: number;
+            };
+            version: null | string;
+            versionRevision: null | string;
+            inAppPurchases: Record<string, string[]>;
+            shopId: null | string;
+            appUrl: null | string;
+        };
+        environment: null | 'development' | 'production' | 'testing';
+        fallbackLocale: null | string;
+        features: null | {
+            [FeatureKey: string]: boolean;
+        };
+        firstRunWizard: null | boolean;
+        systemCurrencyISOCode: null | string;
+        systemCurrencyId: null | EntityKey<'currency'>;
+        windowId: null | string;
+        analyticsGatewayUrl: null | string;
+        hideUpdateModule: null | boolean;
+    };
+    api: {
+        apiPath: null | string;
+        apiResourcePath: null | string;
+        assetsPath: null | string;
+        authToken: null | ApiAuthToken;
+        basePath: null | string;
+        pathInfo: null | string;
+        inheritance: null | boolean;
+        installationPath: null | string;
+        languageId: null | EntityKey<'language'>;
+        language: null | {
+            name: string;
+            parentId?: EntityKey<'language'>;
+        };
+        apiVersion: null | string;
+        liveVersionId: null | string;
+        systemLanguageId: null | EntityKey<'language'>;
+        currencyId: null | EntityKey<'currency'>;
+        versionId: null | EntityKey<'version'>;
+        refreshTokenTtl: null | string;
+        serviceRegistryUrl: null | string;
+        measurementLengthUnit: null | string;
+        measurementWeightUnit: null | string;
+    };
+}
+
+const state: ContextState = reactive({
+    app: {
+        config: {
+            adminWorker: null,
+            bundles: null,
+            version: null,
+            versionRevision: null,
+            inAppPurchases: {},
+            shopId: null,
+            appUrl: null,
+        },
+        environment: null,
+        fallbackLocale: null,
+        features: null,
+        firstRunWizard: null,
+        systemCurrencyId: null,
+        systemCurrencyISOCode: null,
+        windowId: null,
+        analyticsGatewayUrl: null,
+        hideUpdateModule: null,
+    },
+    api: {
+        apiPath: null,
+        apiResourcePath: null,
+        assetsPath: null,
+        authToken: null,
+        basePath: null,
+        pathInfo: null,
+        inheritance: null,
+        installationPath: null,
+        languageId: null,
+        language: null,
+        apiVersion: null,
+        liveVersionId: null,
+        systemLanguageId: null,
+        currencyId: null,
+        versionId: null,
+        refreshTokenTtl: null,
+        serviceRegistryUrl: null,
+        measurementLengthUnit: null,
+        measurementWeightUnit: null,
+    },
+});
+
+function addAppValue<K extends keyof ContextState['app']>({ key, value }: { key: K; value: ContextState['app'][K] }) {
+    if (value === 'true') {
+        state.app[key] = true as ContextState['app'][K];
+        return;
+    }
+
+    if (value === 'false') {
+        state.app[key] = false as ContextState['app'][K];
+        return;
+    }
+
+    state.app[key] = value;
+}
+
+function addApiValue<K extends keyof ContextState['api']>({ key, value }: { key: K; value: ContextState['api'][K] }) {
+    state.api[key] = value;
+}
+
+function addAppConfigValue<K extends keyof ContextState['app']['config']>({
+    key,
+    value,
+}: {
+    key: K;
+    value: ContextState['app']['config'][K];
+}) {
+    state.app.config[key] = value;
+}
+
+function setApiLanguageId(newLanguageId: EntityKey<'language'>) {
+    state.api.languageId = newLanguageId;
+    localStorage.setItem('sw-admin-current-language', newLanguageId);
+}
+
+function resetLanguageToDefault() {
+    state.api.languageId = state.api.systemLanguageId;
+}
+
+const isSystemDefaultLanguage = computed(() => state.api.languageId === state.api.systemLanguageId);
+
+/**
+ * @private
+ */
+export default function useContext() {
+    return {
+        ...state,
+        addAppValue,
+        addApiValue,
+        addAppConfigValue,
+        setApiLanguageId,
+        resetLanguageToDefault,
+        isSystemDefaultLanguage,
+    };
+}

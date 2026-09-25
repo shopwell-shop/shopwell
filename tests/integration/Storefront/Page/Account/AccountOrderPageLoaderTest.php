@@ -1,0 +1,147 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Storefront\Page\Account;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Customer\CustomerCollection;
+use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Util\Random;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
+use Shopwell\Storefront\Test\Page\StorefrontPageTestBehaviour;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+class AccountOrderPageLoaderTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+    use StorefrontPageTestBehaviour;
+
+    private SalesChannelContext $salesChannel;
+
+    /**
+     * @var EntityRepository<CustomerCollection>
+     */
+    private EntityRepository $customerRepository;
+
+    /**
+     * @var EntityRepository<OrderCollection>
+     */
+    private EntityRepository $orderRepository;
+
+    protected function setUp(): void
+    {
+        $this->salesChannel = $this->createSalesChannelContext();
+        $this->customerRepository = static::getContainer()->get('customer.repository');
+        $this->orderRepository = static::getContainer()->get('order.repository');
+    }
+
+    public function testLogsInGuestById(): void
+    {
+        $context = Context::createDefaultContext();
+        $unexpectedCustomer = $this->createCustomer();
+        $expectedCustomer = $this->createCustomer();
+
+        $unexpectedCustomer->setEmail('identical@shopwell.cn');
+        $expectedCustomer->setEmail('identical@shopwell.cn');
+        $expectedCustomer->setGuest(true);
+
+        $this->customerRepository->update([
+            [
+                'id' => $unexpectedCustomer->getId(),
+                'email' => $unexpectedCustomer->getEmail(),
+            ],
+            [
+                'id' => $expectedCustomer->getId(),
+                'email' => $expectedCustomer->getEmail(),
+                'guest' => $expectedCustomer->getGuest(),
+            ],
+        ], $context);
+
+        $salesChannel = static::getContainer()->get(SalesChannelContextFactory::class)->create(
+            $this->salesChannel->getToken(),
+            $this->salesChannel->getSalesChannelId(),
+            [SalesChannelContextService::CUSTOMER_ID => $expectedCustomer->getId()],
+        );
+        $orderId = $this->placeRandomOrder($salesChannel);
+        $order = $this->orderRepository->search(new Criteria([$orderId]), $context)->getEntities()->first();
+        static::assertNotNull($order);
+        $this->orderRepository->update([
+            [
+                'id' => $order->getId(),
+                'deepLinkCode' => $deepLinkCode = Random::getBase64UrlString(32),
+                'orderCustomer.customerId' => $expectedCustomer->getId(),
+            ],
+        ], $context);
+
+        $page = $this->getPageLoader()->load(
+            new Request(
+                [
+                    'email' => $expectedCustomer->getEmail(),
+                    'zipcode' => '12345',
+                ],
+                [],
+                [
+                    'deepLinkCode' => $deepLinkCode,
+                ]
+            ),
+            $this->salesChannel
+        );
+
+        static::assertSame(
+            $expectedCustomer->getId(),
+            $page->getOrders()->getEntities()->first()?->getOrderCustomer()?->getCustomerId(),
+        );
+    }
+
+    public function testLoad(): void
+    {
+        $salesChannel = $this->createSalesChannelContextWithLoggedInCustomerAndWithNavigation();
+
+        $orderId = $this->placeRandomOrder($salesChannel);
+        $order = $this->orderRepository->search(new Criteria([$orderId]), $salesChannel->getContext())->getEntities()->first();
+        static::assertInstanceOf(OrderEntity::class, $order);
+        $deepLinkCode = $order->getDeepLinkCode();
+
+        $page = $this->getPageLoader()->load(
+            new Request(
+                [
+                    'email' => $salesChannel->getCustomer()?->getEmail(),
+                    'zipcode' => '12345',
+                ],
+                [],
+                [
+                    'deepLinkCode' => $deepLinkCode,
+                ]
+            ),
+            $salesChannel
+        );
+
+        $order = $page->getOrders()->getEntities()->first();
+
+        static::assertInstanceOf(OrderEntity::class, $order);
+        static::assertNotNull($order->getPrimaryOrderDelivery());
+        static::assertNotNull($order->getPrimaryOrderTransaction());
+        static::assertNotNull($order->getPrimaryOrderTransactionId());
+        static::assertNotNull($order->getPrimaryOrderDeliveryId());
+
+        static::assertNotNull($page->getDeepLinkCode());
+        static::assertSame($deepLinkCode, $order->getDeepLinkCode());
+    }
+
+    protected function getPageLoader(): AccountOrderPageLoader
+    {
+        return static::getContainer()->get(AccountOrderPageLoader::class);
+    }
+}

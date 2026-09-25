@@ -1,0 +1,14 @@
+.sw-bulk-edit-save-modal-confirm {
+    &__trigger-flows-switch.sw-field--switch {
+        margin: calc(-1 * var(--scale-size-10)) auto var(--scale-size-10);
+    }
+
+    &__trigger-flows-switch.sw-field--switch .sw-field__label label {
+        margin-right: 0;
+    }
+
+    &__trigger-flows-alert p {
+        color: var(--color-text-primary-default);
+        font-weight: var(--font-weight-medium);
+    }
+}

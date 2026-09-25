@@ -1,0 +1,451 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\System\User\Recovery;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Api\Context\SystemSource;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\NotEqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\EnvTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
+use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
+use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryCollection;
+use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryDefinition;
+use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryEntity;
+use Shopwell\Core\System\User\Recovery\UserRecoveryRequestEvent;
+use Shopwell\Core\System\User\Recovery\UserRecoveryService;
+use Shopwell\Core\System\User\UserCollection;
+use Shopwell\Core\System\User\UserDefinition;
+use Shopwell\Core\System\User\UserEntity;
+use Shopwell\Core\System\User\UserException;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
+use Symfony\Component\Routing\RouterInterface;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@framework')]
+#[CoversClass(UserRecoveryService::class)]
+class UserRecoveryServiceTest extends TestCase
+{
+    use EnvTestBehaviour;
+
+    private const HASH = 'Ynp1oKlXNlLRnjTHVCXBSLnFmQCLLbNe';
+
+    protected function setUp(): void
+    {
+        Request::setTrustedHosts([]);
+        $this->setEnvVars([
+            'APP_URL' => 'https://shop.example.com',
+            'SHOPWARE_ADMINISTRATION_PATH_NAME' => null,
+        ]);
+    }
+
+    protected function tearDown(): void
+    {
+        Request::setTrustedHosts([]);
+    }
+
+    public function testGenerateUserRecoveryUserNotFound(): void
+    {
+        $router = static::createStub(RouterInterface::class);
+        $salesChannelContextService = static::createStub(SalesChannelContextService::class);
+
+        $userEmail = 'nonexistent@example.com';
+        $context = new Context(new SystemSource(), [], Defaults::CURRENCY, [Defaults::LANGUAGE_SYSTEM]);
+        $recoveryEntity = new UserRecoveryEntity();
+        $recoveryEntity->setUniqueIdentifier(Uuid::randomHex());
+
+        $userRepository = new StaticEntityRepository([
+            new UserCollection([]),
+        ], new UserDefinition());
+
+        $recoveryRepository = new StaticEntityRepository([
+            new UserRecoveryCollection([$recoveryEntity]),
+            new UserRecoveryCollection([$recoveryEntity]),
+        ], new UserRecoveryDefinition());
+
+        $salesChannelRepository = new StaticEntityRepository([
+            new SalesChannelCollection([]),
+        ], new SalesChannelDefinition());
+
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher
+            ->expects($this->never())
+            ->method('dispatch');
+
+        $service = new UserRecoveryService(
+            $recoveryRepository,
+            $userRepository,
+            $router,
+            $dispatcher,
+            $salesChannelContextService,
+            $salesChannelRepository,
+            new NativeClock()
+        );
+
+        $service->generateUserRecovery($userEmail, $context);
+        static::assertCount(0, $recoveryRepository->creates);
+        static::assertCount(0, $recoveryRepository->deletes);
+    }
+
+    public function testGenerateUserRecoveryWithNoSalesChannel(): void
+    {
+        $router = static::createStub(RouterInterface::class);
+        $salesChannelContextService = static::createStub(SalesChannelContextService::class);
+
+        $this->expectExceptionObject(UserException::salesChannelNotFound());
+
+        $userEmail = 'existing@example.com';
+        $context = new Context(new SystemSource(), [], Defaults::CURRENCY, [Defaults::LANGUAGE_SYSTEM]);
+        $user = new UserEntity();
+        $user->setUniqueIdentifier(Uuid::randomHex());
+        $user->setId(Uuid::randomHex());
+
+        $recoveryEntity = new UserRecoveryEntity();
+        $recoveryEntity->setUniqueIdentifier(Uuid::randomHex());
+        $recoveryEntity->setId(Uuid::randomHex());
+        $recoveryEntity->setHash(Uuid::randomHex());
+
+        $userRepository = new StaticEntityRepository([
+            new UserCollection([$user]),
+        ], new UserDefinition());
+
+        $recoveryRepository = new StaticEntityRepository([
+            new UserRecoveryCollection([$recoveryEntity]),
+            new UserRecoveryCollection([$recoveryEntity]),
+        ], new UserRecoveryDefinition());
+
+        $salesChannelRepository = new StaticEntityRepository([
+            new SalesChannelCollection([]),
+        ], new SalesChannelDefinition());
+
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher
+            ->expects($this->never())
+            ->method('dispatch');
+
+        $service = new UserRecoveryService(
+            $recoveryRepository,
+            $userRepository,
+            $router,
+            $dispatcher,
+            $salesChannelContextService,
+            $salesChannelRepository,
+            new NativeClock()
+        );
+
+        try {
+            $service->generateUserRecovery($userEmail, $context);
+        } finally {
+            static::assertCount(1, $recoveryRepository->creates);
+            static::assertCount(1, $recoveryRepository->deletes);
+        }
+    }
+
+    public function testGenerateUserRecoveryWithExistingRecovery(): void
+    {
+        $router = static::createStub(RouterInterface::class);
+        $salesChannelContextService = $this->createMock(SalesChannelContextService::class);
+
+        $userEmail = 'existing@example.com';
+        $context = new Context(new SystemSource(), [], Defaults::CURRENCY, [Defaults::LANGUAGE_SYSTEM]);
+        $user = new UserEntity();
+        $recoveryEntity = new UserRecoveryEntity();
+        $user->setUniqueIdentifier(Uuid::randomHex());
+        $user->setId(Uuid::randomHex());
+        $recoveryEntity->setUniqueIdentifier(Uuid::randomHex());
+        $recoveryEntity->setId(Uuid::randomHex());
+        $recoveryEntity->setHash(Uuid::randomHex());
+        $salesChannelEntity = new SalesChannelEntity();
+        $salesChannelEntity->setUniqueIdentifier(Uuid::randomHex());
+        $salesChannelEntity->setId(Uuid::randomHex());
+        $salesChannelEntity->setLanguageId(Uuid::randomHex());
+        $salesChannelEntity->setCurrencyId(Uuid::randomHex());
+
+        $userRepository = new StaticEntityRepository([
+            new UserCollection([$user]),
+        ], new UserDefinition());
+
+        $recoveryRepository = new StaticEntityRepository([
+            new UserRecoveryCollection([$recoveryEntity]),
+            new UserRecoveryCollection([$recoveryEntity]),
+        ], new UserRecoveryDefinition());
+
+        $salesChannelRepository = new StaticEntityRepository([
+            new SalesChannelCollection([$salesChannelEntity]),
+        ], new SalesChannelDefinition());
+
+        $salesChannelContextService
+            ->expects($this->once())
+            ->method('get')
+            ->willReturn(static::createStub(SalesChannelContext::class));
+
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with(
+                static::isInstanceOf(UserRecoveryRequestEvent::class),
+                UserRecoveryRequestEvent::EVENT_NAME
+            );
+
+        $service = new UserRecoveryService(
+            $recoveryRepository,
+            $userRepository,
+            $router,
+            $dispatcher,
+            $salesChannelContextService,
+            $salesChannelRepository,
+            new NativeClock()
+        );
+
+        $service->generateUserRecovery($userEmail, $context);
+        static::assertCount(1, $recoveryRepository->deletes);
+        static::assertCount(1, $recoveryRepository->creates);
+    }
+
+    public function testGenerateUserRecoveryWithoutExistingRecovery(): void
+    {
+        $router = static::createStub(RouterInterface::class);
+        $salesChannelContextService = $this->createMock(SalesChannelContextService::class);
+
+        $userEmail = 'existing@example.com';
+        $context = new Context(new SystemSource(), [], Defaults::CURRENCY, [Defaults::LANGUAGE_SYSTEM]);
+        $user = new UserEntity();
+        $recoveryEntity = new UserRecoveryEntity();
+        $salesChannelEntity = new SalesChannelEntity();
+        $salesChannelEntity->setUniqueIdentifier(Uuid::randomHex());
+        $salesChannelEntity->setId(Uuid::randomHex());
+        $salesChannelEntity->setLanguageId(Uuid::randomHex());
+        $salesChannelEntity->setCurrencyId(Uuid::randomHex());
+        $user->setUniqueIdentifier(Uuid::randomHex());
+        $user->setId(Uuid::randomHex());
+        $recoveryEntity->setUniqueIdentifier(Uuid::randomHex());
+        $recoveryEntity->setHash(Uuid::randomHex());
+
+        $userRepository = new StaticEntityRepository([
+            new UserCollection([$user]),
+        ], new UserDefinition());
+
+        $recoveryRepository = new StaticEntityRepository([
+            new UserRecoveryCollection([]),
+            new UserRecoveryCollection([$recoveryEntity]),
+        ], new UserRecoveryDefinition());
+
+        $salesChannelRepository = new StaticEntityRepository([
+            static function (Criteria $criteria, Context $context) use ($salesChannelEntity) {
+                static::assertCount(1, $criteria->getFilters());
+                static::assertEquals([
+                    new NotEqualsFilter('typeId', Defaults::SALES_CHANNEL_TYPE_PRODUCT_COMPARISON),
+                ], $criteria->getFilters());
+
+                return new SalesChannelCollection([$salesChannelEntity]);
+            },
+        ], new SalesChannelDefinition());
+
+        $salesChannelContextService
+            ->expects($this->once())
+            ->method('get')
+            ->willReturn(static::createStub(SalesChannelContext::class));
+
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with(
+                static::isInstanceOf(UserRecoveryRequestEvent::class),
+                UserRecoveryRequestEvent::EVENT_NAME
+            );
+
+        $service = new UserRecoveryService(
+            $recoveryRepository,
+            $userRepository,
+            $router,
+            $dispatcher,
+            $salesChannelContextService,
+            $salesChannelRepository,
+            new NativeClock()
+        );
+
+        $service->generateUserRecovery($userEmail, $context);
+        static::assertCount(0, $recoveryRepository->deletes);
+        static::assertCount(1, $recoveryRepository->creates);
+    }
+
+    public function testRecoveryUrlIsGeneratedByRouterWhenTrustedHostsAreConfigured(): void
+    {
+        Request::setTrustedHosts(['shop.example.com']);
+
+        $router = static::createStub(RouterInterface::class);
+        $router->method('generate')->willReturn('https://shop.example.com/admin');
+
+        static::assertSame(
+            'https://shop.example.com/admin#/login/user-recovery/' . self::HASH,
+            $this->getGeneratedRecoveryUrl($router)
+        );
+    }
+
+    public function testRecoveryUrlFallsBackToAppUrlWhenAdministrationRouteIsNotRegistered(): void
+    {
+        Request::setTrustedHosts(['shop.example.com']);
+
+        $router = static::createStub(RouterInterface::class);
+        $router->method('generate')->willThrowException(new RouteNotFoundException());
+
+        static::assertSame(
+            'https://shop.example.com/admin#/login/user-recovery/' . self::HASH,
+            $this->getGeneratedRecoveryUrl($router)
+        );
+    }
+
+    public function testRouterIsNeverCalledWhenNoTrustedHostsAreConfigured(): void
+    {
+        $router = $this->createMock(RouterInterface::class);
+        $router->expects($this->never())->method('generate');
+
+        static::assertSame(
+            'https://shop.example.com/admin#/login/user-recovery/' . self::HASH,
+            $this->getGeneratedRecoveryUrl($router)
+        );
+    }
+
+    public function testAppUrlIsNotValidatedWhileTheRouterProvidesTheUrl(): void
+    {
+        Request::setTrustedHosts(['shop.example.com']);
+        $this->setEnvVars(['APP_URL' => 'not-a-url']);
+
+        $router = static::createStub(RouterInterface::class);
+        $router->method('generate')->willReturn('https://shop.example.com/admin');
+
+        static::assertSame(
+            'https://shop.example.com/admin#/login/user-recovery/' . self::HASH,
+            $this->getGeneratedRecoveryUrl($router)
+        );
+    }
+
+    public function testRecoveryUrlThrowsWhenAppUrlIsInvalidAndAdministrationRouteIsNotRegistered(): void
+    {
+        Request::setTrustedHosts(['shop.example.com']);
+        $this->setEnvVars(['APP_URL' => 'not-a-url']);
+
+        $router = static::createStub(RouterInterface::class);
+        $router->method('generate')->willThrowException(new RouteNotFoundException());
+
+        $this->expectExceptionObject(UserException::invalidAppUrl('not-a-url'));
+
+        $this->getGeneratedRecoveryUrl($router);
+    }
+
+    public function testRecoveryUrlUsesConfiguredAdministrationPathName(): void
+    {
+        $this->setEnvVars([
+            'APP_URL' => 'https://shop.example.com/',
+            'SHOPWARE_ADMINISTRATION_PATH_NAME' => '/backoffice/',
+        ]);
+
+        static::assertSame(
+            'https://shop.example.com/backoffice#/login/user-recovery/' . self::HASH,
+            $this->getGeneratedRecoveryUrl(static::createStub(RouterInterface::class))
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function invalidAppUrlProvider(): iterable
+    {
+        yield 'empty' => [''];
+        yield 'no scheme' => ['shop.example.com'];
+        yield 'unsupported scheme' => ['ftp://shop.example.com'];
+        yield 'javascript scheme' => ['javascript://shop.example.com/%0aalert(1)'];
+    }
+
+    #[DataProvider('invalidAppUrlProvider')]
+    public function testRecoveryUrlThrowsWhenAppUrlIsNotAValidHttpUrl(string $appUrl): void
+    {
+        $this->setEnvVars(['APP_URL' => $appUrl]);
+
+        $this->expectExceptionObject(UserException::invalidAppUrl(rtrim($appUrl, '/')));
+
+        $this->getGeneratedRecoveryUrl(static::createStub(RouterInterface::class));
+    }
+
+    private function getGeneratedRecoveryUrl(RouterInterface $router): string
+    {
+        $user = new UserEntity();
+        $user->setUniqueIdentifier(Uuid::randomHex());
+        $user->setId(Uuid::randomHex());
+
+        $recoveryEntity = new UserRecoveryEntity();
+        $recoveryEntity->setUniqueIdentifier(Uuid::randomHex());
+        $recoveryEntity->setId(Uuid::randomHex());
+        $recoveryEntity->setHash(self::HASH);
+
+        $salesChannelEntity = new SalesChannelEntity();
+        $salesChannelEntity->setUniqueIdentifier(Uuid::randomHex());
+        $salesChannelEntity->setId(Uuid::randomHex());
+        $salesChannelEntity->setLanguageId(Uuid::randomHex());
+        $salesChannelEntity->setCurrencyId(Uuid::randomHex());
+
+        $salesChannelContextService = static::createStub(SalesChannelContextService::class);
+        $salesChannelContextService
+            ->method('get')
+            ->willReturn(static::createStub(SalesChannelContext::class));
+
+        $recoveryUrl = null;
+        $dispatcher = static::createStub(EventDispatcherInterface::class);
+        $dispatcher
+            ->method('dispatch')
+            ->willReturnCallback(function (UserRecoveryRequestEvent $event) use (&$recoveryUrl) {
+                $recoveryUrl = $event->getResetUrl();
+
+                return $event;
+            });
+
+        /** @var StaticEntityRepository<UserRecoveryCollection> $recoveryRepository */
+        $recoveryRepository = new StaticEntityRepository([
+            new UserRecoveryCollection([]),
+            new UserRecoveryCollection([$recoveryEntity]),
+        ], new UserRecoveryDefinition());
+
+        /** @var StaticEntityRepository<UserCollection> $userRepository */
+        $userRepository = new StaticEntityRepository([
+            new UserCollection([$user]),
+        ], new UserDefinition());
+
+        /** @var StaticEntityRepository<SalesChannelCollection> $salesChannelRepository */
+        $salesChannelRepository = new StaticEntityRepository([
+            new SalesChannelCollection([$salesChannelEntity]),
+        ], new SalesChannelDefinition());
+
+        $service = new UserRecoveryService(
+            $recoveryRepository,
+            $userRepository,
+            $router,
+            $dispatcher,
+            $salesChannelContextService,
+            $salesChannelRepository,
+            new NativeClock()
+        );
+
+        $service->generateUserRecovery('existing@example.com', new Context(new SystemSource(), [], Defaults::CURRENCY, [Defaults::LANGUAGE_SYSTEM]));
+
+        static::assertIsString($recoveryUrl);
+
+        return $recoveryUrl;
+    }
+}

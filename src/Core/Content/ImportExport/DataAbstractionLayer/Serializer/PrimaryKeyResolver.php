@@ -1,0 +1,249 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer;
+
+use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Field\AbstractFieldSerializer;
+use Shopwell\Core\Content\ImportExport\Exception\UpdatedByValueNotFoundException;
+use Shopwell\Core\Content\ImportExport\Struct\Config;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Field;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Language\LanguageDefinition;
+
+#[Package('fundamentals@after-sales')]
+class PrimaryKeyResolver
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly DefinitionInstanceRegistry $definitionInstanceRegistry,
+        private readonly AbstractFieldSerializer $fieldSerializer
+    ) {
+    }
+
+    /**
+     * @param iterable<string, mixed> $record
+     *
+     * @return iterable<string, mixed>
+     */
+    public function resolvePrimaryKeyFromUpdatedBy(Config $config, ?EntityDefinition $definition, iterable $record): iterable
+    {
+        if (!$definition) {
+            return $record;
+        }
+
+        $context = Context::createDefaultContext();
+
+        return $this->resolvePrimaryKey(
+            $config,
+            $definition,
+            $this->handleManyToManyAssociations($config, $definition, $record, $context),
+            $context
+        );
+    }
+
+    /**
+     * @param iterable<string, mixed> $record
+     *
+     * @return iterable<string, mixed>
+     */
+    private function resolvePrimaryKey(Config $config, EntityDefinition $definition, iterable $record, Context $context): iterable
+    {
+        $updatedBy = $config->getUpdateBy()->get($definition->getEntityName());
+
+        if (!$updatedBy) {
+            return $record;
+        }
+
+        $updateByField = $updatedBy->getMappedKey();
+
+        if ($updateByField === null || $updateByField === '' || $definition->getField($updateByField) instanceof IdField) {
+            return $record;
+        }
+
+        $idFields = $definition->getPrimaryKeys()->filter(static fn (Field $field) => $field instanceof IdField);
+        $idField = $idFields->first();
+
+        if ($idFields->count() !== 1 || !$idField) {
+            return $record;
+        }
+
+        $primaryKeyProperty = $idField->getPropertyName();
+
+        $updateByFieldPath = explode('.', $updateByField);
+        $record = \is_array($record) ? $record : iterator_to_array($record);
+        $updateByValue = $this->getValueFromPath($record, $updateByFieldPath);
+
+        if ($updateByValue === null) {
+            $record['_error'] = new UpdatedByValueNotFoundException($definition->getEntityName(), $updateByField);
+
+            return $record;
+        }
+
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+
+        $updateByField = $this->handleTranslationsAssociation(
+            $definition,
+            $updateByFieldPath,
+            $criteria,
+            $context
+        );
+
+        if (!$updateByField) {
+            return $record;
+        }
+
+        if ($field = $definition->getField($updateByField)) {
+            // deserialize for bool, date, int fields...
+            $updateByValue = $this->fieldSerializer->deserialize($config, $field, $updateByValue);
+        }
+
+        $criteria->addFilter(new EqualsFilter(
+            $updateByField,
+            $updateByValue
+        ));
+
+        $repository = $this->definitionInstanceRegistry->getRepository($definition->getEntityName());
+        $id = $repository->searchIds($criteria, $context)->firstId();
+
+        if ($id) {
+            $record[$primaryKeyProperty] = $id;
+        }
+
+        return $record;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @param list<string> $keyPath
+     */
+    private function getValueFromPath(array $data, array $keyPath): mixed
+    {
+        $key = array_shift($keyPath);
+        if ($key === null) {
+            return null;
+        }
+
+        if (!isset($data[$key])) {
+            return null;
+        }
+
+        if (!\is_array($data[$key])) {
+            return $data[$key];
+        }
+
+        return $this->getValueFromPath($data[$key], $keyPath);
+    }
+
+    /**
+     * @param list<string> $updateByFieldPath
+     */
+    private function handleTranslationsAssociation(
+        EntityDefinition $definition,
+        array $updateByFieldPath,
+        Criteria $criteria,
+        Context $context
+    ): ?string {
+        \assert(\is_string($updateByFieldPath[0]));
+
+        if (!$definition->getField($updateByFieldPath[0]) instanceof TranslationsAssociationField) {
+            return implode('.', $updateByFieldPath);
+        }
+
+        if (empty($updateByFieldPath[1])) {
+            return null;
+        }
+
+        if ($updateByFieldPath[1] === 'DEFAULT') {
+            $languageId = Defaults::LANGUAGE_SYSTEM;
+        } else {
+            $languageId = $this->definitionInstanceRegistry
+                ->getRepository(LanguageDefinition::ENTITY_NAME)
+                ->searchIds(
+                    (new Criteria())->addFilter(new EqualsFilter('locale.code', $updateByFieldPath[1]))->setLimit(1),
+                    $context
+                )->firstId();
+        }
+
+        if (!$languageId) {
+            return null;
+        }
+
+        $criteria->addFilter(new EqualsFilter(
+            \sprintf('%s.languageId', $updateByFieldPath[0]),
+            $languageId
+        ));
+
+        unset($updateByFieldPath[1]);
+
+        return implode('.', $updateByFieldPath);
+    }
+
+    /**
+     * @param iterable<string, mixed> $record
+     *
+     * @return iterable<string, mixed>
+     */
+    private function handleManyToManyAssociations(Config $config, EntityDefinition $definition, iterable $record, Context $context): iterable
+    {
+        foreach ($definition->getFields() as $field) {
+            if (!$field instanceof ManyToManyAssociationField) {
+                continue;
+            }
+
+            $manyToManyDefinition = $field->getToManyReferenceDefinition();
+            $updatedBy = $config->getUpdateBy()->get($manyToManyDefinition->getEntityName());
+            $record = \is_array($record) ? $record : iterator_to_array($record);
+
+            if (!$updatedBy || empty($record[$field->getPropertyName()])) {
+                continue;
+            }
+
+            $updateByField = $updatedBy->getMappedKey();
+
+            if ($updateByField === null || $updateByField === '' || $definition->getField($updateByField) instanceof IdField) {
+                continue;
+            }
+
+            $manyToManyValues = explode('|', (string) $record[$field->getPropertyName()]);
+
+            $criteria = new Criteria();
+            $updateByField = $this->handleTranslationsAssociation(
+                $definition,
+                explode('.', $updateByField),
+                $criteria,
+                $context
+            );
+
+            if (!$updateByField) {
+                continue;
+            }
+
+            $orQueries = [];
+            foreach ($manyToManyValues as $manyToManyValue) {
+                $orQueries[] = new EqualsFilter($updateByField, $manyToManyValue);
+            }
+
+            $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, $orQueries));
+
+            $repository = $this->definitionInstanceRegistry->getRepository($manyToManyDefinition->getEntityName());
+
+            $ids = $repository->searchIds($criteria, $context)->getIds();
+
+            $record[$field->getPropertyName()] = implode('|', $ids);
+        }
+
+        return $record;
+    }
+}

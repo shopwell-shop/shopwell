@@ -1,0 +1,12 @@
+{% block sw_version %}
+<div class="sw-version">
+
+    {% block sw_version_info %}
+    <div class="sw-version__info">
+        {% block sw_version_info_text %}
+        {{ version }}
+        {% endblock %}
+    </div>
+    {% endblock %}
+</div>
+{% endblock %}

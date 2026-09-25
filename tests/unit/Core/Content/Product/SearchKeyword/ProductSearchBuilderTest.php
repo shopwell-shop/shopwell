@@ -1,0 +1,81 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Product\SearchKeyword;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Content\Product\SearchKeyword\ProductSearchBuilder;
+use Shopwell\Core\Content\Product\SearchKeyword\ProductSearchTermInterpreterInterface;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+#[CoversClass(ProductSearchBuilder::class)]
+class ProductSearchBuilderTest extends TestCase
+{
+    public function testFallbackToCriteriaTermWhenSearchKeywordIndexingIsDisabled(): void
+    {
+        $termInterpreter = $this->createMock(ProductSearchTermInterpreterInterface::class);
+        $logger = static::createStub(LoggerInterface::class);
+        $searchBuilder = new ProductSearchBuilder(
+            $termInterpreter,
+            $logger,
+            20,
+            false
+        );
+
+        $mockSalesChannelContext = static::createStub(SalesChannelContext::class);
+        $mockSalesChannelContext->method('getContext')->willReturn(Context::createDefaultContext());
+
+        $criteria = new Criteria();
+        $request = new Request();
+        $request->query->set('search', 'ring saphir');
+
+        $termInterpreter->expects($this->never())->method('interpret');
+
+        $searchBuilder->build($request, $criteria, $mockSalesChannelContext);
+
+        static::assertSame('ring saphir', $criteria->getTerm());
+    }
+
+    public function testSearchTermMaxLengthReached(): void
+    {
+        $termInterpreter = $this->createMock(ProductSearchTermInterpreterInterface::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        $searchBuilder = new ProductSearchBuilder(
+            $termInterpreter,
+            $logger,
+            20
+        );
+
+        $mockSalesChannelContext = static::createStub(SalesChannelContext::class);
+        $mockSalesChannelContext->method('getContext')->willReturn(Context::createDefaultContext());
+
+        $criteria = new Criteria();
+        $request = new Request();
+
+        $request->query->set('search', 'This search term\'s length is over 20 characters');
+
+        $logger
+            ->expects($this->once())
+            ->method('notice')
+            ->with(
+                'The search term "{term}" was trimmed because it exceeded the maximum length of {maxLength} characters.',
+                [
+                    'term' => 'This search term\'s length is over 20 characters',
+                    'maxLength' => 20,
+                ]
+            );
+        $termInterpreter->expects($this->once())
+            ->method('interpret')
+            ->with('This search term\'s l', static::isInstanceOf(Context::class));
+        $searchBuilder->build($request, $criteria, $mockSalesChannelContext);
+    }
+}

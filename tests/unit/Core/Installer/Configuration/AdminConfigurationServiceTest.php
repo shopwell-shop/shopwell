@@ -1,0 +1,60 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Installer\Configuration;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Installer\Configuration\AdminConfigurationService;
+use Shopwell\Core\Test\Stub\Doctrine\FakeQueryBuilder;
+use Symfony\Component\Clock\NativeClock;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(AdminConfigurationService::class)]
+class AdminConfigurationServiceTest extends TestCase
+{
+    public function testCreateAdmin(): void
+    {
+        $localeId = Uuid::randomBytes();
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('insert')
+            ->with(
+                'user',
+                static::callback(static function (array $data) use ($localeId): bool {
+                    static::assertSame('admin', $data['username']);
+                    static::assertSame('first', $data['first_name']);
+                    static::assertSame('last', $data['last_name']);
+                    static::assertSame('test@test.com', $data['email']);
+                    static::assertSame($localeId, $data['locale_id']);
+                    static::assertTrue($data['admin']);
+                    static::assertTrue($data['active']);
+
+                    return password_verify('shopware', (string) $data['password']);
+                })
+            );
+
+        $connection->expects($this->once())->method('fetchOne')->willReturn(json_encode(['_value' => 8]));
+
+        $connection->method('createQueryBuilder')->willReturnOnConsecutiveCalls(
+            new FakeQueryBuilder($connection, []),
+            new FakeQueryBuilder($connection, [[$localeId]])
+        );
+
+        $user = [
+            'username' => 'admin',
+            'password' => 'shopware',
+            'firstName' => 'first',
+            'lastName' => 'last',
+            'email' => 'test@test.com',
+        ];
+
+        $service = new AdminConfigurationService(new NativeClock());
+        $service->createAdmin($user, $connection);
+    }
+}

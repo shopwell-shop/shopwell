@@ -1,0 +1,58 @@
+.sw-plugin-card {
+    display: grid;
+    grid-template-columns: var(--scale-size-128) 1fr;
+    column-gap: var(--scale-size-32);
+    align-items: start;
+    justify-content: left;
+
+    &__info {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    &__label {
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+    }
+
+    &__manufacturer {
+        font-size: var(--font-size-2xs);
+        line-height: var(--font-line-height-xs);
+        font-weight: var(--font-weight-regular);
+        color: var(--color-text-secondary-default);
+    }
+
+    &__short-description {
+        font-size: var(--font-size-2xs);
+        line-height: var(--font-line-height-xs);
+        font-weight: var(--font-weight-regular);
+        color: var(--color-text-primary-default);
+        flex-grow: 1;
+    }
+
+    .plugin-status {
+        display: flex;
+        flex-direction: row;
+        justify-content: start;
+        align-items: center;
+        width: 100%;
+    }
+
+    .plugin-installed {
+        height: var(--scale-size-24);
+        font-size: var(--font-size-2xs);
+        line-height: var(--font-line-height-xs);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+        margin-right: var(--scale-size-24);
+        margin-bottom: var(--scale-size-4);
+
+        .mt-icon {
+            margin-right: var(--scale-size-2);
+            color: var(--color-icon-positive-default);
+        }
+    }
+}

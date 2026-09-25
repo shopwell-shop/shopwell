@@ -1,0 +1,923 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Storefront\Controller;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\Error\GenericCartError;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\ProductLineItemFactory;
+use Shopwell\Core\Checkout\Cart\LineItemFactoryRegistry;
+use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopwell\Core\Checkout\Promotion\Cart\PromotionCartAddedInformationError;
+use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
+use Shopwell\Core\Checkout\Promotion\Cart\PromotionProcessor;
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Product\ProductEntity;
+use Shopwell\Core\Content\Product\SalesChannel\AbstractProductListRoute;
+use Shopwell\Core\Content\Product\SalesChannel\ProductListResponse;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\HtmlSanitizer;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Storefront\Controller\CartLineItemController;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use Symfony\Contracts\Translation\TranslatorInterface;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(CartLineItemController::class)]
+class CartLineItemControllerTest extends TestCase
+{
+    private CartLineItemController $controller;
+
+    private LineItemFactoryRegistry&Stub $lineItemRegistryMock;
+
+    private CartService&Stub $cartService;
+
+    private ContainerInterface&Stub $container;
+
+    private PromotionItemBuilder&Stub $promotionItemBuilderMock;
+
+    private AbstractProductListRoute&Stub $productListRouteMock;
+
+    private ProductLineItemFactory&Stub $productLineItemFactoryMock;
+
+    protected function setUp(): void
+    {
+        $this->lineItemRegistryMock = static::createStub(LineItemFactoryRegistry::class);
+        $this->cartService = static::createStub(CartService::class);
+        $this->promotionItemBuilderMock = static::createStub(PromotionItemBuilder::class);
+        $this->productListRouteMock = static::createStub(AbstractProductListRoute::class);
+        $this->productLineItemFactoryMock = static::createStub(ProductLineItemFactory::class);
+
+        $this->controller = $this->getController();
+
+        $this->container = static::createStub(ContainerInterface::class);
+
+        $this->controller->setContainer($this->container);
+    }
+
+    public function testAddLineItemsCallsLineItemWithPayload(): void
+    {
+        $productId = Uuid::randomHex();
+        $lineItemData = [
+            'id' => $productId,
+            'referencedId' => $productId,
+            'type' => 'product',
+            'stackable' => 1,
+            'removable' => 1,
+            'quantity' => 1,
+            'payload' => '{"some": "value"}',
+        ];
+
+        $expectedLineItemData = [
+            'id' => $productId,
+            'referencedId' => $productId,
+            'type' => 'product',
+            'stackable' => 1,
+            'removable' => 1,
+            'quantity' => 1,
+            'payload' => ['some' => 'value'],
+        ];
+
+        $request = new Request([], ['lineItems' => [$productId => $lineItemData]]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+        $expectedLineItem = new LineItem($productId, 'product');
+
+        $lineItemRegistry = $this->createMock(LineItemFactoryRegistry::class);
+        $lineItemRegistry->expects($this->once())
+            ->method('create')
+            ->with($expectedLineItemData, static::createStub(SalesChannelContext::class))
+            ->willReturn($expectedLineItem);
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(lineItemRegistry: $lineItemRegistry);
+        $controller->addLineItems($cart, new RequestDataBag($request->request->all()), $request, $context);
+    }
+
+    public function testAddLineItemsCallsLineItemWithNestedArrayPayload(): void
+    {
+        $productId = Uuid::randomHex();
+        $lineItemData = [
+            'id' => $productId,
+            'referencedId' => $productId,
+            'type' => 'product',
+            'stackable' => 1,
+            'removable' => 1,
+            'quantity' => 1,
+            'payload' => ['some' => 'value', 'nested' => ['key' => 'data']],
+        ];
+
+        $expectedLineItemData = [
+            'id' => $productId,
+            'referencedId' => $productId,
+            'type' => 'product',
+            'stackable' => 1,
+            'removable' => 1,
+            'quantity' => 1,
+            'payload' => ['some' => 'value', 'nested' => ['key' => 'data']],
+        ];
+
+        $request = new Request([], ['lineItems' => [$productId => $lineItemData]]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+        $expectedLineItem = new LineItem($productId, 'product');
+
+        $lineItemRegistry = $this->createMock(LineItemFactoryRegistry::class);
+        $lineItemRegistry->expects($this->once())
+            ->method('create')
+            ->with($expectedLineItemData, static::createStub(SalesChannelContext::class))
+            ->willReturn($expectedLineItem);
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(lineItemRegistry: $lineItemRegistry);
+        $controller->addLineItems($cart, new RequestDataBag($request->request->all()), $request, $context);
+    }
+
+    public function testAddLineItemsCallsLineItemSetDefaultValues(): void
+    {
+        $productId = Uuid::randomHex();
+        $productId2 = Uuid::randomHex();
+        $lineItemData = [
+            'id' => $productId,
+            'referencedId' => $productId,
+            'type' => 'product',
+            'priceDefinition' => [
+                'quantity' => 5,
+                'isCalculated' => 1,
+            ],
+        ];
+        $lineItemData2 = [
+            'id' => $productId2,
+            'referencedId' => $productId2,
+            'type' => 'product',
+        ];
+
+        $expectedLineItemData = [
+            'id' => $productId,
+            'referencedId' => $productId,
+            'type' => 'product',
+            'stackable' => true,
+            'removable' => true,
+            'quantity' => 1,
+            'priceDefinition' => [
+                'quantity' => 5,
+                'isCalculated' => 1,
+            ],
+        ];
+
+        $expectedLineItemData2 = [
+            'id' => $productId2,
+            'referencedId' => $productId2,
+            'type' => 'product',
+            'stackable' => true,
+            'removable' => true,
+            'quantity' => 1,
+        ];
+
+        $request = new Request(
+            [],
+            [
+                'lineItems' => [
+                    $productId => $lineItemData,
+                    $productId2 => $lineItemData2,
+                ],
+            ]
+        );
+
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+
+        $lineItemRegistry = $this->createMock(LineItemFactoryRegistry::class);
+        $matcher = $this->exactly(2);
+        $lineItemRegistry->expects($matcher)->method('create')
+            ->willReturnCallback(
+                static function (array $lineItemDataPar, SalesChannelContext $contextPar) use (
+                    $matcher,
+                    $expectedLineItemData,
+                    $expectedLineItemData2
+                ) {
+                    match ($matcher->numberOfInvocations()) {
+                        default => static::fail('to many calls of create'),
+                        2 => static::assertEquals($expectedLineItemData2, $lineItemDataPar),
+                        1 => static::assertEquals($expectedLineItemData, $lineItemDataPar),
+                    };
+
+                    return new LineItem($lineItemDataPar['id'], 'product');
+                }
+            );
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(lineItemRegistry: $lineItemRegistry);
+        $controller->addLineItems($cart, new RequestDataBag($request->request->all()), $request, $context);
+    }
+
+    public function testAddLineItemsCallsLineItemWithTooBigPayload(): void
+    {
+        $productId = Uuid::randomHex();
+        $bigVal = '';
+
+        for ($x = 0; $x < 9999; ++$x) {
+            $bigVal .= 'dsadasdasdasfweat34wt4etgea';
+        }
+
+        $lineItemData = [
+            'id' => $productId,
+            'referencedId' => $productId,
+            'type' => 'product',
+            'stackable' => 1,
+            'removable' => 1,
+            'quantity' => 1,
+            'payload' => $bigVal,
+        ];
+
+        $request = new Request([], ['lineItems' => [$productId => $lineItemData]]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+
+        $session = new Session(new MockArraySessionStorage());
+        $this->translatorCallback($session);
+
+        $this->controller->addLineItems($cart, new RequestDataBag($request->request->all()), $request, $context);
+
+        static::assertCount(1, $session->getFlashBag()->all());
+    }
+
+    public function testAddLineItemsCallsLineItemFactory(): void
+    {
+        $productId = Uuid::randomHex();
+        $lineItemData = [
+            'id' => $productId,
+            'referencedId' => $productId,
+            'type' => 'product',
+            'stackable' => 1,
+            'removable' => 1,
+            'quantity' => 1,
+        ];
+
+        $request = new Request([], ['lineItems' => [$productId => $lineItemData]]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+        $expectedLineItem = new LineItem($productId, 'product');
+
+        $lineItemRegistry = $this->createMock(LineItemFactoryRegistry::class);
+        $lineItemRegistry->expects($this->once())
+            ->method('create')
+            ->with($lineItemData, static::createStub(SalesChannelContext::class))
+            ->willReturn($expectedLineItem);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->once())
+            ->method('add')
+            ->with($cart, [$expectedLineItem], $context)
+            ->willReturn($cart);
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(cartService: $cartService, lineItemRegistry: $lineItemRegistry);
+        $controller->addLineItems($cart, new RequestDataBag($request->request->all()), $request, $context);
+    }
+
+    public function testAddLineItemsCartExceptionWillBeThrown(): void
+    {
+        $productId = Uuid::randomHex();
+        $lineItemData = [
+            'id' => $productId,
+            'referencedId' => $productId,
+            'type' => 'nonexistenttype',
+            'stackable' => 1,
+            'removable' => 1,
+            'quantity' => 1,
+        ];
+
+        $request = new Request([], ['lineItems' => [$productId => $lineItemData]]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+
+        $exception = CartException::invalidPriceDefinition();
+        $lineItemRegistry = $this->createMock(LineItemFactoryRegistry::class);
+        $lineItemRegistry->expects($this->once())
+            ->method('create')
+            ->with($lineItemData, static::createStub(SalesChannelContext::class))
+            ->willThrowException($exception);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->never())->method('add');
+
+        $this->expectExceptionObject($exception);
+        $controller = $this->getController(cartService: $cartService, lineItemRegistry: $lineItemRegistry);
+        $controller->addLineItems($cart, new RequestDataBag($request->request->all()), $request, $context);
+    }
+
+    public function testAddLineItemsCartExceptionWillBeThrownQuantity(): void
+    {
+        $productId = Uuid::randomHex();
+        $lineItemData = [
+            'id' => $productId,
+            'referencedId' => $productId,
+            'type' => 'nonexistenttype',
+            'stackable' => 1,
+            'removable' => 1,
+            'quantity' => 1,
+        ];
+
+        $request = new Request([], ['lineItems' => [$productId => $lineItemData]]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+
+        $exception = CartException::invalidQuantity(1);
+        $lineItemRegistry = $this->createMock(LineItemFactoryRegistry::class);
+        $lineItemRegistry->expects($this->once())
+            ->method('create')
+            ->with($lineItemData, static::createStub(SalesChannelContext::class))
+            ->willThrowException($exception);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->never())->method('add');
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(cartService: $cartService, lineItemRegistry: $lineItemRegistry);
+        $controller->addLineItems($cart, new RequestDataBag($request->request->all()), $request, $context);
+    }
+
+    public function testAddByProductNumber(): void
+    {
+        $productNumber = Uuid::randomHex();
+        $id = Uuid::randomHex();
+        $request = new Request([], ['number' => $productNumber]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+        $product = new ProductEntity();
+        $product->setUniqueIdentifier($id);
+        $product->setId($id);
+        $item = new LineItem($id, PromotionProcessor::LINE_ITEM_TYPE);
+
+        $cart->add($item);
+        $productListRoute = $this->createMock(AbstractProductListRoute::class);
+        $productListRoute->expects($this->once())
+            ->method('load')
+            ->willReturn(
+                new ProductListResponse(
+                    new EntitySearchResult(
+                        ProductDefinition::ENTITY_NAME,
+                        1,
+                        new ProductCollection([$product]),
+                        null,
+                        new Criteria(),
+                        Context::createDefaultContext()
+                    )
+                )
+            );
+
+        $productLineItemFactory = $this->createMock(ProductLineItemFactory::class);
+        $productLineItemFactory->expects($this->once())->method('create')->willReturn($item);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->once())
+            ->method('getCart')->willReturn($cart);
+
+        $cartService->expects($this->once())
+            ->method('add')
+            ->with($cart, $item, $context)
+            ->willReturn($cart);
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(
+            cartService: $cartService,
+            productLineItemFactory: $productLineItemFactory,
+            productListRoute: $productListRoute
+        );
+        $controller->addProductByNumber($request, $context);
+    }
+
+    public function testAddByProductNumberNotFound(): void
+    {
+        $productNumber = Uuid::randomHex();
+        $id = Uuid::randomHex();
+        $request = new Request([], ['number' => $productNumber]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+        $product = new ProductEntity();
+        $product->setUniqueIdentifier($id);
+        $product->setId($id);
+        $item = new LineItem($id, PromotionProcessor::LINE_ITEM_TYPE);
+
+        $cart->add($item);
+        $productListRoute = $this->createMock(AbstractProductListRoute::class);
+        $productListRoute->expects($this->once())
+            ->method('load')
+            ->willReturn(
+                new ProductListResponse(
+                    new EntitySearchResult(
+                        ProductDefinition::ENTITY_NAME,
+                        0,
+                        new ProductCollection([]),
+                        null,
+                        new Criteria(),
+                        Context::createDefaultContext()
+                    )
+                )
+            );
+
+        $session = new Session(new MockArraySessionStorage());
+        $this->translatorCallback($session);
+
+        $controller = $this->getController(productListRoute: $productListRoute);
+        $response = $controller->addProductByNumber($request, $context);
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        static::assertArrayHasKey('danger', $session->getFlashBag()->peekAll());
+    }
+
+    public function testAddByProductNumberTrimsInputBeforeLookup(): void
+    {
+        $productNumber = \sprintf(' %s ', Uuid::randomHex());
+        $id = Uuid::randomHex();
+        $request = new Request([], ['number' => $productNumber]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+        $product = new ProductEntity();
+        $product->setUniqueIdentifier($id);
+        $product->setId($id);
+        $item = new LineItem($id, PromotionProcessor::LINE_ITEM_TYPE);
+
+        $cart->add($item);
+        $productListRoute = $this->createMock(AbstractProductListRoute::class);
+        $productListRoute->expects($this->once())
+            ->method('load')
+            ->with(
+                static::callback(static function (Criteria $criteria) use ($productNumber): bool {
+                    foreach ($criteria->getFilters() as $filter) {
+                        if ($filter instanceof EqualsFilter && $filter->getField() === 'productNumber' && $filter->getValue() === $productNumber) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }),
+                $context
+            )
+            ->willReturn(
+                new ProductListResponse(
+                    new EntitySearchResult(
+                        ProductDefinition::ENTITY_NAME,
+                        1,
+                        new ProductCollection([$product]),
+                        null,
+                        new Criteria(),
+                        Context::createDefaultContext()
+                    )
+                )
+            );
+
+        $productLineItemFactory = $this->createMock(ProductLineItemFactory::class);
+        $productLineItemFactory->expects($this->once())->method('create')->willReturn($item);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->once())
+            ->method('getCart')->willReturn($cart);
+
+        $cartService->expects($this->once())
+            ->method('add')
+            ->with($cart, $item, $context)
+            ->willReturn($cart);
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(
+            cartService: $cartService,
+            productLineItemFactory: $productLineItemFactory,
+            productListRoute: $productListRoute
+        );
+        $controller->addProductByNumber($request, $context);
+    }
+
+    public function testAddByProductNumberWithBlankInput(): void
+    {
+        $request = new Request([], ['number' => '   ']);
+        $context = static::createStub(SalesChannelContext::class);
+
+        $productListRoute = $this->createMock(AbstractProductListRoute::class);
+        $productListRoute->expects($this->never())->method('load');
+        $productLineItemFactory = $this->createMock(ProductLineItemFactory::class);
+        $productLineItemFactory->expects($this->never())->method('create');
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->never())->method('getCart');
+        $cartService->expects($this->never())->method('add');
+
+        $session = new Session(new MockArraySessionStorage());
+        $this->translatorCallback($session);
+
+        $controller = $this->getController(
+            cartService: $cartService,
+            productLineItemFactory: $productLineItemFactory,
+            productListRoute: $productListRoute
+        );
+        $response = $controller->addProductByNumber($request, $context);
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        static::assertArrayHasKey('danger', $session->getFlashBag()->peekAll());
+    }
+
+    public function testAddPromotion(): void
+    {
+        $code = Uuid::randomHex();
+
+        $request = new Request([], ['code' => $code]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+        $uniqueKey = PromotionItemBuilder::PLACEHOLDER_PREFIX . $code;
+        $item = new LineItem($uniqueKey, PromotionProcessor::LINE_ITEM_TYPE);
+        $item->setLabel($code);
+        $cart->addErrors(new PromotionCartAddedInformationError($item));
+
+        $this->promotionItemBuilderMock->method('buildPlaceholderItem')->willReturn($item);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->once())
+            ->method('add')
+            ->with($cart, $item, $context)
+            ->willReturn($cart);
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->addPromotion($cart, $request, $context);
+    }
+
+    public function testAddPromotionOtherExceptions(): void
+    {
+        $code = Uuid::randomHex();
+
+        $request = new Request([], ['code' => $code]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+        $uniqueKey = PromotionItemBuilder::PLACEHOLDER_PREFIX . $code;
+        $item = new LineItem($uniqueKey, PromotionProcessor::LINE_ITEM_TYPE);
+        $item->setLabel($code);
+        $cart->addErrors(new GenericCartError('d', 's', [], 0, false, true, false));
+
+        $this->promotionItemBuilderMock->method('buildPlaceholderItem')->willReturn($item);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->once())
+            ->method('add')
+            ->with($cart, $item, $context)
+            ->willReturn($cart);
+
+        $session = new Session(new MockArraySessionStorage());
+        $this->translatorCallback($session);
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->addPromotion($cart, $request, $context);
+    }
+
+    public function testAddPromotionNoCode(): void
+    {
+        $code = '';
+
+        $request = new Request([], ['code' => $code]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+        $uniqueKey = PromotionItemBuilder::PLACEHOLDER_PREFIX . $code;
+        $item = new LineItem($uniqueKey, PromotionProcessor::LINE_ITEM_TYPE);
+
+        $this->promotionItemBuilderMock->method('buildPlaceholderItem')->willReturn($item);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->never())
+            ->method('add');
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->addPromotion($cart, $request, $context);
+    }
+
+    public function testChangeQuantity(): void
+    {
+        $id = Uuid::randomHex();
+
+        $request = new Request([], ['quantity' => 3]);
+        $cart = new Cart(Uuid::randomHex());
+        $cart->addLineItems(new LineItemCollection([new LineItem($id, LineItem::PRODUCT_LINE_ITEM_TYPE)]));
+        $context = static::createStub(SalesChannelContext::class);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->once())
+            ->method('changeQuantity')
+            ->with($cart, $id, 3, $context)
+            ->willReturn($cart);
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->changeQuantity($cart, $id, $request, $context);
+    }
+
+    public function testChangeQuantityNoParam(): void
+    {
+        $id = Uuid::randomHex();
+
+        $request = new Request([]);
+        $cart = new Cart(Uuid::randomHex());
+        $cart->addLineItems(new LineItemCollection([new LineItem($id, LineItem::PRODUCT_LINE_ITEM_TYPE)]));
+        $context = static::createStub(SalesChannelContext::class);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->never())
+            ->method('changeQuantity');
+
+        $session = new Session(new MockArraySessionStorage());
+        $this->translatorCallback($session);
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->changeQuantity($cart, $id, $request, $context);
+
+        static::assertArrayHasKey('danger', $session->getFlashBag()->peekAll());
+    }
+
+    public function testChangeQuantityNoLineItem(): void
+    {
+        $id = Uuid::randomHex();
+
+        $request = new Request(['quantity' => 3]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->never())
+            ->method('changeQuantity');
+
+        $session = new Session(new MockArraySessionStorage());
+        $this->translatorCallback($session);
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->changeQuantity($cart, $id, $request, $context);
+
+        static::assertArrayHasKey('danger', $session->getFlashBag()->peekAll());
+    }
+
+    public function testDeleteLineItem(): void
+    {
+        $id = Uuid::randomHex();
+
+        $request = new Request([]);
+        $cart = new Cart(Uuid::randomHex());
+        $cart->addLineItems(new LineItemCollection([new LineItem($id, LineItem::PRODUCT_LINE_ITEM_TYPE)]));
+        $context = static::createStub(SalesChannelContext::class);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->once())
+            ->method('remove')
+            ->with($cart, $id, $context)
+            ->willReturn($cart);
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->deleteLineItem($cart, $id, $request, $context);
+    }
+
+    public function testDeleteLineItemNotInCart(): void
+    {
+        $id = Uuid::randomHex();
+
+        $request = new Request([]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->never())
+            ->method('remove');
+
+        $session = new Session(new MockArraySessionStorage());
+        $this->translatorCallback($session);
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->deleteLineItem($cart, $id, $request, $context);
+
+        static::assertArrayHasKey('danger', $session->getFlashBag()->peekAll());
+    }
+
+    public function testDeleteLineItems(): void
+    {
+        $id1 = Uuid::randomHex();
+        $id2 = Uuid::randomHex();
+        $ids = [$id1, $id2];
+
+        $request = new Request([], ['ids' => $ids]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->once())
+            ->method('removeItems')
+            ->with($cart, $ids, $context)
+            ->willReturn($cart);
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->deleteLineItems($cart, $request, $context);
+    }
+
+    public function testDeleteLineItemsMissingIdsParameter(): void
+    {
+        $request = new Request();
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->never())->method('remove');
+
+        $session = new Session(new MockArraySessionStorage());
+        $this->translatorCallback($session);
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->deleteLineItems($cart, $request, $context);
+
+        static::assertArrayHasKey('danger', $session->getFlashBag()->peekAll());
+    }
+
+    public function testDeleteLineItemsWrongParameter(): void
+    {
+        $id1 = Uuid::randomHex();
+        $id2 = 123;
+        $ids = [$id1, $id2];
+
+        $request = new Request([], ['ids' => $ids]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->never())->method('remove');
+
+        $stack = static::createStub(RequestStack::class);
+        $session = new Session(new MockArraySessionStorage());
+        $stack->method('getSession')->willReturn($session);
+        $this->container->method('get')
+            ->willReturnCallback(function ($id) use ($stack) {
+                if ($id === 'translator') {
+                    return $this->createStub(TranslatorInterface::class);
+                }
+
+                if ($id === 'request_stack') {
+                    return $stack;
+                }
+
+                return null;
+            });
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->deleteLineItems($cart, $request, $context);
+
+        static::assertArrayHasKey('danger', $session->getFlashBag()->peekAll());
+    }
+
+    public function testDeleteCart(): void
+    {
+        $request = new Request([], ['all' => true]);
+        $context = static::createStub(SalesChannelContext::class);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->once())
+            ->method('deleteCart')
+            ->with($context);
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->deleteCart($request, $context);
+    }
+
+    public function testUpdateLineItems(): void
+    {
+        $id1 = Uuid::randomHex();
+        $id2 = Uuid::randomHex();
+        // Raw request payload: browsers submit everything as strings.
+        $lineItems = [
+            ['id' => $id1, 'quantity' => '5', 'stackable' => '1', 'priceDefinition' => ['quantity' => '5', 'isCalculated' => '1']],
+            ['id' => $id2, 'removable' => '0'],
+        ];
+
+        $request = new Request([], ['lineItems' => $lineItems]);
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+
+        // The controller must normalize the raw strings to int/bool before handing them to update().
+        // identicalTo() enforces the types strictly; the default with() uses == and would pass uncast.
+        $expectedItems = [
+            ['id' => $id1, 'quantity' => 5, 'stackable' => true, 'priceDefinition' => ['quantity' => 5, 'isCalculated' => 1]],
+            ['id' => $id2, 'removable' => false],
+        ];
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->once())
+            ->method('update')
+            ->with($cart, static::identicalTo($expectedItems), $context)
+            ->willReturn($cart);
+
+        $this->translatorCallback();
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->updateLineItems($cart, new RequestDataBag($request->request->all()), $request, $context);
+    }
+
+    public function testDeleteLineItemsMissingParameter(): void
+    {
+        $request = new Request();
+        $cart = new Cart(Uuid::randomHex());
+        $context = static::createStub(SalesChannelContext::class);
+
+        $cartService = $this->createMock(CartService::class);
+        $cartService->expects($this->never())->method('update');
+
+        $stack = static::createStub(RequestStack::class);
+        $session = new Session(new MockArraySessionStorage());
+        $stack->method('getSession')->willReturn($session);
+        $this->container->method('get')
+            ->willReturnCallback(function ($id) use ($stack) {
+                if ($id === 'translator') {
+                    return $this->createStub(TranslatorInterface::class);
+                }
+
+                if ($id === 'request_stack') {
+                    return $stack;
+                }
+
+                return null;
+            });
+
+        $controller = $this->getController(cartService: $cartService);
+        $controller->updateLineItems($cart, new RequestDataBag($request->request->all()), $request, $context);
+
+        static::assertArrayHasKey('danger', $session->getFlashBag()->peekAll());
+    }
+
+    private function getController(
+        ?CartService $cartService = null,
+        ?ProductLineItemFactory $productLineItemFactory = null,
+        ?AbstractProductListRoute $productListRoute = null,
+        ?LineItemFactoryRegistry $lineItemRegistry = null
+    ): CartLineItemController {
+        $controller = new CartLineItemController(
+            $cartService ?? $this->cartService,
+            $this->promotionItemBuilderMock,
+            $productLineItemFactory ?? $this->productLineItemFactoryMock,
+            static::createStub(HtmlSanitizer::class),
+            $productListRoute ?? $this->productListRouteMock,
+            $lineItemRegistry ?? $this->lineItemRegistryMock,
+        );
+
+        if (isset($this->container)) {
+            $controller->setContainer($this->container);
+        }
+
+        return $controller;
+    }
+
+    private function translatorCallback(?Session $session = null): void
+    {
+        if (!$session instanceof Session) {
+            $session = new Session(new MockArraySessionStorage());
+        }
+        $stack = static::createStub(RequestStack::class);
+        $stack->method('getSession')->willReturn($session);
+        $this->container->method('get')
+            ->willReturnCallback(function ($id) use ($stack) {
+                if ($id === 'translator') {
+                    return $this->createStub(TranslatorInterface::class);
+                }
+
+                if ($id === 'request_stack') {
+                    return $stack;
+                }
+
+                return null;
+            });
+    }
+}

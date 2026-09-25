@@ -1,0 +1,192 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Document\Service;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Document\DocumentException;
+use Shopwell\Core\Checkout\Document\Extension\PdfRendererExtension;
+use Shopwell\Core\Checkout\Document\Renderer\InvoiceRenderer;
+use Shopwell\Core\Checkout\Document\Renderer\RenderedDocument;
+use Shopwell\Core\Checkout\Document\Service\PdfRenderer;
+use Shopwell\Core\Checkout\Document\Twig\DocumentTemplateRenderer;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseHelper\CallableClass;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Language\LanguageEntity;
+use Shopwell\Core\System\Locale\LocaleEntity;
+use Smalot\PdfParser\Parser;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+
+/**
+ * @internal
+ */
+#[Package('after-sales')]
+#[CoversClass(PdfRenderer::class)]
+class PdfRendererTest extends TestCase
+{
+    public function testGetContentType(): void
+    {
+        $pdfRenderer = new PdfRenderer(
+            [],
+            static::createStub(DocumentTemplateRenderer::class),
+            '',
+            new ExtensionDispatcher(new EventDispatcher())
+        );
+
+        static::assertSame('application/pdf', $pdfRenderer->getContentType());
+    }
+
+    public function testExtensionIsDispatched(): void
+    {
+        $dispatcher = new EventDispatcher();
+        $renderer = new PdfRenderer(
+            [],
+            static::createStub(DocumentTemplateRenderer::class),
+            '',
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        $rendered = new RenderedDocument('', '1001', InvoiceRenderer::TYPE);
+        $rendered->setContext(Context::createDefaultContext());
+        $rendered->setOrder($this->getOrder());
+
+        $pre = $this->createMock(CallableClass::class);
+        $pre->expects($this->once())->method('__invoke');
+        $dispatcher->addListener(PdfRendererExtension::NAME . '.pre', $pre);
+
+        $post = $this->createMock(CallableClass::class);
+        $post->expects($this->once())->method('__invoke');
+        $dispatcher->addListener(PdfRendererExtension::NAME . '.post', $post);
+
+        $renderer->render($rendered);
+    }
+
+    public function testRenderWithoutHtml(): void
+    {
+        $rendered = new RenderedDocument(
+            '1001',
+            InvoiceRenderer::TYPE,
+        );
+
+        $rendered->setContext(Context::createDefaultContext());
+        $rendered->setOrder($this->getOrder());
+
+        $documentTemplateRenderer = $this->createMock(DocumentTemplateRenderer::class);
+        $documentTemplateRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn('html');
+
+        $pdfRenderer = new PdfRenderer(
+            [
+                'isRemoteEnabled' => true,
+                'isHtml5ParserEnabled' => true,
+            ],
+            $documentTemplateRenderer,
+            '',
+            new ExtensionDispatcher(new EventDispatcher()),
+        );
+
+        $generatorOutput = $pdfRenderer->render($rendered);
+        static::assertNotEmpty($generatorOutput);
+
+        static::assertSame($rendered->getFileExtension(), PdfRenderer::FILE_EXTENSION);
+        static::assertSame($rendered->getContentType(), PdfRenderer::FILE_CONTENT_TYPE);
+
+        $finfo = new \finfo(\FILEINFO_MIME_TYPE);
+        static::assertSame('application/pdf', $finfo->buffer($generatorOutput));
+    }
+
+    public function testRenderThrowException(): void
+    {
+        $this->expectException(DocumentException::class);
+
+        $rendered = new RenderedDocument(
+            '1001',
+            InvoiceRenderer::TYPE,
+        );
+
+        $htmlRenderer = new PdfRenderer(
+            [],
+            static::createStub(DocumentTemplateRenderer::class),
+            '',
+            new ExtensionDispatcher(new EventDispatcher()),
+        );
+
+        $htmlRenderer->render($rendered);
+    }
+
+    #[DataProvider('provideFontFamiliesForPageCountInjection')]
+    public function testPageCountInjected(string $fontFamily): void
+    {
+        $rendered = new RenderedDocument(
+            '1001',
+            InvoiceRenderer::TYPE,
+        );
+
+        $rendered->setContext(Context::createDefaultContext());
+        $rendered->setOrder($this->getOrder());
+
+        $raw = <<<HTML
+            <html><head><style>body { font-family: {$fontFamily}; }</style></head><body>
+                <p>Page 1 / DOMPDF_PAGE_COUNT_PLACEHOLDER</p>
+            </body></html>
+            HTML;
+
+        $documentTemplateRenderer = $this->createMock(DocumentTemplateRenderer::class);
+        $documentTemplateRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($raw);
+
+        $pdfRenderer = new PdfRenderer(
+            [
+                'isRemoteEnabled' => false,
+                'isHtml5ParserEnabled' => true,
+            ],
+            $documentTemplateRenderer,
+            '',
+            new ExtensionDispatcher(new EventDispatcher()),
+        );
+
+        $generatorOutput = $pdfRenderer->render($rendered);
+        static::assertNotEmpty($generatorOutput);
+
+        $text = (new Parser())->parseContent($generatorOutput)->getText();
+
+        static::assertStringNotContainsString('DOMPDF_PAGE_COUNT_PLACEHOLDER', $text);
+        static::assertStringContainsString('Page 1 / 1', $text);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideFontFamiliesForPageCountInjection(): iterable
+    {
+        yield 'unicode TrueType font (UTF-16BE)' => ['DejaVu Sans'];
+        yield 'standard core AFM font (8-bit ANSI)' => ['Helvetica'];
+        yield 'generic sans-serif fallback (8-bit ANSI)' => ['sans-serif'];
+    }
+
+    private function getOrder(): OrderEntity
+    {
+        $locale = new LocaleEntity();
+        $locale->setId(Uuid::randomHex());
+        $locale->setCode('en-GB');
+
+        $language = new LanguageEntity();
+        $language->setId(Uuid::randomHex());
+        $language->setLocale($locale);
+
+        $order = new OrderEntity();
+        $order->setId(Uuid::randomHex());
+        $order->setSalesChannelId(Uuid::randomHex());
+        $order->setLanguageId($language->getId());
+        $order->setLanguage($language);
+
+        return $order;
+    }
+}

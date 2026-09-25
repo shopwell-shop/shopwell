@@ -1,0 +1,118 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer;
+
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\ListPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\ReferencePrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\RegulationPrice;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTax;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRule;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Field;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\DataStack\KeyValuePair;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteParameterBag;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class CalculatedPriceFieldSerializer extends JsonFieldSerializer
+{
+    public function encode(
+        Field $field,
+        EntityExistence $existence,
+        KeyValuePair $data,
+        WriteParameterBag $parameters
+    ): \Generator {
+        $value = json_decode(json_encode($data->getValue(), \JSON_PRESERVE_ZERO_FRACTION | \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR);
+
+        // a non-array value must survive untouched, `parent::encode()` turns it into a write constraint violation
+        if (\is_array($value)) {
+            unset($value['extensions']);
+
+            if (\is_array($value['listPrice'] ?? null)) {
+                unset($value['listPrice']['extensions']);
+            }
+
+            if (\is_array($value['regulationPrice'] ?? null)) {
+                unset($value['regulationPrice']['extensions']);
+            }
+        }
+
+        $data->setValue($value);
+
+        yield from parent::encode($field, $existence, $data, $parameters);
+    }
+
+    public function decode(Field $field, mixed $value): ?CalculatedPrice
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $decoded = parent::decode($field, $value);
+        if (!\is_array($decoded)) {
+            return null;
+        }
+
+        $taxRules = array_map(
+            static fn (array $tax) => new TaxRule(
+                (float) $tax['taxRate'],
+                (float) $tax['percentage']
+            ),
+            $decoded['taxRules']
+        );
+
+        $calculatedTaxes = array_map(
+            static fn (array $tax) => new CalculatedTax(
+                (float) $tax['tax'],
+                (float) $tax['taxRate'],
+                (float) $tax['price'],
+                $tax['label'] ?? null,
+            ),
+            $decoded['calculatedTaxes']
+        );
+
+        $referencePriceDefinition = null;
+        if (isset($decoded['referencePrice'])) {
+            $refPrice = $decoded['referencePrice'];
+
+            $referencePriceDefinition = new ReferencePrice(
+                $refPrice['price'],
+                $refPrice['purchaseUnit'],
+                $refPrice['referenceUnit'],
+                $refPrice['unitName']
+            );
+        }
+
+        $listPrice = null;
+        if (isset($decoded['listPrice']) && ((float) ($decoded['listPrice']['price'] ?? 0)) > 0) {
+            $listPrice = ListPrice::createFromUnitPrice(
+                (float) $decoded['unitPrice'],
+                (float) $decoded['listPrice']['price']
+            );
+        }
+
+        $regulationPrice = null;
+        if (isset($decoded['regulationPrice'])) {
+            $regulationPrice = new RegulationPrice(
+                (float) $decoded['regulationPrice']['price']
+            );
+        }
+
+        return new CalculatedPrice(
+            (float) $decoded['unitPrice'],
+            (float) $decoded['totalPrice'],
+            new CalculatedTaxCollection($calculatedTaxes),
+            new TaxRuleCollection($taxRules),
+            (int) $decoded['quantity'],
+            $referencePriceDefinition,
+            $listPrice,
+            $regulationPrice
+        );
+    }
+}

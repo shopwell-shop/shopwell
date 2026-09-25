@@ -1,0 +1,144 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Product\SalesChannel\Detail;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
+use Shopwell\Core\Content\Product\Stock\AbstractStockStorage;
+use Shopwell\Core\Content\Product\Stock\StockLoadRequest;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\FetchModeHelper;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+
+#[Package('inventory')]
+class AvailableCombinationLoader extends AbstractAvailableCombinationLoader
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly Connection $connection,
+        private readonly AbstractStockStorage $stockStorage,
+        private readonly SystemConfigService $systemConfigService,
+    ) {
+    }
+
+    public function getDecorated(): AbstractAvailableCombinationLoader
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    public function loadCombinations(string $productId, SalesChannelContext $salesChannelContext): AvailableCombinationResult
+    {
+        $combinations = $this->getCombinations(
+            $productId,
+            $salesChannelContext->getContext(),
+            $salesChannelContext->getSalesChannelId()
+        );
+
+        $stocks = $this->stockStorage->load(
+            new StockLoadRequest(array_keys($combinations)),
+            $salesChannelContext
+        );
+
+        $result = new AvailableCombinationResult();
+        $hideCloseoutProductsWhenOutOfStock = $this->systemConfigService->getBool(
+            'core.listing.hideCloseoutProductsWhenOutOfStock',
+            $salesChannelContext->getSalesChannelId()
+        );
+
+        foreach ($combinations as $id => $combination) {
+            try {
+                $options = json_decode((string) $combination['options'], true, 512, \JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                continue;
+            }
+
+            $available = (bool) $combination['available'];
+            $isCloseout = (bool) $combination['isCloseout'];
+            $stockData = $stocks->getStockForProductId($id);
+
+            if ($stockData !== null) {
+                $available = $stockData->available;
+            }
+
+            if ($hideCloseoutProductsWhenOutOfStock && $isCloseout && !$available) {
+                continue;
+            }
+
+            $result->addCombination($options, $available);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return array<string, array{options: string, productNumber: string, available: string, isCloseout: string}>
+     */
+    private function getCombinations(string $productId, Context $context, string $salesChannelId): array
+    {
+        $parent = $this->fetchParent($productId, $context);
+
+        $query = $this->connection->createQueryBuilder();
+        $query->from('product');
+
+        $query->andWhere('product.parent_id = :id');
+        $query->andWhere('product.version_id = :versionId');
+        $query->andWhere('IFNULL(product.active, :parentActive) = :active');
+        $query->andWhere('product.option_ids IS NOT NULL');
+
+        $query->setParameter('id', Uuid::fromHexToBytes($productId));
+        $query->setParameter('versionId', Uuid::fromHexToBytes($context->getVersionId()));
+        $query->setParameter('active', true);
+        $query->setParameter('parentActive', $parent['active'], ParameterType::BOOLEAN);
+        $query->setParameter('parentIsCloseout', $parent['is_closeout'], ParameterType::BOOLEAN);
+
+        $query->innerJoin('product', 'product_visibility', 'visibilities', 'product.visibilities = visibilities.product_id');
+        $query->andWhere('visibilities.sales_channel_id = :salesChannelId');
+        $query->setParameter('salesChannelId', Uuid::fromHexToBytes($salesChannelId));
+
+        $query->select(
+            'LOWER(HEX(product.id))',
+            'product.option_ids as options',
+            'product.product_number as productNumber',
+            'product.available',
+            'IFNULL(product.is_closeout, :parentIsCloseout) as isCloseout',
+        );
+
+        $combinations = $query->executeQuery()->fetchAllAssociative();
+
+        /** @var array<string, array{options: string, productNumber: string, available: string, isCloseout: string}> $unique */
+        $unique = FetchModeHelper::groupUnique($combinations);
+
+        return $unique;
+    }
+
+    /**
+     * @return array{active: string|null, is_closeout: string|null}
+     */
+    private function fetchParent(string $productId, Context $context): array
+    {
+        $query = $this->connection->createQueryBuilder();
+        $query->select('active', 'is_closeout');
+        $query->from('product');
+        $query->where('id = :id');
+        $query->andWhere('version_id = :versionId');
+
+        $query->setParameter('id', Uuid::fromHexToBytes($productId));
+        $query->setParameter('versionId', Uuid::fromHexToBytes($context->getVersionId()));
+
+        $parent = $query->executeQuery()->fetchAssociative();
+        if ($parent === false) {
+            return ['active' => null, 'is_closeout' => null];
+        }
+
+        return [
+            'active' => $parent['active'],
+            'is_closeout' => $parent['is_closeout'],
+        ];
+    }
+}

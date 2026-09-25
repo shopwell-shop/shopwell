@@ -1,0 +1,32 @@
+.sw-customer-base-info {
+    font-size: var(--font-size-xs);
+    line-height: var(--font-line-height-xs);
+    margin-bottom: var(--scale-size-8);
+    margin-top: var(--scale-size-8);
+
+    .sw-customer-base-info-columns {
+        dl {
+            margin-bottom: var(--scale-size-18);
+        }
+
+        dt {
+            padding: 0 0 var(--scale-size-2);
+            color: var(--color-text-primary-default);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        dd {
+            padding: 0;
+            color: var(--color-text-secondary-default);
+        }
+    }
+
+    .sw-bound-sales-channel__label {
+        display: flex;
+        align-items: center;
+
+        .sw-help-text {
+            margin-left: var(--scale-size-8);
+        }
+    }
+}

@@ -1,0 +1,161 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules;
+
+use PhpParser\Node;
+use PhpParser\Node\Expr\Array_;
+use PhpParser\Node\Expr\ArrayItem;
+use PhpParser\Node\Scalar\String_;
+use PHPStan\Analyser\Scope;
+use PHPStan\BetterReflection\Reflection\Adapter\FakeReflectionAttribute;
+use PHPStan\BetterReflection\Reflection\Adapter\ReflectionAttribute;
+use PHPStan\Node\InClassNode;
+use PHPStan\Rules\Rule;
+use PHPStan\Rules\RuleError;
+use PHPStan\Rules\RuleErrorBuilder;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\PlatformRequest;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Routing\Attribute\Route;
+
+/**
+ * This rule makes an attempt to validate if the ACL keys used in the controllers and controllers methods route attributes
+ * are valid. The rule does not validate attributes itself, so it return empty errors list if it can't parse acl names.
+ *
+ * @internal
+ *
+ * @implements Rule<InClassNode>
+ */
+#[Package('framework')]
+class AclValidPermissionsInRouteAttributesRule implements Rule
+{
+    public function __construct(private readonly AclValidPermissionsHelper $permissionsHelper)
+    {
+    }
+
+    public function getNodeType(): string
+    {
+        return InClassNode::class;
+    }
+
+    /**
+     * @param InClassNode $node
+     *
+     * @return array<array-key, RuleError>
+     */
+    public function processNode(Node $node, Scope $scope): array
+    {
+        if (!$node->getClassReflection()->is(AbstractController::class)) {
+            return [];
+        }
+
+        $errors = [];
+        $controllerReflection = $node->getClassReflection()->getNativeReflection();
+        \assert($controllerReflection instanceof \ReflectionClass);
+        $classRouteAttr = $this->getRouteAnnotation($controllerReflection->getAttributes());
+        if ($classRouteAttr !== null) {
+            $errors = array_merge($errors, $this->validateAttribute($classRouteAttr, $scope));
+        }
+
+        foreach ($controllerReflection->getMethods() as $method) {
+            // do not check inherited methods
+            if ($method->getDeclaringClass()->name !== $controllerReflection->getName()) {
+                continue;
+            }
+
+            $methodRouteAttr = $this->getRouteAnnotation($method->getAttributes());
+
+            // skip methods without route annotation
+            if ($methodRouteAttr === null) {
+                continue;
+            }
+            $errors = array_merge($errors, $this->validateAttribute($methodRouteAttr, $scope));
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @param list<ReflectionAttribute|FakeReflectionAttribute> $attributes
+     */
+    private function getRouteAnnotation(array $attributes): ?ReflectionAttribute
+    {
+        foreach ($attributes as $attribute) {
+            if ($attribute->getName() === Route::class) {
+                \assert($attribute instanceof ReflectionAttribute);
+
+                return $attribute;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return RuleError[]
+     */
+    private function validateAttribute(ReflectionAttribute $attribute, Scope $scope): array
+    {
+        $errors = [];
+        $defaults = $attribute->getArgumentsExpressions()['defaults'] ?? null;
+
+        if (!$defaults instanceof Array_) {
+            return $errors;
+        }
+
+        foreach ($defaults->items as $item) {
+            if ($item instanceof ArrayItem) {
+                $key = $item->key;
+                // The ACL key may be written as the string literal '_acl' or, as in every real controller,
+                // as the PlatformRequest::ATTRIBUTE_ACL constant. Resolve it through the type system so both forms match.
+                if ($key !== null && $this->resolveConstantString($key, $scope) === PlatformRequest::ATTRIBUTE_ACL) {
+                    if (!$item->value instanceof Array_) {
+                        return $errors;
+                    }
+                    $acls = $item->value->items;
+                    foreach ($acls as $acl) {
+                        if (!$acl instanceof ArrayItem) {
+                            continue;
+                        }
+                        $permissionNode = $acl->value;
+                        if (!$permissionNode instanceof String_) {
+                            return $errors;
+                        }
+                        $permission = $permissionNode->value;
+
+                        try {
+                            if (!$this->permissionsHelper->aclKeyValid($permission)) {
+                                $errors[] = RuleErrorBuilder::message(\sprintf(AclValidPermissionsHelper::INVALID_KEY_ERROR_MESSAGE, $permission))
+                                    ->line($permissionNode->getStartLine() ?: 0)
+                                    ->identifier('shopware.aclKey')
+                                    ->build();
+                            }
+                        } catch (\RuntimeException) {
+                            $errors[] = RuleErrorBuilder::message(\sprintf(AclValidPermissionsHelper::MISSING_SCHEMA_ERROR_MESSAGE, $permission))
+                                ->line($permissionNode->getStartLine() ?: 0)
+                                ->identifier('shopware.aclKey.missingSchema')
+                                ->build();
+                        }
+                    }
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Resolves an expression node to its single constant string value, or null if it is not a constant string.
+     * This collapses both the string literal ('_acl') and the constant fetch (PlatformRequest::ATTRIBUTE_ACL) forms.
+     */
+    private function resolveConstantString(Node\Expr $node, Scope $scope): ?string
+    {
+        $constantStrings = $scope->getType($node)->getConstantStrings();
+
+        if (\count($constantStrings) !== 1) {
+            return null;
+        }
+
+        return $constantStrings[0]->getValue();
+    }
+}

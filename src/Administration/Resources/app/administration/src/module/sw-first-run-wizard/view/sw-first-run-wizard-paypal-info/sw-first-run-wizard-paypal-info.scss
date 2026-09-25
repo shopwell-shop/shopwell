@@ -1,0 +1,84 @@
+.sw-first-run-wizard-paypal-info {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    .sw-first-run-wizard-paypal__error {
+        margin-top: var(--scale-size-24);
+        margin-bottom: var(--scale-size-24);
+    }
+
+    &__icon {
+        height: var(--scale-size-48);
+        margin-bottom: var(--scale-size-18);
+    }
+
+    .headline {
+        width: 512px;
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+        text-align: center;
+        margin: var(--scale-size-18) auto;
+    }
+
+    .paymethods {
+        display: flex;
+        justify-content: center;
+        gap: var(--scale-size-18);
+        width: 450px;
+        margin: 0 auto var(--scale-size-24);
+    }
+
+    .paymethod {
+        display: flex;
+        align-items: center;
+        gap: var(--scale-size-4);
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+        text-align: center;
+
+        .mt-icon {
+            color: var(--color-icon-positive-default);
+        }
+    }
+
+    .disclaimer {
+        position: absolute;
+        bottom: var(--scale-size-48);
+        margin-top: var(--scale-size-48);
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+
+    .disclaimer p {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-2xs);
+        line-height: var(--font-line-height-2xs);
+        font-weight: var(--font-weight-regular);
+    }
+}
+
+.sw-first-run-wizard-paypal-install {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+
+    .sw-loader {
+        background: none;
+    }
+
+    .sw-loader-info-text {
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+        margin-top: calc(var(--scale-size-160) * -1);
+        text-align: center;
+    }
+}

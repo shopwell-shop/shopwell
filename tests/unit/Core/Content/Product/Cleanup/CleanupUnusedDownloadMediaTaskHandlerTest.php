@@ -1,0 +1,46 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Product\Cleanup;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Content\Media\UnusedMediaPurger;
+use Shopwell\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadDefinition;
+use Shopwell\Core\Content\Product\Cleanup\CleanupUnusedDownloadMediaTaskHandler;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+#[CoversClass(CleanupUnusedDownloadMediaTaskHandler::class)]
+class CleanupUnusedDownloadMediaTaskHandlerTest extends TestCase
+{
+    private MockObject&UnusedMediaPurger $purger;
+
+    private CleanupUnusedDownloadMediaTaskHandler $handler;
+
+    protected function setUp(): void
+    {
+        $this->purger = $this->createMock(UnusedMediaPurger::class);
+
+        $this->handler = new CleanupUnusedDownloadMediaTaskHandler(
+            static::createStub(EntityRepository::class),
+            static::createStub(LoggerInterface::class),
+            $this->purger
+        );
+    }
+
+    public function testRun(): void
+    {
+        $this->purger
+            ->expects($this->once())
+            ->method('deleteNotUsedMedia')
+            ->with(null, null, null, ProductDownloadDefinition::ENTITY_NAME);
+
+        $this->handler->run();
+    }
+}

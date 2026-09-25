@@ -1,0 +1,16 @@
+.sw-snippet-settings {
+    &__sidebar .sw-sidebar-item .sw-sidebar-item__headline {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 0;
+        padding: 0 25px;
+        border-bottom: 1px solid var(--color-border-secondary-default);
+    }
+
+    &__sidebar-reset-all {
+        margin-right: auto;
+        padding-left: 10px;
+        font-size: var(--font-size-xs);
+    }
+}

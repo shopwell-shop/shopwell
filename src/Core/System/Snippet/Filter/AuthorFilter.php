@@ -1,0 +1,39 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\Snippet\Filter;
+
+use Shopwell\Core\Framework\Log\Package;
+
+#[Package('discovery')]
+class AuthorFilter extends AbstractFilter implements SnippetFilterInterface
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function getName(): string
+    {
+        return 'author';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function filter(array $snippets, $requestFilterValue): array
+    {
+        if (!\is_array($requestFilterValue) || $requestFilterValue === []) {
+            return $snippets;
+        }
+
+        $result = [];
+        foreach ($snippets as $setId => $set) {
+            foreach ($set['snippets'] as $translationKey => $snippet) {
+                if (!\in_array($snippet['author'], $requestFilterValue, true)) {
+                    continue;
+                }
+                $result[$setId]['snippets'][$translationKey] = $snippet;
+            }
+        }
+
+        return $this->readjust($result, $snippets);
+    }
+}

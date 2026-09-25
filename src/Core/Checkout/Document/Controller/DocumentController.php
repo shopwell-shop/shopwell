@@ -1,0 +1,151 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Document\Controller;
+
+use Shopwell\Core\Checkout\Document\DocumentException;
+use Shopwell\Core\Checkout\Document\Service\DocumentGenerator;
+use Shopwell\Core\Checkout\Document\Service\DocumentMerger;
+use Shopwell\Core\Checkout\Document\Service\PdfRenderer;
+use Shopwell\Core\Checkout\Document\Struct\DocumentGenerateOperation;
+use Shopwell\Core\Checkout\DocumentV2\Controller\DocumentV2Controller;
+use Shopwell\Core\Content\Media\Exception\IllegalFileNameException;
+use Shopwell\Core\Content\Media\Util\PathHelper;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Deprecation\BCChange\ExperimentalReplacement;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\PlatformRequest;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\HeaderUtils;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Package('after-sales')]
+#[ExperimentalReplacement(
+    version: 'v6.9.0',
+    feature: 'DOCUMENT_GENERATION_REWORK',
+    replacement: DocumentV2Controller::class,
+)]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [ApiRouteScope::ID]])]
+class DocumentController extends AbstractController
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly DocumentGenerator $documentGenerator,
+        private readonly DocumentMerger $documentMerger
+    ) {
+    }
+
+    #[Route(
+        path: '/api/_action/document/{documentId}/{deepLinkCode}',
+        name: 'api.action.download.document',
+        defaults: [PlatformRequest::ATTRIBUTE_ACL => ['document:read']],
+        methods: [Request::METHOD_GET]
+    )]
+    public function downloadDocument(Request $request, string $documentId, string $deepLinkCode, Context $context): Response
+    {
+        $download = $request->query->getBoolean('download');
+        $fileType = $request->query->getString('fileType', PdfRenderer::FILE_EXTENSION);
+
+        $generatedDocument = $this->documentGenerator->readDocument($documentId, $context, $deepLinkCode, $fileType);
+
+        if ($generatedDocument === null) {
+            return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+        }
+
+        return $this->createResponse(
+            $generatedDocument->getName(),
+            $generatedDocument->getContent(),
+            $download,
+            $generatedDocument->getContentType()
+        );
+    }
+
+    #[Route(
+        path: '/api/_action/order/{orderId}/{deepLinkCode}/document/{documentTypeName}/preview',
+        name: 'api.action.document.preview',
+        defaults: [PlatformRequest::ATTRIBUTE_ACL => ['document:read']],
+        methods: [Request::METHOD_GET]
+    )]
+    public function previewDocument(
+        Request $request,
+        string $orderId,
+        string $deepLinkCode,
+        string $documentTypeName,
+        Context $context
+    ): Response {
+        $config = $request->query->get('config');
+        $config = \is_string($config) ? json_decode($config, true, 512, \JSON_THROW_ON_ERROR) : [];
+
+        $fileType = $request->query->getAlnum('fileType', PdfRenderer::FILE_EXTENSION);
+        $download = $request->query->getBoolean('download');
+        $referencedDocumentId = $request->query->getAlnum('referencedDocumentId');
+
+        $operation = new DocumentGenerateOperation($orderId, $fileType, $config, $referencedDocumentId, false, true);
+
+        $generatedDocument = $this->documentGenerator->preview($documentTypeName, $operation, $deepLinkCode, $context);
+
+        return $this->createResponse(
+            $generatedDocument->getName(),
+            $generatedDocument->getContent(),
+            $download,
+            $generatedDocument->getContentType()
+        );
+    }
+
+    #[Route(
+        path: '/api/_action/order/document/download',
+        name: 'api.action.download.documents',
+        defaults: [PlatformRequest::ATTRIBUTE_ACL => ['document:read']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function downloadDocuments(Request $request, Context $context): Response
+    {
+        $documentIds = $request->request->all()['documentIds'] ?? [];
+
+        if (!\is_array($documentIds) || $documentIds === []) {
+            throw DocumentException::invalidRequestParameter('documentIds');
+        }
+
+        $download = $request->query->getBoolean('download', true);
+        $combinedDocument = $this->documentMerger->merge($documentIds, $context);
+
+        if ($combinedDocument === null) {
+            return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+        }
+
+        return $this->createResponse(
+            $combinedDocument->getName(),
+            $combinedDocument->getContent(),
+            $download,
+            $combinedDocument->getContentType()
+        );
+    }
+
+    private function createResponse(string $filename, string $content, bool $forceDownload, string $contentType): Response
+    {
+        $response = new Response($content);
+
+        try {
+            $filenameFallback = PathHelper::stripNonAsciiAndControlChars($filename, '_');
+        } catch (IllegalFileNameException) {
+            $filenameFallback = '';
+        }
+
+        $disposition = HeaderUtils::makeDisposition(
+            $forceDownload ? HeaderUtils::DISPOSITION_ATTACHMENT : HeaderUtils::DISPOSITION_INLINE,
+            $filename,
+            // only printable ascii
+            $filenameFallback
+        );
+
+        $response->headers->set('Content-Type', $contentType);
+        $response->headers->set('Content-Disposition', $disposition);
+
+        return $response;
+    }
+}

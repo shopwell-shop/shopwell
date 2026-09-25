@@ -1,0 +1,11 @@
+.sw-settings-tax-detail {
+    position: relative;
+
+    &__default-tax-rate {
+        width: 100%;
+    }
+
+    &__switches {
+        display: flex;
+    }
+}

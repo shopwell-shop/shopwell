@@ -1,0 +1,154 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Framework\Twig;
+
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Term\Filter\AbstractTokenFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\SalesChannelRequest;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Twig\Extension\AbstractExtension;
+use Twig\Extension\GlobalsInterface;
+
+#[Package('discovery')]
+class TemplateDataExtension extends AbstractExtension implements GlobalsInterface
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly RequestStack $requestStack,
+        private readonly bool $showStagingBanner,
+        private readonly Connection $connection,
+    ) {
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getGlobals(): array
+    {
+        $request = $this->requestStack->getCurrentRequest();
+        if (!$request instanceof Request) {
+            return [];
+        }
+
+        $context = $request->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT);
+        if (!$context instanceof SalesChannelContext) {
+            return [];
+        }
+
+        [$controllerName, $controllerAction] = $this->getControllerInfo($request);
+
+        $themeId = $request->attributes->get(SalesChannelRequest::ATTRIBUTE_THEME_ID);
+
+        // check attribute bag for path parameter first (category routes), fallback to other request parameters (product routes)
+        $activeNavigationId = (string) ($request->attributes->get('navigationId') ?? RequestParamHelper::get($request, 'navigationId', ''));
+
+        // resolve category for landing pages so navigation active state is set correctly
+        if ($activeNavigationId === '') {
+            $landingPageId = $request->attributes->getString('landingPageId');
+            if ($landingPageId !== '') {
+                $activeNavigationId = $this->resolveNavigationIdForLandingPage($landingPageId);
+            }
+        }
+
+        // fallback to root category (Home) if no navigation context could be resolved
+        if ($activeNavigationId === '') {
+            $activeNavigationId = $context->getSalesChannel()->getNavigationCategoryId();
+        }
+        $navigationPathIdList = $this->getNavigationPath($activeNavigationId, $context);
+        $navigationInfo = new NavigationInfo(
+            $activeNavigationId,
+            $navigationPathIdList,
+        );
+
+        return [
+            'shopware' => [
+                'dateFormat' => \DATE_ATOM,
+                'navigation' => $navigationInfo,
+                'minSearchLength' => $this->minSearchLength($context),
+                'showStagingBanner' => $this->showStagingBanner,
+            ],
+            'themeId' => $themeId, /** Not used in Twig template directly, but in @see \Shopwell\Storefront\Framework\Twig\Extension\ConfigExtension::getThemeId */
+            /** @deprecated tag:v6.8.0 - Will be removed. Use the "activeRoute" variable instead */
+            'controllerName' => $controllerName,
+            /** @deprecated tag:v6.8.0 - Will be removed. Use the "activeRoute" variable instead */
+            'controllerAction' => $controllerAction,
+            'context' => $context,
+            'activeRoute' => $request->attributes->get('_route'),
+            'formViolations' => $request->attributes->get('formViolations'),
+            // JSON_HEX_TAG and JSON_HEX_AMP encode < > & so a value like "</script>" cannot close the script tag
+            // and inject arbitrary HTML (XSS) when embedding JSON in an HTML <script> block.
+            // |escape('js') is not suitable because it escapes double quotes, breaking the JSON structure.
+            'jsonLdFlags' => \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_HEX_TAG | \JSON_HEX_AMP,
+        ];
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function getControllerInfo(Request $request): array
+    {
+        $controller = $request->attributes->getString('_controller');
+        if ($controller === '') {
+            return ['', ''];
+        }
+
+        $matches = [];
+        preg_match('/Controller\\\\(\w+)Controller::?(\w+)$/', $controller, $matches);
+        if ($matches) {
+            return [$matches[1], $matches[2]];
+        }
+
+        return ['', ''];
+    }
+
+    private function minSearchLength(SalesChannelContext $context): int
+    {
+        $min = (int) $this->connection->fetchOne(
+            'SELECT `min_search_length` FROM `product_search_config` WHERE `language_id` = :id',
+            ['id' => Uuid::fromHexToBytes($context->getLanguageId())]
+        );
+
+        return $min ?: AbstractTokenFilter::DEFAULT_MIN_SEARCH_TERM_LENGTH;
+    }
+
+    private function resolveNavigationIdForLandingPage(string $landingPageId): string
+    {
+        $categoryId = $this->connection->fetchOne(
+            'SELECT LOWER(HEX(ct.category_id))
+             FROM category_translation ct
+             WHERE ct.link_type = :linkType
+               AND ct.internal_link = :landingPageId
+             LIMIT 1',
+            [
+                'linkType' => 'landing_page',
+                'landingPageId' => Uuid::fromHexToBytes($landingPageId),
+            ]
+        );
+
+        return $categoryId ?: '';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function getNavigationPath(string $activeNavigationId, SalesChannelContext $context): array
+    {
+        $path = $this->connection->fetchOne(
+            'SELECT path FROM category WHERE id = :id',
+            ['id' => Uuid::fromHexToBytes($activeNavigationId)]
+        ) ?: '';
+
+        $navigationPathIdList = array_filter(explode('|', $path));
+        $navigationPathIdList = array_diff($navigationPathIdList, [$context->getSalesChannel()->getNavigationCategoryId()]);
+
+        return array_values($navigationPathIdList);
+    }
+}

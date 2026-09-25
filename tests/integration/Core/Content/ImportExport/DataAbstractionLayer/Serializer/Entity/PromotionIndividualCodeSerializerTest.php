@@ -1,0 +1,176 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionIndividualCode\PromotionIndividualCodeCollection;
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionIndividualCode\PromotionIndividualCodeDefinition;
+use Shopwell\Core\Checkout\Promotion\PromotionCollection;
+use Shopwell\Core\Checkout\Promotion\PromotionDefinition;
+use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity\PromotionIndividualCodeSerializer;
+use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\SerializerRegistry;
+use Shopwell\Core\Content\ImportExport\Struct\Config;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+class PromotionIndividualCodeSerializerTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    /**
+     * @var EntityRepository<PromotionCollection>
+     */
+    private EntityRepository $promoRepository;
+
+    /**
+     * @var EntityRepository<PromotionIndividualCodeCollection>
+     */
+    private EntityRepository $promoCodeRepository;
+
+    private PromotionIndividualCodeSerializer $serializer;
+
+    private string $promoName = 'testPromo';
+
+    private string $promoId = '';
+
+    private string $promoCode = 'testCode';
+
+    private string $promoCodeId = '';
+
+    protected function setUp(): void
+    {
+        $this->promoRepository = static::getContainer()->get('promotion.repository');
+        $this->promoCodeRepository = static::getContainer()->get('promotion_individual_code.repository');
+        $serializerRegistry = static::getContainer()->get(SerializerRegistry::class);
+
+        $this->serializer = new PromotionIndividualCodeSerializer(
+            $this->promoCodeRepository,
+            $this->promoRepository
+        );
+        $this->serializer->setRegistry($serializerRegistry);
+
+        $this->promoId = $this->promoRepository->create([
+            [
+                'name' => $this->promoName,
+            ],
+        ], Context::createDefaultContext())
+            ->getPrimaryKeys(PromotionDefinition::ENTITY_NAME)[0];
+
+        $this->promoCodeId = $this->promoCodeRepository->create([
+            [
+                'code' => $this->promoCode,
+                'promotionId' => $this->promoId,
+            ],
+        ], Context::createDefaultContext())
+            ->getPrimaryKeys(PromotionIndividualCodeDefinition::ENTITY_NAME)[0];
+    }
+
+    public function testNonExistingPromo(): void
+    {
+        $config = new Config([], [], []);
+        $promoCode = [
+            'promotion' => [
+                'translations' => [
+                    'DEFAULT' => [
+                        'name' => 'SomeOtherPromoName',
+                    ],
+                ],
+                'id' => '',
+                'useIndividualCodes' => 'false', // explicit override
+            ],
+            'code' => 'PrefixWXMPU',
+            'id' => '',
+        ];
+
+        $deserialized = $this->serializer->deserialize($config, $this->promoCodeRepository->getDefinition(), $promoCode);
+        $deserialized = \is_array($deserialized) ? $deserialized : iterator_to_array($deserialized);
+
+        static::assertSame([
+            'promotion' => [
+                'translations' => [
+                    Defaults::LANGUAGE_SYSTEM => [
+                        'name' => 'SomeOtherPromoName',
+                    ],
+                ],
+                'useIndividualCodes' => false,
+            ],
+            'code' => 'PrefixWXMPU',
+        ], $deserialized);
+    }
+
+    public function testExistingPromoName(): void
+    {
+        $config = new Config([], [], []);
+        $promoCode = [
+            'promotion' => [
+                'translations' => [
+                    'DEFAULT' => [
+                        'name' => $this->promoName,
+                    ],
+                ],
+                'id' => '',
+            ],
+            'code' => 'PrefixWXMPU',
+            'id' => '',
+        ];
+
+        $deserialized = $this->serializer->deserialize($config, $this->promoCodeRepository->getDefinition(), $promoCode);
+        $deserialized = \is_array($deserialized) ? $deserialized : iterator_to_array($deserialized);
+
+        static::assertSame([
+            'promotion' => [
+                'translations' => [
+                    '2fbb5fe2e29a4d70aa5854ce7ce3e20b' => [
+                        'name' => $this->promoName,
+                    ],
+                ],
+                'id' => $this->promoId,
+                'useIndividualCodes' => true,
+                'useCodes' => true,
+            ],
+            'code' => 'PrefixWXMPU',
+        ], $deserialized);
+    }
+
+    public function testExistingPromoNameAndCode(): void
+    {
+        $config = new Config([], [], []);
+        $promoCode = [
+            'promotion' => [
+                'translations' => [
+                    'DEFAULT' => [
+                        'name' => $this->promoName,
+                    ],
+                ],
+                'id' => '',
+            ],
+            'code' => $this->promoCode,
+            'id' => '',
+        ];
+
+        $deserialized = $this->serializer->deserialize($config, $this->promoCodeRepository->getDefinition(), $promoCode);
+        $deserialized = \is_array($deserialized) ? $deserialized : iterator_to_array($deserialized);
+
+        static::assertSame([
+            'promotion' => [
+                'translations' => [
+                    '2fbb5fe2e29a4d70aa5854ce7ce3e20b' => [
+                        'name' => $this->promoName,
+                    ],
+                ],
+                'id' => $this->promoId,
+                'useIndividualCodes' => true,
+                'useCodes' => true,
+            ],
+            'code' => 'testCode',
+            'id' => $this->promoCodeId,
+        ], $deserialized);
+    }
+}

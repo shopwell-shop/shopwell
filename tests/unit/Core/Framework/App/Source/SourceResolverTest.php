@@ -1,0 +1,307 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\App\Source;
+
+use Doctrine\DBAL\Exception\ConnectionException;
+use Doctrine\DBAL\Exception\DriverException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\AppCollection;
+use Shopwell\Core\Framework\App\AppEntity;
+use Shopwell\Core\Framework\App\AppException;
+use Shopwell\Core\Framework\App\Manifest\Manifest;
+use Shopwell\Core\Framework\App\Source\NoDatabaseSourceResolver;
+use Shopwell\Core\Framework\App\Source\Source;
+use Shopwell\Core\Framework\App\Source\SourceResolver;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Filesystem;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Core\Test\Stub\Framework\Util\StaticFilesystem;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(SourceResolver::class)]
+class SourceResolverTest extends TestCase
+{
+    public function testResolveSourceTypeThrowsExceptionWhenNoSourceSupports(): void
+    {
+        static::expectException(AppException::class);
+
+        $repo = new StaticEntityRepository([]);
+
+        $resolver = new SourceResolver([], $repo, static::createStub(NoDatabaseSourceResolver::class));
+
+        $app = static::createStub(Manifest::class);
+
+        $resolver->resolveSourceType($app);
+    }
+
+    public function testCanResolveManifestToType(): void
+    {
+        $app = static::createStub(Manifest::class);
+
+        $repo = new StaticEntityRepository([]);
+
+        $resolver = new SourceResolver([new SupportingSource()], $repo, static::createStub(NoDatabaseSourceResolver::class));
+
+        static::assertSame('supporting-source', $resolver->resolveSourceType($app));
+    }
+
+    public function testFilesystemForManifestThrowsExceptionWhenNoSourceSupportsIt(): void
+    {
+        static::expectException(AppException::class);
+
+        $repo = new StaticEntityRepository([]);
+
+        $resolver = new SourceResolver([new NonSupportingSource()], $repo, static::createStub(NoDatabaseSourceResolver::class));
+
+        $app = static::createStub(Manifest::class);
+
+        $resolver->filesystemForManifest($app);
+    }
+
+    public function testFilesystemForManifest(): void
+    {
+        $app = static::createStub(Manifest::class);
+
+        $repo = new StaticEntityRepository([]);
+
+        $resolver = new SourceResolver([new SupportingSource()], $repo, static::createStub(NoDatabaseSourceResolver::class));
+
+        static::assertSame('/', $resolver->filesystemForManifest($app)->location);
+    }
+
+    public function testFilesystemForAppThrowsExceptionWhenNoSourceSupportsIt(): void
+    {
+        static::expectException(AppException::class);
+
+        $repo = new StaticEntityRepository([]);
+
+        $resolver = new SourceResolver([new NonSupportingSource()], $repo, static::createStub(NoDatabaseSourceResolver::class));
+
+        $app = new AppEntity();
+        $app->setId(Uuid::randomHex());
+        $app->setName('TestApp');
+        $app->setVersion('1.0.0');
+
+        $resolver->filesystemForApp($app);
+    }
+
+    public function testFilesystemForApp(): void
+    {
+        $app = new AppEntity();
+        $app->setId(Uuid::randomHex());
+        $app->setName('TestApp');
+        $app->setVersion('1.0.0');
+
+        $repo = new StaticEntityRepository([]);
+
+        $resolver = new SourceResolver([new SupportingSource()], $repo, static::createStub(NoDatabaseSourceResolver::class));
+
+        static::assertSame('/', $resolver->filesystemForApp($app)->location);
+    }
+
+    public function testFilesystemForAppCacheHit(): void
+    {
+        $app = new AppEntity();
+        $app->setId(Uuid::randomHex());
+        $app->setName('TestApp');
+        $app->setVersion('1.0.0');
+
+        $repo = new StaticEntityRepository([]);
+
+        $fs = new Filesystem('/');
+        $sourceMock = $this->createMock(Source::class);
+        $sourceMock->expects($this->once())
+            ->method('filesystem')
+            ->with($app)
+            ->willReturn($fs);
+        $sourceMock->expects($this->once())
+            ->method('supports')
+            ->with($app)
+            ->willReturn(true);
+
+        $resolver = new SourceResolver([$sourceMock], $repo, static::createStub(NoDatabaseSourceResolver::class));
+
+        static::assertSame($fs, $resolver->filesystemForApp($app));
+        // Second call should return the same instance and not call the source
+        static::assertSame($fs, $resolver->filesystemForApp($app));
+    }
+
+    public function testFilesystemForAppCacheMiss(): void
+    {
+        $firstApp = new AppEntity();
+        $firstApp->setId(Uuid::randomHex());
+        $firstApp->setName('TestApp');
+        $firstApp->setVersion('1.0.0');
+
+        $secondApp = new AppEntity();
+        $secondApp->setId(Uuid::randomHex());
+        $secondApp->setName('TestApp');
+        $secondApp->setVersion('2.0.0');
+
+        $repo = new StaticEntityRepository([]);
+
+        $firstFs = new Filesystem('/one/');
+        $secondFs = new Filesystem('/two/');
+
+        $sourceMock = $this->createMock(Source::class);
+        $sourceMock->expects($this->exactly(2))
+            ->method('filesystem')
+            ->willReturnOnConsecutiveCalls($firstFs, $secondFs);
+        $sourceMock->expects($this->exactly(2))
+            ->method('supports')
+            ->willReturn(true);
+
+        $resolver = new SourceResolver([$sourceMock], $repo, static::createStub(NoDatabaseSourceResolver::class));
+
+        static::assertSame($firstFs, $resolver->filesystemForApp($firstApp));
+        static::assertSame($secondFs, $resolver->filesystemForApp($secondApp));
+    }
+
+    public function testFilesystemForAppCacheResets(): void
+    {
+        $app = new AppEntity();
+        $app->setId(Uuid::randomHex());
+        $app->setName('TestApp');
+        $app->setVersion('1.0.0');
+
+        $repo = new StaticEntityRepository([]);
+
+        $fs = new Filesystem('/');
+        $sourceMock = $this->createMock(Source::class);
+        $sourceMock->expects($this->exactly(2))
+            ->method('filesystem')
+            ->with($app)
+            ->willReturn($fs);
+        $sourceMock->expects($this->exactly(2))
+            ->method('supports')
+            ->with($app)
+            ->willReturn(true);
+        $sourceMock->expects($this->once())
+            ->method('reset')
+            ->with([$fs]);
+
+        $resolver = new SourceResolver([$sourceMock], $repo, static::createStub(NoDatabaseSourceResolver::class));
+
+        static::assertSame($fs, $resolver->filesystemForApp($app));
+        $resolver->reset();
+        static::assertSame($fs, $resolver->filesystemForApp($app));
+    }
+
+    public function testFilesystemForAppNameThrowsExceptionWhenAppDoesNotExist(): void
+    {
+        static::expectException(AppException::class);
+
+        $repo = new StaticEntityRepository([new AppCollection()]);
+
+        $resolver = new SourceResolver([new NonSupportingSource()], $repo, static::createStub(NoDatabaseSourceResolver::class));
+
+        $resolver->filesystemForAppName('my-app');
+    }
+
+    public function testFilesystemForAppNameThrowsExceptionWhenNoSourceSupports(): void
+    {
+        static::expectException(AppException::class);
+
+        $app = new AppEntity();
+        $app->setUniqueIdentifier(Uuid::randomHex());
+        $app->setName('TestApp');
+        $app->setVersion('1.0.0');
+
+        $repo = new StaticEntityRepository([new AppCollection([$app])]);
+
+        $resolver = new SourceResolver([new NonSupportingSource()], $repo, static::createStub(NoDatabaseSourceResolver::class));
+
+        $resolver->filesystemForApp($app);
+    }
+
+    public function testFilesystemForAppName(): void
+    {
+        $app = new AppEntity();
+        $app->setUniqueIdentifier(Uuid::randomHex());
+        $app->setName('TestApp');
+        $app->setVersion('1.0.0');
+
+        $repo = new StaticEntityRepository([new AppCollection([$app])]);
+
+        $resolver = new SourceResolver([new SupportingSource()], $repo, static::createStub(NoDatabaseSourceResolver::class));
+
+        static::assertSame('/', $resolver->filesystemForAppName($app->getName())->location);
+    }
+
+    public function testFilesystemForAppNameUsesActiveAppLoaderWhenNoDatabaseIsPresent(): void
+    {
+        $repo = $this->createMock(EntityRepository::class);
+        $repo->expects($this->once())
+            ->method('search')
+            ->willThrowException(new ConnectionException(static::createStub(DriverException::class), null));
+
+        $fs = new StaticFilesystem();
+        $noDbResolver = $this->createMock(NoDatabaseSourceResolver::class);
+        $noDbResolver->expects($this->once())
+            ->method('filesystem')
+            ->with('TestApp')
+            ->willReturn($fs);
+
+        $resolver = new SourceResolver([new SupportingSource()], $repo, $noDbResolver);
+
+        static::assertSame($fs, $resolver->filesystemForAppName('TestApp'));
+    }
+}
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class SupportingSource implements Source
+{
+    public static function name(): string
+    {
+        return 'supporting-source';
+    }
+
+    public function supports(Manifest|AppEntity $app): bool
+    {
+        return true;
+    }
+
+    public function filesystem(Manifest|AppEntity $app): Filesystem
+    {
+        return new Filesystem('/');
+    }
+
+    public function reset(array $filesystems): void
+    {
+    }
+}
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class NonSupportingSource implements Source
+{
+    public static function name(): string
+    {
+        return 'nonsupporting-source';
+    }
+
+    public function supports(Manifest|AppEntity $app): bool
+    {
+        return false;
+    }
+
+    public function filesystem(Manifest|AppEntity $app): Filesystem
+    {
+        return new Filesystem('/');
+    }
+
+    public function reset(array $filesystems): void
+    {
+    }
+}

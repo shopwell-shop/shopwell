@@ -1,0 +1,130 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Customer\SalesChannel;
+
+use Shopwell\Core\Checkout\Customer\CustomerException;
+use Shopwell\Core\Checkout\Customer\ImitateCustomerTokenGenerator;
+use Shopwell\Core\Checkout\Customer\Struct\ImitateCustomerToken;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
+use Shopwell\Core\Framework\Deprecation\BCChange\ParameterNameChange;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
+use Shopwell\Core\Framework\Validation\BuildValidationEvent;
+use Shopwell\Core\Framework\Validation\Constraint\Uuid;
+use Shopwell\Core\Framework\Validation\DataBag\DataBag;
+use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopwell\Core\Framework\Validation\DataValidationDefinition;
+use Shopwell\Core\Framework\Validation\DataValidator;
+use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\ContextTokenResponse;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+#[Package('checkout')]
+#[Route(
+    defaults: [
+        PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID],
+        PlatformRequest::ATTRIBUTE_CONTEXT_TOKEN_REQUIRED => false,
+    ]
+)]
+class ImitateCustomerRoute extends AbstractImitateCustomerRoute
+{
+    final public const TOKEN = 'token';
+
+    /**
+     * @deprecated tag:v6.8.0 - will be removed, will be sourced from JWT
+     */
+    final public const CUSTOMER_ID = 'customerId';
+
+    /**
+     * @deprecated tag:v6.8.0 - will be removed, will be sourced from JWT
+     */
+    final public const USER_ID = 'userId';
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly AccountService $accountService,
+        private readonly ImitateCustomerTokenGenerator $imitateCustomerTokenGenerator,
+        private readonly AbstractLogoutRoute $logoutRoute,
+        private readonly AbstractSalesChannelContextFactory $salesChannelContextFactory,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly DataValidator $validator
+    ) {
+    }
+
+    public function getDecorated(): AbstractImitateCustomerRoute
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    #[ParameterNameChange(version: 'v6.8.0', parameterName: 'requestDataBag', newName: 'data', description: 'Aligns with the abstract route.')]
+    #[Route(
+        path: '/store-api/account/login/imitate-customer',
+        name: 'store-api.account.imitate-customer-login',
+        methods: [Request::METHOD_POST]
+    )]
+    public function imitateCustomerLogin(RequestDataBag $requestDataBag, SalesChannelContext $context): ContextTokenResponse
+    {
+        $tokenString = $requestDataBag->getString(self::TOKEN);
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            $this->validateRequestDataFields($requestDataBag, $context->getContext());
+
+            $token = new ImitateCustomerToken();
+            $token->customerId = $requestDataBag->getString(self::CUSTOMER_ID);
+            $token->iss = $requestDataBag->getString(self::USER_ID);
+
+            Feature::silent('v6.8.0.0', fn () => $this->imitateCustomerTokenGenerator->validate($tokenString, $context->getSalesChannelId(), $token->customerId, $token->iss));
+        } else {
+            $token = $this->imitateCustomerTokenGenerator->decode($tokenString);
+
+            if ($token->salesChannelId !== $context->getSalesChannelId()) {
+                throw CustomerException::invalidImitationToken($tokenString);
+            }
+        }
+
+        if ($context->getCustomerId() === $token->customerId) {
+            return new ContextTokenResponse($context->getToken());
+        }
+
+        if ($context->getCustomer()) {
+            $newTokenResponse = $this->logoutRoute->logout($context, new RequestDataBag());
+
+            $context = $this->salesChannelContextFactory->create($newTokenResponse->getToken(), $context->getSalesChannelId());
+        }
+
+        $context->setImitatingUserId($token->iss);
+
+        $newToken = $this->accountService->loginById($token->customerId, $context);
+
+        return new ContextTokenResponse($newToken);
+    }
+
+    /**
+     * @throws ConstraintViolationException
+     */
+    private function validateRequestDataFields(DataBag $data, Context $context): void
+    {
+        $definition = new DataValidationDefinition('impersonation.login');
+
+        $definition
+            ->add(self::TOKEN, new NotBlank())
+            ->add(self::CUSTOMER_ID, new Uuid(), new EntityExists(entity: 'customer', context: $context))
+            ->add(self::USER_ID, new Uuid(), new EntityExists(entity: 'user', context: $context));
+
+        $validationEvent = new BuildValidationEvent($definition, $data, $context);
+        $this->eventDispatcher->dispatch($validationEvent, $validationEvent->getName());
+
+        $this->validator->validate($data->all(), $definition);
+    }
+}

@@ -1,0 +1,70 @@
+import type { HttpClient } from 'src/core/factory/http-client.types';
+import ApiService from '../api.service';
+import type { LoginService } from '../login.service';
+
+/**
+ * @sw-package checkout
+ * Gateway for the API end point "order/state-machine"
+ * @class
+ * @extends ApiService
+ */
+class OrderStateMachineApiService extends ApiService {
+    constructor(httpClient: HttpClient, loginService: LoginService, apiEndpoint = 'order') {
+        super(httpClient, loginService, apiEndpoint);
+        this.name = 'orderStateMachineService';
+    }
+
+    transitionOrderState(
+        orderId: EntityKey<'order'>,
+        actionName: string,
+        options = {},
+        additionalParams = {},
+        additionalHeaders = {},
+    ) {
+        const route = `_action/order/${orderId}/state/${actionName}`;
+
+        const headers = this.getBasicHeaders(additionalHeaders);
+
+        return this.httpClient.post(route, options, {
+            ...additionalParams,
+            headers,
+        });
+    }
+
+    transitionOrderTransactionState(
+        orderTransactionId: EntityKey<'order_transaction'>,
+        actionName: string,
+        options = {},
+        additionalParams = {},
+        additionalHeaders = {},
+    ) {
+        const route = `_action/order_transaction/${orderTransactionId}/state/${actionName}`;
+
+        const headers = this.getBasicHeaders(additionalHeaders);
+
+        return this.httpClient.post(route, options, {
+            ...additionalParams,
+            headers,
+        });
+    }
+
+    transitionOrderDeliveryState(
+        orderDeliveryStateId: EntityKey<'state_machine_state'>,
+        actionName: string,
+        options = {},
+        additionalParams = {},
+        additionalHeaders = {},
+    ) {
+        const route = `_action/order_delivery/${orderDeliveryStateId}/state/${actionName}`;
+
+        const headers = this.getBasicHeaders(additionalHeaders);
+
+        return this.httpClient.post(route, options, {
+            ...additionalParams,
+            headers,
+        });
+    }
+}
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+export default OrderStateMachineApiService;

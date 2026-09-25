@@ -1,0 +1,118 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Gateway\Command\Executor;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
+use Shopwell\Core\Checkout\Cart\Error\ErrorCollection;
+use Shopwell\Core\Checkout\Gateway\CheckoutGatewayException;
+use Shopwell\Core\Checkout\Gateway\CheckoutGatewayResponse;
+use Shopwell\Core\Checkout\Gateway\Command\AbstractCheckoutGatewayCommand;
+use Shopwell\Core\Checkout\Gateway\Command\CheckoutGatewayCommandCollection;
+use Shopwell\Core\Checkout\Gateway\Command\Executor\CheckoutGatewayCommandExecutor;
+use Shopwell\Core\Checkout\Gateway\Command\Registry\CheckoutGatewayCommandRegistry;
+use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodCollection;
+use Shopwell\Core\Framework\Log\ExceptionLogger;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Generator;
+use Shopwell\Tests\Unit\Core\Checkout\Gateway\Command\_fixture\StubCheckoutGatewayCommand;
+use Shopwell\Tests\Unit\Core\Checkout\Gateway\Command\_fixture\StubCheckoutGatewayHandler;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(CheckoutGatewayCommandExecutor::class)]
+class CheckoutGatewayCommandExecutorTest extends TestCase
+{
+    public function testExecute(): void
+    {
+        $logger = new ExceptionLogger('prod', false, static::createStub(LoggerInterface::class));
+
+        $handler = new StubCheckoutGatewayHandler();
+        $registry = new CheckoutGatewayCommandRegistry([$handler]);
+        $executor = new CheckoutGatewayCommandExecutor($registry, $logger);
+
+        $response = new CheckoutGatewayResponse(
+            new PaymentMethodCollection(),
+            new ShippingMethodCollection(),
+            new ErrorCollection()
+        );
+
+        $commands = new CheckoutGatewayCommandCollection([new StubCheckoutGatewayCommand(['test-1'])]);
+        $response = $executor->execute($commands, $response, Generator::generateSalesChannelContext());
+
+        static::assertCount(1, $response->getAvailablePaymentMethods());
+        static::assertNotNull($response->getAvailablePaymentMethods()->first());
+        static::assertSame('test-1', $response->getAvailablePaymentMethods()->first()->getTechnicalName());
+    }
+
+    public function testUnknownCommandThrowsIfEnforced(): void
+    {
+        $logger = new ExceptionLogger('prod', true, static::createStub(LoggerInterface::class));
+
+        $handler = new StubCheckoutGatewayHandler();
+        $registry = new CheckoutGatewayCommandRegistry([$handler]);
+        $executor = new CheckoutGatewayCommandExecutor($registry, $logger);
+
+        $response = new CheckoutGatewayResponse(
+            new PaymentMethodCollection(),
+            new ShippingMethodCollection(),
+            new ErrorCollection()
+        );
+
+        $throwCommand = new class extends AbstractCheckoutGatewayCommand {
+            public static function getDefaultKeyName(): string
+            {
+                return 'this-one-throws';
+            }
+        };
+
+        $commands = new CheckoutGatewayCommandCollection([
+            new StubCheckoutGatewayCommand(['test-1']),
+            $throwCommand,
+        ]);
+
+        $this->expectExceptionObject(CheckoutGatewayException::handlerNotFound('this-one-throws'));
+
+        $executor->execute($commands, $response, Generator::generateSalesChannelContext());
+    }
+
+    public function testUnknownCommandLogsInProd(): void
+    {
+        $psrLogger = $this->createMock(LoggerInterface::class);
+        $psrLogger
+            ->expects($this->once())
+            ->method('log')
+            ->with(LogLevel::ERROR, 'Handler not found for command "this-one-throws"');
+
+        $logger = new ExceptionLogger('prod', false, $psrLogger);
+
+        $handler = new StubCheckoutGatewayHandler();
+        $registry = new CheckoutGatewayCommandRegistry([$handler]);
+        $executor = new CheckoutGatewayCommandExecutor($registry, $logger);
+
+        $response = new CheckoutGatewayResponse(
+            new PaymentMethodCollection(),
+            new ShippingMethodCollection(),
+            new ErrorCollection()
+        );
+
+        $throwCommand = new class extends AbstractCheckoutGatewayCommand {
+            public static function getDefaultKeyName(): string
+            {
+                return 'this-one-throws';
+            }
+        };
+
+        $commands = new CheckoutGatewayCommandCollection([
+            new StubCheckoutGatewayCommand(['test-1']),
+            $throwCommand,
+        ]);
+
+        $executor->execute($commands, $response, Generator::generateSalesChannelContext());
+    }
+}

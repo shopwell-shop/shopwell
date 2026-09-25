@@ -1,0 +1,152 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Cart\TaxProvider;
+
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\Price\AmountCalculator;
+use Shopwell\Core\Checkout\Cart\Price\CashRounding;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTax;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\TaxProvider\Struct\TaxProviderResult;
+use Shopwell\Core\Checkout\Cart\Transaction\TransactionProcessor;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+
+#[Package('checkout')]
+class TaxAdjustment
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly AmountCalculator $amountCalculator,
+        private readonly CashRounding $rounding,
+        private readonly TransactionProcessor $transactionProcessor
+    ) {
+    }
+
+    public function adjust(Cart $cart, TaxProviderResult $result, SalesChannelContext $context): void
+    {
+        $lineItems = $cart->getLineItems();
+        $deliveries = $cart->getDeliveries();
+
+        $this->applyLineItemTaxes($lineItems, $result->getLineItemTaxes());
+        $this->applyDeliveryTaxes($deliveries, $result->getDeliveryTaxes());
+
+        $price = $this->amountCalculator->calculate(
+            $cart->getLineItems()->getPrices(),
+            $cart->getDeliveries()->getShippingCosts(),
+            $context
+        );
+
+        // either take the price from the tax provider result or take the calculated taxes
+        $taxes = $price->getCalculatedTaxes()->filter(static fn (CalculatedTax $tax) => $tax->getTax() > 0.0);
+        $price->setCalculatedTaxes($taxes);
+
+        if ($result->getCartPriceTaxes()) {
+            $price = $this->applyCartPriceTaxes($price, $result->getCartPriceTaxes(), $context);
+        }
+
+        $cart->setPrice($price);
+
+        $this->adjustTransactions($cart, $context);
+    }
+
+    private function adjustTransactions(Cart $cart, SalesChannelContext $context): void
+    {
+        if ($cart->getTransactions()->count() === 0) {
+            return;
+        }
+
+        // The transactions were built before the tax provider ran; rebuild them from the adjusted cart price.
+        $cart->setTransactions($this->transactionProcessor->process($cart, $context));
+    }
+
+    private function applyCartPriceTaxes(CartPrice $price, CalculatedTaxCollection $taxes, SalesChannelContext $context): CartPrice
+    {
+        $netPrice = $price->getNetPrice();
+        $grossPrice = $price->getTotalPrice();
+        $taxSum = $taxes->getAmount();
+
+        if ($context->getTaxState() === CartPrice::TAX_STATE_NET) {
+            $grossPrice = $this->rounding->cashRound(
+                $netPrice + $taxSum,
+                $context->getTotalRounding()
+            );
+        }
+
+        if ($context->getTaxState() === CartPrice::TAX_STATE_GROSS) {
+            $netPrice = $this->rounding->cashRound(
+                $grossPrice - $taxSum,
+                $context->getTotalRounding()
+            );
+        }
+
+        return new CartPrice(
+            $netPrice,
+            $grossPrice,
+            $price->getPositionPrice(),
+            $taxes,
+            $price->getTaxRules(),
+            $context->getTaxState(),
+            $grossPrice
+        );
+    }
+
+    /**
+     * @param array<string, CalculatedTaxCollection>|null $taxes
+     */
+    private function applyLineItemTaxes(LineItemCollection $lineItems, ?array $taxes): void
+    {
+        if (!$taxes) {
+            return;
+        }
+
+        foreach ($lineItems as $lineItem) {
+            if (!$lineItem->getPrice()) {
+                throw CartException::missingLineItemPrice($lineItem->getUniqueIdentifier());
+            }
+
+            // trickle down for nested line items
+            if ($lineItem->hasChildren()) {
+                $this->applyLineItemTaxes($lineItem->getChildren(), $taxes);
+            }
+
+            // line item has no tax sum provided
+            if (!\array_key_exists($lineItem->getUniqueIdentifier(), $taxes)) {
+                continue;
+            }
+
+            // apply provided taxes
+            $tax = $taxes[$lineItem->getUniqueIdentifier()];
+            $lineItem->getPrice()->setCalculatedTaxes($tax);
+        }
+    }
+
+    /**
+     * @param array<string, CalculatedTaxCollection>|null $taxes
+     */
+    private function applyDeliveryTaxes(DeliveryCollection $deliveries, ?array $taxes): void
+    {
+        if (!$taxes) {
+            return;
+        }
+
+        foreach ($taxes as $deliveryPositionId => $deliveryTax) {
+            foreach ($deliveries as $delivery) {
+                $position = $delivery->getPositions()->get($deliveryPositionId);
+
+                if (!$position) {
+                    continue;
+                }
+
+                $position->getPrice()->setCalculatedTaxes($deliveryTax);
+                $delivery->getShippingCosts()->setCalculatedTaxes($deliveryTax);
+            }
+        }
+    }
+}

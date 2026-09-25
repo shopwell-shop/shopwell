@@ -1,0 +1,341 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity\MediaSerializer;
+use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity\MediaSerializerSubscriber;
+use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\SerializerRegistry;
+use Shopwell\Core\Content\ImportExport\Exception\InvalidMediaUrlException;
+use Shopwell\Core\Content\ImportExport\Exception\MediaDownloadException;
+use Shopwell\Core\Content\ImportExport\Struct\Config;
+use Shopwell\Core\Content\Media\File\FileSaver;
+use Shopwell\Core\Content\Media\File\MediaFile;
+use Shopwell\Core\Content\Media\MediaCollection;
+use Shopwell\Core\Content\Media\MediaDefinition;
+use Shopwell\Core\Content\Media\MediaEntity;
+use Shopwell\Core\Content\Media\MediaService;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+class MediaSerializerTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    public function testDeserializeDownloadsAndPersistsMedia(): void
+    {
+        $context = Context::createDefaultContext();
+        $serializerRegistry = static::getContainer()->get(SerializerRegistry::class);
+        $mediaDefinition = static::getContainer()->get(MediaDefinition::class);
+
+        $mediaService = $this->createMock(MediaService::class);
+        $fileSaver = $this->createMock(FileSaver::class);
+
+        $mediaFolderRepository = static::createStub(EntityRepository::class);
+        $mediaRepository = static::createStub(EntityRepository::class);
+
+        $mediaSerializer = new MediaSerializer($mediaService, $fileSaver, $mediaFolderRepository, $mediaRepository);
+        $mediaSerializer->setRegistry($serializerRegistry);
+
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber(new MediaSerializerSubscriber($mediaSerializer));
+
+        $mediaId = Uuid::randomHex();
+        $expectedDestination = 'shopware-logo';
+        $record = [
+            'id' => $mediaId,
+            'title' => 'Logo',
+            'url' => 'http://172.16.11.80/shopware-logo.png',
+            'mediaFolderId' => Uuid::randomHex(),
+        ];
+
+        $expectedMediaFile = new MediaFile(
+            '/tmp/foo/bar/baz',
+            'image/png',
+            'png',
+            1337
+        );
+        $mediaService->expects($this->once())
+            ->method('fetchFile')
+            ->willReturn($expectedMediaFile);
+
+        $fileSaver->expects($this->once())
+            ->method('persistFileToMedia')
+            ->willReturnCallback(function (MediaFile $m, string $dest, string $id) use ($expectedMediaFile, $expectedDestination, $mediaId): void {
+                $this->assertSame($expectedMediaFile, $m);
+                $this->assertSame($expectedDestination, $dest);
+                $this->assertSame($mediaId, $id);
+            });
+
+        $result = $mediaSerializer->deserialize(new Config([], [], []), $mediaDefinition, $record);
+        $result = \is_array($result) ? $result : iterator_to_array($result);
+
+        $writtenResult = new EntityWriteResult($mediaId, $result, 'media', 'insert');
+        $writtenEvent = new EntityWrittenEvent('media', [$writtenResult], $context);
+        $eventDispatcher->dispatch($writtenEvent, 'media.written');
+    }
+
+    public function testExistingMediaWithSameUrlDoesNotDownload(): void
+    {
+        $context = Context::createDefaultContext();
+        $serializerRegistry = static::getContainer()->get(SerializerRegistry::class);
+        $mediaDefinition = static::getContainer()->get(MediaDefinition::class);
+
+        $mediaService = $this->createMock(MediaService::class);
+        $fileSaver = $this->createMock(FileSaver::class);
+
+        $mediaFolderRepository = static::createStub(EntityRepository::class);
+        $mediaRepository = static::createStub(EntityRepository::class);
+
+        $mediaSerializer = new MediaSerializer($mediaService, $fileSaver, $mediaFolderRepository, $mediaRepository);
+        $mediaSerializer->setRegistry($serializerRegistry);
+
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber(new MediaSerializerSubscriber($mediaSerializer));
+
+        $mediaId = Uuid::randomHex();
+        $record = [
+            'id' => $mediaId,
+            'url' => 'http://172.16.11.80/shopware-logo.png',
+        ];
+
+        $mediaEntity = new MediaEntity();
+        $mediaEntity->assign($record);
+
+        $record['mediaFolderId'] = Uuid::randomHex();
+        $record['translations'] = [
+            Defaults::LANGUAGE_SYSTEM => [
+                'title' => 'Logo',
+                'alt' => 'Logo description',
+            ],
+        ];
+
+        $mediaService->expects($this->never())
+            ->method('fetchFile');
+
+        $fileSaver->expects($this->never())
+            ->method('persistFileToMedia');
+
+        $searchResult = new EntitySearchResult('media', 1, new MediaCollection([$mediaEntity]), null, new Criteria(), $context);
+        $mediaRepository->method('search')->willReturn($searchResult);
+
+        $result = $mediaSerializer->deserialize(new Config([], [], []), $mediaDefinition, $record);
+        $result = \is_array($result) ? $result : iterator_to_array($result);
+
+        static::assertArrayNotHasKey('url', $result);
+
+        $expected = $record;
+        unset($expected['url']);
+
+        // other properties are written
+        static::assertSame($expected, $result);
+
+        $writtenResult = new EntityWriteResult($mediaId, $result, 'media', 'insert');
+        $writtenEvent = new EntityWrittenEvent('media', [$writtenResult], $context);
+        $eventDispatcher->dispatch($writtenEvent, 'media.written');
+    }
+
+    public function testUrlWithWhitespaces(): void
+    {
+        Feature::skipTestIfActive('v6.8.0.0', $this);
+        $context = Context::createDefaultContext();
+        $serializerRegistry = static::getContainer()->get(SerializerRegistry::class);
+        $mediaDefinition = static::getContainer()->get(MediaDefinition::class);
+
+        $mediaService = $this->createMock(MediaService::class);
+        $fileSaver = $this->createMock(FileSaver::class);
+
+        $mediaFolderRepository = static::getContainer()->get('media_folder.repository');
+        $mediaRepository = static::createStub(EntityRepository::class);
+
+        $mediaSerializer = new MediaSerializer($mediaService, $fileSaver, $mediaFolderRepository, $mediaRepository);
+        $mediaSerializer->setRegistry($serializerRegistry);
+
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber(new MediaSerializerSubscriber($mediaSerializer));
+
+        $mediaId = Uuid::randomHex();
+        $expectedDestination = 'shopware logo';
+        $record = [
+            'id' => $mediaId,
+            'url' => 'http://172.16.11.80/shopware logo.png',
+        ];
+
+        $expectedMediaFile = new MediaFile(
+            '/tmp/foo/bar/baz',
+            'image/png',
+            'png',
+            1337
+        );
+        $mediaService->expects($this->once())
+            ->method('fetchFile')
+            ->willReturn($expectedMediaFile);
+
+        $fileSaver->expects($this->once())
+            ->method('persistFileToMedia')
+            ->willReturnCallback(function (MediaFile $m, string $dest, string $id) use ($expectedMediaFile, $expectedDestination, $mediaId): void {
+                $this->assertSame($expectedMediaFile, $m);
+                $this->assertSame($expectedDestination, $dest);
+                $this->assertSame($mediaId, $id);
+            });
+
+        $result = $mediaSerializer->deserialize(new Config([], [], []), $mediaDefinition, $record);
+        $result = \is_array($result) ? $result : iterator_to_array($result);
+
+        $writtenResult = new EntityWriteResult($mediaId, $result, 'media', 'insert');
+        $writtenEvent = new EntityWrittenEvent('media', [$writtenResult], $context);
+        $eventDispatcher->dispatch($writtenEvent, 'media.written');
+    }
+
+    public function testOnlyUrl(): void
+    {
+        $context = Context::createDefaultContext();
+        $serializerRegistry = static::getContainer()->get(SerializerRegistry::class);
+        $mediaDefinition = static::getContainer()->get(MediaDefinition::class);
+
+        $mediaService = $this->createMock(MediaService::class);
+        $fileSaver = $this->createMock(FileSaver::class);
+
+        $mediaFolderRepository = static::getContainer()->get('media_folder.repository');
+        $mediaRepository = static::createStub(EntityRepository::class);
+
+        $mediaSerializer = new MediaSerializer($mediaService, $fileSaver, $mediaFolderRepository, $mediaRepository);
+        $mediaSerializer->setRegistry($serializerRegistry);
+
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber(new MediaSerializerSubscriber($mediaSerializer));
+
+        $expectedDestination = 'shopware-logo';
+        $record = [
+            'url' => 'http://172.16.11.80/shopware-logo.png',
+        ];
+
+        $expectedMediaFile = new MediaFile(
+            '/tmp/foo/bar/baz',
+            'image/png',
+            'png',
+            1337
+        );
+        $mediaService->expects($this->once())
+            ->method('fetchFile')
+            ->willReturn($expectedMediaFile);
+
+        $fileSaver->expects($this->once())
+            ->method('persistFileToMedia')
+            ->willReturnCallback(function (MediaFile $m, string $dest) use ($expectedMediaFile, $expectedDestination): void {
+                $this->assertSame($expectedMediaFile, $m);
+                $this->assertSame($expectedDestination, $dest);
+            });
+
+        $result = $mediaSerializer->deserialize(new Config([], [], []), $mediaDefinition, $record);
+        $result = \is_array($result) ? $result : iterator_to_array($result);
+
+        $writtenResult = new EntityWriteResult($result['id'], $result, 'media', 'insert');
+        $writtenEvent = new EntityWrittenEvent('media', [$writtenResult], $context);
+        $eventDispatcher->dispatch($writtenEvent, 'media.written');
+    }
+
+    public function testInvalidUrl(): void
+    {
+        $serializerRegistry = static::getContainer()->get(SerializerRegistry::class);
+        $mediaDefinition = static::getContainer()->get(MediaDefinition::class);
+
+        $mediaService = static::createStub(MediaService::class);
+        $fileSaver = static::createStub(FileSaver::class);
+
+        $mediaFolderRepository = static::getContainer()->get('media_folder.repository');
+        $mediaRepository = static::createStub(EntityRepository::class);
+
+        $mediaSerializer = new MediaSerializer($mediaService, $fileSaver, $mediaFolderRepository, $mediaRepository);
+        $mediaSerializer->setRegistry($serializerRegistry);
+
+        $actual = $mediaSerializer->deserialize(new Config([], [], []), $mediaDefinition, ['url' => 'invalid']);
+        $actual = \is_array($actual) ? $actual : iterator_to_array($actual);
+
+        // only the error should be in the result
+        static::assertCount(1, $actual);
+        static::assertInstanceOf(InvalidMediaUrlException::class, $actual['_error']);
+    }
+
+    public function testEmpty(): void
+    {
+        $serializerRegistry = static::getContainer()->get(SerializerRegistry::class);
+        $mediaDefinition = static::getContainer()->get(MediaDefinition::class);
+
+        $mediaService = static::createStub(MediaService::class);
+        $fileSaver = static::createStub(FileSaver::class);
+
+        $mediaFolderRepository = static::getContainer()->get('media_folder.repository');
+        $mediaRepository = static::createStub(EntityRepository::class);
+
+        $mediaSerializer = new MediaSerializer($mediaService, $fileSaver, $mediaFolderRepository, $mediaRepository);
+        $mediaSerializer->setRegistry($serializerRegistry);
+        $config = new Config([], [], []);
+
+        $actual = $mediaSerializer->deserialize($config, $mediaDefinition, []);
+        // should not contain url
+        static::assertEmpty($actual);
+    }
+
+    public function testFailedDownload(): void
+    {
+        $serializerRegistry = static::getContainer()->get(SerializerRegistry::class);
+        $mediaDefinition = static::getContainer()->get(MediaDefinition::class);
+
+        $mediaService = static::createStub(MediaService::class);
+        $fileSaver = static::createStub(FileSaver::class);
+
+        $mediaFolderRepository = static::getContainer()->get('media_folder.repository');
+        $mediaRepository = static::createStub(EntityRepository::class);
+
+        $mediaSerializer = new MediaSerializer($mediaService, $fileSaver, $mediaFolderRepository, $mediaRepository);
+        $mediaSerializer->setRegistry($serializerRegistry);
+
+        $record = [
+            'url' => 'http://localhost/some/path/to/non/existing/image.png',
+        ];
+
+        $actual = $mediaSerializer->deserialize(new Config([], [], []), $mediaDefinition, $record);
+        $actual = \is_array($actual) ? $actual : iterator_to_array($actual);
+        static::assertInstanceOf(MediaDownloadException::class, $actual['_error']);
+    }
+
+    public function testSupportsOnlyMedia(): void
+    {
+        $serializer = new MediaSerializer(
+            static::createStub(MediaService::class),
+            static::createStub(FileSaver::class),
+            static::getContainer()->get('media_folder.repository'),
+            static::getContainer()->get('media.repository')
+        );
+
+        $definitionRegistry = static::getContainer()->get(DefinitionInstanceRegistry::class);
+        foreach ($definitionRegistry->getDefinitions() as $definition) {
+            $entity = $definition->getEntityName();
+
+            if ($entity === MediaDefinition::ENTITY_NAME) {
+                static::assertTrue($serializer->supports($entity));
+            } else {
+                static::assertFalse(
+                    $serializer->supports($entity),
+                    MediaSerializer::class . ' should not support ' . $entity
+                );
+            }
+        }
+    }
+}

@@ -1,0 +1,60 @@
+import ApiService from '../api.service';
+
+/**
+ * Gateway for the API end point "integration"
+ * @class
+ * @sw-package fundamentals@framework
+ * @extends ApiService
+ */
+class IntegrationApiService extends ApiService {
+    constructor(httpClient, loginService, apiEndpoint = 'integration') {
+        super(httpClient, loginService, apiEndpoint);
+        this.name = 'integrationService';
+    }
+
+    /**
+     * Get the generated access key and secret access key from the API
+     *
+     * @param {Object} [additionalParams = {}]
+     * @param {Object} [additionalHeaders = {}]
+     * @returns {Promise<T>}
+     */
+    saveMcpAllowlist(integrationId, allowlist, additionalHeaders = {}) {
+        const headers = this.getBasicHeaders(additionalHeaders);
+
+        return this.httpClient
+            .post(`/_action/integration/${integrationId}/mcp-allowlist`, { allowlist }, { headers })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            });
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Will be removed. Use `Shopwell.Service('repositoryFactory').create('integration').save(integration)` instead.
+     */
+    updateAdmin(integrationId, admin, additionalHeaders = {}) {
+        const headers = this.getBasicHeaders(additionalHeaders);
+
+        return this.httpClient.patch(this.getApiBasePath(integrationId), { admin }, { headers }).then((response) => {
+            return ApiService.handleResponse(response);
+        });
+    }
+
+    generateKey(additionalParams = {}, additionalHeaders = {}, user = false) {
+        const params = additionalParams;
+        const headers = this.getBasicHeaders(additionalHeaders);
+        const endpoint = user ? '/_action/access-key/user' : '/_action/access-key/intergration';
+
+        return this.httpClient
+            .get(endpoint, {
+                params,
+                headers,
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            });
+    }
+}
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+export default IntegrationApiService;

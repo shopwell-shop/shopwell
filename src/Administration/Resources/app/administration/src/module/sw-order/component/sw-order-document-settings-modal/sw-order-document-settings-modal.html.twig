@@ -1,0 +1,221 @@
+{# @deprecated tag:v6.9.0 - Removed with document generation v1. #}
+<!-- eslint-disable vuejs-accessibility/click-events-have-key-events -->
+{% block sw_order_document_settings_modal %}
+<sw-modal
+    :title="modalTitle"
+    class="sw-order-document-settings-modal"
+    @modal-close="onCancel"
+>
+    {% block sw_order_document_settings_modal_form_first_row %}
+    <sw-container
+        columns="1fr 1fr"
+        gap="0px 14px"
+    >
+        {% block sw_order_document_settings_modal_form_document_number %}
+        <mt-text-field
+            v-model="documentNumber"
+            class="sw-order-document-settings-modal__document-number"
+            :label="$t('sw-order.documentModal.labelDocumentNumber')"
+            :error="documentNumberErrorMessage"
+            required
+        />
+        {% endblock %}
+        {% block sw_order_document_settings_modal_form_document_date %}
+        <mt-datepicker
+            v-model="documentConfig.documentDate"
+            class="sw-order-document-settings-modal__document-date"
+            date-type="date"
+            required
+            hide-hint
+            :label="$t('sw-order.documentModal.labelDocumentDate')"
+            :placeholder="$t('sw-datepicker.date.placeholder')"
+        />
+        {% endblock %}
+    </sw-container>
+    {% endblock %}
+
+    {% block sw_order_document_settings_modal_form_file_upload %}
+    {% block sw_order_document_settings_modal_form_file_upload_toggle %}
+
+    <mt-switch
+        v-model="uploadDocument"
+        name="sw-field--uploadDocument"
+        class="sw-order-document-settings-modal__file-toggle"
+        :label="$t('sw-order.documentModal.fileInputLabel')"
+    />
+    {% endblock %}
+
+    {% block sw_order_document_settings_modal_form_file_upload_input %}
+    <sw-upload-listener
+        v-if="uploadDocument"
+        auto-upload
+        :upload-tag="order.id"
+        @media-upload-finish="successfulUploadFromUrl"
+    />
+    <sw-media-upload-v2
+        v-if="uploadDocument"
+        ref="fileInput"
+        variant="small"
+        class="sw-order-document-settings-modal__file-input"
+        use-file-data
+        :source="selectedDocumentFile"
+        :allow-multi-select="false"
+        :file-accept="features.fileAcceptTypes"
+        :max-file-size="features.uploadFileSizeLimit"
+        default-folder="document"
+        :upload-tag="order.id"
+        @media-upload-add-file="onAddDocument"
+        @media-upload-sidebar-open="openMediaModal"
+        @media-upload-remove-image="removeCustomDocument"
+    />
+    {% endblock %}
+    {% endblock %}
+
+    {% block sw_order_document_settings_modal_media_modal %}
+    <sw-media-modal-v2
+        v-if="showMediaModal"
+        :allow-multi-select="false"
+        :file-accept="features.fileAcceptTypes"
+        @media-modal-selection-change="onAddMediaFromLibrary"
+        @modal-close="closeMediaModal"
+    />
+    {% endblock %}
+
+    {% block sw_order_document_settings_modal_form_additional_content %}{% endblock %}
+
+    {% block sw_order_document_settings_modal_form_document_comment %}
+    <mt-textarea
+        v-model="documentConfig.documentComment"
+        name="sw-field--documentConfig-documentComment"
+        class="sw-order-document-settings-modal__comment"
+        :label="$t('sw-order.documentModal.labelDocumentComment')"
+    />
+    {% endblock %}
+
+    {% block sw_order_document_settings_modal_form_document_footer %}
+    <template #modal-footer>
+        <sw-button-group split-button>
+            {% block sw_order_document_settings_modal_form_document_footer_preview %}
+            <mt-button
+                class="sw-order-document-settings-modal__preview-button"
+                size="small"
+                :disabled="invalidInput || isLoadingDocument"
+                :is-loading="isLoadingPreview"
+                variant="secondary"
+                data-analytics-id="sw-order-document-settings-modal.preview"
+                @click="onPreview()"
+            >
+                {{ $t('sw-order.documentModal.labelPreview') }}
+            </mt-button>
+            {% endblock %}
+
+            <sw-context-button
+                class="sw-order-document-settings-modal__preview-button-arrow"
+                :menu-width="160"
+                :disabled="invalidInput || isLoadingDocument"
+                data-analytics-id="sw-order-document-settings-modal.open-preview-menu"
+            >
+                <template #button>
+                    <mt-button
+                        square
+                        size="small"
+                        variant="secondary"
+                        :disabled="invalidInput"
+                    >
+                        <mt-icon
+                            name="regular-chevron-down-xs"
+                            size="16"
+                        />
+                    </mt-button>
+                </template>
+
+                <sw-context-menu-item
+                    class="sw-order-document-settings-modal__preview-button-html"
+                    :disabled="invalidInput || htmlPreviewDisabled"
+                    data-analytics-id="sw-order-document-settings-modal.preview-html"
+                    @click="onPreview('html')"
+                >
+                    {{ $t('sw-order.documentModal.labelPreviewOnlyHtml') }}
+                </sw-context-menu-item>
+            </sw-context-button>
+        </sw-button-group>
+
+        <div>
+            {% block sw_order_document_settings_modal_form_document_footer_cancel %}
+            <mt-button
+                size="small"
+                variant="secondary"
+                :disabled="isLoadingDocument || isLoadingPreview"
+                data-analytics-id="sw-order-document-settings-modal.cancel-and-close-modal"
+                @click="onCancel"
+            >
+                {{ $t('global.default.close') }}
+            </mt-button>
+            {% endblock %}
+
+            {% block sw_order_document_settings_modal_form_document_footer_split_button %}
+            <sw-button-group split-button>
+                {% block sw_order_document_settings_modal_form_document_footer_split_button_create %}
+                <mt-button
+                    class="sw-order-document-settings-modal__create"
+                    variant="primary"
+                    size="small"
+                    :disabled="invalidInput || isLoadingPreview"
+                    :is-loading="isLoadingDocument"
+                    data-analytics-id="sw-order-document-settings-modal.create-document"
+                    @click="onCreateDocument"
+                >
+                    {{ $t('sw-order.documentModal.labelCreate') }}
+                </mt-button>
+                {% endblock %}
+
+                {% block sw_order_document_settings_modal_form_document_footer_split_button_context %}
+                <sw-context-button
+                    class="sw-order-document-settings-modal__create-arrow"
+                    :disabled="invalidInput"
+                    data-analytics-id="sw-order-document-settings-modal.open-create-document-menu"
+                >
+                    {% block sw_order_document_settings_modal_form_document_footer_split_button_context_arrow %}
+                    <template #button>
+                        <mt-button
+                            square
+                            variant="primary"
+                            size="small"
+                            :disabled="invalidInput"
+                        >
+                            <mt-icon
+                                name="regular-chevron-down-xs"
+                                size="16"
+                            />
+                        </mt-button>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_order_document_settings_modal_form_document_footer_split_button_context_create_send %}
+                    <sw-context-menu-item
+                        class="sw-order-document-settings-modal__send-button"
+                        data-analytics-id="sw-order-document-settings-modal.create-document-and-send"
+                        @click="onCreateDocument('send')"
+                    >
+                        {{ $t('sw-order.documentModal.labelCreateSend') }}
+                    </sw-context-menu-item>
+                    {% endblock %}
+
+                    {% block sw_order_document_settings_modal_form_document_footer_split_button_context_create_download %}
+                    <sw-context-menu-item
+                        class="sw-order-document-settings-modal__download-button"
+                        data-analytics-id="sw-order-document-settings-modal.create-document-and-download-pdf"
+                        @click="onCreateDocument('download')"
+                    >
+                        {{ $t('sw-order.documentModal.labelCreateDownload') }}
+                    </sw-context-menu-item>
+                    {% endblock %}
+                </sw-context-button>
+                {% endblock %}
+            </sw-button-group>
+            {% endblock %}
+        </div>
+    </template>
+    {% endblock %}
+</sw-modal>
+{% endblock %}

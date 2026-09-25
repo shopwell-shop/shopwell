@@ -1,0 +1,8 @@
+framework:
+    exceptions:
+        Shopwell\Storefront\Theme\Exception\ThemeException:
+            log_level: notice
+        Shopwell\Storefront\Theme\Exception\ThemeAssignmentException:
+            log_level: notice
+    translator:
+        default_path: "%storefrontRoot%/Resources/snippet"

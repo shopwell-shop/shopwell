@@ -1,0 +1,36 @@
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Shopwell.Component.register('sw-settings-store', () => import('./page/sw-settings-store'));
+
+const { Module } = Shopwell;
+
+/**
+ * @sw-package checkout
+ * @private
+ */
+Module.register('sw-settings-store', {
+    type: 'core',
+    name: 'settings-store',
+    title: 'sw-settings-store.general.mainMenuItemGeneral',
+    description: 'sw-settings-store.general.description',
+    color: 'var(--sw-color-module-neutral-default)',
+    icon: 'regular-laptop',
+    favicon: 'icon-module-settings.svg',
+
+    routes: {
+        index: {
+            component: 'sw-settings-store',
+            path: 'index',
+            meta: {
+                parentPath: 'sw.settings.index.system',
+                privilege: 'system.system_config',
+            },
+        },
+    },
+
+    settingsItem: {
+        group: 'system',
+        to: 'sw.settings.store.index',
+        icon: 'regular-laptop',
+        privilege: 'system.system_config',
+    },
+});

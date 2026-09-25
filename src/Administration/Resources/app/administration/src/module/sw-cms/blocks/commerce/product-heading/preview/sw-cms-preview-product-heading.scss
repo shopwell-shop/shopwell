@@ -1,0 +1,52 @@
+@import "~scss/variables";
+@import "~scss/mixins";
+
+.sw-cms-preview-product-heading {
+    display: grid;
+    grid-template-columns: 5fr 1fr;
+    grid-column-gap: 20px;
+    padding: 15px;
+
+    &__name {
+        @include flex-centering-vertical;
+
+        color: var(--color-text-primary-default);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__logo {
+        @include flex-centering-vertical;
+
+        &::before {
+            @include circle(26px);
+
+            content: "";
+            margin-right: 4px;
+            background: var(--color-background-tertiary-default);
+        }
+    }
+
+    &__placeholder-container {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__placeholder {
+        height: 6px;
+        background: var(--color-background-tertiary-default);
+        border-radius: $border-radius-pill;
+
+        &:first-child {
+            width: 30px;
+        }
+
+        &:last-child {
+            width: 46px;
+        }
+
+        &:not(:first-child) {
+            margin: 4px 0 0;
+        }
+    }
+}

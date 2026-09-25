@@ -1,0 +1,28 @@
+.sw-import-export-activity-log-info-modal {
+    &__color-badge {
+        margin-right: var(--scale-size-4);
+    }
+
+    &__list-item {
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        color: var(--color-text-primary-default);
+
+        dd {
+            display: flex;
+            align-items: center;
+        }
+
+        dt {
+            font-weight: var(--font-weight-semibold);
+        }
+    }
+
+    &__description-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto auto;
+        grid-gap: var(--scale-size-12);
+        margin-bottom: var(--scale-size-24);
+    }
+}

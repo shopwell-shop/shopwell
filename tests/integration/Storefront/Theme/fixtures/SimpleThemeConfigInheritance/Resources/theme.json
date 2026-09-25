@@ -1,0 +1,8 @@
+{
+  "name": "Simple theme",
+  "author": "Shopwell AG",
+  "configInheritance": [
+    "@Storefront",
+    "@SimpleTheme"
+  ]
+}

@@ -1,0 +1,78 @@
+/**
+ * @sw-package discovery
+ */
+import './acl';
+
+const { Module } = Shopwell;
+
+/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+Shopwell.Component.register('sw-settings-snippet-set-list', () => import('./page/sw-settings-snippet-set-list'));
+Shopwell.Component.register('sw-settings-snippet-list', () => import('./page/sw-settings-snippet-list'));
+Shopwell.Component.register('sw-settings-snippet-detail', () => import('./page/sw-settings-snippet-detail'));
+Shopwell.Component.extend(
+    'sw-settings-snippet-create',
+    'sw-settings-snippet-detail',
+    () => import('./page/sw-settings-snippet-create'),
+);
+Shopwell.Component.register('sw-settings-snippet-sidebar', () => import('./component/sidebar/sw-settings-snippet-sidebar'));
+Shopwell.Component.register(
+    'sw-settings-snippet-filter-switch',
+    () => import('./component/sidebar/sw-settings-snippet-filter-switch'),
+);
+/* eslint-enable sw-deprecation-rules/private-feature-declarations */
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Module.register('sw-settings-snippet', {
+    type: 'core',
+    name: 'settings-snippet',
+    title: 'sw-settings-snippet.general.mainMenuItemGeneral',
+    description: 'sw-settings-snippet.general.description',
+    version: '1.0.0',
+    targetVersion: '1.0.0',
+    color: 'var(--sw-color-module-neutral-default)',
+    icon: 'regular-globe-stand',
+    favicon: 'icon-module-settings.svg',
+    entity: 'snippet',
+
+    routes: {
+        index: {
+            component: 'sw-settings-snippet-set-list',
+            path: 'index',
+            meta: {
+                parentPath: 'sw.settings.index',
+                privilege: 'snippet.viewer',
+            },
+        },
+        list: {
+            component: 'sw-settings-snippet-list',
+            path: 'list',
+            meta: {
+                parentPath: 'sw.settings.snippet.index',
+                privilege: 'snippet.viewer',
+            },
+        },
+        detail: {
+            component: 'sw-settings-snippet-detail',
+            path: 'detail/:key',
+            meta: {
+                parentPath: 'sw.settings.snippet.list',
+                privilege: 'snippet.viewer',
+            },
+        },
+        create: {
+            component: 'sw-settings-snippet-create',
+            path: 'create',
+            meta: {
+                parentPath: 'sw.settings.snippet.list',
+                privilege: 'snippet.viewer',
+            },
+        },
+    },
+
+    settingsItem: {
+        group: 'localization',
+        to: 'sw.settings.snippet.index',
+        icon: 'regular-globe-stand',
+        privilege: 'snippet.viewer',
+    },
+});

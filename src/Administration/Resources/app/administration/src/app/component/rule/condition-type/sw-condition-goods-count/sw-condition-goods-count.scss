@@ -1,0 +1,32 @@
+.sw-condition-goods-count {
+    display: grid;
+    gap: var(--scale-size-4);
+    grid-template-columns: auto 1fr;
+
+    &__numfield {
+        .mt-block-field__block {
+            border: none;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+    }
+
+    &__value {
+        display: grid;
+        overflow: hidden;
+        grid-template-columns: 1fr auto;
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: var(--border-radius-xs);
+    }
+
+    &__filter {
+        padding: var(--scale-size-6);
+        background-color: var(--color-background-primary-default);
+
+        .mt-button {
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+    }
+}

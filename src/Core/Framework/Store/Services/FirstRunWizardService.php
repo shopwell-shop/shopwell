@@ -1,0 +1,435 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Store\Services;
+
+use GuzzleHttp\Exception\ClientException;
+use League\Flysystem\FilesystemOperator;
+use League\Flysystem\UnableToWriteFile;
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
+use Shopwell\Core\Framework\App\AppCollection;
+use Shopwell\Core\Framework\App\AppEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\PluginCollection;
+use Shopwell\Core\Framework\Plugin\PluginEntity;
+use Shopwell\Core\Framework\Store\Authentication\StoreRequestOptionsProvider;
+use Shopwell\Core\Framework\Store\Event\FirstRunWizardFinishedEvent;
+use Shopwell\Core\Framework\Store\Event\FirstRunWizardStartedEvent;
+use Shopwell\Core\Framework\Store\Event\ShopwellAccountLoginEvent;
+use Shopwell\Core\Framework\Store\Exception\StoreLicenseDomainMissingException;
+use Shopwell\Core\Framework\Store\StoreException;
+use Shopwell\Core\Framework\Store\Struct\AccessTokenStruct;
+use Shopwell\Core\Framework\Store\Struct\DomainVerificationRequestStruct;
+use Shopwell\Core\Framework\Store\Struct\ExtensionStruct;
+use Shopwell\Core\Framework\Store\Struct\FrwState;
+use Shopwell\Core\Framework\Store\Struct\LicenseDomainCollection;
+use Shopwell\Core\Framework\Store\Struct\LicenseDomainStruct;
+use Shopwell\Core\Framework\Store\Struct\PluginCategoryStruct;
+use Shopwell\Core\Framework\Store\Struct\PluginRecommendationCollection;
+use Shopwell\Core\Framework\Store\Struct\PluginRegionCollection;
+use Shopwell\Core\Framework\Store\Struct\PluginRegionStruct;
+use Shopwell\Core\Framework\Store\Struct\ShopUserTokenStruct;
+use Shopwell\Core\Framework\Store\Struct\StorePluginStruct;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\System\User\Aggregate\UserConfig\UserConfigCollection;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+/**
+ * @internal
+ *
+ * @final
+ */
+#[Package('fundamentals@after-sales')]
+class FirstRunWizardService
+{
+    final public const USER_CONFIG_KEY_FRW_USER_TOKEN = 'core.frw.userToken';
+    final public const USER_CONFIG_VALUE_FRW_USER_TOKEN = 'frwUserToken';
+
+    private const TRACKING_EVENT_FRW_STARTED = 'First Run Wizard started';
+    private const TRACKING_EVENT_FRW_FINISHED = 'First Run Wizard finished';
+
+    private const FRW_MAX_FAILURES = 3;
+
+    /**
+     * @param EntityRepository<UserConfigCollection> $userConfigRepository
+     */
+    public function __construct(
+        private readonly StoreService $storeService,
+        private readonly SystemConfigService $configService,
+        private readonly FilesystemOperator $filesystem,
+        private readonly bool $frwAutoRun,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly FirstRunWizardClient $frwClient,
+        private readonly EntityRepository $userConfigRepository,
+        private readonly TrackingEventClient $trackingEventClient
+    ) {
+    }
+
+    public function startFrw(Context $context): void
+    {
+        $this->trackingEventClient->fireTrackingEvent(self::TRACKING_EVENT_FRW_STARTED);
+
+        $this->eventDispatcher->dispatch(new FirstRunWizardStartedEvent($this->getFrwState(), $context));
+    }
+
+    public function frwLogin(string $shopwareId, string $password, Context $context): void
+    {
+        $accessTokenResponse = $this->frwClient->frwLogin($shopwareId, $password, $context);
+        $accessToken = $this->createAccessTokenStruct($accessTokenResponse, $accessTokenResponse['firstRunWizardUserToken']);
+
+        $this->updateFrwUserToken($context, $accessToken);
+    }
+
+    public function upgradeAccessToken(Context $context): void
+    {
+        $accessTokenResponse = $this->frwClient->upgradeAccessToken($context);
+        $accessToken = $this->createAccessTokenStruct($accessTokenResponse, $accessTokenResponse['shopUserToken']);
+
+        $this->storeService->updateStoreToken($context, $accessToken);
+        $this->configService->set(StoreRequestOptionsProvider::CONFIG_KEY_STORE_SHOP_SECRET, $accessToken->getShopSecret(), null, false);
+        $this->removeFrwUserToken($context);
+
+        $this->eventDispatcher->dispatch(new ShopwellAccountLoginEvent($context));
+    }
+
+    public function finishFrw(bool $failed, Context $context): void
+    {
+        $currentState = $this->getFrwState();
+
+        if ($failed) {
+            $newState = FrwState::failedState(null, $currentState->getFailureCount() + 1);
+        } else {
+            $this->trackingEventClient->fireTrackingEvent(self::TRACKING_EVENT_FRW_FINISHED);
+            $newState = FrwState::completedState();
+        }
+
+        $this->setFrwStatus($newState);
+
+        $this->eventDispatcher->dispatch(new FirstRunWizardFinishedEvent($newState, $currentState, $context));
+    }
+
+    public function frwShouldRun(): bool
+    {
+        if (!$this->frwAutoRun) {
+            return false;
+        }
+
+        $status = $this->getFrwState();
+        if ($status->isCompleted()) {
+            return false;
+        }
+
+        if ($status->isFailed() && $status->getFailureCount() > self::FRW_MAX_FAILURES) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @throws StoreLicenseDomainMissingException
+     * @throws ClientException
+     *
+     * @return StorePluginStruct[]
+     */
+    public function getLanguagePlugins(
+        PluginCollection $pluginCollection,
+        AppCollection $appCollection,
+        Context $context,
+    ): array {
+        $languagePlugins = $this->frwClient->getLanguagePlugins($context);
+
+        return $this->mapExtensionData($languagePlugins, $pluginCollection, $appCollection);
+    }
+
+    /**
+     * @throws StoreLicenseDomainMissingException
+     * @throws ClientException
+     *
+     * @return StorePluginStruct[]
+     */
+    public function getDemoDataPlugins(
+        PluginCollection $pluginCollection,
+        AppCollection $appCollection,
+        Context $context,
+    ): array {
+        $demodataPlugins = $this->frwClient->getDemoDataPlugins($context);
+
+        return $this->mapExtensionData($demodataPlugins, $pluginCollection, $appCollection);
+    }
+
+    /**
+     * @throws StoreLicenseDomainMissingException
+     * @throws ClientException
+     */
+    public function getRecommendationRegions(Context $context): PluginRegionCollection
+    {
+        $regions = new PluginRegionCollection();
+
+        foreach ($this->frwClient->getRecommendationRegions($context) as $region) {
+            $categories = [];
+            foreach ($region['categories'] as $category) {
+                $categoryName = $category['name'] ?? '';
+                $categoryLabel = $category['label'] ?? '';
+
+                if ($categoryName === '' || $categoryLabel === '') {
+                    continue;
+                }
+                $categories[] = new PluginCategoryStruct($categoryName, $categoryLabel);
+            }
+            $regionName = $region['name'] ?? '';
+            $regionLabel = $region['label'] ?? '';
+            if ($regionName === '' || $regionLabel === '' || $categories === []) {
+                continue;
+            }
+            $regions->add(new PluginRegionStruct($regionName, $regionLabel, $categories));
+        }
+
+        return $regions;
+    }
+
+    public function getRecommendations(
+        PluginCollection $pluginCollection,
+        AppCollection $appCollection,
+        ?string $region,
+        ?string $category,
+        Context $context
+    ): PluginRecommendationCollection {
+        $recommendations = $this->frwClient->getRecommendations($region, $category, $context);
+
+        return new PluginRecommendationCollection(
+            $this->mapExtensionData($recommendations, $pluginCollection, $appCollection)
+        );
+    }
+
+    public function getLicenseDomains(Context $context): LicenseDomainCollection
+    {
+        $licenseDomains = $this->frwClient->getLicenseDomains($context);
+
+        $currentLicenseDomain = $this->configService->getString(StoreService::CONFIG_KEY_STORE_LICENSE_DOMAIN);
+        $currentLicenseDomain = $currentLicenseDomain ? idn_to_utf8($currentLicenseDomain) : null;
+
+        $domains = array_map(static function ($data) use ($currentLicenseDomain) {
+            $domain = idn_to_utf8($data['domain']);
+
+            return (new LicenseDomainStruct())->assign([
+                'domain' => $domain,
+                'edition' => $data['edition']['label'],
+                'verified' => $data['verified'] ?? false,
+                'active' => $domain === $currentLicenseDomain,
+            ]);
+        }, $licenseDomains);
+
+        return new LicenseDomainCollection($domains);
+    }
+
+    public function verifyLicenseDomain(string $domain, Context $context, bool $testEnvironment = false): LicenseDomainStruct
+    {
+        $domains = $this->getLicenseDomains($context);
+
+        $existing = $domains->get($domain);
+        if (!$existing || !$existing->isVerified()) {
+            $secretResponse = $this->frwClient->fetchVerificationInfo($domain, $context);
+            $secret = new DomainVerificationRequestStruct($secretResponse['content'], $secretResponse['fileName']);
+            $this->storeVerificationSecret($domain, $secret);
+            $this->frwClient->checkVerificationSecret($domain, $context, $testEnvironment);
+
+            $domains = $this->getLicenseDomains($context);
+            $existing = $domains->get($domain);
+        }
+
+        if (!$existing || !$existing->isVerified()) {
+            throw StoreException::licenseDomainVerificationFailure($domain);
+        }
+        $existing->assign(['active' => true]);
+
+        $this->configService->set(StoreService::CONFIG_KEY_STORE_LICENSE_DOMAIN, $domain, null, false);
+        $this->configService->set(StoreService::CONFIG_KEY_STORE_LICENSE_EDITION, $existing->getEdition(), null, false);
+
+        return $existing;
+    }
+
+    private function setFrwStatus(FrwState $newState): void
+    {
+        $currentState = $this->getFrwState();
+        $completedAt = null;
+        $failedAt = null;
+        $failureCount = null;
+
+        if ($newState->isCompleted() && $newState->getCompletedAt()) {
+            $completedAt = $newState->getCompletedAt()->format(\DateTimeImmutable::ATOM);
+        } elseif ($newState->isFailed() && $newState->getFailedAt()) {
+            $failedAt = $newState->getFailedAt()->format(\DateTimeImmutable::ATOM);
+            $failureCount = $currentState->getFailureCount() + 1;
+        }
+
+        $this->configService->set('core.frw.completedAt', $completedAt, null, false);
+        $this->configService->set('core.frw.failedAt', $failedAt, null, false);
+        $this->configService->set('core.frw.failureCount', $failureCount, null, false);
+    }
+
+    /**
+     * @param array<string, mixed> $extensions
+     *
+     * @return StorePluginStruct[]
+     */
+    private function mapExtensionData(
+        array $extensions,
+        PluginCollection $pluginCollection,
+        AppCollection $appCollection,
+    ): array {
+        $mappedExtensions = [];
+        foreach ($extensions as $extension) {
+            $extensionName = $extension['name'] ?? '';
+            $label = $extension['localizedInfo']['name'] ?? '';
+            if ($extensionName === '' || $label === '') {
+                continue;
+            }
+
+            $mappedExtensions[] = (new StorePluginStruct())->assign([
+                'name' => $extensionName,
+                'type' => $extension['type'] ?? 'plugin',
+                'label' => $label,
+                'shortDescription' => $extension['localizedInfo']['shortDescription'] ?? '',
+
+                'iconPath' => $extension['iconPath'] ?? null,
+                'category' => $extension['language'] ?? null,
+                'region' => $extension['region'] ?? null,
+                'manufacturer' => $extension['producer']['name'] ?? null,
+                'position' => $extension['priority'] ?? null,
+                'isCategoryLead' => $extension['isCategoryLead'] ?? false,
+            ]);
+        }
+
+        foreach ($mappedExtensions as $storeExtension) {
+            if ($storeExtension->getType() !== ExtensionStruct::EXTENSION_TYPE_PLUGIN) {
+                continue;
+            }
+
+            /** @var PluginEntity|null $plugin */
+            $plugin = $pluginCollection->filterByProperty('name', $storeExtension->getName())->first();
+            $storeExtension->assign([
+                'active' => $plugin ? $plugin->getActive() : false,
+                'installed' => $plugin ? ((bool) $plugin->getInstalledAt()) : false,
+            ]);
+        }
+
+        foreach ($mappedExtensions as $storeExtension) {
+            if ($storeExtension->getType() !== ExtensionStruct::EXTENSION_TYPE_APP) {
+                continue;
+            }
+
+            /** @var AppEntity|null $app */
+            $app = $appCollection->filterByProperty('name', $storeExtension->getName())->first();
+
+            $storeExtension->assign([
+                'active' => (bool) $app,
+                'installed' => (bool) $app,
+            ]);
+        }
+
+        return $mappedExtensions;
+    }
+
+    private function storeVerificationSecret(string $domain, DomainVerificationRequestStruct $validationRequest): void
+    {
+        try {
+            $this->filesystem->write($validationRequest->getFileName(), $validationRequest->getContent());
+        } catch (UnableToWriteFile) {
+            throw StoreException::licenseDomainVerificationFailure($domain);
+        }
+    }
+
+    private function getFrwState(): FrwState
+    {
+        $completedAt = $this->configService->getString('core.frw.completedAt');
+        if ($completedAt !== '') {
+            return FrwState::completedState(new \DateTimeImmutable($completedAt));
+        }
+        $failedAt = $this->configService->getString('core.frw.failedAt');
+        if ($failedAt !== '') {
+            $failureCount = $this->configService->getInt('core.frw.failureCount');
+
+            return FrwState::failedState(new \DateTimeImmutable($failedAt), $failureCount);
+        }
+
+        return FrwState::openState();
+    }
+
+    private function updateFrwUserToken(Context $context, AccessTokenStruct $accessToken): void
+    {
+        /** @var AdminApiSource $contextSource */
+        $contextSource = $context->getSource();
+        $userId = $contextSource->getUserId();
+
+        $frwUserToken = $accessToken->getShopUserToken()->getToken();
+        $id = $this->getFrwUserTokenConfigId($context);
+
+        $context->scope(Context::SYSTEM_SCOPE, function ($context) use ($userId, $frwUserToken, $id): void {
+            $this->userConfigRepository->upsert(
+                [
+                    [
+                        'id' => $id,
+                        'userId' => $userId,
+                        'key' => self::USER_CONFIG_KEY_FRW_USER_TOKEN,
+                        'value' => [self::USER_CONFIG_VALUE_FRW_USER_TOKEN => $frwUserToken,
+                        ],
+                    ],
+                ],
+                $context
+            );
+        });
+    }
+
+    private function removeFrwUserToken(Context $context): void
+    {
+        if (!$context->getSource() instanceof AdminApiSource) {
+            return;
+        }
+
+        $id = $this->getFrwUserTokenConfigId($context);
+
+        if ($id) {
+            $context->scope(Context::SYSTEM_SCOPE, function ($context) use ($id): void {
+                $this->userConfigRepository->delete([['id' => $id]], $context);
+            });
+        }
+    }
+
+    private function getFrwUserTokenConfigId(Context $context): ?string
+    {
+        if (!$context->getSource() instanceof AdminApiSource) {
+            return null;
+        }
+
+        /** @var AdminApiSource $contextSource */
+        $contextSource = $context->getSource();
+
+        $criteria = (new Criteria())->addFilter(
+            new EqualsFilter('userId', $contextSource->getUserId()),
+            new EqualsFilter('key', self::USER_CONFIG_KEY_FRW_USER_TOKEN)
+        );
+
+        return $this->userConfigRepository->searchIds($criteria, $context)->firstId();
+    }
+
+    /**
+     * @param array{shopSecret?: string, firstRunWizardUserToken?: array{token: string, expirationDate: string}, shopUserToken?: array{token: string, expirationDate: string}} $accessTokenData
+     * @param array{token: string, expirationDate: string} $userTokenData
+     */
+    private function createAccessTokenStruct(array $accessTokenData, array $userTokenData): AccessTokenStruct
+    {
+        $userToken = new ShopUserTokenStruct(
+            $userTokenData['token'],
+            new \DateTimeImmutable($userTokenData['expirationDate'])
+        );
+
+        return new AccessTokenStruct(
+            $userToken,
+            $accessTokenData['shopSecret'] ?? null,
+        );
+    }
+}

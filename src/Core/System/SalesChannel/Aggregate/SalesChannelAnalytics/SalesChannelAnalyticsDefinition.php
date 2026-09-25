@@ -1,0 +1,57 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelAnalytics;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('discovery')]
+class SalesChannelAnalyticsDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'sales_channel_analytics';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function getCollectionClass(): string
+    {
+        return SalesChannelAnalyticsCollection::class;
+    }
+
+    public function getEntityClass(): string
+    {
+        return SalesChannelAnalyticsEntity::class;
+    }
+
+    public function since(): ?string
+    {
+        return '6.2.0.0';
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required())->setDescription('Unique identity of sales channel analytics.'),
+            (new StringField('tracking_id', 'trackingId'))->setDescription('Unique identity for tracking.'),
+            (new BoolField('active', 'active'))->setDescription('When boolean value is `true`, the sales channel analytics are enabled.'),
+            (new BoolField('track_orders', 'trackOrders'))->setDescription('When boolean value is `true`, it enables Google Analytics to track orders.'),
+            (new BoolField('anonymize_ip', 'anonymizeIp'))->setDescription('Unique identity of anonymize.'),
+            (new BoolField('track_offcanvas_cart', 'trackOffcanvasCart'))->setDescription('When boolean value is `true`, it enables Google Analytics to track offcanvas cart.'),
+            (new BoolField('enhanced_conversions', 'enhancedConversions'))->setDescription('When boolean value is `true`, it enables Google Ads Enhanced Conversions by sending SHA256-hashed customer email with the purchase event.'),
+            new OneToOneAssociationField('salesChannel', 'id', 'analytics_id', SalesChannelDefinition::class, false),
+        ]);
+    }
+}

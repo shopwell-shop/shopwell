@@ -1,0 +1,31 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Product\DataAbstractionLayer;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Product\DataAbstractionLayer\VariantListingConfig;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(VariantListingConfig::class)]
+class VariantListingConfigTest extends TestCase
+{
+    public function testInstantiate(): void
+    {
+        $displayParent = true;
+        $mainVariantId = '1';
+        $configuratorGroupConfig = [
+            ['id' => 'group-a', 'representation' => 'box', 'expressionForListings' => true],
+        ];
+
+        $variantListingConfig = new VariantListingConfig($displayParent, $mainVariantId, $configuratorGroupConfig);
+
+        static::assertSame($displayParent, $variantListingConfig->getDisplayParent());
+        static::assertSame($mainVariantId, $variantListingConfig->getMainVariantId());
+        static::assertSame($configuratorGroupConfig, $variantListingConfig->getConfiguratorGroupConfig());
+    }
+}

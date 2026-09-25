@@ -1,0 +1,60 @@
+/**
+ * @sw-package after-sales
+ */
+import './acl';
+
+const { Module, Component } = Shopwell;
+
+/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+Component.register('sw-settings-document-list', () => import('./page/sw-settings-document-list'));
+Component.register('sw-settings-document-detail', () => import('./page/sw-settings-document-detail'));
+/* eslint-enable sw-deprecation-rules/private-feature-declarations */
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Module.register('sw-settings-document', {
+    type: 'core',
+    name: 'settings-document',
+    title: 'sw-settings-document.general.mainMenuItemGeneral',
+    description: 'sw-settings-document.general.description',
+    color: 'var(--sw-color-module-neutral-default)',
+    icon: 'regular-file-text',
+    favicon: 'icon-module-settings.svg',
+    entity: 'document',
+
+    routes: {
+        index: {
+            component: 'sw-settings-document-list',
+            path: 'index',
+            meta: {
+                privilege: 'document.viewer',
+                parentPath: 'sw.settings.index',
+            },
+        },
+        detail: {
+            component: 'sw-settings-document-detail',
+            path: 'detail/:id',
+            meta: {
+                privilege: 'document.viewer',
+                parentPath: 'sw.settings.document.index',
+            },
+            props: {
+                default: (route) => ({ documentConfigId: route.params.id.toLowerCase() }),
+            },
+        },
+        create: {
+            component: 'sw-settings-document-detail',
+            path: 'create',
+            meta: {
+                privilege: 'document.creator',
+                parentPath: 'sw.settings.document.index',
+            },
+        },
+    },
+
+    settingsItem: {
+        group: 'commerce',
+        to: 'sw.settings.document.index',
+        privilege: 'document.viewer',
+        icon: 'regular-file-text',
+    },
+});

@@ -1,0 +1,185 @@
+/**
+ * @sw-package framework
+ */
+import initializeNotifications from 'src/app/init/notification.init';
+import { notification } from '@shopware-ag/meteor-admin-sdk';
+
+describe('src/app/init/notification.init.ts', () => {
+    beforeAll(() => {
+        initializeNotifications();
+    });
+
+    beforeEach(() => {
+        Shopwell.Store.get('notification').growlNotifications = {};
+    });
+
+    it('should handle notificationDispatch requests', async () => {
+        await notification.dispatch({
+            title: 'Your title',
+            message: 'Your message',
+            variant: 'success',
+            appearance: 'notification',
+            growl: true,
+            actions: [
+                {
+                    label: 'No',
+                    method: () => {},
+                },
+                {
+                    label: 'Cancel',
+                    route: 'https://www.shopwell.cn',
+                    disabled: false,
+                },
+            ],
+        });
+
+        const growlNotificationKey = Object.keys(Shopwell.Store.get('notification').growlNotifications)[0];
+        expect(Shopwell.Store.get('notification').growlNotifications).toEqual({
+            [growlNotificationKey]: expect.objectContaining({
+                title: 'Your title',
+                message: 'Your message',
+                variant: 'positive',
+            }),
+        });
+    });
+
+    it('should handle notificationDispatch requests with fallback for both title and message', async () => {
+        await notification.dispatch({});
+
+        const growlNotificationKey = Object.keys(Shopwell.Store.get('notification').growlNotifications)[0];
+        expect(Shopwell.Store.get('notification').growlNotifications).toEqual({
+            [growlNotificationKey]: expect.objectContaining({
+                title: 'global.notification.noTitle',
+                message: 'global.notification.noMessage',
+                variant: 'info',
+            }),
+        });
+    });
+
+    it('should handle notificationDispatch requests with fallback for missing title', async () => {
+        await notification.dispatch({
+            message: 'Custom message',
+        });
+
+        const growlNotificationKey = Object.keys(Shopwell.Store.get('notification').growlNotifications)[0];
+        expect(Shopwell.Store.get('notification').growlNotifications).toEqual({
+            [growlNotificationKey]: expect.objectContaining({
+                title: 'global.notification.noTitle',
+                message: 'Custom message',
+                variant: 'info',
+            }),
+        });
+    });
+
+    it('should handle notificationDispatch requests with fallback for missing message', async () => {
+        await notification.dispatch({
+            title: 'Custom title',
+        });
+
+        const growlNotificationKey = Object.keys(Shopwell.Store.get('notification').growlNotifications)[0];
+        expect(Shopwell.Store.get('notification').growlNotifications).toEqual({
+            [growlNotificationKey]: expect.objectContaining({
+                title: 'Custom title',
+                message: 'global.notification.noMessage',
+                variant: 'info',
+            }),
+        });
+    });
+
+    it('should handle notificationDispatch requests with fallback for undefined title', async () => {
+        await notification.dispatch({
+            title: undefined,
+            message: 'Custom message',
+        });
+
+        const growlNotificationKey = Object.keys(Shopwell.Store.get('notification').growlNotifications)[0];
+        expect(Shopwell.Store.get('notification').growlNotifications).toEqual({
+            [growlNotificationKey]: expect.objectContaining({
+                title: 'global.notification.noTitle',
+                message: 'Custom message',
+                variant: 'info',
+            }),
+        });
+    });
+
+    it('should handle notificationDispatch requests with fallback for undefined message', async () => {
+        await notification.dispatch({
+            title: 'Custom title',
+            message: undefined,
+        });
+
+        const growlNotificationKey = Object.keys(Shopwell.Store.get('notification').growlNotifications)[0];
+        expect(Shopwell.Store.get('notification').growlNotifications).toEqual({
+            [growlNotificationKey]: expect.objectContaining({
+                title: 'Custom title',
+                message: 'global.notification.noMessage',
+                variant: 'info',
+            }),
+        });
+    });
+
+    const variantCases = [
+        {
+            given: 'success',
+            expected: 'positive',
+        },
+        {
+            given: 'positive',
+            expected: 'positive',
+        },
+        {
+            given: 'info',
+            expected: 'info',
+        },
+        {
+            given: 'neutral',
+            expected: 'info',
+        },
+        {
+            given: 'warning',
+            expected: 'attention',
+        },
+        {
+            given: 'attention',
+            expected: 'attention',
+        },
+        {
+            given: 'error',
+            expected: 'critical',
+        },
+        {
+            given: 'critical',
+            expected: 'critical',
+        },
+    ];
+
+    it.each(variantCases)('should handle notificationDispatch requests with variant %s', async ({ given, expected }) => {
+        await notification.dispatch({
+            title: 'Your title',
+            message: 'Your message',
+            variant: given,
+            appearance: 'notification',
+            growl: true,
+            actions: [
+                {
+                    label: 'No',
+                    method: () => {},
+                },
+                {
+                    label: 'Cancel',
+                    route: 'https://www.shopwell.cn',
+                    disabled: false,
+                },
+            ],
+        });
+
+        const growlNotificationKey = Object.keys(Shopwell.Store.get('notification').growlNotifications)[0];
+        expect(Shopwell.Store.get('notification').growlNotifications).toEqual({
+            [growlNotificationKey]: expect.objectContaining({
+                title: 'Your title',
+                message: 'Your message',
+                variant: expected,
+            }),
+        });
+    });
+});

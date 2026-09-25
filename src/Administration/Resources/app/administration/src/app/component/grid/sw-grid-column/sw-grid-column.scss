@@ -1,0 +1,113 @@
+.sw-grid-column {
+    cursor: default;
+    position: relative;
+
+    &:last-child {
+        border-right: 0 none;
+    }
+
+    .sw-field {
+        margin-bottom: 0;
+
+        &.sw-field--checkbox,
+        &.sw-field--radio {
+            grid-template-columns: auto;
+            align-items: center;
+            justify-items: center;
+            justify-content: center;
+        }
+
+        .sw-field__radio-group .sw-field__radio-option {
+            margin: 0;
+        }
+    }
+
+    .sw-price-field {
+        label {
+            display: none;
+        }
+
+        .sw-price-field__lock {
+            margin-top: var(--scale-size-10);
+            align-self: center;
+        }
+    }
+
+    .sw-context-button {
+        height: var(--scale-size-24);
+    }
+
+    .sw-grid__cell-content {
+        height: 100%;
+        display: grid;
+        grid-auto-flow: column;
+        align-items: center;
+        text-align: left;
+        min-height: var(--scale-size-64);
+        padding: var(--scale-size-20);
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        color: var(--color-icon-primary-default);
+
+        &.is--truncate {
+            display: block;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        a {
+            color: var(--color-icon-primary-default);
+            text-decoration: none;
+
+            &:hover {
+                color: var(--color-interaction-primary-hover);
+                text-decoration: underline;
+            }
+        }
+
+        .sw-field--checkbox {
+            margin-bottom: 0;
+        }
+    }
+
+    &.sw-grid-column--left {
+        .sw-grid__cell-content {
+            text-align: left;
+            justify-items: start;
+            justify-content: start;
+        }
+    }
+
+    &.sw-grid-column--center {
+        .sw-grid__cell-content {
+            text-align: center;
+            justify-items: center;
+            justify-content: center;
+        }
+    }
+
+    &.sw-grid-column--right {
+        .sw-grid__cell-content {
+            text-align: right;
+            justify-items: end;
+            justify-content: end;
+        }
+    }
+
+    &.sw-grid-column--stretch {
+        .sw-grid__cell-content {
+            text-align: left;
+            justify-items: stretch;
+            justify-content: stretch;
+        }
+    }
+
+    &.has--action {
+        cursor: pointer;
+
+        &:hover {
+            color: var(--color-interaction-primary-hover);
+        }
+    }
+}

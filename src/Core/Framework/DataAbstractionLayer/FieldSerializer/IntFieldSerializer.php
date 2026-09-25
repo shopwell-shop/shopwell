@@ -1,0 +1,69 @@
+<?php
+declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Field;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Choice as ChoiceFlag;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\DataStack\KeyValuePair;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteParameterBag;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\Choice as ChoiceConstraint;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Range;
+use Symfony\Component\Validator\Constraints\Type;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class IntFieldSerializer extends AbstractFieldSerializer
+{
+    public function encode(
+        Field $field,
+        EntityExistence $existence,
+        KeyValuePair $data,
+        WriteParameterBag $parameters
+    ): \Generator {
+        if (!$field instanceof IntField) {
+            throw DataAbstractionLayerException::invalidSerializerField(IntField::class, $field);
+        }
+
+        $this->validateIfNeeded($field, $existence, $data, $parameters);
+
+        yield $field->getStorageName() => $data->getValue();
+    }
+
+    public function decode(Field $field, mixed $value): ?int
+    {
+        return $value === null ? null : (int) $value;
+    }
+
+    /**
+     * @param IntField $field
+     *
+     * @return Constraint[]
+     */
+    protected function getConstraints(Field $field): array
+    {
+        $constraints = [
+            new Type('int'),
+            new NotBlank(),
+        ];
+
+        if ($field->getMinValue() !== null || $field->getMaxValue() !== null) {
+            $constraints[] = new Range(min: $field->getMinValue(), max: $field->getMaxValue());
+        }
+
+        $choice = $field->getFlag(ChoiceFlag::class);
+        if ($choice instanceof ChoiceFlag && $choice->isStrict() && $choice->getChoices() !== []) {
+            $constraints[] = new ChoiceConstraint(choices: $choice->getChoices(), strict: true);
+        }
+
+        return $constraints;
+    }
+}

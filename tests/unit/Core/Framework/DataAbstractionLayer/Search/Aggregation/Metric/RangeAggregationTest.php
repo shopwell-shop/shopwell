@@ -1,0 +1,67 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\DataAbstractionLayer\Search\Aggregation\Metric;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Aggregation\Metric\RangeAggregation;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(RangeAggregation::class)]
+class RangeAggregationTest extends TestCase
+{
+    public function testEncode(): void
+    {
+        $aggregation = new RangeAggregation('foo', 'bar', [['to' => 100]]);
+
+        static::assertEquals([
+            'name' => 'foo',
+            'extensions' => [],
+            'field' => 'bar',
+            'ranges' => [
+                [
+                    'to' => 100.0,
+                    'from' => null,
+                    'key' => '*-100',
+                ],
+            ],
+            '_class' => RangeAggregation::class,
+        ], $aggregation->jsonSerialize());
+    }
+
+    public function testClone(): void
+    {
+        $aggregation = new RangeAggregation('foo', 'bar', [['to' => 100]]);
+        $clone = clone $aggregation;
+
+        static::assertSame('foo', $clone->getName());
+        static::assertSame('bar', $clone->getField());
+        static::assertSame($aggregation->jsonSerialize(), $clone->jsonSerialize());
+    }
+
+    #[DataProvider('buildRangeKeyDataProvider')]
+    public function testBuildRangeKey(?float $from, ?float $to, string $expectedKey): void
+    {
+        $aggregation = new RangeAggregation('test', 'test', []);
+        $aggregation->addRange($from, $to);
+
+        $ranges = $aggregation->getRanges();
+        static::assertCount(1, $ranges);
+        static::assertSame($expectedKey, $ranges[0]['key']);
+    }
+
+    /**
+     * @return \Generator<string, array{?float, ?float, string}>
+     */
+    public static function buildRangeKeyDataProvider(): \Generator
+    {
+        yield 'empty from and empty to' => [null, null, '*-*'];
+        yield 'empty from and to' => [null, 10.0, '*-10'];
+        yield 'from and empty to' => [10.0, null, '10-*'];
+    }
+}

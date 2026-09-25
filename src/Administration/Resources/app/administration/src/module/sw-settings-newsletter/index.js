@@ -1,0 +1,40 @@
+/**
+ * @sw-package after-sales
+ */
+
+/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+Shopwell.Component.register('sw-settings-newsletter', () => import('./page/sw-settings-newsletter'));
+/* eslint-enable sw-deprecation-rules/private-feature-declarations */
+
+const { Module } = Shopwell;
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Module.register('sw-settings-newsletter', {
+    type: 'core',
+    name: 'settings-newsletter',
+    title: 'sw-settings-newsletter.general.mainMenuItemGeneral',
+    description: 'sw-settings-newsletter.general.description',
+    version: '1.0.0',
+    targetVersion: '1.0.0',
+    color: 'var(--sw-color-module-neutral-default)',
+    icon: 'regular-inbox',
+    favicon: 'icon-module-settings.svg',
+
+    routes: {
+        index: {
+            component: 'sw-settings-newsletter',
+            path: 'index',
+            meta: {
+                parentPath: 'sw.settings.index',
+                privilege: 'system.system_config',
+            },
+        },
+    },
+
+    settingsItem: {
+        group: 'content',
+        to: 'sw.settings.newsletter.index',
+        icon: 'regular-inbox',
+        privilege: 'system.system_config',
+    },
+});

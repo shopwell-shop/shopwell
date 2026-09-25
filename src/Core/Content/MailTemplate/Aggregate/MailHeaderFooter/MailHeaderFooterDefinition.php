@@ -1,0 +1,60 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\MailTemplate\Aggregate\MailHeaderFooter;
+
+use Shopwell\Core\Content\MailTemplate\Aggregate\MailHeaderFooterTranslation\MailHeaderFooterTranslationDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('after-sales')]
+class MailHeaderFooterDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'mail_header_footer';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function getEntityClass(): string
+    {
+        return MailHeaderFooterEntity::class;
+    }
+
+    public function since(): ?string
+    {
+        return '6.0.0.0';
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required())->setDescription('Unique identity of mail\'s header and footer component.'),
+            (new BoolField('system_default', 'systemDefault'))->addFlags(new ApiAware()),
+
+            // translatable fields->setDescription('Unused field. To be removed in future.')
+            (new TranslatedField('name'))->addFlags(new ApiAware()),
+            (new TranslatedField('description'))->addFlags(new ApiAware()),
+            (new TranslatedField('headerHtml'))->addFlags(new ApiAware()),
+            (new TranslatedField('headerPlain'))->addFlags(new ApiAware()),
+            (new TranslatedField('footerHtml'))->addFlags(new ApiAware()),
+            (new TranslatedField('footerPlain'))->addFlags(new ApiAware()),
+
+            (new TranslationsAssociationField(MailHeaderFooterTranslationDefinition::class, 'mail_header_footer_id'))->addFlags(new ApiAware(), new Required()),
+            new OneToManyAssociationField('salesChannels', SalesChannelDefinition::class, 'mail_header_footer_id'),
+        ]);
+    }
+}

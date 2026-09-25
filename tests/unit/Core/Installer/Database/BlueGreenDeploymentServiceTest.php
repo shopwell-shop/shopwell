@@ -1,0 +1,67 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Installer\Database;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Result;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\DevOps\Environment\EnvironmentHelper;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\EnvTestBehaviour;
+use Shopwell\Core\Installer\Database\BlueGreenDeploymentService;
+use Shopwell\Core\Test\Stub\Doctrine\TestExceptionFactory;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(BlueGreenDeploymentService::class)]
+class BlueGreenDeploymentServiceTest extends TestCase
+{
+    use EnvTestBehaviour;
+
+    public function testSetsEnvironmentVariableToTrueIfTriggersCanBeCreated(): void
+    {
+        $this->setEnvVars([BlueGreenDeploymentService::ENV_NAME => '0']);
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->exactly(2))->method('executeQuery');
+        $connection->expects($this->exactly(1))->method('executeStatement');
+
+        $service = new BlueGreenDeploymentService();
+        $session = new Session(new MockArraySessionStorage());
+        $service->setEnvironmentVariable($connection, $session);
+
+        static::assertTrue($_ENV[BlueGreenDeploymentService::ENV_NAME]);
+        static::assertTrue($_SERVER[BlueGreenDeploymentService::ENV_NAME]);
+        static::assertTrue(EnvironmentHelper::getVariable(BlueGreenDeploymentService::ENV_NAME));
+        static::assertTrue($session->get(BlueGreenDeploymentService::ENV_NAME));
+    }
+
+    public function testSetsEnvironmentVariableToFalseIfTriggersCanNotBeCreated(): void
+    {
+        $this->setEnvVars([BlueGreenDeploymentService::ENV_NAME => '1']);
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->exactly(2))
+            ->method('executeQuery')
+            ->willReturnOnConsecutiveCalls(
+                static::createStub(Result::class),
+                static::throwException(TestExceptionFactory::createException('test')),
+            );
+
+        $connection->expects($this->exactly(1))->method('executeStatement');
+
+        $service = new BlueGreenDeploymentService();
+        $session = new Session(new MockArraySessionStorage());
+        $service->setEnvironmentVariable($connection, $session);
+
+        static::assertFalse($_ENV[BlueGreenDeploymentService::ENV_NAME]);
+        static::assertFalse($_SERVER[BlueGreenDeploymentService::ENV_NAME]);
+        static::assertFalse(EnvironmentHelper::getVariable(BlueGreenDeploymentService::ENV_NAME));
+        static::assertFalse($session->get(BlueGreenDeploymentService::ENV_NAME));
+    }
+}

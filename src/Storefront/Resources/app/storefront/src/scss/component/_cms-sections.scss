@@ -1,0 +1,42 @@
+/*
+CMS sections
+==============================================
+General styling for cms sections
+*/
+
+.cms-section {
+    &.bg-image {
+        background-repeat: no-repeat;
+        background-position: 50%;
+    }
+
+    .boxed {
+        // No replacement mixin available for .container that also respects all breakpoint container max-widths.
+        // Mixin make-container() only provides the padding but no max-widths. Keep alias .boxed.
+        // stylelint-disable-next-line scss/at-extend-no-missing-placeholder
+        @extend .container;
+    }
+
+    .full-width {
+        @include make-container();
+        --#{$prefix}gutter-x: 0;
+    }
+
+    .cms-section-sidebar {
+        & > .row {
+            --#{$prefix}gutter-x: 60px;
+        }
+    }
+}
+
+@include media-breakpoint-down(md) {
+    .cms-section-sidebar-mobile-wrap {
+        flex-direction: column;
+    }
+
+    .cms-section-sidebar-mobile-hidden {
+        .cms-section-sidebar-sidebar-content {
+            display: none;
+        }
+    }
+}

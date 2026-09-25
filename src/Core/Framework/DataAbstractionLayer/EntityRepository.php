@@ -1,0 +1,348 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer;
+
+use Shopwell\Core\Framework\Adapter\Database\ReplicaConnection;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\BeforeEntityAggregationEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityAggregationResultLoadedEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityIdSearchResultLoadedEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntitySearchedEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntitySearchResultLoadedEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\AggregationResult\AggregationResultCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntityAggregatorInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Telemetry\DalSearchInstrumentor;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\CloneBehavior;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteContext;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\ArrayEntity;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Profiling\Profiler;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\VarExporter\LazyGhostTrait;
+
+/**
+ * @final
+ *
+ * @template TEntityCollection of EntityCollection
+ */
+#[Package('framework')]
+class EntityRepository
+{
+    use LazyGhostTrait;
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly EntityDefinition $definition,
+        private readonly EntityReaderInterface $reader,
+        private readonly VersionManager $versionManager,
+        private readonly EntitySearcherInterface $searcher,
+        private readonly EntityAggregatorInterface $aggregator,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly EntityLoadedEventFactory $eventFactory,
+        // wired into every container-built repository by EntityCompilerPass; null only for hand-built
+        // repositories (tests), which then run uninstrumented
+        private readonly ?DalSearchInstrumentor $dalSearchInstrumentor = null,
+    ) {
+    }
+
+    public function getDefinition(): EntityDefinition
+    {
+        return $this->definition;
+    }
+
+    /**
+     * @return EntitySearchResult<TEntityCollection>
+     */
+    public function search(Criteria $criteria, Context $context): EntitySearchResult
+    {
+        $searchFn = fn (): EntitySearchResult => $this->profile($criteria, fn (): EntitySearchResult => $this->_search($criteria, $context));
+
+        return $this->dalSearchInstrumentor?->measure(
+            DalSearchInstrumentor::OPERATION_SEARCH,
+            $this->definition,
+            $criteria,
+            $searchFn,
+        ) ?? $searchFn();
+    }
+
+    public function aggregate(Criteria $criteria, Context $context): AggregationResultCollection
+    {
+        $aggregateFn = fn (): AggregationResultCollection => $this->profile($criteria, fn (): AggregationResultCollection => $this->_aggregate($criteria, $context));
+
+        return $this->dalSearchInstrumentor?->measure(
+            DalSearchInstrumentor::OPERATION_AGGREGATE,
+            $this->definition,
+            $criteria,
+            $aggregateFn,
+        ) ?? $aggregateFn();
+    }
+
+    /**
+     * @template IDStructure of string|array<string, string> = string
+     *
+     * @param Criteria<IDStructure> $criteria
+     *
+     * @return IdSearchResult<IDStructure>
+     */
+    public function searchIds(Criteria $criteria, Context $context): IdSearchResult
+    {
+        $searchIdsFn = fn (): IdSearchResult => $this->profile($criteria, fn (): IdSearchResult => $this->_searchIds($criteria, $context));
+
+        return $this->dalSearchInstrumentor?->measure(
+            DalSearchInstrumentor::OPERATION_SEARCH_IDS,
+            $this->definition,
+            $criteria,
+            $searchIdsFn,
+        ) ?? $searchIdsFn();
+    }
+
+    /**
+     * @param array<array<string, mixed|null>> $data
+     */
+    public function update(array $data, Context $context): EntityWrittenContainerEvent
+    {
+        ReplicaConnection::ensurePrimary();
+
+        $affected = $this->versionManager->update($this->definition, $data, WriteContext::createFromContext($context));
+        $event = EntityWrittenContainerEvent::createWithWrittenEvents($affected, $context, []);
+        $context->scope(Context::SYSTEM_SCOPE, fn () => $this->eventDispatcher->dispatch($event), [Context::SYSTEM_SCOPE_DAL_WRITE_EVENT]);
+
+        return $event;
+    }
+
+    /**
+     * @param array<array<string, mixed|null>> $data
+     */
+    public function upsert(array $data, Context $context): EntityWrittenContainerEvent
+    {
+        ReplicaConnection::ensurePrimary();
+
+        $affected = $this->versionManager->upsert($this->definition, $data, WriteContext::createFromContext($context));
+        $event = EntityWrittenContainerEvent::createWithWrittenEvents($affected, $context, []);
+        $context->scope(Context::SYSTEM_SCOPE, fn () => $this->eventDispatcher->dispatch($event), [Context::SYSTEM_SCOPE_DAL_WRITE_EVENT]);
+
+        return $event;
+    }
+
+    /**
+     * @param array<array<string, mixed|null>> $data
+     */
+    public function create(array $data, Context $context): EntityWrittenContainerEvent
+    {
+        ReplicaConnection::ensurePrimary();
+
+        $affected = $this->versionManager->insert($this->definition, $data, WriteContext::createFromContext($context));
+        $event = EntityWrittenContainerEvent::createWithWrittenEvents($affected, $context, []);
+        $context->scope(Context::SYSTEM_SCOPE, fn () => $this->eventDispatcher->dispatch($event), [Context::SYSTEM_SCOPE_DAL_WRITE_EVENT]);
+
+        return $event;
+    }
+
+    /**
+     * @param array<array<string, mixed|null>> $ids
+     */
+    public function delete(array $ids, Context $context): EntityWrittenContainerEvent
+    {
+        ReplicaConnection::ensurePrimary();
+
+        $affected = $this->versionManager->delete($this->definition, $ids, WriteContext::createFromContext($context));
+        $event = EntityWrittenContainerEvent::createWithDeletedEvents($affected->getDeleted(), $context, $affected->getNotFound());
+
+        if ($affected->getWritten()) {
+            $updates = EntityWrittenContainerEvent::createWithWrittenEvents($affected->getWritten(), $context, []);
+
+            if ($updates->getEvents() !== null) {
+                $event->addEvent(...$updates->getEvents());
+            }
+        }
+
+        $context->scope(Context::SYSTEM_SCOPE, fn () => $this->eventDispatcher->dispatch($event), [Context::SYSTEM_SCOPE_DAL_WRITE_EVENT]);
+
+        return $event;
+    }
+
+    public function createVersion(string $id, Context $context, ?string $name = null, ?string $versionId = null): string
+    {
+        ReplicaConnection::ensurePrimary();
+
+        if (!$this->definition->isVersionAware()) {
+            throw DataAbstractionLayerException::entityNotVersionAware($this->definition->getEntityName());
+        }
+
+        return $this->versionManager->createVersion($this->definition, $id, WriteContext::createFromContext($context), $name, $versionId);
+    }
+
+    public function merge(string $versionId, Context $context): void
+    {
+        ReplicaConnection::ensurePrimary();
+
+        if (!$this->definition->isVersionAware()) {
+            throw DataAbstractionLayerException::entityNotVersionAware($this->definition->getEntityName());
+        }
+        $this->versionManager->merge($versionId, WriteContext::createFromContext($context));
+    }
+
+    public function clone(string $id, Context $context, ?string $newId = null, ?CloneBehavior $behavior = null): EntityWrittenContainerEvent
+    {
+        ReplicaConnection::ensurePrimary();
+
+        $newId ??= Uuid::randomHex();
+        if (!Uuid::isValid($newId)) {
+            throw DataAbstractionLayerException::invalidEntityUuidException($newId);
+        }
+
+        $affected = $this->versionManager->clone(
+            $this->definition,
+            $id,
+            $newId,
+            $context->getVersionId(),
+            WriteContext::createFromContext($context),
+            $behavior ?? new CloneBehavior()
+        );
+
+        $event = EntityWrittenContainerEvent::createWithWrittenEvents($affected, $context, [], true);
+        $context->scope(Context::SYSTEM_SCOPE, fn () => $this->eventDispatcher->dispatch($event), [Context::SYSTEM_SCOPE_DAL_WRITE_EVENT]);
+
+        return $event;
+    }
+
+    /**
+     * Wraps a read operation in a profiler span (title-gated). Is separate from metrics, so
+     * sub-operations of a search are visible in the profiler without emitting a duplicate metric sample.
+     *
+     * @template TReturn
+     *
+     * @param \Closure(): TReturn $fn
+     *
+     * @return TReturn
+     */
+    private function profile(Criteria $criteria, \Closure $fn): mixed
+    {
+        $title = $criteria->getTitle();
+
+        return $title === null ? $fn() : Profiler::trace($title, $fn, 'repository');
+    }
+
+    /**
+     * @return TEntityCollection
+     */
+    private function read(Criteria $criteria, Context $context): EntityCollection
+    {
+        $criteria = clone $criteria;
+
+        /** @var TEntityCollection $entities */
+        // @phpstan-ignore varTag.type (phpstan can't detect that TEntityCollection is always an EntityCollection<Entity>)
+        $entities = $this->reader->read($this->definition, $criteria, $context);
+
+        if ($criteria->getFields() === []) {
+            $event = $this->eventFactory->create($entities->getElements(), $context);
+        } else {
+            $event = $this->eventFactory->createPartial($entities->getElements(), $context);
+        }
+
+        $this->eventDispatcher->dispatch($event);
+
+        return $entities;
+    }
+
+    /**
+     * @return EntitySearchResult<TEntityCollection>
+     */
+    private function _search(Criteria $criteria, Context $context): EntitySearchResult
+    {
+        $criteria = clone $criteria;
+        $aggregations = null;
+        if ($criteria->getAggregations()) {
+            // nested sub-operation: profiled (span) but not metered; keep in sync with SalesChannelRepository
+            $aggregations = $this->profile($criteria, fn (): AggregationResultCollection => $this->_aggregate($criteria, $context));
+        }
+
+        if (!RepositorySearchDetector::isSearchRequired($this->definition, $criteria)) {
+            $this->eventDispatcher->dispatch(
+                new EntitySearchedEvent($criteria, $this->definition, $context)
+            );
+            $entities = $this->read($criteria, $context);
+
+            return new EntitySearchResult($this->definition->getEntityName(), $entities->count(), $entities, $aggregations, $criteria, $context);
+        }
+
+        // nested sub-operation: profiled (span) but not metered; keep in sync with SalesChannelRepository
+        $ids = $this->profile($criteria, fn (): IdSearchResult => $this->_searchIds($criteria, $context));
+
+        if ($ids->getIds() === []) {
+            /** @var TEntityCollection $collection */
+            $collection = $this->definition->getCollectionClass();
+
+            return new EntitySearchResult($this->definition->getEntityName(), $ids->getTotal(), new $collection(), $aggregations, $criteria, $context);
+        }
+
+        $readCriteria = $criteria->cloneForRead($ids->getIds());
+
+        $entities = $this->read($readCriteria, $context);
+
+        $search = $ids->getData();
+
+        if (!$criteria->hasState(Criteria::STATE_DISABLE_SEARCH_INFO)) {
+            foreach ($entities as $element) {
+                if (!\array_key_exists($element->getUniqueIdentifier(), $search)) {
+                    continue;
+                }
+
+                $data = $search[$element->getUniqueIdentifier()];
+                unset($data['id']);
+
+                if ($data === []) {
+                    continue;
+                }
+
+                $element->addExtension('search', new ArrayEntity($data));
+            }
+        }
+
+        $result = new EntitySearchResult($this->definition->getEntityName(), $ids->getTotal(), $entities, $aggregations, $criteria, $context);
+        $result->addState(...$ids->getStates());
+
+        $event = new EntitySearchResultLoadedEvent($this->definition, $result);
+        $this->eventDispatcher->dispatch($event, $event->getName());
+
+        return $result;
+    }
+
+    private function _aggregate(Criteria $criteria, Context $context): AggregationResultCollection
+    {
+        $criteria = clone $criteria;
+
+        $this->eventDispatcher->dispatch(new BeforeEntityAggregationEvent($criteria, $this->definition, $context));
+
+        $result = $this->aggregator->aggregate($this->definition, $criteria, $context);
+
+        $event = new EntityAggregationResultLoadedEvent($this->definition, $result, $context);
+        $this->eventDispatcher->dispatch($event, $event->getName());
+
+        return $result;
+    }
+
+    private function _searchIds(Criteria $criteria, Context $context): IdSearchResult
+    {
+        $criteria = clone $criteria;
+
+        $this->eventDispatcher->dispatch(new EntitySearchedEvent($criteria, $this->definition, $context));
+
+        $result = $this->searcher->search($this->definition, $criteria, $context);
+
+        $event = new EntityIdSearchResultLoadedEvent($this->definition, $result);
+        $this->eventDispatcher->dispatch($event, $event->getName());
+
+        return $result;
+    }
+}

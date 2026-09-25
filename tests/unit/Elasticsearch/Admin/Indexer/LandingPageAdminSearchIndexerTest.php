@@ -1,0 +1,174 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Elasticsearch\Admin\Indexer;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\LandingPage\LandingPageDefinition;
+use Shopwell\Core\Content\LandingPage\LandingPageEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Event\NestedEventCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Elasticsearch\Admin\Indexer\LandingPageAdminSearchIndexer;
+use Shopwell\Elasticsearch\Framework\ElasticsearchFieldBuilder;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+#[CoversClass(LandingPageAdminSearchIndexer::class)]
+class LandingPageAdminSearchIndexerTest extends TestCase
+{
+    private LandingPageAdminSearchIndexer $searchIndexer;
+
+    protected function setUp(): void
+    {
+        $this->searchIndexer = new LandingPageAdminSearchIndexer(
+            static::createStub(Connection::class),
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(ElasticsearchFieldBuilder::class),
+            100
+        );
+    }
+
+    public function testGetUpdatedIds(): void
+    {
+        $indexer = new LandingPageAdminSearchIndexer(
+            static::createStub(Connection::class),
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(ElasticsearchFieldBuilder::class),
+            100
+        );
+
+        $lpId = Uuid::randomHex();
+
+        $event = new EntityWrittenContainerEvent(
+            Context::createDefaultContext(),
+            new NestedEventCollection([
+                new EntityWrittenEvent('landing_page_translation', [
+                    new EntityWriteResult(['landingPageId' => $lpId], ['name' => 'LP'], 'landing_page_translation', EntityWriteResult::OPERATION_UPDATE),
+                ], Context::createDefaultContext()),
+            ]),
+            []
+        );
+
+        static::assertSame([$lpId], $indexer->getUpdatedIds($event));
+    }
+
+    public function testGetEntity(): void
+    {
+        static::assertSame(LandingPageDefinition::ENTITY_NAME, $this->searchIndexer->getEntity());
+    }
+
+    public function testGetName(): void
+    {
+        static::assertSame('landing-page-listing', $this->searchIndexer->getName());
+    }
+
+    public function testGetDecoratedShouldThrowException(): void
+    {
+        static::expectException(DecorationPatternException::class);
+        $this->searchIndexer->getDecorated();
+    }
+
+    public function testGlobalData(): void
+    {
+        $context = Context::createDefaultContext();
+        $repository = static::createStub(EntityRepository::class);
+        $landingPage = new LandingPageEntity();
+        $landingPage->setUniqueIdentifier(Uuid::randomHex());
+        $repository->method('search')->willReturn(
+            new EntitySearchResult(
+                'landing_page',
+                1,
+                new EntityCollection([$landingPage]),
+                null,
+                new Criteria(),
+                $context
+            )
+        );
+
+        $indexer = new LandingPageAdminSearchIndexer(
+            static::createStub(Connection::class),
+            static::createStub(IteratorFactory::class),
+            $repository,
+            static::createStub(ElasticsearchFieldBuilder::class),
+            100
+        );
+
+        $result = [
+            'total' => 1,
+            'hits' => [
+                ['id' => '809c1844f4734243b6aa04aba860cd45'],
+            ],
+        ];
+
+        $data = $indexer->globalData($result, $context);
+
+        static::assertSame($result['total'], $data['total']);
+    }
+
+    public function testFetching(): void
+    {
+        $connection = $this->getConnection();
+
+        $indexer = new LandingPageAdminSearchIndexer(
+            $connection,
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(ElasticsearchFieldBuilder::class),
+            100
+        );
+
+        $id = '809c1844f4734243b6aa04aba860cd45';
+        $documents = $indexer->fetch([$id]);
+
+        static::assertArrayHasKey($id, $documents);
+
+        /** @var array<string, mixed> $document */
+        $document = $documents[$id];
+
+        static::assertSame($id, $document['id']);
+        static::assertSame('landing page landing page tags 809c1844f4734243b6aa04aba860cd45', $document['text']);
+        static::assertTrue($document['active']);
+        static::assertIsArray($document['name']);
+        static::assertIsArray($document['tags']);
+    }
+
+    private function getConnection(): Connection
+    {
+        $connection = static::createStub(Connection::class);
+
+        $languageId = 'b7d2554b0ce847cd82f3ac9bd1c0dfca';
+        $connection->method('fetchAllAssociative')->willReturn(
+            [
+                [
+                    'id' => '809c1844f4734243b6aa04aba860cd45',
+                    'name' => 'Landing page',
+                    'translatedNames' => json_encode([
+                        ['languageId' => $languageId, 'name' => 'Landing page'],
+                    ]),
+                    'tags' => 'Landing page tags',
+                    'tagIds' => 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6',
+                    'active' => 1,
+                    'createdAt' => '2024-01-01 00:00:00.000',
+                ],
+            ],
+        );
+
+        return $connection;
+    }
+}

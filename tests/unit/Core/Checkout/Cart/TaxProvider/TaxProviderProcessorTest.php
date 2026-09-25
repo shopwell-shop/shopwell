@@ -1,0 +1,641 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\TaxProvider;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\Delivery;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryPosition;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryPositionCollection;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
+use Shopwell\Core\Checkout\Cart\Exception\TaxProviderExceptions;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\Price\AmountCalculator;
+use Shopwell\Core\Checkout\Cart\Price\CashRounding;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Checkout\Cart\Tax\PercentageTaxRuleBuilder;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTax;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Checkout\Cart\TaxProvider\Struct\TaxProviderResult;
+use Shopwell\Core\Checkout\Cart\TaxProvider\TaxAdjustment;
+use Shopwell\Core\Checkout\Cart\TaxProvider\TaxAdjustmentCalculator;
+use Shopwell\Core\Checkout\Cart\TaxProvider\TaxProviderProcessor;
+use Shopwell\Core\Checkout\Cart\TaxProvider\TaxProviderRegistry;
+use Shopwell\Core\Checkout\Cart\Transaction\TransactionProcessor;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
+use Shopwell\Core\Framework\App\AppEntity;
+use Shopwell\Core\Framework\App\Privileges\AppCapability;
+use Shopwell\Core\Framework\App\TaxProvider\Payload\TaxProviderPayload;
+use Shopwell\Core\Framework\App\TaxProvider\Payload\TaxProviderPayloadService;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Country\CountryEntity;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\TaxProvider\TaxProviderCollection;
+use Shopwell\Core\System\TaxProvider\TaxProviderDefinition;
+use Shopwell\Core\System\TaxProvider\TaxProviderEntity;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Shopwell\Tests\Unit\Core\Checkout\Cart\TaxProvider\_fixtures\TestConstantTaxRateProvider;
+use Shopwell\Tests\Unit\Core\Checkout\Cart\TaxProvider\_fixtures\TestEmptyTaxProvider;
+use Shopwell\Tests\Unit\Core\Checkout\Cart\TaxProvider\_fixtures\TestGenericExceptionTaxProvider;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(TaxProviderProcessor::class)]
+class TaxProviderProcessorTest extends TestCase
+{
+    private IdsCollection $ids;
+
+    private TaxAdjustment $adjustment;
+
+    protected function setUp(): void
+    {
+        $this->ids = new IdsCollection();
+        $this->adjustment = new TaxAdjustment(
+            new AmountCalculator(
+                new CashRounding(),
+                new PercentageTaxRuleBuilder(),
+                new TaxAdjustmentCalculator()
+            ),
+            new CashRounding(),
+            new TransactionProcessor()
+        );
+    }
+
+    public function testProcess(): void
+    {
+        $cart = $this->createCart();
+        $salesChannelContext = static::createStub(SalesChannelContext::class);
+        $salesChannelContext
+            ->method('getTotalRounding')
+            ->willReturn(new CashRoundingConfig(2, 0.01, true));
+
+        $taxProvider = new TaxProviderEntity();
+        $taxProvider->setId(Uuid::randomHex());
+        $taxProvider->setActive(true);
+        $taxProvider->setPriority(1);
+        $taxProvider->setIdentifier(TestConstantTaxRateProvider::class);
+
+        $collection = new TaxProviderCollection([$taxProvider]);
+
+        $result = new EntitySearchResult(
+            TaxProviderDefinition::ENTITY_NAME,
+            1,
+            $collection,
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $taxProviderRegistry = new TaxProviderRegistry([
+            new TestConstantTaxRateProvider(),
+        ]);
+
+        $repo = static::createStub(EntityRepository::class);
+        $repo->method('search')->willReturn($result);
+
+        $processor = new TaxProviderProcessor(
+            $repo,
+            static::createStub(LoggerInterface::class),
+            $this->adjustment,
+            $taxProviderRegistry,
+            static::createStub(TaxProviderPayloadService::class),
+            static::createStub(AppCapability::class)
+        );
+
+        $processor->process($cart, $salesChannelContext);
+
+        $lineItem = $cart->getLineItems()->get($this->ids->get('line-item-1'));
+        $delivery = $cart->getDeliveries()->first();
+
+        static::assertInstanceOf(LineItem::class, $lineItem);
+        static::assertInstanceOf(Delivery::class, $delivery);
+
+        $lineItemPrice = $lineItem->getPrice();
+
+        static::assertNotNull($lineItemPrice);
+
+        $lineItemTaxes = $lineItemPrice->getCalculatedTaxes()->getElements();
+        $deliveryTaxes = $delivery->getShippingCosts()->getCalculatedTaxes()->getElements();
+
+        static::assertArrayHasKey('7', $lineItemTaxes);
+        static::assertArrayHasKey('7', $deliveryTaxes);
+
+        static::assertInstanceOf(CalculatedTax::class, $lineItemTaxes['7']);
+        static::assertInstanceOf(CalculatedTax::class, $deliveryTaxes['7']);
+
+        $lineItemTax = $lineItemTaxes['7'];
+        $deliveryTax = $deliveryTaxes['7'];
+
+        static::assertSame(7.0, $lineItemTax->getTaxRate());
+        static::assertSame(7.0, $deliveryTax->getTaxRate());
+    }
+
+    public function testNoTaxResultsGivenDoesNoAdjustment(): void
+    {
+        // empty data set should result in exception to prevent invalid taxes
+        $taxProviderStruct = new TaxProviderResult();
+
+        $cart = new Cart('foo');
+        $salesChannelContext = static::createStub(SalesChannelContext::class);
+        $salesChannelContext
+            ->method('getTotalRounding')
+            ->willReturn(new CashRoundingConfig(2, 0.01, true));
+
+        $testProvider = $this->createMock(TestEmptyTaxProvider::class);
+        $testProvider
+            ->expects($this->once())
+            ->method('provide')
+            ->with($cart, $salesChannelContext)
+            ->willReturn($taxProviderStruct);
+
+        $taxProviderRegistry = static::createStub(TaxProviderRegistry::class);
+        $taxProviderRegistry
+            ->method('has')
+            ->willReturnCallback(static fn (string $identifier) => $identifier === TestEmptyTaxProvider::class);
+
+        $taxProviderRegistry
+            ->method('get')
+            ->willReturnCallback(static function (string $identifier) use ($testProvider) {
+                if ($identifier === TestEmptyTaxProvider::class) {
+                    return $testProvider;
+                }
+
+                return null;
+            });
+
+        $taxProvider = new TaxProviderEntity();
+        $taxProvider->setId(Uuid::randomHex());
+        $taxProvider->setActive(true);
+        $taxProvider->setPriority(1);
+        $taxProvider->setIdentifier(TestEmptyTaxProvider::class);
+
+        $collection = new TaxProviderCollection([$taxProvider]);
+
+        $result = new EntitySearchResult(
+            TaxProviderDefinition::ENTITY_NAME,
+            1,
+            $collection,
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $repo = static::createStub(EntityRepository::class);
+        $repo->method('search')->willReturn($result);
+
+        $adjustment = $this->createMock(TaxAdjustment::class);
+        $adjustment
+            ->expects($this->never())
+            ->method('adjust');
+
+        $processor = new TaxProviderProcessor(
+            $repo,
+            static::createStub(LoggerInterface::class),
+            $adjustment,
+            $taxProviderRegistry,
+            static::createStub(TaxProviderPayloadService::class),
+            static::createStub(AppCapability::class)
+        );
+
+        $processor->process($cart, $salesChannelContext);
+    }
+
+    public function testGenericExceptionDoesNotInterruptTaxProcessor(): void
+    {
+        $cart = $this->createCart();
+
+        $salesChannelContext = static::createStub(SalesChannelContext::class);
+        $salesChannelContext
+            ->method('getTotalRounding')
+            ->willReturn(new CashRoundingConfig(2, 0.01, true));
+
+        $registry = new TaxProviderRegistry(
+            [
+                new TestGenericExceptionTaxProvider(),
+                new TestConstantTaxRateProvider(),
+            ]
+        );
+
+        $taxProvider1 = new TaxProviderEntity();
+        $taxProvider1->setId(Uuid::randomHex());
+        $taxProvider1->setActive(true);
+        $taxProvider1->setPriority(1);
+        $taxProvider1->setIdentifier(TestGenericExceptionTaxProvider::class);
+
+        $taxProvider2 = new TaxProviderEntity();
+        $taxProvider2->setId(Uuid::randomHex());
+        $taxProvider2->setActive(true);
+        $taxProvider2->setPriority(2);
+        $taxProvider2->setIdentifier(TestConstantTaxRateProvider::class);
+
+        $collection = new TaxProviderCollection([$taxProvider1, $taxProvider2]);
+
+        $result = new EntitySearchResult(
+            TaxProviderDefinition::ENTITY_NAME,
+            2,
+            $collection,
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $repo = static::createStub(EntityRepository::class);
+        $repo->method('search')->willReturn($result);
+
+        $processor = new TaxProviderProcessor(
+            $repo,
+            static::createStub(LoggerInterface::class),
+            $this->adjustment,
+            $registry,
+            static::createStub(TaxProviderPayloadService::class),
+            static::createStub(AppCapability::class)
+        );
+
+        $processor->process($cart, $salesChannelContext);
+
+        static::assertInstanceOf(LineItem::class, $cart->get($this->ids->get('line-item-1')));
+    }
+
+    public function testProcessorThrowsExceptionOnUnknownProvider(): void
+    {
+        $taxProviderRegistry = static::createStub(TaxProviderRegistry::class);
+        $taxProviderRegistry
+            ->method('has')
+            ->willReturnCallback(static fn (string $identifier) => $identifier === TestEmptyTaxProvider::class);
+
+        $taxProviderRegistry
+            ->method('get')
+            ->willReturnCallback(static function (string $identifier) {
+                if ($identifier === TestEmptyTaxProvider::class) {
+                    return new TestEmptyTaxProvider();
+                }
+
+                return null;
+            });
+
+        $taxProvider = new TaxProviderEntity();
+        $taxProvider->setId(Uuid::randomHex());
+        $taxProvider->setActive(true);
+        $taxProvider->setPriority(1);
+        $taxProvider->setIdentifier('foo_bar');
+
+        $collection = new TaxProviderCollection([$taxProvider]);
+
+        $result = new EntitySearchResult(
+            TaxProviderDefinition::ENTITY_NAME,
+            1,
+            $collection,
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $repo = static::createStub(EntityRepository::class);
+        $repo->method('search')->willReturn($result);
+
+        $processor = new TaxProviderProcessor(
+            $repo,
+            static::createStub(LoggerInterface::class),
+            $this->adjustment,
+            $taxProviderRegistry,
+            static::createStub(TaxProviderPayloadService::class),
+            static::createStub(AppCapability::class)
+        );
+
+        $expected = new TaxProviderExceptions();
+        $expected->add('foo_bar', new NotFoundHttpException('No tax provider found for identifier foo_bar'));
+        $this->expectExceptionObject($expected);
+
+        $processor->process(new Cart('foo'), static::createStub(SalesChannelContext::class));
+    }
+
+    public function testNoProvidersAvailableWillDoNothing(): void
+    {
+        $cart = new Cart('foo');
+
+        $salesChannelContext = static::createStub(SalesChannelContext::class);
+
+        $registry = new TaxProviderRegistry([]);
+        $collection = new TaxProviderCollection([]);
+
+        $result = new EntitySearchResult(
+            TaxProviderDefinition::ENTITY_NAME,
+            0,
+            $collection,
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $repo = static::createStub(EntityRepository::class);
+        $repo->method('search')->willReturn($result);
+
+        $taxAdjuster = $this->createMock(TaxAdjustment::class);
+        $taxAdjuster
+            ->expects($this->never())
+            ->method('adjust');
+
+        $processor = new TaxProviderProcessor(
+            $repo,
+            static::createStub(LoggerInterface::class),
+            $taxAdjuster,
+            $registry,
+            static::createStub(TaxProviderPayloadService::class),
+            static::createStub(AppCapability::class)
+        );
+
+        $processor->process($cart, $salesChannelContext);
+    }
+
+    public function testLoggerIsCalledOnException(): void
+    {
+        $cart = new Cart('foo');
+
+        $salesChannelContext = static::createStub(SalesChannelContext::class);
+
+        $registry = static::createStub(TaxProviderRegistry::class);
+        $registry
+            ->method('get')
+            ->willReturnCallback(static function (string $identifier) {
+                if ($identifier === TestGenericExceptionTaxProvider::class) {
+                    return new TestGenericExceptionTaxProvider();
+                }
+
+                return null;
+            });
+
+        $taxProvider = new TaxProviderEntity();
+        $taxProvider->setId(Uuid::randomHex());
+        $taxProvider->setActive(true);
+        $taxProvider->setPriority(1);
+        $taxProvider->setIdentifier(TestGenericExceptionTaxProvider::class);
+
+        $collection = new TaxProviderCollection([$taxProvider]);
+
+        $result = new EntitySearchResult(
+            TaxProviderDefinition::ENTITY_NAME,
+            1,
+            $collection,
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $repo = static::createStub(EntityRepository::class);
+        $repo->method('search')->willReturn($result);
+
+        $e = new TaxProviderExceptions();
+        $e->add(TestGenericExceptionTaxProvider::class, new \Exception('Test exception'));
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger
+            ->expects($this->once())
+            ->method('error')
+            ->with('There were 1 errors while fetching taxes from providers: ' . \PHP_EOL . 'Tax provider \'Shopwell\\Tests\\Unit\\Core\\Checkout\\Cart\\TaxProvider\\_fixtures\\TestGenericExceptionTaxProvider\' threw an exception: Test exception' . \PHP_EOL);
+
+        $processor = new TaxProviderProcessor(
+            $repo,
+            $logger,
+            static::createStub(TaxAdjustment::class),
+            $registry,
+            static::createStub(TaxProviderPayloadService::class),
+            static::createStub(AppCapability::class)
+        );
+
+        $this->expectException(TaxProviderExceptions::class);
+
+        $processor->process($cart, $salesChannelContext);
+    }
+
+    public function testAppProviderIsCalled(): void
+    {
+        $cart = $this->createCart();
+        $salesChannelContext = static::createStub(SalesChannelContext::class);
+        $salesChannelContext
+            ->method('getTotalRounding')
+            ->willReturn(new CashRoundingConfig(2, 0.01, true));
+
+        $taxProvider = new TaxProviderEntity();
+        $taxProvider->setId(Uuid::randomHex());
+        $taxProvider->setActive(true);
+        $taxProvider->setPriority(1);
+        $taxProvider->setIdentifier(TestConstantTaxRateProvider::class);
+        $app = new AppEntity();
+        $app->setId(Uuid::randomHex());
+        $taxProvider->setApp($app);
+        $taxProvider->setProcessUrl('https://example.com');
+
+        $collection = new TaxProviderCollection([$taxProvider]);
+
+        $result = new EntitySearchResult(
+            TaxProviderDefinition::ENTITY_NAME,
+            1,
+            $collection,
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $taxProviderRegistry = new TaxProviderRegistry([
+            new TestConstantTaxRateProvider(),
+        ]);
+
+        $repo = static::createStub(EntityRepository::class);
+        $repo->method('search')->willReturn($result);
+
+        $taxes = new CalculatedTaxCollection([
+            new CalculatedTax(19, 19, 100),
+        ]);
+
+        $taxProviderPayloadService = $this->createMock(TaxProviderPayloadService::class);
+        $taxProviderPayloadService
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                'https://example.com',
+                static::isInstanceOf(TaxProviderPayload::class),
+                static::isInstanceOf(AppEntity::class),
+                $salesChannelContext->getContext()
+            )
+            ->willReturn(new TaxProviderResult([$this->ids->get('line-item-1') => $taxes]));
+
+        $capabilityAccess = static::createStub(AppCapability::class);
+        $capabilityAccess->method('whenGranted')->willReturnCallback(
+            static fn (string $appId, string $action, callable $callback): mixed => $callback()
+        );
+
+        $processor = new TaxProviderProcessor(
+            $repo,
+            static::createStub(LoggerInterface::class),
+            $this->adjustment,
+            $taxProviderRegistry,
+            $taxProviderPayloadService,
+            $capabilityAccess
+        );
+
+        $processor->process($cart, $salesChannelContext);
+    }
+
+    public function testAppProviderIsNotCalledWithoutGrantedPermission(): void
+    {
+        $cart = $this->createCart();
+        $salesChannelContext = static::createStub(SalesChannelContext::class);
+        $salesChannelContext
+            ->method('getTotalRounding')
+            ->willReturn(new CashRoundingConfig(2, 0.01, true));
+
+        $taxProvider = new TaxProviderEntity();
+        $taxProvider->setId(Uuid::randomHex());
+        $taxProvider->setActive(true);
+        $taxProvider->setPriority(1);
+        $taxProvider->setIdentifier(TestConstantTaxRateProvider::class);
+        $app = new AppEntity();
+        $app->setId(Uuid::randomHex());
+        $taxProvider->setApp($app);
+        $taxProvider->setProcessUrl('https://example.com');
+
+        $result = new EntitySearchResult(
+            TaxProviderDefinition::ENTITY_NAME,
+            1,
+            new TaxProviderCollection([$taxProvider]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $repo = static::createStub(EntityRepository::class);
+        $repo->method('search')->willReturn($result);
+
+        $payloadService = $this->createMock(TaxProviderPayloadService::class);
+        $payloadService->expects($this->never())->method('request');
+
+        $capabilityAccess = static::createStub(AppCapability::class);
+        $capabilityAccess->method('whenGranted')->willReturn(null);
+
+        $processor = new TaxProviderProcessor(
+            $repo,
+            static::createStub(LoggerInterface::class),
+            $this->adjustment,
+            new TaxProviderRegistry([new TestConstantTaxRateProvider()]),
+            $payloadService,
+            $capabilityAccess
+        );
+
+        $processor->process($cart, $salesChannelContext);
+    }
+
+    public function testTaxProcessorNotProcessingOnStateTaxFree(): void
+    {
+        $repo = $this->createMock(EntityRepository::class);
+        $repo
+            ->expects($this->never())
+            ->method('search');
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger
+            ->expects($this->never())
+            ->method('error');
+
+        $taxAdjuster = $this->createMock(TaxAdjustment::class);
+        $taxAdjuster
+            ->expects($this->never())
+            ->method('adjust');
+
+        $registry = $this->createMock(TaxProviderRegistry::class);
+        $registry
+            ->expects($this->never())
+            ->method('get');
+
+        $payloadService = $this->createMock(TaxProviderPayloadService::class);
+        $payloadService
+            ->expects($this->never())
+            ->method('request');
+
+        $processor = new TaxProviderProcessor(
+            $repo,
+            $logger,
+            $taxAdjuster,
+            $registry,
+            $payloadService,
+            static::createStub(AppCapability::class)
+        );
+
+        $cart = new Cart('foo');
+        $context = static::createStub(SalesChannelContext::class);
+        $context
+            ->method('getTaxState')
+            ->willReturn(CartPrice::TAX_STATE_FREE);
+
+        $processor->process($cart, $context);
+    }
+
+    private function createCart(): Cart
+    {
+        $cart = new Cart('test');
+
+        $lineItem = new LineItem(
+            $this->ids->get('line-item-1'),
+            LineItem::PRODUCT_LINE_ITEM_TYPE,
+            $this->ids->get('line-item-1'),
+            1,
+        );
+
+        $taxes = new CalculatedTaxCollection([
+            new CalculatedTax(
+                19,
+                19,
+                100
+            ),
+        ]);
+
+        $price = new CalculatedPrice(
+            100,
+            100,
+            $taxes,
+            new TaxRuleCollection(),
+            1
+        );
+
+        $price->assign(['calculatedTaxes' => $taxes]);
+        $lineItem->setPrice($price);
+
+        $cart->add($lineItem);
+
+        $deliveries = new DeliveryCollection([
+            new Delivery(
+                new DeliveryPositionCollection([
+                    new DeliveryPosition(
+                        $this->ids->get('delivery-position-1'),
+                        $lineItem,
+                        1,
+                        $price,
+                        new DeliveryDate(new \DateTime(), new \DateTime())
+                    ),
+                ]),
+                new DeliveryDate(new \DateTime(), new \DateTime()),
+                new ShippingMethodEntity(),
+                new ShippingLocation(new CountryEntity(), null, null),
+                $price
+            ),
+        ]);
+
+        $cart->addDeliveries($deliveries);
+
+        return $cart;
+    }
+}

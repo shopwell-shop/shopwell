@@ -1,0 +1,257 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Controller;
+
+use Shopwell\Core\Content\Product\Exception\ProductNotFoundException;
+use Shopwell\Core\Content\Product\Exception\ReviewNotActiveExeption;
+use Shopwell\Core\Content\Product\Exception\VariantNotFoundException;
+use Shopwell\Core\Content\Product\SalesChannel\FindVariant\AbstractFindProductVariantRoute;
+use Shopwell\Core\Content\Product\SalesChannel\PurchaseLimit\AbstractProductPurchaseLimitRoute;
+use Shopwell\Core\Content\Product\SalesChannel\Review\AbstractProductReviewLoader;
+use Shopwell\Core\Content\Product\SalesChannel\Review\AbstractProductReviewSaveRoute;
+use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewsWidgetLoadedHook;
+use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
+use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Storefront\Controller\Exception\StorefrontException;
+use Shopwell\Storefront\Framework\Routing\RequestTransformer;
+use Shopwell\Storefront\Framework\Routing\StorefrontRouteScope;
+use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\ProductPageSeoUrlRoute;
+use Shopwell\Storefront\Page\Product\ProductPageLoadedHook;
+use Shopwell\Storefront\Page\Product\ProductPageLoader;
+use Shopwell\Storefront\Page\Product\QuickView\MinimalQuickViewPageLoader;
+use Shopwell\Storefront\Page\Product\QuickView\ProductQuickViewWidgetLoadedHook;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+/**
+ * @internal
+ * Do not use direct or indirect repository calls in a controller. Always use a store-api route to get or put data
+ */
+#[Package('inventory')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StorefrontRouteScope::ID]])]
+class ProductController extends StorefrontController
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly ProductPageLoader $productPageLoader,
+        private readonly AbstractFindProductVariantRoute $findVariantRoute,
+        private readonly MinimalQuickViewPageLoader $minimalQuickViewPageLoader,
+        private readonly AbstractProductReviewSaveRoute $productReviewSaveRoute,
+        private readonly SeoUrlPlaceholderHandlerInterface $seoUrlPlaceholderHandler,
+        private readonly AbstractProductReviewLoader $productReviewLoader,
+        private readonly AbstractProductPurchaseLimitRoute $productPurchaseLimitRoute,
+    ) {
+    }
+
+    #[Route(
+        path: '/detail/{productId}',
+        name: ProductPageSeoUrlRoute::ROUTE_NAME,
+        defaults: [PlatformRequest::ATTRIBUTE_HTTP_CACHE => true],
+        methods: [Request::METHOD_GET]
+    )]
+    public function index(SalesChannelContext $context, Request $request): Response
+    {
+        $page = $this->productPageLoader->load($request, $context);
+
+        $this->hook(new ProductPageLoadedHook($page, $context));
+
+        return $this->renderStorefront(
+            '@Storefront/storefront/page/content/product-detail.html.twig',
+            [
+                'page' => $page,
+                'redirectTo' => ProductPageSeoUrlRoute::ROUTE_NAME,
+            ]
+        );
+    }
+
+    #[Route(
+        path: '/detail/{productId}/switch',
+        name: 'frontend.detail.switch',
+        defaults: [
+            'XmlHttpRequest' => true,
+            PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
+        ],
+        methods: [Request::METHOD_GET]
+    )]
+    public function switch(string $productId, Request $request, SalesChannelContext $salesChannelContext): JsonResponse
+    {
+        $switchedGroup = $request->query->has('switched') ? (string) $request->query->get('switched') : null;
+
+        try {
+            $options = json_decode($request->query->get('options', '[]'), true, 512, \JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            $options = [];
+        }
+
+        $variantRequestData = [
+            'switchedGroup' => $switchedGroup,
+            'options' => $options,
+        ];
+
+        $variantRequest = $request->duplicate($variantRequestData);
+
+        try {
+            $variantResponse = $this->findVariantRoute->load(
+                $productId,
+                $variantRequest,
+                $salesChannelContext
+            );
+
+            $productId = $variantResponse->getFoundCombination()->getVariantId();
+        } catch (VariantNotFoundException|ProductNotFoundException) {
+            // nth
+        }
+
+        $host = $request->attributes->get(RequestTransformer::SALES_CHANNEL_ABSOLUTE_BASE_URL)
+            . $request->attributes->get(RequestTransformer::SALES_CHANNEL_BASE_URL);
+
+        $url = $this->seoUrlPlaceholderHandler->replace(
+            $this->seoUrlPlaceholderHandler->generate(
+                ProductPageSeoUrlRoute::ROUTE_NAME,
+                ['productId' => $productId]
+            ),
+            $host,
+            $salesChannelContext
+        );
+
+        return new JsonResponse([
+            'url' => $url,
+            'productId' => $productId,
+        ]);
+    }
+
+    #[Route(
+        path: '/quickview/{productId}',
+        name: 'widgets.quickview.minimal',
+        defaults: ['XmlHttpRequest' => true],
+        methods: [Request::METHOD_GET]
+    )]
+    public function quickviewMinimal(Request $request, SalesChannelContext $context): Response
+    {
+        $page = $this->minimalQuickViewPageLoader->load($request, $context);
+
+        $this->hook(new ProductQuickViewWidgetLoadedHook($page, $context));
+
+        return $this->renderStorefront('@Storefront/storefront/component/product/quickview/minimal.html.twig', ['page' => $page]);
+    }
+
+    #[Route(
+        path: '/product/{productId}/rating',
+        name: 'frontend.detail.review.save',
+        defaults: [
+            'XmlHttpRequest' => true,
+            PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true,
+        ],
+        methods: [Request::METHOD_POST]
+    )]
+    public function saveReview(string $productId, RequestDataBag $data, SalesChannelContext $context): Response
+    {
+        if (!Feature::isActive('v6.8.0.0')) {
+            try {
+                $this->productReviewSaveRoute->save($productId, $data, $context);
+            } catch (ConstraintViolationException $formViolations) {
+                return $this->forwardToRoute('frontend.product.reviews', [
+                    'productId' => $productId,
+                    'success' => -1,
+                    'formViolations' => $formViolations,
+                    'data' => $data,
+                ], ['productId' => $productId]);
+            } catch (ReviewNotActiveExeption) {
+                throw StorefrontException::reviewNotActive();
+            }
+        } else {
+            try {
+                $this->productReviewSaveRoute->save($productId, $data, $context);
+            } catch (ConstraintViolationException $formViolations) {
+                return $this->forwardToRoute('frontend.product.reviews', [
+                    'productId' => $productId,
+                    'success' => -1,
+                    'formViolations' => $formViolations,
+                    'data' => $data,
+                ], ['productId' => $productId]);
+            }
+        }
+
+        $forwardParams = [
+            'productId' => $productId,
+            'success' => 1,
+            'data' => $data,
+            'parentId' => $data->get('parentId'),
+        ];
+
+        if ($data->has('id')) {
+            $forwardParams['success'] = 2;
+        }
+
+        return $this->forwardToRoute('frontend.product.reviews', $forwardParams, ['productId' => $productId]);
+    }
+
+    #[Route(
+        path: '/product/{productId}/reviews',
+        name: 'frontend.product.reviews',
+        defaults: ['XmlHttpRequest' => true],
+        methods: [Request::METHOD_GET, Request::METHOD_POST]
+    )]
+    public function loadReviews(string $productId, Request $request, SalesChannelContext $context): Response
+    {
+        $parentId = RequestParamHelper::get($request, 'parentId');
+        if (!Feature::isActive('v6.8.0.0')) {
+            try {
+                $reviews = $this->productReviewLoader->load($request, $context, $productId, $parentId);
+            } catch (ReviewNotActiveExeption) {
+                throw StorefrontException::reviewNotActive();
+            }
+        } else {
+            $reviews = $this->productReviewLoader->load($request, $context, $productId, $parentId);
+        }
+
+        $this->hook(new ProductReviewsWidgetLoadedHook($reviews, $context));
+
+        return $this->renderStorefront(
+            'storefront/component/review/review.html.twig',
+            [
+                'reviews' => $reviews,
+                'ratingSuccess' => $request->attributes->get('success'),
+                'redirectTo' => RequestParamHelper::get(
+                    $request,
+                    'redirectTo',
+                    $request->attributes->get('_route')
+                ),
+            ]
+        );
+    }
+
+    #[Route(
+        path: '/product/{productId}/purchase-limit',
+        name: 'frontend.product.purchase-limit',
+        defaults: ['XmlHttpRequest' => true],
+        methods: [Request::METHOD_GET]
+    )]
+    public function purchaseLimit(string $productId, Request $request, SalesChannelContext $context): JsonResponse
+    {
+        $purchaseLimitRequest = $request->duplicate(['ids' => [$productId]]);
+
+        $result = $this->productPurchaseLimitRoute->readProductsPurchaseLimit($purchaseLimitRequest, $context)->getResult()->first();
+
+        if ($result === null) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        return new JsonResponse([
+            'productId' => $result->getProductId(),
+            'minPurchase' => $result->getMinPurchase(),
+            'purchaseSteps' => $result->getPurchaseSteps(),
+            'maxPurchase' => $result->getMaxPurchase(),
+        ]);
+    }
+}

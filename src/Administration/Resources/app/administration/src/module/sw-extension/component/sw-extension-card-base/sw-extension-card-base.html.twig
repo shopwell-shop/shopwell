@@ -1,0 +1,240 @@
+<sw-meteor-card
+    class="sw-extension-card-base"
+    :class="extensionCardClasses"
+>
+    <sw-loader v-if="showLoader" />
+
+    <div class="sw-extension-card-base__select">
+        <mt-checkbox
+            :checked="selected"
+            :aria-label="$t('sw-extension.my-extensions.bulk.selectExtensionAria', { name: extension.label })"
+            @update:checked="$emit('select-change', $event)"
+        />
+    </div>
+
+    <div class="sw-extension-card-base__switch">
+        {% block sw_extension_card_base_activation_switch_switch %}
+
+        <mt-switch
+            v-model="isActive"
+            v-tooltip="{
+                showDelay: 300,
+                message: $t('sw-extension-store.component.sw-extension-card-base.allowDisableTooltip'),
+                disabled: allowDisable
+            }"
+            :disabled="extensionManagementDisabled || !isInstalled || (isActive && !allowDisable)"
+        />
+
+        {% endblock %}
+    </div>
+
+    <sw-extension-icon :src="image" />
+
+    {% block sw_extension_card_base_activation_switch %}
+    <div class="sw-extension-card-base__info">
+        <section>
+            <span class="sw-extension-card-base__info-name">
+                {{ extension.label }}
+            </span>
+
+            {% block sw_extension_card_base_info_inactive_label %}
+            <span
+                v-if="isInstalled && !extension.active"
+                class="sw-extension-card-base__info-inactive"
+            >
+                {{ $t('sw-extension-store.component.sw-extension-card-base.inactiveLabel') }}
+            </span>
+            {% endblock %}
+        </section>
+    </div>
+    {% endblock %}
+
+    <div class="sw-extension-card-base__meta-info">
+        {% block sw_extension_card_base_info_content %}
+        <section>
+            <span
+                v-if="extension.version"
+                class="sw-extension-card-base__meta-info-version"
+            >
+                {{ $t('sw-extension.my-extensions.listing.version') }}: {{ extension.version }}
+            </span>
+
+            <span v-if="!extensionManagementDisabled && isUpdateable">
+                <a
+                    href="#"
+                    @click.prevent="updateExtension(false)"
+                >
+                    {{ $t('sw-extension.my-extensions.listing.update') }}
+                </a>
+            </span>
+        </section>
+        {% endblock %}
+
+        <span v-if="isInstalled">
+            {{ $t('sw-extension-store.component.sw-extension-card-base.installedLabel') }}
+            <sw-time-ago
+                v-if="extension.installedAt.date"
+                :date="extension.installedAt.date"
+                :date-time-format="{ month: '2-digit', day: '2-digit' }"
+            />
+        </span>
+
+        <span v-else-if="extension.storeLicense">
+            {{ $t('sw-extension-store.component.sw-extension-card-base.purchasedLabel') }}
+            <sw-time-ago
+                v-if="extension.storeLicense.creationDate"
+                :date="extension.storeLicense.creationDate"
+                :date-time-format="DATE_ONLY_FORMAT"
+            />
+        </span>
+    </div>
+
+    <div class="sw-extension-card-base__main-action">
+        <span
+            v-if="!isInstalled"
+            class="sw-extension-card-base__open-extension"
+            role="button"
+            tabindex="0"
+            @click="openPermissionsModalForInstall"
+            @keydown.enter="openPermissionsModalForInstall"
+        >
+            {{ $t('sw-extension-store.component.sw-extension-card-base.installExtensionLabel') }}
+        </span>
+        <router-link
+            v-else-if="extension.configurable"
+            :to="configLink"
+        >
+            {{ $t('global.default.configure') }}
+        </router-link>
+    </div>
+
+    <sw-context-button
+        v-if="showContextMenu"
+        class="sw-extension-card-base__context-menu"
+        :menu-width="180"
+    >
+        {% block sw_extension_card_base_context_menu_actions %}
+        <sw-context-menu-item
+            v-if="openLinkExists && extension.active"
+            :disabled="!openLinkExists"
+            :router-link="link"
+        >
+            {{ $t('sw-extension-store.component.sw-extension-card-base.contextMenu.openExtension') }}
+        </sw-context-menu-item>
+
+        <sw-context-menu-item
+            v-if="privacyPolicyLink"
+            @click="openPrivacyAndSafety"
+        >
+            <span class="sw-extension-card-base__context-menu-privacy-link">
+                {{ $t('sw-extension-store.component.sw-extension-card-base.contextMenu.privacyAndSafetyLabel') }}
+                <mt-icon
+                    name="regular-external-link-s"
+                    size="10px"
+                />
+            </span>
+        </sw-context-menu-item>
+
+        <sw-context-menu-item
+            v-if="isInstalled && extension.privacyPolicyExtension"
+            @click="openPrivacyModal"
+        >
+
+            {{ $t('sw-extension-store.component.sw-extension-card-base.contextMenu.policyExtensions') }}
+        </sw-context-menu-item>
+
+        <sw-context-menu-item
+            v-if="isInstalled && permissions"
+            @click="openPermissionsModal"
+        >
+
+            {{ $t('sw-extension-store.component.sw-extension-card-base.contextMenu.permissions') }}
+        </sw-context-menu-item>
+
+        <sw-context-menu-item
+            v-if="!extensionManagementDisabled && isUpdateable"
+            @click="updateExtension(false)"
+        >
+            {{ $t('sw-extension-store.component.sw-extension-card-base.contextMenu.updateLabel', { version: extension.latestVersion }, 0) }}
+        </sw-context-menu-item>
+
+        {% block sw_extension_card_base_context_menu_actions_additional %}{% endblock %}
+
+        <sw-context-menu-item
+            v-if="!extensionManagementDisabled && hasActiveSubscription"
+            class="sw-extension-card-base__cancel-and-remove-link"
+            variant="danger"
+            @click="openRemovalModal"
+        >
+            {{ $t('sw-extension-store.component.sw-extension-card-base.contextMenu.cancelAndRemoveLabel') }}
+        </sw-context-menu-item>
+
+        <sw-context-menu-item
+            v-else-if="!extensionManagementDisabled && isRemovable"
+            class="sw-extension-card-base__remove-link"
+            variant="danger"
+            @click="openRemovalModal"
+        >
+            {{ $t('global.default.remove') }}
+        </sw-context-menu-item>
+
+        <sw-context-menu-item
+            v-if="!extensionManagementDisabled && isUninstallable"
+            variant="danger"
+            @click="openUninstallModal"
+        >
+            {{ $t('sw-extension-store.component.sw-extension-card-base.contextMenu.uninstallLabel') }}
+        </sw-context-menu-item>
+        {% endblock %}
+    </sw-context-button>
+
+    {% block sw_extension_card_base_modals %}
+    <sw-extension-uninstall-modal
+        v-if="showUninstallModal"
+        :extension-name="extension.label"
+        :is-licensed="extension.storeLicense !== null"
+        :is-loading="isLoading"
+        @modal-close="closeUninstallModal"
+        @uninstall-extension="closeModalAndUninstallExtension"
+    />
+
+    <sw-extension-removal-modal
+        v-if="showRemovalModal"
+        :extension-name="extension.label"
+        :is-licensed="hasActiveSubscription"
+        :is-loading="isLoading"
+        @modal-close="closeRemovalModal"
+        @remove-extension="closeModalAndRemoveExtension"
+    />
+
+    <sw-extension-permissions-modal
+        v-if="showPermissionsModal"
+        :extension-label="extension.label"
+        :permissions="permissions"
+        :domains="extension.domains"
+        :action-label="permissionModalActionLabel"
+        @modal-close="closePermissionsModal"
+        @close-with-action="closePermissionsModalAndInstallExtension"
+    />
+
+    <sw-extension-privacy-policy-extensions-modal
+        v-if="showPrivacyModal"
+        :extension-name="extension.label"
+        :privacy-policy-extension="extension.privacyPolicyExtension"
+        @modal-close="closePrivacyModal"
+    />
+
+    <sw-extension-permissions-modal
+        v-if="showConsentAffirmationModal"
+        :title="consentAffirmationModalTitle"
+        :extension-label="extension.label"
+        :permissions="consentAffirmationDeltas.permissions"
+        :domains="consentAffirmationDeltas.domains"
+        :action-label="consentAffirmationModalActionLabel"
+        :close-label="consentAffirmationModalCloseLabel"
+        :description="consentAffirmationModalDescription"
+        @modal-close="closeConsentAffirmationModal"
+        @close-with-action="closeConsentAffirmationModalAndUpdateExtension"
+    />
+    {% endblock %}
+</sw-meteor-card>

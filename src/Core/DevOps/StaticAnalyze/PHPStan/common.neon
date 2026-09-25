@@ -1,0 +1,88 @@
+includes:
+    - phar://phpstan.phar/conf/bleedingEdge.neon
+    - extension.neon
+    - rules.neon
+
+parameters:
+    phpVersion: 80200
+    level: 8
+    treatPhpDocTypesAsCertain: false
+    inferPrivatePropertyTypeFromConstructor: true
+    reportUnmatchedIgnoredErrors: true
+    checkFunctionNameCase: true
+    checkInternalClassCaseSensitivity: true
+    reportAnyTypeWideningInVarTag: true
+
+    # Would otherwise flag usage of internal classes from different namespaces
+    featureToggles:
+        internalTag: false
+
+    # For stricter testing those should be set to true at some point
+    reportMaybesInMethodSignatures: false
+    reportWrongPhpDocTypeInVarTag: true
+
+    # For stricter testing those should be set to true at some point
+    strictRules:
+        disallowedLooseComparison: true
+        booleansInConditions: false
+        booleansInLoopConditions: false
+        uselessCast: true
+        requireParentConstructorCall: false
+        disallowedBacktick: true
+        disallowedEmpty: true
+        disallowedImplicitArrayCreation: true
+        disallowedShortTernary: false
+        overwriteVariablesWithLoop: true
+        closureUsesThis: true
+        matchingInheritedMethodNames: true
+        numericOperandsInArithmeticOperators: true
+        strictFunctionCalls: true
+        dynamicCallOnStaticMethod: false
+        switchConditionsMatchingType: true
+        noVariableVariables: true
+        strictArrayFilter: false
+        illegalConstructorMethodCall: true
+
+    type_perfect:
+        no_mixed_property: true
+        no_mixed_caller: true
+        null_over_false: true
+
+    shopware:
+        allowedNonDomainExceptions:
+            - Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException
+            - Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException
+            - Shopwell\Core\Framework\Api\Controller\Exception\PermissionDeniedException
+            - Shopwell\Core\Content\MailTemplate\Exception\MailEventConfigurationException
+            - Twig\Error\LoaderError
+            - Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException
+            - Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException
+            - Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException
+            - Symfony\Component\HttpKernel\Exception\NotFoundHttpException
+            - Symfony\Component\HttpFoundation\Exception\BadRequestException
+
+        allowedStorefrontRouteNamespaces:
+            - Shopwell\Storefront
+            # Telemetry route resolvers classify storefront routes by name; they don't depend on the Storefront package being installed
+            - Shopwell\Core\Framework\Routing\Telemetry
+        allowedUnitTestClassNamespaces:
+            - Shopwell\Tests\Unit\
+            - Shopwell\Tests\Migration\
+        # narrows NoCreateMockWithoutExpectationsRule enforcement; consumers rolling the rule out
+        # domain by domain append their enabled test namespaces to this list
+        createMockWithoutExpectationsEnabledNamespaces:
+            - 'Shopwell\Tests\Unit\'
+            - 'Shopwell\Tests\DevOps\'
+
+services:
+    -   factory: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Configuration(%shopware%)
+    -   class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\AclValidPermissionsHelper
+
+parametersSchema:
+    ?shopwareTaggedServiceContractAdditionalTagContracts: arrayOf(string(), string())
+    shopware: structure([
+        allowedNonDomainExceptions: list(string),
+        allowedStorefrontRouteNamespaces: list(string),
+        allowedUnitTestClassNamespaces: list(string),
+        createMockWithoutExpectationsEnabledNamespaces: list(string),
+])

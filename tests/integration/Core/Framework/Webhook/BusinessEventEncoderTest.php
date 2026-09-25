@@ -1,0 +1,129 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\Webhook;
+
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Event\BusinessEventRegistry;
+use Shopwell\Core\Framework\Event\FlowEventAware;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Test\Webhook\_fixtures\BusinessEvents\ArrayBusinessEvent;
+use Shopwell\Core\Framework\Test\Webhook\_fixtures\BusinessEvents\CollectionBusinessEvent;
+use Shopwell\Core\Framework\Test\Webhook\_fixtures\BusinessEvents\EntityBusinessEvent;
+use Shopwell\Core\Framework\Test\Webhook\_fixtures\BusinessEvents\HiddenEntityBusinessEvent;
+use Shopwell\Core\Framework\Test\Webhook\_fixtures\BusinessEvents\InvalidAvailableDataBusinessEvent;
+use Shopwell\Core\Framework\Test\Webhook\_fixtures\BusinessEvents\InvalidTypeBusinessEvent;
+use Shopwell\Core\Framework\Test\Webhook\_fixtures\BusinessEvents\NestedEntityBusinessEvent;
+use Shopwell\Core\Framework\Test\Webhook\_fixtures\BusinessEvents\ScalarBusinessEvent;
+use Shopwell\Core\Framework\Test\Webhook\_fixtures\BusinessEvents\StructuredArrayObjectBusinessEvent;
+use Shopwell\Core\Framework\Test\Webhook\_fixtures\BusinessEvents\StructuredObjectBusinessEvent;
+use Shopwell\Core\Framework\Test\Webhook\_fixtures\BusinessEvents\UnstructuredObjectBusinessEvent;
+use Shopwell\Core\Framework\Webhook\BusinessEventEncoder;
+use Shopwell\Core\Framework\Webhook\WebhookException;
+use Shopwell\Core\System\Tax\TaxCollection;
+use Shopwell\Core\System\Tax\TaxEntity;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class BusinessEventEncoderTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    private BusinessEventEncoder $businessEventEncoder;
+
+    protected function setUp(): void
+    {
+        $this->businessEventEncoder = static::getContainer()->get(BusinessEventEncoder::class);
+    }
+
+    #[DataProvider('getEvents')]
+    public function testScalarEvents(FlowEventAware $event): void
+    {
+        $shopwareVersion = static::getContainer()->getParameter('kernel.shopware_version');
+        static::assertTrue(
+            method_exists($event, 'getEncodeValues'),
+            'Event does not have method getEncodeValues'
+        );
+        static::assertEquals($event->getEncodeValues($shopwareVersion), $this->businessEventEncoder->encode($event));
+    }
+
+    public static function getEvents(): \Generator
+    {
+        $tax = new TaxEntity();
+        $tax->setId('tax-id');
+        $tax->setName('test');
+        $tax->setTaxRate(19);
+        $tax->setPosition(1);
+
+        yield 'ScalarBusinessEvent' => [new ScalarBusinessEvent()];
+        yield 'StructuredObjectBusinessEvent' => [new StructuredObjectBusinessEvent()];
+        yield 'StructuredArrayObjectBusinessEvent' => [new StructuredArrayObjectBusinessEvent()];
+        yield 'UnstructuredObjectBusinessEvent' => [new UnstructuredObjectBusinessEvent()];
+        yield 'EntityBusinessEvent' => [new EntityBusinessEvent($tax)];
+        yield 'CollectionBusinessEvent' => [new CollectionBusinessEvent(new TaxCollection([$tax]))];
+        yield 'ArrayBusinessEvent' => [new ArrayBusinessEvent(new TaxCollection([$tax]))];
+        yield 'NestedEntityBusinessEvent' => [new NestedEntityBusinessEvent($tax)];
+        yield 'HiddenEntityBusinessEvent' => [new HiddenEntityBusinessEvent($tax)];
+    }
+
+    public function testInvalidType(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->businessEventEncoder->encode(new InvalidTypeBusinessEvent());
+    }
+
+    public function testInvalidAvailableData(): void
+    {
+        if (!Feature::isActive('v6.8.0.0')) {
+            $this->expectException(\RuntimeException::class);
+            $this->businessEventEncoder->encode(new InvalidAvailableDataBusinessEvent());
+
+            return;
+        }
+
+        try {
+            $this->businessEventEncoder->encode(new InvalidAvailableDataBusinessEvent());
+        } catch (WebhookException $exception) {
+            static::assertSame('Invalid available DataMapping, could not get property "invalid" on instance of Shopwell\Core\Framework\Test\Webhook\_fixtures\BusinessEvents\InvalidAvailableDataBusinessEvent', $exception->getMessage());
+            static::assertSame(WebhookException::INVALID_DATA_MAPPING, $exception->getErrorCode());
+
+            return;
+        }
+
+        static::fail('Exception should have been thrown');
+    }
+
+    public function testEncodeWithInvalidObjectOrData(): void
+    {
+        $this->expectExceptionObject(WebhookException::invalidDataMapping('invalid', InvalidTypeBusinessEvent::class));
+        $this->businessEventEncoder->encode(new InvalidTypeBusinessEvent());
+    }
+
+    public function testRegisteredBusinessEventsExposeWebhookPayloadGetters(): void
+    {
+        $registry = static::getContainer()->get(BusinessEventRegistry::class);
+
+        foreach ($registry->getClasses() as $eventClass) {
+            $missing = [];
+
+            foreach (array_keys($eventClass::getAvailableData()->toArray()) as $key) {
+                $getter = 'get' . $key;
+                $isser = 'is' . $key;
+
+                if (!method_exists($eventClass, $getter) && !method_exists($eventClass, $isser)) {
+                    $missing[] = $key;
+                }
+            }
+
+            static::assertSame([], $missing, \sprintf(
+                'Event %s is missing webhook payload getter(s) for: %s',
+                $eventClass,
+                implode(', ', $missing)
+            ));
+        }
+    }
+}

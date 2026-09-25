@@ -1,0 +1,196 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Sitemap\Provider;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Product\ProductEntity;
+use Shopwell\Core\Content\Seo\SeoUrlRoute\EntityRouteResolver;
+use Shopwell\Core\Content\Sitemap\Event\SitemapQueryEvent;
+use Shopwell\Core\Content\Sitemap\Service\ConfigHandler;
+use Shopwell\Core\Content\Sitemap\Struct\Url;
+use Shopwell\Core\Content\Sitemap\Struct\UrlResult;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\FetchModeHelper;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+
+#[Package('discovery')]
+class ProductUrlProvider extends AbstractUrlProvider
+{
+    final public const CHANGE_FREQ = 'hourly';
+
+    final public const QUERY_EVENT_NAME = 'sitemap.query.product';
+
+    private const CONFIG_EXCLUDE_LINKED_PRODUCTS = 'core.sitemap.excludeLinkedProducts';
+
+    private const CONFIG_HIDE_AFTER_CLOSEOUT = 'core.listing.hideCloseoutProductsWhenOutOfStock';
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly ConfigHandler $configHandler,
+        private readonly Connection $connection,
+        private readonly ProductDefinition $definition,
+        private readonly IteratorFactory $iteratorFactory,
+        private readonly EntityRouteResolver $entityRouteResolver,
+        private readonly SystemConfigService $systemConfigService,
+        private readonly EventDispatcherInterface $eventDispatcher,
+    ) {
+    }
+
+    public function getDecorated(): AbstractUrlProvider
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    public function getName(): string
+    {
+        return 'product';
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @throws \Exception
+     */
+    public function getUrls(SalesChannelContext $context, int $limit, ?int $offset = null): UrlResult
+    {
+        $products = $this->getProducts($context, $limit, $offset);
+
+        if ($products === []) {
+            return new UrlResult([], null);
+        }
+
+        $keys = FetchModeHelper::keyPair($products);
+
+        $routeName = $this->entityRouteResolver->getRouteNameForEntityName(ProductDefinition::ENTITY_NAME, $context->getSalesChannel()->getTypeId());
+        $seoUrls = $this->getSeoUrls(array_values($keys), $routeName, $context, $this->connection);
+
+        /** @var array<string, array{seo_path_info: string}> $seoUrls */
+        $seoUrls = FetchModeHelper::groupUnique($seoUrls);
+
+        $urls = [];
+        $url = new Url();
+
+        foreach ($products as $product) {
+            $lastMod = $product['updated_at'] ?: $product['created_at'];
+
+            $lastMod = (new \DateTime($lastMod))->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+
+            $newUrl = clone $url;
+
+            if (isset($seoUrls[$product['id']])) {
+                $newUrl->setLoc($seoUrls[$product['id']]['seo_path_info']);
+            } else {
+                $newUrl->setLoc($this->entityRouteResolver->generateUrl(ProductDefinition::ENTITY_NAME, $product['id'], $context->getSalesChannel()->getTypeId()));
+            }
+
+            $newUrl->setLastmod(new \DateTime($lastMod));
+            $newUrl->setChangefreq(self::CHANGE_FREQ);
+            $newUrl->setResource(ProductEntity::class);
+            $newUrl->setIdentifier($product['id']);
+
+            $urls[] = $newUrl;
+        }
+
+        $keys = array_keys($keys);
+        $nextOffset = array_pop($keys);
+
+        return new UrlResult($urls, $nextOffset !== null ? (int) $nextOffset : null);
+    }
+
+    /**
+     * @return list<array{id: string, created_at: string, updated_at: string}>
+     */
+    private function getProducts(SalesChannelContext $context, int $limit, ?int $offset): array
+    {
+        $lastId = null;
+        if ($offset) {
+            $lastId = ['offset' => $offset];
+        }
+
+        $iterator = $this->iteratorFactory->createIterator($this->definition, $lastId);
+        $query = $iterator->getQuery();
+        $query->setMaxResults($limit);
+
+        $showAfterCloseout = !$this->systemConfigService->get(self::CONFIG_HIDE_AFTER_CLOSEOUT, $context->getSalesChannelId());
+
+        $query->addSelect(
+            '`product`.created_at as created_at',
+            '`product`.updated_at as updated_at',
+        );
+
+        $query->leftJoin('`product`', '`product`', 'parent', '`product`.parent_id = parent.id');
+        $query->innerJoin('`product`', 'product_visibility', 'visibilities', 'product.visibilities = visibilities.product_id');
+
+        $query->andWhere('`product`.version_id = :versionId');
+
+        if ($showAfterCloseout) {
+            $query->andWhere('(`product`.available = 1 OR `product`.is_closeout)');
+        } else {
+            $query->andWhere('`product`.available = 1');
+        }
+
+        $query->andWhere('IFNULL(`product`.active, parent.active) = 1');
+        $query->andWhere('(`product`.child_count = 0 OR `product`.parent_id IS NOT NULL)');
+        $query->andWhere('(`product`.parent_id IS NULL OR parent.canonical_product_id IS NULL OR parent.canonical_product_id = `product`.id)');
+        $query->andWhere('visibilities.product_version_id = :versionId');
+        $query->andWhere('visibilities.sales_channel_id = :salesChannelId');
+
+        $excludedProductIds = $this->getExcludedProductIds($context);
+        if ($excludedProductIds !== []) {
+            $query->andWhere('`product`.id NOT IN (:productIds)');
+            $query->setParameter('productIds', Uuid::fromHexToBytesList($excludedProductIds), ArrayParameterType::BINARY);
+        }
+
+        $excludeLinkedProducts = $this->systemConfigService->getBool(self::CONFIG_EXCLUDE_LINKED_PRODUCTS, $context->getSalesChannelId());
+        if ($excludeLinkedProducts) {
+            $query->andWhere('visibilities.visibility != :excludedVisibility');
+            $query->setParameter('excludedVisibility', ProductVisibilityDefinition::VISIBILITY_LINK);
+        }
+
+        $query->setParameter('versionId', Uuid::fromHexToBytes(Defaults::LIVE_VERSION));
+        $query->setParameter('salesChannelId', Uuid::fromHexToBytes($context->getSalesChannelId()));
+
+        $this->eventDispatcher->dispatch(
+            new SitemapQueryEvent($query, $limit, $offset, $context, self::QUERY_EVENT_NAME)
+        );
+
+        /** @var list<array{id: string, created_at: string, updated_at: string}> $result */
+        $result = $query->executeQuery()->fetchAllAssociative();
+
+        return $result;
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getExcludedProductIds(SalesChannelContext $salesChannelContext): array
+    {
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
+
+        $excludedUrls = $this->configHandler->get(ConfigHandler::EXCLUDED_URLS_KEY);
+        if ($excludedUrls === []) {
+            return [];
+        }
+
+        $excludedUrls = array_filter($excludedUrls, static function (array $excludedUrl) use ($salesChannelId) {
+            if ($excludedUrl['resource'] !== ProductEntity::class) {
+                return false;
+            }
+
+            return $excludedUrl['salesChannelId'] === $salesChannelId;
+        });
+
+        return array_column($excludedUrls, 'identifier');
+    }
+}

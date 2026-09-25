@@ -1,0 +1,453 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Promotion\Cart\Builder;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\Price\Struct\AbsolutePriceDefinition;
+use Shopwell\Core\Checkout\Cart\Price\Struct\PercentagePriceDefinition;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemUnitPriceRule;
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionDiscount\PromotionDiscountEntity;
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionDiscountPrice\PromotionDiscountPriceCollection;
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionDiscountPrice\PromotionDiscountPriceEntity;
+use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
+use Shopwell\Core\Checkout\Promotion\Cart\PromotionProcessor;
+use Shopwell\Core\Checkout\Promotion\PromotionEntity;
+use Shopwell\Core\Checkout\Promotion\PromotionException;
+use Shopwell\Core\Content\Rule\RuleCollection;
+use Shopwell\Core\Content\Rule\RuleEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Container\OrRule;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Currency\CurrencyEntity;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(PromotionItemBuilder::class)]
+class PromotionItemBuilderTest extends TestCase
+{
+    private PromotionEntity $promotion;
+
+    /**
+     * @var Stub&SalesChannelContext
+     */
+    private SalesChannelContext $salesChannelContext;
+
+    protected function setUp(): void
+    {
+        $this->promotion = new PromotionEntity();
+        $this->promotion->setId('PR-1');
+        $this->promotion->setPriority(1);
+        $this->promotion->setUseCodes(false);
+        $this->promotion->setUseIndividualCodes(false);
+        $this->promotion->setUseSetGroups(false);
+
+        $this->salesChannelContext = static::createStub(SalesChannelContext::class);
+        $context = static::createStub(Context::class);
+
+        $this->salesChannelContext->method('getContext')->willReturn($context);
+    }
+
+    /**
+     * This test verifies that the immutable LineItem Type from
+     * the constructor is correctly used in the LineItem.
+     *
+     * @throws CartException
+     * @throws PromotionException
+     */
+    #[Group('promotions')]
+    public function testLineItemType(): void
+    {
+        $currencyFactor = random_int(0, mt_getrandmax()) / mt_getrandmax();
+
+        $builder = new PromotionItemBuilder();
+
+        $discount = new PromotionDiscountEntity();
+        $discount->setId('D5');
+        $discount->setType(PromotionDiscountEntity::TYPE_PERCENTAGE);
+        $discount->setValue(50);
+        $discount->setScope(PromotionDiscountEntity::SCOPE_CART);
+        $discount->setConsiderAdvancedRules(false);
+
+        $item = $builder->buildDiscountLineItem('', $this->promotion, $discount, 'C1', $currencyFactor);
+
+        static::assertSame(PromotionProcessor::LINE_ITEM_TYPE, $item->getType());
+    }
+
+    /**
+     * This test verifies that we always use the id of the
+     * discount and not from the promotion for the item key.
+     * If we have multiple discounts in a single promotion and use the promotion
+     * id for the key, then we get duplicate key entries which leads to
+     * errors like "line item not stackable".
+     *
+     * @throws CartException
+     * @throws PromotionException
+     */
+    #[Group('promotions')]
+    public function testLineItemKey(): void
+    {
+        $builder = new PromotionItemBuilder();
+
+        $currencyFactor = random_int(0, mt_getrandmax()) / mt_getrandmax();
+
+        $discount = new PromotionDiscountEntity();
+        $discount->setId('D5');
+        $discount->setType(PromotionDiscountEntity::TYPE_PERCENTAGE);
+        $discount->setValue(50);
+        $discount->setScope(PromotionDiscountEntity::SCOPE_CART);
+        $discount->setConsiderAdvancedRules(false);
+
+        $item = $builder->buildDiscountLineItem('', $this->promotion, $discount, 'C1', $currencyFactor);
+
+        static::assertSame('D5', $item->getId());
+    }
+
+    /**
+     * This test verifies that our custom provided code is really
+     * used in our referenceId. This is because we cannot simply use the
+     * code from the promotion, because it might not be this one but one
+     * of its thousand individual codes...thus its provided as separate argument
+     *
+     * @throws CartException
+     * @throws PromotionException
+     */
+    #[Group('promotions')]
+    public function testLineItemReferenceId(): void
+    {
+        $discount = new PromotionDiscountEntity();
+        $currencyFactor = random_int(0, mt_getrandmax()) / mt_getrandmax();
+
+        $discount->setId('D5');
+        $discount->setType(PromotionDiscountEntity::TYPE_PERCENTAGE);
+        $discount->setValue(50);
+        $discount->setScope(PromotionDiscountEntity::SCOPE_CART);
+        $discount->setConsiderAdvancedRules(false);
+
+        $item = (new PromotionItemBuilder())->buildDiscountLineItem('individual-123', $this->promotion, $discount, 'C1', $currencyFactor);
+
+        static::assertSame('individual-123', $item->getReferencedId());
+    }
+
+    /**
+     * This test verifies that we get a correct percentage price
+     * definition if our promotion is based on percentage values.
+     * Also, we must not have a filter rule for this, if our eligible item ID list is empty.
+     *
+     * @throws CartException
+     * @throws PromotionException
+     */
+    #[Group('promotions')]
+    public function testPriceTypePercentage(): void
+    {
+        $builder = new PromotionItemBuilder();
+
+        $currencyFactor = random_int(0, mt_getrandmax()) / mt_getrandmax();
+
+        $discount = new PromotionDiscountEntity();
+        $discount->setId('D5');
+        $discount->setType(PromotionDiscountEntity::TYPE_PERCENTAGE);
+        $discount->setValue(10);
+        $discount->setScope(PromotionDiscountEntity::SCOPE_CART);
+        $discount->setConsiderAdvancedRules(false);
+
+        $item = $builder->buildDiscountLineItem('', $this->promotion, $discount, 'C1', $currencyFactor);
+
+        $expectedPriceDefinition = new PercentagePriceDefinition(-10, null);
+
+        static::assertEquals($expectedPriceDefinition, $item->getPriceDefinition());
+    }
+
+    /**
+     * This test verifies that we get a correct absolute price
+     * definition if our promotion is based on absolute values.
+     * Also, we must not have a filter rule for this, if our eligible item ID list is empty.
+     *
+     * @throws CartException
+     * @throws PromotionException
+     */
+    #[Group('promotions')]
+    public function testPriceTypeAbsolute(): void
+    {
+        $builder = new PromotionItemBuilder();
+
+        $currencyFactor = random_int(0, mt_getrandmax()) / mt_getrandmax();
+
+        $discount = new PromotionDiscountEntity();
+        $discount->setId('D5');
+        $discount->setType(PromotionDiscountEntity::TYPE_ABSOLUTE);
+        $discount->setValue(50);
+        $discount->setScope(PromotionDiscountEntity::SCOPE_CART);
+        $discount->setConsiderAdvancedRules(false);
+
+        $item = $builder->buildDiscountLineItem('', $this->promotion, $discount, 'C1', $currencyFactor);
+
+        $expectedPriceDefinition = new AbsolutePriceDefinition(-50 * $currencyFactor, null);
+
+        static::assertEquals($expectedPriceDefinition, $item->getPriceDefinition());
+    }
+
+    /**
+     * This test verifies that the correct discount filter
+     * is set in the discountItemBuilder
+     */
+    #[Group('promotions')]
+    public function testDiscountTargetFilter(): void
+    {
+        $builder = new PromotionItemBuilder();
+
+        $currencyFactor = random_int(0, mt_getrandmax()) / mt_getrandmax();
+
+        $discount = new PromotionDiscountEntity();
+        $discount->setId('D5');
+        $discount->setType(PromotionDiscountEntity::TYPE_ABSOLUTE);
+        $discount->setValue(50);
+        $discount->setConsiderAdvancedRules(true);
+        $discount->setScope(PromotionDiscountEntity::SCOPE_CART);
+        $discount->setSorterKey('PRICE_ASC');
+        $discount->setApplierKey('ALL');
+        $discount->setUsageKey('UNLIMITED');
+
+        $amount = 100;
+        $operator = '=';
+
+        $discountFilter = $this->getFakeRule($amount, $operator);
+
+        $discountRuleEntity = new RuleEntity();
+        $discountRuleEntity->setId('foo');
+        $discountRuleEntity->setPayload($discountFilter);
+
+        $ruleCollection = new RuleCollection();
+        $ruleCollection->add($discountRuleEntity);
+        $discount->setDiscountRules($ruleCollection);
+
+        $expectedRule = new OrRule();
+        $expectedRule->addRule($discountFilter);
+
+        $item = $builder->buildDiscountLineItem('', $this->promotion, $discount, 'C1', $currencyFactor);
+
+        static::assertInstanceOf(AbsolutePriceDefinition::class, $item->getPriceDefinition());
+        static::assertEquals($expectedRule, $item->getPriceDefinition()->getFilter());
+    }
+
+    /**
+     * This test verifies that the correct discount filter
+     * is set in the discountItemBuilder
+     */
+    #[Group('promotions')]
+    public function testDiscountTargetFilterIfDiscountRulesShouldBeIgnored(): void
+    {
+        $currencyFactor = random_int(0, mt_getrandmax()) / mt_getrandmax();
+
+        $builder = new PromotionItemBuilder();
+
+        $discount = new PromotionDiscountEntity();
+        $discount->setId('D5');
+        $discount->setType(PromotionDiscountEntity::TYPE_ABSOLUTE);
+        $discount->setValue(50);
+        $discount->setConsiderAdvancedRules(false);
+        $discount->setScope(PromotionDiscountEntity::SCOPE_CART);
+
+        $amount = 100;
+        $operator = '=';
+
+        $discountFilter = $this->getFakeRule($amount, $operator);
+
+        $discountRuleEntity = new RuleEntity();
+        $discountRuleEntity->setId('foo');
+        $discountRuleEntity->setPayload($discountFilter);
+
+        $ruleCollection = new RuleCollection();
+        $ruleCollection->add($discountRuleEntity);
+        $discount->setDiscountRules($ruleCollection);
+
+        $item = $builder->buildDiscountLineItem('', $this->promotion, $discount, 'C1', $currencyFactor);
+
+        static::assertInstanceOf(AbsolutePriceDefinition::class, $item->getPriceDefinition());
+        static::assertNull($item->getPriceDefinition()->getFilter());
+    }
+
+    /**
+     * This test verifies that the correct discount filter
+     * is set in the discountItemBuilder if discount rules are empty
+     */
+    #[Group('promotions')]
+    public function testDiscountTargetFilterIfDiscountRulesAreEmpty(): void
+    {
+        $builder = new PromotionItemBuilder();
+
+        $currencyFactor = random_int(0, mt_getrandmax()) / mt_getrandmax();
+
+        $discount = new PromotionDiscountEntity();
+        $discount->setId('D5');
+        $discount->setType(PromotionDiscountEntity::TYPE_ABSOLUTE);
+        $discount->setValue(50);
+        $discount->setConsiderAdvancedRules(true);
+        $discount->setScope(PromotionDiscountEntity::SCOPE_CART);
+        $discount->setSorterKey('PRICE_ASC');
+        $discount->setApplierKey('ALL');
+        $discount->setUsageKey('UNLIMITED');
+
+        $ruleCollection = new RuleCollection();
+        $discount->setDiscountRules($ruleCollection);
+
+        $item = $builder->buildDiscountLineItem('', $this->promotion, $discount, 'C1', $currencyFactor);
+
+        static::assertInstanceOf(AbsolutePriceDefinition::class, $item->getPriceDefinition());
+        static::assertNull($item->getPriceDefinition()->getFilter());
+    }
+
+    /**
+     * This test verifies that the correct currency price value is applied to
+     * discount
+     */
+    #[Group('promotions')]
+    public function testDiscountCurrencyCustomPrices(): void
+    {
+        $builder = new PromotionItemBuilder();
+
+        $currencyFactor = random_int(0, mt_getrandmax()) / mt_getrandmax();
+        $standardDiscountValue = 50;
+        $currencyDiscountValue = 10;
+
+        $discount = new PromotionDiscountEntity();
+        $discount->setId('D5');
+        $discount->setType(PromotionDiscountEntity::TYPE_ABSOLUTE);
+        $discount->setValue($standardDiscountValue);
+        $discount->setScope(PromotionDiscountEntity::SCOPE_CART);
+        $discount->setConsiderAdvancedRules(false);
+
+        $currency = new CurrencyEntity();
+        $currency->setId('C1');
+
+        $advancedPrice = new PromotionDiscountPriceEntity();
+        $advancedPrice->setUniqueIdentifier(Uuid::randomHex());
+        $advancedPrice->setCurrency($currency);
+        $advancedPrice->setCurrencyId($currency->getId());
+        $advancedPrice->setPrice($currencyDiscountValue);
+
+        $advancedPricesCollection = new PromotionDiscountPriceCollection([]);
+        $advancedPricesCollection->add($advancedPrice);
+
+        $discount->setPromotionDiscountPrices($advancedPricesCollection);
+
+        $this->salesChannelContext->method('getCurrency')->willReturn($currency);
+
+        $item = $builder->buildDiscountLineItem('code', $this->promotion, $discount, 'C1', $currencyFactor);
+
+        $expectedPrice = -1 * $currencyDiscountValue;
+
+        $expectedPriceDefinition = new AbsolutePriceDefinition($expectedPrice, null);
+
+        static::assertEquals($expectedPriceDefinition, $item->getPriceDefinition());
+    }
+
+    /**
+     * This test verifies that the currency price is calculated by factor if currency couldn't be found in
+     * advanced discount prices.
+     */
+    #[Group('promotions')]
+    public function testDiscountCurrencyCustomPricesMissingAdvancedPrice(): void
+    {
+        $builder = new PromotionItemBuilder();
+
+        $currencyFactor = random_int(0, mt_getrandmax()) / mt_getrandmax();
+        $standardDiscountValue = 50;
+        $currencyDiscountValue = 10;
+
+        $discount = new PromotionDiscountEntity();
+        $discount->setId('D5');
+        $discount->setType(PromotionDiscountEntity::TYPE_ABSOLUTE);
+        $discount->setValue($standardDiscountValue);
+        $discount->setScope(PromotionDiscountEntity::SCOPE_CART);
+        $discount->setConsiderAdvancedRules(false);
+
+        $currency = new CurrencyEntity();
+        $currency->setId('C1');
+
+        $advancedPrice = new PromotionDiscountPriceEntity();
+        $advancedPrice->setUniqueIdentifier(Uuid::randomHex());
+        $advancedPrice->setCurrency($currency);
+        $advancedPrice->setCurrencyId($currency->getId());
+        $advancedPrice->setPrice($currencyDiscountValue);
+
+        $advancedPricesCollection = new PromotionDiscountPriceCollection([]);
+        $advancedPricesCollection->add($advancedPrice);
+
+        $discount->setPromotionDiscountPrices($advancedPricesCollection);
+
+        $this->salesChannelContext->method('getCurrency')->willReturn($currency);
+
+        $item = $builder->buildDiscountLineItem('code', $this->promotion, $discount, 'D1', $currencyFactor);
+
+        $expectedPrice = -1 * $standardDiscountValue * $currencyFactor;
+
+        $expectedPriceDefinition = new AbsolutePriceDefinition($expectedPrice, null);
+
+        static::assertEquals($expectedPriceDefinition, $item->getPriceDefinition());
+    }
+
+    /**
+     * This test verifies that we have a backward compatibility.
+     * Our currency factors is optional and should have 1.0 as default
+     * if not provided as argument.
+     * We just build a new discount line item and make sure the price
+     * definition has our price * 1.0 as factor...so just the original price :)
+     * Please note that factors and absolute price definitions will only
+     * be available on "amount" discounts...so no percentage...
+     *
+     * @throws CartException
+     * @throws PromotionException
+     */
+    #[DataProvider('getDefaultCurrencyDataProvider')]
+    #[Group('promotions')]
+    public function testDefaultCurrencyFactor(string $type): void
+    {
+        $discount = new PromotionDiscountEntity();
+        $discount->setId('D5');
+        $discount->setType($type);
+        $discount->setValue(50);
+        $discount->setScope(PromotionDiscountEntity::SCOPE_CART);
+        $discount->setConsiderAdvancedRules(false);
+
+        $builder = new PromotionItemBuilder();
+
+        $item = $builder->buildDiscountLineItem(
+            '',
+            $this->promotion,
+            $discount,
+            'C1'
+        );
+
+        /** @var AbsolutePriceDefinition $definition */
+        $definition = $item->getPriceDefinition();
+
+        static::assertEquals(-50, $definition->getPrice());
+    }
+
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function getDefaultCurrencyDataProvider(): iterable
+    {
+        yield 'absolute' => [PromotionDiscountEntity::TYPE_ABSOLUTE];
+        yield 'fixed' => [PromotionDiscountEntity::TYPE_FIXED];
+        yield 'fixed_unit' => [PromotionDiscountEntity::TYPE_FIXED_UNIT];
+    }
+
+    /**
+     * just get a ruleEntity with ID R1
+     */
+    private function getFakeRule(int $amount, string $operator): LineItemUnitPriceRule
+    {
+        return (new LineItemUnitPriceRule())->assign(['amount' => $amount, 'operator' => $operator]);
+    }
+}

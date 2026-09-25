@@ -1,0 +1,118 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\Error\ErrorCollection;
+use Shopwell\Core\Checkout\Cart\Error\GenericCartError;
+use Shopwell\Core\Checkout\Cart\Exception\InvalidCartException;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Exception\UnsupportedOperatorException;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(CartException::class)]
+class CartExceptionTest extends TestCase
+{
+    public function testInvalidPriceFieldType(): void
+    {
+        $e = CartException::invalidPriceFieldTypeException('badType');
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getStatusCode());
+        static::assertSame(CartException::INVALID_PRICE_FIELD_TYPE, $e->getErrorCode());
+        static::assertSame('The price field does not contain a valid "type" value. Received badType', $e->getMessage());
+    }
+
+    public function testDeliveryDateNotSupportedUnit(): void
+    {
+        $e = CartException::deliveryDateNotSupportedUnit('badUnit');
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getStatusCode());
+        static::assertSame(CartException::CART_DELIVERY_DATE_NOT_SUPPORTED_UNIT, $e->getErrorCode());
+        static::assertSame('Not supported unit badUnit', $e->getMessage());
+    }
+
+    public function testShippingMethodNotFound(): void
+    {
+        $e = CartException::shippingMethodNotFound('shipping-method-id');
+        static::assertSame('Could not find shipping method with id "shipping-method-id"', $e->getMessage());
+    }
+
+    public function testUnsupportedOperator(): void
+    {
+        $e = CartException::unsupportedOperator('$', 'testClass');
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $e->getStatusCode());
+        static::assertSame(CartException::RULE_OPERATOR_NOT_SUPPORTED, $e->getErrorCode());
+        static::assertSame('Unsupported operator $ in testClass', $e->getMessage());
+    }
+
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testUnsupportedOperatorDeprecated(): void
+    {
+        $e = CartException::unsupportedOperator('$', 'testClass');
+
+        static::assertInstanceOf(UnsupportedOperatorException::class, $e);
+        static::assertSame(Response::HTTP_BAD_REQUEST, $e->getStatusCode());
+        static::assertSame('CONTENT__RULE_OPERATOR_NOT_SUPPORTED', $e->getErrorCode());
+        static::assertSame('Unsupported operator $ in testClass', $e->getMessage());
+    }
+
+    public function testWrongCartDataType(): void
+    {
+        $fieldKey = 'some-field';
+        $expectedType = 'string';
+        $e = CartException::wrongCartDataType($fieldKey, $expectedType);
+        static::assertSame(Response::HTTP_BAD_REQUEST, $e->getStatusCode());
+        static::assertSame(CartException::CART_WRONG_DATA_TYPE, $e->getErrorCode());
+        static::assertSame('Cart data some-field does not match expected type "string"', $e->getMessage());
+    }
+
+    public function testInvalidCart(): void
+    {
+        $errors = new ErrorCollection([
+            new GenericCartError('error-id', 'message-key', [], 1, false, false, false),
+        ]);
+
+        $exception = CartException::invalidCart($errors);
+
+        static::assertInstanceOf(InvalidCartException::class, $exception);
+        static::assertSame(CartException::CART_INVALID_CODE, $exception->getErrorCode());
+        static::assertStringContainsString('The cart is invalid, got 1 error(s):', $exception->getMessage());
+        static::assertStringContainsString('error-id', $exception->getMessage());
+    }
+
+    public function testInvalidQuantity(): void
+    {
+        $e = CartException::invalidQuantity(0);
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $e->getStatusCode());
+        static::assertSame(CartException::CART_INVALID_LINE_ITEM_QUANTITY_CODE, $e->getErrorCode());
+        static::assertSame('The quantity must be a positive integer. Given: "0"', $e->getMessage());
+    }
+
+    public function testInvalidChildQuantity(): void
+    {
+        $e = CartException::invalidChildQuantity(1, 2);
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $e->getStatusCode());
+        static::assertSame(CartException::CART_INVALID_CHILD_LINE_ITEM_QUANTITY_CODE, $e->getErrorCode());
+        static::assertSame('The quantity of a child "1" must be a multiple of the parent quantity "2"', $e->getMessage());
+    }
+
+    public function testInvalidChildQuantityHasDedicatedErrorCode(): void
+    {
+        // regression: both exceptions previously shared CART_INVALID_LINE_ITEM_QUANTITY_CODE, which broke
+        // the "%quantity%" placeholder of the shared storefront message for the child quantity case.
+        static::assertNotSame(
+            CartException::invalidQuantity(0)->getErrorCode(),
+            CartException::invalidChildQuantity(1, 2)->getErrorCode()
+        );
+    }
+}

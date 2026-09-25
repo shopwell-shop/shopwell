@@ -1,0 +1,190 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Update\Services;
+
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Store\Services\AbstractExtensionDataProvider;
+use Shopwell\Core\Framework\Store\Services\StoreClient;
+use Shopwell\Core\Framework\Store\Struct\ExtensionCollection;
+use Shopwell\Core\Framework\Store\Struct\ExtensionStruct;
+use Shopwell\Core\Framework\Update\Services\ExtensionCompatibility;
+use Shopwell\Core\Framework\Update\Struct\Version;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(ExtensionCompatibility::class)]
+class ExtensionCompatibilityTest extends TestCase
+{
+    #[DataProvider('statusProvider')]
+    public function testGetExtension(string $file, string $statusName, ?string $statusColor): void
+    {
+        $storeClient = static::createStub(StoreClient::class);
+        $storeClient->method('getExtensionCompatibilities')->willReturn(json_decode((string) file_get_contents($file), true, 512, \JSON_THROW_ON_ERROR));
+
+        $pluginCompatibility = new ExtensionCompatibility(
+            $storeClient,
+            $this->getExtensionDataProvider(),
+            new EventDispatcher()
+        );
+
+        $version = new Version();
+        $version->assign([
+            'version' => '6.6.0.0',
+        ]);
+
+        $getExtensionCompatibilities = $pluginCompatibility->getExtensionCompatibilities($version, Context::createDefaultContext());
+
+        static::assertSame($statusName, $getExtensionCompatibilities[0]['statusName']);
+        static::assertSame($statusColor, $getExtensionCompatibilities[0]['statusColor']);
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: string, 2: string|null}>
+     */
+    public static function statusProvider(): iterable
+    {
+        yield 'future' => [
+            __DIR__ . './../_fixtures/responses/extension-yellow.json',
+            'updatableFuture',
+            'yellow',
+        ];
+
+        yield 'green' => [
+            __DIR__ . './../_fixtures/responses/extension-green.json',
+            'compatible',
+            null,
+        ];
+
+        yield 'red' => [
+            __DIR__ . './../_fixtures/responses/extension-red.json',
+            'notCompatible',
+            null,
+        ];
+    }
+
+    public function testGetExtensionWhenInvalidVersion(): void
+    {
+        $storeClient = static::createStub(StoreClient::class);
+        $storeClient
+            ->method('getExtensionCompatibilities')
+            ->willThrowException(new ClientException('test', new Request('GET', '/'), new Response(400)));
+
+        $pluginCompatibility = new ExtensionCompatibility(
+            $storeClient,
+            $this->getExtensionDataProvider(),
+            new EventDispatcher()
+        );
+
+        $version = new Version();
+        $version->assign([
+            'version' => '6.6.0.0',
+        ]);
+
+        $getExtensionCompatibilities = $pluginCompatibility->getExtensionCompatibilities($version, Context::createDefaultContext());
+
+        static::assertSame('notInStore', $getExtensionCompatibilities[0]['statusName']);
+        static::assertNull($getExtensionCompatibilities[0]['statusColor']);
+    }
+
+    public function testGetExtensionWhenOtherException(): void
+    {
+        $storeClient = static::createStub(StoreClient::class);
+        $storeClient
+            ->method('getExtensionCompatibilities')
+            ->willThrowException(new ClientException('test', new Request('GET', '/'), new Response(500)));
+
+        $pluginCompatibility = new ExtensionCompatibility(
+            $storeClient,
+            $this->getExtensionDataProvider(),
+            new EventDispatcher()
+        );
+
+        static::expectException(ClientException::class);
+        $pluginCompatibility->getExtensionCompatibilities(new Version(), Context::createDefaultContext());
+    }
+
+    public function testExtensionsToDeactivateNoFilter(): void
+    {
+        $pluginCompatibility = new ExtensionCompatibility(
+            $this->getStoreClient(),
+            $this->getExtensionDataProvider(),
+            new EventDispatcher()
+        );
+
+        static::assertEmpty($pluginCompatibility->getExtensionsToDeactivate(new Version(), Context::createDefaultContext(), ExtensionCompatibility::PLUGIN_DEACTIVATION_FILTER_NONE));
+    }
+
+    public function testExtensionsToDeactivateAll(): void
+    {
+        $pluginCompatibility = new ExtensionCompatibility(
+            $this->getStoreClient(),
+            $this->getExtensionDataProvider(),
+            new EventDispatcher()
+        );
+
+        $extensionStructs = $pluginCompatibility->getExtensionsToDeactivate(new Version(), Context::createDefaultContext(), ExtensionCompatibility::PLUGIN_DEACTIVATION_FILTER_ALL);
+
+        static::assertCount(1, $extensionStructs);
+        static::assertSame('TestApp', $extensionStructs[0]->getName());
+    }
+
+    public function testExtensionsToDeactivateOnlyInCompatibleWithInCompatible(): void
+    {
+        $pluginCompatibility = new ExtensionCompatibility(
+            $this->getStoreClient(__DIR__ . './../_fixtures/responses/extension-yellow.json'),
+            $this->getExtensionDataProvider(),
+            new EventDispatcher()
+        );
+
+        $extensionStructs = $pluginCompatibility->getExtensionsToDeactivate(new Version(), Context::createDefaultContext());
+
+        static::assertCount(1, $extensionStructs);
+        static::assertSame('TestApp', $extensionStructs[0]->getName());
+    }
+
+    public function testExtensionsToDeactivateOnlyInCompatible(): void
+    {
+        $pluginCompatibility = new ExtensionCompatibility(
+            $this->getStoreClient(__DIR__ . './../_fixtures/responses/extension-green.json'),
+            $this->getExtensionDataProvider(),
+            new EventDispatcher()
+        );
+
+        $extensionStructs = $pluginCompatibility->getExtensionsToDeactivate(new Version(), Context::createDefaultContext());
+
+        static::assertCount(0, $extensionStructs);
+    }
+
+    public function getExtensionDataProvider(): AbstractExtensionDataProvider&Stub
+    {
+        $extension = new ExtensionStruct();
+        $extension->setName('TestApp');
+        $extension->setActive(true);
+
+        $extensionDataProvider = static::createStub(AbstractExtensionDataProvider::class);
+        $extensionDataProvider
+            ->method('getInstalledExtensions')
+            ->willReturn(new ExtensionCollection(['TestApp' => $extension]));
+
+        return $extensionDataProvider;
+    }
+
+    public function getStoreClient(string $file = __DIR__ . './../_fixtures/responses/extension-red.json'): StoreClient&Stub
+    {
+        $storeClient = static::createStub(StoreClient::class);
+        $storeClient->method('getExtensionCompatibilities')->willReturn(json_decode((string) file_get_contents($file), true, 512, \JSON_THROW_ON_ERROR));
+
+        return $storeClient;
+    }
+}

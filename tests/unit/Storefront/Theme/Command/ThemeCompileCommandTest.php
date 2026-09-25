@@ -1,0 +1,359 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Storefront\Theme\Command;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Storefront\Theme\Command\ThemeCompileCommand;
+use Shopwell\Storefront\Theme\ConfigLoader\AbstractAvailableThemeProvider;
+use Shopwell\Storefront\Theme\ThemeService;
+use Shopwell\Storefront\Theme\UnusedThemeDirectoryDeleter;
+use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\Console\Tester\CommandTester;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[CoversClass(ThemeCompileCommand::class)]
+class ThemeCompileCommandTest extends TestCase
+{
+    #[DataProvider('getOptionsValue')]
+    public function testItNegatesKeepAssetsOptionWhenPassed(bool $keepAssetsOption): void
+    {
+        $salesChannelId = 'sales-channel-id';
+        $themeId = 'theme-id';
+
+        $themeService = static::createMock(ThemeService::class);
+        $themeService->expects($this->once())
+            ->method('compileTheme')
+            ->with($salesChannelId, $themeId, static::anything(), null, !$keepAssetsOption);
+
+        $themeProvider = static::createMock(AbstractAvailableThemeProvider::class);
+        $themeProvider->expects($this->once())
+            ->method('load')
+            ->with(static::anything(), false)
+            ->willReturn([$salesChannelId => $themeId]);
+
+        $commandTester = new CommandTester(new ThemeCompileCommand($themeService, $themeProvider, new NativeClock(), static::createStub(UnusedThemeDirectoryDeleter::class)));
+
+        $commandTester->execute(['--keep-assets' => $keepAssetsOption]);
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    #[DataProvider('getOptionsValue')]
+    public function testItPassesActiveOnlyFlagCorrectly(bool $activeOnly): void
+    {
+        $themeService = static::createStub(ThemeService::class);
+
+        $themeProvider = static::createMock(AbstractAvailableThemeProvider::class);
+        $themeProvider->expects($this->once())
+            ->method('load')
+            ->with(static::anything(), $activeOnly)
+            ->willReturn([]);
+
+        $commandTester = new CommandTester(new ThemeCompileCommand($themeService, $themeProvider, new NativeClock(), static::createStub(UnusedThemeDirectoryDeleter::class)));
+
+        $commandTester->execute(['--active-only' => $activeOnly]);
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    public function testItSetsSyncThemeCompileContextState(): void
+    {
+        $salesChannelId = 'sales-channel-id';
+        $themeId = 'theme-id';
+
+        $context = Context::createDefaultContext();
+        $context->addState(ThemeService::STATE_NO_QUEUE);
+
+        $themeService = static::createMock(ThemeService::class);
+        $themeService->expects($this->once())
+            ->method('compileTheme')
+            ->with($salesChannelId, $themeId, $context);
+
+        $themeProvider = static::createMock(AbstractAvailableThemeProvider::class);
+        $themeProvider->expects($this->once())
+            ->method('load')
+            ->with(static::anything(), false)
+            ->willReturn([$salesChannelId => $themeId]);
+
+        $commandTester = new CommandTester(new ThemeCompileCommand($themeService, $themeProvider, new NativeClock(), static::createStub(UnusedThemeDirectoryDeleter::class)));
+
+        $commandTester->execute(['--sync' => true]);
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    public function testItPassesSkipSalesChannelFlagCorrectly(): void
+    {
+        $salesChannelIdSkip1 = 'sales-channel-id1';
+        $salesChannelIdSkip2 = 'sales-channel-id2';
+        $salesChannelIdIncluded1 = 'sales-channel-id3';
+        $salesChannelIdIncluded2 = 'sales-channel-id4';
+        $themeId = 'theme-id';
+
+        $themeProvider = static::createMock(AbstractAvailableThemeProvider::class);
+        $themeProvider->expects($this->once())
+            ->method('load')
+            ->with(static::anything(), false)
+            ->willReturn([
+                $salesChannelIdSkip1 => $themeId,
+                $salesChannelIdSkip2 => $themeId,
+                $salesChannelIdIncluded1 => $themeId,
+                $salesChannelIdIncluded2 => $themeId,
+            ]);
+
+        $themeService = static::createMock(ThemeService::class);
+        $themeService->expects($this->exactly(2))
+            ->method('compileTheme')
+            ->willReturnCallback(
+                static function (
+                    string $actualSalesChannelId,
+                    string $actualThemeId
+                ) use (
+                    $themeId,
+                    $salesChannelIdIncluded1,
+                    $salesChannelIdIncluded2
+                ): void {
+                    static::assertSame($themeId, $actualThemeId);
+                    static::assertContains(
+                        $actualSalesChannelId,
+                        [$salesChannelIdIncluded1, $salesChannelIdIncluded2]
+                    );
+                }
+            );
+
+        $commandTester = new CommandTester(new ThemeCompileCommand($themeService, $themeProvider, new NativeClock(), static::createStub(UnusedThemeDirectoryDeleter::class)));
+
+        $commandTester->execute(['--skip' => [$salesChannelIdSkip1, $salesChannelIdSkip2]]);
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    public function testItPassesOnlySalesChannelFlagCorrectly(): void
+    {
+        $salesChannelIdSkip1 = 'sales-channel-id1';
+        $salesChannelIdSkip2 = 'sales-channel-id2';
+        $salesChannelIdIncluded1 = 'sales-channel-id3';
+        $salesChannelIdIncluded2 = 'sales-channel-id4';
+        $themeId = 'theme-id';
+
+        $themeProvider = static::createMock(AbstractAvailableThemeProvider::class);
+        $themeProvider->expects($this->once())
+            ->method('load')
+            ->with(static::anything(), false)
+            ->willReturn([
+                $salesChannelIdSkip1 => $themeId,
+                $salesChannelIdSkip2 => $themeId,
+                $salesChannelIdIncluded1 => $themeId,
+                $salesChannelIdIncluded2 => $themeId,
+            ]);
+
+        $themeService = static::createMock(ThemeService::class);
+        $themeService->expects($this->exactly(2))
+            ->method('compileTheme')
+            ->willReturnCallback(
+                static function (
+                    string $actualSalesChannelId,
+                    string $actualThemeId
+                ) use (
+                    $themeId,
+                    $salesChannelIdIncluded1,
+                    $salesChannelIdIncluded2
+                ): void {
+                    static::assertSame($themeId, $actualThemeId);
+                    static::assertContains(
+                        $actualSalesChannelId,
+                        [$salesChannelIdIncluded1, $salesChannelIdIncluded2]
+                    );
+                }
+            );
+
+        $commandTester = new CommandTester(new ThemeCompileCommand($themeService, $themeProvider, new NativeClock(), static::createStub(UnusedThemeDirectoryDeleter::class)));
+
+        $commandTester->execute(['--only' => [$salesChannelIdIncluded1, $salesChannelIdIncluded2]]);
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    public function testItPassesSkipThemeFlagCorrectly(): void
+    {
+        $salesChannelIdSkip1 = 'sales-channel-id1';
+        $salesChannelIdSkip2 = 'sales-channel-id2';
+        $salesChannelIdIncluded1 = 'sales-channel-id3';
+        $salesChannelIdIncluded2 = 'sales-channel-id4';
+        $themeIdSkip = 'theme-id-skip';
+        $themeIdIncluded = 'theme-id-included';
+
+        $themeProvider = static::createMock(AbstractAvailableThemeProvider::class);
+        $themeProvider->expects($this->once())
+            ->method('load')
+            ->with(static::anything(), false)
+            ->willReturn([
+                $salesChannelIdSkip1 => $themeIdSkip,
+                $salesChannelIdSkip2 => $themeIdSkip,
+                $salesChannelIdIncluded1 => $themeIdIncluded,
+                $salesChannelIdIncluded2 => $themeIdIncluded,
+            ]);
+
+        $themeService = static::createMock(ThemeService::class);
+        $themeService->expects($this->exactly(2))
+            ->method('compileTheme')
+            ->willReturnCallback(
+                static function (
+                    string $actualSalesChannelId,
+                    string $actualThemeId
+                ) use (
+                    $themeIdIncluded,
+                    $salesChannelIdIncluded1,
+                    $salesChannelIdIncluded2
+                ): void {
+                    static::assertSame($themeIdIncluded, $actualThemeId);
+                    static::assertContains(
+                        $actualSalesChannelId,
+                        [$salesChannelIdIncluded1, $salesChannelIdIncluded2]
+                    );
+                }
+            );
+
+        $commandTester = new CommandTester(new ThemeCompileCommand($themeService, $themeProvider, new NativeClock(), static::createStub(UnusedThemeDirectoryDeleter::class)));
+
+        $commandTester->execute(['--skip-themes' => [$themeIdSkip]]);
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    public function testItPassesOnlyThemeFlagCorrectly(): void
+    {
+        $salesChannelIdSkip1 = 'sales-channel-id1';
+        $salesChannelIdSkip2 = 'sales-channel-id2';
+        $salesChannelIdIncluded1 = 'sales-channel-id3';
+        $salesChannelIdIncluded2 = 'sales-channel-id4';
+        $themeIdSkip = 'theme-id-skip';
+        $themeIdIncluded = 'theme-id-included';
+
+        $themeProvider = static::createMock(AbstractAvailableThemeProvider::class);
+        $themeProvider->expects($this->once())
+            ->method('load')
+            ->with(static::anything(), false)
+            ->willReturn([
+                $salesChannelIdSkip1 => $themeIdSkip,
+                $salesChannelIdSkip2 => $themeIdSkip,
+                $salesChannelIdIncluded1 => $themeIdIncluded,
+                $salesChannelIdIncluded2 => $themeIdIncluded,
+            ]);
+
+        $themeService = static::createMock(ThemeService::class);
+        $themeService->expects($this->exactly(2))
+            ->method('compileTheme')
+            ->willReturnCallback(
+                static function (
+                    string $actualSalesChannelId,
+                    string $actualThemeId
+                ) use (
+                    $themeIdIncluded,
+                    $salesChannelIdIncluded1,
+                    $salesChannelIdIncluded2
+                ): void {
+                    static::assertSame($themeIdIncluded, $actualThemeId);
+                    static::assertContains(
+                        $actualSalesChannelId,
+                        [$salesChannelIdIncluded1, $salesChannelIdIncluded2]
+                    );
+                }
+            );
+
+        $commandTester = new CommandTester(new ThemeCompileCommand($themeService, $themeProvider, new NativeClock(), static::createStub(UnusedThemeDirectoryDeleter::class)));
+
+        $commandTester->execute(['--only-themes' => [$themeIdIncluded]]);
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    public function testItFailsWithContradictingSalesChannelArgs(): void
+    {
+        $themeProvider = static::createMock(AbstractAvailableThemeProvider::class);
+        $themeProvider->expects($this->never())
+            ->method('load');
+
+        $themeService = static::createMock(ThemeService::class);
+        $themeService->expects($this->never())
+            ->method('compileTheme');
+
+        $commandTester = new CommandTester(new ThemeCompileCommand($themeService, $themeProvider, new NativeClock(), static::createStub(UnusedThemeDirectoryDeleter::class)));
+
+        $salesChannelId = Uuid::randomHex();
+        $commandTester->execute([
+            '--only' => [$salesChannelId],
+            '--skip' => [$salesChannelId],
+        ]);
+        static::assertSame(1, $commandTester->getStatusCode());
+    }
+
+    public function testItFailsWithContradictingThemeArgs(): void
+    {
+        $themeProvider = static::createMock(AbstractAvailableThemeProvider::class);
+        $themeProvider->expects($this->never())
+            ->method('load');
+
+        $themeService = static::createMock(ThemeService::class);
+        $themeService->expects($this->never())
+            ->method('compileTheme');
+
+        $commandTester = new CommandTester(new ThemeCompileCommand($themeService, $themeProvider, new NativeClock(), static::createStub(UnusedThemeDirectoryDeleter::class)));
+
+        $themeId = Uuid::randomHex();
+        $commandTester->execute([
+            '--only-themes' => [$themeId],
+            '--skip-themes' => [$themeId],
+        ]);
+        static::assertSame(1, $commandTester->getStatusCode());
+    }
+
+    public function testItDeletesUnusedThemeFilesAfterCompilation(): void
+    {
+        $themeService = static::createStub(ThemeService::class);
+
+        $themeProvider = static::createMock(AbstractAvailableThemeProvider::class);
+        $themeProvider->expects($this->once())
+            ->method('load')
+            ->willReturn(['sales-channel-id' => 'theme-id']);
+
+        $unusedThemeFilesDeleter = static::createMock(UnusedThemeDirectoryDeleter::class);
+        $unusedThemeFilesDeleter->expects($this->once())
+            ->method('deleteUnusedDirectories')
+            ->willReturn(3);
+
+        $commandTester = new CommandTester(new ThemeCompileCommand($themeService, $themeProvider, new NativeClock(), $unusedThemeFilesDeleter));
+
+        $commandTester->execute([]);
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    public function testItSkipsCleanupWhenNoCleanupOptionIsPassed(): void
+    {
+        $themeService = static::createStub(ThemeService::class);
+
+        $themeProvider = static::createMock(AbstractAvailableThemeProvider::class);
+        $themeProvider->expects($this->once())
+            ->method('load')
+            ->willReturn(['sales-channel-id' => 'theme-id']);
+
+        $unusedThemeFilesDeleter = static::createMock(UnusedThemeDirectoryDeleter::class);
+        $unusedThemeFilesDeleter->expects($this->never())
+            ->method('deleteUnusedDirectories');
+
+        $commandTester = new CommandTester(new ThemeCompileCommand($themeService, $themeProvider, new NativeClock(), $unusedThemeFilesDeleter));
+
+        $commandTester->execute(['--no-cleanup' => true]);
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    /**
+     * @return iterable<array<bool>>
+     */
+    public static function getOptionsValue(): iterable
+    {
+        yield [true];
+        yield [false];
+    }
+}

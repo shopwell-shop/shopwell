@@ -1,0 +1,17 @@
+services:
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Type\CollectionHasSpecifyingExtension
+        tags:
+            - phpstan.typeSpecifier.methodTypeSpecifyingExtension
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Type\FuturePropertyTypeExtension
+        tags:
+            - phpstan.broker.expressionTypeResolverExtension
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Type\EntityExistenceHasEntityNameSpecifyingExtension
+        tags:
+            - phpstan.typeSpecifier.methodTypeSpecifyingExtension
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Type\FieldIsSpecifyingExtension
+        tags:
+            - phpstan.typeSpecifier.methodTypeSpecifyingExtension

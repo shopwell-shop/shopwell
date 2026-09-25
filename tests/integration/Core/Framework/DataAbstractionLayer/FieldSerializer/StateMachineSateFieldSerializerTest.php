@@ -1,0 +1,141 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\FieldSerializer;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\Order\OrderStates;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteException;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\TestDefaults;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class StateMachineSateFieldSerializerTest extends TestCase
+{
+    use DatabaseTransactionBehaviour;
+    use KernelTestBehaviour;
+
+    /**
+     * @var EntityRepository<OrderCollection>
+     */
+    private EntityRepository $orderRepository;
+
+    private Context $context;
+
+    private Connection $connection;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->orderRepository = static::getContainer()->get('order.repository');
+        $this->connection = static::getContainer()->get(Connection::class);
+        $this->context = Context::createDefaultContext();
+    }
+
+    public function testChangingStateMachineStateIdThroughRepositoryIsNotAllowedWhenWrongScope(): void
+    {
+        $payload = $this->createOrderPayload();
+        $this->orderRepository->create([$payload], $this->context);
+
+        $this->expectException(WriteException::class);
+        $this->expectExceptionMessageMatches('|There are 1 error\\(s\\) while writing data\\.|');
+        $this->expectExceptionMessageMatches(
+            '|\\[/0/stateId\\] Changing the state-machine-state of this entity is not allowed for scope user\\. '
+            . 'Either change the state-machine-state via a state-transition or use a different scope\\.|'
+        );
+
+        $this->context->scope(Context::USER_SCOPE, function (Context $context) use ($payload): void {
+            $this->orderRepository->update([
+                [
+                    'id' => $payload['id'],
+                    'stateId' => $this->fetchOrderStateId(OrderStates::STATE_COMPLETED),
+                ],
+            ], $context);
+        });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function createOrderPayload(): array
+    {
+        $addressId = Uuid::randomHex();
+
+        return [
+            'id' => Uuid::randomHex(),
+            'itemRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+            'totalRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+            'orderDateTime' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            'price' => new CartPrice(10, 10, 10, new CalculatedTaxCollection(), new TaxRuleCollection(), CartPrice::TAX_STATE_NET),
+            'shippingCosts' => new CalculatedPrice(10, 10, new CalculatedTaxCollection(), new TaxRuleCollection()),
+            'orderCustomer' => [
+                'id' => Uuid::randomHex(),
+                'email' => 'test@example.com',
+                'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                'firstName' => 'Max',
+                'lastName' => 'Mustermann',
+            ],
+            'stateId' => $this->fetchOrderStateId(OrderStates::STATE_OPEN),
+            'paymentMethodId' => $this->fetchFirstIdFromTable('payment_method'),
+            'currencyId' => Defaults::CURRENCY,
+            'currencyFactor' => 1.0,
+            'salesChannelId' => TestDefaults::SALES_CHANNEL,
+            'billingAddressId' => $addressId,
+            'addresses' => [
+                [
+                    'id' => $addressId,
+                    'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                    'firstName' => 'Max',
+                    'lastName' => 'Mustermann',
+                    'street' => 'Ebbinghoff 10',
+                    'zipcode' => '48624',
+                    'city' => 'Schöppingen',
+                    'countryId' => $this->fetchFirstIdFromTable('country'),
+                ],
+            ],
+            'lineItems' => [],
+            'deliveries' => [],
+            'context' => '{}',
+            'payload' => '{}',
+        ];
+    }
+
+    private function fetchFirstIdFromTable(string $table): string
+    {
+        return Uuid::fromBytesToHex((string) $this->connection->fetchOne('SELECT id FROM ' . $table . ' LIMIT 1'));
+    }
+
+    private function fetchOrderStateId(string $orderStateTechnicalName): string
+    {
+        $id = $this->connection->fetchOne(
+            'SELECT state_machine_state.id
+            FROM state_machine_state
+            JOIN state_machine ON state_machine_state.state_machine_id = state_machine.id
+            WHERE
+                state_machine.technical_name = :orderStateMachineTechnicalName
+                AND state_machine_state.technical_name = :orderStateTechnicalName',
+            [
+                'orderStateMachineTechnicalName' => OrderStates::STATE_MACHINE,
+                'orderStateTechnicalName' => $orderStateTechnicalName,
+            ]
+        );
+
+        return Uuid::fromBytesToHex((string) $id);
+    }
+}

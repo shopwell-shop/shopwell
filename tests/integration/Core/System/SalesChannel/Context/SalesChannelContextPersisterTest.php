@@ -1,0 +1,552 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\System\SalesChannel\Context;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\CartPersister;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
+use Shopwell\Core\Framework\Util\Random;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopwell\Core\Test\Generator;
+use Shopwell\Core\Test\TestDefaults;
+use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class SalesChannelContextPersisterTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+    use SalesChannelApiTestBehaviour;
+
+    private Connection $connection;
+
+    private SalesChannelContextPersister $contextPersister;
+
+    protected function setUp(): void
+    {
+        $this->connection = static::getContainer()->get(Connection::class);
+        $eventDispatcher = new EventDispatcher();
+        $this->contextPersister = new SalesChannelContextPersister($this->connection, $eventDispatcher, static::getContainer()->get(CartPersister::class), new NativeClock());
+    }
+
+    public function testLoad(): void
+    {
+        $token = Random::getAlphanumericString(32);
+        $expected = [
+            'key' => 'value',
+            'token' => $token,
+            'expired' => false,
+        ];
+
+        $this->connection->insert('sales_channel_api_context', [
+            'token' => $token,
+            'payload' => json_encode($expected),
+            'sales_channel_id' => Uuid::fromHexToBytes(TestDefaults::SALES_CHANNEL),
+        ]);
+
+        static::assertSame($expected, $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL));
+    }
+
+    public function testLoadPromotesCustomerIdFromColumnWhenMissingInPayload(): void
+    {
+        $token = Random::getAlphanumericString(32);
+        $customerId = $this->createCustomer();
+
+        $this->connection->insert('sales_channel_api_context', [
+            'token' => $token,
+            'payload' => json_encode([], \JSON_THROW_ON_ERROR),
+            'sales_channel_id' => Uuid::fromHexToBytes(TestDefaults::SALES_CHANNEL),
+            'customer_id' => Uuid::fromHexToBytes($customerId),
+            'updated_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ]);
+
+        $result = $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL);
+
+        static::assertSame($customerId, $result[SalesChannelContextService::CUSTOMER_ID]);
+        static::assertSame($token, $result['token']);
+        static::assertFalse($result['expired']);
+    }
+
+    public function testLoadKeepsPayloadCustomerIdWhenColumnDiffersOrIsNull(): void
+    {
+        $tokenWithNullColumn = Random::getAlphanumericString(32);
+        $tokenWithDifferentColumn = Random::getAlphanumericString(32);
+        $payloadCustomerId = $this->createCustomer();
+        $columnCustomerId = $this->createCustomer();
+
+        $this->connection->insert('sales_channel_api_context', [
+            'token' => $tokenWithNullColumn,
+            'payload' => json_encode(['customerId' => $payloadCustomerId], \JSON_THROW_ON_ERROR),
+            'sales_channel_id' => Uuid::fromHexToBytes(TestDefaults::SALES_CHANNEL),
+            'customer_id' => null,
+            'updated_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ]);
+        $this->connection->insert('sales_channel_api_context', [
+            'token' => $tokenWithDifferentColumn,
+            'payload' => json_encode(['customerId' => $payloadCustomerId], \JSON_THROW_ON_ERROR),
+            'sales_channel_id' => Uuid::fromHexToBytes(TestDefaults::SALES_CHANNEL),
+            'customer_id' => Uuid::fromHexToBytes($columnCustomerId),
+            'updated_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ]);
+
+        static::assertSame(
+            $payloadCustomerId,
+            $this->contextPersister->load($tokenWithNullColumn, TestDefaults::SALES_CHANNEL)[SalesChannelContextService::CUSTOMER_ID]
+        );
+        static::assertSame(
+            $payloadCustomerId,
+            $this->contextPersister->load($tokenWithDifferentColumn, TestDefaults::SALES_CHANNEL)[SalesChannelContextService::CUSTOMER_ID]
+        );
+    }
+
+    public function testLoadByCustomerId(): void
+    {
+        $token = Uuid::randomHex();
+        $customerId = $this->createCustomer();
+        $this->contextPersister->save($token, [], TestDefaults::SALES_CHANNEL, $customerId);
+
+        static::assertNotEmpty($result = $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL, $customerId));
+        static::assertSame($token, $result['token']);
+    }
+
+    public function testLoadNotExisting(): void
+    {
+        $token = Random::getAlphanumericString(32);
+
+        static::assertSame([], $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL));
+    }
+
+    public function testLoadCustomerNotExisting(): void
+    {
+        $customerId = Uuid::randomHex();
+        $token = Random::getAlphanumericString(32);
+
+        static::assertSame([], $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL, $customerId));
+    }
+
+    public function testLoadKeepsPayloadWhenTokenExpiresAndCustomerIdIsProvided(): void
+    {
+        $token = Random::getAlphanumericString(32);
+        $expected = $payload = [
+            'key' => 'value',
+            'anotherKey' => 'anotherValue',
+            'expired' => false,
+            'token' => $token,
+        ];
+
+        $this->contextPersister->save($token, $payload, TestDefaults::SALES_CHANNEL);
+
+        $this->makeTokenAge($token, 2);
+
+        // Load with customerId should keep the payload and just mark it as expired
+        $expected['expired'] = true;
+        static::assertSame($expected, $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL, Uuid::randomHex()));
+    }
+
+    public function testLoadWithdrawPayloadWhenTokenExpiresAndCustomerIdIsNotProvided(): void
+    {
+        $token = Random::getAlphanumericString(32);
+        $payload = [
+            'key' => 'value',
+            'anotherKey' => 'anotherValue',
+            'expired' => false,
+            'token' => $token,
+        ];
+
+        $this->contextPersister->save($token, $payload, TestDefaults::SALES_CHANNEL);
+
+        $this->makeTokenAge($token, 2);
+
+        // Everything except 'expired' and 'token' should be removed when loading without customerId
+        static::assertSame(['expired' => true, 'token' => $token], $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL));
+    }
+
+    public function testSaveWithoutExistingContext(): void
+    {
+        $token = Random::getAlphanumericString(32);
+        $expected = [
+            'key' => 'value',
+            'expired' => false,
+            'token' => $token,
+        ];
+
+        $this->contextPersister->save($token, $expected, TestDefaults::SALES_CHANNEL);
+
+        static::assertSame($expected, $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL));
+    }
+
+    public function testSaveNewCustomerContextWithoutExistingCustomer(): void
+    {
+        $token = Random::getAlphanumericString(32);
+        $payload = [
+            'key' => 'value',
+            'token' => $token,
+            'expired' => false,
+        ];
+
+        $customerId = $this->createCustomer();
+
+        $this->contextPersister->save($token, $payload, TestDefaults::SALES_CHANNEL, $customerId);
+
+        $result = $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL, $customerId);
+
+        static::assertNotEmpty($result);
+
+        $expected = $payload;
+        $expected[SalesChannelContextService::CUSTOMER_ID] = $customerId;
+
+        static::assertEquals($expected, $result);
+        static::assertSame($token, $result['token']);
+    }
+
+    public function testSaveMergesWithExisting(): void
+    {
+        $token = Random::getAlphanumericString(32);
+
+        $this->connection->insert('sales_channel_api_context', [
+            'token' => $token,
+            'payload' => json_encode([
+                'first' => 'test',
+                'second' => 'second test',
+            ]),
+            'sales_channel_id' => Uuid::fromHexToBytes(TestDefaults::SALES_CHANNEL),
+        ]);
+
+        $this->contextPersister->save(
+            $token,
+            [
+                'second' => 'overwritten',
+                'third' => 'third test',
+            ],
+            TestDefaults::SALES_CHANNEL
+        );
+
+        $expected = [
+            'expired' => false,
+            'first' => 'test',
+            'second' => 'overwritten',
+            'third' => 'third test',
+            'token' => $token,
+        ];
+
+        $actual = $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL);
+        ksort($actual);
+
+        static::assertSame($expected, $actual);
+    }
+
+    public function testSaveCustomerContextMergesWithExisting(): void
+    {
+        $token = Random::getAlphanumericString(32);
+
+        $customerId = $this->createCustomer();
+
+        $this->connection->insert('sales_channel_api_context', [
+            'token' => $token,
+            'payload' => json_encode([
+                'first' => 'test',
+                'second' => 'second test',
+            ]),
+            'sales_channel_id' => Uuid::fromHexToBytes(TestDefaults::SALES_CHANNEL),
+            'customer_id' => Uuid::fromHexToBytes($customerId),
+        ]);
+
+        $this->contextPersister->save($token, [
+            'second' => 'overwritten',
+            'third' => 'third test',
+        ], TestDefaults::SALES_CHANNEL, $customerId);
+
+        $expected = [
+            SalesChannelContextService::CUSTOMER_ID => $customerId,
+            'expired' => false,
+            'first' => 'test',
+            'second' => 'overwritten',
+            'third' => 'third test',
+            'token' => $token,
+        ];
+        $actual = $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL, $customerId);
+        ksort($actual);
+
+        static::assertSame($expected, $actual);
+    }
+
+    public function testSaveReplacesCustomerContextToken(): void
+    {
+        $customerId = $this->createCustomer();
+        $oldToken = Random::getAlphanumericString(32);
+        $newToken = Random::getAlphanumericString(32);
+
+        $this->contextPersister->save($oldToken, ['first' => 'value'], TestDefaults::SALES_CHANNEL, $customerId);
+        $this->contextPersister->save($newToken, ['second' => 'value'], TestDefaults::SALES_CHANNEL, $customerId);
+
+        static::assertFalse($this->contextExists($oldToken));
+        $context = $this->contextPersister->load($newToken, TestDefaults::SALES_CHANNEL, $customerId);
+        ksort($context);
+
+        static::assertSame(
+            [
+                SalesChannelContextService::CUSTOMER_ID => $customerId,
+                'expired' => false,
+                'first' => 'value',
+                'second' => 'value',
+                'token' => $newToken,
+            ],
+            $context
+        );
+    }
+
+    public function testSaveReplacesConflictingTokenAndCustomerContext(): void
+    {
+        $customerId = $this->createCustomer();
+        $token = Random::getAlphanumericString(32);
+        $customerToken = Random::getAlphanumericString(32);
+
+        $this->contextPersister->save($token, ['guest' => 'value'], TestDefaults::SALES_CHANNEL);
+        $this->contextPersister->save($customerToken, ['customer' => 'value'], TestDefaults::SALES_CHANNEL, $customerId);
+        $this->contextPersister->save($token, ['new' => 'value'], TestDefaults::SALES_CHANNEL, $customerId);
+
+        static::assertFalse($this->contextExists($customerToken));
+        $context = $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL, $customerId);
+        ksort($context);
+
+        static::assertSame(
+            [
+                'customer' => 'value',
+                SalesChannelContextService::CUSTOMER_ID => $customerId,
+                'expired' => false,
+                'new' => 'value',
+                'token' => $token,
+            ],
+            $context
+        );
+    }
+
+    public function testLoadSameCustomerOnDifferentSalesChannel(): void
+    {
+        $customerId = $this->createCustomer();
+
+        $salesChannel1 = $this->createSalesChannel([
+            'id' => Uuid::randomHex(),
+            'domains' => [
+                [
+                    'url' => 'http://test.en',
+                    'currencyId' => Defaults::CURRENCY,
+                    'languageId' => Defaults::LANGUAGE_SYSTEM,
+                    'snippetSetId' => $this->getRandomId('snippet_set'),
+                ],
+            ],
+        ]);
+
+        $salesChannel2 = $this->createSalesChannel([
+            'id' => Uuid::randomHex(),
+            'domains' => [
+                [
+                    'url' => 'http://test.de',
+                    'currencyId' => Defaults::CURRENCY,
+                    'languageId' => Defaults::LANGUAGE_SYSTEM,
+                    'snippetSetId' => $this->getRandomId('snippet_set'),
+                ],
+            ],
+        ]);
+
+        $token1 = Uuid::randomHex();
+        $token2 = Uuid::randomHex();
+
+        $this->contextPersister->save($token1, [], $salesChannel1['id'], $customerId);
+        $this->contextPersister->save($token2, [], $salesChannel2['id'], $customerId);
+
+        // Without saved context sales channel
+        static::assertEmpty($this->contextPersister->load($token1, TestDefaults::SALES_CHANNEL, $customerId));
+        static::assertEmpty($this->contextPersister->load($token2, TestDefaults::SALES_CHANNEL, $customerId));
+
+        $contextPayload1 = $this->contextPersister->load(Uuid::randomHex(), $salesChannel1['id'], $customerId);
+        static::assertNotEmpty($contextPayload1);
+        static::assertSame($token1, $contextPayload1['token']);
+
+        $contextPayload2 = $this->contextPersister->load(Uuid::randomHex(), $salesChannel2['id'], $customerId);
+
+        static::assertNotEmpty($contextPayload2);
+        static::assertSame($token2, $contextPayload2['token']);
+    }
+
+    public function testReplaceWithoutExistingContext(): void
+    {
+        $token = Random::getAlphanumericString(32);
+
+        $context = Generator::generateSalesChannelContext(overrides: ['customer' => null]);
+        $newToken = $this->contextPersister->replace($token, $context);
+
+        static::assertTrue($this->contextExists($newToken));
+        static::assertFalse($this->contextExists($token));
+    }
+
+    public function testSaveReplaceWithExistingContext(): void
+    {
+        $token = Random::getAlphanumericString(32);
+
+        $this->connection->insert('sales_channel_api_context', [
+            'token' => $token,
+            'payload' => json_encode([
+                'first' => 'test',
+                'second' => 'second test',
+            ]),
+            'sales_channel_id' => Uuid::fromHexToBytes(TestDefaults::SALES_CHANNEL),
+        ]);
+
+        $context = Generator::generateSalesChannelContext(overrides: ['customer' => null]);
+        $newToken = $this->contextPersister->replace($token, $context);
+
+        static::assertTrue($this->contextExists($newToken));
+        static::assertFalse($this->contextExists($token));
+    }
+
+    public function testReplaceUpdatesCartTokenToo(): void
+    {
+        $token = Random::getAlphanumericString(32);
+
+        $context = static::getContainer()->get(SalesChannelContextFactory::class)
+            ->create($token, TestDefaults::SALES_CHANNEL);
+
+        $cart = new Cart($token);
+        $cart->addLineItems(new LineItemCollection([new LineItem('test', 'test', Uuid::randomHex(), 10)]));
+        static::getContainer()->get(CartPersister::class)->save($cart, $context);
+
+        static::assertTrue($this->cartExists($token));
+
+        $newToken = $this->contextPersister->replace($token, $context);
+
+        static::assertTrue($this->cartExists($newToken));
+        static::assertFalse($this->cartExists($token));
+    }
+
+    public function testCustomerIdColumnIsBeingUsed(): void
+    {
+        $customerId = $this->createCustomer();
+        $token = Random::getAlphanumericString(32);
+
+        $this->connection->insert('sales_channel_api_context', [
+            'token' => $token,
+            'payload' => json_encode(['foo' => 'bar']),
+            'customer_id' => Uuid::fromHexToBytes($customerId),
+            'sales_channel_id' => Uuid::fromHexToBytes(TestDefaults::SALES_CHANNEL),
+        ]);
+
+        $this->contextPersister->revokeAllCustomerTokens($customerId);
+
+        static::assertNull($this->connection->fetchOne('SELECT customer_id FROM sales_channel_api_context'));
+    }
+
+    public static function tokenExpiringDataProvider(): \Generator
+    {
+        yield [0, 'P2D', false];
+        yield [1, 'P2D', false];
+        yield [3, 'P2D', true];
+        yield [0, 'P1D', false];
+        yield [2, 'P1D', true];
+    }
+
+    #[DataProvider('tokenExpiringDataProvider')]
+    public function testTokenExpiring(int $tokenAgeInDays, string $lifeTimeInterval, bool $expectedExpired): void
+    {
+        $persister = new SalesChannelContextPersister(
+            $this->connection,
+            static::createStub(EventDispatcher::class),
+            static::getContainer()->get(CartPersister::class),
+            new NativeClock(),
+            $lifeTimeInterval,
+        );
+        $token = Uuid::randomHex();
+
+        $customerId = $this->createCustomer();
+        $persister->save($token, [], TestDefaults::SALES_CHANNEL, $customerId);
+
+        $this->makeTokenAge($token, $tokenAgeInDays);
+
+        $result = $persister->load($token, TestDefaults::SALES_CHANNEL, $customerId);
+
+        static::assertSame($result['expired'], $expectedExpired);
+        static::assertSame($customerId, $result[SalesChannelContextService::CUSTOMER_ID]);
+    }
+
+    #[DataProvider('revokeTokensTestDataProvider')]
+    public function testRevokeTokens(string $token, ?string $preserveToken): void
+    {
+        $customerId = $this->createCustomer();
+        $this->contextPersister->save($token, [], TestDefaults::SALES_CHANNEL, $customerId);
+
+        // check token is valid here
+        static::assertNotEmpty($result = $this->contextPersister->load($token, TestDefaults::SALES_CHANNEL, $customerId));
+        static::assertSame($token, $result['token']);
+
+        if ($preserveToken) {
+            $this->contextPersister->revokeAllCustomerTokens($customerId, $preserveToken);
+        } else {
+            $this->contextPersister->revokeAllCustomerTokens($customerId);
+        }
+
+        if ($preserveToken) {
+            static::assertNotNull($this->connection->fetchOne('SELECT customer_id FROM sales_channel_api_context'));
+        } else {
+            static::assertNull($this->connection->fetchOne('SELECT customer_id FROM sales_channel_api_context'));
+        }
+    }
+
+    public static function revokeTokensTestDataProvider(): \Generator
+    {
+        yield [Uuid::randomHex(), ''];
+        yield [$token = Uuid::randomHex(), $token];
+    }
+
+    private function cartExists(string $token): bool
+    {
+        $result = (int) $this->connection->executeQuery(
+            'SELECT COUNT(*) FROM cart WHERE `token` = :token',
+            [
+                'token' => $token,
+            ]
+        )->fetchOne();
+
+        return $result > 0;
+    }
+
+    private function contextExists(string $token): bool
+    {
+        $result = (int) $this->connection->executeQuery(
+            'SELECT COUNT(*) FROM sales_channel_api_context WHERE `token` = :token',
+            [
+                'token' => $token,
+            ]
+        )->fetchOne();
+
+        return $result > 0;
+    }
+
+    /**
+     * Changes the age of a token by updating the updated_at field in the database.
+     */
+    private function makeTokenAge(string $token, int $tokenAgeInDays): void
+    {
+        if ($tokenAgeInDays !== 0) {
+            $this->connection->executeStatement(
+                'UPDATE sales_channel_api_context
+                SET updated_at = DATE_ADD(updated_at, INTERVAL :intervalInDays DAY)
+                WHERE token = :token',
+                ['intervalInDays' => -$tokenAgeInDays, 'token' => $token]
+            );
+        }
+    }
+}

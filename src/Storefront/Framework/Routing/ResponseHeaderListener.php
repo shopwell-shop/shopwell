@@ -1,0 +1,55 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Framework\Routing;
+
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\PlatformRequest;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class ResponseHeaderListener implements EventSubscriberInterface
+{
+    private const REMOVAL_HEADERS = [
+        PlatformRequest::HEADER_VERSION_ID,
+        PlatformRequest::HEADER_CONTEXT_TOKEN,
+        'Access-Control-Allow-Origin',
+        'Access-Control-Allow-Methods',
+        'Access-Control-Allow-Headers',
+        'Access-Control-Expose-Headers',
+    ];
+
+    /**
+     * @return array<string, array{0: string, 1: int}>
+     */
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            ResponseEvent::class => ['onResponse', -10],
+        ];
+    }
+
+    public function onResponse(ResponseEvent $event): void
+    {
+        $response = $event->getResponse();
+        /** @var list<string> $scopes */
+        $scopes = $event->getRequest()->attributes->get(PlatformRequest::ATTRIBUTE_ROUTE_SCOPE, []);
+
+        if (!\in_array(StorefrontRouteScope::ID, $scopes, true)) {
+            return;
+        }
+
+        $this->removeHeaders($response);
+    }
+
+    private function removeHeaders(Response $response): void
+    {
+        foreach (self::REMOVAL_HEADERS as $headerKey) {
+            $response->headers->remove($headerKey);
+        }
+    }
+}

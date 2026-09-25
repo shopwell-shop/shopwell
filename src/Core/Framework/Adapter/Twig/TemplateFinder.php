@@ -1,0 +1,188 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Adapter\Twig;
+
+use Shopwell\Core\Framework\Adapter\Twig\NamespaceHierarchy\NamespaceHierarchyBuilder;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Hasher;
+use Symfony\Contracts\Service\ResetInterface;
+use Twig\Cache\FilesystemCache;
+use Twig\Environment;
+use Twig\Error\LoaderError;
+use Twig\Loader\LoaderInterface;
+
+#[Package('framework')]
+class TemplateFinder implements TemplateFinderInterface, ResetInterface
+{
+    /**
+     * @var list<string>|null
+     */
+    private ?array $namespaceHierarchy = null;
+
+    /**
+     * Per-request cache of resolved template names. `find()` is invoked at runtime for every
+     * `sw_include`/`sw_icon`/`sw_thumbnails` execution, so the same arguments are resolved thousands
+     * of times per page. The result is deterministic within a request (stable hierarchy, immutable
+     * filesystem), so it is memoized and cleared on reset().
+     *
+     * @var array<string, string>
+     */
+    private array $resultCache = [];
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly Environment $twig,
+        private readonly LoaderInterface $loader,
+        private readonly string $cacheDir,
+        private readonly NamespaceHierarchyBuilder $namespaceHierarchyBuilder,
+        private readonly TemplateScopeDetector $templateScopeDetector,
+    ) {
+    }
+
+    public function getTemplateName(string $template): string
+    {
+        // remove static template inheritance prefix
+        if (mb_strpos($template, '@') !== 0) {
+            return $template;
+        }
+
+        $template = explode('/', $template);
+        array_shift($template);
+        $template = implode('/', $template);
+
+        return $template;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function find(string $template, $ignoreMissing = false, ?string $source = null): string
+    {
+        // Key on every input that influences the result. $ignoreMissing uses the same strict
+        // `=== true` semantics as the resolution logic below. A thrown LoaderError is not cached.
+        $cacheKey = $template . "\0" . ($source ?? '') . "\0" . ($ignoreMissing === true ? '1' : '0');
+
+        return $this->resultCache[$cacheKey] ??= $this->resolve($template, $ignoreMissing === true, $source);
+    }
+
+    public function reset(): void
+    {
+        $this->namespaceHierarchy = null;
+        $this->resultCache = [];
+    }
+
+    private function resolve(string $template, bool $ignoreMissing, ?string $source): string
+    {
+        $templatePath = $this->getTemplateName($template);
+        $sourcePath = $source ? $this->getTemplateName($source) : null;
+        $sourceBundleName = $source ? $this->getSourceBundleName($source) : null;
+        $originalTemplate = $source ? null : $template;
+
+        $queue = $this->getNamespaceHierarchy();
+        $modifiedQueue = $queue;
+
+        // If we are trying to load the same file as the template, we do are not allowed to search the hierarchy
+        // up to the source file as that has already been searched and that would lead to an endless template inheritance.
+
+        if ($sourceBundleName !== null && $sourcePath === $templatePath) {
+            $index = \array_search($sourceBundleName, $modifiedQueue, true);
+
+            if (\is_int($index)) {
+                $modifiedQueue = \array_merge(\array_slice($modifiedQueue, $index + 1), \array_slice($queue, 0, $index));
+            }
+        }
+
+        // iterate over all bundles but exclude the originally requested bundle
+        // example: if @Storefront/storefront/index.html.twig is requested, all bundles except Storefront will be checked first
+        foreach ($modifiedQueue as $prefix) {
+            $name = '@' . $prefix . '/' . $templatePath;
+
+            // original template is loaded last
+            if ($name === $originalTemplate) {
+                continue;
+            }
+
+            if (!$this->loader->exists($name)) {
+                continue;
+            }
+
+            return $name;
+        }
+
+        // Throw a useful error when the template cannot be found
+        if ($originalTemplate === null) {
+            if ($ignoreMissing === true) {
+                return $templatePath;
+            }
+
+            throw new LoaderError(\sprintf('Unable to load template "%s". (Looked into: %s)', $templatePath, implode(', ', array_values($modifiedQueue))));
+        }
+
+        // if no other bundle extends the requested template, load the original template
+        if ($this->loader->exists($originalTemplate)) {
+            return $originalTemplate;
+        }
+
+        if ($ignoreMissing === true) {
+            return $templatePath;
+        }
+
+        throw new LoaderError(\sprintf('Unable to load template "%s". (Looked into: %s)', $templatePath, implode(', ', array_values($modifiedQueue))));
+    }
+
+    private function getSourceBundleName(string $source): ?string
+    {
+        if (mb_strpos($source, '@') !== 0) {
+            return null;
+        }
+
+        $source = explode('/', $source);
+        $source = array_shift($source);
+        $source = $source ? ltrim($source, '@') : null;
+
+        return $source ?: null;
+    }
+
+    /**
+     * Gets the final namespace hierarchy for template resolution
+     *
+     * Transforms priority-based ordering to a list of namespace names.
+     * Priority values are discarded after serving their sorting purpose.
+     *
+     * @return list<string> Ordered namespace names (last element = highest priority)
+     */
+    private function getNamespaceHierarchy(): array
+    {
+        if ($this->namespaceHierarchy !== null) {
+            return $this->namespaceHierarchy;
+        }
+
+        // Build hierarchy: returns ['Storefront' => -2, 'PayPal' => 0, 'MyTheme' => 1]
+        $namespaceHierarchy = $this->namespaceHierarchyBuilder->buildHierarchy();
+
+        // Different hierarchies get different cache directories
+        $this->defineCache($namespaceHierarchy);
+
+        // Final step: Extract keys only, discarding priority values
+        // Transforms: ['Storefront' => -2, 'PayPal' => 0] → ['Storefront', 'PayPal']
+        return $this->namespaceHierarchy = array_keys($namespaceHierarchy);
+    }
+
+    /**
+     * @param array<string, int> $queue
+     */
+    private function defineCache(array $queue): void
+    {
+        if ($this->twig->getCache(false) instanceof FilesystemCache) {
+            $configHash = Hasher::hash($queue);
+
+            $fileSystemCache = new ConfigurableFilesystemCache($this->cacheDir);
+            $fileSystemCache->setConfigHash($configHash);
+            $fileSystemCache->setTemplateScopes($this->templateScopeDetector->getScopes());
+            // Set individual twig cache for different configurations
+            $this->twig->setCache($fileSystemCache);
+        }
+    }
+}

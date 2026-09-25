@@ -1,0 +1,32 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Demodata\Faker;
+
+use Faker\Factory;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Demodata\Faker\Commerce;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(Commerce::class)]
+class CommerceTest extends TestCase
+{
+    public function testCustomFieldSet(): void
+    {
+        $commerce = new Commerce(Factory::create());
+
+        $productNameProperty = new \ReflectionProperty(Commerce::class, 'productName');
+        $originalProductName = $productNameProperty->getValue($commerce);
+        $productNameProperty->setValue($commerce, ['adjective' => ['Test Product Name']]);
+
+        $setName = $commerce->customFieldSet();
+        $productNameProperty->setValue($commerce, $originalProductName);
+
+        static::assertStringNotContainsString(' ', $setName);
+        static::assertStringContainsString('Test_Product_Name', $setName);
+    }
+}

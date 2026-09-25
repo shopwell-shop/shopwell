@@ -1,0 +1,604 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\LineItem;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\Price\Struct\AbsolutePriceDefinition;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\PercentagePriceDefinition;
+use Shopwell\Core\Checkout\Cart\Price\Struct\PriceCollection;
+use Shopwell\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Product\State;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(LineItemCollection::class)]
+class LineItemCollectionTest extends TestCase
+{
+    public function testCollectionIsCountable(): void
+    {
+        $collection = new LineItemCollection();
+        static::assertCount(0, $collection);
+    }
+
+    /**
+     * @param array<string, bool> $expectedResults
+     */
+    #[DisabledFeatures(['v6.8.0.0'])]
+    #[DataProvider('lineItemStateProvider')]
+    public function testHasLineItemWithState(LineItemCollection $collection, array $expectedResults): void
+    {
+        foreach ($expectedResults as $state => $expected) {
+            static::assertSame($expected, $collection->hasLineItemWithState($state), 'Line item of state `' . $state . '` could not be found.');
+        }
+    }
+
+    /**
+     * @param array<string, bool> $expectedResults
+     */
+    #[DataProvider('lineItemProductTypeProvider')]
+    public function testHasLineItemWithProductType(LineItemCollection $collection, array $expectedResults): void
+    {
+        foreach ($expectedResults as $type => $expected) {
+            static::assertSame($expected, $collection->hasLineItemWithProductType($type), 'Line item of type `' . $type . '` could not be found.');
+        }
+    }
+
+    public static function lineItemStateProvider(): \Generator
+    {
+        yield 'collection has line item with state download and physical' => [
+            new LineItemCollection([
+                (new LineItem('A', 'test'))->setStates([State::IS_PHYSICAL]),
+                (new LineItem('B', 'test'))->setStates([State::IS_DOWNLOAD]),
+            ]),
+            [State::IS_PHYSICAL => true, State::IS_DOWNLOAD => true],
+        ];
+        yield 'collection has line item with only state physical' => [
+            new LineItemCollection([
+                (new LineItem('A', 'test'))->setStates([State::IS_PHYSICAL]),
+                (new LineItem('B', 'test'))->setStates([State::IS_PHYSICAL]),
+            ]),
+            [State::IS_PHYSICAL => true, State::IS_DOWNLOAD => false],
+        ];
+        yield 'collection has line item with only state download' => [
+            new LineItemCollection([
+                (new LineItem('A', 'test'))->setStates([State::IS_DOWNLOAD]),
+                (new LineItem('B', 'test'))->setStates([State::IS_DOWNLOAD]),
+            ]),
+            [State::IS_PHYSICAL => false, State::IS_DOWNLOAD => true],
+        ];
+        yield 'collection has line items without any state' => [
+            new LineItemCollection([
+                new LineItem('A', 'test'),
+                new LineItem('B', 'test'),
+            ]),
+            [State::IS_PHYSICAL => false, State::IS_DOWNLOAD => false],
+        ];
+        yield 'collection has line items with a unknown state' => [
+            new LineItemCollection([
+                (new LineItem('A', 'test'))->setStates(['foo']),
+                (new LineItem('B', 'test'))->setStates(['foo']),
+            ]),
+            [State::IS_PHYSICAL => false, State::IS_DOWNLOAD => false, 'foo' => true],
+        ];
+    }
+
+    public static function lineItemProductTypeProvider(): \Generator
+    {
+        yield 'collection has line item with state download and physical' => [
+            new LineItemCollection([
+                (new LineItem('A', 'test'))->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_PHYSICAL),
+                (new LineItem('B', 'test'))->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_DIGITAL),
+            ]),
+            [ProductDefinition::TYPE_PHYSICAL => true, ProductDefinition::TYPE_DIGITAL => true],
+        ];
+        yield 'collection has line item with only state physical' => [
+            new LineItemCollection([
+                (new LineItem('A', 'test'))->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_PHYSICAL),
+                (new LineItem('B', 'test'))->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_PHYSICAL),
+            ]),
+            [ProductDefinition::TYPE_PHYSICAL => true, ProductDefinition::TYPE_DIGITAL => false],
+        ];
+        yield 'collection has line item with only state download' => [
+            new LineItemCollection([
+                (new LineItem('A', 'test'))->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_DIGITAL),
+                (new LineItem('B', 'test'))->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_DIGITAL),
+            ]),
+            [ProductDefinition::TYPE_PHYSICAL => false, ProductDefinition::TYPE_DIGITAL => true],
+        ];
+        yield 'collection has line items without any state' => [
+            new LineItemCollection([
+                new LineItem('A', 'test'),
+                new LineItem('B', 'test'),
+            ]),
+            [ProductDefinition::TYPE_PHYSICAL => false, ProductDefinition::TYPE_DIGITAL => false],
+        ];
+        yield 'collection has line items with a unknown state' => [
+            new LineItemCollection([
+                (new LineItem('A', 'test'))->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, 'foo'),
+                (new LineItem('B', 'test'))->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, 'foo'),
+            ]),
+            [ProductDefinition::TYPE_PHYSICAL => false, ProductDefinition::TYPE_DIGITAL => false, 'foo' => true],
+        ];
+    }
+
+    public function testCountReturnsCorrectValue(): void
+    {
+        $collection = new LineItemCollection([
+            new LineItem('A', ''),
+            new LineItem('B', ''),
+            new LineItem('C', ''),
+        ]);
+        static::assertCount(3, $collection);
+    }
+
+    public function testCollectionStacksSameIdentifier(): void
+    {
+        $collection = new LineItemCollection([
+            (new LineItem('A', 'a'))->setStackable(true)->assign(['uniqueIdentifier' => 'A']),
+            (new LineItem('A', 'a', null, 2))->setStackable(true),
+            (new LineItem('A', 'a', null, 3))->setStackable(true),
+        ]);
+
+        static::assertEquals(
+            new LineItemCollection([
+                (new LineItem('A', 'a', null, 6))->setStackable(true)->assign(['uniqueIdentifier' => 'A', 'modified' => true]),
+            ]),
+            $collection
+        );
+    }
+
+    public function testFilterReturnsNewCollectionWithCorrectItems(): void
+    {
+        $collection = new LineItemCollection([
+            (new LineItem('A1', 'A'))->assign(['uniqueIdentifier' => 'A1']),
+            (new LineItem('A2', 'A'))->assign(['uniqueIdentifier' => 'A2']),
+            (new LineItem('B', 'B'))->assign(['uniqueIdentifier' => 'B']),
+            (new LineItem('B2', 'B'))->assign(['uniqueIdentifier' => 'B2']),
+            (new LineItem('B3', 'B'))->assign(['uniqueIdentifier' => 'B3']),
+            (new LineItem('B4', 'B'))->assign(['uniqueIdentifier' => 'B4']),
+            (new LineItem('C', 'C'))->assign(['uniqueIdentifier' => 'C']),
+        ]);
+
+        static::assertEquals(
+            new LineItemCollection([
+                (new LineItem('A1', 'A'))->assign(['uniqueIdentifier' => 'A1']),
+                (new LineItem('A2', 'A'))->assign(['uniqueIdentifier' => 'A2']),
+            ]),
+            $collection->filterType('A')
+        );
+        static::assertEquals(
+            new LineItemCollection([
+                (new LineItem('B', 'B'))->assign(['uniqueIdentifier' => 'B']),
+                (new LineItem('B2', 'B'))->assign(['uniqueIdentifier' => 'B2']),
+                (new LineItem('B3', 'B'))->assign(['uniqueIdentifier' => 'B3']),
+                (new LineItem('B4', 'B'))->assign(['uniqueIdentifier' => 'B4']),
+            ]),
+            $collection->filterType('B')
+        );
+        static::assertEquals(
+            new LineItemCollection([
+                (new LineItem('C', 'C'))->assign(['uniqueIdentifier' => 'C']),
+            ]),
+            $collection->filterType('C')
+        );
+
+        static::assertEquals(
+            new LineItemCollection(),
+            $collection->filterType('NOT EXISTS')
+        );
+    }
+
+    public function testFilterReturnsCollection(): void
+    {
+        $collection = new LineItemCollection([
+            new LineItem('A', 'a'),
+            new LineItem('B', 'b'),
+            new LineItem('C', 'a'),
+        ]);
+
+        static::assertCount(2, $collection->filterType('a'));
+    }
+
+    public function testFilterReturnsNewCollection(): void
+    {
+        $collection = new LineItemCollection([
+            new LineItem('A', 'a'),
+            new LineItem('B', 'a'),
+            new LineItem('C', 'a'),
+        ]);
+
+        static::assertNotSame($collection, $collection->filterType('a'));
+    }
+
+    public function testLineItemsCanBeCleared(): void
+    {
+        $collection = new LineItemCollection([
+            new LineItem('A', 'a'),
+            new LineItem('B', 'a'),
+            new LineItem('C', 'a'),
+        ]);
+        $collection->clear();
+        static::assertEquals(new LineItemCollection(), $collection);
+    }
+
+    public function testLineItemsCanBeRemovedByIdentifier(): void
+    {
+        $collection = new LineItemCollection([
+            (new LineItem('A', 'a'))->assign(['uniqueIdentifier' => 'A']),
+            (new LineItem('B', 'a'))->assign(['uniqueIdentifier' => 'B']),
+            (new LineItem('C', 'a'))->assign(['uniqueIdentifier' => 'C']),
+        ]);
+        $collection->remove('A');
+
+        static::assertEquals(new LineItemCollection([
+            (new LineItem('B', 'a'))->assign(['uniqueIdentifier' => 'B']),
+            (new LineItem('C', 'a'))->assign(['uniqueIdentifier' => 'C']),
+        ]), $collection);
+    }
+
+    public function testIdentifiersCanEasyAccessed(): void
+    {
+        $collection = new LineItemCollection([
+            new LineItem('A', 'a'),
+            new LineItem('B', 'a'),
+            new LineItem('C', 'a'),
+        ]);
+
+        static::assertSame([
+            'A', 'B', 'C',
+        ], $collection->getKeys());
+    }
+
+    public function testGetOnEmptyCollection(): void
+    {
+        $collection = new LineItemCollection();
+        static::assertNull($collection->get('not found'));
+    }
+
+    public function testRemoveElement(): void
+    {
+        $first = (new LineItem('A', 'temp'))->assign(['uniqueIdentifier' => 'A']);
+
+        $collection = new LineItemCollection([
+            $first,
+            (new LineItem('B', 'temp'))->assign(['uniqueIdentifier' => 'B']),
+        ]);
+
+        $collection->removeElement($first);
+
+        static::assertEquals(
+            new LineItemCollection([(new LineItem('B', 'temp'))->assign(['uniqueIdentifier' => 'B'])]),
+            $collection
+        );
+    }
+
+    public function testExists(): void
+    {
+        $first = new LineItem('A', 'temp');
+        $second = new LineItem('B2', 'temp');
+
+        $collection = new LineItemCollection([
+            $first,
+            new LineItem('B', 'temp'),
+        ]);
+
+        static::assertTrue($collection->exists($first));
+        static::assertFalse($collection->exists($second));
+    }
+
+    public function testGetCollectivePayload(): void
+    {
+        $collection = new LineItemCollection([
+            (new LineItem('A', 'temp'))->setPayload(['foo' => 'bar']),
+            (new LineItem('B', 'temp'))->setPayload(['bar' => 'foo']),
+        ]);
+
+        static::assertEquals(
+            [
+                'A' => ['foo' => 'bar'],
+                'B' => ['bar' => 'foo'],
+            ],
+            $collection->getPayload()
+        );
+    }
+
+    public function testCollectionSumsQuantityOfSameKey(): void
+    {
+        $collection = new LineItemCollection([
+            (new LineItem('A', 'test'))->setStackable(true)->assign(['uniqueIdentifier' => 'A']),
+            (new LineItem('A', 'test', null, 2))->setStackable(true)->assign(['uniqueIdentifier' => 'A']),
+            (new LineItem('A', 'test', null, 3))->setStackable(true)->assign(['uniqueIdentifier' => 'A']),
+        ]);
+
+        static::assertEquals(
+            new LineItemCollection([
+                (new LineItem('A', 'test', null, 6))->setStackable(true)->assign(['uniqueIdentifier' => 'A', 'modified' => true]),
+            ]),
+            $collection
+        );
+    }
+
+    public function testCartThrowsExceptionOnLineItemCollision(): void
+    {
+        $cart = new Cart('test');
+
+        $cart->add(new LineItem('a', 'first-type'));
+
+        $this->expectException(CartException::class);
+
+        $cart->add(new LineItem('a', 'other-type'));
+    }
+
+    public function testStackingLineItemsMarksModified(): void
+    {
+        $cart = new Cart('test');
+
+        $existingLineItem = new LineItem('a', 'type');
+        $existingLineItem->markUnmodified();
+        $existingLineItem->setStackable(true);
+        $cart->add($existingLineItem);
+
+        $cart->add(new LineItem('a', 'type'));
+
+        static::assertTrue($existingLineItem->isModified());
+        static::assertSame(2, $existingLineItem->getQuantity());
+    }
+
+    public function testGetLineItemByIdentifier(): void
+    {
+        $collection = new LineItemCollection([
+            (new LineItem('A', 'test', null, 3))->assign(['uniqueIdentifier' => 'A']),
+            (new LineItem('B', 'test', null, 3))->assign(['uniqueIdentifier' => 'B']),
+            (new LineItem('C', 'test', null, 3))->assign(['uniqueIdentifier' => 'C']),
+            (new LineItem('D', 'test', null, 3))->assign(['uniqueIdentifier' => 'D']),
+        ]);
+
+        static::assertEquals(
+            (new LineItem('C', 'test', null, 3))->assign(['uniqueIdentifier' => 'C']),
+            $collection->get('C')
+        );
+    }
+
+    public function testFilterGoodsReturnsOnlyGoods(): void
+    {
+        $collection = new LineItemCollection([
+            (new LineItem('A', 'test', null, 3))->setGood(true)->assign(['uniqueIdentifier' => 'A']),
+            (new LineItem('B', 'test', null, 3))->setGood(false)->assign(['uniqueIdentifier' => 'B']),
+            (new LineItem('C', 'test', null, 3))->setGood(false)->assign(['uniqueIdentifier' => 'C']),
+            (new LineItem('D', 'test', null, 3))->setGood(true)->assign(['uniqueIdentifier' => 'D']),
+        ]);
+
+        static::assertEquals(
+            new LineItemCollection([
+                (new LineItem('A', 'test', null, 3))->setGood(true)->assign(['uniqueIdentifier' => 'A']),
+                (new LineItem('D', 'test', null, 3))->setGood(true)->assign(['uniqueIdentifier' => 'D']),
+            ]),
+            $collection->filterGoods()
+        );
+    }
+
+    public function testFilterGoodsReturnsNewCollection(): void
+    {
+        $collection = new LineItemCollection([
+            (new LineItem('A', 'test', null, 3))->setGood(true),
+            (new LineItem('B', 'test', null, 3))->setGood(true),
+            (new LineItem('C', 'test', null, 3))->setGood(true),
+            (new LineItem('D', 'test', null, 3))->setGood(true),
+        ]);
+
+        static::assertNotSame(
+            $collection->filterGoods(),
+            $collection->filterGoods()
+        );
+    }
+
+    public function testGetPricesCollectionOfMultipleItems(): void
+    {
+        $lineItems = new LineItemCollection([
+            (new LineItem('A', 'test'))
+                ->setPrice(new CalculatedPrice(200, 200, new CalculatedTaxCollection(), new TaxRuleCollection())),
+
+            (new LineItem('B', 'test'))
+                ->setPrice(new CalculatedPrice(300, 300, new CalculatedTaxCollection(), new TaxRuleCollection())),
+        ]);
+
+        static::assertEquals(
+            new PriceCollection([
+                'A' => new CalculatedPrice(200, 200, new CalculatedTaxCollection(), new TaxRuleCollection()),
+                'B' => new CalculatedPrice(300, 300, new CalculatedTaxCollection(), new TaxRuleCollection()),
+            ]),
+            $lineItems->getPrices()
+        );
+    }
+
+    public function testRemoveWithNoneExistingIdentifier(): void
+    {
+        $collection = new LineItemCollection([
+            (new LineItem('A', 'test', null, 3))->assign(['uniqueIdentifier' => 'A']),
+            (new LineItem('B', 'test', null, 3))->assign(['uniqueIdentifier' => 'B']),
+            (new LineItem('C', 'test', null, 3))->assign(['uniqueIdentifier' => 'C']),
+            (new LineItem('D', 'test', null, 3))->assign(['uniqueIdentifier' => 'D']),
+        ]);
+
+        $collection->remove('X');
+
+        static::assertEquals(
+            new LineItemCollection([
+                (new LineItem('A', 'test', null, 3))->assign(['uniqueIdentifier' => 'A']),
+                (new LineItem('B', 'test', null, 3))->assign(['uniqueIdentifier' => 'B']),
+                (new LineItem('C', 'test', null, 3))->assign(['uniqueIdentifier' => 'C']),
+                (new LineItem('D', 'test', null, 3))->assign(['uniqueIdentifier' => 'D']),
+            ]),
+            $collection
+        );
+    }
+
+    public function testRemoveWithNotExisting(): void
+    {
+        $c = (new LineItem('C', 'test', null, 3))->assign(['uniqueIdentifier' => 'C']);
+
+        $collection = new LineItemCollection([
+            (new LineItem('A', 'test', null, 3))->assign(['uniqueIdentifier' => 'A']),
+            (new LineItem('B', 'test', null, 3))->assign(['uniqueIdentifier' => 'B']),
+            (new LineItem('D', 'test', null, 3))->assign(['uniqueIdentifier' => 'D']),
+        ]);
+
+        $collection->removeElement($c);
+
+        static::assertEquals(
+            new LineItemCollection([
+                (new LineItem('A', 'test', null, 3))->assign(['uniqueIdentifier' => 'A']),
+                (new LineItem('B', 'test', null, 3))->assign(['uniqueIdentifier' => 'B']),
+                (new LineItem('D', 'test', null, 3))->assign(['uniqueIdentifier' => 'D']),
+            ]),
+            $collection
+        );
+    }
+
+    public function testAddBeyondIntMax(): void
+    {
+        $collection = new LineItemCollection([
+            (new LineItem('A', 'test', null, 3))->assign(['uniqueIdentifier' => 'A']),
+        ]);
+
+        $expected = clone $collection;
+
+        $collection->add(new LineItem('A', 'test', null, \PHP_INT_MAX));
+
+        static::assertEquals($expected, $collection);
+    }
+
+    public function testSortByPriorityOrdersByPriceDefinitionPriority(): void
+    {
+        $percentage = new LineItem('percentage', 'discount');
+        $percentage->setPriceDefinition(new PercentagePriceDefinition(-10));
+
+        $quantity = new LineItem('quantity', 'product');
+        $quantity->setPriceDefinition(new QuantityPriceDefinition(10, new TaxRuleCollection()));
+
+        $absolute = new LineItem('absolute', 'discount');
+        $absolute->setPriceDefinition(new AbsolutePriceDefinition(-5));
+
+        $collection = new LineItemCollection([$percentage, $quantity, $absolute]);
+        $collection->sortByPriority();
+
+        static::assertSame(['quantity', 'absolute', 'percentage'], $collection->getKeys());
+    }
+
+    public function testSortByPriorityTreatsMissingPriceDefinitionAsQuantityPriority(): void
+    {
+        $percentage = new LineItem('percentage', 'discount');
+        $percentage->setPriceDefinition(new PercentagePriceDefinition(-10));
+
+        $withoutDefinition = new LineItem('no-definition', 'product');
+
+        $collection = new LineItemCollection([$percentage, $withoutDefinition]);
+        $collection->sortByPriority();
+
+        static::assertSame(['no-definition', 'percentage'], $collection->getKeys());
+    }
+
+    public function testGetTotalQuantitySumsAllLineItems(): void
+    {
+        $collection = new LineItemCollection([
+            new LineItem('A', 'product', null, 2),
+            new LineItem('B', 'product', null, 3),
+        ]);
+
+        static::assertSame(5, $collection->getTotalQuantity());
+    }
+
+    public function testFilterFlatByTypeIncludesNestedChildren(): void
+    {
+        $child = new LineItem('child-discount', 'discount');
+        $parent = new LineItem('parent', 'product');
+        $parent->addChild($child);
+
+        $collection = new LineItemCollection([
+            $parent,
+            new LineItem('top-discount', 'discount'),
+        ]);
+
+        $filtered = $collection->filterFlatByType('discount');
+
+        static::assertCount(2, $filtered);
+        static::assertSame(['child-discount', 'top-discount'], array_map(static fn (LineItem $item) => $item->getId(), $filtered));
+    }
+
+    public function testFilterGoodsFlatIncludesNestedGoodsOnly(): void
+    {
+        $childGood = new LineItem('child-good', 'product');
+        $childGood->setGood(true);
+
+        $parent = new LineItem('container', 'container');
+        $parent->setGood(false);
+        $parent->addChild($childGood);
+
+        $topGood = new LineItem('top-good', 'product');
+        $topGood->setGood(true);
+
+        $collection = new LineItemCollection([$parent, $topGood]);
+
+        $goods = $collection->filterGoodsFlat();
+
+        static::assertSame(['child-good', 'top-good'], array_map(static fn (LineItem $item) => $item->getId(), $goods));
+    }
+
+    public function testGetFlatReturnsParentsAndChildren(): void
+    {
+        $child = new LineItem('child', 'product');
+        $parent = new LineItem('parent', 'container');
+        $parent->addChild($child);
+
+        $collection = new LineItemCollection([$parent]);
+
+        static::assertSame(['parent', 'child'], array_map(static fn (LineItem $item) => $item->getId(), $collection->getFlat()));
+    }
+
+    public function testGetTypesReturnsTheTypeOfEveryLineItem(): void
+    {
+        $collection = new LineItemCollection([
+            new LineItem('A', 'product'),
+            new LineItem('B', 'discount'),
+        ]);
+
+        static::assertSame(['A' => 'product', 'B' => 'discount'], $collection->getTypes());
+    }
+
+    public function testGetReferenceIdsReturnsTheReferencedIdOfEveryLineItem(): void
+    {
+        $collection = new LineItemCollection([
+            new LineItem('A', 'product', 'ref-a'),
+            new LineItem('B', 'product', 'ref-b'),
+        ]);
+
+        static::assertSame(['A' => 'ref-a', 'B' => 'ref-b'], $collection->getReferenceIds());
+    }
+
+    public function testSetStoresTheLineItemUnderItsOwnId(): void
+    {
+        $collection = new LineItemCollection();
+        $collection->set('ignored-key', new LineItem('A', 'product'));
+
+        static::assertSame(['A'], $collection->getKeys());
+    }
+
+    public function testApiAlias(): void
+    {
+        static::assertSame('cart_line_item_collection', (new LineItemCollection())->getApiAlias());
+    }
+}

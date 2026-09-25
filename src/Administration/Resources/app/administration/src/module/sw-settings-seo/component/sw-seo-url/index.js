@@ -1,0 +1,312 @@
+/**
+ * @sw-package inventory
+ */
+
+import './store';
+import template from './sw-seo-url.html.twig';
+import './sw-seo-url.scss';
+
+const Criteria = Shopwell.Data.Criteria;
+const EntityCollection = Shopwell.Data.EntityCollection;
+const { Defaults } = Shopwell;
+
+/**
+ * Sequences that are not URL-allowed inside a SEO path: a `%` that is not
+ * part of a valid percent-escape, the fragment marker `#`, backslashes and
+ * ASCII control characters. Query strings (`?`) and valid `%XX` escapes are
+ * allowed. Keep this regex in sync with
+ * `Shopwell\\Core\\Content\\Seo\\Validation\\Constraint\\ValidSeoPathInfo::DISALLOWED_CHARACTERS_PATTERN`.
+ */
+// eslint-disable-next-line no-control-regex
+const DISALLOWED_SEO_PATH_CHARS = /%(?![0-9A-Fa-f]{2})|[#\\\x00-\x1F\x7F]/;
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+export default {
+    template,
+
+    inject: ['repositoryFactory'],
+
+    emits: ['on-change-sales-channel'],
+
+    mixins: [],
+
+    props: {
+        salesChannelId: {
+            type: String,
+            required: false,
+            default: null,
+        },
+
+        urls: {
+            type: Array,
+            required: false,
+            default() {
+                return [];
+            },
+        },
+
+        isLoading: {
+            type: Boolean,
+            required: false,
+            default: false,
+        },
+
+        hasDefaultTemplate: {
+            type: Boolean,
+            required: false,
+            default: true,
+        },
+
+        disabled: {
+            type: Boolean,
+            required: false,
+            default: false,
+        },
+
+        resultLimit: {
+            type: Number,
+            required: false,
+            default: 25,
+        },
+    },
+
+    data() {
+        return {
+            currentSalesChannelId: this.salesChannelId,
+            showEmptySeoUrlError: false,
+        };
+    },
+
+    computed: {
+        seoUrlCollection() {
+            return Shopwell.Store.get('swSeoUrl').seoUrlCollection;
+        },
+
+        currentSeoUrl() {
+            if (!Shopwell.Store.get('swSeoUrl')) {
+                return {};
+            }
+
+            return Shopwell.Store.get('swSeoUrl').currentSeoUrl;
+        },
+
+        defaultSeoUrl() {
+            return Shopwell.Store.get('swSeoUrl').defaultSeoUrl;
+        },
+
+        seoUrlRepository() {
+            return this.repositoryFactory.create('seo_url');
+        },
+
+        salesChannelRepository() {
+            return this.repositoryFactory.create('sales_channel');
+        },
+
+        isUnsupportedSalesChannel() {
+            if (!Shopwell.Store.get('swSeoUrl')) {
+                return true;
+            }
+
+            if (Shopwell.Store.get('swSeoUrl').salesChannelCollection === null) {
+                return true;
+            }
+
+            const salesChannel = Shopwell.Store.get('swSeoUrl').salesChannelCollection.find((entry) => {
+                return entry.id === this.currentSalesChannelId;
+            });
+
+            // Product comparison and agentic commerce sales channels do not serve SEO URLs.
+            const unsupportedTypeIds = [Defaults.productComparisonTypeId, Defaults.agenticCommerceTypeId];
+
+            return this.currentSalesChannelId !== null && unsupportedTypeIds.includes(salesChannel?.typeId);
+        },
+
+        currentSalesChannel() {
+            const salesChannelCollection = Shopwell.Store.get('swSeoUrl')?.salesChannelCollection;
+
+            return salesChannelCollection?.find((entry) => entry.id === this.currentSalesChannelId) ?? null;
+        },
+
+        currentSalesChannelIsHeadless() {
+            return this.currentSalesChannel?.typeId === Defaults.apiSalesChannelTypeId;
+        },
+
+        headlessExternalStorefrontUrl() {
+            const url = this.currentSalesChannel?.domains?.find(
+                (domain) => domain.isExternalStorefront && domain.languageId === Shopwell.Context.api.languageId,
+            )?.url;
+
+            if (!url || url.endsWith('/')) {
+                return url ?? null;
+            }
+
+            return `${url}/`;
+        },
+
+        seoUrlHelptext() {
+            if (this.isUnsupportedSalesChannel) {
+                return this.$t('sw-seo-url.textSeoUrlsNotSupported');
+            }
+
+            if (this.currentSalesChannelIsHeadless && !this.headlessExternalStorefrontUrl) {
+                return this.$t('sw-seo-url-template-card.general.textExternalStorefrontRequired');
+            }
+
+            return null;
+        },
+
+        seoPathInfoError() {
+            const seoPathInfo = this.currentSeoUrl?.seoPathInfo;
+
+            if (typeof seoPathInfo !== 'string' || seoPathInfo === '') {
+                return null;
+            }
+
+            if (!DISALLOWED_SEO_PATH_CHARS.test(seoPathInfo)) {
+                return null;
+            }
+
+            return {
+                code: 'CONTENT__SEO_URL_INVALID_CHARACTERS',
+                detail: this.$t('sw-seo-url.errorInvalidCharacters'),
+            };
+        },
+
+        hasAdditionalSeoSlot() {
+            return this.$slots.hasOwnProperty('seo-additional');
+        },
+
+        allowInput() {
+            return (
+                (this.hasDefaultTemplate || this.currentSalesChannelId !== null) &&
+                (!this.currentSalesChannelIsHeadless || !!this.headlessExternalStorefrontUrl)
+            );
+        },
+    },
+
+    watch: {
+        urls() {
+            this.initSeoUrlCollection();
+            this.refreshCurrentSeoUrl();
+        },
+    },
+
+    created() {
+        Shopwell.Utils.EventBus.on('sw-product-detail-save-finish', this.clearDefaultSeoUrls);
+
+        this.createdComponent();
+    },
+
+    beforeUnmount() {
+        Shopwell.Utils.EventBus.off('sw-product-detail-save-finish', this.clearDefaultSeoUrls);
+    },
+
+    methods: {
+        createdComponent() {
+            this.initSalesChannelCollection();
+            this.initSeoUrlCollection();
+            if (!this.showEmptySeoUrlError) {
+                this.refreshCurrentSeoUrl();
+            }
+        },
+
+        initSalesChannelCollection() {
+            const salesChannelCriteria = new Criteria(1, this.resultLimit);
+            salesChannelCriteria.addAssociation('type');
+            salesChannelCriteria.addAssociation('domains');
+
+            this.salesChannelRepository.search(salesChannelCriteria).then((salesChannelCollection) => {
+                Shopwell.Store.get('swSeoUrl').salesChannelCollection = salesChannelCollection;
+            });
+        },
+
+        initSeoUrlCollection() {
+            this.showEmptySeoUrlError = false;
+            const seoUrlCollection = new EntityCollection(
+                this.seoUrlRepository.route,
+                this.seoUrlRepository.schema.entity,
+                Shopwell.Context.api,
+                new Criteria(1, this.resultLimit),
+            );
+
+            const defaultSeoUrlData = this.urls.find((entityData) => {
+                return entityData.salesChannelId === null;
+            });
+
+            if (defaultSeoUrlData === undefined && (this.hasDefaultTemplate || this.urls.length <= 0)) {
+                this.showEmptySeoUrlError = true;
+            }
+
+            const defaultSeoUrlEntity = this.seoUrlRepository.create();
+            Object.assign(defaultSeoUrlEntity, defaultSeoUrlData);
+            seoUrlCollection.add(defaultSeoUrlEntity);
+            Shopwell.Store.get('swSeoUrl').defaultSeoUrl = defaultSeoUrlEntity;
+
+            this.urls.forEach((entityData) => {
+                const entity = this.seoUrlRepository.create();
+                Object.assign(entity, entityData);
+
+                seoUrlCollection.add(entity);
+            });
+
+            if (!Shopwell.Store.get('swSeoUrl').defaultSeoUrl) {
+                this.showEmptySeoUrlError = true;
+            }
+
+            Shopwell.Store.get('swSeoUrl').seoUrlCollection = seoUrlCollection;
+            Shopwell.Store.get('swSeoUrl').originalSeoUrls = this.urls;
+            this.clearDefaultSeoUrls();
+        },
+
+        clearDefaultSeoUrls() {
+            this.seoUrlCollection.forEach((entity) => {
+                if (entity.id === this.defaultSeoUrl.id) {
+                    return;
+                }
+
+                if (entity.seoPathInfo === this.defaultSeoUrl.seoPathInfo) {
+                    entity.seoPathInfo = null;
+                }
+            });
+        },
+
+        refreshCurrentSeoUrl() {
+            const actualLanguageId = Shopwell.Context.api.languageId;
+
+            const currentSeoUrl = this.seoUrlCollection.find((entity) => {
+                return entity.languageId === actualLanguageId && entity.salesChannelId === this.currentSalesChannelId;
+            });
+
+            if (!currentSeoUrl) {
+                const entity = this.seoUrlRepository.create();
+                // Fetch any seo url as template, since we need to know foreignKey, pathInfo and the routeName
+                const seoUrl =
+                    this.seoUrlCollection.find((item) => {
+                        return item.pathInfo && item.routeName && item.foreignKey;
+                    }) || {};
+
+                entity.foreignKey = this.defaultSeoUrl?.foreignKey ?? seoUrl.foreignKey;
+                entity.isCanonical = true;
+                entity.languageId = actualLanguageId;
+                entity.salesChannelId = this.currentSalesChannelId;
+                entity.routeName = this.defaultSeoUrl?.routeName ?? seoUrl.routeName;
+                entity.pathInfo = this.defaultSeoUrl?.pathInfo ?? seoUrl.pathInfo;
+                entity.isModified = true;
+
+                this.seoUrlCollection.add(entity);
+
+                Shopwell.Store.get('swSeoUrl').currentSeoUrl = entity;
+
+                return;
+            }
+
+            Shopwell.Store.get('swSeoUrl').currentSeoUrl = currentSeoUrl;
+        },
+
+        onSalesChannelChanged(salesChannelId) {
+            this.currentSalesChannelId = salesChannelId;
+            this.$emit('on-change-sales-channel', salesChannelId);
+            this.refreshCurrentSeoUrl();
+        },
+    },
+};

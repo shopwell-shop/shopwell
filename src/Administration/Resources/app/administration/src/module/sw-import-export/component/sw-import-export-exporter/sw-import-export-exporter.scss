@@ -1,0 +1,12 @@
+.sw-import-export-exporter {
+    &__profile-select {
+        margin-bottom: var(--scale-size-18) !important;
+    }
+
+    &__variants-warning-links {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-2);
+        margin-top: var(--scale-size-8);
+    }
+}

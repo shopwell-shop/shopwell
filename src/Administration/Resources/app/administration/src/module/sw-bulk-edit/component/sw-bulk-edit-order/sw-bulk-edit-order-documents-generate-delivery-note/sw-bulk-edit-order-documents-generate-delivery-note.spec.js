@@ -1,0 +1,67 @@
+/**
+ * @sw-package checkout
+ */
+import { mount } from '@vue/test-utils';
+
+async function createWrapper() {
+    return mount(await wrapTestComponent('sw-bulk-edit-order-documents-generate-delivery-note', { sync: true }), {
+        global: {
+            stubs: {
+                'sw-datepicker': true,
+                'sw-textarea-field': true,
+            },
+            provide: {
+                documentV2Service: {
+                    sortFileFormats: (formats) => formats,
+                    getFileFormatSnippet: (format) => format,
+                    getAvailableDocumentTypes: jest.fn().mockResolvedValue({}),
+                },
+            },
+        },
+    });
+}
+
+describe('sw-bulk-edit-order-documents-generate-delivery-note', () => {
+    let wrapper;
+
+    beforeEach(async () => {
+        wrapper = await createWrapper();
+    });
+
+    it('should contain a generateData as a computed property', async () => {
+        expect(wrapper.vm.generateData).toEqual(
+            expect.objectContaining({
+                documentComment: null,
+            }),
+        );
+
+        Shopwell.Store.get('swBulkEdit').setOrderDocumentsValue({
+            type: 'delivery_note',
+            value: {
+                documentDate: 'documentDate',
+                documentComment: 'documentComment',
+            },
+        });
+
+        expect(wrapper.vm.generateData).toEqual(
+            expect.objectContaining({
+                documentDate: 'documentDate',
+                documentComment: 'documentComment',
+            }),
+        );
+    });
+
+    it('should be able to update generateData', async () => {
+        wrapper.vm.generateData = {
+            documentDate: 'I am a date',
+            documentComment: 'I am a comment',
+        };
+
+        expect(wrapper.vm.generateData.documentDate).toBe('I am a date');
+        expect(wrapper.vm.generateData.documentComment).toBe('I am a comment');
+    });
+
+    it('should resolve the document type technical name to delivery_note', async () => {
+        expect(wrapper.vm.documentTypeTechnicalName).toBe('delivery_note');
+    });
+});

@@ -1,0 +1,408 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Administration\Snippet;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Administration\Snippet\AppAdministrationSnippetCollection;
+use Shopwell\Administration\Snippet\AppAdministrationSnippetDefinition;
+use Shopwell\Administration\Snippet\AppAdministrationSnippetEntity;
+use Shopwell\Administration\Snippet\AppAdministrationSnippetPersister;
+use Shopwell\Administration\Snippet\CachedSnippetFinder;
+use Shopwell\Administration\Snippet\SnippetException;
+use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
+use Shopwell\Core\Framework\App\AppEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Locale\LocaleCollection;
+use Shopwell\Core\System\Locale\LocaleDefinition;
+use Shopwell\Core\System\Locale\LocaleEntity;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[CoversClass(AppAdministrationSnippetPersister::class)]
+class AppAdministrationSnippetPersisterTest extends TestCase
+{
+    /**
+     * @param array<mixed> $snippetData
+     * @param array<mixed> $localeData
+     * @param array<string, string> $snippets
+     */
+    #[DataProvider('persisterDataProvider')]
+    public function testItPersistsSnippets(
+        array $snippetData,
+        array $localeData,
+        AppEntity $appEntity,
+        array $snippets
+    ): void {
+        $cacheInvalidator = $this->createMock(CacheInvalidator::class);
+        $cacheInvalidator
+            ->expects($this->once())
+            ->method('invalidate')
+            ->with([CachedSnippetFinder::CACHE_TAG]);
+
+        $persister = new AppAdministrationSnippetPersister(
+            $this->getAppAdministrationSnippetRepository(...$snippetData),
+            $this->getLocaleRepository($localeData),
+            $cacheInvalidator,
+            new Filesystem()
+        );
+
+        $persister->updateSnippets($appEntity, $snippets, Context::createDefaultContext());
+    }
+
+    public function testItPersistsSnippetsWithoutCoreAdministrationSnippets(): void
+    {
+        $filesystem = static::createStub(Filesystem::class);
+        $filesystem->method('readFile')->willThrowException(new IOException('File not found'));
+        $cacheInvalidator = $this->createMock(CacheInvalidator::class);
+        $cacheInvalidator
+            ->expects($this->once())
+            ->method('invalidate')
+            ->with([CachedSnippetFinder::CACHE_TAG]);
+
+        $persister = new AppAdministrationSnippetPersister(
+            $this->getAppAdministrationSnippetRepository(),
+            $this->getLocaleRepository(),
+            $cacheInvalidator,
+            $filesystem
+        );
+
+        $persister->updateSnippets(self::getAppEntity(), [], Context::createDefaultContext());
+    }
+
+    public function testItPersistsSnippetsWithInvalidCoreAdministrationSnippets(): void
+    {
+        $filesystem = static::createStub(Filesystem::class);
+        $filesystem->method('readFile')->willReturn('invalid json');
+        $cacheInvalidator = $this->createMock(CacheInvalidator::class);
+        $cacheInvalidator->expects($this->never())->method('invalidate');
+
+        $this->expectExceptionObject(new \JsonException('Syntax error', 4));
+
+        $persister = new AppAdministrationSnippetPersister(
+            $this->getAppAdministrationSnippetRepository(),
+            $this->getLocaleRepository(),
+            $cacheInvalidator,
+            $filesystem
+        );
+
+        $persister->updateSnippets(self::getAppEntity(), [], Context::createDefaultContext());
+    }
+
+    /**
+     * @param array<string, string> $snippets
+     */
+    #[DataProvider('persisterExceptionDataProvider')]
+    public function testItPersistsSnippetsException(
+        array $snippets,
+        SnippetException $expectedException
+    ): void {
+        $persister = new AppAdministrationSnippetPersister(
+            $this->getAppAdministrationSnippetRepository(),
+            $this->getLocaleRepository(),
+            static::createStub(CacheInvalidator::class),
+            new Filesystem()
+        );
+
+        $this->expectExceptionObject($expectedException);
+        $persister->updateSnippets(self::getAppEntity('appId'), $snippets, Context::createDefaultContext());
+    }
+
+    public function testSkipsSnippetsForNonExistingLocale(): void
+    {
+        $snippetRepository = new StaticEntityRepository([
+            new AppAdministrationSnippetCollection([
+                (new AppAdministrationSnippetEntity())->assign(['id' => 'snippet-id', 'localeId' => 'en-GB', 'appId' => 'app-id']),
+            ]),
+        ]);
+        $localeRepository = new StaticEntityRepository([
+            new LocaleCollection([
+                (new LocaleEntity())->assign(['id' => 'en-GB', 'code' => 'en-GB']),
+                (new LocaleEntity())->assign(['id' => 'de-DE', 'code' => 'de-DE']),
+            ]),
+        ]);
+
+        $persister = new AppAdministrationSnippetPersister(
+            $snippetRepository,
+            $localeRepository,
+            static::createStub(CacheInvalidator::class),
+            new Filesystem()
+        );
+
+        $persister->updateSnippets(
+            self::getAppEntity('app-id'),
+            [
+                'en-GB' => \json_encode(['my' => 'snippets'], \JSON_THROW_ON_ERROR),
+                'non-existing-locale' => \json_encode(['my' => 'snippets'], \JSON_THROW_ON_ERROR),
+            ],
+            Context::createDefaultContext()
+        );
+
+        static::assertCount(1, $snippetRepository->upserts);
+        static::assertSame([
+            'id' => 'snippet-id',
+            'value' => '{"my":"snippets"}',
+            'appId' => 'app-id',
+            'localeId' => 'en-GB',
+        ], $snippetRepository->upserts[0][0]);
+    }
+
+    /**
+     * @return iterable<string, array{array<mixed>, array<mixed>, AppEntity, array<string, string>}>
+     */
+    public static function persisterDataProvider(): iterable
+    {
+        yield 'Test no new snippets, no deletions' => [
+            [],
+            [],
+            self::getAppEntity(),
+            [],
+        ];
+
+        yield 'Test new snippets, no deletion' => [
+            [
+                [],
+                [
+                    [
+                        'id' => 'snippetId',
+                        'value' => \json_encode(['my' => 'snippets'], \JSON_THROW_ON_ERROR),
+                        'appId' => 'appId',
+                        'localeId' => 'en-GB',
+                    ],
+                ],
+            ],
+            [
+                [
+                    'id' => 'en-GB',
+                    'code' => 'en-GB',
+                ],
+            ],
+            self::getAppEntity('appId'),
+            [
+                'en-GB' => \json_encode(['my' => 'snippets'], \JSON_THROW_ON_ERROR),
+            ],
+        ];
+
+        yield 'Test no new snippets, only deletions' => [
+            [
+                [
+                    [
+                        'id' => 'snippetId',
+                        'value' => \json_encode(['my' => 'snippets'], \JSON_THROW_ON_ERROR),
+                        'appId' => 'appId',
+                        'localeId' => 'en-GB',
+                    ],
+                ],
+                [],
+                [
+                    ['id' => 'snippetId'],
+                ],
+            ],
+            [
+                [
+                    'id' => 'en-GB',
+                    'code' => 'en-GB',
+                ],
+            ],
+            self::getAppEntity('appId'),
+            [],
+        ];
+
+        yield 'Test new snippets and deletions' => [
+            [
+                [
+                    [
+                        'id' => 'snippetToDelete',
+                        'value' => \json_encode(['my' => 'deleted'], \JSON_THROW_ON_ERROR),
+                        'appId' => 'appId',
+                        'localeId' => 'de-DE',
+                    ],
+                ],
+                [
+                    [
+                        'id' => 'snippetToAdd',
+                        'value' => \json_encode(['my' => 'added'], \JSON_THROW_ON_ERROR),
+                        'appId' => 'appId',
+                        'localeId' => 'en-GB',
+                    ],
+                ],
+                [
+                    ['id' => 'snippetToDelete'],
+                ],
+            ],
+            [
+                [
+                    'id' => 'en-GB',
+                    'code' => 'en-GB',
+                ],
+                [
+                    'id' => 'de-DE',
+                    'code' => 'de-DE',
+                ],
+            ],
+            self::getAppEntity('appId'),
+            [
+                'en-GB' => \json_encode(['my' => 'added'], \JSON_THROW_ON_ERROR),
+            ],
+        ];
+
+        yield 'Test update snippets' => [
+            [
+                [
+                    [
+                        'id' => 'oldSnippetId',
+                        'value' => \json_encode(['my' => 'oldTranslation'], \JSON_THROW_ON_ERROR),
+                        'appId' => 'appId',
+                        'localeId' => 'en-GB',
+                    ],
+                ],
+                [
+                    [
+                        'id' => 'oldSnippetId',
+                        'value' => \json_encode(['my' => 'newTranslation'], \JSON_THROW_ON_ERROR),
+                        'appId' => 'appId',
+                        'localeId' => 'en-GB',
+                    ],
+                ],
+                [],
+                true, // checks if snippets are updated (no new snippet id is used)
+            ],
+            [
+                [
+                    'id' => 'en-GB',
+                    'code' => 'en-GB',
+                ],
+            ],
+            self::getAppEntity('appId'),
+            [
+                'en-GB' => \json_encode(['my' => 'newTranslation'], \JSON_THROW_ON_ERROR),
+            ],
+        ];
+    }
+
+    /**
+     * @return iterable<string, array{array<mixed>, SnippetException}>
+     */
+    public static function persisterExceptionDataProvider(): iterable
+    {
+        yield 'Test it throws an exception when extending or overwriting the core' => [
+            [
+                'en-GB' => \json_encode(['global' => 'newTranslation'], \JSON_THROW_ON_ERROR),
+            ],
+            SnippetException::extendOrOverwriteCore(['global']),
+        ];
+
+        yield 'Test it throws an exception when no en-GB is defined' => [
+            [
+                'de-DE' => \json_encode(['myCustomSnippetName' => 'newTranslation'], \JSON_THROW_ON_ERROR),
+            ],
+            SnippetException::defaultLanguageNotGiven('en-GB'),
+        ];
+    }
+
+    private static function getAppEntity(?string $appId = null): AppEntity
+    {
+        $appEntity = new AppEntity();
+
+        $appEntity->setId($appId ?? Uuid::randomHex());
+
+        return $appEntity;
+    }
+
+    /**
+     * @param array<int, array<string, string>> $snippetsFromApp
+     * @param array<int, array<string, string>> $newSnippets
+     * @param array<int, array<string, string>> $deletesSnippetIds
+     *
+     * @return EntityRepository<AppAdministrationSnippetCollection>
+     */
+    private function getAppAdministrationSnippetRepository(array $snippetsFromApp = [], array $newSnippets = [], array $deletesSnippetIds = [], bool $updatedSnippets = false): EntityRepository
+    {
+        $repository = static::createStub(EntityRepository::class);
+
+        $appSnippets = [];
+        foreach ($snippetsFromApp as $snippet) {
+            $appSnippet = new AppAdministrationSnippetEntity();
+            $appSnippet->assign($snippet);
+
+            $appSnippets[] = $appSnippet;
+        }
+
+        $collection = new AppAdministrationSnippetCollection($appSnippets);
+        $entitySearchResult = new EntitySearchResult(
+            AppAdministrationSnippetDefinition::ENTITY_NAME,
+            $collection->count(),
+            $collection,
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $repository
+            ->method('search')
+            ->willReturn($entitySearchResult);
+
+        if ($updatedSnippets) {
+            $repository
+                ->method('upsert');
+        }
+
+        if ($newSnippets && !$updatedSnippets) {
+            $repository
+                ->method('upsert');
+        } elseif (!$updatedSnippets) {
+            $repository
+                ->method('upsert');
+        }
+
+        $repository
+            ->method('delete');
+
+        return $repository;
+    }
+
+    /**
+     * @param array<int, array{id: string, code: string}> $locales
+     *
+     * @return EntityRepository<LocaleCollection>
+     */
+    private function getLocaleRepository(array $locales = []): EntityRepository
+    {
+        $repository = static::createStub(EntityRepository::class);
+
+        $localeEntities = [];
+        foreach ($locales as $locale) {
+            $localeEntity = new LocaleEntity();
+            $localeEntity->assign($locale);
+
+            $localeEntities[] = $localeEntity;
+        }
+
+        $collection = new LocaleCollection($localeEntities);
+        $entitySearchResult = new EntitySearchResult(
+            LocaleDefinition::ENTITY_NAME,
+            $collection->count(),
+            $collection,
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $repository
+            ->method('search')
+            ->willReturn($entitySearchResult);
+
+        return $repository;
+    }
+}

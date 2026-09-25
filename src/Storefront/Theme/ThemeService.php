@@ -1,0 +1,510 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Theme;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception\ConnectionException;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Notification\NotificationService;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Storefront\Theme\ConfigLoader\AbstractConfigLoader;
+use Shopwell\Storefront\Theme\ConfigLoader\StaticFileConfigLoader;
+use Shopwell\Storefront\Theme\Event\ThemeAssignedEvent;
+use Shopwell\Storefront\Theme\Event\ThemeConfigChangedEvent;
+use Shopwell\Storefront\Theme\Event\ThemeConfigResetEvent;
+use Shopwell\Storefront\Theme\Exception\InvalidThemeConfigException;
+use Shopwell\Storefront\Theme\Exception\ThemeConfigException;
+use Shopwell\Storefront\Theme\Exception\ThemeException;
+use Shopwell\Storefront\Theme\Message\CompileThemeMessage;
+use Shopwell\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfigurationCollection;
+use Shopwell\Storefront\Theme\Validator\SCSSValidator;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Contracts\Service\ResetInterface;
+
+#[Package('discovery')]
+class ThemeService implements ResetInterface
+{
+    public const CONFIG_THEME_COMPILE_ASYNC = 'core.storefrontSettings.asyncThemeCompilation';
+    public const STATE_NO_QUEUE = 'state-no-queue';
+
+    /**
+     * Context state that defers applying a theme assignment until its background compile finished.
+     */
+    public const STATE_DEFER_ASSIGNMENT = 'theme-defer-assignment';
+
+    /**
+     * Per-sales-channel config key holding the latest requested theme, to detect superseded compiles.
+     */
+    public const CONFIG_KEY_PENDING_THEME = 'storefront.pendingThemeAssignment';
+
+    private bool $notified = false;
+
+    /**
+     * @internal
+     *
+     * @param EntityRepository<ThemeCollection> $themeRepository
+     * @param EntityRepository<EntityCollection<Entity>> $themeSalesChannelRepository
+     */
+    public function __construct(
+        private readonly StorefrontPluginRegistry $extensionRegistry,
+        private readonly EntityRepository $themeRepository,
+        private readonly EntityRepository $themeSalesChannelRepository,
+        private readonly ThemeCompilerInterface $themeCompiler,
+        private readonly AbstractScssCompiler $scssCompiler,
+        private readonly EventDispatcherInterface $dispatcher,
+        private readonly AbstractConfigLoader $configLoader,
+        private readonly Connection $connection,
+        private readonly SystemConfigService $configService,
+        private readonly MessageBusInterface $messageBus,
+        private readonly NotificationService $notificationService,
+        private readonly ThemeMergedConfigBuilder $mergedConfigBuilder,
+        private readonly ThemeRuntimeConfigService $themeRuntimeConfigService,
+    ) {
+    }
+
+    /**
+     * Only compiles a single theme/saleschannel combination.
+     * Use `compileThemeById` to compile all dependend saleschannels
+     */
+    public function compileTheme(
+        string $salesChannelId,
+        string $themeId,
+        Context $context,
+        ?StorefrontPluginConfigurationCollection $configurationCollection = null,
+        bool $withAssets = true
+    ): void {
+        if ($this->isAsyncCompilation($context)) {
+            $this->handleAsync($salesChannelId, $themeId, $withAssets, $context);
+
+            return;
+        }
+
+        $themeConfig = $this->configLoader->load($themeId, $context);
+        $this->themeCompiler->compileTheme(
+            $salesChannelId,
+            $themeId,
+            $themeConfig,
+            $configurationCollection ?? $this->extensionRegistry->getConfigurations(),
+            $withAssets,
+            $context
+        );
+
+        // Refresh the runtime config values when the static file loader is used.
+        // The static file loader is only used for the compiled theme configuration;
+        // the resolved values are still stored in the runtime config table.
+        if (!$this->configLoader instanceof StaticFileConfigLoader) {
+            $importMap = null;
+            if ($this->themeCompiler instanceof ThemeCompiler) {
+                $importMap = $this->themeCompiler->buildComponentImportMap(
+                    $configurationCollection ?? $this->extensionRegistry->getConfigurations()
+                );
+
+                $importMap ??= ['imports' => []];
+            }
+
+            $this->themeRuntimeConfigService->refreshRuntimeConfig(
+                $themeId,
+                $themeConfig,
+                $context,
+                true,
+                $configurationCollection,
+                $importMap,
+            );
+        } else {
+            try {
+                $this->themeRuntimeConfigService->refreshConfigValues($themeId, $context);
+            } catch (ConnectionException) {
+                // Static file compilation is also used in database-less build environments; the theme can be compiled,
+                // but persisted runtime configuration values cannot be refreshed without a database connection.
+                return;
+            }
+        }
+    }
+
+    public function refreshThemeImportMap(
+        string $salesChannelId,
+        string $themeId,
+        Context $context,
+        ?StorefrontPluginConfigurationCollection $configurationCollection = null
+    ): void {
+        if ($this->configLoader instanceof StaticFileConfigLoader || !$this->themeCompiler instanceof ThemeCompiler) {
+            return;
+        }
+
+        $configurationCollection ??= $this->extensionRegistry->getConfigurations();
+        $themeConfig = $this->configLoader->load($themeId, $context);
+        $importMap = $this->themeCompiler->buildComponentImportMap($configurationCollection) ?? ['imports' => []];
+
+        $this->themeRuntimeConfigService->refreshRuntimeConfig(
+            $themeId,
+            $themeConfig,
+            $context,
+            false,
+            $configurationCollection,
+            $importMap,
+        );
+    }
+
+    /**
+     * Compiles all dependend saleschannel/Theme combinations
+     *
+     * @return list<string>
+     */
+    public function compileThemeById(
+        string $themeId,
+        Context $context,
+        ?StorefrontPluginConfigurationCollection $configurationCollection = null,
+        bool $withAssets = true
+    ): array {
+        $mappings = $this->getThemeDependencyMapping($themeId);
+        $compiledThemeIds = [];
+        foreach ($mappings as $mapping) {
+            $this->compileTheme(
+                $mapping->getSalesChannelId(),
+                $mapping->getThemeId(),
+                $context,
+                $configurationCollection ?? $this->extensionRegistry->getConfigurations(),
+                $withAssets
+            );
+
+            $compiledThemeIds[] = $mapping->getThemeId();
+        }
+
+        return $compiledThemeIds;
+    }
+
+    /**
+     * @param array<string, mixed>|null $config
+     */
+    public function updateTheme(string $themeId, ?array $config, ?string $parentThemeId, Context $context): void
+    {
+        $criteria = (new Criteria([$themeId]))
+            ->addAssociation('salesChannels');
+
+        $theme = $this->themeRepository->search($criteria, $context)->getEntities()->first();
+        if (!$theme) {
+            throw ThemeException::couldNotFindThemeById($themeId);
+        }
+
+        $data = ['id' => $themeId];
+        if ($config) {
+            foreach ($config as $key => $value) {
+                $data['configValues'][$key] = $value;
+            }
+        }
+
+        if ($parentThemeId) {
+            $data['parentThemeId'] = $parentThemeId;
+        }
+
+        $themeConfig = $this->getPlainThemeConfiguration($themeId, $context);
+
+        $validFields = [];
+        if ($themeConfig && isset($themeConfig['fields'])) {
+            $validFields = array_keys($themeConfig['fields']);
+        }
+
+        // Cleanup the config values to only include the fields that are defined in the base config.
+        // This is necessary, because the theme config might change and fields could have been removed.
+        if (\array_key_exists('configValues', $data)) {
+            $data['configValues'] = array_intersect_key($data['configValues'], array_flip($validFields));
+        }
+
+        if (\array_key_exists('configValues', $data)) {
+            $this->dispatcher->dispatch(new ThemeConfigChangedEvent($themeId, $data['configValues'], $context));
+        }
+
+        // This part is not executed if the theme was reset before, because the config values are then empty.
+        if (\array_key_exists('configValues', $data) && $theme->getConfigValues()) {
+            $submittedChanges = $data['configValues'];
+            $currentConfig = $theme->getConfigValues();
+            $data['configValues'] = array_replace_recursive($currentConfig, $data['configValues']);
+
+            // Cleaning up the config values also here, because there might be removed fields in the existing config values in the database.
+            $data['configValues'] = array_intersect_key($data['configValues'], array_flip($validFields));
+
+            foreach ($submittedChanges as $key => $changes) {
+                if (isset($changes['value']) && \is_array($changes['value']) && isset($currentConfig[(string) $key]) && \is_array($currentConfig[(string) $key])) {
+                    $data['configValues'][$key]['value'] = array_unique($changes['value']);
+                }
+            }
+        }
+
+        $this->themeRepository->update([$data], $context);
+
+        if ($theme->getSalesChannels() === null) {
+            // refresh runtime config here as theme will not be compiled later
+            $this->themeRuntimeConfigService->refreshConfigValues($themeId, $context);
+
+            return;
+        }
+
+        $this->compileThemeById($themeId, $context, null, false);
+    }
+
+    public function assignTheme(string $themeId, string $salesChannelId, Context $context, bool $skipCompile = false): bool
+    {
+        // Mark the requested theme as the sales channel's target for every switch, so a deferred
+        // compile finishing out of order detects it was superseded (also by a synchronous switch)
+        // and the admin can show an in-flight switch. On success it equals the now-live theme, so
+        // nothing shows as pending; on failure it is restored so it never outlives the switch.
+        $previousPendingTheme = $this->configService->getString(self::CONFIG_KEY_PENDING_THEME, $salesChannelId);
+        $this->configService->set(self::CONFIG_KEY_PENDING_THEME, $themeId, $salesChannelId, false);
+
+        try {
+            // Deferred switch: apply the mapping only after compiling, so the storefront keeps
+            // serving the current theme. Other callers apply synchronously.
+            if (!$skipCompile && $context->hasState(self::STATE_DEFER_ASSIGNMENT) && $this->isAsyncCompilation($context)) {
+                $this->handleAsync($salesChannelId, $themeId, true, $context, true);
+
+                return true;
+            }
+
+            RetryableTransaction::transactional($this->connection, function () use ($themeId, $salesChannelId, $context, $skipCompile): void {
+                if (!$skipCompile) {
+                    $this->compileTheme($salesChannelId, $themeId, $context);
+                }
+
+                $this->themeSalesChannelRepository->upsert([[
+                    'themeId' => $themeId,
+                    'salesChannelId' => $salesChannelId,
+                ]], $context);
+            });
+
+            $this->dispatcher->dispatch(new ThemeAssignedEvent($themeId, $salesChannelId, $context));
+
+            return true;
+        } catch (\Throwable $e) {
+            // The switch could not be started/applied: restore the marker, but only while it still
+            // points at this request, so a newer request's marker is never clobbered.
+            if ($this->configService->getString(self::CONFIG_KEY_PENDING_THEME, $salesChannelId) === $themeId) {
+                $this->configService->set(self::CONFIG_KEY_PENDING_THEME, $previousPendingTheme, $salesChannelId, false);
+            }
+
+            throw $e;
+        }
+    }
+
+    public function resetTheme(string $themeId, Context $context): void
+    {
+        $theme = $this->themeRepository->search(new Criteria([$themeId]), $context)->getEntities()->first();
+        if (!$theme) {
+            throw ThemeException::couldNotFindThemeById($themeId);
+        }
+
+        $data = ['id' => $themeId];
+        $data['configValues'] = null;
+
+        $this->dispatcher->dispatch(new ThemeConfigResetEvent($themeId, $context));
+
+        $this->themeRepository->update([$data], $context);
+
+        // Refresh runtime config after resetting theme config
+        $this->themeRuntimeConfigService->refreshConfigValues($themeId, $context);
+    }
+
+    /**
+     * Validates if the theme config can be compiled in SCSS.
+     *
+     * @param array<string, mixed> $config
+     * @param array<int, string> $customAllowedRegex
+     *
+     * @return array<string, mixed>
+     */
+    public function validateThemeConfig(
+        string $themeId,
+        array $config,
+        Context $context,
+        array $customAllowedRegex = [],
+        bool $sanitize = false
+    ): array {
+        // Get the merged theme config including inherited parent themes.
+        $themeConfig = $this->getPlainThemeConfiguration($themeId, $context);
+
+        // Single validation errors are collected in a wrapping exception.
+        $themeConfigException = new ThemeConfigException();
+
+        foreach ($config as $name => &$field) {
+            // Lookup the field in the original theme config to get the field type.
+            $fieldConfig = $themeConfig['fields'][$name] ?? null;
+
+            // Skip fields that are not editable or excluded from SCSS compilation.
+            if (!$fieldConfig
+                || $fieldConfig['editable'] === false
+                || $fieldConfig['scss'] === false) {
+                continue;
+            }
+
+            $changedField = [
+                'name' => $name,
+                'value' => $field['value'],
+                'type' => $fieldConfig['type'],
+            ];
+
+            try {
+                $field['value'] = SCSSValidator::validate(
+                    $this->scssCompiler,
+                    $changedField,
+                    $customAllowedRegex,
+                    $sanitize
+                );
+            } catch (\Throwable $exception) {
+                $themeConfigException->add($exception);
+            }
+        }
+
+        // Check if there are any validation errors.
+        $themeConfigException->tryToThrow();
+
+        return $config;
+    }
+
+    /**
+     * @throws InvalidThemeConfigException
+     * @throws ThemeException
+     * @throws InconsistentCriteriaIdsException
+     *
+     * @deprecated tag:v6.8.0 Use `getPlainThemeConfiguration` if you do not need translated labels or help texts or
+     * getThemeConfigurationFieldStructure if you need structure with translations
+     *
+     * @return array<string, mixed>
+     */
+    public function getThemeConfiguration(string $themeId, bool $translate, Context $context): array
+    {
+        Feature::triggerDeprecationOrThrow(
+            'v6.8.0.0',
+            Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0', 'getPlainThemeConfiguration')
+        );
+
+        return $this->mergedConfigBuilder->getPlainThemeConfiguration($themeId, $context, $translate);
+    }
+
+    /**
+     * @throws InvalidThemeConfigException
+     * @throws ThemeException
+     * @throws InconsistentCriteriaIdsException
+     *
+     * @return array<string, mixed>
+     */
+    public function getPlainThemeConfiguration(string $themeId, Context $context): array
+    {
+        if (!Feature::isActive('v6.8.0.0')) {
+            $translate = \func_num_args() === 3 ? func_get_arg(2) : false;
+
+            return $this->mergedConfigBuilder->getPlainThemeConfiguration($themeId, $context, $translate);
+        }
+
+        return $this->mergedConfigBuilder->getPlainThemeConfiguration($themeId, $context);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 Use `getThemeConfigurationFieldStructure` instead
+     *
+     * @return array<string, mixed>
+     */
+    public function getThemeConfigurationStructuredFields(string $themeId, bool $translate, Context $context): array
+    {
+        Feature::triggerDeprecationOrThrow(
+            'v6.8.0.0',
+            Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0', 'getStructuredThemeConfiguration')
+        );
+
+        return $this->mergedConfigBuilder->getThemeConfigurationFieldStructure($themeId, $context, $translate);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getThemeConfigurationFieldStructure(string $themeId, Context $context): array
+    {
+        if (!Feature::isActive('v6.8.0.0')) {
+            $translate = \func_num_args() === 3 ? func_get_arg(2) : false;
+
+            return $this->mergedConfigBuilder->getThemeConfigurationFieldStructure($themeId, $context, $translate);
+        }
+
+        return $this->mergedConfigBuilder->getThemeConfigurationFieldStructure($themeId, $context);
+    }
+
+    public function getThemeDependencyMapping(string $themeId): ThemeSalesChannelCollection
+    {
+        $mappings = new ThemeSalesChannelCollection();
+        $themeData = $this->connection->fetchAllAssociative(
+            'SELECT LOWER(HEX(theme.id)) as id, LOWER(HEX(childTheme.id)) as dependentId,
+            LOWER(HEX(tsc.sales_channel_id)) as saleschannelId,
+            LOWER(HEX(dtsc.sales_channel_id)) as dsaleschannelId
+            FROM theme
+            LEFT JOIN theme as childTheme ON childTheme.parent_theme_id = theme.id
+            LEFT JOIN theme_sales_channel as tsc ON theme.id = tsc.theme_id
+            LEFT JOIN theme_sales_channel as dtsc ON childTheme.id = dtsc.theme_id
+            WHERE theme.id = :id',
+            ['id' => Uuid::fromHexToBytes($themeId)]
+        );
+
+        foreach ($themeData as $data) {
+            if (isset($data['id']) && isset($data['saleschannelId']) && $data['id'] === $themeId) {
+                $mappings->add(new ThemeSalesChannel($data['id'], $data['saleschannelId']));
+            }
+            if (isset($data['dependentId']) && isset($data['dsaleschannelId'])) {
+                $mappings->add(new ThemeSalesChannel($data['dependentId'], $data['dsaleschannelId']));
+            }
+        }
+
+        return $mappings;
+    }
+
+    public function reset(): void
+    {
+        $this->notified = false;
+    }
+
+    private function handleAsync(
+        string $salesChannelId,
+        string $themeId,
+        bool $withAssets,
+        Context $context,
+        bool $assign = false
+    ): void {
+        $this->messageBus->dispatch(
+            new CompileThemeMessage(
+                $salesChannelId,
+                $themeId,
+                $withAssets,
+                $context,
+                $assign
+            )
+        );
+
+        if ($this->notified !== true && $context->getScope() === Context::USER_SCOPE) {
+            $this->notificationService->createNotification(
+                [
+                    'id' => Uuid::randomHex(),
+                    'status' => 'info',
+                    'message' => 'sw-theme-manager.detail.asyncCompilation.started',
+                    'requiredPrivileges' => [],
+                ],
+                $context
+            );
+            $this->notified = true;
+        }
+    }
+
+    private function isAsyncCompilation(Context $context): bool
+    {
+        if ($this->configLoader instanceof StaticFileConfigLoader) {
+            return false;
+        }
+
+        return $this->configService->get(self::CONFIG_THEME_COMPILE_ASYNC) && !$context->hasState(self::STATE_NO_QUEUE);
+    }
+}

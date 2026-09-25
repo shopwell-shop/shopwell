@@ -1,0 +1,92 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\System\SalesChannel;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Validation\DataBag\DataBag;
+use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopwell\Core\System\CustomField\CustomFieldTypes;
+use Shopwell\Core\System\SalesChannel\StoreApiCustomFieldMapper;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(StoreApiCustomFieldMapper::class)]
+class StoreApiCustomFieldMapperTest extends TestCase
+{
+    public function testMappingRemovesNotAllowedFields(): void
+    {
+        $connection = static::createStub(Connection::class);
+
+        $mapper = new StoreApiCustomFieldMapper($connection, ['customer' => [['name' => 'allowed', 'type' => 'string']]]);
+        static::assertSame(['allowed' => 'yes'], $mapper->map('customer', new RequestDataBag(['bla' => 'foo', 'allowed' => 'yes'])));
+    }
+
+    public function testMappingDecodesFieldTypes(): void
+    {
+        $connection = static::createStub(Connection::class);
+
+        $mapper = new StoreApiCustomFieldMapper($connection, ['customer' => [
+            ['name' => 'string', 'type' => CustomFieldTypes::TEXT],
+            ['name' => 'int', 'type' => CustomFieldTypes::INT],
+            ['name' => 'float', 'type' => CustomFieldTypes::FLOAT],
+            ['name' => 'bool', 'type' => CustomFieldTypes::BOOL],
+            ['name' => 'json', 'type' => CustomFieldTypes::JSON],
+            ['name' => 'singleSelect', 'type' => CustomFieldTypes::SELECT],
+            ['name' => 'multiSelect', 'type' => CustomFieldTypes::SELECT],
+            ['name' => 'date', 'type' => CustomFieldTypes::DATETIME],
+        ]]);
+
+        $mappedValues = $mapper->map('customer', new RequestDataBag([
+            'bla' => 'foo',
+            'string' => 'yes',
+            'int' => '1',
+            'float' => '1.1',
+            'bool' => 'true',
+            'json' => new DataBag(['foo' => 'bar']),
+            'singleSelect' => 'foo',
+            'multiSelect' => new DataBag(['foo', 'bar']),
+            'date' => '2020-01-01T00:00:00+00:00',
+        ]));
+
+        $date = $mappedValues['date'];
+        static::assertInstanceOf(\DateTimeInterface::class, $date);
+        static::assertSame((new \DateTimeImmutable('2020-01-01T00:00:00+00:00'))->format(Defaults::STORAGE_DATE_TIME_FORMAT), $date->format(Defaults::STORAGE_DATE_TIME_FORMAT));
+        unset($mappedValues['date']);
+
+        static::assertSame(
+            [
+                'string' => 'yes',
+                'int' => 1,
+                'float' => 1.1,
+                'bool' => true,
+                'json' => ['foo' => 'bar'],
+                'singleSelect' => 'foo',
+                'multiSelect' => ['foo', 'bar'],
+            ],
+            $mappedValues
+        );
+    }
+
+    public function testInternalStorageWorks(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection
+            ->expects($this->exactly(2))
+            ->method('fetchAllAssociative')
+            ->willReturn([]);
+
+        $mapper = new StoreApiCustomFieldMapper($connection);
+        static::assertSame([], $mapper->map('customer', new RequestDataBag(['bla' => 'foo'])));
+        static::assertSame([], $mapper->map('customer', new RequestDataBag(['bla' => 'foo'])));
+
+        $mapper->reset();
+
+        static::assertSame([], $mapper->map('customer', new RequestDataBag(['bla' => 'foo'])));
+    }
+}

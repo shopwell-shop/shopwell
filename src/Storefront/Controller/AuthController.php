@@ -1,0 +1,485 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Controller;
+
+use Shopwell\Core\Checkout\Customer\Exception\BadCredentialsException;
+use Shopwell\Core\Checkout\Customer\Exception\CustomerAuthThrottledException;
+use Shopwell\Core\Checkout\Customer\Exception\CustomerNotFoundByHashException;
+use Shopwell\Core\Checkout\Customer\Exception\CustomerNotFoundByIdException;
+use Shopwell\Core\Checkout\Customer\Exception\CustomerNotFoundException;
+use Shopwell\Core\Checkout\Customer\Exception\CustomerOptinNotCompletedException;
+use Shopwell\Core\Checkout\Customer\Exception\CustomerRecoveryHashExpiredException;
+use Shopwell\Core\Checkout\Customer\Exception\InvalidImitateCustomerTokenException;
+use Shopwell\Core\Checkout\Customer\Exception\PasswordPoliciesUpdatedException;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AbstractConvertGuestRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AbstractImitateCustomerRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AbstractLoginRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AbstractLogoutRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AbstractResetPasswordRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AbstractSendPasswordRecoveryMailRoute;
+use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerEmailUnique;
+use Shopwell\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\RateLimiter\Exception\RateLimitExceededException;
+use Shopwell\Core\Framework\Routing\RoutingException;
+use Shopwell\Core\Framework\Validation\DataBag\DataBag;
+use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopwell\Core\Framework\Validation\DataValidationDefinition;
+use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Storefront\Checkout\Cart\SalesChannel\StorefrontCartFacade;
+use Shopwell\Storefront\Framework\Routing\RequestTransformer;
+use Shopwell\Storefront\Framework\Routing\StorefrontRouteScope;
+use Shopwell\Storefront\Page\Account\Login\AccountGuestLoginPageLoadedHook;
+use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoadedHook;
+use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoader;
+use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoadedHook;
+use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoader;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Exception\InvalidParameterException;
+use Symfony\Component\Routing\Exception\MissingMandatoryParametersException;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
+use Symfony\Component\Validator\Constraints\EqualTo;
+use Symfony\Component\Validator\Constraints\NotBlank;
+
+/**
+ * @internal
+ * Do not use direct or indirect repository calls in a controller. Always use a store-api route to get or put data
+ */
+#[Package('checkout')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StorefrontRouteScope::ID]])]
+class AuthController extends StorefrontController
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly AccountLoginPageLoader $loginPageLoader,
+        private readonly AbstractSendPasswordRecoveryMailRoute $sendPasswordRecoveryMailRoute,
+        private readonly AbstractResetPasswordRoute $resetPasswordRoute,
+        private readonly AbstractLoginRoute $loginRoute,
+        private readonly AbstractLogoutRoute $logoutRoute,
+        private readonly AbstractImitateCustomerRoute $imitateCustomerRoute,
+        private readonly StorefrontCartFacade $cartFacade,
+        private readonly AccountRecoverPasswordPageLoader $recoverPasswordPageLoader,
+        private readonly AbstractConvertGuestRoute $convertGuestRoute,
+        private readonly SystemConfigService $systemConfigService,
+    ) {
+    }
+
+    #[Route(
+        path: '/account/login',
+        name: 'frontend.account.login.page',
+        defaults: [PlatformRequest::ATTRIBUTE_NO_STORE => true],
+        methods: [Request::METHOD_GET]
+    )]
+    public function loginPage(Request $request, RequestDataBag $data, SalesChannelContext $context): Response
+    {
+        // Add '_httpCache' => true, to defaults in Route and remove _noStore
+        if (Feature::isActive('PERFORMANCE_TWEAKS') || Feature::isActive('v6.8.0.0')) {
+            $request->attributes->set(PlatformRequest::ATTRIBUTE_HTTP_CACHE, true);
+            $request->attributes->remove(PlatformRequest::ATTRIBUTE_NO_STORE);
+        }
+
+        $customer = $context->getCustomer();
+
+        $redirect = (string) $request->query->get('redirectTo', $customer?->getGuest() ? 'frontend.account.logout.page' : 'frontend.account.home.page');
+
+        if ($customer !== null) {
+            $request->request->set('redirectTo', $redirect);
+
+            return $this->createActionResponse($request);
+        }
+
+        $page = $this->loginPageLoader->load($request, $context);
+
+        $this->hook(new AccountLoginPageLoadedHook($page, $context));
+
+        return $this->renderStorefront('@Storefront/storefront/page/account/register/index.html.twig', [
+            'redirectTo' => $redirect,
+            'redirectParameters' => $request->query->all()['redirectParameters'] ?? json_encode([]),
+            'errorRoute' => $request->attributes->get('_route'),
+            'page' => $page,
+            'loginError' => $request->attributes->getBoolean('loginError'),
+            'waitTime' => $request->attributes->get('waitTime'),
+            'errorSnippet' => $request->attributes->get('errorSnippet'),
+            'data' => $data,
+        ]);
+    }
+
+    #[Route(
+        path: '/account/guest/login',
+        name: 'frontend.account.guest.login.page',
+        defaults: [PlatformRequest::ATTRIBUTE_NO_STORE => true],
+        methods: [Request::METHOD_GET]
+    )]
+    public function guestLoginPage(Request $request, SalesChannelContext $context): Response
+    {
+        /** @var string|null $redirect */
+        $redirect = $request->query->get('redirectTo');
+        if (!$redirect) {
+            // page was probably called directly
+            $this->addFlash(self::DANGER, $this->trans('account.orderGuestLoginWrongCredentials'));
+
+            return $this->redirectToRoute('frontend.account.login.page');
+        }
+
+        $customer = $context->getCustomer();
+
+        if ($customer !== null) {
+            $request->request->set('redirectTo', $redirect);
+
+            return $this->createActionResponse($request);
+        }
+
+        $redirectParameters = $request->query->all()['redirectParameters'] ?? [];
+        if (!\is_array($redirectParameters)) {
+            $redirectParameters = [];
+        }
+
+        // The template builds the form action via `path(redirectTo, redirectParameters)`. If the redirect target
+        // cannot be generated (e.g. the page was called directly without the required `redirectParameters`),
+        // rendering would fail with a 500. Behave like a direct call and send the user to the login page instead.
+        try {
+            $this->generateUrl($redirect, $redirectParameters);
+        } catch (RouteNotFoundException|MissingMandatoryParametersException|InvalidParameterException) {
+            $this->addFlash(self::DANGER, $this->trans('account.orderGuestLoginWrongCredentials'));
+
+            return $this->redirectToRoute('frontend.account.login.page');
+        }
+
+        // WaitTime can be either set as attribute when it's forwarded to this route
+        // or as query parameter when it's redirected
+        $waitTime = (int) ($request->attributes->get('waitTime') ?? $request->query->get('waitTime'));
+        if ($waitTime) {
+            $this->addFlash(self::INFO, $this->trans('account.loginThrottled', ['%seconds%' => $waitTime]));
+        }
+
+        // loginError can be either set as attribute when it's forwarded to this route
+        // or as query parameter when it's redirected
+        if ($request->attributes->getBoolean('loginError') || $request->query->getBoolean('loginError')) {
+            $this->addFlash(self::DANGER, $this->trans('account.orderGuestLoginWrongCredentials'));
+        }
+
+        $page = $this->loginPageLoader->load($request, $context);
+
+        $this->hook(new AccountGuestLoginPageLoadedHook($page, $context));
+
+        return $this->renderStorefront('@Storefront/storefront/page/account/guest-auth.html.twig', [
+            'redirectTo' => $redirect,
+            'redirectParameters' => $redirectParameters,
+            'page' => $page,
+        ]);
+    }
+
+    #[Route(
+        path: '/account/logout',
+        name: 'frontend.account.logout.page',
+        methods: [Request::METHOD_GET]
+    )]
+    public function logout(Request $request, SalesChannelContext $context, RequestDataBag $dataBag): Response
+    {
+        if ($context->getCustomer() === null) {
+            return $this->redirectToRoute('frontend.account.login.page');
+        }
+
+        try {
+            $this->logoutRoute->logout($context, $dataBag);
+            $this->addFlash(self::SUCCESS, $this->trans('account.logoutSucceeded'));
+
+            $request->attributes->set(PlatformRequest::ATTRIBUTE_CLEAR_SITE_DATA, true);
+
+            $parameters = [];
+        } catch (ConstraintViolationException $formViolations) {
+            $parameters = ['formViolations' => $formViolations];
+        }
+
+        return $this->redirectToRoute('frontend.account.login.page', $parameters);
+    }
+
+    #[Route(
+        path: '/account/login',
+        name: 'frontend.account.login',
+        defaults: ['XmlHttpRequest' => true],
+        methods: [Request::METHOD_POST]
+    )]
+    public function login(Request $request, RequestDataBag $data, SalesChannelContext $context): Response
+    {
+        $customer = $context->getCustomer();
+
+        if ($customer !== null && $customer->getGuest() === false) {
+            return $this->createActionResponse($request);
+        }
+
+        try {
+            $token = $this->loginRoute->login($data, $context)->getToken();
+            $cartBeforeNewContext = $this->cartFacade->get($token, $context);
+
+            if ($token !== '') {
+                $this->addCartErrors($cartBeforeNewContext);
+
+                return $this->createActionResponse($request);
+            }
+        } catch (CustomerOptinNotCompletedException $e) {
+            $errorSnippet = $e->getSnippetKey();
+        } catch (CustomerAuthThrottledException $e) {
+            $waitTime = $e->getWaitTime();
+        } catch (BadCredentialsException|CustomerNotFoundException) {
+        } catch (PasswordPoliciesUpdatedException) {
+            $this->addFlash(self::WARNING, $this->trans('account.passwordPoliciesUpdated'));
+
+            return $this->forwardToRoute('frontend.account.recover.page');
+        } finally {
+            $data->set('password', null);
+        }
+
+        // Keep a failed login within the checkout flow instead of forwarding to the account login page.
+        $redirectTo = $request->request->getString('redirectTo');
+        $errorRoute = str_starts_with($redirectTo, 'frontend.checkout')
+            ? 'frontend.checkout.register.page'
+            : 'frontend.account.login.page';
+
+        return $this->forwardToRoute(
+            $errorRoute,
+            [
+                'loginError' => true,
+                'errorSnippet' => $errorSnippet ?? null,
+                'waitTime' => $waitTime ?? null,
+            ]
+        );
+    }
+
+    #[Route(
+        path: '/account/recover',
+        name: 'frontend.account.recover.page',
+        methods: [Request::METHOD_GET]
+    )]
+    public function recoverAccountForm(Request $request, SalesChannelContext $context): Response
+    {
+        // Add '_httpCache' => true, to defaults in Route
+        if (Feature::isActive('PERFORMANCE_TWEAKS') || Feature::isActive('v6.8.0.0')) {
+            $request->attributes->set(PlatformRequest::ATTRIBUTE_HTTP_CACHE, true);
+            $request->attributes->remove(PlatformRequest::ATTRIBUTE_NO_STORE);
+        }
+
+        $page = $this->loginPageLoader->load($request, $context);
+
+        return $this->renderStorefront('@Storefront/storefront/page/account/profile/recover-password.html.twig', [
+            'page' => $page,
+        ]);
+    }
+
+    #[Route(
+        path: '/account/recover',
+        name: 'frontend.account.recover.request',
+        methods: [Request::METHOD_POST]
+    )]
+    public function generateAccountRecovery(Request $request, RequestDataBag $data, SalesChannelContext $context): Response
+    {
+        try {
+            $mailData = $data->get('email');
+            if (!$mailData instanceof DataBag) {
+                throw RoutingException::invalidRequestParameter('email');
+            }
+            $mailData->set('storefrontUrl', $request->attributes->get(RequestTransformer::STOREFRONT_URL));
+
+            $this->sendPasswordRecoveryMailRoute->sendRecoveryMail(
+                $mailData->toRequestDataBag(),
+                $context,
+                false
+            );
+
+            $this->addFlash(self::SUCCESS, $this->trans('account.recoveryMailSend'));
+        } catch (CustomerNotFoundException) {
+            $this->addFlash(self::SUCCESS, $this->trans('account.recoveryMailSend'));
+        } catch (InconsistentCriteriaIdsException) {
+            $this->addFlash(self::DANGER, $this->trans('error.message-default'));
+        } catch (RateLimitExceededException $e) {
+            $this->addFlash(self::INFO, $this->trans('error.rateLimitExceeded', ['%seconds%' => $e->getWaitTime()]));
+        } catch (ConstraintViolationException $formViolations) {
+            return $this->forwardToRoute(
+                'frontend.account.recover.page',
+                ['formViolations' => $formViolations]
+            );
+        }
+
+        return $this->redirectToRoute('frontend.account.recover.page');
+    }
+
+    #[Route(
+        path: '/account/recover/password',
+        name: 'frontend.account.recover.password.page',
+        methods: [Request::METHOD_GET]
+    )]
+    public function resetPasswordForm(Request $request, SalesChannelContext $context): Response
+    {
+        $hash = $request->query->get('hash');
+
+        if (!$hash || !\is_string($hash)) {
+            $this->addFlash(self::DANGER, $this->trans('account.passwordHashNotFound'));
+
+            return $this->redirectToRoute('frontend.account.recover.request');
+        }
+
+        try {
+            $page = $this->recoverPasswordPageLoader->load($request, $context, $hash);
+        } catch (ConstraintViolationException|CustomerNotFoundByHashException) {
+            $this->addFlash(self::DANGER, $this->trans('account.passwordHashNotFound'));
+
+            return $this->redirectToRoute('frontend.account.recover.request');
+        }
+
+        $this->hook(new AccountRecoverPasswordPageLoadedHook($page, $context));
+
+        if ($page->getHash() === null || $page->isHashExpired()) {
+            $this->addFlash(self::DANGER, $this->trans('account.passwordHashNotFound'));
+
+            return $this->redirectToRoute('frontend.account.recover.request');
+        }
+
+        return $this->renderStorefront('@Storefront/storefront/page/account/profile/reset-password.html.twig', [
+            'page' => $page,
+            'formViolations' => $request->attributes->get('formViolations') ?? ($request->query->all()['formViolations'] ?? null),
+        ]);
+    }
+
+    #[Route(
+        path: '/account/recover/password',
+        name: 'frontend.account.recover.password.reset',
+        methods: [Request::METHOD_POST]
+    )]
+    public function resetPassword(RequestDataBag $data, SalesChannelContext $context): Response
+    {
+        $passwordData = $data->get('password');
+        if (!$passwordData instanceof DataBag) {
+            throw RoutingException::invalidRequestParameter('password');
+        }
+        $hash = $passwordData->get('hash');
+
+        try {
+            $this->resetPasswordRoute->resetPassword($passwordData->toRequestDataBag(), $context);
+
+            $this->addFlash(self::SUCCESS, $this->trans('account.passwordChangeSuccess'));
+        } catch (ConstraintViolationException $formViolations) {
+            if ($formViolations->getViolations('newPassword')->count() === 1) {
+                $this->addFlash(self::DANGER, $this->trans('account.passwordNotIdentical'));
+            } else {
+                $this->addFlash(self::DANGER, $this->trans('account.passwordChangeNoSuccess'));
+            }
+
+            return $this->forwardToRoute(
+                'frontend.account.recover.password.page',
+                ['hash' => $hash, 'formViolations' => $formViolations, 'passwordFormViolation' => true]
+            );
+        } catch (CustomerNotFoundByHashException) {
+            $this->addFlash(self::DANGER, $this->trans('account.passwordChangeNoSuccess'));
+
+            return $this->forwardToRoute('frontend.account.recover.request');
+        } catch (CustomerRecoveryHashExpiredException) {
+            $this->addFlash(self::DANGER, $this->trans('account.passwordHashExpired'));
+
+            return $this->forwardToRoute('frontend.account.recover.request');
+        }
+
+        return $this->redirectToRoute('frontend.account.profile.page');
+    }
+
+    #[Route(
+        path: '/account/login/imitate-customer',
+        name: 'frontend.account.login.imitate-customer',
+        methods: [Request::METHOD_POST]
+    )]
+    public function imitateCustomerLogin(RequestDataBag $data, SalesChannelContext $context): Response
+    {
+        try {
+            $this->imitateCustomerRoute->imitateCustomerLogin($data, $context);
+
+            return $this->redirectToRoute('frontend.account.home.page');
+        } catch (InvalidImitateCustomerTokenException|CustomerNotFoundByIdException) {
+            return $this->forwardToRoute(
+                'frontend.account.login.page',
+                [
+                    'loginError' => true,
+                ]
+            );
+        }
+    }
+
+    #[Route(
+        path: '/account/convert',
+        name: 'frontend.account.convert.page',
+        defaults: [
+            PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true,
+            PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED_ALLOW_GUEST => true,
+        ],
+        methods: [Request::METHOD_GET],
+    )]
+    public function convertForm(SalesChannelContext $context): Response
+    {
+        $customer = $context->getCustomer();
+
+        if ($customer === null || !$customer->getGuest()) {
+            return $this->redirectToRoute('frontend.account.home.page');
+        }
+
+        return $this->renderStorefront('@Storefront/storefront/page/account/convert.html.twig');
+    }
+
+    #[Route(
+        path: '/account/convert',
+        name: 'frontend.account.convert.save',
+        defaults: [
+            PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true,
+            PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED_ALLOW_GUEST => true,
+            PlatformRequest::ATTRIBUTE_CAPTCHA => true,
+        ],
+        methods: [Request::METHOD_POST]
+    )]
+    public function convert(RequestDataBag $request, SalesChannelContext $context): Response
+    {
+        $customer = $context->getCustomer();
+
+        if ($customer === null || !$customer->getGuest()) {
+            return $this->redirectToRoute('frontend.account.home.page');
+        }
+
+        $definition = new DataValidationDefinition('guest_conversion');
+
+        if ($this->systemConfigService->get('core.loginRegistration.requirePasswordConfirmation', $context->getSalesChannelId())) {
+            $definition->add('passwordConfirmation', new NotBlank(), new EqualTo(value: $request->get('password')));
+        }
+
+        try {
+            $this->convertGuestRoute->convertGuest($request, $context, $customer, $definition);
+        } catch (RateLimitExceededException $e) {
+            $this->addFlash(self::INFO, $this->trans('error.rateLimitExceeded', ['%seconds%' => $e->getWaitTime()]));
+
+            return $this->forwardToRoute(
+                'frontend.account.convert.page',
+            );
+        } catch (ConstraintViolationException $formViolations) {
+            if ($formViolations->getViolations()->findByCodes(CustomerEmailUnique::CUSTOMER_EMAIL_NOT_UNIQUE_CODE)->count()) {
+                $this->addFlash(
+                    self::DANGER,
+                    $this->trans(
+                        \sprintf('error.%s', CustomerEmailUnique::CUSTOMER_EMAIL_NOT_UNIQUE_CODE)
+                    )
+                );
+            }
+
+            return $this->forwardToRoute(
+                'frontend.account.convert.page',
+                ['formViolations' => $formViolations]
+            );
+        }
+
+        $this->addFlash(self::SUCCESS, $this->trans('account.convertSucceeded'));
+
+        return $this->redirectToRoute('frontend.account.home.page');
+    }
+}

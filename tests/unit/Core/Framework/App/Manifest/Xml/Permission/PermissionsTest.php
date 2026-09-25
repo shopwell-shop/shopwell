@@ -1,0 +1,83 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\App\Manifest\Xml\Permission;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\Manifest\Manifest;
+use Shopwell\Core\Framework\App\Manifest\Xml\Permission\Permissions;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(Permissions::class)]
+class PermissionsTest extends TestCase
+{
+    public function testFromXml(): void
+    {
+        $manifest = Manifest::createFromXmlFile(__DIR__ . '/../../_fixtures/test/manifest.xml');
+
+        static::assertNotNull($manifest->getPermissions());
+        static::assertCount(7, $manifest->getPermissions()->getPermissions());
+        static::assertSame([
+            'product' => ['create', 'update', 'delete'],
+            'category' => ['delete'],
+            'product_manufacturer' => ['create', 'delete'],
+            'tax' => ['create'],
+            'language' => ['read'],
+            'custom_field_set' => ['update'],
+            'order' => ['read'],
+        ], $manifest->getPermissions()->getPermissions());
+
+        // tax_processor is implied by the manifest's tax provider and added to the additional privileges
+        static::assertSame(['user_change_me', 'tax_processor'], $manifest->getPermissions()->getAdditionalPrivileges());
+    }
+
+    public function testAsParsedPrivileges(): void
+    {
+        $manifest = Manifest::createFromXmlFile(__DIR__ . '/../../_fixtures/test/manifest.xml');
+
+        static::assertNotNull($manifest->getPermissions());
+        static::assertCount(17, $manifest->getPermissions()->asParsedPrivileges());
+        static::assertSame([
+            'product:create',
+            'product:read',
+            'product:update',
+            'product:delete',
+            'category:delete',
+            'category:read',
+            'product_manufacturer:create',
+            'product_manufacturer:read',
+            'product_manufacturer:delete',
+            'tax:create',
+            'tax:read',
+            'language:read',
+            'custom_field_set:update',
+            'custom_field_set:read',
+            'order:read',
+            'user_change_me',
+            // implied by the manifest's tax provider
+            'tax_processor',
+        ], $manifest->getPermissions()->asParsedPrivileges());
+    }
+
+    public function testCrudPermission(): void
+    {
+        $manifest = Manifest::createFromXmlFile(__DIR__ . '/../../_fixtures/test/manifest_crud.xml');
+
+        static::assertNotNull($manifest->getPermissions());
+        static::assertCount(8, $manifest->getPermissions()->asParsedPrivileges());
+        static::assertSame([
+            'product:create',
+            'product:read',
+            'product:update',
+            'product:delete',
+            'category:read',
+            'category:create',
+            'category:update',
+            'category:delete',
+        ], $manifest->getPermissions()->asParsedPrivileges());
+    }
+}

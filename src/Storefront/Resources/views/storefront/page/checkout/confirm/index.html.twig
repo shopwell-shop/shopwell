@@ -1,0 +1,422 @@
+{% sw_extends '@Storefront/storefront/page/checkout/_page.html.twig' %}
+
+{% block base_esi_header %}
+    {% sw_include '@Storefront/storefront/layout/header/header-minimal.html.twig' %}
+{% endblock %}
+
+{% set showTaxPrice = config('core.cart.columnTaxInsteadUnitPrice') %}
+{% set showSubtotal = config('core.cart.showSubtotal') %}
+
+{% set showLegalGuaranteeNotice = config('core.cart.showLegalGuaranteeNotice') %}
+{% set legalGuaranteeNoticeModalId = 'legalGuaranteeNoticeModal' %}
+{% set legalGuaranteeNoticeModalTagOpen = '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-bs-toggle="modal" data-bs-target="#' ~ legalGuaranteeNoticeModalId ~ '">' %}
+{% set legalGuaranteeNoticeModalTagClose = '</button>' %}
+
+{% block page_checkout_main_content %}
+    {% block page_checkout_confirm %}
+        {% block page_checkout_confirm_header %}
+            <h1 class="confirm-main-header d-inline-block">
+                {{ 'checkout.confirmHeader'|trans|sw_sanitize }}
+            </h1>
+            <span class="confirm-main-header-item-counter d-inline-block mb-4 fw-bold fs-3 ms-1 text-dark-emphasis">
+                ({{- 'checkout.itemCounter'|trans({'%count%': page.cart.lineItems|length})|sw_sanitize -}})
+            </span>
+        {% endblock %}
+
+        {% block page_checkout_confirm_alerts %}
+            {% block page_checkout_confirm_violations %}
+                {% for violation in formViolations.getViolations() %}
+                    {% set snippetName = "error.#{violation.code}" %}
+                    {% set fieldName = violation.propertyPath|trim('/', 'left') %}
+
+                    {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+                        type: 'danger',
+                        content: snippetName|trans(violation.parameters|merge({'%field%': fieldName}))|sw_sanitize
+                    } %}
+                {% endfor %}
+            {% endblock %}
+        {% endblock %}
+
+        {# @deprecated tag:v6.8.0 - Will be removed - Will be moved to the bottom of the page #}
+        {% block page_checkout_confirm_tos %}
+            {% if not feature('v6.8.0.0') %}
+            <div class="confirm-tos">
+                <div class="card checkout-card">
+                    <div class="card-body">
+
+                        {% block page_checkout_confirm_tos_header %}
+                            <div class="card-title">
+                                {{ 'checkout.confirmTermsHeader'|trans|sw_sanitize }}
+                            </div>
+                        {% endblock %}
+
+                        {% block page_checkout_confirm_revocation_notice %}
+                            {% set cmsPath = 'frontend.cms.page' %}
+                            <p class="revocation-notice">
+                                {% set revocationSnippetKey = 'checkout.confirmRevocationNoticeModal' %}
+
+                                {{ revocationSnippetKey|trans({
+                                    '%revocationModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(cmsPath, { id: config('core.basicInformation.revocationPage') }) ~ '">',
+                                    '%revocationModalTagClose%': '</button>'
+                                })|raw }}
+                            </p>
+                        {% endblock %}
+
+                        {% block page_checkout_confirm_legal_guarantee_paragraph %}
+                            {% if showLegalGuaranteeNotice %}
+                                <p class="legal-guarantee-notice">
+                                    {{ 'checkout.confirmLegalGuaranteeNotice'|trans({
+                                        '%legalGuaranteeNoticeModalTagOpen%': legalGuaranteeNoticeModalTagOpen,
+                                        '%legalGuaranteeNoticeModalTagClose%': legalGuaranteeNoticeModalTagClose,
+                                    })|raw }}
+                                </p>
+                            {% endif %}
+                        {% endblock %}
+
+                        {% block page_checkout_confirm_tos_control %}
+                            {% set tosModalTagOpen = '<button type="button" class="checkout-confirm-terms-modal btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path('frontend.cms.page', { id: config('core.basicInformation.tosPage') }) ~ '">' %}
+                            {% set tosModalTagClose = '</button>' %}
+
+                            <div class="form-check">
+                                {% block page_checkout_confirm_tos_control_checkbox %}
+                                    <input type="checkbox"
+                                        class="checkout-confirm-tos-checkbox form-check-input{% if formViolations.getViolations('/tos') is not empty %} is-invalid{% endif %}"
+                                        required="required"
+                                        id="tos"
+                                        form="confirmOrderForm"
+                                        name="tos">
+                                {% endblock %}
+
+                                {% block page_checkout_confirm_tos_control_label %}
+                                    <label for="tos"
+                                        class="checkout-confirm-tos-label custom-control-label">
+                                        {{ 'checkout.confirmTermsTextModal'|trans({
+                                            '%tosModalTagOpen%': tosModalTagOpen,
+                                            '%tosModalTagClose%': tosModalTagClose,
+                                        })|raw }}
+                                    </label>
+                                {% endblock %}
+                            </div>
+                        {% endblock %}
+
+                        {% block page_checkout_confirm_revocation_control %}
+                            {% if page.showRevocation() %}
+                                <div class="form-check">
+                                    {% block page_checkout_confirm_revocation_control_checkbox %}
+                                        <input type="checkbox"
+                                               class="checkout-confirm-revocation-checkbox form-check-input{% if formViolations.getViolations('/revocation') is not empty %} is-invalid{% endif %}"
+                                               required="required"
+                                               id="revocation"
+                                               form="confirmOrderForm"
+                                               name="revocation">
+                                    {% endblock %}
+
+                                    {% block page_checkout_confirm_revocation_control_label %}
+                                        <label for="revocation"
+                                               class="checkout-confirm-revocation-label custom-control-label">
+                                            {{ 'checkout.confirmRevocationTerms'|trans() }}
+                                        </label>
+                                    {% endblock %}
+                                </div>
+                            {% endif %}
+                        {% endblock %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endblock %}
+
+        {% block page_checkout_confirm_address %}
+            <div class="confirm-address">
+                {% sw_include '@Storefront/storefront/page/checkout/confirm/confirm-address.html.twig' %}
+            </div>
+        {% endblock %}
+
+        {% block page_checkout_confirm_payment_shipping %}
+            <div class="confirm-payment-shipping">
+                <div class="row">
+                    {% block page_checkout_confirm_payment %}
+                        <div class="col-sm-6 confirm-payment">
+                            {% sw_include '@Storefront/storefront/page/checkout/confirm/confirm-payment.html.twig' %}
+                        </div>
+                    {% endblock %}
+
+                    {% block page_checkout_confirm_shipping %}
+                        {% if feature('v6.8.0.0') %}
+                            {% set PHYSICAL_STATE = constant('Shopwell\\Core\\Content\\Product\\ProductDefinition::TYPE_PHYSICAL') %}
+                            {% set hasPhysicalItem = page.cart.lineItems.hasLineItemWithProductType(PHYSICAL_STATE) %}
+                        {% else %}
+                            {% set PHYSICAL_STATE = constant('Shopwell\\Core\\Content\\Product\\State::IS_PHYSICAL') %}
+                            {% set hasPhysicalItem = page.cart.lineItems.hasLineItemWithState(PHYSICAL_STATE) %}
+                        {% endif %}
+
+                        {% if hasPhysicalItem %}
+                            <div class="col-sm-6 confirm-shipping">
+                                {% sw_include '@Storefront/storefront/page/checkout/confirm/confirm-shipping.html.twig' %}
+                            </div>
+                        {% endif %}
+                    {% endblock %}
+                </div>
+            </div>
+        {% endblock %}
+
+        {% block page_checkout_confirm_product_table %}
+            <div class="confirm-product">
+                {% block page_checkout_confirm_table_container %}
+                    <div class="card">
+                        <ul class="card-body list-unstyled">
+                            {% block page_checkout_confirm_table_header %}
+                                {% sw_include '@Storefront/storefront/component/checkout/cart-header.html.twig' with {
+                                    showTaxPrice: showTaxPrice,
+                                    showSubtotal: showSubtotal
+                                } %}
+                            {% endblock %}
+
+                            {% block page_checkout_confirm_table_items %}
+                                {% for lineItem in page.cart.lineItems %}
+                                    {% block page_checkout_confirm_table_item %}
+                                        {% sw_include '@Storefront/storefront/component/line-item/line-item.html.twig' with {
+                                            redirectTo: 'frontend.checkout.confirm.page',
+                                            showTaxPrice: showTaxPrice,
+                                            showSubtotal: showSubtotal
+                                        } %}
+                                    {% endblock %}
+                                {% endfor %}
+                            {% endblock %}
+                        </ul>
+                    </div>
+                {% endblock %}
+            </div>
+        {% endblock %}
+
+        {% block page_checkout_confirm_hidden_line_items_information %}
+            {% sw_include '@Storefront/storefront/component/checkout/hidden-line-items-information.html.twig' with {
+                cart: page.cart,
+                lineItems: page.cart.lineItems
+            } %}
+        {% endblock %}
+    {% endblock %}
+{% endblock %}
+
+{% block page_checkout_additional %}
+    {% if config('core.cart.showCustomerComment') %}
+        <div class="checkout-additional">
+            {% block page_checkout_finish_customer_comment %}
+                <div class="card checkout-card">
+                    <div class="card-body">
+                        {% block page_checkout_confirm_customer_comment_header %}
+                            <div class="card-title">
+                                {{ 'checkout.customerCommentHeader'|trans|sw_sanitize }}
+                            </div>
+                        {% endblock %}
+
+                        {% block page_checkout_confirm_customer_comment_control %}
+                            <div class="checkout-customer-comment-control">
+                                {% block page_checkout_confirm_customer_comment_control_textfield_label %}
+                                    <label class="form-label" for="{{ constant('Shopwell\\Core\\Checkout\\Order\\SalesChannel\\OrderService::CUSTOMER_COMMENT_KEY') }}">
+                                        {{ 'checkout.customerCommentLabel'|trans|sw_sanitize }}
+                                    </label>
+                                {% endblock %}
+
+                                {% block page_checkout_confirm_customer_comment_control_textfield %}
+                                    <textarea class="form-control"
+                                              placeholder="{{ 'checkout.customerCommentPlaceholder'|trans|sw_sanitize }}"
+                                              id="{{ constant('Shopwell\\Core\\Checkout\\Order\\SalesChannel\\OrderService::CUSTOMER_COMMENT_KEY') }}"
+                                              form="confirmOrderForm"
+                                              name="{{ constant('Shopwell\\Core\\Checkout\\Order\\SalesChannel\\OrderService::CUSTOMER_COMMENT_KEY') }}"></textarea>
+                                {% endblock %}
+                            </div>
+                        {% endblock %}
+                    </div>
+                </div>
+            {% endblock %}
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% set formAddHistoryOptions = {
+    entries: [{
+        state: {},
+        title: 'account.ordersTitle'|trans,
+        url: path('frontend.account.order.page')
+    }]
+} %}
+
+{% set confirmOrderFormAction = path('frontend.checkout.finish.order') %}
+
+{% block page_checkout_aside_actions %}
+    {% block page_checkout_confirm_tos_auto_confirmed %}
+        {% if feature('v6.8.0.0') %}
+            {% if config('core.cart.showTosCheckbox') %}
+                <div class="confirm-tos">
+                    {% block page_checkout_confirm_tos_auto_confirmed_revocation_notice_bottom %}
+                        {% set cmsPath = 'frontend.cms.page' %}
+                        <p class="revocation-notice mb-0 mt-4">
+                            {% set revocationSnippetKey = 'checkout.confirmRevocationNoticeModal' %}
+
+                            {{ revocationSnippetKey|trans({
+                                '%revocationModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(cmsPath, { id: config('core.basicInformation.revocationPage') }) ~ '">',
+                                '%revocationModalTagClose%': '</button>'
+                            })|raw }}
+                            </p>
+                    {% endblock %}
+
+                    {% block page_checkout_confirm_tos_auto_confirmed_legal_guarantee_paragraph_bottom %}
+                        {% if showLegalGuaranteeNotice %}
+                            <p class="legal-guarantee-notice mb-0 mt-2">
+                                {{ 'checkout.confirmLegalGuaranteeNotice'|trans({
+                                    '%legalGuaranteeNoticeModalTagOpen%': legalGuaranteeNoticeModalTagOpen,
+                                    '%legalGuaranteeNoticeModalTagClose%': legalGuaranteeNoticeModalTagClose,
+                                })|raw }}
+                            </p>
+                        {% endif %}
+                    {% endblock %}
+
+                    {% block page_checkout_confirm_tos_auto_confirmed_bottom %}
+                        {% set tosModalTagOpen = '<button type="button" class="checkout-confirm-terms-modal btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path('frontend.cms.page', { id: config('core.basicInformation.tosPage') }) ~ '">' %}
+                        {% set tosModalTagClose = '</button>' %}
+
+                        <div class="form-check mt-2 ">
+                            {% block page_checkout_confirm_tos_auto_confirmed_checkbox_bottom %}
+                                <input type="checkbox"
+                                       class="checkout-confirm-tos-checkbox form-check-input{% if formViolations.getViolations('/tos') is not empty %} is-invalid{% endif %}"
+                                       required="required"
+                                       id="tos"
+                                       form="confirmOrderForm"
+                                       name="tos">
+                            {% endblock %}
+
+                            {% block page_checkout_confirm_tos_auto_confirmed_label_bottom %}
+                                <label for="tos"
+                                       class="checkout-confirm-tos-label custom-control-label">
+                                    {{ 'checkout.confirmTermsTextModal'|trans({
+                                        '%tosModalTagOpen%': tosModalTagOpen,
+                                        '%tosModalTagClose%': tosModalTagClose,
+                                    })|raw }}
+                                </label>
+                            {% endblock %}
+                            </div>
+                    {% endblock %}
+                </div>
+            {% else %}
+                {% set tosModalTagOpen = '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path('frontend.cms.page', { id: config('core.basicInformation.tosPage') }) ~ '">' %}
+                {% set tosModalTagClose = '</button>' %}
+
+                {% set revocationModalTagOpen = '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path('frontend.cms.page', { id: config('core.basicInformation.revocationPage') }) ~ '">' %}
+                {% set revocationModalTagClose = '</button>' %}
+
+                {% block page_checkout_confirm_tos_auto_confirmed_text %}
+                    <div class="checkout-confirm-tos-information my-3 fs-6">
+                        {{ (showLegalGuaranteeNotice ? 'checkout.autoConfirmTermsTextWithGuarantee' : 'checkout.autoConfirmTermsText')|trans({
+                            '%tosModalTagOpen%': tosModalTagOpen,
+                            '%tosModalTagClose%': tosModalTagClose,
+                            '%revocationModalTagOpen%': revocationModalTagOpen,
+                            '%revocationModalTagClose%': revocationModalTagClose,
+                            '%legalGuaranteeNoticeModalTagOpen%': legalGuaranteeNoticeModalTagOpen,
+                            '%legalGuaranteeNoticeModalTagClose%': legalGuaranteeNoticeModalTagClose,
+                        })|raw }}
+                    </div>
+                {% endblock %}
+            {% endif %}
+
+            {% if page.showRevocation() %}
+                {% block page_checkout_confirm_revocation_section_control %}
+                    <div class="form-check mt-2 mb-4">
+                        {% block page_checkout_confirm_revocation_section_control_bottom %}
+                            <input type="checkbox"
+                                   class="checkout-confirm-revocation-checkbox form-check-input{% if formViolations.getViolations('/revocation') is not empty %} is-invalid{% endif %}"
+                                   required="required"
+                                   id="revocation"
+                                   form="confirmOrderForm"
+                                   name="revocation">
+                        {% endblock %}
+
+                        {% block page_checkout_confirm_revocation_section_control_label_bottom %}
+                            <label for="revocation"
+                                   class="checkout-confirm-revocation-label custom-control-label">
+                                {{ 'checkout.confirmRevocationTerms'|trans() }}
+                            </label>
+                        {% endblock %}
+                    </div>
+                {% endblock %}
+
+            {% endif %}
+        {% endif %}
+    {% endblock %}
+
+    {% block page_checkout_confirm_legal_guarantee_notice %}
+        {% if showLegalGuaranteeNotice %}
+            {% block page_checkout_confirm_legal_guarantee_notice_modal %}
+                <div class="modal modal-lg fade"
+                     id="{{ legalGuaranteeNoticeModalId }}"
+                     tabindex="-1"
+                     role="dialog"
+                     aria-modal="true"
+                     aria-hidden="true"
+                     aria-labelledby="{{ legalGuaranteeNoticeModalId }}-header">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            {% block page_checkout_confirm_legal_guarantee_notice_modal_header %}
+                                <div class="modal-header">
+                                    <div id="{{ legalGuaranteeNoticeModalId }}-header" class="modal-title js-pseudo-modal-template-title-element h5">
+                                        {{ 'checkout.confirmLegalGuaranteeNoticeLink'|trans|sw_sanitize }}
+                                    </div>
+                                    <button class="btn-close close"
+                                            type="button"
+                                            data-bs-dismiss="modal"
+                                            aria-label="{{ 'global.default.close'|trans|striptags }}">
+                                    </button>
+                                </div>
+                            {% endblock %}
+
+                            {% block page_checkout_confirm_legal_guarantee_notice_modal_body %}
+                                <div class="modal-body confirm-legal-guarantee-notice">
+                                    <a href="{{ context.languageId|sw_legal_guarantee_notice_link }}"
+                                       target="_blank"
+                                       rel="noopener">
+                                        {{ context.languageId|sw_legal_guarantee_notice }}
+                                    </a>
+                                </div>
+                            {% endblock %}
+                        </div>
+                    </div>
+                </div>
+            {% endblock %}
+        {% endif %}
+    {% endblock %}
+
+    <div class="checkout-aside-action">
+        <form id="confirmOrderForm"
+              action="{{ confirmOrderFormAction }}"
+              data-checkout-customer-storage="true"
+              data-checkout-customer-storage-options="{{ { customerId: context.customer.id }|json_encode }}"
+              data-form-preserver="true"
+              data-form-preserver-options="{{ { ignoredElementNames: [constant('Shopwell\\Core\\Checkout\\Order\\SalesChannel\\OrderService::CUSTOMER_COMMENT_KEY'), 'tos', 'revocation'] }|json_encode }}"
+              data-form-handler="true"
+              data-form-handler-options="{{ { formFieldSelector: null }|json_encode }}"
+              data-form-add-history="true"
+              data-form-add-history-options="{{ formAddHistoryOptions|json_encode }}"
+              method="post">
+
+            <input type="text" name="hash" hidden="hidden" value="{{ page.cart.getHash }}" />
+
+            {% block page_checkout_confirm_form_submit %}
+                <div class="d-grid">
+                    <button id="confirmFormSubmit"
+                            class="btn btn-primary btn-lg"
+                            form="confirmOrderForm"
+                        {% if page.cart.errors.blockResubmit %}
+                            disabled
+                        {% endif %}
+                            type="submit">
+                        {{ 'checkout.confirmSubmit'|trans|sw_sanitize }}
+                    </button>
+                </div>
+            {% endblock %}
+        </form>
+    </div>
+{% endblock %}
+
+{% block base_esi_footer %}
+    {% sw_include '@Storefront/storefront/layout/footer/footer-minimal.html.twig' %}
+{% endblock %}

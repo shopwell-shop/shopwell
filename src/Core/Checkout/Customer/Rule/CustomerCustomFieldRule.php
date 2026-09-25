@@ -1,0 +1,65 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Customer\Rule;
+
+use Shopwell\Core\Checkout\CheckoutRuleScope;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\CustomFieldRule;
+use Shopwell\Core\Framework\Rule\Exception\UnsupportedOperatorException;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Rule\RuleScope;
+
+/**
+ * @final
+ */
+#[Package('fundamentals@after-sales')]
+class CustomerCustomFieldRule extends Rule
+{
+    final public const RULE_NAME = 'customerCustomField';
+
+    /**
+     * @var array<string|int|bool|float>|string|int|bool|float|null
+     */
+    protected array|string|int|bool|float|null $renderedFieldValue = null;
+
+    protected ?string $selectedField = null;
+
+    protected ?string $selectedFieldSet = null;
+
+    /**
+     * @param array<string, string|array<string, string>> $renderedField
+     *
+     * @internal
+     */
+    public function __construct(
+        protected string $operator = self::OPERATOR_EQ,
+        protected array $renderedField = []
+    ) {
+        parent::__construct();
+    }
+
+    /**
+     * @throws UnsupportedOperatorException
+     */
+    public function match(RuleScope $scope): bool
+    {
+        if (!$scope instanceof CheckoutRuleScope) {
+            return false;
+        }
+
+        $customer = $scope->getCustomer();
+
+        if ($customer === null) {
+            return false;
+        }
+
+        $customFields = $customer->getCustomFields() ?? [];
+
+        return CustomFieldRule::match($this->renderedField, $this->renderedFieldValue, $this->operator, $customFields, $scope->getSalesChannelContext());
+    }
+
+    public function getConstraints(): array
+    {
+        return CustomFieldRule::getConstraints($this->renderedField);
+    }
+}

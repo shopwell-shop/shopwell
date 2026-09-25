@@ -1,0 +1,101 @@
+import { mount } from '@vue/test-utils';
+
+/**
+ * @sw-package checkout
+ */
+async function createWrapper() {
+    const orderProp = {
+        transactions: [],
+        deliveries: [{}],
+    };
+
+    orderProp.transactions.last = () => ({});
+    orderProp.transactions.getIds = () => [];
+    orderProp.deliveries.getIds = () => [];
+
+    return mount(await wrapTestComponent('sw-order-state-history-card', { sync: true }), {
+        global: {
+            stubs: {
+                'mt-card': {
+                    template: '<div><slot></slot></div>',
+                },
+                'sw-container': await wrapTestComponent('sw-container'),
+                'sw-order-state-history-card-entry': true,
+                'sw-order-state-change-modal': await wrapTestComponent('sw-order-state-change-modal', { sync: true }),
+                'sw-modal': {
+                    template: '<div class="sw-modal"><slot></slot></div>',
+                },
+                'sw-order-state-change-modal-attach-documents': true,
+            },
+            provide: {
+                orderService: {},
+                stateMachineService: {
+                    getState: () => {
+                        return { data: { transactions: [] } };
+                    },
+                },
+                orderStateMachineService: {},
+                repositoryFactory: {
+                    create: () => ({
+                        search: () => Promise.resolve([]),
+                    }),
+                },
+                swOrderDetailAskAndSaveEdits: () => Promise.resolve(true),
+            },
+        },
+        props: {
+            title: '',
+            order: orderProp,
+        },
+    });
+}
+
+describe('src/module/sw-order/component/sw-order-state-history-card', () => {
+    let wrapper;
+
+    // @deprecated tag:v6.8.0 - The test will be removed with sw-order-state-history-card.
+    it.deprecated('v6.8.0.0')('should have an disabled payment state', async () => {
+        global.activeAclRoles = [];
+        wrapper = await createWrapper();
+        const paymentState = wrapper.find('.sw-order-state-history-card__payment-state');
+        expect(paymentState.attributes().disabled).toBe('true');
+    });
+
+    // @deprecated tag:v6.8.0 - The test will be removed with sw-order-state-history-card.
+    it.deprecated('v6.8.0.0')('should not have an disabled payment state', async () => {
+        global.activeAclRoles = ['order.editor'];
+        wrapper = await createWrapper();
+        const paymentState = wrapper.find('.sw-order-state-history-card__payment-state');
+
+        expect(paymentState.attributes().disabled).toBeUndefined();
+    });
+
+    // @deprecated tag:v6.8.0 - The test will be removed with sw-order-state-history-card.
+    it.deprecated('v6.8.0.0')('should have an disabled delivery state', async () => {
+        global.activeAclRoles = [];
+        wrapper = await createWrapper();
+        const deliveryState = wrapper.find('.sw-order-state-history-card__delivery-state');
+
+        expect(deliveryState.attributes().disabled).toBe('true');
+    });
+
+    // @deprecated tag:v6.8.0 - The test will be removed with sw-order-state-history-card.
+    it.deprecated('v6.8.0.0')('should not have an disabled delivery state', async () => {
+        global.activeAclRoles = ['order.editor'];
+        wrapper = await createWrapper(['order.editor']);
+        const deliveryState = wrapper.find('.sw-order-state-history-card__delivery-state');
+
+        expect(deliveryState.attributes().disabled).toBeUndefined();
+    });
+
+    it('should always render order change modal with document selection', async () => {
+        global.activeAclRoles = [];
+        wrapper = await createWrapper();
+        await wrapper.setData({ showModal: true });
+
+        await wrapper.vm.$nextTick();
+
+        // Document selection should be visible
+        expect(wrapper.find('sw-order-state-change-modal-attach-documents-stub').exists()).toBeTruthy();
+    });
+});

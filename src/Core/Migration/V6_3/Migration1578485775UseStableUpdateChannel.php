@@ -1,0 +1,37 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Migration\V6_3;
+
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Migration\MigrationStep;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class Migration1578485775UseStableUpdateChannel extends MigrationStep
+{
+    public function getCreationTimestamp(): int
+    {
+        return 1578485775;
+    }
+
+    public function update(Connection $connection): void
+    {
+        $connection->executeStatement(
+            'UPDATE system_config
+             SET configuration_value = :value
+             WHERE configuration_key = :key',
+            [
+                'key' => 'core.update.channel',
+                'value' => json_encode(['_value' => 'stable']),
+            ]
+        );
+    }
+
+    public function updateDestructive(Connection $connection): void
+    {
+        // implement update destructive
+    }
+}

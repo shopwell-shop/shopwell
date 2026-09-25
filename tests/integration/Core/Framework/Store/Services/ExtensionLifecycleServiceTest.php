@@ -1,0 +1,321 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\Store\Services;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Api\Context\SystemSource;
+use Shopwell\Core\Framework\App\AppCollection;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Store\Services\AbstractExtensionLifecycle;
+use Shopwell\Core\Framework\Store\Services\ExtensionLifecycleService;
+use Shopwell\Core\Framework\Store\StoreException;
+use Shopwell\Core\Framework\Test\Store\ExtensionBehaviour;
+use Shopwell\Core\Framework\Test\Store\StoreClientBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
+use Shopwell\Storefront\Theme\ThemeCollection;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+class ExtensionLifecycleServiceTest extends TestCase
+{
+    use ExtensionBehaviour;
+    use IntegrationTestBehaviour;
+    use StoreClientBehaviour;
+
+    private AbstractExtensionLifecycle $lifecycleService;
+
+    /**
+     * @var EntityRepository<AppCollection>
+     */
+    private EntityRepository $appRepository;
+
+    /**
+     * @var EntityRepository<SalesChannelCollection>
+     */
+    private EntityRepository $salesChannelRepository;
+
+    private Context $context;
+
+    protected function setUp(): void
+    {
+        $this->lifecycleService = static::getContainer()->get(ExtensionLifecycleService::class);
+
+        $this->appRepository = static::getContainer()->get('app.repository');
+        $this->salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+        $this->context = new Context(new SystemSource(), [], Defaults::CURRENCY, [Defaults::LANGUAGE_SYSTEM]);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->removeApp(__DIR__ . '/../_fixtures/TestApp');
+        $this->removeApp(__DIR__ . '/../_fixtures/TestAppTheme');
+        $this->removePlugin(__DIR__ . '/../_fixtures/AppStoreTestPlugin');
+    }
+
+    public function testInstallExtension(): void
+    {
+        $this->installApp(__DIR__ . '/../_fixtures/TestApp', false);
+
+        $this->lifecycleService->install('app', 'TestApp', $this->context);
+
+        $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
+        static::assertCount(1, $apps);
+
+        $testApp = $apps->first();
+        static::assertNotNull($testApp);
+        static::assertSame('TestApp', $testApp->getName());
+        static::assertFalse($testApp->isActive());
+    }
+
+    /**
+     * When trying to uninstall an extension (app not a plugin) that does not exist,
+     * no error should be thrown. It is caught and returned within uninstallExtension
+     */
+    public function testUninstallWithInvalidNameWithout(): void
+    {
+        $error = null;
+        $message = '';
+
+        try {
+            $this->lifecycleService->uninstall('app', 'notExisting', false, $this->context);
+        } catch (\Throwable $e) {
+            $error = $e;
+            $message = \sprintf('No error expected, got "%s" with: %s', $error->getMessage(), $error->getTraceAsString());
+        }
+        static::assertNull($error, $message);
+    }
+
+    public function testInstallAppNotExisting(): void
+    {
+        $this->expectExceptionObject(StoreException::extensionInstallException('Cannot find app by name notExisting'));
+        $this->lifecycleService->install('app', 'notExisting', $this->context);
+    }
+
+    public function testRemoveExtension(): void
+    {
+        $this->installApp(__DIR__ . '/../_fixtures/TestApp');
+
+        $this->lifecycleService->uninstall('app', 'TestApp', false, $this->context);
+        $this->lifecycleService->remove('app', 'TestApp', false, $this->context);
+
+        $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
+
+        static::assertCount(0, $apps);
+    }
+
+    public function testActivateExtension(): void
+    {
+        $this->installApp(__DIR__ . '/../_fixtures/TestApp');
+
+        $this->lifecycleService->activate('app', 'TestApp', $this->context);
+
+        $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
+        static::assertCount(1, $apps);
+
+        $testApp = $apps->first();
+        static::assertNotNull($testApp);
+        static::assertSame('TestApp', $testApp->getName());
+        static::assertTrue($testApp->isActive());
+    }
+
+    public function testDeactivateExtension(): void
+    {
+        $this->installApp(__DIR__ . '/../_fixtures/TestApp');
+
+        $this->lifecycleService->activate('app', 'TestApp', $this->context);
+
+        $testApp = $this->appRepository->search(new Criteria(), $this->context)->getEntities()->first();
+        static::assertNotNull($testApp);
+        static::assertTrue($testApp->isActive());
+
+        $this->lifecycleService->deactivate('app', 'TestApp', $this->context);
+
+        $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
+        static::assertCount(1, $apps);
+
+        $testApp = $apps->first();
+        static::assertNotNull($testApp);
+        static::assertSame('TestApp', $testApp->getName());
+        static::assertFalse($testApp->isActive());
+    }
+
+    public function testUpdateExtensionNotExisting(): void
+    {
+        $this->expectExceptionObject(new \RuntimeException('Cannot find extension'));
+        $this->lifecycleService->update('app', 'foo', false, $this->context);
+    }
+
+    public function testUpdateExtensionNotInstalled(): void
+    {
+        $this->installApp(__DIR__ . '/../_fixtures/TestApp', false);
+        $this->expectExceptionObject(StoreException::extensionNotFoundFromTechnicalName('TestApp'));
+        $this->lifecycleService->update('app', 'TestApp', false, $this->context);
+    }
+
+    public function testUpdateExtension(): void
+    {
+        $this->installApp(__DIR__ . '/../_fixtures/TestApp');
+
+        $testApp = $this->appRepository->search(new Criteria(), $this->context)->getEntities()->first();
+        static::assertNotNull($testApp);
+        static::assertSame('1.0.0', $testApp->getVersion());
+
+        $appManifestPath = static::getContainer()->getParameter('kernel.app_dir') . '/TestApp/manifest.xml';
+        $appManifest = file_get_contents($appManifestPath);
+        static::assertIsString($appManifest);
+        file_put_contents($appManifestPath, str_replace('1.0.0', '1.0.1', $appManifest));
+
+        $this->lifecycleService->update('app', 'TestApp', false, $this->context);
+
+        $testApp = $this->appRepository->search(new Criteria(), $this->context)->getEntities()->first();
+        static::assertNotNull($testApp);
+        static::assertSame('1.0.1', $testApp->getVersion());
+    }
+
+    public function testExtensionCanNotBeRemovedIfAThemeIsAssigned(): void
+    {
+        $themeRepo = $this->getThemeRepository();
+
+        $this->installApp(__DIR__ . '/../_fixtures/TestAppTheme');
+        $this->lifecycleService->activate('app', 'TestAppTheme', $this->context);
+
+        $testApp = $this->appRepository->search(new Criteria(), $this->context)->getEntities()->first();
+        static::assertNotNull($testApp);
+
+        $theme = $themeRepo->search(
+            (new Criteria())->addFilter(new EqualsFilter('technicalName', 'TestAppTheme')),
+            $this->context
+        )->getEntities()->first();
+        static::assertNotNull($theme);
+
+        $defaultSalesChannelId = $this->salesChannelRepository->searchIds(new Criteria(), $this->context)->firstId();
+        static::assertNotNull($defaultSalesChannelId);
+
+        $this->salesChannelRepository->update([[
+            'id' => $defaultSalesChannelId,
+            'themes' => [
+                ['id' => $theme->getId()],
+            ],
+        ]], $this->context);
+
+        $this->expectExceptionObject(StoreException::extensionThemeStillInUse($testApp->getId()));
+        $this->lifecycleService->uninstall(
+            'app',
+            $testApp->getName(),
+            false,
+            $this->context
+        );
+    }
+
+    public function testExtensionCantBeRemovedIfAChildThemeIsAssigned(): void
+    {
+        $themeRepo = $this->getThemeRepository();
+
+        $this->installApp(__DIR__ . '/../_fixtures/TestAppTheme');
+        $this->lifecycleService->activate('app', 'TestAppTheme', $this->context);
+
+        $theme = $themeRepo->search(
+            (new Criteria())->addFilter(new EqualsFilter('technicalName', 'TestAppTheme')),
+            $this->context
+        )->getEntities()->first();
+        static::assertNotNull($theme);
+
+        $childThemeId = Uuid::randomHex();
+        $themeRepo->create([[
+            'id' => $childThemeId,
+            'name' => 'SwagTest',
+            'author' => 'Shopwell',
+            'active' => true,
+            'parentThemeId' => $theme->getId(),
+        ]], $this->context);
+
+        $defaultSalesChannelId = $this->salesChannelRepository->searchIds(new Criteria(), $this->context)->firstId();
+
+        $this->salesChannelRepository->update([[
+            'id' => $defaultSalesChannelId,
+            'themes' => [
+                ['id' => $childThemeId],
+            ],
+        ]], $this->context);
+
+        $testApp = $this->appRepository->search(new Criteria(), $this->context)->getEntities()->first();
+        static::assertNotNull($testApp);
+        $this->expectExceptionObject(StoreException::extensionThemeStillInUse($testApp->getId()));
+        $this->lifecycleService->uninstall(
+            'app',
+            'TestAppTheme',
+            false,
+            $this->context
+        );
+    }
+
+    public function testExtensionCanBeRemovedIfThemeIsNotAssigned(): void
+    {
+        $themeRepo = $this->getThemeRepository();
+
+        $this->installApp(__DIR__ . '/../_fixtures/TestAppTheme');
+        $this->lifecycleService->activate('app', 'TestAppTheme', $this->context);
+
+        $themeCriteria = new Criteria();
+        $themeCriteria->addFilter(new EqualsFilter('technicalName', 'TestAppTheme'))
+            ->addAssociation('salesChannels');
+
+        $theme = $themeRepo->search($themeCriteria, $this->context)->getEntities()->first();
+        static::assertNotNull($theme);
+
+        $salesChannels = $theme->getSalesChannels();
+        static::assertNotNull($salesChannels);
+        static::assertCount(0, $salesChannels);
+
+        $this->lifecycleService->uninstall(
+            'type',
+            'TestAppTheme',
+            false,
+            $this->context
+        );
+
+        $removedApp = $this->appRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('name', 'TestAppTheme')),
+            $this->context
+        )->getEntities()->first();
+
+        static::assertNull($removedApp);
+    }
+
+    public function testDeleteAppWithDifferentName(): void
+    {
+        $this->installApp(__DIR__ . '/../_fixtures/TestAppTheme');
+
+        $oldName = static::getContainer()->getParameter('shopware.app_dir') . '/TestAppTheme';
+        $newName = static::getContainer()->getParameter('shopware.app_dir') . '/some-random-folder-name';
+
+        rename($oldName, $newName);
+
+        $this->lifecycleService->remove('app', 'TestAppTheme', true, Context::createDefaultContext());
+
+        static::assertFileDoesNotExist($newName);
+    }
+
+    /**
+     * @return EntityRepository<ThemeCollection>
+     */
+    private function getThemeRepository(): EntityRepository
+    {
+        $themeRepo = static::getContainer()->get('theme.repository', ContainerInterface::NULL_ON_INVALID_REFERENCE);
+        if (!$themeRepo instanceof EntityRepository) {
+            static::markTestSkipped('ExtensionLifecycleServiceTest needs storefront to be installed.');
+        }
+
+        return $themeRepo;
+    }
+}

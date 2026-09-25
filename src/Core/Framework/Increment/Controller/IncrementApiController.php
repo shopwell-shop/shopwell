@@ -1,0 +1,125 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Increment\Controller;
+
+use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
+use Shopwell\Core\Framework\Increment\IncrementException;
+use Shopwell\Core\Framework\Increment\IncrementGatewayRegistry;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\PlatformRequest;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Package('framework')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [ApiRouteScope::ID]])]
+class IncrementApiController
+{
+    /**
+     * @internal
+     */
+    public function __construct(private readonly IncrementGatewayRegistry $gatewayRegistry)
+    {
+    }
+
+    #[Route(path: '/api/_action/increment/{pool}', name: 'api.increment.increment', defaults: [PlatformRequest::ATTRIBUTE_ACL => ['increment:manage']], methods: ['POST'])]
+    public function increment(Request $request, string $pool): Response
+    {
+        $key = $request->request->get('key');
+
+        if (!$key || !\is_string($key)) {
+            throw IncrementException::keyParameterIsMissing();
+        }
+
+        $cluster = $this->getCluster($request);
+
+        $poolGateway = $this->gatewayRegistry->get($pool);
+
+        $poolGateway->increment($cluster, $key);
+
+        return new JsonResponse(['success' => true]);
+    }
+
+    #[Route(path: '/api/_action/decrement/{pool}', name: 'api.increment.decrement', defaults: [PlatformRequest::ATTRIBUTE_ACL => ['increment:manage']], methods: ['POST'])]
+    public function decrement(Request $request, string $pool): Response
+    {
+        $key = $request->request->get('key');
+
+        if (!$key || !\is_string($key)) {
+            throw IncrementException::keyParameterIsMissing();
+        }
+
+        $cluster = $this->getCluster($request);
+
+        $poolGateway = $this->gatewayRegistry->get($pool);
+
+        $poolGateway->decrement(
+            $cluster,
+            $key
+        );
+
+        return new JsonResponse(['success' => true]);
+    }
+
+    #[Route(path: '/api/_action/increment/{pool}', name: 'api.increment.list', defaults: [PlatformRequest::ATTRIBUTE_ACL => ['increment:manage']], methods: ['GET'])]
+    public function getIncrement(string $pool, Request $request): Response
+    {
+        $cluster = $this->getCluster($request);
+
+        $poolGateway = $this->gatewayRegistry->get($pool);
+
+        $limit = $request->query->getInt('limit', 5);
+        $offset = $request->query->getInt('offset', 0);
+
+        $result = $poolGateway->list($cluster, $limit, $offset);
+
+        return new JsonResponse($result);
+    }
+
+    #[Route(path: '/api/_action/reset-increment/{pool}', name: 'api.increment.reset', defaults: [PlatformRequest::ATTRIBUTE_ACL => ['increment:manage']], methods: ['POST'])]
+    public function reset(string $pool, Request $request): Response
+    {
+        $cluster = $this->getCluster($request);
+        $poolGateway = $this->gatewayRegistry->get($pool);
+
+        $key = $request->request->get('key');
+
+        if ($key !== null && !\is_string($key)) {
+            throw IncrementException::keyParameterIsMissing();
+        }
+
+        $poolGateway->reset($cluster, $key);
+
+        return new JsonResponse(['success' => true]);
+    }
+
+    #[Route(path: '/api/_action/delete-increment/{pool}', name: 'api.increment.delete', defaults: [PlatformRequest::ATTRIBUTE_ACL => ['increment:manage']], methods: ['DELETE'])]
+    public function delete(string $pool, Request $request): Response
+    {
+        $keys = RequestParamHelper::get($request, 'keys', []);
+
+        if (!\is_array($keys)) {
+            throw IncrementException::invalidKeysParameter();
+        }
+
+        $cluster = $this->getCluster($request);
+        $poolGateway = $this->gatewayRegistry->get($pool);
+
+        $poolGateway->delete($cluster, $keys);
+
+        return new Response(status: Response::HTTP_NO_CONTENT);
+    }
+
+    private function getCluster(Request $request): string
+    {
+        $cluster = RequestParamHelper::get($request, 'cluster');
+
+        if ($cluster && \is_string($cluster)) {
+            return $cluster;
+        }
+
+        throw IncrementException::clusterParameterIsMissing();
+    }
+}

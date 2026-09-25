@@ -1,0 +1,49 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Cms\Extension;
+
+use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotCollection;
+use Shopwell\Core\Content\Cms\DataResolver\CriteriaCollection;
+use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
+use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopwell\Core\Framework\Extensions\Extension;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @public This class is used as type-hint for all event listeners, so the class string is "public consumable" API
+ *
+ * @title Determination of the criteria list which is used to load CMS elements in the CMS page resolve process
+ *
+ * @description This event allows interception of the collection process, where a criteria list is populated using the respective CMS resolver.
+ * The resulting criteria list is then used to load CMS elements during the CMS page resolution process.
+ *
+ * @codeCoverageIgnore
+ *
+ * @extends Extension<array<string, CriteriaCollection>>
+ */
+#[Package('discovery')]
+final class CmsSlotsDataCollectExtension extends Extension
+{
+    public const NAME = 'cms-slots-data.collect';
+
+    /**
+     * @internal Shopwell owns the __constructor, but the properties are public API
+     */
+    public function __construct(
+        /**
+         * @public
+         *
+         * @description The slot collection which is used to determine the correct resolver for each CMS slot by id and type
+         */
+        public readonly CmsSlotCollection $slots,
+        /**
+         * @public
+         *
+         * @description Allows you to access to the current resolver-context
+         *
+         * @param ResolverContext|EntityResolverContext $resolverContext
+         */
+        public readonly ResolverContext $resolverContext,
+    ) {
+    }
+}

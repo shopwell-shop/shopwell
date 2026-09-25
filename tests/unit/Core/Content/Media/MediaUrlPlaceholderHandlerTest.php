@@ -1,0 +1,108 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Media;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Result;
+use League\Flysystem\Filesystem;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Media\Infrastructure\Path\MediaUrlGenerator;
+use Shopwell\Core\Content\Media\MediaUrlPlaceholderHandler;
+use Shopwell\Core\Content\Media\MediaUrlPlaceholderHandlerInterface;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[CoversClass(MediaUrlPlaceholderHandler::class)]
+class MediaUrlPlaceholderHandlerTest extends TestCase
+{
+    private const MEDIA1_ID = 'ade8de5aba434c6c8b871e7785d57596';
+    private const MEDIA2_ID = 'f120665e491849d38f1a94e912fbc7e3';
+    private const MEDIA3_ID = 'b897b4b7c8394387ac88341951816613';
+    private const PRODUCT_ID = 'ad518375caa8445caad158291c0c5234';
+    private const DATETIME = '2024-05-14 13:37:00';
+
+    private Stub&Connection $connection;
+
+    private MediaUrlPlaceholderHandlerInterface $mediaUrlPlaceholderHandler;
+
+    protected function setUp(): void
+    {
+        $this->connection = static::createStub(Connection::class);
+        $this->connection->method('getDatabasePlatform')->willReturn(static::createStub(AbstractPlatform::class));
+
+        $fileSystemOperator = static::createStub(Filesystem::class);
+        $fileSystemOperator->method('publicUrl')->willReturnCallback(static function ($path) {
+            return 'http://foo.text:8000/' . $path;
+        });
+
+        $this->mediaUrlPlaceholderHandler = new MediaUrlPlaceholderHandler(
+            $this->connection,
+            new MediaUrlGenerator($fileSystemOperator)
+        );
+    }
+
+    /**
+     * @return iterable<string, array<string, string>>
+     */
+    public static function replaceDataProvider(): iterable
+    {
+        yield 'one url' => [
+            'content' => 'Test content with url ' . MediaUrlPlaceholderHandler::DOMAIN_PLACEHOLDER . '/mediaId/' . self::MEDIA1_ID . '#.',
+            'expected' => 'Test content with url http://foo.text:8000/media/12/34/cat.pdf?ts=' . strtotime(self::DATETIME) . '.',
+        ];
+
+        yield 'two urls' => [
+            'content' => 'Test URL 1: ' . MediaUrlPlaceholderHandler::DOMAIN_PLACEHOLDER . '/mediaId/' . self::MEDIA1_ID . '# and URL 2: '
+                . MediaUrlPlaceholderHandler::DOMAIN_PLACEHOLDER . '/mediaId/' . self::MEDIA2_ID . '#',
+            'expected' => 'Test URL 1: http://foo.text:8000/media/12/34/cat.pdf?ts=' . strtotime(self::DATETIME) . ' and URL 2: http://foo.text:8000/media/56/78/dog.pdf?ts=' . strtotime(self::DATETIME),
+        ];
+
+        yield 'two equal urls' => [
+            'content' => 'Test URL 1: ' . MediaUrlPlaceholderHandler::DOMAIN_PLACEHOLDER . '/mediaId/' . self::MEDIA1_ID . '# and URL 2: '
+                . MediaUrlPlaceholderHandler::DOMAIN_PLACEHOLDER . '/mediaId/' . self::MEDIA1_ID . '#',
+            'expected' => 'Test URL 1: http://foo.text:8000/media/12/34/cat.pdf?ts=' . strtotime(self::DATETIME) . ' and URL 2: http://foo.text:8000/media/12/34/cat.pdf?ts=' . strtotime(self::DATETIME),
+        ];
+
+        yield 'product urls left untouched' => [
+            'content' => 'Test URL 1: ' . MediaUrlPlaceholderHandler::DOMAIN_PLACEHOLDER . '/mediaId/' . self::MEDIA1_ID . '# and URL 2: ' . MediaUrlPlaceholderHandler::DOMAIN_PLACEHOLDER . '/detail/' . self::PRODUCT_ID . '#',
+            'expected' => 'Test URL 1: http://foo.text:8000/media/12/34/cat.pdf?ts=' . strtotime(self::DATETIME) . ' and URL 2: ' . MediaUrlPlaceholderHandler::DOMAIN_PLACEHOLDER . '/detail/' . self::PRODUCT_ID . '#',
+        ];
+
+        yield 'handle not found' => [
+            'content' => 'Test URL 1: ' . MediaUrlPlaceholderHandler::DOMAIN_PLACEHOLDER . '/mediaId/' . self::MEDIA3_ID,
+            'expected' => 'Test URL 1: ' . MediaUrlPlaceholderHandler::DOMAIN_PLACEHOLDER . '/mediaId/' . self::MEDIA3_ID,
+        ];
+    }
+
+    #[DataProvider('replaceDataProvider')]
+    public function testReplace(string $content, string $expected): void
+    {
+        $result = static::createStub(Result::class);
+        $result->method('fetchAllAssociative')->willReturn([
+            [
+                'id' => Uuid::fromHexToBytes(self::MEDIA1_ID),
+                'path' => 'media/12/34/cat.pdf',
+                'created_at' => self::DATETIME,
+                'updated_at' => self::DATETIME,
+                'mime_type' => 'application/pdf',
+            ],
+            [
+                'id' => Uuid::fromHexToBytes(self::MEDIA2_ID),
+                'path' => 'media/56/78/dog.pdf',
+                'created_at' => self::DATETIME,
+                'updated_at' => self::DATETIME,
+                'mime_type' => 'application/pdf',
+            ],
+        ]);
+        $this->connection->method('executeQuery')->willReturn($result);
+        static::assertSame($expected, $this->mediaUrlPlaceholderHandler->replace($content));
+    }
+}

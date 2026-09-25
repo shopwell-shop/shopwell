@@ -1,0 +1,171 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Product\SearchKeyword;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Content\Product\SearchKeyword\KeywordLoader;
+use Shopwell\Core\Content\Product\SearchKeyword\ProductSearchTermInterpreter;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\SearchConfigLoader;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Term\Filter\TokenFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Term\Tokenizer;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+#[CoversClass(ProductSearchTermInterpreter::class)]
+class ProductSearchTermInterpreterTest extends TestCase
+{
+    public function testReturnsEmptyPatternIfEmptyTerm(): void
+    {
+        $term = '';
+
+        $interpreter = new ProductSearchTermInterpreter(
+            static::createStub(Connection::class),
+            new Tokenizer(3),
+            static::createStub(LoggerInterface::class),
+            new TokenFilter(static::createStub(SearchConfigLoader::class)),
+            static::createStub(KeywordLoader::class),
+            static::createStub(SearchConfigLoader::class),
+        );
+
+        $pattern = $interpreter->interpret($term, Context::createDefaultContext());
+
+        static::assertEmpty($pattern->getTerms());
+    }
+
+    public function testReturnsEmptyPatternIfTokensToShort(): void
+    {
+        $term = 'a b c d';
+
+        $interpreter = new ProductSearchTermInterpreter(
+            static::createStub(Connection::class),
+            static::createStub(Tokenizer::class),
+            static::createStub(LoggerInterface::class),
+            new TokenFilter(static::createStub(SearchConfigLoader::class)),
+            static::createStub(KeywordLoader::class),
+            static::createStub(SearchConfigLoader::class),
+        );
+
+        $pattern = $interpreter->interpret($term, Context::createDefaultContext());
+
+        static::assertEmpty($pattern->getTerms());
+    }
+
+    public function testTokenEncodingsStayIntact(): void
+    {
+        $term = 'foo-äöüß-مرحب-bar';
+        $keywordLoader = static::createMock(KeywordLoader::class);
+
+        $keywordLoader->expects($this->once())->method('fetch')
+            ->with(static::callback(static function ($tokenSlops) use ($term) {
+                $tokens = [
+                    ...$tokenSlops[$term]['reversed'],
+                    ...$tokenSlops[$term]['normal'],
+                ];
+                $encodings = [];
+
+                foreach ($tokens as $token) {
+                    $encodings[] = mb_detect_encoding($token, null, true);
+                }
+
+                static::assertNotContains(false, $encodings, 'At least one of the tokens is not properly encoded');
+
+                return true;
+            }));
+
+        $configLoader = static::createStub(SearchConfigLoader::class);
+        $configLoader->method('load')->willReturn([['min_search_length' => 3, 'excluded_terms' => []]]);
+
+        $interpreter = new ProductSearchTermInterpreter(
+            static::createStub(Connection::class),
+            new Tokenizer(3),
+            static::createStub(LoggerInterface::class),
+            new TokenFilter($configLoader),
+            $keywordLoader,
+            $configLoader,
+        );
+
+        $interpreter->interpret($term, Context::createDefaultContext());
+    }
+
+    public function testExactScoringMatches(): void
+    {
+        $term = 'Aerodynamic Aluminum Chambermaid Placemats';
+        $keywordLoader = static::createMock(KeywordLoader::class);
+        $keywordLoader->expects($this->once())->method('fetch')
+            ->willReturnCallback(static function ($tokenSlops) {
+                return [
+                    ['aerodynamic', '1', '0', '0', '0'],
+                    ['alumimagic', '0', '1', '0', '0'],
+                    ['aluminum', '0', '1', '0', '0'],
+                    ['chambermaid', '0', '0', '1', '0'],
+                    ['placemats', '0', '0', '0', '1'],
+                ];
+            });
+
+        $configLoader = static::createStub(SearchConfigLoader::class);
+        $configLoader->method('load')->willReturn([['min_search_length' => 3, 'excluded_terms' => []]]);
+        $interpreter = new ProductSearchTermInterpreter(
+            static::createStub(Connection::class),
+            new Tokenizer(3),
+            static::createStub(LoggerInterface::class),
+            new TokenFilter($configLoader),
+            $keywordLoader,
+            $configLoader,
+        );
+
+        $actualScoring = $interpreter->interpret($term, Context::createDefaultContext());
+
+        static::assertSame($term, $actualScoring->getOriginal()->getTerm());
+        static::assertSame(1.0, $actualScoring->getOriginal()->getScore());
+
+        $expectedScoring = [
+            'aerodynamic' => 1.1,
+            'aluminum' => 1.1,
+            'chambermaid' => 1.1,
+            'placemats' => 1.1,
+            'alumimagic' => 0.1,
+        ];
+
+        $actualScoringFlat = [];
+        foreach ($actualScoring->getTerms() as $searchTerm) {
+            $actualScoringFlat[$searchTerm->getTerm()] = $searchTerm->getScore();
+        }
+
+        static::assertSame($expectedScoring, $actualScoringFlat);
+    }
+
+    public function testUsesConfiguredRelevantKeywordCount(): void
+    {
+        $term = 'search';
+        $keywordLoader = static::createMock(KeywordLoader::class);
+        $keywordLoader->expects($this->once())->method('fetch')
+            ->willReturn(array_map(static fn (int $index) => [\sprintf('keyword-%02d', $index), '1'], range(1, 12)));
+
+        $configLoader = static::createStub(SearchConfigLoader::class);
+        $configLoader->method('load')->willReturn([['min_search_length' => 3, 'excluded_terms' => []]]);
+
+        $connection = static::createStub(Connection::class);
+        $connection->method('fetchAllAssociative')->willReturn([]);
+
+        $interpreter = new ProductSearchTermInterpreter(
+            $connection,
+            new Tokenizer(3),
+            static::createStub(LoggerInterface::class),
+            new TokenFilter($configLoader),
+            $keywordLoader,
+            $configLoader,
+            10,
+        );
+
+        $pattern = $interpreter->interpret($term, Context::createDefaultContext());
+
+        static::assertCount(10, $pattern->getTerms());
+    }
+}

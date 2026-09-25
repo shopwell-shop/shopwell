@@ -1,0 +1,291 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Plugin\Command;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Command\PluginListCommand;
+use Shopwell\Core\Framework\Plugin\KernelPluginLoader\ComposerPluginLoader;
+use Shopwell\Core\Framework\Plugin\PluginCollection;
+use Shopwell\Core\Framework\Plugin\PluginEntity;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
+use Symfony\Component\Console\Tester\CommandTester;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(PluginListCommand::class)]
+class PluginListCommandTest extends TestCase
+{
+    /**
+     * @var MockObject&EntityRepository<PluginCollection>
+     */
+    private MockObject&EntityRepository $pluginRepoMock;
+
+    private Stub&ComposerPluginLoader $composerPluginLoaderMock;
+
+    private PluginListCommand $command;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->pluginRepoMock = $this->createMock(EntityRepository::class);
+        $this->composerPluginLoaderMock = static::createStub(ComposerPluginLoader::class);
+
+        $this->command = new PluginListCommand($this->pluginRepoMock, $this->composerPluginLoaderMock);
+    }
+
+    public function testCommand(): void
+    {
+        $plugin1 = new PluginEntity();
+        $plugin2 = new PluginEntity();
+        $plugin3 = new PluginEntity();
+
+        $entities = [
+            $plugin1,
+            $plugin2,
+            $plugin3,
+        ];
+
+        $plugin1->setUniqueIdentifier('1');
+        $plugin1->assign([
+            'active' => true,
+            'installedAt' => new \DateTimeImmutable('2004-01-01T00:00:00.000001Z'),
+            'upgradeVersion' => '3.0.1',
+            'name' => 'Plugin List Plugin',
+            'label' => 'plp',
+            'composerName' => 'plugin/list',
+            'version' => '2.5.3',
+            'author' => 'Fabian Blechschmidt',
+        ]);
+
+        $plugin2->setUniqueIdentifier('2');
+        $plugin2->assign([
+            'active' => false,
+            'installedAt' => new \DateTimeImmutable('2019-05-23T00:00:00.000001Z'),
+            'upgradeVersion' => '6.0.0',
+            'name' => 'Shopwell Next',
+            'label' => 'swn',
+            'composerName' => null,
+            'version' => '5.5.3',
+            'author' => 'Shopwell AG',
+        ]);
+
+        $plugin3->setUniqueIdentifier('3');
+        $plugin3->assign([
+            'active' => false,
+            'installedAt' => new \DateTimeImmutable('2024-07-05T00:00:00.000001Z'),
+            'upgradeVersion' => '1.0.0',
+            'composerName' => 'shopware/test-plugin',
+            'name' => 'Shopwell Test',
+            'label' => 'I\'ve had issues in the past with ridiculously long labels from store plugins, so we just cap the label at max 40 characters.',
+            'version' => '0.7.12',
+            'author' => 'Shopwell AG',
+        ]);
+
+        $this->setupEntityCollection($entities);
+
+        $this->setupComposerPluginLoaderMock([
+            [
+                'composerName' => 'shopware/test-plugin',
+                'name' => 'Shopwell Test',
+                'version' => '0.7.12',
+            ],
+            [
+                'composerName' => 'somevendor/payment',
+                'name' => 'Somevendor Payment',
+                'version' => '1.0.7',
+            ],
+        ]);
+
+        $commandTester = $this->executeCommand([]);
+        static::assertSame(0, $commandTester->getStatusCode());
+        static::assertStringEqualsFile(
+            __DIR__ . '/../_assertions/PluginListCommandTest-testCommand.txt',
+            implode("\n", array_map('trim', explode("\n", trim($commandTester->getDisplay())))) . "\n"
+        );
+    }
+
+    public function testFilter(): void
+    {
+        $filterValue = 'shopware-is-love';
+
+        $criteria = static::callback(static function (Criteria $criteria) use ($filterValue): bool {
+            $filters = $criteria->getFilters();
+            // must be MultiFilter
+            if (!(\count($filters) === 1 && $filters[0] instanceof MultiFilter)) {
+                return false;
+            }
+            /** @var MultiFilter $filter */
+            $filter = $filters[0];
+            // must be OR
+            if ($filter->getOperator() !== MultiFilter::CONNECTION_OR) {
+                return false;
+            }
+            $fields = ['name', 'label'];
+            foreach ($filter->getQueries() as $query) {
+                /** @var ContainsFilter $query */
+                if (!(
+                    $query instanceof ContainsFilter
+                    && $query->getValue() === $filterValue
+                    // first test against name, then label
+                    && $query->getField() === array_shift($fields)
+                )
+                ) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        $this->pluginRepoMock->expects($this->once())
+            ->method('search')
+            ->willReturnCallback(function (Criteria $actualCriteria) use ($criteria): EntitySearchResult {
+                static::assertThat($actualCriteria, $criteria);
+
+                $result = static::createStub(EntitySearchResult::class);
+                $result->method('getEntities')->willReturn(new PluginCollection());
+
+                return $result;
+            });
+
+        $commandTester = $this->executeCommand(['--filter' => $filterValue]);
+
+        static::assertSame(0, $commandTester->getStatusCode());
+        static::assertStringContainsString('Filtering for: ' . $filterValue, trim($commandTester->getDisplay()));
+    }
+
+    public function testTruncatesAuthorAndSupportsMissingAuthor(): void
+    {
+        $pluginWithLongAuthor = new PluginEntity();
+        $pluginWithLongAuthor->setUniqueIdentifier('1');
+        $pluginWithLongAuthor->assign([
+            'active' => false,
+            'name' => 'PluginWithLongAuthor',
+            'label' => 'Plugin with long author',
+            'version' => '1.0.0',
+            'author' => str_repeat('a', 41),
+        ]);
+
+        $pluginWithoutAuthor = new PluginEntity();
+        $pluginWithoutAuthor->setUniqueIdentifier('2');
+        $pluginWithoutAuthor->assign([
+            'active' => false,
+            'name' => 'PluginWithoutAuthor',
+            'label' => 'Plugin without author',
+            'version' => '1.0.0',
+        ]);
+
+        $pluginWithLongMultibyteAuthor = new PluginEntity();
+        $pluginWithLongMultibyteAuthor->setUniqueIdentifier('3');
+        $pluginWithLongMultibyteAuthor->assign([
+            'active' => false,
+            'name' => 'PluginWithLongMultibyteAuthor',
+            'label' => 'Plugin with long multibyte author',
+            'version' => '1.0.0',
+            'author' => str_repeat('ä', 41),
+        ]);
+
+        $this->setupEntityCollection([$pluginWithLongAuthor, $pluginWithoutAuthor, $pluginWithLongMultibyteAuthor]);
+        $this->setupComposerPluginLoaderMock([]);
+
+        $commandTester = $this->executeCommand([]);
+
+        static::assertSame(0, $commandTester->getStatusCode());
+        static::assertStringContainsString(str_repeat('a', 37) . '...', $commandTester->getDisplay());
+        static::assertStringContainsString('PluginWithoutAuthor', $commandTester->getDisplay());
+        static::assertStringContainsString(str_repeat('ä', 37) . '...', $commandTester->getDisplay());
+    }
+
+    public function testFormatJsonOutput(): void
+    {
+        $entities = [
+            $plugin1 = new PluginEntity(),
+            $plugin2 = new PluginEntity(),
+        ];
+
+        $plugin1->setUniqueIdentifier('1');
+        $plugin2->setUniqueIdentifier('2');
+
+        $this->setupEntityCollection($entities);
+
+        $options = ['--format' => 'json'];
+        $json = json_encode([$plugin1->jsonSerialize(), $plugin2->jsonSerialize()], \JSON_THROW_ON_ERROR);
+
+        $commandTester = $this->executeCommand($options);
+        static::assertSame(0, $commandTester->getStatusCode());
+        static::assertSame($json, trim($commandTester->getDisplay()));
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Remove together with `--json` option
+     */
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testJsonOutput(): void
+    {
+        $entities = [
+            $plugin1 = new PluginEntity(),
+            $plugin2 = new PluginEntity(),
+        ];
+
+        $plugin1->setUniqueIdentifier('1');
+        $plugin2->setUniqueIdentifier('2');
+
+        $this->setupEntityCollection($entities);
+
+        $options = ['--json' => true];
+        $json = json_encode([$plugin1->jsonSerialize(), $plugin2->jsonSerialize()], \JSON_THROW_ON_ERROR);
+
+        $commandTester = $this->executeCommand($options);
+        static::assertSame(0, $commandTester->getStatusCode());
+        static::assertSame($json, trim($commandTester->getDisplay()));
+    }
+
+    public function testInvalidFormatReturnsError(): void
+    {
+        $this->pluginRepoMock->expects($this->never())->method('search');
+
+        $commandTester = $this->executeCommand(['--format' => 'xml']);
+        static::assertSame(2, $commandTester->getStatusCode());
+        static::assertStringContainsString('Invalid format "xml"', $commandTester->getDisplay());
+    }
+
+    /**
+     * @param array<string, bool|string> $options
+     */
+    private function executeCommand(array $options): CommandTester
+    {
+        $commandTester = new CommandTester($this->command);
+        $commandTester->execute($options);
+
+        return $commandTester;
+    }
+
+    /**
+     * @param PluginEntity[] $entities
+     */
+    private function setupEntityCollection(array $entities): void
+    {
+        $result = static::createStub(EntitySearchResult::class);
+        $result->method('getEntities')->willReturn(new PluginCollection($entities));
+        $this->pluginRepoMock->expects($this->atLeastOnce())->method('search')->willReturn($result);
+    }
+
+    /**
+     * @param array<array<string, mixed>> $packages
+     */
+    private function setupComposerPluginLoaderMock(array $packages): void
+    {
+        $this->composerPluginLoaderMock->method('fetchPluginInfos')->willReturn($packages);
+    }
+}

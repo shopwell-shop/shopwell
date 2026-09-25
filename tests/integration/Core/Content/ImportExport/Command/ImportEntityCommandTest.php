@@ -1,0 +1,144 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\ImportExport\Command;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\ImportExport\Command\ImportEntityCommand;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+class ImportEntityCommandTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    private const DEFAULT_CATEGORY_IMPORT_PROFILE_TECHNICAL_NAME = 'default_category';
+    private const DEFAULT_PRODUCT_IMPORT_PROFILE_TECHNICAL_NAME = 'default_product';
+    private const TEST_IMPORT_FILE_PATH = __DIR__ . '/../fixtures/categories.csv';
+    private const TEST_INVALID_IMPORT_FILE_PATH = __DIR__ . '/../fixtures/products_with_invalid.csv';
+
+    private ImportEntityCommand $importEntityCommand;
+
+    protected function setUp(): void
+    {
+        $this->importEntityCommand = static::getContainer()->get(ImportEntityCommand::class);
+    }
+
+    public function testImportCustomersNoInputFile(): void
+    {
+        $commandTester = new CommandTester($this->importEntityCommand);
+        $noFile = Uuid::randomHex();
+        $args = [
+            'file' => $noFile,
+            'expireDate' => date('d.m.Y'),
+        ];
+        $commandTester->setInputs([self::DEFAULT_CATEGORY_IMPORT_PROFILE_TECHNICAL_NAME]);
+
+        $this->expectExceptionObject(new FileNotFoundException($noFile));
+        $commandTester->execute($args);
+    }
+
+    public function testImportCategories(): void
+    {
+        $num = 67;
+
+        $commandTester = new CommandTester($this->importEntityCommand);
+        $args = [
+            'file' => self::TEST_IMPORT_FILE_PATH,
+            'expireDate' => date('d.m.Y'),
+        ];
+        $commandTester->setInputs([self::DEFAULT_CATEGORY_IMPORT_PROFILE_TECHNICAL_NAME]);
+        $commandTester->execute($args);
+
+        $message = $commandTester->getDisplay();
+        static::assertMatchesRegularExpression(\sprintf('/\[OK\] Successfully imported %d records in \d+ seconds/', $num), $message);
+
+        $firstId = '017de84fb11a4e318fd3231317d7def4';
+        $lastId = 'fd98f6a0f00f4b05b40e63da076dfd7d';
+
+        $repository = static::getContainer()->get('category.repository');
+        $result = $repository->searchIds(new Criteria([$firstId, $lastId]), Context::createDefaultContext());
+
+        static::assertCount(2, $result->getIds());
+    }
+
+    public function testImportWithProfileTechnicalName(): void
+    {
+        $num = 67;
+
+        $commandTester = new CommandTester($this->importEntityCommand);
+        $args = [
+            'file' => self::TEST_IMPORT_FILE_PATH,
+            'expireDate' => date('d.m.Y'),
+            '--profile-technical-name' => self::DEFAULT_CATEGORY_IMPORT_PROFILE_TECHNICAL_NAME,
+        ];
+        $commandTester->execute($args);
+
+        $message = $commandTester->getDisplay();
+        static::assertMatchesRegularExpression(\sprintf('/\[OK\] Successfully imported %d records in \d+ seconds/', $num), $message);
+
+        $firstId = '017de84fb11a4e318fd3231317d7def4';
+        $lastId = 'fd98f6a0f00f4b05b40e63da076dfd7d';
+
+        $repository = static::getContainer()->get('category.repository');
+        $result = $repository->searchIds(new Criteria([$firstId, $lastId]), Context::createDefaultContext());
+
+        static::assertCount(2, $result->getIds());
+    }
+
+    public function testImportWithInvalid(): void
+    {
+        $num = 8;
+
+        $commandTester = new CommandTester($this->importEntityCommand);
+        $args = [
+            'file' => self::TEST_INVALID_IMPORT_FILE_PATH,
+            'expireDate' => date('d.m.Y'),
+            '--profile-technical-name' => self::DEFAULT_PRODUCT_IMPORT_PROFILE_TECHNICAL_NAME,
+        ];
+        $commandTester->execute($args);
+
+        $message = $commandTester->getDisplay();
+        static::assertStringContainsString('[WARNING] Not all records could be imported due to errors', $message);
+        static::assertMatchesRegularExpression(\sprintf('/\[OK\] Successfully imported %d records in \d+ seconds/', $num), $message);
+
+        $repository = static::getContainer()->get('product.repository');
+        $result = $repository->searchIds(new Criteria(), Context::createDefaultContext());
+
+        static::assertCount(8, $result->getIds());
+    }
+
+    public function testImportWithInvalidAndRollback(): void
+    {
+        $num = 8;
+
+        $this->stopTransactionAfter();
+        $commandTester = new CommandTester($this->importEntityCommand);
+        $args = [
+            'file' => self::TEST_INVALID_IMPORT_FILE_PATH,
+            'expireDate' => date('d.m.Y'),
+            '--profile-technical-name' => self::DEFAULT_PRODUCT_IMPORT_PROFILE_TECHNICAL_NAME,
+            '-r' => true,
+            '-p' => true,
+        ];
+        $commandTester->execute($args);
+        $this->startTransactionBefore();
+
+        $message = $commandTester->getDisplay();
+        static::assertStringContainsString(\sprintf('[ERROR] Errors on import. Rolling back transactions for %d records.', $num), $message);
+        static::assertStringContainsString('Integrity constraint violation', $message);
+
+        $repository = static::getContainer()->get('product.repository');
+        $result = $repository->searchIds(new Criteria(), Context::createDefaultContext());
+
+        static::assertCount(0, $result->getIds());
+    }
+}

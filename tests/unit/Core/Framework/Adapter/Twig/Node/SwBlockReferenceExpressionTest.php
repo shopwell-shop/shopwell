@@ -1,0 +1,65 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Adapter\Twig\Node;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Adapter\Twig\Extension\NodeExtension;
+use Shopwell\Core\Framework\Adapter\Twig\Extension\TwigFeaturesWithInheritanceExtension;
+use Shopwell\Core\Framework\Adapter\Twig\Node\SwBlockReferenceExpression;
+use Shopwell\Core\Framework\Adapter\Twig\TemplateFinder;
+use Shopwell\Core\Framework\Adapter\Twig\TemplateScopeDetector;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
+use Twig\TwigFunction;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(SwBlockReferenceExpression::class)]
+class SwBlockReferenceExpressionTest extends TestCase
+{
+    public function testRenderBlockReferencingFromInheritedTemplate(): void
+    {
+        static::assertSame(
+            'content',
+            $this->parseTemplate('{{ sw_block("inner", "foo.html.twig") }}')
+        );
+    }
+
+    public function testGetTag(): void
+    {
+        $extension = new TwigFeaturesWithInheritanceExtension(static::createStub(TemplateFinder::class));
+        $functionNames = \array_map(
+            static fn (TwigFunction $function) => $function->getName(),
+            $extension->getFunctions(),
+        );
+
+        static::assertContains('sw_block', $functionNames);
+    }
+
+    private function parseTemplate(string $template): string
+    {
+        $templateName = Uuid::randomHex() . '.html.twig';
+        $templateFinder = $this->createMock(TemplateFinder::class);
+        $templateFinder->expects($this->once())
+            ->method('find')
+            ->with('foo.html.twig', false, null)
+            ->willReturn('bar.html.twig');
+
+        $twig = new Environment(new ArrayLoader([
+            $templateName => $template,
+            'bar.html.twig' => 'start {% block inner %}content{% endblock %} end',
+        ]));
+        $twig->addExtension(new NodeExtension(
+            $templateFinder,
+            static::createStub(TemplateScopeDetector::class),
+        ));
+        $twig->addExtension(new TwigFeaturesWithInheritanceExtension($templateFinder));
+
+        return $twig->render($templateName);
+    }
+}

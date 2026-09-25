@@ -1,0 +1,65 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Product\Aggregate\ProductKeywordDictionary;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Language\LanguageEntity;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('inventory')]
+class ProductKeywordDictionaryEntity extends Entity
+{
+    use EntityIdTrait;
+
+    protected string $languageId;
+
+    protected string $keyword;
+
+    protected string $reversed;
+
+    protected ?LanguageEntity $language = null;
+
+    public function getLanguageId(): string
+    {
+        return $this->languageId;
+    }
+
+    public function setLanguageId(string $languageId): void
+    {
+        $this->languageId = $languageId;
+    }
+
+    public function getKeyword(): string
+    {
+        return $this->keyword;
+    }
+
+    public function setKeyword(string $keyword): void
+    {
+        $this->keyword = $keyword;
+    }
+
+    public function getReversed(): string
+    {
+        return $this->reversed;
+    }
+
+    public function setReversed(string $reversed): void
+    {
+        $this->reversed = $reversed;
+    }
+
+    public function getLanguage(): ?LanguageEntity
+    {
+        return $this->language;
+    }
+
+    public function setLanguage(?LanguageEntity $language): void
+    {
+        $this->language = $language;
+    }
+}

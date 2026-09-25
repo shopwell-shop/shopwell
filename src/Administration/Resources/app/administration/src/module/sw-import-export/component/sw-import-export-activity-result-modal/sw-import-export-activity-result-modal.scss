@@ -1,0 +1,77 @@
+.sw-import-export-activity-result-modal {
+    &__color-badge {
+        margin-right: var(--scale-size-4);
+    }
+
+    &__activity-headline {
+        font-size: var(--font-size-m);
+        line-height: var(--font-line-height-m);
+        font-weight: var(--font-weight-semibold);
+        margin: 0;
+    }
+
+    &__activity-description {
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        font-weight: var(--font-weight-regular);
+        color: var(--color-text-secondary-default);
+    }
+
+    &__activity-header {
+        display: flex;
+        flex-direction: column;
+        padding: var(--scale-size-24);
+        border-bottom: 1px solid var(--color-border-secondary-default);
+    }
+
+    &__activity {
+        border: 1px solid var(--color-border-secondary-default);
+        border-radius: var(--border-radius-card);
+    }
+
+    &__info {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        align-items: stretch;
+        gap: var(--scale-size-24);
+        margin-bottom: var(--scale-size-24);
+    }
+
+    &__main-activity.mt-card,
+    &__log-info.mt-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 0;
+
+        .mt-card__content {
+            flex: 1;
+        }
+    }
+
+    &__info div:empty {
+        display: none;
+    }
+
+    &__main-activity-content,
+    &__log-info-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto auto;
+        grid-gap: var(--scale-size-16);
+    }
+
+    &__list-item {
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        color: var(--color-text-primary-default);
+    }
+
+    &__list-item dt {
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__download-section {
+        margin-top: var(--scale-size-24);
+    }
+}

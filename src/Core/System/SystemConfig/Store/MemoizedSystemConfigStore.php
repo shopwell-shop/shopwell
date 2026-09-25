@@ -1,0 +1,71 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\SystemConfig\Store;
+
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SystemConfig\Event\SystemConfigChangedEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Contracts\Service\ResetInterface;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+final class MemoizedSystemConfigStore implements EventSubscriberInterface, ResetInterface
+{
+    /**
+     * @var array<string, array<mixed>>
+     */
+    private array $configs = [];
+
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            SystemConfigChangedEvent::class => [
+                ['onValueChanged', 1500],
+            ],
+        ];
+    }
+
+    public function onValueChanged(SystemConfigChangedEvent $event): void
+    {
+        $this->removeConfig($event->getSalesChannelId());
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    public function setConfig(?string $salesChannelId, array $config): void
+    {
+        $this->configs[$this->getKey($salesChannelId)] = $config;
+    }
+
+    /**
+     * @return ?array<string, mixed>
+     */
+    public function getConfig(?string $salesChannelId): ?array
+    {
+        return $this->configs[$this->getKey($salesChannelId)] ?? null;
+    }
+
+    public function removeConfig(?string $salesChannelId): void
+    {
+        if ($salesChannelId === null) {
+            $this->reset();
+
+            return;
+        }
+
+        unset($this->configs[$this->getKey($salesChannelId)]);
+    }
+
+    public function reset(): void
+    {
+        $this->configs = [];
+    }
+
+    private function getKey(?string $salesChannelId): string
+    {
+        return $salesChannelId ?? '_global_';
+    }
+}

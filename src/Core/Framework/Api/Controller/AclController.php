@@ -1,0 +1,110 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Api\Controller;
+
+use Shopwell\Core\Framework\Api\Acl\Event\AclGetAdditionalPrivilegesEvent;
+use Shopwell\Core\Framework\Api\Acl\Role\AclRoleDefinition;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\PlatformRequest;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\RouterInterface;
+
+#[Package('fundamentals@framework')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [ApiRouteScope::ID]])]
+class AclController extends AbstractController
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly DefinitionInstanceRegistry $definitionInstanceRegistry,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly RouterInterface $router
+    ) {
+    }
+
+    #[Route(
+        path: '/api/_action/acl/privileges',
+        name: 'api.acl.privileges.get',
+        defaults: [
+            'auth_required' => true,
+            PlatformRequest::ATTRIBUTE_ACL => ['api_acl_privileges_get'],
+            PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
+        ],
+        methods: [Request::METHOD_GET]
+    )]
+    public function getPrivileges(): JsonResponse
+    {
+        $privileges = $this->getFromRoutes();
+
+        $privileges = array_unique([...$privileges, ...$this->getFromDefinitions()]);
+
+        return new JsonResponse($privileges);
+    }
+
+    #[Route(
+        path: '/api/_action/acl/additional_privileges',
+        name: 'api.acl.privileges.additional.get',
+        defaults: [
+            'auth_required' => true,
+            PlatformRequest::ATTRIBUTE_ACL => ['api_acl_privileges_additional_get'],
+        ],
+        methods: [Request::METHOD_GET]
+    )]
+    public function getAdditionalPrivileges(Context $context): JsonResponse
+    {
+        $privileges = $this->getFromRoutes();
+
+        $definitionPrivileges = $this->getFromDefinitions();
+        $privileges = array_diff(array_unique($privileges), $definitionPrivileges);
+
+        $event = new AclGetAdditionalPrivilegesEvent($context, $privileges);
+        $this->eventDispatcher->dispatch($event);
+
+        $privileges = $event->getPrivileges();
+
+        return new JsonResponse($privileges);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function getFromDefinitions(): array
+    {
+        $privileges = [];
+        $definitions = $this->definitionInstanceRegistry->getDefinitions();
+
+        foreach ($definitions as $key => $_definition) {
+            $privileges[] = $key . ':' . AclRoleDefinition::PRIVILEGE_CREATE;
+            $privileges[] = $key . ':' . AclRoleDefinition::PRIVILEGE_DELETE;
+            $privileges[] = $key . ':' . AclRoleDefinition::PRIVILEGE_READ;
+            $privileges[] = $key . ':' . AclRoleDefinition::PRIVILEGE_UPDATE;
+        }
+
+        return $privileges;
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getFromRoutes(): array
+    {
+        $permissions = [];
+
+        foreach ($this->router->getRouteCollection()->all() as $route) {
+            $acl = $route->getDefault(PlatformRequest::ATTRIBUTE_ACL);
+            if ($acl) {
+                $permissions[] = $acl;
+            }
+        }
+
+        return \array_merge(...$permissions);
+    }
+}

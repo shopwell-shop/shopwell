@@ -1,0 +1,67 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Adapter\Filesystem\Plugin;
+
+use League\Flysystem\Filesystem;
+use League\Flysystem\InMemory\InMemoryFilesystemAdapter;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Adapter\AdapterException;
+use Shopwell\Core\Framework\Adapter\Filesystem\Adapter\AsyncAwsS3WriteBatchAdapter;
+use Shopwell\Core\Framework\Adapter\Filesystem\Plugin\CopyBatch;
+use Shopwell\Core\Framework\Adapter\Filesystem\Plugin\CopyBatchInput;
+use Shopwell\Core\Framework\Adapter\Filesystem\Plugin\WriteBatchInterface;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(CopyBatch::class)]
+class CopyBatchTest extends TestCase
+{
+    public function testCopy(): void
+    {
+        $fs = new Filesystem(new InMemoryFilesystemAdapter());
+
+        $tmpFile = sys_get_temp_dir() . '/' . uniqid('test', true);
+        file_put_contents($tmpFile, 'test');
+
+        $sourceFile = fopen($tmpFile, 'r');
+        static::assertIsResource($sourceFile);
+        CopyBatch::copy($fs, new CopyBatchInput($tmpFile, ['test.txt']), new CopyBatchInput($sourceFile, ['test2.txt']));
+
+        static::assertTrue($fs->fileExists('test.txt'));
+        static::assertTrue($fs->fileExists('test2.txt'));
+        static::assertSame('test', $fs->read('test.txt'));
+        static::assertSame('test', $fs->read('test2.txt'));
+
+        unlink($tmpFile);
+    }
+
+    public function testCopyWithBatchCopyInterface(): void
+    {
+        $adapter = $this->createMock(AsyncAwsS3WriteBatchAdapter::class);
+        $adapter->expects($this->once())->method('writeBatch');
+
+        static::assertInstanceOf(WriteBatchInterface::class, $adapter);
+
+        $fs = new Filesystem($adapter);
+
+        $tmpFile = sys_get_temp_dir() . '/' . uniqid('test', true);
+        file_put_contents($tmpFile, 'test');
+
+        $sourceFile = fopen($tmpFile, 'r');
+        static::assertIsResource($sourceFile);
+        CopyBatch::copy($fs, new CopyBatchInput($tmpFile, ['test.txt']), new CopyBatchInput($sourceFile, ['test2.txt']));
+
+        unlink($tmpFile);
+    }
+
+    public function testConstructorThrowsAnExceptionWithNoResource(): void
+    {
+        static::expectException(AdapterException::class);
+        /** @phpstan-ignore argument.type (for test purpose) */
+        new CopyBatchInput(null, []);
+    }
+}

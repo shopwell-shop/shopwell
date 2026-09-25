@@ -1,0 +1,39 @@
+.sw-product-stream-modal-preview {
+    .sw-modal__body {
+        padding: 0;
+        display: flex;
+    }
+
+    &__content {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    &__content-header {
+        display: flex;
+        align-items: flex-end;
+        gap: var(--scale-size-20);
+        padding: var(--scale-size-20) var(--scale-size-24);
+        background: var(--color-background-secondary-default);
+        border-bottom: 1px solid var(--color-border-primary-default);
+    }
+
+    &__search-field-label {
+        flex: 1;
+    }
+
+    &__sales-channel-field-label {
+        min-width: var(--scale-size-256);
+    }
+
+    &__sales-channel-field {
+        margin: 0;
+    }
+
+    &__data-grid {
+        flex: 1;
+        display: grid;
+        grid-template-rows: 1fr auto;
+    }
+}

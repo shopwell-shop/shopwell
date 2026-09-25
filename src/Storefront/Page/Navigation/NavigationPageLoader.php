@@ -1,0 +1,110 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Page\Navigation;
+
+use Shopwell\Core\Content\Category\CategoryEntity;
+use Shopwell\Core\Content\Category\CategoryException;
+use Shopwell\Core\Content\Category\SalesChannel\AbstractCategoryRoute;
+use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
+use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
+use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\NavigationPageSeoUrlRoute;
+use Shopwell\Storefront\Page\GenericPageLoaderInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * Do not use direct or indirect repository calls in a PageLoader. Always use a store-api route to get or put data.
+ */
+#[Package('discovery')]
+class NavigationPageLoader implements NavigationPageLoaderInterface
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly GenericPageLoaderInterface $genericLoader,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly AbstractCategoryRoute $cmsPageRoute,
+        private readonly SeoUrlPlaceholderHandlerInterface $seoUrlReplacer,
+        private readonly CategoryBreadcrumbBuilder $breadcrumbBuilder
+    ) {
+    }
+
+    public function load(Request $request, SalesChannelContext $context): NavigationPage
+    {
+        $page = $this->genericLoader->load($request, $context);
+        $page = NavigationPage::createFrom($page);
+
+        $navigationId = $request->attributes->get('navigationId', $context->getSalesChannel()->getNavigationCategoryId());
+
+        $category = $this->cmsPageRoute
+            ->load($navigationId, $request, $context)
+            ->getCategory();
+
+        if (!$category->getActive()) {
+            throw CategoryException::categoryNotFound($category->getId());
+        }
+
+        $this->loadMetaData($category, $page, $context->getSalesChannel());
+        $page->setNavigationId($category->getId());
+        $page->setCategory($category);
+
+        if (Feature::isActive('BREADCRUMB_REWORK') || Feature::isActive('v6.8.0.0')) {
+            $page->setBreadcrumb($this->breadcrumbBuilder->getCategoryBreadcrumbUrls($category, $context->getContext(), $context->getSalesChannel()));
+        }
+
+        if ($category->getCmsPage()) {
+            $page->setCmsPage($category->getCmsPage());
+        }
+
+        if ($page->getMetaInformation()) {
+            $canonical = ($navigationId === $context->getSalesChannel()->getNavigationCategoryId())
+                ? $this->seoUrlReplacer->generate('frontend.home.page')
+                : $this->seoUrlReplacer->generate(NavigationPageSeoUrlRoute::ROUTE_NAME, ['navigationId' => $navigationId]);
+
+            if ($request->query->has('p') && $request->query->getInt('p') > 1) {
+                $canonical .= '?p=' . $request->query->get('p');
+            }
+
+            $page->getMetaInformation()->setCanonical($canonical);
+        }
+
+        $this->eventDispatcher->dispatch(
+            new NavigationPageLoadedEvent($page, $context, $request)
+        );
+
+        return $page;
+    }
+
+    private function loadMetaData(CategoryEntity $category, NavigationPage $page, SalesChannelEntity $salesChannel): void
+    {
+        $metaInformation = $page->getMetaInformation();
+
+        if ($metaInformation === null) {
+            return;
+        }
+
+        $isHome = $salesChannel->getNavigationCategoryId() === $category->getId();
+
+        $metaDescription = $isHome && $salesChannel->getTranslation('homeMetaDescription')
+            ? $salesChannel->getTranslation('homeMetaDescription')
+            : $category->getTranslation('metaDescription')
+            ?? $category->getTranslation('description');
+        $metaInformation->setMetaDescription((string) $metaDescription);
+
+        $metaTitle = $isHome && $salesChannel->getTranslation('homeMetaTitle')
+            ? $salesChannel->getTranslation('homeMetaTitle')
+            : $category->getTranslation('metaTitle')
+            ?? $category->getTranslation('name');
+        $metaInformation->setMetaTitle((string) $metaTitle);
+
+        $keywords = $isHome && $salesChannel->getTranslation('homeKeywords')
+            ? $salesChannel->getTranslation('homeKeywords')
+            : $category->getTranslation('keywords');
+        $metaInformation->setMetaKeywords((string) $keywords);
+    }
+}

@@ -1,0 +1,266 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Profiling\Doctrine;
+
+use Doctrine\DBAL\Configuration;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\MySQLPlatform;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Profiling\Doctrine\BacktraceDebugDataHolder;
+use Shopwell\Core\Profiling\Doctrine\ConnectionProfiler;
+use Shopwell\Core\Profiling\Doctrine\ProfilingMiddleware;
+use Shopwell\Core\Test\Assert\Serialization;
+use Symfony\Bridge\Doctrine\Middleware\Debug\Query;
+use Symfony\Component\VarDumper\Cloner\Data;
+use Symfony\Component\VarDumper\Dumper\CliDumper;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(ConnectionProfiler::class)]
+class ConnectionProfilerTest extends TestCase
+{
+    public function testCollectConnections(): void
+    {
+        $c = $this->createCollector([]);
+        $c->lateCollect();
+
+        $c = Serialization::assertRoundTrip($c);
+        static::assertSame(['default'], $c->getConnections());
+    }
+
+    public function testCollectQueryCount(): void
+    {
+        $c = $this->createCollector([]);
+        $c->lateCollect();
+
+        $c = Serialization::assertRoundTrip($c);
+        static::assertSame(0, $c->getQueryCount());
+
+        $queries = [
+            ['sql' => 'SELECT * FROM table1', 'params' => [], 'types' => [], 'executionMS' => 0],
+        ];
+        $c = $this->createCollector($queries);
+        $c->lateCollect();
+
+        $c = Serialization::assertRoundTrip($c);
+        static::assertSame(1, $c->getQueryCount());
+    }
+
+    public function testCollectTime(): void
+    {
+        $c = $this->createCollector([]);
+        $c->lateCollect();
+
+        $c = Serialization::assertRoundTrip($c);
+        static::assertSame(0.0, $c->getTime());
+
+        $queries = [
+            ['sql' => 'SELECT * FROM table1', 'params' => [], 'types' => [], 'executionMS' => 10],
+        ];
+        $c = $this->createCollector($queries);
+        $c->lateCollect();
+
+        $c = Serialization::assertRoundTrip($c);
+        static::assertSame(10.0, $c->getTime());
+
+        $queries = [
+            ['sql' => 'SELECT * FROM table1', 'params' => [], 'types' => [], 'executionMS' => 10],
+            ['sql' => 'SELECT * FROM table2', 'params' => [], 'types' => [], 'executionMS' => 20],
+        ];
+        $c = $this->createCollector($queries);
+        $c->lateCollect();
+
+        $c = Serialization::assertRoundTrip($c);
+
+        static::assertGreaterThanOrEqual(30, $c->getTime());
+    }
+
+    public function testCollectQueryWithNoTypes(): void
+    {
+        $queries = [
+            ['sql' => 'SET sql_mode=(SELECT REPLACE(@@sql_mode, \'ONLY_FULL_GROUP_BY\', \'\'))', 'params' => [], 'types' => null, 'executionMS' => 1],
+        ];
+        $c = $this->createCollector($queries);
+        $c->lateCollect();
+
+        $c = Serialization::assertRoundTrip($c);
+
+        $collectedQueries = $c->getQueries();
+        static::assertSame([], $collectedQueries['default'][0]['types']);
+    }
+
+    public function testLateCollectIsStableAcrossSubRequests(): void
+    {
+        // The data holder is shared across the whole request and lateCollect() runs once per profiled
+        // request, i.e. once for the main request and once for every sub-request (e.g. storefront
+        // pagelets). Repeated calls without an intermediate reset() must keep reporting every query,
+        // otherwise the main-request profile ends up showing zero queries.
+        $queries = [
+            ['sql' => 'SELECT * FROM table1', 'params' => [], 'types' => [], 'executionMS' => 1],
+            ['sql' => 'SELECT * FROM table2', 'params' => [], 'types' => [], 'executionMS' => 1],
+        ];
+        $c = $this->createCollector($queries);
+
+        $c->lateCollect();
+        $c->lateCollect();
+        $c->lateCollect();
+
+        $c = Serialization::assertRoundTrip($c);
+        static::assertSame(2, $c->getQueryCount());
+    }
+
+    public function testReset(): void
+    {
+        $queries = [
+            ['sql' => 'SELECT * FROM table1', 'params' => [], 'types' => [], 'executionMS' => 1],
+        ];
+        $c = $this->createCollector($queries);
+        $c->lateCollect();
+
+        $c->reset();
+        $c->lateCollect();
+
+        $c = Serialization::assertRoundTrip($c);
+
+        static::assertSame([], $c->getQueries());
+    }
+
+    /**
+     * @param array<mixed> $types
+     */
+    #[DataProvider('paramProvider')]
+    public function testCollectQueries(mixed $param, array $types, mixed $expected): void
+    {
+        $queries = [
+            ['sql' => 'SELECT * FROM table1 WHERE field1 = ?1', 'params' => [$param], 'types' => $types, 'executionMS' => 1],
+        ];
+        $c = $this->createCollector($queries);
+        $c->lateCollect();
+
+        $c = Serialization::assertRoundTrip($c);
+
+        $collectedQueries = $c->getQueries()['default'][0];
+
+        $collectedParam = $collectedQueries['params']->offsetGet(0);
+        if ($collectedParam instanceof Data) {
+            $out = fopen('php://memory', 'r+');
+            \assert(\is_resource($out));
+            $dumper = new CliDumper();
+            $dumper->setColors(false);
+            $collectedParam->dump($dumper);
+            static::assertStringMatchesFormat($expected, print_r(stream_get_contents($out, -1, 0), true));
+        } elseif (\is_string($expected)) {
+            static::assertStringMatchesFormat($expected, $collectedParam);
+        } else {
+            static::assertSame($expected, $collectedParam);
+        }
+
+        static::assertTrue($collectedQueries['explainable']);
+        static::assertTrue($collectedQueries['runnable']);
+    }
+
+    /**
+     * @return iterable<array{0: mixed, 1: array<mixed>, 2: mixed}>
+     */
+    public static function paramProvider(): iterable
+    {
+        yield 'string profiling parameter stays unchanged' => ['some value', [], 'some value'];
+        yield 'integer profiling parameter stays unchanged' => [1, [], 1];
+        yield 'profiling enabled parameter stays true' => [true, [], true];
+        yield 'missing profiling parameter stays null' => [null, [], null];
+    }
+
+    public function testCollectQueryWithNoParams(): void
+    {
+        $queries = [
+            ['sql' => 'SELECT * FROM table1', 'params' => [], 'types' => [], 'executionMS' => 1],
+            ['sql' => 'SELECT * FROM table1', 'params' => null, 'types' => null, 'executionMS' => 1],
+        ];
+        $c = $this->createCollector($queries);
+        $c->lateCollect();
+
+        $c = Serialization::assertRoundTrip($c);
+
+        $collectedQueries = $c->getQueries();
+        static::assertInstanceOf(Data::class, $collectedQueries['default'][0]['params']);
+        static::assertSame([], $collectedQueries['default'][0]['params']->getValue());
+        static::assertTrue($collectedQueries['default'][0]['explainable']);
+        static::assertTrue($collectedQueries['default'][0]['runnable']);
+        static::assertInstanceOf(Data::class, $collectedQueries['default'][1]['params']);
+        static::assertSame([], $collectedQueries['default'][1]['params']->getValue());
+        static::assertTrue($collectedQueries['default'][1]['explainable']);
+        static::assertTrue($collectedQueries['default'][1]['runnable']);
+    }
+
+    /**
+     * @param array<mixed> $types
+     */
+    #[DataProvider('paramProvider')]
+    public function testSerialization(mixed $param, array $types, mixed $expected): void
+    {
+        $queries = [
+            ['sql' => 'SELECT * FROM table1 WHERE field1 = ?1', 'params' => [$param], 'types' => $types, 'executionMS' => 1],
+        ];
+        $c = $this->createCollector($queries);
+        $c->lateCollect();
+
+        $c = Serialization::assertRoundTrip($c);
+
+        $collectedQueries = $c->getQueries()['default'][0];
+
+        $collectedParam = $collectedQueries['params']->offsetGet(0);
+        if ($collectedParam instanceof Data) {
+            $out = fopen('php://memory', 'r+');
+            \assert(\is_resource($out));
+            $dumper = new CliDumper();
+            $dumper->setColors(false);
+            $collectedParam->dump($dumper);
+            static::assertStringMatchesFormat($expected, print_r(stream_get_contents($out, -1, 0), true));
+        } elseif (\is_string($expected)) {
+            static::assertStringMatchesFormat($expected, $collectedParam);
+        } else {
+            static::assertSame($expected, $collectedParam);
+        }
+
+        static::assertTrue($collectedQueries['explainable']);
+        static::assertTrue($collectedQueries['runnable']);
+    }
+
+    /**
+     * @param array<array{sql: string, params: array<mixed>|null, types: array<mixed>|null, executionMS?: int}> $queries
+     */
+    private function createCollector(array $queries): ConnectionProfiler
+    {
+        $debugDataHolder = new BacktraceDebugDataHolder(['default']);
+        $config = new Configuration();
+        $config->setMiddlewares([new ProfilingMiddleware($debugDataHolder)]);
+
+        $connection = static::createStub(Connection::class);
+        $connection->method('getDatabasePlatform')
+            ->willReturn(new MySQLPlatform());
+        $connection->method('getConfiguration')
+            ->willReturn($config);
+
+        $collector = new ConnectionProfiler($connection);
+        foreach ($queries as $queryData) {
+            $query = static::createStub(Query::class);
+            $query->method('getSql')
+                ->willReturn($queryData['sql'] ?? '');
+            $query->method('getTypes')
+                ->willReturn($queryData['types'] ?? []);
+            $query->method('getParams')
+                ->willReturn($queryData['params'] ?? []);
+            $query->method('getDuration')
+                ->willReturn((float) ($queryData['executionMS'] ?? 0));
+
+            $debugDataHolder->addQuery('default', $query);
+        }
+
+        return $collector;
+    }
+}

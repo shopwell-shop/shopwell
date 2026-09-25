@@ -1,0 +1,593 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\ProductStream\DataAbstractionLayer;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Content\ProductStream\DataAbstractionLayer\ProductStreamIndexer;
+use Shopwell\Core\Content\ProductStream\ProductStreamCollection;
+use Shopwell\Core\Content\ProductStream\ProductStreamDefinition;
+use Shopwell\Core\Content\ProductStream\ProductStreamEntity;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexingMessage;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
+use Shopwell\Core\Framework\Event\NestedEventCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+class ProductStreamIndexerTest extends TestCase
+{
+    use DatabaseTransactionBehaviour;
+    use KernelTestBehaviour;
+
+    /**
+     * @var EntityRepository<ProductStreamCollection>
+     */
+    private EntityRepository $productStreamRepository;
+
+    private ProductStreamIndexer $indexer;
+
+    private Connection $connection;
+
+    /**
+     * @var EntityRepository<ProductCollection>
+     */
+    private EntityRepository $productRepo;
+
+    private Context $context;
+
+    protected function setUp(): void
+    {
+        $this->context = Context::createDefaultContext();
+        $this->productRepo = static::getContainer()->get('product.repository');
+        $this->productStreamRepository = static::getContainer()->get('product_stream.repository');
+        $this->connection = static::getContainer()->get(Connection::class);
+
+        $this->indexer = static::getContainer()->get(ProductStreamIndexer::class);
+    }
+
+    public function testValidRefresh(): void
+    {
+        $productId = Uuid::randomHex();
+        $manufacturerId = Uuid::randomHex();
+        $this->productRepo->create(
+            [
+                [
+                    'id' => $productId,
+                    'productNumber' => Uuid::randomHex(),
+                    'stock' => 10,
+                    'name' => 'Test',
+                    'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 9, 'linked' => false]],
+                    'manufacturer' => ['id' => $manufacturerId, 'name' => 'test'],
+                    'tax' => ['taxRate' => 19, 'name' => 'without id'],
+                ],
+            ],
+            $this->context
+        );
+
+        $id = Uuid::randomHex();
+        $this->connection->insert(
+            'product_stream',
+            [
+                'id' => Uuid::fromHexToBytes($id),
+                'api_filter' => null,
+                'invalid' => 1,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_translation',
+            [
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'language_id' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+                'name' => 'Stream',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_filter',
+            [
+                'id' => Uuid::randomBytes(),
+                'type' => 'equals',
+                'field' => 'manufacturerId',
+                'value' => $manufacturerId,
+                'position' => 1,
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_filter',
+            [
+                'id' => Uuid::randomBytes(),
+                'type' => 'equals',
+                'field' => 'product.id',
+                'value' => $productId,
+                'position' => 2,
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $message = $this->indexer->update($this->createWrittenEvent($id));
+        static::assertInstanceOf(EntityIndexingMessage::class, $message);
+        $this->indexer->handle($message);
+
+        /** @var ProductStreamEntity $entity */
+        $entity = $this->productStreamRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertNotNull($entity->getApiFilter());
+        static::assertCount(2, $entity->getApiFilter());
+
+        static::assertSame('equals', $entity->getApiFilter()[0]['type']);
+        static::assertSame('product.manufacturerId', $entity->getApiFilter()[0]['field']);
+        static::assertSame($manufacturerId, $entity->getApiFilter()[0]['value']);
+
+        static::assertSame('multi', $entity->getApiFilter()[1]['type']);
+        static::assertSame('OR', $entity->getApiFilter()[1]['operator']);
+
+        /** @var array<int, array<string, string>> $queries */
+        $queries = $entity->getApiFilter()[1]['queries'];
+        static::assertCount(2, $queries);
+
+        static::assertSame('equals', $queries[0]['type']);
+        static::assertSame('product.id', $queries[0]['field']);
+        static::assertSame($productId, $queries[0]['value']);
+
+        static::assertSame('equals', $queries[1]['type']);
+        static::assertSame('product.parentId', $queries[1]['field']);
+        static::assertSame($productId, $queries[1]['value']);
+
+        static::assertFalse($entity->isInvalid());
+    }
+
+    public function testFullIndexBuildsMappingsForNewProductStreams(): void
+    {
+        $productId = Uuid::randomHex();
+        $this->productRepo->create([
+            [
+                'id' => $productId,
+                'productNumber' => Uuid::randomHex(),
+                'stock' => 10,
+                'active' => true,
+                'name' => 'Test',
+                'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 9, 'linked' => false]],
+                'manufacturer' => ['name' => 'test'],
+                'tax' => ['taxRate' => 19, 'name' => 'without id'],
+            ],
+        ], $this->context);
+
+        $streamId = Uuid::randomHex();
+        $createdAt = (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+        $this->connection->insert('product_stream', [
+            'id' => Uuid::fromHexToBytes($streamId),
+            'api_filter' => null,
+            'invalid' => 1,
+            'created_at' => $createdAt,
+        ]);
+        $this->connection->insert('product_stream_translation', [
+            'product_stream_id' => Uuid::fromHexToBytes($streamId),
+            'language_id' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+            'name' => 'Active products',
+            'created_at' => $createdAt,
+        ]);
+        $this->connection->insert('product_stream_filter', [
+            'id' => Uuid::randomBytes(),
+            'type' => 'equals',
+            'field' => 'active',
+            'value' => '1',
+            'position' => 1,
+            'product_stream_id' => Uuid::fromHexToBytes($streamId),
+            'created_at' => $createdAt,
+        ]);
+
+        static::getContainer()->get(EntityIndexerRegistry::class)->index(false);
+
+        static::assertSame(1, (int) $this->connection->fetchOne(
+            'SELECT COUNT(*) FROM product_stream_mapping WHERE product_id = :productId AND product_stream_id = :streamId',
+            [
+                'productId' => Uuid::fromHexToBytes($productId),
+                'streamId' => Uuid::fromHexToBytes($streamId),
+            ],
+        ));
+    }
+
+    public function testWithChildren(): void
+    {
+        $productId = Uuid::randomHex();
+        $manufacturerId = Uuid::randomHex();
+        $this->productRepo->create(
+            [
+                [
+                    'id' => $productId,
+                    'productNumber' => Uuid::randomHex(),
+                    'stock' => 10,
+                    'name' => 'Test',
+                    'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 9, 'linked' => false]],
+                    'manufacturer' => ['id' => $manufacturerId, 'name' => 'test'],
+                    'tax' => ['taxRate' => 19, 'name' => 'without id'],
+                ],
+            ],
+            $this->context
+        );
+        $id = Uuid::randomHex();
+
+        $this->connection->insert(
+            'product_stream',
+            [
+                'id' => Uuid::fromHexToBytes($id),
+                'api_filter' => null,
+                'invalid' => 1,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_translation',
+            [
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'language_id' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+                'name' => 'Stream',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $multiId = Uuid::randomHex();
+        $this->connection->insert(
+            'product_stream_filter',
+            [
+                'id' => Uuid::fromHexToBytes($multiId),
+                'type' => 'multi',
+                'position' => 1,
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_filter',
+            [
+                'id' => Uuid::randomBytes(),
+                'type' => 'equals',
+                'field' => 'manufacturerId',
+                'value' => $manufacturerId,
+                'position' => 1,
+                'parent_id' => Uuid::fromHexToBytes($multiId),
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_filter',
+            [
+                'id' => Uuid::randomBytes(),
+                'type' => 'equals',
+                'field' => 'product.id',
+                'operator' => 'equals',
+                'value' => $productId,
+                'position' => 2,
+                'parent_id' => Uuid::fromHexToBytes($multiId),
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $message = $this->indexer->update($this->createWrittenEvent($id));
+        static::assertInstanceOf(EntityIndexingMessage::class, $message);
+        $this->indexer->handle($message);
+
+        /** @var ProductStreamEntity $entity */
+        $entity = $this->productStreamRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertNotNull($entity->getApiFilter());
+        static::assertCount(1, $entity->getApiFilter());
+        static::assertSame('multi', $entity->getApiFilter()[0]['type']);
+        static::assertSame(MultiFilter::CONNECTION_AND, $entity->getApiFilter()[0]['operator']);
+        /** @var array<int, array<string, array<string|mixed>|string>> $childQueries */
+        $childQueries = $entity->getApiFilter()[0]['queries'];
+        static::assertCount(2, $childQueries);
+
+        static::assertSame('equals', $childQueries[0]['type']);
+        static::assertSame('product.manufacturerId', $childQueries[0]['field']);
+        static::assertSame($manufacturerId, $childQueries[0]['value']);
+
+        static::assertSame('multi', $childQueries[1]['type']);
+        static::assertSame('OR', $childQueries[1]['operator']);
+
+        /** @var array<int, array<string, string>> $grandchildQueries */
+        $grandchildQueries = $childQueries[1]['queries'];
+        static::assertCount(2, $grandchildQueries);
+        static::assertSame('equals', $grandchildQueries[0]['type']);
+        static::assertSame('product.id', $grandchildQueries[0]['field']);
+        static::assertSame($productId, $grandchildQueries[0]['value']);
+
+        static::assertSame('equals', $grandchildQueries[1]['type']);
+        static::assertSame('product.parentId', $grandchildQueries[1]['field']);
+        static::assertSame($productId, $grandchildQueries[1]['value']);
+
+        static::assertFalse($entity->isInvalid());
+    }
+
+    public function testInvalidType(): void
+    {
+        $productId = Uuid::randomHex();
+        $this->productRepo->create(
+            [
+                [
+                    'id' => $productId,
+                    'productNumber' => Uuid::randomHex(),
+                    'stock' => 10,
+                    'name' => 'Test',
+                    'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 9, 'linked' => false]],
+                    'manufacturer' => ['name' => 'test'],
+                    'tax' => ['taxRate' => 19, 'name' => 'without id'],
+                ],
+            ],
+            $this->context
+        );
+        $id = Uuid::randomHex();
+
+        $this->connection->insert(
+            'product_stream',
+            [
+                'id' => Uuid::fromHexToBytes($id),
+                'api_filter' => null,
+                'invalid' => 1,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_translation',
+            [
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'language_id' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+                'name' => 'Stream',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $multiId = Uuid::randomHex();
+        $this->connection->insert(
+            'product_stream_filter',
+            [
+                'id' => Uuid::fromHexToBytes($multiId),
+                'type' => 'invalid',
+                'field' => 'product.id',
+                'value' => $productId,
+                'position' => 1,
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $message = $this->indexer->update($this->createWrittenEvent($id));
+        static::assertInstanceOf(EntityIndexingMessage::class, $message);
+        $this->indexer->handle($message);
+
+        /** @var ProductStreamEntity $entity */
+        $entity = $this->productStreamRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertNull($entity->getApiFilter());
+        static::assertTrue($entity->isInvalid());
+    }
+
+    public function testEmptyField(): void
+    {
+        $productId = Uuid::randomHex();
+        $this->productRepo->create(
+            [
+                [
+                    'id' => $productId,
+                    'productNumber' => Uuid::randomHex(),
+                    'stock' => 10,
+                    'name' => 'Test',
+                    'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 9, 'linked' => false]],
+                    'manufacturer' => ['name' => 'test'],
+                    'tax' => ['taxRate' => 19, 'name' => 'without id'],
+                ],
+            ],
+            $this->context
+        );
+
+        $id = Uuid::randomHex();
+        $this->connection->insert(
+            'product_stream',
+            [
+                'id' => Uuid::fromHexToBytes($id),
+                'api_filter' => null,
+                'invalid' => 1,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_translation',
+            [
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'language_id' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+                'name' => 'Stream',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_filter',
+            [
+                'id' => Uuid::randomBytes(),
+                'type' => 'equals',
+                'field' => null,
+                'value' => $productId,
+                'position' => 1,
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $message = $this->indexer->update($this->createWrittenEvent($id));
+        static::assertInstanceOf(EntityIndexingMessage::class, $message);
+        $this->indexer->handle($message);
+
+        /** @var ProductStreamEntity $entity */
+        $entity = $this->productStreamRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertNull($entity->getApiFilter());
+        static::assertTrue($entity->isInvalid());
+    }
+
+    public function testEmptyValue(): void
+    {
+        $productId = Uuid::randomHex();
+        $this->productRepo->create(
+            [
+                [
+                    'id' => $productId,
+                    'productNumber' => Uuid::randomHex(),
+                    'stock' => 10,
+                    'name' => 'Test',
+                    'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 9, 'linked' => false]],
+                    'manufacturer' => ['name' => 'test'],
+                    'tax' => ['taxRate' => 19, 'name' => 'without id'],
+                ],
+            ],
+            $this->context
+        );
+        $id = Uuid::randomHex();
+
+        $this->connection->insert(
+            'product_stream',
+            [
+                'id' => Uuid::fromHexToBytes($id),
+                'api_filter' => null,
+                'invalid' => 1,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_translation',
+            [
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'language_id' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+                'name' => 'Stream',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_filter',
+            [
+                'id' => Uuid::randomBytes(),
+                'type' => 'equalsAny',
+                'field' => 'id',
+                'value' => '',
+                'position' => 1,
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $message = $this->indexer->update($this->createWrittenEvent($id));
+        static::assertInstanceOf(EntityIndexingMessage::class, $message);
+        $this->indexer->handle($message);
+
+        /** @var ProductStreamEntity $entity */
+        $entity = $this->productStreamRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertSame([], $entity->getApiFilter());
+        static::assertFalse($entity->isInvalid());
+    }
+
+    public function testWithParameters(): void
+    {
+        $productId = Uuid::randomHex();
+        $this->productRepo->create(
+            [
+                [
+                    'id' => $productId,
+                    'productNumber' => Uuid::randomHex(),
+                    'stock' => 10,
+                    'name' => 'Test',
+                    'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 9, 'linked' => false]],
+                    'manufacturer' => ['name' => 'test'],
+                    'tax' => ['taxRate' => 19, 'name' => 'without id'],
+                ],
+            ],
+            $this->context
+        );
+        $id = Uuid::randomHex();
+        $this->connection->insert(
+            'product_stream',
+            [
+                'id' => Uuid::fromHexToBytes($id),
+                'api_filter' => null,
+                'invalid' => 1,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_translation',
+            [
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'language_id' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+                'name' => 'Stream',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_filter',
+            [
+                'id' => Uuid::randomBytes(),
+                'type' => 'range',
+                'field' => 'price.gross',
+                'parameters' => json_encode([RangeFilter::GTE => 10]),
+                'position' => 1,
+                'product_stream_id' => Uuid::fromHexToBytes($id),
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $message = $this->indexer->update($this->createWrittenEvent($id));
+        static::assertInstanceOf(EntityIndexingMessage::class, $message);
+        $this->indexer->handle($message);
+
+        /** @var ProductStreamEntity $entity */
+        $entity = $this->productStreamRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertNotNull($entity->getApiFilter());
+        static::assertCount(1, $entity->getApiFilter());
+        static::assertSame('range', $entity->getApiFilter()[0]['type']);
+        static::assertSame([RangeFilter::GTE => 10], $entity->getApiFilter()[0]['parameters']);
+        static::assertFalse($entity->isInvalid());
+    }
+
+    private function createWrittenEvent(string $id): EntityWrittenContainerEvent
+    {
+        return new EntityWrittenContainerEvent(
+            $this->context,
+            new NestedEventCollection([
+                new EntityWrittenEvent(
+                    ProductStreamDefinition::ENTITY_NAME,
+                    [new EntityWriteResult($id, [], ProductStreamDefinition::ENTITY_NAME, EntityWriteResult::OPERATION_INSERT, null)],
+                    Context::createDefaultContext()
+                ),
+            ]),
+            []
+        );
+    }
+}

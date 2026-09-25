@@ -1,0 +1,32 @@
+{% block sw_iframe_renderer %}
+<!-- The explicit tabindex keeps the iframes keyboard-reachable inside focus traps, which skip bare iframes -->
+<div :class="classes">
+    <template v-if="componentName">
+        <component :is="componentName" />
+    </template>
+
+    <template v-else-if="extensionIsApp">
+        <iframe
+            v-if="signedIframeSrc"
+            ref="iframe"
+            :src="signedIframeSrc"
+            :title="src"
+            tabindex="0"
+            width="100%"
+            :height="iFrameHeight"
+            @load="onIframeLoad"
+        ></iframe>
+    </template>
+
+    <iframe
+        v-else
+        ref="iframe"
+        :src="iFrameSrc"
+        :title="src"
+        tabindex="0"
+        width="100%"
+        :height="iFrameHeight"
+        @load="onIframeLoad"
+    ></iframe>
+</div>
+{% endblock %}

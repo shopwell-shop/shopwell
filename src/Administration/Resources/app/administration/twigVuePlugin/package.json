@@ -1,0 +1,21 @@
+{
+  "name": "eslint-plugin-twig-vue",
+  "version": "0.0.0",
+  "description": "A twig and vue plugin",
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin"
+  ],
+  "author": "twig-vue",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\""
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": "^20.x || ^22.x || ^24.x || ^25.x"
+  },
+  "license": "ISC"
+}

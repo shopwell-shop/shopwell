@@ -1,0 +1,45 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Api\OAuth;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Api\OAuth\AccessToken;
+use Shopwell\Core\Framework\Api\OAuth\Client\ApiClient;
+use Shopwell\Core\Framework\Api\OAuth\FakeCryptKey;
+use Shopwell\Core\Framework\Api\OAuth\JWTConfigurationFactory;
+use Shopwell\Core\Framework\Api\OAuth\Scope\WriteScope;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(AccessToken::class)]
+class AccessTokenTest extends TestCase
+{
+    public function testToken(): void
+    {
+        $client = new ApiClient('administration', true, 'test', true);
+        $token = new AccessToken(
+            $client,
+            [],
+            'test'
+        );
+
+        static::assertSame('test', $token->getUserIdentifier());
+        static::assertSame('administration', $token->getClient()->getIdentifier());
+        static::assertCount(0, $token->getScopes());
+
+        $config = JWTConfigurationFactory::createJWTConfiguration();
+        $token->addScope(new WriteScope());
+        $token->setClient($client);
+        $token->setPrivateKey(new FakeCryptKey($config));
+        $token->setIdentifier('administration');
+        static::assertSame('administration', $token->getIdentifier());
+        static::assertSame($client, $token->getClient());
+        $token->setExpiryDateTime(new \DateTimeImmutable());
+
+        static::assertNotEmpty($token->toString());
+    }
+}

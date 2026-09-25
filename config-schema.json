@@ -1,0 +1,1951 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/root",
+    "definitions": {
+        "root": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "parameters": {
+                    "$ref": "#/definitions/parameters"
+                },
+                "shopware": {
+                    "$ref": "#/definitions/shopware"
+                },
+                "storefront": {
+                    "$ref": "#/definitions/storefront"
+                },
+                "elasticsearch": {
+                    "$ref": "#/definitions/elasticsearch"
+                },
+                "framework": {
+                    "$ref": "#/definitions/framework"
+                }
+            },
+            "title": "Root"
+        },
+        "parameters": {
+            "type": "object",
+            "additionalProperties": true,
+            "title": "Parameters"
+        },
+        "shopware": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "http_cache": {
+                    "$ref": "#/definitions/http_cache"
+                },
+                "filesystem": {
+                    "$ref": "#/definitions/filesystem"
+                },
+                "cdn": {
+                    "$ref": "#/definitions/cdn"
+                },
+                "increment": {
+                    "$ref": "#/definitions/increment"
+                },
+                "api": {
+                    "$ref": "#/definitions/api"
+                },
+                "admin_worker": {
+                    "$ref": "#/definitions/admin_worker"
+                },
+                "auto_update": {
+                    "$ref": "#/definitions/auto_update"
+                },
+                "store": {
+                    "$ref": "#/definitions/shopware_store"
+                },
+                "analytics": {
+                    "$ref": "#/definitions/analytics"
+                },
+                "sitemap": {
+                    "$ref": "#/definitions/sitemap"
+                },
+                "translation": {
+                    "$ref": "#/definitions/translation"
+                },
+                "deployment": {
+                    "$ref": "#/definitions/deployment"
+                },
+                "media": {
+                    "$ref": "#/definitions/media"
+                },
+                "dal": {
+                    "$ref": "#/definitions/dal"
+                },
+                "cart": {
+                    "$ref": "#/definitions/cart"
+                },
+                "order": {
+                    "$ref": "#/definitions/order"
+                },
+                "number_range": {
+                    "$ref": "#/definitions/number_range"
+                },
+                "sales_channel_context": {
+                    "$ref": "#/definitions/sales_channel_context"
+                },
+                "html_sanitizer": {
+                    "$ref": "#/definitions/html_sanitizer"
+                },
+                "logger": {
+                    "$ref": "#/definitions/logger"
+                },
+                "cache": {
+                    "$ref": "#/definitions/cache"
+                },
+                "mail": {
+                    "$ref": "#/definitions/mail"
+                },
+                "profiler": {
+                    "$ref": "#/definitions/profiler"
+                },
+                "twig": {
+                    "$ref": "#/definitions/twig"
+                },
+                "dompdf": {
+                    "$ref": "#/definitions/dompdf"
+                },
+                "stock": {
+                    "$ref": "#/definitions/stock"
+                },
+                "messenger": {
+                    "$ref": "#/definitions/messenger"
+                },
+                "redis": {
+                    "$ref": "#/definitions/redis"
+                },
+                "usage_data": {
+                    "$ref": "#/definitions/usage_data"
+                },
+                "staging": {
+                    "$ref": "#/definitions/staging"
+                },
+                "system_config": {
+                    "type": "object"
+                },
+                "feature_toggle": {
+                    "$ref": "#/definitions/feature_toggle"
+                },
+                "product_stream": {
+                    "$ref": "#/definitions/product_stream"
+                },
+                "mcp": {
+                    "$ref": "#/definitions/mcp"
+                },
+                "webhook": {
+                    "$ref": "#/definitions/webhook"
+                },
+                "app_system": {
+                    "$ref": "#/definitions/app_system"
+                }
+            },
+            "title": "Shopwell"
+        },
+        "profiler": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "integrations": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "Symfony",
+                                    "Datadog",
+                                    "Tideways"
+                                ]
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ]
+                    }
+                }
+            },
+            "title": "Enabled profiler, available since 6.4.11.0"
+        },
+        "usage_data": {
+            "type": "object",
+            "additionalProperties": false,
+            "collection_enabled": {
+                "type": "boolean"
+            },
+            "properties": {
+                "gateway": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "dispatch_enabled": {
+                            "type": "boolean"
+                        },
+                        "base_uri": {
+                            "type": "string"
+                        },
+                        "batch_size": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "title": "Usage data"
+        },
+        "staging": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "mailing": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "disable_delivery": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                },
+                "storefront": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "show_banner": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                },
+                "administration": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "show_banner": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                },
+                "extensions": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "disable": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "sales_channel": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "domain_rewrite": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "match": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "equal",
+                                            "regex",
+                                            "prefix"
+                                        ]
+                                    },
+                                    "replace": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "elasticsearch": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "check_for_existence": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                }
+            },
+            "title": "Staging"
+        },
+        "feature_toggle": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "enable": {
+                    "type": "boolean"
+                }
+            },
+            "title": "Feature toggle"
+        },
+        "product_stream": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "indexing": {
+                    "type": "boolean"
+                }
+            },
+            "title": "Product Stream"
+        },
+        "webhook": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "failure_strategy": {
+                    "type": "string",
+                    "enum": [
+                        "disable_on_threshold",
+                        "ignore"
+                    ],
+                    "default": "disable_on_threshold",
+                    "description": "@experimental stableVersion:v6.8.0 feature:WEBHOOK_FAILURE_STRATEGY this is a temporary solution until webhooks are refactored with a circuit breaker implementation"
+                }
+            },
+            "title": "Webhook"
+        },
+        "app_system": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "enable_url_validation": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "allow_unencrypted_traffic": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "allowed_private_ip_addresses": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": []
+                }
+            },
+            "title": "App system"
+        },
+        "twig": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "allowed_php_functions": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dompdf": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "options": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "stock": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "enable_stock_management": {
+                    "type": "boolean",
+                    "title": "Disable Shopwell's default stock management system. This setting should be used if your ERP system manages the stock."
+                }
+            }
+        },
+        "mcp": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "allowed_tools": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Restrict which MCP tools are exposed. Empty array means all tools are allowed."
+                },
+                "app_tool_timeout": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "title": "Timeout in seconds for app webhook MCP tool calls."
+                }
+            },
+            "title": "MCP (Model Context Protocol)"
+        },
+        "messenger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "routing_overwrite": {
+                    "type": "array",
+                    "title": "Allows to overwrite the routing configuration of the messenger component",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "enforce_message_size": {
+                    "type": "boolean",
+                    "title": "Enforce the message size to 256KB, bigger messages will be rejected with an exception",
+                    "default": false
+                },
+                "message_max_kib_size": {
+                    "type": "integer",
+                    "default": 1024,
+                    "title": "Defines the maximum message size in KiB. Messages exceeding this size will be rejected with an exception. If set to 0, no limit is enforced.",
+                    "description": "The current default value of 1024 KiB (1 MiB) is the maximum size supported by AWS SQS, which is most restrictive among the supported transports. See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html"
+                },
+                "stats": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "title": "Enable the messenger stats collection",
+                            "default": false
+                        },
+                        "time_span": {
+                            "type": "integer",
+                            "title": "The time span in seconds for the messenger stats. Be aware that high values can slow down message processing",
+                            "default": 300
+                        }
+                    }
+                },
+                "scheduled_task": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                        "requeue_timeout": {
+                            "type": "integer",
+                            "title": "The timeout in hours after which a scheduled task is considered to be stuck and will be re-queued",
+                            "default": 12
+                        }
+                    }
+                }
+            }
+        },
+        "search": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "term_max_length": {
+                    "type": "integer",
+                    "title": "The maximum length of the search term"
+                }
+            }
+        },
+        "mail": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "update_mail_variables_on_send": {
+                    "type": "boolean",
+                    "title": "Configure mail template variable update on each mail sending. This setting should be disabled on productive installations. "
+                },
+                "max_body_length": {
+                    "type": "integer",
+                    "title": "The maximum length of the mail body. If it's set to 0 there is no limit."
+                }
+            },
+            "title": "Mail Template configuration, Available since 6.4.11.0"
+        },
+        "admin_worker": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "enable_admin_worker": {
+                    "type": "boolean"
+                },
+                "enable_queue_stats_worker": {
+                    "type": "boolean"
+                },
+                "enable_notification_worker": {
+                    "type": "boolean"
+                },
+                "poll_interval": {
+                    "type": "integer"
+                },
+                "transports": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "title": "Admin worker"
+        },
+        "api": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "max_limit": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "default": 100
+                },
+                "access_token_ttl": {
+                    "type": "string"
+                },
+                "refresh_token_ttl": {
+                    "type": "string"
+                },
+                "api_browser": {
+                    "$ref": "#/definitions/api_browser"
+                },
+                "store": {
+                    "$ref": "#/definitions/api_store"
+                },
+                "rate_limiter": {
+                    "$ref": "#/definitions/rate_limiter"
+                }
+            },
+            "title": "API"
+        },
+        "api_browser": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "auth_required": {
+                    "type": "boolean"
+                }
+            },
+            "title": "API browser"
+        },
+        "rate_limiter": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "login": {
+                    "$ref": "#/definitions/rate_limiter_config"
+                },
+                "guest_login": {
+                    "$ref": "#/definitions/rate_limiter_config"
+                },
+                "oauth": {
+                    "$ref": "#/definitions/rate_limiter_config"
+                },
+                "reset_password": {
+                    "$ref": "#/definitions/rate_limiter_config"
+                },
+                "user_recovery": {
+                    "$ref": "#/definitions/rate_limiter_config"
+                },
+                "contact_form": {
+                    "$ref": "#/definitions/rate_limiter_config"
+                },
+                "notification": {
+                    "$ref": "#/definitions/rate_limiter_config"
+                },
+                "newsletter_form": {
+                    "$ref": "#/definitions/rate_limiter_config"
+                },
+                "cart_add_line_item_from": {
+                    "$ref": "#/definitions/rate_limiter_config"
+                },
+                "import_export_file_download": {
+                    "$ref": "#/definitions/rate_limiter_config"
+                },
+                "mcp": {
+                    "$ref": "#/definitions/rate_limiter_config"
+                }
+            },
+            "title": "RateLimiter"
+        },
+        "rate_limiter_config": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "policy": {
+                    "type": "string"
+                },
+                "reset": {
+                    "type": "string"
+                },
+                "limits": {
+                    "type": [
+                        "object",
+                        "array"
+                    ]
+                }
+            },
+            "title": "Rate limiter config"
+        },
+        "redis": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "connections": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "dsn": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "api_store": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "context_lifetime": {
+                    "type": "string"
+                },
+                "max_limit": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "default": 100
+                }
+            },
+            "title": "API store"
+        },
+        "auto_update": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "hide_module": {
+                    "type": "boolean"
+                }
+            },
+            "title": "Auto update"
+        },
+        "cache": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "redis_prefix": {
+                    "type": "string"
+                },
+                "cache_compression": {
+                    "type": "boolean",
+                    "default": null,
+                    "description": "Controls the cache compression before the storage",
+                    "deprecationMessage": "The `cache_compression` option is deprecated and will be removed in v6.8.0 Please use the `compress` option instead."
+                },
+                "compress": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Controls the cache compression before the storage"
+                },
+                "cache_compression_method": {
+                    "type": "string",
+                    "enum": [
+                        "gzip",
+                        "zstd"
+                    ],
+                    "default": null,
+                    "description": "Controls the cache compression method",
+                    "deprecationMessage": "The `cache_compression_method` option is deprecated and will be removed in v6.8.0 Please use the `compression_method` option instead."
+                },
+                "compression_method": {
+                    "type": "string",
+                    "enum": [
+                        "gzip",
+                        "zstd"
+                    ],
+                    "default": "gzip",
+                    "description": "Controls the cache compression method"
+                },
+                "disable_stampede_protection": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Disables Symfony's cache stampede protection when using file-based sessions. Enable this ONLY if you experience session deadlocks (ABBA pattern) in environments using file-based sessions. This is a workaround for cases when Redis is not available. Trade-off: disabling stampede protection may cause increased backend load under high concurrency when cache entries expire simultaneously (cache stampede)."
+                },
+                "invalidation": {
+                    "$ref": "#/definitions/cache_invalidation"
+                },
+                "tagging": {
+                    "$ref": "#/definitions/cache_tags"
+                },
+                "twig": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "string_template_renderer_cache_dir": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "title": "Cache"
+        },
+        "cache_tags": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "each_snippet": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "If enabled, each snippet will be cached with a unique tag. This allows to invalidate a single snippet. If disabled, the whole page will be invalidated on each snippet change."
+                },
+                "each_config": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "If enabled, each config will be cached with a unique tag. This allows to invalidate a single config. If disabled, the whole page will be invalidated on each config change."
+                },
+                "each_theme_config": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "If enabled, each theme config will be cached with a unique tag. This allows to invalidate a single theme config. If disabled, the whole page will be invalidated on each theme config change."
+                }
+            }
+        },
+        "cache_invalidation": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "delay_enabled": {
+                    "type": "boolean"
+                },
+                "delay_options": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "storage": {
+                            "type": "string",
+                            "default": "mysql",
+                            "enum": [
+                                "cache",
+                                "redis",
+                                "mysql"
+                            ]
+                        },
+                        "dsn": {
+                            "type": "string",
+                            "default": "redis://localhost"
+                        },
+                        "connection": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "http_cache": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "product_listing_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "product_detail_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "product_review_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "product_search_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "product_suggest_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "product_cross_selling_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "payment_method_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "shipping_method_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "navigation_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "category_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "landing_page_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "language_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "currency_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "country_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "country_state_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "salutation_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "sitemap_route": {
+                    "$ref": "#/definitions/cache_invalidation_states"
+                },
+                "tag_invalidation_log_enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable logging of cache invalidation events."
+                }
+            },
+            "title": "Cache invalidation"
+        },
+        "cache_invalidation_states": {
+            "type": "array",
+            "title": "Cache invalidation states",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "logged-in",
+                    "cart-filled"
+                ]
+            }
+        },
+        "cart": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "expire_days": {
+                    "type": "integer"
+                },
+                "compress": {
+                    "type": "boolean",
+                    "description": "All carts, which stored in redis, are compressed via gzcompress. This option is only available if redis is used."
+                },
+                "serialization_max_mb_size": {
+                    "type": "integer",
+                    "default": null,
+                    "description": "Limits the maximum size of the serialized cart (in MB). Helps prevent database errors (e.g. max_allowed_packet) by validating the payload size before persistence."
+                },
+                "compression_method": {
+                    "type": "string",
+                    "enum": [
+                        "gzip",
+                        "zstd"
+                    ],
+                    "default": "gzip",
+                    "description": "Controls the cache compression method"
+                },
+                "storage": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "mysql",
+                                "redis"
+                            ]
+                        },
+                        "config": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "dsn": {
+                                    "type": "string",
+                                    "deprecationMessage": "The `dsn` option is deprecated and will be removed in v6.7.0 Please use the `connection` option instead."
+                                },
+                                "connection": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "title": "Cart"
+        },
+        "order": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "deep_link": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "expire_days": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 30,
+                            "description": "Specifies the number of days an order can be accessed via the deep link."
+                        }
+                    }
+                }
+            },
+            "title": "Order"
+        },
+        "number_range": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "increment_storage": {
+                    "description": "The storage engine used for the increments. Note that you need to configure also `config.dsn` if you want to use the `redis` storage.",
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "enum": [
+                                "mysql",
+                                "redis"
+                            ]
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "default": "mysql"
+                },
+                "config": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "dsn": {
+                            "type": "string",
+                            "deprecationMessage": "The `dsn` option is deprecated and will be removed in v6.7.0 Please use the `connection` option instead."
+                        },
+                        "connection": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "title": "Number Range"
+        },
+        "cdn": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "url": {
+                    "type": "string"
+                },
+                "strategy": {
+                    "type": "string"
+                },
+                "fastly": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "api_key": {
+                            "type": "string",
+                            "title": "Fastly API key. Configuring this api key, will lead to purge media urls via fast purge requests"
+                        },
+                        "soft_purge": {
+                            "type": "string",
+                            "enum": [
+                                "1",
+                                "0"
+                            ],
+                            "default": "0",
+                            "Title": "Soft purge parameter will be passed to fastly API"
+                        },
+                        "max_parallel_invalidations": {
+                            "type": "integer",
+                            "default": 2,
+                            "title": "Max parallel requests to the external server"
+                        }
+                    }
+                }
+            },
+            "title": "CDN"
+        },
+        "dal": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "batch_size": {
+                    "type": "integer"
+                },
+                "max_rule_prices": {
+                    "type": "integer"
+                },
+                "versioning": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "expire_days": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "title": "DAL"
+        },
+        "deployment": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "blue_green": {
+                    "type": "boolean"
+                },
+                "cluster_setup": {
+                    "type": "boolean"
+                },
+                "runtime_extension_management": {
+                    "type": "boolean"
+                }
+            },
+            "title": "Deployment"
+        },
+        "http_cache": {
+            "title": "Http cache configuration",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "ignored_url_parameters": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "stale_while_revalidate": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "stale_if_error": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "soft_purge": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "reverse_proxy": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "ban_method": {
+                            "type": "string",
+                            "default": "BAN",
+                            "title": "HTTP method used to purge the cache at the remote server",
+                            "deprecationMessage": "The \"ban_method\" option has no effect anymore and therefore will be removed in 6.8.0."
+                        },
+                        "ban_headers": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "title": "The headers that should be send on a single purge",
+                            "deprecationMessage": "The \"ban_headers\" option has no effect anymore and therefore will be removed in 6.8.0."
+                        },
+                        "hosts": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "List of reverse proxy servers"
+                        },
+                        "max_parallel_invalidations": {
+                            "type": "integer",
+                            "default": 2,
+                            "title": "Max parallel requests to the external server"
+                        },
+                        "use_varnish_xkey": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "Use the XKey Varnish feature",
+                            "deprecationMessage": "The \"use_varnish_xkey\" option has no effect anymore and therefore will be removed in 6.8.0."
+                        },
+                        "redis_url": {
+                            "type": "string",
+                            "title": "Redis URL",
+                            "deprecationMessage": "Using Varnish with Redis is deprecated, consider switching to Varnish with xkeys support"
+                        },
+                        "purge_all": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "additionalProperties": false,
+                            "properties": {
+                                "ban_method": {
+                                    "type": "string",
+                                    "default": "BAN",
+                                    "title": "HTTP method used to purge the cache at the remote server",
+                                    "deprecationMessage": "The \"ban_method\" option has no effect anymore and therefore will be removed in 6.8.0."
+                                },
+                                "ban_headers": {
+                                    "type": [
+                                        "object",
+                                        "null"
+                                    ],
+                                    "title": "The headers that should be send on a single purge",
+                                    "deprecationMessage": "The \"ban_headers\" option has no effect anymore and therefore will be removed in 6.8.0."
+                                },
+                                "urls": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "deprecationMessage": "The \"urls\" option has no effect anymore and therefore will be removed in 6.8.0."
+                                }
+                            }
+                        },
+                        "fastly": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "default": false
+                                },
+                                "instance_tag": {
+                                    "type": "string",
+                                    "default": ""
+                                },
+                                "api_key": {
+                                    "type": "string",
+                                    "title": "Fastly API key"
+                                },
+                                "service_id": {
+                                    "type": "string",
+                                    "title": "Fastly service ID"
+                                },
+                                "soft_purge": {
+                                    "type": "string",
+                                    "enum": [
+                                        "1",
+                                        "0"
+                                    ],
+                                    "default": "0"
+                                }
+                            }
+                        }
+                    },
+                    "title": "Reverse proxy configuration"
+                },
+                "policies": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "headers": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "cache_control": {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "properties": {
+                                            "public": { "type": "boolean" },
+                                            "private": { "type": "boolean" },
+                                            "no_cache": { "type": "boolean" },
+                                            "no_store": { "type": "boolean" },
+                                            "no_transform": { "type": "boolean" },
+                                            "must_revalidate": { "type": "boolean" },
+                                            "proxy_revalidate": { "type": "boolean" },
+                                            "immutable": { "type": "boolean" },
+                                            "max_age": { "type": "integer", "minimum": 0 },
+                                            "s_maxage": { "type": "integer", "minimum": 0 },
+                                            "stale_while_revalidate": { "type": "integer", "minimum": 0 },
+                                            "stale_if_error": { "type": "integer", "minimum": 0 }
+                                        }
+                                    },
+                                    "no_vary_search": {
+                                        "type": "string",
+                                        "title": "Verbatim value of the \"No-Vary-Search\" header, e.g. \"key-order\""
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "title": "Named cache control policies"
+                },
+                "default_policies": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "storefront": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "cacheable": { "type": ["string", "null"] },
+                                "uncacheable": { "type": ["string", "null"] }
+                            }
+                        },
+                        "store_api": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "cacheable": { "type": ["string", "null"] },
+                                "uncacheable": { "type": ["string", "null"] }
+                            }
+                        }
+                    },
+                    "title": "Default policies per area"
+                },
+                "route_policies": {
+                    "type": "object",
+                    "additionalProperties": { "type": "string" },
+                    "title": "Route name to policy mapping",
+                    "description": "Map route names to cache policies. Supports route#modifier pattern for granular script endpoint control (e.g., 'frontend.script_endpoint#hook-name')."
+                }
+            }
+        },
+        "filesystem": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "private": {
+                    "$ref": "#/definitions/file_system_type"
+                },
+                "public": {
+                    "$ref": "#/definitions/file_system_type"
+                },
+                "temp": {
+                    "$ref": "#/definitions/file_system_type"
+                },
+                "theme": {
+                    "$ref": "#/definitions/file_system_type"
+                },
+                "asset": {
+                    "$ref": "#/definitions/file_system_type"
+                },
+                "sitemap": {
+                    "$ref": "#/definitions/file_system_type"
+                },
+                "allowed_extensions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "private_allowed_extensions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "private_local_download_strategy": {
+                    "enum": [
+                        "php",
+                        "x-sendfile",
+                        "x-accel"
+                    ]
+                },
+                "private_local_path_prefix": {
+                    "type": "string",
+                    "description": "Path prefix to be prepended to the path when using a local download strategy"
+                },
+                "batch_write_size": {
+                    "type": "integer",
+                    "default": 250,
+                    "description": "Batch size for writing files simultaneously using AsyncAwsS3WriteBatchAdapter"
+                }
+            },
+            "title": "Filesystem"
+        },
+        "file_system_type": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "additionalProperties": true
+        },
+        "html_sanitizer": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "cache_dir": {
+                    "type": "string"
+                },
+                "cache_enabled": {
+                    "type": "boolean"
+                },
+                "sets": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "tags": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "attributes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "custom_attributes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "tags": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "attributes": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "options": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "title": "Set"
+                    }
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "sets": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "title": "Field"
+                    }
+                }
+            },
+            "title": "HTMLSanitizer"
+        },
+        "increment": {
+            "type": "object",
+            "additionalProperties": true,
+            "patternProperties": {
+                "^.*$": {
+                    "$ref": "#/definitions/increment_config"
+                }
+            },
+            "required": [
+                "message_queue",
+                "user_activity"
+            ],
+            "title": "Increment pools"
+        },
+        "increment_config": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "type": {
+                    "enum": [
+                        "mysql",
+                        "redis",
+                        "array"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "redis"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "url": {
+                                        "type": "string",
+                                        "deprecationMessage": "The `url` option is deprecated and will be removed in v6.7.0 Please use the `connection` option instead."
+                                    },
+                                    "connection": {
+                                        "type": "string"
+                                    }
+                                },
+                                "oneOf": [
+                                    {
+                                        "required": [
+                                            "url"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "connection"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        "required": [
+                            "config"
+                        ]
+                    }
+                }
+            ],
+            "title": "Increment storage config"
+        },
+        "logger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "enforce_throw_exception": {
+                    "type": "boolean"
+                },
+                "file_rotation_count": {
+                    "type": "integer"
+                },
+                "exclude_exception": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "exclude_events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "error_code_log_levels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            },
+            "title": "Logger"
+        },
+        "media": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "enable_url_upload_feature": {
+                    "type": "boolean"
+                },
+                "enable_url_validation": {
+                    "type": "boolean"
+                },
+                "url_upload_max_size": {
+                    "type": "string"
+                },
+                "url_upload_timeout": {
+                    "type": "number",
+                    "minimum": 0,
+                    "title": "Maximum duration in seconds for fetching a media file from a URL. Set to 0 to disable the timeout."
+                },
+                "external_link_timeout": {
+                    "type": "number",
+                    "minimum": 0,
+                    "title": "Maximum duration in seconds for checking an external media link. Set to 0 to disable the timeout."
+                },
+                "remote_thumbnails": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "enable": {
+                            "type": "boolean"
+                        },
+                        "pattern": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "presigned_upload": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Configure presigned S3 uploads for direct browser-to-storage media uploads, bypassing the server.",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Enable presigned upload support. Requires an S3-compatible filesystem adapter."
+                        },
+                        "expiration_minutes": {
+                            "type": "integer",
+                            "default": 5,
+                            "minimum": 1,
+                            "maximum": 10080,
+                            "description": "Time in minutes before the presigned upload URL expires. Bounded by the AWS S3 presigned URL maximum of 7 days (10080 minutes)."
+                        }
+                    }
+                },
+                "svg": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "allowed_elements": {
+                            "type": "array",
+                            "uniqueItems": true,
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "allowed_attributes": {
+                            "type": "array",
+                            "uniqueItems": true,
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "allowed_reference_attributes": {
+                            "type": "array",
+                            "uniqueItems": true,
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "title": "Media"
+        },
+        "sitemap": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "batchsize": {
+                    "type": "integer"
+                },
+                "custom_urls": {
+                    "type": "null"
+                },
+                "excluded_urls": {
+                    "type": "null"
+                },
+                "scheduled_task": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                }
+            },
+            "title": "sitemap"
+        },
+        "translation": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "use_local_filesystem": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "scheduled_task": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                }
+            },
+            "title": "translation"
+        },
+        "shopware_store": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "frw": {
+                    "type": "boolean"
+                }
+            },
+            "title": "Shopwell store"
+        },
+        "analytics": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "gateway_url": {
+                    "type": "string",
+                    "description": "URL of the product analytics gateway"
+                }
+            },
+            "title": "Analytics"
+        },
+        "sales_channel_context": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "expire_days": {
+                    "type": "integer"
+                }
+            },
+            "title": "Sales channel context"
+        },
+        "storefront": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "theme": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "config_loader_id": {
+                            "type": "string"
+                        },
+                        "theme_path_builder_id": {
+                            "type": "string"
+                        },
+                        "available_theme_provider": {
+                            "type": "string"
+                        }
+                    },
+                    "title": "Theme loader configuration"
+                }
+            },
+            "title": "Storefront bundle configuration"
+        },
+        "elasticsearch": {
+            "title": "Elasticsearch",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "enabled": {
+                    "type": [
+                        "string",
+                        "boolean"
+                    ],
+                    "description": "Enable Elasticsearch Searching",
+                    "default": false
+                },
+                "indexing_enabled": {
+                    "type": [
+                        "string",
+                        "boolean"
+                    ],
+                    "description": "Enable Elasticsearch Indexing",
+                    "default": false
+                },
+                "indexing_batch_size": {
+                    "type": [
+                        "string",
+                        "integer"
+                    ],
+                    "description": "Elasticsearch Batch Size",
+                    "default": 100
+                },
+                "hosts": {
+                    "type": "string",
+                    "description": "Elasticsearch Hosts",
+                    "default": "localhost:9200"
+                },
+                "index_prefix": {
+                    "type": "string",
+                    "description": "Elasticsearch Index Prefix",
+                    "default": "sw"
+                },
+                "throw_exception": {
+                    "type": [
+                        "string",
+                        "boolean"
+                    ],
+                    "description": "Throw exception when Elasticsearch queries failing",
+                    "default": false
+                },
+                "product": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "custom_fields_mapping": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "title": "Custom Field Mapping of Product"
+                        }
+                    }
+                },
+                "administration": {
+                    "title": "Admin elasticsearch",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "hosts": {
+                            "type": "string",
+                            "description": "Admin Elasticsearch Hosts",
+                            "default": "localhost:9200"
+                        },
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Admin Elasticsearch Enabled",
+                            "default": false
+                        },
+                        "refresh_indices": {
+                            "type": "boolean",
+                            "description": "Admin Elasticsearch Refresh Indices",
+                            "default": false
+                        },
+                        "index_prefix": {
+                            "type": "string",
+                            "description": "Admin Elasticsearch Index Prefix",
+                            "default": "sw-admin"
+                        }
+                    }
+                },
+                "ssl": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "verify_server_cert": {
+                            "type": "boolean",
+                            "default": true
+                        },
+                        "cert_path": {
+                            "type": [
+                                "boolean",
+                                "string"
+                            ],
+                            "default": false
+                        },
+                        "cert_key_path": {
+                            "type": [
+                                "boolean",
+                                "string"
+                            ],
+                            "default": false
+                        },
+                        "sigV4": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "default": false
+                                },
+                                "region": {
+                                    "type": [
+                                        "boolean",
+                                        "string"
+                                    ],
+                                    "default": false
+                                },
+                                "service": {
+                                    "type": [
+                                        "boolean",
+                                        "string"
+                                    ],
+                                    "default": false
+                                },
+                                "credentials_provider": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "key_id": {
+                                            "type": [
+                                                "boolean",
+                                                "string"
+                                            ],
+                                            "default": false
+                                        },
+                                        "secret_key": {
+                                            "type": [
+                                                "boolean",
+                                                "string"
+                                            ],
+                                            "default": false
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "index_settings": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                        "number_of_shards": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "default": 3
+                        },
+                        "number_of_replicas": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "default": 3
+                        },
+                        "mapping.total_fields.limit": {
+                            "type": "integer",
+                            "default": 50000
+                        },
+                        "mapping.nested_fields.limit": {
+                            "type": "integer",
+                            "default": 500
+                        },
+                        "mapping.nested_objects.limit": {
+                            "type": "integer",
+                            "default": 1000000
+                        }
+                    }
+                },
+                "analysis": {
+                    "type": "object",
+                    "title": "Analysis Config"
+                },
+                "dynamic_templates": {
+                    "type": "array",
+                    "title": "Dynamic Templates Config"
+                },
+                "use_language_analyzer": {
+                    "type": "boolean",
+                    "description": "Use language-specific analyzers for search queries. When disabled (false), searches use sw_whitespace_analyzer for more precise results.",
+                    "default": true
+                }
+            }
+        },
+        "framework": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "trusted_proxies": {
+                    "type": "string",
+                    "default": "",
+                    "description": "A list of IP ranges to be considered as proxies and trust the headers",
+                    "examples": [
+                        "REMOTE_ADDR",
+                        "private_ranges",
+                        "192.0.0.1,10.0.0.0/8"
+                    ]
+                },
+                "trusted_headers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "x-forwarded-for",
+                            "x-forwarded-host",
+                            "x-forwarded-proto",
+                            "x-forwarded-port",
+                            "x-forwarded-prefix"
+                        ]
+                    }
+                },
+                "lock": {
+                    "type": "string",
+                    "default": "flock"
+                },
+                "session": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                        "storage_factory_id": {
+                            "type": "string",
+                            "default": "session.storage.factory.native"
+                        },
+                        "handler_id": {
+                            "type": "string",
+                            "default": "",
+                            "examples": [
+                                "redis://localhost"
+                            ]
+                        },
+                        "name": {
+                            "type": "string",
+                            "default": "shop-",
+                            "description": "The cookie name of the session"
+                        },
+                        "cookie_lifetime": {
+                            "type": "integer",
+                            "default": 7200,
+                            "description": "The cookie lifetime of the session"
+                        }
+                    }
+                },
+                "cache": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                        "app": {
+                            "type": "string",
+                            "default": "cache.adapter.filesystem"
+                        },
+                        "system": {
+                            "type": "string",
+                            "default": "cache.adapter.filesystem"
+                        },
+                        "default_redis_provider": {
+                            "type": "string",
+                            "default": "redis://localhost",
+                            "examples": [
+                                "redis://%env(REDIS_URL)%"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

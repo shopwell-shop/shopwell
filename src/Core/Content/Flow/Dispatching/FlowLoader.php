@@ -1,0 +1,61 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Flow\Dispatching;
+
+use Doctrine\DBAL\Connection;
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\FetchModeHelper;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal not intended for decoration or replacement
+ *
+ * @phpstan-import-type EventGroupedFlowHolders from AbstractFlowLoader
+ */
+#[Package('after-sales')]
+class FlowLoader extends AbstractFlowLoader
+{
+    public function __construct(
+        private readonly Connection $connection,
+        private readonly LoggerInterface $logger
+    ) {
+    }
+
+    public function load(): array
+    {
+        $flows = $this->connection->fetchAllAssociative(
+            'SELECT `event_name`, LOWER(HEX(`id`)) as `id`, `name`, `payload` FROM `flow`
+                WHERE `active` = 1 AND `invalid` = 0 AND `payload` IS NOT NULL
+                ORDER BY `priority` DESC',
+        );
+
+        if ($flows === []) {
+            return [];
+        }
+
+        foreach ($flows as $key => $flow) {
+            try {
+                /** @phpstan-ignore shopware.unserializeUsage */
+                $payload = \unserialize($flow['payload']);
+            } catch (\Throwable $e) {
+                $this->logger->error(
+                    "Flow payload is invalid:\n"
+                    . 'Flow name: ' . $flow['name'] . "\n"
+                    . 'Flow id: ' . $flow['id'] . "\n"
+                    . $e->getMessage() . "\n"
+                    . 'Error Code: ' . $e->getCode() . "\n"
+                );
+
+                continue;
+            }
+
+            $flows[$key]['payload'] = $payload;
+        }
+
+        $result = FetchModeHelper::group($flows);
+
+        /** @var EventGroupedFlowHolders $result */
+        // @phpstan-ignore varTag.type (with the FetchModeHelper we lose the payload type information)
+        return $result;
+    }
+}

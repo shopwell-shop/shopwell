@@ -1,0 +1,119 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework;
+
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+
+/**
+ * @phpstan-type ErrorData array{
+ *     status: string,
+ *     code: string|null,
+ *     title?: string,
+ *     detail: string|\Stringable|null,
+ *     template?: string,
+ *     meta?: array{
+ *         parameters?: array<string, mixed>,
+ *         documentationLink?: string,
+ *         trace?: array<int, mixed>,
+ *         file?: string,
+ *         line?: int,
+ *         previous?: mixed
+ *     },
+ *     source?: array{pointer: string},
+ *     trace?: array<int, mixed>|string
+ * }
+ */
+#[Package('framework')]
+abstract class ShopwellHttpException extends HttpException implements ShopwellException
+{
+    /**
+     * @var array<string, mixed>
+     */
+    protected array $parameters = [];
+
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    public function __construct(
+        string $message,
+        array $parameters = [],
+        ?\Throwable $e = null
+    ) {
+        $this->parameters = $parameters;
+        $message = $this->parse($message, $parameters);
+
+        parent::__construct($this->getStatusCode(), $message, $e);
+    }
+
+    public function getStatusCode(): int
+    {
+        return Response::HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    /**
+     * @return \Generator<ErrorData>
+     */
+    public function getErrors(bool $withTrace = false): \Generator
+    {
+        yield $this->getCommonErrorData($withTrace);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getParameters(): array
+    {
+        return $this->parameters;
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getParameter(string $key)
+    {
+        return $this->parameters[$key] ?? null;
+    }
+
+    /**
+     * @return array{status: string, code: string, title: string, detail: string, meta: array{parameters: array<string, mixed>}, trace?: array<int, mixed>}
+     */
+    protected function getCommonErrorData(bool $withTrace = false): array
+    {
+        $error = [
+            'status' => (string) $this->getStatusCode(),
+            'code' => $this->getErrorCode(),
+            'title' => Response::$statusTexts[$this->getStatusCode()] ?? 'unknown status',
+            'detail' => $this->getMessage(),
+            'meta' => [
+                'parameters' => $this->getParameters(),
+            ],
+        ];
+
+        if ($withTrace) {
+            $error['trace'] = $this->getTrace();
+        }
+
+        return $error;
+    }
+
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    protected function parse(string $message, array $parameters = []): string
+    {
+        $regex = [];
+
+        foreach ($parameters as $key => $value) {
+            if (\is_array($value)) {
+                continue;
+            }
+
+            $formattedKey = (string) preg_replace('/[^a-z]/i', '', $key);
+            $regex[\sprintf('/\{\{(\s+)?(%s)(\s+)?\}\}/', $formattedKey)] = $value;
+        }
+
+        return (string) preg_replace(array_keys($regex), array_values($regex), $message);
+    }
+}

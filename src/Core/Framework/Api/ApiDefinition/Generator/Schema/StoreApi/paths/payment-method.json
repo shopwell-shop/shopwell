@@ -1,0 +1,107 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/payment-method": {
+            "post": {
+                "tags": [
+                    "Payment Method",
+                    "Endpoints supporting Criteria "
+                ],
+                "summary": "Loads all available payment methods",
+                "operationId": "readPaymentMethod",
+                "parameters": [
+                    {
+                        "name": "sw-include-search-info",
+                        "in": "header",
+                        "description": "Controls whether API search information is included in the response. Default is 1 (enabled), will be 0 (disabled) in the next major version.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "0",
+                                "1"
+                            ],
+                            "default": "1"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/Criteria"
+                                    },
+                                    {
+                                        "properties": {
+                                            "onlyAvailable": {
+                                                "description": "List only available",
+                                                "type": "boolean"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/PaymentMethodListResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Payment Method",
+                    "Endpoints supporting Criteria "
+                ],
+                "summary": "Loads all available payment methods",
+                "operationId": "readPaymentMethodGet",
+                "parameters": [
+                    {
+                        "x-parameter-group": "criteria"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/PaymentMethodListResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        }
+    }
+}

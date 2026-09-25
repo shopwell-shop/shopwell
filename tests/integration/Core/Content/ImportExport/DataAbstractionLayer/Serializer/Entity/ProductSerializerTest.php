@@ -1,0 +1,355 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity\MediaSerializer;
+use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity\ProductSerializer;
+use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Field\FieldSerializer;
+use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\SerializerRegistry;
+use Shopwell\Core\Content\ImportExport\Exception\InvalidMediaUrlException;
+use Shopwell\Core\Content\ImportExport\Struct\Config;
+use Shopwell\Core\Content\Media\File\FileSaver;
+use Shopwell\Core\Content\Media\File\MediaFile;
+use Shopwell\Core\Content\Media\MediaService;
+use Shopwell\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingCollection;
+use Shopwell\Core\Content\Product\Aggregate\ProductMedia\ProductMediaCollection;
+use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityCollection;
+use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Product\ProductEntity;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
+use Shopwell\Core\Test\TestDefaults;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+class ProductSerializerTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    /**
+     * @var EntityRepository<ProductVisibilityCollection>
+     */
+    private EntityRepository $visibilityRepository;
+
+    /**
+     * @var EntityRepository<SalesChannelCollection>
+     */
+    private EntityRepository $salesChannelRepository;
+
+    /**
+     * @var EntityRepository<ProductMediaCollection>
+     */
+    private EntityRepository $productMediaRepository;
+
+    /**
+     * @var EntityRepository<ProductConfiguratorSettingCollection>
+     */
+    private EntityRepository $productConfiguratorSettingRepository;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->visibilityRepository = static::getContainer()->get('product_visibility.repository');
+        $this->salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+        $this->productMediaRepository = static::getContainer()->get('product_media.repository');
+        $this->productConfiguratorSettingRepository = static::getContainer()->get('product_configurator_setting.repository');
+    }
+
+    public function testOnlySupportsProduct(): void
+    {
+        $serializer = new ProductSerializer(
+            $this->visibilityRepository,
+            $this->salesChannelRepository,
+            $this->productMediaRepository,
+            $this->productConfiguratorSettingRepository
+        );
+
+        static::assertTrue($serializer->supports('product'), 'should support product');
+
+        $definitionRegistry = static::getContainer()->get(DefinitionInstanceRegistry::class);
+        foreach ($definitionRegistry->getDefinitions() as $definition) {
+            $entity = $definition->getEntityName();
+            if ($entity !== 'product') {
+                static::assertFalse(
+                    $serializer->supports($definition->getEntityName()),
+                    ProductSerializer::class . ' should not support ' . $entity
+                );
+            }
+        }
+    }
+
+    public function testProductSerialize(): void
+    {
+        $product = $this->getProduct();
+
+        $productDefinition = static::getContainer()->get(ProductDefinition::class);
+
+        $serializer = new ProductSerializer(
+            $this->visibilityRepository,
+            $this->salesChannelRepository,
+            $this->productMediaRepository,
+            $this->productConfiguratorSettingRepository
+        );
+        $serializer->setRegistry(static::getContainer()->get(SerializerRegistry::class));
+
+        $serialized = iterator_to_array($serializer->serialize(new Config([], [], []), $productDefinition, $product));
+
+        static::assertNotEmpty($serialized);
+
+        static::assertSame($product->getId(), $serialized['id']);
+        static::assertSame($product->getTranslations()?->first()?->getName(), $serialized['translations']['DEFAULT']['name']);
+        static::assertSame((string) $product->getStock(), $serialized['stock']);
+        static::assertSame($product->getProductNumber(), $serialized['productNumber']);
+        static::assertSame('1', $serialized['active']);
+        static::assertStringContainsString('shopware-logo.png', $serialized['cover']['media']['url']);
+        static::assertStringContainsString('shopware-icon.png', $serialized['media']);
+        static::assertStringContainsString('shopware-background.png', $serialized['media']);
+        static::assertStringNotContainsString('shopware-logo.png', $serialized['media']);
+
+        $iterator = $serializer->deserialize(new Config([], [], []), $productDefinition, $serialized);
+        static::assertInstanceOf(\Traversable::class, $iterator);
+        $deserialized = iterator_to_array($iterator);
+
+        static::assertSame($product->getId(), $deserialized['id']);
+        $translations = $product->getTranslations();
+        static::assertNotNull($translations);
+
+        $first = $translations->first();
+        static::assertNotNull($first);
+        static::assertSame($first->getName(), $deserialized['translations'][Defaults::LANGUAGE_SYSTEM]['name']);
+        static::assertSame($product->getStock(), $deserialized['stock']);
+        static::assertSame($product->getProductNumber(), $deserialized['productNumber']);
+        static::assertSame($product->getActive(), $deserialized['active']);
+    }
+
+    public function testSupportsOnlyProduct(): void
+    {
+        $serializer = new ProductSerializer(
+            $this->visibilityRepository,
+            $this->salesChannelRepository,
+            $this->productMediaRepository,
+            $this->productConfiguratorSettingRepository
+        );
+
+        $definitionRegistry = static::getContainer()->get(DefinitionInstanceRegistry::class);
+        foreach ($definitionRegistry->getDefinitions() as $definition) {
+            $entity = $definition->getEntityName();
+
+            if ($entity === ProductDefinition::ENTITY_NAME) {
+                static::assertTrue($serializer->supports($entity));
+            } else {
+                static::assertFalse(
+                    $serializer->supports($entity),
+                    ProductDefinition::class . ' should not support ' . $entity
+                );
+            }
+        }
+    }
+
+    public function testDeserializeProductMedia(): void
+    {
+        $product = $this->getProduct();
+
+        $mediaService = static::createStub(MediaService::class);
+        $expectedMediaFile = new MediaFile(
+            '/tmp/foo/bar/shopware-logo.png',
+            'image/png',
+            'png',
+            1000,
+            'bc0d90db4dd806bd671ae9f7fabc5796'
+        );
+        $mediaService->method('fetchFile')
+            ->willReturnCallback(static function (Request $request) use ($expectedMediaFile): MediaFile {
+                if ($request->query->get('url') === 'http://172.16.11.80/shopware-logo.png') {
+                    return $expectedMediaFile;
+                }
+
+                return new MediaFile(
+                    '/tmp/foo/bar/baz',
+                    'image/png',
+                    'png',
+                    1000,
+                    Uuid::randomHex()
+                );
+            });
+
+        $fileSaver = static::createStub(FileSaver::class);
+        $mediaSerializer = new MediaSerializer(
+            $mediaService,
+            $fileSaver,
+            static::getContainer()->get('media_folder.repository'),
+            static::getContainer()->get('media.repository')
+        );
+        $mediaSerializer->setRegistry(static::getContainer()->get(SerializerRegistry::class));
+
+        $serializerRegistry = static::createStub(SerializerRegistry::class);
+        $serializerRegistry->method('getEntity')
+            ->willReturn($mediaSerializer);
+        $serializerRegistry->method('getFieldSerializer')
+            ->willReturn(new FieldSerializer());
+
+        $record = [
+            'id' => $product->getId(),
+            'media' => 'http://172.16.11.80/shopware-logo.png|http://172.16.11.80/shopware-logo2.png',
+        ];
+
+        $productDefinition = static::getContainer()->get(ProductDefinition::class);
+
+        $serializer = new ProductSerializer(
+            $this->visibilityRepository,
+            $this->salesChannelRepository,
+            $this->productMediaRepository,
+            $this->productConfiguratorSettingRepository
+        );
+        $serializer->setRegistry($serializerRegistry);
+
+        $result = $serializer->deserialize(new Config([], [], []), $productDefinition, $record);
+        $result = \is_array($result) ? $result : iterator_to_array($result);
+
+        static::assertSame($product->getMedia()?->first()?->getId(), $result['media'][0]['id']);
+        static::assertSame($product->getMedia()?->first()?->getMedia()?->getId(), $result['media'][0]['media']['id']);
+        static::assertArrayNotHasKey('url', $result['media'][0]['media']);
+
+        static::assertArrayNotHasKey('id', $result['media'][1]);
+    }
+
+    public function testDeserializeProductMediaWithInvalidUrl(): void
+    {
+        $record = [
+            'media' => 'foo',
+        ];
+
+        $productDefinition = static::getContainer()->get(ProductDefinition::class);
+
+        $serializer = new ProductSerializer(
+            $this->visibilityRepository,
+            $this->salesChannelRepository,
+            $this->productMediaRepository,
+            $this->productConfiguratorSettingRepository
+        );
+        $serializer->setRegistry(static::getContainer()->get(SerializerRegistry::class));
+
+        $result = $serializer->deserialize(new Config([], [], []), $productDefinition, $record);
+        $result = \is_array($result) ? $result : iterator_to_array($result);
+
+        static::assertArrayHasKey('_error', $result);
+        static::assertInstanceOf(InvalidMediaUrlException::class, $result['_error']);
+    }
+
+    private function getProduct(): ProductEntity
+    {
+        $productId = Uuid::randomHex();
+
+        $product = [
+            'id' => $productId,
+            'stock' => 101,
+            'productNumber' => 'P101',
+            'active' => true,
+            'translations' => [
+                Defaults::LANGUAGE_SYSTEM => [
+                    'name' => 'test product',
+                ],
+            ],
+            'tax' => [
+                'name' => '19%',
+                'taxRate' => 19.0,
+            ],
+            'price' => [
+                Defaults::CURRENCY => [
+                    'gross' => 1.111,
+                    'net' => 1.011,
+                    'linked' => true,
+                    'currencyId' => Defaults::CURRENCY,
+                    'listPrice' => [
+                        'gross' => 1.111,
+                        'net' => 1.011,
+                        'linked' => false,
+                        'currencyId' => Defaults::CURRENCY,
+                    ],
+                ],
+            ],
+            'visibilities' => [
+                [
+                    'salesChannelId' => TestDefaults::SALES_CHANNEL,
+                    'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL,
+                ],
+            ],
+            'categories' => [
+                [
+                    'id' => Uuid::randomHex(),
+                    'name' => 'test category',
+                ],
+            ],
+            'cover' => [
+                'id' => Uuid::randomHex(),
+                'position' => 0,
+                'media' => [
+                    'id' => Uuid::randomHex(),
+                    'fileName' => 'shopware-logo',
+                    'path' => 'shopware-logo.png',
+                    'fileExtension' => 'png',
+                    'mimeType' => 'image/png',
+                    'metaData' => [
+                        'hash' => 'bc0d90db4dd806bd671ae9f7fabc5796',
+                    ],
+                ],
+            ],
+            'media' => [
+                [
+                    'id' => Uuid::randomHex(),
+                    'position' => 1,
+                    'media' => [
+                        'id' => Uuid::randomHex(),
+                        'fileName' => 'shopware-icon',
+                        'path' => 'shopware-icon.png',
+                        'fileExtension' => 'png',
+                        'mimeType' => 'image/png',
+                    ],
+                ],
+                [
+                    'id' => Uuid::randomHex(),
+                    'position' => 2,
+                    'media' => [
+                        'id' => Uuid::randomHex(),
+                        'fileName' => 'shopware-background',
+                        'path' => 'shopware-background.png',
+                        'fileExtension' => 'png',
+                        'mimeType' => 'image/png',
+                    ],
+                ],
+            ],
+        ];
+
+        /** @var EntityRepository<ProductCollection> $productRepository */
+        $productRepository = static::getContainer()->get('product.repository');
+        $productRepository->create([$product], Context::createDefaultContext());
+
+        $criteria = new Criteria();
+        $criteria->addAssociation('translations');
+        $criteria->addAssociation('visibilities');
+        $criteria->addAssociation('tax');
+        $criteria->addAssociation('categories');
+        $criteria->addAssociation('cover.media');
+        $criteria->addAssociation('media.media');
+        $criteria->getAssociation('media')->addSorting(new FieldSorting('position', FieldSorting::ASCENDING));
+
+        $product = $productRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+        static::assertInstanceOf(ProductEntity::class, $product);
+
+        return $product;
+    }
+}

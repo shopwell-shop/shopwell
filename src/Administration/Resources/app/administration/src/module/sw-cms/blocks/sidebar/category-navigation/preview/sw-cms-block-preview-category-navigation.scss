@@ -1,0 +1,26 @@
+.sw-cms-preview-category-navigation {
+    width: 100%;
+    background: var(--color-elevation-surface-raised);
+    font-size: 22px;
+    color: var(--color-text-primary-default);
+    font-weight: var(--font-weight-semibold);
+    border-radius: 5px;
+    padding: 20px;
+
+    .sw-cms-block-category-placeholder-listing div {
+        margin: 10px 0;
+        height: 0.7em;
+        border-radius: 4px;
+        background-color: var(--color-background-secondary-default);
+
+        &.sw-cms-block-category-navigation__placeholder--subcategory {
+            margin: 7px 0 7px 30px;
+        }
+    }
+
+    hr {
+        max-width: 90%;
+        margin: 10px auto;
+        border: 1px solid var(--color-border-secondary-default);
+    }
+}

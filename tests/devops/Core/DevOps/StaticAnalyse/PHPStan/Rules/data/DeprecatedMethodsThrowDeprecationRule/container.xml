@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<container>
+    <services>
+        <service id="Shopwell\Core\DevOps\MyFakeNamespace\DeprecatedClass" class="Shopwell\Core\DevOps\MyFakeNamespace\DeprecatedClass"/>
+        <service id="decorated.service" class="Shopwell\Core\DevOps\MyFakeNamespace\DecoratedService"/>
+        <service id="Shopwell\Core\DevOps\MyFakeNamespace\DeprecatedDecorator" class="Shopwell\Core\DevOps\MyFakeNamespace\DeprecatedDecorator">
+            <tag name="container.decorator" id="decorated.service"/>
+        </service>
+    </services>
+</container>

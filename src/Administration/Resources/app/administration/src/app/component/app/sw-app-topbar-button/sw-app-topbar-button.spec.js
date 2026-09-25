@@ -1,0 +1,48 @@
+/**
+ * @sw-package innovation
+ */
+
+import { mount } from '@vue/test-utils';
+
+async function createWrapper() {
+    return mount(await wrapTestComponent('sw-app-topbar-button', { sync: true }), {
+        global: {
+            provide: {
+                acl: { can: () => true },
+            },
+        },
+    });
+}
+
+const topbarButton = {
+    label: 'Upgrade',
+    icon: 'solid-rocket',
+    callback: () => {},
+};
+
+describe('sw-app-topbar-button', () => {
+    let wrapper = null;
+
+    it('should render button correctly', async () => {
+        const store = Shopwell.Store.get('topBarButton');
+        store.buttons.push(topbarButton);
+
+        wrapper = await createWrapper();
+
+        const button = wrapper.find('button');
+        expect(button.text()).toEqual(topbarButton.label);
+    });
+
+    it('should able to click button', async () => {
+        const store = Shopwell.Store.get('topBarButton');
+        store.buttons.push(topbarButton);
+
+        wrapper = await createWrapper();
+
+        const button = wrapper.find('button');
+        const spyOnButtonClick = jest.spyOn(topbarButton, 'callback');
+        await button.trigger('click');
+
+        expect(spyOnButtonClick).toHaveBeenCalled();
+    });
+});

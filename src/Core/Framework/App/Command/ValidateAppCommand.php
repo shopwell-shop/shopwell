@@ -1,0 +1,148 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\App\Command;
+
+use Shopwell\Core\Framework\App\AppException;
+use Shopwell\Core\Framework\App\Exception\AppValidationException;
+use Shopwell\Core\Framework\App\Exception\AppXmlParsingException;
+use Shopwell\Core\Framework\App\Manifest\Manifest;
+use Shopwell\Core\Framework\App\Validation\ManifestValidator;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Finder\Finder;
+
+/**
+ * @internal only for use by the app-system
+ */
+#[Package('framework')]
+#[AsCommand(
+    name: 'app:validate',
+    description: 'Validates an app',
+)]
+class ValidateAppCommand extends Command
+{
+    public function __construct(
+        private readonly string $appDir,
+        private readonly ManifestValidator $manifestValidator
+    ) {
+        parent::__construct();
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $io = new SymfonyStyle($input, $output);
+        $dir = $this->appDir; // validate all apps as default
+        $successMessage = 'all apps valid';
+
+        $name = $input->getArgument('name');
+
+        if ($name !== '' && \is_string($name)) {
+            $successMessage = 'app is valid';
+            $dir = $this->getAppFolderByName($name, $io);
+
+            if ($dir === null) {
+                return self::FAILURE;
+            }
+        }
+
+        $invalids = $this->validate($dir);
+
+        if ($invalids !== []) {
+            foreach ($invalids as $invalid) {
+                $io->error($invalid);
+            }
+
+            return self::FAILURE;
+        }
+
+        $io->success($successMessage);
+
+        return self::SUCCESS;
+    }
+
+    protected function configure(): void
+    {
+        $this->addArgument('name', InputArgument::OPTIONAL, 'The name of the app, has also to be the name of the folder under which the app can be found under custom/apps.');
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function validate(string $appDir): array
+    {
+        $context = Context::createCLIContext();
+        $invalids = [];
+
+        try {
+            foreach ($this->getManifestsFromDir($appDir) as $manifest) {
+                try {
+                    $this->manifestValidator->validate($manifest, $context);
+                } catch (AppValidationException $e) {
+                    $invalids[] = $e->getMessage();
+                }
+            }
+        } catch (AppXmlParsingException $e) {
+            $invalids[] = $e->getMessage();
+        }
+
+        return $invalids;
+    }
+
+    /**
+     * @return list<Manifest>
+     */
+    private function getManifestsFromDir(string $dir): array
+    {
+        if (!\is_dir($dir)) {
+            throw AppException::manifestNotFound($dir);
+        }
+
+        $finder = new Finder();
+        $finder->in($dir)
+            ->depth('<= 1')
+            ->name('manifest.xml');
+
+        $manifests = [];
+        foreach ($finder->files() as $xml) {
+            $manifests[] = Manifest::createFromXmlFile($xml->getPathname());
+        }
+
+        if ($manifests === []) {
+            throw AppException::manifestNotFound($dir);
+        }
+
+        return $manifests;
+    }
+
+    private function getAppFolderByName(string $name, SymfonyStyle $io): ?string
+    {
+        $finder = new Finder();
+        $finder->in($this->appDir)
+            ->depth('<= 1')
+            ->name($name);
+
+        $folders = [];
+        foreach ($finder->directories() as $dir) {
+            $folders[] = $dir->getPathname();
+        }
+
+        if ($folders === []) {
+            $io->error(
+                \sprintf(
+                    'No app with name "%s" found. Please make sure that a folder with that exact name exist in the custom/apps folder.',
+                    $name
+                )
+            );
+
+            return null;
+        }
+
+        return $folders[0];
+    }
+}

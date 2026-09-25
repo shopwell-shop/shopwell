@@ -1,0 +1,150 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\Product\Hook;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Facade\ScriptPriceStubs;
+use Shopwell\Core\Content\Product\Hook\Pricing\ProductPricingHook;
+use Shopwell\Core\Content\Product\Hook\Pricing\ProductProxy;
+use Shopwell\Core\Content\Test\Product\ProductBuilder;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Script\Debugging\ScriptTraces;
+use Shopwell\Core\Framework\Script\Execution\Script;
+use Shopwell\Core\Framework\Script\Execution\ScriptEnvironmentFactory;
+use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
+use Shopwell\Core\Framework\Script\Execution\ScriptLoader;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Shopwell\Core\Test\TestDefaults;
+use Symfony\Component\Clock\NativeClock;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+class ProductPricingHookTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    public function testScripts(): void
+    {
+        $ids = new IdsCollection();
+
+        $products = [
+            (new ProductBuilder($ids, 'p1'))
+                ->visibility()
+                ->price(100)
+                ->build(),
+            (new ProductBuilder($ids, 'p2'))
+                ->price(100)
+                ->visibility()
+                ->prices('rule-A', 50)
+                ->prices('rule-A', 30, 'default', null, 10)
+                ->prices('rule-A', 15, 'default', null, 20)
+                ->build(),
+            (new ProductBuilder($ids, 'p3'))
+                ->price(100)
+                ->visibility()
+                ->variant((new ProductBuilder($ids, 'p3.1'))->price(50)->build())
+                ->variant((new ProductBuilder($ids, 'p3.2'))->price(40)->build())
+                ->build(),
+        ];
+
+        static::getContainer()->get('product.repository')->create($products, Context::createDefaultContext());
+
+        $salesChannelContext = static::getContainer()->get(SalesChannelContextFactory::class)
+            ->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+
+        $salesChannelContext->setRuleIds([$ids->get('rule-A')]);
+
+        $products = static::getContainer()->get('sales_channel.product.repository')
+            ->search(new Criteria($ids->getList(['p1', 'p2', 'p3.1'])), $salesChannelContext)
+            ->getEntities();
+
+        $stubs = static::getContainer()->get(ScriptPriceStubs::class);
+
+        $p1 = $products->get($ids->get('p1'));
+        $p2 = $products->get($ids->get('p2'));
+        $p3 = $products->get($ids->get('p3.1'));
+
+        static::assertInstanceOf(Entity::class, $p1);
+        static::assertInstanceOf(Entity::class, $p2);
+        static::assertInstanceOf(Entity::class, $p3);
+
+        $proxies = [
+            $ids->get('p1') => new ProductProxy($p1, $salesChannelContext, $stubs),
+            $ids->get('p2') => new ProductProxy($p2, $salesChannelContext, $stubs),
+            $ids->get('p3.1') => new ProductProxy($p3, $salesChannelContext, $stubs),
+        ];
+
+        $salesChannelContext->considerInheritance();
+        $hook = new ProductPricingHookExtension($proxies, $salesChannelContext, $ids);
+
+        // allows easy debugging
+        $traces = new ScriptTraces(new NativeClock());
+
+        $loader = static::createStub(ScriptLoader::class);
+        $loader->method('get')->willReturn([
+            new Script('foo', (string) \file_get_contents(__DIR__ . '/_fixtures/pricing-cases/product-pricing.twig'), new \DateTimeImmutable()),
+        ]);
+
+        $executor = new ScriptExecutor(
+            $loader,
+            $traces,
+            static::getContainer(),
+            static::getContainer()->get(ScriptEnvironmentFactory::class),
+        );
+
+        $executor->execute($hook);
+
+        static::assertNotEmpty($traces->getTraces());
+        static::assertArrayHasKey('product-pricing', $traces->getTraces());
+        static::assertSame(
+            [
+                'original' => 100.0,
+                'changed' => 1.5,
+                'plus' => 3.0,
+                'minus' => 1.5,
+                'discount' => 1.35,
+                'surcharge' => 1.49,
+                'price-20' => 15.0,
+                'price-30' => 10.0,
+                'price-31' => 5.0,
+                'name' => 'p2',
+                'cheapest' => 40.0,
+                'cheapest.change' => 15.0,
+                'cheapest.reset' => 50.0,
+                'cheapest.discount' => 45.0,
+                'cheapest.surcharge' => 49.5,
+                'cheapest.minus' => 48.5,
+                'cheapest.plus' => 49.5,
+            ],
+            $traces->getOutput('product-pricing', 0)
+        );
+    }
+}
+
+/**
+ * @internal
+ *
+ * @phpstan-ignore class.extendsFinalByPhpDoc
+ */
+class ProductPricingHookExtension extends ProductPricingHook
+{
+    /**
+     * @param ProductProxy[] $products
+     */
+    public function __construct(
+        array $products,
+        SalesChannelContext $salesChannelContext,
+        public readonly IdsCollection $ids
+    ) {
+        parent::__construct($products, $salesChannelContext);
+    }
+}

@@ -1,0 +1,176 @@
+/**
+ * @sw-package framework
+ */
+import initializeSettingItems from 'src/app/init/settings-item.init';
+import { ui } from '@shopware-ag/meteor-admin-sdk';
+
+describe('src/app/init/settings-item.init.ts', () => {
+    beforeAll(() => {
+        initializeSettingItems();
+    });
+
+    beforeEach(() => {
+        Shopwell.Store.get('extensionSdkModules').modules = [];
+        Shopwell.Store.get('settingsItems').settingsGroups = {
+            shop: [],
+            system: [],
+            plugins: [],
+        };
+
+        Shopwell.Store.get('extensions').extensionsState = {};
+        Shopwell.Store.get('extensions').addExtension({
+            name: 'jestapp',
+            baseUrl: '',
+            permissions: [],
+            version: '1.0.0',
+            type: 'app',
+            integrationId: '123',
+            active: true,
+        });
+
+        // Clear mocks
+        jest.clearAllMocks();
+    });
+
+    it('should handle the settingsItemAdd requests', async () => {
+        await ui.settings.addSettingsItem({
+            label: 'App Settings',
+            locationId: 'settings-location-id',
+            icon: 'default-object-books',
+            displaySearchBar: true,
+            displaySmartBar: false,
+            tab: 'system',
+        });
+
+        expect(Shopwell.Store.get('extensionSdkModules').modules).toHaveLength(1);
+        expect(Shopwell.Store.get('extensionSdkModules').modules[0]).toEqual({
+            baseUrl: '',
+            displaySearchBar: true,
+            displaySmartBar: false,
+            heading: 'App Settings',
+            id: expect.any(String),
+            locationId: 'settings-location-id',
+        });
+
+        expect(Shopwell.Store.get('settingsItems').settingsGroups.system).toHaveLength(1);
+        expect(Shopwell.Store.get('settingsItems').settingsGroups.system[0]).toEqual({
+            group: 'system',
+            icon: 'default-object-books',
+            id: 'settings-location-id',
+            label: 'App Settings',
+            name: 'settings-location-id',
+            to: {
+                name: 'sw.extension.sdk.index',
+                params: {
+                    id: expect.any(String),
+                    back: 'sw.settings.index.system',
+                },
+            },
+        });
+    });
+
+    it('should handle the settingsItemAdd requests with fallback', async () => {
+        await ui.settings.addSettingsItem({
+            label: 'App Settings',
+            locationId: 'settings-location-id',
+            icon: 'default-object-books',
+            displaySearchBar: true,
+            displaySmartBar: false,
+        });
+
+        expect(Shopwell.Store.get('extensionSdkModules').modules).toHaveLength(1);
+        expect(Shopwell.Store.get('extensionSdkModules').modules[0]).toEqual({
+            baseUrl: '',
+            displaySearchBar: true,
+            displaySmartBar: false,
+            heading: 'App Settings',
+            id: expect.any(String),
+            locationId: 'settings-location-id',
+        });
+
+        expect(Shopwell.Store.get('settingsItems').settingsGroups.plugins).toHaveLength(1);
+        expect(Shopwell.Store.get('settingsItems').settingsGroups.plugins[0]).toEqual({
+            group: 'plugins',
+            icon: 'default-object-books',
+            id: 'settings-location-id',
+            label: 'App Settings',
+            name: 'settings-location-id',
+            to: {
+                name: 'sw.extension.sdk.index',
+                params: {
+                    id: expect.any(String),
+                    back: 'sw.settings.index.plugins',
+                },
+            },
+        });
+    });
+
+    it('should handle the settingsItemAdd requests with unallowed tab', async () => {
+        await ui.settings.addSettingsItem({
+            label: 'App Settings',
+            locationId: 'settings-location-id',
+            icon: 'default-object-books',
+            displaySearchBar: true,
+            displaySmartBar: false,
+            tab: 'not-allowed',
+        });
+
+        expect(Shopwell.Store.get('extensionSdkModules').modules).toHaveLength(1);
+        expect(Shopwell.Store.get('extensionSdkModules').modules[0]).toEqual({
+            baseUrl: '',
+            displaySearchBar: true,
+            displaySmartBar: false,
+            heading: 'App Settings',
+            id: expect.any(String),
+            locationId: 'settings-location-id',
+        });
+
+        expect(Shopwell.Store.get('settingsItems').settingsGroups.plugins).toHaveLength(1);
+        expect(Shopwell.Store.get('settingsItems').settingsGroups.plugins[0]).toEqual({
+            group: 'plugins',
+            icon: 'default-object-books',
+            id: 'settings-location-id',
+            label: 'App Settings',
+            name: 'settings-location-id',
+            to: {
+                name: 'sw.extension.sdk.index',
+                params: {
+                    id: expect.any(String),
+                    back: 'sw.settings.index.plugins',
+                },
+            },
+        });
+    });
+
+    it('should not handle requests when extension is not valid', async () => {
+        Shopwell.Store.get('extensions').extensionsState = {};
+
+        await expect(async () => {
+            await ui.settings.addSettingsItem({
+                label: 'App Settings',
+                locationId: 'settings-location-id',
+                icon: 'default-object-books',
+                displaySearchBar: true,
+                tab: 'plugins',
+            });
+        }).rejects.toThrow(new Error('Extension with the origin "" not found.'));
+
+        expect(Shopwell.Store.get('extensionSdkModules').modules).toHaveLength(0);
+    });
+
+    it('should not commit the extension when moduleID could not be generated', async () => {
+        jest.spyOn(Shopwell.Store.get('extensionSdkModules'), 'addModule').mockImplementationOnce(() => {
+            return Promise.resolve(null);
+        });
+
+        await ui.settings.addSettingsItem({
+            label: 'App Settings',
+            locationId: 'settings-location-id',
+            icon: 'default-object-books',
+            displaySearchBar: true,
+            tab: 'plugins',
+        });
+
+        expect(Shopwell.Store.get('extensionSdkModules').modules).toHaveLength(0);
+    });
+});

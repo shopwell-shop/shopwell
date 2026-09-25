@@ -1,0 +1,61 @@
+{% block component_wishlist_delivery_information %}
+    {# @var product \Shopwell\Core\Content\Product\ProductEntity #}
+    {% if page is defined and page.product is defined %}
+        {% set product = page.product %}
+    {% endif %}
+
+    <div class="product-wishlist-delivery-information">
+        {% if product.active and product.stock >= product.minPurchase and product.deliveryTime and product.releaseDate and product.releaseDate|date('U') > 'now'|date('U') %}
+            {% block component_wishlist_delivery_information_pre_order %}
+                {# @deprecated tag:v6.8.0 - Availability microdata replaced by JSON-LD in json-ld-product.html.twig. Will be removed. #}
+                {# Bug fix: was incorrectly using InStock for pre-order products; corrected to PreOrder. #}
+                {% if not feature('JSON_LD_DATA') %}
+                    <link itemprop="availability" href="https://schema.org/PreOrder">
+                {% endif %}
+                <p class="delivery-information delivery-preorder">
+                    <span class="delivery-status-indicator bg-warning"></span>
+                    {{ 'wishlist.deliveryShipping'|trans|sw_sanitize }} {{ product.releaseDate|format_date('long', locale=app.request.locale) }}
+                </p>
+            {% endblock %}
+        {% elseif product.active and product.stock >= product.minPurchase and product.deliveryTime %}
+            {% block component_wishlist_delivery_information_available %}
+                {# @deprecated tag:v6.8.0 - Availability microdata replaced by JSON-LD in json-ld-product.html.twig. Will be removed. #}
+                {% if not feature('JSON_LD_DATA') %}
+                    <link itemprop="availability" href="https://schema.org/InStock">
+                {% endif %}
+                <p class="delivery-information delivery-available">
+                    <span class="delivery-status-indicator bg-success"></span>
+                    {{ 'wishlist.deliveryTimeAvailable'|trans({
+                        '%name%': product.deliveryTime.translated.name
+                    })|sw_sanitize }}
+                </p>
+            {% endblock %}
+        {% elseif product.isCloseout and product.stock < product.minPurchase %}
+            {% block component_wishlist_delivery_information_soldout %}
+                {# @deprecated tag:v6.8.0 - Availability microdata replaced by JSON-LD in json-ld-product.html.twig. Will be removed. #}
+                {% if not feature('JSON_LD_DATA') %}
+                    <link itemprop="availability" href="https://schema.org/LimitedAvailability">
+                {% endif %}
+                <p class="delivery-information delivery-soldout">
+                    <span class="delivery-status-indicator bg-danger"></span>
+                    {{ 'wishlist.currentlyNotAvailable'|trans|sw_sanitize }}
+                </p>
+            {% endblock %}
+        {% elseif product.stock < product.minPurchase and product.deliveryTime and product.restockTime %}
+            {% block component_wishlist_delivery_information_restock %}
+                {# @deprecated tag:v6.8.0 - Availability microdata replaced by JSON-LD in json-ld-product.html.twig. Will be removed. #}
+                {% if not feature('JSON_LD_DATA') %}
+                    <link itemprop="availability" href="https://schema.org/LimitedAvailability">
+                {% endif %}
+                <p class="delivery-information delivery-restock">
+                    <span class="delivery-status-indicator bg-warning"></span>
+                    {{ 'wishlist.deliveryTimeRestock'|trans({
+                        '%count%': product.restockTime,
+                        '%restockTime%': product.restockTime,
+                        '%name%': product.deliveryTime.translated.name
+                    })|sw_sanitize }}
+                </p>
+            {% endblock %}
+        {% endif %}
+    </div>
+{% endblock %}

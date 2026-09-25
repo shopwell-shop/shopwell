@@ -1,0 +1,91 @@
+.sw-cms-el-product-description-reviews {
+    display: grid;
+    align-content: flex-start;
+    color: var(--color-text-primary-default);
+    width: 100%;
+
+    &__tabs {
+        display: flex;
+        margin: 0 0 30px;
+    }
+
+    &__description-tab,
+    &__reviews-tab {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary-default);
+        margin: auto 10px auto 0;
+        border-bottom: 1px solid var(--color-border-secondary-default);
+        padding: 0 0 5px;
+    }
+
+    &__description-tab {
+        color: var(--color-text-primary-default);
+        border-bottom: 1px solid var(--color-border-secondary-default);
+    }
+
+    &__placeholder > div {
+        border-radius: 100px;
+        background-color: var(--color-background-secondary-default);
+    }
+
+    &__placeholder-title {
+        width: 35%;
+        height: 30px;
+        margin: 15px 0;
+    }
+
+    &__placeholder-description {
+        height: 10px;
+        margin: 10px 0;
+    }
+
+    &__placeholder-listing,
+    &__detail-listing {
+        width: 100%;
+        max-width: 500px;
+        list-style: none;
+        margin: 35px 0 0;
+    }
+
+    &__placeholder-item,
+    &__detail-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 30px;
+        margin: 15px 0;
+        border-radius: 4px;
+
+        &:nth-child(odd) {
+            background-color: var(--color-background-tertiary-default);
+        }
+
+        &:last-child {
+            margin: 15px 0 0;
+        }
+    }
+
+    &__placeholder-left,
+    &__placeholder-right {
+        background-color: var(--color-background-secondary-default);
+        height: 10px;
+        border-radius: 100px;
+    }
+
+    &__placeholder-left {
+        width: 30%;
+    }
+
+    &__placeholder-right {
+        width: 50%;
+    }
+
+    &__detail-item-label,
+    &__detail-item-value {
+        font-size: var(--font-size-xs);
+        width: 50%;
+    }
+
+    &__detail-item-label {
+        font-weight: var(--font-weight-semibold);
+    }
+}

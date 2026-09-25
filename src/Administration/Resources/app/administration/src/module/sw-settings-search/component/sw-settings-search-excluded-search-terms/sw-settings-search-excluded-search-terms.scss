@@ -1,0 +1,19 @@
+.sw-settings-search-excluded-search-terms {
+    &__header-bar {
+        display: flex;
+        align-items: center;
+        padding: var(--scale-size-20) var(--scale-size-24);
+        border-bottom: var(--scale-size-1) solid var(--color-border-secondary-default);
+        background-color: var(--color-elevation-surface-sunken);
+        gap: var(--scale-size-12);
+
+        .sw-card-filter {
+            width: 100%;
+        }
+    }
+
+    &-group-actions {
+        display: flex;
+        gap: var(--scale-size-12);
+    }
+}

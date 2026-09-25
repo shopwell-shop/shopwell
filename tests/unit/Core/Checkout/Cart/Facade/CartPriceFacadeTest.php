@@ -1,0 +1,49 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Facade;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Facade\CartPriceFacade;
+use Shopwell\Core\Checkout\Cart\Facade\ScriptPriceStubs;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(CartPriceFacade::class)]
+class CartPriceFacadeTest extends TestCase
+{
+    public function testPublicApiAvailable(): void
+    {
+        $original = new CartPrice(
+            100,
+            200,
+            300,
+            new CalculatedTaxCollection(),
+            new TaxRuleCollection(),
+            CartPrice::TAX_STATE_GROSS,
+            99.99
+        );
+
+        $stubs = static::createStub(ScriptPriceStubs::class);
+        $price = new PriceCollection([]);
+
+        $stubs->method('build')->willReturn($price);
+
+        $facade = new CartPriceFacade($original, $stubs);
+
+        static::assertSame(100.0, $facade->getNet());
+        static::assertSame(200.0, $facade->getTotal());
+        static::assertSame(200.0, $facade->getRounded());
+        static::assertSame(300.0, $facade->getPosition());
+        static::assertSame(99.99, $facade->getRaw());
+
+        static::assertSame($price, $facade->create([]));
+    }
+}

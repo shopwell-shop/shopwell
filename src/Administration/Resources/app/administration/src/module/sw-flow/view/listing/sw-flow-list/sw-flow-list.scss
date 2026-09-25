@@ -1,0 +1,18 @@
+.sw-flow-list {
+    &-card {
+        overflow: hidden;
+
+        .mt-card__content {
+            padding: 0;
+        }
+    }
+
+    &__empty-state {
+        min-height: 34.375rem;
+        justify-content: center;
+    }
+
+    &__event-name {
+        min-width: var(--scale-size-256);
+    }
+}

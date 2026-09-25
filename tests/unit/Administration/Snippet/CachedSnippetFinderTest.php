@@ -1,0 +1,76 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Administration\Snippet;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Administration\Snippet\CachedSnippetFinder;
+use Shopwell\Administration\Snippet\SnippetFinder;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\Cache\Adapter\AdapterInterface;
+use Symfony\Component\Cache\CacheItem;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[CoversClass(CachedSnippetFinder::class)]
+class CachedSnippetFinderTest extends TestCase
+{
+    private MockObject&SnippetFinder $snippetFinder;
+
+    private MockObject&AdapterInterface $cache;
+
+    protected function setUp(): void
+    {
+        $this->snippetFinder = $this->createMock(SnippetFinder::class);
+        $this->cache = $this->createMock(AdapterInterface::class);
+    }
+
+    public function testFindSnippetsAssignSnippetsToCache(): void
+    {
+        $snippets = ['test-snippet-1', 'test-snippet-2'];
+
+        $cacheItem = $this->buildCacheItem(false, true);
+        $cacheItem->set(null);
+
+        $this->cache->expects($this->once())->method('getItem')->willReturn($cacheItem);
+        $this->snippetFinder->expects($this->once())->method('findSnippets')->willReturn($snippets);
+
+        $cachedSnippetFinder = new CachedSnippetFinder($this->snippetFinder, $this->cache);
+        $result = $cachedSnippetFinder->findSnippets('test');
+
+        static::assertSame($snippets, $cacheItem->get());
+        static::assertSame($snippets, $result);
+    }
+
+    public function testFindSnippetsReturnsCachedSnippets(): void
+    {
+        $snippets = ['test-snippet-1', 'test-snippet-2'];
+
+        $cacheItem = $this->buildCacheItem(true, false);
+        $cacheItem->set($snippets);
+
+        $this->cache->expects($this->once())->method('getItem')->willReturn($cacheItem);
+        $this->snippetFinder->expects($this->never())->method('findSnippets');
+
+        $cachedSnippetFinder = new CachedSnippetFinder($this->snippetFinder, $this->cache);
+        $result = $cachedSnippetFinder->findSnippets('test');
+
+        static::assertSame($snippets, $result);
+    }
+
+    protected function buildCacheItem(bool $isHit, bool $isTaggable): CacheItem
+    {
+        $cacheItem = new CacheItem();
+        $prop = new \ReflectionProperty(CacheItem::class, 'key');
+        $prop->setValue($cacheItem, 'admin_snippet_test');
+        $prop = new \ReflectionProperty(CacheItem::class, 'isHit');
+        $prop->setValue($cacheItem, $isHit);
+        $prop = new \ReflectionProperty(CacheItem::class, 'isTaggable');
+        $prop->setValue($cacheItem, $isTaggable);
+
+        return $cacheItem;
+    }
+}

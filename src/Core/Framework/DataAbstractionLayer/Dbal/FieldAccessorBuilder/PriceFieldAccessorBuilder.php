@@ -1,0 +1,152 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Dbal\FieldAccessorBuilder;
+
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Field;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\PriceField;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class PriceFieldAccessorBuilder implements FieldAccessorBuilderInterface
+{
+    /**
+     * @internal
+     */
+    public function __construct(private readonly Connection $connection)
+    {
+    }
+
+    public function buildAccessor(string $root, Field $field, Context $context, string $accessor): ?string
+    {
+        if (!$field instanceof PriceField) {
+            return null;
+        }
+
+        $currencyId = $context->getCurrencyId();
+        $currencyFactor = \sprintf('* %F', $context->getCurrencyFactor());
+        $jsonAccessor = 'net';
+        if ($context->getTaxState() === CartPrice::TAX_STATE_GROSS) {
+            $jsonAccessor = 'gross';
+        }
+
+        $parts = explode('.', $accessor);
+
+        // is tax state explicitly requested? => overwrite selector
+        if (\in_array(array_last($parts), ['net', 'gross'], true)) {
+            $jsonAccessor = array_last($parts);
+            array_pop($parts);
+        }
+
+        // filter / search / sort for list prices? => extend selector
+        if (array_last($parts) === 'listPrice') {
+            $jsonAccessor = 'listPrice.' . $jsonAccessor;
+            array_pop($parts);
+        }
+
+        $isPercentageAccessor = array_last($parts) === 'percentage';
+        if ($isPercentageAccessor) {
+            $jsonAccessor = 'percentage.' . $jsonAccessor;
+            array_pop($parts);
+        }
+
+        // is specific currency id provided? => overwrite currency id and currency factor
+        $lastPart = (string) array_last($parts);
+        if (Uuid::isValid($lastPart)) {
+            $currencyId = $lastPart;
+            $currencyFactor = \sprintf(
+                '* (SELECT `factor` FROM `currency` WHERE `id` = %s)',
+                $this->connection->quote($currencyId)
+            );
+        }
+
+        $select = [];
+
+        /*
+         * It's not possible to cast to float/double, only decimal. But decimal has a fixed precision,
+         * that would possibly result in rounding errors.
+         *
+         * We can indirectly cast to float by adding 0.0
+         */
+
+        $template = '(JSON_UNQUOTE(JSON_EXTRACT(#root#.#field#, "$.c#currencyId#.#property#")) #factor#)';
+
+        $variables = [
+            '#root#' => EntityDefinitionQueryHelper::escape($root),
+            '#field#' => EntityDefinitionQueryHelper::escape($field->getStorageName()),
+            '#currencyId#' => $currencyId,
+            '#property#' => $jsonAccessor,
+            '#factor#' => '+ 0.0',
+        ];
+
+        $select[] = str_replace(array_keys($variables), array_values($variables), $template);
+
+        if ($currencyId !== Defaults::CURRENCY) {
+            $variables = [
+                '#root#' => EntityDefinitionQueryHelper::escape($root),
+                '#field#' => EntityDefinitionQueryHelper::escape($field->getStorageName()),
+                '#currencyId#' => Defaults::CURRENCY,
+                '#property#' => $jsonAccessor,
+                '#factor#' => $currencyFactor,
+            ];
+
+            $select[] = str_replace(array_keys($variables), array_values($variables), $template);
+        }
+
+        $template = '(COALESCE(%s))';
+
+        $variables = [
+            '#template#' => $template,
+            '#decimals#' => (string) $context->getRounding()->getDecimals(),
+        ];
+
+        $template = str_replace(
+            array_keys($variables),
+            array_values($variables),
+            '(ROUND(CAST(#template# as DECIMAL(30, 20)), #decimals#))'
+        );
+
+        if ($this->useCashRounding($context)) {
+            $multiplier = 100 / ($context->getRounding()->getInterval() * 100);
+
+            $variables = [
+                '#accessor#' => $template,
+                '#multiplier#' => (string) $multiplier,
+            ];
+
+            $template = str_replace(array_keys($variables), array_values($variables), '(ROUND(#accessor# * #multiplier#, 0) / #multiplier#)');
+        }
+
+        $result = \sprintf($template, implode(',', $select));
+
+        // The DB stores the discount percentage (e.g. 25 for "25% off"), but the API
+        // exposes the price-to-list-price ratio (e.g. 75 for "pay 75% of list price").
+        // Invert here so filters/sorts operate on the intuitive ratio scale.
+        if ($isPercentageAccessor) {
+            return \sprintf('(100 - %s)', $result);
+        }
+
+        return $result;
+    }
+
+    private function useCashRounding(Context $context): bool
+    {
+        if ($context->getRounding()->getDecimals() !== 2) {
+            return false;
+        }
+
+        if ($context->getTaxState() === CartPrice::TAX_STATE_GROSS) {
+            return true;
+        }
+
+        return $context->getRounding()->roundForNet();
+    }
+}

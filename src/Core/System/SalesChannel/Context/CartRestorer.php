@@ -1,0 +1,250 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\SalesChannel\Context;
+
+use Shopwell\Core\Checkout\Cart\AbstractCartPersister;
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\CartCalculator;
+use Shopwell\Core\Checkout\Cart\Error\ErrorCollection;
+use Shopwell\Core\Checkout\Cart\Event\BeforeCartMergeEvent;
+use Shopwell\Core\Checkout\Cart\Event\CartMergedEvent;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\SalesChannel\Event\SalesChannelContextRestoredEvent;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+#[Package('framework')]
+class CartRestorer
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly AbstractSalesChannelContextFactory $factory,
+        private readonly SalesChannelContextPersister $contextPersister,
+        private readonly CartService $cartService,
+        private readonly CartCalculator $cartCalculator,
+        private readonly AbstractCartPersister $cartPersister,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly RequestStack $requestStack,
+    ) {
+    }
+
+    /**
+     * This function restores the context by the given token. If a context with this token doesn't exist, the context will
+     * create with the customer id in the payload, but not in the main customerId table column.
+     * So, the context is not directly referenced to the customer and will not be loaded, if the normal restore-function is used.
+     *
+     * @internal
+     */
+    public function restoreByToken(string $token, string $customerId, SalesChannelContext $currentContext): SalesChannelContext
+    {
+        $customerPayload = $this->contextPersister->load(
+            $token,
+            $currentContext->getSalesChannelId(),
+        );
+
+        if ($customerPayload === [] || ($customerPayload['permissions'] ?? []) !== []) {
+            return $this->replaceContextToken($customerId, $currentContext, $token);
+        }
+
+        $customerContext = $this->factory->create($customerPayload['token'], $currentContext->getSalesChannelId(), $customerPayload);
+        if ($customerPayload['expired'] ?? false) {
+            $customerContext = $this->replaceContextToken($customerId, $customerContext, $token);
+        }
+
+        return $this->enrichCustomerContext($customerContext, $currentContext, $currentContext->getToken(), $customerId);
+    }
+
+    /**
+     * This function restores the context by the given customer id. If a context with this customer id doesn't exist, the context will
+     * create with the customer id in the main customerId table column.
+     * So, the context is directly referenced to the customer.
+     */
+    public function restore(string $customerId, SalesChannelContext $currentContext): SalesChannelContext
+    {
+        $customerPayload = $this->contextPersister->load(
+            $currentContext->getToken(),
+            $currentContext->getSalesChannelId(),
+            $customerId
+        );
+
+        if ($customerPayload === [] || ($customerPayload['permissions'] ?? []) !== [] || !($customerPayload['expired'] ?? false) && $customerPayload['token'] === $currentContext->getToken()) {
+            return $this->replaceContextToken($customerId, $currentContext);
+        }
+
+        $customerContext = $this->factory->create($customerPayload['token'], $currentContext->getSalesChannelId(), $customerPayload);
+        if ($customerPayload['expired'] ?? false) {
+            $customerContext = $this->replaceContextToken($customerId, $customerContext);
+        }
+
+        if (!$customerContext->getDomainId()) {
+            $customerContext->setDomainId($currentContext->getDomainId());
+        }
+
+        return $this->enrichCustomerContext($customerContext, $currentContext, $currentContext->getToken(), $customerId);
+    }
+
+    private function mergeCart(Cart $customerCart, Cart $guestCart, SalesChannelContext $customerContext): Cart
+    {
+        $mergeableLineItems = $guestCart->getLineItems()->filter(static fn (LineItem $item) => ($item->getQuantity() > 0 && $item->isStackable()) || !$customerCart->has($item->getId()));
+
+        $this->eventDispatcher->dispatch(new BeforeCartMergeEvent(
+            $customerCart,
+            $guestCart,
+            $mergeableLineItems,
+            $customerContext
+        ));
+
+        $errors = $customerCart->getErrors();
+        $customerCart->setErrors(new ErrorCollection());
+
+        $customerCartClone = clone $customerCart;
+        $customerCart->setErrors($errors);
+        $customerCartClone->setErrors($errors);
+
+        $mergedCart = $this->cartService->add($customerCart, $mergeableLineItems->getElements(), $customerContext);
+
+        $this->eventDispatcher->dispatch(new CartMergedEvent($mergedCart, $customerContext, $customerCartClone));
+
+        return $mergedCart;
+    }
+
+    private function replaceContextToken(?string $customerId, SalesChannelContext $currentContext, ?string $newToken = null): SalesChannelContext
+    {
+        $originalToken = $newToken;
+        if ($newToken === null) {
+            $newToken = $this->contextPersister->replace($currentContext->getToken(), $currentContext);
+        } else {
+            // Prevent duplicate key RDBMS errors in case the new token exists and has permissions attached.
+            $this->cartPersister->delete($newToken, $currentContext);
+            $this->cartPersister->replace($currentContext->getToken(), $newToken, $currentContext);
+        }
+
+        $currentContext->assign([
+            'token' => $newToken,
+        ]);
+
+        $this->contextPersister->save(
+            $newToken,
+            [
+                'customerId' => $customerId,
+                'billingAddressId' => null,
+                'shippingAddressId' => null,
+                'permissions' => [],
+            ],
+            $currentContext->getSalesChannelId(),
+            ($originalToken === null) ? $customerId : null,
+        );
+
+        // The current context may not contain the customer, e.g. when all customer tokens were revoked
+        // by a password change. A new context is created, so events like the CustomerLoginEvent
+        // are dispatched with a context that contains the customer and the matching rule ids.
+        if ($customerId !== null && $currentContext->getCustomerId() !== $customerId) {
+            $currentContext = $this->createCustomerContext($customerId, $currentContext);
+        }
+
+        $this->updateRequestState($currentContext);
+
+        return $currentContext;
+    }
+
+    private function createCustomerContext(string $customerId, SalesChannelContext $currentContext): SalesChannelContext
+    {
+        $customerContext = $this->factory->create(
+            $currentContext->getToken(),
+            $currentContext->getSalesChannelId(),
+            [
+                SalesChannelContextService::CUSTOMER_ID => $customerId,
+                SalesChannelContextService::LANGUAGE_ID => $currentContext->getLanguageId(),
+                SalesChannelContextService::CURRENCY_ID => $currentContext->getCurrencyId(),
+                SalesChannelContextService::DOMAIN_ID => $currentContext->getDomainId(),
+            ]
+        );
+
+        $customerContext->addState(...$currentContext->getStates());
+
+        if ($currentContext->getImitatingUserId() !== null) {
+            $customerContext->setImitatingUserId($currentContext->getImitatingUserId());
+        }
+
+        $this->cartCalculator->calculateByToken($customerContext->getToken(), $customerContext);
+
+        return $customerContext;
+    }
+
+    private function deleteGuestContext(SalesChannelContext $guestContext, string $customerId): void
+    {
+        $this->cartService->deleteCart($guestContext);
+        $this->contextPersister->delete($guestContext->getToken(), $guestContext->getSalesChannelId(), $customerId);
+    }
+
+    private function updateRequestState(SalesChannelContext $context): void
+    {
+        $request = $this->requestStack->getMainRequest();
+
+        if ($request === null) {
+            return;
+        }
+
+        $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
+        $request->attributes->set(PlatformRequest::ATTRIBUTE_CONTEXT_OBJECT, $context->getContext());
+        $request->attributes->set(PlatformRequest::HEADER_CONTEXT_TOKEN, $context->getToken());
+
+        // Only synchronize an initialized storefront session. Store API requests must remain stateless.
+        if (!$request->hasSession(true)) {
+            return;
+        }
+
+        $session = $request->getSession();
+
+        if (!$context->getImitatingUserId()) {
+            $session->remove(PlatformRequest::ATTRIBUTE_IMITATING_USER_ID);
+        } else {
+            $session->set(PlatformRequest::ATTRIBUTE_IMITATING_USER_ID, $context->getImitatingUserId());
+        }
+    }
+
+    private function enrichCustomerContext(
+        SalesChannelContext $customerContext,
+        SalesChannelContext $currentContext,
+        string $token,
+        string $customerId
+    ): SalesChannelContext {
+        if (!$customerContext->getDomainId()) {
+            $customerContext->setDomainId($currentContext->getDomainId());
+        }
+
+        $guestCart = $this->cartService->getCart($token, $currentContext);
+        $customerCart = $this->cartService->getCart($customerContext->getToken(), $customerContext);
+        $cartsAreIdentical = $token === $customerContext->getToken();
+
+        if ($guestCart->getLineItems()->count() > 0 && !$cartsAreIdentical) {
+            $restoredCart = $this->mergeCart($customerCart, $guestCart, $customerContext);
+        } else {
+            $restoredCart = $this->cartService->recalculate($customerCart, $customerContext);
+        }
+
+        $restoredCart->addErrors(...array_values($guestCart->getErrors()->getPersistent()->getElements()));
+
+        $this->deleteGuestContext($currentContext, $customerId);
+
+        if ($currentContext->getImitatingUserId() !== $customerContext->getImitatingUserId()) {
+            $customerContext->setImitatingUserId($currentContext->getImitatingUserId());
+        }
+        $this->updateRequestState($customerContext);
+
+        $errors = $restoredCart->getErrors();
+        $cartWithErrors = $this->cartCalculator->calculateByToken($restoredCart->getToken(), $customerContext);
+        $cartWithErrors->setErrors($errors);
+        $this->cartService->setCart($cartWithErrors);
+
+        $this->eventDispatcher->dispatch(new SalesChannelContextRestoredEvent($customerContext, $currentContext));
+
+        return $customerContext;
+    }
+}

@@ -1,0 +1,77 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Plugin;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin;
+use SwagTestPlugin\SwagTestPlugin;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(Plugin::class)]
+class PluginTest extends TestCase
+{
+    private static string $swagTestPluginPath;
+
+    private static string $symlinkedSwagTestPluginPath;
+
+    public static function setUpBeforeClass(): void
+    {
+        $pluginsDir = __DIR__ . '/../../../../../tests/integration/Core/Framework/Plugin/_fixtures/plugins/';
+        $swagTestPluginPath = realpath($pluginsDir . '/SwagTestPlugin');
+        static::assertIsString($swagTestPluginPath);
+        self::$swagTestPluginPath = $swagTestPluginPath;
+
+        self::$symlinkedSwagTestPluginPath = sys_get_temp_dir() . '/SymlinkedSwagTest_' . uniqid();
+        symlink(self::$swagTestPluginPath, self::$symlinkedSwagTestPluginPath);
+
+        require_once self::$swagTestPluginPath . '/src/SwagTestPlugin.php';
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        if (\is_dir(self::$symlinkedSwagTestPluginPath) && is_link(self::$symlinkedSwagTestPluginPath)) {
+            unlink(self::$symlinkedSwagTestPluginPath);
+        }
+    }
+
+    public function testGetPathWithNonSymlinkedPlugin(): void
+    {
+        $plugin = new SwagTestPlugin(true, self::$swagTestPluginPath);
+
+        static::assertSame(self::$swagTestPluginPath . '/src', $plugin->getPath());
+    }
+
+    public function testGetPathWithSymlinkedPlugin(): void
+    {
+        $plugin = new SwagTestPlugin(true, self::$symlinkedSwagTestPluginPath);
+
+        static::assertSame(self::$symlinkedSwagTestPluginPath . '/src', $plugin->getPath());
+    }
+
+    public function testGetBasePath(): void
+    {
+        $plugin = new SwagTestPlugin(true, self::$symlinkedSwagTestPluginPath);
+
+        static::assertSame(self::$symlinkedSwagTestPluginPath, $plugin->getBasePath());
+    }
+
+    public function testGetBasePathIncludingSlash(): void
+    {
+        $plugin = new SwagTestPlugin(true, 'somePlugin', '/www/');
+
+        static::assertSame('/www/somePlugin', $plugin->getBasePath());
+    }
+
+    public function testGetPathWithTrailingSlashBasePath(): void
+    {
+        $plugin = new SwagTestPlugin(true, self::$swagTestPluginPath . '/');
+
+        static::assertSame(self::$swagTestPluginPath . '/src', $plugin->getPath());
+        static::assertStringNotContainsString('//', $plugin->getPath());
+    }
+}

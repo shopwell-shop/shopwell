@@ -1,0 +1,53 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage;
+
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator;
+
+/**
+ * @phpstan-import-type ValueGeneratorConfig from AbstractValueGenerator
+ */
+#[Package('framework')]
+abstract class AbstractIncrementStorage
+{
+    /**
+     * Reserves and fetches the next increment atomically
+     *
+     * @param ValueGeneratorConfig $config
+     */
+    abstract public function reserve(array $config): int;
+
+    /**
+     * Fetches the next increment value without reserving it
+     *
+     * @param ValueGeneratorConfig $config
+     */
+    abstract public function preview(array $config): int;
+
+    /**
+     * Lists the current increment states, indexed by the number range configuration id
+     *
+     * @return array<string, int>
+     */
+    abstract public function list(): array;
+
+    /**
+     * Sets the current increment state to the given value for the given number range configuration.
+     * Mainly used for migrating between different increment storages.
+     * Note: Calling this method and overwriting the current increment state may lead to duplicated increments!
+     */
+    abstract public function set(string $configurationId, int $value): void;
+
+    /**
+     * @deprecated tag:v6.8.0 - Becomes abstract and has to be implemented with v6.8.0
+     *
+     * Raises the current increment state to at least the given value without lowering an existing higher state.
+     */
+    public function increaseToAtLeast(string $configurationId, int $value): void
+    {
+        $this->getDecorated()->increaseToAtLeast($configurationId, $value);
+    }
+
+    abstract public function getDecorated(): self;
+}

@@ -1,0 +1,44 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Store\Struct;
+
+use Shopwell\Core\Framework\Deprecation\BCChange\ReturnTypeNarrowing;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\Collection;
+
+/**
+ * @template TElement of StoreStruct
+ *
+ * @template-extends Collection<TElement>
+ */
+#[Package('checkout')]
+abstract class StoreCollection extends Collection
+{
+    /**
+     * @param array<TElement|array<string, mixed>> $elements
+     */
+    public function __construct(iterable $elements = [])
+    {
+        foreach ($elements as $element) {
+            if (\is_array($element)) {
+                $element = $this->getElementFromArray($element);
+            }
+
+            $this->add($element);
+        }
+    }
+
+    #[ReturnTypeNarrowing(version: 'v6.8.0', newType: 'string')]
+    protected function getExpectedClass(): ?string
+    {
+        /** @phpstan-ignore return.type (The StoreStruct class is used as fallback. Typically, there is a dedicated StoreStruct class) */
+        return StoreStruct::class;
+    }
+
+    /**
+     * @param array<string, mixed> $element
+     *
+     * @return TElement
+     */
+    abstract protected function getElementFromArray(array $element): StoreStruct;
+}

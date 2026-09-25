@@ -1,0 +1,10 @@
+.sw-condition-operator-select {
+    min-width: var(--scale-size-128);
+    position: relative;
+    flex-shrink: 0;
+
+    &.has--error {
+        background: var(--color-background-critical-default);
+        border-color: var(--color-border-critical-default);
+    }
+}

@@ -1,0 +1,168 @@
+/**
+ * @sw-package discovery
+ */
+import { mount } from '@vue/test-utils';
+import { setupCmsEnvironment } from 'src/module/sw-cms/test-utils';
+
+const defaultProps = {
+    element: {
+        config: {
+            media: {
+                source: 'static',
+                value: null,
+                required: true,
+                entity: {
+                    name: 'media',
+                },
+            },
+            displayMode: {
+                source: 'static',
+                value: 'cover',
+            },
+            url: {
+                source: 'static',
+                value: null,
+            },
+            newTab: {
+                source: 'static',
+                value: true,
+            },
+            minHeight: {
+                source: 'static',
+                value: null,
+            },
+            verticalAlign: {
+                source: 'static',
+                value: null,
+            },
+            horizontalAlign: {
+                source: 'static',
+                value: null,
+            },
+        },
+        data: {
+            media: '',
+        },
+    },
+};
+
+async function createWrapper() {
+    return mount(
+        await wrapTestComponent('sw-cms-el-manufacturer-logo', {
+            sync: true,
+        }),
+        {
+            props: {
+                defaultConfig: {},
+                ...defaultProps,
+            },
+            global: {
+                provide: {
+                    cmsService: Shopwell.Service('cmsService'),
+                },
+            },
+        },
+    );
+}
+
+describe('module/sw-cms/elements/manufacturer-logo/component', () => {
+    beforeAll(async () => {
+        await setupCmsEnvironment();
+        await import('src/module/sw-cms/elements/manufacturer-logo');
+
+        Shopwell.Store.get('cmsPage').setCurrentPage({
+            type: 'product_detail',
+        });
+    });
+
+    it('should map to a product manufacturer media if the component is in a product page', async () => {
+        const wrapper = await createWrapper();
+
+        expect(wrapper.vm.element.config.media.source).toBe('mapped');
+        expect(wrapper.vm.element.config.media.value).toBe('product.manufacturer.media');
+    });
+
+    it('should not initially map to a product manufacturer media if element translated config', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            element: {
+                config: {
+                    ...defaultProps.element.config,
+                    media: {
+                        source: 'static',
+                        value: '1',
+                        required: true,
+                        entity: {
+                            name: 'media',
+                        },
+                    },
+                },
+                data: {
+                    media: {
+                        url: 'http://shopwell.cn/image.jpg',
+                        id: '1',
+                    },
+                },
+                translated: {
+                    config: {
+                        media: {
+                            source: 'static',
+                            value: '1',
+                        },
+                    },
+                },
+            },
+        });
+
+        expect(wrapper.vm.element.config.media.source).toBe('static');
+        expect(wrapper.vm.element.config.media.value).toBe('1');
+    });
+
+    it('should cap the height only in standard mode and set a min-height only in cover mode', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            element: {
+                config: {
+                    ...defaultProps.element.config,
+                    displayMode: { source: 'static', value: 'standard' },
+                    verticalAlign: { source: 'static', value: 'center' },
+                },
+                data: {},
+            },
+        });
+
+        expect(wrapper.vm.styles).toEqual({ 'min-height': null });
+        expect(wrapper.vm.logoStyles).toEqual({ 'max-height': '100px', 'align-self': 'center' });
+
+        await wrapper.setProps({
+            element: {
+                config: {
+                    ...defaultProps.element.config,
+                    displayMode: { source: 'static', value: 'stretch' },
+                    verticalAlign: { source: 'static', value: 'center' },
+                },
+                data: {},
+            },
+        });
+
+        expect(wrapper.vm.styles).toEqual({ 'min-height': null });
+        expect(wrapper.vm.logoStyles).toEqual({ 'max-height': null, 'align-self': 'center' });
+
+        await wrapper.setProps({
+            element: {
+                config: {
+                    ...defaultProps.element.config,
+                    displayMode: { source: 'static', value: 'cover' },
+                    minHeight: { source: 'static', value: '50px' },
+                    verticalAlign: { source: 'static', value: 'flex-end' },
+                },
+                data: {},
+            },
+        });
+
+        expect(wrapper.vm.styles).toEqual({ 'min-height': '50px' });
+        expect(wrapper.vm.logoStyles).toEqual({ 'max-height': null, 'align-self': 'flex-end' });
+    });
+});

@@ -1,0 +1,32 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Storefront\Page\LandingPage;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\LandingPage\LandingPageDefinition;
+use Shopwell\Core\Content\LandingPage\LandingPageEntity;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Storefront\Page\LandingPage\LandingPage;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[CoversClass(LandingPage::class)]
+class LandingPageTest extends TestCase
+{
+    public function testLandingPage(): void
+    {
+        $page = new LandingPage();
+        $entity = new LandingPageEntity();
+        $navigationId = 'navigation-id';
+
+        $page->setLandingPage($entity);
+        $page->setNavigationId($navigationId);
+
+        static::assertSame(LandingPageDefinition::ENTITY_NAME, $page->getEntityName());
+        static::assertSame($entity, $page->getLandingPage());
+        static::assertSame($navigationId, $page->getNavigationId());
+    }
+}

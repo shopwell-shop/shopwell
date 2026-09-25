@@ -1,0 +1,35 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Elasticsearch\Framework\Command;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Elasticsearch\Admin\AdminSearchRegistry;
+use Shopwell\Elasticsearch\Framework\Command\ElasticsearchAdminUpdateMappingCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\CommandTester;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(ElasticsearchAdminUpdateMappingCommand::class)]
+class ElasticsearchAdminUpdateMappingCommandTest extends TestCase
+{
+    public function testUpdate(): void
+    {
+        $registry = $this->createMock(AdminSearchRegistry::class);
+        $registry
+            ->expects($this->once())
+            ->method('updateMappings');
+
+        $command = new ElasticsearchAdminUpdateMappingCommand($registry);
+        $commandTester = new CommandTester($command);
+
+        $commandTester->execute([]);
+
+        static::assertSame(Command::SUCCESS, $commandTester->getStatusCode());
+        static::assertStringContainsString('Updated mapping for admin indices', $commandTester->getDisplay());
+    }
+}

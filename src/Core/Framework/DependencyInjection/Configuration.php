@@ -1,0 +1,1828 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DependencyInjection;
+
+use Shopwell\Core\Content\Media\File\DownloadResponseGenerator;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelPolicy;
+use Shopwell\Core\Framework\Telemetry\Metrics\Metric\Type;
+use Shopwell\Core\Framework\Util\MemorySizeCalculator;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Webhook\WebhookFailureStrategy;
+use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
+use Symfony\Component\Config\Definition\Builder\TreeBuilder;
+use Symfony\Component\Config\Definition\ConfigurationInterface;
+
+#[Package('framework')]
+class Configuration implements ConfigurationInterface
+{
+    public function getConfigTreeBuilder(): TreeBuilder
+    {
+        $treeBuilder = new TreeBuilder('shopware');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->append($this->createHttpCacheSection())
+                ->append($this->createNumberRangeSection())
+                ->append($this->createProfilerSection())
+                ->append($this->createFilesystemSection())
+                ->append($this->createCdnSection())
+                ->append($this->createApiSection())
+                ->append($this->createStoreSection())
+                ->append($this->createCartSection())
+                ->append($this->createOrderSection())
+                ->append($this->createSalesChannelContextSection())
+                ->append($this->createAdminWorkerSection())
+                ->append($this->createAutoUpdateSection())
+                ->append($this->createSitemapSection())
+                ->append($this->createDeploymentSection())
+                ->append($this->createMediaSection())
+                ->append($this->createDalSection())
+                ->append($this->createMailSection())
+                ->append($this->createFeatureSection())
+                ->append($this->createLoggerSection())
+                ->append($this->createCacheSection())
+                ->append($this->createHtmlSanitizerSection())
+                ->append($this->createIncrementSection())
+                ->append($this->createTwigSection())
+                ->append($this->createDompdfSection())
+                ->append($this->createStockSection())
+                ->append($this->createUsageDataSection())
+                ->append($this->createFeatureToggleNode())
+                ->append($this->createStagingNode())
+                ->append($this->createSystemConfigNode())
+                ->append($this->createMessengerSection())
+                ->append($this->createSearchSection())
+                ->append($this->createTelemetrySection())
+                ->append($this->createRedisSection())
+                ->append($this->createProductStreamSection())
+                ->append($this->createProductExportSection())
+                ->append($this->createSsoLoginSection())
+                ->append($this->createProductTypesSection())
+                ->append($this->createMcpSection())
+                ->append($this->createAppSystemSection())
+                ->append($this->createWebhookSection())
+                ->append($this->createTranslationSection())
+            ->end();
+
+        return $treeBuilder;
+    }
+
+    private function createFilesystemSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('filesystem'))->getRootNode();
+        $rootNode
+            ->children()
+                ->arrayNode('private')
+                    ->children()
+                        ->scalarNode('type')->end()
+                        ->scalarNode('visibility')->end()
+                        ->variableNode('config')->end()
+                    ->end()
+                ->end()
+                ->arrayNode('public')
+                    ->children()
+                        ->scalarNode('type')->end()
+                        ->scalarNode('url')->end()
+                        ->scalarNode('visibility')->end()
+                        ->variableNode('config')->end()
+                    ->end()
+                ->end()
+                ->arrayNode('temp')
+                    ->children()
+                        ->scalarNode('type')->end()
+                        ->scalarNode('visibility')->end()
+                        ->variableNode('config')->end()
+                    ->end()
+                ->end()
+                ->arrayNode('theme')
+                    ->treatNullLike(false)
+                    ->canBeUnset()
+                    ->children()
+                        ->scalarNode('type')->end()
+                        ->scalarNode('url')->end()
+                        ->scalarNode('visibility')->end()
+                        ->variableNode('config')->end()
+                    ->end()
+                ->end()
+                ->arrayNode('asset')
+                    ->treatNullLike(false)
+                    ->canBeUnset()
+                    ->children()
+                        ->scalarNode('type')->end()
+                        ->scalarNode('url')->end()
+                        ->scalarNode('visibility')->end()
+                        ->variableNode('config')->end()
+                    ->end()
+                ->end()
+                ->arrayNode('sitemap')
+                    ->treatNullLike(false)
+                    ->canBeUnset()
+                    ->children()
+                        ->scalarNode('type')->end()
+                        ->scalarNode('url')->end()
+                        ->scalarNode('visibility')->end()
+                        ->variableNode('config')->end()
+                    ->end()
+                ->end()
+                ->arrayNode('allowed_extensions')
+                    ->prototype('scalar')->end()
+                ->end()
+                ->arrayNode('private_allowed_extensions')
+                    ->prototype('scalar')->end()
+                ->end()
+                ->enumNode('private_local_download_strategy')
+                    ->defaultValue('php')
+                    ->values(['php', DownloadResponseGenerator::X_SENDFILE_DOWNLOAD_STRATEGY, DownloadResponseGenerator::X_ACCEL_DOWNLOAD_STRATEGY])
+                ->end()
+                ->scalarNode('private_local_path_prefix')
+                    ->defaultValue('')
+                    ->info('Path prefix to be prepended to the path when using a local download strategy')
+                ->end()
+                ->integerNode('batch_write_size')
+                    ->defaultValue(250)
+                    ->min(1)
+                    ->info('Batch size for writing files simultaneously using AsyncAwsS3WriteBatchAdapter')
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createCdnSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('cdn'))->getRootNode();
+        $rootNode
+            ->children()
+                ->scalarNode('url')->end()
+                ->scalarNode('strategy')->end()
+                ->booleanNode('path_cache_buster')->defaultTrue()->end()
+                ->arrayNode('fastly')
+                    ->children()
+                        ->scalarNode('api_key')->end()
+                        ->scalarNode('soft_purge')->end()
+                        ->integerNode('max_parallel_invalidations')->end()
+                    ->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createApiSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('api'))->getRootNode();
+        $rootNode
+            ->children()
+                ->arrayNode('rate_limiter')
+                    ->useAttributeAsKey('name')
+                    ->arrayPrototype()
+                        ->children()
+                            ->booleanNode('enabled')->defaultTrue()->end()
+                            ->scalarNode('lock_factory')->defaultValue('lock.factory')->end()
+                            ->scalarNode('policy')->end()
+                            ->scalarNode('limit')->end()
+                            ->scalarNode('cache_pool')->defaultValue('cache.rate_limiter')->end()
+                            ->scalarNode('interval')->end()
+                            ->scalarNode('reset')->end()
+                            ->arrayNode('rate')
+                                ->children()
+                                    ->scalarNode('interval')->end()
+                                    ->integerNode('amount')->defaultValue(1)->end()
+                                ->end()
+                            ->end()
+                            ->variableNode('limits')->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('store')
+                    ->children()
+                    ->scalarNode('context_lifetime')->defaultValue('P1D')->end()
+                    ->scalarNode('max_limit')->end()
+                ->end()
+            ->end()
+            ->scalarNode('access_token_ttl')->defaultValue('PT10M')->end()
+            ->scalarNode('refresh_token_ttl')->defaultValue('P1W')->end()
+            ->scalarNode('auth_code_ttl')->defaultValue('PT5M')->end()
+            ->arrayNode('oauth_clients')
+                ->info('Public OAuth clients allowed to use the authorization code grant with PKCE, keyed by client id.')
+                ->normalizeKeys(false)
+                ->useAttributeAsKey('client_id')
+                ->arrayPrototype()
+                    ->children()
+                        ->scalarNode('name')->isRequired()->cannotBeEmpty()->end()
+                        ->arrayNode('redirect_uris')
+                            ->isRequired()
+                            ->requiresAtLeastOneElement()
+                            ->scalarPrototype()->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+            ->scalarNode('max_limit')->end()
+            ->arrayNode('static_token')
+                ->children()
+                    ->scalarNode('health_check')->end()
+                ->end()
+            ->end()
+            ->arrayNode('api_browser')
+                ->children()
+                ->booleanNode('auth_required')
+                    ->defaultTrue()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createStoreSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('store'))->getRootNode();
+        $rootNode
+            ->children()
+                ->booleanNode('frw')->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createAdminWorkerSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('admin_worker'))->getRootNode();
+        $rootNode
+            ->children()
+                ->arrayNode('transports')
+                    ->prototype('scalar')->end()
+                ->end()
+                ->integerNode('poll_interval')
+                    ->defaultValue(20)
+                ->end()
+                ->booleanNode('enable_admin_worker')
+                    ->defaultValue(true)
+                ->end()
+                ->booleanNode('enable_queue_stats_worker')
+                    ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0. The increment-based message queue statistics will be removed, please use "shopware.messenger.stats.enabled" as alternative.')
+                    ->defaultValue(true)
+                ->end()
+                ->booleanNode('enable_notification_worker')
+                    ->defaultValue(true)
+                ->end()
+                ->scalarNode('memory_limit')
+                    ->defaultValue('128M')
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createAutoUpdateSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('auto_update'))->getRootNode();
+        $rootNode
+            ->children()
+                ->booleanNode('enabled')->end()
+                ->booleanNode('hide_module')->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createSitemapSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('sitemap');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->arrayNode('custom_urls')
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('url')->end()
+                            ->scalarNode('lastMod')->end()
+                            ->enumNode('changeFreq')
+                                ->values([
+                                    'always',
+                                    'hourly',
+                                    'daily',
+                                    'weekly',
+                                    'monthly',
+                                    'yearly',
+                                ])
+                            ->end()
+                            ->floatNode('priority')->end()
+                            ->scalarNode('salesChannelId')->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('excluded_urls')
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('resource')->end()
+                            ->scalarNode('identifier')->end()
+                            ->scalarNode('salesChannelId')->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->integerNode('batchsize')
+                    ->min(1)
+                    ->defaultValue(100)
+                ->end()
+                ->arrayNode('scheduled_task')
+                    ->children()
+                        ->booleanNode('enabled')
+                            ->defaultTrue()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createDeploymentSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('deployment'))->getRootNode();
+        $rootNode
+            ->children()
+                ->booleanNode('blue_green')->end()
+                ->booleanNode('cluster_setup')->end()
+                ->booleanNode('runtime_extension_management')->defaultTrue()->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createMediaSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('media'))->getRootNode();
+        $rootNode
+            ->children()
+                ->arrayNode('remote_thumbnails')
+                    ->children()
+                        ->booleanNode('enable')->end()
+                        ->scalarNode('pattern')->defaultValue('{mediaUrl}/{mediaPath}?width={width}&ts={mediaUpdatedAt}')->end()
+                        ->arrayNode('fallback_sizes')
+                            ->performNoDeepMerging()
+                            ->defaultValue([])
+                            ->arrayPrototype()
+                                ->children()
+                                    ->integerNode('width')->isRequired()->min(1)->end()
+                                    ->integerNode('height')->isRequired()->min(1)->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->scalarNode('thumbnail_processor')
+                    ->defaultValue('gd')
+                    ->validate()
+                        ->ifNotInArray(['gd', 'imagick'])
+                        ->thenInvalid('Invalid thumbnail processor "%s". Allowed values are "gd" or "imagick".')
+                    ->end()
+                ->end()
+                ->booleanNode('enable_url_upload_feature')->end()
+                ->booleanNode('enable_url_validation')->end()
+                ->scalarNode('url_upload_max_size')->defaultValue(0)
+                    ->validate()->always()->then(static fn ($value) => abs(MemorySizeCalculator::convertToBytes((string) $value)))->end()
+                ->end()
+                ->floatNode('url_upload_timeout')->defaultValue(0.0)->min(0)->end()
+                ->floatNode('external_link_timeout')->defaultValue(0.0)->min(0)->end()
+                ->arrayNode('presigned_upload')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')->defaultFalse()->end()
+                        ->integerNode('expiration_minutes')
+                            ->defaultValue(5)
+                            ->min(1)
+                            ->max(10080)
+                            ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('svg')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->arrayNode('allowed_elements')
+                            ->performNoDeepMerging()
+                            ->defaultValue([
+                                'a',
+                                'animate',
+                                'animatetransform',
+                                'circle',
+                                'clippath',
+                                'defs',
+                                'desc',
+                                'ellipse',
+                                'feblend',
+                                'fecolormatrix',
+                                'fecomposite',
+                                'feflood',
+                                'fegaussianblur',
+                                'femorphology',
+                                'feoffset',
+                                'filter',
+                                'font',
+                                'font-face',
+                                'g',
+                                'glyph',
+                                'hkern',
+                                'image',
+                                'line',
+                                'lineargradient',
+                                'marker',
+                                'mask',
+                                'metadata',
+                                'missing-glyph',
+                                'path',
+                                'pattern',
+                                'polygon',
+                                'polyline',
+                                'radialgradient',
+                                'rect',
+                                'stop',
+                                'style',
+                                'svg',
+                                'switch',
+                                'symbol',
+                                'text',
+                                'title',
+                                'tspan',
+                                'use',
+                                'view',
+                                'vkern',
+                            ])
+                            ->scalarPrototype()->end()
+                        ->end()
+                        ->arrayNode('allowed_attributes')
+                            ->performNoDeepMerging()
+                            ->defaultValue([
+                                'alphabetic',
+                                'alignment-baseline',
+                                'accumulate',
+                                'additive',
+                                'aria-describedby',
+                                'aria-hidden',
+                                'aria-label',
+                                'aria-labelledby',
+                                'aria-roledescription',
+                                'ascent',
+                                'attributename',
+                                'attributetype',
+                                'baseprofile',
+                                'baseline-shift',
+                                'bbox',
+                                'cap-height',
+                                'class',
+                                'clip-path',
+                                'clip-rule',
+                                'clippathunits',
+                                'color',
+                                'color-interpolation',
+                                'color-interpolation-filters',
+                                'color-rendering',
+                                'begin',
+                                'by',
+                                'calcmode',
+                                'cursor',
+                                'cx',
+                                'cy',
+                                'd',
+                                'descent',
+                                'direction',
+                                'display',
+                                'dominant-baseline',
+                                'dur',
+                                'enable-background',
+                                'dx',
+                                'dy',
+                                'fill',
+                                'fill-opacity',
+                                'fill-rule',
+                                'filter',
+                                'filterunits',
+                                'focusable',
+                                'flood-color',
+                                'flood-opacity',
+                                'font-family',
+                                'font-size',
+                                'font-size-adjust',
+                                'font-stretch',
+                                'font-style',
+                                'font-variant',
+                                'font-weight',
+                                'font-scale',
+                                'from',
+                                'fx',
+                                'fy',
+                                'g1',
+                                'g2',
+                                'glyph-name',
+                                'gradienttransform',
+                                'gradientunits',
+                                'height',
+                                'horiz-adv-x',
+                                'href',
+                                'id',
+                                'image-rendering',
+                                'in',
+                                'in2',
+                                'isolation',
+                                'k',
+                                'keysplines',
+                                'keytimes',
+                                'lang',
+                                'letter-spacing',
+                                'lighting-color',
+                                'marker',
+                                'marker-end',
+                                'marker-mid',
+                                'marker-start',
+                                'markerheight',
+                                'markerunits',
+                                'markerwidth',
+                                'mask',
+                                'mask-type',
+                                'maskcontentunits',
+                                'maskunits',
+                                'mix-blend-mode',
+                                'mode',
+                                'offset',
+                                'opacity',
+                                'operator',
+                                'orient',
+                                'overflow',
+                                'paint-order',
+                                'panose-1',
+                                'path',
+                                'patterncontentunits',
+                                'patterntransform',
+                                'patternunits',
+                                'pointer-events',
+                                'points',
+                                'preserveaspectratio',
+                                'r',
+                                'radius',
+                                'refx',
+                                'refy',
+                                'repeatcount',
+                                'repeatdur',
+                                'requiredfeatures',
+                                'restart',
+                                'result',
+                                'role',
+                                'rotate',
+                                'rx',
+                                'ry',
+                                'shape-rendering',
+                                'slope',
+                                'space',
+                                'spreadmethod',
+                                'stddeviation',
+                                'stop-color',
+                                'stop-opacity',
+                                'stroke',
+                                'stroke-dasharray',
+                                'stroke-dashoffset',
+                                'stroke-linecap',
+                                'stroke-linejoin',
+                                'stroke-miterlimit',
+                                'stroke-opacity',
+                                'stroke-width',
+                                'style',
+                                't',
+                                'text',
+                                'text-anchor',
+                                'text-decoration',
+                                'text-overflow',
+                                'text-rendering',
+                                'transform',
+                                'transform-origin',
+                                'type',
+                                'title',
+                                'to',
+                                'u1',
+                                'u2',
+                                'underline-position',
+                                'underline-thickness',
+                                'unicode',
+                                'unicode-bidi',
+                                'unicode-range',
+                                'units-per-em',
+                                'values',
+                                'vector-effect',
+                                'version',
+                                'viewbox',
+                                'visibility',
+                                'white-space',
+                                'width',
+                                'word-spacing',
+                                'writing-mode',
+                                'x-height',
+                                'x',
+                                'x1',
+                                'x2',
+                                'xlink:href',
+                                'xml:lang',
+                                'xml:space',
+                                'xmlns',
+                                'xmlns:xlink',
+                                'y',
+                                'y1',
+                                'y2',
+                                'zoomandpan',
+                            ])
+                            ->scalarPrototype()->end()
+                        ->end()
+                        ->arrayNode('allowed_reference_attributes')
+                            ->performNoDeepMerging()
+                            ->defaultValue([
+                                'href',
+                                'xlink:href',
+                            ])
+                            ->scalarPrototype()->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createFeatureSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('feature'))->getRootNode();
+        $rootNode
+            ->children()
+            ->arrayNode('flags')
+                ->useAttributeAsKey('name')
+                ->arrayPrototype()
+                    ->children()
+                        ->scalarNode('name')->end()
+                        ->booleanNode('default')->defaultFalse()->end()
+                        ->booleanNode('major')->defaultFalse()->end()
+                        // Only for a major flag that is not named after its major: the major it
+                        // arrives in, so FEATURE_ALL=v6.8.0.0 can leave out a later major's flags.
+                        ->scalarNode('majorVersion')->end()
+                        ->booleanNode('toggleable')->defaultFalse()->end()
+                        ->scalarNode('description')->end()
+                    ->end()
+                ->end()
+                ->beforeNormalization()
+                    ->always()->then(static function ($flags) {
+                        foreach ($flags as $key => $flag) {
+                            // support old syntax
+                            if (\is_int($key) && \is_string($flag)) {
+                                unset($flags[$key]);
+
+                                $flags[] = [
+                                    'name' => $flag,
+                                ];
+                            }
+                        }
+
+                        return $flags;
+                    })
+                    ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createLoggerSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('logger'))->getRootNode();
+        $rootNode
+            ->children()
+                ->integerNode('file_rotation_count')
+                    ->defaultValue(14)
+                ->end()
+                ->arrayNode('exclude_exception')
+                    ->prototype('scalar')->end()
+                ->end()
+                ->arrayNode('exclude_events')
+                    ->prototype('scalar')->end()
+                ->end()
+                ->arrayNode('error_code_log_levels')
+                    ->useAttributeAsKey('name')
+                    ->prototype('scalar')->end()
+                ->end()
+                ->booleanNode('enforce_throw_exception')
+                    ->defaultFalse()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createCacheSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('cache'))->getRootNode();
+        $rootNode
+            // @deprecated tag:v6.8.0 - remove this whole "beforeNormalization" block
+            ->beforeNormalization()
+                ->always()->then(static function ($config) {
+                    if (!\is_array($config)) {
+                        return $config;
+                    }
+
+                    if (\array_key_exists('cache_compression', $config) && !\array_key_exists('compress', $config)) {
+                        Feature::triggerDeprecationOrThrow(
+                            'v6.8.0.0',
+                            'Parameter "shopware.cache.cache_compression" is deprecated and will be removed. Please use "shopware.cache.compress" instead.'
+                        );
+                        $config['compress'] = $config['cache_compression'];
+                    }
+
+                    if (\array_key_exists('cache_compression_method', $config) && !\array_key_exists('compression_method', $config)) {
+                        Feature::triggerDeprecationOrThrow(
+                            'v6.8.0.0',
+                            'Parameter "shopware.cache.cache_compression_method" is deprecated and will be removed. Please use "shopware.cache.compression_method" instead.'
+                        );
+                        $config['compression_method'] = $config['cache_compression_method'];
+                    }
+
+                    // backward compatibility
+                    if (!isset($config['cache_compression']) && isset($config['compress'])) {
+                        $config['cache_compression'] = $config['compress'];
+                    }
+                    if (!isset($config['cache_compression_method']) && isset($config['compression_method'])) {
+                        $config['cache_compression_method'] = $config['compression_method'];
+                    }
+
+                    return $config;
+                })
+            ->end()
+            ->children()
+                ->scalarNode('redis_prefix')->end()
+                ->booleanNode('cache_compression')
+                    ->defaultNull()
+                    ->setDeprecated('shopware/core', '6.8.0', 'The `cache_compression` option is deprecated and will be removed in v6.8.0 Please use the `compress` option instead.')
+                ->end()
+                ->booleanNode('compress')->defaultTrue()->end()
+                ->scalarNode('cache_compression_method')
+                    ->defaultNull()
+                    ->setDeprecated('shopware/core', '6.8.0', 'The `cache_compression_method` option is deprecated and will be removed in v6.8.0 Please use the `compression_method` option instead.')
+                ->end()
+                ->scalarNode('compression_method')->defaultValue('gzip')->end()
+                ->booleanNode('disable_stampede_protection')->defaultFalse()->end()
+                ->arrayNode('twig')
+                    ->children()
+                        ->scalarNode('string_template_renderer_cache_dir')->end()
+                    ->end()
+                ->end()
+                ->arrayNode('invalidation')
+                    ->children()
+                        ->booleanNode('delay_enabled')
+                            ->defaultTrue()
+                        ->end()
+                        ->arrayNode('delay_options')
+                            ->children()
+                                ->scalarNode('storage')
+                                    ->defaultValue('mysql')
+                                ->end()
+                                ->scalarNode('connection')
+                                    ->defaultValue(null)
+                                ->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('http_cache')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as cache states will be removed.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->booleanNode('tag_invalidation_log_enabled')
+                            ->defaultFalse()
+                        ->end()
+                        // @deprecated tag:v6.8.0 - remove all route specific invalidation options
+                        ->arrayNode('product_listing_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('product_detail_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('product_search_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('product_suggest_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('product_cross_selling_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('payment_method_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('shipping_method_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('navigation_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('category_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('landing_page_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('language_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('currency_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('country_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('country_state_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('salutation_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('product_review_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('sitemap_route')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->performNoDeepMerging()
+                            ->prototype('scalar')->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createDalSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('dal');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->integerNode('batch_size')
+                    ->min(1)
+                    ->defaultValue(125)
+                ->end()
+                ->integerNode('max_rule_prices')
+                    ->min(1)
+                    ->defaultValue(100)
+                ->end()
+                ->arrayNode('versioning')
+                    ->children()
+                        ->integerNode('expire_days')
+                            ->min(1)
+                            ->defaultValue(30)
+                            ->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createCartSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('cart');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->booleanNode('compress')->defaultFalse()->end()
+                ->scalarNode('compression_method')->defaultValue('gzip')->end()
+                ->variableNode('serialization_max_mb_size')->defaultNull()->end()
+                ->integerNode('expire_days')
+                    ->min(1)
+                    ->defaultValue(120)
+                ->end()
+                ->arrayNode('storage')
+                    ->children()
+                        ->enumNode('type')
+                            ->values(['mysql', 'redis'])
+                            ->defaultValue('mysql')
+                            ->end()
+                        ->arrayNode('config')
+                            ->children()
+                                ->scalarNode('connection')->defaultValue(null)->end()
+                            ->end()
+                    ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createOrderSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('order');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->arrayNode('deep_link')
+                    ->children()
+                        ->integerNode('expire_days')
+                            ->min(1)
+                            ->defaultValue(30)
+                    ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createNumberRangeSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('number_range');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+            ->enumNode('increment_storage')
+                ->values(['mysql', 'redis'])
+                ->defaultValue('mysql')
+                ->end()
+            ->arrayNode('config')
+                ->addDefaultsIfNotSet()
+                ->children()
+                    ->scalarNode('connection')->defaultValue(null)->end()
+                ->end()
+            ->end()
+            ->end()
+            ->validate()
+                ->ifTrue(static fn (array $v) => $v['increment_storage'] === 'redis' && ($v['config']['connection'] ?? null) === null)
+                ->thenInvalid('The "config.connection" option is required when "increment_storage" is set to "redis".')
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createSalesChannelContextSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('sales_channel_context');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->integerNode('expire_days')
+                    ->min(1)
+                    ->defaultValue(120)
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createProductTypesSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('product');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+            ->arrayNode('allowed_types')
+                ->defaultValue([ProductDefinition::TYPE_PHYSICAL, ProductDefinition::TYPE_DIGITAL])
+                ->scalarPrototype()->end()
+            ->end()
+            ->arrayNode('search_keyword')
+                ->addDefaultsIfNotSet()
+                ->children()
+                    ->booleanNode('indexing')->defaultTrue()->end()
+                    ->integerNode('relevant_keyword_count')
+                        ->min(1)
+                        ->defaultValue(8)
+                    ->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createHtmlSanitizerSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('html_sanitizer');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->booleanNode('enabled')
+                    ->defaultTrue()
+                ->end()
+                ->variableNode('cache_dir')
+                    ->defaultValue('%kernel.cache_dir%')
+                ->end()
+                ->booleanNode('cache_enabled')
+                    ->defaultTrue()
+                ->end()
+                ->arrayNode('sets')
+                    ->useAttributeAsKey('name')
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('name')->end()
+                            ->arrayNode('tags')
+                                ->defaultValue([])
+                                ->scalarPrototype()->end()
+                            ->end()
+                            ->arrayNode('custom_tags')
+                                ->arrayPrototype()
+                                    ->children()
+                                        ->scalarNode('tag')
+                                        ->end()
+                                        ->scalarNode('type')
+                                        ->end()
+                                        ->scalarNode('contents')
+                                            ->defaultValue('Flow')
+                                        ->end()
+                                        ->arrayNode('attr_collections')
+                                            ->defaultValue([])
+                                            ->scalarPrototype()->end()
+                                        ->end()
+                                        ->arrayNode('attributes')
+                                            ->defaultValue([])
+                                            ->scalarPrototype()->end()
+                                        ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                            ->arrayNode('attributes')
+                                ->defaultValue([])
+                                ->scalarPrototype()->end()
+                            ->end()
+                            ->arrayNode('custom_attributes')
+                                ->defaultValue([])
+                                ->arrayPrototype()
+                                    ->children()
+                                        ->arrayNode('tags')
+                                            ->defaultValue([])
+                                            ->scalarPrototype()->end()
+                                        ->end()
+                                        ->arrayNode('attributes')
+                                            ->defaultValue([])
+                                            ->scalarPrototype()->end()
+                                        ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                            ->arrayNode('options')
+                                ->useAttributeAsKey('key')
+                                ->defaultValue([])
+                                ->arrayPrototype()
+                                    ->children()
+                                        ->scalarNode('key')->end()
+                                        ->scalarNode('value')->end()
+                                        ->arrayNode('values')
+                                            ->defaultValue([])
+                                            ->scalarPrototype()->end()
+                                        ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('fields')
+                    ->useAttributeAsKey('name')
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('name')->end()
+                            ->arrayNode('sets')
+                                ->scalarPrototype()->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createIncrementSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('increment'))->getRootNode();
+        $rootNode
+            ->useAttributeAsKey('name')
+            ->arrayPrototype()
+                ->children()
+                    ->scalarNode('type')->end()
+                    ->variableNode('config')->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createMailSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('mail');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+            ->booleanNode('update_mail_variables_on_send')->defaultTrue()->end()
+            ->integerNode('max_body_length')->defaultValue(0)->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createProfilerSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('profiler');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->arrayNode('integrations')
+                    ->performNoDeepMerging()
+                    ->scalarPrototype()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createTwigSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('twig');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->arrayNode('allowed_php_functions')
+                    ->performNoDeepMerging()
+                    ->scalarPrototype()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createDompdfSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('dompdf');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+            ->arrayNode('options')
+                ->useAttributeAsKey('name')
+                ->scalarPrototype()
+                ->end()
+            ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createStockSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('stock');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->booleanNode('enable_stock_management')->defaultTrue()->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createUsageDataSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('usage_data');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->scalarNode('collection_enabled')->end()
+                ->arrayNode('gateway')
+                    ->children()
+                        ->scalarNode('dispatch_enabled')->end()
+                        ->scalarNode('base_uri')->end()
+                        ->scalarNode('batch_size')->end()
+                    ->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createFeatureToggleNode(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('feature_toggle');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+            ->booleanNode('enable')->defaultTrue()->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createStagingNode(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('staging');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->arrayNode('mailing')
+                    ->children()
+                        ->booleanNode('disable_delivery')->defaultTrue()->end()
+                    ->end()
+                ->end()
+                ->arrayNode('storefront')
+                    ->children()
+                        ->booleanNode('show_banner')->defaultTrue()->end()
+                    ->end()
+                ->end()
+                ->arrayNode('administration')
+                    ->children()
+                        ->booleanNode('show_banner')->defaultTrue()->end()
+                    ->end()
+                ->end()
+                ->arrayNode('extensions')
+                    ->children()
+                        ->arrayNode('disable')
+                            ->scalarPrototype()->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('sales_channel')
+                    ->children()
+                        ->arrayNode('domain_rewrite')
+                            ->arrayPrototype()
+                                ->children()
+                                    ->scalarNode('match')->end()
+                                    ->scalarNode('type')->defaultValue('equal')->end()
+                                    ->scalarNode('replace')->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('elasticsearch')
+                    ->children()
+                        ->booleanNode('check_for_existence')->defaultTrue()->end()
+                    ->end()
+                ->end()
+                ->arrayNode('system_config')
+                    ->useAttributeAsKey('scope')
+                    ->arrayPrototype()
+                        ->useAttributeAsKey('key')
+                        ->variablePrototype()->end()
+                    ->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createSystemConfigNode(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('system_config');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->arrayPrototype()->scalarPrototype()->end()
+            ->end()
+            ->validate()
+            ->ifFalse(
+                static fn (array $v) => array_filter(
+                    array_keys($v),
+                    static fn (string $key) => $key !== 'default' && !Uuid::isValid($key)
+                ) === []
+            )
+            ->thenInvalid('Key must be "default" or a valid UUID')
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createHttpCacheSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('http_cache');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->scalarNode('stale_while_revalidate')->defaultValue(null)->end()
+                ->scalarNode('stale_if_error')->defaultValue(null)->end()
+                ->scalarNode('soft_purge')->defaultValue(false)->end()
+                ->arrayNode('policies')
+                    ->useAttributeAsKey('name')
+                    ->defaultValue([])
+                    ->arrayPrototype()
+                        ->performNoDeepMerging()
+                        ->children()
+                            ->arrayNode('headers')
+                                ->children()
+                                    ->arrayNode('cache_control')
+                                        ->children()
+                                            ->booleanNode('public')->defaultNull()->end()
+                                            ->booleanNode('private')->defaultNull()->end()
+                                            ->booleanNode('no_cache')->defaultNull()->end()
+                                            ->booleanNode('no_store')->defaultNull()->end()
+                                            ->booleanNode('no_transform')->defaultNull()->end()
+                                            ->booleanNode('must_revalidate')->defaultNull()->end()
+                                            ->booleanNode('proxy_revalidate')->defaultNull()->end()
+                                            ->booleanNode('immutable')->defaultNull()->end()
+                                            ->integerNode('max_age')->min(0)->defaultNull()->end()
+                                            ->integerNode('s_maxage')->min(0)->defaultNull()->end()
+                                            ->integerNode('stale_while_revalidate')->min(0)->defaultNull()->end()
+                                            ->integerNode('stale_if_error')->min(0)->defaultNull()->end()
+                                        ->end()
+                                    ->end()
+                                    ->scalarNode('no_vary_search')
+                                        ->info('Verbatim value of the "No-Vary-Search" header, e.g. "key-order". Declares which query string differences clients may ignore when matching a stored response, both in the HTTP cache and in the prefetch/prerender cache. Never list parameters that change the rendered content (e.g. "p", "order", filter names) via "params", as the stored response would then be served for the wrong URL.')
+                                        ->defaultNull()
+                                        ->validate()
+                                            // `\z` instead of `$`, otherwise a trailing newline would pass and could smuggle a second header
+                                            ->ifTrue(static fn ($value): bool => $value !== null && (!\is_string($value) || preg_match('/^[\x20-\x7E]+\z/', $value) !== 1))
+                                            ->thenInvalid('The "no_vary_search" option must be a single line of printable ASCII, %s given.')
+                                        ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('default_policies')
+                    ->info('Default cache policies per area. Currently only "storefront" and "store_api" are supported.')
+                    ->useAttributeAsKey('area')
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('cacheable')
+                                ->info('Policy name to use for cacheable responses')
+                                ->defaultNull()
+                            ->end()
+                            ->scalarNode('uncacheable')
+                                ->info('Policy name to use for uncacheable responses')
+                                ->defaultNull()
+                            ->end()
+                        ->end()
+                    ->end()
+                    ->validate()
+                        ->ifTrue(static function ($areas) {
+                            $allowedAreas = ['storefront', 'store_api'];
+                            $providedAreas = array_keys($areas);
+
+                            return array_diff($providedAreas, $allowedAreas) !== [];
+                        })
+                        ->thenInvalid('Only "storefront" and "store_api" areas are currently supported in default_policies. Config contains unsupported area(s): %s')
+                    ->end()
+                ->end()
+                ->arrayNode('route_policies')
+                    ->useAttributeAsKey('route')
+                    ->defaultValue([])
+                    ->scalarPrototype()->end()
+                ->end()
+                ->arrayNode('cookies')
+                    ->performNoDeepMerging()
+                    ->scalarPrototype()->end()
+                ->end()
+                ->arrayNode('ignored_url_parameters')
+                    ->scalarPrototype()->end()
+                ->end()
+                ->arrayNode('reverse_proxy')
+                    ->children()
+                        ->booleanNode('enabled')->end()
+                        ->booleanNode('use_varnish_xkey')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option has no effect anymore and therefore will be removed in 6.8.0.')
+                            ->defaultFalse()
+                        ->end()
+                        ->arrayNode('hosts')->performNoDeepMerging()
+                            ->scalarPrototype()->end()
+                        ->end()
+                        ->integerNode('max_parallel_invalidations')->defaultValue(2)->end()
+                        ->scalarNode('ban_method')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option has no effect anymore and therefore will be removed in 6.8.0.')
+                            ->defaultValue('BAN')
+                        ->end()
+                        ->arrayNode('ban_headers')
+                            ->performNoDeepMerging()
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option has no effect anymore and therefore will be removed in 6.8.0.')
+                            ->defaultValue([])
+                            ->scalarPrototype()->end()
+                        ->end()
+                        ->arrayNode('purge_all')
+                            ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option has no effect anymore and therefore will be removed in 6.8.0.')
+                            ->children()
+                                ->scalarNode('ban_method')
+                                    ->defaultValue('BAN')
+                                    ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option has no effect anymore and therefore will be removed in 6.8.0.')
+                                ->end()
+                                ->arrayNode('ban_headers')
+                                    ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option has no effect anymore and therefore will be removed in 6.8.0.')
+                                    ->performNoDeepMerging()->defaultValue([])->scalarPrototype()->end()
+                                ->end()
+                                ->arrayNode('urls')
+                                    ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option has no effect anymore and therefore will be removed in 6.8.0.')
+                                    ->performNoDeepMerging()->defaultValue(['/'])->scalarPrototype()->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('fastly')
+                            ->children()
+                                ->booleanNode('enabled')->defaultFalse()->end()
+                                ->scalarNode('api_key')->defaultValue('')->end()
+                                ->scalarNode('instance_tag')->defaultValue('')->end()
+                                ->scalarNode('service_id')->defaultValue('')->end()
+                                ->scalarNode('soft_purge')->defaultValue('0')->end()
+                                ->scalarNode('tag_prefix')->defaultValue('')->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+            ->validate()
+                ->ifTrue(static function (array $config) {
+                    $policies = array_keys($config['policies'] ?? []);
+
+                    // Check default_policies references
+                    foreach ((array) ($config['default_policies'] ?? []) as $defaults) {
+                        if (!\is_array($defaults)) {
+                            continue;
+                        }
+                        foreach ($defaults as $name) {
+                            if ($name !== null && $name !== '' && !\in_array($name, $policies, true)) {
+                                return true;
+                            }
+                        }
+                    }
+
+                    // Check route_policies references
+                    foreach ((array) ($config['route_policies'] ?? []) as $name) {
+                        if ($name !== null && $name !== '' && !\in_array($name, $policies, true)) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                })
+                ->thenInvalid('Configuration references unknown cache policies. All policy names in default_policies and route_policies must be defined under shopware.http_cache.policies.')
+            ->end()
+        ->end();
+
+        return $rootNode;
+    }
+
+    private function createMessengerSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('messenger');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->arrayNode('routing_overwrite')
+                    ->useAttributeAsKey('name')
+                    ->scalarPrototype()->end()
+                ->end()
+                ->booleanNode('enforce_message_size')->defaultFalse()->end()
+                ->integerNode('message_max_kib_size')->defaultValue(1024)->end()
+                ->arrayNode('scheduled_task')
+                    ->children()
+                        ->integerNode('requeue_timeout')->defaultValue(12)->end()
+                    ->end()
+                ->end()
+                ->arrayNode('stats')
+                    ->children()
+                        ->booleanNode('enabled')->defaultTrue()->end()
+                        ->integerNode('time_span')->defaultValue(300)->end()
+                    ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createSearchSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('search');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+            ->integerNode('term_max_length')->defaultValue(300)->end()
+            ->arrayNode('preserved_chars')
+            ->performNoDeepMerging()->defaultValue([])
+            ->prototype('scalar')->end()
+            ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createTelemetrySection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('telemetry');
+        $rootNode = $treeBuilder->getRootNode();
+
+        $rootNode
+            ->children()
+            ->arrayNode('metrics')
+                ->children()
+                    ->scalarNode('namespace')->end()
+                    ->booleanNode('allow_unknown_labels')
+                        ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0. Unknown label names are now always validated.')
+                        ->defaultFalse()
+                    ->end()
+                    ->booleanNode('allow_unknown_label_values')
+                        ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0. Use per-label "policy" in metric definitions instead.')
+                        ->defaultFalse()
+                    ->end()
+                    ->booleanNode('enable_internal_metrics')
+                        ->setDeprecated('shopware/core', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0. Use per-metric "enabled" instead.')
+                        ->defaultFalse()
+                    ->end()
+                    ->booleanNode('enabled')->defaultFalse()->end()
+                    ->scalarNode('replace_unknown_label_values_with')->defaultValue('other')->end()
+                    ->arrayNode('definitions')
+                        ->useAttributeAsKey('name')
+                        ->arrayPrototype()
+                            ->children()
+                                ->enumNode('type')
+                                    ->isRequired()
+                                    ->values(array_map(static fn (Type $type) => $type->value, Type::cases()))
+                                ->end()
+                                ->scalarNode('description')->end()
+                                ->scalarNode('unit')->end()
+                                ->scalarNode('enabled')->defaultTrue()->end()
+                                ->arrayNode('parameters')
+                                    ->variablePrototype()
+                                ->end()
+                                ->end()
+                                ->arrayNode('labels')
+                                    ->useAttributeAsKey('label_name')
+                                    ->arrayPrototype()
+                                        ->validate()
+                                            ->ifTrue(static function (array $label): bool {
+                                                $hasAllowedValues = isset($label['allowed_values']) && $label['allowed_values'] !== [];
+                                                $hasPolicy = isset($label['policy']);
+
+                                                if ($hasPolicy && $label['policy'] === LabelPolicy::OPEN->value && $hasAllowedValues) {
+                                                    return true;
+                                                }
+                                                if (!$hasAllowedValues && !$hasPolicy) {
+                                                    return true;
+                                                }
+
+                                                return false;
+                                            })
+                                            ->thenInvalid('Each label must have either "allowed_values" or "policy: open", but not both. Missing both is also invalid.')
+                                        ->end()
+                                        ->children()
+                                            ->arrayNode('allowed_values')
+                                                ->performNoDeepMerging()
+                                                ->scalarPrototype()->end()
+                                            ->end()
+                                            ->enumNode('policy')
+                                                ->values(LabelPolicy::values())
+                                            ->end()
+                                        ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+        ->end()
+        ->end();
+
+        return $rootNode;
+    }
+
+    private function createRedisSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('redis');
+        $rootNode = $treeBuilder->getRootNode();
+
+        $rootNode
+            ->children()
+                ->arrayNode('connections')
+                    ->useAttributeAsKey('name')
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('dsn')->isRequired()->end()
+                            // Additional options if necessary
+                        ->end()
+                    ->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createProductStreamSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('product_stream');
+        $rootNode = $treeBuilder->getRootNode();
+
+        $rootNode
+            ->children()
+                ->booleanNode('indexing')->defaultTrue()->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createProductExportSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('product_export');
+        $rootNode = $treeBuilder->getRootNode();
+
+        $rootNode
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->integerNode('read_buffer_size')
+                    ->info('Number of products read and rendered per product export batch. Higher values reduce per-batch overhead but increase peak worker memory, as each batch hydrates and renders that many full product entities.')
+                    ->min(1)
+                    ->defaultValue(200)
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createMcpSection(): ArrayNodeDefinition
+    {
+        $rootNode = (new TreeBuilder('mcp'))->getRootNode();
+        $rootNode
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->arrayNode('allowed_tools')
+                    ->info('Restrict which MCP tools are exposed. Empty array means all tools are allowed.')
+                    ->scalarPrototype()->end()
+                    ->defaultValue([])
+                ->end()
+                ->integerNode('app_tool_timeout')
+                    ->info('Timeout in seconds for app webhook MCP tool calls.')
+                    ->defaultValue(10)
+                    ->min(1)
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createSsoLoginSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('admin_login');
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode->addDefaultsIfNotSet()
+            ->children()
+                ->booleanNode('use_default')->defaultTrue()->end();
+
+        $rootNode
+            ->children()
+                ->booleanNode('use_default')->isRequired()->end()
+                ->scalarNode('client_id')->isRequired()->end()
+                ->scalarNode('client_secret')->isRequired()->end()
+                ->scalarNode('redirect_uri')->isRequired()->end()
+                ->scalarNode('base_url')->isRequired()->end()
+                ->scalarNode('authorize_path')->isRequired()->end()
+                ->scalarNode('token_path')->isRequired()->end()
+                ->scalarNode('jwks_path')->isRequired()->end()
+                ->scalarNode('scope')->isRequired()->end()
+                ->scalarNode('register_url')->isRequired()->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createWebhookSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('webhook');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->enumNode('failure_strategy')
+                    ->info('@experimental stableVersion:v6.8.0 feature:WEBHOOK_FAILURE_STRATEGY this is a temporary solution until webhooks are refactored with a circuit breaker implementation')
+                    ->values(WebhookFailureStrategy::values())
+                    ->defaultValue(WebhookFailureStrategy::DisableOnThreshold->value)
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createAppSystemSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('app_system');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->booleanNode('enable_url_validation')->defaultTrue()->end()
+                ->booleanNode('allow_unencrypted_traffic')->defaultFalse()->end()
+                ->arrayNode('allowed_private_ip_addresses')
+                    ->performNoDeepMerging()
+                    ->defaultValue([])
+                    ->scalarPrototype()
+                        ->cannotBeEmpty()
+                        ->validate()
+                            ->ifTrue(static fn (string $value): bool => filter_var($value, \FILTER_VALIDATE_IP) === false)
+                            ->thenInvalid('"%s" is not a valid IP address.')
+                        ->end()
+                    ->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createTranslationSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('translation');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->info('Overrides for the built-in translation system. Options left unset fall back to the shipped defaults in translation.yaml.')
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->scalarNode('repository_url')->defaultNull()->end()
+                ->scalarNode('metadata_url')->defaultNull()->end()
+                ->scalarNode('community_translations_url')->defaultNull()->end()
+                ->scalarNode('documentation_url_snippet_key')->defaultNull()->end()
+                ->integerNode('completeness_threshold')->defaultNull()->end()
+                // list overrides default to null so an unset option (keep the shipped default) can be told apart from an explicit empty list (clear the shipped default)
+                ->arrayNode('plugins')
+                    ->defaultNull()
+                    ->performNoDeepMerging()
+                    ->scalarPrototype()->cannotBeEmpty()->end()
+                ->end()
+                ->arrayNode('excluded_locales')
+                    ->defaultNull()
+                    ->performNoDeepMerging()
+                    ->scalarPrototype()->cannotBeEmpty()->end()
+                ->end()
+                ->arrayNode('pseudo_locales')
+                    ->defaultNull()
+                    ->performNoDeepMerging()
+                    ->scalarPrototype()->cannotBeEmpty()->end()
+                ->end()
+                ->arrayNode('plugin_mapping')
+                    ->defaultNull()
+                    ->performNoDeepMerging()
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('plugin')->isRequired()->cannotBeEmpty()->end()
+                            ->scalarNode('name')->isRequired()->cannotBeEmpty()->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('languages')
+                    ->defaultNull()
+                    ->performNoDeepMerging()
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('name')->isRequired()->cannotBeEmpty()->end()
+                            ->scalarNode('locale')->isRequired()->cannotBeEmpty()->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->booleanNode('use_local_filesystem')->defaultFalse()->end()
+                ->arrayNode('scheduled_task')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')->defaultTrue()->end()
+                    ->end()
+                ->end()
+            ->end();
+
+        return $rootNode;
+    }
+}

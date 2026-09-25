@@ -1,0 +1,356 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\ImportExport;
+
+use Shopwell\Core\Content\ImportExport\Exception\FileNotFoundException;
+use Shopwell\Core\Content\ImportExport\Exception\InvalidFileAccessTokenException;
+use Shopwell\Core\Content\ImportExport\Exception\InvalidIdentifierException;
+use Shopwell\Core\Content\ImportExport\Exception\ProcessingException;
+use Shopwell\Core\Content\ImportExport\Exception\ProfileNotFoundException;
+use Shopwell\Core\Content\ImportExport\Exception\RequiredByUserException;
+use Shopwell\Core\Framework\HttpException;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\ShopwellHttpException;
+use Symfony\Component\HttpFoundation\Response;
+
+#[Package('fundamentals@after-sales')]
+class ImportExportException extends HttpException
+{
+    final public const CONTENT_IMPORT_EXPORT_COULD_NOT_OPEN_FILE = 'CONTENT__IMPORT_EXPORT__COULD_NOT_OPEN_FILE';
+    final public const CONTENT_IMPORT_EXPORT_COULD_NOT_CREATE_FILE = 'CONTENT__IMPORT_EXPORT__COULD_NOT_CREATE_FILE';
+    final public const CONTENT_IMPORT_EXPORT_COULD_NOT_COPY_FILE = 'CONTENT__IMPORT_EXPORT__COULD_NOT_COPY_FILE';
+    final public const CONTENT_IMPORT_EXPORT_COULD_NOT_WRITE_TO_BUFFER = 'CONTENT__IMPORT_EXPORT__COULD_NOT_WRITE_TO_BUFFER';
+    public const FIELD_CANNOT_BE_EXPORTED = 'IMPORT_EXPORT__FIELD_CANNOT_BE_EXPORTED';
+    final public const FAILED_MEDIA_URL_PARSE = 'IMPORT_EXPORT__FAILED_MEDIA_URL_PARSE';
+    final public const MEDIA_FOLDER_NOT_FOUND = 'IMPORT_EXPORT__MEDIA_FOLDER_NOT_FOUND';
+    public const FILE_EMPTY = 'CONTENT__IMPORT_EXPORT_FILE_EMPTY';
+    public const FILE_NOT_READABLE = 'CONTENT__IMPORT_FILE_IS_NOT_READABLE';
+    public const INVALID_FILE_CONTENT = 'CONTENT__IMPORT_EXPORT_INVALID_FILE_CONTENT';
+    public const LOG_ENTITY_NOT_FOUND = 'CONTENT__IMPORT_EXPORT__LOG_ENTITY_NOT_FOUND';
+    public const PROFILE_WITHOUT_MAPPINGS = 'CONTENT__IMPORT_EXPORT_PROFILE_WITHOUT_MAPPINGS';
+    public const PROFILE_WRONG_TYPE = 'CONTENT__IMPORT_EXPORT_PROFILE_WRONG_TYPE';
+    public const UNEXPECTED_FILE_TYPE = 'CONTENT__IMPORT_FILE_HAS_UNEXPECTED_TYPE';
+    public const UNKNOWN_ACTIVITY = 'CONTENT__IMPORT_EXPORT__UNKNOWN_ACTIVITY';
+    public const FILE_PATH_NOT_FOUND = 'CONTENT__IMPORT_EXPORT__FILE_PATH_NOT_FOUND';
+    public const INVALID_REQUEST_PARAMETER = 'CONTENT__IMPORT_EXPORT__INVALID_REQUEST_PARAMETER';
+    public const MISSING_PRIVILEGE = 'CONTENT__IMPORT_EXPORT__MISSING_PRIVILEGE';
+    final public const PROFILE_SEARCH_EMPTY = 'CONTENT__IMPORT_EXPORT__PROFILE_SEARCH_EMPTY';
+    final public const IMPORT_COMMAND_FAILED = 'CONTENT__IMPORT_EXPORT__COMMAND_FAILED';
+    final public const DUPLICATE_TECHNICAL_NAME = 'CONTENT__IMPORT_EXPORT__DUPLICATE_TECHNICAL_NAME';
+    final public const DESERIALIZE_FAILED = 'CONTENT__IMPORT_EXPORT__DESERIALIZE_FAILED';
+    final public const IMPORT_EXPORT_FILE_DOWNLOAD_THROTTLED = 'CONTENT__IMPORT_EXPORT__FILE_DOWNLOAD_THROTTLED';
+
+    final public const INVALID_INSTANCE_TYPE = 'CONTENT__IMPORT_EXPORT__INVALID_INSTANCE_TYPE';
+    final public const SERIALIZER_NOT_FOUND = 'CONTENT__IMPORT_EXPORT__SERIALIZER_NOT_FOUND';
+    final public const UPDATE_ENTITY_NOT_FOUND = 'CONTENT__IMPORT_EXPORT__UPDATE_ENTITY_NOT_FOUND';
+    /**
+     * @internal tag:v6.8.0 - Will be removed once $context is required in event constructors
+     */
+    final public const INVALID_EVENT_DATA = 'CONTENT__IMPORT_EXPORT__INVALID_EVENT_DATA';
+
+    /**
+     * @internal tag:v6.8.0 - Will be removed once $context is required in event constructors
+     */
+    public static function invalidEventData(string $message): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_EVENT_DATA,
+            $message
+        );
+    }
+
+    public static function invalidFileAccessToken(): ShopwellHttpException
+    {
+        return new InvalidFileAccessTokenException();
+    }
+
+    public static function fileDownloadThrottledException(int $waitTime): self
+    {
+        return new self(
+            Response::HTTP_TOO_MANY_REQUESTS,
+            self::IMPORT_EXPORT_FILE_DOWNLOAD_THROTTLED,
+            'Too many attempts to download this file. Please try again in {{ seconds }} seconds.',
+            ['seconds' => $waitTime]
+        );
+    }
+
+    public static function fileNotFound(string $fileId): ShopwellHttpException
+    {
+        return new FileNotFoundException($fileId);
+    }
+
+    public static function processingError(string $message): ShopwellHttpException
+    {
+        return new ProcessingException($message);
+    }
+
+    public static function requiredByUser(string $column): ShopwellHttpException
+    {
+        return new RequiredByUserException($column);
+    }
+
+    public static function invalidIdentifier(string $id): ShopwellHttpException
+    {
+        return new InvalidIdentifierException($id);
+    }
+
+    public static function decorationPattern(string $class): ShopwellHttpException
+    {
+        return new DecorationPatternException($class);
+    }
+
+    public static function profileNotFound(string $profileId): ShopwellHttpException
+    {
+        return new ProfileNotFoundException($profileId);
+    }
+
+    public static function couldNotOpenFile(string $path): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::CONTENT_IMPORT_EXPORT_COULD_NOT_OPEN_FILE,
+            'Could not open file at: {{ path }}',
+            ['path' => $path]
+        );
+    }
+
+    public static function couldNotCreateFile(string $directoryPath): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::CONTENT_IMPORT_EXPORT_COULD_NOT_CREATE_FILE,
+            'Could not create file in directory: {{ directoryPath }}',
+            ['directoryPath' => $directoryPath]
+        );
+    }
+
+    public static function couldNotCopyFile(string $toPath): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::CONTENT_IMPORT_EXPORT_COULD_NOT_COPY_FILE,
+            'Could not copy file from buffer to "{{ toPath }}"',
+            ['toPath' => $toPath]
+        );
+    }
+
+    public static function couldNotWriteToBuffer(): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::CONTENT_IMPORT_EXPORT_COULD_NOT_WRITE_TO_BUFFER,
+            'Could not write to buffer'
+        );
+    }
+
+    public static function fieldCannotBeExported(string $class): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::FIELD_CANNOT_BE_EXPORTED,
+            'Field of type {{ class }} cannot be exported.',
+            ['class' => $class]
+        );
+    }
+
+    public static function fileEmpty(string $filename): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::FILE_EMPTY,
+            'The file {{ filename }} is empty.',
+            ['filename' => $filename]
+        );
+    }
+
+    public static function fileNotReadable(string $path): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::FILE_NOT_READABLE,
+            'Import file is not readable at {{ path }}.',
+            ['path' => $path]
+        );
+    }
+
+    public static function filePathNotFound(): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::FILE_PATH_NOT_FOUND,
+            'File path does not exist.'
+        );
+    }
+
+    public static function invalidFileContent(string $filename): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_FILE_CONTENT,
+            'The content of the file {{ filename }} is invalid.',
+            ['filename' => $filename]
+        );
+    }
+
+    public static function logEntityNotFound(string $logId): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::LOG_ENTITY_NOT_FOUND,
+            'Import/Export log "{{ logId }}" not found.',
+            ['logId' => $logId]
+        );
+    }
+
+    public static function profileWithoutMappings(string $profileId): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::PROFILE_WITHOUT_MAPPINGS,
+            'Import/Export profile "{{ profileId }}" has no mappings.',
+            ['profileId' => $profileId]
+        );
+    }
+
+    public static function profileWrongType(string $profileId, string $profileType): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::PROFILE_WRONG_TYPE,
+            'The import/export profile with id {{ profileId }} can only be used for {{ profileType }}',
+            ['profileId' => $profileId, 'profileType' => $profileType]
+        );
+    }
+
+    public static function unexpectedFileType(string $givenType, string $expectedType): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::UNEXPECTED_FILE_TYPE,
+            'Given file does not match MIME-Type for selected profile. Given: {{ given }}. Expected: {{ expected }}',
+            ['given' => $givenType, 'expected' => $expectedType]
+        );
+    }
+
+    public static function unknownActivity(string $activity): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::UNKNOWN_ACTIVITY,
+            'The activity "{{ activity }}" could not be processed.',
+            ['activity' => $activity]
+        );
+    }
+
+    public static function invalidRequestParameter(string $name): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_REQUEST_PARAMETER,
+            'The parameter "{{ parameter }}" is invalid.',
+            ['parameter' => $name]
+        );
+    }
+
+    /**
+     * @param array<string> $privilege
+     */
+    public static function missingPrivilege(array $privilege): self
+    {
+        return new self(
+            Response::HTTP_FORBIDDEN,
+            self::MISSING_PRIVILEGE,
+            'Missing privilege: {{ missingPrivileges }}',
+            ['missingPrivileges' => \json_encode($privilege)],
+        );
+    }
+
+    public static function profileSearchEmpty(): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::PROFILE_SEARCH_EMPTY,
+            'The search for profiles returned no results.'
+        );
+    }
+
+    public static function importCommandFailed(string $message): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::IMPORT_COMMAND_FAILED,
+            $message
+        );
+    }
+
+    public static function duplicateTechnicalName(string $technicalName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::DUPLICATE_TECHNICAL_NAME,
+            'The technical name "{{ technicalName }}" is not unique.',
+            ['technicalName' => $technicalName]
+        );
+    }
+
+    public static function deserializationFailed(string $field, ?string $value, string $type): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::DESERIALIZE_FAILED,
+            'Deserialization failed for field "{{ field }}" with value "{{ value }}" to type "{{ type }}"',
+            ['field' => $field, 'value' => $value, 'type' => $type]
+        );
+    }
+
+    public static function invalidInstanceType(string $argument, string $expected): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_INSTANCE_TYPE,
+            'Expected "{{ argument }}" to be an instance of "{{ expected }}".',
+            ['argument' => $argument, 'expected' => $expected],
+        );
+    }
+
+    public static function serializerNotFound(string $entityOrField): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::SERIALIZER_NOT_FOUND,
+            'Serializer for "{{ entityOrField }}" not found.',
+            ['entityOrField' => $entityOrField],
+        );
+    }
+
+    public static function failedParsingMediaUrl(string $url): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::FAILED_MEDIA_URL_PARSE,
+            'Error parsing media URL: {{ url }}',
+            ['url' => $url]
+        );
+    }
+
+    public static function mediaFolderNotFoundForImportExportProfile(): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::MEDIA_FOLDER_NOT_FOUND,
+            'Failed to find default media folder for import_export_profile'
+        );
+    }
+
+    public static function updateEntityNotFound(string $entityName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::UPDATE_ENTITY_NOT_FOUND,
+            'The {{ entity }} record was not found. This import profile only allows updates to existing records.',
+            ['entity' => $entityName]
+        );
+    }
+}

@@ -1,0 +1,74 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Elasticsearch\Framework;
+
+use OpenSearchDSL\Aggregation\AbstractAggregation;
+use OpenSearchDSL\Aggregation\Type\BucketingTrait;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class ElasticsearchDateHistogramAggregation extends AbstractAggregation
+{
+    use BucketingTrait;
+
+    protected string $interval;
+
+    protected ?string $format = null;
+
+    public function __construct(
+        string $name,
+        string $field,
+        string $interval,
+        ?string $format = null
+    ) {
+        parent::__construct($name);
+
+        $this->setField($field);
+        $this->setInterval($interval);
+        $this->setFormat($format);
+    }
+
+    public function getInterval(): string
+    {
+        return $this->interval;
+    }
+
+    public function setInterval(string $interval): self
+    {
+        $this->interval = $interval;
+
+        return $this;
+    }
+
+    public function setFormat(?string $format): self
+    {
+        $this->format = $format;
+
+        return $this;
+    }
+
+    public function getType(): string
+    {
+        return 'date_histogram';
+    }
+
+    /**
+     * @return array{field: string|null, calendar_interval: string, format?: non-empty-string}
+     */
+    protected function getArray(): array
+    {
+        $out = [
+            'field' => $this->getField(),
+            'calendar_interval' => $this->getInterval(),
+        ];
+
+        if ($this->format !== null && $this->format !== '') {
+            $out['format'] = $this->format;
+        }
+
+        return $out;
+    }
+}

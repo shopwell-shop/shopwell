@@ -1,0 +1,411 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\Category\DataAbstractionLayer;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Category\CategoryCollection;
+use Shopwell\Core\Content\Category\CategoryEntity;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Api\Context\SystemSource;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\BasicTestDataBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\QueueTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+class CategoryBreadcrumbUpdaterTest extends TestCase
+{
+    use BasicTestDataBehaviour;
+    use DatabaseTransactionBehaviour;
+    use KernelTestBehaviour;
+    use QueueTestBehaviour;
+
+    /**
+     * @var EntityRepository<CategoryCollection>
+     */
+    private EntityRepository $repository;
+
+    private string $deLanguageId;
+
+    protected function setUp(): void
+    {
+        $this->repository = static::getContainer()->get('category.repository');
+
+        $this->deLanguageId = $this->getDeDeLanguageId();
+    }
+
+    public function testBreadcrumbAfterCreate(): void
+    {
+        $ids = $this->getSetUpData();
+
+        $context = new Context(
+            new SystemSource(),
+            [],
+            Defaults::CURRENCY,
+            [Defaults::LANGUAGE_SYSTEM]
+        );
+
+        $categories = $this->repository
+            ->search(new Criteria($ids->all()), $context)
+            ->getEntities();
+
+        $c1 = $categories->get($ids->level1);
+        $c2 = $categories->get($ids->level2);
+        $c3 = $categories->get($ids->level3);
+
+        static::assertInstanceOf(CategoryEntity::class, $c1);
+        static::assertInstanceOf(CategoryEntity::class, $c2);
+        static::assertInstanceOf(CategoryEntity::class, $c3);
+
+        static::assertSame(['EN-A'], $c1->getBreadcrumb());
+        static::assertSame(['EN-A', 'EN-B'], $c2->getBreadcrumb());
+        static::assertSame(['EN-A', 'EN-B', 'EN-C'], $c3->getBreadcrumb());
+
+        $context = new Context(
+            new SystemSource(),
+            [],
+            Defaults::CURRENCY,
+            [$this->deLanguageId]
+        );
+
+        $categories = $this->repository
+            ->search(new Criteria($ids->all()), $context)
+            ->getEntities();
+
+        $c1 = $categories->get($ids->level1);
+        $c2 = $categories->get($ids->level2);
+        $c3 = $categories->get($ids->level3);
+
+        static::assertInstanceOf(CategoryEntity::class, $c1);
+        static::assertInstanceOf(CategoryEntity::class, $c2);
+        static::assertInstanceOf(CategoryEntity::class, $c3);
+
+        static::assertSame(['DE-A'], $c1->getBreadcrumb());
+        static::assertSame(['DE-A',  'DE-B'], $c2->getBreadcrumb());
+        static::assertSame(['DE-A', 'DE-B', 'DE-C'], $c3->getBreadcrumb());
+    }
+
+    public function testUpdateTranslation(): void
+    {
+        $ids = $this->getSetUpData();
+
+        $context = new Context(
+            new SystemSource(),
+            [],
+            Defaults::CURRENCY,
+            [Defaults::LANGUAGE_SYSTEM]
+        );
+
+        $this->repository->update([
+            [
+                'id' => $ids->level1,
+                'translations' => [
+                    ['name' => 'EN-A-1', 'languageId' => Defaults::LANGUAGE_SYSTEM],
+                ],
+                'children' => [
+                    [
+                        'id' => $ids->level2,
+                        'translations' => [
+                            ['name' => 'EN-B-1', 'languageId' => Defaults::LANGUAGE_SYSTEM],
+                        ],
+                        'children' => [
+                            [
+                                'id' => $ids->level3,
+                                'translations' => [
+                                    ['name' => 'EN-C-1', 'languageId' => Defaults::LANGUAGE_SYSTEM],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ], $context);
+
+        $categories = $this->repository
+            ->search(new Criteria($ids->all()), $context)
+            ->getEntities();
+
+        $c1 = $categories->get($ids->level1);
+        $c2 = $categories->get($ids->level2);
+        $c3 = $categories->get($ids->level3);
+
+        static::assertInstanceOf(CategoryEntity::class, $c1);
+        static::assertInstanceOf(CategoryEntity::class, $c2);
+        static::assertInstanceOf(CategoryEntity::class, $c3);
+        static::assertSame(['EN-A-1'], $c1->getBreadcrumb());
+        static::assertSame(['EN-A-1', 'EN-B-1'], $c2->getBreadcrumb());
+        static::assertSame(['EN-A-1', 'EN-B-1', 'EN-C-1'], $c3->getBreadcrumb());
+
+        $context = new Context(
+            new SystemSource(),
+            [],
+            Defaults::CURRENCY,
+            [$this->deLanguageId]
+        );
+
+        $categories = $this->repository
+            ->search(new Criteria($ids->all()), $context)
+            ->getEntities();
+
+        $c1 = $categories->get($ids->level1);
+        $c2 = $categories->get($ids->level2);
+        $c3 = $categories->get($ids->level3);
+
+        static::assertInstanceOf(CategoryEntity::class, $c1);
+        static::assertInstanceOf(CategoryEntity::class, $c2);
+        static::assertInstanceOf(CategoryEntity::class, $c3);
+
+        static::assertSame(['DE-A'], $c1->getBreadcrumb());
+        static::assertSame(['DE-A', 'DE-B'], $c2->getBreadcrumb());
+        static::assertSame(['DE-A', 'DE-B', 'DE-C'], $c3->getBreadcrumb());
+    }
+
+    public function testLanguageInheritance(): void
+    {
+        $ids = $this->getSetUpData();
+
+        $context = new Context(
+            new SystemSource(),
+            [],
+            Defaults::CURRENCY,
+            [Defaults::LANGUAGE_SYSTEM]
+        );
+
+        $this->repository->update([
+            [
+                'id' => $ids->level1,
+                'translations' => [
+                    ['name' => null, 'languageId' => $this->deLanguageId],
+                ],
+                'children' => [
+                    [
+                        'id' => $ids->level2,
+                        'translations' => [
+                            ['name' => null, 'languageId' => $this->deLanguageId],
+                        ],
+                        'children' => [
+                            [
+                                'id' => $ids->level3,
+                                'translations' => [
+                                    ['name' => null, 'languageId' => $this->deLanguageId],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ], $context);
+
+        $categories = $this->repository
+            ->search(new Criteria($ids->all()), $context)
+            ->getEntities();
+
+        $c1 = $categories->get($ids->level1);
+        $c2 = $categories->get($ids->level2);
+        $c3 = $categories->get($ids->level3);
+
+        static::assertInstanceOf(CategoryEntity::class, $c1);
+        static::assertInstanceOf(CategoryEntity::class, $c2);
+        static::assertInstanceOf(CategoryEntity::class, $c3);
+
+        static::assertSame(['EN-A'], $c1->getBreadcrumb());
+        static::assertSame(['EN-A', 'EN-B'], $c2->getBreadcrumb());
+        static::assertSame(['EN-A', 'EN-B', 'EN-C'], $c3->getBreadcrumb());
+
+        $context = new Context(
+            new SystemSource(),
+            [],
+            Defaults::CURRENCY,
+            [$this->deLanguageId]
+        );
+
+        $categories = $this->repository
+            ->search(new Criteria($ids->all()), $context)
+            ->getEntities();
+
+        $c1 = $categories->get($ids->level1);
+        $c2 = $categories->get($ids->level2);
+        $c3 = $categories->get($ids->level3);
+
+        static::assertInstanceOf(CategoryEntity::class, $c1);
+        static::assertInstanceOf(CategoryEntity::class, $c2);
+        static::assertInstanceOf(CategoryEntity::class, $c3);
+
+        static::assertSame(['EN-A'], $c1->getBreadcrumb());
+        static::assertSame(['EN-A', 'EN-B'], $c2->getBreadcrumb());
+        static::assertSame(['EN-A', 'EN-B', 'EN-C'], $c3->getBreadcrumb());
+
+        $context = new Context(
+            new SystemSource(),
+            [],
+            Defaults::CURRENCY,
+            [$this->deLanguageId]
+        );
+
+        $this->repository->update([
+            [
+                'id' => $ids->level2,
+                'translations' => [
+                    ['name' => 'DE-B', 'languageId' => $this->deLanguageId],
+                ],
+            ],
+        ], $context);
+
+        $this->runWorker();
+
+        $categories = $this->repository
+            ->search(new Criteria($ids->all()), $context)
+            ->getEntities();
+
+        $c1 = $categories->get($ids->level1);
+        $c2 = $categories->get($ids->level2);
+        $c3 = $categories->get($ids->level3);
+
+        static::assertInstanceOf(CategoryEntity::class, $c1);
+        static::assertInstanceOf(CategoryEntity::class, $c2);
+        static::assertInstanceOf(CategoryEntity::class, $c3);
+
+        static::assertSame(['EN-A'], $c1->getBreadcrumb());
+        static::assertSame(['EN-A', 'DE-B'], $c2->getBreadcrumb());
+        static::assertSame(['EN-A', 'DE-B', 'EN-C'], $c3->getBreadcrumb());
+    }
+
+    public function testSiblingsSharingAParentAreAllResolved(): void
+    {
+        $parentId = Uuid::randomHex();
+        $siblingIds = [Uuid::randomHex(), Uuid::randomHex(), Uuid::randomHex()];
+
+        $context = new Context(
+            new SystemSource(),
+            [],
+            Defaults::CURRENCY,
+            [Defaults::LANGUAGE_SYSTEM]
+        );
+
+        $this->repository->create([
+            [
+                'id' => $parentId,
+                'translations' => [
+                    ['name' => 'EN-Root', 'languageId' => Defaults::LANGUAGE_SYSTEM],
+                    ['name' => 'DE-Root', 'languageId' => $this->deLanguageId],
+                ],
+                'children' => array_map(
+                    fn (string $id, int $i): array => [
+                        'id' => $id,
+                        'translations' => [
+                            ['name' => 'EN-Child-' . $i, 'languageId' => Defaults::LANGUAGE_SYSTEM],
+                            ['name' => 'DE-Child-' . $i, 'languageId' => $this->deLanguageId],
+                        ],
+                    ],
+                    $siblingIds,
+                    array_keys($siblingIds)
+                ),
+            ],
+        ], $context);
+
+        $allIds = [$parentId, ...$siblingIds];
+
+        $englishContext = new Context(new SystemSource(), [], Defaults::CURRENCY, [Defaults::LANGUAGE_SYSTEM]);
+        $englishCategories = $this->repository->search(new Criteria($allIds), $englishContext)->getEntities();
+
+        foreach ($siblingIds as $i => $siblingId) {
+            $sibling = $englishCategories->get($siblingId);
+            static::assertInstanceOf(CategoryEntity::class, $sibling);
+            static::assertSame(['EN-Root', 'EN-Child-' . $i], $sibling->getBreadcrumb());
+        }
+
+        $germanContext = new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->deLanguageId]);
+        $germanCategories = $this->repository->search(new Criteria($allIds), $germanContext)->getEntities();
+
+        foreach ($siblingIds as $i => $siblingId) {
+            $sibling = $germanCategories->get($siblingId);
+            static::assertInstanceOf(CategoryEntity::class, $sibling);
+            static::assertSame(['DE-Root', 'DE-Child-' . $i], $sibling->getBreadcrumb());
+        }
+    }
+
+    private function getSetUpData(): SetUpData
+    {
+        $level1 = Uuid::randomHex();
+        $level2 = Uuid::randomHex();
+        $level3 = Uuid::randomHex();
+
+        $data = [
+            [
+                'id' => $level1,
+                'translations' => [
+                    ['name' => 'EN-A', 'languageId' => Defaults::LANGUAGE_SYSTEM],
+                    ['name' => 'DE-A', 'languageId' => $this->deLanguageId],
+                ],
+                'children' => [
+                    [
+                        'id' => $level2,
+                        'translations' => [
+                            ['name' => 'EN-B', 'languageId' => Defaults::LANGUAGE_SYSTEM],
+                            ['name' => 'DE-B', 'languageId' => $this->deLanguageId],
+                        ],
+                        'children' => [
+                            [
+                                'id' => $level3,
+                                'translations' => [
+                                    ['name' => 'EN-C', 'languageId' => Defaults::LANGUAGE_SYSTEM],
+                                    ['name' => 'DE-C', 'languageId' => $this->deLanguageId],
+                                ],
+                                'children' => [],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $context = new Context(
+            new SystemSource(),
+            [],
+            Defaults::CURRENCY,
+            [Defaults::LANGUAGE_SYSTEM]
+        );
+
+        $this->repository->create($data, $context);
+
+        return new SetUpData($level1, $level2, $level3);
+    }
+}
+
+/**
+ * @internal
+ */
+class SetUpData
+{
+    public string $level1;
+
+    public string $level2;
+
+    public string $level3;
+
+    public function __construct(
+        string $level1,
+        string $level2,
+        string $level3
+    ) {
+        $this->level1 = $level1;
+        $this->level2 = $level2;
+        $this->level3 = $level3;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function all(): array
+    {
+        return [$this->level1, $this->level2, $this->level3];
+    }
+}

@@ -1,0 +1,86 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Cart\Rule;
+
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Content\Product\State;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Rule\RuleComparison;
+use Shopwell\Core\Framework\Rule\RuleConfig;
+use Shopwell\Core\Framework\Rule\RuleConstraints;
+use Shopwell\Core\Framework\Rule\RuleScope;
+
+/**
+ * @deprecated tag:v6.8.0 - reason:remove-rule - Use \Shopwell\Core\Checkout\Cart\Rule\LineItemProductTypeRule instead.
+ */
+#[Package('fundamentals@after-sales')]
+class LineItemProductStatesRule extends Rule
+{
+    final public const RULE_NAME = 'cartLineItemProductStates';
+
+    protected string $productState;
+
+    protected string $operator;
+
+    /**
+     * @deprecated tag:v6.8.0 - reason:remove-rule - Will be removed, as product states are deprecated.
+     */
+    public function match(RuleScope $scope): bool
+    {
+        if ($scope instanceof LineItemScope) {
+            return $this->lineItemMatches($scope->getLineItem());
+        }
+
+        if (!$scope instanceof CartRuleScope) {
+            return false;
+        }
+
+        foreach ($scope->getCart()->getLineItems()->filterGoodsFlat() as $lineItem) {
+            if ($this->lineItemMatches($lineItem)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - reason:remove-rule - Will be removed, as product states are deprecated.
+     */
+    public function getConstraints(): array
+    {
+        return [
+            'operator' => RuleConstraints::stringOperators(false),
+            'productState' => RuleConstraints::choice([
+                State::IS_PHYSICAL,
+                State::IS_DOWNLOAD,
+            ]),
+        ];
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - reason:remove-rule - Will be removed, as product states are deprecated.
+     */
+    public function getConfig(): RuleConfig
+    {
+        return (new RuleConfig())
+            ->operatorSet(RuleConfig::OPERATOR_SET_STRING, false, true)
+            ->selectField('productState', [
+                State::IS_PHYSICAL,
+                State::IS_DOWNLOAD,
+            ]);
+    }
+
+    private function lineItemMatches(LineItem $lineItem): bool
+    {
+        $states = [];
+
+        Feature::callSilentIfInactive('v6.8.0.0', static function () use (&$states, $lineItem): void {
+            $states = $lineItem->getStates();
+        });
+
+        return RuleComparison::stringArray($this->productState, array_values($states), $this->operator);
+    }
+}

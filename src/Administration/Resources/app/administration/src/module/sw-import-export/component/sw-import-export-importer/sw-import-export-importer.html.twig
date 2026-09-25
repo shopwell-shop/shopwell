@@ -1,0 +1,119 @@
+{% block sw_import_export_importer %}
+<div class="sw-import-export-importer">
+    <template v-if="showProductVariantsInfo">
+        {% block sw_import_export_importer_product_variants_warning %}
+        <mt-banner
+            variant="attention"
+            class="sw-import-export-importer__variants-warning"
+        >
+            {% block sw_import_export_importer_product_variants_warning_text %}
+            <span>{{ $t('sw-import-export.importer.variantsWarning') }}</span>
+
+            <div class="sw-import-export-importer__variants-warning-links">
+                <mt-link
+                    as="button"
+                    class="sw-import-export-importer__link"
+                    @click="setImportModalProfile('product_configurator_setting')"
+                >
+                    {{ $t('sw-import-export.importer.directImportVariantsLabel') }}
+                </mt-link>
+
+                <mt-link
+                    as="button"
+                    class="sw-import-export-importer__link"
+                    @click="setImportModalProfile('property_group_option')"
+                >
+                    {{ $t('sw-import-export.importer.directImportPropertiesLabel') }}
+                </mt-link>
+            </div>
+            {% endblock %}
+        </mt-banner>
+        {% endblock %}
+    </template>
+
+    {% block sw_import_export_importer_upload_csv_label %}
+    <span class="sw-import-export-importer__title">
+        {{ $t('sw-import-export.importer.uploadCsvLabel') }}
+    </span>
+    {% endblock %}
+
+    {% block sw_import_export_importer_warning_block %}
+    <p class="sw-import-export-importer__text">
+        {{ $t('sw-import-export.importer.warningBlock') }}
+    </p>
+    {% endblock %}
+
+    {% block sw_import_export_importer_file_input %}
+    <sw-file-input
+        :key="isLoading"
+        v-model:value="importFile"
+    >
+        <template #caption-label>
+            {{ $t('sw-import-export.importer.labelUploadCaption') }}
+        </template>
+    </sw-file-input>
+    {% endblock %}
+
+    {% block sw_import_export_importer_select_profile_label %}{% endblock %}
+
+    {% block sw_import_export_importer_profile_select %}
+    <sw-entity-single-select
+        class="sw-import-export-importer__profile-select"
+        :disabled="isLoading"
+        :label="$t('sw-import-export.importer.profileLabel')"
+        entity="import_export_profile"
+        label-property="technicalName"
+        :criteria="profileCriteria"
+        :value="selectedProfileId"
+        required
+        @update:value="onProfileSelect"
+    />
+    {% endblock %}
+
+    <template v-if="selectedProfile && selectedProfile.sourceEntity === 'product'">
+        {% block sw_import_export_importer_profile_select_product_variants_switch %}
+        <mt-switch
+            v-model="config.includeVariants"
+            class="sw-import-export-importer__variants-switch-field"
+            :label="$t('sw-import-export.importer.importVariants')"
+        />
+        {% endblock %}
+    </template>
+
+    {% block sw_import_export_importer_modal %}
+    <sw-modal
+        v-if="importModalProfile"
+        :title="$t('sw-import-export.importer.importLabel')"
+        @modal-close="setImportModalProfile(null)"
+    >
+        {% block sw_import_export_importer_modal_exporter %}
+        <sw-import-export-importer
+            :source-entity="importModalProfile"
+            @import-started="$emit('import-started', $event)"
+        />
+        {% endblock %}
+
+        <template #modal-footer>
+            {% block sw_import_export_importer_modal_footer %}
+            <mt-button
+                size="small"
+                variant="secondary"
+                @click="setImportModalProfile(null)"
+            >
+                {{ $t('global.default.close') }}
+            </mt-button>
+            {% endblock %}
+        </template>
+    </sw-modal>
+    {% endblock %}
+
+    {% block sw_import_export_importer_progress %}
+    <sw-import-export-progress
+        activity-type="import"
+        :disable-button="disableImporting"
+        @process-start="onStartProcess"
+        @process-start-dryrun="onStartDryRunProcess"
+    />
+    {% endblock %}
+</div>
+{% endblock %}

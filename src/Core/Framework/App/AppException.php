@@ -1,0 +1,699 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\App;
+
+use GuzzleHttp\Exception\RequestException;
+use Shopwell\Core\Framework\Api\Context\ContextSource;
+use Shopwell\Core\Framework\App\Exception\AppAlreadyInstalledException;
+use Shopwell\Core\Framework\App\Exception\AppNotFoundException;
+use Shopwell\Core\Framework\App\Exception\AppRegistrationException;
+use Shopwell\Core\Framework\App\Exception\AppRegistrationRejectedException;
+use Shopwell\Core\Framework\App\Exception\AppXmlParsingException;
+use Shopwell\Core\Framework\App\Exception\InvalidAppFlowActionVariableException;
+use Shopwell\Core\Framework\App\Exception\ShopIdChangeStrategyNotFoundException;
+use Shopwell\Core\Framework\App\Exception\ShopIdChangeSuggestedException;
+use Shopwell\Core\Framework\App\Exception\UserAbortedCommandException;
+use Shopwell\Core\Framework\App\ShopId\FingerprintComparisonResult;
+use Shopwell\Core\Framework\App\ShopId\ShopId;
+use Shopwell\Core\Framework\App\Validation\Error\Error;
+use Shopwell\Core\Framework\App\Validation\Requirements\UnmetRequirement;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\HttpException;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class AppException extends HttpException
+{
+    public const CANNOT_DELETE_COMPOSER_MANAGED = 'FRAMEWORK__APP_CANNOT_DELETE_COMPOSER_MANAGED';
+    public const NOT_COMPATIBLE = 'FRAMEWORK__APP_NOT_COMPATIBLE';
+    public const NOT_FOUND = 'FRAMEWORK__APP_NOT_FOUND';
+    public const ALREADY_INSTALLED = 'FRAMEWORK__APP_ALREADY_INSTALLED';
+    public const REGISTRATION_FAILED = 'FRAMEWORK__APP_REGISTRATION_FAILED';
+    public const APP_REGISTRATION_REJECTED = 'FRAMEWORK__APP_REGISTRATION_REJECTED';
+    public const APP_SECRET_RECOVERY_FAILED = 'FRAMEWORK__APP_SECRET_RECOVERY_FAILED';
+    public const APP_INSTALLATION_INCOMPLETE = 'FRAMEWORK__APP_INSTALLATION_INCOMPLETE';
+    public const LICENSE_COULD_NOT_BE_VERIFIED = 'FRAMEWORK__APP_LICENSE_COULD_NOT_BE_VERIFIED';
+    public const INVALID_CONFIGURATION = 'FRAMEWORK__APP_INVALID_CONFIGURATION';
+    public const JWT_GENERATION_REQUIRES_CUSTOMER_LOGGED_IN = 'FRAMEWORK__APP_JWT_GENERATION_REQUIRES_CUSTOMER_LOGGED_IN';
+    public const FEATURES_REQUIRE_APP_SECRET = 'FRAMEWORK__APP_FEATURES_REQUIRE_APP_SECRET';
+    public const APP_SECRET_MISSING = 'FRAMEWORK__APP_SECRET_MISSING';
+    public const ACTION_BUTTON_PROCESS_EXCEPTION = 'FRAMEWORK__SYNC_ACTION_PROCESS_INTERRUPTED';
+    public const INSTALLATION_FAILED = 'FRAMEWORK__APP_INSTALLATION_FAILED';
+    public const XML_PARSE_ERROR = 'FRAMEWORK_APP__XML_PARSE_ERROR';
+    public const MISSING_REQUEST_PARAMETER_CODE = 'FRAMEWORK__APP_MISSING_REQUEST_PARAMETER';
+    final public const APP_PAYMENT_INVALID_TRANSACTION_ID = 'APP_PAYMENT__INVALID_TRANSACTION_ID';
+    final public const APP_PAYMENT_INTERRUPTED = 'APP_PAYMENT__INTERRUPTED';
+    final public const APP_PAYMENT_GATEWAY_REQUEST_FAILED = 'FRAMEWORK__APP_PAYMENT_GATEWAY_REQUEST_FAILED';
+    public const NO_SOURCE_SUPPORTS = 'FRAMEWORK__APP_NO_SOURCE_SUPPORTS';
+    public const CANNOT_MOUNT_APP_FILESYSTEM = 'FRAMEWORK__CANNOT_MOUNT_APP_FILESYSTEM';
+    public const CHECKOUT_GATEWAY_PAYLOAD_INVALID_CODE = 'FRAMEWORK__APP_CHECKOUT_GATEWAY_PAYLOAD_INVALID';
+    public const APP_TAX_PROVIDER_RESPONSE_INVALID = 'FRAMEWORK__APP_TAX_PROVIDER_RESPONSE_INVALID';
+    public const USER_ABORTED = 'FRAMEWORK__APP_USER_ABORTED';
+    public const CANNOT_READ_FILE = 'FRAMEWORK__APP_CANNOT_READ_FILE';
+    public const APP_ACTION_NOT_FOUND = 'FRAMEWORK__APP_ACTION_NOT_FOUND';
+    public const JWKS_KEY_NOT_FOUND = 'FRAMEWORK__APP_JWKS_KEY_NOT_FOUND';
+    final public const APP_UNALLOWED_HOST = 'APP__UNALLOWED_HOST';
+    final public const INVALID_ARGUMENT = 'APP__INVALID_ARGUMENT';
+    final public const APP_CREATE_COMMAND_VALIDATION_ERROR = 'FRAMEWORK__APP_CREATE_COMMAND_VALIDATION_ERROR';
+    final public const APP_DIRECTORY_ALREADY_EXISTS = 'FRAMEWORK__APP_DIRECTORY_ALREADY_EXISTS';
+    final public const APP_DIRECTORY_CREATION_FAILED = 'FRAMEWORK__APP_DIRECTORY_CREATION_FAILED';
+    final public const APP_GATEWAY_NOT_CONFIGURED = 'FRAMEWORK__APP_GATEWAY_NOT_CONFIGURED';
+    final public const APP_GATEWAY_REQUEST_FAILED = 'FRAMEWORK__APP_CONTEXT_GATEWAY_REQUEST_FAILED';
+    final public const APP_RESTRICT_DELETE_PREVENTS_DEACTIVATION = 'FRAMEWORK__APP_RESTRICT_DELETE_PREVENTS_DEACTIVATION';
+    final public const CONFLICTING_PRIVILEGE_UPDATE = 'FRAMEWORK__APP_CONFLICTING_PRIVILEGE_UPDATE';
+    final public const INVALID_PERMISSIONS = 'FRAMEWORK__APP_INVALID_PERMISSIONS';
+    final public const REQUIRES_ADMIN_API_SOURCE = 'FRAMEWORK__APP_ACTION_REQUIRES_ADMIN_API_SOURCE';
+    final public const MISSING_USER_IN_CONTEXT_SOURCE = 'FRAMEWORK__APP_MISSING_USER_IN_CONTEXT_SOURCE';
+    final public const INTEGRATION_MISSING = 'FRAMEWORK__APP_MISSING_INTEGRATION';
+    final public const SHOP_ID_CHANGE_SUGGESTED = 'FRAMEWORK__APP_SHOP_ID_CHANGE_SUGGESTED';
+    final public const APP_URL_NOT_CONFIGURED = 'FRAMEWORK__APP_URL_NOT_CONFIGURED';
+    final public const INVALID_SHOP_ID_CONFIGURATION = 'FRAMEWORK__APP_INVALID_SHOP_ID_CONFIGURATION';
+    final public const SHOP_ID_CHANGE_STRATEGY_NOT_FOUND = 'FRAMEWORK__APP_SHOP_ID_CHANGE_STRATEGY_NOT_FOUND';
+    final public const APP_URL_INVALID = 'FRAMEWORK__APP_URL_INVALID';
+    final public const MANIFEST_NOT_FOUND = 'FRAMEWORK__APP_MANIFEST_NOT_FOUND';
+    final public const APP_REQUIREMENTS_NOT_MET = 'FRAMEWORK__APP_REQUIREMENTS_NOT_MET';
+    final public const RE_REGISTRATION_FAILED = 'FRAMEWORK__APP_RE_REGISTRATION_FAILED';
+    final public const CAPABILITY_NOT_GRANTED = 'FRAMEWORK__APP_CAPABILITY_NOT_GRANTED';
+    final public const APP_SYSTEM_REQUEST_NOT_ALLOWED = 'FRAMEWORK__APP_SYSTEM_REQUEST_NOT_ALLOWED';
+
+    /**
+     * @internal will be removed once store extensions are installed over composer
+     */
+    public static function cannotDeleteManaged(string $pluginName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::CANNOT_DELETE_COMPOSER_MANAGED,
+            'App {{ name }} is managed by Composer and cannot be deleted',
+            ['name' => $pluginName]
+        );
+    }
+
+    public static function notCompatible(string $pluginName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::NOT_COMPATIBLE,
+            'App {{ name }} is not compatible with this Shopwell version',
+            ['name' => $pluginName]
+        );
+    }
+
+    public static function invalidAppFlowActionVariableException(
+        string $appFlowActionId,
+        string $param,
+        string $message = '',
+        int $code = 0
+    ): InvalidAppFlowActionVariableException {
+        return new InvalidAppFlowActionVariableException($appFlowActionId, $param, $message, $code);
+    }
+
+    public static function notFound(string $identifier): self
+    {
+        return static::notFoundByField($identifier);
+    }
+
+    public static function notFoundByField(string $value, string $field = 'identifier'): self
+    {
+        return new AppNotFoundException(
+            Response::HTTP_NOT_FOUND,
+            self::NOT_FOUND,
+            self::$couldNotFindMessage,
+            ['entity' => 'app', 'field' => $field, 'value' => $value]
+        );
+    }
+
+    public static function alreadyInstalled(string $appName): self
+    {
+        return new AppAlreadyInstalledException(
+            Response::HTTP_CONFLICT,
+            self::ALREADY_INSTALLED,
+            'App "{{ appName }}" is already installed',
+            ['appName' => $appName]
+        );
+    }
+
+    public static function registrationFailed(string $appName, string $reason, ?\Throwable $previous = null): self
+    {
+        return new AppRegistrationException(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::REGISTRATION_FAILED,
+            'App registration for "{{ appName }}" failed: {{ reason }}',
+            ['appName' => $appName, 'reason' => $reason],
+            $previous
+        );
+    }
+
+    public static function appRegistrationRejected(string $appName, string $reason, ?\Throwable $previous = null): self
+    {
+        return new AppRegistrationRejectedException(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::APP_REGISTRATION_REJECTED,
+            'App registration for "{{ appName }}" failed: {{ reason }}',
+            ['appName' => $appName, 'reason' => $reason],
+            $previous
+        );
+    }
+
+    public static function appSecretRecoveryFailed(string $appName): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::APP_SECRET_RECOVERY_FAILED,
+            'App "{{ appName }}" did not accept any saved credential candidate. The pending recovery state was kept; retry "bin/console app:secret:rotate {{ appName }}" or "bin/console app:install {{ appName }}". If the registration is permanently lost, run the "reinstall-apps" shop ID change strategy.',
+            ['appName' => $appName]
+        );
+    }
+
+    public static function appInstallationIncomplete(string $appName): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::APP_INSTALLATION_INCOMPLETE,
+            'App "{{ appName }}" has an unfinished installation and cannot be rotated. Run "bin/console app:install {{ appName }}" to complete it — that also recovers the credentials.',
+            ['appName' => $appName]
+        );
+    }
+
+    public static function licenseCouldNotBeVerified(string $appName, ?\Throwable $previous = null): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::LICENSE_COULD_NOT_BE_VERIFIED,
+            'License for app "{{ appName }}" could not be verified',
+            ['appName' => $appName],
+            $previous
+        );
+    }
+
+    public static function invalidConfiguration(string $appName, Error $error, ?\Throwable $previous = null): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_CONFIGURATION,
+            'Configuration of app "{{ appName }}" is invalid: {{ error }}',
+            ['appName' => $appName, 'error' => $error->getMessage()],
+            $previous
+        );
+    }
+
+    public static function appSystemRequestNotAllowed(string $reason): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_SYSTEM_REQUEST_NOT_ALLOWED,
+            $reason,
+        );
+    }
+
+    public static function jwtGenerationRequiresCustomerLoggedIn(): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::JWT_GENERATION_REQUIRES_CUSTOMER_LOGGED_IN,
+            'JWT generation requires customer to be logged in'
+        );
+    }
+
+    /**
+     * @param array<string> $features
+     */
+    public static function appSecretRequiredForFeatures(string $appName, array $features): self
+    {
+        $featuresAsString = \count($features) < 3
+            ? implode(' and ', $features)
+            : \sprintf('%s and %s', implode(', ', \array_slice($features, 0, -1)), array_pop($features));
+
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::FEATURES_REQUIRE_APP_SECRET,
+            'App "{{ appName }}" could not be installed/updated because it uses features {{ features }} but has no secret',
+            ['appName' => $appName, 'features' => $featuresAsString],
+        );
+    }
+
+    public static function appSecretMissing(string $appName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_SECRET_MISSING,
+            'App secret is missing for app {{ appName }}',
+            ['appName' => $appName]
+        );
+    }
+
+    public static function actionButtonProcessException(string $actionId, string $message, ?\Throwable $e = null): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::ACTION_BUTTON_PROCESS_EXCEPTION,
+            'The synchronous action (id: {{ actionId }}) process was interrupted due to the following error:' . \PHP_EOL . '{{ errorMessage }}',
+            ['errorMessage' => $message, 'actionId' => $actionId],
+            $e
+        );
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Will be removed without replacement in next major version as it is unused
+     */
+    public static function installationFailed(string $appName, string $reason): self
+    {
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0'));
+
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INSTALLATION_FAILED,
+            'App installation for "{{ appName }}" failed: {{ reason }}',
+            ['appName' => $appName, 'reason' => $reason],
+        );
+    }
+
+    public static function createFromXmlFileFlowError(string $xmlFile, string $message, ?\Throwable $previous = null): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::XML_PARSE_ERROR,
+            'Unable to parse file "{{ file }}". Message: {{ message }}',
+            ['file' => $xmlFile, 'message' => $message],
+            $previous
+        );
+    }
+
+    public static function xmlParsingException(string $file, string $message): self
+    {
+        return AppXmlParsingException::cannotParseFile($file, $message);
+    }
+
+    public static function missingRequestParameter(string $parameterName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::MISSING_REQUEST_PARAMETER_CODE,
+            'Parameter "{{ parameterName }}" is missing.',
+            ['parameterName' => $parameterName]
+        );
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Will be removed without replacement in next major version as it is unused
+     */
+    public static function checkoutGatewayPayloadInvalid(): self
+    {
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0'));
+
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::CHECKOUT_GATEWAY_PAYLOAD_INVALID_CODE,
+            'The checkout gateway payload is invalid'
+        );
+    }
+
+    public static function interrupted(string $errorMessage, ?\Throwable $e = null): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_PAYMENT_INTERRUPTED,
+            'The app payment process was interrupted due to the following error:' . \PHP_EOL . '{{ errorMessage }}',
+            [
+                'errorMessage' => $errorMessage,
+            ],
+            $e
+        );
+    }
+
+    public static function invalidTransaction(string $transactionId, ?\Throwable $e = null): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_PAYMENT_INVALID_TRANSACTION_ID,
+            'The transaction with id {{ transactionId }} is invalid or could not be found.',
+            ['transactionId' => $transactionId],
+            $e
+        );
+    }
+
+    public static function paymentGatewayRequestFailed(string $appName, ?\Throwable $previous = null): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_PAYMENT_GATEWAY_REQUEST_FAILED,
+            'Request from app "{{ appName }}" to payment gateway failed.',
+            ['appName' => $appName],
+            $previous
+        );
+    }
+
+    public static function invalidTaxProviderResponse(): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_TAX_PROVIDER_RESPONSE_INVALID,
+            'Tax provider response contains malformed tax data.'
+        );
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Will be removed without replacement in next major version as it is unused
+     */
+    public static function inAppPurchaseGatewayUrlEmpty(): self
+    {
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0'));
+
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_CONFIGURATION,
+            'No In-App Purchases gateway url set. Please update your manifest file.',
+        );
+    }
+
+    public static function noSourceSupports(): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::NO_SOURCE_SUPPORTS,
+            'App is not supported by any source.',
+        );
+    }
+
+    public static function sourceDoesNotExist(string $sourceClassName): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::NO_SOURCE_SUPPORTS,
+            'The source "{{ sourceClassName }}" does not exist',
+            [
+                'sourceClassName' => $sourceClassName,
+            ]
+        );
+    }
+
+    public static function cannotMountAppFilesystem(string $appName, HttpException $exception): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::CANNOT_MOUNT_APP_FILESYSTEM,
+            'Cannot mount a filesystem for App "{{ app }}". Error: "{{ error }}"',
+            ['app' => $appName, 'error' => $exception->getMessage()],
+            $exception
+        );
+    }
+
+    public static function userAborted(): self
+    {
+        return new UserAbortedCommandException(
+            Response::HTTP_BAD_REQUEST,
+            self::USER_ABORTED,
+            'User aborted operation'
+        );
+    }
+
+    public static function cannotReadFile(string $file): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::CANNOT_READ_FILE,
+            'Unable to read file: "{{ file }}"',
+            ['file' => $file]
+        );
+    }
+
+    public static function actionNotFound(): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::APP_ACTION_NOT_FOUND,
+            'The requested app action does not exist',
+        );
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Will be removed. Use `StoreException::jwksNotFound` instead
+     */
+    public static function jwksNotFound(?\Throwable $e = null): self
+    {
+        Feature::triggerDeprecationOrThrow(
+            'v6.8.0.0',
+            Feature::deprecatedClassMessage(self::class, 'v6.8.0.0'),
+        );
+
+        return new self(
+            statusCode: Response::HTTP_INTERNAL_SERVER_ERROR,
+            errorCode: self::JWKS_KEY_NOT_FOUND,
+            message: 'Unable to retrieve JWKS key',
+            previous: $e
+        );
+    }
+
+    public static function hostNotAllowed(string $host, string $appName): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::APP_UNALLOWED_HOST,
+            'The host "{{ host }}" you tried to call is not listed in the allowed hosts in the manifest file for app "{{ appName }}".',
+            ['host' => $host, 'appName' => $appName]
+        );
+    }
+
+    public static function appNotFoundByName(mixed $appName): self
+    {
+        return self::notFoundByField($appName, 'name');
+    }
+
+    public static function invalidArgument(string $string): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_ARGUMENT,
+            $string
+        );
+    }
+
+    public static function createCommandValidationError(string $message): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_CREATE_COMMAND_VALIDATION_ERROR,
+            $message
+        );
+    }
+
+    public static function directoryAlreadyExists(string $appName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_DIRECTORY_ALREADY_EXISTS,
+            'Directory for app "{{ appName }}" already exists',
+            ['appName' => $appName]
+        );
+    }
+
+    public static function directoryCreationFailed(string $path): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_DIRECTORY_CREATION_FAILED,
+            'Unable to create directory "{{ path }}". Please check permissions',
+            ['path' => $path]
+        );
+    }
+
+    public static function gatewayNotConfigured(string $appName, string $gateway): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_GATEWAY_NOT_CONFIGURED,
+            'Gateway "{{ gateway }}" is not configured for app "{{ appName }}". Please check the manifest file',
+            ['appName' => $appName, 'gateway' => $gateway]
+        );
+    }
+
+    public static function gatewayRequestFailed(string $appName, string $gateway, ?RequestException $requestException = null): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_GATEWAY_REQUEST_FAILED,
+            'Request from app "{{ appName }}" to gateway "{{ gateway }}" failed.',
+            ['appName' => $appName, 'gateway' => $gateway],
+            $requestException
+        );
+    }
+
+    public static function restrictDeletePreventsDeactivation(string $appName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_RESTRICT_DELETE_PREVENTS_DEACTIVATION,
+            'App "{{ name }}" has some data that restricts deletion, please remove the data first or uninstall the app without the `keepUserData` option.',
+            ['name' => $appName]
+        );
+    }
+
+    public static function conflictingPrivilegeUpdate(): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::CONFLICTING_PRIVILEGE_UPDATE,
+            'A privilege cannot be present in both the accept and revoke lists simultaneously.'
+        );
+    }
+
+    public static function invalidPrivileges(): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_PERMISSIONS,
+            'For each accept, or revoke, expected a list of privileges in the format "category:read"',
+        );
+    }
+
+    /**
+     * @param class-string<ContextSource> $expectedContextSource
+     * @param class-string<ContextSource> $actualContextSource
+     */
+    public static function invalidContextSource(string $expectedContextSource, string $actualContextSource): self
+    {
+        return new self(
+            Response::HTTP_FORBIDDEN,
+            self::REQUIRES_ADMIN_API_SOURCE,
+            'Expected context source to be "{{ expectedContextSource }}" but got "{{ actualContextSource }}".',
+            [
+                'expectedContextSource' => $expectedContextSource,
+                'actualContextSource' => $actualContextSource,
+            ],
+        );
+    }
+
+    /**
+     * @param class-string<ContextSource> $contextSource
+     */
+    public static function missingUserInContextSource(
+        string $contextSource,
+        ?\Throwable $previous = null
+    ): self {
+        return new self(
+            Response::HTTP_FORBIDDEN,
+            self::MISSING_USER_IN_CONTEXT_SOURCE,
+            'No user available in context source "{{ contextSource }}"',
+            ['contextSource' => $contextSource],
+            $previous,
+        );
+    }
+
+    public static function missingIntegration(): self
+    {
+        return new self(
+            Response::HTTP_FORBIDDEN,
+            self::INTEGRATION_MISSING,
+            'Forbidden. Not a valid integration source.',
+        );
+    }
+
+    public static function capabilityNotGranted(string $appName, string $permission): self
+    {
+        return new self(
+            Response::HTTP_FORBIDDEN,
+            self::CAPABILITY_NOT_GRANTED,
+            'App "{{ appName }}" has not been granted the "{{ permission }}" permission.',
+            ['appName' => $appName, 'permission' => $permission]
+        );
+    }
+
+    public static function shopIdChangeSuggested(ShopId $shopId, FingerprintComparisonResult $comparisonResult): self
+    {
+        return new ShopIdChangeSuggestedException($shopId, $comparisonResult);
+    }
+
+    public static function appUrlNotConfigured(): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::APP_URL_NOT_CONFIGURED,
+            'The environment variable "APP_URL" is not set. Please set it to the URL to your Admin API.'
+        );
+    }
+
+    public static function invalidShopIdConfiguration(): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_SHOP_ID_CONFIGURATION,
+            'The configuration values for "core.app.shopIdV2" and "core.app.shopId" in the system config are invalid.'
+        );
+    }
+
+    public static function shopIdChangeResolveStrategyNotFound(string $strategy): self
+    {
+        return new ShopIdChangeStrategyNotFoundException($strategy);
+    }
+
+    public static function invalidAppUrl(string $reason): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::APP_URL_INVALID,
+            'APP_URL is invalid: ' . $reason
+        );
+    }
+
+    public static function manifestNotFound(string $path): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::MANIFEST_NOT_FOUND,
+            'No "manifest.xml" file in path "{{ path }}" found. (The file must be placed in the app root folder.)',
+            ['path' => $path],
+        );
+    }
+
+    /**
+     * @param list<string> $failedAppNames
+     */
+    public static function shopMoveFailed(array $failedAppNames): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::RE_REGISTRATION_FAILED,
+            'Failed to re-register {{ count }} app(s): {{ apps }}. After resolving the issue, '
+            . 'retry each failed app with "bin/console app:secret:rotate <app-name>".',
+            ['count' => (string) \count($failedAppNames), 'apps' => implode(', ', $failedAppNames)]
+        );
+    }
+
+    /**
+     * @param list<string> $failedAppNames
+     */
+    public static function reinstallAppsFailed(array $failedAppNames): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::RE_REGISTRATION_FAILED,
+            'Failed to re-register {{ count }} app(s): {{ apps }}. After resolving the issue, '
+            . 'run the shop ID change strategy "reinstall-apps" again.',
+            ['count' => (string) \count($failedAppNames), 'apps' => implode(', ', $failedAppNames)]
+        );
+    }
+
+    public static function requirementsNotMet(UnmetRequirement ...$violations): self
+    {
+        $violationDetails = array_map(
+            fn (UnmetRequirement $v) => \sprintf(
+                'App "%s" - Requirement "%s": %s',
+                $v->appName,
+                $v->requirementName,
+                $v->actionableResolution
+            ),
+            $violations
+        );
+
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::APP_REQUIREMENTS_NOT_MET,
+            'The app requirements are not met: {{ violations }}',
+            ['violations' => implode('; ', $violationDetails)]
+        );
+    }
+}

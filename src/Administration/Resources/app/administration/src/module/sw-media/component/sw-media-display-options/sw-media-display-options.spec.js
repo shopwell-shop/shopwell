@@ -1,0 +1,57 @@
+import { mount } from '@vue/test-utils';
+
+const createWrapper = async (customOptions) => {
+    return mount(await wrapTestComponent('sw-media-display-options', { sync: true }), {
+        global: {
+            stubs: {},
+        },
+        ...customOptions,
+    });
+};
+
+describe('src/module/sw-media/component/sw-media-display-options', () => {
+    // @deprecated tag:v6.8.0 - The test will be removed with the legacy ascending media sort default.
+    it.deprecated('v6.8.0.0')('should default to created at ascending', async () => {
+        const wrapper = await createWrapper();
+
+        expect(wrapper.vm.sortingConCat).toBe('createdAt:asc');
+    });
+
+    it.activeFeatureFlags(['v6.8.0.0'])('should default to created at descending', async () => {
+        const wrapper = await createWrapper();
+
+        expect(wrapper.vm.sortingConCat).toBe('createdAt:desc');
+    });
+
+    it('should return the correct presentationOptions', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        // Click on the presentation dropdown
+        const presentationSelect = wrapper.find('.sw-media-display-options__label-presentation');
+        await presentationSelect.find('.mt-select__selection').trigger('click');
+
+        // Contains 4 preview options
+        const selectResults = wrapper.findAll('.mt-select-result');
+        expect(selectResults).toHaveLength(4);
+        expect(selectResults[0].text()).toBe('sw-media.presentation.labelPresentationSmall');
+        expect(selectResults[1].text()).toBe('sw-media.presentation.labelPresentationMedium');
+        expect(selectResults[2].text()).toBe('sw-media.presentation.labelPresentationLarge');
+        expect(selectResults[3].text()).toBe('sw-media.presentation.labelPresentationList');
+    });
+
+    it('should disable the presentation select when disabled prop is true', async () => {
+        const wrapper = await createWrapper({
+            props: {
+                disabled: true,
+            },
+        });
+        await flushPromises();
+
+        const presentationSelect = wrapper.find('.sw-media-display-options__label-presentation');
+        expect(presentationSelect.classes()).toContain('is--disabled');
+
+        const sortSelect = wrapper.find('.sw-media-display-options__label-sort');
+        expect(sortSelect.classes()).toContain('is--disabled');
+    });
+});

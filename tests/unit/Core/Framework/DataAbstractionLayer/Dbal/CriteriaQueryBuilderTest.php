@@ -1,0 +1,211 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\DataAbstractionLayer\Dbal;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Query\Expression\CompositeExpression;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\CriteriaQueryBuilder;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityReader;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\FieldResolver\CriteriaPartResolver;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\JoinGroupBuilder;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\QueryBuilder;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Parser\ParseResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Parser\SqlQueryParser;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Query\ScoreQuery;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Term\EntityScoreQueryBuilder;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Term\SearchTermInterpreter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Stub\Doctrine\QueryBuilderDataExtractor;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(CriteriaQueryBuilder::class)]
+class CriteriaQueryBuilderTest extends TestCase
+{
+    public function testBuildWithWhereCondition(): void
+    {
+        $queryBuilder = new QueryBuilder(static::createStub(Connection::class));
+
+        $criteria = new Criteria();
+        $criteria->addQuery(new ScoreQuery(
+            new ContainsFilter('name', 'test'),
+            500
+        ));
+        $criteria->addQuery(new ScoreQuery(
+            new ContainsFilter('description', 'test'),
+            250
+        ));
+
+        $parser = $this->createMock(SqlQueryParser::class);
+
+        $parserResult = new ParseResult();
+        $parserResult->addWhere('IF(`order`.`name` LIKE :param_018f75fcb173706bb1e5a16110f13c1d, \'500\', 0)');
+        $parserResult->addWhere('IF(`order`.`description` LIKE :param_018f766366cf70ce8e487d3cc1b513a6, \'250\', 0)');
+        $parser->expects($this->once())->method('parseRanking')->willReturn($parserResult);
+
+        $whereParserResult1 = new ParseResult();
+        $whereParserResult2 = new ParseResult();
+        $whereParserResult1->addWhere('`order`.`name` LIKE :param_018f75fcb173706bb1e5a16110f13c1d');
+        $whereParserResult2->addWhere('`order`.`description` LIKE :param_018f766366cf70ce8e487d3cc1b513a6');
+        $parser->expects($this->exactly(3))->method('parse')->willReturnOnConsecutiveCalls(new ParseResult(), $whereParserResult1, $whereParserResult2);
+
+        $helper = $this->createMock(EntityDefinitionQueryHelper::class);
+        $helper->expects($this->once())->method('getBaseQuery')->willReturn($queryBuilder);
+
+        $builder = new CriteriaQueryBuilder(
+            $parser,
+            $helper,
+            static::createStub(SearchTermInterpreter::class),
+            static::createStub(EntityScoreQueryBuilder::class),
+            static::createStub(JoinGroupBuilder::class),
+            static::createStub(CriteriaPartResolver::class)
+        );
+
+        $definition = $this->returnMockDefinition();
+        $definition->compile(static::createStub(DefinitionInstanceRegistry::class));
+
+        $builder->build($queryBuilder, $definition, $criteria, Context::createDefaultContext());
+
+        static::assertEquals(
+            CompositeExpression::and(
+                '`order`.`name` LIKE :param_018f75fcb173706bb1e5a16110f13c1d OR `order`.`description` LIKE :param_018f766366cf70ce8e487d3cc1b513a6',
+            ),
+            QueryBuilderDataExtractor::getWhere($queryBuilder),
+        );
+    }
+
+    public function testBuildWithoutAddConditions(): void
+    {
+        $queryBuilder = new QueryBuilder(static::createStub(Connection::class));
+
+        $criteria = new Criteria();
+        $criteria->addQuery(new ScoreQuery(
+            new ContainsFilter('name', 'test'),
+            500
+        ));
+
+        $parserResult = new ParseResult();
+        $parserResult->addWhere('IF(`order`.`name` LIKE :param_018f75fcb173706bb1e5a16110f13c1d, \'500\', 0)');
+
+        $parser = $this->createMock(SqlQueryParser::class);
+        $parser->expects($this->once())->method('parseRanking')->willReturn($parserResult);
+
+        $parser->method('parse')->willReturn(new ParseResult());
+
+        $builder = new CriteriaQueryBuilder(
+            $parser,
+            static::createStub(EntityDefinitionQueryHelper::class),
+            static::createStub(SearchTermInterpreter::class),
+            static::createStub(EntityScoreQueryBuilder::class),
+            static::createStub(JoinGroupBuilder::class),
+            static::createStub(CriteriaPartResolver::class)
+        );
+
+        $definition = $this->returnMockDefinition();
+        $definition->compile(static::createStub(DefinitionInstanceRegistry::class));
+        $builder->build($queryBuilder, $definition, $criteria, Context::createDefaultContext());
+
+        static::assertNull(QueryBuilderDataExtractor::getWhere($queryBuilder));
+    }
+
+    public function testInvalidSortingDirectionException(): void
+    {
+        $queryBuilder = new QueryBuilder(static::createStub(Connection::class));
+
+        $definition = $this->returnMockDefinition();
+        $definition->compile(static::createStub(DefinitionInstanceRegistry::class));
+
+        $criteria = new Criteria();
+        $criteria->addSorting(new FieldSorting('name', 'foo'));
+
+        $builder = new CriteriaQueryBuilder(
+            static::createStub(SqlQueryParser::class),
+            static::createStub(EntityDefinitionQueryHelper::class),
+            static::createStub(SearchTermInterpreter::class),
+            static::createStub(EntityScoreQueryBuilder::class),
+            static::createStub(JoinGroupBuilder::class),
+            static::createStub(CriteriaPartResolver::class)
+        );
+
+        $this->expectExceptionObject(DataAbstractionLayerException::invalidSortingDirection('foo'));
+
+        $builder->build($queryBuilder, $definition, $criteria, Context::createDefaultContext());
+    }
+
+    public function testToManyAssociationLimitQueryKeepsSortingUnaggregated(): void
+    {
+        $definition = $this->returnMockDefinition();
+        $criteria = new Criteria();
+        $sorting = new FieldSorting('name', FieldSorting::ASCENDING);
+        $criteria->addSorting($sorting);
+
+        $helper = $this->createMock(EntityDefinitionQueryHelper::class);
+        $helper->expects($this->exactly(2))
+            ->method('getFieldAccessor')
+            ->willReturn('`order`.`name`');
+
+        $builder = new CriteriaQueryBuilder(
+            static::createStub(SqlQueryParser::class),
+            $helper,
+            static::createStub(SearchTermInterpreter::class),
+            static::createStub(EntityScoreQueryBuilder::class),
+            static::createStub(JoinGroupBuilder::class),
+            static::createStub(CriteriaPartResolver::class)
+        );
+
+        $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+
+        $groupedQuery = new QueryBuilder($connection);
+        $groupedQuery->addState(EntityDefinitionQueryHelper::HAS_TO_MANY_JOIN);
+
+        $builder->addSortings($definition, $criteria, [$sorting], $groupedQuery, Context::createDefaultContext());
+
+        static::assertSame(['MIN(`order`.`name`) ASC'], $groupedQuery->getOrderByParts());
+
+        $limitQuery = new QueryBuilder($connection);
+        $limitQuery->addState(EntityDefinitionQueryHelper::HAS_TO_MANY_JOIN);
+        $limitQuery->addState(EntityReader::TO_MANY_ASSOCIATION_LIMIT_QUERY);
+
+        $builder->addSortings($definition, $criteria, [$sorting], $limitQuery, Context::createDefaultContext());
+
+        static::assertSame(['`order`.`name` ASC'], $limitQuery->getOrderByParts());
+    }
+
+    private function returnMockDefinition(): EntityDefinition
+    {
+        return new class extends EntityDefinition {
+            public function getEntityName(): string
+            {
+                return 'order';
+            }
+
+            protected function defineFields(): FieldCollection
+            {
+                return new FieldCollection([
+                    (new IdField('id', 'id'))->addFlags(new Required(), new PrimaryKey()),
+                    (new TranslatedField('name'))->addFlags(new ApiAware()),
+                    new TranslatedField('description'),
+                ]);
+            }
+        };
+    }
+}

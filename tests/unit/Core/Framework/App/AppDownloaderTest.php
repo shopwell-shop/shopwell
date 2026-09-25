@@ -1,0 +1,116 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\App;
+
+use League\Flysystem\InMemory\InMemoryFilesystemAdapter;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\AppDownloader;
+use Shopwell\Core\Framework\App\Exception\AppDownloadException;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpClient\Chunk\DataChunk;
+use Symfony\Component\HttpClient\Response\ResponseStream;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(AppDownloader::class)]
+class AppDownloaderTest extends TestCase
+{
+    private HttpClientInterface&Stub $httpClient;
+
+    private Filesystem&MockObject $filesystem;
+
+    private AppDownloader $appDownloader;
+
+    protected function setUp(): void
+    {
+        $this->httpClient = static::createStub(HttpClientInterface::class);
+        $this->filesystem = $this->createMock(Filesystem::class);
+
+        $this->appDownloader = new AppDownloader($this->httpClient, $this->filesystem);
+    }
+
+    public function testDownloadThrowsExceptionOnNon200Response(): void
+    {
+        $response = static::createStub(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn(404);
+
+        $this->httpClient->method('request')->willReturn($response);
+
+        $this->filesystem->expects($this->never())->method('appendToFile');
+
+        $this->expectExceptionObject(AppDownloadException::transportError('http://example.com/file.zip'));
+
+        $this->appDownloader->download('http://example.com/file.zip', '/path/to/file.zip');
+    }
+
+    public function testStreamingDownloadCreatesDirectory(): void
+    {
+        $this->filesystem->expects($this->once())
+            ->method('mkdir')
+            ->with(static::equalTo('/path/to'));
+
+        $response = static::createStub(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn(200);
+
+        $generator = static function () use ($response): \Generator {
+            yield $response => new DataChunk(0, 'chunk1content');
+            yield $response => new DataChunk(1, 'chunk2content');
+        };
+
+        $stream = new ResponseStream($generator());
+
+        $this->httpClient->method('request')->willReturn($response);
+        $this->httpClient->method('stream')->willReturn($stream);
+
+        $matcher = $this->exactly(2);
+
+        $this->filesystem
+            ->expects($matcher)
+            ->method('appendToFile')
+            ->willReturnOnConsecutiveCalls()
+            ->willReturnCallback(function (string $file, $content) use ($matcher): void {
+                $this->assertSame('/path/to/file.zip', $file);
+                match ($matcher->numberOfInvocations()) {
+                    1 => $this->assertSame('chunk1content', $content),
+                    2 => $this->assertSame('chunk2content', $content),
+                    default => null,
+                };
+            });
+
+        $this->appDownloader->download('http://example.com/file.zip', '/path/to/file.zip');
+    }
+
+    public function testDownloadFromFilesystem(): void
+    {
+        $fs = new \League\Flysystem\Filesystem(new InMemoryFilesystemAdapter());
+        $fs->write('/some/file.zip', 'content');
+
+        $this->filesystem->expects($this->once())
+            ->method('dumpFile')
+            ->willReturnCallback(static function (string $path, $contentResource): void {
+                static::assertSame('/path/to/file.zip', $path);
+                static::assertSame('content', stream_get_contents($contentResource));
+            });
+
+        $this->appDownloader->downloadFromFilesystem($fs, '/some/file.zip', '/path/to/file.zip');
+    }
+
+    public function testDownloadFromFilesystemWrapsException(): void
+    {
+        $this->expectExceptionObject(AppDownloadException::transportError('/some/file.zip'));
+
+        $fs = new \League\Flysystem\Filesystem(new InMemoryFilesystemAdapter());
+
+        $this->filesystem->expects($this->never())->method('dumpFile');
+
+        $this->appDownloader->downloadFromFilesystem($fs, '/some/file.zip', '/path/to/file.zip');
+    }
+}

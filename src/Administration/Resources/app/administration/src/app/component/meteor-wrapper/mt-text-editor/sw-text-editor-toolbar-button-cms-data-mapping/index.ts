@@ -1,0 +1,26 @@
+import type { CustomButton } from '@shopware-ag/meteor-component-library/dist/esm/MtTextEditorToolbar';
+
+/**
+ * @sw-package framework
+ *
+ * @private
+ */
+export default (getAvailableDataMappings: () => string[]): CustomButton => {
+    const dataMappings = getAvailableDataMappings();
+
+    return {
+        icon: 'regular-variables-xs',
+        name: 'cms-data-mapping',
+        position: 14000,
+        // @ts-expect-error
+        label: Shopwell.Snippet.t('sw-text-editor-toolbar-button-cms-data-mapping.label') as string,
+        disabled: () => !dataMappings?.length,
+        children: dataMappings.map((dataMapping) => ({
+            name: dataMapping,
+            label: dataMapping,
+            action(editor) {
+                return editor.commands.insertContent(`{{ ${dataMapping} }}`);
+            },
+        })),
+    };
+};

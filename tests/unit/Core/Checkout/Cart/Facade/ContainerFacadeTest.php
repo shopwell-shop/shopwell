@@ -1,0 +1,189 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Facade;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversTrait;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\Facade\CartFacadeHelper;
+use Shopwell\Core\Checkout\Cart\Facade\ContainerFacade;
+use Shopwell\Core\Checkout\Cart\Facade\ItemFacade;
+use Shopwell\Core\Checkout\Cart\Facade\ScriptPriceStubs;
+use Shopwell\Core\Checkout\Cart\Facade\Traits\DiscountTrait;
+use Shopwell\Core\Checkout\Cart\Facade\Traits\SurchargeTrait;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CurrencyPriceDefinition;
+use Shopwell\Core\Checkout\Cart\Price\Struct\PercentagePriceDefinition;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\Price;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(ContainerFacade::class)]
+#[CoversTrait(DiscountTrait::class)]
+#[CoversTrait(SurchargeTrait::class)]
+class ContainerFacadeTest extends TestCase
+{
+    public function testPublicApiAvailable(): void
+    {
+        $facade = $this->rampUpFacade();
+
+        static::assertSame('container', $facade->getType());
+        static::assertSame('container', $facade->getId());
+        static::assertSame('container', $facade->getReferencedId());
+
+        static::assertSame(1, $facade->getQuantity());
+        static::assertTrue($facade->has('foo'));
+
+        $facade->remove('foo');
+        static::assertFalse($facade->has('foo'));
+        static::assertCount(0, $facade->products());
+    }
+
+    public function testAbsoluteDiscount(): void
+    {
+        $facade = $this->rampUpFacade();
+
+        static::assertSame(1, $facade->getQuantity());
+        static::assertTrue($facade->has('foo'));
+
+        $absolute = new PriceCollection([new Price(Defaults::CURRENCY, 5, 5, false)]);
+        $facade->discount('absolute', 'absolute', $absolute, 'my-discount');
+
+        static::assertSame(1, $facade->getQuantity());
+        static::assertTrue($facade->has('absolute'));
+
+        $discount = $facade->get('absolute');
+        static::assertInstanceOf(ItemFacade::class, $discount);
+        static::assertSame('discount', $discount->getType());
+        static::assertNull($discount->getPrice());
+
+        $definition = $discount->getItem()->getPriceDefinition();
+        static::assertInstanceOf(CurrencyPriceDefinition::class, $definition);
+        static::assertSame($absolute, $definition->getPrice());
+    }
+
+    public function testPercentageDiscount(): void
+    {
+        $facade = $this->rampUpFacade();
+
+        static::assertSame(1, $facade->getQuantity());
+        static::assertTrue($facade->has('foo'));
+
+        $facade->discount('percentage', 'percentage', 10, 'my-discount');
+
+        static::assertSame(1, $facade->getQuantity());
+        static::assertTrue($facade->has('percentage'));
+
+        $discount = $facade->get('percentage');
+        static::assertInstanceOf(ItemFacade::class, $discount);
+        static::assertSame('discount', $discount->getType());
+        static::assertNull($discount->getPrice());
+
+        $definition = $discount->getItem()->getPriceDefinition();
+        static::assertInstanceOf(PercentagePriceDefinition::class, $definition);
+    }
+
+    public function testDiscountRequiresDefaultCurrency(): void
+    {
+        $facade = $this->rampUpFacade();
+
+        $this->expectExceptionObject(CartException::missingDefaultPriceCollectionForDiscount('my-discount'));
+
+        $facade->discount('my-discount', 'absolute', new PriceCollection([new Price(Uuid::randomHex(), 5, 5, false)]), 'my-discount');
+    }
+
+    public function testNotSupportedDiscountType(): void
+    {
+        $facade = $this->rampUpFacade();
+
+        $this->expectExceptionObject(CartException::discountTypeNotSupported('my-discount', 'foo'));
+
+        $facade->discount('my-discount', 'foo', 10, 'my-discount');
+    }
+
+    public function testAbsoluteSurcharge(): void
+    {
+        $facade = $this->rampUpFacade();
+
+        static::assertSame(1, $facade->getQuantity());
+        static::assertTrue($facade->has('foo'));
+
+        $absolute = new PriceCollection([new Price(Defaults::CURRENCY, 5, 5, false)]);
+        $facade->surcharge('absolute', 'absolute', $absolute, 'my-surcharge');
+
+        static::assertSame(1, $facade->getQuantity());
+        static::assertTrue($facade->has('absolute'));
+
+        $surcharge = $facade->get('absolute');
+        static::assertInstanceOf(ItemFacade::class, $surcharge);
+        static::assertSame('discount', $surcharge->getType());
+        static::assertNull($surcharge->getPrice());
+
+        $definition = $surcharge->getItem()->getPriceDefinition();
+        static::assertInstanceOf(CurrencyPriceDefinition::class, $definition);
+        static::assertSame($absolute, $definition->getPrice());
+    }
+
+    public function testPercentageSurcharge(): void
+    {
+        $facade = $this->rampUpFacade();
+
+        static::assertSame(1, $facade->getQuantity());
+        static::assertTrue($facade->has('foo'));
+
+        $facade->surcharge('percentage', 'percentage', 10, 'my-surcharge');
+
+        static::assertSame(1, $facade->getQuantity());
+        static::assertTrue($facade->has('percentage'));
+
+        $surcharge = $facade->get('percentage');
+        static::assertInstanceOf(ItemFacade::class, $surcharge);
+        static::assertSame('discount', $surcharge->getType());
+        static::assertNull($surcharge->getPrice());
+
+        $definition = $surcharge->getItem()->getPriceDefinition();
+        static::assertInstanceOf(PercentagePriceDefinition::class, $definition);
+    }
+
+    public function testSurchargeRequiresDefaultCurrency(): void
+    {
+        $facade = $this->rampUpFacade();
+
+        $this->expectExceptionObject(CartException::missingDefaultPriceCollectionForSurcharge('my-surcharge'));
+
+        $facade->surcharge('my-surcharge', 'absolute', new PriceCollection([new Price(Uuid::randomHex(), 5, 5, false)]), 'my-surcharge');
+    }
+
+    public function testNotSupportedSurchargeType(): void
+    {
+        $facade = $this->rampUpFacade();
+
+        $this->expectExceptionObject(CartException::surchargeTypeNotSupported('my-surcharge', 'foo'));
+
+        $facade->surcharge('my-surcharge', 'foo', 10, 'my-surcharge');
+    }
+
+    private function rampUpFacade(): ContainerFacade
+    {
+        $container = new LineItem('container', 'container', 'container');
+
+        $stubs = static::createStub(ScriptPriceStubs::class);
+        $helper = static::createStub(CartFacadeHelper::class);
+        $context = static::createStub(SalesChannelContext::class);
+        $facade = new ContainerFacade($container, $stubs, $helper, $context);
+
+        $facade->add(
+            new ItemFacade(new LineItem('foo', 'foo', 'foo'), $stubs, $helper, $context)
+        );
+
+        return $facade;
+    }
+}

@@ -1,0 +1,212 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\CustomField;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteException;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\CustomField\CustomFieldCollection;
+use Shopwell\Core\System\CustomField\CustomFieldDefinition;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class CustomFieldRepositoryTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    /**
+     * @var EntityRepository<CustomFieldCollection>
+     */
+    private EntityRepository $repo;
+
+    protected function setUp(): void
+    {
+        $this->repo = static::getContainer()->get('custom_field.repository');
+    }
+
+    public function testCreate(): void
+    {
+        $id = Uuid::randomHex();
+        $attribute = [
+            'id' => $id,
+            'name' => 'foo_size',
+            'type' => 'int',
+        ];
+        $result = $this->repo->create([$attribute], Context::createDefaultContext());
+
+        $events = $result->getEventByEntityName(CustomFieldDefinition::ENTITY_NAME);
+        static::assertNotNull($events);
+
+        $payloads = $events->getPayloads();
+        static::assertNotEmpty($payloads);
+
+        static::assertSame($attribute['id'], $payloads[0]['id']);
+        static::assertSame($attribute['name'], $payloads[0]['name']);
+        static::assertSame($attribute['type'], $payloads[0]['type']);
+    }
+
+    public function testSearchId(): void
+    {
+        $sizeId = Uuid::randomHex();
+        $descriptionId = Uuid::randomHex();
+        $attributes = [
+            [
+                'id' => $sizeId,
+                'name' => 'foo_size',
+                'type' => 'int',
+                'config' => ['fieldType' => 'color-picker'],
+            ],
+            [
+                'id' => $descriptionId,
+                'name' => 'foo_description',
+                'type' => 'string',
+                'config' => ['fieldType' => 'date-picker'],
+            ],
+        ];
+        $this->repo->create($attributes, Context::createDefaultContext());
+        $result = $this->repo->search(new Criteria([$sizeId]), Context::createDefaultContext())->getEntities();
+        $attribute = $result->first();
+        static::assertNotNull($attribute);
+
+        static::assertSame($sizeId, $attribute->getId());
+        static::assertSame($attributes[0]['name'], $attribute->getName());
+        static::assertSame($attributes[0]['type'], $attribute->getType());
+        static::assertSame($attributes[0]['config'], $attribute->getConfig());
+    }
+
+    public function testDelete(): void
+    {
+        $sizeId = Uuid::randomHex();
+        $descriptionId = Uuid::randomHex();
+        $attributes = [
+            [
+                'id' => $sizeId,
+                'name' => 'foo_size',
+                'type' => 'int',
+            ],
+            [
+                'id' => $descriptionId,
+                'name' => 'foo_description',
+                'type' => 'string',
+            ],
+        ];
+        $this->repo->create($attributes, Context::createDefaultContext());
+
+        $result = $this->repo->delete([['id' => $sizeId]], Context::createDefaultContext());
+        $event = $result->getEventByEntityName(CustomFieldDefinition::ENTITY_NAME);
+
+        static::assertNotNull($event);
+        static::assertCount(1, $event->getIds());
+        static::assertSame($sizeId, $event->getIds()[0]);
+    }
+
+    public function testUpdate(): void
+    {
+        $sizeId = Uuid::randomHex();
+        $descriptionId = Uuid::randomHex();
+        $attributes = [
+            [
+                'id' => $sizeId,
+                'name' => 'foo_size',
+                'type' => 'int',
+            ],
+            [
+                'id' => $descriptionId,
+                'name' => 'foo_description',
+                'type' => 'string',
+            ],
+        ];
+        $this->repo->create($attributes, Context::createDefaultContext());
+
+        $update = [
+            'id' => $descriptionId,
+            'config' => ['componentName' => 'sw-custom-field', 'customFieldType' => 'text'],
+        ];
+        $result = $this->repo->update([$update], Context::createDefaultContext());
+
+        $event = $result->getEventByEntityName(CustomFieldDefinition::ENTITY_NAME);
+        static::assertNotNull($event);
+        static::assertCount(1, $event->getPayloads());
+    }
+
+    public function testNameIsImmutable(): void
+    {
+        $id = Uuid::randomHex();
+        $this->repo->create([
+            [
+                'id' => $id,
+                'name' => 'immutable_name',
+                'type' => 'int',
+            ],
+        ], Context::createDefaultContext());
+
+        $this->expectException(WriteException::class);
+        $this->repo->update([
+            [
+                'id' => $id,
+                'name' => 'renamed',
+            ],
+        ], Context::createDefaultContext());
+    }
+
+    public function testTypeIsImmutable(): void
+    {
+        $id = Uuid::randomHex();
+        $this->repo->create([
+            [
+                'id' => $id,
+                'name' => 'immutable_type',
+                'type' => 'int',
+            ],
+        ], Context::createDefaultContext());
+
+        $this->expectException(WriteException::class);
+        $this->repo->update([
+            [
+                'id' => $id,
+                'type' => 'text',
+            ],
+        ], Context::createDefaultContext());
+    }
+
+    public function testUpsert(): void
+    {
+        $sizeId = Uuid::randomHex();
+        $descriptionId = Uuid::randomHex();
+        $attributes = [
+            [
+                'id' => $sizeId,
+                'name' => 'foo_size',
+                'type' => 'int',
+                'label' => 'The size of foo products',
+            ],
+            [
+                'id' => $descriptionId,
+                'name' => 'foo_description',
+                'type' => 'string',
+                'label' => 'Foo description',
+            ],
+        ];
+        $result = $this->repo->upsert($attributes, Context::createDefaultContext());
+        $event = $result->getEventByEntityName(CustomFieldDefinition::ENTITY_NAME);
+        static::assertNotNull($event);
+        static::assertCount(2, $event->getPayloads());
+
+        foreach ($attributes as &$attribute) {
+            unset($attribute['name']);
+            unset($attribute['type']);
+        }
+
+        $result = $this->repo->upsert($attributes, Context::createDefaultContext());
+        $event = $result->getEventByEntityName(CustomFieldDefinition::ENTITY_NAME);
+        static::assertNotNull($event);
+        static::assertCount(2, $event->getPayloads());
+    }
+}

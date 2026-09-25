@@ -1,0 +1,168 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Product\Cms;
+
+use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
+use Shopwell\Core\Content\Cms\DataResolver\CriteriaCollection;
+use Shopwell\Core\Content\Cms\DataResolver\Element\AbstractCmsElementResolver;
+use Shopwell\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
+use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopwell\Core\Content\Cms\SalesChannel\Struct\ProductListingStruct;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\AbstractProductListingRoute;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\Filter\ManufacturerListingFilterHandler;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\Filter\PriceListingFilterHandler;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\Filter\PropertyListingFilterHandler;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\Filter\RatingListingFilterHandler;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\Filter\ShippingFreeListingFilterHandler;
+use Shopwell\Core\Content\Product\SalesChannel\Sorting\ProductSortingCollection;
+use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
+
+#[Package('discovery')]
+class ProductListingCmsElementResolver extends AbstractCmsElementResolver
+{
+    private const FILTER_REQUEST_PARAMS = [
+        ManufacturerListingFilterHandler::FILTER_ENABLED_REQUEST_PARAM,
+        RatingListingFilterHandler::FILTER_ENABLED_REQUEST_PARAM,
+        ShippingFreeListingFilterHandler::FILTER_ENABLED_REQUEST_PARAM,
+        PriceListingFilterHandler::FILTER_ENABLED_REQUEST_PARAM,
+        PropertyListingFilterHandler::FILTER_ENABLED_REQUEST_PARAM,
+    ];
+
+    /**
+     * @internal
+     *
+     * @param EntityRepository<ProductSortingCollection> $sortingRepository
+     */
+    public function __construct(
+        private readonly AbstractProductListingRoute $listingRoute,
+        private readonly EntityRepository $sortingRepository
+    ) {
+    }
+
+    public function getType(): string
+    {
+        return 'product-listing';
+    }
+
+    public function collect(CmsSlotEntity $slot, ResolverContext $resolverContext): ?CriteriaCollection
+    {
+        return null;
+    }
+
+    public function enrich(CmsSlotEntity $slot, ResolverContext $resolverContext, ElementDataCollection $result): void
+    {
+        $data = new ProductListingStruct();
+        $slot->setData($data);
+
+        $request = $resolverContext->getRequest();
+        $context = $resolverContext->getSalesChannelContext();
+
+        $this->restrictFilters($slot, $request);
+
+        if ($this->isCustomSorting($slot)) {
+            $this->restrictSortings($request, $slot);
+            $this->addDefaultSorting($request, $slot, $context);
+        }
+
+        $navigationId = $this->getNavigationId($request, $context);
+
+        $criteria = new Criteria();
+        $criteria->setTitle('cms::product-listing');
+
+        $listing = $this->listingRoute
+            ->load($navigationId, $request, $context, $criteria)
+            ->getResult();
+
+        $data->setListing($listing);
+    }
+
+    private function getNavigationId(Request $request, SalesChannelContext $salesChannelContext): string
+    {
+        return (string) (
+            $request->attributes->get('navigationId')
+            ?? RequestParamHelper::get($request, 'navigationId', $salesChannelContext->getSalesChannel()->getNavigationCategoryId())
+        );
+    }
+
+    private function isCustomSorting(CmsSlotEntity $slot): bool
+    {
+        $config = $slot->getTranslation('config');
+
+        if ($config && isset($config['useCustomSorting']) && isset($config['useCustomSorting']['value'])) {
+            return $config['useCustomSorting']['value'];
+        }
+
+        return false;
+    }
+
+    private function addDefaultSorting(Request $request, CmsSlotEntity $slot, SalesChannelContext $context): void
+    {
+        if (RequestParamHelper::get($request, 'order')) {
+            return;
+        }
+
+        $config = $slot->getTranslation('config');
+
+        if ($config && isset($config['defaultSorting']) && isset($config['defaultSorting']['value']) && $config['defaultSorting']['value']) {
+            $defaultSortingValue = $config['defaultSorting']['value'];
+            $criteria = new Criteria([$defaultSortingValue]);
+
+            $request->request->set('order', $this->sortingRepository->search($criteria, $context->getContext())->getEntities()->first()?->get('key'));
+
+            return;
+        }
+
+        // if we have no specific order given at this point, set the order to the highest priority available sorting
+        $availableSortings = RequestParamHelper::get($request, 'availableSortings');
+        if ($availableSortings) {
+            arsort($availableSortings);
+            $sortingId = array_key_first($availableSortings);
+            if (!\is_string($sortingId)) {
+                return;
+            }
+
+            $criteria = new Criteria([$sortingId]);
+
+            $request->request->set('order', $this->sortingRepository->search($criteria, $context->getContext())->getEntities()->first()?->get('key'));
+        }
+    }
+
+    private function restrictSortings(Request $request, CmsSlotEntity $slot): void
+    {
+        $config = $slot->getTranslation('config');
+
+        if (!$config || !isset($config['availableSortings']) || !isset($config['availableSortings']['value'])) {
+            return;
+        }
+
+        $request->request->set('availableSortings', $config['availableSortings']['value']);
+    }
+
+    private function restrictFilters(CmsSlotEntity $slot, Request $request): void
+    {
+        $config = $slot->get('config');
+
+        $enabledFilters = $config['filters']['value'] ?? null;
+
+        $enabledFilters = \is_string($enabledFilters) ? explode(',', $enabledFilters) : self::FILTER_REQUEST_PARAMS;
+
+        $propertyWhitelist = $config['propertyWhitelist']['value'] ?? null ?: null;
+
+        // When the property filters are restricted, they are not in the enabledFilters array
+        if (\in_array(PropertyListingFilterHandler::FILTER_ENABLED_REQUEST_PARAM, $enabledFilters, true)
+            || !\is_array($propertyWhitelist)) {
+            $propertyWhitelist = null;
+        }
+
+        $request->request->set(PropertyListingFilterHandler::PROPERTY_GROUP_IDS_REQUEST_PARAM, $propertyWhitelist);
+
+        foreach (self::FILTER_REQUEST_PARAMS as $filterParam) {
+            $request->request->set($filterParam, \in_array($filterParam, $enabledFilters, true));
+        }
+    }
+}

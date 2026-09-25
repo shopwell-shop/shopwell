@@ -1,0 +1,251 @@
+@import "~scss/variables";
+@import "~scss/mixins";
+
+.sw-meteor-page {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    // The head area below queries this. It sits on the parent, an element cannot query its own size.
+    container-type: inline-size;
+    container-name: sw-meteor-page;
+
+    .sw-meteor-page__content {
+        position: static;
+        height: auto;
+        padding: 0 12px;
+    }
+
+    &.sw-meteor-page--full-width {
+        .sw-meteor-page__body {
+            position: relative;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            overflow-y: hidden;
+        }
+
+        .sw-meteor-page__content {
+            position: relative;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .sw-meteor-page__smart-bar {
+            grid-column: 1/4;
+        }
+
+        .sw-meteor-page__smart-bar__tabs {
+            grid-column: 1/4;
+        }
+    }
+
+    .sw-meteor-page__scrollable-content {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+    }
+
+    .sw-meteor-page__body {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .sw-meteor-page__head-area {
+        color: var(--color-text-primary-default);
+        position: sticky;
+        top: 0;
+        display: grid;
+        grid-row-gap: var(--scale-size-24);
+
+        // No column gap: the outer columns are empty, a gap would only indent the content.
+        grid-template-columns: 1fr minmax(0, $content-width) 1fr;
+        width: 100%;
+        background: var(--color-elevation-surface-default);
+        padding-inline: var(--scale-size-12);
+        z-index: $z-index-page-header;
+        margin-bottom: 48px;
+        border-bottom: 1px solid var(--color-border-secondary-default);
+
+        // The negative margin bleeds the divider through the padding to full width
+        &::before {
+            content: "";
+            grid-row: 1;
+            grid-column: 1 / -1;
+            align-self: end;
+            height: 1px;
+            margin-inline: calc(var(--scale-size-12) * -1);
+            background: var(--color-border-secondary-default);
+        }
+
+        .sw-meteor-page__smart-bar-navigation {
+            margin-bottom: var(--scale-size-12);
+        }
+    }
+
+    // Without the smart bar the top bar divider would only double the head area border
+    &.sw-meteor-page--hide-smart-bar .sw-meteor-page__head-area {
+        margin-bottom: 0;
+
+        &::before {
+            content: none;
+        }
+    }
+
+    .sw-meteor-page__head-area.is--scrolled {
+        .sw-meteor-page__smart-bar-navigation {
+            margin-bottom: 4px;
+        }
+    }
+
+    .sw-meteor-page__head-area.is--scrolled::after {
+        content: "";
+        display: block;
+        position: absolute;
+        top: 100%;
+        height: 4px;
+        width: 100%;
+        background: linear-gradient(to bottom, var(--color-elevation-shadow-default), transparent);
+    }
+
+    // The search bar brings the same 72px top bar rhythm as the sw-page head area.
+    .sw-meteor-page__head-area-top-bar-content {
+        grid-row: 1;
+        grid-column: 2/3;
+    }
+
+    .sw-meteor-page__head-area-global-actions {
+        grid-row: 1;
+        grid-column: 3;
+        align-self: center;
+        justify-self: end;
+        display: flex;
+        align-content: flex-end;
+        justify-content: flex-end;
+        gap: var(--scale-size-8);
+        margin-inline-start: var(--scale-size-8);
+    }
+
+    // Expanded keeps 16px to the actions, collapsed joins their plain 8px button row
+    .sw-meteor-page__head-area:has(.sw-search-bar__field-wrapper) .sw-meteor-page__head-area-global-actions {
+        margin-inline-start: var(--scale-size-16);
+    }
+
+    .sw-meteor-page__smart-bar-tabs {
+        grid-column: 2/3;
+
+        .sw-tabs__content::before {
+            content: unset;
+        }
+
+        .sw-tabs-item {
+            border-bottom: none;
+        }
+
+        .sw-tabs__custom-content {
+            display: none;
+        }
+    }
+
+    // Narrow head area: the outer columns collapse and the content runs full width
+    @container sw-meteor-page (max-width: 1400px) {
+        .sw-meteor-page__head-area {
+            grid-template-columns: 0 minmax(0, 1fr) auto;
+        }
+
+        .sw-meteor-page__smart-bar,
+        .sw-meteor-page__smart-bar-tabs {
+            grid-column: 2 / -1;
+        }
+
+        // Matched through its own root to outrank the equally specific max-width/centering base rule.
+        .sw-search-bar .sw-search-bar__container {
+            max-width: none;
+            margin-inline: 0;
+        }
+    }
+}
+
+.sw-meteor-page__smart-bar {
+    grid-column: 2/3;
+
+    .sw-meteor-page__smart-bar-content {
+        display: grid;
+        grid-template-columns: 70% 1fr;
+        grid-template-rows: auto auto;
+        grid-column-gap: 16px;
+        grid-template-areas:
+            "module secondary"
+            "context context";
+    }
+
+    .sw-meteor-page__smart-bar-module-info {
+        display: grid;
+        width: 100%;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+            "icon title"
+            "icon description";
+
+        .sw-meteor-page__smart-bar-module-icon {
+            grid-area: icon;
+            align-self: start;
+            margin-right: 16px;
+        }
+
+        .sw-meteor-page__smart-bar-header {
+            grid-area: title;
+            align-self: center;
+            display: flex;
+            align-items: end;
+            min-width: 100%;
+
+            .sw-meteor-page__smart-bar-title {
+                @include truncate;
+
+                color: var(--color-text-primary-default);
+                line-height: 1.2;
+                font-size: var(--font-size-xl);
+                margin-right: 8px;
+                margin-bottom: 0;
+                min-width: 20%;
+            }
+        }
+
+        .sw-meteor-page__smart-bar-description {
+            grid-area: description;
+        }
+    }
+
+    .sw-meteor-page__smart-bar-actions {
+        grid-area: secondary;
+        display: flex;
+        align-items: flex-end;
+        flex-direction: column;
+
+        & > * {
+            margin: 5px 0;
+        }
+    }
+
+    .sw-meteor-page__smart-bar-context-buttons {
+        grid-area: context;
+        min-width: 20%;
+
+        .mt-button {
+            margin: 6px 4px;
+            border: 1px solid var(--color-border-primary-default);
+
+            &:first-child {
+                margin-left: 0;
+            }
+        }
+    }
+}

@@ -1,0 +1,159 @@
+.sw-product-variants-media-upload.sw-media-upload-v2 {
+    .sw-product-variants-media-upload {
+        &__preview-images {
+            display: flex;
+        }
+
+        &__preview-cover {
+            display: flex;
+            width: var(--scale-size-36);
+            height: var(--scale-size-36);
+        }
+
+        &__cover-image {
+            margin-right: 0;
+            align-self: center;
+        }
+
+        &__cover-image::after {
+            content: "";
+            width: var(--scale-size-1);
+            background-color: var(--color-border-secondary-default);
+            position: absolute;
+            left: calc(var(--scale-size-30) + var(--scale-size-8));
+            height: var(--scale-size-32);
+            display: block;
+        }
+
+        &__context-button {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+
+            &.is--disabled {
+                display: none;
+            }
+        }
+    }
+
+    .sw-media-upload-v2__dropzone {
+        min-height: 0;
+        padding: var(--scale-size-8);
+        width: calc(var(--scale-size-224) + var(--scale-size-56) + var(--scale-size-40) + var(--scale-size-10));
+        background: var(--color-background-secondary-default);
+
+        .sw-product-variants-media-upload__images {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            width: calc(var(--scale-size-80) + var(--scale-size-6));
+            margin-left: var(--scale-size-8);
+
+            &.is--compact--button {
+                width: calc(var(--scale-size-160) + var(--scale-size-56));
+            }
+        }
+    }
+
+    .sw-media-upload-v2__button {
+        margin: 0;
+        margin-right: var(--scale-size-6);
+        min-width: 0;
+    }
+
+    .sw-media-upload-v2__preview {
+        width: var(--scale-size-32);
+        height: var(--scale-size-32);
+        margin-right: 0;
+        align-self: center;
+
+        &.is--cover {
+            width: var(--scale-size-36);
+            height: var(--scale-size-36);
+            border: var(--scale-size-1) solid var(--color-border-brand-default);
+        }
+    }
+
+    .sw-media-upload-v2__actions {
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: stretch;
+        align-self: flex-start;
+        height: var(--scale-size-36);
+    }
+
+    .sw-media-preview-v2__item {
+        border-radius: var(--border-radius-xs);
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .sw-product-variants-media-upload__regular-button {
+        height: var(--scale-size-32);
+        align-self: center;
+    }
+
+    .sw-product-variants-media-upload__compact-button {
+        position: relative;
+        height: var(--scale-size-32);
+        align-self: center;
+
+        .sw-product-variants-media-upload__context-button {
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .sw-context-button__button {
+            border: none;
+            visibility: hidden;
+        }
+    }
+}
+
+.sw-product-variants-media-upload__image {
+    position: relative;
+    width: var(--scale-size-36);
+    height: var(--scale-size-36);
+    display: flex;
+    justify-content: center;
+
+    &:hover {
+        .sw-media-upload-v2__preview {
+            background-color: var(--color-static-black);
+            border: none;
+
+            &.is--disabled {
+                background-color: unset;
+
+                &.is--cover {
+                    border: var(--scale-size-1) solid var(--color-border-brand-default);
+                }
+
+                .sw-media-preview-v2__item {
+                    opacity: 1;
+                }
+            }
+        }
+
+        .sw-media-preview-v2__item {
+            opacity: 0.7;
+        }
+
+        .sw-context-button__button {
+            visibility: visible;
+            border: none;
+        }
+    }
+
+    .sw-context-button__button {
+        visibility: hidden;
+
+        .mt-icon {
+            color: var(--color-static-white);
+            height: 100%;
+        }
+    }
+}

@@ -1,0 +1,116 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": [],
+    "components": {
+        "schemas": {
+            "CalculatedPrice": {
+                "type": "object",
+                "description": "Represents the calculated price of an item, including taxes and optional reference, list and regulation prices.",
+                "properties": {
+                    "unitPrice": {
+                        "type": "number"
+                    },
+                    "quantity": {
+                        "type": "number"
+                    },
+                    "totalPrice": {
+                        "type": "number"
+                    },
+                    "calculatedTaxes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "apiAlias": {
+                                    "type": "string",
+                                    "const": "cart_tax_calculated"
+                                },
+                                "tax": {
+                                    "type": "number"
+                                },
+                                "taxRate": {
+                                    "type": "number"
+                                },
+                                "price": {
+                                    "type": "number"
+                                }
+                            },
+                            "required": ["apiAlias", "tax", "taxRate", "price"]
+                        }
+                    },
+                    "referencePrice": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CartPriceReference"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "listPrice": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CartListPrice"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "regulationPrice": {
+                        "oneOf": [
+                            {
+                                "type": "object",
+                                "properties": {
+                                    "price": {
+                                        "type": "number"
+                                    },
+                                    "apiAlias": {
+                                        "type": "string",
+                                        "const": "cart_regulation_price"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "apiAlias": {
+                        "type": "string",
+                        "const": "calculated_price"
+                    },
+                    "taxRules": {
+                        "type": "array",
+                        "description": "Currently active tax rules and/or rates",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "taxRate": {
+                                    "type": "number",
+                                    "format": "float"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "apiAlias",
+                    "regulationPrice",
+                    "listPrice",
+                    "referencePrice",
+                    "calculatedTaxes",
+                    "totalPrice",
+                    "quantity",
+                    "unitPrice",
+                    "taxRules"
+                ]
+            }
+        }
+    }
+}

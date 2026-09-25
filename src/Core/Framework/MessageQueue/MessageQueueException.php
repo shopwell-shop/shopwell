@@ -1,0 +1,147 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\MessageQueue;
+
+use Shopwell\Core\Framework\DependencyInjection\CompilerPass\ScheduledTaskExecutorCompilerPass;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\HttpException;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskExecutor;
+use Symfony\Component\HttpFoundation\Response;
+
+#[Package('framework')]
+class MessageQueueException extends HttpException
+{
+    public const NO_VALID_RECEIVER_NAME_PROVIDED = 'FRAMEWORK__NO_VALID_RECEIVER_NAME_PROVIDED';
+    public const QUEUE_CANNOT_UNSERIALIZE_MESSAGE = 'FRAMEWORK__QUEUE_CANNOT_UNSERIALIZE_MESSAGE';
+    public const WORKER_IS_LOCKED = 'FRAMEWORK__WORKER_IS_LOCKED';
+    public const CANNOT_FIND_SCHEDULED_TASK = 'FRAMEWORK__CANNOT_FIND_SCHEDULED_TASK';
+    public const QUEUE_MESSAGE_SIZE_EXCEEDS = 'FRAMEWORK__QUEUE_MESSAGE_SIZE_EXCEEDS';
+    public const QUEUE_STATS_NOT_FOUND = 'FRAMEWORK__QUEUE_STATS_NOT_FOUND';
+    public const MISSING_EXTENDS_CODE = 'FRAMEWORK__SCHEDULED_TASK_MISSING_EXTENDS';
+    public const NOT_FOUND_CODE = 'FRAMEWORK__SCHEDULED_TASK_NOT_FOUND';
+    public const SCHEDULED_TASK_NOT_IMPLEMENTING_INTERFACE = 'FRAMEWORK__SCHEDULED_TASK_NOT_IMPLEMENTING_INTERFACE';
+    public const SCHEDULED_TASK_EXECUTOR_NOT_SET = 'FRAMEWORK__SCHEDULED_TASK_EXECUTOR_NOT_SET';
+
+    public static function validReceiverNameNotProvided(): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::NO_VALID_RECEIVER_NAME_PROVIDED,
+            'No receiver name provided.',
+        );
+    }
+
+    public static function cannotUnserializeMessage(string $message): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::QUEUE_CANNOT_UNSERIALIZE_MESSAGE,
+            'Cannot unserialize message {{ message }}',
+            ['message' => $message]
+        );
+    }
+
+    public static function workerIsLocked(string $receiver): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::WORKER_IS_LOCKED,
+            'Another worker is already running for receiver: "{{ receiver }}"',
+            ['receiver' => $receiver]
+        );
+    }
+
+    public static function cannotFindTaskByName(string $name): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::CANNOT_FIND_SCHEDULED_TASK,
+            self::$couldNotFindMessage,
+            ['entity' => 'scheduled task', 'field' => 'name', 'value' => $name]
+        );
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - not used anymore, use MessageQueueException::maxQueueMessageSizeExceeded() instead
+     */
+    public static function queueMessageSizeExceeded(string $messageName, float $size): self
+    {
+        Feature::triggerDeprecationOrThrow(
+            'v6.8.0.0',
+            Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0', self::class . '::maxQueueMessageSizeExceeded'),
+        );
+
+        $message = 'The message "{{ message }}" exceeds the 256 kB size limit with its size of {{ size }} kB.';
+
+        return new self(
+            Response::HTTP_REQUEST_ENTITY_TOO_LARGE,
+            self::QUEUE_MESSAGE_SIZE_EXCEEDS,
+            $message,
+            [
+                'message' => $messageName,
+                'size' => $size,
+            ]
+        );
+    }
+
+    public static function maxQueueMessageSizeExceeded(string $messageName, float $size, int $maxSize): self
+    {
+        $message = 'The message "{{ message }}" exceeds the {{ maxSize }} KiB size limit with its size of {{ size }} KiB.';
+
+        return new self(
+            Response::HTTP_REQUEST_ENTITY_TOO_LARGE,
+            self::QUEUE_MESSAGE_SIZE_EXCEEDS,
+            $message,
+            [
+                'message' => $messageName,
+                'maxSize' => $maxSize,
+                'size' => $size,
+            ]
+        );
+    }
+
+    public static function missingExtends(string $class): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::MISSING_EXTENDS_CODE,
+            'Tried to register "{{ class }}" as scheduled task, but class does not extend ScheduledTask',
+            ['class' => $class]
+        );
+    }
+
+    public static function notFound(string $name): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::NOT_FOUND_CODE,
+            'Tried to fetch "{{ name }}" scheduled task, but scheduled task does not exist',
+            ['name' => $name]
+        );
+    }
+
+    public static function scheduledTaskDoesNotImplementInterface(string $class): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::SCHEDULED_TASK_NOT_IMPLEMENTING_INTERFACE,
+            'Tried to schedule "{{ class }}", but class does not extend ScheduledTask',
+            ['class' => $class]
+        );
+    }
+
+    public static function scheduledTaskExecutorNotSet(string $handler): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::SCHEDULED_TASK_EXECUTOR_NOT_SET,
+            'No "{{ executor }}" was set on the scheduled task handler "{{ handler }}". Register the handler as a "messenger.message_handler" service so the "{{ compilerPass }}" can inject the executor, or call "{{ handler }}::setScheduledTaskExecutor()" manually.',
+            [
+                'executor' => ScheduledTaskExecutor::class,
+                'handler' => $handler,
+                'compilerPass' => ScheduledTaskExecutorCompilerPass::class,
+            ]
+        );
+    }
+}

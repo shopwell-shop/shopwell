@@ -1,0 +1,291 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Rule;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\Rule\CartRuleScope;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemDimensionHeightRule;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemScope;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Rule\RuleScope;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Checkout\CartRuleFixture;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+#[CoversClass(LineItemDimensionHeightRule::class)]
+class LineItemDimensionHeightRuleTest extends TestCase
+{
+    #[DataProvider('matchTestDataProvider')]
+    public function testMatch(string $operator, float $amount, bool $expectedResult): void
+    {
+        $lineItemDimensionHeightRule = new LineItemDimensionHeightRule($operator, $amount);
+
+        $lineItemScope = new LineItemScope(
+            CartRuleFixture::createLineItemWithDeliveryInfo(true, 1, 10.0, 10.0, 10.0, 10.0),
+            static::createStub(SalesChannelContext::class)
+        );
+
+        static::assertSame($expectedResult, $lineItemDimensionHeightRule->match($lineItemScope));
+    }
+
+    public static function matchTestDataProvider(): \Generator
+    {
+        yield '>= 10.0 true' => [
+            Rule::OPERATOR_GTE,
+            10.0,
+            true,
+        ];
+
+        yield '>= 12.0 false' => [
+            Rule::OPERATOR_GTE,
+            12.0,
+            false,
+        ];
+
+        yield '<= 8.0 false' => [
+            Rule::OPERATOR_LTE,
+            8.0,
+            false,
+        ];
+
+        yield '<= 10.0 true' => [
+            Rule::OPERATOR_LTE,
+            10.0,
+            true,
+        ];
+
+        yield '<= 12.0 true' => [
+            Rule::OPERATOR_LTE,
+            12.0,
+            true,
+        ];
+
+        yield '> 8.0 true' => [
+            Rule::OPERATOR_GT,
+            8.0,
+            true,
+        ];
+
+        yield '> 10.0 false' => [
+            Rule::OPERATOR_GT,
+            10.0,
+            false,
+        ];
+
+        yield '> 12.0 false' => [
+            Rule::OPERATOR_GT,
+            12.0,
+            false,
+        ];
+
+        yield '< 8.0 false' => [
+            Rule::OPERATOR_LT,
+            8.0,
+            false,
+        ];
+
+        yield '< 10.0 false' => [
+            Rule::OPERATOR_LT,
+            10.0,
+            false,
+        ];
+
+        yield '< 12.0 true' => [
+            Rule::OPERATOR_LT,
+            12.0,
+            true,
+        ];
+
+        yield '= 8.0 false' => [
+            Rule::OPERATOR_EQ,
+            8.0,
+            false,
+        ];
+
+        yield '= 10.0 true' => [
+            Rule::OPERATOR_EQ,
+            10.0,
+            true,
+        ];
+
+        yield '= 12.0 false' => [
+            Rule::OPERATOR_EQ,
+            12.0,
+            false,
+        ];
+
+        yield '!= 8.0 true' => [
+            Rule::OPERATOR_NEQ,
+            8.0,
+            true,
+        ];
+
+        yield '!= 10.0 false' => [
+            Rule::OPERATOR_NEQ,
+            10.0,
+            false,
+        ];
+
+        yield '!= 12.0 true' => [
+            Rule::OPERATOR_NEQ,
+            12.0,
+            true,
+        ];
+
+        yield 'empty 10.0 false' => [
+            Rule::OPERATOR_EMPTY,
+            10.0,
+            false,
+        ];
+    }
+
+    public function testMatchWithWrongScopeShouldReturnFalse(): void
+    {
+        $lineItemDimensionHeightRule = new LineItemDimensionHeightRule();
+        $wrongScope = static::createStub(RuleScope::class);
+
+        static::assertFalse($lineItemDimensionHeightRule->match($wrongScope));
+    }
+
+    public function testMatchWithCartRuleScope(): void
+    {
+        $lineItemDimensionHeightRule = new LineItemDimensionHeightRule(Rule::OPERATOR_EQ, 10.0);
+
+        $lineItemCollection = new LineItemCollection();
+        $lineItemCollection->add(CartRuleFixture::createLineItemWithDeliveryInfo(true, 1, 10.0, 10.0, 10.0, 10.0));
+        $lineItemCollection->add(CartRuleFixture::createLineItemWithDeliveryInfo(true, 1, 10.0, 10.0, 10.0, 10.0));
+
+        $cartRuleScope = new CartRuleScope(CartRuleFixture::createCart($lineItemCollection), static::createStub(SalesChannelContext::class));
+
+        static::assertTrue($lineItemDimensionHeightRule->match($cartRuleScope));
+    }
+
+    public function testMatchWithCartRuleScopeExpectFalseBecauseLineItemIsHigher(): void
+    {
+        $lineItemDimensionHeightRule = new LineItemDimensionHeightRule(Rule::OPERATOR_EQ, 10.0);
+
+        $lineItemCollection = new LineItemCollection();
+        $lineItemCollection->add(CartRuleFixture::createLineItemWithDeliveryInfo(true, 1, 10.0, 12.0, 10.0, 10.0));
+        $lineItemCollection->add(CartRuleFixture::createLineItemWithDeliveryInfo(true, 1, 10.0, 12.0, 10.0, 10.0));
+
+        $cartRuleScope = new CartRuleScope(CartRuleFixture::createCart($lineItemCollection), static::createStub(SalesChannelContext::class));
+
+        static::assertFalse($lineItemDimensionHeightRule->match($cartRuleScope));
+    }
+
+    #[DataProvider('matchWithoutDeliveryInformationTestDataProvider')]
+    public function testMatchWithoutDeliveryInformation(string $operator, bool $expectedResult): void
+    {
+        $lineItemDimensionHeightRule = new LineItemDimensionHeightRule($operator, 10.0);
+
+        $lineItemCollection = new LineItemCollection();
+        $lineItemCollection->add(CartRuleFixture::createLineItem());
+        $lineItemCollection->add(CartRuleFixture::createLineItem());
+
+        $cartRuleScope = new CartRuleScope(CartRuleFixture::createCart($lineItemCollection), static::createStub(SalesChannelContext::class));
+
+        static::assertSame($expectedResult, $lineItemDimensionHeightRule->match($cartRuleScope));
+    }
+
+    public static function matchWithoutDeliveryInformationTestDataProvider(): \Generator
+    {
+        yield 'empty expect true' => [
+            Rule::OPERATOR_EMPTY,
+            true,
+        ];
+
+        yield '!= expect true' => [
+            Rule::OPERATOR_NEQ,
+            true,
+        ];
+
+        yield '>= expect false' => [
+            Rule::OPERATOR_GTE,
+            false,
+        ];
+
+        yield '<= expect false' => [
+            Rule::OPERATOR_LTE,
+            false,
+        ];
+
+        yield '> expect false' => [
+            Rule::OPERATOR_GT,
+            false,
+        ];
+
+        yield '< expect false' => [
+            Rule::OPERATOR_LT,
+            false,
+        ];
+
+        yield '= expect false' => [
+            Rule::OPERATOR_EQ,
+            false,
+        ];
+    }
+
+    public function testGetConstraintsWithOperatorEmpty(): void
+    {
+        $lineItemDimensionHeightRule = new LineItemDimensionHeightRule(Rule::OPERATOR_EMPTY);
+
+        $result = $lineItemDimensionHeightRule->getConstraints();
+
+        static::assertArrayHasKey('operator', $result);
+        static::assertArrayNotHasKey('amount', $result);
+    }
+
+    public function testGetConstraintsWithOtherOperator(): void
+    {
+        $lineItemDimensionHeightRule = new LineItemDimensionHeightRule(Rule::OPERATOR_EQ);
+
+        $result = $lineItemDimensionHeightRule->getConstraints();
+
+        static::assertArrayHasKey('operator', $result);
+        static::assertArrayHasKey('amount', $result);
+    }
+
+    public function testGetConfig(): void
+    {
+        $lineItemDimensionHeightRule = new LineItemDimensionHeightRule();
+
+        $result = $lineItemDimensionHeightRule->getConfig()->getData();
+
+        static::assertIsArray($result['operatorSet']['operators']);
+        static::assertSame('dimension', $result['fields']['amount']['config']['unit']);
+    }
+
+    #[DataProvider('lineItemTypeProvider')]
+    public function testMatchesByLineItemType(string $type, bool $lineItemScope, bool $expected): void
+    {
+        $rule = new LineItemDimensionHeightRule(Rule::OPERATOR_NEQ, 5.0);
+
+        $lineItem = CartRuleFixture::createLineItem($type);
+        $context = static::createStub(SalesChannelContext::class);
+
+        $scope = $lineItemScope
+            ? new LineItemScope($lineItem, $context)
+            : new CartRuleScope(CartRuleFixture::createCart(new LineItemCollection([$lineItem])), $context);
+
+        static::assertSame($expected, $rule->match($scope));
+    }
+
+    /**
+     * @return \Generator<string, array{non-empty-string, bool, bool}>
+     */
+    public static function lineItemTypeProvider(): \Generator
+    {
+        yield 'product via line item scope' => [LineItem::PRODUCT_LINE_ITEM_TYPE, true, true];
+        yield 'product via cart scope' => [LineItem::PRODUCT_LINE_ITEM_TYPE, false, true];
+        yield 'custom via line item scope' => [LineItem::CUSTOM_LINE_ITEM_TYPE, true, false];
+        yield 'custom via cart scope' => [LineItem::CUSTOM_LINE_ITEM_TYPE, false, false];
+    }
+}

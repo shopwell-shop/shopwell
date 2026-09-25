@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Storefront\Pagelet\Menu\Offcanvas;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Category\CategoryEntity;
+use Shopwell\Core\Content\Category\Service\NavigationLoaderInterface;
+use Shopwell\Core\Content\Category\Tree\Tree;
+use Shopwell\Core\Content\Category\Tree\TreeItem;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Generator;
+use Shopwell\Storefront\Pagelet\Menu\Offcanvas\MenuOffcanvasPageletLoader;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[CoversClass(MenuOffcanvasPageletLoader::class)]
+class MenuOffcanvasPageletLoaderTest extends TestCase
+{
+    public function testLoad(): void
+    {
+        $eventDispatcher = static::createStub(EventDispatcherInterface::class);
+
+        $salesChannelContext = Generator::generateSalesChannelContext();
+
+        $navigationLoader = static::createStub(NavigationLoaderInterface::class);
+        $categoryId1 = Uuid::randomHex();
+        $categoryId2 = Uuid::randomHex();
+        $category1 = (new CategoryEntity())->assign(['id' => $categoryId1]);
+        $category2 = (new CategoryEntity())->assign(['id' => $categoryId2]);
+        $navigationLoader->method('load')->willReturnMap(
+            [
+                [
+                    $categoryId2,
+                    $salesChannelContext,
+                    $categoryId2,
+                    1,
+                    new Tree($category2, [new TreeItem($category1, []), new TreeItem($category2, [])]),
+                ],
+            ]
+        );
+
+        $loader = new MenuOffcanvasPageletLoader($eventDispatcher, $navigationLoader);
+        $menuOffcanvas = $loader->load(new Request(['navigationId' => $categoryId2]), $salesChannelContext);
+
+        $navigation = $menuOffcanvas->getNavigation();
+        static::assertNotNull($navigation);
+        static::assertSame($categoryId2, $navigation->getActive()?->getId());
+
+        $tree = $navigation->getTree();
+        static::assertCount(2, $tree);
+        static::assertSame($categoryId1, $tree[0]->getCategory()->getId());
+        static::assertSame($categoryId2, $tree[1]->getCategory()->getId());
+    }
+}

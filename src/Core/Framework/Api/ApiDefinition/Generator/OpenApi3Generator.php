@@ -1,0 +1,270 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Api\ApiDefinition\Generator;
+
+use OpenApi\Annotations\OpenApi;
+use Shopwell\Core\Framework\Api\ApiDefinition\ApiDefinitionGeneratorInterface;
+use Shopwell\Core\Framework\Api\ApiDefinition\DefinitionService;
+use Shopwell\Core\Framework\Api\ApiDefinition\Generator\OpenApi\OpenApiDefinitionSchemaBuilder;
+use Shopwell\Core\Framework\Api\ApiDefinition\Generator\OpenApi\OpenApiPathBuilder;
+use Shopwell\Core\Framework\Api\ApiDefinition\Generator\OpenApi\OpenApiSchemaBuilder;
+use Shopwell\Core\Framework\Api\ApiException;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\AssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
+use Shopwell\Core\Framework\DataAbstractionLayer\MappingEntityDefinition;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\Entity\SalesChannelDefinitionInterface;
+
+/**
+ * @internal
+ *
+ * @phpstan-import-type OpenApiSpec from DefinitionService
+ */
+#[Package('framework')]
+class OpenApi3Generator implements ApiDefinitionGeneratorInterface
+{
+    final public const FORMAT = 'openapi-3';
+
+    private readonly string $schemaPath;
+
+    /**
+     * @param array{Framework: array{path: string}} $bundles
+     */
+    public function __construct(
+        private readonly OpenApiSchemaBuilder $openApiBuilder,
+        private readonly OpenApiPathBuilder $pathBuilder,
+        private readonly OpenApiDefinitionSchemaBuilder $definitionSchemaBuilder,
+        array $bundles,
+        private readonly BundleSchemaPathCollection $bundleSchemaPathCollection,
+        private readonly ?OpenApiRouteDefaultsFilter $routeDefaultsFilter = null,
+    ) {
+        $this->schemaPath = $bundles['Framework']['path'] . '/Api/ApiDefinition/Generator/Schema/AdminApi';
+    }
+
+    public function supports(string $format, string $api): bool
+    {
+        return $format === self::FORMAT;
+    }
+
+    /**
+     * @param array<string, EntityDefinition>|array<string, EntityDefinition&SalesChannelDefinitionInterface> $definitions
+     *
+     * @return OpenApiSpec
+     */
+    public function generate(array $definitions, string $api, string $apiType = DefinitionService::TYPE_JSON_API, ?string $bundleName = null): array
+    {
+        $forSalesChannel = $this->containsSalesChannelDefinition($definitions);
+
+        $openApi = new OpenApi([
+            'openapi' => '3.2.0',
+        ]);
+        $this->openApiBuilder->enrich($openApi, $api);
+
+        ksort($definitions);
+
+        foreach ($definitions as $definition) {
+            if (!$this->shouldDefinitionBeIncluded($definition)) {
+                continue;
+            }
+
+            $onlyFlat = match ($apiType) {
+                DefinitionService::TYPE_JSON => true,
+                default => $this->shouldIncludeReferenceOnly($definition, $forSalesChannel),
+            };
+
+            $schema = $this->definitionSchemaBuilder->getSchemaByDefinition(
+                $definition,
+                $this->getResourceUri($definition),
+                $forSalesChannel,
+                $onlyFlat,
+                $apiType
+            );
+
+            $openApi->components->merge(array_values($schema));
+
+            if ($onlyFlat) {
+                continue;
+            }
+
+            if ($apiType === DefinitionService::TYPE_JSON_API) {
+                $openApi->merge(array_values($this->pathBuilder->getPathActions($definition, $this->getResourceUri($definition))));
+                $openApi->merge([$this->pathBuilder->getTag($definition)]);
+            }
+        }
+
+        $data = json_decode($openApi->toJson(), true, 512, \JSON_THROW_ON_ERROR);
+        $data['paths'] ??= [];
+
+        $schemaPaths = [$this->schemaPath];
+
+        if ($bundleName !== null && $bundleName !== '') {
+            $schemaPaths = array_merge([$this->schemaPath . '/components', $this->schemaPath . '/tags'], $this->bundleSchemaPathCollection->getSchemaPaths($api, $bundleName));
+            $data['paths'] = [];
+        } else {
+            $schemaPaths = array_merge($schemaPaths, $this->bundleSchemaPathCollection->getSchemaPaths($api, $bundleName));
+        }
+
+        $loader = new OpenApiFileLoader($schemaPaths);
+
+        /** @var OpenApiSpec $finalSpecs */
+        $finalSpecs = array_replace_recursive($data, $loader->loadOpenapiSpecification());
+
+        return $this->routeDefaultsFilter?->filter($finalSpecs, $api) ?? $finalSpecs;
+    }
+
+    /**
+     * @param array<string, EntityDefinition>|list<EntityDefinition&SalesChannelDefinitionInterface> $definitions
+     *
+     * @return array<string, array{name: string, translatable: array<int|string, mixed>, properties: array<string, mixed>}>
+     */
+    public function getSchema(array $definitions): array
+    {
+        $schemaDefinitions = [];
+
+        $forSalesChannel = $this->containsSalesChannelDefinition($definitions);
+
+        ksort($definitions);
+
+        foreach ($definitions as $definition) {
+            if (!$definition instanceof EntityDefinition) {
+                continue;
+            }
+
+            if (str_ends_with($definition->getEntityName(), '_translation')) {
+                continue;
+            }
+
+            try {
+                $definition->getEntityName();
+            } catch (\Exception) {
+                // mapping tables has no repository, skip them
+                continue;
+            }
+
+            $schema = $this->definitionSchemaBuilder->getSchemaByDefinition($definition, $this->getResourceUri($definition), $forSalesChannel);
+            $schema = array_shift($schema);
+            if ($schema === null) {
+                throw ApiException::invalidSchemaForDefinition($definition, 'No schema found');
+            }
+            $schema = json_decode($schema->toJson(), true, 512, \JSON_THROW_ON_ERROR);
+            $schema = $schema['allOf'][1]['properties'];
+
+            $relationships = [];
+            if (\array_key_exists('relationships', $schema)) {
+                foreach ($schema['relationships']['properties'] as $propertyName => $extension) {
+                    $relationshipData = $extension['properties']['data'];
+                    $type = $relationshipData['type'];
+
+                    if ($type === 'object') {
+                        $entity = $relationshipData['properties']['type']['example'];
+                    } elseif ($type === 'array') {
+                        $entity = $relationshipData['items']['properties']['type']['example'];
+                    } else {
+                        throw ApiException::invalidSchemaForDefinition($definition, 'Invalid type');
+                    }
+
+                    $relationships[$propertyName] = [
+                        'type' => $type,
+                        'entity' => $entity,
+                    ];
+                }
+            }
+
+            $properties = array_merge(
+                [
+                    'id' => [
+                        'type' => 'string',
+                        'pattern' => '^[0-9a-f]{32}$',
+                    ],
+                ],
+                $schema,
+                $relationships
+            );
+
+            if (\array_key_exists('extensions', $properties)) {
+                $extensions = [];
+
+                foreach ($properties['extensions']['properties'] as $propertyName => $extension) {
+                    $field = $definition->getFields()->get($propertyName);
+
+                    if (!$field instanceof AssociationField) {
+                        $extensions[$propertyName] = $extension;
+
+                        continue;
+                    }
+
+                    $data = $extension['properties']['data'];
+                    $type = $data['type'];
+
+                    if ($type === 'object') {
+                        $entity = $data['properties']['type']['example'];
+                    } elseif ($type === 'array') {
+                        $entity = $data['items']['properties']['type']['example'];
+                    } else {
+                        throw ApiException::invalidSchemaForDefinition($definition, 'Invalid type');
+                    }
+
+                    $extensions[$propertyName] = ['type' => $type, 'entity' => $entity];
+                }
+
+                $properties['extensions']['properties'] = $extensions;
+            }
+
+            $entityName = $definition->getEntityName();
+            $schemaDefinitions[$entityName] = [
+                'name' => $entityName,
+                'translatable' => $definition->getFields()->filterInstance(TranslatedField::class)->getKeys(),
+                'properties' => $properties,
+            ];
+        }
+
+        return $schemaDefinitions;
+    }
+
+    private function getResourceUri(EntityDefinition $definition): string
+    {
+        return '/' . str_replace('_', '-', $definition->getEntityName());
+    }
+
+    /**
+     * @param array<string, EntityDefinition>|list<EntityDefinition&SalesChannelDefinitionInterface> $definitions
+     */
+    private function containsSalesChannelDefinition(array $definitions): bool
+    {
+        foreach ($definitions as $definition) {
+            if (is_subclass_of($definition, SalesChannelDefinitionInterface::class)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function shouldDefinitionBeIncluded(EntityDefinition $definition): bool
+    {
+        if (str_ends_with($definition->getEntityName(), '_translation')) {
+            return false;
+        }
+
+        if (str_starts_with($definition->getEntityName(), 'version')) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function shouldIncludeReferenceOnly(EntityDefinition $definition, bool $forSalesChannel): bool
+    {
+        $class = new \ReflectionClass($definition);
+        if ($class->isSubclassOf(MappingEntityDefinition::class)) {
+            return true;
+        }
+
+        if ($forSalesChannel && !is_subclass_of($definition, SalesChannelDefinitionInterface::class)) {
+            return true;
+        }
+
+        return false;
+    }
+}

@@ -1,0 +1,163 @@
+import ListingPlugin from 'src/plugin/listing/listing.plugin';
+
+const template = `
+    <div class="cms-element-product-listing-wrapper" data-listing-pagination="true">
+        <!-- Pagination -->
+        <nav aria-label="pagination" class="pagination-nav" data-pagination-position="top">
+            <ul class="pagination">
+                <li class="page-item page-first"><a href="#" class="page-link" data-page="1" data-focus-id="first">First</a></li>
+                <li class="page-item page-prev"><a href="#" class="page-link" data-page="1" data-focus-id="prev">Prev</a></li>
+                <li class="page-item"><a href="#" class="page-link" data-page="1" data-focus-id="1">1</a></li>
+                <!-- active page -->
+                <li class="page-item active"><a href="#" class="page-link" data-page="2" data-focus-id="2">2</a></li>
+                <li class="page-item"><a href="#" class="page-link" data-page="3" data-focus-id="3">3</a></li>
+                <li class="page-item"><a href="#" class="page-link" data-page="4" data-focus-id="4">4</a></li>
+                <li class="page-item"><a href="#" class="page-link" data-page="5" data-focus-id="5">5</a></li>
+                <li class="page-item page-next"><a href="#" class="page-link" data-page="3" data-focus-id="next">Next</a></li>
+                <li class="page-item page-last"><a href="#" class="page-link" data-page="42" data-focus-id="last">Last</a></li>
+            </ul>
+        </nav>
+
+        <!-- Listing product results -->
+        <div class="cms-element-product-listing">
+            <div class="row cms-listing-row js-listing-wrapper">
+                <div class="card product-box box-standard"></div>
+                <div class="card product-box box-standard"></div>
+                <div class="card product-box box-standard"></div>
+                <div class="card product-box box-standard"></div>
+            </div>
+        </div>
+    </div>
+`;
+
+describe('listing-pagination.plugin', () => {
+    let listingPaginationPlugin;
+    let changeListingSpy;
+    let saveFocusSpy;
+    let resumeFocusSpy;
+
+    beforeEach(async () => {
+        // Import plugin class async because of feature toggles inside static options
+        const { default: ListingPaginationPlugin }  = await import('src/plugin/listing/listing-pagination.plugin');
+
+        const canonicalLink = document.createElement('link');
+        canonicalLink.setAttribute('rel', 'canonical');
+        canonicalLink.setAttribute('href', 'https://example.com/paginated-page/?p=4');
+        document.head.appendChild(canonicalLink);
+
+        document.body.innerHTML = template;
+        const element = document.querySelector('[data-listing-pagination]');
+
+        window.PluginManager.getPluginInstanceFromElement = () => {
+            // Listing plugin is using the same element as the pagination plugin
+            return new ListingPlugin(element);
+        };
+
+        window.PluginManager.initializePlugins = jest.fn();
+
+        window.focusHandler = {
+            saveFocusState: jest.fn(),
+            resumeFocusState: jest.fn(),
+        };
+
+        changeListingSpy = jest.spyOn(ListingPlugin.prototype, 'changeListing');
+        saveFocusSpy = jest.spyOn(ListingPaginationPlugin.prototype, '_saveFocusState');
+        resumeFocusSpy = jest.spyOn(ListingPaginationPlugin.prototype, '_resumeFocusState');
+
+        listingPaginationPlugin = new ListingPaginationPlugin(element);
+
+        global.fetch = jest.fn(() =>
+            Promise.resolve({
+                ok: true,
+                text: () => Promise.resolve(`
+                <div class="cms-element-product-listing-wrapper" data-listing="true">
+                    <div class="cms-element-product-listing">
+                        <div class="row cms-listing-row js-listing-wrapper">
+                            <div class="card product-box box-standard"></div>
+                            <div class="card product-box box-standard"></div>
+                        </div>
+                    </div>
+                </div>
+                `),
+            }),
+        );
+    });
+
+    afterEach(() => {
+        const canonicalLink = document.head.querySelector('link[rel="canonical"]');
+        if (canonicalLink) {
+            canonicalLink.remove();
+        }
+    });
+
+    test('plugin instance is created', () => {
+        expect(typeof listingPaginationPlugin).toBe('object');
+    });
+
+    test('attempts to change listing when clicking on pagination item', async () => {
+        const pageItem = document.querySelector('[data-page="3"]');
+        const getValuesSpy = jest.spyOn(listingPaginationPlugin, 'getValues');
+
+        // Click on page-item for page 3
+        pageItem.dispatchEvent(new Event('click', { bubbles: true }));
+        await new Promise(process.nextTick);
+
+        // Ensure correct page is communicated to listing plugin
+        expect(listingPaginationPlugin.getValues).toHaveReturnedWith({ 'p': 3 });
+        expect(getValuesSpy).toHaveBeenCalledTimes(1);
+        expect(changeListingSpy).toHaveBeenCalledTimes(1);
+
+        // Ensure the canonical URL is updated
+        const canonicalMetaTag = document.head.querySelector('link[rel="canonical"]');
+        if (canonicalMetaTag?.href) {
+            const canonicalUrl = new URL(canonicalMetaTag.href);
+            expect(canonicalUrl.searchParams.get('p')).toBe('3');
+        }
+    });
+
+    test('falls back to first page when dataset page is non-numeric', () => {
+        const pageItem = document.querySelector('[data-page="3"]');
+        pageItem.dataset.page = 'page';
+
+        pageItem.dispatchEvent(new Event('click', { bubbles: true }));
+
+        const canonicalMetaTag = document.head.querySelector('link[rel="canonical"]');
+        expect(canonicalMetaTag?.href).toBe('https://example.com/paginated-page/');
+    });
+
+    test('removes pagination parameter from canonical URL when returning to first page', async () => {
+        const pageItem = document.querySelector('[data-page="1"]');
+
+        pageItem.dispatchEvent(new Event('click', { bubbles: true }));
+        await new Promise(process.nextTick);
+
+        const canonicalMetaTag = document.head.querySelector('link[rel="canonical"]');
+        expect(canonicalMetaTag?.href).toBe('https://example.com/paginated-page/');
+    });
+
+    test('tries to set the focus back to the pagination link when content changes after pagination', async () => {
+        const pageItem = document.querySelector('[data-page="4"]');
+
+        // Click on page-item for page 4
+        pageItem.dispatchEvent(new Event('click', { bubbles: true }));
+        await new Promise(process.nextTick);
+
+        // Ensure the focusHandler tries to save the correct selector
+        expect(saveFocusSpy).toHaveBeenCalledTimes(1);
+        expect(window.focusHandler.saveFocusState).toHaveBeenCalledWith('listing-pagination', '[data-pagination-location="top"] [data-focus-id="4"]');
+
+        // Ensure the focusHandler tries to resume the focus with the correct parameters
+        expect(resumeFocusSpy).toHaveBeenCalledTimes(1);
+        expect(window.focusHandler.resumeFocusState).toHaveBeenCalledWith('listing-pagination', { preventScroll: true });
+    });
+
+    test('sets page from URL parameter', () => {
+        expect(listingPaginationPlugin.setValuesFromUrl({ p: '3' })).toBe(true);
+        expect(listingPaginationPlugin.getValues()).toEqual({ p: 3 });
+    });
+
+    test('falls back to first page for non-numeric URL parameter', () => {
+        expect(listingPaginationPlugin.setValuesFromUrl({ p: 'page' })).toBe(false);
+        expect(listingPaginationPlugin.getValues()).toEqual({ p: 1 });
+    });
+});

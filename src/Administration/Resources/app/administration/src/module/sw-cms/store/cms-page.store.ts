@@ -1,0 +1,187 @@
+type CmsSlot = Entity<'cms_slot'> & { config?: Record<string, unknown> };
+
+type CmsPageState = {
+    currentPage: null | Entity<'cms_page'>;
+    currentPageType: null | string;
+    currentMappingEntity: null | string;
+    currentMappingTypes: Record<string, unknown>;
+    currentDemoEntity: unknown;
+    currentDemoProducts: unknown[];
+    pageEntityName: string;
+    defaultMediaFolderId: null | string;
+    currentCmsDeviceView: 'desktop' | 'tablet-landscape' | 'mobile' | 'form';
+    selectedSection: null | Entity<'cms_section'>;
+    selectedBlock: null | Entity<'cms_block'>;
+    isSystemDefaultLanguage: boolean;
+};
+
+/** The slot carrying `elementId`, searched across the sections and blocks of the open page. */
+function findSlot(page: null | Entity<'cms_page'>, elementId: string): CmsSlot | null {
+    for (const section of page?.sections ?? []) {
+        for (const block of section.blocks ?? []) {
+            const slot = (block.slots ?? []).find((candidate) => candidate.id === elementId);
+
+            if (slot) {
+                return slot as CmsSlot;
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * @private
+ * @sw-package discovery
+ */
+const cmsPageStore = Shopwell.Store.register({
+    id: 'cmsPage',
+
+    state: (): CmsPageState => ({
+        currentPage: null,
+        currentPageType: null,
+        currentMappingEntity: null,
+        currentMappingTypes: {},
+        currentDemoEntity: null,
+        currentDemoProducts: [],
+        pageEntityName: 'cms_page',
+        defaultMediaFolderId: null,
+        currentCmsDeviceView: 'desktop',
+        selectedSection: null,
+        selectedBlock: null,
+        isSystemDefaultLanguage: true,
+    }),
+
+    actions: {
+        setCurrentPage(page: Entity<'cms_page'>) {
+            this.currentPage = page;
+        },
+
+        removeCurrentPage() {
+            this.currentPage = null;
+        },
+
+        setCurrentPageType(type: string) {
+            this.currentPageType = type;
+        },
+
+        setCurrentMappingEntity(entity: string) {
+            this.currentMappingEntity = entity;
+        },
+
+        removeCurrentMappingEntity() {
+            this.currentMappingEntity = null;
+        },
+
+        setCurrentMappingTypes(types: Record<string, unknown>) {
+            this.currentMappingTypes = types;
+        },
+
+        removeCurrentMappingTypes() {
+            this.currentMappingTypes = {};
+        },
+
+        setCurrentDemoEntity(entity: unknown) {
+            this.currentDemoEntity = entity;
+        },
+
+        removeCurrentDemoEntity() {
+            this.currentDemoEntity = null;
+        },
+
+        setCurrentDemoProducts(products: unknown[]) {
+            this.currentDemoProducts = products;
+        },
+
+        removeCurrentDemoProducts() {
+            this.currentDemoProducts = [];
+        },
+
+        setPageEntityName(entity: string) {
+            this.pageEntityName = entity;
+        },
+
+        removePageEntityName() {
+            this.pageEntityName = 'cms_page';
+        },
+
+        setDefaultMediaFolderId(folderId: EntityKey<'media_folder'>) {
+            this.defaultMediaFolderId = folderId;
+        },
+
+        removeDefaultMediaFolderId() {
+            this.defaultMediaFolderId = null;
+        },
+
+        setCurrentCmsDeviceView(view: CmsPageState['currentCmsDeviceView']) {
+            this.currentCmsDeviceView = view;
+        },
+
+        removeCurrentCmsDeviceView() {
+            this.currentCmsDeviceView = 'desktop';
+        },
+
+        setSelectedSection(section: Entity<'cms_section'>) {
+            this.selectedSection = section;
+        },
+
+        removeSelectedSection() {
+            this.selectedSection = null;
+        },
+
+        setSelectedBlock(block: Entity<'cms_block'>) {
+            this.selectedBlock = block;
+        },
+
+        removeSelectedBlock() {
+            this.selectedBlock = null;
+        },
+
+        setIsSystemDefaultLanguage(isSystemDefaultLanguage: boolean) {
+            this.isSystemDefaultLanguage = isSystemDefaultLanguage;
+        },
+
+        resetCmsPageState() {
+            this.removeCurrentPage();
+            this.removeCurrentMappingEntity();
+            this.removeCurrentMappingTypes();
+            this.removeCurrentDemoEntity();
+            this.removeCurrentDemoProducts();
+        },
+
+        setSection(section: Entity<'cms_section'>) {
+            this.removeSelectedBlock();
+            this.setSelectedSection(section);
+        },
+
+        setBlock(block: Entity<'cms_block'>) {
+            this.removeSelectedSection();
+            this.setSelectedBlock(block);
+        },
+
+        /**
+         * Writes one config value of an element of the open page, addressed by its slot id and a path
+         * relative to that slot's `config` (`'media.value'`). Editor components own the element they
+         * render, not the page it belongs to, so the write goes through the store that does.
+         */
+        updateElementConfig(elementId: string, path: string, value: unknown) {
+            const slot = findSlot(this.currentPage, elementId);
+
+            if (!slot) {
+                return;
+            }
+
+            Shopwell.Utils.object.set(slot, `config.${path}`, value);
+        },
+    },
+});
+
+/**
+ * @private
+ */
+export type CmsPageStore = ReturnType<typeof cmsPageStore>;
+
+/**
+ * @private
+ */
+export default cmsPageStore;

@@ -1,0 +1,42 @@
+.sw-extension-teaser-sales-channel {
+    display: flex;
+    background: var(--color-background-primary-default);
+    align-items: center;
+    justify-content: space-between;
+    margin: 10px 0;
+    padding-right: 10px;
+
+    &__info {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+    }
+
+    &__icon {
+        background: var(--color-background-secondary-default);
+        width: 64px;
+        height: 64px;
+        border-radius: 8px;
+        margin-right: 30px;
+
+        .mt-icon {
+            color: var(--color-icon-primary-default);
+            margin: 20px;
+        }
+    }
+
+    &__item-name {
+        font-size: var(--font-size-m);
+        margin-bottom: 0;
+        color: var(--color-text-primary-default);
+        font-weight: normal;
+        cursor: pointer;
+    }
+
+    &__item-description {
+        color: var(--color-text-primary-default);
+        font-size: var(--font-size-xs);
+        margin-top: 5px;
+        cursor: pointer;
+    }
+}

@@ -1,0 +1,382 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Dbal;
+
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\AssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Field;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Flag;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\RestrictDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ReverseInherited;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SetNullOnDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StorageAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\VersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\ArrayStruct;
+use Shopwell\Core\Framework\Uuid\Exception\InvalidUuidException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Language\LanguageDefinition;
+use Symfony\Contracts\Service\ResetInterface;
+
+/**
+ * Determines all associated data for a definition.
+ * Used to determines which associated will be deleted to or which associated data would restrict a delete operation.
+ *
+ * @internal
+ */
+#[Package('framework')]
+class EntityForeignKeyResolver implements ResetInterface
+{
+    private ArrayStruct $restrictDeleteMetaFields;
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly Connection $connection,
+        private readonly EntityDefinitionQueryHelper $queryHelper
+    ) {
+        $this->restrictDeleteMetaFields = new ArrayStruct();
+    }
+
+    /**
+     * Returns a list of all entities and their primary keys which will restrict the deletion in the mysql server
+     * Example:
+     *  [
+     *      "order_customer" => [
+     *          ["id => "cace68bdbca140b6ac43a083fb19f82b"],
+     *          ["id => "50330f5531ed485fbd72ba016b20ea2a"],
+     *      ],
+     *      "order_address" => [
+     *          ["id => "29d6334b01e64be28c89a5f1757fd661"],
+     *          ["id => "484ef1124595434fa9b14d6d2cc1e9f8"],
+     *          ["id => "601133b1173f4ca3aeda5ef64ad38355"],
+     *          ["id => "9fd6c61cf9844a8984a45f4e5b55a59c"],
+     *      ]
+     *  ]
+     *
+     * @param array<string>|array<array<string, string>> $ids
+     *
+     * @throws \RuntimeException
+     *
+     * @return array<string, list<array<string, mixed>>>
+     */
+    public function getAffectedDeleteRestrictions(
+        EntityDefinition $definition,
+        array $ids,
+        Context $context,
+        bool $restrictDeleteOnlyFirstLevel = false
+    ): array {
+        $this->reset();
+
+        $this->fetch($definition, $ids, RestrictDelete::class, $context, $restrictDeleteOnlyFirstLevel);
+
+        return $this->restrictDeleteMetaFields->getVars();
+    }
+
+    /**
+     * Returns a list of all entities and their primary keys which will be deleted by the mysql server
+     * Example:
+     *  [
+     *      "order_customer" => [
+     *          "cace68bdbca140b6ac43a083fb19f82b",
+     *          "50330f5531ed485fbd72ba016b20ea2a",
+     *      ],
+     *      "order_address" => [
+     *          "29d6334b01e64be28c89a5f1757fd661",
+     *          "484ef1124595434fa9b14d6d2cc1e9f8",
+     *          "601133b1173f4ca3aeda5ef64ad38355",
+     *          "9fd6c61cf9844a8984a45f4e5b55a59c",
+     *      ]
+     *  ]
+     *
+     * @param array<string>|array<array<string, string>> $ids
+     *
+     * @throws \RuntimeException
+     *
+     * @return array<string, list<string>>
+     */
+    public function getAffectedDeletes(EntityDefinition $definition, array $ids, Context $context): array
+    {
+        return $this->fetch($definition, $ids, CascadeDelete::class, $context);
+    }
+
+    /**
+     * Returns an associated nested array which contains all affected set null on delete entities.
+     * Example:
+     *   [
+     *       'product.manufacturer_id' => [
+     *           '1ffd7ea958c643558256927aae8efb07'
+     *           '1ffd7ea958c643558256927aae8efb07'
+     *       ]
+     *   ]
+     *
+     * @param array<string>|array<array<string, string>> $ids
+     *
+     * @throws \RuntimeException
+     *
+     * @return array<string, list<string>>
+     */
+    public function getAffectedSetNulls(EntityDefinition $definition, array $ids, Context $context): array
+    {
+        return $this->fetch($definition, $ids, SetNullOnDelete::class, $context);
+    }
+
+    /**
+     * Returns a list of all entities and their primary keys which will be deleted by the mysql server
+     * Example:
+     *  [
+     *      "order_customer" => [
+     *          "cace68bdbca140b6ac43a083fb19f82b",
+     *          "50330f5531ed485fbd72ba016b20ea2a",
+     *      ],
+     *      "order_address" => [
+     *          "29d6334b01e64be28c89a5f1757fd661",
+     *          "484ef1124595434fa9b14d6d2cc1e9f8",
+     *          "601133b1173f4ca3aeda5ef64ad38355",
+     *          "9fd6c61cf9844a8984a45f4e5b55a59c",
+     *      ]
+     *  ]
+     *
+     * @param array<string>|array<array<string, string>> $ids
+     *
+     * @throws \RuntimeException
+     *
+     * @return array<string, list<string>>
+     */
+    public function getAllReverseInherited(EntityDefinition $definition, array $ids, Context $context): array
+    {
+        return $this->fetch($definition, $ids, ReverseInherited::class, $context);
+    }
+
+    public function reset(): void
+    {
+        $this->restrictDeleteMetaFields = new ArrayStruct();
+    }
+
+    /**
+     * @param class-string<Flag> $class
+     * @param array<string>|array<array<string, string>> $ids
+     *
+     * @throws InvalidUuidException
+     *
+     * @return array<string, list<string>>
+     */
+    private function fetch(EntityDefinition $definition, array $ids, string $class, Context $context, bool $restrictDeleteOnlyFirstLevel = false): array
+    {
+        if ($context->getVersionId() !== Defaults::LIVE_VERSION) {
+            return [];
+        }
+
+        if (!$definition->getFields()->has('id')) {
+            return [];
+        }
+
+        // prevent cascade delete and set null foreign key check for language definition,
+        // otherwise all ids of language translations have to be checked
+        // RestrictDelete is processed as usual to enable foreign key checks
+        if (!$restrictDeleteOnlyFirstLevel && $definition->getClass() === LanguageDefinition::class) {
+            return [];
+        }
+
+        $cascades = $definition->getFields()->filter(static fn (Field $field): bool => $field->is($class));
+
+        if ($cascades->count() === 0) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($cascades as $association) {
+            if (!$association instanceof AssociationField) {
+                continue;
+            }
+
+            $affected = $this->fetchAssociation($ids, $definition, $association, $class, $context, $restrictDeleteOnlyFirstLevel);
+
+            $result = array_merge($result, $affected);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string>|array<array<string, string>> $ids
+     * @param class-string<Flag> $class
+     *
+     * @return array<string, list<string>>
+     */
+    private function fetchAssociation(
+        array $ids,
+        EntityDefinition $root,
+        AssociationField $association,
+        string $class,
+        Context $context,
+        bool $restrictDeleteOnlyFirstLevel = false
+    ): array {
+        if ($ids === []) {
+            return [];
+        }
+
+        $query = new QueryBuilder($this->connection);
+        $query->from(
+            EntityDefinitionQueryHelper::escape($root->getEntityName()),
+            EntityDefinitionQueryHelper::escape($root->getEntityName())
+        );
+
+        $this->queryHelper->resolveField($association, $root, $root->getEntityName(), $query, $context);
+
+        $alias = $root->getEntityName() . '.' . $association->getPropertyName();
+
+        if ($association instanceof ManyToManyAssociationField) {
+            $alias .= '.mapping';
+        }
+
+        if ($class === RestrictDelete::class) {
+            foreach ($root->getRestrictDeleteMetaFields() as $field) {
+                if (!$field instanceof StorageAware) {
+                    continue;
+                }
+
+                $query->addSelect(\sprintf(
+                    '%s.%s as %s',
+                    EntityDefinitionQueryHelper::escape($root->getEntityName()),
+                    EntityDefinitionQueryHelper::escape($field->getStorageName()),
+                    EntityDefinitionQueryHelper::escape('_' . $field->getPropertyName())
+                ));
+            }
+        }
+
+        $primaryKeys = $association->getReferenceDefinition()->getPrimaryKeys()->filter(static function (Field $field) {
+            if ($field instanceof ReferenceVersionField || $field instanceof VersionField) {
+                return false;
+            }
+
+            return true;
+        });
+
+        foreach ($primaryKeys as $field) {
+            if (!$field instanceof StorageAware) {
+                continue;
+            }
+            $storageName = $field->getStorageName();
+
+            $vars = [
+                '#root#' => EntityDefinitionQueryHelper::escape($alias),
+                '#field#' => EntityDefinitionQueryHelper::escape($storageName),
+                '#property#' => $field->getPropertyName(),
+            ];
+
+            $template = '#root#.#field# as #property#';
+            if ($field instanceof IdField || $field instanceof FkField) {
+                $template = 'LOWER(HEX(#root#.#field#)) as #property#';
+            }
+
+            $accessor = str_replace(array_keys($vars), array_values($vars), $template);
+            $query->addSelect($accessor);
+
+            $accessor = str_replace(array_keys($vars), array_values($vars), '#root#.#field#');
+            $query->andWhere($accessor . ' IS NOT NULL');
+        }
+
+        if ($root->isVersionAware()) {
+            $query->andWhere(EntityDefinitionQueryHelper::escape($root->getEntityName()) . '.`version_id` = :version');
+            $query->setParameter('version', Uuid::fromHexToBytes($context->getVersionId()));
+        }
+
+        $this->queryHelper->addIdCondition(new Criteria($ids), $root, $query);
+
+        $affected = $query->executeQuery()->fetchAllAssociative();
+
+        if ($affected === []) {
+            return [];
+        }
+
+        // create flat list for single primary key entities
+        if ($primaryKeys->count() === 1) {
+            $property = $primaryKeys->first()?->getPropertyName();
+            \assert(\is_string($property));
+
+            // prevent infinite loop when entity points to itself
+            if ($root === $association->getReferenceDefinition()) {
+                $flatIds = array_column($ids, $property);
+
+                $affected = array_values(array_filter(
+                    $affected,
+                    static fn (array $row) => !\in_array($row[$property], $flatIds, true)
+                ));
+            }
+
+            if ($class === RestrictDelete::class) {
+                $this->buildRestrictDeleteMetaData(
+                    $association->getReferenceDefinition()->getEntityName(),
+                    $root,
+                    $affected,
+                    $property
+                );
+            }
+
+            $affected = array_column($affected, $property);
+        }
+
+        // prevent circular reference for many to many
+        if ($association instanceof ManyToManyAssociationField) {
+            return [$association->getReferenceDefinition()->getEntityName() => $affected];
+        }
+
+        if ($class === SetNullOnDelete::class) {
+            // add entity prefix for the current association
+            // stop recursion here, set null of an foreign key has no further impact
+            return [$association->getReferenceDefinition()->getEntityName() . '.' . $association->getReferenceField() => $affected];
+        }
+
+        // add entity prefix for the current association
+        $formatted = [$association->getReferenceDefinition()->getEntityName() => $affected];
+
+        // Only include entities directly associated with the definition
+        if ($restrictDeleteOnlyFirstLevel && $class === RestrictDelete::class) {
+            return $formatted;
+        }
+        // call recursion for nested cascades
+        $nested = $this->fetch($association->getReferenceDefinition(), $affected, $class, $context, $restrictDeleteOnlyFirstLevel);
+
+        return array_merge($formatted, $nested);
+    }
+
+    /**
+     * @param list<array<string, string>> $affected
+     */
+    private function buildRestrictDeleteMetaData(
+        string $entityName,
+        EntityDefinition $root,
+        array $affected,
+        string $property,
+    ): void {
+        foreach ($affected as $row) {
+            $params = [$property => $row[$property]];
+
+            $rootParams = $root->getRestrictDeleteMetaFields()->map(
+                static fn (Field $field) => $field instanceof IdField
+                    ? Uuid::fromBytesToHex($row['_' . $field->getPropertyName()])
+                    : $row['_' . $field->getPropertyName()]
+            );
+
+            if ($rootParams !== []) {
+                $params[$root->getEntityName()] = $rootParams;
+            }
+
+            $merged = $this->restrictDeleteMetaFields->get($entityName) ?? [];
+            $merged[] = $params;
+
+            $this->restrictDeleteMetaFields->set($entityName, $merged);
+        }
+    }
+}

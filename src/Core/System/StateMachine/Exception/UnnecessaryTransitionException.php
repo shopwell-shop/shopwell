@@ -1,0 +1,24 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\StateMachine\Exception;
+
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\StateMachine\StateMachineException;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('checkout')]
+class UnnecessaryTransitionException extends StateMachineException
+{
+    public function __construct(string $transition)
+    {
+        parent::__construct(
+            Response::HTTP_BAD_REQUEST,
+            self::UNNECESSARY_TRANSITION,
+            'The transition "{{ transition }}" is unnecessary, already on desired state.',
+            ['transition' => $transition]
+        );
+    }
+}

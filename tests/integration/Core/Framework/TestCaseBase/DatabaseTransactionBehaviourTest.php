@@ -1,0 +1,80 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\TestCaseBase;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\ExpectationFailedException;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class DatabaseTransactionBehaviourTest extends TestCase
+{
+    use DatabaseTransactionBehaviour;
+    use KernelTestBehaviour;
+
+    private bool $setUpIsInTransaction = false;
+
+    protected function setUp(): void
+    {
+        $this->setUpIsInTransaction = KernelLifecycleManager::getKernel()
+            ->getContainer()
+            ->get(Connection::class)
+            ->isTransactionActive();
+    }
+
+    protected function tearDown(): void
+    {
+        $tearDownIsInTransaction = KernelLifecycleManager::getKernel()
+            ->getContainer()
+            ->get(Connection::class)
+            ->isTransactionActive();
+
+        if (!$tearDownIsInTransaction) {
+            throw new \RuntimeException('TearDown does not work correctly');
+        }
+    }
+
+    public function testNoAssertionIsPerformedInTheTrait(): void
+    {
+        // This test is to ensure that the DatabaseTransactionBehaviour trait does not perform any assertions
+        // during its execution, which could interfere with testing behaviour, as test suites consuming this trait
+        // may hide risky tests.
+        static::expectNotToPerformAssertions();
+    }
+
+    public function testInTransaction(): void
+    {
+        $connection = KernelLifecycleManager::getKernel()
+            ->getContainer()
+            ->get(Connection::class);
+
+        static::assertTrue($connection->isTransactionActive());
+    }
+
+    public function testSetUpIsAlsoInTransaction(): void
+    {
+        static::assertTrue($this->setUpIsInTransaction);
+    }
+
+    public function testLastTestCaseIsSet(): void
+    {
+        static::assertSame($this->nameWithDataSet(), static::$lastTestCase);
+    }
+
+    public function testTransactionOpenWithoutClose(): void
+    {
+        $this->expectExceptionObject(new ExpectationFailedException(
+            'The previous test case\'s transaction was not closed properly.
+            This may affect following Tests in an unpredictable manner!
+            Previous Test case: ' . (new \ReflectionClass($this))->getName() . '::' . static::$lastTestCase
+        ));
+        static::startTransactionBefore();
+    }
+}

@@ -1,0 +1,51 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\DeliveryTime\Aggregate\DeliveryTimeTranslation;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @extends EntityCollection<DeliveryTimeTranslationEntity>
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('discovery')]
+class DeliveryTimeTranslationCollection extends EntityCollection
+{
+    /**
+     * @return array<string>
+     */
+    public function getDeliveryTimeIds(): array
+    {
+        return $this->fmap(static fn (DeliveryTimeTranslationEntity $deliveryTimeTranslation) => $deliveryTimeTranslation->getDeliveryTimeId());
+    }
+
+    public function filterByDeliveryTimeId(string $id): self
+    {
+        return $this->filter(static fn (DeliveryTimeTranslationEntity $deliveryTimeTranslation) => $deliveryTimeTranslation->getDeliveryTimeId() === $id);
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getLanguageIds(): array
+    {
+        return $this->fmap(static fn (DeliveryTimeTranslationEntity $deliveryTimeTranslation) => $deliveryTimeTranslation->getLanguageId());
+    }
+
+    public function filterByLanguageId(string $id): self
+    {
+        return $this->filter(static fn (DeliveryTimeTranslationEntity $deliveryTimeTranslation) => $deliveryTimeTranslation->getLanguageId() === $id);
+    }
+
+    public function getApiAlias(): string
+    {
+        return 'delivery_time_translation_collection';
+    }
+
+    protected function getExpectedClass(): string
+    {
+        return DeliveryTimeTranslationEntity::class;
+    }
+}

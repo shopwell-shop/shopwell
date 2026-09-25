@@ -1,0 +1,158 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\DataAbstractionLayer\FieldSerializer;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\OneToOneAssociationFieldSerializer;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommandQueue;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\DataStack\KeyValuePair;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteCommandExtractor;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteContext;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteParameterBag;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticDefinitionInstanceRegistry;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(OneToOneAssociationFieldSerializer::class)]
+class OneToOneAssociationFieldSerializerTest extends TestCase
+{
+    public function testExceptionInNormalizationIsThrownIfDataIsNotArray(): void
+    {
+        new StaticDefinitionInstanceRegistry(
+            [
+                TestCustomerDefinition::class => $customerDefinition = new TestCustomerDefinition(),
+                CustomerRecoveryDefinition::class => new CustomerRecoveryDefinition(),
+            ],
+            static::createStub(ValidatorInterface::class),
+            static::createStub(EntityWriteGatewayInterface::class)
+        );
+
+        $field = $customerDefinition->getField('recoveryCustomer');
+
+        static::assertInstanceOf(OneToOneAssociationField::class, $field);
+
+        $serializer = new OneToOneAssociationFieldSerializer(static::createStub(WriteCommandExtractor::class));
+
+        $params = new WriteParameterBag(
+            $customerDefinition,
+            WriteContext::createFromContext(Context::createDefaultContext()),
+            '/0',
+            new WriteCommandQueue()
+        );
+
+        $this->expectExceptionObject(DataAbstractionLayerException::expectedArray('/0/recoveryCustomer'));
+
+        $serializer->normalize(
+            $field,
+            ['recoveryCustomer' => 'foobar'],
+            $params,
+        );
+    }
+
+    public function testExceptionInEncodeIsThrownIfDataIsNotArray(): void
+    {
+        new StaticDefinitionInstanceRegistry(
+            [
+                TestCustomerDefinition::class => $customerDefinition = new TestCustomerDefinition(),
+                CustomerRecoveryDefinition::class => new CustomerRecoveryDefinition(),
+            ],
+            static::createStub(ValidatorInterface::class),
+            static::createStub(EntityWriteGatewayInterface::class)
+        );
+
+        $field = $customerDefinition->getField('recoveryCustomer');
+
+        static::assertInstanceOf(OneToOneAssociationField::class, $field);
+
+        $serializer = new OneToOneAssociationFieldSerializer(static::createStub(WriteCommandExtractor::class));
+
+        $params = new WriteParameterBag(
+            $customerDefinition,
+            WriteContext::createFromContext(Context::createDefaultContext()),
+            '/0',
+            new WriteCommandQueue()
+        );
+
+        $this->expectExceptionObject(DataAbstractionLayerException::expectedArray('/0/recoveryCustomer'));
+
+        $serializer->encode(
+            $field,
+            static::createStub(EntityExistence::class),
+            new KeyValuePair('recoveryCustomer', 'foobar', false),
+            $params,
+        )->next();
+    }
+}
+
+/**
+ * @internal
+ */
+class CustomerRecoveryDefinition extends EntityDefinition
+{
+    public function getEntityName(): string
+    {
+        return 'customer_recovery';
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
+            (new StringField('hash', 'hash'))->addFlags(new Required()),
+            (new FkField('customer_id', 'customerId', TestCustomerDefinition::class))->addFlags(new Required()),
+
+            new OneToOneAssociationField(
+                'customer',
+                'customer_id',
+                'id',
+                TestCustomerDefinition::class,
+                false
+            ),
+        ]);
+    }
+}
+
+/**
+ * @internal
+ */
+class TestCustomerDefinition extends EntityDefinition
+{
+    public function getEntityName(): string
+    {
+        return 'customer';
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new Required(), new PrimaryKey()),
+            (new StringField('first_name', 'first_name'))->addFlags(new Required()),
+            (new StringField('last_name', 'last_name'))->addFlags(new Required()),
+
+            new OneToOneAssociationField(
+                'recoveryCustomer',
+                'id',
+                'customer_id',
+                CustomerRecoveryDefinition::class,
+                false
+            ),
+        ]);
+    }
+}

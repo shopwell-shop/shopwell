@@ -1,0 +1,49 @@
+@import "~scss/variables";
+
+.sw-cms-el-preview-buy-box {
+    height: 100%;
+    width: 100%;
+    padding: 0 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    &__price {
+        font-size: var(--font-size-m);
+    }
+
+    &__placeholders {
+        display: grid;
+        grid-template-columns: 10px 1fr;
+        grid-gap: 4px;
+        margin-top: 4px;
+
+        & > .sw-cms-el-preview-buy-box__placeholder {
+            width: 60px;
+            margin: 0;
+
+            &:nth-child(odd) {
+                width: 8px;
+                margin-right: 4px;
+            }
+        }
+    }
+
+    &__placeholder {
+        height: 8px;
+        border-radius: $border-radius-default;
+        background-color: var(--color-background-secondary-default);
+    }
+
+    &__action {
+        background: var(--color-background-tertiary-default);
+        color: var(--color-text-primary-default);
+        border-radius: $border-radius-default;
+        text-align: center;
+        font-size: var(--font-size-2xs);
+        line-height: 26px;
+        width: 100%;
+        margin-top: 4px;
+        align-self: flex-end;
+    }
+}

@@ -1,0 +1,271 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\System\UsageData\EntitySync;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\MySQLPlatform;
+use Doctrine\DBAL\Query\Expression\CompositeExpression;
+use Doctrine\DBAL\Query\Expression\ExpressionBuilder;
+use Doctrine\DBAL\Query\QueryBuilder;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\VersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\MappingEntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterface;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\UsageData\EntitySync\IterateEntitiesQueryBuilder;
+use Shopwell\Core\System\UsageData\EntitySync\Operation;
+use Shopwell\Core\System\UsageData\Services\EntityDefinitionService;
+use Shopwell\Core\System\UsageData\Services\UsageDataAllowListService;
+use Shopwell\Core\System\UsageData\UsageDataException;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticDefinitionInstanceRegistry;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+
+/**
+ * @internal
+ */
+#[Package('data-services')]
+#[CoversClass(IterateEntitiesQueryBuilder::class)]
+class IterateEntitiesQueryBuilderTest extends TestCase
+{
+    private IterateEntitiesQueryBuilder $iteratorFactory;
+
+    protected function setUp(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->never())
+            ->method('createQueryBuilder');
+        $connection->method('createExpressionBuilder')
+            ->willReturn(new ExpressionBuilder($connection));
+        $connection->method('getDatabasePlatform')
+            ->willReturn(new MySQLPlatform());
+
+        $entityDefinitions = [
+            new IterableTestEntityDefinition(),
+            new VersionAwareTestDefinition(),
+            new TestMappingEntityDefinition(),
+        ];
+
+        new StaticDefinitionInstanceRegistry(
+            $entityDefinitions,
+            static::createStub(ValidatorInterface::class),
+            static::createStub(EntityWriteGatewayInterface::class)
+        );
+
+        $this->iteratorFactory = new IterateEntitiesQueryBuilder(
+            new EntityDefinitionService(
+                $entityDefinitions,
+                new UsageDataAllowListService(),
+            ),
+            $connection,
+            12,
+        );
+    }
+
+    public function testThrowsEntityDoesNotHaveCreatedAndUpdatedAtFields(): void
+    {
+        $this->expectExceptionObject(UsageDataException::entityNotAllowed('test_mapping_entity'));
+        $this->iteratorFactory->create(TestMappingEntityDefinition::ENTITY_NAME, Operation::CREATE, new \DateTimeImmutable(), null);
+    }
+
+    public function testCreateThrowsExceptionIfEntityDoesNotExist(): void
+    {
+        $this->expectExceptionObject(UsageDataException::entityNotAllowed('no_entity'));
+        $this->iteratorFactory->create('no_entity', Operation::CREATE, new \DateTimeImmutable(), null);
+    }
+
+    public function testCreateReturnsQueryForFetchingAllEntities(): void
+    {
+        $queryBuilder = $this->iteratorFactory->create(IterableTestEntityDefinition::ENTITY_NAME, Operation::CREATE, new \DateTimeImmutable(), null);
+
+        static::assertStringContainsString(
+            'FROM ' . EntityDefinitionQueryHelper::escape(IterableTestEntityDefinition::ENTITY_NAME),
+            $queryBuilder->getSQL()
+        );
+        static::assertSame(12, $queryBuilder->getMaxResults());
+    }
+
+    public function testCreateAddsLastRunConditionIfGiven(): void
+    {
+        $connection = static::createStub(Connection::class);
+        $connection->method('createQueryBuilder')
+            ->willReturn(new QueryBuilder($connection));
+
+        $expressionBuilder = new ExpressionBuilder($connection);
+        $connection->method('createExpressionBuilder')->willReturn($expressionBuilder);
+
+        $queryBuilderMock = static::createStub(QueryBuilder::class);
+        $connection->method('createQueryBuilder')->willReturn($queryBuilderMock);
+
+        $lastRun = new \DateTimeImmutable('2023-08-11');
+        $queryBuilder = $this->iteratorFactory->create(IterableTestEntityDefinition::ENTITY_NAME, Operation::CREATE, new \DateTimeImmutable(), $lastRun);
+
+        static::assertStringContainsString(
+            'FROM ' . EntityDefinitionQueryHelper::escape(IterableTestEntityDefinition::ENTITY_NAME),
+            $queryBuilder->getSQL()
+        );
+        static::assertSame(12, $queryBuilder->getMaxResults());
+        static::assertStringContainsString(
+            '(created_at > :lastRun) AND (created_at <= :currentRun) AND ((updated_at IS NULL) OR (updated_at <= :currentRun))',
+            $queryBuilder->getSQL()
+        );
+        static::assertSame('2023-08-11 00:00:00.000', $queryBuilder->getParameter('lastRun'));
+    }
+
+    public function testCreateThrowsForUpdatesIfLastRunIsNotSet(): void
+    {
+        static::expectException(UsageDataException::class);
+        $this->iteratorFactory->create(IterableTestEntityDefinition::ENTITY_NAME, Operation::UPDATE, new \DateTimeImmutable(), null);
+    }
+
+    public function testCreateFetchesAllEntitiesUpdatedButNotCreatedSinceLastRun(): void
+    {
+        $lastRun = new \DateTimeImmutable('2023-08-11');
+        $queryBuilder = $this->iteratorFactory->create(IterableTestEntityDefinition::ENTITY_NAME, Operation::UPDATE, new \DateTimeImmutable(), $lastRun);
+
+        static::assertStringContainsString(
+            'FROM ' . EntityDefinitionQueryHelper::escape(IterableTestEntityDefinition::ENTITY_NAME),
+            $queryBuilder->getSQL()
+        );
+        static::assertSame(12, $queryBuilder->getMaxResults());
+
+        static::assertStringContainsString(
+            '(created_at <= :lastRun) AND (updated_at > :lastRun) AND (updated_at <= :currentRun)',
+            $queryBuilder->getSQL()
+        );
+        static::assertSame('2023-08-11 00:00:00.000', $queryBuilder->getParameter('lastRun'));
+    }
+
+    public function testCreateThrowsExceptionForDeletionsIfLastRunIsNotSet(): void
+    {
+        static::expectException(UsageDataException::class);
+        $this->iteratorFactory->create(IterableTestEntityDefinition::ENTITY_NAME, Operation::DELETE, new \DateTimeImmutable(), null);
+    }
+
+    public function testCreateReturnsIteratorForDeletions(): void
+    {
+        $lastRun = new \DateTimeImmutable('2023-08-11');
+        $queryBuilder = $this->iteratorFactory->create(
+            IterableTestEntityDefinition::ENTITY_NAME,
+            Operation::DELETE,
+            new \DateTimeImmutable(),
+            $lastRun,
+        );
+
+        static::assertStringContainsString(
+            'FROM ' . EntityDefinitionQueryHelper::escape('usage_data_entity_deletion'),
+            $queryBuilder->getSQL()
+        );
+        static::assertSame(12, $queryBuilder->getMaxResults());
+        static::assertStringContainsString(
+            '(`entity_name` = :entityName) AND (`deleted_at` <= :currentRunDate)',
+            $queryBuilder->getSQL(),
+        );
+        static::assertSame(IterableTestEntityDefinition::ENTITY_NAME, $queryBuilder->getParameter('entityName'));
+    }
+
+    /**
+     * It filters non-live version entities. And it will exclude the version fields and non storage aware
+     * fields from the select clause.
+     */
+    public function testFiltersNonLiveVersionEntities(): void
+    {
+        $queryBuilder = $this->iteratorFactory->create(
+            VersionAwareTestDefinition::ENTITY_NAME,
+            Operation::CREATE,
+            new \DateTimeImmutable(),
+            null,
+        );
+
+        static::assertStringContainsString(
+            \sprintf(
+                'LOWER(HEX(%s.%s)) as %s',
+                EntityDefinitionQueryHelper::escape('category'),
+                EntityDefinitionQueryHelper::escape('id'),
+                EntityDefinitionQueryHelper::escape('id')
+            ),
+            $queryBuilder->getSQL()
+        );
+
+        static::assertStringContainsString(
+            (string) CompositeExpression::and(
+                EntityDefinitionQueryHelper::escape('version_id') . ' = :versionId',
+                EntityDefinitionQueryHelper::escape('version_aware_test_version_id') . ' = :versionId',
+            ),
+            $queryBuilder->getSQL()
+        );
+
+        static::assertSame(Uuid::fromHexToBytes(Defaults::LIVE_VERSION), $queryBuilder->getParameter('versionId'));
+    }
+}
+
+/**
+ * @internal
+ */
+class IterableTestEntityDefinition extends EntityDefinition
+{
+    public const ENTITY_NAME = 'product';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
+        ]);
+    }
+}
+
+/**
+ * @internal
+ */
+class VersionAwareTestDefinition extends EntityDefinition
+{
+    public const ENTITY_NAME = 'category';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
+            (new VersionField())->addFlags(new PrimaryKey(), new Required()),
+            (new ReferenceVersionField(self::class, 'version_aware_test_version_id'))->addFlags(new PrimaryKey(), new Required()),
+            (new OneToManyAssociationField('association_field', self::class, 'id'))->addFlags(new PrimaryKey(), new Required()),
+        ]);
+    }
+}
+
+/**
+ * @internal
+ */
+class TestMappingEntityDefinition extends MappingEntityDefinition
+{
+    public const ENTITY_NAME = 'test_mapping_entity';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection();
+    }
+}

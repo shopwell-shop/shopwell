@@ -1,0 +1,114 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Script\Api;
+
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Script\ScriptException;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Storefront\Controller\ScriptController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\RouterInterface;
+
+/**
+ * The `response` service allows you to create HTTP-Responses.
+ *
+ * @script-service custom_endpoint
+ */
+#[Package('framework')]
+class ScriptResponseFactoryFacade
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly RouterInterface $router,
+        /**
+         * @deprecated tag:v6.8.0 - only needed for the deprecated render() BC path.
+         *
+         * @phpstan-ignore phpat.restrictNamespacesInCore (Storefront dependency is nullable. Don't do that! Will be removed with v6.8.0 when render() is removed from this class)
+         */
+        private readonly ?ScriptController $scriptController = null,
+        // @deprecated tag:v6.8.0 - only needed for the deprecated render() BC path.
+        protected readonly ?SalesChannelContext $salesChannelContext = null,
+    ) {
+    }
+
+    /**
+     * The `json()` method allows you to create a JSON-Response.
+     *
+     * @param array<mixed> $data The data that should be sent in the response as array.
+     * @param int $code The HTTP-Status-Code of the response, defaults to 200.
+     *
+     * @return ScriptResponse The created response object, remember to assign it to the hook with `hook.setResponse()`.
+     *
+     * @example /api-simple-script/simple-script.twig 3 Return hard coded values as JsonResponse.
+     * @example /api-repository-test/api-repository-test.twig Search for products and return them in a JsonResponse.
+     * @example /api-action-button/action-button-script-integration.twig Provide a response to a ActionButtons request from the administration.
+     */
+    public function json(array $data, int $code = Response::HTTP_OK): ScriptResponse
+    {
+        $response = new ScriptResponse(null, $code);
+        $response->setBody($data);
+
+        return $response;
+    }
+
+    /**
+     * The `redirect()` method allows you to create a RedirectResponse.
+     *
+     * @param string $route The name of the route that should be redirected to.
+     * @param array<mixed> $parameters The parameters needing to generate the URL of the route as an associative array.
+     * @param int $code he HTTP-Status-Code of the response, defaults to 302.
+     *
+     * @return ScriptResponse The created response object, remember to assign it to the hook with `hook.setResponse()`.
+     *
+     * @example /api-redirect-response/redirect-script.twig 3 Redirect to an Admin-API route.
+     * @example /storefront-redirect-response/script.twig 3 Redirect to a storefront page.
+     */
+    public function redirect(string $route, array $parameters, int $code = Response::HTTP_FOUND): ScriptResponse
+    {
+        $url = $this->router->generate($route, $parameters);
+
+        return new ScriptResponse(
+            new RedirectResponse($url, $code),
+            $code
+        );
+    }
+
+    /**
+     * The `render()` method allows you to render a twig view with the parameters you provide and create a StorefrontResponse.
+     *
+     * Note that the `render()` method will throw an exception if it is called from outside a `SalesChannelContext` (e.g. from an `/api` route)
+     * or if the Storefront-bundle is not installed.
+     *
+     * @deprecated tag:v6.8.0 - Rendering Storefront templates through the core response service is deprecated. Type the response service as `Shopwell\Storefront\Framework\Script\Api\StorefrontScriptResponseFactoryFacade` in Storefront script hooks and use this core facade without `render()` in admin-api/store-api hooks.
+     *
+     * @param string $view The name of the twig template you want to render e.g. `@Storefront/storefront/page/content/detail.html.twig`
+     * @param array<string, mixed> $parameters The parameters you want to pass to the template, ensure that you pass the `page` parameter from the hook to the templates.
+     *
+     * @return ScriptResponse The created response object with the rendered template as content, remember to assign it to the hook with `hook.setResponse()`.
+     *
+     * @example storefront-render/script.twig 3 Fetch a product, add it to the page and return a rendered response.
+     */
+    public function render(string $view, array $parameters = []): ScriptResponse
+    {
+        Feature::triggerDeprecationOrThrow(
+            'v6.8.0.0',
+            'Rendering Storefront templates via the script `response` service is only supported in Storefront script hooks. The `render()` method will be removed from the core `response` service.'
+        );
+
+        if ($this->scriptController === null) {
+            throw ScriptException::storefrontBundleMissingForHookMethod(__METHOD__);
+        }
+
+        if ($this->salesChannelContext === null) {
+            throw ScriptException::hookMethodOutsideOfSalesChannelContext(__METHOD__);
+        }
+
+        $inner = $this->scriptController->renderStorefrontForScript($view, $parameters);
+
+        return new ScriptResponse($inner, $inner->getStatusCode());
+    }
+}

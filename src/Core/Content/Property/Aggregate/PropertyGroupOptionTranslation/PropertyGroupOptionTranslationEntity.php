@@ -1,0 +1,65 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Property\Aggregate\PropertyGroupOptionTranslation;
+
+use Shopwell\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionEntity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
+use Shopwell\Core\Framework\DataAbstractionLayer\TranslationEntity;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('inventory')]
+class PropertyGroupOptionTranslationEntity extends TranslationEntity
+{
+    use EntityCustomFieldsTrait;
+
+    protected string $propertyGroupOptionId;
+
+    protected ?string $name = null;
+
+    protected ?int $position = null;
+
+    protected ?PropertyGroupOptionEntity $propertyGroupOption = null;
+
+    public function getPropertyGroupOptionId(): string
+    {
+        return $this->propertyGroupOptionId;
+    }
+
+    public function setPropertyGroupOptionId(string $propertyGroupOptionId): void
+    {
+        $this->propertyGroupOptionId = $propertyGroupOptionId;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(?string $name): void
+    {
+        $this->name = $name;
+    }
+
+    public function getPropertyGroupOption(): ?PropertyGroupOptionEntity
+    {
+        return $this->propertyGroupOption;
+    }
+
+    public function setPropertyGroupOption(PropertyGroupOptionEntity $propertyGroupOption): void
+    {
+        $this->propertyGroupOption = $propertyGroupOption;
+    }
+
+    public function getPosition(): ?int
+    {
+        return $this->position;
+    }
+
+    public function setPosition(int $position): void
+    {
+        $this->position = $position;
+    }
+}

@@ -1,0 +1,285 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\Sitemap\Service;
+
+use League\Flysystem\FilesystemOperator;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Psr\Cache\CacheItemInterface;
+use Psr\Cache\CacheItemPoolInterface;
+use Shopwell\Core\Checkout\Cart\CartRuleLoader;
+use Shopwell\Core\Content\Sitemap\Exception\AlreadyLockedException;
+use Shopwell\Core\Content\Sitemap\Provider\AbstractUrlProvider;
+use Shopwell\Core\Content\Sitemap\Service\SitemapExporter;
+use Shopwell\Core\Content\Sitemap\Service\SitemapHandleFactoryInterface;
+use Shopwell\Core\Content\Sitemap\Service\SitemapHandleInterface;
+use Shopwell\Core\Content\Sitemap\Struct\Url;
+use Shopwell\Core\Content\Sitemap\Struct\UrlResult;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\Seo\StorefrontSalesChannelTestHelper;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
+use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Generator;
+use Symfony\Component\Cache\CacheItem;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+class SitemapExporterTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+    use StorefrontSalesChannelTestHelper;
+
+    private SalesChannelContext $context;
+
+    /**
+     * @var EntityRepository<SalesChannelCollection>
+     */
+    private EntityRepository $salesChannelRepository;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->context = $this->createStorefrontSalesChannelContext(Uuid::randomHex(), 'sitemap-exporter-test');
+        $this->salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+    }
+
+    public function testNotLocked(): void
+    {
+        $cache = static::createStub(CacheItemPoolInterface::class);
+        $cache->method('getItem')->willReturn($this->createCacheItem('', true, false));
+
+        $exporter = $this->createSitemapExporter($cache);
+
+        $result = $exporter->generate($this->context);
+
+        static::assertTrue($result->isFinish());
+    }
+
+    public function testExpectAlreadyLockedException(): void
+    {
+        $cache = static::createStub(CacheItemPoolInterface::class);
+        $cache->method('getItem')->willReturn($this->createCacheItem('', true, true));
+
+        $exporter = $this->createSitemapExporter($cache);
+
+        $this->expectException(AlreadyLockedException::class);
+        $exporter->generate($this->context);
+    }
+
+    public function testForce(): void
+    {
+        $cache = static::createStub(CacheItemPoolInterface::class);
+        $cache->method('getItem')->willReturn($this->createCacheItem('', true, true));
+
+        $exporter = $this->createSitemapExporter($cache);
+
+        $result = $exporter->generate($this->context, true);
+
+        static::assertTrue($result->isFinish());
+    }
+
+    public function testLocksAndUnlocks(): void
+    {
+        $cache = static::createStub(CacheItemPoolInterface::class);
+        $cacheItem = null;
+        $cache->method('getItem')->willReturnCallback(function (string $k) use (&$cacheItem) {
+            if ($cacheItem === null) {
+                $cacheItem = $this->createCacheItem($k, null, false);
+            }
+
+            return $cacheItem;
+        });
+
+        $cache->method('save')->willReturnCallback(function (CacheItemInterface $i) use (&$cacheItem): bool {
+            self::assertInstanceOf(CacheItemInterface::class, $cacheItem);
+            static::assertSame($cacheItem->getKey(), $i->getKey());
+            $cacheItem = $this->createCacheItem($i->getKey(), $i->get(), true);
+
+            return true;
+        });
+
+        $cache->method('deleteItem')->willReturnCallback(static function (string $k) use (&$cacheItem): bool {
+            static::assertNotNull($cacheItem, 'Was not locked');
+            static::assertSame($cacheItem->getKey(), $k);
+            static::assertTrue($cacheItem->isHit(), 'Was not locked');
+
+            return true;
+        });
+
+        $exporter = $this->createSitemapExporter($cache);
+
+        $result = $exporter->generate($this->context);
+
+        static::assertTrue($result->isFinish());
+    }
+
+    public function testWriteWithMultipleSchemesAndSameLanguage(): void
+    {
+        $salesChannel = $this->salesChannelRepository->search(
+            $this->storefrontSalesChannelCriteria([$this->context->getSalesChannelId()]),
+            $this->context->getContext()
+        )->getEntities()->first();
+        static::assertNotNull($salesChannel);
+
+        $domain = $salesChannel->getDomains()?->first();
+        static::assertNotNull($domain);
+
+        $this->salesChannelRepository->update([
+            [
+                'id' => $this->context->getSalesChannelId(),
+                'domains' => [
+                    [
+                        'id' => Uuid::randomHex(),
+                        'languageId' => $domain->getLanguageId(),
+                        'url' => str_replace('http://', 'https://', (string) $domain->getUrl()),
+                        'currencyId' => Defaults::CURRENCY,
+                        'snippetSetId' => $domain->getSnippetSetId(),
+                    ],
+                ],
+            ],
+        ], $this->context->getContext());
+
+        $salesChannel = $this->salesChannelRepository->search(
+            $this->storefrontSalesChannelCriteria([$this->context->getSalesChannelId()]),
+            $this->context->getContext()
+        )->getEntities()->first();
+        static::assertNotNull($salesChannel);
+
+        $domains = $salesChannel->getDomains();
+        static::assertNotNull($domains);
+        $languageIds = $domains->map(static fn (SalesChannelDomainEntity $salesChannelDomain) => $salesChannelDomain->getLanguageId());
+
+        $languageIds = array_unique($languageIds);
+
+        foreach ($languageIds as $languageId) {
+            $salesChannelContext = static::getContainer()->get(SalesChannelContextFactory::class)
+                ->create('', $salesChannel->getId(), [SalesChannelContextService::LANGUAGE_ID => $languageId]);
+
+            $this->generateSitemap($salesChannelContext, false);
+
+            $files = $this->getFilesystem('shopware.filesystem.sitemap')
+                ->listContents('sitemap/salesChannel-' . $salesChannel->getId() . '-' . $salesChannelContext->getLanguageId());
+
+            static::assertCount(1, iterator_to_array($files));
+        }
+    }
+
+    public function testGenerationWithSlashes(): void
+    {
+        $url1 = new Url();
+        $url1->setLoc('/test-with-slash');
+        $url1->setLastmod(new \DateTime());
+        $url1->setChangefreq('daily');
+
+        $url2 = new Url();
+        $url2->setLoc('test-without-slash');
+        $url2->setLastmod(new \DateTime());
+        $url2->setChangefreq('daily');
+
+        $urls = [$url1, $url2];
+
+        $handler = $this->createMock(AbstractUrlProvider::class);
+        $handler->expects($this->once())->method('getUrls')->willReturn(new UrlResult($urls, null));
+
+        $factory = $this->createMock(SitemapHandleFactoryInterface::class);
+        $sitemapHandleMock = $this->createMock(SitemapHandleInterface::class);
+        $sitemapHandleMock->expects($this->once())->method('write')->willReturnCallback(static function (array $urls): void {
+            static::assertCount(2, $urls);
+            static::assertInstanceOf(Url::class, $urls[0]);
+            static::assertInstanceOf(Url::class, $urls[1]);
+            static::assertSame('https://test.com/de/test-with-slash', $urls[0]->getLoc());
+            static::assertSame('https://test.com/de/test-without-slash', $urls[1]->getLoc());
+        });
+
+        $factory->expects($this->once())->method('create')->willReturn($sitemapHandleMock);
+
+        $cache = static::createStub(CacheItemPoolInterface::class);
+        $cache->method('getItem')->willReturn($this->createCacheItem('', true, false));
+
+        $exporter = $this->createSitemapExporter($cache, [$handler], $factory);
+
+        $salesChannel = Generator::generateSalesChannelContext();
+        $salesChannel->getSalesChannel()->setDomains(new SalesChannelDomainCollection([
+            (new SalesChannelDomainEntity())->assign(['id' => '11', 'url' => 'https://test.com/de', 'languageId' => Defaults::LANGUAGE_SYSTEM]),
+        ]));
+
+        $exporter->generate($salesChannel);
+    }
+
+    private function createCacheItem(string $key, ?bool $value, ?bool $isHit): CacheItemInterface
+    {
+        $item = new CacheItem();
+
+        $class = new \ReflectionClass(CacheItem::class);
+
+        $class->getProperty('key')->setValue($item, $key);
+        $class->getProperty('value')->setValue($item, $value);
+        $class->getProperty('isHit')->setValue($item, $isHit);
+
+        return $item;
+    }
+
+    /**
+     * @param list<string> $ids
+     */
+    private function storefrontSalesChannelCriteria(array $ids): Criteria
+    {
+        $criteria = new Criteria($ids);
+        $criteria->addAssociation('domains');
+        $criteria->addFilter(new NotFilter(
+            NotFilter::CONNECTION_AND,
+            [new EqualsFilter('domains.id', null)]
+        ));
+
+        $criteria->addAssociation('type');
+        $criteria->addFilter(new EqualsFilter('type.id', Defaults::SALES_CHANNEL_TYPE_STOREFRONT));
+
+        return $criteria;
+    }
+
+    private function generateSitemap(
+        SalesChannelContext $salesChannelContext,
+        bool $force,
+        ?string $lastProvider = null,
+        ?int $offset = null
+    ): void {
+        $result = static::getContainer()->get(SitemapExporter::class)->generate($salesChannelContext, $force, $lastProvider, $offset);
+        if (!$result->isFinish()) {
+            $this->generateSitemap($salesChannelContext, $force, $result->getProvider(), $result->getOffset());
+        }
+    }
+
+    /**
+     * @param iterable<AbstractUrlProvider>|null $urlProvider
+     */
+    private function createSitemapExporter(
+        CacheItemPoolInterface&Stub $cache,
+        ?iterable $urlProvider = null,
+        (SitemapHandleFactoryInterface&MockObject)|null $sitemapHandleFactory = null,
+    ): SitemapExporter {
+        return new SitemapExporter(
+            $urlProvider ?? [],
+            $cache,
+            10,
+            static::createStub(FilesystemOperator::class),
+            $sitemapHandleFactory ?? static::createStub(SitemapHandleFactoryInterface::class),
+            static::createStub(EventDispatcher::class),
+            static::createStub(CartRuleLoader::class)
+        );
+    }
+}

@@ -1,0 +1,165 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Rule;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\Rule\CartRuleScope;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemIsNewRule;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemScope;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Checkout\CartRuleFixture;
+use Symfony\Component\Validator\Constraints\Type;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+#[CoversClass(LineItemIsNewRule::class)]
+#[Group('rules')]
+class LineItemIsNewRuleTest extends TestCase
+{
+    private LineItemIsNewRule $rule;
+
+    protected function setUp(): void
+    {
+        $this->rule = new LineItemIsNewRule();
+    }
+
+    public function testGetName(): void
+    {
+        static::assertSame('cartLineItemIsNew', $this->rule->getName());
+    }
+
+    /**
+     * This test verifies that we have the correct constraint
+     * and that no NotBlank is existing - only 1 BOOL constraint.
+     * Otherwise a FALSE value would not work when saving in the administration.
+     */
+    #[Group('rules')]
+    public function testIsNewConstraint(): void
+    {
+        $ruleConstraints = $this->rule->getConstraints();
+
+        $boolType = new Type(type: 'bool');
+
+        static::assertArrayHasKey('isNew', $ruleConstraints, 'Rule Constraint isNew is not defined');
+        static::assertCount(1, $ruleConstraints['isNew']);
+        static::assertEquals($boolType, $ruleConstraints['isNew'][0]);
+    }
+
+    #[DataProvider('getLineItemScopeTestData')]
+    public function testIfMatchesCorrectWithLineItem(bool $ruleActive, bool $isNew, bool $expected): void
+    {
+        $this->rule->assign(['isNew' => $ruleActive]);
+
+        $match = $this->rule->match(new LineItemScope(
+            $this->createLineItemWithIsNewMarker($isNew),
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    /**
+     * @return array<string, array<bool>>
+     */
+    public static function getLineItemScopeTestData(): array
+    {
+        return [
+            'rule yes / newcomer yes' => [true, true, true],
+            'rule yes / newcomer no' => [true, false, false],
+            'rule no / newcomer yes' => [false, true, false],
+            'rule no / newcomer no' => [false, false, true],
+        ];
+    }
+
+    #[DataProvider('getCartRuleScopeTestData')]
+    public function testIfMatchesCorrectWithCartRuleScope(bool $ruleActive, bool $isNew, bool $expected): void
+    {
+        $this->rule->assign(['isNew' => $ruleActive]);
+
+        $lineItemCollection = new LineItemCollection([
+            $this->createLineItemWithIsNewMarker($isNew),
+            $this->createLineItemWithIsNewMarker(false),
+        ]);
+
+        $cart = CartRuleFixture::createCart($lineItemCollection);
+
+        $match = $this->rule->match(new CartRuleScope(
+            $cart,
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    #[DataProvider('getCartRuleScopeTestData')]
+    public function testIfMatchesCorrectWithCartRuleScopeNested(bool $ruleActive, bool $isNew, bool $expected): void
+    {
+        $this->rule->assign(['isNew' => $ruleActive]);
+
+        $lineItemCollection = new LineItemCollection([
+            $this->createLineItemWithIsNewMarker($isNew),
+            $this->createLineItemWithIsNewMarker(false),
+        ]);
+        $containerLineItem = CartRuleFixture::createContainerLineItem($lineItemCollection);
+        $cart = CartRuleFixture::createCart(new LineItemCollection([$containerLineItem]));
+
+        $match = $this->rule->match(new CartRuleScope(
+            $cart,
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    /**
+     * @return array<string, array<bool>>
+     */
+    public static function getCartRuleScopeTestData(): array
+    {
+        return [
+            'rule yes / newcomer yes' => [true, true, true],
+            'rule yes / newcomer no' => [true, false, false],
+            'rule no / newcomer yes' => [false, true, true],
+            'rule no / newcomer no' => [false, false, true],
+        ];
+    }
+
+    #[DataProvider('lineItemTypeProvider')]
+    public function testMatchesByLineItemType(string $type, bool $lineItemScope, bool $expected): void
+    {
+        $rule = new LineItemIsNewRule(false);
+
+        $lineItem = CartRuleFixture::createLineItem($type);
+        $context = static::createStub(SalesChannelContext::class);
+
+        $scope = $lineItemScope
+            ? new LineItemScope($lineItem, $context)
+            : new CartRuleScope(CartRuleFixture::createCart(new LineItemCollection([$lineItem])), $context);
+
+        static::assertSame($expected, $rule->match($scope));
+    }
+
+    /**
+     * @return \Generator<string, array{non-empty-string, bool, bool}>
+     */
+    public static function lineItemTypeProvider(): \Generator
+    {
+        yield 'product via line item scope' => [LineItem::PRODUCT_LINE_ITEM_TYPE, true, true];
+        yield 'product via cart scope' => [LineItem::PRODUCT_LINE_ITEM_TYPE, false, true];
+        yield 'custom via line item scope' => [LineItem::CUSTOM_LINE_ITEM_TYPE, true, false];
+        yield 'custom via cart scope' => [LineItem::CUSTOM_LINE_ITEM_TYPE, false, false];
+    }
+
+    private function createLineItemWithIsNewMarker(bool $isNew): LineItem
+    {
+        return CartRuleFixture::createLineItem()->setPayloadValue('isNew', $isNew);
+    }
+}

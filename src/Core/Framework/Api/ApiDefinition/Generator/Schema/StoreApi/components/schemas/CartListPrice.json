@@ -1,0 +1,32 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": [],
+    "components": {
+        "schemas": {
+            "CartListPrice": {
+                "type": "object",
+                "description": "",
+                "properties": {
+                    "discount": {
+                        "type": "number"
+                    },
+                    "percentage": {
+                        "type": "number"
+                    },
+
+                    "price": {
+                        "type": "number"
+                    },
+
+                    "apiAlias": {
+                        "type": "string",
+                        "const": "cart_list_price"
+                    }
+                },
+
+                "required": ["apiAlias"]
+            }
+        }
+    }
+}

@@ -1,0 +1,143 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\Country;
+
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressDefinition;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressDefinition;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\RestrictDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TaxFreeConfigField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateDefinition;
+use Shopwell\Core\System\Country\Aggregate\CountryTranslation\CountryTranslationDefinition;
+use Shopwell\Core\System\Currency\Aggregate\CurrencyCountryRounding\CurrencyCountryRoundingDefinition;
+use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelCountry\SalesChannelCountryDefinition;
+use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
+use Shopwell\Core\System\Tax\Aggregate\TaxRule\TaxRuleDefinition;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('fundamentals@discovery')]
+class CountryDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'country';
+
+    final public const TYPE_CUSTOMER_TAX_FREE = 'customer-tax-free';
+
+    final public const TYPE_COMPANY_TAX_FREE = 'company-tax-free';
+
+    final public const DEFAULT_ADDRESS_FORMAT = [
+        ['address/company', 'symbol/dash', 'address/department'],
+        ['address/first_name', 'address/last_name'],
+        ['address/street'],
+        ['address/zipcode', 'address/city'],
+        ['address/country'],
+    ];
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function getCollectionClass(): string
+    {
+        return CountryCollection::class;
+    }
+
+    public function getEntityClass(): string
+    {
+        return CountryEntity::class;
+    }
+
+    public function getDefaults(): array
+    {
+        $defaultTax = [
+            'enabled' => false,
+            'currencyId' => Defaults::CURRENCY,
+            'amount' => 0,
+        ];
+
+        return [
+            'vatIdRequired' => false,
+            'postalCodeRequired' => false,
+            'checkPostalCodePattern' => false,
+            'checkAdvancedPostalCodePattern' => false,
+            'customerTax' => $defaultTax,
+            'companyTax' => $defaultTax,
+            'isEu' => false,
+        ];
+    }
+
+    public function since(): ?string
+    {
+        return '6.0.0.0';
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new ApiAware(), new PrimaryKey(), new Required())->setDescription('Unique identity of the country.'),
+
+            (new TranslatedField('name'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)),
+            (new StringField('iso', 'iso'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Internationally recognized two-letter country codes. For example, DE, IN, NO, etc.'),
+            (new IntField('position', 'position'))->addFlags(new ApiAware())->setDescription('Numerical value that indicates the order in which the defined countries must be displayed in the frontend.'),
+            (new BoolField('active', 'active'))->addFlags(new ApiAware())->setDescription('When boolean value is `true`, the country is available for selection in the storefront.'),
+            (new BoolField('shipping_available', 'shippingAvailable'))->addFlags(new ApiAware())->setDescription('The shipping availability for a country is enabled when boolean value is `true`.'),
+            (new StringField('iso3', 'iso3'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Internationally recognized three-letter country codes. For example, DEU, IND, NOR, etc.'),
+            (new BoolField('display_state_in_registration', 'displayStateInRegistration'))->addFlags(new ApiAware())->setDescription('The country\'s state is displayed in the address when boolean value is `true`.'),
+            (new BoolField('force_state_in_registration', 'forceStateInRegistration'))->addFlags(new ApiAware())->setDescription('State details in the address are force included when boolean value is `true`.'),
+            (new BoolField('check_vat_id_pattern', 'checkVatIdPattern'))->addFlags(new ApiAware())->setDescription('Verify if VAT ID is valid or not.'),
+            (new BoolField('vat_id_required', 'vatIdRequired'))->addFlags(new ApiAware())->setDescription('Set to true, if VAT ID is to be made mandatory.'),
+            (new StringField('vat_id_pattern', 'vatIdPattern'))->addFlags(new ApiAware())->setDescription('Unique VAT ID with country code and numbers, for example - GB999 9999'),
+            (new TranslatedField('customFields'))->addFlags(new ApiAware()),
+            (new TaxFreeConfigField('customer_tax', 'customerTax'))->addFlags(new ApiAware())->setDescription('Sum of money to be paid by the customer.'),
+            (new TaxFreeConfigField('company_tax', 'companyTax'))->addFlags(new ApiAware())->setDescription('Sum of money to be paid by the company.'),
+            (new BoolField('postal_code_required', 'postalCodeRequired'))->addFlags(new ApiAware())->setDescription('The postal code is made mandatory specification in the address, when boolean value is `true`.'),
+            (new BoolField('check_postal_code_pattern', 'checkPostalCodePattern'))->addFlags(new ApiAware())->setDescription('Verify for valid postal code pattern.'),
+            (new BoolField('check_advanced_postal_code_pattern', 'checkAdvancedPostalCodePattern'))->addFlags(new ApiAware())->setDescription('Verify for advanced postal code pattern.'),
+            (new StringField('advanced_postal_code_pattern', 'advancedPostalCodePattern', 1024))->addFlags(new ApiAware())->setDescription('Wildcard formatted zip codes to allow easy searching in the frontend based on initial constants, for example - 24****, 1856**.'),
+            (new TranslatedField('addressFormat'))->addFlags(new ApiAware()),
+            (new StringField('default_postal_code_pattern', 'defaultPostalCodePattern', 1024))->addFlags(new ApiAware())->setDescription('Default pattern of postal or zip code.'),
+            (new BoolField('is_eu', 'isEu'))->addFlags(new ApiAware(), new Required()),
+
+            (new OneToManyAssociationField('states', CountryStateDefinition::class, 'country_id', 'id'))
+                ->addFlags(new ApiAware(), new CascadeDelete())->setDescription('States/provinces/regions within the country'),
+
+            (new TranslationsAssociationField(CountryTranslationDefinition::class, 'country_id'))
+                ->addFlags(new ApiAware(), new Required()),
+
+            (new OneToManyAssociationField('customerAddresses', CustomerAddressDefinition::class, 'country_id', 'id'))
+                ->addFlags(new RestrictDelete()),
+
+            (new OneToManyAssociationField('orderAddresses', OrderAddressDefinition::class, 'country_id', 'id'))
+                ->addFlags(new RestrictDelete()),
+
+            (new OneToManyAssociationField('salesChannelDefaultAssignments', SalesChannelDefinition::class, 'country_id', 'id'))
+                ->addFlags(new RestrictDelete()),
+
+            new ManyToManyAssociationField('salesChannels', SalesChannelDefinition::class, SalesChannelCountryDefinition::class, 'country_id', 'sales_channel_id'),
+
+            (new OneToManyAssociationField('taxRules', TaxRuleDefinition::class, 'country_id', 'id'))
+                ->addFlags(new RestrictDelete()),
+
+            (new OneToManyAssociationField('currencyCountryRoundings', CurrencyCountryRoundingDefinition::class, 'country_id'))
+                ->addFlags(new CascadeDelete()),
+        ]);
+    }
+}

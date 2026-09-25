@@ -1,0 +1,72 @@
+{% block sw_users_permissions_detailed_permissions_grid %}
+<mt-card
+    class="sw-users-permissions-detailed-permissions-grid"
+    position-identifier="sw-users-permissions-detailed-permissions-grid"
+    :is-loading="isLoading"
+    :title="$t('sw-users-permissions.roles.grid.title')"
+>
+    <div
+        v-if="role"
+        class="sw-users-permissions-detailed-permissions-grid__grid"
+    >
+        {% block sw_users_permissions_detailed_permissions_grid_header %}
+        <div class="sw-users-permissions-detailed-permissions-grid__entry sw-users-permissions-detailed-permissions-grid__entry-header">
+            {% block sw_users_permissions_detailed_permissions_grid_header_title %}
+            <div class="sw-users-permissions-detailed-permissions-grid__title"></div>
+            {% endblock %}
+
+            {% block sw_users_permissions_detailed_permissions_grid_header_roles %}
+            <div
+                v-for="permissionType in permissionTypes"
+                :key="permissionType"
+                class="sw-users-permissions-detailed-permissions-grid__checkbox-wrapper"
+            >
+                {% block sw_users_permissions_detailed_permissions_grid_header_roles_name %}
+                {{ $t('sw-privileges.permissionType.' + permissionType) }}
+                {% endblock %}
+            </div>
+            {% endblock %}
+        </div>
+        {% endblock %}
+
+        {% block sw_users_permissions_detailed_permissions_grid_permissions %}
+        <div
+            v-for="entity in allEntities"
+            :key="entity"
+            :class="'sw-users-permissions-detailed-permissions-grid__entry_' + entity"
+            class="sw-users-permissions-detailed-permissions-grid__entry"
+        >
+            {% block sw_users_permissions_detailed_permissions_grid_permissions_title %}
+            <div class="sw-users-permissions-detailed-permissions-grid__title">
+                {{ entity }}
+            </div>
+            {% endblock %}
+
+            {% block sw_users_permissions_detailed_permissions_grid_permissions_roles %}
+            <div
+                v-for="permissionType in permissionTypes"
+                :key="permissionType"
+                :class="'sw-users-permissions-detailed-permissions-grid__role_' + permissionType"
+                :data-privilege="`${entity}:${permissionType}`"
+                class="sw-users-permissions-detailed-permissions-grid__checkbox-wrapper"
+            >
+                {% block sw_users_permissions_detailed_permissions_grid_permissions_roles_field %}
+                <mt-checkbox
+                    v-tooltip="{
+                        message: isEntityDisabled(entity, permissionType) && !disabled
+                            ? $t('sw-users-permissions.roles.detailed-grid.coveredByGeneralMessage')
+                            : `${entity}:${permissionType}`,
+                        showOnDisabledElements: true
+                    }"
+                    :checked="isEntitySelected(entity, permissionType)"
+                    :disabled="isEntityDisabled(entity, permissionType)"
+                    @update:checked="changePermissionForEntity(entity, permissionType)"
+                />
+                {% endblock %}
+            </div>
+            {% endblock %}
+        </div>
+        {% endblock %}
+    </div>
+</mt-card>
+{% endblock %}

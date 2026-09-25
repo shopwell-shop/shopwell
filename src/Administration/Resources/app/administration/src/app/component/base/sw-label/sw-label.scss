@@ -1,0 +1,191 @@
+@use "sass:math";
+@import "~scss/variables";
+@import "~scss/mixins";
+@import "sw-label-variant";
+
+$sw-label-border-radius: var(--border-radius-xs);
+$sw-label-pill-border-radius: 50px;
+
+.sw-label {
+    display: inline-block;
+    position: relative;
+    max-width: 100%;
+    min-width: var(--scale-size-56);
+    margin: 0 var(--scale-size-6) var(--scale-size-6) 0;
+    padding: var(--scale-size-8) var(--scale-size-12);
+    line-height: 14px;
+    font-size: var(--font-size-2xs);
+    height: var(--scale-size-32);
+    border: 1px solid var(--color-border-primary-default);
+    background: var(--color-background-secondary-default);
+    border-radius: $sw-label-border-radius;
+    color: var(--color-text-primary-default);
+    cursor: default;
+
+    .sw-label__caption {
+        @include truncate;
+
+        display: inline-block;
+        width: 100%;
+    }
+
+    &.sw-label--dismissable:hover {
+        border-color: var(--color-border-brand-default);
+        background: var(--color-background-brand-default);
+
+        .sw-label__caption {
+            width: calc(100% - 15px);
+        }
+
+        .sw-label__dismiss {
+            display: inline-block;
+            color: var(--color-icon-brand-default);
+            background: transparent;
+        }
+    }
+
+    &.sw-label--size-medium {
+        height: var(--scale-size-24);
+        padding: var(--scale-size-4) var(--scale-size-12);
+    }
+
+    &.sw-label--size-small {
+        height: var(--scale-size-16);
+        padding: 0 var(--scale-size-8);
+    }
+
+    .sw-label__dismiss {
+        display: none;
+        position: absolute;
+        height: 100%;
+        right: 10px;
+        top: 0;
+        color: var(--color-icon-primary-default);
+        background-color: var(--color-background-secondary-default);
+        border: 0 none;
+        cursor: pointer;
+        outline: none;
+    }
+
+    &.sw-label--ghost {
+        background: transparent;
+        border-color: var(--color-border-primary-default);
+    }
+
+    &.sw-label--appearance-badged {
+        background: transparent;
+        border: 0;
+        font-size: var(--font-size-xs);
+        padding: 4px 0;
+        line-height: 22px;
+
+        .sw-color-badge {
+            margin: 0 8px 6px 0;
+        }
+    }
+
+    &.sw-label--appearance-pill {
+        border-radius: $sw-label-pill-border-radius;
+    }
+
+    &.sw-label--appearance-circle {
+        width: 24px;
+        height: 24px;
+        border-radius: 100%;
+        padding: 4px;
+        border: 0;
+        min-width: 24px;
+    }
+
+    &.sw-label--caps {
+        text-transform: uppercase;
+    }
+
+    &.sw-label--info,
+    &.sw-label--danger,
+    &.sw-label--success,
+    &.sw-label--warning,
+    &.sw-label--neutral {
+        &.sw-label--small {
+            font-weight: var(--font-weight-semibold);
+            line-height: 14px;
+            font-size: var(--font-size-2xs);
+            padding: 0 5px;
+            padding-left: 15px;
+            height: 16px;
+        }
+
+        &.sw-label--small::before {
+            content: "";
+            display: block;
+            height: 6px;
+            width: 6px;
+            position: absolute;
+            top: 4px;
+            left: 5px;
+        }
+    }
+
+    &.sw-label--info:not(&--appearance-badged) {
+        @include sw-label-variant(
+            var(--color-background-brand-default),
+            var(--color-text-brand-default),
+            var(--color-border-brand-default),
+            var(--color-border-brand-default)
+        );
+    }
+
+    &.sw-label--success:not(&--appearance-badged) {
+        @include sw-label-variant(
+            var(--color-background-positive-default),
+            var(--color-text-primary-default),
+            var(--color-border-positive-default),
+            var(--color-border-positive-default)
+        );
+    }
+
+    &.sw-label--danger:not(&--appearance-badged) {
+        @include sw-label-variant(
+            var(--color-background-critical-default),
+            var(--color-text-critical-default),
+            var(--color-border-critical-default),
+            var(--color-border-critical-default)
+        );
+    }
+
+    &.sw-label--warning:not(&--appearance-badged) {
+        @include sw-label-variant(
+            var(--color-background-attention-default),
+            var(--color-text-primary-default),
+            var(--color-border-attention-default),
+            var(--color-border-attention-default)
+        );
+    }
+
+    &.sw-label--neutral:not(&--appearance-badged) {
+        @include sw-label-variant(
+            var(--color-background-tertiary-default),
+            var(--color-text-secondary-default),
+            var(--color-border-primary-default),
+            var(--color-border-primary-default)
+        );
+    }
+
+    &.sw-label--neutral-reversed:not(&--appearance-badged) {
+        @include sw-label-variant(
+            var(--color-elevation-floating-default),
+            var(--color-text-primary-inverse),
+            var(--color-elevation-floating-default),
+            var(--color-elevation-floating-default)
+        );
+    }
+
+    &.sw-label--primary:not(&--appearance-badged) {
+        @include sw-label-variant(
+            var(--color-interaction-primary-default),
+            var(--color-static-white),
+            var(--color-interaction-primary-hover),
+            var(--color-interaction-primary-default)
+        );
+    }
+}

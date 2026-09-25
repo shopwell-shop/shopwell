@@ -1,0 +1,798 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Api\ApiDefinition\Generator;
+
+use OpenApi\Annotations\Components;
+use OpenApi\Annotations\License;
+use OpenApi\Annotations\OpenApi;
+use OpenApi\Annotations\Parameter;
+use Shopwell\Core\Framework\Api\ApiDefinition\ApiDefinitionGeneratorInterface;
+use Shopwell\Core\Framework\Api\ApiDefinition\DefinitionService;
+use Shopwell\Core\Framework\Api\ApiDefinition\Generator\OpenApi\OpenApiDefinitionSchemaBuilder;
+use Shopwell\Core\Framework\Api\ApiDefinition\Generator\OpenApi\OpenApiSchemaBuilder;
+use Shopwell\Core\Framework\Api\ApiException;
+use Shopwell\Core\Framework\Api\Context\SalesChannelApiSource;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\AssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\IgnoreInOpenapiSchema;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ParentAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\MappingEntityDefinition;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\Entity\SalesChannelDefinitionInterface;
+
+/**
+ * @internal
+ *
+ * @phpstan-import-type Api from DefinitionService
+ * @phpstan-import-type OpenApiSpec from DefinitionService
+ */
+#[Package('framework')]
+class StoreApiGenerator implements ApiDefinitionGeneratorInterface
+{
+    final public const FORMAT = 'openapi-3';
+    private const OPERATION_KEYS = [
+        'get',
+        'post',
+        'put',
+        'patch',
+        'delete',
+    ];
+
+    private readonly string $schemaPath;
+
+    /**
+     * @param array{Framework: array{path: string}} $bundles
+     *
+     * @internal
+     */
+    public function __construct(
+        private readonly OpenApiSchemaBuilder $openApiBuilder,
+        private readonly OpenApiDefinitionSchemaBuilder $definitionSchemaBuilder,
+        array $bundles,
+        private readonly BundleSchemaPathCollection $bundleSchemaPathCollection,
+        private readonly ?OpenApiRouteDefaultsFilter $routeDefaultsFilter = null,
+    ) {
+        $this->schemaPath = $bundles['Framework']['path'] . '/Api/ApiDefinition/Generator/Schema/StoreApi';
+    }
+
+    public function supports(string $format, string $api): bool
+    {
+        return $format === self::FORMAT && $api === DefinitionService::STORE_API;
+    }
+
+    public function generate(array $definitions, string $api, string $apiType, ?string $bundleName): array
+    {
+        $openApi = new OpenApi([
+            'openapi' => '3.2.0',
+        ]);
+        $this->openApiBuilder->enrich($openApi, $api);
+
+        $forSalesChannel = $api === DefinitionService::STORE_API;
+
+        ksort($definitions);
+
+        $schemaPaths = [$this->schemaPath];
+
+        if ($bundleName !== null && $bundleName !== '') {
+            $schemaPaths = array_merge([$this->schemaPath . '/components', $this->schemaPath . '/tags'], $this->bundleSchemaPathCollection->getSchemaPaths($api, $bundleName));
+        } else {
+            $schemaPaths = array_merge($schemaPaths, $this->bundleSchemaPathCollection->getSchemaPaths($api, $bundleName));
+        }
+
+        $loader = new OpenApiFileLoader($schemaPaths);
+        $jsonSpec = $loader->loadOpenapiSpecification();
+        $jsonSchemaNames = [];
+        if (isset($jsonSpec['components']['schemas']) && \is_array($jsonSpec['components']['schemas'])) {
+            foreach (array_keys($jsonSpec['components']['schemas']) as $schemaName) {
+                if (\is_string($schemaName)) {
+                    $jsonSchemaNames[] = $schemaName;
+                }
+            }
+        }
+        $generatedSchemas = $this->getGeneratedSchemas($definitions, $jsonSchemaNames, $forSalesChannel);
+        $referencedJsonSchemaNames = $this->getReferencedJsonSchemaNames($jsonSpec, $generatedSchemas['componentSchemas']);
+
+        foreach ($generatedSchemas['definitionSchemas'] as $schemaName => $schema) {
+            if (\in_array($schemaName, $jsonSchemaNames, true)) {
+                // A matching JSON component owns the base schema; PHP contributes only dynamic extensions.
+                $openApi->components->merge(array_values($schema));
+
+                continue;
+            }
+
+            if (!array_intersect(array_keys($schema), $referencedJsonSchemaNames)) {
+                continue;
+            }
+
+            $openApi->components->merge(array_values($schema));
+        }
+
+        $this->addGeneralInformation($openApi);
+        $this->addLanguageIdParameter($openApi);
+
+        $data = json_decode($openApi->toJson(), true, 512, \JSON_THROW_ON_ERROR);
+        $data['paths'] ??= [];
+        $data['components']['schemas'] ??= [];
+
+        $preFinalSpecs = $this->mergeComponentsSchemaRequiredFieldsRecursive($data, $jsonSpec);
+        /** @var OpenApiSpec $finalSpecs */
+        $finalSpecs = array_replace_recursive($data, $preFinalSpecs);
+
+        $this->filterUndefinedRequiredProperties($finalSpecs);
+        /** @var OpenApiSpec $finalSpecs */
+        $this->resolveParameterGroups($finalSpecs);
+        $this->injectLanguageIdHeader($finalSpecs);
+        $this->enrichPathsWithAssociations($finalSpecs, $definitions);
+
+        return $this->routeDefaultsFilter?->filter($finalSpecs, $api) ?? $finalSpecs;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @param array<string, EntityDefinition>|array<string, EntityDefinition&SalesChannelDefinitionInterface> $definitions
+     *
+     * @return never
+     */
+    public function getSchema(array $definitions): array
+    {
+        throw ApiException::unsupportedStoreApiSchemaEndpoint();
+    }
+
+    private function shouldDefinitionBeIncluded(EntityDefinition $definition): bool
+    {
+        if (preg_match('/_translation$/', $definition->getEntityName())) {
+            return false;
+        }
+
+        if (mb_strpos($definition->getEntityName(), 'version') === 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function shouldIncludeReferenceOnly(EntityDefinition $definition, bool $forSalesChannel): bool
+    {
+        $class = new \ReflectionClass($definition);
+        if ($class->isSubclassOf(MappingEntityDefinition::class)) {
+            return true;
+        }
+
+        if ($forSalesChannel && !is_subclass_of($definition, SalesChannelDefinitionInterface::class)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function getResourceUri(EntityDefinition $definition, string $rootPath = '/'): string
+    {
+        return ltrim('/', $rootPath) . '/' . str_replace('_', '-', $definition->getEntityName());
+    }
+
+    private function addGeneralInformation(OpenApi $openApi): void
+    {
+        $openApi->info->description = 'This endpoint reference contains an overview of all endpoints comprising the Shopwell Store API';
+        $openApi->info->license = new License([
+            'name' => 'MIT',
+            'url' => 'https://github.com/shopware/shopware/blob/trunk/LICENSE',
+        ]);
+    }
+
+    private function addLanguageIdParameter(OpenApi $openApi): void
+    {
+        $openApi->components->parameters = [
+            new Parameter([
+                'parameter' => 'swLanguageId',
+                'name' => 'sw-language-id',
+                'in' => 'header',
+                'required' => false,
+                'schema' => [
+                    'type' => 'string',
+                    'pattern' => '^[0-9a-f]{32}$',
+                ],
+                'description' => 'Instructs Shopwell to return the response in the given language.',
+            ]),
+        ];
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $specsFromDefinition
+     * @param array<string, array<string, mixed>> $specsFromStaticJsonDefinition
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function mergeComponentsSchemaRequiredFieldsRecursive(array $specsFromDefinition, array $specsFromStaticJsonDefinition): array
+    {
+        if (!isset($specsFromDefinition['components']['schemas']) || !\is_array($specsFromDefinition['components']['schemas'])) {
+            return $specsFromStaticJsonDefinition;
+        }
+
+        foreach ($specsFromDefinition['components']['schemas'] as $key => $value) {
+            if (isset($specsFromStaticJsonDefinition['components']['schemas'][$key]['required']) && isset($specsFromDefinition['components']['schemas'][$key]['required'])) {
+                $specsFromStaticJsonDefinition['components']['schemas'][$key]['required']
+                    = array_merge_recursive(
+                        $specsFromStaticJsonDefinition['components']['schemas'][$key]['required'],
+                        $specsFromDefinition['components']['schemas'][$key]['required']
+                    );
+            }
+        }
+
+        return $specsFromStaticJsonDefinition;
+    }
+
+    /**
+     * @param array<string, mixed> $schema
+     */
+    private function filterUndefinedRequiredProperties(array &$schema): void
+    {
+        foreach ($schema as &$value) {
+            if (!\is_array($value)) {
+                continue;
+            }
+
+            $this->filterUndefinedRequiredProperties($value);
+        }
+
+        if (!isset($schema['required'], $schema['properties']) || !\is_array($schema['required']) || !\is_array($schema['properties'])) {
+            return;
+        }
+
+        $properties = array_flip(array_keys($schema['properties']));
+        $schema['required'] = array_values(array_filter(
+            $schema['required'],
+            static fn (mixed $property): bool => \is_string($property) && isset($properties[$property])
+        ));
+
+        if ($schema['required'] === []) {
+            unset($schema['required']);
+        }
+    }
+
+    /**
+     * @param array<string, EntityDefinition> $definitions
+     * @param list<string> $jsonSchemaNames
+     *
+     * @return array{
+     *     definitionSchemas: array<string, array<string, mixed>>,
+     *     componentSchemas: array<string, mixed>
+     * }
+     */
+    private function getGeneratedSchemas(array $definitions, array $jsonSchemaNames, bool $forSalesChannel): array
+    {
+        $definitionSchemas = [];
+
+        foreach ($definitions as $definition) {
+            if (!$definition instanceof EntityDefinition) {
+                continue;
+            }
+
+            if (!$this->shouldDefinitionBeIncluded($definition)) {
+                continue;
+            }
+
+            $schemaName = $this->definitionSchemaBuilder->getSchemaName($definition);
+
+            if (\in_array($schemaName, $jsonSchemaNames, true)) {
+                $definitionSchemas[$schemaName] = $this->definitionSchemaBuilder->getExtensionSchemaByDefinition(
+                    $definition,
+                    $this->getResourceUri($definition),
+                    $forSalesChannel,
+                );
+
+                continue;
+            }
+
+            $definitionSchemas[$schemaName] = $this->definitionSchemaBuilder->getSchemaByDefinition(
+                $definition,
+                $this->getResourceUri($definition),
+                $forSalesChannel,
+                $this->shouldIncludeReferenceOnly($definition, $forSalesChannel),
+                DefinitionService::TYPE_JSON_API,
+            );
+        }
+
+        $openApi = new OpenApi([
+            'openapi' => '3.2.0',
+        ]);
+        $openApi->components = new Components([]);
+
+        foreach ($definitionSchemas as $schema) {
+            $openApi->components->merge(array_values($schema));
+        }
+
+        $data = json_decode($openApi->toJson(), true, 512, \JSON_THROW_ON_ERROR);
+        $componentSchemas = $data['components']['schemas'] ?? [];
+        if (!\is_array($componentSchemas)) {
+            $componentSchemas = [];
+        }
+
+        return [
+            'definitionSchemas' => $definitionSchemas,
+            'componentSchemas' => $componentSchemas,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $jsonSpec
+     * @param array<string, mixed> $generatedComponentSchemas
+     *
+     * @return list<string>
+     */
+    private function getReferencedJsonSchemaNames(array $jsonSpec, array $generatedComponentSchemas): array
+    {
+        $componentSchemas = $jsonSpec['components']['schemas'] ?? [];
+        if (!\is_array($componentSchemas)) {
+            $componentSchemas = [];
+        }
+        $componentSchemas = array_replace_recursive($componentSchemas, $generatedComponentSchemas);
+
+        $referencedSchemaNames = [];
+        $queue = [];
+        $this->collectSchemaReferences($jsonSpec['paths'] ?? [], $queue);
+
+        while ($queue !== []) {
+            $schemaName = array_shift($queue);
+            if (isset($referencedSchemaNames[$schemaName]) || !\is_string($schemaName)) {
+                continue;
+            }
+
+            $referencedSchemaNames[$schemaName] = true;
+
+            if (isset($componentSchemas[$schemaName])) {
+                $this->collectSchemaReferences($componentSchemas[$schemaName], $queue);
+            }
+        }
+
+        return array_keys($referencedSchemaNames);
+    }
+
+    /**
+     * @param list<string> $schemaNames
+     */
+    private function collectSchemaReferences(mixed $value, array &$schemaNames): void
+    {
+        if (!\is_array($value)) {
+            return;
+        }
+
+        if (isset($value['$ref']) && \is_string($value['$ref']) && str_starts_with($value['$ref'], '#/components/schemas/')) {
+            $schemaNames[] = mb_substr($value['$ref'], 21);
+        }
+
+        foreach ($value as $nestedValue) {
+            $this->collectSchemaReferences($nestedValue, $schemaNames);
+        }
+    }
+
+    /**
+     * [WARNING] Please refrain from using this functionality in new code. It is a workaround to reduce duplication of
+     * the criteria parameter groups and may be removed in the future.
+     *
+     * OpenAPI specification does not support groups of parameters as reusable components.
+     * As in Shopwell has a number of GET routes that support passing criteria as a set of parameters,
+     * describing them in the OpenAPI spec leads to a lot of duplication.
+     *
+     * This methods adds support for a custom extension that allows describing parameter groups in the components
+     * and referencing them in the separate paths as a group. Those groups will be resolved and replaced with the actual parameters.
+     *
+     * Example:
+     *
+     * ```json
+     * {
+     *   "components": {
+     *     "x-parameter-groups": {
+     *       "pagination": [
+     *         {
+     *           "name": "limit",
+     *           "in": "query",
+     *           "required": false,
+     *            ... usual parameter properties
+     *         },
+     *         {
+     *           "name": "page",
+     *           ... usual parameter properties
+     *         }
+     *       ]
+     *     }
+     *   },
+     *   "paths": {
+     *     "/product": {
+     *       "get": {
+     *         "parameters": [
+     *           {
+     *             "x-parameter-group": "pagination"
+     *           },
+     *           ... other parameters
+     *         ]
+     *         ... usual operation properties
+     *       }
+     *     }
+     *   }
+     * }
+     * ```
+     *
+     * @param OpenApiSpec $specs
+     */
+    private function resolveParameterGroups(array &$specs): void
+    {
+        // this is a custom extension that is not supported by the OpenAPI spec
+        // it has to be processed and removed before the final output
+        $parameterGroups = $specs['components']['x-parameter-groups'] ?? [];
+        unset($specs['components']['x-parameter-groups']);
+
+        foreach ($specs['paths'] as &$pathDefinition) {
+            foreach ($pathDefinition as &$operation) {
+                if (!isset($operation['parameters']) || !\is_array($operation['parameters'])) {
+                    continue;
+                }
+
+                $newParams = [];
+                $hasGroup = false;
+
+                foreach ($operation['parameters'] as $parameter) {
+                    if (isset($parameter['x-parameter-group'])) {
+                        $hasGroup = true;
+                        $groupNames = (array) $parameter['x-parameter-group'];
+
+                        foreach ($groupNames as $groupName) {
+                            if (isset($parameterGroups[$groupName])) {
+                                array_push($newParams, ...$parameterGroups[$groupName]);
+                            }
+                        }
+                    } else {
+                        $newParams[] = $parameter;
+                    }
+                }
+
+                if ($hasGroup) {
+                    $operation['parameters'] = $newParams;
+                }
+            }
+        }
+    }
+
+    /**
+     * Injects the sw-language-id header into Store API operations whose
+     * responses can surface translated content. DELETE operations are skipped
+     * because they only confirm removal and do not return localised payloads,
+     * and tooling endpoints under /_info/* are skipped because they serve
+     * schema and routing metadata. The HTTP-method filter is portable across
+     * third-party plugins and apps that contribute their own Store API
+     * endpoints. Operations that already declare the header (by name or $ref)
+     * are left untouched so bundle-provided schemas with an explicit
+     * declaration are never duplicated.
+     *
+     * @param OpenApiSpec $specs
+     */
+    private function injectLanguageIdHeader(array &$specs): void
+    {
+        foreach ($specs['paths'] as $path => &$pathDefinition) {
+            if (str_starts_with((string) $path, '/_info/')) {
+                continue;
+            }
+
+            foreach (self::OPERATION_KEYS as $method) {
+                if ($method === 'delete') {
+                    continue;
+                }
+
+                if (!isset($pathDefinition[$method])) {
+                    continue;
+                }
+
+                if (!\is_array($pathDefinition[$method]['parameters'] ?? null)) {
+                    $pathDefinition[$method]['parameters'] = [];
+                }
+
+                foreach ($pathDefinition[$method]['parameters'] as $param) {
+                    if (
+                        (isset($param['name']) && strtolower((string) $param['name']) === 'sw-language-id')
+                        || (isset($param['$ref']) && $param['$ref'] === '#/components/parameters/swLanguageId')
+                    ) {
+                        continue 2;
+                    }
+                }
+
+                $pathDefinition[$method]['parameters'][] = ['$ref' => '#/components/parameters/swLanguageId'];
+            }
+        }
+    }
+
+    /**
+     * Automatically enriches path descriptions with available associations
+     *
+     * @param OpenApiSpec $specs
+     * @param array<string, EntityDefinition> $definitions
+     */
+    private function enrichPathsWithAssociations(array &$specs, array $definitions): void
+    {
+        // Build a map of entity names to their association documentation
+        $associationDocs = [];
+        foreach ($definitions as $def) {
+            if (!$def instanceof EntityDefinition) {
+                continue;
+            }
+
+            $doc = $this->getAssociationsDocumentation($def);
+            if ($doc !== '') {
+                $associationDocs[$def->getEntityName()] = $doc;
+            }
+        }
+
+        // Enrich all paths
+        foreach ($specs['paths'] as &$pathDefinition) {
+            foreach (self::OPERATION_KEYS as $method) {
+                if (!isset($pathDefinition[$method])) {
+                    continue;
+                }
+
+                // Only enrich read operations (operationId starts with "read")
+                if (!isset($pathDefinition[$method]['operationId'])
+                    || !str_starts_with($pathDefinition[$method]['operationId'], 'read')) {
+                    continue;
+                }
+
+                // Try to find entity reference in the response schema
+                $entityName = $this->extractEntityNameFromOperation($pathDefinition[$method]);
+
+                if (!$entityName || !isset($associationDocs[$entityName])) {
+                    continue;
+                }
+
+                // Append associations documentation
+                if (isset($pathDefinition[$method]['description'])) {
+                    $currentDesc = $pathDefinition[$method]['description'];
+                    // Only add if not already present
+                    if (!str_contains($currentDesc, '**Available Associations:**')) {
+                        $pathDefinition[$method]['description'] = $currentDesc . $associationDocs[$entityName];
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Extracts entity name from operation response schemas
+     *
+     * @param array<string, mixed> $operation
+     */
+    private function extractEntityNameFromOperation(array $operation): ?string
+    {
+        // Handle response-level $ref (e.g., "$ref": "#/components/responses/ProductListResponse")
+        if (isset($operation['responses']['200']['$ref'])) {
+            $ref = $operation['responses']['200']['$ref'];
+            // Extract entity name from response reference like "ProductListResponse" -> "product"
+            // Match pattern: components/responses/{Entity}[List|Detail]Response
+            if (\is_string($ref) && preg_match('#/([^/]+?)(?:List|Detail)?Response$#', $ref, $matches)) {
+                $converted = preg_replace('/(?<!^)[A-Z]/', '_$0', $matches[1]);
+                if (!\is_string($converted)) {
+                    return null;
+                }
+
+                return strtolower($converted);
+            }
+        }
+
+        // Check if there's a 200 response with a schema
+        if (!isset($operation['responses']['200']['content']['application/json']['schema'])) {
+            return null;
+        }
+
+        $schema = $operation['responses']['200']['content']['application/json']['schema'];
+
+        // Check for direct reference (e.g., "#/components/schemas/ShippingMethod" or "ProductDetailResponse")
+        if (isset($schema['$ref'])) {
+            $ref = $schema['$ref'];
+            // Check if it's a RouteResponse wrapper - extract actual entity reference
+            if (str_contains($ref, 'RouteResponse')) {
+                return $this->extractEntityFromRouteResponseRef($ref);
+            }
+            // Check if it's a DetailResponse wrapper (ProductDetailResponse -> product)
+            if (str_contains($ref, 'DetailResponse')) {
+                return $this->extractEntityFromDetailResponseRef($ref);
+            }
+            // Check if it's a Result wrapper (ProductListingResult, etc.)
+            if (str_contains($ref, 'Result')) {
+                $entityName = $this->extractEntityFromResultRef($ref);
+                if ($entityName) {
+                    return $entityName;
+                }
+            }
+
+            return $this->extractEntityNameFromRef($ref);
+        }
+
+        // Check for allOf with references
+        if (isset($schema['allOf']) && \is_array($schema['allOf'])) {
+            foreach ($schema['allOf'] as $item) {
+                if (isset($item['$ref'])) {
+                    $ref = $item['$ref'];
+                    if (str_contains($ref, 'RouteResponse')) {
+                        $entityName = $this->extractEntityFromRouteResponseRef($ref);
+                    } elseif (str_contains($ref, 'DetailResponse')) {
+                        $entityName = $this->extractEntityFromDetailResponseRef($ref);
+                    } elseif (str_contains($ref, 'Result')) {
+                        $entityName = $this->extractEntityFromResultRef($ref);
+                    } else {
+                        $entityName = $this->extractEntityNameFromRef($ref);
+                    }
+                    if ($entityName) {
+                        return $entityName;
+                    }
+                }
+            }
+        }
+
+        // Check for array items reference (collection endpoints)
+        if (isset($schema['properties']['elements']['items']['$ref'])) {
+            return $this->extractEntityNameFromRef($schema['properties']['elements']['items']['$ref']);
+        }
+
+        return null;
+    }
+
+    /**
+     * Extracts entity name from Result schema reference
+     * Example: "#/components/schemas/ProductListingResult" -> "product"
+     *
+     * This handles wrapper classes like ProductListingResult, EntitySearchResult, etc.
+     */
+    private function extractEntityFromResultRef(string $ref): ?string
+    {
+        // Common patterns:
+        // ProductListingResult -> product
+        // EntitySearchResult -> generic, skip
+
+        // Extract schema name from reference
+        if (!preg_match('#/([^/]+)Result$#', $ref, $matches)) {
+            return null;
+        }
+
+        $schemaName = $matches[1];
+
+        // Skip generic result wrappers
+        if (\in_array($schemaName, ['EntitySearch', 'Search'], true)) {
+            return null;
+        }
+
+        // Handle patterns like "ProductListing" -> "product"
+        // Remove common suffixes before converting
+        $schemaName = preg_replace('/(?:Listing|Search|Collection)$/', '', $schemaName);
+        if (!\is_string($schemaName)) {
+            return null;
+        }
+
+        // Convert PascalCase to snake_case
+        $converted = preg_replace('/(?<!^)[A-Z]/', '_$0', $schemaName);
+        if (!\is_string($converted)) {
+            return null;
+        }
+
+        return strtolower($converted);
+    }
+
+    /**
+     * Extracts entity name from RouteResponse schema reference
+     * Example: "#/components/schemas/OrderRouteResponse" -> "order"
+     */
+    private function extractEntityFromRouteResponseRef(string $ref): ?string
+    {
+        // Extract schema name from reference
+        if (!preg_match('#/([^/]+)RouteResponse$#', $ref, $matches)) {
+            return null;
+        }
+
+        $schemaName = $matches[1];
+
+        // Convert PascalCase to snake_case
+        $converted = preg_replace('/(?<!^)[A-Z]/', '_$0', $schemaName);
+        if (!\is_string($converted)) {
+            return null;
+        }
+
+        return strtolower($converted);
+    }
+
+    /**
+     * Extracts entity name from DetailResponse schema reference
+     * Example: "#/components/schemas/ProductDetailResponse" -> "product"
+     */
+    private function extractEntityFromDetailResponseRef(string $ref): ?string
+    {
+        // Extract schema name from reference
+        if (!preg_match('#/([^/]+)DetailResponse$#', $ref, $matches)) {
+            return null;
+        }
+
+        $schemaName = $matches[1];
+
+        // Convert PascalCase to snake_case
+        $converted = preg_replace('/(?<!^)[A-Z]/', '_$0', $schemaName);
+        if (!\is_string($converted)) {
+            return null;
+        }
+
+        return strtolower($converted);
+    }
+
+    /**
+     * Extracts entity name from schema reference
+     * Example: "#/components/schemas/ShippingMethod" -> "shipping_method"
+     */
+    private function extractEntityNameFromRef(string $ref): ?string
+    {
+        // Extract schema name from reference
+        if (!preg_match('#/([^/]+)$#', $ref, $matches)) {
+            return null;
+        }
+
+        $schemaName = $matches[1];
+
+        // Convert PascalCase to snake_case
+        $converted = preg_replace('/(?<!^)[A-Z]/', '_$0', $schemaName);
+        if (!\is_string($converted)) {
+            return null;
+        }
+
+        return strtolower($converted);
+    }
+
+    /**
+     * Generates documentation for available associations
+     */
+    private function getAssociationsDocumentation(EntityDefinition $definition): string
+    {
+        $associations = [];
+
+        foreach ($definition->getFields() as $field) {
+            if (!$field instanceof AssociationField) {
+                continue;
+            }
+
+            // Skip if explicitly hidden from OpenAPI
+            if ($field->getFlag(IgnoreInOpenapiSchema::class)) {
+                continue;
+            }
+
+            // Skip translations
+            if ($field->getPropertyName() === 'translations') {
+                continue;
+            }
+
+            // Skip parent associations - they cannot be loaded via Criteria due to infinite recursion prevention
+            // Error: FRAMEWORK__PARENT_ASSOCIATION_CAN_NOT_BE_FETCHED
+            if ($field instanceof ParentAssociationField) {
+                continue;
+            }
+
+            // Check ApiAware flag for Store API
+            $apiAware = $field->getFlag(ApiAware::class);
+            if (!$apiAware || !$apiAware->isSourceAllowed(SalesChannelApiSource::class)) {
+                continue;
+            }
+
+            $fieldName = $field->getPropertyName();
+
+            // Get description from Field
+            $description = $field->getDescription();
+
+            // Build the association line
+            $line = '- `' . $fieldName . '`';
+
+            if ($description) {
+                $line .= ' - ' . $description;
+            }
+
+            $associations[] = $line;
+        }
+
+        if ($associations === []) {
+            return '';
+        }
+
+        return "\n\n**Available Associations:**\n" . implode("\n", $associations);
+    }
+}

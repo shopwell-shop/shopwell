@@ -1,0 +1,244 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Media\Subscriber;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use League\Flysystem\Visibility;
+use Shopwell\Core\Content\Media\Aggregate\MediaFolder\MediaFolderDefinition;
+use Shopwell\Core\Content\Media\Aggregate\MediaThumbnail\MediaThumbnailCollection;
+use Shopwell\Core\Content\Media\Aggregate\MediaThumbnail\MediaThumbnailDefinition;
+use Shopwell\Core\Content\Media\Event\MediaThumbnailDeletedEvent;
+use Shopwell\Core\Content\Media\MediaCollection;
+use Shopwell\Core\Content\Media\MediaDefinition;
+use Shopwell\Core\Content\Media\Message\DeleteFileHandler;
+use Shopwell\Core\Content\Media\Message\DeleteFileMessage;
+use Shopwell\Core\Content\Media\Upload\MediaUploadService;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityDeleteEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+class MediaDeletionSubscriber implements EventSubscriberInterface
+{
+    final public const SYNCHRONE_FILE_DELETE = 'synchrone-file-delete';
+
+    /**
+     * Context state that suppresses the physical file deletion entirely, for callers
+     * that overwrite or clean up the affected files themselves after the transaction.
+     */
+    final public const SKIP_FILE_DELETE = 'skip-file-delete';
+
+    /**
+     * @internal
+     *
+     * @param EntityRepository<MediaThumbnailCollection> $thumbnailRepository
+     * @param EntityRepository<MediaCollection> $mediaRepository
+     */
+    public function __construct(
+        private readonly EventDispatcherInterface $dispatcher,
+        private readonly EntityRepository $thumbnailRepository,
+        private readonly MessageBusInterface $messageBus,
+        private readonly DeleteFileHandler $deleteFileHandler,
+        private readonly Connection $connection,
+        private readonly EntityRepository $mediaRepository,
+        private readonly bool $remoteThumbnailsEnable = false
+    ) {
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            EntityDeleteEvent::class => 'beforeDelete',
+        ];
+    }
+
+    public function beforeDelete(EntityDeleteEvent $event): void
+    {
+        /** @var array<string> $affected */
+        $affected = $event->getIds(MediaThumbnailDefinition::ENTITY_NAME);
+        if (\count($affected) > 0) {
+            $this->handleThumbnailDeletion($event, $affected, $event->getContext());
+        }
+
+        /** @var array<string> $affected */
+        $affected = $event->getIds(MediaFolderDefinition::ENTITY_NAME);
+        if (\count($affected) > 0) {
+            $folderIds = $this->fetchChildrenIds($affected);
+            $this->handleFolderDeletion($folderIds, $event->getContext());
+        }
+
+        /** @var array<string> $affected */
+        $affected = $event->getIds(MediaDefinition::ENTITY_NAME);
+        if (\count($affected) > 0) {
+            $this->handleMediaDeletion($affected, $event->getContext());
+        }
+    }
+
+    /**
+     * @param array<string> $affected
+     */
+    private function handleMediaDeletion(array $affected, Context $context): void
+    {
+        $media = $context->scope(Context::SYSTEM_SCOPE, fn (Context $context): MediaCollection => $this->mediaRepository->search(new Criteria($affected), $context)->getEntities());
+
+        $privatePaths = [];
+        $publicPaths = [];
+        $thumbnails = [];
+
+        foreach ($media as $mediaEntity) {
+            if (!$mediaEntity->hasFile()) {
+                continue;
+            }
+
+            $path = $mediaEntity->getPath();
+
+            // Check if the path is an external URL, if so, don't attempt to delete the file (don't add the path)
+            if (!MediaUploadService::isExternalUrl($path)) {
+                if ($mediaEntity->isPrivate()) {
+                    $privatePaths[] = $path;
+                } else {
+                    $publicPaths[] = $path;
+                }
+            }
+
+            if ($this->remoteThumbnailsEnable || !$mediaEntity->getThumbnails()) {
+                continue;
+            }
+
+            foreach ($mediaEntity->getThumbnails()->getIds() as $id) {
+                $thumbnails[] = ['id' => $id];
+            }
+        }
+
+        $this->performFileDelete($context, $publicPaths, Visibility::PUBLIC);
+        $this->performFileDelete($context, $privatePaths, Visibility::PRIVATE);
+
+        if ($this->remoteThumbnailsEnable) {
+            return;
+        }
+
+        $this->thumbnailRepository->delete($thumbnails, $context);
+    }
+
+    /**
+     * @param non-empty-list<string> $folderIds
+     */
+    private function handleFolderDeletion(array $folderIds, Context $context): void
+    {
+        $media = $this->connection->fetchAllAssociative(
+            'SELECT LOWER(HEX(id)) as id FROM media WHERE media_folder_id IN (:ids)',
+            ['ids' => Uuid::fromHexToBytesList($folderIds)],
+            ['ids' => ArrayParameterType::BINARY]
+        );
+
+        if ($media === []) {
+            return;
+        }
+
+        $this->mediaRepository->delete($media, $context);
+    }
+
+    /**
+     * @param non-empty-array<string> $ids
+     *
+     * @return non-empty-list<string>
+     */
+    private function fetchChildrenIds(array $ids): array
+    {
+        $ids = \array_values($ids);
+        $children = $this->connection->fetchFirstColumn(
+            'SELECT LOWER(HEX(id)) FROM media_folder WHERE parent_id IN (:ids)',
+            ['ids' => Uuid::fromHexToBytesList($ids)],
+            ['ids' => ArrayParameterType::BINARY]
+        );
+
+        if ($children === []) {
+            return $ids;
+        }
+
+        $nested = $this->fetchChildrenIds($children);
+
+        $children = [...$children, ...$nested];
+
+        return [...$ids, ...$children, ...$nested];
+    }
+
+    /**
+     * @param array<string> $affected
+     */
+    private function handleThumbnailDeletion(EntityDeleteEvent $event, array $affected, Context $context): void
+    {
+        $privatePaths = [];
+        $publicPaths = [];
+
+        $thumbnails = $this->getThumbnails($affected, $context);
+
+        foreach ($thumbnails as $thumbnail) {
+            $media = $thumbnail->getMedia();
+            if ($media === null) {
+                continue;
+            }
+
+            $path = $thumbnail->getPath();
+
+            // Skip external thumbnails as they are hosted externally and should not be deleted from the filesystem
+            if (MediaUploadService::isExternalUrl($path)) {
+                continue;
+            }
+
+            if ($media->isPrivate()) {
+                $privatePaths[] = $path;
+            } else {
+                $publicPaths[] = $path;
+            }
+        }
+
+        $this->performFileDelete($context, $privatePaths, Visibility::PRIVATE);
+        $this->performFileDelete($context, $publicPaths, Visibility::PUBLIC);
+
+        $event->addSuccess(function () use ($thumbnails, $context): void {
+            $this->dispatcher->dispatch(new MediaThumbnailDeletedEvent($thumbnails, $context), MediaThumbnailDeletedEvent::EVENT_NAME);
+        });
+    }
+
+    /**
+     * @param array<string> $ids
+     */
+    private function getThumbnails(array $ids, Context $context): MediaThumbnailCollection
+    {
+        $criteria = new Criteria();
+        $criteria->addAssociation('media');
+        $criteria->addFilter(new EqualsAnyFilter('media_thumbnail.id', $ids));
+
+        return $this->thumbnailRepository->search($criteria, $context)->getEntities();
+    }
+
+    /**
+     * @param list<string> $paths
+     */
+    private function performFileDelete(Context $context, array $paths, string $visibility): void
+    {
+        if (\count($paths) <= 0 || $context->hasState(self::SKIP_FILE_DELETE)) {
+            return;
+        }
+
+        if ($context->hasState(self::SYNCHRONE_FILE_DELETE)) {
+            $this->deleteFileHandler->__invoke(new DeleteFileMessage($paths, $visibility, true));
+
+            return;
+        }
+
+        $this->messageBus->dispatch(new DeleteFileMessage($paths, $visibility, true));
+    }
+}

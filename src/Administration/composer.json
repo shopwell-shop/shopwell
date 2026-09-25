@@ -1,0 +1,67 @@
+{
+    "name": "shopware/administration",
+    "description": "Administration frontend for the Shopwell Core",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Shopwell\\Administration\\": ""
+        },
+        "exclude-from-classmap": [
+            "Resources/app/administration/node_modules/"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "symfony/runtime": true
+        }
+    },
+    "support": {
+        "issues": "https://github.com/shopware/shopware/issues",
+        "forum": "https://forum.shopwell.cn",
+        "wiki": "https://developer.shopwell.cn",
+        "docs": "https://developer.shopwell.cn",
+        "chat": "https://chat.shopwell.cn/"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "6.7.x-dev",
+            "dev-trunk": "6.7.x-dev"
+        }
+    },
+    "require": {
+        "php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
+        "doctrine/dbal": "~4.4.0",
+        "lcobucci/jwt": "^5.5",
+        "league/flysystem": "^3.13.0",
+        "league/oauth2-server": "^9.3",
+        "pentatrion/vite-bundle": "^8.1",
+        "phpseclib/phpseclib": "^3.0",
+        "psr/clock": "^1.0.0",
+        "psr/http-message": "^1.1 || ^2.0",
+        "shopware/core": "*",
+        "symfony/asset": "~7.4.0",
+        "symfony/cache": "~7.4.12",
+        "symfony/cache-contracts": "~3.6.0",
+        "symfony/config": "~7.4.0",
+        "symfony/console": "~7.4.0",
+        "symfony/dependency-injection": "~7.4.0",
+        "symfony/event-dispatcher": "~7.4.0",
+        "symfony/event-dispatcher-contracts": "~3.6.0",
+        "symfony/filesystem": "~7.4.0",
+        "symfony/finder": "~7.4.0",
+        "symfony/framework-bundle": "~7.4.0",
+        "symfony/http-client": "~7.4.0",
+        "symfony/http-client-contracts": "~3.6.0",
+        "symfony/http-foundation": "~7.4.0",
+        "symfony/http-kernel": "~7.4.12",
+        "symfony/mime": "~7.4.12",
+        "symfony/psr-http-message-bridge": "~7.4.0",
+        "symfony/routing": "~7.4.12",
+        "symfony/serializer": "~7.4.0",
+        "symfony/string": "~7.4.0",
+        "symfony/validator": "~7.4.0"
+    }
+}

@@ -1,0 +1,35 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Store\InAppPurchase\Services;
+
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotNull;
+use Symfony\Component\Validator\Constraints\Type;
+
+#[Package('checkout')]
+final readonly class DecodedPurchaseStruct
+{
+    #[NotNull, NotBlank, Type('string')]
+    public string $identifier;
+
+    #[Type('string')]
+    public ?string $nextBookingDate;
+
+    #[NotNull, Type('integer')]
+    public int $quantity;
+
+    #[NotNull, NotBlank, Type('string')]
+    public string $sub;
+
+    /**
+     * @param array{identifier: string, nextBookingDate: string|null, quantity: int, sub: string} $data
+     */
+    public function __construct(array $data)
+    {
+        $this->identifier = $data['identifier'];
+        $this->nextBookingDate = $data['nextBookingDate'];
+        $this->quantity = $data['quantity'];
+        $this->sub = $data['sub'];
+    }
+}

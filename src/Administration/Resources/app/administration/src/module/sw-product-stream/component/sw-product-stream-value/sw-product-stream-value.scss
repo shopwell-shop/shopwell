@@ -1,0 +1,30 @@
+.sw-product-stream-value {
+    display: flex;
+    align-items: center;
+    gap: var(--scale-size-4);
+    width: 100%;
+    min-width: 0;
+
+    & > * {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    &__operator-select {
+        flex: 0 0 auto;
+        min-width: var(--scale-size-128);
+        max-width: max-content;
+    }
+
+    &__placeholder {
+        height: 100%;
+    }
+
+    &__time-input .mt-field__addition {
+        border-left: 0;
+    }
+
+    .sw-select__selection {
+        flex: 1;
+    }
+}

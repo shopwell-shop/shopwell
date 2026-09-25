@@ -1,0 +1,115 @@
+@import "~scss/variables";
+@import "~scss/mixins";
+
+$sw-search-bar-item-border-radius: $border-radius-default;
+$sw-search-bar-item-color-label: var(--color-text-primary-default);
+$sw-search-bar-item-color-type: var(--color-text-primary-default);
+$sw-search-bar-item-hover-color-background: var(--color-interaction-secondary-hover);
+
+.sw-search-bar-item {
+    border-radius: $sw-search-bar-item-border-radius;
+    padding: 6px;
+
+    .sw-search-bar-item__link {
+        padding: 4px 10px;
+        border-radius: $sw-search-bar-item-border-radius;
+        display: flex;
+        text-decoration: none;
+        line-height: var(--font-line-height-s);
+
+        &:focus-visible {
+            outline-offset: var(--scale-size-2);
+            outline: var(--scale-size-2) solid var(--color-border-brand-default);
+        }
+    }
+
+    .mt-icon {
+        margin-right: 20px;
+        flex-shrink: 0;
+    }
+
+    .sw-search-bar-item__label {
+        color: $sw-search-bar-item-color-label;
+        font-size: var(--font-size-xs);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-right: 10px;
+    }
+
+    .sw-search-bar-item__type {
+        color: $sw-search-bar-item-color-type;
+        font-size: var(--font-size-2xs);
+        margin-left: auto;
+    }
+
+    &.is--active {
+        background: $sw-search-bar-item-hover-color-background;
+    }
+
+    &--v2 {
+        display: flex;
+        align-items: center;
+        padding: 3px 30px;
+        margin: 0;
+        border-radius: 0;
+
+        .sw-search-bar-item__link {
+            flex: 1;
+        }
+
+        .mt-icon {
+            margin-left: 8px;
+            margin-right: 2px;
+        }
+
+        .sw-search-bar-item__label {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+            gap: var(--scale-size-8);
+        }
+
+        .sw-shortcut-overview-item {
+            display: none;
+            flex-shrink: 0;
+            white-space: nowrap;
+            margin: 0;
+
+            span {
+                padding: 0 4px;
+                font-size: var(--font-size-2xs);
+            }
+
+            // Kept below the row text line height, so revealing them never changes the row height
+            .sw-shortcut-overview-item__key {
+                min-width: var(--scale-size-20);
+                height: var(--scale-size-20);
+            }
+        }
+
+        &.is--active .sw-shortcut-overview-item {
+            display: block;
+        }
+
+        // Shortcut hints add no value when the page gets narrow.
+        @container (max-width: 960px) {
+            &.is--active .sw-shortcut-overview-item {
+                display: none;
+            }
+        }
+
+        // The name grows and truncates, keeping the shortcut and type label at the right edge
+        .sw-highlight-text:first-child {
+            @include truncate;
+
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .sw-highlight-text:not(:first-child) {
+            color: var(--color-text-secondary-default);
+        }
+    }
+}

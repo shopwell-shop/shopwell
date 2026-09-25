@@ -1,0 +1,379 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\System\UsageData\EntitySync;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
+use Monolog\Logger;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Test\Product\ProductBuilder;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Consent\ConsentScope;
+use Shopwell\Core\System\Consent\ConsentStatus;
+use Shopwell\Core\System\Consent\Definition\BackendData;
+use Shopwell\Core\System\Consent\DTO\ConsentState;
+use Shopwell\Core\System\Consent\Service\ConsentService;
+use Shopwell\Core\System\UsageData\EntitySync\DispatchEntityMessage;
+use Shopwell\Core\System\UsageData\EntitySync\IterateEntitiesQueryBuilder;
+use Shopwell\Core\System\UsageData\EntitySync\IterateEntityMessage;
+use Shopwell\Core\System\UsageData\EntitySync\IterateEntityMessageHandler;
+use Shopwell\Core\System\UsageData\EntitySync\Operation;
+use Shopwell\Core\System\UsageData\Services\EntityDefinitionService;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Shopwell\Core\Test\Stub\MessageBus\CollectingMessageBus;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Contracts\HttpClient\ResponseInterface;
+
+/**
+ * @internal
+ */
+#[Package('data-services')]
+class IterateEntityMessageHandlerTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    protected function setUp(): void
+    {
+        /** @var MockHttpClient $client */
+        $client = static::getContainer()->get('shopware.usage_data.gateway.client');
+        $client->setResponseFactory(static function (string $method, string $url): ResponseInterface {
+            if (\str_ends_with($url, '/killswitch')) {
+                $body = json_encode(['killswitch' => false]);
+                static::assertIsString($body);
+
+                return new MockResponse($body);
+            }
+
+            return new MockResponse();
+        });
+    }
+
+    public function testItFetchesEverythingIfLastRunIsNotSet(): void
+    {
+        $this->setConsentAccepted();
+
+        $definitionRegistry = static::getContainer()->get(DefinitionInstanceRegistry::class);
+
+        $entityDefinitionService = static::createStub(EntityDefinitionService::class);
+        $entityDefinitionService->method('getAllowedEntityDefinition')
+            ->willReturn($definitionRegistry->get(ProductDefinition::class));
+
+        $productIds = $this->setUpProducts();
+
+        $messageBus = new CollectingMessageBus();
+
+        $messageHandler = new IterateEntityMessageHandler(
+            $messageBus,
+            new IterateEntitiesQueryBuilder(
+                $entityDefinitionService,
+                static::getContainer()->get(Connection::class),
+                static::getContainer()->getParameter('shopware.usage_data.gateway.batch_size'),
+            ),
+            $this->getContainer()->get(ConsentService::class),
+            $entityDefinitionService,
+            static::getContainer()->get(LoggerInterface::class),
+        );
+
+        $messageHandler(new IterateEntityMessage(
+            'product',
+            Operation::CREATE,
+            new \DateTimeImmutable('2023-08-16'),
+            null,
+        ));
+
+        $dispatchedMessages = $messageBus->getMessages();
+
+        static::assertNotEmpty($dispatchedMessages);
+
+        $entitySyncMessage = $dispatchedMessages[0]->getMessage();
+
+        static::assertInstanceOf(DispatchEntityMessage::class, $entitySyncMessage);
+
+        static::assertSame('product', $entitySyncMessage->entityName);
+        static::assertSame([
+            ['id' => $productIds->get('product-from-the-past')],
+            ['id' => $productIds->get('product-created-on-last-run-date')],
+            ['id' => $productIds->get('product-created-today')],
+            ['id' => $productIds->get('product-updated-today')],
+        ], array_values($entitySyncMessage->primaryKeys));
+    }
+
+    public function testItFetchesOnlyNewChangesIfLastRunIsSet(): void
+    {
+        $this->setConsentAccepted();
+
+        $definitionRegistry = static::getContainer()->get(DefinitionInstanceRegistry::class);
+
+        $entityDefinitionService = static::createStub(EntityDefinitionService::class);
+        $entityDefinitionService->method('getAllowedEntityDefinition')
+            ->willReturn($definitionRegistry->get(ProductDefinition::class));
+
+        $productIds = $this->setUpProducts();
+
+        $messageBus = new CollectingMessageBus();
+
+        $messageHandler = new IterateEntityMessageHandler(
+            $messageBus,
+            new IterateEntitiesQueryBuilder(
+                $entityDefinitionService,
+                static::getContainer()->get(Connection::class),
+                static::getContainer()->getParameter('shopware.usage_data.gateway.batch_size'),
+            ),
+            $this->getContainer()->get(ConsentService::class),
+            $entityDefinitionService,
+            static::getContainer()->get(LoggerInterface::class),
+        );
+
+        $messageHandler(new IterateEntityMessage(
+            'product',
+            Operation::CREATE,
+            new \DateTimeImmutable('2023-08-16'),
+            new \DateTimeImmutable('2023-08-01'),
+        ));
+
+        $dispatchedMessages = $messageBus->getMessages();
+
+        static::assertNotEmpty($dispatchedMessages);
+
+        $entitySyncMessage = $dispatchedMessages[0]->getMessage();
+
+        static::assertInstanceOf(DispatchEntityMessage::class, $entitySyncMessage);
+
+        static::assertSame('product', $entitySyncMessage->entityName);
+        static::assertSame([
+            ['id' => $productIds->get('product-created-on-last-run-date')],
+            ['id' => $productIds->get('product-created-today')],
+        ], array_values($entitySyncMessage->primaryKeys));
+    }
+
+    public function testItFetchesOnlyDeletionsUpToTheCurrentRunDate(): void
+    {
+        $this->setConsentAccepted();
+
+        $definitionRegistry = static::getContainer()->get(DefinitionInstanceRegistry::class);
+
+        $entityDefinitionService = static::createStub(EntityDefinitionService::class);
+        $entityDefinitionService->method('getAllowedEntityDefinition')
+            ->willReturn($definitionRegistry->get(ProductDefinition::class));
+
+        $ids = new IdsCollection();
+
+        $this->insertProductDeletion($ids->get('product-from-the-past'), (new \DateTimeImmutable())->sub(new \DateInterval('P1D')));
+        $this->insertProductDeletion($ids->get('product-from-the-future'), (new \DateTimeImmutable())->add(new \DateInterval('P1D')));
+
+        $messageBus = new CollectingMessageBus();
+
+        $messageHandler = new IterateEntityMessageHandler(
+            $messageBus,
+            new IterateEntitiesQueryBuilder(
+                $entityDefinitionService,
+                static::getContainer()->get(Connection::class),
+                static::getContainer()->getParameter('shopware.usage_data.gateway.batch_size'),
+            ),
+            $this->getContainer()->get(ConsentService::class),
+            $entityDefinitionService,
+            static::getContainer()->get(LoggerInterface::class),
+        );
+
+        $messageHandler(new IterateEntityMessage(
+            'product',
+            Operation::DELETE,
+            new \DateTimeImmutable(),
+            new \DateTimeImmutable('2023-08-01'),
+        ));
+
+        $dispatchedMessages = $messageBus->getMessages();
+
+        static::assertNotEmpty($dispatchedMessages);
+
+        $entitySyncMessage = $dispatchedMessages[0]->getMessage();
+
+        static::assertInstanceOf(DispatchEntityMessage::class, $entitySyncMessage);
+        static::assertSame(
+            [
+                ['id' => $ids->get('product-from-the-past')],
+            ],
+            $entitySyncMessage->primaryKeys,
+        );
+    }
+
+    public function testItLogsExceptionWithTableDoesNotExistExceptionIsThrown(): void
+    {
+        $logger = $this->createMock(Logger::class);
+        $logger->expects($this->once())->method('error');
+
+        $consentService = $this->createMock(ConsentService::class);
+        $consentService->expects($this->once())
+            ->method('getConsentState')
+            ->willReturn(new ConsentState(
+                BackendData::NAME,
+                ConsentScope\System::NAME,
+                ConsentScope\System::NAME,
+                ConsentStatus::ACCEPTED,
+                'actor',
+                (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ));
+
+        $entityDefinitionService = $this->createMock(EntityDefinitionService::class);
+        $entityDefinitionService->expects($this->once())
+            ->method('getAllowedEntityDefinition')
+            ->with('test_entity')
+            ->willReturn(new TestEntityDefinition());
+
+        $messageHandler = new IterateEntityMessageHandler(
+            new CollectingMessageBus(),
+            static::getContainer()->get(IterateEntitiesQueryBuilder::class),
+            $consentService,
+            $entityDefinitionService,
+            $logger,
+        );
+
+        /** @var DefinitionInstanceRegistry $registry */
+        $registry = static::getContainer()->get(DefinitionInstanceRegistry::class);
+        $registry->register(new TestEntityDefinition());
+
+        $messageHandler(new IterateEntityMessage(
+            TestEntityDefinition::ENTITY_NAME,
+            Operation::CREATE,
+            new \DateTimeImmutable('2023-08-16'),
+            new \DateTimeImmutable('2023-08-01'),
+        ));
+    }
+
+    private function setUpProducts(): IdsCollection
+    {
+        $ids = new IdsCollection();
+
+        $products = [
+            (new ProductBuilder($ids, 'product-from-the-past'))
+                ->price(2.00)
+                ->build(),
+            (new ProductBuilder($ids, 'product-created-on-last-run-date'))
+                ->price(2.00)
+                ->build(),
+            (new ProductBuilder($ids, 'product-created-today'))
+                ->price(2.00)
+                ->build(),
+            (new ProductBuilder($ids, 'product-updated-today'))
+                ->price(2.00)
+                ->build(),
+        ];
+
+        static::getContainer()->get('product.repository')->upsert($products, Context::createDefaultContext());
+
+        $connection = static::getContainer()->get(Connection::class);
+
+        static::assertSame(1, $connection->update(
+            '`product`',
+            ['`created_at`' => '2023-05-24', '`updated_at`' => null],
+            ['`product_number`' => 'product-from-the-past'],
+        ));
+
+        static::assertSame(1, $connection->update(
+            '`product`',
+            ['`created_at`' => '2023-08-02', '`updated_at`' => null],
+            ['`product_number`' => 'product-created-on-last-run-date'],
+        ));
+
+        static::assertSame(1, $connection->update(
+            '`product`',
+            ['`created_at`' => '2023-08-03', '`updated_at`' => null],
+            ['`product_number`' => 'product-created-today'],
+        ));
+
+        static::assertSame(1, $connection->update(
+            '`product`',
+            ['`created_at`' => '2022-08-02', '`updated_at`' => '2023-08-02'],
+            ['`product_number`' => 'product-updated-today'],
+        ));
+
+        return $ids;
+    }
+
+    private function setConsentAccepted(): void
+    {
+        /** @var Connection $connection */
+        $connection = static::getContainer()->get(Connection::class);
+
+        $connection->executeStatement(
+            'DELETE FROM consent_state WHERE name = :name AND identifier = :identifier',
+            ['name' => BackendData::NAME, 'identifier' => 'system']
+        );
+
+        $connection->executeStatement(
+            'INSERT INTO consent_state (id, name, identifier, state, actor, updated_at)
+            VALUES (:id, :name, :identifier, :state, :actor, :updatedAt)',
+            [
+                'id' => Uuid::randomBytes(),
+                'name' => BackendData::NAME,
+                'identifier' => 'system',
+                'state' => 'accepted',
+                'actor' => 'test',
+                'updatedAt' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ],
+            ['id' => ParameterType::BINARY]
+        );
+
+        static::getContainer()->get(ConsentService::class)->reset();
+    }
+
+    private function insertProductDeletion(string $id, \DateTimeImmutable $deletedAt): void
+    {
+        /** @var Connection $connection */
+        $connection = static::getContainer()->get(Connection::class);
+        $qb = $connection->createQueryBuilder();
+        $qb->insert('usage_data_entity_deletion');
+        $qb->values([
+            'id' => ':id',
+            'entity_name' => ':entity_name',
+            'entity_ids' => ':entity_ids',
+            'deleted_at' => ':deleted_at',
+        ]);
+        $statement = $connection->prepare($qb->getSQL());
+        $statement->bindValue(':id', Uuid::fromHexToBytes($id), ParameterType::BINARY);
+        $statement->bindValue(':entity_name', 'product');
+        $statement->bindValue(':entity_ids', \json_encode(Uuid::randomHex(), \JSON_THROW_ON_ERROR));
+
+        // this deletion is in the future
+        $statement->bindValue(':deleted_at', $deletedAt->format(Defaults::STORAGE_DATE_TIME_FORMAT));
+
+        $statement->executeStatement();
+    }
+}
+
+/**
+ * @internal
+ */
+class TestEntityDefinition extends EntityDefinition
+{
+    public const ENTITY_NAME = 'test_entity';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function since(): string
+    {
+        return 'test';
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey()),
+        ]);
+    }
+}

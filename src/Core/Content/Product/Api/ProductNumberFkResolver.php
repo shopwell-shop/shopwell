@@ -1,0 +1,57 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Product\Api;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Api\Sync\AbstractFkResolver;
+use Shopwell\Core\Framework\Api\Sync\FkReference;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class ProductNumberFkResolver extends AbstractFkResolver
+{
+    public function __construct(private readonly Connection $connection)
+    {
+    }
+
+    public static function getName(): string
+    {
+        return 'product.number';
+    }
+
+    /**
+     * @param array<FkReference> $map
+     *
+     * @return array<FkReference>
+     */
+    public function resolve(array $map): array
+    {
+        $numbers = \array_map(static fn ($id) => $id->value, $map);
+
+        $numbers = \array_filter(\array_unique($numbers));
+
+        if ($numbers === []) {
+            return $map;
+        }
+
+        $hash = $this->connection->fetchAllKeyValue(
+            'SELECT product_number, LOWER(HEX(id)) FROM product WHERE product_number IN (:numbers) AND version_id = :version',
+            ['numbers' => $numbers, 'version' => Uuid::fromHexToBytes(Defaults::LIVE_VERSION)],
+            ['numbers' => ArrayParameterType::STRING]
+        );
+
+        foreach ($map as $reference) {
+            if (isset($hash[$reference->value])) {
+                $reference->resolved = $hash[$reference->value];
+            }
+        }
+
+        return $map;
+    }
+}

@@ -1,0 +1,756 @@
+/* eslint-disable sw-test-rules/test-file-max-lines-warning */
+
+/**
+ * @sw-package inventory
+ */
+
+import { mount } from '@vue/test-utils';
+import { nextTick } from 'vue';
+
+const { Store } = Shopwell;
+const { cloneDeep } = Shopwell.Utils.object;
+
+let productPropertiesMock = [
+    { id: '01', groupId: 'sizeId', name: '30' },
+    { id: '02', groupId: 'sizeId', name: '32' },
+    { id: '03', groupId: 'colorId', name: 'white' },
+    { id: '04', groupId: 'colorId', name: 'black' },
+];
+
+productPropertiesMock.getIds = () => {
+    return productPropertiesMock.map((property) => {
+        return property.id;
+    });
+};
+
+productPropertiesMock.remove = (id) => {
+    productPropertiesMock = productPropertiesMock.filter((item) => {
+        return item.id !== id;
+    });
+};
+productPropertiesMock.has = (id) => {
+    return productPropertiesMock.some((item) => {
+        return item.id === id;
+    });
+};
+productPropertiesMock.add = (item) => {
+    productPropertiesMock.push(item);
+};
+
+const propertiesMock = [
+    {
+        id: 'sizeId',
+        name: 'size',
+        translated: {
+            name: 'size',
+        },
+        options: productPropertiesMock.filter((item) => {
+            return item.groupId === 'sizeId';
+        }),
+    },
+    {
+        id: 'colorId',
+        name: 'color',
+        translated: {
+            name: 'color',
+        },
+        options: productPropertiesMock.filter((item) => {
+            return item.groupId === 'colorId';
+        }),
+    },
+];
+
+const productMock = {
+    id: 'productId',
+    parentId: 'parentProductId',
+    properties: [],
+};
+
+const parentProductMock = {
+    id: 'parentProductId',
+    parentId: null,
+    properties: productPropertiesMock,
+};
+
+const $refsMock = {
+    entityListing: {
+        deleteId: null,
+        showBulkDeleteModal: false,
+        selection: {
+            1: propertiesMock[1],
+        },
+    },
+};
+
+let repositoryFactoryCreateResult;
+
+async function createWrapper() {
+    repositoryFactoryCreateResult = {
+        search: () => {
+            return Promise.resolve({ total: 0 });
+        },
+        searchIds: () => {
+            return Promise.resolve({ total: 0 });
+        },
+    };
+
+    return mount(await wrapTestComponent('sw-product-properties', { sync: true }), {
+        global: {
+            stubs: {
+                'sw-inheritance-switch': {
+                    props: ['isInherited', 'disabled'],
+                    template: `
+                        <div class="sw-inheritance-switch">
+                            <div v-if="isInherited"
+                                class="sw-inheritance-switch--is-inherited"
+                                @click="onClickRemoveInheritance">
+                            </div>
+                            <div v-else
+                                class="sw-inheritance-switch--is-not-inherited"
+                                @click="onClickRestoreInheritance">
+                            </div>
+                        </div>`,
+                    methods: {
+                        onClickRestoreInheritance() {
+                            this.$emit('inheritance-restore');
+                        },
+                        onClickRemoveInheritance() {
+                            this.$emit('inheritance-remove');
+                        },
+                    },
+                },
+                'sw-inherit-wrapper': await wrapTestComponent('sw-inherit-wrapper'),
+                'mt-card': {
+                    template: `
+                        <div class="mt-card">
+                            <slot></slot>
+                            <slot name="title"></slot>
+                            <slot name="grid"></slot>
+                        </div>
+                    `,
+                },
+                'sw-container': {
+                    template: `
+                        <div class="sw-container">
+                            <slot></slot>
+                        </div>
+                    `,
+                },
+                'sw-card-section': {
+                    template: `
+                        <div class="sw-card-section">
+                            <slot></slot>
+                        </div>
+                    `,
+                },
+                'mt-empty-state': {
+                    props: ['headline', 'description'],
+                    template: `
+                        <div class="mt-empty-state">
+                            <div class="mt-empty-state__headline">{{ headline }}</div>
+                            <div
+                                v-if="description"
+                                class="mt-empty-state__description"
+                            >
+                                {{ description }}
+                            </div>
+                            <slot name="button"></slot>
+                        </div>
+                    `,
+                },
+                'mt-button': {
+                    props: ['disabled'],
+                    template: `
+                        <button :disabled="disabled">
+                            <slot></slot>
+                        </button>
+                    `,
+                },
+                'sw-entity-listing': {
+                    props: ['items', 'dataSource'],
+                    computed: {
+                        listingItems() {
+                            return this.dataSource || this.items || [];
+                        },
+                    },
+                    methods: {
+                        resetSelection: () => {},
+                    },
+                    template: `
+                        <div class="sw-entity-listing" ref="entityListing">
+                            <template v-for="item in listingItems" :key="item.id">
+                                <slot name="column-values" v-bind="{ item }"></slot>
+                                <slot name="actions" v-bind="{ item }"></slot>
+                            </template>
+                        </div>
+                    `,
+                },
+                'sw-product-add-properties-modal': true,
+                'sw-loader': true,
+                'sw-simple-search-field': true,
+                'sw-label': true,
+                'sw-help-text': true,
+            },
+            provide: {
+                repositoryFactory: {
+                    create: () => repositoryFactoryCreateResult,
+                },
+            },
+            mocks: {
+                $route: {
+                    meta: {
+                        $module: {
+                            icon: 'regular-content',
+                        },
+                    },
+                },
+            },
+        },
+    });
+}
+
+describe('src/module/sw-product/component/sw-product-properties', () => {
+    beforeAll(() => {
+        Store.register({
+            id: 'swProductDetail',
+            state() {
+                return {
+                    product: productMock,
+                    parentProduct: parentProductMock,
+                };
+            },
+            actions: {
+                setProduct(state, newProduct) {
+                    state.product = newProduct;
+                },
+            },
+            getters: {
+                isLoading: () => false,
+                isChild: () => true,
+            },
+        });
+    });
+
+    it('should get group ids successful', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        await wrapper.vm.$nextTick();
+        Store.get('swProductDetail').product = productMock;
+        await wrapper.vm.getGroupIds();
+
+        expect(wrapper.vm.groupIds).toEqual(expect.arrayContaining(['sizeId', 'colorId']));
+    });
+
+    it('should get group ids failed', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        await wrapper.vm.$nextTick();
+        Store.get('swProductDetail').product = {};
+        await wrapper.vm.getGroupIds();
+
+        expect(wrapper.vm.groupIds).toEqual(expect.arrayContaining([]));
+    });
+
+    it('should get properties successful', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        repositoryFactoryCreateResult.search = jest.fn(() => {
+            return Promise.resolve(propertiesMock);
+        });
+
+        Store.get('swProductDetail').product = productMock;
+        await nextTick();
+        await wrapper.vm.getGroupIds();
+        await wrapper.vm.getProperties();
+
+        expect(wrapper.vm.properties).toEqual(expect.arrayContaining(propertiesMock));
+        wrapper.vm.propertyGroupRepository.search.mockRestore();
+    });
+
+    it('should get properties failed', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.propertyGroupRepository.search = jest.fn(() => {
+            return Promise.reject();
+        });
+
+        Store.get('swProductDetail').product = productMock;
+        await wrapper.vm.getGroupIds();
+        await wrapper.vm.getProperties();
+
+        expect(wrapper.vm.properties).toEqual(expect.arrayContaining([]));
+        wrapper.vm.propertyGroupRepository.search.mockRestore();
+    });
+
+    it('should get properties failed if having no inputs', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.getProperties = jest.fn(() => {
+            return Promise.reject(new Error('Whoops!'));
+        });
+
+        Store.get('swProductDetail').product = productMock;
+
+        const getError = async () => {
+            try {
+                await wrapper.vm.getProperties();
+
+                throw new Error('Method should have thrown an error');
+            } catch (error) {
+                return error;
+            }
+        };
+        expect((await getError()).message).toBe('Whoops!');
+
+        expect(wrapper.vm.properties).toEqual(expect.arrayContaining([]));
+        wrapper.vm.getProperties.mockRestore();
+    });
+
+    it('should render property value labels in one wrapping container per property', async () => {
+        global.activeAclRoles = ['product.deleter'];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        await wrapper.setData({
+            groupIds: ['sizeId', 'colorId'],
+            properties: propertiesMock,
+        });
+
+        const valueContainers = wrapper.findAll('.sw-product-properties-list__column-values').filter((container) => {
+            return container.findAll('sw-label-stub').length > 0;
+        });
+
+        expect(valueContainers).toHaveLength(propertiesMock.length);
+        expect(valueContainers[0].findAll('sw-label-stub')).toHaveLength(propertiesMock[0].options.length);
+        expect(valueContainers[0].find('sw-label-stub').attributes('dismissable')).toBe('true');
+    });
+
+    it('should allow the property value column to wrap', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        expect(wrapper.vm.propertyColumns.find((column) => column.property === 'values').multiLine).toBe(true);
+    });
+
+    it('should delete property value successful', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.propertyGroupRepository.search = jest.fn(() => {
+            return Promise.resolve(propertiesMock);
+        });
+
+        const getPropertiesSpy = jest.spyOn(wrapper.vm, 'getProperties').mockImplementation(() => Promise.resolve());
+
+        Store.get('swProductDetail').product = productMock;
+        await wrapper.vm.getGroupIds();
+        await wrapper.vm.getProperties();
+
+        wrapper.vm.onDeletePropertyValue(productPropertiesMock[0]);
+
+        expect(wrapper.vm.productProperties).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: '02',
+                    groupId: 'sizeId',
+                    name: '32',
+                }),
+                expect.objectContaining({
+                    id: '03',
+                    groupId: 'colorId',
+                    name: 'white',
+                }),
+                expect.objectContaining({
+                    id: '04',
+                    groupId: 'colorId',
+                    name: 'black',
+                }),
+            ]),
+        );
+        expect(getPropertiesSpy).toHaveBeenCalled();
+
+        wrapper.vm.propertyGroupRepository.search.mockRestore();
+    });
+
+    it('should delete property successful', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        await wrapper.setData({ $refs: $refsMock });
+        wrapper.vm.propertyGroupRepository.search = jest.fn(() => {
+            return Promise.resolve(propertiesMock);
+        });
+
+        Store.get('swProductDetail').product = productMock;
+        await wrapper.vm.getGroupIds();
+        await wrapper.vm.getProperties();
+
+        const getPropertiesSpy = jest.spyOn(wrapper.vm, 'getProperties').mockImplementation(() => Promise.resolve());
+
+        wrapper.vm.onDeleteProperty(propertiesMock[0]);
+        await nextTick();
+
+        expect(wrapper.vm.productProperties).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: '03',
+                    groupId: 'colorId',
+                    name: 'white',
+                }),
+                expect.objectContaining({
+                    id: '04',
+                    groupId: 'colorId',
+                    name: 'black',
+                }),
+            ]),
+        );
+        expect(getPropertiesSpy).toHaveBeenCalled();
+
+        wrapper.vm.propertyGroupRepository.search.mockRestore();
+        getPropertiesSpy.mockRestore();
+    });
+
+    it('should delete properties successful', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.propertyGroupRepository.search = jest.fn(() => {
+            return Promise.resolve(propertiesMock);
+        });
+
+        Store.get('swProductDetail').product = productMock;
+        await wrapper.vm.getGroupIds();
+        await wrapper.vm.getProperties();
+
+        const getPropertiesSpy = jest.spyOn(wrapper.vm, 'getProperties').mockImplementation(() => Promise.resolve());
+
+        wrapper.vm.onDeleteProperties();
+        await nextTick();
+
+        expect(wrapper.vm.productProperties).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: '01',
+                    groupId: 'sizeId',
+                    name: '30',
+                }),
+                expect.objectContaining({
+                    id: '02',
+                    groupId: 'sizeId',
+                    name: '32',
+                }),
+            ]),
+        );
+        expect(getPropertiesSpy).toHaveBeenCalled();
+
+        wrapper.vm.propertyGroupRepository.search.mockRestore();
+        getPropertiesSpy.mockRestore();
+    });
+
+    it('should get properties when changing search term', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        const error = new Error('Whoops!');
+        wrapper.vm.getProperties = jest.fn(() => {
+            return Promise.reject(error);
+        });
+
+        await expect(wrapper.vm.onChangeSearchTerm('textile')).rejects.toEqual(error);
+
+        expect(wrapper.vm.searchTerm).toBe('textile');
+        expect(wrapper.vm.propertyGroupCriteria.term).toBe('textile');
+    });
+
+    it('should turn on add properties modal', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        await wrapper.setData({
+            propertiesAvailable: true,
+        });
+        wrapper.vm.updateNewProperties = jest.fn();
+
+        wrapper.vm.turnOnAddPropertiesModal();
+
+        expect(wrapper.vm.updateNewProperties).toHaveBeenCalledTimes(1);
+        expect(wrapper.vm.showAddPropertiesModal).toBe(true);
+        wrapper.vm.updateNewProperties.mockRestore();
+    });
+
+    it('should turn off add properties modal', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.updateNewProperties = jest.fn();
+
+        wrapper.vm.turnOffAddPropertiesModal();
+
+        expect(wrapper.vm.showAddPropertiesModal).toBe(false);
+        expect(wrapper.vm.updateNewProperties).toHaveBeenCalledTimes(1);
+        wrapper.vm.updateNewProperties.mockRestore();
+    });
+
+    it('should update new properties correctly', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.propertyGroupRepository.search = jest.fn(() => {
+            return Promise.resolve(propertiesMock);
+        });
+
+        Store.get('swProductDetail').product = productMock;
+        await wrapper.vm.getGroupIds();
+        await wrapper.vm.getProperties();
+
+        wrapper.vm.updateNewProperties();
+
+        expect(wrapper.vm.newProperties).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: '01',
+                    groupId: 'sizeId',
+                    name: '30',
+                }),
+                expect.objectContaining({
+                    id: '02',
+                    groupId: 'sizeId',
+                    name: '32',
+                }),
+                expect.objectContaining({
+                    id: '03',
+                    groupId: 'colorId',
+                    name: 'white',
+                }),
+                expect.objectContaining({
+                    id: '04',
+                    groupId: 'colorId',
+                    name: 'black',
+                }),
+            ]),
+        );
+        wrapper.vm.propertyGroupRepository.search.mockRestore();
+    });
+
+    it('should call a turning off modal function when canceling properties modal', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.turnOffAddPropertiesModal = jest.fn();
+
+        wrapper.vm.onCancelAddPropertiesModal();
+
+        expect(wrapper.vm.turnOffAddPropertiesModal).toHaveBeenCalledTimes(1);
+        wrapper.vm.turnOffAddPropertiesModal.mockRestore();
+    });
+
+    it('should save add properties modal failed', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.turnOffAddPropertiesModal = jest.fn();
+
+        wrapper.vm.onSaveAddPropertiesModal([]);
+
+        expect(wrapper.vm.turnOffAddPropertiesModal).toHaveBeenCalledTimes(1);
+        expect(wrapper.vm.newProperties).toEqual(expect.arrayContaining([]));
+        wrapper.vm.turnOffAddPropertiesModal.mockRestore();
+    });
+
+    it('should be able to add properties in filled state', async () => {
+        global.activeAclRoles = ['product.editor'];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        await wrapper.setData({
+            searchTerm: 'Size',
+            properties: propertiesMock,
+        });
+
+        const createButton = wrapper.findByText('button', 'sw-product.properties.buttonAddProperty');
+
+        expect(createButton.attributes('disabled')).toBeUndefined();
+    });
+
+    it('should not be able to add properties in filled state', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        await wrapper.setData({
+            searchTerm: 'Size',
+            properties: propertiesMock,
+        });
+
+        const createButton = wrapper.findByText('button', 'sw-product.properties.buttonAddProperty');
+        expect(createButton.attributes('disabled')).toBeDefined();
+    });
+
+    it('should be able to edit property', async () => {
+        global.activeAclRoles = ['property.editor'];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.propertyGroupRepository.search = jest.fn(() => {
+            return Promise.resolve(propertiesMock);
+        });
+
+        Store.get('swProductDetail').product = productMock;
+        await wrapper.vm.getGroupIds();
+        await wrapper.vm.getProperties();
+
+        const entityListing = wrapper.find('.sw-product-properties__list');
+        expect(entityListing.attributes()['allow-edit']).toBe('true');
+
+        wrapper.vm.propertyGroupRepository.search.mockRestore();
+    });
+
+    it('should not be able to edit property', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.propertyGroupRepository.search = jest.fn(() => {
+            return Promise.resolve(propertiesMock);
+        });
+
+        Store.get('swProductDetail').product = productMock;
+        await wrapper.vm.getGroupIds();
+        await wrapper.vm.getProperties();
+
+        const entityListing = wrapper.find('.sw-product-properties__list');
+        expect(entityListing.attributes()['allow-edit']).toBeUndefined();
+
+        wrapper.vm.propertyGroupRepository.search.mockRestore();
+    });
+
+    it('should be able to delete property', async () => {
+        global.activeAclRoles = ['product.deleter'];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.propertyGroupRepository.search = jest.fn(() => {
+            return Promise.resolve(propertiesMock);
+        });
+
+        Store.get('swProductDetail').product = productMock;
+        await wrapper.vm.getGroupIds();
+        await wrapper.vm.getProperties();
+
+        const entityListing = wrapper.find('.sw-product-properties__list');
+        expect(entityListing.attributes()['allow-delete']).toBe('true');
+
+        wrapper.vm.propertyGroupRepository.search.mockRestore();
+    });
+
+    it('should not be able to delete property', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.propertyGroupRepository.search = jest.fn(() => {
+            return Promise.resolve(propertiesMock);
+        });
+
+        Store.get('swProductDetail').product = productMock;
+        await wrapper.vm.getGroupIds();
+        await wrapper.vm.getProperties();
+
+        const entityListing = wrapper.find('.sw-product-properties__list');
+        expect(entityListing.attributes()['allow-delete']).toBeUndefined();
+
+        wrapper.vm.propertyGroupRepository.search.mockRestore();
+    });
+
+    it('should hide sw-inheritance-switch component', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        expect(wrapper.find('.sw-inheritance-switch').exists()).toBeTruthy();
+
+        await wrapper.setProps({
+            showInheritanceSwitcher: false,
+        });
+        expect(wrapper.vm.showInheritanceSwitcher).toBe(false);
+
+        expect(wrapper.find('.sw-inheritance-switch').exists()).toBeFalsy();
+    });
+
+    it('should render card title as mt-card title', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        const cardElement = wrapper.get('.sw-product-properties__card');
+        const cardTitleWrapper = cardElement.get('.sw-inherit-wrapper__card-title');
+        const cardTitle = cardTitleWrapper.get('h3.mt-card__title');
+
+        expect(cardTitleWrapper.classes()).toContain('sw-inherit-wrapper__card-title');
+        expect(cardTitle.classes()).toEqual(['mt-card__title']);
+        expect(cardTitle.text()).toBe('sw-product.properties.cardTitle');
+        expect(cardTitleWrapper.find('.sw-inheritance-switch').exists()).toBeTruthy();
+    });
+
+    it('should close properties modal and call a callback', async () => {
+        global.activeAclRoles = [];
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.turnOffAddPropertiesModal = jest.fn();
+        const callbackUpdateCurrentValuesMock = jest.fn();
+
+        wrapper.vm.onSaveAddPropertiesModal(propertiesMock, callbackUpdateCurrentValuesMock);
+
+        expect(wrapper.vm.turnOffAddPropertiesModal).toHaveBeenCalledTimes(1);
+        expect(callbackUpdateCurrentValuesMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should render custom empty-state copy when provided', async () => {
+        global.activeAclRoles = [];
+
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        const emptyPropertiesProductMock = cloneDeep(productMock);
+        const emptyPropertiesParentProductMock = cloneDeep(parentProductMock);
+
+        emptyPropertiesProductMock.properties = [];
+        emptyPropertiesParentProductMock.properties = [];
+
+        Store.get('swProductDetail').product = emptyPropertiesProductMock;
+        Store.get('swProductDetail').parentProduct = emptyPropertiesParentProductMock;
+
+        await wrapper.setProps({
+            emptyStateTitle: 'bulk-edit.emptyStateTitle',
+            emptyStateDescription: 'bulk-edit.emptyStateDescription',
+        });
+
+        await wrapper.vm.getGroupIds();
+        await wrapper.vm.getProperties();
+        await flushPromises();
+
+        expect(wrapper.find('.mt-empty-state__headline').text()).toBe('bulk-edit.emptyStateTitle');
+        expect(wrapper.find('.mt-empty-state__description').text()).toBe('bulk-edit.emptyStateDescription');
+    });
+});

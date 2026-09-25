@@ -1,0 +1,15 @@
+@import "~scss/variables";
+
+.sw-settings-payment-detail {
+    #sw-field--paymentMethod-description {
+        min-height: 148px;
+    }
+
+    .sw-settings-payment-detail-delete {
+        &__container {
+            display: flex;
+            align-items: center;
+            justify-content: end;
+        }
+    }
+}

@@ -1,0 +1,57 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Seo\SeoUrlRoute;
+
+use Shopwell\Core\Framework\Log\Package;
+
+#[Package('inventory')]
+class SeoUrlRouteRegistry
+{
+    /**
+     * @var SeoUrlRouteInterface[]
+     */
+    private array $seoUrlRoutes = [];
+
+    /**
+     * @var array<string, list<SeoUrlRouteInterface>>
+     */
+    private array $definitionToRoutes = [];
+
+    /**
+     * @internal
+     *
+     * @param iterable<SeoUrlRouteInterface> $seoUrlRoutes
+     */
+    public function __construct(iterable $seoUrlRoutes)
+    {
+        foreach ($seoUrlRoutes as $seoUrlRoute) {
+            $config = $seoUrlRoute->getConfig();
+
+            $route = $config->getRouteName();
+            $this->seoUrlRoutes[$route] = $seoUrlRoute;
+            $entityName = $config->getDefinition()->getEntityName();
+            $this->definitionToRoutes[$entityName][] = $seoUrlRoute;
+        }
+    }
+
+    /**
+     * @return iterable<string, SeoUrlRouteInterface>
+     */
+    public function getSeoUrlRoutes(): iterable
+    {
+        return $this->seoUrlRoutes;
+    }
+
+    public function findByRouteName(string $routeName): ?SeoUrlRouteInterface
+    {
+        return $this->seoUrlRoutes[$routeName] ?? null;
+    }
+
+    /**
+     * @return SeoUrlRouteInterface[]
+     */
+    public function findByDefinition(string $definitionName): array
+    {
+        return $this->definitionToRoutes[$definitionName] ?? [];
+    }
+}

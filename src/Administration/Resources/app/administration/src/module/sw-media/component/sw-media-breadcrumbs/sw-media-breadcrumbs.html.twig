@@ -1,0 +1,53 @@
+{% block sw_media_breadcrumbs %}
+<nav
+    class="sw-media-breadcrumbs"
+    :class="swMediaBreadcrumbsClasses"
+>
+    {% block sw_media_breadcrumbs_root_folder %}
+    <a
+        class="sw-media-breadcrumbs__button-back-to-root"
+        role="button"
+        tabindex="0"
+        :aria-label="$t('sw-media.index.rootFolderName')"
+        @click="onBreadcrumbsItemClicked(null)"
+        @keydown.enter="onBreadcrumbsItemClicked(null)"
+    >
+        <sw-media-folder-thumbnail
+            v-if="!small"
+            variant="back-breadcrumb"
+        />
+        <sw-media-folder-thumbnail v-else />
+    </a>
+    {% endblock %}
+
+    {% block sw_media_breadcrumbs_parent_folder %}
+    <a
+        v-if="parentFolder"
+        class="sw-media-breadcrumbs__entry sw-media-breadcrumbs__parent-folder"
+        role="button"
+        tabindex="0"
+        @click="onBreadcrumbsItemClicked(parentFolder.id)"
+        @keydown.enter="onBreadcrumbsItemClicked(parentFolder.id)"
+    >
+        <mt-icon
+            class="sw-media-breadcrumbs__arrow-separator"
+            name="regular-chevron-right-xxs"
+        />
+        {{ parentFolder.name }}
+    </a>
+    {% endblock %}
+
+    {% block sw_media_breadcrumbs_current_folder %}
+    <span
+        v-if="currentFolder"
+        class="sw-media-breadcrumbs__entry sw-media-breadcrumbs__current-folder"
+    >
+        <mt-icon
+            class="sw-media-breadcrumbs__arrow-separator"
+            name="regular-chevron-right-xxs"
+        />
+        {{ currentFolder.name }}
+    </span>
+    {% endblock %}
+</nav>
+{% endblock %}

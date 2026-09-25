@@ -1,0 +1,27 @@
+.sw-product-stream-detail {
+    &__condition_container.mt-card .mt-card__content {
+        padding: 0;
+        min-height: var(--scale-size-96);
+    }
+
+    &__open_modal_preview {
+        margin: var(--scale-size-24) var(--scale-size-24) 0;
+    }
+
+    .sw-condition-tree > .sw-condition-or-container {
+        padding-top: var(--scale-size-16);
+    }
+
+    &__product-type-warning,
+    &__product-stream-warning {
+        margin: var(--scale-size-24) var(--scale-size-24) 0;
+
+        .mt-banner {
+            margin-bottom: 0;
+        }
+
+        ul {
+            list-style-type: initial;
+        }
+    }
+}

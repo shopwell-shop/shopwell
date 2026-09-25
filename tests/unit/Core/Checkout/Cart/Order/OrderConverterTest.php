@@ -1,0 +1,1029 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Order;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\Delivery;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryPositionCollection;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
+use Shopwell\Core\Checkout\Cart\Event\BeforeSalesChannelContextAssembledEvent;
+use Shopwell\Core\Checkout\Cart\Event\SalesChannelContextAssembledEvent;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\Order\CartConvertedEvent;
+use Shopwell\Core\Checkout\Cart\Order\IdStruct;
+use Shopwell\Core\Checkout\Cart\Order\LineItemDownloadLoader;
+use Shopwell\Core\Checkout\Cart\Order\OrderConversionContext;
+use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCollection;
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
+use Shopwell\Core\Checkout\Customer\CustomerCollection;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Exception\AddressNotFoundException;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderDeliveryPosition\OrderDeliveryPositionCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderDeliveryPosition\OrderDeliveryPositionEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Checkout\Order\OrderException;
+use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
+use Shopwell\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadEntity;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Product\State;
+use Shopwell\Core\Content\Rule\RuleCollection;
+use Shopwell\Core\Content\Rule\RuleEntity;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\RuleAreas;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\ShopwellHttpException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
+use Shopwell\Core\System\Country\CountryEntity;
+use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
+use Shopwell\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
+use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
+use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
+use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
+use Shopwell\Core\Test\Generator;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Core\Test\Stub\EventDispatcher\CollectingEventDispatcher;
+use Shopwell\Core\Test\TestDefaults;
+use Shopwell\Tests\Unit\Core\Checkout\Cart\Order\Stubs\CartOrderConversionStub;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(OrderConverter::class)]
+class OrderConverterTest extends TestCase
+{
+    private EventDispatcher $eventDispatcher;
+
+    private CashRoundingConfig $cashRoundingConfig;
+
+    private OrderConverter $orderConverter;
+
+    protected function setUp(): void
+    {
+        $this->cashRoundingConfig = new CashRoundingConfig(2, 0.01, true);
+        $this->eventDispatcher = new EventDispatcher();
+        $this->orderConverter = $this->getOrderConverter();
+    }
+
+    /**
+     * @param \Closure(OrderEntity): ShopwellHttpException|null $expectedException
+     */
+    #[DataProvider('assembleSalesChannelContextData')]
+    public function testAssembleSalesChannelContext(?\Closure $expectedException, string $manipulateOrder = ''): void
+    {
+        $orderEntity = $this->getOrder($manipulateOrder);
+        $expected = $expectedException === null ? null : $expectedException($orderEntity);
+
+        $orderAddressRepositorySearchResult = [];
+        if (!$expected instanceof AddressNotFoundException) {
+            $orderAddressRepositorySearchResult = [$this->getOrderAddress()];
+        }
+
+        $orderConverter = $this->getOrderConverter(
+            [$this->getCustomer(false)],
+            $orderAddressRepositorySearchResult,
+            function (string $randomId, string $salesChannelId, array $options): SalesChannelContext {
+                $expectedOptions = [
+                    SalesChannelContextService::CURRENCY_ID => 'order-currency-id',
+                    SalesChannelContextService::LANGUAGE_ID => 'order-language-id',
+                    SalesChannelContextService::CUSTOMER_ID => 'customer-id',
+                    SalesChannelContextService::COUNTRY_STATE_ID => 'country-state-id',
+                    SalesChannelContextService::CUSTOMER_GROUP_ID => 'customer-group-id',
+                    SalesChannelContextService::PERMISSIONS => OrderConverter::ADMIN_EDIT_ORDER_PERMISSIONS,
+                    SalesChannelContextService::VERSION_ID => Defaults::LIVE_VERSION,
+                    SalesChannelContextService::PAYMENT_METHOD_ID => 'order-transaction-payment-method-id',
+                ];
+
+                if (!Feature::isActive('v6.8.0.0')) {
+                    $expectedOptions[SalesChannelContextService::SHIPPING_METHOD_ID] = 'order-delivery-shipping-method-id';
+                }
+
+                static::assertSame($expectedOptions, $options);
+
+                return $this->getSalesChannelContext(true);
+            }
+        );
+
+        if ($expected !== null) {
+            $this->expectExceptionObject($expected);
+        }
+
+        $orderConverter->assembleSalesChannelContext($orderEntity, Context::createDefaultContext());
+    }
+
+    /**
+     * @return list<array{0: (\Closure(OrderEntity): ShopwellHttpException)|null, 1?: string}>
+     */
+    public static function assembleSalesChannelContextData(): array
+    {
+        return [
+            [
+                static fn (OrderEntity $order): ShopwellHttpException => OrderException::missingAssociation('transactions'),
+                'order-no-transactions',
+            ],
+            [
+                static fn (OrderEntity $order): ShopwellHttpException => OrderException::missingAssociation('orderCustomer'),
+                'order-no-order-customer',
+            ],
+            [
+                static fn (OrderEntity $order): ShopwellHttpException => CartException::addressNotFound($order->getBillingAddressId()),
+            ],
+            [
+                null,
+            ],
+        ];
+    }
+
+    public function testConvertToOrderReferencesTheParentLineItemInTheWrittenVersion(): void
+    {
+        $versionId = Uuid::randomHex();
+
+        $parent = new LineItem('parent', LineItem::PRODUCT_LINE_ITEM_TYPE, 'product-id');
+        $parent->setLabel('parent');
+        $parent->addChild((new LineItem('child', LineItem::DISCOUNT_LINE_ITEM, 'discount-id'))->setLabel('child'));
+
+        $cart = $this->getCart();
+        $cart->setLineItems(new LineItemCollection([$parent]));
+
+        $context = $this->getSalesChannelContext(true);
+        $context->assign(['context' => $context->getContext()->createWithVersionId($versionId)]);
+
+        $result = $this->orderConverter->convertToOrder($cart, $context, new OrderConversionContext());
+
+        $lineItems = [];
+        foreach ($result['lineItems'] as $lineItem) {
+            $lineItems[$lineItem['identifier']] = $lineItem;
+        }
+
+        static::assertSame($lineItems['parent']['id'], $lineItems['child']['parentId']);
+        static::assertSame($versionId, $lineItems['child']['parentVersionId']);
+        static::assertArrayNotHasKey('parentVersionId', $lineItems['parent']);
+    }
+
+    public function testConvertToOrderWithoutDeliveries(): void
+    {
+        $cart = $this->getCart();
+        $result = $this->orderConverter->convertToOrder($cart, $this->getSalesChannelContext(true), new OrderConversionContext());
+
+        // unset uncheckable ids
+        unset(
+            $result['id'],
+            $result['billingAddressId'],
+            $result['deepLinkCode'],
+            $result['orderDateTime'],
+            $result['stateId'],
+            $result['languageId'],
+        );
+        for ($i = 0; $i < (is_countable($result['lineItems']) ? \count($result['lineItems']) : 0); ++$i) {
+            unset($result['lineItems'][$i]['id']);
+        }
+
+        for ($i = 0; $i < (is_countable($result['addresses']) ? \count($result['addresses']) : 0); ++$i) {
+            unset($result['addresses'][$i]['id']);
+        }
+
+        $expected = CartOrderConversionStub::getExpectedConvertToOrder();
+        $expected['deliveries'] = [];
+
+        $expectedJson = \json_encode($expected, \JSON_THROW_ON_ERROR);
+        static::assertIsString($expectedJson);
+        $actual = \json_encode($result, \JSON_THROW_ON_ERROR);
+        static::assertIsString($actual);
+
+        // As json to avoid classes
+        static::assertJsonStringEqualsJsonString($expectedJson, $actual);
+    }
+
+    public function testConvertToOrderShouldNotContainDeliveriesWithNoAddress(): void
+    {
+        $cart = $this->getCart();
+
+        $cart->setDeliveries(
+            $this->getDeliveryCollection(true)
+        );
+
+        $orderConversionContext = new OrderConversionContext();
+        $orderConversionContext->setIncludeDeliveries(false);
+
+        $result = $this->orderConverter->convertToOrder($cart, $this->getSalesChannelContext(true), $orderConversionContext);
+
+        static::assertEmpty($result['deliveries']);
+    }
+
+    public function testConvertToOrderShouldNotContainDeliveriesWithNoAddressButHaveOriginalAddressId(): void
+    {
+        $cart = $this->getCart();
+
+        $cart->setDeliveries(
+            $this->getDeliveryCollection(true)
+        );
+
+        foreach ($cart->getDeliveries() as $delivery) {
+            $delivery->addExtension(OrderConverter::ORIGINAL_ADDRESS_ID, new IdStruct('original-address-id'));
+            $delivery->addExtension(OrderConverter::ORIGINAL_ADDRESS_VERSION_ID, new IdStruct('original-address-version-id'));
+        }
+
+        $orderConversionContext = new OrderConversionContext();
+        $orderConversionContext->setIncludeDeliveries(true);
+
+        $result = $this->orderConverter->convertToOrder($cart, $this->getSalesChannelContext(true), $orderConversionContext);
+
+        static::assertNotEmpty($result['deliveries']);
+    }
+
+    public function testConvertToOrderWithDeliveries(): void
+    {
+        $cart = $this->getCart();
+        $cart->setDeliveries($this->getDeliveryCollection());
+
+        $result = $this->orderConverter->convertToOrder($cart, $this->getSalesChannelContext(true), new OrderConversionContext());
+
+        // unset uncheckable ids
+        unset(
+            $result['id'],
+            $result['billingAddressId'],
+            $result['deepLinkCode'],
+            $result['orderDateTime'],
+            $result['stateId'],
+            $result['languageId'],
+            $result['primaryOrderDeliveryId'],
+        );
+        for ($i = 0; $i < (is_countable($result['lineItems']) ? \count($result['lineItems']) : 0); ++$i) {
+            unset($result['lineItems'][$i]['id']);
+        }
+
+        for ($i = 0; $i < (is_countable($result['deliveries']) ? \count($result['deliveries']) : 0); ++$i) {
+            unset(
+                $result['deliveries'][$i]['id'],
+                $result['deliveries'][$i]['shippingOrderAddress']['id'],
+                $result['deliveries'][$i]['shippingDateEarliest'],
+                $result['deliveries'][$i]['shippingDateLatest'],
+            );
+        }
+
+        $expected = CartOrderConversionStub::getExpectedConvertToOrder();
+        unset($expected['addresses']);
+        $expected['shippingCosts']['unitPrice'] = 1;
+        $expected['shippingCosts']['totalPrice'] = 1;
+
+        $expectedJson = \json_encode($expected, \JSON_THROW_ON_ERROR);
+        static::assertIsString($expectedJson);
+        $actual = \json_encode($result, \JSON_THROW_ON_ERROR);
+        static::assertIsString($actual);
+        // As json to avoid classes
+        static::assertJsonStringEqualsJsonString($expectedJson, $actual);
+    }
+
+    /**
+     * @param \Closure(): ShopwellHttpException $expectedException
+     */
+    #[DataProvider('convertToOrderExceptionsData')]
+    public function testConvertToOrderExceptions(\Closure $expectedException, bool $loginCustomer = true, bool $conversionIncludeCustomer = true): void
+    {
+        $expected = $expectedException();
+
+        $cart = $this->getCart();
+        $cart->setDeliveries(
+            $this->getDeliveryCollection(
+                $expected instanceof OrderException
+            )
+        );
+
+        $conversionContext = new OrderConversionContext();
+        $conversionContext->setIncludeCustomer($conversionIncludeCustomer);
+
+        $salesChannelContext = $this->getSalesChannelContext(
+            $loginCustomer,
+            $expected instanceof AddressNotFoundException
+        );
+
+        $this->expectExceptionObject($expected);
+
+        $this->orderConverter->convertToOrder($cart, $salesChannelContext, $conversionContext);
+    }
+
+    /**
+     * @return list<array{0: \Closure(): ShopwellHttpException, 1?: false, 2?: false}>
+     */
+    public static function convertToOrderExceptionsData(): array
+    {
+        return [
+            [
+                static fn (): ShopwellHttpException => CartException::addressNotFound(''),
+            ],
+            [
+                static fn (): ShopwellHttpException => OrderException::deliveryWithoutAddress(),
+            ],
+            [
+                static fn (): ShopwellHttpException => CartException::customerNotLoggedIn(),
+                false,
+            ],
+            [
+                static fn (): ShopwellHttpException => CartException::customerNotLoggedIn(),
+                false,
+                false,
+            ],
+        ];
+    }
+
+    public function testConvertToCart(): void
+    {
+        $result = $this->orderConverter->convertToCart($this->getOrder(), Context::createDefaultContext());
+        $result = \json_encode($result, \JSON_THROW_ON_ERROR);
+        static::assertIsString($result);
+        $result = \json_decode($result, true, 512, \JSON_THROW_ON_ERROR);
+        static::assertNotFalse($result);
+
+        // unset uncheckable ids
+        unset(
+            $result['extensions']['originalId'],
+            $result['token'],
+            $result['errorHash']
+        );
+        for ($i = 0; $i < (is_countable($result['lineItems']) ? \count($result['lineItems']) : 0); ++$i) {
+            unset(
+                $result['lineItems'][$i]['extensions']['originalId'],
+                $result['lineItems'][$i]['uniqueIdentifier'],
+            );
+        }
+
+        for ($i = 0; $i < (is_countable($result['deliveries']) ? \count($result['deliveries']) : 0); ++$i) {
+            unset($result['deliveries'][$i]['deliveryDate']);
+            for ($f = 0; $f < (is_countable($result['deliveries'][$i]['positions']) ? \count($result['deliveries'][$i]['positions']) : 0); ++$f) {
+                unset(
+                    $result['deliveries'][$i]['positions'][$f]['deliveryDate'],
+                    $result['deliveries'][$i]['positions'][$f]['lineItem']['uniqueIdentifier'],
+                );
+            }
+        }
+
+        static::assertEquals(CartOrderConversionStub::getExpectedConvertToCart(), $result);
+    }
+
+    #[DataProvider('convertToCartManipulatedOrderData')]
+    public function testConvertToCartManipulatedOrder(string $manipulateOrder = ''): void
+    {
+        $order = $this->getOrder($manipulateOrder);
+
+        $result = $this->orderConverter->convertToCart($order, Context::createDefaultContext());
+        $result = \json_encode($result, \JSON_THROW_ON_ERROR);
+        static::assertIsString($result);
+        $result = \json_decode($result, true, 512, \JSON_THROW_ON_ERROR);
+        static::assertNotFalse($result);
+
+        // unset uncheckable ids
+        unset(
+            $result['extensions']['originalId'],
+            $result['token'],
+            $result['errorHash']
+        );
+        for ($i = 0; $i < (is_countable($result['lineItems']) ? \count($result['lineItems']) : 0); ++$i) {
+            unset(
+                $result['lineItems'][$i]['extensions']['originalId'],
+                $result['lineItems'][$i]['uniqueIdentifier'],
+            );
+        }
+
+        for ($i = 0; $i < (is_countable($result['deliveries']) ? \count($result['deliveries']) : 0); ++$i) {
+            unset($result['deliveries'][$i]['deliveryDate']);
+            for ($f = 0; $f < (is_countable($result['deliveries'][$i]['positions']) ? \count($result['deliveries'][$i]['positions']) : 0); ++$f) {
+                unset($result['deliveries'][$i]['positions'][$f]['deliveryDate']);
+            }
+        }
+
+        $expected = CartOrderConversionStub::getExpectedConvertToCart();
+        $expected['deliveries'] = [];
+
+        static::assertEquals($expected, $result);
+    }
+
+    /**
+     * @return array<array<string>>
+     */
+    public static function convertToCartManipulatedOrderData(): array
+    {
+        return [
+            [
+                'order-no-order-deliveries',
+            ],
+            [
+                'order-delivery-no-position',
+            ],
+            [
+                'order-delivery-no-shipping-method',
+            ],
+        ];
+    }
+
+    /**
+     * @param \Closure(OrderEntity): OrderException $expectedException
+     */
+    #[DataProvider('convertToCartExceptionsData')]
+    public function testConvertToCartExceptions(string $manipulateOrder, \Closure $expectedException): void
+    {
+        $order = $this->getOrder($manipulateOrder);
+
+        $this->expectExceptionObject($expectedException($order));
+
+        $this->orderConverter->convertToCart($order, Context::createDefaultContext());
+    }
+
+    /**
+     * @return \Generator<string, array{string, \Closure(OrderEntity): OrderException}>
+     */
+    public static function convertToCartExceptionsData(): \Generator
+    {
+        yield 'order without line items' => [
+            'order-no-line-items',
+            static fn (OrderEntity $order): OrderException => OrderException::missingAssociation('lineItems'),
+        ];
+
+        yield 'order without deliveries' => [
+            'order-no-deliveries',
+            static fn (OrderEntity $order): OrderException => OrderException::missingAssociation('deliveries'),
+        ];
+
+        yield 'order without order number' => [
+            'order-no-order-number',
+            static fn (OrderEntity $order): OrderException => OrderException::missingOrderNumber($order->getId()),
+        ];
+    }
+
+    public function testEventsAreCalled(): void
+    {
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->willReturn(static::isInstanceOf(CartConvertedEvent::class));
+
+        $orderConverter = $this->getOrderConverter(
+            null,
+            null,
+            null,
+            $dispatcher
+        );
+
+        $orderConverter->convertToOrder($this->getCart(), $this->getSalesChannelContext(true), new OrderConversionContext());
+    }
+
+    public function testConvertionWithDownloads(): void
+    {
+        $cart = $this->orderConverter->convertToCart($this->getOrder('order-add-line-item-download'), Context::createDefaultContext());
+        $lineItem = $cart->getLineItems()->first();
+
+        static::assertNotNull($lineItem);
+        static::assertInstanceOf(LineItem::class, $lineItem);
+        $collection = $lineItem->getExtensionOfType(OrderConverter::ORIGINAL_DOWNLOADS, OrderLineItemDownloadCollection::class);
+        static::assertInstanceOf(OrderLineItemDownloadCollection::class, $collection);
+        static::assertCount(1, $collection);
+
+        $cart = $this->getCart();
+        $cart->getLineItems()->clear();
+        $lineItemA = (new LineItem('line-item-label-1', 'line-item-label-1', Uuid::randomHex()))
+            ->setPrice(new CalculatedPrice(1, 1, new CalculatedTaxCollection(), new TaxRuleCollection()))
+            ->setLabel('line-item-label-1')
+            ->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_DIGITAL);
+
+        $lineItemA->addExtension(OrderConverter::ORIGINAL_DOWNLOADS, $collection);
+        $lineItemB = (new LineItem('line-item-label-2', 'line-item-label-2', Uuid::randomHex()))
+            ->setPrice(new CalculatedPrice(1, 1, new CalculatedTaxCollection(), new TaxRuleCollection()))
+            ->setLabel('line-item-label-2')
+            ->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_DIGITAL);
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            $lineItemA->setStates([State::IS_DOWNLOAD]);
+            $lineItemB->setStates([State::IS_DOWNLOAD]);
+        }
+
+        $cart->add($lineItemA);
+        $cart->add($lineItemB);
+
+        $order = $this->orderConverter->convertToOrder($cart, $this->getSalesChannelContext(true), new OrderConversionContext());
+
+        static::assertArrayHasKey('lineItems', $order);
+        static::assertIsArray($order['lineItems']);
+        static::assertCount(2, $order['lineItems']);
+
+        $lineItemA = \is_array($order['lineItems'][0]) ? $order['lineItems'][0] : [];
+        $lineItemB = \is_array($order['lineItems'][1]) ? $order['lineItems'][1] : [];
+
+        static::assertIsArray($lineItemA['downloads']);
+        static::assertArrayHasKey('id', $lineItemA['downloads'][0]);
+        static::assertArrayNotHasKey('mediaId', $lineItemA['downloads'][0]);
+        static::assertIsArray($lineItemB['downloads']);
+        static::assertArrayNotHasKey('id', $lineItemB['downloads'][0]);
+        static::assertArrayHasKey('mediaId', $lineItemB['downloads'][0]);
+        static::assertArrayHasKey('position', $lineItemB['downloads'][0]);
+    }
+
+    public function testAssembleSalesChannelContextEventsAreDispatched(): void
+    {
+        $order = $this->getOrder();
+        $salesChannelContext = $this->getSalesChannelContext(true);
+        $dispatcher = new CollectingEventDispatcher();
+
+        $address = new OrderAddressEntity();
+        $address->setId('order-address-id');
+        $address->setUniqueIdentifier('order-address-id');
+        $address->setHash('order-address-hash');
+
+        $addresses = new OrderAddressCollection([$address]);
+
+        $addressRepository = $this->createMock(EntityRepository::class);
+        $addressRepository
+            ->expects($this->once())
+            ->method('search')
+            ->willReturn(new EntitySearchResult(
+                'order_address',
+                1,
+                $addresses,
+                null,
+                new Criteria(),
+                $salesChannelContext->getContext()
+            ));
+
+        $ruleRepository = new StaticEntityRepository([new RuleCollection()]);
+
+        $customerRepository = new StaticEntityRepository([new CustomerCollection([$this->getCustomer(false)])]);
+
+        $converter = new OrderConverter(
+            $customerRepository,
+            static::createStub(SalesChannelContextFactory::class),
+            $dispatcher,
+            static::createStub(NumberRangeValueGeneratorInterface::class),
+            $addressRepository,
+            static::createStub(InitialStateIdLoader::class),
+            static::createStub(LineItemDownloadLoader::class),
+            $ruleRepository,
+        );
+
+        $converter->assembleSalesChannelContext($order, $salesChannelContext->getContext());
+
+        static::assertCount(2, $dispatcher->getEvents());
+        static::assertInstanceOf(BeforeSalesChannelContextAssembledEvent::class, $dispatcher->getEvents()[0]);
+        static::assertSame($order, $dispatcher->getEvents()[0]->getOrder());
+        static::assertSame(OrderConverter::ADMIN_EDIT_ORDER_PERMISSIONS, $dispatcher->getEvents()[0]->getOptions()[SalesChannelContextService::PERMISSIONS]);
+        static::assertInstanceOf(SalesChannelContextAssembledEvent::class, $dispatcher->getEvents()[1]);
+        static::assertSame($order, $dispatcher->getEvents()[1]->getOrder());
+    }
+
+    public function testAssembleSalesChannelContextWithCustomerRestoresAddresses(): void
+    {
+        $defaultAddress = $this->getCustomerAddress();
+        $defaultAddress->setId('default-address-id');
+        $defaultAddress->setHash('default-address-hash');
+
+        $billingAddress = $this->getCustomerAddress();
+        $billingAddress->setId('billing-address-id');
+        $billingAddress->setHash('billing-address-hash');
+
+        $shippingAddress = $this->getCustomerAddress();
+        $shippingAddress->setId('shipping-address-id');
+        $shippingAddress->setHash('shipping-address-hash');
+
+        $customer = $this->getCustomer(true);
+        $customer->setAddresses(new CustomerAddressCollection([$billingAddress, $shippingAddress]));
+
+        $orderBillingAddress = $this->getOrderAddress();
+        $orderBillingAddress->setId('order-billing-address-id');
+        $orderBillingAddress->setHash('billing-address-hash');
+
+        $orderShippingAddress = $this->getOrderAddress();
+        $orderShippingAddress->setId('order-shipping-address-id');
+        $orderShippingAddress->setHash('shipping-address-hash');
+
+        $order = $this->getOrder();
+        $order->setBillingAddressId('order-billing-address-id');
+        $delivery = $order->getDeliveries()?->first();
+        $order->setPrimaryOrderDelivery($delivery);
+        static::assertNotNull($delivery);
+        $delivery->setShippingOrderAddressId('order-shipping-address-id');
+
+        $converter = $this->getOrderConverter(
+            [$customer],
+            [$orderShippingAddress, $orderBillingAddress],
+            function (string $randomId, string $salesChannelId, array $options): SalesChannelContext {
+                static::assertSame('billing-address-id', $options[SalesChannelContextService::BILLING_ADDRESS_ID] ?? null);
+                static::assertSame('shipping-address-id', $options[SalesChannelContextService::SHIPPING_ADDRESS_ID] ?? null);
+
+                return $this->getSalesChannelContext(true);
+            }
+        );
+
+        $converter->assembleSalesChannelContext($order, Context::createDefaultContext());
+    }
+
+    private function getSalesChannelContext(bool $loginCustomer, bool $customerWithoutBillingAddress = false): SalesChannelContext
+    {
+        $salesChannel = new SalesChannelEntity();
+        $salesChannel->setId(TestDefaults::SALES_CHANNEL);
+        $salesChannel->setLanguageId(Defaults::LANGUAGE_SYSTEM);
+        $salesChannel->setTaxCalculationType(SalesChannelDefinition::CALCULATION_TYPE_HORIZONTAL);
+
+        $paymentMethod = new PaymentMethodEntity();
+        $paymentMethod->setId('payment-method-id');
+
+        $salesChannelContext = Generator::generateSalesChannelContext(
+            salesChannel: $salesChannel,
+            paymentMethod: $paymentMethod,
+            itemRounding: $this->cashRoundingConfig,
+            totalRounding: $this->cashRoundingConfig,
+            areaRuleIds: [RuleAreas::PAYMENT_AREA => ['rule-id']],
+            customer: $loginCustomer ? $this->getCustomer($customerWithoutBillingAddress) : null,
+            overrides: $loginCustomer ? [] : ['customer' => null]
+        );
+
+        $salesChannelContext->setRuleIds(['order-rule-id-1', 'order-rule-id-2']);
+
+        return $salesChannelContext;
+    }
+
+    private function getCart(): Cart
+    {
+        $cart = new Cart('cart-token');
+        $cart->add(
+            (new LineItem('line-item-id-1', LineItem::PRODUCT_LINE_ITEM_TYPE))
+                ->setPrice(new CalculatedPrice(1, 1, new CalculatedTaxCollection(), new TaxRuleCollection()))
+                ->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_PHYSICAL)
+                ->setLabel('line-item-label-1')
+        )->add(
+            (new LineItem('line-item-id-2', LineItem::PRODUCT_LINE_ITEM_TYPE))
+                ->setPrice(new CalculatedPrice(1, 1, new CalculatedTaxCollection(), new TaxRuleCollection()))
+                ->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_PHYSICAL)
+                ->setLabel('line-item-label-2')
+        );
+
+        return $cart;
+    }
+
+    private function getOrder(string $toManipulate = ''): OrderEntity
+    {
+        // Order line items
+        $orderLineItem = new OrderLineItemEntity();
+        $orderLineItem->setIdentifier('order-line-item-identifier');
+        $orderLineItem->setId('order-line-item-id');
+        $orderLineItem->setQuantity(1);
+        $orderLineItem->setType(LineItem::PRODUCT_LINE_ITEM_TYPE);
+        $orderLineItem->setLabel('order-line-item-label');
+        $orderLineItem->setGood(true);
+        $orderLineItem->setRemovable(false);
+        $orderLineItem->setStackable(true);
+        $orderLineItem->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_PHYSICAL);
+
+        if ($toManipulate === 'order-add-line-item-download') {
+            $orderLineItemDownload = new OrderLineItemDownloadEntity();
+            $orderLineItemDownload->setId(Uuid::randomHex());
+            $orderLineItemDownload->setMediaId(Uuid::randomHex());
+
+            $orderLineItemDownloadCollection = new OrderLineItemDownloadCollection();
+            $orderLineItemDownloadCollection->add($orderLineItemDownload);
+            $orderLineItem->setDownloads($orderLineItemDownloadCollection);
+            $orderLineItem->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_DIGITAL);
+        }
+
+        $orderLineItemCollection = new OrderLineItemCollection();
+        $orderLineItemCollection->add($orderLineItem);
+
+        // Order delivery position
+        $orderDeliveryPositionCollection = new OrderDeliveryPositionCollection();
+        $orderDeliveryPosition = new OrderDeliveryPositionEntity();
+        $orderDeliveryPosition->setId('order-delivery-position-id-1');
+        $orderDeliveryPosition->setOrderLineItem($orderLineItem);
+        $orderDeliveryPosition->setPrice(new CalculatedPrice(1, 1, new CalculatedTaxCollection(), new TaxRuleCollection()));
+        $orderDeliveryPositionCollection->add($orderDeliveryPosition);
+
+        // Order delivery
+        $orderDeliveryCollection = new OrderDeliveryCollection();
+        $orderDelivery = new OrderDeliveryEntity();
+        $orderDelivery->setId('order-delivery-id');
+        $orderDelivery->setShippingDateEarliest(new \DateTimeImmutable());
+        $orderDelivery->setShippingDateLatest(new \DateTimeImmutable());
+        $orderDelivery->setShippingMethodId('order-delivery-shipping-method-id');
+        $orderAddress = $this->getOrderAddress();
+        $orderDelivery->setShippingOrderAddress($orderAddress);
+        $orderDelivery->setShippingOrderAddressId($orderAddress->getId());
+        static::assertIsString($orderAddress->getVersionId());
+        $orderDelivery->setShippingOrderAddressVersionId($orderAddress->getVersionId());
+        $orderDelivery->setShippingCosts(new CalculatedPrice(1, 1, new CalculatedTaxCollection(), new TaxRuleCollection()));
+        if ($toManipulate !== 'order-delivery-no-shipping-method') {
+            $orderDelivery->setShippingMethod(new ShippingMethodEntity());
+        }
+        if ($toManipulate !== 'order-delivery-no-position') {
+            $orderDelivery->setPositions($orderDeliveryPositionCollection);
+        }
+        if ($toManipulate !== 'order-no-order-deliveries') {
+            $orderDeliveryCollection->add($orderDelivery);
+        }
+
+        // Transactions
+        $orderTransactionCollection = new OrderTransactionCollection();
+
+        $orderTransaction = new OrderTransactionEntity();
+        $orderTransaction->setId('order-transaction-id');
+        $orderTransaction->setPaymentMethodId('order-transaction-payment-method-id');
+        $stateMachineState = new StateMachineStateEntity();
+        $stateMachineState->setId('state-machine-state-id');
+        $stateMachineState->setTechnicalName('state-machine-state-technical-name');
+        $orderTransaction->setStateMachineState($stateMachineState);
+
+        $orderTransactionCancelled = new OrderTransactionEntity();
+        $orderTransactionCancelled->setId('order-transaction-cancelled-id');
+        $orderTransactionCancelled->setPaymentMethodId('order-transaction-cancelled-payment-method-id');
+        $stateMachineStateCancelled = new StateMachineStateEntity();
+        $stateMachineStateCancelled->setId('state-machine-cancelled-state-id');
+        $stateMachineStateCancelled->setTechnicalName('cancelled');
+        $orderTransactionCancelled->setStateMachineState($stateMachineStateCancelled);
+
+        $orderTransactionFailed = new OrderTransactionEntity();
+        $orderTransactionFailed->setId('order-transaction-failed-id');
+        $orderTransactionFailed->setPaymentMethodId('order-transaction-failed-payment-method-id');
+        $stateMachineStateFailed = new StateMachineStateEntity();
+        $stateMachineStateFailed->setId('state-machine-failed-state-id');
+        $stateMachineStateFailed->setTechnicalName('failed');
+        $orderTransactionFailed->setStateMachineState($stateMachineStateFailed);
+
+        $orderTransactionCollection->add($orderTransactionCancelled);
+        $orderTransactionCollection->add($orderTransaction);
+        $orderTransactionCollection->add($orderTransactionFailed);
+
+        // Cart price
+        $cartPrice = new CartPrice(19.5, 19.5, 19.5, new CalculatedTaxCollection(), new TaxRuleCollection(), CartPrice::TAX_STATE_FREE);
+
+        // Order entity
+        $order = new OrderEntity();
+        $order->setPrice($cartPrice);
+        $order->setId(Uuid::randomHex());
+        $order->setBillingAddressId('order-address-id');
+        $order->setCurrencyId('order-currency-id');
+        $order->setLanguageId('order-language-id');
+        $order->setSalesChannelId(TestDefaults::SALES_CHANNEL);
+        $order->setTotalRounding($this->cashRoundingConfig);
+        $order->setItemRounding($this->cashRoundingConfig);
+        $order->setRuleIds(['order-rule-id-1', 'order-rule-id-2']);
+        $order->setTaxStatus(CartPrice::TAX_STATE_FREE);
+
+        if ($toManipulate !== 'order-no-order-customer') {
+            $order->setOrderCustomer($this->getOrderCustomer());
+        }
+        if ($toManipulate !== 'order-no-transactions') {
+            $order->setTransactions($orderTransactionCollection);
+        }
+        if ($toManipulate !== 'order-no-line-items') {
+            $order->setLineItems($orderLineItemCollection);
+        }
+        if ($toManipulate !== 'order-no-deliveries') {
+            $order->setDeliveries($orderDeliveryCollection);
+        }
+        if ($toManipulate !== 'order-no-order-number') {
+            $order->setOrderNumber('10000');
+        }
+
+        return $order;
+    }
+
+    /**
+     * @param array<CustomerEntity>|null $customerRepositoryResultArray
+     * @param array<OrderAddressEntity>|null $orderAddressRepositoryResultArray
+     * @param callable(string, string, array<string, mixed>): SalesChannelContext|null $salesChannelContextFactoryCreateCallable
+     */
+    private function getOrderConverter(?array $customerRepositoryResultArray = null, ?array $orderAddressRepositoryResultArray = null, ?callable $salesChannelContextFactoryCreateCallable = null, ?EventDispatcherInterface $eventDispatcher = null): OrderConverter
+    {
+        // Setup classes for OrderConverter
+        // Static
+        $initialStateIdLoader = static::createStub(InitialStateIdLoader::class);
+        $numberRangeValueGenerator = static::createStub(NumberRangeValueGeneratorInterface::class);
+        $numberRangeValueGenerator->method('getValue')->willReturn('10000');
+
+        // Dynamic
+        $salesChannelContextFactory = static::createStub(AbstractSalesChannelContextFactory::class);
+        if ($salesChannelContextFactoryCreateCallable !== null) {
+            $salesChannelContextFactory->method('create')->willReturnCallback($salesChannelContextFactoryCreateCallable);
+        }
+
+        $customerRepository = static::createStub(EntityRepository::class);
+        if ($customerRepositoryResultArray !== null) {
+            $customerRepository->method('search')->willReturn(
+                new EntitySearchResult(
+                    'customer',
+                    1,
+                    new EntityCollection($customerRepositoryResultArray),
+                    null,
+                    new Criteria(),
+                    Context::createDefaultContext()
+                )
+            );
+        }
+
+        $orderAddressRepository = static::createStub(EntityRepository::class);
+        if ($orderAddressRepositoryResultArray !== null) {
+            $orderAddressRepository->method('search')->willReturn(
+                new EntitySearchResult(
+                    'order_address',
+                    1,
+                    new EntityCollection($orderAddressRepositoryResultArray),
+                    null,
+                    new Criteria(),
+                    Context::createDefaultContext()
+                )
+            );
+        }
+
+        $rule = new RuleEntity();
+        $rule->setId('rule-id');
+        $rule->setAreas([RuleAreas::PAYMENT_AREA]);
+        $ruleRepository = new StaticEntityRepository([new RuleCollection([$rule])]);
+
+        $productDownload = new ProductDownloadEntity();
+        $productDownload->setId(Uuid::randomHex());
+        $productDownload->setMediaId(Uuid::randomHex());
+        $productDownload->setPosition(0);
+        $productDownloadRepository = static::createStub(EntityRepository::class);
+        $productDownloadRepository->method('search')->willReturnCallback(static function (Criteria $criteria) use ($productDownload): EntitySearchResult {
+            $filters = $criteria->getFilters();
+            if (isset($filters[0]) && $filters[0] instanceof EqualsAnyFilter) {
+                $value = (new \ReflectionProperty(EqualsAnyFilter::class, 'value'))->getValue($filters[0]);
+                $productDownload->setProductId($value[0] ?? null);
+            }
+
+            return new EntitySearchResult(
+                'product_download',
+                1,
+                new EntityCollection([$productDownload]),
+                null,
+                new Criteria(),
+                Context::createDefaultContext()
+            );
+        });
+
+        $lineItemDownloadLoader = new LineItemDownloadLoader($productDownloadRepository);
+
+        return new OrderConverter(
+            $customerRepository,
+            $salesChannelContextFactory,
+            $eventDispatcher ?? $this->eventDispatcher,
+            $numberRangeValueGenerator,
+            $orderAddressRepository,
+            $initialStateIdLoader,
+            $lineItemDownloadLoader,
+            $ruleRepository,
+        );
+    }
+
+    private function getCustomer(bool $withoutBillingAddress): CustomerEntity
+    {
+        $customer = new CustomerEntity();
+        $customer->setId('customer-id');
+        $customer->setEmail('customer-email');
+        $customer->setSalutationId('customer-salutation-id');
+        $customer->setFirstName('customer-first-name');
+        $customer->setLastName('customer-last-name');
+        $customer->setCustomerNumber('customer-number');
+        $customer->setGroupId('customer-group-id');
+        $customer->setAddresses(new CustomerAddressCollection([$this->getCustomerAddress()]));
+
+        if (!$withoutBillingAddress) {
+            $customer->setDefaultBillingAddress($this->getCustomerAddress());
+        }
+
+        return $customer;
+    }
+
+    private function getCustomerAddress(): CustomerAddressEntity
+    {
+        $address = new CustomerAddressEntity();
+        $address->setId('billing-address-id');
+        $address->setSalutationId('billing-address-salutation-id');
+        $address->setFirstName('billing-address-first-name');
+        $address->setLastName('billing-address-last-name');
+        $address->setStreet('billing-address-street');
+        $address->setZipcode('billing-address-zipcode');
+        $address->setCity('billing-address-city');
+        $address->setCountryId('billing-address-country-id');
+        $address->setHash('billing-address-hash');
+
+        return $address;
+    }
+
+    private function getOrderCustomer(): OrderCustomerEntity
+    {
+        $customer = new OrderCustomerEntity();
+        $customer->setId('order-customer-id');
+        $customer->setCustomerId('customer-id');
+        $customer->setEmail('order-customer-email');
+        $customer->setSalutationId('order-customer-salutation-id');
+        $customer->setFirstName('order-customer-first-name');
+        $customer->setLastName('order-customer-last-name');
+        $customer->setCustomerNumber('order-customer-number');
+
+        return $customer;
+    }
+
+    private function getOrderAddress(): OrderAddressEntity
+    {
+        $country = new CountryEntity();
+        $country->setId('country-id');
+        $country->setName('country-name');
+        $country->setPosition(0);
+        $country->setActive(true);
+        $country->setShippingAvailable(true);
+        $country->setDisplayStateInRegistration(true);
+        $country->setForceStateInRegistration(true);
+        $country->setCheckVatIdPattern(false);
+
+        $countryState = new CountryStateEntity();
+        $countryState->setId('country-state-id');
+        $countryState->setName('country-state-name');
+        $countryState->setCountryId($country->getId());
+        $countryState->setShortCode('CSN');
+        $countryState->setPosition(0);
+        $countryState->setActive(true);
+
+        $address = new OrderAddressEntity();
+        $address->setId('order-address-id');
+        $address->setVersionId('order-address-version-id');
+        $address->setSalutationId('order-address-salutation-id');
+        $address->setFirstName('order-address-first-name');
+        $address->setLastName('order-address-last-name');
+        $address->setStreet('order-address-street');
+        $address->setZipcode('order-address-zipcode');
+        $address->setCity('order-address-city');
+        $address->setCountryId($country->getId());
+        $address->setCountryStateId($countryState->getId());
+        $address->setCountry($country);
+        $address->setCountryState($countryState);
+        $address->setHash('order-address-hash');
+
+        return $address;
+    }
+
+    private function getDeliveryCollection(bool $withoutAddress = false): DeliveryCollection
+    {
+        $country = new CountryEntity();
+        $country->setId('country-id');
+        $country->setName('country-name');
+
+        $countryState = new CountryStateEntity();
+        $countryState->setId('country-state-id');
+        $countryState->setName('country-state-name');
+
+        $shippingMethod = new ShippingMethodEntity();
+        $shippingMethod->setId('shipping-method-id');
+
+        $shippingLocation = new ShippingLocation($country, null, null);
+        if (!$withoutAddress) {
+            $shippingLocation = new ShippingLocation($country, $countryState, $this->getCustomerAddress());
+        }
+
+        $deliveryCollection = new DeliveryCollection();
+        $delivery = new Delivery(
+            new DeliveryPositionCollection(),
+            new DeliveryDate(new \DateTimeImmutable(), new \DateTimeImmutable()),
+            $shippingMethod,
+            $shippingLocation,
+            new CalculatedPrice(1, 1, new CalculatedTaxCollection(), new TaxRuleCollection())
+        );
+        $deliveryCollection->add($delivery);
+
+        return $deliveryCollection;
+    }
+}

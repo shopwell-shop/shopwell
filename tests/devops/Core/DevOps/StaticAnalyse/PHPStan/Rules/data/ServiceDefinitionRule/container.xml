@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<container>
+    <services>
+        <service id="Shopwell\Core\Framework\Example\CoreServiceInCore" class="Shopwell\Core\Framework\Example\CoreServiceInCore"/>
+        <service id="Shopwell\Core\Framework\Example\XmlCoreService" class="Shopwell\Core\Framework\Example\XmlCoreService"/>
+        <service id="Shopwell\Core\Framework\Example\PhpCoreService" class="Shopwell\Core\Framework\Example\PhpCoreService"/>
+        <service id="Shopwell\Core\Framework\Example\CoreContract" class="Shopwell\Storefront\Framework\Example\StorefrontImplementation"/>
+        <service id="Shopwell\Core\Framework\Example\CoreAlias" alias="Shopwell\Core\Framework\Example\XmlCoreService"/>
+    </services>
+</container>

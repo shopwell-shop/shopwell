@@ -1,0 +1,51 @@
+.sw-extension-ratings-summary {
+    font-size: var(--font-size-xs);
+    max-width: 450px;
+
+    &__grid {
+        display: grid;
+        grid-template-columns: 72px auto;
+        grid-template-rows: auto auto;
+        column-gap: 24px;
+    }
+
+    &__progress-bars {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-gap: 12px;
+        align-items: center;
+        font-size: var(--font-size-2xs);
+
+        .mt-progress-bar {
+            height: 4px;
+            row-gap: 0;
+
+            .mt-progress-bar__fill {
+                background: var(--color-background-brand-default);
+            }
+
+            .mt-progress-bar__track {
+                background: var(--color-background-tertiary-default);
+            }
+
+            .mt-field-label,
+            .mt-progress-bar__progress-label {
+                display: none;
+            }
+        }
+    }
+
+    &__rows {
+        display: grid;
+        grid-auto-rows: 16px;
+        grid-gap: 4px;
+        align-items: center;
+    }
+
+    &__average {
+        font-size: 40px;
+        margin-bottom: 25px;
+        line-height: 0.8;
+        word-break: keep-all;
+    }
+}

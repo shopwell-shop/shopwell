@@ -1,0 +1,160 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Store\Struct;
+
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\Struct;
+
+#[Package('checkout')]
+class CartPositionStruct extends Struct
+{
+    protected float $netPrice;
+
+    protected float $taxValue;
+
+    protected float $grossPrice;
+
+    protected float $pseudoPrice;
+
+    protected bool $firstMonthFree;
+
+    protected int $discountAppliesForMonths;
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected array $extension;
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected array $variant;
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public static function fromArray(array $data): CartPositionStruct
+    {
+        return (new self())->assign($data);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getExtensionInformation(): array
+    {
+        return $this->extension;
+    }
+
+    /**
+     * @param array<string, mixed> $extensionInformation
+     */
+    public function setExtensionInformation(array $extensionInformation): void
+    {
+        $this->extension = $extensionInformation;
+    }
+
+    public function getExtensionId(): int
+    {
+        return $this->getExtensionInformation()['id'];
+    }
+
+    public function getExtensionName(): string
+    {
+        return $this->getExtensionInformation()['name'];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getVariant(): array
+    {
+        return $this->variant;
+    }
+
+    /**
+     * @param array<string, mixed> $variant
+     */
+    public function setVariant(array $variant): void
+    {
+        $this->variant = $variant;
+    }
+
+    public function getVariantId(): int
+    {
+        return $this->getVariant()['id'];
+    }
+
+    public function getVariantType(): string
+    {
+        return $this->getVariant()['name'];
+    }
+
+    public function getNetPrice(): float
+    {
+        return $this->netPrice;
+    }
+
+    public function setNetPrice(float $netPrice): void
+    {
+        $this->netPrice = $netPrice;
+    }
+
+    public function getTaxValue(): float
+    {
+        return $this->taxValue;
+    }
+
+    public function setTaxValue(float $taxValue): void
+    {
+        $this->taxValue = $taxValue;
+    }
+
+    public function getGrossPrice(): float
+    {
+        return $this->grossPrice;
+    }
+
+    public function setGrossPrice(float $grossPrice): void
+    {
+        $this->grossPrice = $grossPrice;
+    }
+
+    public function getPseudoPrice(): float
+    {
+        return $this->pseudoPrice;
+    }
+
+    public function setPseudoPrice(float $pseudoPrice): void
+    {
+        $this->pseudoPrice = $pseudoPrice;
+    }
+
+    public function isFirstMonthFree(): bool
+    {
+        return $this->firstMonthFree;
+    }
+
+    public function setFirstMonthFree(bool $firstMonthFree): void
+    {
+        $this->firstMonthFree = $firstMonthFree;
+    }
+
+    public function getDiscountAppliesForMonths(): int
+    {
+        return $this->discountAppliesForMonths;
+    }
+
+    public function setDiscountAppliesForMonths(int $discountAppliesForMonths): void
+    {
+        $this->discountAppliesForMonths = $discountAppliesForMonths;
+    }
+
+    public function jsonSerialize(): array
+    {
+        $vars = get_object_vars($this);
+        unset($vars['extensions']);
+
+        return $vars;
+    }
+}

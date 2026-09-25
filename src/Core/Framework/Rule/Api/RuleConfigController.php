@@ -1,0 +1,57 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Rule\Api;
+
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\PlatformRequest;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Package('fundamentals@after-sales')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [ApiRouteScope::ID]])]
+class RuleConfigController extends AbstractController
+{
+    /**
+     * @var array<string, mixed[]>
+     */
+    private array $config = [];
+
+    /**
+     * @internal
+     *
+     * @param iterable<Rule> $taggedRules
+     */
+    public function __construct(iterable $taggedRules)
+    {
+        $this->hydrateConfig($taggedRules);
+    }
+
+    #[Route(path: '/api/_info/rule-config', name: 'api.info.rule-config', methods: ['GET'])]
+    public function getConditionsConfig(): JsonResponse
+    {
+        return new JsonResponse($this->config);
+    }
+
+    /**
+     * @param iterable<Rule> $taggedRules
+     */
+    private function hydrateConfig(iterable $taggedRules): void
+    {
+        foreach ($taggedRules as $rule) {
+            try {
+                $config = $rule->getConfig();
+            } catch (\Throwable) {
+                continue;
+            }
+
+            if ($config === null) {
+                continue;
+            }
+
+            $this->config[$rule->getName()] = $config->getData();
+        }
+    }
+}

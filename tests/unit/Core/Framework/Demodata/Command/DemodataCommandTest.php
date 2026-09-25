@@ -1,0 +1,226 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Demodata\Command;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Customer\CustomerDefinition;
+use Shopwell\Core\Checkout\Order\OrderDefinition;
+use Shopwell\Core\Checkout\Promotion\PromotionDefinition;
+use Shopwell\Core\Content\Category\CategoryDefinition;
+use Shopwell\Core\Content\Flow\FlowDefinition;
+use Shopwell\Core\Content\MailTemplate\Aggregate\MailHeaderFooter\MailHeaderFooterDefinition;
+use Shopwell\Core\Content\MailTemplate\MailTemplateDefinition;
+use Shopwell\Core\Content\Media\MediaDefinition;
+use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientDefinition;
+use Shopwell\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerDefinition;
+use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewDefinition;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\ProductStream\ProductStreamDefinition;
+use Shopwell\Core\Content\Property\PropertyGroupDefinition;
+use Shopwell\Core\Content\Rule\RuleDefinition;
+use Shopwell\Core\Framework\Demodata\Command\DemodataCommand;
+use Shopwell\Core\Framework\Demodata\DemodataService;
+use Shopwell\Core\Framework\Demodata\Event\DemodataRequestCreatedEvent;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\CustomField\Aggregate\CustomFieldSet\CustomFieldSetDefinition;
+use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainDefinition;
+use Shopwell\Core\System\Tag\TagDefinition;
+use Shopwell\Core\System\User\UserDefinition;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+#[CoversClass(DemodataCommand::class)]
+class DemodataCommandTest extends TestCase
+{
+    private const DEFAULT_DEFINITIONS = [
+        TagDefinition::class,
+        RuleDefinition::class,
+        MediaDefinition::class,
+        CustomerDefinition::class,
+        PropertyGroupDefinition::class,
+        CategoryDefinition::class,
+        ProductManufacturerDefinition::class,
+        ProductDefinition::class,
+        ProductStreamDefinition::class,
+        PromotionDefinition::class,
+        OrderDefinition::class,
+        ProductReviewDefinition::class,
+        UserDefinition::class,
+        FlowDefinition::class,
+        CustomFieldSetDefinition::class,
+        MailTemplateDefinition::class,
+        MailHeaderFooterDefinition::class,
+        SalesChannelDomainDefinition::class,
+        NewsletterRecipientDefinition::class,
+    ];
+
+    private EventDispatcher $dispatcher;
+
+    private DemodataCommand $command;
+
+    protected function setUp(): void
+    {
+        $this->dispatcher = new EventDispatcher();
+        $this->command = new DemodataCommand(
+            static::createStub(DemodataService::class),
+            $this->dispatcher,
+            $this->name() === 'testShowNoticeWhenNotProd' ? 'dev' : 'prod',
+            [self::class], // always-present class, avoids dependency on shopware/dev-tools in unit tests
+        );
+    }
+
+    public function testMissingDependencyReturnsFailure(): void
+    {
+        $command = new DemodataCommand(
+            static::createStub(DemodataService::class),
+            $this->dispatcher,
+            'prod',
+            ['NonExistent\Class\That\DoesNotExist'], // @phpstan-ignore argument.type (non-existent class is intentional for the test)
+        );
+
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        static::assertStringContainsString('Please install composer package "shopware/dev-tools"', $tester->getDisplay());
+        static::assertSame(Command::FAILURE, $tester->getStatusCode());
+    }
+
+    public function testShowNoticeWhenNotProd(): void
+    {
+        $eventCalled = false;
+        $this->dispatcher->addListener(DemodataRequestCreatedEvent::class, static function () use (&$eventCalled): void {
+            $eventCalled = true;
+        });
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        static::assertFalse($eventCalled, 'Event was fired.');
+        static::assertStringContainsString('Demo data command requires the app environment set to production to run.', $tester->getDisplay());
+        static::assertSame(Command::INVALID, $tester->getStatusCode());
+    }
+
+    public function testRequestHasDefaults(): void
+    {
+        $eventCalled = false;
+        $this->dispatcher->addListener(DemodataRequestCreatedEvent::class, static function (DemodataRequestCreatedEvent $event) use (&$eventCalled): void {
+            $eventCalled = true;
+
+            $items = $event->getRequest()->all();
+            foreach (self::DEFAULT_DEFINITIONS as $definition) {
+                static::assertArrayHasKey($definition, $items);
+                unset($items[$definition]);
+            }
+
+            self::assertSame([], $items);
+        });
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        static::assertTrue($eventCalled, 'Event was not fired.');
+        static::assertStringContainsString('Demodata Generator', $tester->getDisplay());
+        static::assertSame(Command::SUCCESS, $tester->getStatusCode());
+    }
+
+    public function testDefaults(): void
+    {
+        $this->command->addOption('tags', null, InputOption::VALUE_OPTIONAL);
+        $this->command->addOption('products', null, InputOption::VALUE_OPTIONAL);
+        $this->command->addOption('categories', null, InputOption::VALUE_OPTIONAL);
+
+        $this->command->addDefault('products', 1);
+        $this->command->addDefault('categories', 1);
+
+        $eventCalled = false;
+        $this->dispatcher->addListener(DemodataRequestCreatedEvent::class, static function (DemodataRequestCreatedEvent $event) use (&$eventCalled): void {
+            $eventCalled = true;
+
+            static::assertSame(0, $event->getRequest()->get(TagDefinition::class));
+            static::assertSame(1, $event->getRequest()->get(ProductDefinition::class));
+            static::assertSame(2, $event->getRequest()->get(CategoryDefinition::class));
+        });
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([
+            '--categories' => 2,
+        ]);
+
+        static::assertTrue($eventCalled, 'Event was not fired.');
+        static::assertStringContainsString('Demodata Generator', $tester->getDisplay());
+        static::assertSame(Command::SUCCESS, $tester->getStatusCode());
+    }
+
+    public function testResetDefaults(): void
+    {
+        $this->command->addOption('tags', null, InputOption::VALUE_OPTIONAL);
+        $this->command->addOption('rules', null, InputOption::VALUE_OPTIONAL);
+        $this->command->addOption('products', null, InputOption::VALUE_OPTIONAL);
+        $this->command->addOption('categories', null, InputOption::VALUE_OPTIONAL);
+
+        $this->command->addDefault('products', 1);
+        $this->command->addDefault('categories', 1);
+
+        $eventCalled = false;
+        $this->dispatcher->addListener(DemodataRequestCreatedEvent::class, static function (DemodataRequestCreatedEvent $event) use (&$eventCalled): void {
+            $eventCalled = true;
+
+            static::assertSame(0, $event->getRequest()->get(TagDefinition::class));
+            static::assertSame(5, $event->getRequest()->get(RuleDefinition::class));
+            static::assertSame(0, $event->getRequest()->get(ProductDefinition::class));
+            static::assertSame(2, $event->getRequest()->get(CategoryDefinition::class));
+        });
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([
+            '--reset-defaults' => true,
+            '--categories' => 2,
+            '--rules' => 5,
+        ]);
+
+        static::assertTrue($eventCalled, 'Event was not fired.');
+        static::assertStringContainsString('Demodata Generator', $tester->getDisplay());
+        static::assertSame(Command::SUCCESS, $tester->getStatusCode());
+    }
+
+    public function testCustomFieldOptions(): void
+    {
+        $eventCalled = false;
+        $this->dispatcher->addListener(DemodataRequestCreatedEvent::class, static function (DemodataRequestCreatedEvent $event) use (&$eventCalled): void {
+            $eventCalled = true;
+
+            $options = $event->getRequest()->getOptions(CustomFieldSetDefinition::class);
+            static::assertArrayHasKey('relations', $options);
+
+            $relations = $options['relations'];
+            static::assertArrayHasKey('product', $relations);
+            static::assertArrayHasKey('product_manufacturer', $relations);
+            static::assertArrayHasKey('order', $relations);
+            static::assertArrayHasKey('customer', $relations);
+            static::assertArrayHasKey('media', $relations);
+
+            static::assertSame(1, $relations['product']);
+            static::assertSame(3, $relations['product_manufacturer']);
+            static::assertSame(0, $relations['order']);
+            static::assertSame(0, $relations['customer']);
+            static::assertSame(0, $relations['media']);
+        });
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([
+            '--product-attributes' => 1,
+            '--manufacturer-attributes' => 3,
+        ]);
+
+        static::assertTrue($eventCalled, 'Event was not fired.');
+        static::assertStringContainsString('Demodata Generator', $tester->getDisplay());
+        static::assertSame(Command::SUCCESS, $tester->getStatusCode());
+    }
+}

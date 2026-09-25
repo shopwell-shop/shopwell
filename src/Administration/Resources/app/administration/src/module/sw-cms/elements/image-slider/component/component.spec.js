@@ -1,0 +1,290 @@
+/**
+ * @sw-package discovery
+ */
+import { mount } from '@vue/test-utils';
+import { setupCmsEnvironment } from 'src/module/sw-cms/test-utils';
+
+const MOCK_ASSET_PATH = '/ASSET-PATH/';
+Shopwell.Context.api.assetsPath = MOCK_ASSET_PATH;
+
+const sliderItemsConfigMock = [
+    {
+        mediaId: '1',
+        mediaUrl: 'http://shopwell.cn/image1.jpg',
+    },
+    {
+        mediaId: '2',
+        mediaUrl: 'http://shopwell.cn/image2.jpg',
+    },
+    {
+        mediaId: '3',
+        mediaUrl: 'http://shopwell.cn/image3.jpg',
+    },
+];
+
+const sliderItemsDataMock = [
+    {
+        media: {
+            id: '1',
+            url: 'http://shopwell.cn/image1.jpg',
+        },
+    },
+    {
+        media: {
+            id: '2',
+            url: 'http://shopwell.cn/image2.jpg',
+        },
+    },
+    {
+        media: {
+            id: '3',
+            url: 'http://shopwell.cn/image3.jpg',
+        },
+    },
+];
+
+async function createWrapper() {
+    return mount(
+        await wrapTestComponent('sw-cms-el-image-slider', {
+            sync: true,
+        }),
+        {
+            global: {
+                sync: false,
+                provide: {
+                    cmsService: {
+                        getCmsElementRegistry: () => ({
+                            'image-slider': {
+                                defaultConfig: {
+                                    sliderItems: {
+                                        source: 'static',
+                                        value: [],
+                                    },
+                                    navigationArrows: {
+                                        source: 'static',
+                                        value: 'outside',
+                                    },
+                                    navigationDots: {
+                                        source: 'static',
+                                        value: null,
+                                    },
+                                    displayMode: {
+                                        source: 'static',
+                                        value: 'standard',
+                                    },
+                                    verticalAlign: {
+                                        source: 'static',
+                                        value: null,
+                                    },
+                                },
+                            },
+                        }),
+                    },
+                },
+            },
+            props: {
+                element: {
+                    type: 'image-slider',
+                    config: {},
+                    data: {},
+                },
+                defaultConfig: {
+                    sliderItems: {
+                        source: 'static',
+                        value: [],
+                    },
+                    navigationArrows: {
+                        source: 'static',
+                        value: 'outside',
+                    },
+                    navigationDots: {
+                        source: 'static',
+                        value: null,
+                    },
+                    displayMode: {
+                        source: 'static',
+                        value: 'standard',
+                    },
+                    verticalAlign: {
+                        source: 'static',
+                        value: null,
+                    },
+                },
+            },
+        },
+    );
+}
+
+describe('src/module/sw-cms/elements/image-slider/component', () => {
+    beforeAll(async () => {
+        await setupCmsEnvironment();
+        await import('src/module/sw-cms/elements/image-slider');
+    });
+
+    it('should render a fallback image if config is not resolved to data', async () => {
+        const wrapper = await createWrapper();
+
+        const image = wrapper.get('.sw-cms-el-image-slider__image');
+
+        expect(image.attributes('src')).toBe(
+            `${MOCK_ASSET_PATH}administration/administration/static/img/cms/preview_mountain_large.webp`,
+        );
+    });
+
+    it('setSliderArrowItem should work correctly', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            element: {
+                config: {
+                    ...wrapper.props().element.config,
+                    sliderItems: {
+                        source: 'static',
+                        value: sliderItemsConfigMock,
+                    },
+                },
+                data: {
+                    sliderItems: sliderItemsDataMock,
+                },
+            },
+        });
+
+        // Initial state
+        expect(wrapper.vm.sliderPos).toBe(0);
+        expect(wrapper.vm.imgSrc).toBe('http://shopwell.cn/image1.jpg');
+
+        // Click on back arrow
+        wrapper.vm.setSliderArrowItem(-1);
+
+        // Navigate to last item provided that first item is active
+        expect(wrapper.vm.sliderPos).toBe(2);
+        expect(wrapper.vm.imgSrc).toBe('http://shopwell.cn/image3.jpg');
+
+        // Click on next arrow
+        wrapper.vm.setSliderArrowItem(1);
+
+        // Navigate to first item provided that last item is active
+        expect(wrapper.vm.sliderPos).toBe(0);
+        expect(wrapper.vm.imgSrc).toBe('http://shopwell.cn/image1.jpg');
+
+        // Click on next arrow
+        wrapper.vm.setSliderArrowItem(1);
+
+        // Navigate to next item
+        expect(wrapper.vm.sliderPos).toBe(1);
+        expect(wrapper.vm.imgSrc).toBe('http://shopwell.cn/image2.jpg');
+    });
+
+    it('should render number of navigation dots correctly', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            element: {
+                config: {
+                    ...wrapper.props().element.config,
+                    sliderItems: {
+                        source: 'static',
+                        value: sliderItemsConfigMock,
+                    },
+                    navigationDots: {
+                        source: 'static',
+                        value: 'outside',
+                    },
+                },
+                data: {
+                    sliderItems: sliderItemsDataMock,
+                },
+            },
+        });
+
+        const navigationDots = wrapper.find('.sw-cms-el-image-slider__navigation-dots');
+        expect(navigationDots.exists()).toBeTruthy();
+
+        const navigationButtons = navigationDots.findAll('.sw-cms-el-image-slider__navigation-button');
+        expect(navigationButtons).toHaveLength(sliderItemsConfigMock.length);
+        expect(navigationButtons.at(0).classes()).toContain('is--active');
+    });
+
+    it.each([null, 'none'])('should not render navigation dots if the config value is %s', async (navigationDotsValue) => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            element: {
+                config: {
+                    ...wrapper.props().element.config,
+                    sliderItems: {
+                        source: 'static',
+                        value: sliderItemsConfigMock,
+                    },
+                    navigationDots: {
+                        source: 'static',
+                        value: navigationDotsValue,
+                    },
+                },
+                data: {
+                    sliderItems: sliderItemsDataMock,
+                },
+            },
+        });
+
+        expect(wrapper.find('.sw-cms-el-image-slider__navigation-dots').exists()).toBe(false);
+    });
+
+    it.each([null, 'none'])(
+        'should not render navigation arrows if the config value is %s',
+        async (navigationArrowsValue) => {
+            const wrapper = await createWrapper();
+
+            await wrapper.setProps({
+                element: {
+                    config: {
+                        ...wrapper.props().element.config,
+                        sliderItems: {
+                            source: 'static',
+                            value: sliderItemsConfigMock,
+                        },
+                        navigationArrows: {
+                            source: 'static',
+                            value: navigationArrowsValue,
+                        },
+                    },
+                    data: {
+                        sliderItems: sliderItemsDataMock,
+                    },
+                },
+            });
+
+            expect(wrapper.find('.sw-cms-el-image-slider__navigation-arrows').exists()).toBe(false);
+        },
+    );
+
+    it('should render active image correctly after clicking on dot button', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.setProps({
+            element: {
+                config: {
+                    ...wrapper.props().element.config,
+                    sliderItems: {
+                        source: 'static',
+                        value: sliderItemsConfigMock,
+                    },
+                    navigationDots: {
+                        source: 'static',
+                        value: 'outside',
+                    },
+                },
+                data: {
+                    sliderItems: sliderItemsDataMock,
+                },
+            },
+        });
+
+        wrapper.vm.setSliderItem(sliderItemsDataMock[1].media, 1);
+        await wrapper.vm.$nextTick();
+
+        const navigationButtons = wrapper.findAll('.sw-cms-el-image-slider__navigation-button');
+        expect(navigationButtons.at(1).classes()).toContain('is--active');
+        expect(wrapper.vm.sliderPos).toBe(1);
+    });
+});

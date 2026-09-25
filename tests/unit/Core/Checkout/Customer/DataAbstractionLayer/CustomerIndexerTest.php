@@ -1,0 +1,83 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Customer\DataAbstractionLayer;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Customer\DataAbstractionLayer\CustomerIndexer;
+use Shopwell\Core\Checkout\Customer\DataAbstractionLayer\CustomerIndexingMessage;
+use Shopwell\Core\Checkout\Customer\Event\CustomerIndexerEvent;
+use Shopwell\Core\Content\Newsletter\DataAbstractionLayer\Indexing\CustomerNewsletterSalesChannelsUpdater;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ManyToManyIdFieldUpdater;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(CustomerIndexer::class)]
+class CustomerIndexerTest extends TestCase
+{
+    public function testUpdate(): void
+    {
+        $customerId = Uuid::randomHex();
+
+        $event = $this->createMock(EntityWrittenContainerEvent::class);
+
+        $event->method('getPrimaryKeys')->willReturn(['customer']);
+        $event->expects($this->once())->method('getPrimaryKeysWithPropertyChange')->willReturn([
+            $customerId,
+        ]);
+
+        $eventDispatcher = static::createStub(EventDispatcherInterface::class);
+
+        $indexer = new CustomerIndexer(
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(ManyToManyIdFieldUpdater::class),
+            static::createStub(CustomerNewsletterSalesChannelsUpdater::class),
+            $eventDispatcher
+        );
+
+        /** @var CustomerIndexingMessage $indexing */
+        $indexing = $indexer->update($event);
+
+        static::assertSame($indexing->getIds(), [$customerId]);
+    }
+
+    public function testHandle(): void
+    {
+        $customerId = Uuid::randomHex();
+
+        $message = static::createStub(CustomerIndexingMessage::class);
+        $message->method('getData')->willReturn([$customerId]);
+        $message->method('getContext')->willReturn(
+            static::createStub(Context::class)
+        );
+        $message->method('getIds')->willReturn([$customerId]);
+
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->once())->method('dispatch')->willReturnCallback(static function ($message) use ($customerId) {
+            static::assertInstanceOf(CustomerIndexerEvent::class, $message);
+            static::assertSame($message->getIds(), [$customerId]);
+
+            return $message;
+        });
+
+        $indexer = new CustomerIndexer(
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(ManyToManyIdFieldUpdater::class),
+            static::createStub(CustomerNewsletterSalesChannelsUpdater::class),
+            $eventDispatcher
+        );
+
+        $indexer->handle($message);
+    }
+}

@@ -1,0 +1,40 @@
+.sw-property-search__search-field.sw-product-variants-configurator-selection-search__search-field {
+    .sw-simple-search-field {
+        margin: 0;
+    }
+}
+
+.generate-variant-progress-bar__wrapper {
+    z-index: 3;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: calc(var(--scale-size-40) + var(--scale-size-10));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 80%);
+    transform-origin: top right;
+
+    .generate-variant-progress-bar {
+        max-width: calc(var(--scale-size-224) + var(--scale-size-56) + var(--scale-size-20));
+    }
+
+    .generate-variant-progress-bar__description {
+        color: var(--color-text-secondary-default);
+        margin-top: var(--scale-size-20);
+    }
+}
+
+.generate-variant-progress-bar--transition-enter-active,
+.generate-variant-progress-bar--transition-leave-active {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.generate-variant-progress-bar--transition-enter,
+.generate-variant-progress-bar--transition-leave-to {
+    opacity: 0;
+}

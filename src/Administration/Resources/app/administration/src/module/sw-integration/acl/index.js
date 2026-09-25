@@ -1,0 +1,43 @@
+/**
+ * @sw-package fundamentals@framework
+ */
+Shopwell.Service('privileges').addPrivilegeMappingEntry({
+    category: 'additional_permissions',
+    parent: null,
+    key: 'integration_mcp',
+    roles: {
+        editor: {
+            privileges: ['api_action_integration_mcp-allowlist'],
+            dependencies: ['integration.viewer'],
+        },
+    },
+});
+
+Shopwell.Service('privileges').addPrivilegeMappingEntry({
+    category: 'permissions',
+    parent: 'settings',
+    key: 'integration',
+    roles: {
+        viewer: {
+            privileges: ['integration:read', 'acl_role:read', 'app:read'],
+            dependencies: [],
+        },
+        editor: {
+            privileges: [
+                'integration:update',
+                'api_action_access-key_integration',
+                'integration_role:create',
+                'integration_role:delete',
+            ],
+            dependencies: ['integration.viewer'],
+        },
+        creator: {
+            privileges: ['integration:create'],
+            dependencies: ['integration.viewer', 'integration.editor'],
+        },
+        deleter: {
+            privileges: ['integration:delete'],
+            dependencies: ['integration.viewer'],
+        },
+    },
+});

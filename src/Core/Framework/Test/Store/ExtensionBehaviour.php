@@ -1,0 +1,55 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Test\Store;
+
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Store\Services\AbstractStoreAppLifecycleService;
+use Symfony\Component\Filesystem\Filesystem;
+
+trait ExtensionBehaviour
+{
+    public function installApp(string $path, bool $install = true): void
+    {
+        $appRepository = static::getContainer()->get('app.repository');
+        $idResult = $appRepository->searchIds(new Criteria(), Context::createDefaultContext());
+
+        $ids = $idResult->getPrimaryKeyData();
+        if (\count($ids)) {
+            $appRepository->delete($ids, Context::createDefaultContext());
+        }
+
+        $fs = new Filesystem();
+
+        $name = basename($path);
+        $appDir = static::getContainer()->getParameter('shopware.app_dir') . '/' . $name;
+        $fs->mirror($path, $appDir);
+
+        if ($install) {
+            static::getContainer()->get(AbstractStoreAppLifecycleService::class)->installExtension($name, Context::createDefaultContext());
+        }
+    }
+
+    public function removeApp(string $path): void
+    {
+        $fs = new Filesystem();
+
+        $fs->remove(static::getContainer()->getParameter('shopware.app_dir') . '/' . basename($path));
+    }
+
+    public function registerPlugin(string $path): void
+    {
+        $fs = new Filesystem();
+
+        $name = basename($path);
+        $pluginDir = static::getContainer()->getParameter('kernel.plugin_dir') . '/' . $name;
+        $fs->mirror($path, $pluginDir);
+    }
+
+    public function removePlugin(string $path): void
+    {
+        $fs = new Filesystem();
+
+        $fs->remove(static::getContainer()->getParameter('kernel.plugin_dir') . '/' . basename($path));
+    }
+}

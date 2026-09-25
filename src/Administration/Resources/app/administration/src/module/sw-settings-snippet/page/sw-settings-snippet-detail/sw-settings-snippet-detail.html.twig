@@ -1,0 +1,149 @@
+{% block sw_settings_snippet_detail %}
+<sw-page class="sw-settings-snippet-detail">
+
+    {% block sw_settings_snippet_detail_smart_bar %}
+    <template #smart-bar-back>
+        <router-link
+            v-slot="{ href, navigate }"
+            :to="backPath"
+            custom
+        >
+            <!-- Rendered as a real link so open-in-new-tab and middle click keep working. -->
+            <mt-button
+                is="a"
+                class="smart-bar__back-btn"
+                variant="secondary"
+                size="default"
+                square
+                :href="href"
+                :aria-label="$t('global.sw-page.backButton')"
+                :title="$t('global.sw-page.backButton')"
+                @click="navigate"
+            >
+                <mt-icon
+                    name="solid-long-arrow-left"
+                    size="12px"
+                />
+            </mt-button>
+        </router-link>
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_snippet_detail_header %}
+    <template #smart-bar-header>
+        <h2 v-if="translationKey">
+            {{ translationKey }}
+        </h2>
+        <h2 v-else>
+            {{ $t('sw-settings-snippet.detail.textHeadline') }}
+        </h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_snippet_detail_actions %}
+    <template #smart-bar-actions>
+        {% block sw_settings_snippet_detail_actions_abort %}
+        <mt-button
+            :disabled="isLoading"
+            variant="secondary"
+            size="default"
+            @click="$router.push(backPath)"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_settings_snippet_detail_actions_save %}
+        <sw-button-process
+            v-tooltip="getNoPermissionsTooltip('snippet.editor')"
+            class="sw-snippet-detail__save-action"
+            :is-loading="isLoading"
+            :process-success="isSaveSuccessful"
+            :disabled="!acl.can('snippet.editor') || isLoading || !translationKey || !isSaveable"
+            variant="primary"
+            @update:process-success="saveFinish"
+            @click.prevent="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </sw-button-process>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_snippet_detail_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_settings_snippet_set_detail_card %}
+            <div class="sw-settings-snippet-set-detail-card">
+                {% block sw_settings_snippet_set_detail_card_information %}
+                <mt-card
+                    position-identifier="sw-settings-snippet-detail-information"
+                    :title="$t('sw-settings-snippet.detail.cardGeneralTitle')"
+                    :is-loading="isLoading"
+                >
+                    <div class="snippet-general-card">
+                        {% block sw_settings_snippet_set_detail_card_information_key %}
+
+                        <mt-text-field
+                            v-model="translationKey"
+                            v-tooltip.bottom="getNoPermissionsTooltip('snippet.editor')"
+                            name="sw-field--translationKey"
+                            :label="$t('sw-settings-snippet.detail.labelName')"
+                            :placeholder="$t('sw-settings-snippet.detail.labelNamePlaceholder')"
+                            :disabled="!(isCreate || isAddedSnippet)"
+                            :error="invalidKeyError"
+                            @update:model-value="onChange(null, $event)"
+                        />
+                        {% endblock %}
+                    </div>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_settings_snippet_set_detail_card_snippets %}
+                <mt-card
+                    position-identifier="sw-settings-snippet-detail-snippets"
+                    :title="$t('sw-settings-snippet.detail.cardSnippetSetsTitle')"
+                    :is-loading="isLoading || isLoadingSnippets"
+                >
+                    <div class="snippet-overview-card">
+                        {% block sw_settings_snippet_set_detail_card_snippets_fields %}
+
+                        <mt-text-field
+                            v-for="(snippet, index) in snippets"
+                            :key="snippet.setId"
+                            v-tooltip.bottom="getNoPermissionsTooltip('snippet.editor')"
+                            :model-value="snippetStates[snippet.setId] === 'inherited' ? null : snippet.value"
+                            name="sw-field--snippet-value"
+                            :class="`sw-settings-snippet-detail__translation-field--${index}`"
+                            :disabled="!acl.can('snippet.editor') || isLoadingSnippets"
+                            :label="$t('sw-settings-snippet.detail.labelContent', { name: sets.get(snippet.setId).name }, 0)"
+                            :placeholder="getPlaceholder(snippet)"
+                            :is-inherited="snippetStates[snippet.setId] === 'inherited'"
+                            :is-inheritance-field="snippet._hasFileValue"
+                            @inheritance-restore="onResetSnippet(snippet)"
+                            @inheritance-remove="onRemoveInheritance(snippet)"
+                            @update:model-value="onChange(snippet, $event)"
+                        >
+                            <template
+                                v-if="snippetStates[snippet.setId] === 'overridden' || snippetStates[snippet.setId] === 'overriding'"
+                                #hint
+                            >
+                                <span class="sw-settings-snippet-detail__translation-original-label">
+                                    {{ $t('sw-settings-snippet.detail.labelOriginal') }}
+                                </span>
+                                <span class="sw-settings-snippet-detail__translation-original-value">
+                                    {{ snippet.resetTo || snippet.origin }}
+                                </span>
+                            </template>
+                        </mt-text-field>
+                        {% endblock %}
+                    </div>
+                </mt-card>
+                {% endblock %}
+            </div>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

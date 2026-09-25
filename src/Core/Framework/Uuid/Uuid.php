@@ -1,0 +1,137 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Uuid;
+
+use Ramsey\Uuid\BinaryUtils;
+use Ramsey\Uuid\Generator\RandomGeneratorFactory;
+use Ramsey\Uuid\Generator\UnixTimeGenerator;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Hasher;
+use Shopwell\Core\Framework\Uuid\Exception\InvalidUuidException;
+use Shopwell\Core\Framework\Uuid\Exception\InvalidUuidLengthException;
+
+#[Package('framework')]
+class Uuid
+{
+    /**
+     * Regular expression pattern for matching a valid UUID of any variant.
+     */
+    final public const VALID_PATTERN = '^[0-9a-f]{32}$';
+
+    private static ?UnixTimeGenerator $generator = null;
+
+    /**
+     * @return non-empty-string
+     */
+    public static function randomHex(): string
+    {
+        /** @var non-empty-string */
+        return bin2hex(self::randomBytes());
+    }
+
+    /**
+     * same as Ramsey\Uuid\UuidFactory->uuidFromBytesAndVersion without using a transfer object
+     *
+     * @return non-empty-string
+     */
+    public static function randomBytes(): string
+    {
+        if (self::$generator === null) {
+            self::$generator = new UnixTimeGenerator((new RandomGeneratorFactory())->getGenerator());
+        }
+        $bytes = self::$generator->generate();
+
+        $unpackedTime = unpack('n*', substr($bytes, 6, 2));
+        \assert(\is_array($unpackedTime));
+        $timeHi = (int) $unpackedTime[1];
+        $timeHiAndVersion = pack('n*', BinaryUtils::applyVersion($timeHi, 7));
+
+        $unpackedClockSeq = unpack('n*', substr($bytes, 8, 2));
+        \assert(\is_array($unpackedClockSeq));
+        $clockSeqHi = (int) $unpackedClockSeq[1];
+        $clockSeqHiAndReserved = pack('n*', BinaryUtils::applyVariant($clockSeqHi));
+
+        $bytes = substr_replace($bytes, $timeHiAndVersion, 6, 2);
+        $bytes = substr_replace($bytes, $clockSeqHiAndReserved, 8, 2);
+        \assert($bytes !== '');
+
+        return $bytes;
+    }
+
+    /**
+     * @throws InvalidUuidException
+     * @throws InvalidUuidLengthException
+     *
+     * @return non-empty-string
+     */
+    public static function fromBytesToHex(string $bytes): string
+    {
+        if (mb_strlen($bytes, '8bit') !== 16) {
+            throw UuidException::invalidUuidLength(mb_strlen($bytes, '8bit'), bin2hex($bytes));
+        }
+        $uuid = bin2hex($bytes);
+
+        if (!self::isValid($uuid)) {
+            throw UuidException::invalidUuid($uuid);
+        }
+
+        \assert($uuid !== '');
+
+        return $uuid;
+    }
+
+    /**
+     * @template TArrayKey of array-key
+     *
+     * @param array<TArrayKey, string> $bytesList
+     *
+     * @return array<TArrayKey, non-empty-string>
+     */
+    public static function fromBytesToHexList(array $bytesList): array
+    {
+        return array_map(static function ($bytes) {
+            return self::fromBytesToHex($bytes);
+        }, $bytesList);
+    }
+
+    /**
+     * @template TArrayKey of array-key
+     *
+     * @param array<TArrayKey, string> $uuids
+     *
+     * @return array<TArrayKey, non-empty-string>
+     */
+    public static function fromHexToBytesList(array $uuids): array
+    {
+        return array_map(static function ($uuid) {
+            return self::fromHexToBytes($uuid);
+        }, $uuids);
+    }
+
+    /**
+     * @throws InvalidUuidException
+     *
+     * @return non-empty-string
+     */
+    public static function fromHexToBytes(string $uuid): string
+    {
+        if ($bin = @hex2bin($uuid)) {
+            return $bin;
+        }
+
+        throw UuidException::invalidUuid($uuid);
+    }
+
+    /**
+     * Generates a md5 binary, to hash the string and returns a UUID in hex
+     */
+    public static function fromStringToHex(string $string): string
+    {
+        return self::fromBytesToHex(Hasher::hashBinary($string, 'md5'));
+    }
+
+    public static function isValid(string $id): bool
+    {
+        return (bool) preg_match('/' . self::VALID_PATTERN . '/', $id);
+    }
+}

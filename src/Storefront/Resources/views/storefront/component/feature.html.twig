@@ -1,0 +1,7 @@
+{# @sw-package framework #}
+
+{% block component_head_feature %}
+    <script>
+        window.features = JSON.parse('{{ getAllFeatures()|json_encode|escape('js') }}');
+    </script>
+{% endblock %}

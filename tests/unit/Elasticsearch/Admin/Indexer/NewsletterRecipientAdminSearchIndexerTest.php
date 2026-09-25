@@ -1,0 +1,177 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Elasticsearch\Admin\Indexer;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientDefinition;
+use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Event\NestedEventCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Elasticsearch\Admin\Indexer\NewsletterRecipientAdminSearchIndexer;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+#[CoversClass(NewsletterRecipientAdminSearchIndexer::class)]
+class NewsletterRecipientAdminSearchIndexerTest extends TestCase
+{
+    private NewsletterRecipientAdminSearchIndexer $searchIndexer;
+
+    protected function setUp(): void
+    {
+        $this->searchIndexer = new NewsletterRecipientAdminSearchIndexer(
+            static::createStub(Connection::class),
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            100
+        );
+    }
+
+    public function testGetUpdatedIds(): void
+    {
+        $indexer = new NewsletterRecipientAdminSearchIndexer(
+            static::createStub(Connection::class),
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            100
+        );
+
+        $id = Uuid::randomHex();
+
+        $event = new EntityWrittenContainerEvent(
+            Context::createDefaultContext(),
+            new NestedEventCollection([
+                new EntityWrittenEvent('newsletter_recipient', [
+                    new EntityWriteResult($id, ['email' => 'e@example.com'], 'newsletter_recipient', EntityWriteResult::OPERATION_UPDATE),
+                ], Context::createDefaultContext()),
+            ]),
+            []
+        );
+
+        static::assertSame([$id], $indexer->getUpdatedIds($event));
+    }
+
+    public function testGetEntity(): void
+    {
+        static::assertSame(NewsletterRecipientDefinition::ENTITY_NAME, $this->searchIndexer->getEntity());
+    }
+
+    public function testGetName(): void
+    {
+        static::assertSame('newsletter-recipient-listing', $this->searchIndexer->getName());
+    }
+
+    public function testGetDecoratedShouldThrowException(): void
+    {
+        static::expectException(DecorationPatternException::class);
+        $this->searchIndexer->getDecorated();
+    }
+
+    public function testGlobalData(): void
+    {
+        $context = Context::createDefaultContext();
+        $repository = static::createStub(EntityRepository::class);
+        $newsletterRecipient = new NewsletterRecipientEntity();
+        $newsletterRecipient->setUniqueIdentifier(Uuid::randomHex());
+        $repository->method('search')->willReturn(
+            new EntitySearchResult(
+                'newsletter_recipient',
+                1,
+                new EntityCollection([$newsletterRecipient]),
+                null,
+                new Criteria(),
+                $context
+            )
+        );
+
+        $indexer = new NewsletterRecipientAdminSearchIndexer(
+            static::createStub(Connection::class),
+            static::createStub(IteratorFactory::class),
+            $repository,
+            100
+        );
+
+        $result = [
+            'total' => 1,
+            'hits' => [
+                ['id' => '809c1844f4734243b6aa04aba860cd45'],
+            ],
+        ];
+
+        $data = $indexer->globalData($result, $context);
+
+        static::assertSame($result['total'], $data['total']);
+    }
+
+    public function testFetching(): void
+    {
+        $connection = $this->getConnection();
+
+        $indexer = new NewsletterRecipientAdminSearchIndexer(
+            $connection,
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            100
+        );
+
+        $id = '809c1844f4734243b6aa04aba860cd45';
+        $documents = $indexer->fetch([$id]);
+
+        static::assertArrayHasKey($id, $documents);
+
+        /** @var array<string, mixed> $document */
+        $document = $documents[$id];
+
+        static::assertSame($id, $document['id']);
+        static::assertSame('newsletter@example.com john doe da nang 50000 main street tag 809c1844f4734243b6aa04aba860cd45', $document['text']);
+        static::assertSame('newsletter@example.com', $document['email']);
+        static::assertSame('John', $document['firstName']);
+        static::assertSame('Doe', $document['lastName']);
+        static::assertSame('optIn', $document['status']);
+        static::assertSame('Da Nang', $document['city']);
+        static::assertSame('Main Street', $document['street']);
+        static::assertIsArray($document['tags']);
+    }
+
+    private function getConnection(): Connection
+    {
+        $connection = static::createStub(Connection::class);
+
+        $connection->method('fetchAllAssociative')->willReturn(
+            [
+                [
+                    'id' => '809c1844f4734243b6aa04aba860cd45',
+                    'email' => 'newsletter@example.com',
+                    'first_name' => 'John',
+                    'last_name' => 'Doe',
+                    'status' => 'optIn',
+                    'city' => 'Da Nang',
+                    'zipCode' => '50000',
+                    'street' => 'Main Street',
+                    'tags' => 'Tag',
+                    'tagIds' => 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6',
+                    'salesChannelId' => 'aabbccdd11223344556677889900aabb',
+                    'languageId' => 'b7d2554b0ce847cd82f3ac9bd1c0dfca',
+                    'createdAt' => '2024-01-01 00:00:00.000',
+                    'updatedAt' => null,
+                ],
+            ],
+        );
+
+        return $connection;
+    }
+}

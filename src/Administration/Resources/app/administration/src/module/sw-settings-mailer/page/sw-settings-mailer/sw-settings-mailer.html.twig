@@ -1,0 +1,138 @@
+{% block sw_settings_mailer_index %}
+<sw-page class="sw-settings-mailer">
+    {% block sw_settings_mailer_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_settings_mailer_smart_bar_header_title %}
+        <h2>
+            {% block sw_settings_mailer_smart_bar_header_title_text %}
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+
+            <span>{{ $t('sw-settings-mailer.general.textHeadline') }}</span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_mailer_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_settings_mailer_actions_save %}
+        <sw-button-process
+            :is-loading="isLoading"
+            :process-success="isSaveSuccessful"
+            variant="primary"
+            @update:process-success="onSaveFinish"
+            @click="saveMailerSettings"
+        >
+            {{ $t('global.default.save') }}
+        </sw-button-process>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_mailer_content %}
+    <template #content>
+        <sw-card-view>
+            <mt-card
+                position-identifier="sw-settings-mailer-configuration"
+                :is-loading="isLoading"
+                :title="$t('sw-settings-mailer.mailer-configuration.card-title')"
+            >
+                {% block sw_settings_mailer_first_configuration %}
+                <div
+                    v-if="isFirstConfiguration"
+                    class="sw-settings-mailer__first-configuration"
+                >
+                    {% block sw_settings_mailer_first_configuration_headline %}
+                    <h4 class="sw-settings-mailer__headline">
+                        {{ $t('sw-settings-mailer.first-configuration.headline') }}
+                    </h4>
+                    {% endblock %}
+
+                    {% block sw_settings_mailer_first_configuration_description %}
+                    <p class="sw-settings-mailer__description">
+                        {{ $t('sw-settings-mailer.first-configuration.description') }}
+                    </p>
+                    {% endblock %}
+                </div>
+                {% endblock %}
+
+                {# @deprecated tag:v6.8.0 - Will be removed. #}
+                {% block sw_settings_mailer_headline_agent %}
+                {% endblock %}
+
+                <div class="sw-settings-mailer__radio-selection">
+                    {% block sw_settings_mailer_agent_options %}
+                    <mt-select
+                        v-model="mailerSettings['core.mailerSettings.emailAgent']"
+                        class="sw-settings-mailer__select-agent"
+                        :label="$t('sw-settings-mailer.mailer-configuration.agent')"
+                        :options="emailAgentOptions"
+                    />
+
+                    <sw-radio-field
+                        v-if="mailerSettings['core.mailerSettings.emailAgent'] === 'local'"
+                        v-model:value="mailerSettings['core.mailerSettings.sendMailOptions']"
+                        :options="emailSendmailOptions"
+                    />
+                    {% endblock %}
+                </div>
+
+                <mt-switch
+                    v-if="!isSmtpMode"
+                    v-model="mailerSettings['core.mailerSettings.disableDelivery']"
+                    class="sw-settings-mailer__switch-disable-delivery"
+                    :label="$t('sw-settings-mailer.card-smtp.disable-delivery')"
+                />
+
+                <mt-banner
+                    class="sw-settings-mailer__help-text"
+                    variant="info"
+                >
+                    <i18n-t
+                        keypath="sw-settings-mailer.general.helpText"
+                        tag="span"
+                    >
+                        <template #documentation>
+                            <mt-link
+                                as="a"
+                                :to="$t('sw-settings-mailer.general.docsLink')"
+                                type="external"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {{ $t('sw-settings-mailer.general.docsLabel') }}
+                            </mt-link>
+                        </template>
+                    </i18n-t>
+                </mt-banner>
+            </mt-card>
+
+            {% block sw_settings_mailer_smtp %}
+            <mt-card
+                v-if="isSmtpMode"
+                position-identifier="sw-settings-mailer-smtp-settings"
+                :is-loading="isLoading"
+                title="SMTP server"
+                class="sw-settings-mailer__input-fields"
+            >
+                {% block sw_settings_mailer_smtp_settings %}
+                <sw-settings-mailer-smtp
+                    :mailer-settings="mailerSettings"
+                    :host-error="smtpHostError"
+                    :port-error="smtpPortError"
+                    @host-changed="resetSmtpHostError"
+                    @port-changed="resetSmtpPortError"
+                />
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

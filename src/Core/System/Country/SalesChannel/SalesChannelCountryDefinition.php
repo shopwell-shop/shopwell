@@ -1,0 +1,19 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\Country\SalesChannel;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Country\CountryDefinition;
+use Shopwell\Core\System\SalesChannel\Entity\SalesChannelDefinitionInterface;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+
+#[Package('fundamentals@discovery')]
+class SalesChannelCountryDefinition extends CountryDefinition implements SalesChannelDefinitionInterface
+{
+    public function processCriteria(Criteria $criteria, SalesChannelContext $context): void
+    {
+        $criteria->addFilter(new EqualsFilter('country.salesChannels.id', $context->getSalesChannelId()));
+    }
+}

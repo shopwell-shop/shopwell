@@ -1,0 +1,35 @@
+{% block sw_connect_action_button %}
+<div
+    v-tooltip.left="{
+        message: $t('sw-privileges.tooltip.warning'),
+        disabled: acl.can(`app.${action.app}`),
+        showOnDisabledElements: true
+    }"
+    class="sw-app-action-button sw-context-menu-item"
+    :class="{
+        'sw-context-menu-item--icon': !!action.icon,
+        'sw-context-menu-item--disabled': !acl.can(`app.${action.app}`)
+    }"
+    role="button"
+    tabindex="0"
+    @click="runAction"
+    @keydown.enter="runAction"
+>
+    <sw-extension-icon
+        v-if="action.icon"
+        class="sw-app-action-button__icon"
+        :src="`data:image/png;base64, ${action.icon}`"
+        alt=""
+    />
+
+    <mt-icon
+        v-if="action.meteorIcon && action.view !== 'item'"
+        :name="action.meteorIcon"
+        size="14px"
+    />
+
+    <span class="sw-context-menu-item__text">
+        {{ $t(buttonLabel ?? '') }}
+    </span>
+</div>
+{% endblock %}

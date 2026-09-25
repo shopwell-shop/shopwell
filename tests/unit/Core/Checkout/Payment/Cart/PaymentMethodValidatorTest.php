@@ -1,0 +1,126 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Payment\Cart;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\Error\ErrorCollection;
+use Shopwell\Core\Checkout\Payment\Cart\PaymentMethodValidator;
+use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
+use Shopwell\Core\Test\Generator;
+use Shopwell\Core\Test\TestDefaults;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(PaymentMethodValidator::class)]
+class PaymentMethodValidatorTest extends TestCase
+{
+    private PaymentMethodValidator $validator;
+
+    private Cart $cart;
+
+    protected function setUp(): void
+    {
+        $this->validator = new PaymentMethodValidator();
+        $this->cart = new Cart('cart-token');
+    }
+
+    public function testValidateWithoutErrors(): void
+    {
+        $context = $this->getSalesChannelContext();
+        $errors = new ErrorCollection();
+
+        $this->validator->validate($this->cart, $errors, $context);
+
+        static::assertCount(0, $errors, \print_r($errors, true));
+    }
+
+    public function testValidatePaymentMethodIsInactive(): void
+    {
+        $context = $this->getSalesChannelContext();
+        $context->getPaymentMethod()->setActive(false);
+
+        $errors = new ErrorCollection();
+
+        $this->validator->validate($this->cart, $errors, $context);
+
+        static::assertCount(1, $errors);
+        $error = $errors->get('payment-method-blocked-1');
+        static::assertNotNull($error);
+        static::assertStringContainsString('inactive', $error->getMessage(), print_r($error->getMessage(), true));
+    }
+
+    public function testValidatePaymentMethodNotAvailableInSalesChannel(): void
+    {
+        $context = $this->getSalesChannelContext();
+        $context->getSalesChannel()->setPaymentMethodIds([]);
+
+        $errors = new ErrorCollection();
+
+        $this->validator->validate($this->cart, $errors, $context);
+
+        static::assertCount(1, $errors);
+        $error = $errors->get('payment-method-blocked-1');
+        static::assertNotNull($error);
+        static::assertStringContainsString('not allowed', $error->getMessage());
+    }
+
+    public function testValidateAvailabilityRuleNotMatched(): void
+    {
+        $context = $this->getSalesChannelContext();
+        $context->setRuleIds([]);
+
+        $errors = new ErrorCollection();
+
+        $this->validator->validate($this->cart, $errors, $context);
+
+        static::assertCount(1, $errors);
+        $error = $errors->get('payment-method-blocked-1');
+        static::assertNotNull($error);
+        static::assertStringContainsString('rule not matching', $error->getMessage());
+    }
+
+    public function testValidateAllErrorsTriggeredOnlyContainsLastError(): void
+    {
+        $context = $this->getSalesChannelContext();
+        $context->getPaymentMethod()->setActive(false);
+        $context->getSalesChannel()->setPaymentMethodIds([]);
+        $context->setRuleIds([]);
+
+        $errors = new ErrorCollection();
+
+        $this->validator->validate($this->cart, $errors, $context);
+
+        static::assertCount(1, $errors);
+        $error = $errors->get('payment-method-blocked-1');
+        static::assertNotNull($error);
+    }
+
+    private function getSalesChannelContext(): SalesChannelContext
+    {
+        $paymentMethod = new PaymentMethodEntity();
+        $paymentMethod->setId('1');
+        $paymentMethod->setActive(true);
+        $paymentMethod->setAvailabilityRuleId('payment-method-availability-rule-id');
+
+        $salesChannel = new SalesChannelEntity();
+        $salesChannel->setId(TestDefaults::SALES_CHANNEL);
+        $salesChannel->setPaymentMethodIds(['1']);
+
+        $base = Context::createDefaultContext();
+        $base->setRuleIds(['payment-method-availability-rule-id']);
+
+        return Generator::generateSalesChannelContext(
+            baseContext: $base,
+            salesChannel: $salesChannel,
+            paymentMethod: $paymentMethod,
+        );
+    }
+}

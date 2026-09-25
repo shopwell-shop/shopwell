@@ -1,0 +1,349 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\Product\Cms\Type;
+
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
+use Shopwell\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
+use Shopwell\Core\Content\Cms\DataResolver\FieldConfig;
+use Shopwell\Core\Content\Cms\DataResolver\FieldConfigCollection;
+use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
+use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopwell\Core\Content\Cms\SalesChannel\Struct\BuyBoxStruct;
+use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopwell\Core\Content\Product\Cms\BuyBoxCmsElementResolver;
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductConfiguratorLoader;
+use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductDefinition;
+use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
+use Shopwell\Core\Content\Property\PropertyGroupCollection;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\TestDefaults;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+class BuyBoxTypeDataResolverTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    private BuyBoxCmsElementResolver $buyBoxResolver;
+
+    protected function setUp(): void
+    {
+        $saleChannelProductEntity = new SalesChannelProductEntity();
+        $saleChannelProductEntity->setId('product123');
+        $mockConfiguratorLoader = static::createStub(ProductConfiguratorLoader::class);
+        $mockConfiguratorLoader->method('load')->willReturn(
+            new PropertyGroupCollection()
+        );
+
+        $repositoryMock = static::createStub(EntityRepository::class);
+
+        $this->buyBoxResolver = new BuyBoxCmsElementResolver($mockConfiguratorLoader, $repositoryMock);
+    }
+
+    public function testGetType(): void
+    {
+        static::assertSame('buy-box', $this->buyBoxResolver->getType());
+    }
+
+    public function testCollectWithEmptyConfig(): void
+    {
+        $resolverContext = new ResolverContext(static::createStub(SalesChannelContext::class), new Request());
+
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('id');
+        $slot->setType('buy-box');
+        $slot->setConfig([]);
+        $slot->setFieldConfig(new FieldConfigCollection());
+
+        $criteriaCollection = $this->buyBoxResolver->collect($slot, $resolverContext);
+
+        static::assertNull($criteriaCollection);
+    }
+
+    public function testCollectWithStaticConfig(): void
+    {
+        $resolverContext = new ResolverContext(static::createStub(SalesChannelContext::class), new Request());
+
+        $fieldConfig = new FieldConfigCollection();
+        $fieldConfig->add(new FieldConfig('product', FieldConfig::SOURCE_STATIC, 'product123'));
+
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('id');
+        $slot->setType('buy-box');
+        $slot->setFieldConfig($fieldConfig);
+
+        $criteriaCollection = $this->buyBoxResolver->collect($slot, $resolverContext);
+
+        static::assertNotNull($criteriaCollection);
+        static::assertCount(1, $criteriaCollection->all());
+        $criteria = $criteriaCollection->all()[SalesChannelProductDefinition::class]['product_id'];
+
+        static::assertInstanceOf(Criteria::class, $criteria);
+        static::assertCount(1, $criteria->getFilters());
+        static::assertInstanceOf(OrFilter::class, $orFilter = $criteria->getFilters()[0]);
+        static::assertCount(2, $queries = $orFilter->getQueries());
+
+        static::assertInstanceOf(EqualsFilter::class, $firstQuery = $queries[0]);
+        static::assertSame('product.parentId', $firstQuery->getField());
+        static::assertSame('product123', $firstQuery->getValue());
+        static::assertInstanceOf(EqualsFilter::class, $secondQuery = $queries[1]);
+        static::assertSame('id', $secondQuery->getField());
+        static::assertSame('product123', $secondQuery->getValue());
+    }
+
+    public function testEnrichWithEmptyConfig(): void
+    {
+        $resolverContext = new ResolverContext(static::createStub(SalesChannelContext::class), new Request());
+        $result = new ElementDataCollection();
+
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('id');
+        $slot->setType('buy-box');
+        $slot->setFieldConfig(new FieldConfigCollection());
+
+        $this->buyBoxResolver->enrich($slot, $resolverContext, $result);
+
+        $buyBoxStruct = $slot->getData();
+        static::assertInstanceOf(BuyBoxStruct::class, $buyBoxStruct);
+        static::assertNull($buyBoxStruct->getProductId());
+        static::assertNull($buyBoxStruct->getProduct());
+    }
+
+    public function testEnrichWithStaticConfig(): void
+    {
+        $product = new SalesChannelProductEntity();
+        $product->setId('product123');
+
+        $resolverContext = new ResolverContext(static::createStub(SalesChannelContext::class), new Request());
+        $result = new ElementDataCollection();
+        $result->add('product_id', new EntitySearchResult(
+            'product',
+            1,
+            new ProductCollection([$product]),
+            null,
+            new Criteria(),
+            $resolverContext->getSalesChannelContext()->getContext()
+        ));
+
+        $fieldConfig = new FieldConfigCollection();
+        $fieldConfig->add(new FieldConfig('product', FieldConfig::SOURCE_STATIC, 'product123'));
+
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('id');
+        $slot->setType('buy-box');
+        $slot->setFieldConfig($fieldConfig);
+
+        $this->buyBoxResolver->enrich($slot, $resolverContext, $result);
+
+        $buyBoxStruct = $slot->getData();
+        static::assertInstanceOf(BuyBoxStruct::class, $buyBoxStruct);
+        static::assertSame($product->getId(), $buyBoxStruct->getProductId());
+    }
+
+    public function testCollectWithEmptyProductId(): void
+    {
+        $resolverContext = new ResolverContext(static::createStub(SalesChannelContext::class), new Request());
+
+        $fieldConfig = new FieldConfigCollection();
+        $fieldConfig->add(new FieldConfig('product', FieldConfig::SOURCE_STATIC, null));
+
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('id');
+        $slot->setType('buy-box');
+        $slot->setFieldConfig($fieldConfig);
+
+        $criteriaCollection = $this->buyBoxResolver->collect($slot, $resolverContext);
+
+        static::assertNull($criteriaCollection);
+    }
+
+    public function testReviewCountLoaded(): void
+    {
+        $productId = Uuid::randomHex();
+        $saleChannelContext = $this->createSalesChannelContext();
+
+        $this->createProduct($productId);
+        $this->createReviews($productId);
+
+        $fieldConfig = new FieldConfigCollection();
+        $fieldConfig->add(new FieldConfig('product', FieldConfig::SOURCE_STATIC, $productId));
+
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('id');
+        $slot->setType('buy-box');
+        $slot->setFieldConfig($fieldConfig);
+
+        $product = new SalesChannelProductEntity();
+        $product->setId($productId);
+
+        $resolverContext = new ResolverContext($saleChannelContext, new Request());
+
+        $result = new ElementDataCollection();
+        $result->add('product_id', new EntitySearchResult(
+            'product',
+            1,
+            new ProductCollection([$product]),
+            null,
+            new Criteria(),
+            $resolverContext->getSalesChannelContext()->getContext()
+        ));
+
+        $buyBoxResolver = static::getContainer()->get(BuyBoxCmsElementResolver::class);
+        $buyBoxResolver->enrich($slot, $resolverContext, $result);
+
+        $buyBoxStruct = $slot->getData();
+        static::assertInstanceOf(BuyBoxStruct::class, $buyBoxStruct);
+
+        static::assertSame(3, $buyBoxStruct->getTotalReviews());
+    }
+
+    #[DataProvider('reviewCountDataProvider')]
+    public function testReviewCountLoadedWithVariants(int $variantCount, int $reviewsPerProduct, int $expectedReviews): void
+    {
+        $productId = Uuid::randomHex();
+        $variantIds = [];
+        $salesChannelContext = $this->createSalesChannelContext();
+
+        $this->createProduct($productId);
+        $this->createReviews($productId, $reviewsPerProduct);
+        for ($i = 0; $i < $variantCount; ++$i) {
+            $variantIds[$i] = Uuid::randomHex();
+            $this->createProduct($variantIds[$i], ['parentId' => $productId]);
+            $this->createReviews($variantIds[$i], $reviewsPerProduct);
+        }
+        $investigatedProductId = $variantIds[0] ?? $productId;
+
+        $fieldConfig = new FieldConfigCollection();
+        $fieldConfig->add(new FieldConfig('product', FieldConfig::SOURCE_MAPPED, $investigatedProductId));
+        $fieldConfig->add(new FieldConfig('alignment', FieldConfig::SOURCE_STATIC, null));
+
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier('id');
+        $slot->setType('buy-box');
+        $slot->setFieldConfig($fieldConfig);
+
+        $variantProduct = new SalesChannelProductEntity();
+        $variantProduct->setId($investigatedProductId);
+        if (isset($variantIds[0])) {
+            $variantProduct->setParentId($productId);
+        }
+        $variantProduct->setOptionIds([Uuid::randomHex()]);
+
+        $resolverContext = new EntityResolverContext(
+            $salesChannelContext,
+            new Request(),
+            static::createStub(SalesChannelProductDefinition::class),
+            $variantProduct
+        );
+
+        $result = new ElementDataCollection();
+
+        $buyBoxResolver = static::getContainer()->get(BuyBoxCmsElementResolver::class);
+        $buyBoxResolver->enrich($slot, $resolverContext, $result);
+
+        $buyBoxStruct = $slot->getData();
+        static::assertInstanceOf(BuyBoxStruct::class, $buyBoxStruct);
+
+        static::assertSame($expectedReviews, $buyBoxStruct->getTotalReviews());
+    }
+
+    /**
+     * @return iterable<string, list<int>>
+     */
+    public static function reviewCountDataProvider(): iterable
+    {
+        // variant count, reviews per variant, expected review count
+        yield 'No variants, No reviews' => [0, 0, 0];
+        yield 'No variants, 3 reviews' => [0, 3, 3];
+        yield 'No variants, 10 reviews' => [0, 10, 10];
+
+        yield 'One variant, No reviews' => [1, 0, 0];
+        yield 'One variant, 3 reviews each' => [1, 3, 6];
+        yield 'One variant, 10 reviews each' => [1, 10, 20];
+
+        yield '5 variants, No reviews' => [5, 0, 0];
+        yield '5 variants, 3 reviews each' => [5, 3, 18];
+        yield '5 variants, 10 reviews each' => [5, 10, 60];
+    }
+
+    /**
+     * @param array<string, mixed> $additionalData
+     */
+    private function createProduct(string $productId, array $additionalData = []): void
+    {
+        $data = array_merge([
+            'id' => $productId,
+            'name' => 'test',
+            'productNumber' => Uuid::randomHex(),
+            'stock' => 10,
+            'price' => [
+                ['currencyId' => Defaults::CURRENCY, 'gross' => 15, 'net' => 10, 'linked' => false],
+            ],
+            'purchasePrice' => 7.5,
+            'purchasePrices' => [
+                ['currencyId' => Defaults::CURRENCY, 'gross' => 7.5, 'net' => 5, 'linked' => false],
+                ['currencyId' => Uuid::randomHex(), 'gross' => 150, 'net' => 100, 'linked' => false],
+            ],
+            'active' => true,
+            'tax' => ['name' => 'test', 'taxRate' => 15],
+            'weight' => 100,
+            'height' => 101,
+            'width' => 102,
+            'length' => 103,
+            'visibilities' => [
+                ['salesChannelId' => TestDefaults::SALES_CHANNEL, 'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL],
+            ],
+            'translations' => [
+                Defaults::LANGUAGE_SYSTEM => [
+                    'name' => 'test',
+                ],
+            ],
+        ], $additionalData);
+
+        static::getContainer()->get('product.repository')
+            ->create([$data], Context::createDefaultContext());
+    }
+
+    private function createReviews(string $productId, int $reviewCount = 3): void
+    {
+        $reviews = [];
+        for ($i = 1; $i <= $reviewCount; ++$i) {
+            $reviews[] = [
+                'languageId' => Defaults::LANGUAGE_SYSTEM,
+                'salesChannelId' => TestDefaults::SALES_CHANNEL,
+                'productId' => $productId,
+                'title' => 'Test',
+                'content' => 'test',
+                'points' => min(5, $i + $i / 5),
+                'status' => true,
+            ];
+        }
+
+        static::getContainer()->get('product_review.repository')
+            ->create($reviews, Context::createDefaultContext());
+    }
+
+    private function createSalesChannelContext(): SalesChannelContext
+    {
+        $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
+
+        return $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+    }
+}

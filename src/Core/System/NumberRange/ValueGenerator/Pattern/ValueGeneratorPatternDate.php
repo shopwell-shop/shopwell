@@ -1,0 +1,31 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\NumberRange\ValueGenerator\Pattern;
+
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+
+#[Package('framework')]
+class ValueGeneratorPatternDate extends AbstractValueGenerator
+{
+    final public const STANDARD_FORMAT = 'Y-m-d';
+
+    public function getPatternId(): string
+    {
+        return 'date';
+    }
+
+    public function generate(array $config, ?array $args = null, ?bool $preview = false): string
+    {
+        if ($args === null || $args === []) {
+            $args[] = self::STANDARD_FORMAT;
+        }
+
+        return date($args[0]);
+    }
+
+    public function getDecorated(): AbstractValueGenerator
+    {
+        throw new DecorationPatternException(self::class);
+    }
+}

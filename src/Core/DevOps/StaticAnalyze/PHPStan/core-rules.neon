@@ -1,0 +1,100 @@
+includes:
+    - tagged-service-contracts.php
+
+parameters:
+    shopwareTaggedServiceContractAdditionalTagContracts: []
+
+parametersSchema:
+    shopwareTaggedServiceContractTagContracts: arrayOf(anyOf(string(), listOf(string())), string())
+    shopwareTaggedServiceContractAdditionalTagContracts: arrayOf(anyOf(string(), listOf(string())), string())
+
+rules:
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\FuturePropertyCompatibilityRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\FuturePropertyVisibilityChangeRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\NoBCPlanningDeprecationRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\NoClassAliasExpressionUsageRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\NoClassAliasUsageRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Internal\InternalClassRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Internal\InternalMethodRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Migration\AddColumnRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Migration\NoAfterStatementRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Migration\NoDropStatementInUpdateRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Migration\NonStandardFkGuardRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\AbstractClassUsageRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\DecorationPatternRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\PackageAnnotationRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\ServiceDefinitionRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\DomainExceptionRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\ExtensionRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoNewRequestInStorefrontRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\AclValidPermissionsInMethodRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\AclValidPermissionsInRouteAttributesRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\ShopwellNamespaceStyleRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\AttributeFinalRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NameConstantEntityDefinition
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\StorefrontRouteUsageRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoRuntimeExceptionInDomainExceptionsRule
+    # core-only until the commercial repositories have swept their own reflection backlogs
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoReflectionOnNonPublicMethodsRule
+
+services:
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedServiceDecoratorPattern
+
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedMethodsThrowDeprecationRule
+        arguments:
+            deprecationPatterns:
+                - @Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedServiceDecoratorPattern
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\ClassAliasMap
+
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\BCChangeAttributeUsageRule
+        arguments:
+            containerXmlPath: %symfony.containerXmlPath%
+        tags:
+            - phpstan.rules.rule
+
+    # gated to the core test namespaces inside the rule; downstream repositories carry their own package taxonomy
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\TestPackageMatchRule
+        arguments:
+            projectDir: %currentWorkingDirectory%
+        tags:
+            - phpstan.rules.rule
+
+    # gated to the core unit suite inside the rule; downstream repositories run their own phpunit configurations
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\CoversTargetInCoverageSourceRule
+        arguments:
+            projectDir: %currentWorkingDirectory%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\TaggedServiceContractRule
+        arguments:
+            tagContracts: %shopwareTaggedServiceContractTagContracts%
+            additionalTagContracts: %shopwareTaggedServiceContractAdditionalTagContracts%
+            containerXmlPath: %symfony.containerXmlPath%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\ServiceDefinitionCollector
+        tags:
+            - phpstan.collector
+
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\MessageHandlerFinalRule
+        tags:
+            - phpat.test
+
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\RestrictNamespacesRule
+        tags:
+            - phpat.test

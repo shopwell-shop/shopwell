@@ -1,0 +1,373 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\System\SystemConfig\Api;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
+use Shopwell\Core\System\SystemConfig\Api\SystemConfigController;
+use Shopwell\Core\System\SystemConfig\Service\ConfigurationService;
+use Shopwell\Core\System\SystemConfig\SystemConfigException;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\System\SystemConfig\Validation\SystemConfigValidator;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(SystemConfigController::class)]
+class SystemConfigControllerTest extends TestCase
+{
+    public function testCheckConfigurationEmptyDomain(): void
+    {
+        $controller = new SystemConfigController(
+            static::createStub(ConfigurationService::class),
+            static::createStub(SystemConfigService::class),
+            static::createStub(SystemConfigValidator::class)
+        );
+
+        $request = new Request();
+
+        $context = Context::createDefaultContext();
+
+        $result = $controller->checkConfiguration($request, $context);
+
+        static::assertSame('false', $result->getContent());
+    }
+
+    public function testCheckConfiguration(): void
+    {
+        $configurationService = static::createStub(ConfigurationService::class);
+        $configurationService
+            ->method('checkConfiguration')
+            ->willReturn(true);
+
+        $controller = new SystemConfigController(
+            $configurationService,
+            static::createStub(SystemConfigService::class),
+            static::createStub(SystemConfigValidator::class)
+        );
+
+        $request = new Request();
+        $request->query->set('domain', 'foo');
+
+        $context = Context::createDefaultContext();
+
+        $result = $controller->checkConfiguration($request, $context);
+
+        static::assertSame('true', $result->getContent());
+    }
+
+    public function testGetConfiguration(): void
+    {
+        $configurationService = static::createStub(ConfigurationService::class);
+        $configurationService
+            ->method('getConfiguration')
+            ->willReturn(['foo' => 'bar']);
+
+        $controller = new SystemConfigController(
+            $configurationService,
+            static::createStub(SystemConfigService::class),
+            static::createStub(SystemConfigValidator::class)
+        );
+
+        $request = new Request();
+        $request->query->set('domain', 'foo');
+
+        $context = Context::createDefaultContext();
+
+        $result = $controller->getConfiguration($request, $context);
+
+        static::assertSame('{"foo":"bar"}', $result->getContent());
+    }
+
+    public function testGetConfigurationWithName(): void
+    {
+        $configurationService = static::createStub(ConfigurationService::class);
+        $configurationService
+            ->method('getConfiguration')
+            ->willReturn(['foo' => 'bar']);
+
+        $controller = new SystemConfigController(
+            $configurationService,
+            static::createStub(SystemConfigService::class),
+            static::createStub(SystemConfigValidator::class)
+        );
+
+        $request = new Request();
+        $request->query->set('domain', '');
+
+        $context = Context::createDefaultContext();
+
+        $this->expectExceptionObject(SystemConfigException::missingRequestParameter('domain'));
+        $controller->getConfiguration($request, $context);
+    }
+
+    public function testGetConfigurationValues(): void
+    {
+        $controller = new SystemConfigController(
+            static::createStub(ConfigurationService::class),
+            static::createStub(SystemConfigService::class),
+            static::createStub(SystemConfigValidator::class)
+        );
+
+        $request = new Request();
+        $request->query->set('domain', '');
+
+        $this->expectExceptionObject(SystemConfigException::missingRequestParameter('domain'));
+        $controller->getConfigurationValues($request);
+    }
+
+    public function testGetConfigurationValuesEmptyArray(): void
+    {
+        $systemConfig = static::createStub(SystemConfigService::class);
+        $systemConfig
+            ->method('getDomain')
+            ->willReturnMap([['foo', []]]);
+
+        $controller = new SystemConfigController(
+            static::createStub(ConfigurationService::class),
+            $systemConfig,
+            static::createStub(SystemConfigValidator::class)
+        );
+
+        $request = new Request();
+        $request->query->set('domain', 'foo');
+
+        $data = $controller->getConfigurationValues($request);
+
+        static::assertSame('{}', $data->getContent());
+    }
+
+    public function testGetConfigurationValuesArray(): void
+    {
+        $systemConfig = static::createStub(SystemConfigService::class);
+        $systemConfig
+            ->method('getDomain')
+            ->willReturnMap([['foo', ['foo' => 'bar']]]);
+
+        $controller = new SystemConfigController(
+            static::createStub(ConfigurationService::class),
+            $systemConfig,
+            static::createStub(SystemConfigValidator::class)
+        );
+
+        $request = new Request();
+        $request->query->set('domain', 'foo');
+
+        $data = $controller->getConfigurationValues($request);
+
+        static::assertSame('{"foo":"bar"}', $data->getContent());
+    }
+
+    #[DataProvider('saveConfigurationProvider')]
+    public function testSaveConfiguration(Request $request, ?string $expectedSalesChannelId, ?bool $expectedSilent): void
+    {
+        $systemConfig = $this->createMock(SystemConfigService::class);
+        $setMultiple = $systemConfig->expects($this->once())
+            ->method('setMultiple');
+
+        if ($expectedSilent === null) {
+            $setMultiple->with(['foo' => '1'], $expectedSalesChannelId);
+        } else {
+            $setMultiple->with(['foo' => '1'], $expectedSalesChannelId, $expectedSilent);
+        }
+
+        $controller = new SystemConfigController(
+            static::createStub(ConfigurationService::class),
+            $systemConfig,
+            static::createStub(SystemConfigValidator::class)
+        );
+
+        $data = $controller->saveConfiguration($request);
+
+        static::assertSame(Response::HTTP_NO_CONTENT, $data->getStatusCode());
+    }
+
+    public static function saveConfigurationProvider(): \Generator
+    {
+        yield 'without silent' => [
+            new Request([], ['foo' => '1']),
+            null,
+            true,
+        ];
+
+        yield 'with silent' => [
+            new Request(['silent' => '1'], ['foo' => '1']),
+            null,
+            true,
+        ];
+
+        yield 'with explicit non-silent' => [
+            new Request(['silent' => '0'], ['foo' => '1']),
+            null,
+            false,
+        ];
+
+        yield 'with sales channel' => [
+            new Request(['salesChannelId' => 'sc-id'], ['foo' => '1']),
+            'sc-id',
+            true,
+        ];
+    }
+
+    #[DisabledFeatures(['v6.8.0.0', 'CACHE_REWORK'])]
+    public function testSaveConfigurationWithoutSilentUsesServiceDefaultBeforeFeatureFlag(): void
+    {
+        $systemConfig = $this->createMock(SystemConfigService::class);
+        $systemConfig->expects($this->once())
+            ->method('setMultiple')
+            ->with(['foo' => '1'], null);
+
+        $controller = new SystemConfigController(
+            static::createStub(ConfigurationService::class),
+            $systemConfig,
+            static::createStub(SystemConfigValidator::class)
+        );
+
+        $data = $controller->saveConfiguration(new Request([], ['foo' => '1']));
+
+        static::assertSame(Response::HTTP_NO_CONTENT, $data->getStatusCode());
+    }
+
+    #[DataProvider('batchSaveConfigurationProvider')]
+    public function testBatchSaveConfiguration(Request $request, ?string $expectedSalesChannelId, ?bool $expectedSilent): void
+    {
+        $configurationServiceMock = static::createStub(ConfigurationService::class);
+
+        $systemConfigServiceMock = $this->createMock(SystemConfigService::class);
+        $setMultiple = $systemConfigServiceMock->expects($this->once())
+            ->method('setMultiple');
+
+        if ($expectedSilent === null) {
+            $setMultiple->with([], $expectedSalesChannelId);
+        } else {
+            $setMultiple->with([], $expectedSalesChannelId, $expectedSilent);
+        }
+
+        $systemConfigValidatorMock = static::createStub(SystemConfigValidator::class);
+        $systemConfigValidatorMock->method('validate');
+
+        $systemConfigController = new SystemConfigController(
+            $configurationServiceMock,
+            $systemConfigServiceMock,
+            $systemConfigValidatorMock
+        );
+
+        $result = $systemConfigController->batchSaveConfiguration($request, Context::createDefaultContext());
+
+        static::assertSame('{}', $result->getContent());
+    }
+
+    public static function batchSaveConfigurationProvider(): \Generator
+    {
+        yield 'without silent' => [
+            new Request([], ['null' => []]),
+            null,
+            true,
+        ];
+
+        yield 'with silent' => [
+            new Request(['silent' => '1'], ['null' => []]),
+            null,
+            true,
+        ];
+
+        yield 'with explicit non-silent' => [
+            new Request(['silent' => '0'], ['null' => []]),
+            null,
+            false,
+        ];
+    }
+
+    #[DisabledFeatures(['v6.8.0.0', 'CACHE_REWORK'])]
+    public function testBatchSaveConfigurationWithoutSilentUsesServiceDefaultBeforeFeatureFlag(): void
+    {
+        $systemConfig = $this->createMock(SystemConfigService::class);
+        $systemConfig->expects($this->once())
+            ->method('setMultiple')
+            ->with([], null);
+
+        $controller = new SystemConfigController(
+            static::createStub(ConfigurationService::class),
+            $systemConfig,
+            static::createStub(SystemConfigValidator::class)
+        );
+
+        $data = $controller->batchSaveConfiguration(new Request([], ['null' => []]), Context::createDefaultContext());
+
+        static::assertSame('{}', $data->getContent());
+    }
+
+    public function testBatchSaveConfigurationFailure(): void
+    {
+        $systemConfigValidatorMock = static::createStub(SystemConfigValidator::class);
+        $systemConfigValidatorMock->method('validate')
+            ->willThrowException(static::createStub(ConstraintViolationException::class));
+
+        $controller = new SystemConfigController(
+            static::createStub(ConfigurationService::class),
+            static::createStub(SystemConfigService::class),
+            $systemConfigValidatorMock
+        );
+
+        $request = new Request();
+        $request->request->set('null', []);
+
+        $this->expectException(ConstraintViolationException::class);
+
+        $controller->batchSaveConfiguration($request, Context::createDefaultContext());
+    }
+
+    #[DataProvider('inheritRequestDataProvider')]
+    public function testInheritFlag(Request $request, bool $expectedFlag): void
+    {
+        $systemConfigService = $this->createMock(SystemConfigService::class);
+        $systemConfigService->expects($this->once())
+            ->method('getDomain')
+            ->with('dummy domain', 'dummy sales channel', $expectedFlag);
+
+        $systemConfigController = new SystemConfigController(
+            static::createStub(ConfigurationService::class),
+            $systemConfigService,
+            static::createStub(SystemConfigValidator::class)
+        );
+
+        $systemConfigController->getConfigurationValues($request);
+    }
+
+    public static function inheritRequestDataProvider(): \Generator
+    {
+        yield 'inherit flag not set' => [
+            new Request([
+                'domain' => 'dummy domain',
+                'salesChannelId' => 'dummy sales channel',
+            ]),
+            false,
+        ];
+
+        yield 'inherit flag set to false' => [
+            new Request([
+                'domain' => 'dummy domain',
+                'salesChannelId' => 'dummy sales channel',
+                'inherit' => false,
+            ]),
+            false,
+        ];
+
+        yield 'inherit flag set to true' => [
+            new Request([
+                'domain' => 'dummy domain',
+                'salesChannelId' => 'dummy sales channel',
+                'inherit' => true,
+            ]),
+            true,
+        ];
+    }
+}

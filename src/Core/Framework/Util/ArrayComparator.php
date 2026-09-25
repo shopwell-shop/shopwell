@@ -1,0 +1,40 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Util;
+
+use Shopwell\Core\Framework\Log\Package;
+
+#[Package('framework')]
+class ArrayComparator
+{
+    /**
+     * @param array<string|int|bool|float> $a
+     * @param array<string|int|bool|float> $b
+     */
+    public static function compare(array $a, array $b, string $operator): bool
+    {
+        return match ($operator) {
+            '!=' => self::notEquals($a, $b),
+            '=' => self::equals($a, $b),
+            default => throw UtilException::operatorNotSupported($operator),
+        };
+    }
+
+    /**
+     * @param array<string|int|bool|float> $a
+     * @param array<string|int|bool|float> $b
+     */
+    public static function equals(array $a, array $b): bool
+    {
+        return array_intersect($a, $b) !== [];
+    }
+
+    /**
+     * @param array<string|int|bool|float> $a
+     * @param array<string|int|bool|float> $b
+     */
+    public static function notEquals(array $a, array $b): bool
+    {
+        return array_intersect($a, $b) === [];
+    }
+}

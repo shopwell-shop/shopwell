@@ -1,0 +1,40 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\TaxProvider;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\TaxProvider\TaxProviderRegistry;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Tests\Unit\Core\Checkout\Cart\TaxProvider\_fixtures\TestConstantTaxRateProvider;
+use Shopwell\Tests\Unit\Core\Checkout\Cart\TaxProvider\_fixtures\TestEmptyTaxProvider;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(TaxProviderRegistry::class)]
+class TaxProviderRegistryTest extends TestCase
+{
+    public function testProviderRegistered(): void
+    {
+        $registry = new TaxProviderRegistry(
+            [new TestConstantTaxRateProvider()]
+        );
+
+        static::assertTrue($registry->has(TestConstantTaxRateProvider::class));
+        static::assertInstanceOf(TestConstantTaxRateProvider::class, $registry->get(TestConstantTaxRateProvider::class));
+
+        static::assertFalse($registry->has(TestEmptyTaxProvider::class));
+    }
+
+    public function testProviderNotFound(): void
+    {
+        $registry = new TaxProviderRegistry(
+            [new TestConstantTaxRateProvider()]
+        );
+
+        static::assertFalse($registry->has(TestEmptyTaxProvider::class));
+        static::assertNull($registry->get(TestEmptyTaxProvider::class));
+    }
+}

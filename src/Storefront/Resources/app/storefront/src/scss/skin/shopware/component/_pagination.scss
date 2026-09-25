@@ -1,0 +1,21 @@
+.pagination {
+    --#{$prefix}pagination-padding-y: calc(#{$btn-padding-y} + 1px);
+    gap: 0.125rem;
+
+    .page-link {
+        line-height: $btn-line-height;
+        text-align: center;
+
+        @include media-breakpoint-up(sm) {
+            min-width: 40px;
+        }
+
+        .icon {
+            color: inherit;
+        }
+
+        &:focus {
+            box-shadow: $focus-ring-box-shadow-inset;
+        }
+    }
+}

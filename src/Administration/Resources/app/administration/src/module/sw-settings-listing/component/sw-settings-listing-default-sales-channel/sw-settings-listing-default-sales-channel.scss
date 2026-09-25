@@ -1,0 +1,37 @@
+.sw-settings-listing-default-sales-channel {
+    p {
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        color: var(--color-text-primary-default);
+        margin-bottom: var(--scale-size-20);
+    }
+
+    &__select.sw-field {
+        margin-bottom: 0;
+    }
+
+    &__options-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    &__quick-link {
+        display: flex;
+        justify-content: flex-end;
+        font-size: var(--font-size-xs);
+    }
+
+    &__link-icon {
+        margin-left: var(--scale-size-4);
+    }
+
+    &__visibility-modal,
+    &__visibility-modal .sw-grid .sw-grid__header .sw-grid-column {
+        font-size: var(--font-size-xs);
+    }
+
+    .sw-field--switch {
+        margin: 0;
+    }
+}

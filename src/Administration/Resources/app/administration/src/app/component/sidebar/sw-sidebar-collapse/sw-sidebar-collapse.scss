@@ -1,0 +1,53 @@
+.sw-sidebar-collapse {
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--scale-size-16) var(--scale-size-24);
+        color: var(--color-text-primary-default);
+        border-top: 1px solid var(--color-border-secondary-default);
+    }
+
+    &__title {
+        font-size: var(--font-size-s);
+        font-weight: var(--font-weight-regular);
+        color: var(--color-text-primary-default);
+        cursor: pointer;
+        margin: 0;
+    }
+
+    &__indicator {
+        color: var(--color-icon-primary-default);
+        height: var(--scale-size-32);
+        width: var(--scale-size-32);
+        border-radius: var(--border-radius-button);
+        transition: background-color 0.2s ease-out;
+        cursor: pointer;
+        background: none;
+        border: none;
+        outline: none;
+
+        &:hover,
+        &:focus-visible {
+            background-color: var(--color-interaction-secondary-hover);
+        }
+
+        .mt-icon {
+            &.is--hidden {
+                display: none;
+            }
+        }
+    }
+
+    &__expand-button {
+        width: var(--scale-size-24);
+        height: var(--scale-size-24);
+        padding: var(--scale-size-6);
+    }
+
+    &__collapse-button {
+        width: var(--scale-size-16);
+        height: var(--scale-size-16);
+        padding: var(--scale-size-2);
+    }
+}

@@ -1,0 +1,165 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\DataAbstractionLayer\Validation;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityNotExists;
+use Shopwell\Core\Framework\FrameworkException;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(EntityNotExists::class)]
+class EntityNotExistsTest extends TestCase
+{
+    public function testConstructor(): void
+    {
+        $context = Context::createDefaultContext();
+        $criteria = new Criteria();
+
+        $entityNotExists = new EntityNotExists(
+            entity: 'product_review',
+            context: $context,
+            primaryProperty: 'customerId',
+            criteria: $criteria,
+            message: 'The {{ entity }} was already reviewed by this customer.',
+        );
+
+        static::assertSame('product_review', $entityNotExists->getEntity());
+        static::assertSame($context, $entityNotExists->getContext());
+        static::assertSame($criteria, $entityNotExists->getCriteria());
+        static::assertSame('customerId', $entityNotExists->getPrimaryProperty());
+        static::assertSame('The {{ entity }} was already reviewed by this customer.', $entityNotExists->getMessage());
+    }
+
+    public function testConstructorUsesDefaultsForCriteriaPrimaryPropertyAndMessage(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $entityNotExists = new EntityNotExists(
+            entity: 'product_review',
+            context: $context,
+        );
+
+        static::assertSame('product_review', $entityNotExists->getEntity());
+        static::assertSame($context, $entityNotExists->getContext());
+        static::assertEquals(new Criteria(), $entityNotExists->getCriteria());
+        static::assertSame('id', $entityNotExists->getPrimaryProperty());
+        static::assertSame('The {{ entity }} entity already exists.', $entityNotExists->getMessage());
+    }
+
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testConstructorWithoutEntity(): void
+    {
+        $this->expectExceptionObject(FrameworkException::missingOptions(\sprintf(
+            'Option "entity" must be given for constraint %s',
+            EntityNotExists::class
+        )));
+
+        new EntityNotExists(
+            context: Context::createDefaultContext(),
+            primaryProperty: 'customerId',
+            criteria: new Criteria(),
+        );
+    }
+
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testConstructorWithoutContext(): void
+    {
+        $this->expectExceptionObject(FrameworkException::missingOptions(\sprintf(
+            'Option "context" must be given for constraint %s',
+            EntityNotExists::class
+        )));
+
+        new EntityNotExists(
+            entity: 'product_review',
+            primaryProperty: 'customerId',
+            criteria: new Criteria(),
+        );
+    }
+
+    /**
+     * Ignore deprecation triggered by Symfony as the parent constructor is called
+     */
+    #[IgnoreDeprecations]
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testConstructorWithOptions(): void
+    {
+        $context = Context::createDefaultContext();
+        $criteria = new Criteria();
+
+        $entityNotExists = new EntityNotExists([
+            'entity' => 'product_review',
+            'context' => $context,
+            'criteria' => $criteria,
+            'primaryProperty' => 'customerId',
+        ]);
+
+        static::assertSame('product_review', $entityNotExists->getEntity());
+        static::assertSame($context, $entityNotExists->getContext());
+        static::assertSame($criteria, $entityNotExists->getCriteria());
+        static::assertSame('customerId', $entityNotExists->getPrimaryProperty());
+    }
+
+    /**
+     * @param array{
+     *     entity?: string|int,
+     *     context?: Context,
+     *     criteria?: Criteria|string,
+     *     primaryProperty?: string|int
+     * } $options
+     */
+    #[DataProvider('invalidOptionsProvider')]
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testConstructorWithInvalidOptions(array $options, FrameworkException $expectedException): void
+    {
+        $this->expectExceptionObject($expectedException);
+
+        /** @phpstan-ignore argument.type (for test purpose) */
+        new EntityNotExists($options);
+    }
+
+    /**
+     * @return \Generator<string, array{array{
+     *     entity?: string|int,
+     *     context?: Context,
+     *     criteria?: Criteria|string,
+     *     primaryProperty?: string|int
+     * }, FrameworkException}>
+     */
+    public static function invalidOptionsProvider(): \Generator
+    {
+        yield 'without entity' => [
+            ['context' => Context::createDefaultContext(), 'criteria' => new Criteria(), 'primaryProperty' => 'customerId'],
+            FrameworkException::missingOptions(\sprintf('Option "entity" must be given for constraint %s', EntityNotExists::class)),
+        ];
+
+        yield 'with non string entity' => [
+            ['entity' => 123, 'context' => Context::createDefaultContext()],
+            FrameworkException::missingOptions(\sprintf('Option "entity" must be given for constraint %s', EntityNotExists::class)),
+        ];
+
+        yield 'without context' => [
+            ['entity' => 'product_review', 'criteria' => new Criteria(), 'primaryProperty' => 'customerId'],
+            FrameworkException::missingOptions(\sprintf('Option "context" must be given for constraint %s', EntityNotExists::class)),
+        ];
+
+        yield 'with invalid criteria' => [
+            ['entity' => 'product_review', 'context' => Context::createDefaultContext(), 'criteria' => 'invalid'],
+            FrameworkException::invalidOptions(\sprintf('Option "criteria" must be an instance of %s for constraint %s', Criteria::class, EntityNotExists::class)),
+        ];
+
+        yield 'with invalid primary property' => [
+            ['entity' => 'product_review', 'context' => Context::createDefaultContext(), 'primaryProperty' => 123],
+            FrameworkException::invalidOptions(\sprintf('Option "primaryProperty" must be a string for constraint %s', EntityNotExists::class)),
+        ];
+    }
+}

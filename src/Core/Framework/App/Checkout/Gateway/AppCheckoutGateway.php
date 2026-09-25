@@ -1,0 +1,153 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\App\Checkout\Gateway;
+
+use Shopwell\Core\Checkout\Gateway\CheckoutGatewayException;
+use Shopwell\Core\Checkout\Gateway\CheckoutGatewayInterface;
+use Shopwell\Core\Checkout\Gateway\CheckoutGatewayResponse;
+use Shopwell\Core\Checkout\Gateway\Command\AbstractCheckoutGatewayCommand;
+use Shopwell\Core\Checkout\Gateway\Command\CheckoutGatewayCommandCollection;
+use Shopwell\Core\Checkout\Gateway\Command\Event\CheckoutGatewayCommandsCollectedEvent;
+use Shopwell\Core\Checkout\Gateway\Command\Executor\CheckoutGatewayCommandExecutor;
+use Shopwell\Core\Checkout\Gateway\Command\Registry\CheckoutGatewayCommandRegistry;
+use Shopwell\Core\Checkout\Gateway\Command\Struct\CheckoutGatewayPayloadStruct;
+use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
+use Shopwell\Core\Framework\App\ActiveAppsLoader;
+use Shopwell\Core\Framework\App\AppCollection;
+use Shopwell\Core\Framework\App\Checkout\Payload\AppCheckoutGatewayPayload;
+use Shopwell\Core\Framework\App\Checkout\Payload\AppCheckoutGatewayPayloadService;
+use Shopwell\Core\Framework\App\Manifest\Xml\Gateway\CheckoutGateway;
+use Shopwell\Core\Framework\App\Privileges\AppCapability;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\NotEqualsFilter;
+use Shopwell\Core\Framework\Log\ExceptionLogger;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+
+/**
+ * @internal only for use by the app-system
+ */
+#[Package('checkout')]
+class AppCheckoutGateway implements CheckoutGatewayInterface
+{
+    /**
+     * @param EntityRepository<AppCollection> $appRepository
+     *
+     * @internal
+     */
+    public function __construct(
+        private readonly AppCheckoutGatewayPayloadService $payloadService,
+        private readonly CheckoutGatewayCommandExecutor $executor,
+        private readonly CheckoutGatewayCommandRegistry $registry,
+        private readonly EntityRepository $appRepository,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly ExceptionLogger $logger,
+        private readonly ActiveAppsLoader $activeAppsLoader,
+        private readonly AppCapability $appCapability
+    ) {
+    }
+
+    public function process(CheckoutGatewayPayloadStruct $payload): CheckoutGatewayResponse
+    {
+        $collected = new CheckoutGatewayCommandCollection();
+
+        $context = $payload->getSalesChannelContext();
+        $paymentMethods = $payload->getPaymentMethods()->map(static fn (PaymentMethodEntity $paymentMethod) => $paymentMethod->getTechnicalName());
+        $shippingMethods = $payload->getShippingMethods()->map(static fn (ShippingMethodEntity $shippingMethod) => $shippingMethod->getTechnicalName());
+
+        $appPayload = new AppCheckoutGatewayPayload($context, $payload->getCart(), $paymentMethods, $shippingMethods);
+        $apps = $this->getActiveAppsWithCheckoutGateway($context->getContext());
+
+        foreach ($apps as $app) {
+            // do not push cart/customer data to an app that has not been granted the checkout gateway permission
+            $this->appCapability->whenGranted($app->getId(), CheckoutGateway::PERMISSION, function () use ($app, $appPayload, $collected): void {
+                $checkoutGatewayUrl = $app->getCheckoutGatewayUrl();
+                \assert(\is_string($checkoutGatewayUrl));
+                $appResponse = $this->payloadService->request($checkoutGatewayUrl, $appPayload, $app);
+
+                if (!$appResponse) {
+                    $this->logger->logOrThrowException(CheckoutGatewayException::emptyAppResponse($app->getName()));
+
+                    return;
+                }
+
+                $this->collectCommandsFromAppResponse($appResponse, $collected);
+            });
+        }
+
+        $response = new CheckoutGatewayResponse(
+            $payload->getPaymentMethods(),
+            $payload->getShippingMethods(),
+            $payload->getCart()->getErrors()
+        );
+
+        $this->eventDispatcher->dispatch(new CheckoutGatewayCommandsCollectedEvent($payload, $collected));
+
+        return $this->executor->execute($collected, $response, $context);
+    }
+
+    private function getActiveAppsWithCheckoutGateway(Context $context): AppCollection
+    {
+        // If no active apps are available, we can return early
+        if ($this->activeAppsLoader->getActiveApps() === []) {
+            return new AppCollection();
+        }
+
+        $criteria = new Criteria();
+        $criteria->addAssociation('paymentMethods');
+
+        $criteria->addFilter(
+            new EqualsFilter('active', true),
+            new NotEqualsFilter('checkoutGatewayUrl', null),
+        );
+
+        return $this->appRepository->search($criteria, $context)->getEntities();
+    }
+
+    private function collectCommandsFromAppResponse(AppCheckoutGatewayResponse $commands, CheckoutGatewayCommandCollection $collected): void
+    {
+        foreach ($commands->getCommands() as $payload) {
+            if (!isset($payload['command'])) {
+                $this->logger->logOrThrowException(CheckoutGatewayException::payloadInvalid());
+
+                continue;
+            }
+
+            $commandKey = $payload['command'];
+            if (!isset($payload['payload'])) {
+                $this->logger->logOrThrowException(CheckoutGatewayException::payloadInvalid($commandKey));
+
+                continue;
+            }
+
+            if (!$this->registry->hasAppCommand($commandKey)) {
+                $this->logger->logOrThrowException(CheckoutGatewayException::handlerNotFound($commandKey));
+
+                continue;
+            }
+
+            $command = $this->registry->getAppCommand($commandKey);
+
+            if (!\is_a($command, AbstractCheckoutGatewayCommand::class, true)) {
+                $this->logger->logOrThrowException(CheckoutGatewayException::handlerNotFound($commandKey));
+
+                continue;
+            }
+
+            $commandPayload = $payload['payload'];
+
+            try {
+                $executableCommand = $command::createFromPayload($commandPayload);
+            } catch (\Error) {
+                $this->logger->logOrThrowException(CheckoutGatewayException::payloadInvalid($payload['command']));
+                continue;
+            }
+
+            $collected->add($executableCommand);
+        }
+    }
+}

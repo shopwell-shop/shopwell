@@ -1,0 +1,46 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\SalesChannel\Context\Cleanup;
+
+use Doctrine\DBAL\Connection;
+use Psr\Clock\ClockInterface;
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskCollection;
+use Shopwell\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[AsMessageHandler(handles: CleanupSalesChannelContextTask::class)]
+final class CleanupSalesChannelContextTaskHandler extends ScheduledTaskHandler
+{
+    /**
+     * @internal
+     *
+     * @param EntityRepository<ScheduledTaskCollection> $repository
+     */
+    public function __construct(
+        EntityRepository $repository,
+        LoggerInterface $logger,
+        private readonly Connection $connection,
+        private readonly int $days,
+        private readonly ClockInterface $clock,
+    ) {
+        parent::__construct($repository, $logger);
+    }
+
+    public function run(): void
+    {
+        $time = $this->clock->now()->modify(\sprintf('-%d day', $this->days));
+
+        $this->connection->executeStatement(
+            'DELETE FROM sales_channel_api_context WHERE updated_at <= :timestamp',
+            ['timestamp' => $time->format(Defaults::STORAGE_DATE_TIME_FORMAT)]
+        );
+    }
+}

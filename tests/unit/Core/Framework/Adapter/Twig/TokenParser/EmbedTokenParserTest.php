@@ -1,0 +1,63 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Adapter\Twig\TokenParser;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Adapter\Twig\TemplateFinder;
+use Shopwell\Core\Framework\Adapter\Twig\TokenParser\EmbedTokenParser;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(EmbedTokenParser::class)]
+class EmbedTokenParserTest extends TestCase
+{
+    public function testRenderEmbedReferencingFromInheritedTemplate(): void
+    {
+        static::assertSame(
+            'start embed end',
+            $this->parseTemplate('{% sw_embed "foo.html.twig" %}{% block content %}embed{% endblock %}{% end_sw_embed %}')
+        );
+    }
+
+    public function testNotRenderEmbedReferencingFromInheritedTemplate(): void
+    {
+        static::assertSame(
+            'start inner end',
+            $this->parseTemplate('{% sw_embed "foo.html.twig" %}{% block not_content %}embed{% endblock %}{% end_sw_embed %}')
+        );
+    }
+
+    public function testGetTag(): void
+    {
+        static::assertSame(
+            'sw_embed',
+            (new EmbedTokenParser(static::createStub(TemplateFinder::class)))->getTag(),
+        );
+    }
+
+    private function parseTemplate(string $template): string
+    {
+        $templateName = Uuid::randomHex() . '.html.twig';
+        $templateFinder = $this->createMock(TemplateFinder::class);
+        $templateFinder->expects($this->once())
+            ->method('find')
+            ->with('foo.html.twig', false, null)
+            ->willReturn('bar.html.twig');
+
+        $twig = new Environment(new ArrayLoader([
+            $templateName => $template,
+            'bar.html.twig' => 'start {% block content %}inner{% endblock %} end',
+        ]));
+
+        $twig->addTokenParser(new EmbedTokenParser($templateFinder));
+
+        return $twig->render($templateName);
+    }
+}

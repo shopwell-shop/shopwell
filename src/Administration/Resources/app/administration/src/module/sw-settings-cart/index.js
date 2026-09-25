@@ -1,0 +1,40 @@
+/**
+ * @sw-package checkout
+ */
+
+const { Module } = Shopwell;
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Shopwell.Component.register('sw-settings-cart', () => import('./page/sw-settings-cart'));
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Module.register('sw-settings-cart', {
+    type: 'core',
+    name: 'settings-cart',
+    title: 'sw-settings-cart.general.mainMenuItemGeneral',
+    description: 'sw-settings-cart.general.description',
+    version: '1.0.0',
+    targetVersion: '1.0.0',
+    color: 'var(--sw-color-module-neutral-default)',
+    icon: 'regular-shopping-cart',
+    favicon: 'icon-module-settings.svg',
+    entity: 'store_settings',
+
+    routes: {
+        index: {
+            component: 'sw-settings-cart',
+            path: 'index',
+            meta: {
+                parentPath: 'sw.settings.index',
+                privilege: 'system.system_config',
+            },
+        },
+    },
+
+    settingsItem: {
+        group: 'general',
+        to: 'sw.settings.cart.index',
+        icon: 'regular-shopping-cart',
+        privilege: 'system.system_config',
+    },
+});

@@ -1,0 +1,127 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Flow\Dispatching\Action;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Customer\CustomerCollection;
+use Shopwell\Core\Content\Flow\Dispatching\Action\AddCustomerTagAction;
+use Shopwell\Core\Content\Flow\Dispatching\StorableFlow;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Event\CustomerAware;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+
+/**
+ * @internal
+ */
+#[Package('after-sales')]
+#[CoversClass(AddCustomerTagAction::class)]
+class AddCustomerTagActionTest extends TestCase
+{
+    /**
+     * @var Stub&EntityRepository<CustomerCollection>
+     */
+    private Stub&EntityRepository $repository;
+
+    private AddCustomerTagAction $action;
+
+    protected function setUp(): void
+    {
+        $this->repository = static::createStub(EntityRepository::class);
+        $this->action = new AddCustomerTagAction($this->repository);
+    }
+
+    public function testRequirements(): void
+    {
+        static::assertSame(
+            [CustomerAware::class],
+            $this->action->requirements()
+        );
+    }
+
+    public function testName(): void
+    {
+        static::assertSame('action.add.customer.tag', AddCustomerTagAction::getName());
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @param array<string, mixed> $expected
+     */
+    #[DataProvider('actionExecutedProvider')]
+    public function testActionExecuted(array $config, array $expected): void
+    {
+        $customerId = Uuid::randomHex();
+        $flow = new StorableFlow('foo', Context::createDefaultContext(), [], [
+            CustomerAware::CUSTOMER_ID => $customerId,
+        ]);
+        $flow->setConfig($config);
+
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->once())
+            ->method('update')
+            ->with([['id' => $customerId, 'tags' => $expected]]);
+
+        $this->createAction($repository)->handleFlow($flow);
+    }
+
+    public function testActionWithNotAware(): void
+    {
+        $flow = new StorableFlow('foo', Context::createDefaultContext());
+
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->never())->method('update');
+
+        $this->createAction($repository)->handleFlow($flow);
+    }
+
+    public function testActionWithEmptyConfig(): void
+    {
+        $flow = new StorableFlow('foo', Context::createDefaultContext(), [], [
+            CustomerAware::CUSTOMER_ID => Uuid::randomHex(),
+        ]);
+
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->never())->method('update');
+
+        $this->createAction($repository)->handleFlow($flow);
+    }
+
+    public static function actionExecutedProvider(): \Generator
+    {
+        $ids = new IdsCollection();
+
+        yield 'Test with single tag' => [
+            ['tagIds' => self::keys([$ids->get('tag-1')])],
+            $ids->getIdArray(['tag-1']),
+        ];
+
+        yield 'Test with multiple tags' => [
+            ['tagIds' => self::keys($ids->getList(['tag-1', 'tag-2']))],
+            $ids->getIdArray(['tag-1', 'tag-2']),
+        ];
+    }
+
+    /**
+     * @param EntityRepository<CustomerCollection>|null $repository
+     */
+    private function createAction(?EntityRepository $repository = null): AddCustomerTagAction
+    {
+        return new AddCustomerTagAction($repository ?? $this->repository);
+    }
+
+    /**
+     * @param array<string> $ids
+     *
+     * @return array<string, true>
+     */
+    private static function keys(array $ids): array
+    {
+        return \array_combine($ids, \array_fill(0, \count($ids), true));
+    }
+}

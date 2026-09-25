@@ -1,0 +1,386 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Order\SalesChannel;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\CustomerException;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AccountService;
+use Shopwell\Core\Checkout\Customer\Service\GuestAuthenticator;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
+use Shopwell\Core\Checkout\Order\Event\OrderCriteriaEvent;
+use Shopwell\Core\Checkout\Order\Exception\GuestNotAuthenticatedException;
+use Shopwell\Core\Checkout\Order\Exception\WrongGuestCredentialsException;
+use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\Order\OrderDefinition;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Checkout\Order\OrderException;
+use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\Filter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\PrefixFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\SuffixFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\RateLimiter\RateLimiter;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
+use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(OrderRoute::class)]
+class OrderRouteTest extends TestCase
+{
+    public function testNotLoggedIn(): void
+    {
+        $this->expectException(OrderException::class);
+
+        $route = new OrderRoute(
+            static::createStub(EntityRepository::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(RateLimiter::class),
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(AccountService::class),
+            new GuestAuthenticator(),
+            new NativeClock()
+        );
+
+        $route->load(new Request(), static::createStub(SalesChannelContext::class), new Criteria());
+    }
+
+    public function testLoadCustomerOrder(): void
+    {
+        $customer = new CustomerEntity();
+        $customer->setId(Uuid::randomHex());
+
+        $order = new OrderEntity();
+        $order->setId(Uuid::randomHex());
+
+        $context = static::createStub(SalesChannelContext::class);
+        $context
+            ->method('getCustomer')
+            ->willReturn($customer);
+
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->willReturnCallback(static function (object $event): object {
+                static::assertInstanceOf(OrderCriteriaEvent::class, $event);
+
+                return $event;
+            });
+
+        $searchResult = new EntitySearchResult(
+            OrderDefinition::ENTITY_NAME,
+            1,
+            new OrderCollection([$order]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $orderRepository = $this->createMock(EntityRepository::class);
+        $orderRepository
+            ->expects($this->once())
+            ->method('search')
+            ->willReturn($searchResult);
+
+        $route = new OrderRoute(
+            $orderRepository,
+            static::createStub(EntityRepository::class),
+            static::createStub(RateLimiter::class),
+            $eventDispatcher,
+            static::createStub(AccountService::class),
+            new GuestAuthenticator(),
+            new NativeClock()
+        );
+
+        $responseOrder = $route->load(new Request(), $context, new Criteria())->getOrders()->getEntities()->first();
+
+        static::assertNotNull($responseOrder);
+        static::assertSame($order->getId(), $responseOrder->getId());
+    }
+
+    /**
+     * @param ?class-string<\Throwable> $exception
+     */
+    #[DataProvider('customerDataProvider')]
+    public function testValidateGuestCustomer(?bool $isGuest, ?string $mail, ?string $postalCode, ?string $exception, bool $login = false): void
+    {
+        $this->assertGuestOrderAccess($isGuest, $mail, $postalCode, $exception, $login, false);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - remove together with OrderRoute::checkGuestAuth()
+     *
+     * @param ?class-string<\Throwable> $exception
+     */
+    #[DataProvider('legacyCustomerDataProvider')]
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testValidateGuestCustomerWithoutGuestAuthenticator(?bool $isGuest, ?string $mail, ?string $postalCode, ?string $exception, bool $login = false, bool $credentialsInQuery = false): void
+    {
+        $this->assertGuestOrderAccess($isGuest, $mail, $postalCode, $exception, $login, $credentialsInQuery);
+    }
+
+    /**
+     * @return iterable<string, array{?bool, ?string, ?string, ?class-string<\Throwable>, 4?: bool}>
+     */
+    public static function customerDataProvider(): iterable
+    {
+        yield 'no customer' => [null, 'test@example.com', 'AA-345', CustomerException::class];
+        yield 'no guest customer' => [false, 'test@example.com', 'AA-345', CustomerException::class];
+        yield 'no request e-mail' => [true, null, 'AA-345', GuestNotAuthenticatedException::class];
+        yield 'no request postal code' => [true, 'test@example.com', null, GuestNotAuthenticatedException::class];
+        yield 'wrong e-mail' => [true, 'false@example.com', 'AA-345', WrongGuestCredentialsException::class];
+        yield 'wrong postal code' => [true, 'test@example.com', '12345', WrongGuestCredentialsException::class];
+        yield 'valid guest' => [true, 'test@example.com', 'AA-345', null];
+        yield 'valid guest uppercase email' => [true, 'Test@Example.Com', 'AA-345', null];
+        yield 'valid guest lowercase postal code' => [true, 'Test@Example.Com', 'aa-345', null];
+        yield 'valid guest with login' => [true, 'Test@Example.Com', 'aa-345', null, true];
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - remove together with OrderRoute::checkGuestAuth()
+     *
+     * @return iterable<string, array{?bool, ?string, ?string, ?class-string<\Throwable>, 4?: bool, 5?: bool}>
+     */
+    public static function legacyCustomerDataProvider(): iterable
+    {
+        yield 'no customer' => [null, 'test@example.com', 'AA-345', CartException::class];
+        yield 'no guest customer' => [false, 'test@example.com', 'AA-345', CartException::class];
+        yield 'no request e-mail' => [true, null, 'AA-345', GuestNotAuthenticatedException::class];
+        yield 'no request postal code' => [true, 'test@example.com', null, GuestNotAuthenticatedException::class];
+        yield 'wrong e-mail' => [true, 'false@example.com', 'AA-345', WrongGuestCredentialsException::class];
+        yield 'wrong postal code' => [true, 'test@example.com', '12345', WrongGuestCredentialsException::class];
+        yield 'valid guest' => [true, 'test@example.com', 'AA-345', null];
+        yield 'valid guest uppercase email' => [true, 'Test@Example.Com', 'AA-345', null];
+        yield 'valid guest lowercase postal code' => [true, 'Test@Example.Com', 'aa-345', null];
+        yield 'valid guest with login' => [true, 'Test@Example.Com', 'aa-345', null, true];
+        yield 'valid guest with credentials in query' => [true, 'test@example.com', 'AA-345', null, false, true];
+        yield 'wrong e-mail in query' => [true, 'false@example.com', 'AA-345', WrongGuestCredentialsException::class, false, true];
+        yield 'no request e-mail in query' => [true, null, 'AA-345', GuestNotAuthenticatedException::class, false, true];
+    }
+
+    #[DataProvider('deeplinkFilterProvider')]
+    public function testWronglyDeeplinkFilter(Filter $filter): void
+    {
+        $this->expectException(OrderException::class);
+
+        $route = new OrderRoute(
+            static::createStub(EntityRepository::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(RateLimiter::class),
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(AccountService::class),
+            new GuestAuthenticator(),
+            new NativeClock()
+        );
+
+        $route->load(new Request(), static::createStub(SalesChannelContext::class), (new Criteria())->addFilter($filter));
+    }
+
+    /**
+     * @return iterable<string, array{Filter}>
+     */
+    public static function deeplinkFilterProvider(): iterable
+    {
+        yield 'deeplink equalsAny' => [new EqualsAnyFilter('deepLinkCode', ['deepLinkCode'])];
+        yield 'deeplink multi' => [new MultiFilter(MultiFilter::CONNECTION_OR, [new EqualsFilter('deepLinkCode', 'deepLinkCode')])];
+        yield 'deeplink not' => [new NotFilter(MultiFilter::CONNECTION_OR, [new EqualsFilter('deepLinkCode', 'deepLinkCode')])];
+        yield 'deeplink suffix' => [new SuffixFilter('deepLinkCode', 'Code')];
+        yield 'deeplink prefix' => [new PrefixFilter('deepLinkCode', 'deep')];
+    }
+
+    #[DataProvider('deeplinkExpireDaysProvider')]
+    public function testDeeplinkFilterExpireDays(int $createdDaysAgo, int $expireDays, bool $expectedFiltered): void
+    {
+        $orderCustomer = new OrderCustomerEntity();
+        $orderCustomer->setId(Uuid::randomHex());
+        $orderCustomer->setEmail('test@example.com');
+        $orderCustomer->setCustomerId(Uuid::randomHex());
+
+        $guestCustomer = new CustomerEntity();
+        $guestCustomer->setId($orderCustomer->getId());
+        $guestCustomer->setGuest(true);
+        $orderCustomer->setCustomer($guestCustomer);
+
+        $billingAddress = new OrderAddressEntity();
+        $billingAddress->setZipcode('AA-345');
+
+        $order = new OrderEntity();
+        $order->setId(Uuid::randomHex());
+        $order->setCreatedAt(new \DateTime("-{$createdDaysAgo} days"));
+        $order->setUpdatedAt(new \DateTime("-{$createdDaysAgo} days"));
+        $order->setOrderCustomer($orderCustomer);
+        $order->setBillingAddress($billingAddress);
+
+        $context = static::createStub(SalesChannelContext::class);
+        $context
+            ->method('getCustomer')
+            ->willReturn(null);
+
+        $searchResult = new EntitySearchResult(
+            OrderDefinition::ENTITY_NAME,
+            1,
+            new OrderCollection([$order]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $orderRepository = static::createStub(EntityRepository::class);
+        $orderRepository
+            ->method('search')
+            ->willReturn($searchResult);
+
+        $route = new OrderRoute(
+            $orderRepository,
+            static::createStub(EntityRepository::class),
+            static::createStub(RateLimiter::class),
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(AccountService::class),
+            new GuestAuthenticator(),
+            new NativeClock(),
+            $expireDays,
+        );
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('deepLinkCode', 'someDeepLinkCode'));
+
+        $request = new Request();
+        $request->request->set('email', 'test@example.com');
+        $request->request->set('zipcode', 'AA-345');
+
+        if ($expectedFiltered) {
+            $this->expectException(OrderException::class);
+        }
+
+        $response = $route->load($request, $context, $criteria);
+
+        if (!$expectedFiltered) {
+            static::assertSame($order->getId(), $response->getOrders()->getEntities()->first()?->getId());
+        }
+    }
+
+    /**
+     * @return iterable<string, array{int, int, bool}>
+     */
+    public static function deeplinkExpireDaysProvider(): iterable
+    {
+        yield 'order within limit' => [10, 30, false];
+        yield 'order beyond limit' => [31, 30, true];
+        yield 'order beyond default, within custom limit' => [40, 60, false];
+        yield 'order beyond custom limit' => [61, 60, true];
+    }
+
+    /**
+     * @param ?class-string<\Throwable> $exception
+     */
+    private function assertGuestOrderAccess(?bool $isGuest, ?string $mail, ?string $postalCode, ?string $exception, bool $login, bool $credentialsInQuery): void
+    {
+        if ($exception !== null) {
+            $this->expectException($exception);
+        }
+
+        $orderCustomer = new OrderCustomerEntity();
+        $orderCustomer->setId(Uuid::randomHex());
+        $orderCustomer->setEmail('test@example.com');
+        $orderCustomer->setCustomerId(Uuid::randomHex());
+
+        if ($isGuest !== null) {
+            $customer = new CustomerEntity();
+            $customer->setId($orderCustomer->getId());
+            $customer->setGuest($isGuest);
+
+            $orderCustomer->setCustomer($customer);
+        }
+
+        $billingAddress = new OrderAddressEntity();
+        $billingAddress->setZipcode('AA-345');
+
+        $order = new OrderEntity();
+        $order->setId(Uuid::randomHex());
+        $order->setCreatedAt(new \DateTime());
+        $order->setOrderCustomer($orderCustomer);
+        $order->setBillingAddress($billingAddress);
+
+        $context = static::createStub(SalesChannelContext::class);
+        $context
+            ->method('getCustomer')
+            ->willReturn(null);
+
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->willReturnCallback(static function (object $event): object {
+                static::assertInstanceOf(OrderCriteriaEvent::class, $event);
+
+                return $event;
+            });
+
+        $searchResult = new EntitySearchResult(
+            OrderDefinition::ENTITY_NAME,
+            1,
+            new OrderCollection([$order]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $orderRepository = $this->createMock(EntityRepository::class);
+        $orderRepository
+            ->expects($this->once())
+            ->method('search')
+            ->willReturn($searchResult);
+
+        $accountService = $this->createMock(AccountService::class);
+        $accountService->expects($login ? $this->once() : $this->never())
+            ->method('loginById')
+            ->with($orderCustomer->getCustomerId())
+            ->willReturn('newContextToken');
+
+        $route = new OrderRoute(
+            $orderRepository,
+            static::createStub(EntityRepository::class),
+            static::createStub(RateLimiter::class),
+            $eventDispatcher,
+            $accountService,
+            new GuestAuthenticator(),
+            new NativeClock()
+        );
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('deepLinkCode', 'deepLinkCode'));
+
+        $request = new Request();
+        $credentials = $credentialsInQuery ? $request->query : $request->request;
+        $credentials->set('email', $mail);
+        $credentials->set('zipcode', $postalCode);
+        $request->request->set('login', $login);
+
+        $response = $route->load($request, $context, $criteria);
+        $responseOrder = $response->getOrders()->getEntities()->first();
+
+        static::assertNotNull($responseOrder);
+        static::assertSame($order->getId(), $responseOrder->getId());
+        static::assertSame($login ? 'newContextToken' : null, $response->headers->get('sw-context-token'));
+    }
+}

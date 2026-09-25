@@ -1,0 +1,311 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Adapter\Twig;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Adapter\Twig\SecurityExtension;
+use Shopwell\Core\Framework\Log\Package;
+use Twig\Environment;
+use Twig\Error\RuntimeError;
+use Twig\Loader\ArrayLoader;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(SecurityExtension::class)]
+class SecurityExtensionTest extends TestCase
+{
+    #[DataProvider('notAllowedTemplates')]
+    public function testNotAllowedTemplates(string $template): void
+    {
+        // don't expect any errors being thrown without our security extension
+        $this->runUnsafeTwig($template, ['arrayCaller' => [SecurityExtensionGadget::class, 'do']]);
+
+        // expect an error when our security extension is enabled
+        $this->expectException(RuntimeError::class);
+        $this->runTwig($template, [], ['arrayCaller' => [SecurityExtensionGadget::class, 'do']]);
+    }
+
+    public static function notAllowedTemplates(): \Generator
+    {
+        yield 'map not allowed function' => ['{{ ["a", "b", "c"]|map("strcmp")|join }}'];
+
+        yield 'map not allowed callback function string' => ['{{ ["a", "b", "c"]|map("\\\\Shopwell\\\\Tests\\\\Unit\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\SecurityExtensionGadget::do")|join }}'];
+
+        yield 'map not allowed callback function array' => ['{{ ["a", "b", "c"]|map([\'\\\\Shopwell\\\\Tests\\\\Unit\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\SecurityExtensionGadget\', \'do\'])|join }}'];
+
+        yield 'map not allowed callback function array on variable' => ['{{ ["a", "b", "c"]|map(arrayCaller)|join }}'];
+
+        yield 'reduce not allowed function' => ['{{ ["a", "b", "c"]|reduce("str_replace")|join }}'];
+
+        yield 'reduce not allowed callback function string' => ['{{ ["a", "b", "c"]|reduce("\\\\Shopwell\\\\Tests\\\\Unit\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\SecurityExtensionGadget::do")|join }}'];
+
+        yield 'reduce not allowed callback function array' => ['{{ ["a", "b", "c"]|reduce([\'\\\\Shopwell\\\\Tests\\\\Unit\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\SecurityExtensionGadget\', \'do\'])|join }}'];
+
+        yield 'reduce not allowed callback function array on variable' => ['{{ ["a", "b", "c"]|reduce(arrayCaller)|join }}'];
+
+        yield 'filter not allowed function' => ['{{ ["a", "b", "c"]|filter("strcmp")|join }}'];
+
+        yield 'filter not allowed callback function string' => ['{{ ["a", "b", "c"]|filter("\\\\Shopwell\\\\Tests\\\\Unit\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\SecurityExtensionGadget::do")|join }}'];
+
+        yield 'filter not allowed callback function array' => ['{{ ["a", "b", "c"]|filter([\'\\\\Shopwell\\\\Tests\\\\Unit\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\SecurityExtensionGadget\', \'do\'])|join }}'];
+
+        yield 'filter not allowed callback function array on variable' => ['{{ ["a", "b", "c"]|filter(arrayCaller)|join }}'];
+
+        yield 'sort not allowed function' => ['{{ ["a", "b", "c"]|sort("strcmp")|join }}'];
+
+        yield 'sort not allowed callback function string' => ['{{ ["a", "b", "c"]|sort("\\\\Shopwell\\\\Tests\\\\Unit\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\SecurityExtensionGadget::do")|join }}'];
+
+        yield 'sort not allowed callback function array' => ['{{ ["a", "b", "c"]|sort([\'\\\\Shopwell\\\\Tests\\\\Unit\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\SecurityExtensionGadget\', \'do\'])|join }}'];
+
+        yield 'sort not allowed callback function array on variable' => ['{{ ["a", "b", "c"]|sort(arrayCaller)|join }}'];
+
+        yield 'find not allowed function' => ['{{ ["a", "b", "c"]|find("strcmp") }}'];
+
+        yield 'find not allowed callback function string' => ['{{ ["a", "b", "c"]|find("\\\\Shopwell\\\\Tests\\\\Unit\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\SecurityExtensionGadget::do") }}'];
+
+        yield 'find not allowed callback function array' => ['{{ ["a", "b", "c"]|find([\'\\\\Shopwell\\\\Tests\\\\Unit\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\SecurityExtensionGadget\', \'do\']) }}'];
+
+        yield 'find not allowed callback function array on variable' => ['{{ ["a", "b", "c"]|find(arrayCaller) }}'];
+
+        yield 'has some not allowed function' => ['{{ ["a", "b", "c"] has some "strcmp" }}'];
+
+        yield 'has some not allowed callback function array on variable' => ['{{ ["a", "b", "c"] has some arrayCaller }}'];
+
+        yield 'has every not allowed function' => ['{{ ["a", "b", "c"] has every "strcmp" }}'];
+
+        yield 'has every not allowed callback function array on variable' => ['{{ ["a", "b", "c"] has every arrayCaller }}'];
+    }
+
+    public function testMapWithAllowedFunction(): void
+    {
+        static::assertSame('nop', $this->runTwig('{{ ["a", "b", "c"]|map("str_rot13")|join }}', ['str_rot13']));
+    }
+
+    public function testMapWithAllowedClosure(): void
+    {
+        static::assertSame(
+            'TEST',
+            $this->runTwig(
+                '{{ ["test"]|map(\'Shopwell\\\\Tests\\\\Unit\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\SecurityExtensionGoodClass::upper\')|join }}',
+                ['Shopwell\\Tests\\Unit\\Core\\Framework\\Adapter\\Twig\\SecurityExtensionGoodClass::upper'],
+            )
+        );
+    }
+
+    public function testMapWithClosure(): void
+    {
+        static::assertSame('a-testb-testc-test', $this->runTwig('{{ ["a", "b", "c"]|map(v => (v ~ "-test"))|join }}'));
+    }
+
+    public function testMapWithKeyValue(): void
+    {
+        static::assertSame('jon doe', $this->runTwig('{{ { "jon": "doe" }|map((value, key) => "#{key} #{value}")|join }}'));
+    }
+
+    public function testReduceAllowedFunction(): void
+    {
+        static::assertSame('6', $this->runTwig('{{ [1 , 5]|reduce((a, b) => a + b)|json_encode|raw }}'));
+    }
+
+    public function testReduceOnIterator(): void
+    {
+        static::assertSame('3', $this->runTwig('{{ test|reduce((a, b) => a + b)|json_encode|raw }}', [], ['test' => new \ArrayIterator([1, 2])]));
+    }
+
+    public function testReduceWithNotCallableFunction(): void
+    {
+        static::assertSame(
+            '',
+            $this->runTwig('{{ ["value"]|reduce(functionName)|join }}', ['not_callable'], ['functionName' => 'not_callable'])
+        );
+    }
+
+    public function testFilterClosure(): void
+    {
+        static::assertSame('a', $this->runTwig('{{ ["a", "b", "c"]|filter(v => v == "a")|join }}'));
+    }
+
+    public function testFilterIteratorClosure(): void
+    {
+        static::assertSame(
+            'a',
+            $this->runTwig('{{ test|filter(v => v == "a")|join }}', [], ['test' => new \ArrayIterator(['a', 'b', 'c'])])
+        );
+    }
+
+    public function testFilterWithNotCallableFunction(): void
+    {
+        static::assertSame(
+            '',
+            $this->runTwig('{{ ["value"]|filter(functionName)|join }}', ['not_callable'], ['functionName' => 'not_callable'])
+        );
+    }
+
+    public function testSortAllowedFunction(): void
+    {
+        set_error_handler(static function () {
+            return true;
+        });
+
+        static::assertSame('abc', $this->runTwig('{{ ["a", "b", "c"]|sort("str_starts_with")|join }}', ['str_starts_with']));
+
+        restore_error_handler();
+    }
+
+    public function testSortClosure(): void
+    {
+        static::assertSame('cba', $this->runTwig('{{ ["a", "b", "c"]|sort((a, b) => b <=> a)|join }}'));
+    }
+
+    public function testSortIteratorClosure(): void
+    {
+        static::assertSame(
+            'cba',
+            $this->runTwig('{{ test|sort((a, b) => b <=> a)|join }}', [], ['test' => new \ArrayIterator(['a', 'b', 'c'])])
+        );
+    }
+
+    public function testSortDefault(): void
+    {
+        static::assertSame(
+            '123',
+            $this->runTwig('{{ test|sort|join }}', [], ['test' => ['2', '3', '1']])
+        );
+    }
+
+    public function testFindClosure(): void
+    {
+        static::assertSame('b', $this->runTwig('{{ ["a", "b", "c"]|find(v => v == "b") }}'));
+    }
+
+    public function testFindWithAllowedFunction(): void
+    {
+        static::assertSame(
+            'TEST',
+            $this->runTwig(
+                '{{ ["", "TEST"]|find(\'Shopwell\\\\Tests\\\\Unit\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\SecurityExtensionGoodClass::upper\') }}',
+                ['Shopwell\\Tests\\Unit\\Core\\Framework\\Adapter\\Twig\\SecurityExtensionGoodClass::upper'],
+            )
+        );
+    }
+
+    public function testFindWithAllowedSingleArgumentFunction(): void
+    {
+        // is_numeric() accepts exactly one argument, so this pins the single-argument calling convention
+        static::assertSame('1', $this->runTwig('{{ ["a", "1"]|find("is_numeric") }}', ['is_numeric']));
+    }
+
+    public function testFindWithNotCallableFunction(): void
+    {
+        static::assertSame(
+            '',
+            $this->runTwig('{{ ["value"]|find(functionName) }}', ['not_callable'], ['functionName' => 'not_callable'])
+        );
+    }
+
+    /**
+     * @param list<string> $allowedFunctions
+     */
+    #[DataProvider('callbackOperatorTemplates')]
+    public function testCallbackOperators(string $template, array $allowedFunctions, string $expected): void
+    {
+        static::assertSame($expected, $this->runTwig($template, $allowedFunctions));
+    }
+
+    public static function callbackOperatorTemplates(): \Generator
+    {
+        yield 'has some with closure matches' => ['{{ (["a", "b", "c"] has some (v => v == "b")) ? 1 : 0 }}', [], '1'];
+
+        yield 'has some with closure does not match' => ['{{ (["a", "b", "c"] has some (v => v == "z")) ? 1 : 0 }}', [], '0'];
+
+        yield 'has every with closure matches' => ['{{ (["a", "a"] has every (v => v == "a")) ? 1 : 0 }}', [], '1'];
+
+        yield 'has every with closure does not match' => ['{{ (["a", "b"] has every (v => v == "a")) ? 1 : 0 }}', [], '0'];
+
+        // is_numeric() accepts exactly one argument, so these also pin the single-argument calling convention
+        yield 'has some with allowed function matches' => ['{{ (["a", "1"] has some "is_numeric") ? 1 : 0 }}', ['is_numeric'], '1'];
+
+        yield 'has some with allowed function does not match' => ['{{ (["a", "b"] has some "is_numeric") ? 1 : 0 }}', ['is_numeric'], '0'];
+
+        yield 'has every with allowed function matches' => ['{{ (["1", "2"] has every "is_numeric") ? 1 : 0 }}', ['is_numeric'], '1'];
+
+        yield 'has every with allowed function does not match' => ['{{ (["1", "b"] has every "is_numeric") ? 1 : 0 }}', ['is_numeric'], '0'];
+    }
+
+    public function testAcceptsNull(): void
+    {
+        static::assertSame(
+            '',
+            $this->runTwig('{{ test|map(v => (v ~ "-test"))|join }}', [], ['test' => null])
+        );
+        static::assertSame(
+            '',
+            $this->runTwig('{{ test|reduce((a, b) => a + b)|join }}', [], ['test' => null])
+        );
+        static::assertSame(
+            '',
+            $this->runTwig('{{ test|filter(v => v == "a")|join }}', [], ['test' => null])
+        );
+        static::assertSame(
+            '',
+            $this->runTwig('{{ test|sort|join }}', [], ['test' => null])
+        );
+    }
+
+    /**
+     * @param array<string> $allowedFunctions
+     * @param array<mixed> $variables
+     */
+    private function runTwig(string $template, array $allowedFunctions = [], array $variables = []): string
+    {
+        $twig = new Environment(new ArrayLoader([
+            'test' => $template,
+        ]));
+
+        $twig->addExtension(new SecurityExtension($allowedFunctions));
+
+        return $twig->render('test', $variables);
+    }
+
+    /**
+     * @param array<mixed> $variables
+     */
+    private function runUnsafeTwig(string $template, array $variables = []): string
+    {
+        $twig = new Environment(new ArrayLoader([
+            'test' => $template,
+        ]));
+
+        return $twig->render('test', $variables);
+    }
+}
+
+/**
+ * @internal
+ *
+ * Demonstrates that this static method cannot be called from Twig by closure
+ */
+class SecurityExtensionGadget
+{
+    public static function do(): void
+    {
+        // no op, do not throw as we need to check that an exception is thrown by the security extension, not here
+    }
+}
+
+/**
+ * @internal
+ *
+ * Demonstrates that closure can call this static method from Twig when allowed
+ */
+class SecurityExtensionGoodClass
+{
+    public static function upper(string $text): string
+    {
+        return strtoupper($text);
+    }
+}

@@ -1,0 +1,13 @@
+{% block sw_condition_base_field_condition %}
+<sw-single-select
+    v-if="options.length > 1"
+    class="sw-product-stream-field-select"
+    :class="{ 'has--error': hasError }"
+    :options="options"
+    :value="field"
+    :placeholder="$t('sw-product-stream.filter.placeholderFieldSelect')"
+    :disabled="disabled"
+    show-clearable-button
+    @update:value="changeField"
+/>
+{% endblock %}

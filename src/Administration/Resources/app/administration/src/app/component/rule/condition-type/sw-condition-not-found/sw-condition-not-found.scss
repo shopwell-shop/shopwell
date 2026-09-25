@@ -1,0 +1,12 @@
+.sw-condition {
+    .sw-condition__container {
+        .sw-condition-type-select {
+            border: 1px solid var(--color-border-critical-default);
+
+            .sw-block-field__block,
+            .sw-single-select__selection-input {
+                background-color: var(--color-background-critical-default);
+            }
+        }
+    }
+}

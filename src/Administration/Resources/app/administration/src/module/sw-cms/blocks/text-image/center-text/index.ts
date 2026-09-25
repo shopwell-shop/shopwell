@@ -1,0 +1,76 @@
+/**
+ * @private
+ * @sw-package discovery
+ */
+Shopwell.Component.register('sw-cms-preview-center-text', () => import('./preview'));
+/**
+ * @private
+ * @sw-package discovery
+ */
+Shopwell.Component.register('sw-cms-block-center-text', () => import('./component'));
+
+/**
+ * @private
+ * @sw-package discovery
+ */
+Shopwell.Service('cmsService').registerCmsBlock({
+    name: 'center-text',
+    label: 'sw-cms.blocks.textImage.centerText.label',
+    category: 'text-image',
+    component: 'sw-cms-block-center-text',
+    previewComponent: 'sw-cms-preview-center-text',
+    defaultConfig: {
+        marginBottom: '20px',
+        marginTop: '20px',
+        marginLeft: null,
+        marginRight: null,
+        sizingMode: 'boxed',
+    },
+    slots: {
+        left: {
+            type: 'image',
+            default: {
+                config: {
+                    displayMode: { source: 'static', value: 'cover' },
+                },
+                data: {
+                    media: {
+                        value: Shopwell.Constants.CMS.MEDIA.previewCamera,
+                        source: 'default',
+                    },
+                },
+            },
+        },
+        center: {
+            type: 'text',
+            default: {
+                config: {
+                    content: {
+                        source: 'static',
+                        value: `
+                        <h2 style="text-align: center;">Lorem Ipsum dolor sit amet</h2>
+                        <p style="text-align: center;">Lorem ipsum dolor sit amet, consetetur sadipscing elitr,
+                        sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
+                        sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum.
+                        Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</p>
+                        `.trim(),
+                    },
+                },
+            },
+        },
+        right: {
+            type: 'image',
+            default: {
+                config: {
+                    displayMode: { source: 'static', value: 'cover' },
+                },
+                data: {
+                    media: {
+                        value: Shopwell.Constants.CMS.MEDIA.previewPlant,
+                        source: 'default',
+                    },
+                },
+            },
+        },
+    },
+});

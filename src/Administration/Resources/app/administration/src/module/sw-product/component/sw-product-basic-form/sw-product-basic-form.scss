@@ -1,0 +1,16 @@
+.product-basic-form {
+    position: relative;
+
+    .product-basic-form__switches {
+        display: flex;
+        justify-content: space-between;
+
+        .sw-field {
+            margin-right: var(--scale-size-20);
+        }
+    }
+
+    .sw-product-basic-form__inheritance-wrapper-description {
+        margin-bottom: var(--scale-size-12);
+    }
+}

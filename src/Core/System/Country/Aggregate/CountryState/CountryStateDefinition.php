@@ -1,0 +1,77 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\Country\Aggregate\CountryState;
+
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressDefinition;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SetNullOnDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Country\Aggregate\CountryStateTranslation\CountryStateTranslationDefinition;
+use Shopwell\Core\System\Country\CountryDefinition;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('fundamentals@discovery')]
+class CountryStateDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'country_state';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function getCollectionClass(): string
+    {
+        return CountryStateCollection::class;
+    }
+
+    public function getEntityClass(): string
+    {
+        return CountryStateEntity::class;
+    }
+
+    public function since(): ?string
+    {
+        return '6.0.0.0';
+    }
+
+    protected function getParentDefinitionClass(): ?string
+    {
+        return CountryDefinition::class;
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new ApiAware(), new PrimaryKey(), new Required())->setDescription('Unique identity of the country\'s state.'),
+            (new FkField('country_id', 'countryId', CountryDefinition::class))->addFlags(new ApiAware(), new Required())->setDescription('Unique identity of the country.'),
+            (new StringField('short_code', 'shortCode'))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('An abbreviation for the country\'s state.'),
+            (new TranslatedField('name'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)),
+            (new IntField('position', 'position'))->addFlags(new ApiAware())->setDescription('Numerical value that indicates the order in which the defined states must be displayed in the frontend.'),
+            (new BoolField('active', 'active'))->addFlags(new ApiAware())->setDescription('When boolean value is `true`, the country\'s state is available for selection in the storefront.'),
+            (new TranslatedField('customFields'))->addFlags(new ApiAware()),
+            new ManyToOneAssociationField('country', 'country_id', CountryDefinition::class, 'id', false),
+            (new TranslationsAssociationField(CountryStateTranslationDefinition::class, 'country_state_id'))->addFlags(new Required()),
+            // Reverse Associations, not available in sales-channel-api
+            (new OneToManyAssociationField('customerAddresses', CustomerAddressDefinition::class, 'country_state_id', 'id'))->addFlags(new SetNullOnDelete()),
+            (new OneToManyAssociationField('orderAddresses', OrderAddressDefinition::class, 'country_state_id', 'id'))->addFlags(new SetNullOnDelete()),
+        ]);
+    }
+}

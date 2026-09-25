@@ -1,0 +1,59 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Field;
+
+use Shopwell\Core\DevOps\Environment\EnvironmentHelper;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\CreatedByFieldSerializer;
+use Shopwell\Core\Framework\Deprecation\BCChange\ParameterDefaultValueChange;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\User\UserDefinition;
+
+#[Package('framework')]
+class CreatedByField extends FkField
+{
+    /**
+     * @var array<string>
+     */
+    private readonly array $allowedWriteScopes;
+
+    /**
+     * @param list<string> $allowedWriteScopes
+     */
+    #[ParameterDefaultValueChange(version: 'v6.8.0', parameterName: 'allowedWriteScopes', newDefaultValue: [Context::SYSTEM_SCOPE, Context::CRUD_API_SCOPE])]
+    public function __construct(array $allowedWriteScopes = [Context::SYSTEM_SCOPE])
+    {
+        parent::__construct('created_by_id', 'createdById', UserDefinition::class);
+
+        if (\func_num_args() === 0 && Feature::isActive('v6.8.0.0')) {
+            $allowedWriteScopes = [Context::SYSTEM_SCOPE, Context::CRUD_API_SCOPE];
+        }
+
+        if (\func_num_args() === 0 && !Feature::isActive('v6.8.0.0') && !EnvironmentHelper::getVariable('TESTS_RUNNING')) {
+            trigger_deprecation(
+                'shopware/core',
+                '',
+                \sprintf(
+                    'Not passing $allowedWriteScopes to %s::__construct() will include Context::CRUD_API_SCOPE by default in v6.8.0. Pass the desired scopes explicitly to keep the current behavior.',
+                    self::class
+                )
+            );
+        }
+
+        $this->allowedWriteScopes = $allowedWriteScopes;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getAllowedWriteScopes(): array
+    {
+        return $this->allowedWriteScopes;
+    }
+
+    protected function getSerializerClass(): string
+    {
+        return CreatedByFieldSerializer::class;
+    }
+}

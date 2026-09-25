@@ -1,0 +1,60 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Promotion\Aggregate\PromotionIndividualCode;
+
+use Shopwell\Core\Checkout\Promotion\PromotionDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\JsonField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('checkout')]
+class PromotionIndividualCodeDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'promotion_individual_code';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function getEntityClass(): string
+    {
+        return PromotionIndividualCodeEntity::class;
+    }
+
+    public function getCollectionClass(): string
+    {
+        return PromotionIndividualCodeCollection::class;
+    }
+
+    public function since(): ?string
+    {
+        return '6.0.0.0';
+    }
+
+    protected function getParentDefinitionClass(): ?string
+    {
+        return PromotionDefinition::class;
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required())->setDescription('Unique identity of promotion individual code.'),
+            (new FkField('promotion_id', 'promotionId', PromotionDefinition::class, 'id'))->addFlags(new Required())->setDescription('Unique identity of promotion.'),
+            (new StringField('code', 'code'))->addFlags(new Required())->setDescription('Promotion code.'),
+            (new JsonField('payload', 'payload'))->setDescription('Any data related to promotion is passed.'),
+            new ManyToOneAssociationField('promotion', 'promotion_id', PromotionDefinition::class, 'id'),
+        ]);
+    }
+}

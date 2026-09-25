@@ -1,0 +1,68 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\Unit;
+
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Unit\Aggregate\UnitTranslation\UnitTranslationCollection;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('inventory')]
+class UnitEntity extends Entity
+{
+    use EntityCustomFieldsTrait;
+    use EntityIdTrait;
+
+    protected ?string $shortCode = null;
+
+    protected ?string $name = null;
+
+    protected ?UnitTranslationCollection $translations = null;
+
+    protected ?ProductCollection $products = null;
+
+    public function getShortCode(): ?string
+    {
+        return $this->shortCode;
+    }
+
+    public function setShortCode(?string $shortCode): void
+    {
+        $this->shortCode = $shortCode;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(?string $name): void
+    {
+        $this->name = $name;
+    }
+
+    public function getTranslations(): ?UnitTranslationCollection
+    {
+        return $this->translations;
+    }
+
+    public function setTranslations(UnitTranslationCollection $translations): void
+    {
+        $this->translations = $translations;
+    }
+
+    public function getProducts(): ?ProductCollection
+    {
+        return $this->products;
+    }
+
+    public function setProducts(ProductCollection $products): void
+    {
+        $this->products = $products;
+    }
+}

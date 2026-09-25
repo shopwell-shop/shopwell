@@ -1,0 +1,54 @@
+.sw-seo-url-template-card {
+    .sw-sales-channel-switch {
+        width: 100%;
+    }
+
+    .sw-loader {
+        position: relative;
+    }
+
+    .sw-seo-url-template-card__preview {
+        color: var(--color-text-primary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    .sw-seo-url-template-card__preview-label {
+        margin: var(--scale-size-10) 0 var(--scale-size-8);
+        display: block;
+        line-height: var(--scale-size-16);
+        font-weight: var(--font-weight-regular);
+        user-select: none;
+    }
+}
+
+.sw-seo-url-template-card__seo-url {
+    margin-bottom: var(--scale-size-32);
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+
+    .sw-field {
+        margin-bottom: 0;
+    }
+
+    .sw-field__addition .mt-icon {
+        width: var(--font-size-s);
+        height: var(--font-size-s);
+        line-height: var(--font-size-s);
+
+        &.icon--regular {
+            &-checkmark {
+                color: var(--color-icon-positive-default);
+            }
+
+            &-exclamation-triangle {
+                color: var(--color-icon-attention-default);
+            }
+
+            &-times {
+                color: var(--color-icon-critical-default);
+            }
+        }
+    }
+}

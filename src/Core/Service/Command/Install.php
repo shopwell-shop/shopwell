@@ -1,0 +1,51 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Service\Command;
+
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Service\LifecycleManager;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
+
+#[Package('framework')]
+#[AsCommand(
+    name: 'services:install',
+    description: 'Install all services'
+)]
+class Install extends Command
+{
+    /**
+     * @internal
+     */
+    public function __construct(private readonly LifecycleManager $manager)
+    {
+        parent::__construct();
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $io = new SymfonyStyle($input, $output);
+
+        $io->title('Installing services...');
+
+        if (!$this->manager->enabled()) {
+            $io->error('Services are disabled. Please enable them to install services.');
+
+            return Command::FAILURE;
+        }
+
+        $installed = $this->manager->reconcile(Context::createCLIContext());
+
+        if ($installed === []) {
+            $io->info('No services were installed');
+        } else {
+            $io->success(\sprintf('Done. Installed %s', implode(', ', $installed)));
+        }
+
+        return Command::SUCCESS;
+    }
+}

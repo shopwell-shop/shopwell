@@ -1,0 +1,35 @@
+.sw-settings-mailer {
+    &__first-configuration {
+        margin-bottom: var(--scale-size-24);
+    }
+
+    .mt-card__content .sw-settings-mailer__headline {
+        font-weight: var(--font-weight-semi-bold);
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+    }
+
+    &__description {
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+    }
+
+    &__additional_settings {
+        margin-left: var(--scale-size-10);
+        margin-bottom: var(--scale-size-4);
+    }
+
+    &__radio-selection {
+        .sw-field--radio {
+            margin-bottom: var(--scale-size-8);
+        }
+
+        .sw-field__radio-group {
+            display: flex;
+        }
+
+        .sw-field__radio-option {
+            margin-right: var(--scale-size-32);
+        }
+    }
+}

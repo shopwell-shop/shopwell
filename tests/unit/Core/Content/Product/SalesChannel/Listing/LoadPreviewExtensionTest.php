@@ -1,0 +1,44 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Product\SalesChannel\Listing;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Product\Extension\LoadPreviewExtension;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Tests\Examples\ProductListingCriteriaExtensionExample;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+#[CoversClass(LoadPreviewExtension::class)]
+class LoadPreviewExtensionTest extends TestCase
+{
+    public function testLoadPreviewExample(): void
+    {
+        $example = new ProductListingCriteriaExtensionExample();
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addSubscriber($example);
+
+        $extension = new LoadPreviewExtension(
+            ['5441aebfd9d048338476f88ba7f07c76'],
+            static::createStub(SalesChannelContext::class)
+        );
+
+        $result = (new ExtensionDispatcher($dispatcher))->publish(
+            name: LoadPreviewExtension::NAME,
+            extension: $extension,
+            function: static function (array $ids, SalesChannelContext $context): array {
+                return array_combine($ids, $ids);
+            }
+        );
+
+        static::assertIsArray($result);
+        static::assertSame(['5441aebfd9d048338476f88ba7f07c76' => '5441aebfd9d048338476f88ba7f07c76'], $result);
+    }
+}

@@ -1,0 +1,60 @@
+{% block sw_category_detail_custom_entity %}
+<div class="sw-category-detail-custom-entity">
+    <template v-if="category">
+        <mt-card
+            v-if="!Array.isArray(customEntityAssignments)"
+            :title="$t('sw-category.base.customEntity.cardTitle')"
+            position-identifier="category-detail-custom-entity"
+            class="sw-category-detail-custom-entity__selection-container"
+        >
+            <sw-entity-single-select
+                class="sw-category-detail-custom-entity__assignment"
+                :value="category.customEntityTypeId"
+                :label="$t('sw-category.base.customEntity.assignment.label')"
+                :help-text="$t('sw-category.base.customEntity.assignment.helpText')"
+                :disabled="!acl.can('category.editor')"
+                :criteria="customEntityCriteria"
+                entity="custom_entity"
+                required
+                @update:value="onEntityChange"
+            />
+        </mt-card>
+
+        <sw-many-to-many-assignment-card
+            v-else
+            :entity-collection="customEntityAssignments"
+            :title="$t('sw-category.base.customEntity.cardTitle')"
+            :columns="customEntityColumns"
+            :local-mode="category.isNew()"
+            label-property="cmsAwareTitle"
+            :criteria="sortingCriteria"
+            :select-label="$t('sw-category.base.customEntity.instanceAssignment.label')"
+            :placeholder="$t('sw-category.base.customEntity.instanceAssignment.placeholder')"
+            @update:entity-collection="onAssignmentChange"
+        >
+            <template #prepend-select>
+                <sw-entity-single-select
+                    class="sw-category-detail-custom-entity__assignment"
+                    :value="category.customEntityTypeId"
+                    :label="$t('sw-category.base.customEntity.assignment.label')"
+                    :help-text="$t('sw-category.base.customEntity.assignment.helpText')"
+                    :disabled="!acl.can('category.editor')"
+                    :criteria="customEntityCriteria"
+                    entity="custom_entity"
+                    required
+                    @update:value="onEntityChange"
+                />
+            </template>
+
+            <template #empty-state>
+                <mt-empty-state
+                    centered
+                    :icon="$route.meta.$module.icon"
+                    :headline="$t('sw-category.base.customEntity.instanceAssignment.emptyState.title')"
+                    description=""
+                />
+            </template>
+        </sw-many-to-many-assignment-card>
+    </template>
+</div>
+{% endblock %}

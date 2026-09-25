@@ -1,0 +1,95 @@
+.sw-customer-card {
+    &__metadata-customer-name,
+    &__header {
+        display: flex;
+        gap: var(--scale-size-8);
+    }
+
+    .sw-customer-card__metadata {
+        padding-top: 17px;
+    }
+
+    .sw-customer-card__metadata-customer-name {
+        align-items: center;
+        display: flex;
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-m);
+    }
+
+    &__metadata-header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--scale-size-16);
+    }
+
+    &__metadata-header-text {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__metadata-customer-guest-label {
+        margin-left: var(--scale-size-8);
+    }
+
+    .sw-customer-card-email-link {
+        text-decoration: none;
+    }
+
+    &__metadata-item {
+        margin-bottom: var(--scale-size-8);
+    }
+
+    &__actions {
+        padding-top: var(--scale-size-10);
+
+        .mt-button {
+            margin-right: var(--scale-size-6);
+
+            &:last-of-type {
+                margin-right: 0;
+            }
+        }
+    }
+
+    &__tag-select {
+        margin-top: var(--scale-size-12);
+    }
+
+    .sw-card-section.sw-card-section--divider-bottom {
+        border-bottom: 1px solid var(--color-border-secondary-default);
+    }
+
+    &__detailed-data {
+        border-bottom-left-radius: var(--border-radius-card);
+        border-bottom-right-radius: var(--border-radius-card);
+    }
+
+    .sw-customer-card__tag-select {
+        &.is--disabled {
+            background-color: transparent;
+            border-color: transparent;
+
+            .sw-block-field__block {
+                border: none;
+                background: transparent;
+            }
+
+            .sw-select__selection {
+                padding-left: 0;
+            }
+
+            .sw-select__selection-indicators {
+                display: none;
+            }
+
+            input {
+                background: transparent;
+            }
+        }
+    }
+
+    .sw-customer-card__salutation-select {
+        grid-column: 1;
+    }
+}

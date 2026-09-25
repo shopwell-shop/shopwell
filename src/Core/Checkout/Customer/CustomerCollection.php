@@ -1,0 +1,150 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Customer;
+
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCollection;
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupCollection;
+use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
+
+/**
+ * @extends EntityCollection<CustomerEntity>
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('checkout')]
+class CustomerCollection extends EntityCollection
+{
+    /**
+     * @return array<string>
+     */
+    public function getGroupIds(): array
+    {
+        return $this->fmap(static fn (CustomerEntity $customer) => $customer->getGroupId());
+    }
+
+    public function filterByGroupId(string $id): self
+    {
+        return $this->filter(static fn (CustomerEntity $customer) => $customer->getGroupId() === $id);
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getSalesChannelIds(): array
+    {
+        return $this->fmap(static fn (CustomerEntity $customer) => $customer->getSalesChannelId());
+    }
+
+    public function filterBySalesChannelId(string $id): self
+    {
+        return $this->filter(static fn (CustomerEntity $customer) => $customer->getSalesChannelId() === $id);
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getLanguageIds(): array
+    {
+        return $this->fmap(static fn (CustomerEntity $customer) => $customer->getLanguageId());
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getLastPaymentMethodIds(): array
+    {
+        return $this->fmap(static fn (CustomerEntity $customer) => $customer->getLastPaymentMethodId());
+    }
+
+    public function filterByLastPaymentMethodId(string $id): self
+    {
+        return $this->filter(static fn (CustomerEntity $customer) => $customer->getLastPaymentMethodId() === $id);
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getDefaultBillingAddressIds(): array
+    {
+        return $this->fmap(static fn (CustomerEntity $customer) => $customer->getDefaultBillingAddressId());
+    }
+
+    public function filterByDefaultBillingAddressId(string $id): self
+    {
+        return $this->filter(static fn (CustomerEntity $customer) => $customer->getDefaultBillingAddressId() === $id);
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getDefaultShippingAddressIds(): array
+    {
+        return $this->fmap(static fn (CustomerEntity $customer) => $customer->getDefaultShippingAddressId());
+    }
+
+    public function filterByDefaultShippingAddressId(string $id): self
+    {
+        return $this->filter(static fn (CustomerEntity $customer) => $customer->getDefaultShippingAddressId() === $id);
+    }
+
+    public function getGroups(): CustomerGroupCollection
+    {
+        return new CustomerGroupCollection(
+            $this->fmap(static fn (CustomerEntity $customer) => $customer->getGroup())
+        );
+    }
+
+    public function getSalesChannels(): SalesChannelCollection
+    {
+        return new SalesChannelCollection(
+            $this->fmap(static fn (CustomerEntity $customer) => $customer->getSalesChannel())
+        );
+    }
+
+    public function getLastPaymentMethods(): PaymentMethodCollection
+    {
+        return new PaymentMethodCollection(
+            $this->fmap(static fn (CustomerEntity $customer) => $customer->getLastPaymentMethod())
+        );
+    }
+
+    public function getDefaultBillingAddress(): CustomerAddressCollection
+    {
+        return new CustomerAddressCollection(
+            $this->fmap(static fn (CustomerEntity $customer) => $customer->getDefaultBillingAddress())
+        );
+    }
+
+    public function getDefaultShippingAddress(): CustomerAddressCollection
+    {
+        return new CustomerAddressCollection(
+            $this->fmap(static fn (CustomerEntity $customer) => $customer->getDefaultShippingAddress())
+        );
+    }
+
+    /**
+     * @return array<array<string>>
+     */
+    public function getListVatIds(): array
+    {
+        return $this->fmap(static fn (CustomerEntity $customer) => $customer->getVatIds());
+    }
+
+    public function filterByVatId(string $id): self
+    {
+        return $this->filter(static fn (CustomerEntity $customer) => \in_array($id, $customer->getVatIds() ?? [], true));
+    }
+
+    public function getApiAlias(): string
+    {
+        return 'customer_collection';
+    }
+
+    protected function getExpectedClass(): string
+    {
+        return CustomerEntity::class;
+    }
+}

@@ -1,0 +1,49 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Cart\Event;
+
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Contracts\EventDispatcher\Event;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('checkout')]
+class CartBeforeSerializationEvent extends Event implements CartEvent
+{
+    /**
+     * @param array<string> $customFieldAllowList
+     */
+    public function __construct(
+        protected Cart $cart,
+        private array $customFieldAllowList
+    ) {
+    }
+
+    public function getCart(): Cart
+    {
+        return $this->cart;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getCustomFieldAllowList(): array
+    {
+        return $this->customFieldAllowList;
+    }
+
+    /**
+     * @param array<string> $customFieldAllowList
+     */
+    public function setCustomFieldAllowList(array $customFieldAllowList): void
+    {
+        $this->customFieldAllowList = $customFieldAllowList;
+    }
+
+    public function addCustomFieldToAllowList(string $customField): void
+    {
+        $this->customFieldAllowList[] = $customField;
+    }
+}

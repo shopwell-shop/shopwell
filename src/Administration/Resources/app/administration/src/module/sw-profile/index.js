@@ -1,0 +1,74 @@
+/**
+ * @sw-package fundamentals@framework
+ */
+import './extension/sw-admin-menu';
+import './acl';
+
+const { Module } = Shopwell;
+
+/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+Shopwell.Component.register('sw-profile-index', () => import('./page/sw-profile-index'));
+Shopwell.Component.register('sw-profile-index-general', () => import('./view/sw-profile-index-general'));
+Shopwell.Component.register(
+    'sw-profile-index-search-preferences',
+    () => import('./view/sw-profile-index-search-preferences'),
+);
+/* eslint-enable sw-deprecation-rules/private-feature-declarations */
+
+/**
+ * @private
+ */
+Shopwell.Component.register(
+    'sw-profile-index-privacy-preferences',
+    () => import('./view/sw-profile-index-privacy-preferences'),
+);
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Module.register('sw-profile', {
+    type: 'core',
+    name: 'profile',
+    title: 'sw-profile.general.headlineProfile',
+    description: 'sw-profile.general.description',
+    color: 'var(--sw-color-module-neutral-default)',
+    icon: 'regular-user',
+    entity: 'user',
+
+    routes: {
+        index: {
+            component: 'sw-profile-index',
+            path: 'index',
+            redirect: {
+                name: 'sw.profile.index.general',
+            },
+            meta: {
+                privilege: 'user.update_profile',
+            },
+            children: {
+                general: {
+                    component: 'sw-profile-index-general',
+                    path: 'general',
+                    meta: {
+                        parentPath: 'sw.profile.index',
+                        privilege: 'user.update_profile',
+                    },
+                },
+                searchPreferences: {
+                    component: 'sw-profile-index-search-preferences',
+                    path: 'search-preferences',
+                    meta: {
+                        parentPath: 'sw.profile.index',
+                        privilege: 'user.update_profile',
+                    },
+                },
+                privacyPreferences: {
+                    component: 'sw-profile-index-privacy-preferences',
+                    path: 'privacy-preferences',
+                    meta: {
+                        parentPath: 'sw.profile.index',
+                        privilege: 'user.update_profile',
+                    },
+                },
+            },
+        },
+    },
+});

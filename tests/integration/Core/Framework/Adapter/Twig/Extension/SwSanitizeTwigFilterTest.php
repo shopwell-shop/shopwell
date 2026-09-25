@@ -1,0 +1,32 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\Adapter\Twig\Extension;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Adapter\Twig\Extension\SwSanitizeTwigFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class SwSanitizeTwigFilterTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    private SwSanitizeTwigFilter $swSanitize;
+
+    protected function setUp(): void
+    {
+        $this->swSanitize = static::getContainer()->get(SwSanitizeTwigFilter::class);
+    }
+
+    public function testTwigFilterIsRegistered(): void
+    {
+        $filters = $this->swSanitize->getFilters();
+
+        static::assertCount(1, $filters);
+        static::assertSame('sw_sanitize', $filters[0]->getName());
+    }
+}

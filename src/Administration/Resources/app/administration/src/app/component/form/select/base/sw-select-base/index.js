@@ -1,0 +1,203 @@
+import template from './sw-select-base.html.twig';
+import './sw-select-base.scss';
+
+/**
+ * @sw-package framework
+ *
+ * @private
+ * @status ready
+ * @description Base component for creating new select components. Uses sw-field base components as basic structure.
+ * @example-type code-only
+ */
+export default {
+    template,
+
+    inheritAttrs: false,
+
+    emits: ['select-expanded', 'select-collapsed', 'clear'],
+
+    props: {
+        isLoading: {
+            type: Boolean,
+            required: false,
+            default: false,
+        },
+
+        disabled: {
+            type: Boolean,
+            required: false,
+            default: false,
+        },
+
+        /**
+         * Controls visibility of the clear button.
+         * When undefined, defaults to true if not required, false if required.
+         * Explicit true/false overrides this default behavior.
+         * @see isClearable computed property
+         */
+        showClearableButton: {
+            type: Boolean,
+            required: false,
+            default: undefined,
+        },
+
+        size: {
+            type: String,
+            required: false,
+            default: 'default',
+        },
+    },
+
+    data() {
+        return {
+            expanded: false,
+        };
+    },
+
+    computed: {
+        swFieldClasses() {
+            return { 'has--focus': this.expanded };
+        },
+
+        isClearable() {
+            // If explicitly set, use the provided value
+            if (this.showClearableButton !== undefined) {
+                return this.showClearableButton;
+            }
+
+            // Default: clearable when not required
+            // '' case is for empty attribute like <form-field required> which should be treated as true
+            return !this.$attrs.required && this.$attrs.required !== '';
+        },
+    },
+
+    mounted() {
+        this.onMounted();
+    },
+
+    beforeUnmount() {
+        this.onBeforeUnmount();
+    },
+
+    methods: {
+        onMounted() {
+            document.addEventListener('keydown', this.handleKeydown);
+        },
+
+        onBeforeUnmount() {
+            document.removeEventListener('keydown', this.handleKeydown);
+        },
+
+        handleKeydown(event) {
+            if (!this.expanded) {
+                return;
+            }
+
+            // Handle escape key
+            if (event.key === 'Escape' || event.key === 'Esc') {
+                this.collapse();
+            }
+        },
+
+        toggleExpand() {
+            if (!this.expanded) {
+                this.expand();
+            } else {
+                this.collapse();
+            }
+        },
+
+        expand() {
+            if (this.expanded) {
+                return;
+            }
+
+            if (this.disabled) {
+                return;
+            }
+
+            this.expanded = true;
+            document.addEventListener('click', this.listenToClickOutside);
+            this.$emit('select-expanded');
+        },
+
+        collapse(event) {
+            if (!this.expanded) {
+                return;
+            }
+
+            document.removeEventListener('click', this.listenToClickOutside);
+            this.expanded = false;
+
+            // do not let clearable button trigger change event
+            if (event?.target?.dataset.clearableButton === undefined) {
+                this.$emit('select-collapsed');
+            }
+
+            // @see NEXT-16079 allow back tab-ing through form via SHIFT+TAB
+            if (event && event?.shiftKey) {
+                event.preventDefault();
+                this.focusPreviousFormElement();
+            }
+        },
+
+        focusPreviousFormElement() {
+            const focusableSelector = 'a, button, input, textarea, select, details, [tabindex]:not([tabindex="-1"])';
+            const myFocusable = this.$el.querySelector(focusableSelector);
+            const keyboardFocusable = [...document.querySelectorAll(focusableSelector)].filter(
+                (el) => !el.hasAttribute('disabled') && el.dataset.clearableButton === undefined,
+            );
+
+            keyboardFocusable.forEach((element, index) => {
+                if (index > 0 && element === myFocusable) {
+                    const kbFocusable = keyboardFocusable[index - 1];
+                    kbFocusable.click();
+                    kbFocusable.focus();
+                }
+            });
+        },
+
+        listenToClickOutside(event) {
+            const target = event.target;
+            const clickIsInsideSelect = target instanceof Node && this.$el.contains(target);
+
+            // Borderline clicks can target the body even while the pointer is still over the select.
+            // Non-layout environments like jsdom do not implement the hit-test fallback.
+            const clickedElementStackContainsSelect =
+                typeof document.elementsFromPoint === 'function' &&
+                document
+                    .elementsFromPoint(event.clientX, event.clientY)
+                    .some((element) => element === this.$el || this.$el.contains(element));
+
+            if (!clickIsInsideSelect && !clickedElementStackContainsSelect) {
+                this.collapse();
+            }
+        },
+
+        /**
+         * @deprecated tag:v6.8.0 - Will be removed. Use `Element.contains()` instead.
+         */
+        computePath(event) {
+            const path = [];
+            let target = event.target;
+
+            while (target) {
+                path.push(target);
+                target = target.parentElement;
+            }
+
+            return path;
+        },
+
+        emitClear() {
+            this.$emit('clear');
+        },
+
+        focusParentSelect(event) {
+            if (event && event?.shiftKey) {
+                this.$refs.selectWrapper.click();
+                event.preventDefault();
+            }
+        },
+    },
+};

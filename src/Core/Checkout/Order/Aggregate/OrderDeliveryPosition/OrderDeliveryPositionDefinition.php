@@ -1,0 +1,77 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Order\Aggregate\OrderDeliveryPosition;
+
+use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryDefinition;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\CalculatedPriceField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\CustomFields;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Computed;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FloatField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\VersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('checkout')]
+class OrderDeliveryPositionDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'order_delivery_position';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function getCollectionClass(): string
+    {
+        return OrderDeliveryPositionCollection::class;
+    }
+
+    public function getEntityClass(): string
+    {
+        return OrderDeliveryPositionEntity::class;
+    }
+
+    public function since(): ?string
+    {
+        return '6.0.0.0';
+    }
+
+    protected function getParentDefinitionClass(): ?string
+    {
+        return OrderDeliveryDefinition::class;
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new ApiAware(), new PrimaryKey(), new Required())->setDescription('Unique identity of order delivery position.'),
+            (new VersionField())->addFlags(new ApiAware()),
+
+            (new FkField('order_delivery_id', 'orderDeliveryId', OrderDeliveryDefinition::class))->addFlags(new ApiAware(), new Required())->setDescription('Unique identity of order delivery.'),
+            (new ReferenceVersionField(OrderDeliveryDefinition::class))->addFlags(new ApiAware(), new Required()),
+
+            (new FkField('order_line_item_id', 'orderLineItemId', OrderLineItemDefinition::class))->addFlags(new ApiAware(), new Required())->setDescription('Unique identity of line items in an order.'),
+            (new ReferenceVersionField(OrderLineItemDefinition::class))->addFlags(new ApiAware(), new Required()),
+            (new CalculatedPriceField('price', 'price'))->addFlags(new ApiAware())->setDescription('Contains cheapest price from last 30 days as per EU law.'),
+            (new FloatField('unit_price', 'unitPrice'))->addFlags(new ApiAware(), new Computed())->setDescription('Price of product per item (where, quantity=1).'),
+            (new FloatField('total_price', 'totalPrice'))->addFlags(new ApiAware(), new Computed())->setDescription('Cost of product based on quantity.'),
+            (new IntField('quantity', 'quantity'))->addFlags(new ApiAware(), new Computed())->setDescription('Number of items of each product.'),
+            (new CustomFields())->addFlags(new ApiAware())->setDescription('Additional fields that offer a possibility to add own fields for the different program-areas.'),
+            new ManyToOneAssociationField('orderDelivery', 'order_delivery_id', OrderDeliveryDefinition::class, 'id', false),
+            new ManyToOneAssociationField('orderLineItem', 'order_line_item_id', OrderLineItemDefinition::class, 'id', false),
+        ]);
+    }
+}

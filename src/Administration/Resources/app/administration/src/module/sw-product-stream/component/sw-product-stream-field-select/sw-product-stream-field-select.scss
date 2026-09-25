@@ -1,0 +1,13 @@
+.sw-product-stream-field-select {
+    flex: 1;
+    min-width: var(--scale-size-256);
+
+    .sw-select__selection {
+        flex: 1;
+    }
+
+    &.has--error {
+        background: var(--color-background-critical-default);
+        border-color: var(--color-border-critical-default);
+    }
+}

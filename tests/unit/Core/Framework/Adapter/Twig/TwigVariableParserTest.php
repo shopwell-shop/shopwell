@@ -1,0 +1,110 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Adapter\Twig;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Adapter\Twig\TwigVariableParser;
+use Shopwell\Core\Framework\Log\Package;
+use Twig\Environment;
+use Twig\Extension\DebugExtension;
+use Twig\Loader\ArrayLoader;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(TwigVariableParser::class)]
+class TwigVariableParserTest extends TestCase
+{
+    public function testParser(): void
+    {
+        $template = <<<TWIG
+{% if product.price.gross == null %}
+    {{ dump(product.prices) }}
+{% endif %}
+
+{{ product.name|striptags(product.stock) }}
+
+{% set temp = product.translated.name %}
+
+{% set temp = product.manufacturer.cover.id %}
+
+{% include 'content.html.twig' with {'foo': 'bar', 'media': product.media} %}
+
+TWIG;
+
+        $twig = new Environment(new ArrayLoader([]));
+        $twig->addExtension(new DebugExtension());
+        $parser = new TwigVariableParser($twig);
+
+        $variables = $parser->parse($template);
+
+        $expected = [
+            'product.price.gross',
+            'product.prices',
+            'product.name',
+            'product.stock',
+            'product.translated.name',
+            'product.manufacturer.cover.id',
+            'product.media',
+        ];
+
+        sort($expected);
+        sort($variables);
+
+        static::assertSame($expected, $variables);
+    }
+
+    public function testParserHandlesAssociationsInLoops(): void
+    {
+        $template = <<<TWIG
+{{ product.name|striptags(product.stock) }}
+
+{% for option in product.options %}
+    {{ option.group.name }}
+{% endfor %}
+
+{% for options in product.options %}
+    {{ options.group.name }}
+{% endfor %}
+
+{% for option in product.options %}
+    {{ foo.group.name }}
+{% endfor %}
+
+{% for foo in product.foo|sort((a, b) => a.position <=> b.position) %}
+    {{ foo.bar.baz }}
+{% endfor %}
+
+{% set foo = product.test %}
+{% for bar in foo %}
+    {% set baz = bar.shop %}
+    {{ baz.ware }}
+{% endfor %}
+
+TWIG;
+
+        $parser = new TwigVariableParser(new Environment(new ArrayLoader([])));
+
+        $variables = $parser->parse($template);
+
+        $expected = [
+            'foo.group.name',
+            'product.name',
+            'product.options',
+            'product.options.group.name',
+            'product.stock',
+            'product.foo',
+            'product.foo.bar.baz',
+            'product.test',
+            'product.test.shop',
+            'product.test.shop.ware',
+        ];
+
+        sort($expected);
+        sort($variables);
+
+        static::assertSame($expected, $variables);
+    }
+}

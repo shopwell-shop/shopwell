@@ -1,0 +1,325 @@
+import Plugin from 'src/plugin-system/plugin.class';
+import PageLoadingIndicatorUtil from 'src/utility/loading-indicator/page-loading-indicator.util';
+import FormSerializeUtil from 'src/utility/form/form-serialize.util';
+/** @deprecated tag:v6.8.0 - HttpClient is deprecated. Use native fetch API instead. */
+import HttpClient from 'src/service/http-client.service';
+import Debouncer from 'src/helper/debouncer.helper';
+
+/**
+ * This plugin automatically submits a form,
+ * when the element or the form itself has changed.
+ *
+ * @package framework
+ */
+export default class FormAutoSubmitPlugin extends Plugin {
+    static options = {
+        useAjax: false,
+        ajaxContainerSelector: false,
+
+        /**
+         * When this option is used the plugin only submits the form when
+         * elements with one of the given selectors triggered the change event.
+         *
+         * @type null|[]String
+         */
+        changeTriggerSelectors: null,
+        /**
+         * When this option is used the submitting of the form is delayed
+         * for the given time in milliseconds
+         *
+         * @type null|number
+         */
+        delayChangeEvent: null,
+
+        /**
+         * When true, the `FormAutoSubmitPlugin` will try to re-focus the previously focused element after page or ajax reload.
+         * @type {boolean}
+         */
+        autoFocus: true,
+
+        /**
+         * The key under which the focus state is saved in `window.focusHandler`.
+         * @type {string}
+         */
+        focusHandlerKey: 'form-auto-submit',
+
+        /**
+         * When active, the form submission is more humanly triggered with validation and submit event
+         * @link https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/requestSubmit#usage_notes
+         * @type {boolean}
+         */
+        useRequestSubmit: true,
+    };
+
+    init() {
+        this.formSubmittedByCaptcha = false;
+
+        this._getForm();
+
+        if (!this._form) {
+            throw new Error(`No form found for the plugin: ${this.constructor.name}`);
+        }
+
+        /** @deprecated tag:v6.8.0 - HttpClient is deprecated. Use native fetch API instead. */
+        this._client = new HttpClient();
+
+        if (this.options.useAjax) {
+            if (!this.options.ajaxContainerSelector) {
+                throw new Error(`[${this.constructor.name}] The option "ajaxContainerSelector" must be given when using ajax.`);
+            }
+        }
+
+        if (this.options.changeTriggerSelectors && !Array.isArray(this.options.changeTriggerSelectors)) {
+            throw new Error(`[${this.constructor.name}] The option "changeTriggerSelectors" must be an array of selector strings.`);
+        }
+
+        this._registerEvents();
+        this._resumeFocusState();
+    }
+
+    /**
+     * tries to get the closest form
+     *
+     * @returns {HTMLElement|boolean}
+     * @private
+     */
+    _getForm() {
+        if (this.el && this.el.nodeName === 'FORM') {
+            this._form = this.el;
+        } else {
+            this._form = this.el.closest('form');
+        }
+    }
+
+    /**
+     * registers all needed events
+     *
+     * @private
+     */
+    _registerEvents() {
+        const onChange = this.options.useAjax ? this._onSubmit.bind(this) : this._onChange.bind(this);
+        if (this.options.delayChangeEvent) {
+            const delayedChange = Debouncer.debounce(onChange, this.options.delayChangeEvent);
+            this._form.addEventListener('change', (event) => {
+                if (event.detail?.submitImmediately) {
+                    delayedChange.flush(event);
+                    return;
+                }
+
+                delayedChange(event);
+            });
+        } else {
+            this._form.addEventListener('change', onChange);
+        }
+
+        if (!this.options.useAjax) {
+            // Remove the loading indicator before leaving the page to not cache it in back/forward-cache.
+            window.addEventListener('pagehide', () => {
+                PageLoadingIndicatorUtil.remove();
+            });
+        }
+    }
+
+    /**
+     * Checks if an event target element matches a selector from changeTriggerSelectors option.
+     *
+     * @param event
+     * @return {boolean}
+     * @private
+     */
+    _targetMatchesSelector(event) {
+        return !!this.options.changeTriggerSelectors.find(selector => event.target.matches(selector));
+    }
+
+    /**
+     * on change callback for the form
+     *
+     * @private
+     */
+    _onChange(event) {
+        this._updateRedirectParameters();
+
+        if (this.options.changeTriggerSelectors && !this._targetMatchesSelector(event)) {
+            return;
+        }
+
+        this._saveFocusState(event.target);
+        this._submitNativeForm();
+    }
+
+    /**
+     * submits the form
+     *
+     * @private
+     */
+    _submitNativeForm() {
+        this.$emitter.publish('beforeChange');
+
+        if (this.options.useRequestSubmit) {
+            this._form.requestSubmit();
+        } else {
+            this._form.submit();
+        }
+
+        if (this._form.checkValidity()) {
+            PageLoadingIndicatorUtil.create();
+        }
+    }
+
+    /**
+     * on submit callback for the form
+     *
+     * @param {Event} event
+     *
+     * @private
+     */
+    _onSubmit(event) {
+        event.preventDefault();
+        PageLoadingIndicatorUtil.create();
+
+        this.$emitter.publish('beforeSubmit');
+
+        this._saveFocusState(event.target);
+
+        if (!this.formSubmittedByCaptcha) {
+            this.sendAjaxFormSubmit(event);
+        }
+    }
+
+    /**
+     * submits the form via ajax
+     *
+     * @param {Event|undefined} event
+     */
+    sendAjaxFormSubmit(event) {
+        let action = this._form.getAttribute('action');
+        let method = this._form.getAttribute('method');
+
+        const submitter = event?.submitter || event?.currentTarget;
+        if (submitter?.hasAttribute('formAction')) {
+            action = submitter.getAttribute('formAction');
+        }
+        if (submitter?.hasAttribute('formMethod')) {
+            method = submitter.getAttribute('formMethod').toLowerCase();
+        }
+
+        if (method === 'get') {
+            fetch(action, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            })
+                .then(response => response.text())
+                .then(response => this._onAfterAjaxSubmit(response));
+        } else {
+            fetch(action, {
+                method: method ?? 'post',
+                body: this._getFormData(),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            })
+                .then(response => response.text())
+                .then(content => this._onAfterAjaxSubmit(content));
+        }
+    }
+
+    /**
+     * serializes the form
+     * and appends the redirect parameter
+     *
+     * @returns {FormData}
+     *
+     * @private
+     */
+    _getFormData() {
+        /** @type FormData **/
+        const data = FormSerializeUtil.serialize(this._form);
+
+        if (this.options.redirectTo) {
+            data.append('redirectTo', this.options.redirectTo);
+        } else if (this.options.forwardTo) {
+            data.append('forwardTo', this.options.forwardTo);
+        }
+
+        return data;
+    }
+
+    /**
+     * callback when xhr is finished
+     * replaces the container content with the response
+     *
+     * @param {string} response
+     *
+     * @private
+     */
+    _onAfterAjaxSubmit(response) {
+        PageLoadingIndicatorUtil.remove();
+        const replaceContainer = document.querySelector(this.options.ajaxContainerSelector);
+        replaceContainer.innerHTML = response;
+        window.PluginManager.initializePlugins();
+
+        this.$emitter.publish('onAfterAjaxSubmit');
+    }
+
+    _updateRedirectParameters() {
+        const params = Object.fromEntries(new URLSearchParams(this._getLocationSearch()).entries());
+        const formData = FormSerializeUtil.serialize(this._form);
+
+        Object.keys(params)
+            .filter(param => !formData.has(`redirectParameters[${param}]`))
+            .map(param => this._createInputForRedirectParameter(param, params[param]))
+            .forEach((input) => {
+                this._form.appendChild(input);
+            });
+    }
+
+    /**
+     * Thin wrapper so tests can spy on location access without mocking window.location
+     * (non-configurable in JSDOM v26).
+     */
+    _getLocationSearch() {
+        return window.location.search;
+    }
+
+    _createInputForRedirectParameter(name, value) {
+        const input = document.createElement('input');
+
+        input.setAttribute('type', 'hidden');
+        input.setAttribute('name', `redirectParameters[${name}]`);
+        input.setAttribute('value', value);
+
+        return input;
+    }
+
+    /**
+     * @param {HTMLElement} element
+     * @private
+     */
+    _saveFocusState(element) {
+        if (!this.options.autoFocus) {
+            return;
+        }
+
+        // If the form is submitted via AJAX, use the focusHandler in memory, otherwise use the persistent focusHandler.
+        if (this.options.useAjax) {
+            window.focusHandler.saveFocusState(this.options.focusHandlerKey, `[data-focus-id="${element.dataset.focusId}"]`);
+            return;
+        }
+
+        window.focusHandler.saveFocusStatePersistent(this.options.focusHandlerKey, `[data-focus-id="${element.dataset.focusId}"]`);
+    }
+
+    /**
+     * @private
+     */
+    _resumeFocusState() {
+        if (!this.options.autoFocus) {
+            return;
+        }
+
+        // If the form is submitted via AJAX, use the focusHandler in memory, otherwise use the persistent focusHandler.
+        if (this.options.useAjax) {
+            window.focusHandler.resumeFocusState(this.options.focusHandlerKey);
+            return;
+        }
+
+        window.focusHandler.resumeFocusStatePersistent(this.options.focusHandlerKey);
+    }
+}

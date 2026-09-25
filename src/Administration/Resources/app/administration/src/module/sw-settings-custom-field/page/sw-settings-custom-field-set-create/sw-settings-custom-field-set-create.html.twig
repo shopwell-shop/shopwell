@@ -1,0 +1,17 @@
+{% block sw_settings_custom_field_set_detail_content_detail_custom_field_list %}
+<mt-card
+    class="sw-settings-set-create__option-list-empty-state__wrapper"
+    position-identifier="sw-settings-custom-field-set-create"
+>
+
+    {% block sw_settings_custom_field_set_detail_content_detail_custom_field_list_empty_state %}
+    <mt-empty-state
+        class="sw-settings-set-create__option-list-empty-state__empty-state"
+        centered
+        :icon="$route.meta.$module.icon"
+        :headline="$t('sw-settings-custom-field.set.detail.messageCustomFieldsEmpty')"
+        :description="$t('sw-settings-custom-field.set.detail.emptyStateDescription')"
+    />
+    {% endblock %}
+</mt-card>
+{% endblock %}

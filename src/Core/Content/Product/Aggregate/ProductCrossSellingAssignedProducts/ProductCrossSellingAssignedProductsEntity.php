@@ -1,0 +1,78 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingAssignedProducts;
+
+use Shopwell\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingEntity;
+use Shopwell\Core\Content\Product\ProductEntity;
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('inventory')]
+class ProductCrossSellingAssignedProductsEntity extends Entity
+{
+    use EntityIdTrait;
+
+    protected string $crossSellingId;
+
+    protected string $productId;
+
+    protected ?ProductEntity $product = null;
+
+    protected ?ProductCrossSellingEntity $crossSelling = null;
+
+    protected int $position;
+
+    public function getCrossSellingId(): string
+    {
+        return $this->crossSellingId;
+    }
+
+    public function setCrossSellingId(string $crossSellingId): void
+    {
+        $this->crossSellingId = $crossSellingId;
+    }
+
+    public function getProductId(): string
+    {
+        return $this->productId;
+    }
+
+    public function setProductId(string $productId): void
+    {
+        $this->productId = $productId;
+    }
+
+    public function getProduct(): ?ProductEntity
+    {
+        return $this->product;
+    }
+
+    public function setProduct(?ProductEntity $product): void
+    {
+        $this->product = $product;
+    }
+
+    public function getCrossSelling(): ?ProductCrossSellingEntity
+    {
+        return $this->crossSelling;
+    }
+
+    public function setCrossSelling(?ProductCrossSellingEntity $crossSelling): void
+    {
+        $this->crossSelling = $crossSelling;
+    }
+
+    public function getPosition(): int
+    {
+        return $this->position;
+    }
+
+    public function setPosition(int $position): void
+    {
+        $this->position = $position;
+    }
+}

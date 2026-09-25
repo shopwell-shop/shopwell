@@ -1,0 +1,55 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/customer-group-registration/config/{customerGroupId}": {
+            "get": {
+                "tags": [
+                    "Login & Registration"
+                ],
+                "summary": "Fetch registration settings for customer group",
+                "operationId": "getCustomerGroupRegistrationInfo",
+                "parameters": [
+                    {
+                        "name": "customerGroupId",
+                        "in": "path",
+                        "description": "Customer group id",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns the customer group including registration settings.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CustomerGroup"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "No customer group with the given id exists, or it has no registration form configured."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        }
+    }
+}

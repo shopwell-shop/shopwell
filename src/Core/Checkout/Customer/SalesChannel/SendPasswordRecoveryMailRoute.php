@@ -1,0 +1,258 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Customer\SalesChannel;
+
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryCollection;
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryEntity;
+use Shopwell\Core\Checkout\Customer\CustomerCollection;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\CustomerException;
+use Shopwell\Core\Checkout\Customer\Event\CustomerAccountRecoverRequestEvent;
+use Shopwell\Core\Checkout\Customer\Event\PasswordRecoveryUrlEvent;
+use Shopwell\Core\Checkout\Customer\Service\EmailIdnConverter;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\RateLimiter\RateLimiter;
+use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
+use Shopwell\Core\Framework\Util\Random;
+use Shopwell\Core\Framework\Validation\BuildValidationEvent;
+use Shopwell\Core\Framework\Validation\DataBag\DataBag;
+use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopwell\Core\Framework\Validation\DataValidationDefinition;
+use Shopwell\Core\Framework\Validation\DataValidator;
+use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SalesChannel\SuccessResponse;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Validator\Constraints\Choice;
+use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\EqualTo;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\ConstraintViolation;
+use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+#[Package('checkout')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
+class SendPasswordRecoveryMailRoute extends AbstractSendPasswordRecoveryMailRoute
+{
+    /**
+     * @internal
+     *
+     * @param EntityRepository<CustomerCollection> $customerRepository
+     * @param EntityRepository<CustomerRecoveryCollection> $customerRecoveryRepository
+     */
+    public function __construct(
+        private readonly EntityRepository $customerRepository,
+        private readonly EntityRepository $customerRecoveryRepository,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly DataValidator $validator,
+        private readonly SystemConfigService $systemConfigService,
+        private readonly RequestStack $requestStack,
+        private readonly RateLimiter $rateLimiter
+    ) {
+    }
+
+    public function getDecorated(): AbstractSendPasswordRecoveryMailRoute
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    #[Route(path: '/store-api/account/recovery-password', name: 'store-api.account.recovery.send.mail', methods: ['POST'])]
+    public function sendRecoveryMail(RequestDataBag $data, SalesChannelContext $context, bool $validateStorefrontUrl = true): SuccessResponse
+    {
+        EmailIdnConverter::encodeDataBag($data);
+
+        $this->validateRecoverEmail($data, $context, $validateStorefrontUrl);
+
+        if (($request = $this->requestStack->getMainRequest()) !== null) {
+            $key = strtolower(\sprintf('%s-%s', $data->get('email'), $request->getClientIp()));
+            $this->rateLimiter->ensureAccepted(RateLimiter::RESET_PASSWORD, $key);
+        }
+
+        try {
+            $customer = $this->getCustomerByEmail($data->get('email'), $context);
+        } catch (CustomerException) {
+            return new SuccessResponse();
+        }
+
+        $customerId = $customer->getId();
+
+        $customerIdCriteria = new Criteria();
+        $customerIdCriteria->addFilter(new EqualsFilter('customerId', $customerId));
+        $customerIdCriteria->addAssociation('customer.salutation');
+
+        $repoContext = $context->getContext();
+
+        $existingRecovery = $this->customerRecoveryRepository->search($customerIdCriteria, $repoContext)->getEntities()->first();
+        if ($existingRecovery) {
+            $this->deleteRecoveryForCustomer($existingRecovery, $repoContext);
+        }
+
+        $recoveryData = [
+            'customerId' => $customerId,
+            'hash' => Random::getAlphanumericString(32),
+        ];
+
+        $this->customerRecoveryRepository->create([$recoveryData], $repoContext);
+
+        $customerRecovery = $this->customerRecoveryRepository->search($customerIdCriteria, $repoContext)->getEntities()->first();
+        if (!$customerRecovery) {
+            throw CustomerException::customerNotFoundByIdException($customerId);
+        }
+
+        $hash = $customerRecovery->getHash();
+
+        $recoverUrl = $this->getRecoverUrl($context, $hash, $data->get('storefrontUrl'), $customerRecovery);
+
+        $event = new CustomerAccountRecoverRequestEvent($context, $customerRecovery, $recoverUrl);
+
+        $this->eventDispatcher->dispatch($event, CustomerAccountRecoverRequestEvent::EVENT_NAME);
+
+        return new SuccessResponse();
+    }
+
+    private function validateRecoverEmail(DataBag $data, SalesChannelContext $context, bool $validateStorefrontUrl = true): void
+    {
+        $validation = new DataValidationDefinition('customer.email.recover');
+
+        $validation
+            ->add(
+                'email',
+                new Email()
+            );
+
+        if ($validateStorefrontUrl) {
+            $validation
+                ->add('storefrontUrl', new NotBlank(), new Choice(choices: array_values($this->getDomainUrls($context))));
+        }
+
+        $this->dispatchValidationEvent($validation, $data, $context->getContext());
+
+        $this->validator->validate($data->all(), $validation);
+
+        $this->tryValidateEqualtoConstraint($data->all(), 'email', $validation);
+    }
+
+    /**
+     * @return string[]
+     */
+    private function getDomainUrls(SalesChannelContext $context): array
+    {
+        $domains = $context->getSalesChannel()->getDomains();
+        if (!$domains) {
+            return [];
+        }
+
+        return array_map(static fn (SalesChannelDomainEntity $domainEntity) => rtrim($domainEntity->getUrl(), '/'), $domains->getElements());
+    }
+
+    private function dispatchValidationEvent(DataValidationDefinition $definition, DataBag $data, Context $context): void
+    {
+        $validationEvent = new BuildValidationEvent($definition, $data, $context);
+        $this->eventDispatcher->dispatch($validationEvent, $validationEvent->getName());
+    }
+
+    /**
+     * @param array<string|int, string> $data
+     *
+     * @throws ConstraintViolationException
+     */
+    private function tryValidateEqualtoConstraint(array $data, string $field, DataValidationDefinition $validation): void
+    {
+        $validations = $validation->getProperties();
+
+        if (!\array_key_exists($field, $validations)) {
+            return;
+        }
+
+        $fieldValidations = $validations[$field];
+
+        $equalityValidation = null;
+
+        foreach ($fieldValidations as $emailValidation) {
+            if ($emailValidation instanceof EqualTo) {
+                $equalityValidation = $emailValidation;
+
+                break;
+            }
+        }
+
+        if (!$equalityValidation instanceof EqualTo) {
+            return;
+        }
+
+        $compareValue = $data[$equalityValidation->propertyPath ?? ''] ?? null;
+        if ($data[$field] === $compareValue) {
+            return;
+        }
+
+        $message = str_replace('{{ compared_value }}', $compareValue ?? '', $equalityValidation->message);
+
+        $violations = new ConstraintViolationList();
+        $violations->add(new ConstraintViolation($message, $equalityValidation->message, [], '', $field, $data[$field]));
+
+        throw new ConstraintViolationException($violations, $data);
+    }
+
+    private function getCustomerByEmail(string $email, SalesChannelContext $context): CustomerEntity
+    {
+        $criteria = (new Criteria())
+            ->addFilter(new EqualsFilter('customer.active', 1))
+            ->addFilter(new EqualsFilter('customer.email', $email))
+            ->addFilter(new EqualsFilter('customer.guest', 0))
+            ->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, [
+                new EqualsFilter('customer.boundSalesChannelId', null),
+                new EqualsFilter('customer.boundSalesChannelId', $context->getSalesChannelId()),
+            ]));
+
+        $customer = $this->customerRepository->search($criteria, $context->getContext())->getEntities()->first();
+        if (!$customer) {
+            throw CustomerException::customerNotFound($email);
+        }
+
+        return $customer;
+    }
+
+    private function deleteRecoveryForCustomer(CustomerRecoveryEntity $existingRecovery, Context $context): void
+    {
+        $recoveryData = [
+            'id' => $existingRecovery->getId(),
+        ];
+
+        $this->customerRecoveryRepository->delete([$recoveryData], $context);
+    }
+
+    private function getRecoverUrl(
+        SalesChannelContext $context,
+        string $hash,
+        string $storefrontUrl,
+        CustomerRecoveryEntity $customerRecovery
+    ): string {
+        $urlTemplate = $this->systemConfigService->get(
+            'core.loginRegistration.pwdRecoverUrl',
+            $context->getSalesChannelId()
+        );
+        if (!\is_string($urlTemplate)) {
+            $urlTemplate = '/account/recover/password?hash=%%RECOVERHASH%%';
+        }
+
+        $urlEvent = new PasswordRecoveryUrlEvent($context, $urlTemplate, $hash, $storefrontUrl, $customerRecovery);
+        $this->eventDispatcher->dispatch($urlEvent);
+
+        return rtrim($storefrontUrl, '/') . str_replace(
+            '%%RECOVERHASH%%',
+            $hash,
+            $urlEvent->getRecoveryUrl()
+        );
+    }
+}

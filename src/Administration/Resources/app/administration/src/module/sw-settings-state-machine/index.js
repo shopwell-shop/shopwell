@@ -1,0 +1,64 @@
+/**
+ * @sw-package checkout
+ */
+import './acl';
+
+/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+Shopwell.Component.register('sw-settings-state-machine-list', () => import('./page/sw-settings-state-machine-list'));
+Shopwell.Component.register('sw-settings-state-machine-detail', () => import('./page/sw-settings-state-machine-detail'));
+Shopwell.Component.register(
+    'sw-settings-state-machine-state-list',
+    () => import('./component/sw-settings-state-machine-state-list'),
+);
+Shopwell.Component.register(
+    'sw-settings-state-machine-state-detail',
+    () => import('./component/sw-settings-state-machine-state-detail'),
+);
+/* eslint-enable sw-deprecation-rules/private-feature-declarations */
+
+const { Module } = Shopwell;
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Module.register('sw-settings-state-machine', {
+    type: 'core',
+    name: 'settings-state-machine',
+    title: 'sw-settings-state-machine.general.mainMenuItemGeneral',
+    description: 'State machine section in the settings module',
+    color: 'var(--sw-color-module-neutral-default)',
+    icon: 'regular-history',
+    favicon: 'icon-module-settings.svg',
+    entity: 'state_machine',
+
+    routes: {
+        index: {
+            component: 'sw-settings-state-machine-list',
+            path: 'index',
+            meta: {
+                parentPath: 'sw.settings.index',
+                privilege: 'state_machine.viewer',
+            },
+        },
+        detail: {
+            component: 'sw-settings-state-machine-detail',
+            path: 'detail/:id',
+            meta: {
+                parentPath: 'sw.settings.state.machine.index',
+                privilege: 'state_machine.viewer',
+            },
+            props: {
+                default(route) {
+                    return {
+                        stateMachineId: route.params.id.toLowerCase(),
+                    };
+                },
+            },
+        },
+    },
+
+    settingsItem: {
+        group: 'general',
+        to: 'sw.settings.state.machine.index',
+        icon: 'regular-history',
+        privilege: 'state_machine.viewer',
+    },
+});

@@ -1,0 +1,91 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Struct;
+
+use PHPUnit\Framework\Attributes\CoversTrait;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\StateAwareTrait;
+use Shopwell\Tests\Unit\Core\Framework\Struct\Fixture\StateStruct;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversTrait(StateAwareTrait::class)]
+class StateAwareTraitTest extends TestCase
+{
+    public function testTrait(): void
+    {
+        $struct = new StateStruct();
+
+        $struct->addState('foo');
+
+        static::assertTrue($struct->hasState('foo'));
+
+        $struct->addState('bar');
+
+        // contains foo and bar at this point
+        static::assertSame(['foo', 'bar'], $struct->getStates(), 'States do not match');
+
+        static::assertTrue($struct->hasState('foo'), 'foo should be set');
+
+        static::assertTrue($struct->hasState('foo', 'bar'), 'State or check failed');
+
+        static::assertFalse($struct->hasState('baz'), 'baz should not be set');
+
+        $struct->removeState('foo');
+
+        // contains only bar at this point
+        static::assertSame(['bar'], $struct->getStates(), 'States do not match');
+
+        static::assertFalse($struct->hasState('foo'), 'foo should not be set');
+
+        static::assertTrue($struct->hasState('bar'), 'bar should be set');
+
+        static::assertTrue($struct->hasState('bar', 'baz'), 'State or check failed');
+
+        static::assertFalse($struct->hasState('foo', 'baz'));
+
+        $value = $struct->state(
+            static function (StateStruct $state) {
+                return $state->hasState('baz');
+            },
+            'baz'
+        );
+
+        static::assertTrue($value, 'Baz was not added');
+
+        static::assertSame(['bar'], $struct->getStates(), 'States do not match');
+
+        static::assertFalse($struct->hasState('baz'), 'baz should not be set outside');
+
+        $value = $struct->state(
+            static function (StateStruct $state) {
+                return $state->hasState('baz') && $state->hasState('foo');
+            },
+            'baz',
+            'foo'
+        );
+
+        static::assertTrue($value, 'Baz or foo were not added');
+
+        static::assertSame(['bar'], $struct->getStates(), 'States do not match');
+
+        $value = $struct->state(
+            static function (StateStruct $state) {
+                return $state->state(
+                    static function (StateStruct $state) {
+                        return $state->hasState('baz') && $state->hasState('foo');
+                    },
+                    'baz'
+                );
+            },
+            'foo'
+        );
+
+        static::assertTrue($value, 'Baz or foo were not added');
+
+        static::assertSame(['bar'], $struct->getStates(), 'States do not match');
+    }
+}

@@ -1,0 +1,380 @@
+/**
+ * @sw-package discovery
+ */
+import { mount } from '@vue/test-utils';
+import 'src/module/sw-cms/mixin/sw-cms-element.mixin';
+
+const productMock = [
+    {
+        id: 'de8de156da134dabac24257f81ff282f',
+        name: 'Translated',
+        translated: {
+            name: 'Übersetzt',
+        },
+    },
+    {
+        id: 'c336e6ad6a174c76bb201ce7ba0e2ab3',
+        name: 'Test',
+        translated: {},
+    },
+];
+
+const defaultConfig = {
+    title: {
+        value: '',
+    },
+    products: {
+        value: ['de8de156da134dabac24257f81ff282f', '2fbb5fe2e29a4d70aa5854ce7ce3e20b'],
+        source: 'static',
+    },
+    productStreamSorting: {
+        value: 'name:ASC',
+    },
+    productStreamLimit: {
+        value: 10,
+    },
+    displayMode: {
+        value: 'standard',
+    },
+    elMinWidth: {
+        value: null,
+    },
+    verticalAlign: {
+        value: null,
+    },
+    boxLayout: {
+        value: 'standard',
+    },
+    border: {
+        value: false,
+    },
+    navigationArrows: {
+        value: 'outside',
+    },
+    speed: {
+        value: 300,
+    },
+    rotate: {
+        value: false,
+    },
+    autoplayTimeout: {
+        value: 5000,
+    },
+};
+
+const productStreamMock = {
+    name: 'Cheap pc parts',
+    apiFilter: ['foo', 'bar'],
+    invalid: false,
+};
+
+async function createWrapper(customCmsElementConfig = {}, { featureActive = false, activeTab = 'content' } = {}) {
+    return mount(
+        await wrapTestComponent('sw-cms-el-config-product-slider', {
+            sync: true,
+        }),
+        {
+            props: {
+                element: {
+                    config: {
+                        ...defaultConfig,
+                        ...customCmsElementConfig,
+                    },
+                    translated: {
+                        config: {
+                            ...defaultConfig,
+                            ...customCmsElementConfig,
+                        },
+                    },
+                },
+                defaultConfig: {},
+            },
+            global: {
+                renderStubDefaultSlot: true,
+                stubs: {
+                    'sw-tabs': {
+                        template: '<div class="sw-tabs"><slot></slot><slot name="content" active="content"></slot></div>',
+                    },
+                    'sw-tabs-item': true,
+                    'mt-tabs': {
+                        name: 'mt-tabs',
+                        emits: ['new-item-active'],
+                        props: {
+                            defaultItem: {
+                                type: String,
+                                required: false,
+                                default: undefined,
+                            },
+                            items: {
+                                type: Array,
+                                required: true,
+                            },
+                            positionIdentifier: {
+                                type: String,
+                                required: true,
+                            },
+                        },
+                        template: '<div class="mt-tabs"></div>',
+                    },
+                    'sw-container': true,
+                    'sw-text-field': true,
+                    'sw-single-select': true,
+                    'sw-select-base': await wrapTestComponent('sw-select-base'),
+                    'sw-entity-multi-select': await wrapTestComponent('sw-entity-multi-select'),
+                    'sw-select-selection-list': await wrapTestComponent('sw-select-selection-list'),
+                    'sw-select-result-list': await wrapTestComponent('sw-select-result-list'),
+                    'sw-select-result': true,
+                    'sw-product-variant-info': true,
+                    'sw-label': true,
+                    'sw-modal': true,
+                    'sw-block-field': true,
+                    'sw-product-stream-modal-preview': true,
+                    'sw-entity-single-select': true,
+                    'sw-number-field': true,
+                    'sw-loader': true,
+                    'sw-popover': true,
+                    'sw-select-field': true,
+                    'sw-highlight-text': true,
+                    'sw-cms-inherit-wrapper': {
+                        template: '<div><slot :isInherited="false"></slot></div>',
+                        props: [
+                            'field',
+                            'element',
+                            'contentEntity',
+                            'label',
+                        ],
+                    },
+                },
+                provide: {
+                    feature: {
+                        isActive: (feature) => feature === 'v6.8.0.0' && featureActive,
+                    },
+                    cmsService: {
+                        getCmsBlockRegistry: () => {
+                            return {};
+                        },
+                        getCmsElementRegistry: () => {
+                            return {};
+                        },
+                    },
+                    repositoryFactory: {
+                        create: () => {
+                            return {
+                                get: () => Promise.resolve(productStreamMock),
+                                search: (criteria) => {
+                                    const products = criteria.ids.length ? productMock.slice(0, 1) : productMock;
+
+                                    products.has = (id) => products.some((i) => i.id === id);
+
+                                    return Promise.resolve(products);
+                                },
+                            };
+                        },
+                    },
+                },
+            },
+            data() {
+                return {
+                    activeTab,
+                };
+            },
+        },
+    );
+}
+
+describe('module/sw-cms/elements/product-slider/config', () => {
+    beforeAll(() => {
+        Shopwell.Store.register({
+            id: 'cmsPage',
+        });
+    });
+
+    it('should render deprecated tabs when the major feature flag is inactive', async () => {
+        const wrapper = await createWrapper();
+
+        expect(wrapper.find('.sw-tabs').exists()).toBe(true);
+        expect(wrapper.findComponent({ name: 'mt-tabs' }).exists()).toBe(false);
+    });
+
+    it('should render meteor tabs when the major feature flag is active', async () => {
+        const wrapper = await createWrapper({}, { featureActive: true });
+        const tabs = wrapper.getComponent({ name: 'mt-tabs' });
+
+        expect(tabs.props('positionIdentifier')).toBe('sw-cms-element-config-product-slider');
+        expect(tabs.props('defaultItem')).toBe('content');
+        expect(tabs.props('items')).toEqual([
+            {
+                label: 'sw-cms.elements.general.config.tab.content',
+                name: 'content',
+            },
+            {
+                label: 'sw-cms.elements.general.config.tab.settings',
+                name: 'settings',
+            },
+        ]);
+        expect(wrapper.find('.sw-tabs').exists()).toBe(false);
+        expect(wrapper.find('.sw-cms-el-config-product-slider__tab-content-products').exists()).toBe(true);
+    });
+
+    it('should switch meteor tab content when the active tab changes', async () => {
+        const wrapper = await createWrapper({}, { featureActive: true });
+        const tabs = wrapper.getComponent({ name: 'mt-tabs' });
+
+        await tabs.vm.$emit('new-item-active', 'settings');
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.activeTab).toBe('settings');
+        expect(wrapper.find('.sw-cms-el-config-product-slider__tab-content-products').exists()).toBe(false);
+        expect(wrapper.find('.sw-cms-el-config-product-slider__tab-settings-display-mode').exists()).toBe(true);
+    });
+
+    it('should render product assignment type select', async () => {
+        const wrapper = await createWrapper();
+
+        expect(
+            wrapper.find('.sw-cms-el-config-product-slider__tab-content-product-assignment-type-select').exists(),
+        ).toBeTruthy();
+    });
+
+    it('should render manual product assignment by default', async () => {
+        const wrapper = await createWrapper();
+
+        expect(wrapper.find('.sw-cms-el-config-product-slider__tab-content-products').exists()).toBeTruthy();
+    });
+
+    it('should fetch product stream when assignment type is "product_stream"', async () => {
+        const wrapper = await createWrapper({
+            products: {
+                value: 'de8de156da134dabac24257f81ff282f',
+                source: 'product_stream',
+            },
+        });
+
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.productStream).toEqual(productStreamMock);
+    });
+
+    it('should fetch product stream when changing product stream via select', async () => {
+        const wrapper = await createWrapper();
+
+        wrapper.vm.onChangeProductStream('de8de156da134dabac24257f81ff282f');
+
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.productStream).toEqual(productStreamMock);
+    });
+
+    it('should set product stream to null when changing product stream via select and no stream is given', async () => {
+        const wrapper = await createWrapper();
+
+        wrapper.vm.onChangeProductStream(null);
+
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.productStream).toBeNull();
+    });
+
+    it('should render product stream selection when element product type is "product_stream"', async () => {
+        const wrapper = await createWrapper({
+            products: {
+                value: 'de8de156da134dabac24257f81ff282f',
+                source: 'product_stream',
+            },
+        });
+
+        await wrapper.vm.$nextTick();
+
+        // Product stream select should exist
+        expect(wrapper.find('.sw-cms-el-config-product-slider__tab-content-product-stream-select').exists()).toBeTruthy();
+
+        // Performance hint should exist
+        expect(
+            wrapper.find('.sw-cms-el-config-product-slider__tab-content-product-stream-performance-hint').exists(),
+        ).toBeTruthy();
+
+        // Sorting fields should exist
+        expect(wrapper.find('.sw-cms-el-config-product-slider__tab-content-product-stream-sorting').exists()).toBeTruthy();
+        expect(wrapper.find('.sw-cms-el-config-product-slider__tab-content-product-stream-limit').exists()).toBeTruthy();
+    });
+
+    it('should store the productIds after changing the assignment type to "product_stream"', async () => {
+        const wrapper = await createWrapper();
+
+        wrapper.vm.onChangeAssignmentType('product_stream');
+
+        await wrapper.vm.$nextTick();
+
+        const expectedProductIds = ['de8de156da134dabac24257f81ff282f', '2fbb5fe2e29a4d70aa5854ce7ce3e20b'];
+
+        expect(wrapper.vm.tempProductIds).toEqual(expectedProductIds);
+        expect(wrapper.vm.element.config.products.value).toBeNull();
+    });
+
+    it('should store the streamIds after changing the assignment type to "static"', async () => {
+        const wrapper = await createWrapper({
+            products: {
+                value: 'de8de156da134dabac24257f81ff282f',
+                source: 'product_stream',
+            },
+        });
+
+        wrapper.vm.onChangeAssignmentType('static');
+
+        await wrapper.vm.$nextTick();
+
+        const expectedStreamId = 'de8de156da134dabac24257f81ff282f';
+
+        expect(wrapper.vm.tempStreamId).toEqual(expectedStreamId);
+        expect(wrapper.vm.element.config.products.value).toEqual([]);
+    });
+
+    it('should render product stream preview modal', async () => {
+        const wrapper = await createWrapper({
+            products: {
+                value: 'de8de156da134dabac24257f81ff282f',
+                source: 'product_stream',
+            },
+        });
+
+        await wrapper.vm.$nextTick();
+
+        await wrapper.setData({
+            showProductStreamPreview: true,
+        });
+
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.find('sw-product-stream-modal-preview-stub').exists()).toBeTruthy();
+    });
+
+    it('should update product ids in element config and translated element config if available', async () => {
+        const expectedProductIds = productMock.map((product) => product.id);
+
+        const wrapper = await createWrapper({
+            products: {
+                value: [],
+                source: 'static',
+            },
+        });
+
+        wrapper.vm.productCollection = new Shopwell.Data.EntityCollection('/product', 'product', {}, null, productMock);
+
+        await wrapper.vm.$nextTick();
+
+        wrapper.vm.onProductsChange();
+
+        expect(Array.from(wrapper.vm.element.config.products.value)).toStrictEqual(expectedProductIds);
+
+        wrapper.vm.element.translated.config.products = {
+            value: [],
+            source: 'static',
+        };
+
+        await wrapper.vm.$nextTick();
+
+        wrapper.vm.onProductsChange();
+
+        expect(Array.from(wrapper.vm.element.translated.config.products.value)).toStrictEqual(expectedProductIds);
+    });
+});

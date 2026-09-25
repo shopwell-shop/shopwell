@@ -1,0 +1,96 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Document\Aggregate\DocumentType;
+
+use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection;
+use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelCollection;
+use Shopwell\Core\Checkout\Document\Aggregate\DocumentTypeTranslation\DocumentTypeTranslationCollection;
+use Shopwell\Core\Checkout\Document\DocumentCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @codeCoverageIgnore
+ *
+ * @deprecated tag:v6.9.0 reason:remove-entity - Will be removed. Use `document.type_name` instead.
+ */
+#[Package('after-sales')]
+class DocumentTypeEntity extends Entity
+{
+    use EntityCustomFieldsTrait;
+    use EntityIdTrait;
+
+    protected string $name;
+
+    protected string $technicalName;
+
+    protected ?DocumentTypeTranslationCollection $translations = null;
+
+    protected ?DocumentCollection $documents = null;
+
+    protected ?DocumentBaseConfigCollection $documentBaseConfigs = null;
+
+    protected ?DocumentBaseConfigSalesChannelCollection $documentBaseConfigSalesChannels = null;
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
+
+    public function getTechnicalName(): string
+    {
+        return $this->technicalName;
+    }
+
+    public function setTechnicalName(string $technicalName): void
+    {
+        $this->technicalName = $technicalName;
+    }
+
+    public function getTranslations(): ?DocumentTypeTranslationCollection
+    {
+        return $this->translations;
+    }
+
+    public function setTranslations(DocumentTypeTranslationCollection $translations): void
+    {
+        $this->translations = $translations;
+    }
+
+    public function getDocuments(): ?DocumentCollection
+    {
+        return $this->documents;
+    }
+
+    public function setDocuments(DocumentCollection $documents): void
+    {
+        $this->documents = $documents;
+    }
+
+    public function getDocumentBaseConfigs(): ?DocumentBaseConfigCollection
+    {
+        return $this->documentBaseConfigs;
+    }
+
+    public function setDocumentBaseConfigs(DocumentBaseConfigCollection $documentBaseConfigs): void
+    {
+        $this->documentBaseConfigs = $documentBaseConfigs;
+    }
+
+    public function getDocumentBaseConfigSalesChannels(): ?DocumentBaseConfigSalesChannelCollection
+    {
+        return $this->documentBaseConfigSalesChannels;
+    }
+
+    public function setDocumentBaseConfigSalesChannels(DocumentBaseConfigSalesChannelCollection $documentBaseConfigSalesChannels): void
+    {
+        $this->documentBaseConfigSalesChannels = $documentBaseConfigSalesChannels;
+    }
+}

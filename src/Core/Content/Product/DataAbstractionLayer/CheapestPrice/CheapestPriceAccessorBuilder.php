@@ -1,0 +1,152 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Product\DataAbstractionLayer\CheapestPrice;
+
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\FieldAccessorBuilder\FieldAccessorBuilderInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Field;
+use Shopwell\Core\Framework\Log\Package;
+
+#[Package('framework')]
+class CheapestPriceAccessorBuilder implements FieldAccessorBuilderInterface
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly int $maxRulePrices,
+        private readonly LoggerInterface $logger
+    ) {
+    }
+
+    public function buildAccessor(string $root, Field $field, Context $context, string $accessor): ?string
+    {
+        if (!$field instanceof CheapestPriceField) {
+            return null;
+        }
+
+        // cheapest price is only indexed for parent product
+        $keys = $context->getRuleIds();
+        if (\count($keys) > $this->maxRulePrices) {
+            $this->logger->warning(\sprintf('More than %d rules are active, only the first %d rules are considered for the cheapest price calculation', $this->maxRulePrices, $this->maxRulePrices));
+            $this->logger->info(
+                'More rules then the configured `dal.max_rule_prices` are active, thus not all rule prices are considered for the cheapest price. You can increase the `dal.max_rule_prices`, but this will have a negative performance impact. Consider restructuring your rules, so that not so many match at the same time.'
+            );
+            $keys = \array_slice($keys, 0, $this->maxRulePrices);
+        }
+        $keys[] = 'default';
+
+        $jsonAccessor = 'net';
+        if ($context->getTaxState() === CartPrice::TAX_STATE_GROSS) {
+            $jsonAccessor = 'gross';
+        }
+
+        $parts = explode('.', $accessor);
+        $lastAccessorPart = array_last($parts);
+
+        // is tax state explicitly requested? => overwrite selector
+        if (\in_array($lastAccessorPart, ['net', 'gross'], true)) {
+            $jsonAccessor = $lastAccessorPart;
+            array_pop($parts);
+            $lastAccessorPart = array_last($parts);
+        }
+
+        // filter / search / sort for list prices? => extend selector
+        if ($lastAccessorPart === 'listPrice') {
+            $jsonAccessor = 'listPrice.' . $jsonAccessor;
+            array_pop($parts);
+            $lastAccessorPart = array_last($parts);
+        }
+
+        $isPercentageAccessor = $lastAccessorPart === 'percentage';
+        if ($isPercentageAccessor) {
+            $jsonAccessor = 'percentage.' . $jsonAccessor;
+            array_pop($parts);
+        }
+
+        $template = '(JSON_UNQUOTE(JSON_EXTRACT(`#root#`.`#field#`, "$.#rule_key#.#currency_key#.#property#")) * #factor#)';
+        $variables = [
+            '#template#' => $template,
+            '#decimals#' => (string) $context->getRounding()->getDecimals(),
+        ];
+
+        $template = str_replace(
+            array_keys($variables),
+            array_values($variables),
+            '(ROUND(CAST(#template# as DECIMAL(30, 20)), #decimals#))'
+        );
+
+        $multiplier = '';
+        if ($this->useCashRounding($context)) {
+            $multiplier = 100 / ($context->getRounding()->getInterval() * 100);
+            $template = '(ROUND(' . $template . ' * #multiplier#, 0) / #multiplier#)';
+        }
+
+        $select = [];
+
+        foreach ($keys as $ruleId) {
+            $parameters = [
+                '#root#' => $root,
+                '#field#' => 'cheapest_price_accessor',
+                '#rule_key#' => 'rule' . $ruleId,
+                '#currency_key#' => 'currency' . $context->getCurrencyId(),
+                '#property#' => $jsonAccessor,
+                '#factor#' => '1',
+                '#multiplier#' => (string) $multiplier,
+            ];
+
+            $select[] = str_replace(
+                array_keys($parameters),
+                array_values($parameters),
+                $template
+            );
+
+            if ($context->getCurrencyId() === Defaults::CURRENCY) {
+                continue;
+            }
+
+            $parameters = [
+                '#root#' => $root,
+                '#field#' => 'cheapest_price_accessor',
+                '#rule_key#' => 'rule' . $ruleId,
+                '#currency_key#' => 'currency' . Defaults::CURRENCY,
+                '#property#' => $jsonAccessor,
+                '#factor#' => (string) $context->getCurrencyFactor(),
+                '#multiplier#' => (string) $multiplier,
+            ];
+
+            $select[] = str_replace(
+                array_keys($parameters),
+                array_values($parameters),
+                $template
+            );
+        }
+
+        $result = \sprintf('COALESCE(%s)', implode(',', $select));
+
+        // The DB stores the discount percentage (e.g. 25 for "25% off"), but the API
+        // exposes the price-to-list-price ratio (e.g. 75 for "pay 75% of list price").
+        // Invert here so filters/sorts operate on the intuitive ratio scale.
+        if ($isPercentageAccessor) {
+            return \sprintf('(100 - %s)', $result);
+        }
+
+        return $result;
+    }
+
+    private function useCashRounding(Context $context): bool
+    {
+        if ($context->getRounding()->getDecimals() !== 2) {
+            return false;
+        }
+
+        if ($context->getTaxState() === CartPrice::TAX_STATE_GROSS) {
+            return true;
+        }
+
+        return $context->getRounding()->roundForNet();
+    }
+}

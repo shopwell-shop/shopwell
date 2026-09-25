@@ -1,0 +1,16 @@
+.sw-inactivity-login {
+    width: 100%;
+    height: 100%;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    background-size: cover;
+    filter: blur(7px);
+}
+
+.sw-inactivity-login__modal {
+    footer.sw-modal__footer {
+        display: flex;
+        justify-content: space-between;
+    }
+}

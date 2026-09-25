@@ -1,0 +1,97 @@
+.sw-first-run-wizard-data-import {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    align-self: center;
+
+    &__card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 380px;
+
+        .button-plugin-install {
+            margin-top: auto;
+        }
+
+        .plugin-status {
+            margin-top: auto;
+        }
+    }
+
+    &__icon-demodata {
+        width: 154px;
+        margin: 25px auto;
+    }
+
+    &__icon-migration {
+        width: 206px;
+        margin: 19px auto;
+    }
+
+    h5 {
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+        margin-bottom: var(--scale-size-8);
+    }
+
+    p {
+        width: 300px;
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        font-weight: var(--font-weight-regular);
+        color: var(--color-text-primary-default);
+    }
+
+    .installing-plugin {
+        transform: translate(0, 10%);
+    }
+
+    .sw-loader {
+        background: none;
+    }
+
+    .sw-loader-info-text {
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+        margin-top: var(--scale-size-32);
+        position: relative;
+        width: 100%;
+        top: var(--scale-size-56);
+        text-align: center;
+    }
+
+    .plugin-status {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .plugin-installed {
+        display: flex;
+        align-items: center;
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+
+        .mt-icon {
+            color: var(--color-icon-positive-default);
+            margin-right: var(--scale-size-6);
+        }
+    }
+
+    .sw-first-run-wizard-plugin-installation__error {
+        width: 100%;
+    }
+}
+
+.sw-modal.sw-first-run-wizard-data-import__warning {
+    z-index: 1100;
+}

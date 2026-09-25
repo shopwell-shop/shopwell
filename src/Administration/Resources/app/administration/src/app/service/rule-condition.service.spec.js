@@ -1,0 +1,821 @@
+/* eslint-disable sw-test-rules/test-file-max-lines-warning */
+
+/**
+ * @sw-package framework
+ */
+import RuleConditionService from 'src/app/service/rule-condition.service';
+
+const responses = global.repositoryFactoryMock.responses;
+
+responses.addResponse({
+    method: 'Post',
+    url: '/search-ids/rule',
+    status: 200,
+    response: {
+        data: ['restricted-rule-id'],
+    },
+});
+
+function buildServiceWithDeprecation({ registerReplacementInStore = true } = {}) {
+    const ruleConditionService = new RuleConditionService();
+
+    if (registerReplacementInStore) {
+        ruleConditionService.addCondition('cartLineItemProductType', { label: 'Product type' });
+    }
+
+    ruleConditionService.registerDeprecation('cartLineItemProductStates', {
+        version: 'v6.8.0.0',
+        replacement: 'cartLineItemProductType',
+        label: 'Product states',
+    });
+
+    return ruleConditionService;
+}
+
+function buildServiceWithCondition(type, condition) {
+    const ruleConditionService = new RuleConditionService();
+
+    ruleConditionService.addCondition(type, condition);
+
+    return ruleConditionService;
+}
+
+describe('src/app/service/rule-condition.service.js', () => {
+    it('should be a function', async () => {
+        expect(typeof RuleConditionService).toBe('function');
+    });
+
+    it('should return restricted rules', async () => {
+        const ruleConditionService = new RuleConditionService();
+        ruleConditionService.addAwarenessConfiguration('personaPromotions', {
+            notEquals: ['cartCartAmount'],
+        });
+
+        const result = await ruleConditionService.getRestrictedRules('personaPromotions');
+        expect(result).toEqual(['restricted-rule-id']);
+    });
+
+    it('should return empty array when the specified relation does not exist', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        const result = await ruleConditionService.getRestrictedRules('personaPromotions');
+        expect(result).toEqual([]);
+    });
+
+    it('should return restricted conditions', async () => {
+        const ruleConditionService = new RuleConditionService();
+        ruleConditionService.addAwarenessConfiguration('personaPromotions', {
+            notEquals: ['cartCartAmount'],
+            snippet: 'random-snippet',
+        });
+
+        const rule = {
+            personaPromotions: [{ id: 'someId' }],
+        };
+
+        const restrictedConditions = ruleConditionService.getRestrictedConditions(rule);
+
+        expect(restrictedConditions).toEqual({
+            cartCartAmount: [
+                {
+                    associationName: 'personaPromotions',
+                    snippet: 'random-snippet',
+                },
+            ],
+        });
+    });
+
+    it('should add config item', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        const configItemBefore = ruleConditionService.getAwarenessConfigurationByAssignmentName('personaPromotions');
+
+        expect(configItemBefore).toBeNull();
+
+        ruleConditionService.addAwarenessConfiguration('personaPromotions', {
+            notEquals: ['cartCartAmount'],
+        });
+
+        const configItemAfter = ruleConditionService.getAwarenessConfigurationByAssignmentName('personaPromotions');
+
+        expect(configItemAfter).toEqual({
+            notEquals: ['cartCartAmount'],
+        });
+    });
+
+    it('should get config item', async () => {
+        const ruleConditionService = new RuleConditionService();
+        ruleConditionService.addAwarenessConfiguration('personaPromotions', {
+            notEquals: ['cartCartAmount'],
+        });
+
+        const configItem = ruleConditionService.getAwarenessConfigurationByAssignmentName('personaPromotions');
+
+        expect(configItem).toEqual({
+            notEquals: ['cartCartAmount'],
+        });
+    });
+
+    it('should return empty object when the rule is undefined', async () => {
+        const ruleConditionService = new RuleConditionService();
+        const restricted = ruleConditionService.getRestrictedConditions();
+
+        expect(restricted).toEqual({});
+    });
+
+    it('should return empty config when assignmentName is not in the config', async () => {
+        const ruleConditionService = new RuleConditionService();
+        const restricted = ruleConditionService.getRestrictionsByAssociation([], 'assignmentName');
+
+        expect(restricted).toEqual({
+            assignmentName: 'assignmentName',
+            notEqualsViolations: [],
+            equalsAnyMatched: [],
+            equalsAnyNotMatched: [],
+            isRestricted: false,
+        });
+    });
+
+    it('should return restriction config with restricted true by not equals restriction', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        ruleConditionService.addCondition('conditionType1', {});
+        ruleConditionService.addCondition('conditionType2', {});
+        ruleConditionService.addCondition('conditionType3', {});
+
+        ruleConditionService.addAwarenessConfiguration('assignmentOne', {
+            notEquals: ['conditionType1'],
+            equalsAny: ['conditionType2', 'conditionType3'],
+            snippet: 'sw-assignment-one-snippet',
+        });
+
+        const conditions = [{ type: 'andContainer' }, { type: 'conditionType1' }, { type: 'conditionType2' }];
+
+        const restricted = ruleConditionService.getRestrictionsByAssociation(conditions, 'assignmentOne');
+
+        expect(restricted.assignmentName).toBe('assignmentOne');
+        expect(restricted.assignmentSnippet).toBe('sw-assignment-one-snippet');
+        expect(restricted.isRestricted).toBeTruthy();
+        expect(restricted.notEqualsViolations[0].type).toBe('conditionType1');
+        expect(restricted.equalsAnyMatched[0].type).toBe('conditionType2');
+        expect(restricted.equalsAnyNotMatched[0].type).toBe('conditionType3');
+    });
+
+    it('should return restriction config with restricted true by equals any restriction', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        ruleConditionService.addCondition('conditionType1', {});
+        ruleConditionService.addCondition('conditionType2', {});
+        ruleConditionService.addCondition('conditionType3', {});
+
+        ruleConditionService.addAwarenessConfiguration('assignmentOne', {
+            notEquals: ['conditionType1'],
+            equalsAny: ['conditionType2', 'conditionType3'],
+            snippet: 'sw-assignment-one-snippet',
+        });
+
+        const conditions = [{ type: 'andContainer' }, { type: 'conditionType4' }];
+
+        const restricted = ruleConditionService.getRestrictionsByAssociation(conditions, 'assignmentOne');
+
+        expect(restricted.assignmentName).toBe('assignmentOne');
+        expect(restricted.isRestricted).toBeTruthy();
+        expect(restricted.notEqualsViolations).toHaveLength(0);
+        expect(restricted.equalsAnyMatched).toHaveLength(0);
+        expect(restricted.equalsAnyNotMatched).toHaveLength(2);
+        expect(restricted.equalsAnyNotMatched[0].type).toBe('conditionType2');
+        expect(restricted.equalsAnyNotMatched[1].type).toBe('conditionType3');
+    });
+
+    it('should return restriction config with restricted false', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        ruleConditionService.addCondition('conditionType1', {});
+        ruleConditionService.addCondition('conditionType2', {});
+        ruleConditionService.addCondition('conditionType3', {});
+
+        ruleConditionService.addAwarenessConfiguration('assignmentOne', {
+            notEquals: ['conditionType1'],
+            equalsAny: ['conditionType2', 'conditionType3'],
+            snippet: 'sw-assignment-one-snippet',
+        });
+
+        const conditions = [{ type: 'andContainer' }, { type: 'conditionType2' }, { type: 'conditionType3' }];
+
+        const restricted = ruleConditionService.getRestrictionsByAssociation(conditions, 'assignmentOne');
+
+        expect(restricted.assignmentName).toBe('assignmentOne');
+        expect(restricted.isRestricted).toBeFalsy();
+        expect(restricted.notEqualsViolations).toHaveLength(0);
+        expect(restricted.equalsAnyMatched).toHaveLength(2);
+        expect(restricted.equalsAnyNotMatched).toHaveLength(0);
+    });
+
+    it('should return restricted associations', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        ruleConditionService.addCondition('conditionType1', {});
+        ruleConditionService.addCondition('conditionType2', {});
+        ruleConditionService.addCondition('conditionType3', {});
+
+        ruleConditionService.addAwarenessConfiguration('assignmentOne', {
+            notEquals: ['conditionType1'],
+            equalsAny: ['conditionType2', 'conditionType3'],
+            snippet: 'sw-assignment-one-snippet',
+        });
+
+        ruleConditionService.addAwarenessConfiguration('assignmentTwo', {
+            notEquals: ['conditionType2'],
+            equalsAny: ['conditionType2', 'conditionType3'],
+            snippet: 'sw-assignment-one-snippet',
+        });
+
+        const conditions = [{ type: 'andContainer' }, { type: 'conditionType2' }, { type: 'conditionType3' }];
+
+        const restricted = ruleConditionService.getRestrictedAssociations(conditions);
+
+        expect(restricted.assignmentOne.isRestricted).toBeFalsy();
+        expect(restricted.assignmentTwo.isRestricted).toBeTruthy();
+    });
+
+    it('should return a translated list of violations', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        let translatedViolations = ruleConditionService.getTranslatedConditionViolationList(
+            [{ label: 'violation1' }, { label: 'violation2' }, { label: 'violation3' }],
+            'and',
+        );
+        expect(translatedViolations).toBe('"violation1", "violation2" and "violation3"');
+
+        translatedViolations = ruleConditionService.getTranslatedConditionViolationList([{ label: 'violation1' }], 'and');
+        expect(translatedViolations).toBe('"violation1"');
+    });
+
+    it('should return a disabled restriction tooltip because of no violations', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        ruleConditionService.addAwarenessConfiguration('assignmentOne', {
+            notEquals: ['conditionType1'],
+            equalsAny: ['conditionType2', 'conditionType3'],
+            snippet: 'sw-assignment-one-snippet',
+        });
+
+        const conditions = [{ type: 'andContainer' }, { type: 'conditionType2' }, { type: 'conditionType3' }];
+
+        const tooltipConfig = ruleConditionService.getRestrictedRuleTooltipConfig(conditions, 'assignmentOne');
+        expect(tooltipConfig.disabled).toBeTruthy();
+        expect(tooltipConfig.message).toBeFalsy();
+    });
+
+    it('should return a disabled restriction tooltip because empty ruleAwareGroupKey', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        const tooltipConfig = ruleConditionService.getRestrictedRuleTooltipConfig([], undefined);
+        expect(tooltipConfig.disabled).toBeTruthy();
+        expect(tooltipConfig.message).toBeFalsy();
+    });
+
+    it('should return an enabled restriction tooltip by not equals violation', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        ruleConditionService.addAwarenessConfiguration('assignmentOne', {
+            notEquals: ['conditionType1'],
+            equalsAny: ['conditionType2', 'conditionType3'],
+            snippet: 'sw-assignment-one-snippet',
+        });
+
+        ruleConditionService.addCondition('conditionType1', {
+            label: 'conditionType1Label',
+        });
+        ruleConditionService.addCondition('conditionType2', {
+            label: 'conditionType2Label',
+        });
+        ruleConditionService.addCondition('conditionType3', {
+            label: 'conditionType3Label',
+        });
+
+        const conditions = [{ type: 'andContainer' }, { type: 'conditionType1' }, { type: 'conditionType3' }];
+
+        const tooltipConfig = ruleConditionService.getRestrictedRuleTooltipConfig(conditions, 'assignmentOne');
+        expect(tooltipConfig.disabled).toBeFalsy();
+        expect(tooltipConfig.message).toBe('sw-restricted-rules.restrictedAssignment.notEqualsViolationTooltip');
+    });
+
+    it('should return an enabled restriction tooltip by equals any violation', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        ruleConditionService.addAwarenessConfiguration('assignmentOne', {
+            notEquals: [],
+            equalsAny: ['conditionType2', 'conditionType3'],
+            snippet: 'sw-assignment-one-snippet',
+        });
+
+        ruleConditionService.addCondition('conditionType1', {
+            label: 'conditionType1Label',
+        });
+        ruleConditionService.addCondition('conditionType2', {
+            label: 'conditionType2Label',
+        });
+        ruleConditionService.addCondition('conditionType3', {
+            label: 'conditionType3Label',
+        });
+
+        const conditions = [{ type: 'andContainer' }, { type: 'conditionType1' }];
+
+        const tooltipConfig = ruleConditionService.getRestrictedRuleTooltipConfig(conditions, 'assignmentOne');
+        expect(tooltipConfig.disabled).toBeFalsy();
+        expect(tooltipConfig.message).toBe('sw-restricted-rules.restrictedAssignment.equalsAnyViolationTooltip');
+    });
+
+    it('should be restricted', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        ruleConditionService.addAwarenessConfiguration('assignmentOne', {
+            notEquals: [],
+            equalsAny: ['conditionType2', 'conditionType3'],
+            snippet: 'sw-assignment-one-snippet',
+        });
+
+        ruleConditionService.addCondition('conditionType1', {
+            label: 'conditionType1Label',
+        });
+        ruleConditionService.addCondition('conditionType2', {
+            label: 'conditionType2Label',
+        });
+        ruleConditionService.addCondition('conditionType3', {
+            label: 'conditionType3Label',
+        });
+
+        const conditions = [{ type: 'andContainer' }, { type: 'conditionType1' }];
+
+        const result = ruleConditionService.isRuleRestricted(conditions, 'assignmentOne');
+        expect(result).toBeTruthy();
+    });
+
+    it('should not be restricted', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        ruleConditionService.addAwarenessConfiguration('assignmentOne', {
+            notEquals: [],
+            equalsAny: ['conditionType2', 'conditionType3'],
+            snippet: 'sw-assignment-one-snippet',
+        });
+
+        ruleConditionService.addCondition('conditionType1', {
+            label: 'conditionType1Label',
+        });
+        ruleConditionService.addCondition('conditionType2', {
+            label: 'conditionType2Label',
+        });
+        ruleConditionService.addCondition('conditionType3', {
+            label: 'conditionType3Label',
+        });
+
+        const conditions = [{ type: 'andContainer' }, { type: 'conditionType2' }];
+
+        const result = ruleConditionService.isRuleRestricted(conditions, 'assignmentOne');
+        expect(result).toBeFalsy();
+    });
+
+    it('should not be restricted if group parameter is not set', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        const result = ruleConditionService.isRuleRestricted([], undefined);
+        expect(result).toBeFalsy();
+    });
+
+    it('should have the correct operators for date & datetime', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        const expected = [
+            {
+                identifier: '=',
+                label: 'global.sw-condition.operator.equals',
+            },
+            {
+                identifier: '>',
+                label: 'global.sw-condition.operator.greaterThan',
+            },
+            {
+                identifier: '>=',
+                label: 'global.sw-condition.operator.greaterThanEquals',
+            },
+            {
+                identifier: '<',
+                label: 'global.sw-condition.operator.lowerThan',
+            },
+            {
+                identifier: '<=',
+                label: 'global.sw-condition.operator.lowerThanEquals',
+            },
+            {
+                identifier: '!=',
+                label: 'global.sw-condition.operator.notEquals',
+            },
+            {
+                identifier: 'between',
+                label: 'global.sw-condition.operator.between',
+            },
+        ];
+
+        expect(ruleConditionService.getOperatorSet('date')).toEqual(expected);
+        expect(ruleConditionService.getOperatorSet('datetime')).toEqual(expected);
+    });
+
+    it('should get the restrictedConditions', () => {
+        const ruleConditionService = new RuleConditionService();
+
+        ruleConditionService.addAwarenessConfiguration('flowTrigger.someFlow', {
+            notEquals: ['cartCartAmount'],
+            snippet: 'someFlowSnippet',
+        });
+
+        const rule = {
+            id: 'random-id',
+            flowSequences: [
+                {
+                    flow: { eventName: 'someFlow' },
+                },
+                {
+                    flow: { eventName: 'anotherFlow' },
+                },
+            ],
+        };
+        const result = ruleConditionService.getRestrictedConditions(rule);
+
+        expect(result).toStrictEqual({
+            cartCartAmount: [
+                {
+                    associationName: 'flowTrigger.someFlow',
+                    snippet: 'someFlowSnippet',
+                },
+            ],
+        });
+    });
+
+    it('should get the keys of awareness configurations that have an equalsAny config', () => {
+        const ruleConditionService = new RuleConditionService();
+
+        ruleConditionService.addAwarenessConfiguration('personaPromotions', {
+            equalsAny: ['cartCartAmount', 'cartLineItemsCount'],
+            snippet: 'someFlowSnippet',
+        });
+
+        const result = ruleConditionService.getAwarenessKeysWithEqualsAnyConfig();
+
+        expect(result).toStrictEqual(['personaPromotions']);
+    });
+
+    it.each([
+        {
+            componentName: 'sw-entity-single-select',
+            expected: ['equals', 'notEquals'],
+        },
+        {
+            componentName: 'sw-single-select',
+            expected: ['equals', 'notEquals'],
+        },
+        {
+            componentName: 'sw-multi-select',
+            expected: ['isOneOf', 'isNoneOf'],
+        },
+        {
+            componentName: 'sw-text-editor',
+            expected: ['equals', 'notEquals'],
+        },
+    ])('should get operators for a given component: $componentName', async ({ componentName, expected }) => {
+        const ruleConditionService = new RuleConditionService();
+
+        const operators = ruleConditionService.getOperatorSetByComponent({
+            type: 'undefined-type',
+            config: {
+                componentName,
+            },
+        });
+
+        expect(operators).toHaveLength(expected.length);
+        operators.forEach((operator, index) => {
+            expect(operator.label.endsWith(expected[index])).toBe(true);
+        });
+    });
+
+    it.each([
+        {
+            type: 'text',
+            expected: ['equals', 'notEquals'],
+        },
+        {
+            type: 'number',
+            expected: [
+                'equals',
+                'notEquals',
+                'greaterThanEquals',
+                'lowerThanEquals',
+            ],
+        },
+        { type: 'bool', expected: ['equals'] },
+    ])('should get operators for a given type: $type', async ({ type, expected }) => {
+        const ruleConditionService = new RuleConditionService();
+
+        const operators = ruleConditionService.getOperatorSetByComponent({
+            type,
+            config: {
+                componentName: 'sw-undefined-component',
+            },
+        });
+
+        expect(operators).toHaveLength(expected.length);
+        operators.forEach((operator, index) => {
+            expect(operator.label.endsWith(expected[index])).toBe(true);
+        });
+    });
+
+    it('should get default operators if no operators are defined for a given type or component', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        const operators = ruleConditionService.getOperatorSetByComponent({
+            type: 'undefined-type',
+            config: {
+                componentName: 'sw-undefined-component',
+            },
+        });
+
+        const expected = [
+            'equals',
+            'notEquals',
+            'greaterThanEquals',
+            'lowerThanEquals',
+        ];
+
+        expect(operators).toHaveLength(expected.length);
+        operators.forEach((operator, index) => {
+            expect(operator.label.endsWith(expected[index])).toBe(true);
+        });
+    });
+
+    it.each([
+        { name: 'checkbox', config: { type: 'switch', doNotOverride: 'test' } },
+        { name: 'switch', config: { type: 'switch', doNotOverride: 'test' } },
+    ])('should transform custom field condition config for: $name', async ({ config }) => {
+        jest.spyOn(Shopwell.Store, 'get').mockReturnValueOnce({
+            currentLocale: 'some-locale',
+        });
+
+        const ruleConditionService = new RuleConditionService();
+
+        const transformedConfig = ruleConditionService.getTransformedCustomFieldConditionConfig(config);
+
+        expect(transformedConfig).toStrictEqual({
+            ...config,
+            options: [
+                {
+                    label: {
+                        'some-locale': 'global.default.yes',
+                    },
+                    value: true,
+                },
+                {
+                    label: {
+                        'some-locale': 'global.default.no',
+                    },
+                    value: false,
+                },
+            ],
+            componentName: 'sw-single-select',
+            customFieldType: 'select',
+        });
+    });
+
+    it('should transform custom field condition config for textEditor', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        const config = {
+            doNotOverride: 'test',
+            type: 'textEditor',
+            componentName: 'sw-text-editor',
+            customFieldType: 'textEditor',
+        };
+
+        const transformedConfig = ruleConditionService.getTransformedCustomFieldConditionConfig(config);
+
+        expect(transformedConfig).toStrictEqual({
+            ...config,
+            componentName: 'sw-field',
+            customFieldType: 'text',
+            type: 'text',
+        });
+    });
+
+    it('should not transform custom field condition empty config', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        expect(ruleConditionService.getTransformedCustomFieldConditionConfig(null, jest.fn())).toBeNull();
+    });
+
+    describe('getDeprecationsInTree', () => {
+        it.each([
+            { name: 'no conditions provided', conditions: [] },
+            { name: 'no deprecated type in tree', conditions: [{ type: 'cartCartAmount' }] },
+        ])('should return an empty array when $name', ({ conditions }) => {
+            const ruleConditionService = new RuleConditionService();
+            ruleConditionService.addCondition('cartCartAmount', { label: 'Cart amount' });
+
+            expect(ruleConditionService.getDeprecationsInTree(conditions)).toEqual([]);
+        });
+
+        it.each([
+            {
+                name: 'registered replacement is in the store',
+                setup: () => buildServiceWithDeprecation(),
+                expectedReplacement: { type: 'cartLineItemProductType', label: 'Product type' },
+            },
+            {
+                name: 'replacement type is not in the store',
+                setup: () => buildServiceWithDeprecation({ registerReplacementInStore: false }),
+                expectedReplacement: null,
+            },
+            {
+                name: 'no replacement is registered',
+                setup: () => {
+                    const service = new RuleConditionService();
+
+                    service.registerDeprecation('cartLineItemProductStates', {
+                        version: 'v6.8.0.0',
+                        label: 'Product states',
+                    });
+
+                    return service;
+                },
+                expectedReplacement: null,
+            },
+        ])('should resolve replacement to the expected value when $name', ({ setup, expectedReplacement }) => {
+            const result = setup().getDeprecationsInTree([{ type: 'cartLineItemProductStates' }]);
+
+            expect(result).toEqual([
+                {
+                    type: 'cartLineItemProductStates',
+                    label: 'Product states',
+                    version: 'v6.8.0.0',
+                    replacement: expectedReplacement,
+                },
+            ]);
+        });
+
+        it.each([
+            {
+                name: 'nested children',
+                conditions: [
+                    {
+                        type: 'andContainer',
+                        children: [
+                            {
+                                type: 'orContainer',
+                                children: [{ type: 'cartLineItemProductStates' }],
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                name: 'duplicates across the tree',
+                conditions: [
+                    { type: 'cartLineItemProductStates' },
+                    {
+                        type: 'andContainer',
+                        children: [{ type: 'cartLineItemProductStates' }, { type: 'cartLineItemProductStates' }],
+                    },
+                ],
+            },
+        ])('should return a single deprecation entry for $name', ({ conditions }) => {
+            const result = buildServiceWithDeprecation().getDeprecationsInTree(conditions);
+
+            expect(result).toHaveLength(1);
+            expect(result[0].type).toBe('cartLineItemProductStates');
+        });
+    });
+
+    describe('getFlowOnlyTypesInTree', () => {
+        it.each([
+            {
+                name: 'no conditions are provided',
+                setup: () => new RuleConditionService(),
+                conditions: [],
+            },
+            {
+                name: 'condition has mixed scopes',
+                setup: () =>
+                    buildServiceWithCondition('mixedCondition', {
+                        label: 'Mixed condition',
+                        scopes: ['flow', 'cart'],
+                    }),
+                conditions: [{ type: 'mixedCondition' }],
+            },
+            {
+                name: 'condition has an empty scopes array',
+                setup: () =>
+                    buildServiceWithCondition('emptyScopeCondition', {
+                        label: 'Empty scope',
+                        scopes: [],
+                    }),
+                conditions: [{ type: 'emptyScopeCondition' }],
+            },
+            {
+                name: 'condition has no scopes property',
+                setup: () => buildServiceWithCondition('noScopeCondition', { label: 'No scope' }),
+                conditions: [{ type: 'noScopeCondition' }],
+            },
+            {
+                name: 'condition type is unknown',
+                setup: () => new RuleConditionService(),
+                conditions: [{ type: 'unknownType' }],
+            },
+        ])('should return an empty array when $name', ({ setup, conditions }) => {
+            expect(setup().getFlowOnlyTypesInTree(conditions)).toEqual([]);
+        });
+
+        it.each([
+            {
+                name: 'flat tree',
+                conditions: [{ type: 'orderStatus' }],
+            },
+            {
+                name: 'nested children',
+                conditions: [
+                    {
+                        type: 'andContainer',
+                        children: [{ type: 'orderStatus' }],
+                    },
+                ],
+            },
+            {
+                name: 'duplicates across the tree',
+                conditions: [{ type: 'orderStatus' }, { type: 'orderStatus' }],
+            },
+        ])('should return a single flow-only entry for $name', ({ conditions }) => {
+            const ruleConditionService = buildServiceWithCondition('orderStatus', {
+                label: 'Order status',
+                scopes: ['flow'],
+            });
+
+            expect(ruleConditionService.getFlowOnlyTypesInTree(conditions)).toEqual([
+                {
+                    type: 'orderStatus',
+                    label: 'Order status',
+                },
+            ]);
+        });
+    });
+
+    it('should use en-GB as fallback locale for custom field condition config', async () => {
+        const ruleConditionService = new RuleConditionService();
+
+        jest.spyOn(Shopwell.Store, 'get').mockReturnValueOnce({
+            currentLocale: '',
+        });
+
+        const config = {
+            doNotOverride: 'test',
+            componentName: 'sw-checkbox',
+            customFieldType: 'checkbox',
+            type: 'checkbox',
+        };
+
+        const transformedConfig = ruleConditionService.getTransformedCustomFieldConditionConfig(config);
+
+        expect(transformedConfig).toStrictEqual({
+            ...config,
+            componentName: 'sw-single-select',
+            customFieldType: 'select',
+            options: [
+                {
+                    label: {
+                        'en-GB': 'global.default.yes',
+                    },
+                    value: true,
+                },
+                {
+                    label: {
+                        'en-GB': 'global.default.no',
+                    },
+                    value: false,
+                },
+            ],
+        });
+    });
+
+    it('should strip the disabled flag from custom field condition config', () => {
+        const ruleConditionService = new RuleConditionService();
+
+        const result = ruleConditionService.getTransformedCustomFieldConditionConfig({
+            type: 'text',
+            componentName: 'sw-text-field',
+            disabled: true,
+        });
+
+        expect(result).not.toHaveProperty('disabled');
+        expect(result).toMatchObject({
+            type: 'text',
+            componentName: 'sw-text-field',
+        });
+    });
+});

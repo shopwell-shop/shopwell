@@ -1,0 +1,137 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Controller;
+
+use Shopwell\Core\Framework\Adapter\Kernel\HttpCacheKernel;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\RoutingException;
+use Shopwell\Core\Framework\Util\Json;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\SalesChannelRequest;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Storefront\Framework\Routing\MaintenanceModeResolver;
+use Shopwell\Storefront\Framework\Routing\StorefrontRouteScope;
+use Shopwell\Storefront\Page\Maintenance\MaintenancePageLoadedHook;
+use Shopwell\Storefront\Page\Maintenance\MaintenancePageLoader;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+/**
+ * @internal
+ * Do not use direct or indirect repository calls in a controller. Always use a store-api route to get or put data
+ */
+#[Package('discovery')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StorefrontRouteScope::ID]])]
+class MaintenanceController extends StorefrontController
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly SystemConfigService $systemConfigService,
+        private readonly MaintenancePageLoader $maintenancePageLoader,
+        private readonly MaintenanceModeResolver $maintenanceModeResolver
+    ) {
+    }
+
+    #[Route(
+        path: '/maintenance',
+        name: 'frontend.maintenance.page',
+        defaults: [
+            PlatformRequest::ATTRIBUTE_IS_ALLOWED_IN_MAINTENANCE => true,
+            PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
+        ],
+        methods: [Request::METHOD_GET]
+    )]
+    public function renderMaintenancePage(Request $request, SalesChannelContext $context): ?Response
+    {
+        if ($this->maintenanceModeResolver->shouldRedirectToShop($request)) {
+            if ($request->query->getString('redirectTo') !== '') {
+                return $this->createActionResponse($request);
+            }
+
+            return $this->redirectToRoute('frontend.home.page');
+        }
+
+        $salesChannelId = $context->getSalesChannelId();
+        $maintenanceLayoutId = $this->systemConfigService->getString('core.basicInformation.maintenancePage', $salesChannelId);
+
+        if ($maintenanceLayoutId === '') {
+            $response = $this->renderStorefront(
+                '@Storefront/storefront/page/error/error-maintenance.html.twig'
+            );
+
+            $response->setStatusCode(Response::HTTP_SERVICE_UNAVAILABLE, 'Service Temporarily Unavailable');
+            $response->headers->set('Retry-After', '3600');
+
+            $this->addAllowlistIpHeader($request, $response);
+
+            return $response;
+        }
+
+        $maintenancePage = $this->maintenancePageLoader->load($maintenanceLayoutId, $request, $context);
+
+        $this->hook(new MaintenancePageLoadedHook($maintenancePage, $context));
+
+        $response = $this->renderStorefront(
+            '@Storefront/storefront/page/error/error-maintenance.html.twig',
+            ['page' => $maintenancePage]
+        );
+
+        $response->setStatusCode(Response::HTTP_SERVICE_UNAVAILABLE, 'Service Temporarily Unavailable');
+        $response->headers->set('Retry-After', '3600');
+
+        $this->addAllowlistIpHeader($request, $response);
+
+        return $response;
+    }
+
+    /**
+     * Route for standalone cms pages during maintenance
+     */
+    #[Route(
+        path: '/maintenance/singlepage/{id}',
+        name: 'frontend.maintenance.singlepage',
+        defaults: [
+            PlatformRequest::ATTRIBUTE_IS_ALLOWED_IN_MAINTENANCE => true,
+            PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
+        ],
+        methods: [Request::METHOD_GET]
+    )]
+    public function renderSinglePage(string $id, Request $request, SalesChannelContext $salesChannelContext): Response
+    {
+        if (!$id) {
+            throw RoutingException::missingRequestParameter('id');
+        }
+
+        $cmsPage = $this->maintenancePageLoader->load($id, $request, $salesChannelContext);
+
+        $this->hook(new MaintenancePageLoadedHook($cmsPage, $salesChannelContext));
+
+        $response = $this->renderStorefront(
+            '@Storefront/storefront/page/content/single-cms-page.html.twig',
+            ['page' => $cmsPage]
+        );
+
+        $this->addAllowlistIpHeader($request, $response);
+
+        return $response;
+    }
+
+    private function addAllowlistIpHeader(Request $request, Response $response): void
+    {
+        $ips = $request->attributes->get(SalesChannelRequest::ATTRIBUTE_SALES_CHANNEL_MAINTENANCE_IP_ALLOWLIST)
+            // @deprecated tag:v6.8.0 - remove the fallback to the deprecated attribute
+            ?? $request->attributes->get(SalesChannelRequest::ATTRIBUTE_SALES_CHANNEL_MAINTENANCE_IP_WHITLELIST);
+
+        if ($ips) {
+            $ips = implode(',', Json::decodeToList((string) $ips));
+
+            $response->headers->set(HttpCacheKernel::MAINTENANCE_ALLOWLIST_HEADER, $ips);
+            // @deprecated tag:v6.8.0 - remove setting the deprecated header
+            $response->headers->set(HttpCacheKernel::MAINTENANCE_WHITELIST_HEADER, $ips);
+        }
+    }
+}

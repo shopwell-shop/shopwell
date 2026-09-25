@@ -1,0 +1,38 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag;
+
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * Defines the weight for a search query on the entity for this field
+ */
+#[Package('framework')]
+class SearchRanking extends Flag
+{
+    final public const ASSOCIATION_SEARCH_RANKING = 0.25;
+    final public const MIDDLE_SEARCH_RANKING = 250.0;
+    final public const LOW_SEARCH_RANKING = 80.0;
+    final public const HIGH_SEARCH_RANKING = 500.0;
+
+    public function __construct(
+        protected float $ranking,
+        protected bool $tokenize = true
+    ) {
+    }
+
+    public function getRanking(): float
+    {
+        return $this->ranking;
+    }
+
+    public function parse(): \Generator
+    {
+        yield 'search_ranking' => $this->ranking;
+    }
+
+    public function tokenize(): bool
+    {
+        return $this->tokenize;
+    }
+}

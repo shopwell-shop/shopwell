@@ -1,0 +1,70 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\SalesChannel\Context;
+
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\Struct;
+
+#[Package('framework')]
+class SalesChannelContextServiceParameters extends Struct
+{
+    public function __construct(
+        protected string $salesChannelId,
+        protected string $token,
+        protected ?string $languageId = null,
+        // used as fallback if no currency is set in the existing context
+        protected ?string $currencyId = null,
+        protected ?string $domainId = null,
+        protected ?Context $originalContext = null,
+        protected ?string $customerId = null,
+        protected ?string $imitatingUserId = null,
+        protected ?string $overwriteCurrencyId = null,
+    ) {
+    }
+
+    public function getSalesChannelId(): string
+    {
+        return $this->salesChannelId;
+    }
+
+    public function getToken(): string
+    {
+        return $this->token;
+    }
+
+    public function getLanguageId(): ?string
+    {
+        return $this->languageId;
+    }
+
+    public function getCurrencyId(): ?string
+    {
+        return $this->currencyId;
+    }
+
+    public function getOverwriteCurrencyId(): ?string
+    {
+        return $this->overwriteCurrencyId;
+    }
+
+    public function getDomainId(): ?string
+    {
+        return $this->domainId;
+    }
+
+    public function getOriginalContext(): ?Context
+    {
+        return $this->originalContext;
+    }
+
+    public function getCustomerId(): ?string
+    {
+        return $this->customerId;
+    }
+
+    public function getImitatingUserId(): ?string
+    {
+        return $this->imitatingUserId;
+    }
+}

@@ -1,0 +1,274 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Demodata\Generator;
+
+use Doctrine\DBAL\Connection;
+use Faker\Generator;
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupCollection;
+use Shopwell\Core\Checkout\Customer\CustomerDefinition;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriterInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteContext;
+use Shopwell\Core\Framework\Demodata\DemodataContext;
+use Shopwell\Core\Framework\Demodata\DemodataException;
+use Shopwell\Core\Framework\Demodata\DemodataGeneratorInterface;
+use Shopwell\Core\Framework\Demodata\DemodataService;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
+use Shopwell\Core\Test\TestDefaults;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+class CustomerGenerator implements DemodataGeneratorInterface
+{
+    /**
+     * @var non-empty-list<string>
+     */
+    private array $salutationIds;
+
+    private Generator $faker;
+
+    /**
+     * @internal
+     *
+     * @param EntityRepository<CustomerGroupCollection> $customerGroupRepository
+     */
+    public function __construct(
+        private readonly EntityWriterInterface $writer,
+        private readonly Connection $connection,
+        private readonly EntityRepository $customerGroupRepository,
+        private readonly NumberRangeValueGeneratorInterface $numberRangeValueGenerator,
+        private readonly CustomerDefinition $customerDefinition
+    ) {
+    }
+
+    public function getDefinition(): string
+    {
+        return CustomerDefinition::class;
+    }
+
+    public function generate(int $numberOfItems, DemodataContext $context, array $options = []): void
+    {
+        $this->faker = $context->getFaker();
+        $this->createCustomers($numberOfItems, $context);
+
+        try {
+            $this->createDefaultCustomer($context->getContext());
+        } catch (\Exception $e) {
+            $context->getConsole()->warning('Could not create default customer: ' . $e->getMessage());
+        }
+    }
+
+    private function createNetCustomerGroup(Context $context): string
+    {
+        $id = Uuid::randomHex();
+        $data = [
+            'id' => $id,
+            'displayGross' => false,
+            'name' => 'Net price customer group',
+        ];
+
+        $this->customerGroupRepository->create([$data], $context);
+
+        return $id;
+    }
+
+    private function createDefaultCustomer(Context $context): void
+    {
+        $id = Uuid::randomHex();
+        $shippingAddressId = Uuid::randomHex();
+        $billingAddressId = Uuid::randomHex();
+        $salutationId = Uuid::fromBytesToHex($this->getRandomSalutationId());
+        $countries = $this->connection->fetchFirstColumn('SELECT id FROM country WHERE active = 1');
+        if ($countries === []) {
+            throw DemodataException::wrongExecutionOrder();
+        }
+        $salesChannelIds = $this->connection->fetchFirstColumn('SELECT LOWER(HEX(id)) FROM sales_channel');
+        if ($salesChannelIds === []) {
+            throw DemodataException::wrongExecutionOrder();
+        }
+
+        $customer = [
+            'id' => $id,
+            'customerNumber' => '1337',
+            'salutationId' => $salutationId,
+            'firstName' => 'Max',
+            'lastName' => 'Mustermann',
+            'email' => 'test@example.com',
+            'password' => 'shopware',
+            'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
+            'salesChannelId' => $salesChannelIds[array_rand($salesChannelIds)],
+            'defaultBillingAddressId' => $billingAddressId,
+            'defaultShippingAddressId' => $shippingAddressId,
+            'customFields' => [DemodataService::DEMODATA_CUSTOM_FIELDS_KEY => true],
+            'addresses' => [
+                [
+                    'id' => $shippingAddressId,
+                    'customerId' => $id,
+                    'countryId' => Uuid::fromBytesToHex($countries[array_rand($countries)]),
+                    'salutationId' => $salutationId,
+                    'firstName' => 'Max',
+                    'lastName' => 'Mustermann',
+                    'street' => 'Ebbinghoff 10',
+                    'zipcode' => '48624',
+                    'city' => 'Schöppingen',
+                ],
+                [
+                    'id' => $billingAddressId,
+                    'customerId' => $id,
+                    'countryId' => Uuid::fromBytesToHex($countries[array_rand($countries)]),
+                    'salutationId' => $salutationId,
+                    'firstName' => 'Max',
+                    'lastName' => 'Mustermann',
+                    'street' => 'Bahnhofstraße 27',
+                    'zipcode' => '10332',
+                    'city' => 'Berlin',
+                ],
+            ],
+        ];
+
+        $writeContext = WriteContext::createFromContext($context);
+
+        $this->writer->upsert($this->customerDefinition, [$customer], $writeContext);
+    }
+
+    private function createCustomers(int $numberOfItems, DemodataContext $context): void
+    {
+        $writeContext = WriteContext::createFromContext($context->getContext());
+
+        $context->getConsole()->progressStart($numberOfItems);
+
+        $netCustomerGroupId = $this->createNetCustomerGroup($context->getContext());
+        $customerGroups = [TestDefaults::FALLBACK_CUSTOMER_GROUP, $netCustomerGroupId];
+        $tags = $this->getTagIds();
+
+        $salesChannelIds = $this->connection->fetchFirstColumn('SELECT LOWER(HEX(id)) FROM sales_channel');
+        if ($salesChannelIds === []) {
+            throw DemodataException::wrongExecutionOrder();
+        }
+        $countries = $this->connection->fetchFirstColumn('SELECT id FROM country WHERE active = 1');
+
+        $payload = [];
+        for ($i = 0; $i < $numberOfItems; ++$i) {
+            $randomDate = $context->getFaker()->dateTimeBetween('-2 years');
+            $id = Uuid::randomHex();
+            $firstName = $context->getFaker()->firstName();
+            $lastName = $context->getFaker()->format('lastName');
+            $salutationId = Uuid::fromBytesToHex($this->getRandomSalutationId());
+            $title = $this->getRandomTitle();
+
+            $addresses = [];
+
+            $aCount = random_int(2, 5);
+            for ($x = 1; $x < $aCount; ++$x) {
+                $addresses[] = [
+                    'id' => Uuid::randomHex(),
+                    'countryId' => Uuid::fromBytesToHex($context->getFaker()->randomElement($countries)),
+                    'salutationId' => $salutationId,
+                    'title' => $title,
+                    'firstName' => $firstName,
+                    'lastName' => $lastName,
+                    'street' => $context->getFaker()->format('streetName'),
+                    'zipcode' => $context->getFaker()->format('postcode'),
+                    'city' => $context->getFaker()->format('city'),
+                ];
+            }
+            \assert($addresses !== []);
+
+            $customer = [
+                'id' => $id,
+                'customerNumber' => $this->numberRangeValueGenerator->getValue('customer', $context->getContext(), null),
+                'salutationId' => $salutationId,
+                'title' => $title,
+                'firstName' => $firstName,
+                'lastName' => $lastName,
+                'email' => $id . $context->getFaker()->format('safeEmail'),
+                // use dummy hashed password, so not need to compute the hash for every customer
+                // password is `shopware`
+                'password' => '$2y$10$XFRhv2TdOz9GItRt6ZgHl.e/HpO5Mfea6zDNXI9Q8BasBRtWbqSTS',
+                'groupId' => $customerGroups[array_rand($customerGroups)],
+                'salesChannelId' => $salesChannelIds[array_rand($salesChannelIds)],
+                'defaultBillingAddressId' => $addresses[array_rand($addresses)]['id'],
+                'defaultShippingAddressId' => $addresses[array_rand($addresses)]['id'],
+                'addresses' => $addresses,
+                'tags' => $this->getTags($tags),
+                'createdAt' => $randomDate->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+                'customFields' => [DemodataService::DEMODATA_CUSTOM_FIELDS_KEY => true],
+            ];
+
+            $payload[] = $customer;
+
+            if (\count($payload) >= 100) {
+                $this->writer->upsert($this->customerDefinition, $payload, $writeContext);
+
+                $context->getConsole()->progressAdvance(\count($payload));
+
+                $payload = [];
+            }
+        }
+
+        if ($payload !== []) {
+            $this->writer->upsert($this->customerDefinition, $payload, $writeContext);
+
+            $context->getConsole()->progressAdvance(\count($payload));
+        }
+
+        $context->getConsole()->progressFinish();
+    }
+
+    private function getRandomTitle(): string
+    {
+        $titles = ['', 'Dr.', 'Dr. med.', 'Prof.', 'Prof. Dr.'];
+
+        return $titles[array_rand($titles)];
+    }
+
+    /**
+     * @param list<string> $tags
+     *
+     * @return list<array{id: string}>
+     */
+    private function getTags(array $tags): array
+    {
+        $tagAssignments = [];
+
+        if ($tags !== []) {
+            $chosenTags = $this->faker->randomElements($tags, $this->faker->numberBetween(1, \count($tags)));
+
+            if ($chosenTags !== []) {
+                $tagAssignments = array_map(
+                    static fn (string $id) => ['id' => $id],
+                    $chosenTags
+                );
+            }
+        }
+
+        return array_values($tagAssignments);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function getTagIds(): array
+    {
+        return $this->connection->fetchFirstColumn('SELECT LOWER(HEX(id)) as id FROM tag LIMIT 500');
+    }
+
+    private function getRandomSalutationId(): string
+    {
+        if (!isset($this->salutationIds)) {
+            $salutationIds = $this->connection->fetchFirstColumn('SELECT id FROM salutation');
+            if ($salutationIds === []) {
+                throw DemodataException::wrongExecutionOrder();
+            }
+            $this->salutationIds = $salutationIds;
+        }
+
+        return $this->salutationIds[array_rand($this->salutationIds)];
+    }
+}

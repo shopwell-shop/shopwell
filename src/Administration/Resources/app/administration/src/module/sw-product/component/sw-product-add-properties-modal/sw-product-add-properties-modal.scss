@@ -1,0 +1,84 @@
+@import "~scss/variables";
+
+$base-size: calc(var(--scale-size-224) + var(--scale-size-56));
+
+.sw-product-add-properties-modal {
+    &.sw-modal.sw-modal--default {
+        .sw-modal__dialog {
+            max-width: calc(var(--scale-size-224) * 4 + var(--scale-size-4));
+        }
+
+        .sw-modal__body {
+            padding: 0;
+        }
+    }
+
+    &__content .sw-card-section {
+        position: relative;
+        min-height: calc(#{$base-size} + var(--scale-size-40) * 3 + var(--scale-size-20));
+        padding: 0;
+    }
+
+    &__content .sw-grid {
+        height: 100%;
+    }
+
+    &__content .sw-grid .sw-grid-row {
+        border-bottom: 0;
+    }
+
+    &__content .sw-grid .sw-grid__cell-content {
+        min-height: 0;
+        line-height: var(--font-line-height-xs);
+        padding: var(--scale-size-10) var(--scale-size-30);
+    }
+
+    &__content .sw-grid.sw-grid--table .sw-grid-row.is--selected {
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    &__property-name {
+        cursor: pointer;
+        margin-left: var(--scale-size-10);
+    }
+
+    &__property-selected {
+        font-size: var(--font-size-xs);
+    }
+
+    &__property-values .sw-grid__cell .sw-grid__cell-content {
+        padding-left: var(--scale-size-6);
+    }
+
+    .sw-property-search {
+        .sw-property-search__toolbar {
+            margin-bottom: 0;
+        }
+
+        .sw-property-search__tree-selection-container,
+        .sw-property-search__search-selection {
+            min-height: calc(#{$base-size} + var(--scale-size-40) * 3 + var(--scale-size-20));
+        }
+    }
+
+    .sw-product-add-properties-modal__toolbar {
+        border-bottom: var(--scale-size-1) solid var(--color-border-secondary-default);
+        background-color: var(--color-elevation-surface-sunken);
+        grid-template-columns: 1fr auto;
+    }
+
+    .sw-property-search__search-field.sw-product-add-properties-modal__search-field {
+        .sw-simple-search-field {
+            margin: 0;
+        }
+
+        .mt-icon.sw-simple-search-field__search-icon.icon--regular-search-s.mt-icon--small {
+            right: calc(var(--scale-size-40) + var(--scale-size-6));
+        }
+    }
+
+    .sw-extension-teaser-popover {
+        margin-left: var(--scale-size-14);
+    }
+}

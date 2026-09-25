@@ -1,0 +1,40 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Migration\V6_4;
+
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Migration\MigrationStep;
+use Symfony\Component\Filesystem\Filesystem;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class Migration1641289204FixProductComparisonGoogleShippingPriceDisplay extends MigrationStep
+{
+    public function getCreationTimestamp(): int
+    {
+        return 1641289204;
+    }
+
+    public function update(Connection $connection): void
+    {
+        $filesystem = new Filesystem();
+
+        $old_template = $filesystem->readFile(__DIR__ . '/../Fixtures/productComparison-export-profiles/next-19135/body_old.xml.twig');
+        $new_template = $filesystem->readFile(__DIR__ . '/../Fixtures/productComparison-export-profiles/next-19135/body_new.xml.twig');
+
+        $connection->update(
+            'product_export',
+            ['body_template' => $new_template, 'updated_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)],
+            ['body_template' => $old_template]
+        );
+    }
+
+    public function updateDestructive(Connection $connection): void
+    {
+        // implement update destructive
+    }
+}

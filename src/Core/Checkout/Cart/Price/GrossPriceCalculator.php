@@ -1,0 +1,138 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Cart\Price;
+
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\ListPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
+use Shopwell\Core\Checkout\Cart\Price\Struct\ReferencePrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\ReferencePriceDefinition;
+use Shopwell\Core\Checkout\Cart\Price\Struct\RegulationPrice;
+use Shopwell\Core\Checkout\Cart\Tax\TaxCalculator;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
+use Shopwell\Core\Framework\Log\Package;
+
+#[Package('checkout')]
+class GrossPriceCalculator
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly TaxCalculator $taxCalculator,
+        private readonly CashRounding $priceRounding
+    ) {
+    }
+
+    public function calculate(QuantityPriceDefinition $definition, CashRoundingConfig $config): CalculatedPrice
+    {
+        $unitPrice = $this->getUnitPrice($definition, $config);
+
+        $unitTaxes = $this->taxCalculator->calculateGrossTaxes($unitPrice, $definition->getTaxRules());
+
+        foreach ($unitTaxes as $tax) {
+            $total = $this->priceRounding->mathRound($tax->getTax() * $definition->getQuantity(), $config);
+            $taxPrice = $this->priceRounding->mathRound($tax->getPrice() * $definition->getQuantity(), $config);
+
+            $tax->setTax($total);
+            $tax->setPrice($taxPrice);
+        }
+
+        $price = $this->priceRounding->cashRound(
+            $unitPrice * $definition->getQuantity(),
+            $config
+        );
+
+        $reference = $this->calculateReferencePrice($unitPrice, $definition->getReferencePriceDefinition(), $config);
+
+        return new CalculatedPrice(
+            $unitPrice,
+            $price,
+            $unitTaxes,
+            $definition->getTaxRules(),
+            $definition->getQuantity(),
+            $reference,
+            $this->calculateListPrice($unitPrice, $definition, $config),
+            $this->calculateRegulationPrice($definition, $config)
+        );
+    }
+
+    private function getUnitPrice(QuantityPriceDefinition $definition, CashRoundingConfig $config): float
+    {
+        // item price already calculated?
+        if ($definition->isCalculated()) {
+            return $this->priceRounding->cashRound($definition->getPrice(), $config);
+        }
+
+        $price = $this->taxCalculator->calculateGross(
+            $definition->getPrice(),
+            $definition->getTaxRules()
+        );
+
+        return $this->priceRounding->cashRound($price, $config);
+    }
+
+    private function calculateListPrice(float $unitPrice, QuantityPriceDefinition $definition, CashRoundingConfig $config): ?ListPrice
+    {
+        $price = $definition->getListPrice();
+        if (!$price) {
+            return null;
+        }
+
+        if (!$definition->isCalculated()) {
+            $price = $this->taxCalculator->calculateGross(
+                $price,
+                $definition->getTaxRules()
+            );
+        }
+
+        $listPrice = $this->priceRounding->cashRound($price, $config);
+
+        if ($listPrice <= 0) {
+            return null;
+        }
+
+        return ListPrice::createFromUnitPrice($unitPrice, $listPrice);
+    }
+
+    private function calculateRegulationPrice(QuantityPriceDefinition $definition, CashRoundingConfig $config): ?RegulationPrice
+    {
+        $price = $definition->getRegulationPrice();
+        if (!$price) {
+            return null;
+        }
+
+        if (!$definition->isCalculated()) {
+            $price = $this->taxCalculator->calculateGross(
+                $price,
+                $definition->getTaxRules()
+            );
+        }
+
+        $regulationPrice = $this->priceRounding->cashRound($price, $config);
+
+        return new RegulationPrice($regulationPrice);
+    }
+
+    private function calculateReferencePrice(float $price, ?ReferencePriceDefinition $definition, CashRoundingConfig $config): ?ReferencePrice
+    {
+        if (!$definition) {
+            return null;
+        }
+
+        if ($definition->getPurchaseUnit() <= 0 || $definition->getReferenceUnit() <= 0) {
+            return null;
+        }
+
+        $price = $price / $definition->getPurchaseUnit() * $definition->getReferenceUnit();
+
+        $price = $this->priceRounding->mathRound($price, $config);
+
+        return new ReferencePrice(
+            $price,
+            $definition->getPurchaseUnit(),
+            $definition->getReferenceUnit(),
+            $definition->getUnitName()
+        );
+    }
+}

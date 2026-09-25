@@ -1,0 +1,121 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Internal;
+
+use PhpParser\Node;
+use PhpParser\Node\Stmt\ClassMethod;
+use PHPStan\Analyser\Scope;
+use PHPStan\Rules\Rule;
+use PHPStan\Rules\RuleError;
+use PHPStan\Rules\RuleErrorBuilder;
+use PHPStan\Symfony\ServiceMap;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Contracts\EventDispatcher\Event;
+
+/**
+ * @implements Rule<ClassMethod>
+ *
+ * @internal
+ */
+#[Package('framework')]
+class InternalMethodRule implements Rule
+{
+    public function __construct(private readonly ServiceMap $serviceMap)
+    {
+    }
+
+    public function getNodeType(): string
+    {
+        return ClassMethod::class;
+    }
+
+    /**
+     * @param ClassMethod $node
+     *
+     * @return array<array-key, RuleError|string>
+     */
+    public function processNode(Node $node, Scope $scope): array
+    {
+        // no class method
+        if (!$scope->isInClass()) {
+            return [];
+        }
+
+        $class = $scope->getClassReflection();
+        // complete class is marked as internal
+        if ($class->isInternal()) {
+            return [];
+        }
+
+        if ($this->isConstructor($node)) {
+            if ($this->isEvent($scope)) {
+                return [];
+            }
+
+            if ($this->isService($scope)) {
+                if ($this->hasInternalComment($node) && $this->hasDeprecatedComment($node)) {
+                    return [
+                        RuleErrorBuilder::message('A deprecation annotation must not be used on internal constructors of DI services. Put it on the affected constructor parameter instead.')
+                            ->identifier('shopware.internalMethod')
+                            ->build(),
+                    ];
+                }
+
+                if ($this->hasInternalComment($node)) {
+                    return [];
+                }
+
+                return [
+                    RuleErrorBuilder::message('__construct of di container services has to be @internal')
+                        ->identifier('shopware.internalMethod')
+                        ->build(),
+                ];
+            }
+        }
+
+        return [];
+    }
+
+    private function hasInternalComment(ClassMethod $node): bool
+    {
+        if ($node->getDocComment() === null) {
+            return false;
+        }
+
+        $text = $node->getDocComment()->getText();
+
+        return \str_contains($text, '@internal');
+    }
+
+    private function hasDeprecatedComment(ClassMethod $node): bool
+    {
+        return \str_contains($node->getDocComment()?->getText() ?? '', '@deprecated');
+    }
+
+    private function isService(Scope $scope): bool
+    {
+        $class = $scope->getClassReflection();
+        if ($class === null) {
+            return false;
+        }
+
+        $service = $this->serviceMap->getService($class->getName());
+
+        return $service !== null;
+    }
+
+    private function isConstructor(ClassMethod $node): bool
+    {
+        return (string) $node->name === '__construct';
+    }
+
+    private function isEvent(Scope $scope): bool
+    {
+        $class = $scope->getClassReflection();
+        if ($class === null) {
+            return false;
+        }
+
+        return $class->is(Event::class);
+    }
+}

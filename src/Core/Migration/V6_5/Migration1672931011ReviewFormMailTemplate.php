@@ -1,0 +1,130 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Migration\V6_5;
+
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Content\MailTemplate\MailTemplateTypes;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Migration\MigrationStep;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Migration\Traits\ImportTranslationsTrait;
+use Shopwell\Core\Migration\Traits\Translations;
+use Symfony\Component\Filesystem\Filesystem;
+
+/**
+ * @internal
+ */
+#[Package('after-sales')]
+class Migration1672931011ReviewFormMailTemplate extends MigrationStep
+{
+    use ImportTranslationsTrait;
+
+    private const LOCALE_EN_GB = 'en-GB';
+    private const LOCALE_DE_DE = 'de-DE';
+
+    public function getCreationTimestamp(): int
+    {
+        return 1672931011;
+    }
+
+    public function update(Connection $connection): void
+    {
+        $technicalName = MailTemplateTypes::MAILTYPE_REVIEW_FORM;
+        $typeId = Uuid::randomBytes();
+        $templateId = Uuid::randomBytes();
+
+        $existingTypeId = $this->getExistingMailTemplateTypeId($technicalName, $connection);
+        if ($existingTypeId !== null) {
+            $typeId = $existingTypeId;
+        } else {
+            $connection->insert(
+                'mail_template_type',
+                [
+                    'id' => $typeId,
+                    'technical_name' => $technicalName,
+                    'available_entities' => json_encode(['salesChannel' => 'sales_channel']),
+                    'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+                ]
+            );
+
+            $translations = new Translations(
+                [
+                    'mail_template_type_id' => $typeId,
+                    'name' => 'Produktbewertung',
+                ],
+                [
+                    'mail_template_type_id' => $typeId,
+                    'name' => 'Product review',
+                ]
+            );
+
+            $this->importTranslation('mail_template_type_translation', $translations, $connection);
+        }
+
+        $connection->insert(
+            'mail_template',
+            [
+                'id' => $templateId,
+                'mail_template_type_id' => $typeId,
+                'system_default' => 1,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $translations = new Translations(
+            [
+                'mail_template_id' => $templateId,
+                'sender_name' => '{{ salesChannel.name }}',
+                'subject' => 'Neue Produktbewertung',
+                'content_html' => $this->getMailTemplateContent(self::LOCALE_DE_DE, true),
+                'content_plain' => $this->getMailTemplateContent(self::LOCALE_DE_DE, false),
+            ],
+            [
+                'mail_template_id' => $templateId,
+                'sender_name' => '{{ salesChannel.name }}',
+                'subject' => 'New product review',
+                'content_html' => $this->getMailTemplateContent(self::LOCALE_EN_GB, true),
+                'content_plain' => $this->getMailTemplateContent(self::LOCALE_EN_GB, false),
+            ],
+        );
+
+        $this->importTranslation('mail_template_translation', $translations, $connection);
+    }
+
+    private function getMailTemplateContent(string $locale, bool $html): string
+    {
+        $filesystem = new Filesystem();
+
+        $enHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/review_form/en-html.html.twig');
+        $enPlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/review_form/en-plain.html.twig');
+        $deHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/review_form/de-html.html.twig');
+        $dePlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/review_form/de-plain.html.twig');
+
+        $templateContentMapping = [
+            self::LOCALE_EN_GB => [
+                'html' => $enHtml,
+                'plain' => $enPlain,
+            ],
+            self::LOCALE_DE_DE => [
+                'html' => $deHtml,
+                'plain' => $dePlain,
+            ],
+        ];
+
+        return $templateContentMapping[$locale][$html ? 'html' : 'plain'];
+    }
+
+    private function getExistingMailTemplateTypeId(string $technicalName, Connection $connection): ?string
+    {
+        $result = $connection->createQueryBuilder()
+            ->select('id')
+            ->from('mail_template_type')
+            ->where('technical_name = :technicalName')
+            ->setParameter('technicalName', $technicalName)
+            ->executeQuery()
+            ->fetchOne();
+
+        return $result ?: null;
+    }
+}

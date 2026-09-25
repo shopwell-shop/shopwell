@@ -1,0 +1,175 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Adapter\Cache\ReverseProxy;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Adapter\Cache\CacheStateSubscriber;
+use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\Adapter\Cache\Http\CacheStore;
+use Shopwell\Core\Framework\Adapter\Cache\Http\HttpCacheKeyGenerator;
+use Shopwell\Core\Framework\Adapter\Cache\InvalidateCacheEvent;
+use Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\AbstractReverseProxyGateway;
+use Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\ReverseProxyCache;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
+use Shopwell\Storefront\Framework\Routing\RequestTransformer;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(ReverseProxyCache::class)]
+class ReverseProxyCacheTest extends TestCase
+{
+    public function testFlushIsCalledInDestruct(): void
+    {
+        $gateway = $this->createMock(AbstractReverseProxyGateway::class);
+
+        $gateway->expects($this->once())->method('flush');
+
+        $cache = new ReverseProxyCache(
+            $gateway,
+            [],
+            new CacheTagCollector(
+                static::createStub(RequestStack::class),
+                static::createStub(EventDispatcherInterface::class),
+            )
+        );
+
+        // this is the only way to call the destructor
+        unset($cache);
+    }
+
+    public function testTagsFromResponseGetsMergedAndRemoved(): void
+    {
+        $gateway = $this->createMock(AbstractReverseProxyGateway::class);
+
+        $gateway
+            ->expects($this->once())
+            ->method('tag')
+            ->with(['foo']);
+
+        $cache = new ReverseProxyCache(
+            $gateway,
+            [],
+            new CacheTagCollector(
+                static::createStub(RequestStack::class),
+                static::createStub(EventDispatcherInterface::class),
+            )
+        );
+
+        $response = new Response();
+        $response->headers->set(CacheStore::TAG_HEADER, '["foo"]');
+
+        $request = new Request();
+        $request->attributes->set(RequestTransformer::ORIGINAL_REQUEST_URI, 'test');
+        $cache->write($request, $response);
+        static::assertFalse($response->headers->has(CacheStore::TAG_HEADER));
+    }
+
+    /**
+     * The store is only used to track the cache tags and not to cache actual
+     */
+    public function testLookup(): void
+    {
+        $store = new ReverseProxyCache(
+            static::createStub(AbstractReverseProxyGateway::class),
+            [],
+            new CacheTagCollector(
+                static::createStub(RequestStack::class),
+                static::createStub(EventDispatcherInterface::class),
+            )
+        );
+
+        static::assertNull($store->lookup(new Request()));
+        static::assertFalse($store->isLocked(new Request()));
+        static::assertTrue($store->lock(new Request()));
+        static::assertTrue($store->unlock(new Request()));
+        $store->cleanup();
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - can be deleted as cache states are removed
+     */
+    #[DisabledFeatures(['v6.8.0.0', 'PERFORMANCE_TWEAKS', 'CACHE_REWORK'])]
+    public function testWriteAddsGlobalStates(): void
+    {
+        $store = new ReverseProxyCache(
+            static::createStub(AbstractReverseProxyGateway::class),
+            [CacheStateSubscriber::STATE_LOGGED_IN],
+            new CacheTagCollector(
+                static::createStub(RequestStack::class),
+                static::createStub(EventDispatcherInterface::class),
+            )
+        );
+
+        $request = new Request();
+        $request->attributes->set(RequestTransformer::ORIGINAL_REQUEST_URI, '/foo');
+        $response = new Response();
+        $store->write($request, $response);
+
+        static::assertTrue($response->headers->has(HttpCacheKeyGenerator::INVALIDATION_STATES_HEADER));
+        static::assertSame($response->headers->get(HttpCacheKeyGenerator::INVALIDATION_STATES_HEADER), CacheStateSubscriber::STATE_LOGGED_IN);
+    }
+
+    public function testPurge(): void
+    {
+        $gateway = $this->createMock(AbstractReverseProxyGateway::class);
+        $gateway->expects($this->once())->method('ban')->with(['/foo']);
+        $store = new ReverseProxyCache(
+            $gateway,
+            [],
+            new CacheTagCollector(
+                static::createStub(RequestStack::class),
+                static::createStub(EventDispatcherInterface::class),
+            )
+        );
+
+        $store->purge('/foo');
+    }
+
+    public function testInvalidateWithoutOriginalUrl(): void
+    {
+        $gateway = $this->createMock(AbstractReverseProxyGateway::class);
+        $gateway->expects($this->never())->method('ban');
+        $store = new ReverseProxyCache(
+            $gateway,
+            [],
+            new CacheTagCollector(
+                static::createStub(RequestStack::class),
+                static::createStub(EventDispatcherInterface::class),
+            )
+        );
+        $store->invalidate(new Request());
+    }
+
+    public function testTaggingOfRequest(): void
+    {
+        $gateway = $this->createMock(AbstractReverseProxyGateway::class);
+        $gateway->expects($this->once())->method('tag')->with(['product-1', 'category-1'], '/');
+
+        $collector = $this->createMock(CacheTagCollector::class);
+        $collector->expects($this->once())->method('get')->willReturn(['product-1', 'category-1']);
+
+        $store = new ReverseProxyCache($gateway, [], $collector);
+
+        $request = new Request();
+        $store->write($request, new Response());
+    }
+
+    public function testInvoke(): void
+    {
+        $gateway = $this->createMock(AbstractReverseProxyGateway::class);
+        $gateway->expects($this->once())->method('invalidate')->with(['foo']);
+        $store = new ReverseProxyCache($gateway, [], new CacheTagCollector(
+            static::createStub(RequestStack::class),
+            static::createStub(EventDispatcherInterface::class)
+        ));
+        $store(new InvalidateCacheEvent(['foo']));
+    }
+}

@@ -1,0 +1,66 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Promotion\Aggregate\PromotionSetGroup;
+
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionSetGroupRule\PromotionSetGroupRuleDefinition;
+use Shopwell\Core\Checkout\Promotion\PromotionDefinition;
+use Shopwell\Core\Content\Rule\RuleDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FloatField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('checkout')]
+class PromotionSetGroupDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'promotion_setgroup';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function getEntityClass(): string
+    {
+        return PromotionSetGroupEntity::class;
+    }
+
+    public function getCollectionClass(): string
+    {
+        return PromotionSetGroupCollection::class;
+    }
+
+    public function since(): ?string
+    {
+        return '6.0.0.0';
+    }
+
+    protected function getParentDefinitionClass(): ?string
+    {
+        return PromotionDefinition::class;
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required())->setDescription('Unique identity of promotion set group.'),
+            (new FkField('promotion_id', 'promotionId', PromotionDefinition::class, 'id'))->addFlags(new Required())->setDescription('Unique identity of promotion.'),
+            (new StringField('packager_key', 'packagerKey'))->addFlags(new Required())->setDescription('Internal field.'),
+            (new StringField('sorter_key', 'sorterKey', 32))->addFlags(new Required())->setDescription('Internal field.'),
+            (new FloatField('value', 'value'))->addFlags(new Required())->setDescription('To filter by PromotionSetgroup value.'),
+            new ManyToOneAssociationField('promotion', 'promotion_id', PromotionDefinition::class, 'id'),
+            (new ManyToManyAssociationField('setGroupRules', RuleDefinition::class, PromotionSetGroupRuleDefinition::class, 'setgroup_id', 'rule_id'))->addFlags(new CascadeDelete()),
+        ]);
+    }
+}

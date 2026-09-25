@@ -1,0 +1,447 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\Translation;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Adapter\Translation\Translator;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Util\StatementHelper;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\SalesChannelRequest;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\System\Snippet\Files\SnippetFileCollection;
+use Shopwell\Core\System\Snippet\SnippetCollection;
+use Shopwell\Core\System\Snippet\SnippetDefinition;
+use Shopwell\Core\Test\AppSystemTestBehaviour;
+use Shopwell\Core\Test\TestDefaults;
+use Shopwell\Storefront\Theme\DatabaseSalesChannelThemeLoader;
+use Shopwell\Storefront\Theme\ThemeService;
+use Shopwell\Tests\Integration\Core\Framework\Translation\Fixtures\UnitTest_SnippetFile;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Translation\MessageCatalogueInterface;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class TranslatorTest extends TestCase
+{
+    use AppSystemTestBehaviour;
+    use IntegrationTestBehaviour;
+
+    private Connection $connection;
+
+    private Translator $translator;
+
+    /**
+     * @var EntityRepository<SnippetCollection>
+     */
+    private EntityRepository $snippetRepository;
+
+    protected function setUp(): void
+    {
+        $this->connection = static::getContainer()->get(Connection::class);
+        $this->translator = static::getContainer()->get(Translator::class);
+        $this->snippetRepository = static::getContainer()->get('snippet.repository');
+
+        $this->translator->reset();
+        $this->translator->warmUp('');
+    }
+
+    public function testPassthrough(): void
+    {
+        $snippetFile = new UnitTest_SnippetFile();
+        static::getContainer()->get(SnippetFileCollection::class)->add($snippetFile);
+
+        $stack = static::getContainer()->get(RequestStack::class);
+        $prop = new \ReflectionProperty(RequestStack::class, 'requests');
+        $prop->setValue($stack, []);
+
+        // fake request
+        $request = new Request();
+        $request->attributes->set(SalesChannelRequest::ATTRIBUTE_DOMAIN_SNIPPET_SET_ID, $this->getSnippetSetIdForLocale('en-GB'));
+        $request->attributes->set(SalesChannelRequest::ATTRIBUTE_DOMAIN_LOCALE, 'en-GB');
+
+        $stack->push($request);
+        $result = $this->translator->getCatalogue('en-GB')->get('frontend.note.item.NoteLinkZoom');
+        $prop->setValue($stack, []);
+
+        static::assertSame(
+            'Enlarge',
+            $result
+        );
+    }
+
+    public function testSimpleOverwrite(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $snippet = [
+            'translationKey' => 'new.unit.test.key',
+            'value' => 'Realisiert mit Unit test',
+            'setId' => $this->getSnippetSetIdForLocale('en-GB'),
+            'author' => 'Shopwell',
+        ];
+        $this->snippetRepository->create([$snippet], $context);
+
+        // fake request
+        $request = new Request();
+
+        $request->attributes->set(SalesChannelRequest::ATTRIBUTE_DOMAIN_SNIPPET_SET_ID, $this->getSnippetSetIdForLocale('en-GB'));
+        $request->attributes->set(SalesChannelRequest::ATTRIBUTE_DOMAIN_LOCALE, 'en-GB');
+
+        static::getContainer()->get(RequestStack::class)->push($request);
+
+        // get overwritten string
+        static::assertSame(
+            $snippet['value'],
+            $this->translator->getCatalogue('en-GB')->get('new.unit.test.key')
+        );
+        static::assertSame(
+            $request,
+            static::getContainer()->get(RequestStack::class)->pop()
+        );
+    }
+
+    public function testSymfonyDefaultTranslationFallback(): void
+    {
+        $this->translator->reset();
+        $catalogue = $this->translator->getCatalogue('en');
+        static::assertInstanceOf(MessageCatalogueInterface::class, $catalogue->getFallbackCatalogue());
+        static::assertSame('en_GB', $catalogue->getFallbackCatalogue()->getLocale());
+
+        $this->translator->reset();
+        $catalogue = $this->translator->getCatalogue('en_GB');
+        static::assertInstanceOf(MessageCatalogueInterface::class, $catalogue->getFallbackCatalogue());
+        static::assertSame('en_001', $catalogue->getFallbackCatalogue()->getLocale());
+
+        $this->translator->reset();
+        $catalogue = $this->translator->getCatalogue('en-GB');
+        $fallback = $catalogue->getFallbackCatalogue();
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback);
+        static::assertSame('en', $fallback->getLocale());
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback->getFallbackCatalogue());
+        static::assertSame('en_GB', $fallback->getFallbackCatalogue()->getLocale());
+
+        $this->translator->reset();
+        $catalogue = $this->translator->getCatalogue('de');
+        $fallback = $catalogue->getFallbackCatalogue();
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback);
+        static::assertSame('en_GB', $fallback->getLocale());
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback->getFallbackCatalogue());
+        static::assertSame('en', $fallback->getFallbackCatalogue()->getLocale());
+
+        $this->translator->reset();
+        $catalogue = $this->translator->getCatalogue('de_DE');
+        $fallback = $catalogue->getFallbackCatalogue();
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback);
+        static::assertSame('de', $fallback->getLocale());
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback->getFallbackCatalogue());
+        static::assertSame('en_GB', $fallback->getFallbackCatalogue()->getLocale());
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback->getFallbackCatalogue()->getFallbackCatalogue());
+        static::assertSame('en', $fallback->getFallbackCatalogue()->getFallbackCatalogue()->getLocale());
+
+        $this->translator->reset();
+        $catalogue = $this->translator->getCatalogue('de-DE');
+        $fallback = $catalogue->getFallbackCatalogue();
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback);
+        static::assertSame('de', $fallback->getLocale());
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback->getFallbackCatalogue());
+        static::assertSame('en_GB', $fallback->getFallbackCatalogue()->getLocale());
+
+        $this->translator->reset();
+    }
+
+    public function testSymfonyDefaultTranslationFallbackWithCustomShopwellDefaultLanguage(): void
+    {
+        $this->switchDefaultLanguage();
+
+        $catalogue = $this->translator->getCatalogue('en');
+        static::assertInstanceOf(MessageCatalogueInterface::class, $catalogue->getFallbackCatalogue());
+        static::assertSame('en_GB', $catalogue->getFallbackCatalogue()->getLocale());
+
+        $this->translator->reset();
+        $catalogue = $this->translator->getCatalogue('en_GB');
+        static::assertInstanceOf(MessageCatalogueInterface::class, $catalogue->getFallbackCatalogue());
+        static::assertSame('en_001', $catalogue->getFallbackCatalogue()->getLocale());
+
+        $this->translator->reset();
+        $catalogue = $this->translator->getCatalogue('en-GB');
+        $fallback = $catalogue->getFallbackCatalogue();
+
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback);
+        static::assertSame('en', $fallback->getLocale());
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback->getFallbackCatalogue());
+        static::assertSame('en_GB', $fallback->getFallbackCatalogue()->getLocale());
+
+        $this->translator->reset();
+        $catalogue = $this->translator->getCatalogue('de');
+        $fallback = $catalogue->getFallbackCatalogue();
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback);
+        static::assertSame('en_GB', $fallback->getLocale());
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback->getFallbackCatalogue());
+        static::assertSame('en', $fallback->getFallbackCatalogue()->getLocale());
+
+        $this->translator->reset();
+        $catalogue = $this->translator->getCatalogue('de_DE');
+        $fallback = $catalogue->getFallbackCatalogue();
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback);
+        static::assertSame('de', $fallback->getLocale());
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback->getFallbackCatalogue());
+        static::assertSame('en_GB', $fallback->getFallbackCatalogue()->getLocale());
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback->getFallbackCatalogue()->getFallbackCatalogue());
+        static::assertSame('en', $fallback->getFallbackCatalogue()->getFallbackCatalogue()->getLocale());
+
+        $this->translator->reset();
+        $catalogue = $this->translator->getCatalogue('de-DE');
+        $fallback = $catalogue->getFallbackCatalogue();
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback);
+        static::assertSame('de', $fallback->getLocale());
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback->getFallbackCatalogue());
+        static::assertSame('en_GB', $fallback->getFallbackCatalogue()->getLocale());
+        static::assertInstanceOf(MessageCatalogueInterface::class, $fallback->getFallbackCatalogue()->getFallbackCatalogue());
+        static::assertSame('en', $fallback->getFallbackCatalogue()->getFallbackCatalogue()->getLocale());
+
+        $this->translator->reset();
+    }
+
+    public function testTranslatorCustomLocaleAndFallback(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $snippets = [
+            [
+                'translationKey' => 'new.unit.test.key',
+                'value' => 'Realized with Unit test',
+                'setId' => $this->getSnippetSetIdForLocale('en-GB'),
+                'author' => 'Shopwell',
+            ],
+            [
+                'translationKey' => 'new.unit.test.key',
+                'value' => 'Realisiert mit Unit test',
+                'setId' => $this->getSnippetSetIdForLocale('de-DE'),
+                'author' => 'Shopwell',
+            ],
+        ];
+        $this->snippetRepository->create($snippets, $context);
+
+        // fake request
+        $request = new Request();
+
+        $request->attributes->set(SalesChannelRequest::ATTRIBUTE_DOMAIN_SNIPPET_SET_ID, $this->getSnippetSetIdForLocale('en-GB'));
+        $request->attributes->set(SalesChannelRequest::ATTRIBUTE_DOMAIN_LOCALE, 'en-GB');
+
+        static::getContainer()->get(RequestStack::class)->push($request);
+
+        // get overwritten string
+        static::assertSame(
+            $snippets[0]['value'],
+            $this->translator->trans('new.unit.test.key', [], null, 'en-GB')
+        );
+        static::assertSame(
+            $snippets[1]['value'],
+            $this->translator->trans('new.unit.test.key', [], null, 'de-DE')
+        );
+        static::assertSame(
+            $snippets[0]['value'],
+            $this->translator->trans('new.unit.test.key', [], null, 'en')
+        );
+        static::assertSame(
+            $snippets[1]['value'],
+            $this->translator->trans('new.unit.test.key', [], null, 'de-DE')
+        );
+        static::assertSame(
+            $snippets[0]['value'],
+            $this->translator->trans('new.unit.test.key')
+        );
+
+        $this->translator->setLocale('de-DE');
+        static::assertSame(
+            $snippets[1]['value'],
+            $this->translator->trans('new.unit.test.key')
+        );
+
+        static::assertSame(
+            $request,
+            static::getContainer()->get(RequestStack::class)->pop()
+        );
+    }
+
+    public function testDeleteSnippet(): void
+    {
+        $snippetRepository = static::getContainer()->get('snippet.repository');
+        $snippet = [
+            'id' => Uuid::randomHex(),
+            'translationKey' => 'foo',
+            'value' => 'bar',
+            'setId' => $this->getSnippetSetIdForLocale('en-GB'),
+            'author' => 'Shopwell',
+        ];
+
+        $created = $snippetRepository->create([$snippet], Context::createDefaultContext())->getEventByEntityName(SnippetDefinition::ENTITY_NAME);
+        static::assertInstanceOf(EntityWrittenEvent::class, $created);
+        static::assertSame([$snippet['id']], $created->getIds());
+
+        $deleted = $snippetRepository->delete([['id' => $snippet['id']]], Context::createDefaultContext())->getEventByEntityName(SnippetDefinition::ENTITY_NAME);
+        static::assertInstanceOf(EntityWrittenEvent::class, $deleted);
+        static::assertSame([$snippet['id']], $deleted->getIds());
+    }
+
+    public function testItReplacesReservedCharacter(): void
+    {
+        static::assertSame('translator.<_r_strong>', Translator::buildName('</strong>'));
+    }
+
+    public function testThemeSnippetsGetsMergedWithOverride(): void
+    {
+        if (!static::getContainer()->has(ThemeService::class) || !static::getContainer()->has('theme.repository')) {
+            static::markTestSkipped('This test needs storefront to be installed.');
+        }
+
+        $salesChannelContext = static::getContainer()->get(SalesChannelContextFactory::class)->create(
+            Uuid::randomHex(),
+            TestDefaults::SALES_CHANNEL
+        );
+
+        $translator = static::getContainer()->get(Translator::class);
+        $themeService = static::getContainer()->get(ThemeService::class);
+        $themeRepo = static::getContainer()->get('theme.repository');
+        $loader = static::getContainer()->get(DatabaseSalesChannelThemeLoader::class);
+
+        // Install the app
+        $this->loadAppsFromDir(__DIR__ . '/Fixtures/theme');
+        $this->reloadAppSnippets();
+
+        // Ensure the default Storefront theme is active
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('technicalName', 'Storefront'));
+        $defaultThemeId = $themeRepo->searchIds($criteria, $salesChannelContext->getContext())->firstId();
+        static::assertNotNull($defaultThemeId, 'Default theme not found');
+        $themeService->assignTheme($defaultThemeId, $salesChannelContext->getSalesChannelId(), $salesChannelContext->getContext(), true);
+
+        // Inject the sales channel and assert that the original snippet is used
+        $translator->injectSettings(
+            $salesChannelContext->getSalesChannelId(),
+            $salesChannelContext->getLanguageId(),
+            'en-GB',
+            $salesChannelContext->getContext()
+        );
+
+        static::assertSame('Service date equivalent to invoice date', $translator->trans('document.serviceDateNotice'));
+        $translator->reset();
+        $loader->reset();
+
+        // Assign the SwagTheme and assert that the snippet is overwritten
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('technicalName', 'SwagTheme'));
+        $themeId = $themeRepo->searchIds($criteria, $salesChannelContext->getContext())->firstId();
+
+        static::assertNotNull($themeId);
+
+        $themeService->assignTheme($themeId, $salesChannelContext->getSalesChannelId(), $salesChannelContext->getContext(), true);
+
+        $translator->injectSettings(
+            $salesChannelContext->getSalesChannelId(),
+            $salesChannelContext->getLanguageId(),
+            'en-GB',
+            $salesChannelContext->getContext()
+        );
+
+        static::assertSame('Swag Theme serviceDateNotice EN', $translator->trans('document.serviceDateNotice'));
+
+        $translator->reset();
+        $loader->reset();
+
+        // In reset, we ignore all theme snippets and use the default ones
+        static::assertSame('Service date equivalent to invoice date', $translator->trans('document.serviceDateNotice'));
+
+        // Assign the Storefront theme again and assert that the original snippet is used again
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('technicalName', 'Storefront'));
+        $themeId = $themeRepo->searchIds($criteria, $salesChannelContext->getContext())->firstId();
+        static::assertNotNull($themeId);
+
+        $themeService->assignTheme($themeId, $salesChannelContext->getSalesChannelId(), $salesChannelContext->getContext(), true);
+
+        $translator->reset();
+        $loader->reset();
+
+        $translator->injectSettings(
+            $salesChannelContext->getSalesChannelId(),
+            $salesChannelContext->getLanguageId(),
+            'en-GB',
+            $salesChannelContext->getContext()
+        );
+
+        static::assertSame('Service date equivalent to invoice date', $translator->trans('document.serviceDateNotice'));
+    }
+
+    #[DataProvider('pluralTranslationProvider')]
+    public function testPluralRules(string $expected, string $id, int $number, string $locale): void
+    {
+        static::assertSame($expected, $this->translator->trans($id, ['%count%' => (string) $number], null, $locale));
+    }
+
+    /**
+     * @return iterable<string, array{string, string, int, string}>
+     */
+    public static function pluralTranslationProvider(): iterable
+    {
+        yield 'English hyphenated locale uses plural form for zero apples' => ['There are 0 apples', 'There is one apple|There are %count% apples', 0, 'en-GB'];
+        yield 'English hyphenated locale uses singular form for one apple' => ['There is one apple', 'There is one apple|There are %count% apples', 1, 'en-GB'];
+        yield 'English hyphenated locale uses plural form for two apples' => ['There are 2 apples', 'There is one apple|There are %count% apples', 2, 'en-GB'];
+        yield 'English hyphenated locale uses plural form for twenty one apples' => ['There are 21 apples', 'There is one apple|There are %count% apples', 21, 'en-GB'];
+        yield 'English underscored locale uses plural form for zero apples' => ['There are 0 apples', 'There is one apple|There are %count% apples', 0, 'en_GB'];
+        yield 'English underscored locale uses singular form for one apple' => ['There is one apple', 'There is one apple|There are %count% apples', 1, 'en_GB'];
+        yield 'English underscored locale uses plural form for two apples' => ['There are 2 apples', 'There is one apple|There are %count% apples', 2, 'en_GB'];
+        yield 'English underscored locale uses plural form for twenty one apples' => ['There are 21 apples', 'There is one apple|There are %count% apples', 21, 'en_GB'];
+        yield 'Ukrainian hyphenated locale uses many form for zero apples' => ['0 яблук', '%count% яблуко|%count% яблука|%count% яблук', 0, 'uk-UA'];
+        yield 'Ukrainian hyphenated locale uses singular form for one apple' => ['1 яблуко', '%count% яблуко|%count% яблука|%count% яблук', 1, 'uk-UA'];
+        yield 'Ukrainian hyphenated locale uses few form for two apples' => ['2 яблука', '%count% яблуко|%count% яблука|%count% яблук', 2, 'uk-UA'];
+        yield 'Ukrainian hyphenated locale uses many form for five apples' => ['5 яблук', '%count% яблуко|%count% яблука|%count% яблук', 5, 'uk-UA'];
+        yield 'Ukrainian hyphenated locale uses singular form for twenty one apples' => ['21 яблуко', '%count% яблуко|%count% яблука|%count% яблук', 21, 'uk-UA'];
+        yield 'Ukrainian underscored locale uses many form for zero apples' => ['0 яблук', '%count% яблуко|%count% яблука|%count% яблук', 0, 'uk_UA'];
+        yield 'Ukrainian underscored locale uses singular form for one apple' => ['1 яблуко', '%count% яблуко|%count% яблука|%count% яблук', 1, 'uk_UA'];
+        yield 'Ukrainian underscored locale uses few form for two apples' => ['2 яблука', '%count% яблуко|%count% яблука|%count% яблук', 2, 'uk_UA'];
+        yield 'Ukrainian underscored locale uses many form for five apples' => ['5 яблук', '%count% яблуко|%count% яблука|%count% яблук', 5, 'uk_UA'];
+        yield 'Ukrainian underscored locale uses singular form for twenty one apples' => ['21 яблуко', '%count% яблуко|%count% яблука|%count% яблук', 21, 'uk_UA'];
+    }
+
+    private function switchDefaultLanguage(): void
+    {
+        $currentDeId = $this->connection->fetchOne(
+            'SELECT language.id
+             FROM language
+             INNER JOIN locale ON translation_code_id = locale.id
+             WHERE locale.code = "de-DE"'
+        );
+
+        $stmt = $this->connection->prepare(
+            'UPDATE language
+             SET id = :newId
+             WHERE id = :oldId'
+        );
+
+        // assign new uuid to old DEFAULT
+        StatementHelper::executeStatement($stmt, [
+            'newId' => Uuid::randomBytes(),
+            'oldId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+        ]);
+
+        // change id to DEFAULT
+        StatementHelper::executeStatement($stmt, [
+            'newId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+            'oldId' => $currentDeId,
+        ]);
+    }
+}

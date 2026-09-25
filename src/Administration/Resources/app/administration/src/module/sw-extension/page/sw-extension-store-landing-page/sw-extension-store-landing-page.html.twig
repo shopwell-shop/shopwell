@@ -1,0 +1,69 @@
+{% block sw_extension_store_landing_page %}
+<component
+    :is="insideModal ? 'div' : 'sw-meteor-page'"
+    v-bind="insideModal ? {} : { fullWidth: true, hideSmartBar: true }"
+>
+    <div class="sw-extension-store-landing-page">
+        <div class="sw-extension-store-landing-page__wrapper">
+            <div
+                v-if="isLoading"
+                class="sw-extension-store-landing-page__wrapper-loading"
+            >
+                <sw-loader />
+
+                <p>
+                    {{ $t('sw-extension-store.landing-page.enablingShopwellStore') }}
+                    <br>
+                    {{ $t('sw-extension-store.landing-page.takeMinutes') }}
+                </p>
+            </div>
+
+            <mt-empty-state
+                v-else-if="activationStatus === 'error'"
+                class="sw-extension-store-landing-page__wrapper-activated"
+                centered
+                icon="regular-times-circle"
+                :headline="error && error.title || $t('sw-extension-store.landing-page.activationErrorTitle')"
+                :description="error && error.detail || $t('sw-extension-store.landing-page.activationErrorDescription')"
+            >
+                <template #button>
+                    <mt-button
+                        variant="primary"
+                        @click="activateStore"
+                    >
+                        {{ $t('sw-extension-store.landing-page.retryButton') }}
+                    </mt-button>
+                </template>
+            </mt-empty-state>
+
+            <mt-empty-state
+                v-else-if="activationStatus === 'success'"
+                class="sw-extension-store-landing-page__wrapper-activated"
+                centered
+                icon="regular-check-circle"
+                :headline="$t('sw-extension-store.landing-page.activationSuccessTitle')"
+                :description="$t('sw-extension-store.landing-page.activationSuccessDescription')"
+            />
+
+            <mt-empty-state
+                v-else
+                class="sw-extension-store-landing-page__wrapper-content"
+                centered
+                icon="regular-shopware"
+                :headline="activationHeadline"
+                :description="$t('sw-extension-store.landing-page.activationDescriptionTitleDescription')"
+            >
+                <template #button>
+                    <mt-button
+                        class="sw-extension-store-landing-page__activate_button"
+                        variant="primary"
+                        @click="activateStore"
+                    >
+                        {{ $t('sw-extension-store.landing-page.activate') }}
+                    </mt-button>
+                </template>
+            </mt-empty-state>
+        </div>
+    </div>
+</component>
+{% endblock %}

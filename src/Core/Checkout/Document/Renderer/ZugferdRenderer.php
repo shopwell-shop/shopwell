@@ -1,0 +1,161 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Document\Renderer;
+
+use Doctrine\DBAL\Connection;
+use horstoeko\zugferd\codelists\ZugferdInvoiceType;
+use Psr\Clock\ClockInterface;
+use Shopwell\Core\Checkout\Document\DocumentException;
+use Shopwell\Core\Checkout\Document\FileGenerator\FileTypes;
+use Shopwell\Core\Checkout\Document\Service\DocumentConfigLoader;
+use Shopwell\Core\Checkout\Document\Struct\DocumentGenerateOperation;
+use Shopwell\Core\Checkout\Document\Zugferd\ZugferdBuilder;
+use Shopwell\Core\Checkout\Document\Zugferd\ZugferdInvoiceOrdersEvent;
+use Shopwell\Core\Checkout\DocumentV2\Provider\AbstractDocumentDataProvider;
+use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Deprecation\BCChange\ExperimentalReplacement;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+#[Package('after-sales')]
+#[ExperimentalReplacement(
+    version: 'v6.9.0',
+    feature: 'DOCUMENT_GENERATION_REWORK',
+    replacement: AbstractDocumentDataProvider::class,
+    description: 'Register a data provider for DocumentType::INVOICE. Enrich the order criteria via enrichOrderCriteria() and the render data via provideRenderingData().',
+)]
+class ZugferdRenderer extends AbstractDocumentRenderer
+{
+    public const TYPE = 'zugferd_invoice';
+
+    public const FILE_EXTENSION = FileTypes::XML;
+
+    public const FILE_CONTENT_TYPE = FileTypes::XML_CONTENT_TYPE;
+
+    /**
+     * @internal
+     *
+     * @param EntityRepository<OrderCollection> $orderRepository
+     */
+    public function __construct(
+        protected EntityRepository $orderRepository,
+        protected Connection $connection,
+        protected ZugferdBuilder $documentBuilder,
+        protected EventDispatcherInterface $eventDispatcher,
+        protected DocumentConfigLoader $documentConfigLoader,
+        protected NumberRangeValueGeneratorInterface $numberRangeValueGenerator,
+        private readonly ClockInterface $clock,
+    ) {
+    }
+
+    public function supports(): string
+    {
+        return self::TYPE;
+    }
+
+    public function getDecorated(): AbstractDocumentRenderer
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    public function render(array $operations, Context $context, DocumentRendererConfig $rendererConfig): RendererResult
+    {
+        $result = new RendererResult();
+
+        $ids = \array_map(static fn (DocumentGenerateOperation $operation) => $operation->getOrderId(), $operations);
+        if ($ids === []) {
+            return $result;
+        }
+
+        $languageIdChain = $context->getLanguageIdChain();
+
+        $chunk = $this->getOrdersLanguageId(array_values($ids), $context->getVersionId(), $this->connection);
+        foreach ($chunk as ['language_id' => $languageId, 'ids' => $chunkIds]) {
+            $criteria = OrderDocumentCriteriaFactory::create(\explode(',', (string) $chunkIds), $rendererConfig->deepLinkCode);
+            $criteria->addAssociation('lineItems.product.manufacturer');
+
+            $context->assign([
+                'languageIdChain' => \array_values(\array_unique(\array_filter([$languageId, ...$languageIdChain]))),
+            ]);
+
+            $orders = $this->orderRepository->search($criteria, $context)->getEntities();
+
+            $this->eventDispatcher->dispatch(new ZugferdInvoiceOrdersEvent($orders, $context, $operations));
+
+            foreach ($orders as $order) {
+                if ($operations[$order->getId()] instanceof DocumentGenerateOperation) {
+                    $this->createDocument($result, $order, $operations[$order->getId()], $context);
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    protected function createDocument(RendererResult $renderResult, OrderEntity $order, DocumentGenerateOperation $operation, Context $context): void
+    {
+        $forceDocumentCreation = $operation->getConfig()['forceDocumentCreation'] ?? true;
+        if (!$forceDocumentCreation && $order->getDocuments()?->first()) {
+            return;
+        }
+
+        $config = clone $this->documentConfigLoader->load(InvoiceRenderer::TYPE, $order->getSalesChannelId(), $context);
+        $config->merge($operation->getConfig());
+        // So no A11y will be generated
+        $config->merge(['fileTypes' => [self::FILE_EXTENSION]]);
+
+        $number = $config->getDocumentNumber() ?: $this->getNumber($context, $order, $operation);
+
+        $now = $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+
+        $config->merge([
+            'documentDate' => $operation->getConfig()['documentDate'] ?? $now,
+            'documentNumber' => $number,
+            'custom' => [
+                'invoiceNumber' => $number,
+            ],
+        ]);
+
+        // create version of order to ensure the document stays the same even if the order changes
+        $operation->setOrderVersionId($this->orderRepository->createVersion($order->getId(), $context, 'document'));
+
+        try {
+            $content = $this->documentBuilder->buildDocumentWithType(
+                $order,
+                $config,
+                $context,
+                ZugferdInvoiceType::INVOICE,
+            );
+
+            $renderResult->addSuccess(
+                $order->getId(),
+                new RenderedDocument(
+                    $number,
+                    $config->buildName(),
+                    self::FILE_EXTENSION,
+                    $config->jsonSerialize(),
+                    self::FILE_CONTENT_TYPE,
+                    $content
+                )
+            );
+        } catch (DocumentException $e) {
+            $renderResult->addError($order->getId(), $e);
+        }
+    }
+
+    private function getNumber(Context $context, OrderEntity $order, DocumentGenerateOperation $operation): string
+    {
+        return $this->numberRangeValueGenerator->getValue(
+            'document_' . InvoiceRenderer::TYPE,
+            $context,
+            $order->getSalesChannelId(),
+            $operation->isPreview()
+        );
+    }
+}

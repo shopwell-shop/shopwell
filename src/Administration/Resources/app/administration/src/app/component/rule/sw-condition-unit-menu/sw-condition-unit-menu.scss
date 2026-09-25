@@ -1,0 +1,69 @@
+.sw-condition-unit-menu__label {
+    align-self: center;
+    margin-right: var(--scale-size-2);
+    background-color: var(--color-interaction-secondary-default);
+    border: 1px solid var(--color-border-secondary-default);
+    padding: var(--scale-size-6) var(--scale-size-12);
+    font-size: var(--font-size-xs);
+    border-radius: var(--border-radius-button);
+    color: var(--color-text-primary-default);
+    display: flex;
+    align-items: center;
+}
+
+.sw-condition-unit-menu {
+    cursor: pointer;
+    transition: background-color 100ms ease-out;
+
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+        background-color: var(--color-interaction-secondary-hover);
+    }
+
+    &:disabled {
+        color: var(--color-text-primary-default);
+        cursor: initial;
+    }
+
+    &__menu {
+        background-color: var(--color-background-primary-default);
+        border: 1px solid var(--color-border-secondary-default);
+        border-radius: var(--border-radius-xs);
+        box-shadow: 0 3px 6px rgba(120, 138, 155, 25%);
+        padding: var(--scale-size-8);
+        width: var(--scale-size-224);
+    }
+
+    &__menu-item {
+        font-size: var(--font-size-xs);
+        padding: var(--scale-size-8) var(--scale-size-16);
+        border-radius: var(--border-radius-button);
+        outline: none;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background-color: var(--color-background-brand-default);
+            color: var(--color-text-brand-default);
+        }
+
+        &__shortcut {
+            margin-left: var(--scale-size-8);
+            color: var(--color-text-secondary-disabled);
+        }
+
+        &__label {
+            color: var(--color-text-primary-default);
+        }
+
+        &__selected-label {
+            color: var(--color-text-brand-default);
+            font-weight: var(--font-weight-medium);
+        }
+    }
+}
+
+.sw-condition-unit-menu__icon {
+    color: var(--color-text-primary-default);
+    margin-left: var(--scale-size-8);
+}

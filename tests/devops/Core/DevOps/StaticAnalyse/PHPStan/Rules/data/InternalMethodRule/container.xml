@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<container>
+    <services>
+        <service id="Shopwell\Core\DevOps\MyFakeNamespace\InternalService" class="Shopwell\Core\DevOps\MyFakeNamespace\InternalService"/>
+    </services>
+</container>

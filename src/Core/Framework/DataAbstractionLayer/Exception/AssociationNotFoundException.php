@@ -1,0 +1,28 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Exception;
+
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\ShopwellHttpException;
+
+/**
+ * @deprecated tag:v6.8.0 - reason:remove-exception - Will be removed, use {DomainException}::associationNotFound() instead
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('framework')]
+class AssociationNotFoundException extends ShopwellHttpException
+{
+    public function __construct(string $field)
+    {
+        parent::__construct(
+            'Can not find association by name {{ association }}',
+            ['association' => $field]
+        );
+    }
+
+    public function getErrorCode(): string
+    {
+        return 'FRAMEWORK__ASSOCIATION_NOT_FOUND';
+    }
+}

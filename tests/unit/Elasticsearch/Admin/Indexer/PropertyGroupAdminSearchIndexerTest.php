@@ -1,0 +1,171 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Elasticsearch\Admin\Indexer;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Property\PropertyGroupDefinition;
+use Shopwell\Core\Content\Property\PropertyGroupEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Event\NestedEventCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Elasticsearch\Admin\Indexer\PropertyGroupAdminSearchIndexer;
+use Shopwell\Elasticsearch\Framework\ElasticsearchFieldBuilder;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+#[CoversClass(PropertyGroupAdminSearchIndexer::class)]
+class PropertyGroupAdminSearchIndexerTest extends TestCase
+{
+    private PropertyGroupAdminSearchIndexer $searchIndexer;
+
+    protected function setUp(): void
+    {
+        $this->searchIndexer = new PropertyGroupAdminSearchIndexer(
+            static::createStub(Connection::class),
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(ElasticsearchFieldBuilder::class),
+            100
+        );
+    }
+
+    public function testGetUpdatedIds(): void
+    {
+        $indexer = new PropertyGroupAdminSearchIndexer(
+            static::createStub(Connection::class),
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(ElasticsearchFieldBuilder::class),
+            100
+        );
+
+        $id = Uuid::randomHex();
+
+        $event = new EntityWrittenContainerEvent(
+            Context::createDefaultContext(),
+            new NestedEventCollection([
+                new EntityWrittenEvent('property_group_translation', [
+                    new EntityWriteResult(['propertyGroupId' => $id], ['name' => 'PG'], 'property_group_translation', EntityWriteResult::OPERATION_UPDATE),
+                ], Context::createDefaultContext()),
+            ]),
+            []
+        );
+
+        static::assertSame([$id], $indexer->getUpdatedIds($event));
+    }
+
+    public function testGetEntity(): void
+    {
+        static::assertSame(PropertyGroupDefinition::ENTITY_NAME, $this->searchIndexer->getEntity());
+    }
+
+    public function testGetName(): void
+    {
+        static::assertSame('property-group-listing', $this->searchIndexer->getName());
+    }
+
+    public function testGetDecoratedShouldThrowException(): void
+    {
+        static::expectException(DecorationPatternException::class);
+        $this->searchIndexer->getDecorated();
+    }
+
+    public function testGlobalData(): void
+    {
+        $context = Context::createDefaultContext();
+        $repository = static::createStub(EntityRepository::class);
+        $propertyGroup = new PropertyGroupEntity();
+        $propertyGroup->setUniqueIdentifier(Uuid::randomHex());
+        $repository->method('search')->willReturn(
+            new EntitySearchResult(
+                'property_group',
+                1,
+                new EntityCollection([$propertyGroup]),
+                null,
+                new Criteria(),
+                $context
+            )
+        );
+
+        $indexer = new PropertyGroupAdminSearchIndexer(
+            static::createStub(Connection::class),
+            static::createStub(IteratorFactory::class),
+            $repository,
+            static::createStub(ElasticsearchFieldBuilder::class),
+            100
+        );
+
+        $result = [
+            'total' => 1,
+            'hits' => [
+                ['id' => '809c1844f4734243b6aa04aba860cd45'],
+            ],
+        ];
+
+        $data = $indexer->globalData($result, $context);
+
+        static::assertSame($result['total'], $data['total']);
+    }
+
+    public function testFetching(): void
+    {
+        $connection = $this->getConnection();
+
+        $indexer = new PropertyGroupAdminSearchIndexer(
+            $connection,
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(ElasticsearchFieldBuilder::class),
+            100
+        );
+
+        $id = '809c1844f4734243b6aa04aba860cd45';
+        $documents = $indexer->fetch([$id]);
+
+        static::assertArrayHasKey($id, $documents);
+
+        /** @var array<string, mixed> $document */
+        $document = $documents[$id];
+
+        static::assertSame($id, $document['id']);
+        static::assertSame('property group 809c1844f4734243b6aa04aba860cd45', $document['text']);
+        static::assertTrue($document['filterable']);
+        static::assertIsArray($document['name']);
+    }
+
+    private function getConnection(): Connection
+    {
+        $connection = static::createStub(Connection::class);
+
+        $languageId = 'b7d2554b0ce847cd82f3ac9bd1c0dfca';
+        $connection->method('fetchAllAssociative')->willReturn(
+            [
+                [
+                    'id' => '809c1844f4734243b6aa04aba860cd45',
+                    'name' => 'Property group',
+                    'translatedNames' => json_encode([
+                        ['languageId' => $languageId, 'name' => 'Property group'],
+                    ]),
+                    'filterable' => 1,
+                    'createdAt' => '2024-01-01 00:00:00.000',
+                ],
+            ],
+        );
+
+        return $connection;
+    }
+}

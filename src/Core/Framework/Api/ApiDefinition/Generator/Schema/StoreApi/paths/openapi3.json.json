@@ -1,0 +1,48 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "\/_info\/openapi3.json": {
+            "get": {
+                "tags": [
+                    "System Info & Health Check"
+                ],
+                "summary": "Get OpenAPI Specification",
+                "description": "Get information about the store API in OpenAPI format.",
+                "operationId": "api-info",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Type of the api",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "jsonapi",
+                                "json"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/OpenApi3"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `type` query parameter is not a supported API type."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing. This endpoint can be opened up by setting `shopware.api.api_browser.auth_required` to `false`."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        }
+    }
+}

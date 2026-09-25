@@ -1,0 +1,144 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\UsageData\EntitySync;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Query\Expression\CompositeExpression;
+use Doctrine\DBAL\Query\QueryBuilder as DoctrineQueryBuilder;
+use Doctrine\DBAL\Result;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\QueryBuilder;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StorageAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\VersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+/**
+ * @internal
+ */
+#[Package('data-services')]
+class DispatchEntitiesQueryBuilder
+{
+    private readonly QueryBuilder $queryBuilder;
+
+    public function __construct(Connection $connection)
+    {
+        $this->queryBuilder = new QueryBuilder($connection);
+    }
+
+    public function getQueryBuilder(): DoctrineQueryBuilder
+    {
+        return $this->queryBuilder;
+    }
+
+    public function forEntity(string $entityName): self
+    {
+        $this->queryBuilder->setTitle("UsageData EntitySync - dispatch entities for '$entityName'");
+        $this->queryBuilder->from(EntityDefinitionQueryHelper::escape($entityName));
+
+        return $this;
+    }
+
+    public function withFields(FieldCollection $fields): self
+    {
+        foreach ($fields as $field) {
+            if (!$field instanceof StorageAware) {
+                continue;
+            }
+
+            $this->queryBuilder->addSelect(EntityDefinitionQueryHelper::escape($field->getStorageName()));
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param array<int, array<string, string>> $primaryKeys
+     */
+    public function withPrimaryKeys(array $primaryKeys): self
+    {
+        $primaryKeyConditions = null;
+
+        $pkCount = 0;
+        foreach ($primaryKeys as $primaryKey) {
+            $combinedKeyCondition = null;
+
+            foreach ($primaryKey as $column => $id) {
+                ++$pkCount;
+                $condition = \sprintf('%s = :pk_%s', EntityDefinitionQueryHelper::escape($column), (string) $pkCount);
+                $this->queryBuilder->setParameter(\sprintf('pk_%s', (string) $pkCount), Uuid::fromHexToBytes($id));
+
+                $combinedKeyCondition = $combinedKeyCondition === null
+                    ? CompositeExpression::and($condition)
+                    : $combinedKeyCondition->with($condition);
+            }
+
+            if ($combinedKeyCondition) {
+                $primaryKeyConditions = $primaryKeyConditions === null
+                    ? CompositeExpression::or($combinedKeyCondition)
+                    : $primaryKeyConditions->with($combinedKeyCondition);
+            }
+        }
+
+        if ($primaryKeyConditions !== null) {
+            $this->queryBuilder->andWhere($primaryKeyConditions);
+        }
+
+        return $this;
+    }
+
+    public function checkLiveVersion(EntityDefinition $definition): self
+    {
+        $hasVersionFields = false;
+
+        foreach ($definition->getFields() as $field) {
+            if ($field instanceof VersionField || $field instanceof ReferenceVersionField) {
+                $hasVersionFields = true;
+                $this->queryBuilder->andWhere(
+                    \sprintf('%s = :versionId', EntityDefinitionQueryHelper::escape($field->getStorageName())),
+                );
+            }
+        }
+
+        if ($hasVersionFields) {
+            $this->queryBuilder->setParameter('versionId', Uuid::fromHexToBytes(Defaults::LIVE_VERSION));
+        }
+
+        return $this;
+    }
+
+    public function withCollectUntilConstraint(DispatchEntityMessage $message, \DateTimeInterface $collectUntil): self
+    {
+        $escapedUpdatedAtColumnName = EntityDefinitionQueryHelper::escape('updated_at');
+
+        if ($message->operation === Operation::CREATE) {
+            $this->queryBuilder->andWhere(
+                CompositeExpression::or(
+                    $this->queryBuilder->expr()->isNull($escapedUpdatedAtColumnName),
+                    $this->queryBuilder->expr()->lte($escapedUpdatedAtColumnName, ':collectUntil'),
+                )
+            );
+
+            $this->queryBuilder->setParameter('collectUntil', $collectUntil->format(Defaults::STORAGE_DATE_TIME_FORMAT));
+        }
+
+        if ($message->operation === Operation::UPDATE) {
+            $this->queryBuilder->andWhere(
+                $this->queryBuilder->expr()->lte($escapedUpdatedAtColumnName, ':collectUntil')
+            );
+
+            $this->queryBuilder->setParameter('collectUntil', $collectUntil->format(Defaults::STORAGE_DATE_TIME_FORMAT));
+        }
+
+        return $this;
+    }
+
+    public function execute(): Result
+    {
+        return $this->queryBuilder->executeQuery();
+    }
+}

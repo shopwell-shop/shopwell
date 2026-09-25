@@ -1,0 +1,105 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Framework\Captcha;
+
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Validator\ConstraintViolation;
+use Symfony\Component\Validator\ConstraintViolationList;
+
+#[Package('discovery')]
+abstract class AbstractCaptcha
+{
+    /**
+     * supports returns true if this captcha needs to be valid for the request
+     * to be let through. This may be determined based on the given request, but
+     * also the shop's configuration or other sources.
+     *
+     * @param array<string, mixed> $captchaConfig
+     */
+    public function supports(Request $request, array $captchaConfig): bool
+    {
+        if (!$request->isMethod(Request::METHOD_POST)) {
+            return false;
+        }
+
+        if ($captchaConfig === []) {
+            return false;
+        }
+
+        return (bool) $captchaConfig['isActive'];
+    }
+
+    /**
+     * validate returns the violations describing the failure, an empty list means the captcha is valid.
+     *
+     * @param array<string, mixed> $captchaConfig
+     */
+    public function validate(Request $request, array $captchaConfig): ConstraintViolationList
+    {
+        if ($this->isValid($request, $captchaConfig)) {
+            return new ConstraintViolationList();
+        }
+
+        $violations = Feature::silent('v6.8.0.0', fn (): ConstraintViolationList => $this->getViolations());
+        if ($violations->count() > 0) {
+            return $violations;
+        }
+
+        // An empty list would read as valid, so a failure always needs a violation.
+        return new ConstraintViolationList([
+            new ConstraintViolation('', '', [], '', '', '', null, CaptchaException::INVALID_CAPTCHA_ERROR),
+        ]);
+    }
+
+    /**
+     * isValid returns true, when the captcha contained in the request is valid.
+     *
+     * @deprecated tag:v6.8.0 - reason:becomes-unused - Will be removed, implement validate() instead
+     *
+     * @param array<string, mixed> $captchaConfig
+     */
+    public function isValid(Request $request, array $captchaConfig): bool
+    {
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0', 'validate()'));
+
+        return $this->validate($request, $captchaConfig)->count() === 0;
+    }
+
+    /**
+     * getName returns a unique technical name identifying this captcha.
+     */
+    abstract public function getName(): string;
+
+    /**
+     * Returns true when the CAPTCHA doesn't need to provide information on how to pass
+     * the check to customers. An exception will be thrown instead as soon as the CAPTCHA check fails
+     */
+    public function shouldBreak(): bool
+    {
+        return true;
+    }
+
+    /**
+     * getData returns data the captcha might need to render in the template for
+     * the user to be able to correctly fill in the captcha value, for example
+     * an image of distorted text.
+     *
+     * @return array<string|int, mixed>|null
+     */
+    public function getData(): ?array
+    {
+        return null;
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - reason:becomes-unused - Will be removed, use validate() instead
+     */
+    public function getViolations(): ConstraintViolationList
+    {
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0', 'validate()'));
+
+        return new ConstraintViolationList();
+    }
+}

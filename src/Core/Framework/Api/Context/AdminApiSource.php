@@ -1,0 +1,89 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Api\Context;
+
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\JsonSerializableTrait;
+
+#[Package('framework')]
+class AdminApiSource implements ContextSource, \JsonSerializable
+{
+    use JsonSerializableTrait;
+
+    /**
+     * Runtime privileges granted to authenticated Administration users by default.
+     *
+     * @var list<string>
+     */
+    public const DEFAULT_USER_PRIVILEGES = [
+        'language:read',
+        'locale:read',
+        'message_queue_stats:read',
+        'log_entry:create',
+        'currency:read',
+        'country:read',
+        'increment:manage',
+        'system:queue:process',
+        'scheduled_task:read',
+    ];
+
+    public string $type = 'admin-api';
+
+    private bool $isAdmin = false;
+
+    /**
+     * @var array<string>
+     */
+    private array $permissions = [];
+
+    public function __construct(
+        private readonly ?string $userId,
+        private readonly ?string $integrationId = null,
+    ) {
+    }
+
+    public function getUserId(): ?string
+    {
+        return $this->userId;
+    }
+
+    public function getIntegrationId(): ?string
+    {
+        return $this->integrationId;
+    }
+
+    public function setIsAdmin(bool $isAdmin): void
+    {
+        $this->isAdmin = $isAdmin;
+    }
+
+    /**
+     * @param array<string> $permissions
+     */
+    public function setPermissions(array $permissions): void
+    {
+        $this->permissions = $permissions;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getPermissions(): array
+    {
+        return $this->permissions;
+    }
+
+    public function isAllowed(string $privilege): bool
+    {
+        if ($this->isAdmin) {
+            return true;
+        }
+
+        return \in_array($privilege, $this->permissions, true);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->isAdmin;
+    }
+}

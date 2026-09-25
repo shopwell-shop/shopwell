@@ -1,0 +1,120 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\ImportExport\Strategy\Import;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Shopwell\Core\Content\ImportExport\Event\ImportExportAfterImportBatchEvent;
+use Shopwell\Core\Content\ImportExport\Event\ImportExportAfterImportRecordEvent;
+use Shopwell\Core\Content\ImportExport\Event\ImportExportExceptionImportRecordEvent;
+use Shopwell\Core\Content\ImportExport\Strategy\Import\BatchImportStrategy;
+use Shopwell\Core\Content\ImportExport\Struct\Config;
+use Shopwell\Core\Content\ImportExport\Struct\Progress;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\Event\NestedEventCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+#[CoversClass(BatchImportStrategy::class)]
+class BatchImportStrategyTest extends ImportStrategyTestCase
+{
+    private BatchImportStrategy $strategy;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->strategy = new BatchImportStrategy(
+            $this->eventDispatcher,
+            $this->repository
+        );
+    }
+
+    public function testImport(): void
+    {
+        $context = Context::createDefaultContext();
+        $progress = new Progress('logId', Progress::STATE_PROGRESS);
+        $config = new Config([], [], []);
+
+        $this->repository->expects($this->never())->method('upsert');
+        $this->eventDispatcher->expects($this->never())->method('dispatch');
+
+        $result = $this->strategy->import(['some' => 'data'], [], $config, $progress, $context);
+
+        static::assertSame([], $result->results);
+        static::assertSame([], $result->failedRecords);
+    }
+
+    #[DataProvider('importProvider')]
+    public function testSuccessfulCommit(Config $config, string $method): void
+    {
+        $context = Context::createDefaultContext();
+        $progress = new Progress('logId', Progress::STATE_PROGRESS);
+
+        $this->strategy->import(['some' => 'data'], [], $config, $progress, $context);
+        $this->strategy->import(['some' => 'data'], [], $config, $progress, $context);
+
+        $writeResult = new EntityWrittenContainerEvent(Context::createDefaultContext(), new NestedEventCollection(), []);
+
+        $this->repository->expects($this->once())->method($method)->willReturn($writeResult);
+        $this->eventDispatcher->expects($this->exactly(3))->method('dispatch');
+
+        $progress = new Progress('logId', Progress::STATE_PROGRESS);
+
+        $result = $this->strategy->commit($config, $progress, $context);
+
+        static::assertSame([$writeResult], $result->results);
+        static::assertSame([], $result->failedRecords);
+        static::assertSame(2, $progress->getProcessedRecords());
+    }
+
+    public function testFailedCommit(): void
+    {
+        $config = new Config(
+            mapping: [],
+            parameters: [
+                'createEntities' => true,
+                'updateEntities' => false,
+            ],
+            updateBy: []
+        );
+
+        $context = Context::createDefaultContext();
+        $progress = new Progress('logId', Progress::STATE_PROGRESS);
+
+        $this->strategy->import(['some' => 'data'], [], $config, $progress, $context);
+        $this->strategy->import(['some' => 'data'], [], $config, $progress, $context);
+
+        $writeResult = new EntityWrittenContainerEvent(Context::createDefaultContext(), new NestedEventCollection(), []);
+
+        $this->repository->expects($this->exactly(3))->method('create')->willReturnCallback(
+            static function () use ($writeResult) {
+                static $counter = 0;
+                if ($counter++ < 2) {
+                    throw new \Exception('Error');
+                }
+
+                return $writeResult;
+            }
+        );
+
+        $this->eventDispatcher->expects($this->exactly(3))
+            ->method('dispatch')
+            ->with(static::logicalOr(
+                static::isInstanceOf(ImportExportAfterImportRecordEvent::class),
+                static::isInstanceOf(ImportExportExceptionImportRecordEvent::class),
+                static::isInstanceOf(ImportExportAfterImportBatchEvent::class),
+            ));
+
+        $result = $this->strategy->commit($config, $progress, $context);
+
+        static::assertSame([$writeResult], $result->results);
+        static::assertSame([
+            ['some' => 'data', '_error' => 'Error'],
+        ], $result->failedRecords);
+    }
+}

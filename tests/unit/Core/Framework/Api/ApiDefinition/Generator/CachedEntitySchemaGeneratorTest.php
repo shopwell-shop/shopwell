@@ -1,0 +1,93 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Api\ApiDefinition\Generator;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Api\ApiDefinition\DefinitionService;
+use Shopwell\Core\Framework\Api\ApiDefinition\Generator\CachedEntitySchemaGenerator;
+use Shopwell\Core\Framework\Api\ApiDefinition\Generator\EntitySchemaGenerator;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Contracts\Cache\CacheInterface;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(CachedEntitySchemaGenerator::class)]
+class CachedEntitySchemaGeneratorTest extends TestCase
+{
+    private CachedEntitySchemaGenerator $cachedEntitySchemaGenerator;
+
+    private CacheInterface&MockObject $cache;
+
+    private EntitySchemaGenerator&MockObject $entitySchemaGenerator;
+
+    protected function setUp(): void
+    {
+        $this->cache = $this->createMock(CacheInterface::class);
+        $this->entitySchemaGenerator = $this->createMock(EntitySchemaGenerator::class);
+        $this->cachedEntitySchemaGenerator = new CachedEntitySchemaGenerator(
+            $this->entitySchemaGenerator,
+            $this->cache,
+        );
+    }
+
+    public function testSupportsCallsInnerServiceSupports(): void
+    {
+        $this->entitySchemaGenerator->expects($this->once())
+            ->method('supports')
+            ->with('foo')
+            ->willReturn(false);
+        $this->cache->expects($this->never())->method('get');
+
+        static::assertFalse($this->cachedEntitySchemaGenerator->supports('foo', ''));
+    }
+
+    public function testGenerateCallsInnerServiceGenerate(): void
+    {
+        $this->entitySchemaGenerator->expects($this->once())
+            ->method('generate')
+            ->willThrowException(new \RuntimeException());
+        $this->cache->expects($this->never())->method('get');
+
+        static::expectException(\RuntimeException::class);
+        $this->cachedEntitySchemaGenerator->generate([], DefinitionService::API, 'json', null);
+    }
+
+    public function testGetSchemaUtilizesCacheIfPresent(): void
+    {
+        $result = [
+            'foo' => [
+                'bar' => null,
+            ],
+        ];
+
+        $this->cache->expects($this->once())
+            ->method('get')
+            ->willReturn($result);
+        $this->entitySchemaGenerator->expects($this->never())->method('getSchema');
+
+        static::assertSame($result, $this->cachedEntitySchemaGenerator->getSchema([]));
+    }
+
+    public function testGetSchemaCallsInnerWithAbsentCache(): void
+    {
+        $result = [
+            'fiz' => [
+                'buz' => null,
+            ],
+        ];
+        $this->entitySchemaGenerator->expects($this->once())
+            ->method('getSchema')
+            ->willReturn($result);
+        $this->cache->expects($this->once())
+            ->method('get')
+            ->willReturn($this->entitySchemaGenerator->getSchema([]));
+
+        static::assertSame($result, $this->cachedEntitySchemaGenerator->getSchema([]));
+    }
+}

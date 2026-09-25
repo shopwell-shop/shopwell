@@ -1,0 +1,159 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Page\Account\Order;
+
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\Exception\CustomerNotLoggedInException;
+use Shopwell\Core\Checkout\Order\Exception\GuestNotAuthenticatedException;
+use Shopwell\Core\Checkout\Order\Exception\WrongGuestCredentialsException;
+use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\Order\SalesChannel\AbstractOrderRoute;
+use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
+use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Storefront\Event\RouteRequest\OrderRouteRequestEvent;
+use Shopwell\Storefront\Page\GenericPageLoaderInterface;
+use Shopwell\Storefront\Page\MetaInformation;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * Do not use direct or indirect repository calls in a PageLoader. Always use a store-api route to get or put data.
+ */
+#[Package('checkout')]
+class AccountOrderPageLoader
+{
+    private const DEFAULT_LIMIT = 10;
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly GenericPageLoaderInterface $genericLoader,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly AbstractOrderRoute $orderRoute,
+        private readonly AbstractTranslator $translator
+    ) {
+    }
+
+    public function load(Request $request, SalesChannelContext $salesChannelContext): AccountOrderPage
+    {
+        if (!$salesChannelContext->getCustomer() && !$request->attributes->has('deepLinkCode')) {
+            throw CartException::customerNotLoggedIn();
+        }
+
+        $page = $this->genericLoader->load($request, $salesChannelContext);
+
+        $page = AccountOrderPage::createFrom($page);
+        $this->setMetaInformation($page);
+
+        $orders = $this->getOrders($request, $salesChannelContext);
+
+        $page->setOrders($orders);
+
+        $page->setDeepLinkCode($request->attributes->get('deepLinkCode'));
+
+        $this->eventDispatcher->dispatch(
+            new AccountOrderPageLoadedEvent($page, $salesChannelContext, $request)
+        );
+
+        return $page;
+    }
+
+    protected function setMetaInformation(AccountOrderPage $page): void
+    {
+        if ($page->getMetaInformation()) {
+            $page->getMetaInformation()->setRobots('noindex,follow');
+        }
+
+        if ($page->getMetaInformation() === null) {
+            $page->setMetaInformation(new MetaInformation());
+        }
+
+        $page->getMetaInformation()?->setMetaTitle(
+            $this->translator->trans('account.ordersMetaTitle') . ' | ' . $page->getMetaInformation()->getMetaTitle()
+        );
+    }
+
+    /**
+     * @throws CustomerNotLoggedInException
+     * @throws GuestNotAuthenticatedException
+     * @throws WrongGuestCredentialsException
+     *
+     * @return EntitySearchResult<OrderCollection>
+     */
+    private function getOrders(Request $request, SalesChannelContext $context): EntitySearchResult
+    {
+        $criteria = $this->createCriteria($request);
+        $apiRequest = $request->duplicate();
+
+        // Add email and zipcode for guest customer verification in order view
+        if (RequestParamHelper::get($request, 'email', false) && RequestParamHelper::get($request, 'zipcode', false)) {
+            $apiRequest->query->set('email', RequestParamHelper::get($request, 'email'));
+            $apiRequest->query->set('zipcode', RequestParamHelper::get($request, 'zipcode'));
+            $apiRequest->query->set('login', true);
+        }
+
+        $event = new OrderRouteRequestEvent($request, $apiRequest, $context, $criteria);
+        $this->eventDispatcher->dispatch($event);
+
+        $responseStruct = $this->orderRoute
+            ->load($event->getStoreApiRequest(), $context, $criteria);
+
+        return $responseStruct->getOrders();
+    }
+
+    private function createCriteria(Request $request): Criteria
+    {
+        $page = RequestParamHelper::get($request, 'p');
+        $page = $page ? (int) $page : 1;
+
+        $criteria = (new Criteria())
+            ->addSorting(new FieldSorting('order.createdAt', FieldSorting::DESCENDING))
+            ->addAssociation('primaryOrderTransaction.paymentMethod')
+            ->addAssociation('primaryOrderTransaction.stateMachineState')
+            ->addAssociation('primaryOrderDelivery.shippingMethod')
+            ->addAssociation('primaryOrderDelivery.stateMachineState')
+            ->addAssociation('deliveries.shippingMethod')
+            ->addAssociation('orderCustomer.customer')
+            ->addAssociation('lineItems')
+            ->addAssociation('lineItems.cover')
+            ->addAssociation('lineItems.downloads.media')
+            ->addAssociation('addresses')
+            ->addAssociation('currency')
+            ->addAssociation('stateMachineState')
+            ->addAssociation('documents.documentType')
+            ->addAssociation('documents.documentMediaFile')
+            ->addAssociation('documents.documentA11yMediaFile')
+            ->addAssociation('documents.documentFiles.media')
+            ->setLimit(self::DEFAULT_LIMIT)
+            ->setOffset(($page - 1) * self::DEFAULT_LIMIT)
+            ->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT);
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            $criteria
+                ->addAssociation('transactions.paymentMethod')
+                ->addAssociation('transactions.stateMachineState')
+                ->addAssociation('deliveries.stateMachineState');
+
+            $criteria
+                ->getAssociation('transactions')
+                ->addSorting(new FieldSorting('createdAt'));
+        }
+
+        $criteria
+            ->addSorting(new FieldSorting('orderDateTime', FieldSorting::DESCENDING));
+
+        if ($request->attributes->has('deepLinkCode')) {
+            $criteria->addFilter(new EqualsFilter('deepLinkCode', $request->attributes->get('deepLinkCode')));
+        }
+
+        return $criteria;
+    }
+}

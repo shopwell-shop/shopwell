@@ -1,0 +1,59 @@
+@import "~scss/variables";
+
+.sw-inherit-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+
+    .sw-inherit-wrapper__toggle-wrapper {
+        display: flex;
+        align-items: center;
+        line-height: 16px;
+        font-size: var(--font-size-xs);
+        margin-bottom: 8px;
+        color: var(--color-text-primary-default);
+
+        label {
+            &.has--error {
+                color: var(--color-text-critical-default);
+            }
+
+            flex-grow: 1;
+        }
+
+        .sw-inherit-wrapper__inheritance-icon {
+            margin-right: 8px;
+        }
+    }
+
+    &.is--inherited {
+        .sw-inherit-wrapper__toggle-wrapper {
+            color: $color-module-purple-900;
+        }
+    }
+
+    &.is--required .sw-inherit-wrapper__toggle-wrapper label::after {
+        content: "*";
+        color: var(--color-text-brand-default);
+    }
+
+    .sw-inherit-wrapper__card-title {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .sw-inherit-wrapper__card-title--inherited .mt-card__title {
+        color: $color-module-purple-900;
+    }
+
+    .sw-card__inherited .sw-card__content {
+        border-color: $color-module-purple-900;
+    }
+
+    .sw-card__toolbar {
+        border-top-color: $color-module-purple-900;
+        border-left-color: $color-module-purple-900;
+        border-right-color: $color-module-purple-900;
+    }
+}

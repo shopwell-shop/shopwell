@@ -1,0 +1,134 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Test\Integration\Builder\Promotion;
+
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionDiscount\PromotionDiscountCollection;
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionSetGroup\PromotionSetGroupCollection;
+use Shopwell\Core\Checkout\Promotion\PromotionCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\TestDefaults;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+class PromotionFixtureBuilder
+{
+    private readonly SalesChannelContext $context;
+
+    private ?string $code = null;
+
+    /**
+     * @var list<array<string, mixed>>
+     */
+    private array $dataSetGroups = [];
+
+    /**
+     * @var list<array<string, mixed>>
+     */
+    private array $dataDiscounts = [];
+
+    /**
+     * @param EntityRepository<PromotionCollection> $promotionRepository
+     * @param EntityRepository<PromotionSetGroupCollection> $promotionSetgroupRepository
+     * @param EntityRepository<PromotionDiscountCollection> $promotionDiscountRepository
+     */
+    public function __construct(
+        private readonly string $promotionId,
+        AbstractSalesChannelContextFactory $salesChannelContextFactory,
+        private readonly EntityRepository $promotionRepository,
+        private readonly EntityRepository $promotionSetgroupRepository,
+        private readonly EntityRepository $promotionDiscountRepository
+    ) {
+        $this->context = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+    }
+
+    public function setCode(string $code): PromotionFixtureBuilder
+    {
+        $this->code = $code;
+
+        return $this;
+    }
+
+    public function addDiscount(
+        string $scope,
+        string $type,
+        float $value,
+        bool $considerAdvancedRules,
+        ?float $maxValue
+    ): PromotionFixtureBuilder {
+        $data = [
+            'id' => Uuid::randomHex(),
+            'promotionId' => $this->promotionId,
+            'scope' => $scope,
+            'type' => $type,
+            'value' => $value,
+            'considerAdvancedRules' => $considerAdvancedRules,
+        ];
+
+        if ($maxValue !== null) {
+            $data['maxValue'] = $maxValue;
+        }
+
+        $this->dataDiscounts[] = $data;
+
+        return $this;
+    }
+
+    public function addSetGroup(string $packagerKey, float $value, string $sorterKey): PromotionFixtureBuilder
+    {
+        $this->dataSetGroups[] = [
+            'id' => Uuid::randomHex(),
+            'promotionId' => $this->promotionId,
+            'packagerKey' => $packagerKey,
+            'sorterKey' => $sorterKey,
+            'value' => $value,
+        ];
+
+        return $this;
+    }
+
+    /**
+     * Builds our configured promotion and saves all related
+     * entities and objects in the database.
+     */
+    public function buildPromotion(): void
+    {
+        $data = [
+            'id' => $this->promotionId,
+            'name' => 'Black Friday',
+            'active' => true,
+            'useCodes' => false,
+            'useSetGroups' => false,
+            'salesChannels' => [
+                ['salesChannelId' => TestDefaults::SALES_CHANNEL, 'priority' => 1],
+            ],
+        ];
+
+        if ($this->code !== null) {
+            $data['code'] = $this->code;
+            $data['useCodes'] = true;
+        }
+
+        if ($this->dataSetGroups !== []) {
+            $data['useSetGroups'] = true;
+        }
+
+        // save the promotion
+        $this->promotionRepository->create([$data], $this->context->getContext());
+
+        // save our defined set groups
+        if ($this->dataSetGroups !== []) {
+            $this->promotionSetgroupRepository->create($this->dataSetGroups, $this->context->getContext());
+        }
+
+        // save our added discounts
+        if ($this->dataDiscounts !== []) {
+            $this->promotionDiscountRepository->create($this->dataDiscounts, $this->context->getContext());
+        }
+    }
+}

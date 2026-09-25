@@ -1,0 +1,347 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\ImportExport\Event\Subscriber;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Content\ImportExport\Event\ImportExportAfterImportRecordEvent;
+use Shopwell\Core\Content\ImportExport\ImportExportException;
+use Shopwell\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingDefinition;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
+use Shopwell\Core\Content\Property\PropertyGroupCollection;
+use Shopwell\Core\Framework\Api\Sync\SyncBehavior;
+use Shopwell\Core\Framework\Api\Sync\SyncOperation;
+use Shopwell\Core\Framework\Api\Sync\SyncServiceInterface;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Contracts\Service\ResetInterface;
+
+/**
+ * @internal
+ *
+ * @phpstan-type CombinationPayload list<array{
+ *     id: string,
+ *     parentId: string,
+ *     productNumber: string,
+ *     stock: int,
+ *     type?: string, // @deprecated tag:v6.8.0 - Make type required
+ *     options: list<array{
+ *         id: string,
+ *         name: string,
+ *         group: array{id: string, name: string}
+ *     }>
+ * }>
+ */
+#[Package('fundamentals@after-sales')]
+class ProductVariantsSubscriber implements EventSubscriberInterface, ResetInterface
+{
+    /**
+     * @var array<string, string>
+     */
+    private array $groupIdCache = [];
+
+    /**
+     * @var array<string, string>
+     */
+    private array $optionIdCache = [];
+
+    /**
+     * @internal
+     *
+     * @param EntityRepository<PropertyGroupCollection> $groupRepository
+     * @param EntityRepository<PropertyGroupOptionCollection> $optionRepository
+     */
+    public function __construct(
+        private readonly SyncServiceInterface $syncService,
+        private readonly Connection $connection,
+        private readonly EntityRepository $groupRepository,
+        private readonly EntityRepository $optionRepository
+    ) {
+    }
+
+    /**
+     * @return array<string, string|array{0: string, 1: int}|list<array{0: string, 1?: int}>>
+     */
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            ImportExportAfterImportRecordEvent::class => 'onAfterImportRecord',
+        ];
+    }
+
+    public function onAfterImportRecord(ImportExportAfterImportRecordEvent $event): void
+    {
+        $entityName = $event->getConfig()->get('sourceEntity');
+        if ($entityName !== ProductDefinition::ENTITY_NAME) {
+            return;
+        }
+
+        $variantString = $event->getRow()['variants'] ?? '';
+        if (!\is_string($variantString)) {
+            return;
+        }
+        if ($variantString === '') {
+            return;
+        }
+
+        $entityWrittenEvents = $event->getResult()->getEvents();
+        if ($entityWrittenEvents === null) {
+            return;
+        }
+
+        $variants = $this->parseVariantString($variantString);
+
+        $entityWrittenEvent = $entityWrittenEvents->filter(static fn ($event) => $event->getEntityName() === ProductDefinition::ENTITY_NAME)->first();
+        if (!$entityWrittenEvent instanceof EntityWrittenEvent) {
+            return;
+        }
+
+        $writeResults = $entityWrittenEvent->getWriteResults();
+        if ($writeResults === []) {
+            return;
+        }
+
+        $parentId = $writeResults[0]->getPrimaryKey();
+        if (!\is_string($parentId)) {
+            return;
+        }
+
+        $context = $event->getContext();
+        $payload = $this->getCombinationsPayload($variants, $parentId, $writeResults[0]->getPayload()['productNumber'], $context);
+
+        $variantIds = array_column($payload, 'id');
+        $this->connection->executeStatement(
+            'DELETE FROM `product_option` WHERE `product_id` IN (:ids);',
+            ['ids' => Uuid::fromHexToBytesList($variantIds)],
+            ['ids' => ArrayParameterType::BINARY]
+        );
+        $configuratorSettingPayload = $this->getProductConfiguratorSettingPayload($payload, $parentId);
+        $this->connection->executeStatement(
+            'DELETE FROM `product_configurator_setting` WHERE `product_id` = :parentId AND `id` NOT IN (:ids);',
+            [
+                'parentId' => Uuid::fromHexToBytes($parentId),
+                'ids' => Uuid::fromHexToBytesList(array_column($configuratorSettingPayload, 'id')),
+            ],
+            ['ids' => ArrayParameterType::BINARY]
+        );
+
+        $this->syncService->sync([
+            new SyncOperation(
+                'write',
+                ProductDefinition::ENTITY_NAME,
+                SyncOperation::ACTION_UPSERT,
+                $payload
+            ),
+            new SyncOperation(
+                'write',
+                ProductConfiguratorSettingDefinition::ENTITY_NAME,
+                SyncOperation::ACTION_UPSERT,
+                $configuratorSettingPayload
+            ),
+        ], $context, new SyncBehavior());
+    }
+
+    public function reset(): void
+    {
+        $this->groupIdCache = [];
+        $this->optionIdCache = [];
+    }
+
+    /**
+     * convert "size: m, l, xl" to ["size|m", "size|l", "size|xl"]
+     *
+     * @return list<array<string>>
+     */
+    private function parseVariantString(string $variantsString): array
+    {
+        $result = [];
+
+        $groups = explode('|', $variantsString);
+
+        foreach ($groups as $group) {
+            $groupOptions = explode(':', $group);
+
+            if (\count($groupOptions) !== 2) {
+                $this->throwExceptionFailedParsingVariants($variantsString);
+            }
+
+            $groupName = trim($groupOptions[0]);
+            $options = array_filter(array_map('trim', explode(',', $groupOptions[1])));
+
+            if ($groupName === '' || $options === []) {
+                $this->throwExceptionFailedParsingVariants($variantsString);
+            }
+
+            $options = array_map(static fn (string $option): string => \sprintf('%s|%s', $groupName, $option), $options);
+
+            $result[] = $options;
+        }
+
+        return $result;
+    }
+
+    private function throwExceptionFailedParsingVariants(string $variantsString): void
+    {
+        throw ImportExportException::processingError(\sprintf(
+            'Failed parsing variants from string "%s", valid format is: "size: L, XL, | color: Green, White"',
+            $variantsString
+        ));
+    }
+
+    /**
+     * @param list<array<string>> $variants
+     *
+     * @return CombinationPayload
+     */
+    private function getCombinationsPayload(array $variants, string $parentId, string $productNumber, Context $context): array
+    {
+        $combinations = $this->getCombinations($variants);
+        $payload = [];
+
+        foreach ($combinations as $key => $combination) {
+            $options = [];
+
+            if (\is_string($combination)) {
+                $combination = [$combination];
+            }
+
+            foreach ($combination as $option) {
+                [$group, $option] = explode('|', $option);
+
+                $optionId = $this->getOptionId($group, $option, $context);
+                $groupId = $this->getGroupId($group, $context);
+
+                $options[] = [
+                    'id' => $optionId,
+                    'name' => $option,
+                    'group' => [
+                        'id' => $groupId,
+                        'name' => $group,
+                    ],
+                ];
+            }
+
+            $variantId = Uuid::fromStringToHex(\sprintf('%s.%s', $parentId, $key));
+            $variantProductNumber = \sprintf('%s.%s', $productNumber, $key);
+
+            $variant = [
+                'id' => $variantId,
+                'parentId' => $parentId,
+                'productNumber' => $variantProductNumber,
+                'stock' => 0,
+                'options' => $options,
+            ];
+
+            if (Feature::isActive('v6.8.0.0')) {
+                $variant['type'] = ProductDefinition::TYPE_PHYSICAL;
+            }
+
+            $payload[] = $variant;
+        }
+
+        return $payload;
+    }
+
+    /**
+     * convert [["size|m", "size|l"], ["color|blue", "color|red"]]
+     * to [["size|m", "color|blue"], ["size|l", "color|blue"], ["size|m", "color|red"], ["size|l", "color|red"]]
+     *
+     * @param list<array<string>> $variants
+     *
+     * @return list<array<string>>|array<string>
+     */
+    private function getCombinations(array $variants, int $currentIndex = 0): array
+    {
+        if (!isset($variants[$currentIndex])) {
+            return [];
+        }
+
+        if ($currentIndex === \count($variants) - 1) {
+            return $variants[$currentIndex];
+        }
+
+        // get combinations from subsequent arrays
+        $combinations = $this->getCombinations($variants, $currentIndex + 1);
+
+        $result = [];
+
+        // concat each array from tmp with each element from $variants[$i]
+        foreach ($variants[$currentIndex] as $variant) {
+            foreach ($combinations as $combination) {
+                $result[] = \is_array($combination) ? [...[$variant], ...$combination] : [$variant, $combination];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param CombinationPayload $variantsPayload
+     *
+     * @return list<array{id: string, optionId: string, productId: string}>
+     */
+    private function getProductConfiguratorSettingPayload(array $variantsPayload, string $parentId): array
+    {
+        $options = array_merge(...array_column($variantsPayload, 'options'));
+        $optionIds = array_unique(array_column($options, 'id'));
+
+        $payload = [];
+
+        foreach ($optionIds as $optionId) {
+            $payload[] = [
+                'id' => Uuid::fromStringToHex(\sprintf('%s_configurator', $optionId)),
+                'optionId' => $optionId,
+                'productId' => $parentId,
+            ];
+        }
+
+        return $payload;
+    }
+
+    private function getGroupId(string $groupName, Context $context): string
+    {
+        $groupId = Uuid::fromStringToHex($groupName);
+
+        if (isset($this->groupIdCache[$groupId])) {
+            return $this->groupIdCache[$groupId];
+        }
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('name', $groupName));
+
+        $this->groupIdCache[$groupId] = $this->groupRepository->searchIds(
+            $criteria,
+            $context
+        )->firstId() ?? $groupId;
+
+        return $this->groupIdCache[$groupId];
+    }
+
+    private function getOptionId(string $groupName, string $optionName, Context $context): string
+    {
+        $optionId = Uuid::fromStringToHex(\sprintf('%s.%s', $groupName, $optionName));
+
+        if (isset($this->optionIdCache[$optionId])) {
+            return $this->optionIdCache[$optionId];
+        }
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('name', $optionName));
+        $criteria->addFilter(new EqualsFilter('group.name', $groupName));
+
+        $this->optionIdCache[$optionId] = $this->optionRepository->searchIds(
+            $criteria,
+            $context
+        )->firstId() ?? $optionId;
+
+        return $this->optionIdCache[$optionId];
+    }
+}

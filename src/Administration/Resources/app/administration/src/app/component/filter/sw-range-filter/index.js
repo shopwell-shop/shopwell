@@ -1,0 +1,60 @@
+/**
+ * @sw-package framework
+ */
+
+import template from './sw-range-filter.html.twig';
+import './sw-range-filter.scss';
+
+const { Criteria } = Shopwell.Data;
+
+/**
+ * @private
+ */
+export default {
+    template,
+
+    inject: ['feature'],
+
+    emits: ['filter-update'],
+
+    props: {
+        value: {
+            type: Object,
+            required: true,
+        },
+
+        property: {
+            type: String,
+            required: true,
+        },
+
+        isShowDivider: {
+            type: Boolean,
+            required: false,
+            default: true,
+        },
+    },
+
+    computed: {},
+
+    watch: {
+        value: {
+            deep: true,
+            handler(newValue) {
+                this.updateFilter(newValue);
+            },
+        },
+    },
+
+    methods: {
+        updateFilter(range) {
+            const params = {
+                ...(range.from != null ? { gte: range.from } : {}),
+                ...(range.to != null ? { lte: range.to } : {}),
+            };
+
+            const filterCriteria = [Criteria.range(this.property, params)];
+            this.$emit('filter-update', filterCriteria);
+        },
+    },
+};

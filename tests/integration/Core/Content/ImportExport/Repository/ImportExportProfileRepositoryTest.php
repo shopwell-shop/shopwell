@@ -1,0 +1,418 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\ImportExport\Repository;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\ImportExport\ImportExportProfileEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteException;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Validation\WriteConstraintViolationException;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+class ImportExportProfileRepositoryTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    /**
+     * @var EntityRepository<EntityCollection<ImportExportProfileEntity>>
+     */
+    private EntityRepository $repository;
+
+    private Connection $connection;
+
+    private Context $context;
+
+    protected function setUp(): void
+    {
+        $this->repository = static::getContainer()->get('import_export_profile.repository');
+        $this->connection = static::getContainer()->get(Connection::class);
+        $this->context = Context::createDefaultContext();
+
+        // Clean up system defaults before testing.
+        $this->connection->executeStatement('DELETE FROM `import_export_profile`');
+    }
+
+    public function testImportExportProfileSingleCreateSuccess(): void
+    {
+        $data = $this->prepareImportExportProfileTestData();
+
+        $id = array_key_first($data);
+
+        $this->repository->create([$data[$id]], $this->context);
+
+        $record = $this->connection->fetchAssociative(
+            'SELECT * FROM import_export_profile WHERE id = :id',
+            ['id' => $id]
+        );
+
+        $expect = $data[$id];
+        static::assertIsArray($record);
+        static::assertSame($id, $record['id']);
+        static::assertSame($expect['technicalName'], $record['technical_name']);
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            $translationRecord = $this->connection->fetchAssociative(
+                'SELECT * FROM import_export_profile_translation WHERE import_export_profile_id = :id',
+                ['id' => $id]
+            );
+
+            static::assertIsArray($translationRecord);
+            static::assertSame($expect['label'], $translationRecord['label']);
+        }
+
+        static::assertSame($expect['systemDefault'], (bool) $record['system_default']);
+        static::assertSame($expect['sourceEntity'], $record['source_entity']);
+        static::assertSame($expect['fileType'], $record['file_type']);
+        static::assertSame($expect['delimiter'], $record['delimiter']);
+        static::assertSame($expect['enclosure'], $record['enclosure']);
+        static::assertSame(json_encode($expect['mapping'], \JSON_THROW_ON_ERROR), $record['mapping']);
+    }
+
+    public function testImportExportProfileSingleCreateMissingRequired(): void
+    {
+        $requiredProperties = ['sourceEntity', 'fileType'];
+        $num = \count($requiredProperties);
+        $data = $this->prepareImportExportProfileTestData($num);
+
+        foreach ($requiredProperties as $property) {
+            /** @var array<string, mixed> $entry */
+            $entry = array_shift($data);
+            unset($entry[$property]);
+
+            try {
+                $this->repository->create([$entry], $this->context);
+                static::fail(\sprintf('Create without required property \'%s\'', $property));
+            } catch (\Exception $e) {
+                static::assertInstanceOf(WriteException::class, $e);
+            }
+        }
+    }
+
+    public function testImportExportProfileMultiCreateSuccess(): void
+    {
+        $num = 5;
+        $data = $this->prepareImportExportProfileTestData($num);
+
+        $this->repository->create(array_values($data), $this->context);
+
+        $records = $this->connection->fetchAllAssociative(
+            'SELECT * FROM import_export_profile'
+        );
+
+        $translationRecords = [];
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            $translationRecords = $this->getTranslationRecords();
+        }
+
+        static::assertCount($num, $records);
+
+        foreach ($records as $record) {
+            $expect = $data[$record['id']];
+
+            if (!Feature::isActive('v6.8.0.0')) {
+                static::assertSame($expect['label'], $translationRecords[$record['id']]['label']);
+            }
+
+            static::assertSame($expect['technicalName'], $record['technical_name']);
+            static::assertSame($expect['systemDefault'], (bool) $record['system_default']);
+            static::assertSame($expect['sourceEntity'], $record['source_entity']);
+            static::assertSame($expect['fileType'], $record['file_type']);
+            static::assertSame($expect['delimiter'], $record['delimiter']);
+            static::assertSame($expect['enclosure'], $record['enclosure']);
+            static::assertSame(json_encode($expect['mapping'], \JSON_THROW_ON_ERROR), $record['mapping']);
+            unset($data[$record['id']]);
+        }
+    }
+
+    public function testImportExportProfileMultiCreateMissingRequired(): void
+    {
+        $data = $this->prepareImportExportProfileTestData(2);
+
+        $requiredProperties = ['sourceEntity', 'fileType'];
+        $incompleteData = $this->prepareImportExportProfileTestData(\count($requiredProperties));
+
+        foreach ($requiredProperties as $property) {
+            /** @var array<string, mixed> $entry */
+            $entry = array_shift($incompleteData);
+            unset($entry[$property]);
+            $data[] = $entry;
+        }
+
+        try {
+            $this->repository->create(array_values($data), $this->context);
+            static::fail('Create without required properties');
+        } catch (WriteException $e) {
+            static::assertCount(\count($requiredProperties), $e->getExceptions());
+            $foundViolations = [];
+
+            /** @var WriteConstraintViolationException $violations */
+            foreach ($e->getExceptions() as $violations) {
+                foreach ($violations->getViolations() as $violation) {
+                    $foundViolations[] = $violation->getPropertyPath();
+                }
+            }
+
+            $missingPropertyPaths = array_map(static fn ($property) => '/' . $property, $requiredProperties);
+
+            static::assertSame($missingPropertyPaths, $foundViolations);
+        }
+    }
+
+    public function testImportExportProfileReadSuccess(): void
+    {
+        $num = 5;
+        $data = $this->prepareImportExportProfileTestData($num);
+
+        $this->repository->create(array_values($data), $this->context);
+
+        foreach ($data as $expect) {
+            $id = $expect['id'];
+
+            /** @var ImportExportProfileEntity $importExportProfile */
+            $importExportProfile = $this->repository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+
+            if (!Feature::isActive('v6.8.0.0')) {
+                static::assertSame($expect['label'], $importExportProfile->getLabel());
+            }
+
+            static::assertSame($expect['systemDefault'], $importExportProfile->getSystemDefault());
+            static::assertSame($expect['sourceEntity'], $importExportProfile->getSourceEntity());
+            static::assertSame($expect['fileType'], $importExportProfile->getFileType());
+            static::assertSame($expect['delimiter'], $importExportProfile->getDelimiter());
+            static::assertSame($expect['enclosure'], $importExportProfile->getEnclosure());
+            static::assertSame($expect['mapping'], $importExportProfile->getMapping());
+            static::assertSame($expect['technicalName'], $importExportProfile->getTechnicalName());
+        }
+    }
+
+    public function testImportExportProfileReadNoResult(): void
+    {
+        $num = 3;
+        $data = $this->prepareImportExportProfileTestData($num);
+
+        $this->repository->create(array_values($data), $this->context);
+
+        $result = $this->repository->search(new Criteria([Uuid::randomHex()]), $this->context)->getEntities();
+        static::assertCount(0, $result);
+    }
+
+    public function testImportExportProfileUpdateFull(): void
+    {
+        $num = 5;
+        $data = $this->prepareImportExportProfileTestData($num);
+
+        $this->repository->create(array_values($data), $this->context);
+
+        $new_data = array_values($this->prepareImportExportProfileTestData($num, 'xxx'));
+        foreach ($data as $id => $value) {
+            $new_value = array_pop($new_data);
+            $new_value['id'] = $value['id'];
+            $data[$id] = $new_value;
+        }
+
+        $this->repository->upsert(array_values($data), $this->context);
+
+        $records = $this->connection->fetchAllAssociative(
+            'SELECT * FROM import_export_profile'
+        );
+
+        $translationRecords = [];
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            $translationRecords = $this->getTranslationRecords();
+        }
+
+        static::assertCount($num, $records);
+
+        foreach ($records as $record) {
+            $expect = $data[$record['id']];
+
+            if (!Feature::isActive('v6.8.0.0')) {
+                static::assertSame($expect['label'], $translationRecords[$record['id']]['label']);
+            }
+
+            static::assertSame($expect['technicalName'], $record['technical_name']);
+            static::assertSame($expect['systemDefault'], (bool) $record['system_default']);
+            static::assertSame($expect['sourceEntity'], $record['source_entity']);
+            static::assertSame($expect['fileType'], $record['file_type']);
+            static::assertSame($expect['delimiter'], $record['delimiter']);
+            static::assertSame($expect['enclosure'], $record['enclosure']);
+            static::assertSame(json_encode($expect['mapping'], \JSON_THROW_ON_ERROR), $record['mapping']);
+            unset($data[$record['id']]);
+        }
+    }
+
+    public function testImportExportProfileUpdatePartial(): void
+    {
+        $upsertData = [];
+        $data = $this->prepareImportExportProfileTestData();
+        /** @var array<string, mixed> $last */
+        $last = array_pop($data);
+        $properties = array_keys($last);
+
+        $num = \count($properties);
+        $data = $this->prepareImportExportProfileTestData($num);
+
+        $this->repository->create(array_values($data), $this->context);
+
+        $new_data = array_values($this->prepareImportExportProfileTestData($num, 'xxx'));
+        foreach ($data as $id => $value) {
+            $new_value = array_pop($new_data);
+            $new_value['id'] = $value['id'];
+            $data[$id] = $new_value;
+            $upsertData = $data;
+
+            // Remove property before write
+            $property = array_pop($properties);
+            if ($property === 'id' || $property === null) {
+                continue;
+            }
+            unset($upsertData[$id][$property]);
+        }
+
+        $this->repository->upsert(array_values($upsertData), $this->context);
+
+        $records = $this->connection->fetchAllAssociative('SELECT * FROM import_export_profile');
+
+        $translationRecords = [];
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            $translationRecords = $this->getTranslationRecords();
+        }
+
+        static::assertCount($num, $records);
+
+        foreach ($records as $record) {
+            $expect = $data[$record['id']];
+
+            if (!Feature::isActive('v6.8.0.0')) {
+                static::assertSame($expect['label'], $translationRecords[$record['id']]['label']);
+            }
+
+            static::assertSame($expect['technicalName'], $record['technical_name']);
+            static::assertSame($expect['systemDefault'], (bool) $record['system_default']);
+            static::assertSame($expect['sourceEntity'], $record['source_entity']);
+            static::assertSame($expect['fileType'], $record['file_type']);
+            static::assertSame($expect['delimiter'], $record['delimiter']);
+            static::assertSame($expect['enclosure'], $record['enclosure']);
+            static::assertSame(json_encode($expect['mapping'], \JSON_THROW_ON_ERROR), $record['mapping']);
+            unset($data[$record['id']]);
+        }
+    }
+
+    public function testImportExportProfileDeleteNonSystemDefault(): void
+    {
+        $num = 2;
+        $data = $this->prepareImportExportProfileTestData($num);
+
+        $this->repository->create(array_values($data), $this->context);
+
+        $deleted = 0;
+        foreach (array_column($data, 'id') as $id) {
+            if (!$data[Uuid::fromHexToBytes($id)]['systemDefault']) {
+                $this->repository->delete([['id' => $id]], $this->context);
+                ++$deleted;
+            }
+        }
+
+        $records = $this->connection->fetchAllAssociative('SELECT * FROM import_export_profile');
+
+        static::assertCount($num - $deleted, $records);
+    }
+
+    public function testImportExportProfileDeleteUnknown(): void
+    {
+        $num = 5;
+        $data = $this->prepareImportExportProfileTestData($num);
+        $this->repository->create(array_values($data), $this->context);
+
+        $ids = [];
+        for ($i = 0; $i <= $num; ++$i) {
+            $ids[] = ['id' => Uuid::randomHex()];
+        }
+
+        $this->repository->delete($ids, $this->context);
+
+        $records = $this->connection->fetchAllAssociative('SELECT * FROM import_export_profile');
+
+        static::assertCount($num, $records);
+    }
+
+    public function testCanSearchByTechnicalName(): void
+    {
+        $data = $this->prepareImportExportProfileTestData();
+        $this->repository->create(array_values($data), $this->context);
+
+        $criteria = new Criteria();
+        $criteria->setTerm('technical');
+
+        $result = $this->repository->search($criteria, $this->context)->getEntities();
+
+        static::assertCount(1, $result);
+        static::assertInstanceOf(ImportExportProfileEntity::class, $result->first());
+    }
+
+    /**
+     * Prepare a defined number of test data.
+     *
+     * @return non-empty-array<string, array<string, mixed>>
+     */
+    protected function prepareImportExportProfileTestData(int $num = 1, string $add = ''): array
+    {
+        $data = [];
+        for ($i = 1; $i <= $num; ++$i) {
+            $uuid = Uuid::randomHex();
+
+            $profile = [
+                'id' => $uuid,
+                'technicalName' => uniqid('technical_name_'),
+                'systemDefault' => ($i % 2 === 0),
+                'sourceEntity' => \sprintf('Test entity %d %s', $i, $add),
+                'fileType' => \sprintf('Test file type %d %s', $i, $add),
+                'delimiter' => \sprintf('Test delimiter %d %s', $i, $add),
+                'enclosure' => \sprintf('Test enclosure %d %s', $i, $add),
+                'mapping' => ['Mapping ' . $i => 'Value ' . $i . $add],
+            ];
+
+            if (!Feature::isActive('v6.8.0.0')) {
+                $profile['label'] = \sprintf('Test label %d %s', $i, $add);
+            }
+
+            $data[Uuid::fromHexToBytes($uuid)] = $profile;
+        }
+
+        static::assertNotSame([], $data);
+
+        return $data;
+    }
+
+    /**
+     * Read out the contents of the import_export_profile_translation table
+     *
+     * @return array<string, array<string, string>>
+     */
+    protected function getTranslationRecords(): array
+    {
+        return array_reduce(
+            $this->connection->fetchAllAssociative('SELECT * FROM import_export_profile_translation'),
+            static function ($carry, $translationRecord) {
+                $carry[$translationRecord['import_export_profile_id']] = $translationRecord;
+
+                return $carry;
+            },
+            []
+        );
+    }
+}

@@ -1,0 +1,138 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Promotion\Util;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionIndividualCode\PromotionIndividualCodeCollection;
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionIndividualCode\PromotionIndividualCodeEntity;
+use Shopwell\Core\Checkout\Promotion\PromotionCollection;
+use Shopwell\Core\Checkout\Promotion\PromotionEntity;
+use Shopwell\Core\Checkout\Promotion\PromotionException;
+use Shopwell\Core\Checkout\Promotion\Util\PromotionCodeService;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(PromotionCodeService::class)]
+class PromotionCodeServiceTest extends TestCase
+{
+    public function testAddIndividualCodesPromotionNotFound(): void
+    {
+        $context = Context::createDefaultContext();
+
+        /** @var StaticEntityRepository<PromotionCollection> */
+        $promotionRepository = new StaticEntityRepository([new PromotionCollection([])]);
+
+        $codeService = new PromotionCodeService(
+            $promotionRepository,
+            static::createStub(EntityRepository::class),
+            static::createStub(Connection::class)
+        );
+
+        $this->expectExceptionObject(PromotionException::promotionsNotFound(['promotionId']));
+        $codeService->addIndividualCodes('promotionId', 10, $context);
+    }
+
+    public function testAddIndividualCodesPromotionEmptyPattern(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $promotion = new PromotionEntity();
+        $promotion->setId('promotionId');
+        $promotion->setIndividualCodePattern('');
+
+        /** @var StaticEntityRepository<PromotionCollection> */
+        $promotionRepository = new StaticEntityRepository([new PromotionCollection([$promotion])]);
+
+        $codeService = new PromotionCodeService(
+            $promotionRepository,
+            static::createStub(EntityRepository::class),
+            static::createStub(Connection::class)
+        );
+
+        $this->expectExceptionObject(PromotionException::patternNotComplexEnough());
+        $codeService->addIndividualCodes('promotionId', 10, $context);
+    }
+
+    public function testReplaceIndividualCodes(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $promotion = new PromotionEntity();
+        $promotion->setId('promotionId');
+        $promotion->setIndividualCodePattern('%s');
+
+        /** @var StaticEntityRepository<PromotionCollection> */
+        $promotionRepository = new StaticEntityRepository([
+            new PromotionCollection([$promotion]),
+            [],
+        ]);
+
+        $promotionId = Uuid::randomHex();
+        /** @var StaticEntityRepository<PromotionIndividualCodeCollection> */
+        $individualCodeRepository = new StaticEntityRepository([new PromotionIndividualCodeCollection([])]);
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())->method('executeStatement')->with(
+            'DELETE FROM promotion_individual_code WHERE promotion_id = :id',
+            ['id' => Uuid::fromHexToBytes($promotionId)],
+        );
+
+        $codeService = new PromotionCodeService(
+            $promotionRepository,
+            $individualCodeRepository,
+            $connection
+        );
+
+        $codeService->addIndividualCodes($promotionId, 10, $context);
+
+        static::assertNotEmpty($individualCodeRepository->upserts[0]);
+        static::assertCount(10, $individualCodeRepository->upserts[0]);
+    }
+
+    public function testAddIndividualCodes(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $promotion = new PromotionEntity();
+        $promotion->setId('promotionId');
+        $promotion->setIndividualCodePattern('%s');
+
+        $code = new PromotionIndividualCodeEntity();
+        $code->setId(Uuid::randomHex());
+        $code->setCode('code');
+        $codes = new PromotionIndividualCodeCollection([]);
+
+        $promotion->setIndividualCodes($codes);
+
+        /** @var StaticEntityRepository<PromotionCollection> */
+        $promotionRepository = new StaticEntityRepository([
+            new PromotionCollection([$promotion]),
+            [],
+        ]);
+        /** @var StaticEntityRepository<PromotionIndividualCodeCollection> */
+        $individualCodeRepository = new StaticEntityRepository([new PromotionIndividualCodeCollection([])]);
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->never())->method('executeStatement');
+
+        $codeService = new PromotionCodeService(
+            $promotionRepository,
+            $individualCodeRepository,
+            $connection
+        );
+
+        $promotionId = Uuid::randomHex();
+
+        $codeService->addIndividualCodes($promotionId, 10, $context);
+
+        static::assertNotEmpty($individualCodeRepository->upserts[0]);
+        static::assertCount(10, $individualCodeRepository->upserts[0]);
+    }
+}

@@ -1,0 +1,307 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\Product\SalesChannel\Detail;
+
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader;
+use Shopwell\Core\Content\Product\SalesChannel\Detail\AvailableCombinationLoader;
+use Shopwell\Core\Content\Test\Product\ProductBuilder;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\Test\Generator;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Shopwell\Core\Test\TestDefaults;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+class AvailableCombinationLoaderTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+    use SalesChannelApiTestBehaviour;
+
+    private AbstractAvailableCombinationLoader $loader;
+
+    /**
+     * @var EntityRepository<ProductCollection>
+     */
+    private EntityRepository $productRepository;
+
+    private IdsCollection $ids;
+
+    protected function setUp(): void
+    {
+        $this->productRepository = static::getContainer()->get('product.repository');
+        $this->loader = static::getContainer()->get(AvailableCombinationLoader::class);
+        $this->ids = new IdsCollection();
+
+        static::getContainer()->get(SystemConfigService::class)
+            ->set('core.listing.hideCloseoutProductsWhenOutOfStock', false);
+
+        $this->createSalesChannel([
+            'id' => $this->ids->get('sales-channel'),
+            'domains' => [
+                [
+                    'languageId' => Defaults::LANGUAGE_SYSTEM,
+                    'currencyId' => Defaults::CURRENCY,
+                    'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                    'url' => 'http://test.to',
+                ],
+            ],
+        ]);
+    }
+
+    public function testCombinationsAreInResult(): void
+    {
+        $context = Context::createDefaultContext();
+        $salesChanelContext = Generator::generateSalesChannelContext($context);
+        $productId = $this->createProduct($context);
+        $result = $this->loader->loadCombinations($productId, $salesChanelContext);
+
+        foreach ($result->getCombinations() as $combinationHash => $combination) {
+            static::assertTrue($result->hasCombination($combination));
+
+            foreach ($combination as $optionId) {
+                static::assertTrue($result->hasOptionId($optionId));
+            }
+
+            static::assertTrue(\in_array($combinationHash, $result->getHashes(), true));
+        }
+    }
+
+    #[DataProvider('availabilityProvider')]
+    public function testCombinationAvailability(
+        int $stock,
+        bool $expected,
+        ?bool $parentCloseout,
+        ?bool $isCloseout,
+        int $minPurchase,
+        bool $differentChannel = false
+    ): void {
+        $products = (new ProductBuilder($this->ids, 'a.0'))
+            ->manufacturer('m1')
+            ->name('test')
+            ->price(10)
+            ->visibility(TestDefaults::SALES_CHANNEL)
+            ->configuratorSetting('red', 'color')
+            ->configuratorSetting('xl', 'size')
+            ->stock(10)
+            ->closeout($parentCloseout)
+            ->variant(
+                (new ProductBuilder($this->ids, 'a.1'))
+                    ->visibility($differentChannel ? $this->ids->get('sales-channel') : TestDefaults::SALES_CHANNEL)
+                    ->option('red', 'color')
+                    ->option('xl', 'size')
+                    ->stock($stock)
+                    ->closeout($isCloseout)
+                    ->add('minPurchase', $minPurchase)
+                    ->build()
+            )
+            ->build();
+
+        static::getContainer()->get('product.repository')->create([$products], Context::createDefaultContext());
+
+        $context = Context::createDefaultContext();
+        $salesChanelContext = Generator::generateSalesChannelContext($context);
+        $result = $this->loader->loadCombinations($this->ids->get('a.0'), $salesChanelContext);
+
+        foreach ($result->getCombinations() as $combination) {
+            static::assertSame($expected, $result->isAvailable($combination));
+        }
+
+        if ($differentChannel) {
+            static::assertCount(0, $result->getCombinations());
+        }
+    }
+
+    public function testHiddenCloseoutCombinationsAreRemovedWhenConfigured(): void
+    {
+        static::getContainer()->get(SystemConfigService::class)
+            ->set('core.listing.hideCloseoutProductsWhenOutOfStock', true);
+
+        $context = Context::createDefaultContext();
+        $salesChanelContext = Generator::generateSalesChannelContext($context);
+        $productId = $this->createSingleVariantProduct($context, true, null, 0);
+
+        $result = $this->loader->loadCombinations($productId, $salesChanelContext);
+
+        static::assertCount(0, $result->getCombinations());
+    }
+
+    /**
+     * @return \Generator<string, array{0:int, 1:bool, 2:bool|null, 3:bool|null, 4:int, 5?:bool}>
+     */
+    public static function availabilityProvider(): \Generator
+    {
+        yield 'test parentCloseout = true and isCloseout = true and stock = 0 and minPurchase = 1' => [0, false, true, true, 1];
+        yield 'test parentCloseout = true and isCloseout = false and stock = 0 and minPurchase = 1' => [0, true, true, false, 1];
+        yield 'test parentCloseout = true and isCloseout = null and stock = 0 and minPurchase = 1' => [0, false, true, null, 1];
+
+        yield 'test parentCloseout = false and isCloseout = true and stock = 0 and minPurchase = 1' => [0, false, false, true, 1];
+        yield 'test parentCloseout = false and isCloseout = false and stock = 0 and minPurchase = 1' => [0, true, false, false, 1];
+        yield 'test parentCloseout = false and isCloseout = null and stock = 0 and minPurchase = 1' => [0, true, false, null, 1];
+
+        yield 'test parentCloseout = null and isCloseout = true and stock = 0 and minPurchase = 1' => [0, false, null, true, 1];
+        yield 'test parentCloseout = null and isCloseout = false and stock = 0 and minPurchase = 1' => [0, true, null, false, 1];
+        yield 'test parentCloseout = null and isCloseout = null and stock = 0 and minPurchase = 1' => [0, true, null, null, 1];
+
+        yield 'test parentCloseout = true and isCloseout = true and stock = 1 and minPurchase = 1' => [1, true, true, true, 1];
+        yield 'test parentCloseout = true and isCloseout = false and stock = 1 and minPurchase = 1' => [1, true, true, false, 1];
+        yield 'test parentCloseout = true and isCloseout = null and stock = 1 and minPurchase = 1' => [1, true, true, null, 1];
+
+        yield 'test parentCloseout = true and isCloseout = true and stock = 1 and minPurchase = 2' => [1, false, true, true, 2];
+        yield 'test parentCloseout = true and isCloseout = false and stock = 1 and minPurchase = 2' => [1, true, true, false, 2];
+        yield 'test parentCloseout = true and isCloseout = null and stock = 1 and minPurchase = 2' => [1, false, true, null, 2];
+
+        yield 'test parentCloseout = false and isCloseout = true and stock = 1 and minPurchase = 1' => [1, true, false, true, 1];
+        yield 'test parentCloseout = false and isCloseout = false and stock = 1 and minPurchase = 1' => [1, true, false, false, 1];
+        yield 'test parentCloseout = false and isCloseout = null and stock = 1 and minPurchase = 1' => [1, true, false, null, 1];
+
+        yield 'test parentCloseout = false and isCloseout = true and stock = 1 and minPurchase = 2' => [1, false, false, true, 2];
+        yield 'test parentCloseout = false and isCloseout = false and stock = 1 and minPurchase = 2' => [1, true, false, false, 2];
+        yield 'test parentCloseout = false and isCloseout = null and stock = 1 and minPurchase = 2' => [1, true, false, null, 2];
+
+        yield 'test parentCloseout = null and isCloseout = true and stock = 1 and minPurchase = 1' => [1, true, null, true, 1];
+        yield 'test parentCloseout = null and isCloseout = false and stock = 1 and minPurchase = 1' => [1, true, null, false, 1];
+        yield 'test parentCloseout = null and isCloseout = null and stock = 1 and minPurchase = 1' => [1, true, null, null, 1];
+
+        yield 'test parentCloseout = null and isCloseout = true and stock = 1 and minPurchase = 2' => [1, false, null, true, 2];
+        yield 'test parentCloseout = null and isCloseout = false and stock = 1 and minPurchase = 2' => [1, true, null, false, 2];
+        yield 'test parentCloseout = null and isCloseout = null and stock = 1 and minPurchase = 2' => [1, true, null, null, 2];
+
+        yield 'test parentCloseout = true and isCloseout = true and stock = 1 and minPurchase = 1 and differentChannel = true' => [1, false, null, true, 1, true];
+        yield 'test parentCloseout = true and isCloseout = false and stock = 1 and minPurchase = 1 and differentChannel = true' => [1, false, null, false, 1, true];
+        yield 'test parentCloseout = true and isCloseout = null and stock = 1 and minPurchase = 1 and differentChannel = true' => [1, false, null, null, 1, true];
+    }
+
+    /**
+     * @param array<mixed> $a
+     */
+    private function ashuffle(array &$a): void
+    {
+        $keys = array_keys($a);
+        shuffle($keys);
+        $shuffled = [];
+        foreach ($keys as $key) {
+            $shuffled[$key] = $a[$key];
+        }
+        $a = $shuffled;
+    }
+
+    private function createProduct(Context $context): string
+    {
+        // create product with property groups and 1 variant and get its configurator settings
+        $productId = Uuid::randomHex();
+        $variantId = Uuid::randomHex();
+
+        $groupIds = [
+            'a' => Uuid::randomHex(),
+            'b' => Uuid::randomHex(),
+            'c' => Uuid::randomHex(),
+            'd' => Uuid::randomHex(),
+            'e' => Uuid::randomHex(),
+            'f' => Uuid::randomHex(),
+        ];
+
+        $optionIds = [];
+
+        $this->ashuffle($groupIds);
+
+        $configuratorSettings = [];
+        foreach ($groupIds as $groupName => $groupId) {
+            $group = [
+                'id' => $groupId,
+                'name' => $groupName,
+            ];
+
+            // 2 options for each group
+            $optionIds[$groupId] = [];
+            for ($i = 0; $i < 2; ++$i) {
+                $id = Uuid::randomHex();
+                $optionIds[$groupId][] = $id;
+                $configuratorSettings[] = [
+                    'option' => [
+                        'id' => $id,
+                        'name' => $groupName . $i,
+                        'group' => $group,
+                    ],
+                ];
+            }
+        }
+
+        $configuratorGroupConfig = null;
+
+        $product = [
+            'id' => $productId,
+            'name' => 'Test product',
+            'productNumber' => 'a.0',
+            'manufacturer' => ['name' => 'test'],
+            'tax' => ['id' => Uuid::randomHex(), 'taxRate' => 19, 'name' => 'test'],
+            'stock' => 10,
+            'active' => true,
+            'type' => ProductDefinition::TYPE_PHYSICAL,
+            'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 9, 'linked' => true]],
+            'configuratorSettings' => $configuratorSettings,
+            'configuratorGroupConfig' => $configuratorGroupConfig,
+            'visibilities' => [
+                [
+                    'salesChannelId' => TestDefaults::SALES_CHANNEL,
+                    'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL,
+                ],
+            ],
+        ];
+
+        $variant = [
+            'id' => $variantId,
+            'productNumber' => 'variant',
+            'stock' => 10,
+            'active' => true,
+            'parentId' => $productId,
+            'options' => array_map(static fn (array $group) => ['id' => $group[0]], $optionIds),
+        ];
+
+        $this->productRepository->create([$product, $variant], $context);
+
+        return $productId;
+    }
+
+    private function createSingleVariantProduct(Context $context, ?bool $parentCloseout, ?bool $variantCloseout, int $stock): string
+    {
+        $ids = new IdsCollection();
+
+        $product = (new ProductBuilder($ids, 'single.0'))
+            ->manufacturer('m1')
+            ->name('test')
+            ->price(10)
+            ->visibility(TestDefaults::SALES_CHANNEL)
+            ->configuratorSetting('red', 'color')
+            ->configuratorSetting('xl', 'size')
+            ->stock(10)
+            ->closeout($parentCloseout)
+            ->variant(
+                (new ProductBuilder($ids, 'single.1'))
+                    ->visibility(TestDefaults::SALES_CHANNEL)
+                    ->option('red', 'color')
+                    ->option('xl', 'size')
+                    ->stock($stock)
+                    ->closeout($variantCloseout)
+                    ->build()
+            )
+            ->build();
+
+        static::getContainer()->get('product.repository')->create([$product], $context);
+
+        return $ids->get('single.0');
+    }
+}

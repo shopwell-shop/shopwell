@@ -1,0 +1,81 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/app-system/{name}/generate-token": {
+            "post": {
+                "tags": [
+                    "App system"
+                ],
+                "summary": "Generate JWT token for app system backend",
+                "description": "Generate JWT token for authenticated communication with the app server",
+                "operationId": "generateJWTAppSystemAppServer",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "name",
+                        "required": true,
+                        "description": "Name of the app",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "expires": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "shopId": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "No customer is logged in. The token can only be issued for an identified customer."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "No app is installed with the given `name`."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        }
+    }
+}

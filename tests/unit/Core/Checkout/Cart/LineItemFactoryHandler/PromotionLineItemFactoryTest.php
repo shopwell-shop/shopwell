@@ -1,0 +1,85 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\LineItemFactoryHandler;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\PromotionLineItemFactory;
+use Shopwell\Core\Checkout\Cart\Price\Struct\PercentagePriceDefinition;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Generator;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(PromotionLineItemFactory::class)]
+class PromotionLineItemFactoryTest extends TestCase
+{
+    public function testSupports(): void
+    {
+        $factory = new PromotionLineItemFactory();
+
+        static::assertTrue($factory->supports('promotion'));
+        static::assertFalse($factory->supports('credit'));
+        static::assertFalse($factory->supports('custom'));
+        static::assertFalse($factory->supports('product'));
+        static::assertFalse($factory->supports('discount'));
+        static::assertFalse($factory->supports('container'));
+        static::assertFalse($factory->supports('foo'));
+    }
+
+    public function testCreate(): void
+    {
+        $factory = new PromotionLineItemFactory();
+
+        $data = [
+            'id' => 'test-id',
+            'referencedId' => 'test-referenced-id',
+        ];
+
+        $context = Generator::generateSalesChannelContext();
+
+        $lineItem = $factory->create($data, $context);
+
+        static::assertSame(Uuid::fromStringToHex('promotion-test-referenced-id'), $lineItem->getId());
+        static::assertSame('test-referenced-id', $lineItem->getReferencedId());
+        static::assertFalse($lineItem->isGood());
+        static::assertSame(1, $lineItem->getQuantity());
+        static::assertSame('promotion', $lineItem->getType());
+
+        $percentagePrice = $lineItem->getPriceDefinition();
+
+        static::assertInstanceOf(PercentagePriceDefinition::class, $percentagePrice);
+        static::assertSame(0.0, $percentagePrice->getPercentage());
+    }
+
+    public function testCreateTrimsPromotionCode(): void
+    {
+        $factory = new PromotionLineItemFactory();
+
+        $lineItem = $factory->create([
+            'id' => 'test-id',
+            'referencedId' => "\u{00a0}test-referenced-id \t",
+        ], Generator::generateSalesChannelContext());
+
+        static::assertSame(Uuid::fromStringToHex('promotion-test-referenced-id'), $lineItem->getId());
+        static::assertSame('test-referenced-id', $lineItem->getReferencedId());
+    }
+
+    public function testUpdate(): void
+    {
+        $this->expectExceptionObject(CartException::lineItemTypeNotUpdatable('promotion'));
+
+        $factory = new PromotionLineItemFactory();
+
+        $context = Generator::generateSalesChannelContext();
+
+        $lineItem = new LineItem('hatoken', 'promotion');
+
+        $factory->update($lineItem, [], $context);
+    }
+}

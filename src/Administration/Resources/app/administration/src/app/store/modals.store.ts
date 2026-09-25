@@ -1,0 +1,74 @@
+/**
+ * @sw-package framework
+ */
+
+import type { uiModalOpen } from '@shopware-ag/meteor-admin-sdk/es/ui/modal';
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+export type ModalItemEntry = Omit<uiModalOpen, 'responseType' | 'variant' | 'zIndex'> & {
+    baseUrl: string;
+    // Keep these fields local so Admin can support newer Meteor messages while
+    // still compiling against older Meteor SDK versions.
+    variant?: 'default' | 'small' | 'large' | 'x-large' | 'full';
+    zIndex?: number;
+};
+
+const modalsStore = Shopwell.Store.register({
+    id: 'modals',
+
+    state: () => ({
+        modals: [] as ModalItemEntry[],
+    }),
+
+    actions: {
+        openModal({
+            locationId,
+            title,
+            closable,
+            showHeader,
+            showFooter,
+            variant,
+            baseUrl,
+            buttons,
+            textContent,
+            zIndex,
+        }: ModalItemEntry) {
+            this.modals.push({
+                title,
+                closable,
+                showHeader,
+                showFooter,
+                variant,
+                locationId,
+                buttons: buttons ?? [],
+                baseUrl,
+                textContent,
+                ...(zIndex !== undefined ? { zIndex } : {}),
+            });
+        },
+
+        closeModal(locationId: string): void {
+            this.modals = this.modals.filter((modal) => {
+                return modal.locationId !== locationId;
+            });
+        },
+
+        closeLastModalWithoutLocationId(): void {
+            const lastModalWithoutLocationId = this.modals.filter((modal) => !modal.locationId).at(-1);
+
+            if (lastModalWithoutLocationId) {
+                this.modals = this.modals.filter((modal) => modal !== lastModalWithoutLocationId);
+            }
+        },
+    },
+});
+
+/**
+ * @private
+ */
+export type ModalsStore = ReturnType<typeof modalsStore>;
+
+/**
+ * @private
+ */
+export default modalsStore;

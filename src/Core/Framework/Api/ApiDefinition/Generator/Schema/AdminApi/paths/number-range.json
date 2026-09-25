@@ -1,0 +1,127 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "\/_action\/number-range\/reserve\/{type}\/{saleschannel}": {
+            "get": {
+                "tags": [
+                    "Number Range Management"
+                ],
+                "summary": "Reserve or preview a number range value",
+                "description": "Reserves or previews the next value for a number range type, for example `order`, `customer`, `product`, or `document_invoice`. This route resolves the applicable number range by type and sales channel.\n\nThe generated number will be reserved and the number pointer will be incremented with every call. For preview purposes, add the `?preview=1` parameter to the request. In that case, the number will not be incremented.\n\nWhen editing an existing persisted number range and previewing its concrete state or unsaved pattern/start changes, use `\/_action\/number-range\/{numberRangeId}\/preview-pattern` instead.",
+                "operationId": "numberRangeReserve",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "description": "Technical name of the number range type, for example `order`, `customer`, `product`, or `document_invoice`.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "saleschannel",
+                        "in": "path",
+                        "description": "Sales channel for the number range. Number ranges can be defined per sales channel, so you can pass a sales channel ID here.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "preview",
+                        "in": "query",
+                        "description": "If this parameter has a true value, the number will not actually be incremented, but only previewed.",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The generated number",
+                        "content": {
+                            "application\/json": {
+                                "schema": {
+                                    "properties": {
+                                        "number": {
+                                            "description": "The generated or previewed number range value.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Number range not found"
+                    }
+                }
+            }
+        },
+        "\/_action\/number-range\/{numberRangeId}\/preview-pattern": {
+            "get": {
+                "tags": [
+                    "Number Range Management"
+                ],
+                "summary": "Preview a persisted number range",
+                "description": "Previews the next value for a concrete persisted number range without incrementing its state. Optional `pattern` and `start` query parameters can be used to preview unsaved changes while editing the number range. Use `\/_action\/number-range\/reserve\/{type}` for actual allocation by business type and sales channel.",
+                "operationId": "numberRangePreviewPatternById",
+                "parameters": [
+                    {
+                        "name": "numberRangeId",
+                        "in": "path",
+                        "description": "Identifier of the number range to preview.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    },
+                    {
+                        "name": "pattern",
+                        "in": "query",
+                        "description": "Optional pattern override for the preview.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start",
+                        "in": "query",
+                        "description": "Optional start value override for the preview.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The previewed number",
+                        "content": {
+                            "application\/json": {
+                                "schema": {
+                                    "properties": {
+                                        "number": {
+                                            "description": "The previewed number.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Number range not found"
+                    }
+                }
+            }
+        }
+    }
+}

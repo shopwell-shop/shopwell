@@ -1,0 +1,200 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Cart;
+
+use Doctrine\DBAL\Connection;
+use Psr\Clock\ClockInterface;
+use Shopwell\Core\Checkout\Cart\Error\ErrorCollection;
+use Shopwell\Core\Checkout\Cart\Event\CartLoadedEvent;
+use Shopwell\Core\Checkout\Cart\Event\CartSavedEvent;
+use Shopwell\Core\Checkout\Cart\Event\CartVerifyPersistEvent;
+use Shopwell\Core\Checkout\CheckoutPermissions;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery;
+use Shopwell\Core\Framework\DataAbstractionLayer\Util\StatementHelper;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Exception\InvalidUuidException;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+#[Package('checkout')]
+class CartPersister extends AbstractCartPersister
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly Connection $connection,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly CartSerializationCleaner $cartSerializationCleaner,
+        private readonly CartCompressor $compressor,
+        private readonly ClockInterface $clock,
+    ) {
+    }
+
+    public function getDecorated(): AbstractCartPersister
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    public function load(string $token, SalesChannelContext $context): Cart
+    {
+        $content = $this->connection->fetchAssociative(
+            '#cart-persister::load
+            SELECT `cart`.`payload`, `cart`.`rule_ids`, `cart`.`compressed` FROM cart WHERE `token` = :token',
+            ['token' => $token]
+        );
+
+        if (!\is_array($content)) {
+            throw CartException::tokenNotFound($token);
+        }
+
+        try {
+            $cart = $this->compressor->unserialize($content['payload'], (int) $content['compressed']);
+        } catch (\Throwable) {
+            // When we can't decode it, we have to delete it
+            throw CartException::tokenNotFound($token);
+        }
+
+        if (!$cart instanceof Cart) {
+            throw CartException::deserializeFailed();
+        }
+
+        $cart->setToken($token);
+        $cart->setRuleIds(json_decode((string) $content['rule_ids'], true, 512, \JSON_THROW_ON_ERROR) ?? []);
+        $cart->setErrorHash($cart->getErrors()->getUniqueHash());
+        $cart->setPersisted(true);
+
+        $this->eventDispatcher->dispatch(new CartLoadedEvent($cart, $context));
+
+        return $cart;
+    }
+
+    public function exists(string $token, SalesChannelContext $context): bool
+    {
+        return (bool) $this->connection->fetchOne(
+            '#cart-persister::exists
+            SELECT 1 FROM cart WHERE `token` = :token',
+            ['token' => $token]
+        );
+    }
+
+    /**
+     * @throws InvalidUuidException
+     */
+    public function save(Cart $cart, SalesChannelContext $context): void
+    {
+        /** @deprecated tag:v6.8.0 - Condition will be removed */
+        if (!Feature::isActive('v6.8.0.0') && $cart->getBehavior()?->isRecalculation()) {
+            return;
+        }
+
+        $shouldPersist = $this->shouldPersist($cart);
+
+        $event = new CartVerifyPersistEvent($context, $cart, $shouldPersist);
+        $this->eventDispatcher->dispatch($event);
+
+        if (!$event->shouldBePersisted()) {
+            // skipping the persistence means the stored cart stays untouched, it must not be deleted
+            if (!$cart->getBehavior()?->hasPermission(CheckoutPermissions::SKIP_CART_PERSISTENCE)) {
+                $this->delete($cart->getToken(), $context);
+                $cart->setPersisted(false);
+            }
+
+            return;
+        }
+
+        if (!$cart->isPersisted()) {
+            $sql = <<<'SQL'
+                INSERT INTO `cart` (`token`, `payload`, `rule_ids`, `compressed`, `created_at`)
+                VALUES (:token, :payload, :rule_ids, :compressed, :now)
+                ON DUPLICATE KEY UPDATE `payload` = :payload, `compressed` = :compressed, `rule_ids` = :rule_ids, `created_at` = :now;
+            SQL;
+        } else {
+            $sql = <<<'SQL'
+                UPDATE `cart`
+                SET `payload` = :payload, `rule_ids` = :rule_ids, `compressed` = :compressed, `created_at` = :now
+                WHERE `token` = :token;
+            SQL;
+        }
+
+        [$compressed, $serializeCart] = $this->serializeCart($cart);
+
+        $data = [
+            'token' => $cart->getToken(),
+            'payload' => $serializeCart,
+            'rule_ids' => json_encode($context->getRuleIds(), \JSON_THROW_ON_ERROR),
+            'now' => $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            'compressed' => $compressed,
+        ];
+
+        $query = new RetryableQuery($this->connection, $this->connection->prepare($sql));
+        $result = $query->execute($data);
+
+        if ($cart->isPersisted() && (int) $result === 0) {
+            return;
+        }
+
+        $cart->setPersisted(true);
+        $this->eventDispatcher->dispatch(new CartSavedEvent($context, $cart));
+    }
+
+    public function delete(string $token, SalesChannelContext $context): void
+    {
+        $query = new RetryableQuery(
+            $this->connection,
+            $this->connection->prepare('DELETE FROM `cart` WHERE `token` = :token')
+        );
+        $query->execute(['token' => $token]);
+    }
+
+    public function replace(string $oldToken, string $newToken, SalesChannelContext $context): void
+    {
+        $this->connection->executeStatement(
+            'UPDATE `cart` SET `token` = :newToken WHERE `token` = :oldToken',
+            ['newToken' => $newToken, 'oldToken' => $oldToken]
+        );
+    }
+
+    public function prune(int $days): void
+    {
+        $time = $this->clock->now()->modify(\sprintf('-%d day', $days));
+
+        $stmt = $this->connection->prepare(<<<'SQL'
+            DELETE FROM cart
+                WHERE created_at <= :timestamp
+                LIMIT 1000;
+        SQL);
+
+        $timestamp = $time->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+
+        do {
+            $result = StatementHelper::executeStatement($stmt, ['timestamp' => $timestamp]);
+        } while ($result > 0);
+    }
+
+    /**
+     * @return array{0: int, 1: string}
+     */
+    private function serializeCart(Cart $cart): array
+    {
+        $errors = $cart->getErrors();
+        if (!$cart->getBehavior()?->hasPermission(CheckoutPermissions::PERSIST_CART_ERRORS)) {
+            $cart->setErrors(new ErrorCollection());
+        }
+
+        $data = $cart->getData();
+        $cart->setData(null);
+
+        $this->cartSerializationCleaner->cleanupCart($cart);
+
+        $serialized = $this->compressor->serialize($cart);
+
+        $cart->setErrors($errors);
+        $cart->setData($data);
+
+        return $serialized;
+    }
+}

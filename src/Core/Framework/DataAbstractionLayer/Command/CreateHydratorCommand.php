@@ -1,0 +1,475 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Command;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityTranslationDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\AssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\CustomFields;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\DateField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Field;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Runtime;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FloatField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\JsonField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ParentAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StorageAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\VersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\MappingEntityDefinition;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\ArrayEntity;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
+
+#[Package('framework')]
+#[AsCommand(
+    name: 'dal:create:hydrators',
+    description: 'Creates the hydrator classes',
+)]
+class CreateHydratorCommand extends Command
+{
+    private readonly string $dir;
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly DefinitionInstanceRegistry $registry,
+        private readonly Filesystem $filesystem,
+        string $rootDir
+    ) {
+        parent::__construct();
+        $this->dir = $rootDir . '/src';
+    }
+
+    protected function configure(): void
+    {
+        parent::configure();
+        $this->addArgument('whitelist', InputArgument::IS_ARRAY);
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $io = new SymfonyStyle($input, $output);
+        $io->title('DAL generate hydrators');
+
+        if ($this->hasInactiveFeatureFlag()) {
+            $io->info('Note that if definitions are dependent on feature flags, make sure to activate these feature flags, in order to consider them in the hydrators');
+        }
+
+        $this->filesystem->mkdir($this->dir);
+
+        $entities = $this->registry->getDefinitions();
+        $classes = [];
+        $services = [];
+        $uses = [];
+
+        $whitelist = $input->getArgument('whitelist');
+        if ($whitelist === []) {
+            $whitelist = [];
+
+            $startsWith = ['product', 'category', 'property'];
+
+            foreach ($entities as $definition) {
+                foreach ($startsWith as $prefix) {
+                    if (str_starts_with($definition->getEntityName(), $prefix)) {
+                        $whitelist[] = $definition->getEntityName();
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        foreach ($entities as $entity) {
+            if (!\in_array($entity->getEntityName(), $whitelist, true)) {
+                continue;
+            }
+            if ($entity instanceof EntityTranslationDefinition) {
+                continue;
+            }
+            if ($entity instanceof MappingEntityDefinition) {
+                continue;
+            }
+            $classes[$this->getFile($entity)] = $this->generate($entity);
+
+            $content = $this->updateDefinition($entity);
+            if ($content !== null) {
+                $classes[$this->getDefinitionFile($entity)] = $content;
+            }
+
+            // key by hydrator class: the registry can yield the same definition twice,
+            // and a duplicated use statement would be a PHP fatal error
+            $hydratorClass = $this->getNamespace($entity) . '\\' . $this->getClass($entity);
+            $services[$hydratorClass] = $this->generateService($entity);
+            $uses[$hydratorClass] = $hydratorClass;
+        }
+
+        $io->success('Created schema in ' . $this->dir);
+        foreach ($classes as $file => $content) {
+            $file = rtrim($this->dir, '/') . '/' . $file;
+
+            try {
+                $this->filesystem->dumpFile($file, $content);
+            } catch (IOException $e) {
+                $output->writeln($e->getMessage());
+            }
+        }
+
+        $file = $this->dir . '/Core/Framework/DependencyInjection/hydrator.php';
+
+        try {
+            $content = <<<'EOF'
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DependencyInjection;
+
+#uses#
+use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+
+return static function (ContainerConfigurator $containerConfigurator): void {
+    $services = $containerConfigurator->services();
+
+#services#
+};
+
+EOF;
+
+            uksort($uses, 'strcasecmp');
+            $useStatements = array_map(static fn (string $class): string => 'use ' . $class . ';', $uses);
+
+            $content = str_replace(
+                ['#uses#', '#services#'],
+                [implode("\n", $useStatements), implode("\n\n", $services)],
+                $content
+            );
+
+            $this->filesystem->dumpFile($file, $content);
+        } catch (IOException $e) {
+            $output->writeln($e->getMessage());
+        }
+
+        return Command::SUCCESS;
+    }
+
+    private function getDefinitionFile(EntityDefinition $definition): string
+    {
+        $class = $definition::class;
+
+        $class = explode('\\', $class);
+
+        array_shift($class);
+
+        $class = implode('/', $class);
+
+        return $class . '.php';
+    }
+
+    private function updateDefinition(EntityDefinition $definition): ?string
+    {
+        $file = $this->getDefinitionFile($definition);
+
+        $file = rtrim($this->dir, '/') . '/' . $file;
+
+        $content = $this->filesystem->readFile($file);
+
+        if (str_contains($content, 'getHydratorClass')) {
+            return null;
+        }
+
+        $find = 'protected function defineFields(';
+
+        $class = $this->getClass($definition);
+
+        $replace = <<<EOF
+public function getHydratorClass(): string
+    {
+        return #class#::class;
+    }
+
+    protected function defineFields(
+EOF;
+
+        $replace = str_replace('#class#', $class, $replace);
+
+        $content = str_replace($find, $replace, $content);
+
+        return $content;
+    }
+
+    private function generateService(EntityDefinition $definition): string
+    {
+        $template = <<<'EOF'
+    $services->set(#class#::class)
+        ->public()
+        ->args([
+            service('service_container'),
+        ]);
+EOF;
+
+        return str_replace('#class#', $this->getClass($definition), $template);
+    }
+
+    private function generate(EntityDefinition $definition): string
+    {
+        $order = array_merge(
+            $definition->getFields()->filterInstance(StorageAware::class)->getElements(),
+            $definition->getFields()->filterInstance(TranslatedField::class)->getElements(),
+            $definition->getFields()->filterInstance(ManyToOneAssociationField::class)->getElements(),
+            $definition->getFields()->filterInstance(OneToOneAssociationField::class)->getElements(),
+            $definition->getFields()->filterInstance(ManyToManyAssociationField::class)->getElements(),
+            $definition->getFields()->getElements(),
+        );
+
+        $fields = [];
+        $calls = [];
+
+        $handled = [];
+        foreach ($order as $field) {
+            if (\in_array($field->getPropertyName(), $handled, true)) {
+                continue;
+            }
+
+            if (!$this->hasProperty($definition, $field)) {
+                continue;
+            }
+
+            $handled[] = $field->getPropertyName();
+
+            if ($field instanceof TranslatedField) {
+                $typed = EntityDefinitionQueryHelper::getTranslatedField($definition, $field);
+
+                if ($typed instanceof CustomFields) {
+                    $calls[] = $this->renderCustomFields($field);
+                }
+
+                continue;
+            }
+            if ($field instanceof ParentAssociationField) {
+                continue;
+            }
+            if ($field instanceof OneToManyAssociationField) {
+                continue;
+            }
+            if ($field instanceof JsonField && $field->getPropertyName() === 'translated') {
+                continue;
+            }
+            if ($field->is(Runtime::class)) {
+                continue;
+            }
+            if ($field instanceof CustomFields) {
+                $calls[] = $this->renderCustomFields($field);
+            }
+            if ($field instanceof ManyToOneAssociationField || $field instanceof OneToOneAssociationField) {
+                $fields[] = $this->renderToOne($field);
+
+                continue;
+            }
+            if ($field instanceof ManyToManyAssociationField) {
+                $calls[] = $this->renderManyToMany($field);
+
+                continue;
+            }
+
+            $fields[] = $this->renderField($field);
+        }
+
+        return $this->renderClass(
+            $definition,
+            $this->getNamespace($definition),
+            $this->getClass($definition),
+            $fields,
+            $calls
+        );
+    }
+
+    private function getNamespace(EntityDefinition $definition): string
+    {
+        $reflection = new \ReflectionClass($definition);
+
+        return $reflection->getNamespaceName();
+    }
+
+    private function getClass(EntityDefinition $definition): string
+    {
+        $parts = explode('_', $definition->getEntityName());
+
+        $parts = array_map('ucfirst', $parts);
+
+        return implode('', $parts) . 'Hydrator';
+    }
+
+    /**
+     * @param list<string> $fields
+     * @param list<string> $calls
+     */
+    private function renderClass(EntityDefinition $definition, string $namespace, string $class, array $fields, array $calls): string
+    {
+        $template = <<<EOF
+<?php declare(strict_types=1);
+
+namespace #namespace#;
+
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityHydrator;
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+class #class# extends EntityHydrator
+{
+    protected function assign(EntityDefinition \$definition, Entity \$entity, string \$root, array \$row, Context \$context): Entity
+    {
+        #fields#
+
+        \$this->translate(\$definition, \$entity, \$row, \$root, \$context, \$definition->getTranslatedFields());
+        \$this->hydrateFields(\$definition, \$entity, \$root, \$row, \$context, \$definition->getExtensionFields());#calls#
+
+        return \$entity;
+    }
+}
+
+EOF;
+
+        $entity = explode('\\', $definition->getEntityClass());
+        $entity = array_pop($entity);
+
+        $callTemplate = '';
+        if ($calls !== []) {
+            $callTemplate = "\n        " . implode("\n        ", $calls);
+        }
+
+        $vars = [
+            '#namespace#' => $namespace,
+            '#class#' => $class,
+            '#entity#' => $entity,
+            '#fields#' => implode("\n        ", $fields),
+            '#calls#' => $callTemplate,
+        ];
+
+        return str_replace(array_keys($vars), array_values($vars), $template);
+    }
+
+    private function renderToOne(AssociationField $field): string
+    {
+        $template = <<<EOF
+        \$entity->#property# = \$this->manyToOne(\$row, \$root, \$definition->getField('#property#'), \$context);
+        EOF;
+
+        return str_replace('#property#', $field->getPropertyName(), $template);
+    }
+
+    private function renderManyToMany(ManyToManyAssociationField $field): string
+    {
+        $template = <<<EOF
+        \$this->manyToMany(\$row, \$root, \$entity, \$definition->getField('#property#'));
+        EOF;
+
+        return str_replace('#property#', $field->getPropertyName(), $template);
+    }
+
+    private function renderField(Field $field): string
+    {
+        $template = 'if (isset($row[$root . \'.#property#\'])) {
+            #inner#
+        }';
+        $arrayKeyExists = "if (\array_key_exists(\$root . '.#property#', \$row)) {
+            #inner#
+        }";
+        switch (true) {
+            case $field instanceof IdField:
+            case $field instanceof FkField:
+            case $field instanceof VersionField:
+            case $field instanceof ReferenceVersionField:
+                $inner = str_replace('#property#', $field->getPropertyName(), '$entity->#property# = Uuid::fromBytesToHex($row[$root . \'.#property#\']);');
+
+                break;
+            case $field instanceof StringField:
+                $inner = str_replace('#property#', $field->getPropertyName(), '$entity->#property# = $row[$root . \'.#property#\'];');
+
+                break;
+            case $field instanceof FloatField:
+                $inner = str_replace('#property#', $field->getPropertyName(), '$entity->#property# = (float) $row[$root . \'.#property#\'];');
+
+                break;
+            case $field instanceof IntField:
+                $inner = str_replace('#property#', $field->getPropertyName(), '$entity->#property# = (int) $row[$root . \'.#property#\'];');
+
+                break;
+            case $field instanceof DateField:
+            case $field instanceof DateTimeField:
+                $inner = str_replace('#property#', $field->getPropertyName(), "\$entity->#property# = new \DateTimeImmutable(\$row[\$root . '.#property#']);");
+
+                break;
+            case $field instanceof BoolField:
+                $inner = str_replace('#property#', $field->getPropertyName(), '$entity->#property# = (bool) $row[$root . \'.#property#\'];');
+
+                break;
+            default:
+                $template = $arrayKeyExists;
+                $inner = str_replace('#property#', $field->getPropertyName(), '$entity->#property# = $definition->decode(\'#property#\', self::value($row, $root, \'#property#\'));');
+
+                return str_replace(['#property#', '#inner#'], [$field->getPropertyName(), $inner], $template);
+        }
+
+        return str_replace(['#property#', '#inner#'], [$field->getPropertyName(), $inner], $template);
+    }
+
+    private function renderCustomFields(Field $field): string
+    {
+        $template = <<<EOF
+        \$this->customFields(\$definition, \$row, \$root, \$entity, \$definition->getField('#property#'), \$context);
+        EOF;
+
+        return str_replace('#property#', $field->getPropertyName(), $template);
+    }
+
+    private function getFile(EntityDefinition $definition): string
+    {
+        $namespace = $this->getNamespace($definition);
+
+        $namespace = explode('\\', $namespace);
+
+        array_shift($namespace);
+
+        $namespace = implode('/', $namespace);
+
+        return $namespace . '/' . $this->getClass($definition) . '.php';
+    }
+
+    private function hasProperty(EntityDefinition $definition, Field $field): bool
+    {
+        if ($definition->getEntityClass() === ArrayEntity::class) {
+            return true;
+        }
+
+        return property_exists($definition->getEntityClass(), $field->getPropertyName());
+    }
+
+    private function hasInactiveFeatureFlag(): bool
+    {
+        return \in_array(false, Feature::getAll(), true);
+    }
+}

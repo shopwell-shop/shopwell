@@ -1,0 +1,41 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Migration\V6_6;
+
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Migration\MigrationStep;
+use Symfony\Component\Filesystem\Filesystem;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class Migration1731576063UpdateProductComparisonTemplate extends MigrationStep
+{
+    public function getCreationTimestamp(): int
+    {
+        return 1731576063;
+    }
+
+    public function update(Connection $connection): void
+    {
+        $filesystem = new Filesystem();
+
+        $fixturePath = __DIR__ . '/../Fixtures/productComparison-export-profiles/next-39314/';
+        $templateOld = $filesystem->readFile($fixturePath . 'google_old.xml.twig');
+        $templateNew = $filesystem->readFile($fixturePath . 'google_new.xml.twig');
+
+        $connection->update(
+            'product_export',
+            [
+                'body_template' => $templateNew,
+                'updated_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ],
+            [
+                'body_template' => $templateOld,
+            ]
+        );
+    }
+}

@@ -1,0 +1,155 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Rule;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\Rule\CartRuleScope;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemProductStatesRule;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemScope;
+use Shopwell\Core\Checkout\CheckoutRuleScope;
+use Shopwell\Core\Content\Product\State;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Rule\RuleConfig;
+use Shopwell\Core\Framework\Rule\RuleConstraints;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+#[CoversClass(LineItemProductStatesRule::class)]
+class LineItemProductStatesRuleTest extends TestCase
+{
+    private LineItemProductStatesRule $rule;
+
+    protected function setUp(): void
+    {
+        Feature::skipTestIfActive('v6.8.0.0', $this);
+        $this->rule = new LineItemProductStatesRule();
+    }
+
+    public function testGetName(): void
+    {
+        static::assertSame('cartLineItemProductStates', $this->rule->getName());
+    }
+
+    public function testConstraints(): void
+    {
+        $constraints = $this->rule->getConstraints();
+
+        static::assertArrayHasKey('productState', $constraints);
+        static::assertArrayHasKey('operator', $constraints);
+        static::assertEquals(RuleConstraints::choice([
+            State::IS_PHYSICAL,
+            State::IS_DOWNLOAD,
+        ]), $constraints['productState']);
+        static::assertEquals(RuleConstraints::stringOperators(false), $constraints['operator']);
+    }
+
+    public function testConfig(): void
+    {
+        $config = $this->rule->getConfig();
+        $expected = (new RuleConfig())
+            ->operatorSet(RuleConfig::OPERATOR_SET_STRING)
+            ->selectField('productState', [
+                State::IS_PHYSICAL,
+                State::IS_DOWNLOAD,
+            ]);
+
+        static::assertSame($expected->getData(), $config->getData());
+    }
+
+    /**
+     * @param array<int, string> $states
+     */
+    #[DataProvider('caseDataProvider')]
+    public function testMatchesWithLineItemScope(
+        array $states,
+        string $operator,
+        string $productState,
+        bool $expected
+    ): void {
+        $this->rule->assign([
+            'operator' => $operator,
+            'productState' => $productState,
+        ]);
+
+        $match = $this->rule->match(new LineItemScope(
+            $this->createLineItemWithStates($states),
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    /**
+     * @param array<int, string> $states
+     */
+    #[DataProvider('caseDataProvider')]
+    public function testMatchesWithCartRuleScope(
+        array $states,
+        string $operator,
+        string $productState,
+        bool $expected
+    ): void {
+        $this->rule->assign([
+            'operator' => $operator,
+            'productState' => $productState,
+        ]);
+
+        $lineItemCollection = new LineItemCollection([
+            $this->createLineItemWithStates($states),
+        ]);
+
+        $cart = new Cart('test-token');
+        $cart->setLineItems($lineItemCollection);
+
+        $match = $this->rule->match(new CartRuleScope(
+            $cart,
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    public function testNotMatchingWithIncorrectScope(): void
+    {
+        $this->rule->assign([
+            'operator' => Rule::OPERATOR_EQ,
+            'productState' => State::IS_DOWNLOAD,
+        ]);
+
+        $match = $this->rule->match(new CheckoutRuleScope(static::createStub(SalesChannelContext::class)));
+
+        static::assertFalse($match);
+    }
+
+    /**
+     * @return iterable<string, array<int, array<int, string>|bool|string>>
+     */
+    public static function caseDataProvider(): iterable
+    {
+        yield 'equal / match' => [[State::IS_PHYSICAL, State::IS_DOWNLOAD], Rule::OPERATOR_EQ, State::IS_DOWNLOAD, true];
+        yield 'equal / no match' => [[State::IS_PHYSICAL], Rule::OPERATOR_EQ, State::IS_DOWNLOAD, false];
+        yield 'not equal / match' => [[State::IS_PHYSICAL], Rule::OPERATOR_NEQ, State::IS_DOWNLOAD, true];
+        yield 'not equal / no match' => [[State::IS_PHYSICAL, State::IS_DOWNLOAD], Rule::OPERATOR_NEQ, State::IS_DOWNLOAD, false];
+    }
+
+    /**
+     * @param array<int, string> $states
+     */
+    private function createLineItemWithStates(array $states): LineItem
+    {
+        return (new LineItem(Uuid::randomHex(), LineItem::PRODUCT_LINE_ITEM_TYPE))
+            ->setGood(true)
+            ->setStates($states);
+    }
+}

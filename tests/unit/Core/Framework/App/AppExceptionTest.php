@@ -1,0 +1,287 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\App;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\AppException;
+use Shopwell\Core\Framework\App\Exception\AppAlreadyInstalledException;
+use Shopwell\Core\Framework\App\Exception\AppDownloadException;
+use Shopwell\Core\Framework\App\Exception\AppNotFoundException;
+use Shopwell\Core\Framework\App\Exception\AppRegistrationRejectedException;
+use Shopwell\Core\Framework\App\Exception\ShopIdChangeSuggestedException;
+use Shopwell\Core\Framework\App\ShopId\FingerprintComparisonResult;
+use Shopwell\Core\Framework\App\ShopId\ShopId;
+use Shopwell\Core\Framework\App\Validation\Error\AppNameError;
+use Shopwell\Core\Framework\App\Validation\Requirements\UnmetRequirement;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(AppException::class)]
+class AppExceptionTest extends TestCase
+{
+    public function testCannotDeleteManaged(): void
+    {
+        $e = AppException::cannotDeleteManaged('ManagedApp');
+
+        static::assertSame(AppException::CANNOT_DELETE_COMPOSER_MANAGED, $e->getErrorCode());
+    }
+
+    public function testNotCompatible(): void
+    {
+        $e = AppException::notCompatible('IncompatibleApp');
+
+        static::assertSame(AppException::NOT_COMPATIBLE, $e->getErrorCode());
+    }
+
+    public function testNotFound(): void
+    {
+        $e = AppException::notFound('NonExistingApp');
+
+        static::assertInstanceOf(AppNotFoundException::class, $e);
+        static::assertSame(AppException::NOT_FOUND, $e->getErrorCode());
+    }
+
+    public function testAlreadyInstalled(): void
+    {
+        $e = AppException::alreadyInstalled('AlreadyInstalledApp');
+
+        static::assertInstanceOf(AppAlreadyInstalledException::class, $e);
+        static::assertSame(AppException::ALREADY_INSTALLED, $e->getErrorCode());
+    }
+
+    public function testRegistrationFailed(): void
+    {
+        $e = AppException::registrationFailed('ToBeRegisteredApp', 'Invalid signature');
+
+        static::assertSame(AppException::REGISTRATION_FAILED, $e->getErrorCode());
+        static::assertSame('App registration for "ToBeRegisteredApp" failed: Invalid signature', $e->getMessage());
+    }
+
+    public function testAppRegistrationRejected(): void
+    {
+        $e = AppException::appRegistrationRejected('RejectedApp', 'the app does not trust this secret');
+
+        // A dedicated subtype so recovery can catch a definitive rejection by type, not by error-code string.
+        static::assertInstanceOf(AppRegistrationRejectedException::class, $e);
+        static::assertSame(AppException::APP_REGISTRATION_REJECTED, $e->getErrorCode());
+        static::assertSame('App registration for "RejectedApp" failed: the app does not trust this secret', $e->getMessage());
+    }
+
+    public function testAppSecretRecoveryFailed(): void
+    {
+        $e = AppException::appSecretRecoveryFailed('PendingApp');
+
+        static::assertSame(Response::HTTP_CONFLICT, $e->getStatusCode());
+        static::assertSame(AppException::APP_SECRET_RECOVERY_FAILED, $e->getErrorCode());
+        static::assertStringContainsString('bin/console app:install PendingApp', $e->getMessage());
+        static::assertStringContainsString('bin/console app:secret:rotate PendingApp', $e->getMessage());
+        static::assertStringContainsString('reinstall-apps', $e->getMessage());
+    }
+
+    public function testLicenseCouldNotBeVerified(): void
+    {
+        $e = AppException::licenseCouldNotBeVerified('UnlicensedApp');
+
+        static::assertSame(AppException::LICENSE_COULD_NOT_BE_VERIFIED, $e->getErrorCode());
+    }
+
+    public function testInvalidConfiguration(): void
+    {
+        $e = AppException::invalidConfiguration('InvalidlyConfiguredApp', new AppNameError('InvalidlyConfiguredApp'));
+
+        static::assertSame(AppException::INVALID_CONFIGURATION, $e->getErrorCode());
+    }
+
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testInstallationFailed(): void
+    {
+        $e = AppException::installationFailed('AnyAppName', 'reason');
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getStatusCode());
+        static::assertSame(AppException::INSTALLATION_FAILED, $e->getErrorCode());
+        static::assertSame('App installation for "AnyAppName" failed: reason', $e->getMessage());
+    }
+
+    public function testAppSecretRequiredForFeatures(): void
+    {
+        $e = AppException::appSecretRequiredForFeatures('MyApp', ['Modules']);
+
+        static::assertSame(AppException::FEATURES_REQUIRE_APP_SECRET, $e->getErrorCode());
+        static::assertSame('App "MyApp" could not be installed/updated because it uses features Modules but has no secret', $e->getMessage());
+
+        $e = AppException::appSecretRequiredForFeatures('MyApp', ['Modules', 'Payments', 'Webhooks']);
+
+        static::assertSame(AppException::FEATURES_REQUIRE_APP_SECRET, $e->getErrorCode());
+        static::assertSame('App "MyApp" could not be installed/updated because it uses features Modules, Payments and Webhooks but has no secret', $e->getMessage());
+    }
+
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testInAppPurchaseGatewayUrlEmpty(): void
+    {
+        $e = AppException::inAppPurchaseGatewayUrlEmpty();
+
+        static::assertSame(AppException::INVALID_CONFIGURATION, $e->getErrorCode());
+        static::assertSame('No In-App Purchases gateway url set. Please update your manifest file.', $e->getMessage());
+    }
+
+    public function testNoSourceSupports(): void
+    {
+        $e = AppException::noSourceSupports();
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_NO_SOURCE_SUPPORTS', $e->getErrorCode());
+        static::assertSame('App is not supported by any source.', $e->getMessage());
+    }
+
+    public function testPaymentGatewayRequestFailed(): void
+    {
+        $previous = new \RuntimeException('Request failed');
+        $e = AppException::paymentGatewayRequestFailed('PaymentApp', $previous);
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $e->getStatusCode());
+        static::assertSame(AppException::APP_PAYMENT_GATEWAY_REQUEST_FAILED, $e->getErrorCode());
+        static::assertSame('Request from app "PaymentApp" to payment gateway failed.', $e->getMessage());
+        static::assertSame($previous, $e->getPrevious());
+    }
+
+    public function testCannotMountAppFilesystem(): void
+    {
+        $previous = AppDownloadException::transportError('some/url');
+        $e = AppException::cannotMountAppFilesystem('appName', $previous);
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__CANNOT_MOUNT_APP_FILESYSTEM', $e->getErrorCode());
+        static::assertSame('Cannot mount a filesystem for App "appName". Error: "' . $previous->getMessage() . '"', $e->getMessage());
+    }
+
+    public function testSourceDoesNotExist(): void
+    {
+        $e = AppException::sourceDoesNotExist('/Unknown/Source');
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_NO_SOURCE_SUPPORTS', $e->getErrorCode());
+        static::assertSame('The source "/Unknown/Source" does not exist', $e->getMessage());
+    }
+
+    public function testCreateCommandValidationError(): void
+    {
+        $e = AppException::createCommandValidationError('error message');
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_CREATE_COMMAND_VALIDATION_ERROR', $e->getErrorCode());
+        static::assertSame('error message', $e->getMessage());
+    }
+
+    public function testDirectoryAlreadyExists(): void
+    {
+        $e = AppException::directoryAlreadyExists('SuperApp');
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_DIRECTORY_ALREADY_EXISTS', $e->getErrorCode());
+        static::assertSame('Directory for app "SuperApp" already exists', $e->getMessage());
+    }
+
+    public function testDirectoryCreationFailed(): void
+    {
+        $e = AppException::directoryCreationFailed('path/to/app');
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_DIRECTORY_CREATION_FAILED', $e->getErrorCode());
+        static::assertSame('Unable to create directory "path/to/app". Please check permissions', $e->getMessage());
+    }
+
+    public function testInvalidPrivileges(): void
+    {
+        $e = AppException::invalidPrivileges();
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_INVALID_PERMISSIONS', $e->getErrorCode());
+        static::assertSame('For each accept, or revoke, expected a list of privileges in the format "category:read"', $e->getMessage());
+    }
+
+    public function testMissingIntegration(): void
+    {
+        $e = AppException::missingIntegration();
+
+        static::assertSame(Response::HTTP_FORBIDDEN, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_MISSING_INTEGRATION', $e->getErrorCode());
+        static::assertSame('Forbidden. Not a valid integration source.', $e->getMessage());
+    }
+
+    public function testCapabilityNotGranted(): void
+    {
+        $e = AppException::capabilityNotGranted('myApp', 'context_gateway');
+
+        static::assertSame(Response::HTTP_FORBIDDEN, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_CAPABILITY_NOT_GRANTED', $e->getErrorCode());
+        static::assertSame('App "myApp" has not been granted the "context_gateway" permission.', $e->getMessage());
+    }
+
+    public function testShopIdChangeSuggested(): void
+    {
+        $e = AppException::shopIdChangeSuggested(ShopId::v2('123456789'), $comparisonResult = new FingerprintComparisonResult([], [], 75));
+
+        static::assertInstanceOf(ShopIdChangeSuggestedException::class, $e);
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_SHOP_ID_CHANGE_SUGGESTED', $e->getErrorCode());
+        static::assertSame('Changes in your system were detected that suggest a change of the shop ID.', $e->getMessage());
+        static::assertSame($comparisonResult, $e->comparisonResult);
+    }
+
+    public function testAppUrlNotConfigured(): void
+    {
+        $e = AppException::appUrlNotConfigured();
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_URL_NOT_CONFIGURED', $e->getErrorCode());
+        static::assertSame('The environment variable "APP_URL" is not set. Please set it to the URL to your Admin API.', $e->getMessage());
+    }
+
+    public function testInvalidShopIdConfiguration(): void
+    {
+        $e = AppException::invalidShopIdConfiguration();
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_INVALID_SHOP_ID_CONFIGURATION', $e->getErrorCode());
+        static::assertSame('The configuration values for "core.app.shopIdV2" and "core.app.shopId" in the system config are invalid.', $e->getMessage());
+    }
+
+    public function testInvalidAppUrl(): void
+    {
+        $e = AppException::invalidAppUrl('invalid-url');
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_URL_INVALID', $e->getErrorCode());
+        static::assertSame('APP_URL is invalid: invalid-url', $e->getMessage());
+    }
+
+    public function testRequirementsNotMet(): void
+    {
+        $violation1 = new UnmetRequirement(
+            appName: 'TestApp1',
+            requirementName: 'PHP Version',
+            actionableResolution: 'Upgrade to PHP 8.2 or higher'
+        );
+
+        $violation2 = new UnmetRequirement(
+            appName: 'TestApp2',
+            requirementName: 'MySQL Version',
+            actionableResolution: 'Upgrade to MySQL 8.0 or higher'
+        );
+
+        $e = AppException::requirementsNotMet($violation1, $violation2);
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $e->getStatusCode());
+        static::assertSame('FRAMEWORK__APP_REQUIREMENTS_NOT_MET', $e->getErrorCode());
+        static::assertSame('The app requirements are not met: App "TestApp1" - Requirement "PHP Version": Upgrade to PHP 8.2 or higher; App "TestApp2" - Requirement "MySQL Version": Upgrade to MySQL 8.0 or higher', $e->getMessage());
+
+        $expectedViolations = 'App "TestApp1" - Requirement "PHP Version": Upgrade to PHP 8.2 or higher; App "TestApp2" - Requirement "MySQL Version": Upgrade to MySQL 8.0 or higher';
+        static::assertSame(['violations' => $expectedViolations], $e->getParameters());
+    }
+}

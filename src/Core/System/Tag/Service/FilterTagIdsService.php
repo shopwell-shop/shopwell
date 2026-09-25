@@ -1,0 +1,145 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\Tag\Service;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Query\Expression\CompositeExpression;
+use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\CompiledFieldCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\CriteriaQueryBuilder;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\QueryBuilder;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Field;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Tag\Struct\FilteredTagIdsStruct;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@framework')]
+class FilterTagIdsService
+{
+    public function __construct(
+        private readonly EntityDefinition $tagDefinition,
+        private readonly Connection $connection,
+        private readonly CriteriaQueryBuilder $criteriaQueryBuilder
+    ) {
+    }
+
+    public function filterIds(Request $request, Criteria $criteria, Context $context): FilteredTagIdsStruct
+    {
+        $query = $this->getIdsQuery($criteria, $context);
+        $duplicateFilter = RequestParamHelper::get($request, 'duplicateFilter', false);
+        $emptyFilter = RequestParamHelper::get($request, 'emptyFilter', false);
+        $assignmentFilter = RequestParamHelper::get($request, 'assignmentFilter', false);
+
+        if ($emptyFilter) {
+            $this->addEmptyFilter($query);
+        }
+
+        if ($duplicateFilter) {
+            $this->addDuplicateFilter($query);
+        }
+
+        if (\is_array($assignmentFilter)) {
+            $this->addAssignmentFilter($query, $assignmentFilter);
+        }
+
+        $ids = $query->executeQuery()->fetchFirstColumn();
+
+        return new FilteredTagIdsStruct($ids, $this->getTotal($query));
+    }
+
+    private function getIdsQuery(Criteria $criteria, Context $context): QueryBuilder
+    {
+        $query = new QueryBuilder($this->connection);
+
+        $query = $this->criteriaQueryBuilder->build($query, $this->tagDefinition, $criteria, $context);
+
+        $select = array_merge(['LOWER(HEX(`tag`.`id`))'], $query->getSelectParts());
+        $query->select(...$select);
+        $query->addGroupBy('`tag`.`id`');
+        $query->setMaxResults($criteria->getLimit());
+        $query->setFirstResult($criteria->getOffset() ?? 0);
+
+        return $query;
+    }
+
+    private function getTotal(QueryBuilder $query): int
+    {
+        $query->setMaxResults(null);
+        $query->setFirstResult(0);
+
+        $total = (new QueryBuilder($this->connection))
+            ->select('COUNT(*)')
+            ->from(\sprintf('(%s) total', $query->getSQL()))
+            ->setParameters($query->getParameters(), $query->getParameterTypes());
+
+        return (int) $total->executeQuery()->fetchOne();
+    }
+
+    private function addEmptyFilter(QueryBuilder $query): void
+    {
+        /** @var CompiledFieldCollection<ManyToManyAssociationField> $manyToManyFields */
+        $manyToManyFields = $this->tagDefinition->getFields()->filter(static fn (Field $field) => $field instanceof ManyToManyAssociationField);
+
+        foreach ($manyToManyFields as $manyToManyField) {
+            $mappingTable = EntityDefinitionQueryHelper::escape($manyToManyField->getMappingDefinition()->getEntityName());
+            $mappingLocalColumn = EntityDefinitionQueryHelper::escape($manyToManyField->getMappingLocalColumn());
+
+            $subQuery = (new QueryBuilder($this->connection))
+                ->select($mappingLocalColumn)
+                ->from($mappingTable);
+
+            $query->andWhere($query->expr()->notIn('`tag`.`id`', \sprintf('(%s)', $subQuery->getSQL())));
+        }
+    }
+
+    private function addDuplicateFilter(QueryBuilder $query): void
+    {
+        $subQuery = (new QueryBuilder($this->connection))
+            ->select('name')
+            ->from('tag')
+            ->groupBy('name')
+            ->having('COUNT(`name`) > 1');
+
+        $query->innerJoin(
+            '`tag`',
+            \sprintf('(%s)', $subQuery->getSQL()),
+            'duplicate',
+            'duplicate.`name` = `tag`.`name`'
+        );
+    }
+
+    /**
+     * @param array<string> $assignments
+     */
+    private function addAssignmentFilter(QueryBuilder $query, array $assignments): void
+    {
+        /** @var CompiledFieldCollection<ManyToManyAssociationField> $manyToManyFields */
+        $manyToManyFields = $this->tagDefinition->getFields()->filter(static fn (Field $field) => $field instanceof ManyToManyAssociationField && \in_array($field->getPropertyName(), $assignments, true));
+
+        if (\count($manyToManyFields) === 0) {
+            return;
+        }
+
+        $parts = [];
+        foreach ($manyToManyFields as $manyToManyField) {
+            $mappingTable = EntityDefinitionQueryHelper::escape($manyToManyField->getMappingDefinition()->getEntityName());
+            $mappingLocalColumn = EntityDefinitionQueryHelper::escape($manyToManyField->getMappingLocalColumn());
+
+            $subQuery = (new QueryBuilder($this->connection))
+                ->select($mappingLocalColumn)
+                ->from($mappingTable);
+
+            $parts[] = $query->expr()->in('`tag`.`id`', \sprintf('(%s)', $subQuery->getSQL()));
+        }
+
+        $query->andWhere(CompositeExpression::or(...$parts));
+    }
+}

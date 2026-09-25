@@ -1,0 +1,137 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules;
+
+use PhpParser\Node;
+use PHPStan\Analyser\Scope;
+use PHPStan\Node\InClassNode;
+use PHPStan\Reflection\ClassReflection;
+use PHPStan\Reflection\ExtendedMethodReflection;
+use PHPStan\Reflection\MissingConstantFromReflectionException;
+use PHPStan\Rules\Rule;
+use PHPStan\Rules\RuleError;
+use PHPStan\Rules\RuleErrorBuilder;
+use Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\BCChangeMarkers;
+use Shopwell\Core\Framework\Deprecation\BCChange\BecomesInternal;
+use Shopwell\Core\Framework\Extensions\Extension;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @implements Rule<InClassNode>
+ *
+ * @internal
+ */
+#[Package('framework')]
+class ExtensionRule implements Rule
+{
+    public function getNodeType(): string
+    {
+        return InClassNode::class;
+    }
+
+    /**
+     * @param InClassNode $node
+     *
+     * @return array<RuleError|string>
+     */
+    public function processNode(Node $node, Scope $scope): array
+    {
+        $example = $this->isExample($node);
+
+        $extension = $this->isExtension($node);
+
+        $internal = $this->isInternal($node->getDocComment()?->getText() ?? '', $node->getClassReflection());
+
+        if (!$extension && !$example) {
+            return [];
+        }
+
+        $errors = [];
+        if ($internal) {
+            $errors[] = RuleErrorBuilder::message('Extension / Example classes should not be marked as internal')
+                ->identifier('shopware.extensionNotInternal')
+                ->line($node->getDocComment()?->getStartLine() ?? 0)
+                ->build();
+        }
+
+        if ($extension) {
+            $errors = array_merge($errors, $this->validateExtension($node));
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @return array<RuleError|string>
+     */
+    private function validateExtension(InClassNode $node): array
+    {
+        $errors = [];
+
+        $nameConstant = null;
+        try {
+            $nameConstant = $node->getClassReflection()->getConstant('NAME');
+        } catch (MissingConstantFromReflectionException) {
+            $errors[] = RuleErrorBuilder::message('Extension classes should have a public NAME constant')
+                ->identifier('shopware.extensionPublicNameConst')
+                ->line($node->getStartLine())
+                ->build();
+        }
+
+        if ($nameConstant && !$nameConstant->isPublic()) {
+            $errors[] = RuleErrorBuilder::message('Extension classes should have a public NAME constant')
+                ->identifier('shopware.extensionPublicNameConst')
+                ->line($node->getStartLine())
+                ->build();
+        }
+
+        // is final?
+        if (!$node->getClassReflection()->isFinal()) {
+            $errors[] = RuleErrorBuilder::message('Extension classes should be final')
+                ->identifier('shopware.extensionFinal')
+                ->line($node->getStartLine())
+                ->build();
+        }
+
+        if (!$node->getClassReflection()->hasConstructor()) {
+            return $errors;
+        }
+
+        $constructor = $node->getClassReflection()->getConstructor();
+        $internal = $this->isInternal($constructor->getDocComment() ?? '', $constructor);
+        if (!$internal) {
+            $errors[] = RuleErrorBuilder::message('Extension classes constructor should be marked as internal')
+                ->identifier('shopware.extensionConstructInternal')
+                ->line($node->getStartLine())
+                ->build();
+        }
+
+        return $errors;
+    }
+
+    private function isInternal(string $doc, ClassReflection|ExtendedMethodReflection $subject): bool
+    {
+        return \str_contains($doc, '@internal')
+            || BCChangeMarkers::has(BecomesInternal::class, $subject);
+    }
+
+    private function isExtension(InClassNode $node): bool
+    {
+        $reflection = $node->getClassReflection();
+
+        if ($reflection->getParentClass() === null) {
+            return false;
+        }
+
+        $parentClass = $reflection->getParentClass()->getName();
+
+        return $parentClass === Extension::class;
+    }
+
+    private function isExample(InClassNode $node): bool
+    {
+        $namespace = $node->getClassReflection()->getName();
+
+        return \str_contains($namespace, 'Shopwell\\Tests\\Examples\\');
+    }
+}

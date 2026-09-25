@@ -1,0 +1,28 @@
+.sw-users-permissions-additional-permissions {
+    .sw-users-permissions-additional-permissions__headline,
+    .sw-users-permissions-additional-permissions-app {
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
+        margin-bottom: var(--scale-size-8);
+
+        &:first-child {
+            margin-top: 0;
+        }
+    }
+
+    .sw-users-permissions-additional-permissions__switches {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--scale-size-6);
+        margin-bottom: var(--scale-size-20);
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .mt-switch {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+}

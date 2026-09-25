@@ -1,0 +1,133 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Cart\Order\Transformer;
+
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\Delivery;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
+use Shopwell\Core\Checkout\Cart\Order\IdStruct;
+use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\Struct;
+
+/**
+ * @phpstan-import-type TransformedAddressArray from AddressTransformer
+ *
+ * @phpstan-type DeliveryArray array{
+ *     id?: string,
+ *     shippingDateEarliest: string,
+ *     shippingDateLatest: string,
+ *     shippingMethodId: string,
+ *     shippingOrderAddress?: TransformedAddressArray,
+ *     shippingOrderAddressId?: string,
+ *     shippingOrderAddressVersionId?: string,
+ *     shippingCosts: CalculatedPrice,
+ *     positions: list<array{
+ *         id: string|null,
+ *         price: CalculatedPrice,
+ *         orderLineItemId: string,
+ *         orderLineItemVersionId: string
+ *     }>,
+ *     stateId: string
+ * }
+ */
+#[Package('checkout')]
+class DeliveryTransformer
+{
+    /**
+     * @param array<string, array<string, mixed>> $lineItems
+     * @param array<string, TransformedAddressArray> $addresses
+     *
+     * @return list<DeliveryArray>
+     */
+    public static function transformCollection(
+        DeliveryCollection $deliveries,
+        array $lineItems,
+        string $stateId,
+        Context $context,
+        array $addresses = []
+    ): array {
+        $output = [];
+        foreach ($deliveries as $delivery) {
+            $output[] = self::transform($delivery, $lineItems, $stateId, $context, $addresses);
+        }
+
+        return $output;
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $lineItems
+     * @param array<string, TransformedAddressArray> $addresses
+     *
+     * @return DeliveryArray
+     */
+    public static function transform(
+        Delivery $delivery,
+        array $lineItems,
+        string $stateId,
+        Context $context,
+        array $addresses = []
+    ): array {
+        $addressId = $delivery->getLocation()->getAddress()?->getId();
+        $shippingAddress = null;
+
+        if ($addressId !== null && \array_key_exists($addressId, $addresses)) {
+            $shippingAddress = $addresses[$addressId];
+        } elseif ($delivery->getLocation()->getAddress() !== null) {
+            $shippingAddress = AddressTransformer::transform($delivery->getLocation()->getAddress());
+        }
+
+        $originalAddressId = $delivery->getExtensionOfType(
+            OrderConverter::ORIGINAL_ADDRESS_ID,
+            IdStruct::class
+        )?->getId();
+
+        $originalAddressVersionId = $delivery->getExtensionOfType(
+            OrderConverter::ORIGINAL_ADDRESS_VERSION_ID,
+            IdStruct::class
+        )?->getId();
+
+        $deliveryData = [
+            'id' => self::getId($delivery),
+            'shippingDateEarliest' => $delivery->getDeliveryDate()->getEarliest()->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            'shippingDateLatest' => $delivery->getDeliveryDate()->getLatest()->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            'shippingMethodId' => $delivery->getShippingMethod()->getId(),
+            'shippingOrderAddress' => $shippingAddress,
+            'shippingCosts' => $delivery->getShippingCosts(),
+            'positions' => [],
+            'stateId' => $stateId,
+        ];
+
+        if ($originalAddressId !== null && $originalAddressVersionId !== null) {
+            $deliveryData['shippingOrderAddressId'] = $originalAddressId;
+            $deliveryData['shippingOrderAddressVersionId'] = $originalAddressVersionId;
+        }
+
+        $deliveryData = array_filter($deliveryData, static fn ($item) => $item !== null);
+
+        foreach ($delivery->getPositions() as $position) {
+            if (!isset($lineItems[$position->getIdentifier()])) {
+                continue;
+            }
+
+            $deliveryData['positions'][] = [
+                'id' => self::getId($position),
+                'price' => $position->getPrice(),
+                'orderLineItemId' => $lineItems[$position->getIdentifier()]['id'],
+                'orderLineItemVersionId' => $context->getVersionId(),
+            ];
+        }
+
+        return $deliveryData;
+    }
+
+    private static function getId(Struct $struct): ?string
+    {
+        return $struct->getExtensionOfType(
+            OrderConverter::ORIGINAL_ID,
+            IdStruct::class
+        )?->getId();
+    }
+}

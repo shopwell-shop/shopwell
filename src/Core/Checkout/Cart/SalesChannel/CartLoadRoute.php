@@ -1,0 +1,55 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Cart\SalesChannel;
+
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\CartCalculator;
+use Shopwell\Core\Checkout\Cart\TaxProvider\TaxProviderProcessor;
+use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Package('checkout')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
+class CartLoadRoute extends AbstractCartLoadRoute
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly CartCalculator $cartCalculator,
+        private readonly TaxProviderProcessor $taxProviderProcessor
+    ) {
+    }
+
+    public function getDecorated(): AbstractCartLoadRoute
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    /**
+     * `$cart` is filled by the CartValueResolver when this route runs as a controller, and then holds the
+     * cart that resolving the sales channel context already loaded and calculated for the context token.
+     */
+    #[Route(path: '/store-api/checkout/cart', name: 'store-api.checkout.cart.read', methods: ['GET', 'POST'])]
+    public function load(Request $request, SalesChannelContext $context, ?Cart $cart = null): CartResponse
+    {
+        $token = RequestParamHelper::get($request, 'token', $context->getToken());
+        $taxed = RequestParamHelper::get($request, 'taxed', false);
+
+        if ($cart === null || $cart->getToken() !== $token) {
+            $cart = $this->cartCalculator->calculateByToken($token, $context);
+        }
+
+        if ($taxed) {
+            $this->taxProviderProcessor->process($cart, $context);
+        }
+
+        return new CartResponse($cart);
+    }
+}

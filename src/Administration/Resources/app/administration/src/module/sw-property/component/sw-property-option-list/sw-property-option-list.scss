@@ -1,0 +1,33 @@
+.sw-property-option-list {
+    .media-column .sw-grid__cell-content {
+        padding: 0;
+    }
+
+    &.sw-card .sw-card__content {
+        padding: 0;
+    }
+
+    .sw-property-option-list__toolbar {
+        padding: 25px 35px;
+        background-color: var(--color-elevation-surface-sunken);
+        border-bottom: 1px solid var(--color-border-secondary-default);
+
+        .sw-property-option-list__delete-button {
+            border-color: var(--color-border-critical-default);
+
+            .mt-icon {
+                color: var(--color-icon-critical-default);
+            }
+
+            &.mt-button--disabled {
+                opacity: 0.2;
+            }
+        }
+    }
+
+    .sw-tooltip--wrapper {
+        .sw-property-option-list__add-button {
+            width: 100%;
+        }
+    }
+}

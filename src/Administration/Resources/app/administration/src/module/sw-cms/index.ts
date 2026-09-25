@@ -1,0 +1,99 @@
+import CmsPageTypeService from './service/cms-page-type.service';
+import defaultSearchConfiguration from './default-search-configuration';
+import initCmsPageTypes from './init/cmsPageTypes.init';
+import './service/cms.service';
+import './acl';
+import './blocks';
+import './component';
+import './elements';
+import './mixin/sw-cms-element.mixin';
+import './mixin/sw-cms-state.mixin';
+import './store/cms-page.store';
+import './service/cms-block-favorites.service';
+import './service/cms-element-favorites.service';
+import './service/cmsDataResolver.service';
+
+/**
+ * @private
+ */
+Shopwell.Service().register('cmsPageTypeService', () => {
+    return new CmsPageTypeService();
+});
+
+initCmsPageTypes();
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Shopwell.Component.register('sw-cms-list', () => import('./page/sw-cms-list'));
+/**
+ * @private
+ * @sw-package discovery
+ */
+Shopwell.Component.register('sw-cms-detail', () => import('./page/sw-cms-detail'));
+/**
+ * @private
+ * @sw-package discovery
+ */
+Shopwell.Component.extend('sw-cms-create', 'sw-cms-detail', () => import('./page/sw-cms-create'));
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Shopwell.Module.register('sw-cms', {
+    type: 'core',
+    name: 'cms',
+    title: 'sw-cms.general.mainMenuItemGeneral',
+    description: 'The module for creating content.',
+    color: 'var(--sw-color-module-pink-default)',
+    icon: 'regular-image-text',
+    favicon: 'icon-module-content.svg',
+    entity: 'cms_page',
+
+    routes: {
+        index: {
+            component: 'sw-cms-list',
+            path: 'index',
+            meta: {
+                privilege: 'cms.viewer',
+            },
+        },
+        detail: {
+            component: 'sw-cms-detail',
+            path: 'detail/:id',
+            meta: {
+                parentPath: 'sw.cms.index',
+                privilege: 'cms.viewer',
+                appSystem: {
+                    view: 'detail',
+                },
+            },
+        },
+        create: {
+            component: 'sw-cms-create',
+            path: 'create/:type?/:id?',
+            meta: {
+                parentPath: 'sw.cms.index',
+                privilege: 'cms.creator',
+            },
+        },
+    },
+
+    navigation: [
+        {
+            id: 'sw-content',
+            label: 'global.sw-admin-menu.navigation.mainMenuItemContent',
+            color: 'var(--sw-color-module-pink-default)',
+            icon: 'regular-image-text',
+            position: 50,
+        },
+        {
+            id: 'sw-cms',
+            label: 'sw-cms.general.mainMenuItemGeneral',
+            color: 'var(--sw-color-module-pink-default)',
+            path: 'sw.cms.index',
+            icon: 'regular-image-text',
+            position: 10,
+            parent: 'sw-content',
+            privilege: 'cms.viewer',
+        },
+    ],
+
+    defaultSearchConfiguration,
+});

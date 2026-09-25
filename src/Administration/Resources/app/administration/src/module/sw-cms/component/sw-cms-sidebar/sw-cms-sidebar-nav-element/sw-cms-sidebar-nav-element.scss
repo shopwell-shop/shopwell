@@ -1,0 +1,37 @@
+.sw-cms-sidebar__navigator-element {
+    display: grid;
+    grid-template-columns: 1fr 28px 28px;
+    align-items: center;
+    align-content: center;
+    padding: 8px 4px 8px 14px;
+    margin: 8px 0;
+    border: 1px solid var(--color-border-secondary-default);
+    background: var(--color-background-tertiary-default);
+    color: var(--color-text-primary-default);
+    border-radius: 4px;
+    cursor: move;
+
+    &.is--drag-element {
+        border: 1px solid var(--color-border-brand-default);
+        box-shadow: 0 0 4px 0 var(--color-elevation-shadow-default);
+
+        .navigator-element__action-duplicate,
+        .navigator-element__action-delete {
+            display: none;
+        }
+    }
+
+    &.is--dragging {
+        background: none;
+    }
+
+    .navigator-element__action-duplicate,
+    .navigator-element__action-delete {
+        line-height: 12px;
+        cursor: pointer;
+
+        &:hover {
+            color: var(--color-text-brand-default);
+        }
+    }
+}

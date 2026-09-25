@@ -1,0 +1,54 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Migration\Core\V6_6;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
+use Shopwell\Core\Framework\Util\Database\TableHelper;
+use Shopwell\Core\Migration\V6_6\Migration1713345551AddAppManagedColumn;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(Migration1713345551AddAppManagedColumn::class)]
+class Migration1713345551AddAppManagedColumnTest extends TestCase
+{
+    private Connection $connection;
+
+    protected function setUp(): void
+    {
+        $this->connection = KernelLifecycleManager::getConnection();
+    }
+
+    public function testGetCreationTimestamp(): void
+    {
+        static::assertSame(1713345551, (new Migration1713345551AddAppManagedColumn())->getCreationTimestamp());
+    }
+
+    public function testMigration(): void
+    {
+        $this->dropSelfManagedColumn();
+
+        static::assertFalse(TableHelper::columnExists($this->connection, 'app', 'self_managed'));
+
+        $migration = new Migration1713345551AddAppManagedColumn();
+        $migration->update($this->connection);
+        $migration->update($this->connection);
+
+        static::assertTrue(TableHelper::columnExists($this->connection, 'app', 'self_managed'));
+    }
+
+    private function dropSelfManagedColumn(): void
+    {
+        try {
+            $this->connection->executeStatement(
+                'ALTER TABLE `app` DROP COLUMN `self_managed`;'
+            );
+        } catch (\Throwable) {
+        }
+    }
+}

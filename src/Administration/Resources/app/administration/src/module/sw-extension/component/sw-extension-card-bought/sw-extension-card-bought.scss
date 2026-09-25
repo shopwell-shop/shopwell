@@ -1,0 +1,27 @@
+.sw-extension-card-bought {
+    .sw-extension-card-bought__info-price-subscription {
+        color: var(--color-text-primary-default);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    .sw-extension-card-bought__info-price {
+        margin-top: 4px;
+        color: var(--color-text-primary-default);
+    }
+
+    .sw-loader {
+        background-color: var(--color-background-secondary-default);
+    }
+
+    .sw-extension-card-bought__info-subscription-expiry {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 2px;
+        font-weight: var(--font-weight-medium);
+
+        .mt-icon {
+            margin-right: 4px;
+            color: var(--color-icon-attention-default);
+        }
+    }
+}

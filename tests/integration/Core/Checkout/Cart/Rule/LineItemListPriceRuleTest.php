@@ -1,0 +1,428 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Checkout\Cart\Rule;
+
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\ProductLineItemFactory;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\ListPrice;
+use Shopwell\Core\Checkout\Cart\Rule\CartRuleScope;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemListPriceRule;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemScope;
+use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Container\AndRule;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\System\Currency\Rule\CurrencyRule;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Checkout\CartRuleFixture;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Shopwell\Core\Test\TestDefaults;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+#[Group('rules')]
+class LineItemListPriceRuleTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    private LineItemListPriceRule $rule;
+
+    protected function setUp(): void
+    {
+        $this->rule = new LineItemListPriceRule();
+    }
+
+    public function testGetName(): void
+    {
+        static::assertSame('cartLineItemListPrice', $this->rule->getName());
+    }
+
+    public function testGetConstraints(): void
+    {
+        $ruleConstraints = $this->rule->getConstraints();
+
+        static::assertArrayHasKey('amount', $ruleConstraints, 'Rule Constraint amount is not defined');
+        static::assertArrayHasKey('operator', $ruleConstraints, 'Rule Constraint operator is not defined');
+    }
+
+    #[DataProvider('getMatchingRuleTestData')]
+    public function testIfMatchesCorrectWithLineItem(
+        string $operator,
+        ?float $amount,
+        ?float $lineItemAmount,
+        bool $expected,
+        bool $lineItemWithoutPrice = false
+    ): void {
+        $this->rule->assign([
+            'amount' => $amount,
+            'operator' => $operator,
+        ]);
+
+        $lineItem = $this->createLineItemWithListPrice($lineItemAmount);
+        if ($lineItemWithoutPrice) {
+            $lineItem = CartRuleFixture::createLineItem();
+        }
+
+        $match = $this->rule->match(new LineItemScope(
+            $lineItem,
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    /**
+     * @return \Traversable<string, array<string|int|bool|null>>
+     */
+    public static function getMatchingRuleTestData(): \Traversable
+    {
+        // OPERATOR_EQ
+        yield 'match / operator equals / same price' => [Rule::OPERATOR_EQ, 100, 100, true];
+        yield 'no match / operator equals / different price' => [Rule::OPERATOR_EQ, 200, 100, false];
+        yield 'no match / operator equals / without price' => [Rule::OPERATOR_EQ, 200, 100, false, true];
+        // OPERATOR_NEQ
+        yield 'no match / operator not equals / same price' => [Rule::OPERATOR_NEQ, 100, 100, false];
+        yield 'match / operator not equals / different price' => [Rule::OPERATOR_NEQ, 200, 100, true];
+        // OPERATOR_GT
+        yield 'no match / operator greater than / lower price' => [Rule::OPERATOR_GT, 100, 50, false];
+        yield 'no match / operator greater than / same price' => [Rule::OPERATOR_GT, 100, 100, false];
+        yield 'match / operator greater than / higher price' => [Rule::OPERATOR_GT, 100, 200, true];
+        // OPERATOR_GTE
+        yield 'no match / operator greater than equals / lower price' => [Rule::OPERATOR_GTE, 100, 50, false];
+        yield 'match / operator greater than equals / same price' => [Rule::OPERATOR_GTE, 100, 100, true];
+        yield 'match / operator greater than equals / higher price' => [Rule::OPERATOR_GTE, 100, 200, true];
+        // OPERATOR_LT
+        yield 'match / operator lower than / lower price' => [Rule::OPERATOR_LT, 100, 50, true];
+        yield 'no match / operator lower  than / same price' => [Rule::OPERATOR_LT, 100, 100, false];
+        yield 'no match / operator lower than / higher price' => [Rule::OPERATOR_LT, 100, 200, false];
+        // OPERATOR_LTE
+        yield 'match / operator lower than equals / lower price' => [Rule::OPERATOR_LTE, 100, 50, true];
+        yield 'match / operator lower than equals / same price' => [Rule::OPERATOR_LTE, 100, 100, true];
+        yield 'no match / operator lower than equals / higher price' => [Rule::OPERATOR_LTE, 100, 200, false];
+        // OPERATOR_EMPTY
+        yield 'match / operator empty / is empty' => [Rule::OPERATOR_EMPTY, null, null, true];
+        yield 'no match / operator empty / is not empty' => [Rule::OPERATOR_EMPTY, 100, 200, false];
+
+        yield 'match / operator not equals / without price' => [Rule::OPERATOR_NEQ, 200, 100, true, true];
+        yield 'match / operator empty / without price' => [Rule::OPERATOR_EMPTY, 100, 200, true, true];
+    }
+
+    #[DataProvider('getCartRuleScopeTestData')]
+    public function testIfMatchesCorrectWithCartRuleScope(
+        string $operator,
+        ?float $amount,
+        ?float $lineItemAmount1,
+        ?float $lineItemAmount2,
+        bool $expected,
+        bool $lineItem1WithoutPrice = false,
+        bool $lineItem2WithoutPrice = false,
+        ?float $containerLineItemAmount = null
+    ): void {
+        $this->rule->assign([
+            'amount' => $amount,
+            'operator' => $operator,
+        ]);
+
+        $lineItem1 = $this->createLineItemWithListPrice($lineItemAmount1);
+        if ($lineItem1WithoutPrice) {
+            $lineItem1 = CartRuleFixture::createLineItem();
+        }
+
+        $lineItem2 = $this->createLineItemWithListPrice($lineItemAmount2);
+        if ($lineItem2WithoutPrice) {
+            $lineItem2 = CartRuleFixture::createLineItem();
+        }
+
+        $lineItemCollection = new LineItemCollection([
+            $lineItem1,
+            $lineItem2,
+        ]);
+
+        $cart = CartRuleFixture::createCart($lineItemCollection);
+
+        $match = $this->rule->match(new CartRuleScope(
+            $cart,
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    #[DataProvider('getCartRuleScopeTestData')]
+    public function testIfMatchesCorrectWithCartRuleScopeNested(
+        string $operator,
+        ?float $amount,
+        ?float $lineItemAmount1,
+        ?float $lineItemAmount2,
+        bool $expected,
+        bool $lineItem1WithoutPrice = false,
+        bool $lineItem2WithoutPrice = false,
+        ?float $containerLineItemAmount = null
+    ): void {
+        $this->rule->assign([
+            'amount' => $amount,
+            'operator' => $operator,
+        ]);
+
+        $lineItem1 = $this->createLineItemWithListPrice($lineItemAmount1);
+        if ($lineItem1WithoutPrice) {
+            $lineItem1 = CartRuleFixture::createLineItem();
+        }
+
+        $lineItem2 = $this->createLineItemWithListPrice($lineItemAmount2);
+        if ($lineItem2WithoutPrice) {
+            $lineItem2 = CartRuleFixture::createLineItem();
+        }
+
+        $lineItemCollection = new LineItemCollection([
+            $lineItem1,
+            $lineItem2,
+        ]);
+        $containerLineItem = CartRuleFixture::createLineItem();
+        if ($containerLineItemAmount !== null) {
+            $containerLineItem = $this->createLineItemWithListPrice($containerLineItemAmount);
+        }
+        $containerLineItem->setChildren($lineItemCollection);
+        $cart = CartRuleFixture::createCart(new LineItemCollection([$containerLineItem]));
+
+        $match = $this->rule->match(new CartRuleScope(
+            $cart,
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    /**
+     * @return \Traversable<string, array<string|int|bool|null>>
+     */
+    public static function getCartRuleScopeTestData(): \Traversable
+    {
+        // OPERATOR_EQ
+        yield 'match / operator equals / same price' => [Rule::OPERATOR_EQ, 100, 100, 200, true];
+        yield 'no match / operator equals / different price' => [Rule::OPERATOR_EQ, 200, 100, 300, false];
+        yield 'no match / operator equals / item 1 without price' => [Rule::OPERATOR_EQ, 200, 100, 300, false, true];
+        yield 'no match / operator equals / item 2 without price' => [Rule::OPERATOR_EQ, 200, 100, 300, false, false, true];
+        yield 'no match / operator equals / item 1 and 2 without price' => [Rule::OPERATOR_EQ, 200, 100, 300, false, true, true];
+        // OPERATOR_NEQ
+        yield 'no match / operator not equals / same prices' => [Rule::OPERATOR_NEQ, 100, 100, 100, false, false, false, 100];
+        yield 'match / operator not equals / different prices' => [Rule::OPERATOR_NEQ, 200, 100, 200, true];
+        yield 'match / operator not equals / different prices 2' => [Rule::OPERATOR_NEQ, 200, 100, 300, true];
+        // OPERATOR_GT
+        yield 'no match / operator greater than / lower price' => [Rule::OPERATOR_GT, 100, 50, 70, false];
+        yield 'no match / operator greater than / same price' => [Rule::OPERATOR_GT, 100, 100, 70, false];
+        yield 'match / operator greater than / higher price' => [Rule::OPERATOR_GT, 100, 200, 70, true];
+        // OPERATOR_GTE
+        yield 'no match / operator greater than equals / lower price' => [Rule::OPERATOR_GTE, 100, 50, 70, false];
+        yield 'match / operator greater than equals / same price' => [Rule::OPERATOR_GTE, 100, 100, 70, true];
+        yield 'match / operator greater than equals / higher price' => [Rule::OPERATOR_GTE, 100, 200, 70, true];
+        // OPERATOR_LT
+        yield 'match / operator lower than / lower price' => [Rule::OPERATOR_LT, 100, 50, 120, true];
+        yield 'no match / operator lower  than / same price' => [Rule::OPERATOR_LT, 100, 100, 120, false];
+        yield 'no match / operator lower than / higher price' => [Rule::OPERATOR_LT, 100, 200, 120, false];
+        // OPERATOR_LTE
+        yield 'match / operator lower than equals / lower price' => [Rule::OPERATOR_LTE, 100, 50, 120, true];
+        yield 'match / operator lower than equals / same price' => [Rule::OPERATOR_LTE, 100, 100, 120, true];
+        yield 'no match / operator lower than equals / higher price' => [Rule::OPERATOR_LTE, 100, 200, 120, false];
+        // OPERATOR_EMPTY
+        yield 'match / operator empty / is empty' => [Rule::OPERATOR_EMPTY, null, null, 100, true];
+        yield 'no match / operator empty / is not empty' => [Rule::OPERATOR_EMPTY, 100, 100, 100, false, false, false, 100];
+
+        yield 'match / operator not equals / item 1 and 2 without price' => [Rule::OPERATOR_NEQ, 200, 100, 300, true, true, true];
+        yield 'match / operator not equals / item 1 without price' => [Rule::OPERATOR_NEQ, 100, 100, 100, true, true];
+        yield 'match / operator not equals / item 2 without price' => [Rule::OPERATOR_NEQ, 100, 100, 100, true, false, true];
+
+        yield 'match / operator empty / item 1 and 2 without price' => [Rule::OPERATOR_EMPTY, 200, 100, 300, true, true, true];
+        yield 'match / operator empty / item 1 without price' => [Rule::OPERATOR_EMPTY, 100, 100, 100, true, true];
+        yield 'match / operator empty / item 2 without price' => [Rule::OPERATOR_EMPTY, 100, 100, 100, true, false, true];
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testMatchWithEmptyCalculatedPrice(): void
+    {
+        $this->rule->assign(['amount' => 100, 'operator' => Rule::OPERATOR_EQ]);
+
+        $match = $this->rule->match(new LineItemScope(
+            CartRuleFixture::createLineItem(),
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertFalse($match);
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testMatchWithEmptyListPrice(): void
+    {
+        $price = 100;
+
+        $this->rule->assign(['amount' => $price, 'operator' => Rule::OPERATOR_EQ]);
+
+        $match = $this->rule->match(new LineItemScope(
+            CartRuleFixture::createLineItemWithPrice(LineItem::PRODUCT_LINE_ITEM_TYPE, $price),
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertFalse($match);
+    }
+
+    public function testProductListPrice(): void
+    {
+        $ids = new IdsCollection();
+
+        $itemRounding = json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR);
+        static::assertNotFalse($itemRounding);
+        $totalRounding = json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR);
+        static::assertNotFalse($totalRounding);
+
+        $currency = [
+            'id' => $ids->create('currency'),
+            'name' => 'dollar',
+            'factor' => 1.3,
+            'symbol' => '$',
+            'isoCode' => 'US',
+            'decimalPrecision' => 2,
+            'shortName' => 'dollar',
+            'itemRounding' => json_decode($itemRounding, true, 512, \JSON_THROW_ON_ERROR),
+            'totalRounding' => json_decode($totalRounding, true, 512, \JSON_THROW_ON_ERROR),
+        ];
+
+        static::getContainer()->get('currency.repository')
+            ->create([$currency], Context::createDefaultContext());
+        static::getContainer()->get('sales_channel_currency.repository')->create([
+            [
+                'salesChannelId' => TestDefaults::SALES_CHANNEL,
+                'currencyId' => $ids->get('currency'),
+            ],
+        ], Context::createDefaultContext());
+
+        // create product with two different currency prices
+        $data = [
+            'id' => $ids->create('product'),
+            'name' => 'test',
+            'productNumber' => $ids->create('get'),
+            'stock' => 10,
+            'price' => [
+                [
+                    'currencyId' => Defaults::CURRENCY,
+                    'gross' => 15,
+                    'net' => 10,
+                    'linked' => false,
+                    'listPrice' => ['gross' => 20, 'net' => 15, 'linked' => false],
+                ],
+                [
+                    'currencyId' => $ids->get('currency'),
+                    'gross' => 5,
+                    'net' => 5,
+                    'linked' => false,
+                    'listPrice' => ['gross' => 15, 'net' => 15, 'linked' => false],
+                ],
+            ],
+            'active' => true,
+            'visibilities' => [
+                [
+                    'salesChannelId' => TestDefaults::SALES_CHANNEL,
+                    'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL,
+                ],
+            ],
+            'tax' => ['name' => 'test', 'taxRate' => 15],
+        ];
+
+        static::getContainer()->get('product.repository')
+            ->create([$data], Context::createDefaultContext());
+
+        $context = static::getContainer()->get(SalesChannelContextFactory::class)
+            ->create('test', TestDefaults::SALES_CHANNEL);
+
+        $service = static::getContainer()->get(CartService::class);
+
+        // create cart and product line item
+        $cart = $service->getCart('test', $context);
+        $lineItem = static::getContainer()
+            ->get(ProductLineItemFactory::class)
+            ->create(['id' => $ids->get('product'), 'referencedId' => $ids->get('product')], $context);
+
+        $service->add($cart, $lineItem, $context);
+        static::assertTrue($cart->has($ids->get('product')));
+
+        // assert list price is calculated for default price
+        $lineItem = $cart->get($ids->get('product'));
+        static::assertInstanceOf(LineItem::class, $lineItem);
+        static::assertInstanceOf(CalculatedPrice::class, $lineItem->getPrice());
+        static::assertInstanceOf(ListPrice::class, $lineItem->getPrice()->getListPrice());
+        $listPrice = $lineItem->getPrice()->getListPrice();
+        static::assertSame(20.0, $listPrice->getPrice());
+
+        $rules = [
+            new LineItemListPriceRule(Rule::OPERATOR_GTE, 19),
+            new LineItemListPriceRule(Rule::OPERATOR_GT, 19),
+            new LineItemListPriceRule(Rule::OPERATOR_LTE, 21),
+            new LineItemListPriceRule(Rule::OPERATOR_LT, 21),
+            new LineItemListPriceRule(Rule::OPERATOR_EQ, 20),
+            new LineItemListPriceRule(Rule::OPERATOR_NEQ, 15),
+        ];
+
+        // test different rules for the default list price
+        $scope = new LineItemScope($lineItem, $context);
+        foreach ($rules as $rule) {
+            static::assertTrue($rule->match($scope));
+        }
+
+        // create new context for other currency
+        $context = static::getContainer()->get(SalesChannelContextFactory::class)
+            ->create('test', TestDefaults::SALES_CHANNEL, ['currencyId' => $ids->get('currency')]);
+
+        // fetch cart for recalculation
+        $cart = $service->getCart('test', $context, false);
+        $lineItem = $cart->get($ids->get('product'));
+
+        $rules = [
+            new LineItemListPriceRule(Rule::OPERATOR_GTE, 14),
+            new LineItemListPriceRule(Rule::OPERATOR_GT, 14),
+            new LineItemListPriceRule(Rule::OPERATOR_LTE, 16),
+            new LineItemListPriceRule(Rule::OPERATOR_LT, 16),
+            new LineItemListPriceRule(Rule::OPERATOR_EQ, 15),
+            new LineItemListPriceRule(Rule::OPERATOR_NEQ, 14),
+        ];
+
+        static::assertInstanceOf(LineItem::class, $lineItem);
+        $scope = new LineItemScope($lineItem, $context);
+        foreach ($rules as $rule) {
+            // test combination with currency rule to validate currency list prices+
+
+            $currencyIds = array_values($ids->getList(['currency']));
+
+            $wrapper = new AndRule([
+                new CurrencyRule(CurrencyRule::OPERATOR_EQ, $currencyIds),
+                $rule,
+            ]);
+
+            static::assertTrue($wrapper->match($scope));
+        }
+    }
+
+    private function createLineItemWithListPrice(?float $listPriceAmount): LineItem
+    {
+        $listPrice = $listPriceAmount === null ? null : ListPrice::createFromUnitPrice(400, $listPriceAmount);
+        $listPriceAmount ??= 99.99;
+
+        return CartRuleFixture::createLineItemWithPrice(LineItem::PRODUCT_LINE_ITEM_TYPE, $listPriceAmount, $listPrice);
+    }
+}

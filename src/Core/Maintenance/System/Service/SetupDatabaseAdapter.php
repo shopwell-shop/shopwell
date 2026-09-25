@@ -1,0 +1,91 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Maintenance\System\Service;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Kernel;
+use Shopwell\Core\Maintenance\MaintenanceException;
+
+/**
+ * @internal
+ *
+ * @codeCoverageIgnore
+ *
+ * @see \Shopwell\Tests\Integration\Core\Maintenance\System\Service\SetupDatabaseAdapterTest
+ */
+#[Package('framework')]
+class SetupDatabaseAdapter
+{
+    public function dropDatabase(Connection $connection, string $database): void
+    {
+        $connection->executeStatement('DROP DATABASE IF EXISTS `' . $database . '`');
+    }
+
+    public function createDatabase(Connection $connection, string $database): void
+    {
+        $connection->executeStatement('CREATE DATABASE IF NOT EXISTS `' . $database . '` CHARACTER SET `utf8mb4` COLLATE `utf8mb4_unicode_ci`');
+    }
+
+    public function initializeShopwellDb(Connection $connection, ?string $database = null): bool
+    {
+        if (!$hasShopwellTables = $this->hasShopwellTables($connection, $database)) {
+            $connection->executeStatement($this->getBaseSchema());
+        }
+
+        return !$hasShopwellTables;
+    }
+
+    public function hasShopwellTables(Connection $connection, ?string $database = null): bool
+    {
+        if ($database) {
+            $connection->executeStatement('USE `' . $database . '`');
+        }
+
+        $tables = $connection->fetchFirstColumn('SHOW TABLES');
+
+        return \in_array('migration', $tables, true);
+    }
+
+    public function getTableCount(Connection $connection, string $database): int
+    {
+        $connection->executeStatement('USE `' . $database . '`');
+
+        $tables = $connection->fetchFirstColumn('SHOW TABLES');
+
+        return \count($tables);
+    }
+
+    /**
+     * @param list<string> $ignoredSchemas
+     *
+     * @return array<string>
+     */
+    public function getExistingDatabases(Connection $connection, array $ignoredSchemas): array
+    {
+        $query = $connection->createQueryBuilder()
+            ->select('SCHEMA_NAME')
+            ->from('information_schema.SCHEMATA');
+
+        if ($ignoredSchemas !== []) {
+            $query->andWhere('SCHEMA_NAME NOT IN (:ignoredSchemas)')
+                ->setParameter('ignoredSchemas', $ignoredSchemas, ArrayParameterType::STRING);
+        }
+
+        return $query->executeQuery()->fetchFirstColumn();
+    }
+
+    private function getBaseSchema(): string
+    {
+        $kernelClass = new \ReflectionClass(Kernel::class);
+        $directory = \dirname((string) $kernelClass->getFileName());
+
+        $path = $directory . '/schema.sql';
+        if (!is_file($path) || !is_readable($path)) {
+            throw MaintenanceException::couldNotReadFile($path);
+        }
+
+        return (string) file_get_contents($path);
+    }
+}

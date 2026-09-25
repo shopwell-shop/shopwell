@@ -1,0 +1,250 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Rule;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\Rule\CartRuleScope;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemInCategoryRule;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemScope;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Rule\RuleComparison;
+use Shopwell\Core\Framework\Rule\RuleException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Validation\Constraint\ArrayOfUuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Checkout\CartRuleFixture;
+use Symfony\Component\Validator\Constraints\Choice;
+use Symfony\Component\Validator\Constraints\NotBlank;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+#[CoversClass(LineItemInCategoryRule::class)]
+#[Group('rules')]
+class LineItemInCategoryRuleTest extends TestCase
+{
+    private LineItemInCategoryRule $rule;
+
+    protected function setUp(): void
+    {
+        $this->rule = new LineItemInCategoryRule();
+    }
+
+    public function testGetName(): void
+    {
+        static::assertSame('cartLineItemInCategory', $this->rule->getName());
+    }
+
+    public function testGetConstraints(): void
+    {
+        $ruleConstraints = $this->rule->getConstraints();
+
+        static::assertArrayHasKey('operator', $ruleConstraints, 'Rule Constraint operator is not defined');
+        static::assertArrayHasKey('categoryIds', $ruleConstraints, 'Rule Constraint categoryIds is not defined');
+    }
+
+    /**
+     * @param array<string> $categoryIds
+     * @param array<string> $lineItemCategoryIds
+     */
+    #[DataProvider('getLineItemScopeTestData')]
+    public function testIfMatchesCorrectWithLineItemScope(
+        array $categoryIds,
+        string $operator,
+        array $lineItemCategoryIds,
+        bool $expected
+    ): void {
+        $this->rule->assign([
+            'categoryIds' => $categoryIds,
+            'operator' => $operator,
+        ]);
+
+        $match = $this->rule->match(new LineItemScope(
+            $this->createLineItemWithCategories($lineItemCategoryIds),
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    public static function getLineItemScopeTestData(): \Generator
+    {
+        yield 'single product / equal / match category id' => [['1', '2'], Rule::OPERATOR_EQ, ['1'], true];
+        yield 'single product / equal / no match' => [['1', '2'], Rule::OPERATOR_EQ, ['3'], false];
+        yield 'single product / not equal / match category id' => [['1', '2'], Rule::OPERATOR_NEQ, ['3'], true];
+        yield 'single product / empty / match category id' => [['1', '2'], Rule::OPERATOR_EMPTY, [], true];
+        yield 'single product / empty / no match category id' => [['1', '2'], Rule::OPERATOR_EMPTY, ['3'], false];
+    }
+
+    /**
+     * @param array<string> $categoryIds
+     * @param array<string> $lineItemCategoryIds
+     */
+    #[DataProvider('getCartRuleScopeTestData')]
+    public function testIfMatchesCorrectWithCartRuleScope(
+        array $categoryIds,
+        string $operator,
+        array $lineItemCategoryIds,
+        bool $expected
+    ): void {
+        $this->rule->assign([
+            'categoryIds' => $categoryIds,
+            'operator' => $operator,
+        ]);
+
+        $lineItemCollection = new LineItemCollection([
+            $this->createLineItemWithCategories(['1']),
+            $this->createLineItemWithCategories($lineItemCategoryIds),
+        ]);
+
+        $cart = CartRuleFixture::createCart($lineItemCollection);
+
+        $match = $this->rule->match(new CartRuleScope(
+            $cart,
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    /**
+     * @param array<string> $categoryIds
+     * @param array<string> $lineItemCategoryIds
+     */
+    #[DataProvider('getCartRuleScopeTestData')]
+    public function testIfMatchesCorrectWithCartRuleScopeNested(
+        array $categoryIds,
+        string $operator,
+        array $lineItemCategoryIds,
+        bool $expected
+    ): void {
+        $this->rule->assign([
+            'categoryIds' => $categoryIds,
+            'operator' => $operator,
+        ]);
+
+        $lineItemCollection = new LineItemCollection([
+            $this->createLineItemWithCategories(['1']),
+            $this->createLineItemWithCategories($lineItemCategoryIds),
+        ]);
+        $containerLineItem = CartRuleFixture::createContainerLineItem($lineItemCollection)->setPayloadValue('categoryIds', ['1']);
+        $cart = CartRuleFixture::createCart(new LineItemCollection([$containerLineItem]));
+
+        $match = $this->rule->match(new CartRuleScope(
+            $cart,
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    public static function getCartRuleScopeTestData(): \Generator
+    {
+        yield 'multiple products / equal / match category id' => [['1', '2'], Rule::OPERATOR_EQ, ['2'], true];
+        yield 'multiple products / equal / no match' => [['4', '5'], Rule::OPERATOR_EQ, ['2'], false];
+        yield 'multiple products / not equal / match category id' => [['5', '6'], Rule::OPERATOR_NEQ, ['2'], true];
+        yield 'multiple products / not equal / no match category id' => [['1', '2'], Rule::OPERATOR_NEQ, ['2'], false];
+        yield 'multiple products / empty / match category id' => [['1', '2'], Rule::OPERATOR_EMPTY, [], true];
+        yield 'multiple products / empty / no match category id' => [['1', '2'], Rule::OPERATOR_EMPTY, ['2'], false];
+    }
+
+    public function testNotAvailableOperatorIsUsed(): void
+    {
+        $this->rule->assign([
+            'categoryIds' => ['1', '2'],
+            'operator' => Rule::OPERATOR_LT,
+        ]);
+
+        $this->expectExceptionObject(RuleException::unsupportedOperator(Rule::OPERATOR_LT, RuleComparison::class));
+
+        $this->rule->match(new LineItemScope(
+            $this->createLineItemWithCategories(['3']),
+            static::createStub(SalesChannelContext::class)
+        ));
+    }
+
+    public function testOnlyMatchesGoods(): void
+    {
+        $this->rule->assign([
+            'categoryIds' => ['1'],
+            'operator' => Rule::OPERATOR_NEQ,
+        ]);
+
+        $lineItemCollection = new LineItemCollection([
+            $this->createLineItemWithCategories(['1']),
+            CartRuleFixture::createLineItem(LineItem::PROMOTION_LINE_ITEM_TYPE, 1, 'PROMO')->setGood(false),
+        ]);
+
+        $cart = CartRuleFixture::createCart($lineItemCollection);
+
+        $match = $this->rule->match(new CartRuleScope(
+            $cart,
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertFalse($match);
+    }
+
+    public function testConstraints(): void
+    {
+        $expectedOperators = [
+            Rule::OPERATOR_EQ,
+            Rule::OPERATOR_NEQ,
+            Rule::OPERATOR_EMPTY,
+        ];
+
+        $ruleConstraints = $this->rule->getConstraints();
+
+        static::assertArrayHasKey('operator', $ruleConstraints, 'Constraint operator not found in Rule');
+        $operators = $ruleConstraints['operator'];
+        static::assertEquals(new NotBlank(), $operators[0]);
+        static::assertEquals(new Choice(choices: $expectedOperators), $operators[1]);
+
+        $this->rule->assign(['operator' => Rule::OPERATOR_EQ]);
+        static::assertArrayHasKey('categoryIds', $ruleConstraints, 'Constraint categoryIds not found in Rule');
+        $categoryIds = $ruleConstraints['categoryIds'];
+        static::assertEquals(new NotBlank(), $categoryIds[0]);
+        static::assertEquals(new ArrayOfUuid(), $categoryIds[1]);
+    }
+
+    #[DataProvider('lineItemTypeProvider')]
+    public function testMatchesByLineItemType(string $type, bool $lineItemScope, bool $expected): void
+    {
+        $rule = new LineItemInCategoryRule(Rule::OPERATOR_NEQ, [Uuid::randomHex()]);
+
+        $lineItem = CartRuleFixture::createLineItem($type);
+        $context = static::createStub(SalesChannelContext::class);
+
+        $scope = $lineItemScope
+            ? new LineItemScope($lineItem, $context)
+            : new CartRuleScope(CartRuleFixture::createCart(new LineItemCollection([$lineItem])), $context);
+
+        static::assertSame($expected, $rule->match($scope));
+    }
+
+    /**
+     * @return \Generator<string, array{non-empty-string, bool, bool}>
+     */
+    public static function lineItemTypeProvider(): \Generator
+    {
+        yield 'product via line item scope' => [LineItem::PRODUCT_LINE_ITEM_TYPE, true, true];
+        yield 'product via cart scope' => [LineItem::PRODUCT_LINE_ITEM_TYPE, false, true];
+        yield 'custom via line item scope' => [LineItem::CUSTOM_LINE_ITEM_TYPE, true, false];
+        yield 'custom via cart scope' => [LineItem::CUSTOM_LINE_ITEM_TYPE, false, false];
+    }
+
+    /**
+     * @param array<string> $categoryIds
+     */
+    private function createLineItemWithCategories(array $categoryIds): LineItem
+    {
+        return CartRuleFixture::createLineItem()->setPayloadValue('categoryIds', $categoryIds);
+    }
+}

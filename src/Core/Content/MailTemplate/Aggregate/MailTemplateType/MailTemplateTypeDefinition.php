@@ -1,0 +1,77 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\MailTemplate\Aggregate\MailTemplateType;
+
+use Shopwell\Core\Content\MailTemplate\Aggregate\MailTemplateTypeTranslation\MailTemplateTypeTranslationDefinition;
+use Shopwell\Core\Content\MailTemplate\MailTemplateDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Deprecated;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SetNullOnDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\JsonField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+
+#[Package('after-sales')]
+class MailTemplateTypeDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'mail_template_type';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function getEntityClass(): string
+    {
+        return MailTemplateTypeEntity::class;
+    }
+
+    public function getCollectionClass(): string
+    {
+        return MailTemplateTypeCollection::class;
+    }
+
+    public function getTranslationDefinitionClass(): ?string
+    {
+        return MailTemplateTypeTranslationDefinition::class;
+    }
+
+    public function since(): ?string
+    {
+        return '6.0.0.0';
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        $fields = new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new ApiAware(), new PrimaryKey(), new Required())->setDescription('Unique identity of mail template type.'),
+
+            (new TranslatedField('name'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING)),
+            (new StringField('technical_name', 'technicalName'))->addFlags(new ApiAware(), new Required())->setDescription('Technical name of mail template.'),
+            (new JsonField('available_entities', 'availableEntities'))->setDescription('Defines  which entities are compatible with a given mail template type, ensuring that the right templates can be used for the appropriate purposes within the system'),
+            (new TranslatedField('customFields'))->addFlags(new ApiAware()),
+            (new TranslationsAssociationField(MailTemplateTypeTranslationDefinition::class, 'mail_template_type_id'))->addFlags(new ApiAware(), new Required()),
+            (new OneToManyAssociationField('mailTemplates', MailTemplateDefinition::class, 'mail_template_type_id'))->addFlags(new SetNullOnDelete()),
+        ]);
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            $fields->add(
+                (new JsonField('template_data', 'templateData'))
+                    ->addFlags(new Deprecated('v6.7.12.0', 'v6.8.0.0'))
+                    ->setDescription('Template data used to generate emails associated with that template type.'),
+            );
+        }
+
+        return $fields;
+    }
+}

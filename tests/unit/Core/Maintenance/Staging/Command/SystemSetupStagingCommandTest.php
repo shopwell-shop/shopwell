@@ -1,0 +1,125 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Maintenance\Staging\Command;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Maintenance\Staging\Command\SystemSetupStagingCommand;
+use Shopwell\Core\Maintenance\Staging\Event\SetupStagingEvent;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\Test\Stub\EventDispatcher\CollectingEventDispatcher;
+use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\CommandTester;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(SystemSetupStagingCommand::class)]
+class SystemSetupStagingCommandTest extends TestCase
+{
+    public function testCancelPrompt(): void
+    {
+        $command = new SystemSetupStagingCommand(
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(SystemConfigService::class),
+            true,
+            [],
+            [],
+        );
+
+        $tester = new CommandTester($command);
+
+        $tester->setInputs(['no']);
+        $tester->execute([]);
+        static::assertSame(Command::FAILURE, $tester->getStatusCode());
+    }
+
+    public function testRun(): void
+    {
+        $configService = new StaticSystemConfigService();
+        $eventDispatcher = new CollectingEventDispatcher();
+
+        $routeMappings = [
+            ['match' => '/old-path', 'type' => 'prefix', 'replace' => '/new-path'],
+        ];
+
+        $systemConfigOverrides = [
+            'default' => [
+                'core.someKey' => 'someValue',
+            ],
+            'a1b2c3d4e5f6' => [
+                'core.someKey' => 'channelValue',
+            ],
+        ];
+
+        $command = new SystemSetupStagingCommand(
+            $eventDispatcher,
+            $configService,
+            true,
+            $routeMappings,
+            ['MyDisabledExtension'],
+            $systemConfigOverrides,
+        );
+
+        $tester = new CommandTester($command);
+        $tester->setInputs(['yes']);
+        $tester->execute([]);
+        $tester->assertCommandIsSuccessful();
+
+        static::assertTrue($configService->get('core.staging'));
+        static::assertCount(1, $eventDispatcher->getEvents());
+
+        $event = $eventDispatcher->getEvents()[0];
+
+        static::assertInstanceOf(SetupStagingEvent::class, $event);
+        static::assertSame($routeMappings, $event->domainMappings);
+        static::assertTrue($event->disableMailDelivery);
+        static::assertSame(['MyDisabledExtension'], $event->extensionsToDisable);
+        static::assertSame($systemConfigOverrides, $event->systemConfigOverrides);
+    }
+
+    public function testRunNoInteractionWithForce(): void
+    {
+        $configService = new StaticSystemConfigService();
+        $eventDispatcher = new CollectingEventDispatcher();
+
+        $command = new SystemSetupStagingCommand(
+            $eventDispatcher,
+            $configService,
+            true,
+            [],
+            [],
+        );
+
+        $tester = new CommandTester($command);
+        $tester->execute(['--force' => null], ['interactive' => false]);
+        $tester->assertCommandIsSuccessful();
+
+        static::assertTrue($configService->get('core.staging'));
+        static::assertCount(1, $eventDispatcher->getEvents());
+
+        $event = $eventDispatcher->getEvents()[0];
+
+        static::assertInstanceOf(SetupStagingEvent::class, $event);
+    }
+
+    public function testRunNoInteractionWithoutForce(): void
+    {
+        $command = new SystemSetupStagingCommand(
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(SystemConfigService::class),
+            true,
+            [],
+            [],
+        );
+
+        $tester = new CommandTester($command);
+
+        $tester->execute([], ['interactive' => false]);
+        static::assertSame(Command::FAILURE, $tester->getStatusCode());
+    }
+}

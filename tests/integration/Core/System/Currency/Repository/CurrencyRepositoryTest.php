@@ -1,0 +1,160 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\System\Currency\Repository;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Term\EntityScoreQueryBuilder;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Term\SearchTermInterpreter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\RestrictDeleteViolationException;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Currency\CurrencyCollection;
+use Shopwell\Core\System\Currency\CurrencyDefinition;
+use Shopwell\Core\System\Currency\CurrencyException;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@framework')]
+class CurrencyRepositoryTest extends TestCase
+{
+    use DatabaseTransactionBehaviour;
+    use KernelTestBehaviour;
+
+    /**
+     * @var EntityRepository<CurrencyCollection>
+     */
+    private EntityRepository $currencyRepository;
+
+    protected function setUp(): void
+    {
+        $this->currencyRepository = static::getContainer()->get('currency.repository');
+    }
+
+    public function testSearchRanking(): void
+    {
+        $recordA = Uuid::randomHex();
+        $recordB = Uuid::randomHex();
+
+        $records = [
+            [
+                'id' => $recordA,
+                'decimalPrecision' => 2,
+                'name' => 'match',
+                'isoCode' => 'FOO',
+                'shortName' => 'test',
+                'factor' => 1,
+                'symbol' => 'A',
+                'itemRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+                'totalRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+            ],
+            [
+                'id' => $recordB,
+                'decimalPrecision' => 2,
+                'name' => 'not',
+                'isoCode' => 'BAR',
+                'shortName' => 'match',
+                'factor' => 1,
+                'symbol' => 'A',
+                'itemRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+                'totalRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+            ],
+        ];
+
+        $this->currencyRepository->create($records, Context::createDefaultContext());
+
+        $criteria = new Criteria();
+
+        $builder = static::getContainer()->get(EntityScoreQueryBuilder::class);
+        $pattern = static::getContainer()->get(SearchTermInterpreter::class)->interpret('match');
+        $context = Context::createDefaultContext();
+        $queries = $builder->buildScoreQueries(
+            $pattern,
+            $this->currencyRepository->getDefinition(),
+            $this->currencyRepository->getDefinition()->getEntityName(),
+            $context
+        );
+        $criteria->addQuery(...$queries);
+
+        $result = $this->currencyRepository->searchIds($criteria, Context::createDefaultContext());
+
+        static::assertCount(2, $result->getIds());
+
+        static::assertSame(
+            [$recordA, $recordB],
+            $result->getIds()
+        );
+
+        static::assertGreaterThan(
+            $result->getDataFieldOfId($recordB, '_score'),
+            $result->getDataFieldOfId($recordA, '_score')
+        );
+    }
+
+    public function testDeleteNonDefaultCurrency(): void
+    {
+        $context = Context::createDefaultContext();
+        $recordA = Uuid::randomHex();
+
+        $records = [
+            [
+                'id' => $recordA,
+                'decimalPrecision' => 2,
+                'name' => 'match',
+                'isoCode' => 'FOO',
+                'shortName' => 'test',
+                'factor' => 1,
+                'symbol' => 'A',
+                'itemRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+                'totalRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+            ],
+        ];
+
+        $this->currencyRepository->create($records, $context);
+
+        $deleteEventElement = $this->currencyRepository->delete([['id' => $recordA]], $context)->getEventByEntityName(CurrencyDefinition::ENTITY_NAME);
+
+        static::assertNotNull($deleteEventElement);
+        static::assertSame($recordA, $deleteEventElement->getWriteResults()[0]->getPrimaryKey());
+    }
+
+    public function testDeleteDefaultCurrency(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $this->expectException(RestrictDeleteViolationException::class);
+        $this->currencyRepository->delete([['id' => Defaults::CURRENCY]], $context);
+    }
+
+    public function testCreateDuplicateIsoCodeReturnsCurrencyException(): void
+    {
+        $this->expectExceptionObject(CurrencyException::isoCodeNotUnique('EUR'));
+
+        $this->currencyRepository->create([[
+            'id' => Uuid::randomHex(),
+            'decimalPrecision' => 2,
+            'name' => 'Euro Austria',
+            'isoCode' => 'EUR',
+            'shortName' => 'Euro Austria',
+            'factor' => 1.1,
+            'symbol' => '€',
+            'itemRounding' => [
+                'decimals' => 2,
+                'interval' => 0.01,
+                'roundForNet' => true,
+            ],
+            'totalRounding' => [
+                'decimals' => 2,
+                'interval' => 0.01,
+                'roundForNet' => true,
+            ],
+        ]], Context::createDefaultContext());
+    }
+}

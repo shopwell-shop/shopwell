@@ -1,0 +1,16 @@
+@import "~scss/mixins";
+
+.sw-media-quickinfo-metadata-item__term {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-primary-default);
+}
+
+.sw-media-quickinfo-metadata-item__description {
+    @include truncate;
+
+    font-size: var(--font-size-xs);
+
+    @media screen and (max-width: 768px) {
+        margin-bottom: 16px;
+    }
+}

@@ -1,0 +1,534 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\Media\Api;
+
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Media\Event\MediaUploadedEvent;
+use Shopwell\Core\Content\Media\MediaCollection;
+use Shopwell\Core\Content\Media\MediaEntity;
+use Shopwell\Core\Content\Media\MediaType\ImageType;
+use Shopwell\Core\Content\Test\Media\MediaFixtures;
+use Shopwell\Core\DevOps\Environment\EnvironmentHelper;
+use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseHelper\CallableClass;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[Group('needsWebserver')]
+class MediaUploadControllerTest extends TestCase
+{
+    use AdminFunctionalTestBehaviour;
+    use MediaFixtures;
+
+    final public const TEST_IMAGE = __DIR__ . '/../fixtures/shopware-logo.png';
+    final public const SAFE_SVG = __DIR__ . '/fixtures/safe.svg';
+    final public const UNSAFE_SVG = __DIR__ . '/fixtures/unsafe.svg';
+
+    /**
+     * @var EntityRepository<MediaCollection>
+     */
+    private EntityRepository $mediaRepository;
+
+    private string $mediaId;
+
+    private Context $context;
+
+    private bool $mediaDirCreated = false;
+
+    private ?MediaUploadedEvent $thrownMediaEvent;
+
+    protected function setUp(): void
+    {
+        $this->mediaRepository = static::getContainer()->get('media.repository');
+
+        $this->context = Context::createDefaultContext();
+        $this->mediaId = $this->getEmptyMedia()->getId();
+        $this->thrownMediaEvent = null;
+
+        $this->addEventListener(
+            static::getContainer()->get('event_dispatcher'),
+            MediaUploadedEvent::class,
+            function (MediaUploadedEvent $event): void {
+                $this->thrownMediaEvent = $event;
+            }
+        );
+
+        $projectDir = static::getContainer()->getParameter('kernel.project_dir');
+        if (!\is_dir($projectDir . '/public/media')) {
+            mkdir($projectDir . '/public/media');
+            $this->mediaDirCreated = true;
+        }
+        \copy(self::TEST_IMAGE, static::getContainer()->getParameter('kernel.project_dir') . '/public/media/shopware-logo.png');
+    }
+
+    protected function tearDown(): void
+    {
+        \unlink(static::getContainer()->getParameter('kernel.project_dir') . '/public/media/shopware-logo.png');
+
+        if ($this->mediaDirCreated) {
+            rmdir(static::getContainer()->getParameter('kernel.project_dir') . '/public/media');
+            $this->mediaDirCreated = false;
+        }
+    }
+
+    public function testUploadFromBinaryUsesMediaId(): void
+    {
+        $url = \sprintf(
+            '/api/_action/media/%s/upload',
+            $this->mediaId
+        );
+
+        $this->getBrowser()->request(
+            'POST',
+            $url . '?extension=png',
+            [],
+            [],
+            [
+                'HTTP_CONTENT-TYPE' => 'image/png',
+                'HTTP_CONTENT-LENGTH' => filesize(self::TEST_IMAGE),
+            ],
+            (string) file_get_contents(self::TEST_IMAGE)
+        );
+        $media = $this->getMediaEntity();
+
+        $mediaPath = $media->getPath();
+
+        static::assertTrue($this->getPublicFilesystem()->has($mediaPath));
+        static::assertStringEndsWith($media->getId() . '.' . $media->getFileExtension(), $mediaPath);
+
+        $this->assertMediaApiResponse();
+    }
+
+    public function testUploadFromBinaryRequiresMediaUpdatePrivilege(): void
+    {
+        $browser = $this->getBrowser(true, [], ['media:read']);
+        $url = \sprintf('/api/_action/media/%s/upload', $this->mediaId);
+
+        $browser->request(
+            'POST',
+            $url . '?extension=html',
+            [],
+            [],
+            [
+                'HTTP_CONTENT-TYPE' => 'text/html',
+                'HTTP_CONTENT-LENGTH' => 30,
+            ],
+            '<html><body>test</body></html>'
+        );
+
+        $content = (string) $browser->getResponse()->getContent();
+
+        static::assertSame(Response::HTTP_FORBIDDEN, $browser->getResponse()->getStatusCode(), $content);
+        static::assertSame(MissingPrivilegeException::MISSING_PRIVILEGE_ERROR, json_decode($content, true)['errors'][0]['code'], $content);
+        static::assertSame(['media:update'], json_decode(json_decode($content, true)['errors'][0]['detail'], true)['missingPrivileges'], $content);
+    }
+
+    public function testRenameRequiresMediaUpdatePrivilege(): void
+    {
+        $browser = $this->getBrowser(true, [], ['media:read']);
+        $browser->jsonRequest(
+            'POST',
+            \sprintf('/api/_action/media/%s/rename', $this->mediaId),
+            ['fileName' => 'renamed-media'],
+        );
+
+        $content = (string) $browser->getResponse()->getContent();
+
+        static::assertSame(Response::HTTP_FORBIDDEN, $browser->getResponse()->getStatusCode(), $content);
+        static::assertSame(MissingPrivilegeException::MISSING_PRIVILEGE_ERROR, json_decode($content, true)['errors'][0]['code'], $content);
+        static::assertSame(['media:update'], json_decode(json_decode($content, true)['errors'][0]['detail'], true)['missingPrivileges'], $content);
+    }
+
+    public function testProvideNameRequiresMediaReadPrivilege(): void
+    {
+        $browser = $this->getBrowser(true, [], []);
+        $browser->jsonRequest('GET', '/api/_action/media/provide-name?fileName=media&extension=png');
+
+        $content = (string) $browser->getResponse()->getContent();
+
+        static::assertSame(Response::HTTP_FORBIDDEN, $browser->getResponse()->getStatusCode(), $content);
+        static::assertSame(MissingPrivilegeException::MISSING_PRIVILEGE_ERROR, json_decode($content, true)['errors'][0]['code'], $content);
+        static::assertSame(['media:read'], json_decode(json_decode($content, true)['errors'][0]['detail'], true)['missingPrivileges'], $content);
+    }
+
+    public function testUpdatingFileExtensionOfExistingFileToDisallowedValueIsRejected(): void
+    {
+        // Give the media a real file with a valid extension first.
+        $this->getBrowser()->request(
+            'POST',
+            \sprintf('/api/_action/media/%s/upload?extension=png', $this->mediaId),
+            [],
+            [],
+            [
+                'HTTP_CONTENT-TYPE' => 'image/png',
+                'HTTP_CONTENT-LENGTH' => filesize(self::TEST_IMAGE),
+            ],
+            (string) file_get_contents(self::TEST_IMAGE)
+        );
+
+        static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode());
+
+        // Attempt to overwrite the stored extension with a forbidden one via the Admin API.
+        $this->getBrowser()->jsonRequest(
+            'PATCH',
+            \sprintf('/api/media/%s', $this->mediaId),
+            ['fileExtension' => 'php'],
+        );
+
+        $response = $this->getBrowser()->getResponse();
+        $content = (string) $response->getContent();
+        $responseData = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode(), $content);
+        static::assertSame('MEDIA_ILLEGAL_FILE_EXTENSION', $responseData['errors'][0]['code'], $content);
+
+        // The forbidden extension must not have been persisted.
+        $media = $this->mediaRepository->search(new Criteria([$this->mediaId]), $this->context)->getEntities()->get($this->mediaId);
+        static::assertInstanceOf(MediaEntity::class, $media);
+        static::assertSame('png', $media->getFileExtension());
+    }
+
+    public function testUploadFromBinaryUsesFileName(): void
+    {
+        $dispatcher = static::getContainer()->get('event_dispatcher');
+        $listener = $this->createMock(CallableClass::class);
+        $listener->expects($this->once())->method('__invoke');
+        $this->addEventListener($dispatcher, MediaUploadedEvent::class, $listener);
+
+        $url = \sprintf(
+            '/api/_action/media/%s/upload',
+            $this->mediaId
+        );
+
+        $this->getBrowser()->request(
+            'POST',
+            $url . '?extension=png&fileName=new%20file%20name',
+            [],
+            [],
+            [
+                'HTTP_CONTENT-TYPE' => 'image/png',
+                'HTTP_CONTENT-LENGTH' => filesize(self::TEST_IMAGE),
+            ],
+            (string) file_get_contents(self::TEST_IMAGE)
+        );
+        $media = $this->getMediaEntity();
+
+        $mediaPath = $media->getPath();
+
+        static::assertTrue($this->getPublicFilesystem()->has($mediaPath));
+        static::assertIsString($media->getFileName());
+        static::assertStringEndsWith('new file name', $media->getFileName());
+
+        $this->assertMediaApiResponse();
+    }
+
+    public function testUploadValidSvgFromBinary(): void
+    {
+        $url = \sprintf(
+            '/api/_action/media/%s/upload',
+            $this->mediaId
+        );
+
+        $this->getBrowser()->request(
+            'POST',
+            $url . '?extension=svg',
+            [],
+            [],
+            [
+                'HTTP_CONTENT-TYPE' => 'image/svg+xml',
+                'HTTP_CONTENT-LENGTH' => filesize(self::SAFE_SVG),
+            ],
+            (string) file_get_contents(self::SAFE_SVG)
+        );
+
+        $media = $this->getMediaEntity();
+
+        static::assertSame('svg', $media->getFileExtension());
+        static::assertTrue($this->getPublicFilesystem()->has($media->getPath()));
+        $this->assertMediaEventThrown();
+    }
+
+    public function testUploadInvalidSvgFromBinaryReturnsBadRequest(): void
+    {
+        $url = \sprintf(
+            '/api/_action/media/%s/upload',
+            $this->mediaId
+        );
+
+        $this->getBrowser()->request(
+            'POST',
+            $url . '?extension=svg',
+            [],
+            [],
+            [
+                'HTTP_CONTENT-TYPE' => 'image/svg+xml',
+                'HTTP_CONTENT-LENGTH' => filesize(self::UNSAFE_SVG),
+            ],
+            (string) file_get_contents(self::UNSAFE_SVG)
+        );
+
+        $response = $this->getBrowser()->getResponse();
+        $responseData = json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        $media = $this->mediaRepository->search(new Criteria([$this->mediaId]), $this->context)->getEntities()->get($this->mediaId);
+
+        static::assertInstanceOf(MediaEntity::class, $media);
+        static::assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
+        static::assertSame('CONTENT__MEDIA_INVALID_FILE', $responseData['errors'][0]['code']);
+        static::assertSame(
+            'Provided file is invalid: SVG files with active content are not allowed.'
+            . \PHP_EOL . 'Event handler attributes not allowed: onload'
+            . \PHP_EOL . 'Attributes not allowed: onload.',
+            $responseData['errors'][0]['detail']
+        );
+        static::assertEmpty($media->getPath());
+        static::assertNull($this->thrownMediaEvent);
+    }
+
+    public function testUploadFromURL(): void
+    {
+        $dispatcher = static::getContainer()->get('event_dispatcher');
+        $listener = $this->createMock(CallableClass::class);
+        $listener->expects($this->once())->method('__invoke');
+        $this->addEventListener($dispatcher, MediaUploadedEvent::class, $listener);
+
+        $baseUrl = EnvironmentHelper::getVariable('APP_URL') . '/media/shopware-logo.png';
+
+        $url = \sprintf(
+            '/api/_action/media/%s/upload',
+            $this->mediaId
+        );
+
+        $this->getBrowser()->jsonRequest(
+            'POST',
+            $url . '?extension=png',
+            ['url' => $baseUrl],
+            [
+                'HTTP_CONTENT-TYPE' => 'application/json',
+            ],
+        );
+        $response = $this->getBrowser()->getResponse();
+
+        $media = $this->mediaRepository->search(new Criteria([$this->mediaId]), $this->context)->getEntities()->get($this->mediaId);
+
+        static::assertInstanceOf(MediaEntity::class, $media);
+        static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode(), (string) $response->getContent());
+        $location = $response->headers->get('location');
+        static::assertIsString($location);
+        static::assertStringEndsWith(
+            '/api/media/' . $this->mediaId,
+            $location
+        );
+
+        $path = $media->getPath();
+
+        static::assertTrue($this->getPublicFilesystem()->has($path));
+
+        $this->assertMediaApiResponse();
+    }
+
+    public function testRenameMediaFileThrowsExceptionIfFileNameIsNotPresent(): void
+    {
+        $dispatcher = static::getContainer()->get('event_dispatcher');
+        $listener = $this->createMock(CallableClass::class);
+        $listener->expects($this->never())->method('__invoke');
+        $this->addEventListener($dispatcher, MediaUploadedEvent::class, $listener);
+
+        $context = Context::createDefaultContext();
+        $this->setFixtureContext($context);
+        $media = $this->getPng();
+
+        $url = \sprintf(
+            '/api/_action/media/%s/rename',
+            $media->getId()
+        );
+
+        $this->getBrowser()->jsonRequest(
+            'POST',
+            $url,
+            [],
+            [
+                'HTTP_CONTENT_TYPE' => 'application/json',
+            ],
+        );
+
+        $response = $this->getBrowser()->getResponse();
+        $responseData = json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertSame(400, $response->getStatusCode());
+        static::assertSame('CONTENT__MEDIA_EMPTY_FILE_NAME', $responseData['errors'][0]['code']);
+
+        static::assertNull($this->thrownMediaEvent);
+    }
+
+    public function testRenameMediaFileHappyPath(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $ids = new IdsCollection();
+        $data = [
+            'id' => $id = $ids->get('media'),
+            'fileName' => 'original_file_name',
+            'path' => 'media/original_file_name.png',
+            'fileExtension' => 'png',
+        ];
+
+        $this->mediaRepository->create([$data], $context);
+        $media = $this->mediaRepository->search(new Criteria([$id]), $context)->getEntities()->get($id);
+
+        static::assertInstanceOf(MediaEntity::class, $media);
+        static::assertNotEmpty($media->getPath());
+
+        $this->getPublicFilesystem()->write($media->getPath(), 'some content');
+
+        $url = \sprintf(
+            '/api/_action/media/%s/rename',
+            $media->getId()
+        );
+
+        $this->getBrowser()->jsonRequest(
+            'POST',
+            $url,
+            ['fileName' => 'new_file_name'],
+            [
+                'HTTP_CONTENT_TYPE' => 'application/json',
+            ],
+        );
+
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(204, $response->getStatusCode());
+
+        $updated = $this->mediaRepository->search(new Criteria([$id]), $context)->getEntities()->get($id);
+
+        static::assertInstanceOf(MediaEntity::class, $updated);
+        static::assertNotSame($media->getFileName(), $updated->getFileName());
+
+        static::assertTrue($this->getPublicFilesystem()->has($updated->getPath()));
+        static::assertFalse($this->getPublicFilesystem()->has($media->getPath()));
+    }
+
+    public function testProvideName(): void
+    {
+        $context = Context::createDefaultContext();
+        $this->setFixtureContext($context);
+        $media = $this->getPng();
+
+        $fileName = $media->getFileName();
+        static::assertIsString($fileName);
+        $url = \sprintf(
+            '/api/_action/media/provide-name?fileName=%s&extension=png',
+            $fileName
+        );
+
+        $this->getBrowser()->jsonRequest(
+            'GET',
+            $url
+        );
+
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(200, $response->getStatusCode());
+
+        $result = json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertSame($fileName . '_(1)', $result['fileName']);
+    }
+
+    public function testProvideNameProvidesOwnName(): void
+    {
+        $context = Context::createDefaultContext();
+        $this->setFixtureContext($context);
+        $media = $this->getPng();
+
+        $fileName = $media->getFileName();
+        static::assertIsString($fileName);
+        $url = \sprintf(
+            '/api/_action/media/provide-name?fileName=%s&extension=png&mediaId=%s',
+            $fileName,
+            $media->getId()
+        );
+
+        $this->getBrowser()->jsonRequest(
+            'GET',
+            $url
+        );
+
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(200, $response->getStatusCode());
+
+        $result = json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertSame($fileName, $result['fileName']);
+    }
+
+    private function getMediaEntity(): MediaEntity
+    {
+        $media = $this->mediaRepository->search(new Criteria([$this->mediaId]), $this->context)->getEntities()->get($this->mediaId);
+        static::assertInstanceOf(MediaEntity::class, $media);
+        $response = $this->getBrowser()->getResponse();
+
+        static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode(), (string) $response->getContent());
+        $location = $response->headers->get('Location');
+        static::assertIsString($location);
+        static::assertStringEndsWith(
+            '/api/media/' . $this->mediaId,
+            $location
+        );
+
+        return $media;
+    }
+
+    private function assertMediaApiResponse(): void
+    {
+        $this->getBrowser()->jsonRequest(
+            'GET',
+            '/api/media/' . $this->mediaId
+        );
+
+        $responseData = json_decode((string) $this->getBrowser()->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertCount(
+            4,
+            $responseData['data']['attributes']['metaData'],
+            print_r($responseData['data']['attributes'], true)
+        );
+        static::assertSame(
+            499,
+            $responseData['data']['attributes']['metaData']['width'],
+            print_r($responseData['data']['attributes'], true)
+        );
+        static::assertCount(
+            3,
+            $responseData['data']['attributes']['mediaType'],
+            print_r($responseData['data']['attributes']['mediaType'], true)
+        );
+        static::assertSame(
+            'IMAGE',
+            $responseData['data']['attributes']['mediaType']['name'],
+            print_r($responseData['data']['attributes']['mediaType'], true)
+        );
+        static::assertCount(
+            1,
+            $responseData['data']['attributes']['mediaType']['flags'],
+            print_r($responseData['data']['attributes']['mediaType']['flags'], true)
+        );
+        static::assertSame(
+            ImageType::TRANSPARENT,
+            $responseData['data']['attributes']['mediaType']['flags'][0],
+            print_r($responseData['data']['attributes']['mediaType']['flags'], true)
+        );
+        $this->assertMediaEventThrown();
+    }
+
+    private function assertMediaEventThrown(): void
+    {
+        static::assertNotNull($this->thrownMediaEvent);
+        static::assertSame($this->mediaId, $this->thrownMediaEvent->getMediaId());
+    }
+}

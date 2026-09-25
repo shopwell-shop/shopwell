@@ -1,0 +1,55 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\DateHistogramAggregation;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(DateHistogramAggregation::class)]
+class DateHistogramAggregationTest extends TestCase
+{
+    public function testEncode(): void
+    {
+        $aggregation = new DateHistogramAggregation(
+            'test',
+            'test',
+            DateHistogramAggregation::PER_DAY,
+            null,
+            null,
+            null,
+            null
+        );
+
+        static::assertEquals([
+            'extensions' => [],
+            'name' => 'test',
+            'field' => 'test',
+            'interval' => 'day',
+            'aggregation' => null,
+            '_class' => DateHistogramAggregation::class,
+        ], $aggregation->jsonSerialize());
+    }
+
+    public function testClone(): void
+    {
+        $aggregation = new DateHistogramAggregation(
+            'test',
+            'test',
+            DateHistogramAggregation::PER_DAY,
+            null,
+            null,
+            null,
+            null
+        );
+
+        $clone = clone $aggregation;
+
+        static::assertSame($aggregation->jsonSerialize(), $clone->jsonSerialize());
+    }
+}

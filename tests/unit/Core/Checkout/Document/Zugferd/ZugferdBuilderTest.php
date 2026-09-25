@@ -1,0 +1,431 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Document\Zugferd;
+
+use horstoeko\zugferd\codelists\ZugferdInvoiceType;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\Price\AmountCalculator;
+use Shopwell\Core\Checkout\Cart\Price\CashRounding;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Checkout\Cart\Tax\PercentageTaxRuleBuilder;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTax;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Checkout\Cart\Tax\TaxCalculator;
+use Shopwell\Core\Checkout\Document\DocumentConfiguration;
+use Shopwell\Core\Checkout\Document\DocumentConfigurationFactory;
+use Shopwell\Core\Checkout\Document\Zugferd\ZugferdBuilder;
+use Shopwell\Core\Checkout\Document\Zugferd\ZugferdDocument;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
+use Shopwell\Core\System\Country\CountryEntity;
+use Shopwell\Core\System\Currency\CurrencyEntity;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+/**
+ * @internal
+ */
+#[Package('after-sales')]
+#[CoversClass(ZugferdBuilder::class)]
+#[CoversClass(ZugferdDocument::class)]
+class ZugferdBuilderTest extends TestCase
+{
+    private const ALLOWANCE_TOTAL = 20.00;
+
+    private const SHIPPING_COST_NET = 20.00;
+
+    private int $position = 0;
+
+    private float $totalAmount = 0.0;
+
+    protected function tearDown(): void
+    {
+        $this->position = 0;
+        $this->totalAmount = 0.0;
+    }
+
+    public function testBuildDocument(): void
+    {
+        $order = $this->buildOrder();
+        $documentConfig = $this->buildDocumentConfig();
+
+        $xmlContent = $this->createZugferdBuilder()->buildDocumentWithType(
+            $order,
+            $documentConfig,
+            Context::createDefaultContext(),
+            ZugferdInvoiceType::CORRECTION,
+            [
+                'documentNumber' => '1001',
+                'config' => [
+                    'documentDate' => (new \DateTime('2024-01-01'))->format('Y-m-d'),
+                ],
+            ]
+        );
+
+        $typeCode = ZugferdInvoiceType::CORRECTION;
+        $totalAmount = number_format($this->totalAmount, 2, '.', '');
+        $shippingCost = number_format(self::SHIPPING_COST_NET, 2, '.', '');
+        $allowance = number_format(self::ALLOWANCE_TOTAL, 2, '.', '');
+        $grandTotal = number_format($order->getAmountTotal(), 2, '.', '');
+        $taxBasis = number_format($order->getAmountNet(), 2, '.', '');
+        $taxTotal = number_format($order->getAmountTotal() - $order->getAmountNet(), 2, '.', '');
+
+        static::assertStringStartsWith('<?xml', $xmlContent);
+        static::assertStringContainsString("LineTotalAmount>$totalAmount<", $xmlContent);
+        static::assertStringContainsString("ChargeTotalAmount>$shippingCost<", $xmlContent);
+        static::assertStringContainsString("AllowanceTotalAmount>$allowance<", $xmlContent);
+        static::assertStringContainsString("TaxBasisTotalAmount>$taxBasis<", $xmlContent);
+        static::assertStringContainsString("TaxTotalAmount currencyID=\"EUR\">$taxTotal<", $xmlContent);
+        static::assertStringContainsString("GrandTotalAmount>$grandTotal<", $xmlContent);
+        static::assertStringContainsString("DuePayableAmount>$grandTotal<", $xmlContent);
+        static::assertStringContainsString("TypeCode>$typeCode<", $xmlContent);
+        static::assertStringContainsString('IssuerAssignedID>1001<', $xmlContent);
+        static::assertStringContainsString('DateTimeString format="102">20240101<', $xmlContent);
+
+        static::assertStringContainsString('UK', $xmlContent);
+        static::assertStringContainsString('DueDateDateTime', $xmlContent);
+
+        $lineItems = $order->getLineItems();
+        static::assertNotNull($lineItems);
+
+        foreach ($lineItems as $lineItem) {
+            $this->assertLineItemProperties($lineItem, $xmlContent);
+        }
+
+        $customerData = \array_filter($order->getOrderCustomer()?->getVars() ?? []);
+        static::assertNotEmpty($customerData);
+
+        foreach ($customerData as $value) {
+            static::assertStringContainsString($value, $xmlContent);
+        }
+    }
+
+    public function testHandleCreditLineItemByDocumentType(): void
+    {
+        $creditLabel = 'credit-item-label-' . Uuid::randomHex();
+
+        $order = $this->buildOrderWithCreditLineItem($creditLabel);
+        $documentConfig = $this->buildDocumentConfig();
+        $builder = $this->createZugferdBuilder();
+
+        $creditNoteXml = $builder->buildDocumentWithType(
+            $order,
+            $documentConfig,
+            Context::createDefaultContext(),
+            ZugferdInvoiceType::CREDITNOTE,
+        );
+
+        static::assertStringContainsString('TypeCode>' . ZugferdInvoiceType::CREDITNOTE . '<', $creditNoteXml);
+        static::assertStringContainsString("Name>$creditLabel<", $creditNoteXml);
+        static::assertStringNotContainsString("Reason>$creditLabel<", $creditNoteXml);
+
+        $this->position = 0;
+        $this->totalAmount = 0.0;
+
+        $order = $this->buildOrderWithCreditLineItem($creditLabel);
+
+        $invoiceXml = $builder->buildDocument(
+            $order,
+            $documentConfig,
+            Context::createDefaultContext()
+        );
+
+        static::assertStringContainsString('TypeCode>' . ZugferdInvoiceType::INVOICE . '<', $invoiceXml);
+        static::assertStringContainsString("Reason>$creditLabel<", $invoiceXml);
+        static::assertStringNotContainsString("Name>$creditLabel<", $invoiceXml);
+    }
+
+    private function buildOrderWithCreditLineItem(string $creditLabel): OrderEntity
+    {
+        $creditId = Uuid::randomHex();
+
+        $creditItem = $this->buildOrderLineItemEntity($creditId, LineItem::CREDIT_LINE_ITEM_TYPE);
+        $creditItem->setLabel($creditLabel);
+        $creditItem->setUnitPrice(-50.0);
+        $creditItem->setTotalPrice(-50.0);
+        $creditItem->setPrice(new CalculatedPrice(
+            -50.0,
+            -50.0,
+            new CalculatedTaxCollection([
+                new CalculatedTax(-7.98, 19, -50.0),
+            ]),
+            new TaxRuleCollection()
+        ));
+
+        $currency = new CurrencyEntity();
+        $currency->setIsoCode('EUR');
+
+        $address = $this->getOrderAddress();
+        $order = new OrderEntity();
+        $order->setTaxStatus('gross');
+        $order->setLineItems(new OrderLineItemCollection([$creditItem]));
+        $order->setOrderCustomer($this->getOrderCustomer());
+        $order->setBillingAddressId($address->getId());
+        $order->setAddresses(new OrderAddressCollection([$address]));
+        $order->setSalesChannelId(Uuid::randomHex());
+        $order->setAmountTotal(-50.0);
+        $order->setAmountNet(-42.02);
+        $order->setCurrency($currency);
+        $order->setPrice(new CartPrice(
+            -42.02,
+            -50.0,
+            -50.0,
+            new CalculatedTaxCollection([new CalculatedTax(-7.98, 19, -50.0)]),
+            new TaxRuleCollection(),
+            'gross'
+        ));
+
+        $delivery = new OrderDeliveryEntity();
+        $delivery->setId(Uuid::randomHex());
+        $delivery->setShippingDateLatest(new \DateTimeImmutable());
+        $delivery->setShippingCosts(new CalculatedPrice(
+            0.0,
+            0.0,
+            new CalculatedTaxCollection(),
+            new TaxRuleCollection()
+        ));
+        $order->setDeliveries(new OrderDeliveryCollection([$delivery]));
+
+        return $order;
+    }
+
+    private function createZugferdBuilder(): ZugferdBuilder
+    {
+        return new ZugferdBuilder(
+            static::createStub(EventDispatcherInterface::class),
+            new AmountCalculator(new CashRounding(), new PercentageTaxRuleBuilder(), new TaxCalculator())
+        );
+    }
+
+    private function buildDocumentConfig(): DocumentConfiguration
+    {
+        $overrides = [];
+
+        $country = new CountryEntity();
+        $country->setId(Uuid::randomHex());
+        $country->setIso('UK');
+
+        $config = \array_merge([
+            'documentNumber' => 'test-1000',
+            'companyCountryId' => $country->getId(),
+            'companyStreet' => 'Musterstreet 1',
+            'companyZipcode' => '12345',
+            'companyCity' => 'Mustercity',
+            'companyName' => 'Muster company SE',
+            'companyEmail' => 'test@example.de',
+            'companyPhone' => '0123456789',
+            'executiveDirector' => 'Max Mustermann',
+            'placeOfJurisdiction' => 'Muster',
+            'taxNumber' => '0123456789',
+            'vatId' => '012356789',
+            'paymentDueDate' => '+30 day',
+        ], \array_filter($overrides, static fn ($key) => !str_starts_with($key, '_'), \ARRAY_FILTER_USE_KEY));
+
+        $documentConfig = DocumentConfigurationFactory::createConfiguration($config);
+        $documentConfig->setCompanyCountry($country);
+
+        return $documentConfig;
+    }
+
+    private function buildOrder(): OrderEntity
+    {
+        $normalId = Uuid::randomHex();
+        $bundleId = Uuid::randomHex();
+        $bundleFirstId = Uuid::randomHex();
+        $bundleSecondId = Uuid::randomHex();
+        $promotion1Id = Uuid::randomHex();
+
+        $orderLineItemCollection = new OrderLineItemCollection(
+            [
+                $normal = $this->buildOrderLineItemEntity($normalId, LineItem::PRODUCT_LINE_ITEM_TYPE),
+                $bundle = $this->buildOrderLineItemEntity($bundleId, LineItem::CONTAINER_LINE_ITEM),
+                $promotion1 = $this->buildOrderLineItemEntity($promotion1Id, LineItem::PROMOTION_LINE_ITEM_TYPE),
+                $this->buildOrderLineItemEntity(Uuid::randomHex(), LineItem::PROMOTION_LINE_ITEM_TYPE),
+            ]
+        );
+
+        $bundleFirst = $this->buildOrderLineItemEntity($bundleFirstId, LineItem::PRODUCT_LINE_ITEM_TYPE, $bundle, 2);
+        $bundleSecond = $this->buildOrderLineItemEntity($bundleSecondId, LineItem::PRODUCT_LINE_ITEM_TYPE, $bundle);
+
+        $this->setPrice($normal, $bundleFirst, $bundleSecond);
+        $promotion1->setUnitPrice(-self::ALLOWANCE_TOTAL * 1.19);
+        $promotion1->setTotalPrice($promotion1->getUnitPrice());
+
+        $promotion1->setPrice(new CalculatedPrice(
+            $promotion1->getUnitPrice(),
+            $promotion1->getTotalPrice(),
+            new CalculatedTaxCollection([
+                new CalculatedTax($promotion1->getUnitPrice() + self::ALLOWANCE_TOTAL, 19, $promotion1->getTotalPrice()),
+            ]),
+            new TaxRuleCollection()
+        ));
+
+        $currency = new CurrencyEntity();
+        $currency->setIsoCode('EUR');
+
+        $address = $this->getOrderAddress();
+        $order = new OrderEntity();
+        $order->setTaxStatus('gross');
+        $order->setLineItems($orderLineItemCollection);
+        $order->setOrderCustomer($this->getOrderCustomer());
+        $order->setBillingAddressId($address->getId());
+        $order->setAddresses(new OrderAddressCollection([$address]));
+        $order->setSalesChannelId(Uuid::randomHex());
+        $order->setAmountTotal(1213.8);
+        $order->setAmountNet(1020);
+        $order->setCurrency($currency);
+        $order->setPrice(new CartPrice(
+            1000,
+            1190,
+            1190,
+            new CalculatedTaxCollection([new CalculatedTax(119, 19, 1190)]),
+            new TaxRuleCollection(),
+            'gross'
+        ));
+
+        $shippingCost = self::SHIPPING_COST_NET * 1.19;
+        $delivery = new OrderDeliveryEntity();
+        $delivery->setId(Uuid::randomHex());
+        $delivery->setShippingDateLatest(new \DateTimeImmutable());
+        $delivery->setShippingCosts(new CalculatedPrice(
+            $shippingCost,
+            $shippingCost,
+            new CalculatedTaxCollection([
+                new CalculatedTax($shippingCost - self::SHIPPING_COST_NET, 19, $shippingCost),
+            ]),
+            new TaxRuleCollection()
+        ));
+
+        $order->setDeliveries(new OrderDeliveryCollection([$delivery]));
+
+        return $order;
+    }
+
+    private function assertLineItemProperties(OrderLineItemEntity $lineItem, string $xmlContent): void
+    {
+        if ($lineItem->getType() === LineItem::PRODUCT_LINE_ITEM_TYPE) {
+            $quantity = number_format($lineItem->getQuantity(), 2, '.', '');
+            $unitPrice = number_format($lineItem->getUnitPrice() / 1.19, 4, '.', '');
+            $totalPrice = number_format($lineItem->getTotalPrice() / 1.19, 2, '.', '');
+
+            static::assertStringContainsString("LineID>{$this->getPosition($lineItem)}<", $xmlContent);
+            static::assertStringContainsString("Name>{$lineItem->getLabel()}<", $xmlContent);
+            static::assertStringContainsString("ChargeAmount>$unitPrice<", $xmlContent);
+            static::assertStringContainsString('BasisQuantity unitCode="H87">1.00<', $xmlContent);
+            static::assertStringContainsString("BilledQuantity unitCode=\"H87\">$quantity<", $xmlContent);
+            static::assertStringContainsString("LineTotalAmount>$totalPrice<", $xmlContent);
+            static::assertStringContainsString("Name>{$lineItem->getLabel()}<", $xmlContent);
+        }
+
+        if ($lineItem->getChildren()) {
+            foreach ($lineItem->getChildren() as $child) {
+                $this->assertLineItemProperties($child, $xmlContent);
+            }
+        }
+    }
+
+    private function getPosition(OrderLineItemEntity $lineItem): string
+    {
+        $position = '';
+
+        if ($lineItem->getParent()) {
+            $position .= $this->getPosition($lineItem->getParent()) . '-';
+        }
+
+        return $position . $lineItem->getPosition();
+    }
+
+    private function buildOrderLineItemEntity(string $id, string $type, ?OrderLineItemEntity $parent = null, int $quantity = 1): OrderLineItemEntity
+    {
+        $orderLineItemEntity = new OrderLineItemEntity();
+        $orderLineItemEntity->setId($id);
+        $orderLineItemEntity->setType($type);
+        $orderLineItemEntity->setPosition(++$this->position);
+        $orderLineItemEntity->setIdentifier($id);
+        $orderLineItemEntity->setLabel(Uuid::randomHex());
+        $orderLineItemEntity->setGood(true);
+        $orderLineItemEntity->setRemovable(true);
+        $orderLineItemEntity->setStackable(false);
+        $orderLineItemEntity->setQuantity($quantity);
+        $orderLineItemEntity->setChildren(new OrderLineItemCollection());
+        $orderLineItemEntity->setParent($parent);
+
+        $parent?->getChildren()?->add($orderLineItemEntity);
+
+        return $orderLineItemEntity;
+    }
+
+    private function getOrderCustomer(): OrderCustomerEntity
+    {
+        $customer = new OrderCustomerEntity();
+        $customer->setEmail('order-customer-email');
+        $customer->setFirstName('order-customer-first-name');
+        $customer->setLastName('order-customer-last-name');
+        $customer->setCustomerNumber('order-customer-number');
+        $customer->setCompany('order-customer-company');
+
+        return $customer;
+    }
+
+    private function getOrderAddress(): OrderAddressEntity
+    {
+        $country = new CountryEntity();
+        $country->setId('country-id');
+        $country->setName('country-name');
+        $country->setIso('DE');
+
+        $countryState = new CountryStateEntity();
+        $countryState->setId('country-state-id');
+        $countryState->setName('country-state-name');
+        $countryState->setShortCode('DE-TEST');
+
+        $address = new OrderAddressEntity();
+        $address->setId('order-address-id');
+        $address->setVersionId('order-address-version-id');
+        $address->setSalutationId('order-address-salutation-id');
+        $address->setFirstName('order-address-first-name');
+        $address->setLastName('order-address-last-name');
+        $address->setStreet('order-address-street');
+        $address->setZipcode('order-address-zipcode');
+        $address->setCity('order-address-city');
+        $address->setCountryId('order-address-country-id');
+        $address->setCountryStateId('order-address-country-state-id');
+        $address->setCountry($country);
+        $address->setCountryState($countryState);
+
+        return $address;
+    }
+
+    private function setPrice(OrderLineItemEntity ...$items): void
+    {
+        foreach ($items as $item) {
+            $item->setUnitPrice($item->getPosition() * 119);
+            $item->setTotalPrice($item->getUnitPrice() * $item->getQuantity());
+
+            $this->totalAmount += $item->getTotalPrice() / 1.19;
+
+            $item->setPrice(new CalculatedPrice(
+                $item->getUnitPrice(),
+                $item->getTotalPrice(),
+                new CalculatedTaxCollection([
+                    new CalculatedTax($item->getTotalPrice() - $item->getTotalPrice() / 1.19, 19, $item->getTotalPrice()),
+                ]),
+                new TaxRuleCollection(),
+                $item->getQuantity()
+            ));
+        }
+    }
+}

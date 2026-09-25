@@ -1,0 +1,43 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\StateMachine;
+
+use Shopwell\Core\Framework\Log\Package;
+
+#[Package('checkout')]
+class Transition
+{
+    public function __construct(
+        private readonly string $entityName,
+        private readonly string $entityId,
+        private readonly string $transitionName,
+        private readonly string $stateFieldName,
+        private readonly ?string $internalComment = null,
+    ) {
+    }
+
+    public function getEntityId(): string
+    {
+        return $this->entityId;
+    }
+
+    public function getEntityName(): string
+    {
+        return $this->entityName;
+    }
+
+    public function getTransitionName(): string
+    {
+        return $this->transitionName;
+    }
+
+    public function getStateFieldName(): string
+    {
+        return $this->stateFieldName;
+    }
+
+    public function getInternalComment(): ?string
+    {
+        return $this->internalComment;
+    }
+}

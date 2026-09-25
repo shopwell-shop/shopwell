@@ -1,0 +1,284 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Mail\Transport;
+
+use League\Flysystem\FilesystemOperator;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Mail\MailException;
+use Shopwell\Core\Content\Mail\Service\MailAttachmentsBuilder;
+use Shopwell\Core\Content\Mail\Transport\MailerTransportDecorator;
+use Shopwell\Core\Content\Mail\Transport\MailerTransportLoader;
+use Shopwell\Core\Content\Mail\Transport\SmtpOauthAuthenticator;
+use Shopwell\Core\Content\Mail\Transport\SmtpOauthTransportFactoryDecorator;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\Test\Stub\Doctrine\TestExceptionFactory;
+use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
+use Symfony\Component\Mailer\Transport;
+use Symfony\Component\Mailer\Transport\NullTransport;
+use Symfony\Component\Mailer\Transport\NullTransportFactory;
+use Symfony\Component\Mailer\Transport\SendmailTransport;
+use Symfony\Component\Mailer\Transport\SendmailTransportFactory;
+use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
+use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransportFactory;
+use Symfony\Component\Mailer\Transport\TransportFactoryInterface;
+use Symfony\Component\Mailer\Transport\Transports;
+
+/**
+ * @internal
+ */
+#[Package('after-sales')]
+#[CoversClass(MailerTransportLoader::class)]
+class MailerTransportLoaderTest extends TestCase
+{
+    public function testUseSymfonyTransportDefault(): void
+    {
+        $transport = $this->getTransportFactory();
+
+        $loader = new MailerTransportLoader(
+            $transport,
+            new StaticSystemConfigService([
+                'core.mailerSettings.emailAgent' => '',
+            ]),
+            static::createStub(MailAttachmentsBuilder::class),
+            static::createStub(FilesystemOperator::class),
+            static::createStub(EntityRepository::class)
+        );
+
+        $trans = $loader->fromString('smtp://localhost:25');
+
+        static::assertInstanceOf(MailerTransportDecorator::class, $trans);
+
+        $decorated = (new \ReflectionProperty(MailerTransportDecorator::class, 'decorated'))->getValue($trans);
+
+        static::assertInstanceOf(EsmtpTransport::class, $decorated);
+    }
+
+    public function testFactoryWithLocal(): void
+    {
+        $factory = new MailerTransportLoader(
+            $this->getTransportFactory(),
+            new StaticSystemConfigService([
+                'core.mailerSettings.emailAgent' => 'local',
+                'core.mailerSettings.sendMailOptions' => null,
+            ]),
+            static::createStub(MailAttachmentsBuilder::class),
+            static::createStub(FilesystemOperator::class),
+            static::createStub(EntityRepository::class)
+        );
+
+        $mailer = $factory->fromString('null://null');
+
+        static::assertInstanceOf(MailerTransportDecorator::class, $mailer);
+
+        $decorated = (new \ReflectionProperty(MailerTransportDecorator::class, 'decorated'))->getValue($mailer);
+
+        static::assertInstanceOf(SendmailTransport::class, $decorated);
+    }
+
+    #[DataProvider('providerSmtpEncryption')]
+    public function testLoaderWithSmtpConfig(?string $encryption): void
+    {
+        $transport = $this->getTransportFactory();
+
+        $loader = new MailerTransportLoader(
+            $transport,
+            new StaticSystemConfigService([
+                'core.mailerSettings.emailAgent' => 'smtp',
+                'core.mailerSettings.host' => 'localhost',
+                'core.mailerSettings.port' => '225',
+                'core.mailerSettings.username' => 'root',
+                'core.mailerSettings.password' => 'root',
+                'core.mailerSettings.encryption' => $encryption,
+                'core.mailerSettings.authenticationMethod' => 'cram-md5',
+            ]),
+            static::createStub(MailAttachmentsBuilder::class),
+            static::createStub(FilesystemOperator::class),
+            static::createStub(EntityRepository::class)
+        );
+
+        $mailer = $loader->fromString('null://null');
+
+        static::assertInstanceOf(MailerTransportDecorator::class, $mailer);
+
+        $decorated = (new \ReflectionProperty(MailerTransportDecorator::class, 'decorated'))->getValue($mailer);
+
+        static::assertInstanceOf(EsmtpTransport::class, $decorated);
+    }
+
+    /**
+     * @return iterable<string, array{0: string|null}>
+     */
+    public static function providerSmtpEncryption(): iterable
+    {
+        yield 'tls' => ['tls'];
+        yield 'ssl' => ['ssl'];
+        yield 'null' => [null];
+    }
+
+    public function testLoaderWithSmtpOauthConfig(): void
+    {
+        $transport = $this->getTransportFactory();
+
+        $loader = new MailerTransportLoader(
+            $transport,
+            new StaticSystemConfigService([
+                'core.mailerSettings.emailAgent' => 'smtp+oauth',
+                'core.mailerSettings.host' => 'localhost',
+                'core.mailerSettings.port' => '225',
+                'core.mailerSettings.clientId' => '123',
+                'core.mailerSettings.clientSecret' => 'SECRET',
+                'core.mailerSettings.oauthUrl' => 'test',
+                'core.mailerSettings.oauthScope' => 'test',
+                'core.mailerSettings.senderAddress' => 'test@example.com',
+                'core.mailerSettings.encryption' => 'tls',
+            ]),
+            static::createStub(MailAttachmentsBuilder::class),
+            static::createStub(FilesystemOperator::class),
+            static::createStub(EntityRepository::class),
+        );
+
+        $mailer = $loader->fromString('null://null');
+
+        static::assertInstanceOf(MailerTransportDecorator::class, $mailer);
+
+        $decorated = (new \ReflectionProperty(MailerTransportDecorator::class, 'decorated'))->getValue($mailer);
+
+        static::assertInstanceOf(EsmtpTransport::class, $decorated);
+    }
+
+    public function testFactoryWithLocalAndInvalidConfig(): void
+    {
+        $loader = new MailerTransportLoader(
+            $this->getTransportFactory(),
+            new StaticSystemConfigService([
+                'core.mailerSettings.emailAgent' => 'local',
+                'core.mailerSettings.sendMailOptions' => '-t bla',
+            ]),
+            static::createStub(MailAttachmentsBuilder::class),
+            static::createStub(FilesystemOperator::class),
+            static::createStub(EntityRepository::class)
+        );
+
+        $this->expectExceptionObject(MailException::givenSendMailOptionIsInvalid('bla', ['-bs', '-i', '-t']));
+
+        $loader->fromString('null://null');
+    }
+
+    public function testFactoryWithLocalAndValidConfig(): void
+    {
+        $loader = new MailerTransportLoader(
+            $this->getTransportFactory(),
+            new StaticSystemConfigService([
+                'core.mailerSettings.emailAgent' => 'local',
+                'core.mailerSettings.sendMailOptions' => '-t    -i',
+            ]),
+            static::createStub(MailAttachmentsBuilder::class),
+            static::createStub(FilesystemOperator::class),
+            static::createStub(EntityRepository::class)
+        );
+
+        $res = $loader->fromString('null://null');
+        static::assertInstanceOf(MailerTransportDecorator::class, $res);
+    }
+
+    public function testFactoryInvalidAgent(): void
+    {
+        $loader = new MailerTransportLoader(
+            $this->getTransportFactory(),
+            new StaticSystemConfigService([
+                'core.mailerSettings.emailAgent' => 'test',
+            ]),
+            static::createStub(MailAttachmentsBuilder::class),
+            static::createStub(FilesystemOperator::class),
+            static::createStub(EntityRepository::class)
+        );
+
+        $this->expectExceptionObject(MailException::givenMailAgentIsInvalid('test'));
+
+        $loader->fromString('null://null');
+    }
+
+    public function testFactoryNoConnection(): void
+    {
+        $config = static::createStub(SystemConfigService::class);
+        $config->method('get')->willThrowException(TestExceptionFactory::createDriverException('no connection'));
+
+        $loader = new MailerTransportLoader(
+            $this->getTransportFactory(),
+            $config,
+            static::createStub(MailAttachmentsBuilder::class),
+            static::createStub(FilesystemOperator::class),
+            static::createStub(EntityRepository::class)
+        );
+
+        $mailer = $loader->fromString('null://null');
+
+        static::assertInstanceOf(MailerTransportDecorator::class, $mailer);
+
+        $decorated = (new \ReflectionProperty(MailerTransportDecorator::class, 'decorated'))->getValue($mailer);
+
+        static::assertInstanceOf(NullTransport::class, $decorated);
+    }
+
+    public function testLoadMultipleMailers(): void
+    {
+        $loader = new MailerTransportLoader(
+            $this->getTransportFactory(),
+            new StaticSystemConfigService([
+                'core.mailerSettings.emailAgent' => 'smtp',
+                'core.mailerSettings.host' => 'localhost',
+                'core.mailerSettings.port' => '225',
+                'core.mailerSettings.username' => 'root',
+                'core.mailerSettings.password' => 'root',
+                'core.mailerSettings.encryption' => 'foo',
+                'core.mailerSettings.authenticationMethod' => 'cram-md5',
+            ]),
+            static::createStub(MailAttachmentsBuilder::class),
+            static::createStub(FilesystemOperator::class),
+            static::createStub(EntityRepository::class)
+        );
+
+        $dsns = [
+            'main' => 'null://localhost:25',
+            'fallback' => 'null://localhost:25',
+        ];
+
+        $transports = (new \ReflectionProperty(Transports::class, 'transports'))->getValue($loader->fromStrings($dsns));
+        static::assertArrayHasKey('main', $transports);
+        static::assertArrayHasKey('fallback', $transports);
+
+        $mainMailer = $transports['main'];
+        static::assertInstanceOf(MailerTransportDecorator::class, $mainMailer);
+
+        $decorated = (new \ReflectionProperty(MailerTransportDecorator::class, 'decorated'))->getValue($mainMailer);
+        static::assertInstanceOf(EsmtpTransport::class, $decorated);
+
+        $fallbackMailer = $transports['fallback'];
+        static::assertInstanceOf(MailerTransportDecorator::class, $fallbackMailer);
+
+        $decorated = (new \ReflectionProperty(MailerTransportDecorator::class, 'decorated'))->getValue($fallbackMailer);
+        static::assertInstanceOf(NullTransport::class, $decorated);
+    }
+
+    /**
+     * @return array<string, TransportFactoryInterface>
+     */
+    private function getFactories(): array
+    {
+        return [
+            'smtp+oauth' => new SmtpOauthTransportFactoryDecorator(new EsmtpTransportFactory(), static::createStub(SmtpOauthAuthenticator::class)),
+            'smtp' => new EsmtpTransportFactory(),
+            'null' => new NullTransportFactory(),
+            'sendmail' => new SendmailTransportFactory(),
+        ];
+    }
+
+    private function getTransportFactory(): Transport
+    {
+        return new Transport($this->getFactories());
+    }
+}

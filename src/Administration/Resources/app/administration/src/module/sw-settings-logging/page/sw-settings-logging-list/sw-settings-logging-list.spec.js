@@ -1,0 +1,137 @@
+/**
+ * @sw-package framework
+ */
+
+import { mount } from '@vue/test-utils';
+import 'src/module/sw-settings/mixin/sw-settings-list.mixin';
+
+const logEntryMock = {
+    id: '018dc68776077179b6c51bdf18a4f25d',
+    channel: 'business_events',
+    message: 'mail.sent',
+    level: 200,
+    context: {
+        additionalData: {
+            recipients: [],
+        },
+    },
+};
+
+async function createWrapper() {
+    return mount(await wrapTestComponent('sw-settings-logging-list', { sync: true }), {
+        global: {
+            stubs: {
+                'sw-settings-logging-mail-sent-info': await wrapTestComponent('sw-settings-logging-mail-sent-info'),
+                'sw-page': {
+                    template: `<div class="sw-page">
+                            <slot name="content"></slot>
+                        </div>`,
+                },
+                'sw-search-bar': true,
+                'sw-pagination': true,
+                'sw-context-menu-item': true,
+                'sw-entity-listing': true,
+                'sw-sidebar-item': true,
+                'sw-sidebar': true,
+                'sw-tabs-item': true,
+                'sw-tabs': await wrapTestComponent('sw-tabs', {
+                    sync: true,
+                }),
+                'sw-tabs-deprecated': {
+                    template: '<div><slot /></div>',
+                },
+                'mt-tabs': {
+                    name: 'mt-tabs',
+                    props: ['defaultItem', 'items'],
+                    template: '<div class="mt-tabs"></div>',
+                },
+                'sw-extension-component-section': await wrapTestComponent('sw-extension-component-section', { sync: true }),
+                'sw-textarea-field': true,
+                'sw-time-ago': true,
+            },
+            provide: {
+                searchRankingService: {
+                    isValidTerm: (term) => {
+                        return term && term.trim().length >= 1;
+                    },
+                },
+            },
+        },
+    });
+}
+
+describe('src/module/sw-settings-logging/page/sw-settings-logging-list', () => {
+    it('should load default modal component', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        await wrapper.setData({
+            displayedLog: {
+                ...logEntryMock,
+                message: 'test'.repeat(10),
+            },
+        });
+
+        expect(wrapper.find('.sw-settings-logging-list__custom-content').exists()).toBe(true);
+        expect(wrapper.find('sw-settings-logging-entry-info').exists()).toBe(true);
+    });
+
+    // @deprecated tag:v6.8.0 - The test will be removed with the legacy logging modal tabs.
+    it.deprecated('v6.8.0.0')('should load dynamic modal component', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        await wrapper.setData({
+            displayedLog: {
+                ...logEntryMock,
+                message: 'mail.sent',
+            },
+        });
+        await flushPromises();
+
+        expect(wrapper.find('.sw-settings-logging-list__custom-content').exists()).toBe(true);
+        expect(wrapper.find('.sw-settings-logging-mail-sent-info__tab-item').exists()).toBe(true);
+    });
+
+    it.activeFeatureFlags(['v6.8.0.0'])('should load dynamic modal component', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        await wrapper.setData({
+            displayedLog: {
+                ...logEntryMock,
+                message: 'mail.sent',
+                context: {
+                    additionalData: {
+                        recipients: [],
+                        contents: {
+                            'text/html': '<p>Mail content</p>',
+                            'text/plain': 'Mail content',
+                        },
+                    },
+                },
+            },
+        });
+        await flushPromises();
+
+        const tabs = wrapper.getComponent({ name: 'mt-tabs' });
+
+        expect(wrapper.find('.sw-settings-logging-list__custom-content').exists()).toBe(true);
+        expect(tabs.props('defaultItem')).toBe('html');
+        expect(tabs.props('items')).toEqual([
+            {
+                label: 'sw-settings-logging.mailInfo.tabHTML',
+                name: 'html',
+            },
+            {
+                label: 'sw-settings-logging.mailInfo.tabPlain',
+                name: 'plain',
+            },
+            {
+                label: 'sw-settings-logging.entryInfo.tabRaw',
+                name: 'raw',
+            },
+        ]);
+        expect(wrapper.find('.sw-settings-logging-mail-sent-info__mail-content').text()).toBe('Mail content');
+    });
+});

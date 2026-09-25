@@ -1,0 +1,72 @@
+/**
+ * @sw-package framework
+ *
+ * @private
+ * @description
+ * The component catches all errors in subcomponent which aren't handled before.
+ * @status ready
+ * @example-type code-only
+ * @component-example
+ * <sw-error-boundary>
+ *     <!-- Your components -->
+ * </sw-error-boundary>
+ */
+export default {
+    render() {
+        if (typeof this.$slots.default === 'function') {
+            return this.$slots.default();
+        }
+
+        return this.$slots.default;
+    },
+
+    inject: ['repositoryFactory'],
+
+    computed: {
+        logEntryRepository() {
+            return this.repositoryFactory.create('log_entry', null, {
+                keepApiErrors: true,
+            });
+        },
+    },
+
+    errorCaptured(err, vm) {
+        // Show more detailed error messages in development mode
+        if (process.env.NODE_ENV === 'development') {
+            return true;
+        }
+
+        console.error('An error was captured in current module:', err);
+
+        this.logErrorInEntries(err, vm);
+
+        // stop error propagation
+        return false;
+    },
+
+    methods: {
+        /** Thin wrapper so tests can spy on navigation without mocking window.location (non-configurable in JSDOM v26). */
+        _getLocationHref() {
+            return window.location.href;
+        },
+
+        logErrorInEntries(err, vm) {
+            if (!err) {
+                return;
+            }
+
+            const newLogEntry = this.logEntryRepository.create();
+
+            newLogEntry.message = err.toString();
+            newLogEntry.channel = 'Administration';
+            newLogEntry.level = 400;
+            newLogEntry.context = {
+                component: vm?._name ?? 'Unknown component',
+                stack: err.stack ?? 'Unknown stack',
+                url: this._getLocationHref(),
+            };
+
+            this.logEntryRepository.save(newLogEntry).catch((e) => Shopwell.Utils.debug.error(e));
+        },
+    },
+};

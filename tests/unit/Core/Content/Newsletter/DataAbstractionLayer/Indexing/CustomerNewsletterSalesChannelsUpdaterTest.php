@@ -1,0 +1,157 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Newsletter\DataAbstractionLayer\Indexing;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Newsletter\DataAbstractionLayer\Indexing\CustomerNewsletterSalesChannelsUpdater;
+use Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+/**
+ * @internal
+ */
+#[Package('after-sales')]
+#[CoversClass(CustomerNewsletterSalesChannelsUpdater::class)]
+class CustomerNewsletterSalesChannelsUpdaterTest extends TestCase
+{
+    private MockObject&Connection $connection;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->connection = $this->createMock(Connection::class);
+    }
+
+    public function testUpdateCustomersRecipientWithoutNewsletterSalesChannelIds(): void
+    {
+        $this->connection->method('fetchAllAssociative')->willReturn([
+            [
+                'email' => 'y.tran@shopwell.cn',
+                'last_name' => 'Tran',
+                'first_name' => 'Y',
+                'newsletter_sales_channel_ids' => null,
+            ],
+        ]);
+
+        $this->connection->expects($this->never())->method('executeStatement');
+
+        $indexing = new CustomerNewsletterSalesChannelsUpdater($this->connection);
+        $indexing->updateCustomersRecipient([Uuid::randomHex()]);
+    }
+
+    public function testUpdateCustomersRecipientWithRegisteredEmailNewsletterRecipient(): void
+    {
+        $newsletterIds = json_encode([Uuid::randomHex() => Uuid::randomHex()], \JSON_THROW_ON_ERROR);
+        static::assertIsString($newsletterIds);
+        $this->connection->method('fetchAllAssociative')->willReturn([
+            [
+                'email' => 'y.tran@shopwell.cn',
+                'last_name' => 'Tran',
+                'first_name' => 'Y',
+                'newsletter_sales_channel_ids' => $newsletterIds,
+            ],
+        ]);
+
+        $ids = $this->getNewsLetterIds($newsletterIds);
+
+        $consentReset = false;
+        $this->connection->expects($this->exactly(2))->method('executeStatement')->willReturnCallback(static function ($sql, $params) use ($ids, &$consentReset): int {
+            if (!$consentReset) {
+                $consentReset = true;
+
+                static::assertSame('UPDATE newsletter_recipient SET status = (:notSet), confirmed_at = NULL WHERE id IN (:ids) AND email <> :email AND status = :optIn', $sql);
+
+                static::assertSame([
+                    'ids' => Uuid::fromHexToBytesList($ids),
+                    'email' => 'y.tran@shopwell.cn',
+                    'notSet' => NewsletterSubscribeRoute::STATUS_NOT_SET,
+                    'optIn' => NewsletterSubscribeRoute::STATUS_OPT_IN,
+                ], $params);
+
+                return 1;
+            }
+
+            static::assertSame('UPDATE newsletter_recipient SET email = (:email), first_name = (:firstName), last_name = (:lastName) WHERE id IN (:ids)', $sql);
+
+            static::assertSame([
+                'ids' => Uuid::fromHexToBytesList($ids),
+                'email' => 'y.tran@shopwell.cn',
+                'firstName' => 'Y',
+                'lastName' => 'Tran',
+            ], $params);
+
+            return 1;
+        });
+
+        $indexing = new CustomerNewsletterSalesChannelsUpdater($this->connection);
+        $indexing->updateCustomersRecipient([Uuid::randomHex()]);
+    }
+
+    public function testUpdateCustomersRecipientWithMultipleRegisteredEmailNewsletterRecipient(): void
+    {
+        $newsletterIds = json_encode([Uuid::randomHex() => Uuid::randomHex(), Uuid::randomHex() => Uuid::randomHex()], \JSON_THROW_ON_ERROR);
+        static::assertIsString($newsletterIds);
+        $this->connection->method('fetchAllAssociative')->willReturn([
+            [
+                'email' => 'y.tran@shopwell.cn',
+                'last_name' => 'Tran',
+                'first_name' => 'Y',
+                'newsletter_sales_channel_ids' => $newsletterIds,
+            ],
+        ]);
+
+        $ids = $this->getNewsLetterIds($newsletterIds);
+        $consentReset = false;
+        $this->connection->expects($this->exactly(2))->method('executeStatement')->willReturnCallback(static function ($sql, $params) use ($ids, &$consentReset): int {
+            if (!$consentReset) {
+                $consentReset = true;
+
+                static::assertSame('UPDATE newsletter_recipient SET status = (:notSet), confirmed_at = NULL WHERE id IN (:ids) AND email <> :email AND status = :optIn', $sql);
+
+                static::assertSame([
+                    'ids' => Uuid::fromHexToBytesList($ids),
+                    'email' => 'y.tran@shopwell.cn',
+                    'notSet' => NewsletterSubscribeRoute::STATUS_NOT_SET,
+                    'optIn' => NewsletterSubscribeRoute::STATUS_OPT_IN,
+                ], $params);
+
+                return 1;
+            }
+
+            static::assertSame('UPDATE newsletter_recipient SET email = (:email), first_name = (:firstName), last_name = (:lastName) WHERE id IN (:ids)', $sql);
+
+            static::assertSame([
+                'ids' => Uuid::fromHexToBytesList($ids),
+                'email' => 'y.tran@shopwell.cn',
+                'firstName' => 'Y',
+                'lastName' => 'Tran',
+            ], $params);
+
+            return 1;
+        });
+
+        $indexing = new CustomerNewsletterSalesChannelsUpdater($this->connection);
+        $indexing->updateCustomersRecipient([Uuid::randomHex()]);
+    }
+
+    /**
+     * @throws \JsonException
+     *
+     * @return array<int, string>
+     */
+    private function getNewsLetterIds(string $newsletterIds): array
+    {
+        $result = [];
+        $ids = array_keys(json_decode($newsletterIds, true, 512, \JSON_THROW_ON_ERROR));
+
+        foreach ($ids as $key => $value) {
+            $result[$key] = (string) $value;
+        }
+
+        return $result;
+    }
+}

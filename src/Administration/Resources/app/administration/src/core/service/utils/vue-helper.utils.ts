@@ -1,0 +1,40 @@
+/**
+ * @private
+ * @sw-package framework
+ *
+ * These helper methods shouldn't be used.
+ * They are only needed used for internal purposes.
+ */
+import type { VNode } from 'vue';
+import { getCurrentInstance } from 'vue';
+import type { ComponentPublicInstance } from '@vue/runtime-core';
+
+function getCompatChildren() {
+    const instance = getCurrentInstance();
+
+    const root = instance?.subTree;
+    const children: ComponentPublicInstance[] = [];
+    if (root) {
+        walk(root, children);
+    }
+    return children;
+}
+
+function walk(vnode: VNode, children: ComponentPublicInstance[]) {
+    if (vnode.component) {
+        children.push(vnode.component.proxy!);
+    } else if (vnode.shapeFlag & 16) {
+        const vnodes = vnode.children as VNode[];
+
+        for (let i = 0; i < vnodes.length; i++) {
+            walk(vnodes[i], children);
+        }
+    }
+}
+
+/**
+ * @private
+ */
+export default {
+    getCompatChildren,
+};

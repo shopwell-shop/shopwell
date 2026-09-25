@@ -1,0 +1,30 @@
+@import "~scss/variables";
+
+.sw-product-price-form {
+    &__tax-rate.sw-inherit-wrapper {
+        justify-content: flex-start;
+    }
+
+    &__currency {
+        font-weight: var(--font-weight-regular);
+        font-size: var(--font-size-l);
+    }
+
+    &__links {
+        a:first-child {
+            margin-top: 0;
+        }
+
+        a {
+            transition: color 0.3s ease;
+            cursor: pointer;
+            margin-top: var(--scale-size-16);
+        }
+    }
+
+    &__price-list:not(.has--parent) {
+        .sw-inherit-wrapper__toggle-wrapper {
+            margin: 0;
+        }
+    }
+}

@@ -1,0 +1,65 @@
+{% block sw_flow_list_flow_templates %}
+<mt-card
+    class="sw-flow-list-flow-templates-card"
+    position-identifier="sw-flow-list-flow-templates-card"
+>
+    <div class="sw-flow-list-my-templates">
+        <div class="sw-flow-list-my-templates__content">
+            <sw-entity-listing
+                v-if="total"
+                class="sw-flow-list-my-templates__grid"
+                :show-settings="false"
+                :allow-column-edit="false"
+                :allow-view="false"
+                :allow-edit="false"
+                :allow-delete="false"
+                :allow-bulk-edit="false"
+                :columns="flowTemplateColumns"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                :repository="flowTemplateRepository"
+                :data-source="flowTemplates"
+                :is-loading="isLoading"
+                :full-page="false"
+                :show-selection="false"
+                :show-actions="false"
+                :plain-appearance="true"
+                @column-sort="onSortColumn"
+                @page-change="onPageChange"
+            >
+                <template #column-name="{ item }">
+                    <mt-link
+                        class="sw-flow-list-my-flows__content__update-flow-template-link"
+                        as="a"
+                        tabindex="0"
+                        @click="onEditFlow(item)"
+                        @keydown.enter="onEditFlow(item)"
+                    >
+                        {{ item.name }}
+                    </mt-link>
+                </template>
+
+                <template #column-createFlow="{ item }">
+                    <mt-link
+                        class="sw-flow-list-my-flows__content__create-flow-link"
+                        :to="{ name: 'sw.flow.create', params: { flowTemplateId: item.id } }"
+                        :disabled="!acl.can('flow.creator')"
+                        type="internal"
+                    >
+                        {{ $t('sw-flow.template.create') }}
+                    </mt-link>
+                </template>
+            </sw-entity-listing>
+
+            <mt-empty-state
+                v-else
+                class="sw-flow-list-my_templates__empty-state"
+                centered
+                :icon="$route.meta.$module.icon"
+                :headline="$t('sw-flow.list.emptyStateTitle')"
+                :description="$t('sw-flow.list.emptyStateSubTitle')"
+            />
+        </div>
+    </div>
+</mt-card>
+{% endblock %}

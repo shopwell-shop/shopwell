@@ -1,0 +1,59 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Store\Services;
+
+use Doctrine\DBAL\Connection;
+use GuzzleHttp\Promise\PromiseInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Store\Authentication\StoreRequestOptionsProvider;
+use Shopwell\Core\Framework\Store\StoreException;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+class ShopSecretInvalidMiddleware implements MiddlewareInterface
+{
+    private const INVALID_SHOP_SECRET = 'ShopwellPlatformException-68';
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly Connection $connection,
+        private readonly SystemConfigService $systemConfigService
+    ) {
+    }
+
+    public function __invoke(callable $handler): callable
+    {
+        return function (RequestInterface $request, array $options) use ($handler) {
+            /** @var PromiseInterface $promise */
+            $promise = $handler($request, $options);
+
+            return $promise->then(function (ResponseInterface $response) {
+                if ($response->getStatusCode() !== 401) {
+                    return $response;
+                }
+
+                $body = json_decode($response->getBody()->getContents(), true, 512, \JSON_THROW_ON_ERROR);
+                $code = $body['code'] ?? null;
+
+                if ($code !== self::INVALID_SHOP_SECRET) {
+                    $response->getBody()->rewind();
+
+                    return $response;
+                }
+
+                $this->connection->executeStatement('UPDATE user SET store_token = NULL');
+
+                $this->systemConfigService->delete(StoreRequestOptionsProvider::CONFIG_KEY_STORE_SHOP_SECRET, null, true);
+
+                throw StoreException::shopSecretInvalid();
+            });
+        };
+    }
+}

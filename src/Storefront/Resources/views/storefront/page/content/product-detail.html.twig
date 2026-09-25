@@ -1,0 +1,42 @@
+{% sw_extends '@Storefront/storefront/base.html.twig' %}
+
+{% block base_head %}
+    {% sw_include '@Storefront/storefront/page/product-detail/meta.html.twig' %}
+{% endblock %}
+
+{% block base_main_inner %}
+    <div class="container-main">
+        {% block page_content %}
+            {% block cms_breadcrumb %}
+                <div class="cms-breadcrumb container">
+                    {% if feature('v6.8.0.0') or feature('BREADCRUMB_REWORK') %}
+                        {% sw_include '@Storefront/storefront/layout/breadcrumb.html.twig' with {
+                            context: context,
+                            themeIconConfig: themeIconConfig,
+                            breadcrumb: page.breadcrumb
+                        } only %}
+                    {% else %}
+                        {% sw_include '@Storefront/storefront/layout/breadcrumb.html.twig' with {
+                            context: context,
+                            themeIconConfig: themeIconConfig,
+                            category: page.product.seoCategory
+                        } only %}
+                    {% endif %}
+                </div>
+            {% endblock %}
+
+            {% block cms_content %}
+                {% set cmsPageClasses = ('cms-page ' ~ page.cmsPage.cssClass|striptags)|trim %}
+                {# @deprecated tag:v6.8.0 - Product microdata on wrapper div replaced by JSON-LD. Will be removed. #}
+                <div class="{{ cmsPageClasses }}"
+                     {% if not feature('JSON_LD_DATA') %}
+                     itemscope itemtype="https://schema.org/Product"
+                     {% endif %}>
+                    {% block page_content_blocks %}
+                        {% sw_include '@Storefront/storefront/page/content/detail.html.twig' with {cmsPage: page.cmsPage} %}
+                    {% endblock %}
+                </div>
+            {% endblock %}
+        {% endblock %}
+    </div>
+{% endblock %}

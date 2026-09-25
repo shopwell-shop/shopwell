@@ -1,0 +1,112 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Api\Command;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Api\Command\CreateIntegrationCommand;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Dotenv\Dotenv;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(CreateIntegrationCommand::class)]
+class CreateIntegrationCommandTest extends TestCase
+{
+    /**
+     * @return iterable<array<bool>>
+     */
+    public static function createIntegrationDataProvider(): iterable
+    {
+        yield 'integration is created without admin privileges' => ['adminOption' => false];
+        yield 'integration is created with admin privileges' => ['adminOption' => true];
+    }
+
+    #[DataProvider('createIntegrationDataProvider')]
+    public function testCreateIntegration(bool $adminOption): void
+    {
+        $integrationRepository = $this->createMock(EntityRepository::class);
+
+        $accessKey = null;
+        $secretAccessKey = null;
+        $admin = null;
+        $integrationRepository->expects($this->once())
+            ->method('create')
+            ->with(static::callback(static function ($input) use (&$accessKey, &$secretAccessKey, &$admin) {
+                $accessKey = $input[0]['accessKey'];
+                $secretAccessKey = $input[0]['secretAccessKey'];
+                $admin = $input[0]['admin'];
+
+                return true;
+            }), static::anything());
+
+        $cmd = new CommandTester(new CreateIntegrationCommand($integrationRepository));
+        $parameters = ['name' => 'Test'];
+        if ($adminOption) {
+            $parameters['--admin'] = true;
+        }
+        $cmd->execute($parameters);
+
+        $cmd->assertCommandIsSuccessful();
+
+        static::assertNotNull($accessKey);
+        static::assertNotNull($secretAccessKey);
+        static::assertNotNull($admin);
+        static::assertSame($adminOption, $admin);
+
+        $output = $cmd->getDisplay();
+        static::assertNotEmpty($output);
+
+        $parsedEnv = (new Dotenv())->parse($output);
+        static::assertCount(2, $parsedEnv);
+        static::assertSame($accessKey, $parsedEnv['SHOPWARE_ACCESS_KEY_ID']);
+        static::assertSame($secretAccessKey, $parsedEnv['SHOPWARE_SECRET_ACCESS_KEY']);
+    }
+
+    public function testCreateIntegrationWithCustomKeys(): void
+    {
+        $integrationRepository = $this->createMock(EntityRepository::class);
+
+        $customAccessKey = 'custom-access-key';
+        $customSecretAccessKey = 'custom-secret-access-key';
+
+        $accessKey = null;
+        $secretAccessKey = null;
+        $admin = null;
+        $integrationRepository->expects($this->once())
+            ->method('create')
+            ->with(static::callback(static function ($input) use (&$accessKey, &$secretAccessKey, &$admin) {
+                $accessKey = $input[0]['accessKey'];
+                $secretAccessKey = $input[0]['secretAccessKey'];
+                $admin = $input[0]['admin'];
+
+                return true;
+            }), static::anything());
+
+        $cmd = new CommandTester(new CreateIntegrationCommand($integrationRepository));
+        $cmd->execute([
+            'name' => 'Test',
+            '--access-key' => $customAccessKey,
+            '--secret-access-key' => $customSecretAccessKey,
+        ]);
+
+        $cmd->assertCommandIsSuccessful();
+
+        static::assertSame($customAccessKey, $accessKey);
+        static::assertSame($customSecretAccessKey, $secretAccessKey);
+        static::assertFalse($admin);
+
+        $output = $cmd->getDisplay();
+        static::assertNotEmpty($output);
+
+        $parsedEnv = (new Dotenv())->parse($output);
+        static::assertCount(2, $parsedEnv);
+        static::assertSame($customAccessKey, $parsedEnv['SHOPWARE_ACCESS_KEY_ID']);
+        static::assertSame($customSecretAccessKey, $parsedEnv['SHOPWARE_SECRET_ACCESS_KEY']);
+    }
+}

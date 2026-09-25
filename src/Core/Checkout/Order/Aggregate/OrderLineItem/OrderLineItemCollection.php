@@ -1,0 +1,148 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem;
+
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\Price\Struct\PriceCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @extends EntityCollection<OrderLineItemEntity>
+ */
+#[Package('checkout')]
+class OrderLineItemCollection extends EntityCollection
+{
+    /**
+     * @return array<string>
+     */
+    public function getOrderIds(): array
+    {
+        return $this->fmap(static fn (OrderLineItemEntity $orderLineItem) => $orderLineItem->getOrderId());
+    }
+
+    public function filterByOrderId(string $id): self
+    {
+        return $this->filter(static fn (OrderLineItemEntity $orderLineItem) => $orderLineItem->getOrderId() === $id);
+    }
+
+    public function sortByCreationDate(string $sortDirection = FieldSorting::ASCENDING): void
+    {
+        $this->sort(static function (OrderLineItemEntity $a, OrderLineItemEntity $b) use ($sortDirection) {
+            if ($sortDirection === FieldSorting::ASCENDING) {
+                return $a->getCreatedAt() <=> $b->getCreatedAt();
+            }
+
+            return $b->getCreatedAt() <=> $a->getCreatedAt();
+        });
+    }
+
+    public function sortByPosition(): void
+    {
+        $this->sort(static fn (OrderLineItemEntity $a, OrderLineItemEntity $b) => $a->getPosition() <=> $b->getPosition());
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    public function getPayloadsProperty(string $property): array
+    {
+        return $this->fmap(static function (OrderLineItemEntity $lineItem) use ($property) {
+            $payload = $lineItem->getPayload() ?? [];
+
+            return $payload[$property] ?? null;
+        });
+    }
+
+    public function filterByType(string $type): self
+    {
+        return $this->filter(static fn (OrderLineItemEntity $lineItem) => $lineItem->getType() === $type);
+    }
+
+    /**
+     * @return OrderLineItemEntity[]
+     */
+    public function filterGoodsFlat(): array
+    {
+        $lineItems = $this->buildFlat($this);
+
+        $filtered = [];
+        foreach ($lineItems as $lineItem) {
+            if ($lineItem->getGood()) {
+                $filtered[] = $lineItem;
+            }
+        }
+
+        return $filtered;
+    }
+
+    public function hasLineItemWithType(string $type): bool
+    {
+        foreach ($this->buildFlat($this) as $lineItem) {
+            if ($lineItem->getPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE) === $type) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use hasLineItemWithType() instead.
+     */
+    public function hasLineItemWithState(string $state): bool
+    {
+        Feature::triggerDeprecationOrThrow(
+            'v6.8.0.0',
+            Feature::deprecatedMethodMessage(self::class, 'hasLineItemWithState', 'v6.8.0.0', 'hasLineItemWithType')
+        );
+
+        foreach ($this->buildFlat($this) as $lineItem) {
+            if (\in_array($state, $lineItem->getStates(), true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function getApiAlias(): string
+    {
+        return 'order_line_item_collection';
+    }
+
+    public function getPrices(): PriceCollection
+    {
+        return new PriceCollection(
+            $this->fmap(static fn (OrderLineItemEntity $orderLineItem) => $orderLineItem->getPrice())
+        );
+    }
+
+    protected function getExpectedClass(): string
+    {
+        return OrderLineItemEntity::class;
+    }
+
+    /**
+     * @return OrderLineItemEntity[]
+     */
+    private function buildFlat(?OrderLineItemCollection $lineItems): array
+    {
+        $flat = [];
+        if (!$lineItems) {
+            return $flat;
+        }
+
+        foreach ($lineItems as $lineItem) {
+            $flat[] = $lineItem;
+
+            foreach ($this->buildFlat($lineItem->getChildren()) as $nest) {
+                $flat[] = $nest;
+            }
+        }
+
+        return $flat;
+    }
+}

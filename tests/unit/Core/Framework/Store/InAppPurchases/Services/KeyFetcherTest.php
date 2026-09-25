@@ -1,0 +1,179 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Store\InAppPurchases\Services;
+
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Store\Authentication\StoreRequestOptionsProvider;
+use Shopwell\Core\Framework\Store\InAppPurchase\Services\KeyFetcher;
+use Shopwell\Core\Framework\Store\StoreException;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(KeyFetcher::class)]
+class KeyFetcherTest extends TestCase
+{
+    public function testGetKey(): void
+    {
+        $systemConfig = $this->createMock(SystemConfigService::class);
+        $systemConfig->expects($this->once())
+            ->method('get')
+            ->with(KeyFetcher::CORE_STORE_JWKS)
+            ->willReturn($this->getKey());
+
+        $systemConfig->expects($this->never())
+            ->method('set');
+
+        $keyFetcher = new KeyFetcher(
+            static::createStub(ClientInterface::class),
+            static::createStub(StoreRequestOptionsProvider::class),
+            $systemConfig,
+            static::createStub(LoggerInterface::class)
+        );
+
+        $key = $keyFetcher->getKey(Context::createDefaultContext());
+
+        static::assertSame('sample-key-id', $key->getElements()[0]->kid);
+    }
+
+    public function testGetKeyWithForceRefresh(): void
+    {
+        $systemConfig = $this->createMock(SystemConfigService::class);
+        $systemConfig->expects($this->once())
+            ->method('get')
+            ->with(KeyFetcher::CORE_STORE_JWKS)
+            ->willReturn($this->getKey());
+
+        $systemConfig->expects($this->once())
+            ->method('set')
+            ->with(KeyFetcher::CORE_STORE_JWKS, $this->getKey());
+
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->once())
+            ->method('request')
+            ->willReturn(new Response(200, [], $this->getKey()));
+
+        $keyFetcher = new KeyFetcher(
+            $client,
+            static::createStub(StoreRequestOptionsProvider::class),
+            $systemConfig,
+            static::createStub(LoggerInterface::class)
+        );
+
+        $key = $keyFetcher->getKey(Context::createDefaultContext(), true);
+
+        static::assertSame('sample-key-id', $key->getElements()[0]->kid);
+    }
+
+    public function testGetKeyReturns400ResponseWithExistingKey(): void
+    {
+        $systemConfig = $this->createMock(SystemConfigService::class);
+        $systemConfig->expects($this->once())
+            ->method('get')
+            ->with(KeyFetcher::CORE_STORE_JWKS)
+            ->willReturn($this->getKey());
+
+        $systemConfig->expects($this->never())
+            ->method('set');
+
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->once())
+            ->method('request')
+            ->willReturn(new Response(400));
+
+        $keyFetcher = new KeyFetcher(
+            $client,
+            static::createStub(StoreRequestOptionsProvider::class),
+            $systemConfig,
+            static::createStub(LoggerInterface::class)
+        );
+
+        $key = $keyFetcher->getKey(Context::createDefaultContext(), true);
+
+        static::assertSame('sample-key-id', $key->getElements()[0]->kid);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - reason: see StoreException::jwksNotFound - to be removed
+     */
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testGetKeyReturns400ResponseWithoutExistingKeyDeprecated(): void
+    {
+        $this->expectExceptionObject(StoreException::jwksNotFound());
+
+        $systemConfig = $this->createMock(SystemConfigService::class);
+        $systemConfig->expects($this->once())
+            ->method('get')
+            ->with(KeyFetcher::CORE_STORE_JWKS)
+            ->willReturn(null);
+
+        $systemConfig->expects($this->never())
+            ->method('set');
+
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->once())
+            ->method('request')
+            ->willReturn(new Response(400));
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('error')
+            ->with('Could not fetch the JWKS from the SBP');
+
+        $keyFetcher = new KeyFetcher(
+            $client,
+            static::createStub(StoreRequestOptionsProvider::class),
+            $systemConfig,
+            $logger
+        );
+
+        $keyFetcher->getKey(Context::createDefaultContext(), true);
+    }
+
+    public function testGetKeyReturns400ResponseWithoutExistingKey(): void
+    {
+        $this->expectExceptionObject(StoreException::jwksNotFound());
+
+        $systemConfig = $this->createMock(SystemConfigService::class);
+        $systemConfig->expects($this->once())
+            ->method('get')
+            ->with(KeyFetcher::CORE_STORE_JWKS)
+            ->willReturn(null);
+
+        $systemConfig->expects($this->never())
+            ->method('set');
+
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->once())
+            ->method('request')
+            ->willReturn(new Response(400));
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('error')
+            ->with('Could not fetch the JWKS from the SBP');
+
+        $keyFetcher = new KeyFetcher(
+            $client,
+            static::createStub(StoreRequestOptionsProvider::class),
+            $systemConfig,
+            $logger
+        );
+
+        $keyFetcher->getKey(Context::createDefaultContext(), true);
+    }
+
+    private function getKey(): string
+    {
+        return '{"keys": [{"kty": "RSA", "kid": "sample-key-id", "use": "sig", "alg": "RS256", "n": "sample-n", "e": "AQAB"}]}';
+    }
+}

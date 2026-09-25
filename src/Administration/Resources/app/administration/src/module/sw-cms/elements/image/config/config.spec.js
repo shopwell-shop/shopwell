@@ -1,0 +1,207 @@
+/**
+ * @sw-package discovery
+ */
+import { mount } from '@vue/test-utils';
+import { setupCmsEnvironment } from 'src/module/sw-cms/test-utils';
+import selectMtSelectOptionByText from 'test/_helper_/select-mt-select-by-text';
+
+async function createWrapper() {
+    return mount(
+        await wrapTestComponent('sw-cms-el-config-image', {
+            sync: true,
+        }),
+        {
+            global: {
+                provide: {
+                    cmsService: Shopwell.Service('cmsService'),
+                    repositoryFactory: {
+                        create: () => {
+                            return {
+                                search: () => Promise.resolve(),
+                            };
+                        },
+                    },
+                },
+                stubs: {
+                    'sw-text-field': true,
+                    'sw-cms-mapping-field': await wrapTestComponent('sw-cms-mapping-field'),
+                    'sw-media-upload-v2': true,
+                    'sw-upload-listener': true,
+                    'sw-dynamic-url-field': true,
+
+                    'sw-media-modal-v2': true,
+                    'sw-context-button': true,
+                    'sw-context-menu-item': true,
+                    'sw-cms-inherit-wrapper': {
+                        template: '<div><slot :isInherited="false"></slot></div>',
+                        props: [
+                            'field',
+                            'element',
+                            'contentEntity',
+                            'label',
+                        ],
+                    },
+                    'sw-container': await wrapTestComponent('sw-container'),
+                },
+            },
+            props: {
+                element: {
+                    config: {
+                        media: {
+                            source: 'static',
+                            value: null,
+                            required: true,
+                            entity: {
+                                name: 'media',
+                            },
+                        },
+                        displayMode: {
+                            source: 'static',
+                            value: 'standard',
+                        },
+                        url: {
+                            source: 'static',
+                            value: null,
+                        },
+                        ariaLabel: {
+                            source: 'static',
+                            value: null,
+                        },
+                        newTab: {
+                            source: 'static',
+                            value: false,
+                        },
+                        minHeight: {
+                            source: 'static',
+                            value: '340px',
+                        },
+                        verticalAlign: {
+                            source: 'static',
+                            value: null,
+                        },
+                        horizontalAlign: {
+                            source: 'static',
+                            value: null,
+                        },
+                        isDecorative: {
+                            source: 'static',
+                            value: false,
+                        },
+                        fetchPriorityHigh: {
+                            source: 'static',
+                            value: false,
+                        },
+                    },
+                    data: {},
+                },
+                defaultConfig: {},
+            },
+        },
+    );
+}
+
+describe('src/module/sw-cms/elements/image/config', () => {
+    beforeAll(async () => {
+        await setupCmsEnvironment();
+    });
+
+    it('should clear the minHeight value when changing display mode away from cover', async () => {
+        const wrapper = await createWrapper();
+
+        await selectMtSelectOptionByText(
+            wrapper,
+            'sw-cms.elements.general.config.label.displayModeCover',
+            '.sw-cms-el-config-image__display-mode input',
+        );
+
+        // minHeight is only relevant in cover mode and stays untouched while in cover
+        expect(wrapper.vm.element.config.minHeight.value).toBe('340px');
+
+        await selectMtSelectOptionByText(
+            wrapper,
+            'sw-cms.elements.general.config.label.displayModeStandard',
+            '.sw-cms-el-config-image__display-mode input',
+        );
+
+        // Leaving cover mode clears the value so no min-height is persisted/sent through the API
+        expect(wrapper.vm.element.config.minHeight.value).toBe('');
+    });
+
+    it('should append px to a unitless min height value', async () => {
+        const wrapper = await createWrapper();
+
+        wrapper.vm.onChangeMinHeight('500');
+        expect(wrapper.vm.element.config.minHeight.value).toBe('500px');
+
+        wrapper.vm.onChangeMinHeight('260.5');
+        expect(wrapper.vm.element.config.minHeight.value).toBe('260.5px');
+    });
+
+    it('should keep an explicitly given unit on the min height value', async () => {
+        const wrapper = await createWrapper();
+
+        wrapper.vm.onChangeMinHeight('340px');
+        expect(wrapper.vm.element.config.minHeight.value).toBe('340px');
+
+        wrapper.vm.onChangeMinHeight('20rem');
+        expect(wrapper.vm.element.config.minHeight.value).toBe('20rem');
+    });
+
+    it('should clear the min height value when emptied', async () => {
+        const wrapper = await createWrapper();
+
+        wrapper.vm.onChangeMinHeight('');
+        expect(wrapper.vm.element.config.minHeight.value).toBe('');
+
+        wrapper.vm.onChangeMinHeight(null);
+        expect(wrapper.vm.element.config.minHeight.value).toBe('');
+    });
+
+    it('should use the media entity as preview source when element data holds one', async () => {
+        const wrapper = await createWrapper();
+        const media = {
+            id: 'media-id',
+            url: 'http://shop.example/media/preview.png',
+        };
+
+        wrapper.vm.element.data.media = media;
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.previewSource).toStrictEqual(media);
+    });
+
+    it('should use the config value as preview source for a static media source', async () => {
+        const wrapper = await createWrapper();
+
+        wrapper.vm.element.config.media.value = 'media-id';
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.previewSource).toBe('media-id');
+    });
+
+    it('should build an asset url as preview source for a default media source', async () => {
+        const wrapper = await createWrapper();
+
+        wrapper.vm.element.config.media.source = 'default';
+        wrapper.vm.element.config.media.value = Shopwell.Constants.CMS.MEDIA.previewMountain;
+        await wrapper.vm.$nextTick();
+
+        const previewSource = wrapper.vm.previewSource;
+
+        expect(previewSource).toBeInstanceOf(URL);
+        expect(previewSource.pathname).toContain('administration/administration/static/img/cms/preview_mountain_large.webp');
+    });
+
+    it('should change the isDecorative value', async () => {
+        const wrapper = await createWrapper();
+        const isDecorativeSwitch = wrapper.find('.sw-cms-el-config-image__is-decorative input');
+
+        await isDecorativeSwitch.setValue(true);
+
+        expect(wrapper.vm.element.config.isDecorative.value).toBe(true);
+
+        await isDecorativeSwitch.setValue(false);
+
+        expect(wrapper.vm.element.config.isDecorative.value).toBe(false);
+    });
+});

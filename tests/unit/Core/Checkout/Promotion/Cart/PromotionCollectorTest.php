@@ -1,0 +1,466 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Promotion\Cart;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\CartBehavior;
+use Shopwell\Core\Checkout\Cart\LineItem\CartDataCollection;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\Order\IdStruct;
+use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionDiscount\PromotionDiscountCollection;
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionDiscount\PromotionDiscountEntity;
+use Shopwell\Core\Checkout\Promotion\Cart\Error\PromotionNotEligibleError;
+use Shopwell\Core\Checkout\Promotion\Cart\Extension\CartExtension;
+use Shopwell\Core\Checkout\Promotion\Cart\PromotionCollector;
+use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
+use Shopwell\Core\Checkout\Promotion\Cart\PromotionProcessor;
+use Shopwell\Core\Checkout\Promotion\Gateway\PromotionGatewayInterface;
+use Shopwell\Core\Checkout\Promotion\PromotionCollection;
+use Shopwell\Core\Checkout\Promotion\PromotionEntity;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\HtmlSanitizer;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
+use Shopwell\Core\Test\Generator;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(PromotionCollector::class)]
+class PromotionCollectorTest extends TestCase
+{
+    private readonly PromotionGatewayInterface&Stub $gateway;
+
+    private readonly PromotionCollector $promotionCollector;
+
+    private readonly SalesChannelContext $context;
+
+    private readonly Connection&Stub $connection;
+
+    protected function setUp(): void
+    {
+        $this->gateway = static::createStub(PromotionGatewayInterface::class);
+        $this->connection = static::createStub(Connection::class);
+        $this->promotionCollector = $this->createPromotionCollector();
+
+        $customer = new CustomerEntity();
+        $customer->setId(Uuid::randomHex());
+
+        $this->context = Generator::generateSalesChannelContext(customer: $customer);
+    }
+
+    public function testCollectWithExistingPromotionAndDifferentDiscount(): void
+    {
+        $discountId1 = Uuid::randomHex();
+        $discountId2 = Uuid::randomHex();
+        $promotionId = Uuid::randomHex();
+
+        $cart = $this->prepareCart([$discountId1, $discountId2], $promotionId);
+        $cartDataCollection = new CartDataCollection();
+
+        $this->promotionCollector->collect($cartDataCollection, $cart, $this->context, new CartBehavior());
+
+        /** @var LineItemCollection $promotions */
+        $promotions = $cartDataCollection->get(PromotionProcessor::DATA_KEY);
+        $promotionFirst = $promotions->first();
+        $promotionLast = $promotions->last();
+
+        static::assertNotNull($promotionFirst);
+        static::assertNotNull($promotionLast);
+
+        static::assertCount(2, $promotions);
+        static::assertSame($promotionId, $promotionFirst->getPayloadValue('promotionId'));
+        static::assertSame($discountId1, $promotionFirst->getPayloadValue('discountId'));
+        static::assertNotNull($promotionFirst->getExtension(OrderConverter::ORIGINAL_ID));
+
+        static::assertSame($promotionId, $promotionLast->getPayloadValue('promotionId'));
+        static::assertSame($discountId2, $promotionLast->getPayloadValue('discountId'));
+        static::assertNull($promotionLast->getExtension(OrderConverter::ORIGINAL_ID));
+    }
+
+    public function testCollectWithCreditLineItemInRecalculation(): void
+    {
+        $discountId = Uuid::randomHex();
+        $promotionId = Uuid::randomHex();
+
+        $cart = $this->prepareCart([$discountId], $promotionId);
+
+        $creditLineItem = new LineItem(Uuid::randomHex(), LineItem::CREDIT_LINE_ITEM_TYPE);
+        $cart->add($creditLineItem);
+
+        $cartDataCollection = new CartDataCollection();
+
+        $this->promotionCollector->collect($cartDataCollection, $cart, $this->context, new CartBehavior(OrderConverter::ADMIN_EDIT_ORDER_PERMISSIONS));
+
+        static::assertEmpty($cart->getErrors()->getElements());
+    }
+
+    public function testPromotionWithInvalidOrderCount(): void
+    {
+        $cart = $this->prepareCart([Uuid::randomHex(), Uuid::randomHex()], Uuid::randomHex(), 2, 1);
+        $cartDataCollection = new CartDataCollection();
+
+        $this->promotionCollector->collect($cartDataCollection, $cart, $this->context, new CartBehavior());
+
+        static::assertNull($cartDataCollection->get(PromotionProcessor::DATA_KEY));
+        $this->assertAlreadyRedeemedError($cart);
+    }
+
+    public function testPromotionWithInvalidOrderCountPerCustomerCount(): void
+    {
+        $customerId = $this->context->getCustomerId();
+        static::assertNotNull($customerId);
+        $cart = $this->prepareCart([Uuid::randomHex(), Uuid::randomHex()], Uuid::randomHex(), 1, 2, 1, [$customerId => 1]);
+        $cartDataCollection = new CartDataCollection();
+
+        $this->promotionCollector->collect($cartDataCollection, $cart, $this->context, new CartBehavior());
+
+        static::assertNull($cartDataCollection->get(PromotionProcessor::DATA_KEY));
+        $this->assertAlreadyRedeemedError($cart);
+    }
+
+    public function testUnknownPromotionCodeAddsNotFoundError(): void
+    {
+        $lineItem = new LineItem(Uuid::randomHex(), LineItem::PRODUCT_LINE_ITEM_TYPE, Uuid::randomHex());
+
+        $cart = new Cart(Uuid::randomHex());
+        $cart->setLineItems(new LineItemCollection([$lineItem]));
+
+        $cartExtension = new CartExtension();
+        $cartExtension->addCode('unknown-code');
+        $cart->addExtension(CartExtension::KEY, $cartExtension);
+
+        // gateway finds no promotion for the code (global, individual and automatic lookups)
+        $this->gateway->method('get')->willReturn(new PromotionCollection());
+
+        $cartDataCollection = new CartDataCollection();
+
+        $this->promotionCollector->collect($cartDataCollection, $cart, $this->context, new CartBehavior());
+
+        static::assertNull($cartDataCollection->get(PromotionProcessor::DATA_KEY));
+        static::assertTrue($cart->getErrors()->has('promotion-not-found'));
+        static::assertFalse($cart->getErrors()->has('promotion-not-eligible'));
+    }
+
+    public function testSecondCodeOfSamePromotionIsRejectedWithNotice(): void
+    {
+        $codeFirst = 'individual-code-1';
+        $codeSecond = 'individual-code-2';
+        $discountId = Uuid::randomHex();
+        $promotionId = Uuid::randomHex();
+
+        $product = new LineItem(Uuid::randomHex(), LineItem::PRODUCT_LINE_ITEM_TYPE, Uuid::randomHex());
+
+        $cart = new Cart(Uuid::randomHex());
+        $cart->setLineItems(new LineItemCollection([$product]));
+
+        $cartExtension = new CartExtension();
+        $cartExtension->addCode($codeFirst);
+        $cartExtension->addCode($codeSecond);
+        $cart->addExtension(CartExtension::KEY, $cartExtension);
+
+        // both codes resolve to the same promotion (global lookup returns it, so no individual lookup);
+        // the final call is the automatic-promotion lookup which returns nothing
+        $promotion = $this->createPromotion($promotionId, $codeFirst, [$discountId]);
+        $this->gateway->method('get')->willReturn(
+            new PromotionCollection([$promotion]),
+            new PromotionCollection([$promotion]),
+            new PromotionCollection(),
+        );
+
+        $cartDataCollection = new CartDataCollection();
+
+        $this->promotionCollector->collect($cartDataCollection, $cart, $this->context, new CartBehavior());
+
+        /** @var LineItemCollection $promotions */
+        $promotions = $cartDataCollection->get(PromotionProcessor::DATA_KEY);
+        static::assertInstanceOf(LineItemCollection::class, $promotions);
+        static::assertCount(1, $promotions, 'The promotion must only be applied once');
+
+        // the redundant code is dropped so it does not linger in the cart
+        static::assertSame([$codeFirst], $cartExtension->getCodes());
+
+        // the customer is informed why the second code was not applied
+        $error = $cart->getErrors()->get('promotion-not-eligible');
+        static::assertInstanceOf(PromotionNotEligibleError::class, $error);
+        static::assertSame('promotion-not-eligible-already-added', $error->getMessageKey());
+        static::assertTrue($error->isPersistent());
+    }
+
+    public function testPromotionWithoutDiscount(): void
+    {
+        $code = 'promotions-code';
+
+        $lineItem1 = new LineItem(Uuid::randomHex(), LineItem::PRODUCT_LINE_ITEM_TYPE, Uuid::randomHex());
+
+        $cart = new Cart(Uuid::randomHex());
+        $cart->setLineItems(new LineItemCollection([$lineItem1]));
+
+        $promotion = $this->createPromotion(Uuid::randomHex(), $code, []);
+
+        $this->gateway->method('get')->willReturn(
+            new PromotionCollection([$promotion]),
+            new PromotionCollection(),
+        );
+
+        $cartDataCollection = new CartDataCollection();
+
+        $this->promotionCollector->collect($cartDataCollection, $cart, $this->context, new CartBehavior());
+
+        static::assertNull($cartDataCollection->get(PromotionProcessor::DATA_KEY));
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - will be removed
+     */
+    public function testCollectIgnoresBlockedPromotionsWhenFeatureEnabled(): void
+    {
+        $discountId = Uuid::randomHex();
+        $promotionId = Uuid::randomHex();
+
+        $cart = $this->prepareCart([$discountId], $promotionId);
+        $extension = $cart->getExtensionOfType(CartExtension::KEY, CartExtension::class);
+        static::assertInstanceOf(CartExtension::class, $extension);
+        Feature::silent('PERMANENT_AUTOMATIC_PROMOTIONS', fn () => $extension->blockPromotion($promotionId));
+
+        $cartDataCollection = new CartDataCollection();
+
+        $this->promotionCollector->collect($cartDataCollection, $cart, $this->context, new CartBehavior());
+
+        /** @var LineItemCollection $promotions */
+        $promotions = $cartDataCollection->get(PromotionProcessor::DATA_KEY);
+
+        static::assertInstanceOf(LineItemCollection::class, $promotions);
+        static::assertCount(1, $promotions);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - will be removed
+     */
+    #[DisabledFeatures(['PERMANENT_AUTOMATIC_PROMOTIONS'])]
+    public function testCollectSkipsBlockedPromotionsWhenFeatureDisabled(): void
+    {
+        $discountId = Uuid::randomHex();
+        $promotionId = Uuid::randomHex();
+
+        $cart = $this->prepareCart([$discountId], $promotionId);
+        $extension = $cart->getExtensionOfType(CartExtension::KEY, CartExtension::class);
+        static::assertInstanceOf(CartExtension::class, $extension);
+        $extension->blockPromotion($promotionId);
+
+        $cartDataCollection = new CartDataCollection();
+
+        $this->promotionCollector->collect($cartDataCollection, $cart, $this->context, new CartBehavior());
+
+        static::assertNull($cartDataCollection->get(PromotionProcessor::DATA_KEY));
+    }
+
+    public function testPromotionWithMaxTotalUseIsReachedInEditingOrder(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('fetchOne')
+            ->willReturn('1');
+        $promotionCollector = $this->createPromotionCollector($connection);
+        $discountId1 = Uuid::randomHex();
+        $discountId2 = Uuid::randomHex();
+        $promotionId = Uuid::randomHex();
+
+        $cart = $this->prepareCart([$discountId1, $discountId2], $promotionId, 1);
+        $cart->addExtension(OrderConverter::ORIGINAL_ID, new IdStruct(Uuid::randomHex()));
+        $cartDataCollection = new CartDataCollection();
+
+        $promotionCollector->collect($cartDataCollection, $cart, $this->context, new CartBehavior());
+
+        /** @var LineItemCollection $promotions */
+        $promotions = $cartDataCollection->get(PromotionProcessor::DATA_KEY);
+        $promotionFirst = $promotions->first();
+        $promotionLast = $promotions->last();
+
+        static::assertNotNull($promotionFirst);
+        static::assertNotNull($promotionLast);
+
+        static::assertCount(2, $promotions);
+        static::assertSame($promotionId, $promotionFirst->getPayloadValue('promotionId'));
+        static::assertSame($discountId1, $promotionFirst->getPayloadValue('discountId'));
+        static::assertNotNull($promotionFirst->getExtension(OrderConverter::ORIGINAL_ID));
+
+        static::assertSame($promotionId, $promotionLast->getPayloadValue('promotionId'));
+        static::assertSame($discountId2, $promotionLast->getPayloadValue('discountId'));
+        static::assertNull($promotionLast->getExtension(OrderConverter::ORIGINAL_ID));
+    }
+
+    public function testPromotionWithMaxUsePerCustomerIsReachedInEditingOrder(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('fetchOne')
+            ->willReturn('1');
+        $promotionCollector = $this->createPromotionCollector($connection);
+        $discountId1 = Uuid::randomHex();
+        $discountId2 = Uuid::randomHex();
+        $promotionId = Uuid::randomHex();
+
+        $customerId = $this->context->getCustomerId();
+        static::assertNotNull($customerId);
+        $cart = $this->prepareCart(
+            [$discountId1, $discountId2],
+            $promotionId,
+            1,
+            1,
+            1,
+            [$customerId => 1]
+        );
+        $cart->addExtension(OrderConverter::ORIGINAL_ID, new IdStruct(Uuid::randomHex()));
+
+        $cartDataCollection = new CartDataCollection();
+
+        $promotionCollector->collect($cartDataCollection, $cart, $this->context, new CartBehavior());
+
+        /** @var LineItemCollection $promotions */
+        $promotions = $cartDataCollection->get(PromotionProcessor::DATA_KEY);
+        $promotionFirst = $promotions->first();
+        $promotionLast = $promotions->last();
+
+        static::assertNotNull($promotionFirst);
+        static::assertNotNull($promotionLast);
+
+        static::assertCount(2, $promotions);
+        static::assertSame($promotionId, $promotionFirst->getPayloadValue('promotionId'));
+        static::assertSame($discountId1, $promotionFirst->getPayloadValue('discountId'));
+        static::assertNotNull($promotionFirst->getExtension(OrderConverter::ORIGINAL_ID));
+
+        static::assertSame($promotionId, $promotionLast->getPayloadValue('promotionId'));
+        static::assertSame($discountId2, $promotionLast->getPayloadValue('discountId'));
+        static::assertNull($promotionLast->getExtension(OrderConverter::ORIGINAL_ID));
+    }
+
+    private function assertAlreadyRedeemedError(Cart $cart): void
+    {
+        static::assertFalse($cart->getErrors()->has('promotion-not-found'));
+
+        $error = $cart->getErrors()->get('promotion-not-eligible');
+        static::assertInstanceOf(PromotionNotEligibleError::class, $error);
+        static::assertSame('promotion-not-eligible-already-redeemed', $error->getMessageKey());
+        // must be persistent, otherwise the Processor drops it and the customer sees nothing
+        static::assertTrue($error->isPersistent());
+    }
+
+    private function createPromotionCollector(?Connection $connection = null): PromotionCollector
+    {
+        return new PromotionCollector(
+            $this->gateway,
+            new PromotionItemBuilder(),
+            static::createStub(HtmlSanitizer::class),
+            $connection ?? $this->connection
+        );
+    }
+
+    /**
+     * @param string[] $discountIds
+     * @param array<string, int>|null $orderPerCustomerCount
+     */
+    private function prepareCart(
+        array $discountIds,
+        string $promotionId,
+        int $orderCount = 1,
+        ?int $maxTotalUse = null,
+        ?int $maxUsePerCustomer = null,
+        ?array $orderPerCustomerCount = null
+    ): Cart {
+        $code = 'promotions-code';
+
+        $lineItem1 = new LineItem(Uuid::randomHex(), LineItem::PRODUCT_LINE_ITEM_TYPE, Uuid::randomHex());
+
+        $lineItemId2 = Uuid::randomHex();
+        $lineItem2 = new LineItem($lineItemId2, LineItem::DISCOUNT_LINE_ITEM, $code);
+        $lineItem2->setPayloadValue('discountId', $discountIds[0]);
+        $lineItem2->addExtension(OrderConverter::ORIGINAL_ID, new IdStruct($lineItemId2));
+
+        $cart = new Cart(Uuid::randomHex());
+        $cart->setLineItems(new LineItemCollection([$lineItem1, $lineItem2]));
+
+        $promotion = $this->createPromotion($promotionId, $code, $discountIds, $orderCount, $maxTotalUse, $maxUsePerCustomer, $orderPerCustomerCount);
+
+        $promotionData = new CartExtension();
+        $promotionData->addCode($code);
+        $cart->addExtension(CartExtension::KEY, $promotionData);
+
+        $this->gateway->method('get')->willReturn(
+            new PromotionCollection([$promotion]),
+            new PromotionCollection(),
+        );
+
+        return $cart;
+    }
+
+    /**
+     * @param string[] $ids
+     */
+    private function createPromotionDiscountCollection(array $ids, PromotionEntity $promotion): PromotionDiscountCollection
+    {
+        $discounts = [];
+        foreach ($ids as $id) {
+            $discount = new PromotionDiscountEntity();
+            $discount->setId($id);
+            $discount->setScope(PromotionDiscountEntity::SCOPE_CART);
+            $discount->setType(PromotionDiscountEntity::TYPE_ABSOLUTE);
+            $discount->setValue(10.0);
+            $discount->setPromotionId($promotion->getId());
+            $discount->setConsiderAdvancedRules(false);
+
+            $discounts[] = $discount;
+        }
+
+        return new PromotionDiscountCollection($discounts);
+    }
+
+    /**
+     * @param string[] $discountIds
+     * @param array<string, int>|null $orderPerCustomerCount
+     */
+    private function createPromotion(
+        string $promotionId,
+        string $code,
+        array $discountIds,
+        int $orderCount = 1,
+        ?int $maxTotalUse = null,
+        ?int $maxUsePerCustomer = null,
+        ?array $orderPerCustomerCount = null
+    ): PromotionEntity {
+        $promotion = new PromotionEntity();
+        $promotion->setId($promotionId);
+        $promotion->setCode($code);
+        $promotion->setUseIndividualCodes(true);
+        $promotion->setPriority(1);
+        $promotion->setOrderCount($orderCount);
+
+        $promotion->setDiscounts($this->createPromotionDiscountCollection($discountIds, $promotion));
+
+        if ($maxTotalUse !== null) {
+            $promotion->setMaxRedemptionsGlobal($maxTotalUse);
+        }
+
+        if ($maxUsePerCustomer !== null) {
+            $promotion->setMaxRedemptionsPerCustomer($maxUsePerCustomer);
+        }
+
+        if ($orderPerCustomerCount !== null) {
+            $promotion->setOrdersPerCustomerCount($orderPerCustomerCount);
+        }
+
+        return $promotion;
+    }
+}

@@ -1,0 +1,5 @@
+{% set response = services.response.render('@Storefront/storefront/base.html.twig', { 'page': hook.page }) %}
+{% do response.cache.invalidationState('logged-in') %}
+{% do response.cache.sharedMaxAge(5) %}
+
+{% do hook.setResponse(response) %}

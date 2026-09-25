@@ -1,0 +1,83 @@
+/**
+ * @sw-package framework
+ */
+
+import template from './sw-app-wrong-app-url-modal.html.twig';
+import './sw-app-wrong-app-url-modal.scss';
+
+const STORAGE_KEY_WAS_WRONG_APP_MODAL_SHOWN = 'sw-app-wrong-app-url-modal-shown';
+
+/**
+ * @private
+ */
+export default {
+    template,
+
+    emits: ['modal-close'],
+
+    mixins: [Shopwell.Mixin.getByName('notification')],
+
+    data() {
+        return {
+            wasModalAlreadyShown: !!localStorage.getItem(STORAGE_KEY_WAS_WRONG_APP_MODAL_SHOWN),
+            notification: {
+                title: this.$t('sw-app.component.sw-app-wrong-app-url-modal.title'),
+                message: this.$t('sw-app.component.sw-app-wrong-app-url-modal.explanation'),
+                actions: [
+                    {
+                        label: this.$t('sw-app.component.sw-app-wrong-app-url-modal.labelLearnMoreButton'),
+                        route: this.$t('sw-app.component.sw-app-wrong-app-url-modal.linkToDocsArticle'),
+                    },
+                ],
+                uuid: STORAGE_KEY_WAS_WRONG_APP_MODAL_SHOWN,
+            },
+        };
+    },
+
+    computed: {
+        isAppUrlReachable() {
+            return Shopwell.Store.get('context').app.config.settings?.appUrlReachable;
+        },
+
+        hasAppsThatRequireAppUrl() {
+            return Shopwell.Store.get('context').app.config.settings?.appsRequireAppUrl;
+        },
+
+        display() {
+            return !this.isAppUrlReachable && this.hasAppsThatRequireAppUrl && !this.wasModalAlreadyShown;
+        },
+
+        assetFilter() {
+            return Shopwell.Filter.getByName('asset');
+        },
+    },
+
+    created() {
+        if (!this.display && !this.isAppUrlReachable) {
+            this.createAlertNotification();
+        }
+
+        if (this.isAppUrlReachable) {
+            localStorage.removeItem(STORAGE_KEY_WAS_WRONG_APP_MODAL_SHOWN);
+            this.removeAlertNotification();
+        }
+    },
+
+    methods: {
+        closeModal() {
+            localStorage.setItem(STORAGE_KEY_WAS_WRONG_APP_MODAL_SHOWN, 'true');
+            this.wasModalAlreadyShown = true;
+            this.createAlertNotification();
+
+            this.$emit('modal-close');
+        },
+
+        createAlertNotification() {
+            this.createSystemNotificationInfo(this.notification);
+        },
+
+        removeAlertNotification() {
+            Shopwell.Store.get('notification').removeNotification(this.notification);
+        },
+    },
+};

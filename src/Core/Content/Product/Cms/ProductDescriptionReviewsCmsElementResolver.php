@@ -1,0 +1,77 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Product\Cms;
+
+use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
+use Shopwell\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
+use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
+use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopwell\Core\Content\Cms\SalesChannel\Struct\ProductDescriptionReviewsStruct;
+use Shopwell\Core\Content\Product\SalesChannel\Review\AbstractProductReviewLoader;
+use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewsWidgetLoadedHook;
+use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
+use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+
+#[Package('discovery')]
+class ProductDescriptionReviewsCmsElementResolver extends AbstractProductDetailCmsElementResolver
+{
+    final public const TYPE = 'product-description-reviews';
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly AbstractProductReviewLoader $productReviewLoader,
+        private readonly ScriptExecutor $scriptExecutor,
+        private readonly SystemConfigService $systemConfigService
+    ) {
+    }
+
+    public function getType(): string
+    {
+        return self::TYPE;
+    }
+
+    public function enrich(CmsSlotEntity $slot, ResolverContext $resolverContext, ElementDataCollection $result): void
+    {
+        $data = new ProductDescriptionReviewsStruct();
+        $slot->setData($data);
+
+        $productConfig = $slot->getFieldConfig()->get('product');
+        if ($productConfig === null) {
+            return;
+        }
+
+        $request = $resolverContext->getRequest();
+        $ratingSuccess = (bool) RequestParamHelper::get($request, 'success', false);
+        $data->setRatingSuccess($ratingSuccess);
+
+        $product = null;
+
+        if ($productConfig->isMapped() && $resolverContext instanceof EntityResolverContext) {
+            $product = $this->resolveEntityValue($resolverContext->getEntity(), $productConfig->getStringValue());
+        }
+
+        if ($productConfig->isStatic()) {
+            $product = $this->getSlotProduct($slot, $result, $productConfig->getStringValue());
+        }
+
+        if (!$product instanceof SalesChannelProductEntity) {
+            // product can not be resolved, so we do not enrich the slot
+            return;
+        }
+
+        $data->setProduct($product);
+
+        if ($this->systemConfigService->getBool('core.listing.showReview', $resolverContext->getSalesChannelContext()->getSalesChannelId())) {
+            $reviews = $this->productReviewLoader->load($request, $resolverContext->getSalesChannelContext(), $product->getId(), $product->getParentId());
+
+            $this->scriptExecutor->execute(new ProductReviewsWidgetLoadedHook($reviews, $resolverContext->getSalesChannelContext()));
+
+            $data->setReviews($reviews);
+        }
+    }
+}

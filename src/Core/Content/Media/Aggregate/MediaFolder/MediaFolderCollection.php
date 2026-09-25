@@ -1,0 +1,25 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Media\Aggregate\MediaFolder;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @extends EntityCollection<MediaFolderEntity>
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('discovery')]
+class MediaFolderCollection extends EntityCollection
+{
+    public function getApiAlias(): string
+    {
+        return 'media_folder_collection';
+    }
+
+    protected function getExpectedClass(): string
+    {
+        return MediaFolderEntity::class;
+    }
+}

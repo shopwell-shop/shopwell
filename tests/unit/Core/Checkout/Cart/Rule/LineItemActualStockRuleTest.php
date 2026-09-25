@@ -1,0 +1,276 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Rule;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\Rule\CartRuleScope;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemActualStockRule;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemScope;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Exception\UnsupportedValueException;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Rule\RuleScope;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Checkout\CartRuleFixture;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+#[CoversClass(LineItemActualStockRule::class)]
+#[Group('rules')]
+class LineItemActualStockRuleTest extends TestCase
+{
+    private LineItemActualStockRule $rule;
+
+    protected function setUp(): void
+    {
+        $this->rule = new LineItemActualStockRule();
+    }
+
+    public function testGetName(): void
+    {
+        static::assertSame('cartLineItemActualStock', $this->rule->getName());
+    }
+
+    public function testGetConstraints(): void
+    {
+        $ruleConstraints = $this->rule->getConstraints();
+
+        static::assertArrayHasKey('stock', $ruleConstraints, 'Rule Constraint stock is not defined');
+        static::assertArrayHasKey('operator', $ruleConstraints, 'Rule Constraint operator is not defined');
+    }
+
+    #[DataProvider('getMatchingRuleTestData')]
+    public function testIfMatchesCorrectWithLineItem(
+        string $operator,
+        int $stock,
+        int $lineItemStock,
+        bool $expected
+    ): void {
+        $this->rule->assign([
+            'stock' => $stock,
+            'operator' => $operator,
+        ]);
+
+        $match = $this->rule->match(new LineItemScope(
+            $this->createLineItemWithStock(999)->setPayloadValue('stock', $lineItemStock),
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    public static function getMatchingRuleTestData(): \Generator
+    {
+        // OPERATOR_EQ
+        yield 'match / operator equals / same stock' => [Rule::OPERATOR_EQ, 100, 100, true];
+        yield 'no match / operator equals / different stock' => [Rule::OPERATOR_EQ, 200, 100, false];
+        // OPERATOR_NEQ
+        yield 'no match / operator not equals / same stock' => [Rule::OPERATOR_NEQ, 100, 100, false];
+        yield 'match / operator not equals / different stock' => [Rule::OPERATOR_NEQ, 200, 100, true];
+        // OPERATOR_GT
+        yield 'no match / operator greater than / lower stock' => [Rule::OPERATOR_GT, 100, 50, false];
+        yield 'no match / operator greater than / same stock' => [Rule::OPERATOR_GT, 100, 100, false];
+        yield 'match / operator greater than / higher stock' => [Rule::OPERATOR_GT, 100, 200, true];
+        // OPERATOR_GTE
+        yield 'no match / operator greater than equals / lower stock' => [Rule::OPERATOR_GTE, 100, 50, false];
+        yield 'match / operator greater than equals / same stock' => [Rule::OPERATOR_GTE, 100, 100, true];
+        yield 'match / operator greater than equals / higher stock' => [Rule::OPERATOR_GTE, 100, 200, true];
+        // OPERATOR_LT
+        yield 'match / operator lower than / lower stock' => [Rule::OPERATOR_LT, 100, 50, true];
+        yield 'no match / operator lower  than / same stock' => [Rule::OPERATOR_LT, 100, 100, false];
+        yield 'no match / operator lower than / higher stock' => [Rule::OPERATOR_LT, 100, 200, false];
+        // OPERATOR_LTE
+        yield 'match / operator lower than equals / lower stock' => [Rule::OPERATOR_LTE, 100, 50, true];
+        yield 'match / operator lower than equals / same stock' => [Rule::OPERATOR_LTE, 100, 100, true];
+        yield 'no match / operator lower than equals / higher stock' => [Rule::OPERATOR_LTE, 100, 200, false];
+    }
+
+    #[DataProvider('getCartRuleScopeTestData')]
+    public function testIfMatchesCorrectWithCartRuleScope(
+        string $operator,
+        int $stock,
+        int $lineItemStock1,
+        int $lineItemStock2,
+        bool $expected
+    ): void {
+        $this->rule->assign([
+            'stock' => $stock,
+            'operator' => $operator,
+        ]);
+
+        $lineItemCollection = new LineItemCollection([
+            $this->createLineItemWithStock(999)->setPayloadValue('stock', $lineItemStock1),
+            $this->createLineItemWithStock(999)->setPayloadValue('stock', $lineItemStock2),
+        ]);
+        $cart = CartRuleFixture::createCart($lineItemCollection);
+
+        $match = $this->rule->match(new CartRuleScope(
+            $cart,
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    #[DataProvider('getCartRuleScopeTestData')]
+    public function testIfMatchesCorrectWithCartRuleScopeNested(
+        string $operator,
+        int $stock,
+        int $lineItemStock1,
+        int $lineItemStock2,
+        bool $expected
+    ): void {
+        $this->rule->assign([
+            'stock' => $stock,
+            'operator' => $operator,
+        ]);
+
+        $lineItemCollection = new LineItemCollection([
+            $this->createLineItemWithStock(999)->setPayloadValue('stock', $lineItemStock1),
+            $this->createLineItemWithStock(999)->setPayloadValue('stock', $lineItemStock2),
+        ]);
+        $containerLineItem = CartRuleFixture::createContainerLineItem($lineItemCollection);
+        $cart = CartRuleFixture::createCart(new LineItemCollection([$containerLineItem]));
+
+        $match = $this->rule->match(new CartRuleScope(
+            $cart,
+            static::createStub(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
+    }
+
+    public static function getCartRuleScopeTestData(): \Generator
+    {
+        // OPERATOR_EQ
+        yield 'match / operator equals / same stock' => [Rule::OPERATOR_EQ, 100, 100, 200, true];
+        yield 'no match / operator equals / different stock' => [Rule::OPERATOR_EQ, 200, 100, 300, false];
+        // OPERATOR_NEQ
+        yield 'no match / operator not equals / same stock' => [Rule::OPERATOR_NEQ, 100, 100, 100, false];
+        yield 'match / operator not equals / different stock' => [Rule::OPERATOR_NEQ, 200, 100, 200, true];
+        yield 'match / operator not equals / different stock 2' => [Rule::OPERATOR_NEQ, 200, 100, 300, true];
+        // OPERATOR_GT
+        yield 'no match / operator greater than / lower stock' => [Rule::OPERATOR_GT, 100, 50, 70, false];
+        yield 'no match / operator greater than / same stock' => [Rule::OPERATOR_GT, 100, 100, 70, false];
+        yield 'match / operator greater than / higher stock' => [Rule::OPERATOR_GT, 100, 200, 70, true];
+        // OPERATOR_GTE
+        yield 'no match / operator greater than equals / lower stock' => [Rule::OPERATOR_GTE, 100, 50, 70, false];
+        yield 'match / operator greater than equals / same stock' => [Rule::OPERATOR_GTE, 100, 100, 70, true];
+        yield 'match / operator greater than equals / higher stock' => [Rule::OPERATOR_GTE, 100, 200, 70, true];
+        // OPERATOR_LT
+        yield 'match / operator lower than / lower stock' => [Rule::OPERATOR_LT, 100, 50, 120, true];
+        yield 'no match / operator lower  than / same stock' => [Rule::OPERATOR_LT, 100, 100, 120, false];
+        yield 'no match / operator lower than / higher stock' => [Rule::OPERATOR_LT, 100, 200, 120, false];
+        // OPERATOR_LTE
+        yield 'match / operator lower than equals / lower stock' => [Rule::OPERATOR_LTE, 100, 50, 120, true];
+        yield 'match / operator lower than equals / same stock' => [Rule::OPERATOR_LTE, 100, 100, 120, true];
+        yield 'no match / operator lower than equals / higher stock' => [Rule::OPERATOR_LTE, 100, 200, 120, false];
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testMatchWithEmptyDeliveryInformation(): void
+    {
+        $this->rule->assign(['stock' => 100, 'operator' => Rule::OPERATOR_EQ]);
+
+        $scope = new LineItemScope(
+            CartRuleFixture::createLineItem(),
+            static::createStub(SalesChannelContext::class)
+        );
+
+        static::assertFalse($this->rule->match($scope));
+    }
+
+    public function testMatchWithWrongScopeShouldReturnFalse(): void
+    {
+        $goodsCountRule = new LineItemActualStockRule();
+        $wrongScope = static::createStub(RuleScope::class);
+
+        static::assertFalse($goodsCountRule->match($wrongScope));
+    }
+
+    public function testMatchWithoutStockExpectException(): void
+    {
+        $goodsCountRule = new LineItemActualStockRule();
+        $scope = new LineItemScope(
+            CartRuleFixture::createLineItem(),
+            static::createStub(SalesChannelContext::class)
+        );
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            $this->expectExceptionObject(new UnsupportedValueException('NULL', LineItemActualStockRule::class));
+        } else {
+            $this->expectExceptionObject(CartException::unsupportedValue('NULL', LineItemActualStockRule::class));
+        }
+
+        $goodsCountRule->match($scope);
+    }
+
+    public function testGetConfig(): void
+    {
+        $cartVolumeRule = new LineItemActualStockRule();
+
+        $result = $cartVolumeRule->getConfig()->getData();
+
+        static::assertIsArray($result['operatorSet']['operators']);
+        static::assertSame('stock', $result['fields']['stock']['name']);
+    }
+
+    public function testMatchThrowsException(): void
+    {
+        if (!Feature::isActive('v6.8.0.0')) {
+            $this->expectException(UnsupportedValueException::class);
+        } else {
+            $this->expectException(CartException::class);
+        }
+
+        (new LineItemActualStockRule())->match(
+            new LineItemScope(
+                new LineItem(Uuid::randomHex(), 'product'),
+                static::createStub(SalesChannelContext::class)
+            )
+        );
+    }
+
+    #[DataProvider('lineItemTypeProvider')]
+    public function testMatchesByLineItemType(string $type, bool $lineItemScope, bool $expected): void
+    {
+        $rule = new LineItemActualStockRule(Rule::OPERATOR_NEQ, 5);
+
+        $lineItem = CartRuleFixture::createLineItem($type)->setPayloadValue('stock', 10);
+        $context = static::createStub(SalesChannelContext::class);
+
+        $scope = $lineItemScope
+            ? new LineItemScope($lineItem, $context)
+            : new CartRuleScope(CartRuleFixture::createCart(new LineItemCollection([$lineItem])), $context);
+
+        static::assertSame($expected, $rule->match($scope));
+    }
+
+    /**
+     * @return \Generator<string, array{non-empty-string, bool, bool}>
+     */
+    public static function lineItemTypeProvider(): \Generator
+    {
+        yield 'product via line item scope' => [LineItem::PRODUCT_LINE_ITEM_TYPE, true, true];
+        yield 'product via cart scope' => [LineItem::PRODUCT_LINE_ITEM_TYPE, false, true];
+        yield 'custom via line item scope' => [LineItem::CUSTOM_LINE_ITEM_TYPE, true, false];
+        yield 'custom via cart scope' => [LineItem::CUSTOM_LINE_ITEM_TYPE, false, false];
+    }
+
+    private function createLineItemWithStock(int $stock): LineItem
+    {
+        return CartRuleFixture::createLineItemWithDeliveryInfo(false, 1, 1, null, null, null, $stock);
+    }
+}

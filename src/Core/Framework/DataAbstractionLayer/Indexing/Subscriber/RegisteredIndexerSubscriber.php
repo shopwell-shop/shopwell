@@ -1,0 +1,79 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Indexing\Subscriber;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\SynchronousPostUpdateIndexer;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Migration\IndexerQueuer;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostInstallEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostUninstallEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostUpdateEvent;
+use Shopwell\Core\Framework\Store\Event\FirstRunWizardFinishedEvent;
+use Shopwell\Core\Framework\Update\Event\UpdatePostFinishEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class RegisteredIndexerSubscriber implements EventSubscriberInterface
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly IndexerQueuer $indexerQueuer,
+        private readonly EntityIndexerRegistry $indexerRegistry
+    ) {
+    }
+
+    /**
+     * @return array<string, string|array{0: string, 1: int}|list<array{0: string, 1?: int}>>
+     */
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            UpdatePostFinishEvent::class => 'runRegisteredIndexers',
+            FirstRunWizardFinishedEvent::class => 'runRegisteredIndexers',
+            PluginPostInstallEvent::class => 'runRegisteredIndexers',
+            PluginPostUpdateEvent::class => 'runRegisteredIndexers',
+            PluginPostUninstallEvent::class => 'runRegisteredIndexers',
+        ];
+    }
+
+    /**
+     * @internal
+     */
+    public function runRegisteredIndexers(): void
+    {
+        $queuedIndexers = $this->indexerQueuer->getIndexers();
+
+        if ($queuedIndexers === []) {
+            return;
+        }
+
+        $this->indexerQueuer->finishIndexer(array_keys($queuedIndexers));
+
+        foreach ($queuedIndexers as $indexerName => $options) {
+            $indexer = $this->indexerRegistry->getIndexer($indexerName);
+
+            if ($indexer === null) {
+                continue;
+            }
+
+            $skipList = [];
+            if ($options !== []) {
+                $skipList = array_values(array_diff($indexer->getOptions(), $options));
+            }
+
+            if ($indexer instanceof SynchronousPostUpdateIndexer) {
+                $this->indexerRegistry->index(false, $skipList, [$indexerName], true);
+
+                continue;
+            }
+
+            $this->indexerRegistry->sendIndexingMessage([$indexerName], $skipList, true);
+        }
+    }
+}

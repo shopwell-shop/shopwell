@@ -1,0 +1,28 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Gateway\Command;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Gateway\Command\RemoveShippingMethodCommand;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(RemoveShippingMethodCommand::class)]
+class RemoveShippingMethodCommandTest extends TestCase
+{
+    public function testCommand(): void
+    {
+        $command = new RemoveShippingMethodCommand('test');
+
+        static::assertSame('test', $command->shippingMethodTechnicalName);
+    }
+
+    public function testCommandKey(): void
+    {
+        static::assertSame(RemoveShippingMethodCommand::COMMAND_KEY, RemoveShippingMethodCommand::getDefaultKeyName());
+    }
+}

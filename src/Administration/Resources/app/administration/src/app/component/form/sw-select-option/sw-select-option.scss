@@ -1,0 +1,52 @@
+.sw-select-option {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--color-border-secondary-default);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .sw-select-option__result-item-text {
+        word-break: break-word;
+        display: flex;
+    }
+
+    .mt-icon {
+        color: var(--color-icon-secondary-default);
+        flex-grow: 0;
+        flex-shrink: 0;
+        margin-left: 10px;
+    }
+
+    &.is--active {
+        background: var(--color-background-brand-default);
+        color: var(--color-text-primary-default);
+    }
+
+    &.is--disabled {
+        color: var(--color-text-primary-disabled);
+
+        &.is--active {
+            background: var(--color-background-tertiary-default);
+            color: var(--color-text-primary-disabled);
+            cursor: default;
+        }
+    }
+
+    &:last-child {
+        border-bottom: 0 none;
+    }
+
+    // Vue.js transitions
+    .sw-select-option-appear-enter-active,
+    .sw-select-option-appear-leave-active {
+        transition: all ease-in-out 0.15s;
+        transform: translateY(0);
+    }
+
+    .sw-select-option-appear-enter,
+    .sw-select-option-appear-leave-to {
+        opacity: 0;
+        transform: translateY(-15px);
+    }
+}

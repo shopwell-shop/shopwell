@@ -1,0 +1,149 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Cart;
+
+use Shopwell\Core\Checkout\Cart\Price\GrossPriceCalculator;
+use Shopwell\Core\Checkout\Cart\Price\NetPriceCalculator;
+use Shopwell\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRule;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\Tax\TaxCollection;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Package('checkout')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [ApiRouteScope::ID]])]
+class PriceActionController extends AbstractController
+{
+    /**
+     * @internal
+     *
+     * @param EntityRepository<TaxCollection> $taxRepository
+     */
+    public function __construct(
+        private readonly EntityRepository $taxRepository,
+        private readonly NetPriceCalculator $netCalculator,
+        private readonly GrossPriceCalculator $grossCalculator
+    ) {
+    }
+
+    #[Route(path: 'api/_action/calculate-price', name: 'api.action.calculate-price', methods: ['POST'])]
+    public function calculate(Request $request, Context $context): JsonResponse
+    {
+        if (!$request->request->has('price')) {
+            throw CartException::priceParameterIsMissing();
+        }
+        if (!$request->request->has('taxId')) {
+            throw CartException::taxIdParameterIsMissing();
+        }
+
+        $taxId = (string) $request->request->get('taxId');
+        $price = (float) $request->request->get('price');
+        $quantity = $request->request->getInt('quantity', 1);
+        $output = (string) $request->request->get('output', 'gross');
+        $preCalculated = $request->request->getBoolean('calculated', true);
+
+        $taxRate = null;
+        if (Feature::isActive('v6.8.0.0')) {
+            $criteria = (new Criteria([$taxId]))
+                ->addFields(['taxRate']);
+
+            $tax = $this->taxRepository->search($criteria, $context)->getEntities()->first();
+            $taxRate = $tax?->get('taxRate');
+        } else {
+            $tax = $this->taxRepository->search(new Criteria([$taxId]), $context)->getEntities()->first();
+            $taxRate = $tax?->getTaxRate();
+        }
+
+        if ($taxRate === null) {
+            throw CartException::taxRuleNotFound($taxId);
+        }
+
+        $data = $this->calculatePrice($price, $taxRate, $quantity, $output, $preCalculated);
+
+        return new JsonResponse(
+            ['data' => $data]
+        );
+    }
+
+    #[Route(path: 'api/_action/calculate-prices', name: 'api.action.calculate-prices', methods: ['POST'])]
+    public function calculatePrices(Request $request, Context $context): JsonResponse
+    {
+        if (!$request->request->has('taxId')) {
+            throw CartException::taxIdParameterIsMissing();
+        }
+
+        $taxId = $request->request->getAlnum('taxId');
+        $productPrices = $request->request->all('prices');
+
+        if ($productPrices === []) {
+            throw CartException::pricesParameterIsMissing();
+        }
+
+        if (Feature::isActive('v6.8.0.0')) {
+            $criteria = (new Criteria([$taxId]))
+                ->addFields(['taxRate']);
+
+            $tax = $this->taxRepository->search($criteria, $context)->getEntities()->first();
+            $taxRate = $tax?->get('taxRate');
+        } else {
+            $tax = $this->taxRepository->search(new Criteria([$taxId]), $context)->getEntities()->first();
+            $taxRate = $tax?->getTaxRate();
+        }
+
+        if ($taxRate === null) {
+            throw CartException::taxRuleNotFound($taxId);
+        }
+
+        $data = [];
+
+        foreach ($productPrices as $productId => $prices) {
+            $calculatedPrices = [];
+            foreach ($prices as $price) {
+                $quantity = $price['quantity'] ?? 1;
+                $output = $price['output'] ?? 'gross';
+                $preCalculated = $price['calculated'] ?? true;
+
+                $calculatedPrices[$price['currencyId']] = $this->calculatePrice((float) $price['price'], $taxRate, (int) $quantity, $output, (bool) $preCalculated);
+            }
+
+            $data[$productId] = $calculatedPrices;
+        }
+
+        return new JsonResponse(
+            ['data' => $data]
+        );
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private function calculatePrice(float $price, float $taxRate, int $quantity, string $output, bool $preCalculated): array
+    {
+        $calculator = $this->grossCalculator;
+        if ($output === 'net') {
+            $calculator = $this->netCalculator;
+        }
+
+        $taxRules = new TaxRuleCollection([new TaxRule($taxRate)]);
+
+        $definition = new QuantityPriceDefinition($price, $taxRules, $quantity);
+        $definition->setIsCalculated($preCalculated);
+
+        $config = new CashRoundingConfig(50, 0.01, true);
+
+        $calculated = $calculator->calculate($definition, $config);
+
+        return json_decode((string) json_encode($calculated, \JSON_PRESERVE_ZERO_FRACTION), true, 512, \JSON_THROW_ON_ERROR);
+    }
+}

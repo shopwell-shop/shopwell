@@ -1,0 +1,53 @@
+.sw-contextual-field {
+    input:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0 1000px var(--color-background-primary-default) inset;
+    }
+
+    .sw-block-field__block {
+        display: flex;
+    }
+
+    .sw-field__addition {
+        display: flex;
+        flex-shrink: 0;
+        justify-content: center;
+        align-items: center;
+        min-width: 50px;
+        background: var(--color-background-secondary-default);
+        border-left: 1px solid var(--color-border-secondary-default);
+        border-right: none;
+        line-height: 22px;
+        padding: 12px 15px;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-primary-default);
+        transition: border-color 0.3s ease-out;
+
+        .mt-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        &.is--prefix {
+            border-right: 1px solid var(--color-border-secondary-default);
+            border-left: none;
+        }
+    }
+
+    &.is--disabled {
+        .sw-field__addition {
+            background: var(--color-background-tertiary-default);
+        }
+    }
+
+    &.sw-field--small {
+        .sw-field__addition {
+            padding: 4px 16px;
+        }
+    }
+
+    &.sw-field--medium {
+        .sw-field__addition {
+            padding: 8px 16px;
+        }
+    }
+}

@@ -1,0 +1,64 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Rule\DataAbstractionLayer;
+
+use Doctrine\DBAL\Connection;
+use Psr\Clock\ClockInterface;
+use Shopwell\Core\Checkout\Cart\CartRuleLoader;
+use Shopwell\Core\Content\Rule\RuleEvents;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostActivateEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostDeactivateEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostInstallEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostUninstallEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostUpdateEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+class RuleIndexerSubscriber implements EventSubscriberInterface
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly Connection $connection,
+        private readonly CartRuleLoader $cartRuleLoader,
+        private readonly ClockInterface $clock
+    ) {
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            PluginPostInstallEvent::class => 'refreshPlugin',
+            PluginPostActivateEvent::class => 'refreshPlugin',
+            PluginPostUpdateEvent::class => 'refreshPlugin',
+            PluginPostDeactivateEvent::class => 'refreshPlugin',
+            PluginPostUninstallEvent::class => 'refreshPlugin',
+            RuleEvents::RULE_WRITTEN_EVENT => 'onRuleWritten',
+        ];
+    }
+
+    public function refreshPlugin(): void
+    {
+        // Delete the payload and invalid flag of all rules
+        $now = $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+        $update = new RetryableQuery(
+            $this->connection,
+            $this->connection->prepare('UPDATE `rule` SET `payload` = null, `invalid` = 0, `updated_at` = :updatedAt')
+        );
+        $update->execute([
+            'updatedAt' => $now,
+        ]);
+    }
+
+    public function onRuleWritten(): void
+    {
+        $this->cartRuleLoader->invalidate();
+    }
+}

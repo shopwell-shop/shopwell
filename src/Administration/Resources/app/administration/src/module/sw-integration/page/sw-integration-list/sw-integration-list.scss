@@ -1,0 +1,46 @@
+.sw-integration-list {
+    .mt-card__header {
+        gap: 0;
+    }
+
+    .mt-card__content {
+        padding: 0;
+    }
+
+    .sw-data-grid {
+        border-radius: var(--border-radius-card);
+    }
+
+    &__app-icon {
+        margin-right: var(--scale-size-10);
+        background-color: var(--color-icon-primary-default);
+        border-radius: var(--border-radius-s);
+        width: var(--scale-size-20);
+        height: var(--scale-size-20);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .mt-icon {
+            translate: -0.5px;
+            color: var(--color-icon-primary-inverse);
+        }
+    }
+
+    &__app-badge {
+        margin-left: var(--scale-size-10);
+    }
+}
+
+.sw-integration-list__detail {
+    .sw-integration-list__secret-help-text-alert {
+        margin-top: var(--scale-size-20);
+    }
+
+    .sw-integration-list__help-text {
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        color: var(--color-text-secondary-default);
+        margin-top: var(--scale-size-10);
+    }
+}

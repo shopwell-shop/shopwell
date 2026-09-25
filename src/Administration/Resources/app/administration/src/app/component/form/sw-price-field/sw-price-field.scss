@@ -1,0 +1,53 @@
+.sw-price-field {
+    .price-field-grid {
+        display: grid;
+        grid-template-columns: 1fr 30px 1fr;
+        min-width: 120px;
+        align-items: end;
+    }
+
+    .sw-price-field__lock {
+        height: 45px;
+        background: none;
+        border: none;
+        color: var(--color-icon-primary-default);
+        outline: none;
+        cursor: pointer;
+
+        &.is--locked {
+            color: var(--color-icon-brand-default);
+        }
+
+        &.is--disabled {
+            color: var(--color-icon-primary-disabled);
+            cursor: default;
+        }
+
+        .mt-icon {
+            padding: 0 3px;
+        }
+    }
+
+    .sw-field {
+        .sw-field__addition {
+            font-weight: var(--font-weight-regular);
+            font-size: var(--font-size-l);
+        }
+    }
+
+    &.sw-price-field--label .sw-price-field__lock {
+        margin-bottom: var(--scale-size-32);
+    }
+
+    &.sw-price-field--compact .sw-price-field__lock {
+        height: 32px;
+    }
+
+    &.sw-price-field--disabled {
+        pointer-events: none;
+    }
+
+    .sw-price-form__links {
+        grid-area: center;
+    }
+}

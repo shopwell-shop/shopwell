@@ -1,0 +1,33 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Migration\V6_3;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Migration\MigrationStep;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class Migration1559134989Promotion extends MigrationStep
+{
+    public function getCreationTimestamp(): int
+    {
+        return 1559134989;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function update(Connection $connection): void
+    {
+        $connection->executeStatement('ALTER TABLE `promotion` ADD `use_individual_codes` TINYINT(1) NOT NULL DEFAULT 0;');
+        $connection->executeStatement('ALTER TABLE `promotion` ADD `individual_code_pattern` VARCHAR(255) NULL UNIQUE;');
+    }
+
+    public function updateDestructive(Connection $connection): void
+    {
+    }
+}

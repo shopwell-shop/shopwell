@@ -1,0 +1,51 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\Currency\Aggregate\CurrencyTranslation;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @extends EntityCollection<CurrencyTranslationEntity>
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('fundamentals@framework')]
+class CurrencyTranslationCollection extends EntityCollection
+{
+    /**
+     * @return array<string, string>
+     */
+    public function getCurrencyIds(): array
+    {
+        return $this->fmap(static fn (CurrencyTranslationEntity $currencyTranslation) => $currencyTranslation->getCurrencyId());
+    }
+
+    public function filterByCurrencyId(string $id): self
+    {
+        return $this->filter(static fn (CurrencyTranslationEntity $currencyTranslation) => $currencyTranslation->getCurrencyId() === $id);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getLanguageIds(): array
+    {
+        return $this->fmap(static fn (CurrencyTranslationEntity $currencyTranslation) => $currencyTranslation->getLanguageId());
+    }
+
+    public function filterByLanguageId(string $id): self
+    {
+        return $this->filter(static fn (CurrencyTranslationEntity $currencyTranslation) => $currencyTranslation->getLanguageId() === $id);
+    }
+
+    public function getApiAlias(): string
+    {
+        return 'currency_translation_collection';
+    }
+
+    protected function getExpectedClass(): string
+    {
+        return CurrencyTranslationEntity::class;
+    }
+}

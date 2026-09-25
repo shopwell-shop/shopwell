@@ -1,0 +1,39 @@
+.sw-flow-app-action-modal {
+    &__app-badge {
+        background-color: var(--color-background-secondary-default);
+        border: 1px solid var(--color-border-secondary-default);
+        border-radius: var(--border-radius-round);
+        height: var(--scale-size-24);
+        padding: var(--scale-size-4) var(--scale-size-10);
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+        margin-left: var(--scale-size-4);
+    }
+
+    .sw-field--checkbox__content .sw-field .sw-field__label label {
+        flex-grow: inherit;
+        margin-right: var(--scale-size-10);
+    }
+
+    &__headcontent {
+        margin-bottom: var(--scale-size-24);
+    }
+
+    &__headline {
+        font-size: var(--font-size-s);
+        color: var(--color-text-primary-default);
+        line-height: var(--font-line-height-s);
+        font-weight: var(--font-weight-semibold);
+        margin-bottom: var(--scale-size-4);
+    }
+
+    &__paragraph {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-primary-default);
+        line-height: var(--font-line-height-xs);
+        font-weight: var(--font-weight-regular);
+        margin-bottom: var(--scale-size-8);
+    }
+}

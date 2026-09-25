@@ -1,0 +1,563 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\Dbal;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Product\Aggregate\ProductCategory\ProductCategoryDefinition;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Test\Category\CategoryBuilder;
+use Shopwell\Core\Content\Test\Product\ProductBuilder;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Api\Context\SystemSource;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\CriteriaQueryBuilder;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntitySearcher;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Grouping\FieldGrouping;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Query\ScoreQuery;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class EntitySearcherTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    private EntitySearcher $entitySearcher;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->entitySearcher = new EntitySearcher(
+            static::getContainer()->get(Connection::class),
+            static::getContainer()->get(EntityDefinitionQueryHelper::class),
+            static::getContainer()->get(CriteriaQueryBuilder::class),
+        );
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        static::getContainer()->get(Connection::class)->executeQuery('SET FOREIGN_KEY_CHECKS=1;');
+    }
+
+    public function testSearchFiltersByTranslatedFieldsInAssociations(): void
+    {
+        $ids = new IdsCollection();
+        $this->createCategory(
+            defaultTranslation: 'Category 1',
+            deDeTranslation: null,
+            ids: $ids,
+        );
+        $this->createCategory(
+            defaultTranslation: 'Category 2',
+            deDeTranslation: 'Kategorie 2',
+            ids: $ids,
+        );
+        $productId1 = $this->createProduct(
+            productNumber: 'product-1',
+            deDeTranslation: 'Deutscher Name',
+            defaultTranslation: 'German name',
+            categories: ['Category 1'],
+            ids: $ids,
+        );
+        $this->createProduct(
+            productNumber: 'product-2',
+            deDeTranslation: 'Deutsches Produkt',
+            defaultTranslation: 'German product',
+            categories: ['Category 2'],
+            ids: $ids,
+        );
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('name', 'Deutscher Name'));
+        $criteria->addFilter(new EqualsFilter('categories.name', 'Category 1'));
+
+        $productIds = $this->entitySearcher->search(
+            static::getContainer()->get(ProductDefinition::class),
+            $criteria,
+            self::createLocalizedContext([
+                $this->getDeDeLanguageId(),
+                Defaults::LANGUAGE_SYSTEM,
+            ]),
+        );
+
+        static::assertSame([$productId1], $productIds->getIds());
+    }
+
+    public function testSearchFiltersByTranslatedFieldsInAssociationsByApplyingLanguageOverrides(): void
+    {
+        $ids = new IdsCollection();
+        $this->createCategory(
+            defaultTranslation: 'category-1',
+            deDeTranslation: 'Kategorie 1',
+            ids: $ids,
+        );
+        $this->createCategory(
+            defaultTranslation: 'category-2',
+            deDeTranslation: 'Kategorie 2',
+            ids: $ids,
+        );
+        $productId1 = $this->createProduct(
+            productNumber: 'product-1',
+            deDeTranslation: 'Deutscher Name',
+            categories: ['category-1'],
+            ids: $ids,
+        );
+        $this->createProduct(
+            productNumber: 'product-2',
+            deDeTranslation: 'Deutsches Produkt',
+            categories: ['category-2'],
+            ids: $ids,
+        );
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('name', 'Deutscher Name'));
+        $criteria->addFilter(new EqualsFilter('categories.name', 'Kategorie 1'));
+
+        $productIds = $this->entitySearcher->search(
+            static::getContainer()->get(ProductDefinition::class),
+            $criteria,
+            self::createLocalizedContext([
+                $this->getDeDeLanguageId(),
+                Defaults::LANGUAGE_SYSTEM,
+            ]),
+        );
+
+        static::assertSame([$productId1], $productIds->getIds());
+    }
+
+    public function testSearchFiltersByTranslatedFieldsByApplyingInheritanceAndLanguageOverridesPreferringOwnTranslation(): void
+    {
+        $ids = new IdsCollection();
+        $productId1 = $this->createProduct(
+            productNumber: 'product-1',
+            deDeTranslation: 'Parent: Deutscher Name',
+            defaultTranslation: 'Parent: Fallback name',
+            ids: $ids,
+        );
+        $productId2 = $this->createProduct(
+            productNumber: 'product-2',
+            deDeTranslation: 'Deutscher Name',
+            parentProductNumber: 'product-1',
+            ids: $ids,
+        );
+        // The following product should not be matched because its deDeTranslation takes precedence over the parent's
+        $this->createProduct(
+            productNumber: 'product-3',
+            deDeTranslation: 'Deutsches Produkt',
+            defaultTranslation: 'German product',
+            parentProductNumber: 'product-1',
+            ids: $ids,
+        );
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new ContainsFilter('name', 'Deutscher Name'));
+
+        $productIds = $this->entitySearcher->search(
+            static::getContainer()->get(ProductDefinition::class),
+            $criteria,
+            self::createLocalizedContext([
+                $this->getDeDeLanguageId(),
+                Defaults::LANGUAGE_SYSTEM,
+            ]),
+        );
+
+        static::assertSame(
+            [
+                $productId1,
+                $productId2,
+            ],
+            $productIds->getIds(),
+        );
+    }
+
+    public function testSearchAppliesTermToTranslatedFields(): void
+    {
+        $productId1 = $this->createProduct(
+            productNumber: 'product-1',
+            deDeTranslation: null,
+            defaultTranslation: 'German name',
+        );
+        $this->createProduct(
+            productNumber: 'product-2',
+            deDeTranslation: 'Deutsches Produkt',
+            defaultTranslation: 'German product',
+        );
+
+        $criteria = new Criteria();
+        $criteria->setTerm('German name');
+
+        $productIds = $this->entitySearcher->search(
+            static::getContainer()->get(ProductDefinition::class),
+            $criteria,
+            self::createLocalizedContext([
+                $this->getDeDeLanguageId(),
+                Defaults::LANGUAGE_SYSTEM,
+            ]),
+        );
+
+        static::assertSame([$productId1], $productIds->getIds());
+    }
+
+    public function testSearchAppliesTermToTranslatedFieldsByApplyingLanguageOverrides(): void
+    {
+        $productId1 = $this->createProduct(
+            productNumber: 'product-1',
+            deDeTranslation: 'Deutscher Name',
+            defaultTranslation: 'German name',
+        );
+        $this->createProduct(
+            productNumber: 'product-2',
+            deDeTranslation: 'Deutsches Produkt',
+            defaultTranslation: 'German product',
+        );
+
+        $criteria = new Criteria();
+        $criteria->setTerm('Deutscher Name');
+
+        $productIds = $this->entitySearcher->search(
+            static::getContainer()->get(ProductDefinition::class),
+            $criteria,
+            self::createLocalizedContext([
+                $this->getDeDeLanguageId(),
+                Defaults::LANGUAGE_SYSTEM,
+            ]),
+        );
+
+        static::assertSame([$productId1], $productIds->getIds());
+    }
+
+    public function testSearchAppliesQueryToTranslatedFields(): void
+    {
+        $productId1 = $this->createProduct(
+            productNumber: 'product-1',
+            deDeTranslation: null,
+            defaultTranslation: 'German name',
+        );
+        $this->createProduct(
+            productNumber: 'product-2',
+            deDeTranslation: 'Deutsches Produkt',
+            defaultTranslation: 'German product',
+        );
+
+        $criteria = new Criteria();
+        $criteria->addQuery(new ScoreQuery(new EqualsFilter('name', 'German name'), score: 100));
+
+        $productIds = $this->entitySearcher->search(
+            static::getContainer()->get(ProductDefinition::class),
+            $criteria,
+            self::createLocalizedContext([
+                $this->getDeDeLanguageId(),
+                Defaults::LANGUAGE_SYSTEM,
+            ]),
+        );
+
+        static::assertSame([$productId1], $productIds->getIds());
+    }
+
+    public function testSearchAppliesQueryToTranslatedFieldsByApplyingLanguageOverrides(): void
+    {
+        $productId1 = $this->createProduct(
+            productNumber: 'product-1',
+            deDeTranslation: 'Deutscher Name',
+            defaultTranslation: 'German name',
+        );
+        $this->createProduct(
+            productNumber: 'product-2',
+            deDeTranslation: 'Deutsches Produkt',
+            defaultTranslation: 'German product',
+        );
+
+        $criteria = new Criteria();
+        $criteria->addQuery(new ScoreQuery(new EqualsFilter('name', 'Deutscher Name'), score: 100));
+
+        $productIds = $this->entitySearcher->search(
+            static::getContainer()->get(ProductDefinition::class),
+            $criteria,
+            self::createLocalizedContext([
+                $this->getDeDeLanguageId(),
+                Defaults::LANGUAGE_SYSTEM,
+            ]),
+        );
+
+        static::assertSame([$productId1], $productIds->getIds());
+    }
+
+    public function testSearchFiltersByAndAppliesQueryToTranslatedFields(): void
+    {
+        $ids = new IdsCollection();
+        $productBuilder1 = $this->buildProduct(
+            deDeTranslation: 'Deutscher Name',
+            productNumber: 'product-1',
+            ids: $ids,
+        );
+        $productBuilder1->translation($this->getDeDeLanguageId(), 'keywords', 'Schlagwort');
+        $productBuilder2 = $this->buildProduct(
+            deDeTranslation: 'Deutsches Produkt',
+            productNumber: 'product-2',
+            ids: $ids,
+        );
+        static::getContainer()->get('product.repository')->create(
+            [
+                $productBuilder1->build(),
+                $productBuilder2->build(),
+            ],
+            Context::createDefaultContext(),
+        );
+        $productId1 = $ids->get('product-1');
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('keywords', 'Schlagwort'));
+        $criteria->addQuery(new ScoreQuery(new ContainsFilter('name', 'Deutsch'), score: 100));
+
+        $productIds = $this->entitySearcher->search(
+            static::getContainer()->get(ProductDefinition::class),
+            $criteria,
+            self::createLocalizedContext([
+                $this->getDeDeLanguageId(),
+                Defaults::LANGUAGE_SYSTEM,
+            ]),
+        );
+
+        static::assertSame([$productId1], $productIds->getIds());
+    }
+
+    public function testScoreRankingPicksHighestScoredRowPerGroup(): void
+    {
+        $ids = $this->createSportProducts();
+
+        $criteria = $this->createScoreRankedCriteria($ids);
+        $criteria->addQuery(new ScoreQuery(new ContainsFilter('name', 'Sport'), score: 100));
+        $criteria->addQuery(new ScoreQuery(new ContainsFilter('name', 'Premium'), score: 300));
+        $criteria->addQuery(new ScoreQuery(new ContainsFilter('name', 'Green'), score: 500));
+
+        $result = $this->entitySearcher->search(
+            static::getContainer()->get(ProductDefinition::class),
+            $criteria,
+            Context::createDefaultContext(),
+        );
+
+        $resultIds = array_values($result->getIds());
+
+        static::assertCount(2, $resultIds);
+        static::assertSame($ids->get('b2'), $resultIds[0], 'Highest overall score (Sport Gear Premium Green) should be first');
+        static::assertSame($ids->get('a3'), $resultIds[1], 'Highest score in Group A (Sport Bottle Green) should be second');
+    }
+
+    public function testScoreRankingRespectsTheSortingOfTheCriteria(): void
+    {
+        $ids = $this->createSportProducts();
+
+        $criteria = $this->createScoreRankedCriteria($ids);
+        $criteria->addQuery(new ScoreQuery(new ContainsFilter('name', 'Sport'), score: 100));
+        $criteria->addQuery(new ScoreQuery(new ContainsFilter('name', 'Premium'), score: 300));
+        $criteria->addQuery(new ScoreQuery(new ContainsFilter('name', 'Green'), score: 500));
+
+        $criteria->addSorting(new FieldSorting('name', FieldSorting::ASCENDING));
+        $criteria->addSorting(new FieldSorting(Criteria::SCORE_FIELD, FieldSorting::DESCENDING));
+
+        $result = $this->entitySearcher->search(
+            static::getContainer()->get(ProductDefinition::class),
+            $criteria,
+            Context::createDefaultContext(),
+        );
+
+        static::assertSame(
+            [$ids->get('a3'), $ids->get('b2')],
+            array_values($result->getIds()),
+            'The sorting of the criteria has to win over the score'
+        );
+    }
+
+    public function testScoreRankingDoesNotLeakItsHelperColumnsIntoTheResult(): void
+    {
+        $ids = $this->createSportProducts();
+
+        $criteria = $this->createScoreRankedCriteria($ids);
+        $criteria->addQuery(new ScoreQuery(new ContainsFilter('name', 'Sport'), score: 100));
+        // a sorting other than _score is what makes the ranking add its `_sort_*` columns
+        $criteria->addSorting(new FieldSorting('name', FieldSorting::ASCENDING));
+
+        $result = $this->entitySearcher->search(
+            static::getContainer()->get(ProductDefinition::class),
+            $criteria,
+            Context::createDefaultContext(),
+        );
+
+        $data = $result->getDataOfId($ids->get('a1'));
+
+        static::assertIsArray($data);
+        static::assertArrayHasKey(Criteria::SCORE_FIELD, $data);
+        static::assertArrayNotHasKey('_rn', $data);
+        static::assertArrayNotHasKey('_group_0', $data);
+        static::assertArrayNotHasKey('_sort_0', $data);
+    }
+
+    public function testScoreRankingSupportsCombinedPrimaryKeys(): void
+    {
+        $ids = new IdsCollection();
+
+        static::getContainer()->get('product.repository')->create(
+            [(new ProductBuilder($ids, 'mapped'))->price(100)->name('Sport Bottle')->category('sports')->build()],
+            Context::createDefaultContext(),
+        );
+
+        $criteria = new Criteria();
+        $criteria->addQuery(new ScoreQuery(new EqualsFilter('categoryId', $ids->get('sports')), score: 100));
+        $criteria->addGroupField(new FieldGrouping('categoryId'));
+
+        $result = $this->entitySearcher->search(
+            static::getContainer()->get(ProductCategoryDefinition::class),
+            $criteria,
+            Context::createDefaultContext(),
+        );
+
+        static::assertSame(
+            [['productId' => $ids->get('mapped'), 'categoryId' => $ids->get('sports')]],
+            $result->getIds()
+        );
+    }
+
+    private function createSportProducts(): IdsCollection
+    {
+        $ids = new IdsCollection();
+
+        // Group A: "Sport Bottle" variants — all share a displayGroup via parent-a
+        $parentA = (new ProductBuilder($ids, 'parent-a'))->price(100)
+            ->name('Parent A');
+        $a1 = (new ProductBuilder($ids, 'a1'))->parent('parent-a')->tax(null)
+            ->name('Sport Bottle Blue');
+        $a2 = (new ProductBuilder($ids, 'a2'))->parent('parent-a')->tax(null)
+            ->name('Sport Bottle Red');
+        $a3 = (new ProductBuilder($ids, 'a3'))->parent('parent-a')->tax(null)
+            ->name('Sport Bottle Green');
+
+        // Group B: "Sport Gear" variants — all share a displayGroup via parent-b
+        $parentB = (new ProductBuilder($ids, 'parent-b'))->price(100)
+            ->name('Parent B');
+        $b1 = (new ProductBuilder($ids, 'b1'))->parent('parent-b')->tax(null)
+            ->name('Sport Gear Standard');
+        $b2 = (new ProductBuilder($ids, 'b2'))->parent('parent-b')->tax(null)
+            ->name('Sport Gear Premium Green');
+
+        static::getContainer()->get('product.repository')->create(
+            [$parentA->build(), $a1->build(), $a2->build(), $a3->build(), $parentB->build(), $b1->build(), $b2->build()],
+            Context::createDefaultContext(),
+        );
+
+        return $ids;
+    }
+
+    private function createScoreRankedCriteria(IdsCollection $ids): Criteria
+    {
+        $criteria = new Criteria();
+        $criteria->addGroupField(new FieldGrouping('displayGroup'));
+        $criteria->addFilter(new EqualsAnyFilter(
+            'parentId',
+            [$ids->get('parent-a'), $ids->get('parent-b')]
+        ));
+
+        return $criteria;
+    }
+
+    /**
+     * @param list<string> $categories
+     */
+    private function createProduct(
+        string $productNumber,
+        ?string $deDeTranslation,
+        ?string $defaultTranslation = null,
+        array $categories = [],
+        ?string $parentProductNumber = null,
+        ?IdsCollection $ids = null,
+    ): string {
+        $ids ??= new IdsCollection();
+        $productBuilder = $this->buildProduct(
+            deDeTranslation: $deDeTranslation,
+            defaultTranslation: $defaultTranslation,
+            productNumber: $productNumber,
+            parentProductNumber: $parentProductNumber,
+            ids: $ids,
+        );
+        $productBuilder->categories($categories);
+
+        static::getContainer()->get('product.repository')->create(
+            [$productBuilder->build()],
+            Context::createDefaultContext()
+        );
+
+        return $ids->get($productNumber);
+    }
+
+    private function buildProduct(
+        ?string $deDeTranslation = null,
+        ?string $defaultTranslation = null,
+        string $productNumber = 'product-1',
+        ?string $parentProductNumber = null,
+        ?IdsCollection $ids = null,
+    ): ProductBuilder {
+        $ids ??= new IdsCollection();
+        $productBuilder = new ProductBuilder($ids, $productNumber);
+        $productBuilder->price(100);
+        if ($deDeTranslation !== null) {
+            $productBuilder->translation($this->getDeDeLanguageId(), 'name', $deDeTranslation);
+        }
+        if ($defaultTranslation !== null) {
+            $productBuilder->translation(Defaults::LANGUAGE_SYSTEM, 'name', $defaultTranslation);
+        }
+        if ($parentProductNumber !== null) {
+            $productBuilder->parent($parentProductNumber);
+        }
+
+        return $productBuilder;
+    }
+
+    private function createCategory(
+        string $defaultTranslation,
+        ?string $deDeTranslation,
+        ?IdsCollection $ids = null
+    ): string {
+        $ids ??= new IdsCollection();
+        // Category does not have a name filed but only translations, hence the default translation must be passed to
+        // the builder as the name
+        $categoryBuilder = new CategoryBuilder($ids, categoryName: $defaultTranslation);
+        if ($deDeTranslation !== null) {
+            $categoryBuilder->translation($this->getDeDeLanguageId(), 'name', $deDeTranslation);
+        }
+
+        static::getContainer()->get('category.repository')->create(
+            [$categoryBuilder->build()],
+            Context::createDefaultContext(),
+        );
+
+        return $ids->get($defaultTranslation);
+    }
+
+    /**
+     * @param non-empty-list<string> $languageIdChain
+     */
+    private static function createLocalizedContext(array $languageIdChain): Context
+    {
+        return new Context(
+            source: new SystemSource(),
+            ruleIds: [],
+            currencyId: Defaults::CURRENCY,
+            languageIdChain: $languageIdChain,
+        );
+    }
+}

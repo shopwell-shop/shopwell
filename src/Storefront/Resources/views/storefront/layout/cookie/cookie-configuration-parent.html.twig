@@ -1,0 +1,34 @@
+{# @sw-package framework #}
+
+{# @deprecated tag:v6.8.0 - Use `parent.name` instead of `parent.snippet_name`. Support for `parent.snippet_name` will be removed. #}
+{% set parentName = parent.snippet_name ?? parent.name %}
+{% set name = parentName ? parentName|trans|sw_sanitize : parent.cookie %}
+{% set identifier = parent.cookie ? parent.cookie : name|replace({' ': '-'})|lower %}
+
+{% if name is not empty %}
+    <div class="form-check form-switch">
+        <input
+            type="checkbox"
+            role="switch"
+            class="form-check-input offcanvas-cookie-parent-input"
+            id="cookie_{{ identifier }}"
+            {% if parent.isRequired %}
+                checked="checked"
+                disabled="disabled"
+                aria-disabled="true"
+                data-cookie-required="true"
+            {% endif %}
+            {% if parent.cookie %}
+                data-cookie="{{ parent.cookie }}"
+            {% endif %}
+            {% if parent.value %}
+                data-cookie-value="{{ parent.value }}"
+            {% endif %}
+            {% if parent.expiration %}
+                data-cookie-expiration="{{ parent.expiration }}"
+            {% endif %}>
+        <label for="cookie_{{ identifier }}" class="custom-control-label">
+            {{ name }}
+        </label>
+    </div>
+{% endif %}

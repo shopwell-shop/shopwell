@@ -1,0 +1,189 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Installer\Controller;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Migration\MigrationStep;
+use Shopwell\Core\Installer\Controller\DatabaseImportController;
+use Shopwell\Core\Installer\Database\BlueGreenDeploymentService;
+use Shopwell\Core\Installer\Database\DatabaseMigrator;
+use Shopwell\Core\Maintenance\System\Service\DatabaseConnectionFactory;
+use Shopwell\Core\Maintenance\System\Struct\DatabaseConnectionInformation;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\RouterInterface;
+use Twig\Environment;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(DatabaseImportController::class)]
+class DatabaseImportControllerTest extends TestCase
+{
+    use InstallerControllerTestTrait;
+
+    private DatabaseConnectionFactory&Stub $connectionFactory;
+
+    private MockObject&DatabaseMigrator $databaseMigrator;
+
+    private DatabaseImportController $controller;
+
+    private MockObject&Environment $twig;
+
+    private MockObject&RouterInterface $router;
+
+    protected function setUp(): void
+    {
+        $this->connectionFactory = static::createStub(DatabaseConnectionFactory::class);
+        $this->databaseMigrator = $this->createMock(DatabaseMigrator::class);
+        $this->twig = $this->createMock(Environment::class);
+        $this->router = $this->createMock(RouterInterface::class);
+
+        $this->controller = new DatabaseImportController(
+            $this->connectionFactory,
+            $this->databaseMigrator
+        );
+        $this->controller->setContainer($this->getInstallerContainer($this->twig, ['router' => $this->router]));
+    }
+
+    #[After]
+    public function unsetEnvVars(): void
+    {
+        unset(
+            $_SERVER[BlueGreenDeploymentService::ENV_NAME],
+            $_ENV[BlueGreenDeploymentService::ENV_NAME],
+            $_SERVER[MigrationStep::INSTALL_ENVIRONMENT_VARIABLE],
+            $_ENV[MigrationStep::INSTALL_ENVIRONMENT_VARIABLE],
+        );
+    }
+
+    public function testImportDatabaseRedirectsToConfigPageWhenDatabaseConnectionWasNotConfigured(): void
+    {
+        $this->databaseMigrator->expects($this->never())->method('migrate');
+
+        $this->twig->expects($this->never())
+            ->method('render');
+
+        $this->router->expects($this->once())->method('generate')
+            ->with('installer.database-configuration', [], UrlGeneratorInterface::ABSOLUTE_PATH)
+            ->willReturn('/installer/database-configuration');
+
+        $session = new Session(new MockArraySessionStorage());
+        $request = Request::create('/installer/database-import');
+        $request->setSession($session);
+
+        $response = $this->controller->databaseImport($request);
+        static::assertInstanceOf(RedirectResponse::class, $response);
+        static::assertSame('/installer/database-configuration', $response->getTargetUrl());
+    }
+
+    public function testImportDatabaseRoute(): void
+    {
+        $this->databaseMigrator->expects($this->never())->method('migrate');
+        $this->router->expects($this->never())->method('generate');
+
+        $this->twig->expects($this->once())->method('render')
+            ->with(
+                '@Installer/installer/database-import.html.twig',
+                array_merge($this->getDefaultViewParams(), [
+                    'error' => null,
+                ])
+            )
+            ->willReturn('import');
+
+        $session = new Session(new MockArraySessionStorage());
+        $session->set(DatabaseConnectionInformation::class, new DatabaseConnectionInformation());
+        $request = Request::create('/installer/database-import');
+        $request->setSession($session);
+
+        $response = $this->controller->databaseImport($request);
+        static::assertSame('import', $response->getContent());
+    }
+
+    public function testDatabaseMigrateReturnsErrorIfSessionExpired(): void
+    {
+        $this->databaseMigrator->expects($this->never())->method('migrate');
+        $this->router->expects($this->never())->method('generate');
+        $this->twig->expects($this->never())->method('render');
+
+        $session = new Session(new MockArraySessionStorage());
+        $request = Request::create('/installer/database-import');
+        $request->setSession($session);
+
+        $response = $this->controller->databaseMigrate($request);
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $response->getStatusCode());
+        static::assertIsString($response->getContent());
+        static::assertSame([
+            'error' => 'Session expired, please go back to database configuration.',
+        ], json_decode($response->getContent(), true, 512, \JSON_THROW_ON_ERROR));
+    }
+
+    public function testDatabaseMigrateWithoutOffset(): void
+    {
+        $this->router->expects($this->never())->method('generate');
+        $this->twig->expects($this->never())->method('render');
+
+        $connection = static::createStub(Connection::class);
+        $this->connectionFactory->method('getConnection')
+            ->willReturn($connection);
+
+        $result = [
+            'offset' => 5,
+            'total' => 10,
+            'isFinished' => false,
+        ];
+
+        $this->databaseMigrator->expects($this->once())
+            ->method('migrate')
+            ->with(3, $connection)
+            ->willReturn($result);
+
+        $session = new Session(new MockArraySessionStorage());
+        $session->set(DatabaseConnectionInformation::class, new DatabaseConnectionInformation());
+        $request = Request::create('/installer/database-import', 'POST', [], [], [], [], '{"offset":3}');
+        $request->setSession($session);
+
+        $response = $this->controller->databaseMigrate($request);
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        static::assertIsString($response->getContent());
+        static::assertSame($result, json_decode($response->getContent(), true, 512, \JSON_THROW_ON_ERROR));
+    }
+
+    public function testDatabaseMigrateWillReportException(): void
+    {
+        $this->router->expects($this->never())->method('generate');
+        $this->twig->expects($this->never())->method('render');
+
+        $connection = static::createStub(Connection::class);
+        $this->connectionFactory->method('getConnection')
+            ->willReturn($connection);
+
+        $this->databaseMigrator->expects($this->once())
+            ->method('migrate')
+            ->with(3, $connection)
+            ->willThrowException(new \Exception('Test exception'));
+
+        $session = new Session(new MockArraySessionStorage());
+        $session->set(DatabaseConnectionInformation::class, new DatabaseConnectionInformation());
+        $request = Request::create('/installer/database-import', 'POST', [], [], [], [], '{"offset":3}');
+        $request->setSession($session);
+
+        $response = $this->controller->databaseMigrate($request);
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $response->getStatusCode());
+        static::assertIsString($response->getContent());
+        static::assertSame([
+            'error' => 'Test exception',
+        ], json_decode($response->getContent(), true, 512, \JSON_THROW_ON_ERROR));
+    }
+}

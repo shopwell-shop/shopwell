@@ -1,0 +1,142 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\App\Lifecycle;
+
+use Shopwell\Core\Framework\App\AppCollection;
+use Shopwell\Core\Framework\App\Lifecycle\Parameters\AppInstallParameters;
+use Shopwell\Core\Framework\App\Lifecycle\Parameters\AppUpdateParameters;
+use Shopwell\Core\Framework\App\Manifest\Manifest;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal only for use by the app-system
+ *
+ * @phpstan-type RegisteredApps = array<string, array{id: string, version: string, roleId: string, hasUnconfirmedSecrets: bool}>
+ */
+#[Package('framework')]
+class AppLifecycleIterator
+{
+    /**
+     * @param EntityRepository<AppCollection> $appRepository
+     */
+    public function __construct(
+        private readonly EntityRepository $appRepository,
+        private readonly AppLoader $appLoader
+    ) {
+    }
+
+    /**
+     * @param array<string> $installAppNames Apps that should be installed
+     *
+     * @return list<array{manifest: Manifest, exception: \Exception}>
+     */
+    public function iterateOverApps(
+        AbstractAppLifecycle $appLifecycle,
+        AppInstallParameters $parameters,
+        Context $context,
+        array $installAppNames = []
+    ): array {
+        $appsFromFileSystem = $this->appLoader->load();
+        $installedApps = $this->getRegisteredApps($context);
+
+        $successfulUpdates = [];
+        $fails = [];
+        foreach ($appsFromFileSystem as $manifest) {
+            if (\count($installAppNames) && !\in_array($manifest->getMetadata()->getName(), $installAppNames, true)) {
+                continue;
+            }
+
+            try {
+                if (!\array_key_exists($manifest->getMetadata()->getName(), $installedApps)) {
+                    $appLifecycle->install($manifest, $parameters, $context);
+                    $successfulUpdates[] = $manifest->getMetadata()->getName();
+
+                    continue;
+                }
+
+                $app = $installedApps[$manifest->getMetadata()->getName()];
+                if (version_compare($manifest->getMetadata()->getVersion(), $app['version']) > 0) {
+                    $appLifecycle->update(
+                        $manifest,
+                        new AppUpdateParameters(acceptPermissions: $parameters->acceptPermissions),
+                        ['id' => $app['id']],
+                        $context
+                    );
+                }
+                $successfulUpdates[] = $manifest->getMetadata()->getName();
+            } catch (\Exception $exception) {
+                $fails[] = [
+                    'manifest' => $manifest,
+                    'exception' => $exception,
+                ];
+            }
+        }
+
+        if ($installAppNames === []) {
+            $this->deleteNotFoundAndFailedInstallApps($this->getRegisteredApps($context), $successfulUpdates, $appLifecycle, $context);
+        }
+
+        return $fails;
+    }
+
+    /**
+     * @return RegisteredApps
+     */
+    private function getRegisteredApps(Context $context): array
+    {
+        $criteria = (new Criteria())->addFilter(new EqualsFilter('selfManaged', false));
+        $criteria->addFields(['id', 'name', 'aclRoleId', 'version', 'unconfirmedAppSecrets']);
+        $apps = $this->appRepository->search($criteria, $context)->getEntities();
+
+        $appData = [];
+        foreach ($apps as $app) {
+            $id = $app->get('id');
+            $version = $app->get('version');
+            $roleId = $app->get('aclRoleId');
+            $name = $app->get('name');
+
+            \assert(\is_string($name));
+            \assert(\is_string($id));
+            \assert(\is_string($version));
+            \assert(\is_string($roleId));
+
+            $appData[$name] = [
+                'id' => $id,
+                'version' => $version,
+                'roleId' => $roleId,
+                'hasUnconfirmedSecrets' => $app->get('unconfirmedAppSecrets') !== null,
+            ];
+        }
+
+        return $appData;
+    }
+
+    /**
+     * @param RegisteredApps $appsFromDb
+     * @param list<string> $successfulUpdates
+     */
+    private function deleteNotFoundAndFailedInstallApps(
+        array $appsFromDb,
+        array $successfulUpdates,
+        AbstractAppLifecycle $appLifecycle,
+        Context $context
+    ): void {
+        // re-fetch registered apps, so we can remove apps where the installation failed
+        foreach ($successfulUpdates as $app) {
+            unset($appsFromDb[$app]);
+        }
+        foreach ($appsFromDb as $appName => $app) {
+            // Pending secret from an interrupted install — a later app:install recovers it; this refresh
+            // path would otherwise uninstall and destroy the app, so skip.
+            if ($app['hasUnconfirmedSecrets']) {
+                continue;
+            }
+
+            $appLifecycle->uninstall($appName, ['id' => $app['id']], $context);
+        }
+    }
+}

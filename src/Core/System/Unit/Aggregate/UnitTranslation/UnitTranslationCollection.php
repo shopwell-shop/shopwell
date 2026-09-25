@@ -1,0 +1,51 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\Unit\Aggregate\UnitTranslation;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @extends EntityCollection<UnitTranslationEntity>
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('inventory')]
+class UnitTranslationCollection extends EntityCollection
+{
+    /**
+     * @return array<string, string>
+     */
+    public function getUnitIds(): array
+    {
+        return $this->fmap(static fn (UnitTranslationEntity $unitTranslation) => $unitTranslation->getUnitId());
+    }
+
+    public function filterByUnitId(string $id): self
+    {
+        return $this->filter(static fn (UnitTranslationEntity $unitTranslation) => $unitTranslation->getUnitId() === $id);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getLanguageIds(): array
+    {
+        return $this->fmap(static fn (UnitTranslationEntity $unitTranslation) => $unitTranslation->getLanguageId());
+    }
+
+    public function filterByLanguageId(string $id): self
+    {
+        return $this->filter(static fn (UnitTranslationEntity $unitTranslation) => $unitTranslation->getLanguageId() === $id);
+    }
+
+    public function getApiAlias(): string
+    {
+        return 'unit_translation_collection';
+    }
+
+    protected function getExpectedClass(): string
+    {
+        return UnitTranslationEntity::class;
+    }
+}

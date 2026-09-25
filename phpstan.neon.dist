@@ -1,0 +1,229 @@
+includes:
+    - phpstan-baseline.php
+    # computes the analysed paths with node_modules subtrees pruned, see the file header
+    - phpstan-paths.php
+    - src/Core/DevOps/StaticAnalyze/PHPStan/common.neon
+    - src/Core/DevOps/StaticAnalyze/PHPStan/core-rules.neon
+
+parameters:
+    tmpDir: var/cache/phpstan
+    bootstrapFiles:
+        - src/Core/DevOps/StaticAnalyze/phpstan-bootstrap.php # run `php src/Core/DevOps/StaticAnalyze/phpstan-bootstrap.php` to create the container
+    symfony:
+        constantHassers: false
+        containerXmlPath: 'var/cache/static_phpstan_dev/Shopwell_Core_DevOps_StaticAnalyze_StaticAnalyzeKernelPhpstan_devDebugContainer.xml'
+    scanDirectories:
+        - var/cache/static_phpstan_dev/Symfony/Config
+    scanFiles:
+        - vendor/symfony/dependency-injection/Loader/Configurator/ContainerConfigurator.php
+        # global functions the matrix generators share, required by tests/devops/Github
+        - .github/bin/lib/feature-flags.php
+
+    excludePaths:
+        # vendor patches over autoload files
+        - src/Core/Framework/Adapter/Doctrine/Patch/AbstractAsset.php
+
+        # Code copied and adapted from twig
+        - src/Core/Framework/Adapter/Twig/TokenParser/SwMacroFunctionTokenParser.php
+
+        # node_modules
+        - src/**/node_modules/*
+        - tests/**/node_modules/*
+
+        # @todo NEXT-22697 - Remove when re-enabling cms-aware
+        - src/Core/System/CustomEntity/Xml/Config/CustomEntityEnrichmentService.php
+        - tests/integration/Core/System/CustomEntity/Xml/Config/CmsAwareAndAdminUiTest.php
+
+        # PHPStan rule test files
+        - tests/devops/Core/DevOps/StaticAnalyse/PHPStan/Rules/data/*
+
+        # Danger rule test fixtures
+        - tests/unit/Core/DevOps/StaticAnalyze/Danger/Rules/_fixtures/*
+
+    universalObjectCratesClasses:
+        - Shopwell\Core\Content\Product\Hook\Pricing\ProductProxy
+
+    ignoreErrors:
+        # The symfony extension checks against the "normal" container, not the test container
+        # Therefore some services in the tests are not found and the extension can not infer that all private services are public during test execution
+        -
+            message: '#Service ".*" is not registered in the container\.#'
+            paths:
+                - tests/unit
+                - tests/integration
+                - tests/devops
+                - src/Core/Framework/Test/TestCaseBase/*.php
+        -
+            message: '#Service ".*" is private#'
+            paths:
+                - tests/performance/**/*Bench.php
+                - tests/unit/**/*Test.php
+                - tests/devops/**/*Test.php
+                - tests/migration/**/*Test.php
+                - tests/integration/**/*Test.php
+                - tests/integration/**/*TestCase.php
+
+        - # ignore errors caused by static::markTestSkipped
+            message: '#Unreachable statement - code above always terminates.#'
+            paths:
+                - tests/**/*Test.php
+
+        # To fix this error, the \Shopwell\Core\Framework\Struct\Collection::createNew method has to be implemented
+        # in every implementation of `Collection` and needs to return `new self` instead of `new static`. See https://github.com/phpstan/phpstan/issues/2773
+        -
+            message: '#Unsafe usage of new static\(\)#'
+            paths:
+                - src/Core/Framework/Struct/Collection.php
+                - src/Core/Framework/Rule/RuleCollection.php
+                - src/Core/Framework/DataAbstractionLayer/CompiledFieldCollection.php
+
+        # allowed extension of internal classes with @final annotation only for specific classes
+        -
+            message: '#.*extends @final class Shopwell\\Core\\Framework\\DataAbstractionLayer\\Search\\EntitySearchResult\.#'
+            paths:
+                - src/Core/Content/Product/SalesChannel/Listing/ProductListingResult.php
+                - src/Core/Content/Product/SalesChannel/Review/ProductReviewResult.php
+        -
+            message: '#.*extends @final class Shopwell\\Core\\Framework\\DataAbstractionLayer\\EntityRepository.#'
+            paths:
+                - src/Core/Content/Test/ImportExport/MockRepository.php
+                - src/Core/Test/Stub/DataAbstractionLayer/StaticEntityRepository.php
+        -
+            message: '#.*extends @final class Shopwell\\Core\\System\\SalesChannel\\Entity\\SalesChannelRepository.#'
+            paths:
+                - src/Core/Test/Stub/DataAbstractionLayer/StaticSalesChannelRepository.php
+
+        # Route scopes for controllers
+        -
+           message: '#.* has no route scope defined.*#'
+           paths:
+            - **/*Test.php
+            - src/Core/Installer
+
+        -
+           message: '#No global Command directories allowed, put your commands in the right domain directory#'
+           path: src/Administration/
+
+        # A PartialEntity is not directly a subtype of a real Entity but it is returned by a EntityRepository, if fields are used
+        -
+           message: '#PHPDoc tag @var with type Shopwell\\Core\\Framework\\DataAbstractionLayer\\PartialEntity.* is not subtype of type .*Entity.*\.#'
+
+        # dynamic hydrator performance
+        -
+            message: '#Access to an undefined property Shopwell\\Core\\Framework\\DataAbstractionLayer\\Entity#'
+            path: src/*/*Hydrator.php
+        -
+            message: '#Access to an undefined property Shopwell\\Core\\Framework\\DataAbstractionLayer\\Entity#'
+            path: tests/*/*Hydrator.php
+        -
+            message: '#Access to protected property *#'
+            path: src/*/*Hydrator.php
+
+        - # Exception is thrown in trait
+            message: '#Expected domain exception class Shopwell\\Core\\.*, got Shopwell\\Core\\Framework\\FrameworkException#'
+            identifier: shopware.domainException
+            paths:
+                - src/Core/Checkout/Cart/Error/Error.php
+                - src/Core/Content/ProductExport/Error/Error.php
+
+        # Internal deprecations of Shopwell are handled in other places
+        - '#deprecated.*(class|interface) Shopwell\\#'
+
+        - # tests are allowed to add dummy classes in the same file
+            message: '#Multiple class\/interface\/trait is not allowed in single file#'
+            paths:
+                - tests/**
+
+        # implementation of symfony flashbag interface which does not define iterable types
+        - identifier: missingType.iterableValue
+          path: src/Core/Framework/Adapter/Session/StatefulFlashBag.php
+
+        # ArrayFacadeTest explicitly tests array access on object, so it works from twig scripts
+        - identifier: offsetAssign.dimType
+          path: tests/unit/Core/Framework/Script/Service/ArrayFacadeTest.php
+
+        - identifier: typePerfect.noArrayAccessOnObject
+          path: tests/unit/Core/Framework/Script/Service/ArrayFacadeTest.php
+
+        # DefaultsTest explicitly tests that the default values are not changed
+        - identifier: staticMethod.alreadyNarrowedType
+          path: tests/devops/Core/DefaultsTest.php
+
+        - # Can not be fixed currently. See https://github.com/phpstan/phpstan/discussions/9159
+            message: '#Method Shopwell\\Core\\Framework\\DataAbstractionLayer\\Field\\Field::getFlag\(\) should return \(TFlag of Shopwell\\Core\\Framework\\DataAbstractionLayer\\Field\\Flag\\Flag\)\|null but returns Shopwell\\Core\\Framework\\DataAbstractionLayer\\Field\\Flag\\Flag\|null#'
+            path: src/Core/Framework/DataAbstractionLayer/Field/Field.php
+            count: 1
+
+        - # test plugin implementations in fixtures, the files can't be excluded as that would lead to errors when they are used
+            message: '#.*#'
+            paths:
+                - tests/integration/**/_fixtures/**
+
+        - # Needs a proper class-string annotation in `\Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition::getCollectionClass` and all child classes
+            message: '#PHPDoc tag @var with type .*Shopwell\\Core\\Framework\\DataAbstractionLayer\\EntityCollection.* is not subtype of native type string#'
+            paths:
+                - src/Core/Framework/DataAbstractionLayer/Dbal/EntityReader.php
+                - src/Core/Framework/DataAbstractionLayer/EntityRepository.php
+                - src/Core/System/SalesChannel/Entity/SalesChannelRepository.php
+
+        - # It is not possible to specify the type of the EntityResult, as the Aggregators are used for multiple entities at the same time
+            message: '#Method Shopwell\\.*::hydrateEntityAggregation\(\) return type with generic class Shopwell\\Core\\Framework\\DataAbstractionLayer\\Search\\AggregationResult\\Metric\\EntityResult does not specify its types: TEntityCollection#'
+            paths:
+                - src/Core/Framework/DataAbstractionLayer/Dbal/EntityAggregator.php
+                - src/Elasticsearch/Framework/DataAbstractionLayer/ElasticsearchEntityAggregatorHydrator.php
+
+        - # PHPdocs are inherited from https://github.com/JetBrains/phpstorm-stubs/tree/master/redis and should be updated there
+            identifier: missingType.iterableValue
+            path: src/Core/Test/Stub/Redis
+
+        - # It is checked before if the entity supports custom fields, but it is not possible for PHPStan to recognize this
+            message: '#Call to an undefined method TElement of Shopwell\\Core\\Framework\\DataAbstractionLayer\\Entity::.*CustomFields.*\(\)#'
+            count: 4
+            path: src/Core/Framework/DataAbstractionLayer/EntityCollection.php
+
+        - # The AnnotatePackageProcessorTest sets not allowed package names on purpose for easier understanding the tests
+            message: '#Parameter \#1 \$package of attribute class Shopwell\\Core\\Framework\\Log\\Package constructor#'
+            identifier: argument.type
+            path: tests/unit/Core/Framework/Log/Monolog/AnnotatePackageProcessorTest.php
+
+        - # With the active `reportWrongPhpDocTypeInVarTag` phpstan parameter we should resolve this issue per area
+            message: '#PHPDoc tag @var with type .* is not subtype of type .*#'
+            paths:
+                - tests/**
+
+        - # XML config format will be migrated step by step, so we ignore errors for now, see https://github.com/shopware/shopware/issues/13072
+            message: '#deprecated class Symfony\\Component\\DependencyInjection\\Loader\\XmlFileLoader#'
+
+        # Script service generator test fixtures intentionally omit @internal so the generator can read their docblocks,
+        # and some fixtures have mismatched @return types for behaviours testing purpose
+        -
+            identifier: shopware.internalClass
+            path: tests/unit/Core/DevOps/Docs/Script/_fixtures/*
+        -
+            identifier: return.phpDocType
+            path: tests/unit/Core/DevOps/Docs/Script/_fixtures/*
+        -
+            identifier: missingType.iterableValue
+            path: tests/unit/Core/DevOps/Docs/Script/_fixtures/*
+
+        # Hook fixtures intentionally omit native property types to test the @var annotation fallback and the untyped property exception path
+        -
+            identifier: shopware.propertyNativeType
+            path: tests/unit/Core/DevOps/Docs/Script/_fixtures/hooks/*
+        -
+            identifier: missingType.property
+            path: tests/unit/Core/DevOps/Docs/Script/_fixtures/hooks/*
+
+        # Many tests are checking DAL write errors with `WriteException` containing `WriteConstraintViolationException`.
+        # As `WriteException` can also contain other exceptions, it is hard to teach PHPStan without touching each test, that in those tests only `WriteConstraintViolationException` are present.
+        # A Generic type for `WriteException` is not applicable, as it can contain different exceptions types at the same time.
+        -
+            message: "#Offset 'source' might not exist on array{status: string, code: #"
+            path: tests
+
+        - # @deprecated tag:v6.8.0 - Should be fixed, once the parent class changes
+            message: '#Parameter .* expects Shopwell\\Core\\Framework\\DataAbstractionLayer\\Search\\EntitySearchResult<.*>, Shopwell\\Core\\Framework\\DataAbstractionLayer\\Search\\EntitySearchResult<.*> given#'
+            identifier: argument.type
+        -
+            message: '#Method .* should return Shopwell\\Core\\Framework\\DataAbstractionLayer\\Search\\EntitySearchResult<.*> but returns Shopwell\\Core\\Framework\\DataAbstractionLayer\\Search\\EntitySearchResult<.*>#'
+            identifier: return.type

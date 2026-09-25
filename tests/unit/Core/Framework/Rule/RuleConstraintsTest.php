@@ -1,0 +1,112 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Rule;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Rule\RuleConstraints;
+use Symfony\Component\Validator\Constraints\Choice;
+use Symfony\Component\Validator\Constraints\Collection;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Type;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+#[CoversClass(RuleConstraints::class)]
+class RuleConstraintsTest extends TestCase
+{
+    /**
+     * @var list<string>
+     */
+    private array $defaultOperators = [
+        Rule::OPERATOR_BETWEEN,
+        Rule::OPERATOR_NEQ,
+        Rule::OPERATOR_GTE,
+        Rule::OPERATOR_LTE,
+        Rule::OPERATOR_EQ,
+        Rule::OPERATOR_GT,
+        Rule::OPERATOR_LT,
+    ];
+
+    public function testDateBetweenConstraints(): void
+    {
+        $constraints = RuleConstraints::dateBetween();
+
+        static::assertEquals(
+            [
+                new NotBlank(),
+                new Collection(
+                    fields: [
+                        'from' => [new NotBlank(), new Type('string')],
+                        'to' => [new NotBlank(), new Type('string')],
+                    ],
+                    allowExtraFields: false,
+                    allowMissingFields: false,
+                ),
+            ],
+            $constraints,
+        );
+    }
+
+    public function testDateConstraints(): void
+    {
+        $constraints = RuleConstraints::date();
+
+        static::assertCount(2, $constraints);
+        static::assertInstanceOf(NotBlank::class, $constraints[0]);
+        static::assertInstanceOf(Type::class, $constraints[1]);
+    }
+
+    public function testDateTimeConstraints(): void
+    {
+        $constraints = RuleConstraints::datetime();
+
+        static::assertCount(2, $constraints);
+        static::assertInstanceOf(NotBlank::class, $constraints[0]);
+        static::assertInstanceOf(Type::class, $constraints[1]);
+    }
+
+    public function testDateOperators(): void
+    {
+        $operators = RuleConstraints::dateOperators(false);
+
+        static::assertCount(2, $operators);
+        static::assertInstanceOf(NotBlank::class, $operators[0]);
+        static::assertInstanceOf(Choice::class, $operators[1]);
+        static::assertEquals(new Choice(choices: $this->defaultOperators), $operators[1]);
+
+        $operators = RuleConstraints::dateOperators();
+
+        static::assertCount(2, $operators);
+        static::assertInstanceOf(NotBlank::class, $operators[0]);
+        static::assertInstanceOf(Choice::class, $operators[1]);
+        static::assertEquals(
+            new Choice(choices: [...$this->defaultOperators, Rule::OPERATOR_EMPTY]),
+            $operators[1],
+        );
+    }
+
+    public function testDateTimeOperators(): void
+    {
+        $operators = RuleConstraints::datetimeOperators(false);
+
+        static::assertCount(2, $operators);
+        static::assertInstanceOf(NotBlank::class, $operators[0]);
+        static::assertInstanceOf(Choice::class, $operators[1]);
+        static::assertEquals(new Choice(choices: $this->defaultOperators), $operators[1]);
+
+        $operators = RuleConstraints::datetimeOperators();
+
+        static::assertCount(2, $operators);
+        static::assertInstanceOf(NotBlank::class, $operators[0]);
+        static::assertInstanceOf(Choice::class, $operators[1]);
+        static::assertEquals(
+            new Choice(choices: [...$this->defaultOperators, Rule::OPERATOR_EMPTY]),
+            $operators[1],
+        );
+    }
+}

@@ -1,0 +1,214 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\SalesChannel\Context;
+
+use Shopwell\Core\Checkout\Cart\AbstractCartPersister;
+use Shopwell\Core\Checkout\Cart\CartCalculator;
+use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Random;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\Profiling\Profiler;
+use Shopwell\Core\System\SalesChannel\Event\SalesChannelContextCreatedEvent;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SalesChannel\SalesChannelException;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
+
+#[Package('framework')]
+class SalesChannelContextService implements SalesChannelContextServiceInterface
+{
+    final public const CURRENCY_ID = 'currencyId';
+
+    final public const LANGUAGE_ID = 'languageId';
+
+    final public const CUSTOMER_ID = 'customerId';
+
+    final public const CUSTOMER_GROUP_ID = 'customerGroupId';
+
+    final public const BILLING_ADDRESS_ID = 'billingAddressId';
+
+    final public const SHIPPING_ADDRESS_ID = 'shippingAddressId';
+
+    final public const PAYMENT_METHOD_ID = 'paymentMethodId';
+
+    final public const SHIPPING_METHOD_ID = 'shippingMethodId';
+
+    final public const COUNTRY_ID = 'countryId';
+
+    final public const COUNTRY_STATE_ID = 'countryStateId';
+
+    final public const VERSION_ID = 'version-id';
+
+    final public const PERMISSIONS = 'permissions';
+
+    final public const DOMAIN_ID = 'domainId';
+
+    final public const ORIGINAL_CONTEXT = 'originalContext';
+
+    final public const IMITATING_USER_ID = 'imitatingUserId';
+
+    /**
+     * @internal do not rely on this externally, use the rules from the context instead
+     */
+    final public const RULE_IDS = 'sw-rule-ids';
+
+    /**
+     * @internal do not rely on this externally, use the rules from the context instead
+     */
+    final public const AREA_RULE_IDS = 'sw-rule-area-ids';
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly AbstractSalesChannelContextFactory $factory,
+        private readonly CartCalculator $cartCalculator,
+        private readonly SalesChannelContextPersister $contextPersister,
+        private readonly CartService $cartService,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly RequestStack $requestStack
+    ) {
+    }
+
+    public function get(SalesChannelContextServiceParameters $parameters): SalesChannelContext
+    {
+        return Profiler::trace('sales-channel-context', function () use ($parameters) {
+            $token = $parameters->getToken();
+
+            $session = $this->contextPersister->load($token, $parameters->getSalesChannelId());
+
+            if ($session['expired'] ?? false) {
+                $token = Random::getAlphanumericString(32);
+            }
+
+            if ($parameters->getLanguageId() !== null) {
+                $session[self::LANGUAGE_ID] = $parameters->getLanguageId();
+            }
+
+            if ($parameters->getOverwriteCurrencyId() !== null) {
+                $session[self::CURRENCY_ID] = $parameters->getOverwriteCurrencyId();
+            } elseif ($parameters->getCurrencyId() !== null && !\array_key_exists(self::CURRENCY_ID, $session)) {
+                $session[self::CURRENCY_ID] = $parameters->getCurrencyId();
+            }
+
+            if ($parameters->getDomainId() !== null) {
+                $session[self::DOMAIN_ID] = $parameters->getDomainId();
+            }
+
+            if ($parameters->getOriginalContext() !== null) {
+                $session[self::ORIGINAL_CONTEXT] = $parameters->getOriginalContext();
+            }
+
+            if ($parameters->getCustomerId() !== null) {
+                $session[self::CUSTOMER_ID] = $parameters->getCustomerId();
+            }
+
+            if ($parameters->getImitatingUserId() !== null) {
+                $session[self::IMITATING_USER_ID] = $parameters->getImitatingUserId();
+            }
+
+            $context = $this->createContext($token, $parameters, $session);
+
+            if ($parameters->getOriginalContext()?->hasState(Context::ELASTICSEARCH_EXPLAIN_MODE)) {
+                $context->addState(Context::ELASTICSEARCH_EXPLAIN_MODE);
+            }
+
+            $this->eventDispatcher->dispatch(new SalesChannelContextCreatedEvent($context, $token, $session));
+
+            $currentRequest = $this->requestStack->getCurrentRequest();
+
+            if ($currentRequest !== null) {
+                // Update attributes and headers of the current request
+                $currentRequest->attributes->set(PlatformRequest::ATTRIBUTE_CONTEXT_OBJECT, $context->getContext());
+                $currentRequest->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
+                $currentRequest->headers->set(PlatformRequest::HEADER_CONTEXT_TOKEN, $context->getToken());
+            }
+
+            // Only synchronize an initialized storefront session. Store API requests must remain stateless.
+            $requestSession = $currentRequest?->hasSession(true) ? $currentRequest->getSession() : null;
+
+            // Remove imitating user id from session, if there is no customer
+            if ($requestSession && $context->getImitatingUserId() && !$context->getCustomerId()) {
+                $requestSession->remove(PlatformRequest::ATTRIBUTE_IMITATING_USER_ID);
+                $context->setImitatingUserId(null);
+            }
+
+            // skip cart calculation on ESI sub-requests if it has already been done.
+            $esiRequest = $currentRequest?->attributes->has('_esi') ?? false;
+            if (!$this->cartService->hasCart($token) || !$esiRequest) {
+                // @deprecated tag:v6.8.0 - Permission will always be true
+                $cart = $context->withPermissions(
+                    [AbstractCartPersister::PERSIST_CART_ERROR_PERMISSION => Feature::isActive('DEFERRED_CART_ERRORS')],
+                    fn (SalesChannelContext $context) => $this->cartCalculator->calculateByToken($token, $context),
+                );
+
+                $this->cartService->setCart($cart);
+
+                // the rule loader updates the rules in the context, save them to the session for later reuse
+                $requestSession?->set(self::RULE_IDS, $context->getRuleIds());
+                $requestSession?->set(self::AREA_RULE_IDS, $context->getAreaRuleIds());
+            } else {
+                $context->setRuleIds($requestSession?->get(self::RULE_IDS) ?? []);
+                $context->setAreaRuleIds($requestSession?->get(self::AREA_RULE_IDS) ?? []);
+            }
+
+            return $context;
+        });
+    }
+
+    /**
+     * @param array<string, mixed> $session
+     */
+    private function createContext(string $token, SalesChannelContextServiceParameters $parameters, array &$session): SalesChannelContext
+    {
+        // A stored selection can become unavailable after a sales channel configuration change. Explicit request options must still fail.
+        $recoveredOptions = [];
+        while (true) {
+            try {
+                return $this->factory->create($token, $parameters->getSalesChannelId(), $session);
+            } catch (SalesChannelException $exception) {
+                $staleOption = $this->getStalePersistedOption($exception, $parameters, $session);
+                if ($staleOption === null || isset($recoveredOptions[$staleOption])) {
+                    throw $exception;
+                }
+
+                unset($session[$staleOption]);
+                if ($staleOption === self::CURRENCY_ID && $parameters->getCurrencyId() !== null) {
+                    $session[self::CURRENCY_ID] = $parameters->getCurrencyId();
+                }
+
+                $customerId = $session[self::CUSTOMER_ID] ?? null;
+                $this->contextPersister->save(
+                    $token,
+                    [$staleOption => null],
+                    $parameters->getSalesChannelId(),
+                    \is_string($customerId) ? $customerId : null,
+                );
+                $recoveredOptions[$staleOption] = true;
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $session
+     */
+    private function getStalePersistedOption(SalesChannelException $exception, SalesChannelContextServiceParameters $parameters, array $session): ?string
+    {
+        if ($exception->getErrorCode() === SalesChannelException::SALES_CHANNEL_LANGUAGE_NOT_AVAILABLE_EXCEPTION
+            && $parameters->getLanguageId() === null
+            && \array_key_exists(self::LANGUAGE_ID, $session)) {
+            return self::LANGUAGE_ID;
+        }
+
+        if ($exception->getErrorCode() === SalesChannelException::CURRENCY_DOES_NOT_EXISTS_EXCEPTION
+            && $parameters->getOverwriteCurrencyId() === null
+            && \array_key_exists(self::CURRENCY_ID, $session)) {
+            return self::CURRENCY_ID;
+        }
+
+        return null;
+    }
+}

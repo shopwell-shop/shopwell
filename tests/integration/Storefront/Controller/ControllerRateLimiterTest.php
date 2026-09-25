@@ -1,0 +1,518 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Storefront\Controller;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Customer\CustomerException;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AbstractImitateCustomerRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AbstractLogoutRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AbstractResetPasswordRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AbstractSendPasswordRecoveryMailRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AccountService;
+use Shopwell\Core\Checkout\Customer\SalesChannel\ConvertGuestRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\ImitateCustomerRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\LoginRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\LogoutRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\ResetPasswordRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute;
+use Shopwell\Core\Checkout\Customer\Service\GuestAuthenticator;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
+use Shopwell\Core\Content\ContactForm\SalesChannel\AbstractContactFormRoute;
+use Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRoute;
+use Shopwell\Core\Content\Newsletter\SalesChannel\AbstractNewsletterSubscribeRoute;
+use Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute;
+use Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterUnsubscribeRoute;
+use Shopwell\Core\Content\RevocationRequest\SalesChannel\AbstractRevocationRequestRoute;
+use Shopwell\Core\Content\RevocationRequest\SalesChannel\RevocationRequestRoute;
+use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
+use Shopwell\Core\Framework\Adapter\Translation\ConstraintViolationTranslator;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\RateLimiter\Exception\RateLimitExceededException;
+use Shopwell\Core\Framework\RateLimiter\RateLimiter;
+use Shopwell\Core\Framework\Test\RateLimiter\DisableRateLimiterCompilerPass;
+use Shopwell\Core\Framework\Test\RateLimiter\RateLimiterTestTrait;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\SalesChannelRequest;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\Test\Integration\Traits\CustomerTestTrait;
+use Shopwell\Core\Test\Integration\Traits\OrderFixture;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Shopwell\Storefront\Checkout\Cart\SalesChannel\StorefrontCartFacade;
+use Shopwell\Storefront\Controller\AuthController;
+use Shopwell\Storefront\Controller\FormController;
+use Shopwell\Storefront\Framework\Routing\RequestTransformer;
+use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoader;
+use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
+use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoader;
+use Shopwell\Storefront\Page\GenericPageLoader;
+use Shopwell\Storefront\Test\Controller\StorefrontControllerTestBehaviour;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
+use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Contracts\Translation\TranslatorInterface;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+class ControllerRateLimiterTest extends TestCase
+{
+    use ClockSensitiveTrait;
+    use CustomerTestTrait;
+    use OrderFixture;
+    use RateLimiterTestTrait;
+    use StorefrontControllerTestBehaviour;
+
+    private Context $context;
+
+    private IdsCollection $ids;
+
+    private KernelBrowser $browser;
+
+    private SalesChannelContext $salesChannelContext;
+
+    private TranslatorInterface $translator;
+
+    private static bool $rateLimitedKernelBooted = false;
+
+    public static function setUpBeforeClass(): void
+    {
+        DisableRateLimiterCompilerPass::disableNoLimit();
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        DisableRateLimiterCompilerPass::enableNoLimit();
+        // shut down only: the next class boots its kernel lazily inside a test context, which
+        // recompiles with the rate limiter restored
+        KernelLifecycleManager::ensureKernelShutdown();
+        self::$rateLimitedKernelBooted = false;
+    }
+
+    protected function setUp(): void
+    {
+        // the rate-limiter pass applies at container compile time, so this class needs a freshly
+        // compiled kernel. It is booted here rather than in setUpBeforeClass(): a deprecation
+        // triggered during a static-context kernel boot has no TestCase object on the call stack
+        // and crashes PHPUnit's event system instead of being recorded
+        if (!self::$rateLimitedKernelBooted) {
+            KernelLifecycleManager::bootKernel(true, Uuid::randomHex());
+            self::$rateLimitedKernelBooted = true;
+        }
+
+        $this->context = Context::createDefaultContext();
+        $this->ids = new IdsCollection();
+
+        $this->browser = $this->createCustomSalesChannelBrowser([
+            'id' => $this->ids->create('sales-channel'),
+        ]);
+        $this->assignSalesChannelContext($this->browser);
+
+        $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class)->getDecorated();
+        $this->salesChannelContext = $salesChannelContextFactory->create(Uuid::randomHex(), $this->ids->get('sales-channel'));
+
+        $this->clearCache();
+
+        $session = $this->getSession();
+        static::assertInstanceOf(Session::class, $session);
+        $session->getFlashBag()->clear();
+
+        $this->translator = static::getContainer()->get('translator');
+    }
+
+    public function testGenerateAccountRecoveryRateLimit(): void
+    {
+        $now = new \DateTimeImmutable('2026-01-01 00:00:00');
+        static::mockTime($now);
+
+        $passwordRecoveryMailRoute = static::createStub(SendPasswordRecoveryMailRoute::class);
+        $passwordRecoveryMailRoute->method('sendRecoveryMail')->willThrowException(new RateLimitExceededException($now->getTimestamp() + 10));
+
+        $controller = new AuthController(
+            static::getContainer()->get(AccountLoginPageLoader::class),
+            $passwordRecoveryMailRoute,
+            static::getContainer()->get(ResetPasswordRoute::class),
+            static::getContainer()->get(LoginRoute::class),
+            static::getContainer()->get(LogoutRoute::class),
+            static::getContainer()->get(ImitateCustomerRoute::class),
+            static::getContainer()->get(StorefrontCartFacade::class),
+            static::getContainer()->get(AccountRecoverPasswordPageLoader::class),
+            static::getContainer()->get(ConvertGuestRoute::class),
+            static::getContainer()->get(SystemConfigService::class),
+        );
+        $controller->setContainer(static::getContainer());
+
+        $request = $this->createRequest('frontend.account.recover.request');
+
+        static::getContainer()->get('request_stack')->push($request);
+
+        $controller->generateAccountRecovery($request, new RequestDataBag([
+            'email' => [
+                'email' => 'test@example.com',
+            ],
+        ]), $this->salesChannelContext);
+
+        $session = $this->getSession();
+        static::assertInstanceOf(Session::class, $session);
+        $flashBag = $session->getFlashBag();
+
+        static::assertNotEmpty($flash = $flashBag->get('info'));
+        static::assertSame($this->translator->trans('error.rateLimitExceeded', ['%seconds%' => 10]), $flash[0]);
+    }
+
+    public function testAuthControllerGuestLoginShowsRateLimit(): void
+    {
+        $controller = new AuthController(
+            static::getContainer()->get(AccountLoginPageLoader::class),
+            static::createStub(AbstractSendPasswordRecoveryMailRoute::class),
+            static::createStub(AbstractResetPasswordRoute::class),
+            static::createStub(LoginRoute::class),
+            static::createStub(AbstractLogoutRoute::class),
+            static::createStub(AbstractImitateCustomerRoute::class),
+            static::getContainer()->get(StorefrontCartFacade::class),
+            static::getContainer()->get(AccountRecoverPasswordPageLoader::class),
+            static::getContainer()->get(ConvertGuestRoute::class),
+            static::getContainer()->get(SystemConfigService::class)
+        );
+        $controller->setContainer(static::getContainer());
+
+        $request = $this->createRequest('frontend.account.guest.login.page', [
+            'redirectTo' => 'frontend.account.order.single.page',
+            'redirectParameters' => ['deepLinkCode' => 'example'],
+            'loginError' => false,
+            'waitTime' => 5,
+        ]);
+
+        static::getContainer()->get('request_stack')->push($request);
+
+        $response = $controller->guestLoginPage($request, $this->salesChannelContext);
+
+        $contentReturn = $response->getContent();
+        $crawler = new Crawler();
+        $crawler->addHtmlContent((string) $contentReturn);
+
+        $errorContent = $crawler->filterXPath('//div[@class="flashbags container"]//div[@class="alert-content-container"]')->text();
+
+        static::assertStringContainsString($this->translator->trans('account.loginThrottled', ['%seconds%' => 5], 'messages', 'en-GB'), $errorContent);
+    }
+
+    public function testAuthControllerLoginShowsRateLimit(): void
+    {
+        $loginRoute = static::createStub(LoginRoute::class);
+        $loginRoute->method('login')->willThrowException(CustomerException::customerAuthThrottledException(5));
+
+        $controller = new AuthController(
+            static::getContainer()->get(AccountLoginPageLoader::class),
+            static::createStub(AbstractSendPasswordRecoveryMailRoute::class),
+            static::createStub(AbstractResetPasswordRoute::class),
+            $loginRoute,
+            static::createStub(AbstractLogoutRoute::class),
+            static::createStub(AbstractImitateCustomerRoute::class),
+            static::getContainer()->get(StorefrontCartFacade::class),
+            static::getContainer()->get(AccountRecoverPasswordPageLoader::class),
+            static::getContainer()->get(ConvertGuestRoute::class),
+            static::getContainer()->get(SystemConfigService::class)
+        );
+        $controller->setContainer(static::getContainer());
+
+        $request = $this->createRequest('frontend.account.login');
+
+        static::getContainer()->get('request_stack')->push($request);
+
+        $response = $controller->login($request, new RequestDataBag([
+            'email' => 'test@example.com',
+            'password' => 'wrong',
+        ]), $this->salesChannelContext);
+
+        $contentReturn = $response->getContent();
+        $crawler = new Crawler();
+        $crawler->addHtmlContent((string) $contentReturn);
+
+        $errorContent = $crawler->filterXPath('//form[@class="login-form"]//div[@class="alert-content-container"]')->text();
+
+        static::assertStringContainsString($this->translator->trans('account.loginThrottled', ['%seconds%' => 5], 'messages', 'en-GB'), $errorContent);
+    }
+
+    public function testFormControllerRateLimit(): void
+    {
+        $now = new \DateTimeImmutable('2026-01-01 00:00:00');
+        static::mockTime($now);
+
+        $contactFormRoute = static::createStub(AbstractContactFormRoute::class);
+        $contactFormRoute->method('load')->willThrowException(new RateLimitExceededException($now->getTimestamp() + 5));
+
+        $controller = new FormController(
+            $contactFormRoute,
+            static::getContainer()->get(NewsletterSubscribeRoute::class),
+            static::getContainer()->get(NewsletterUnsubscribeRoute::class),
+            static::getContainer()->get(RevocationRequestRoute::class),
+            static::getContainer()->get(ConstraintViolationTranslator::class),
+        );
+        $controller->setContainer(static::getContainer());
+
+        $response = $controller->sendContactForm(new RequestDataBag([
+        ]), $this->salesChannelContext);
+
+        $content = \json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertCount(1, $content);
+        static::assertArrayHasKey('type', $content[0]);
+        static::assertSame('info', $content[0]['type']);
+
+        $contentReturn = $content[0]['alert'];
+        $crawler = new Crawler();
+        $crawler->addHtmlContent($contentReturn);
+
+        $errorContent = $crawler->filterXPath('//div[@class="alert-content-container"]')->text();
+
+        static::assertStringContainsString($this->translator->trans('error.rateLimitExceeded', ['%seconds%' => 5]), $errorContent);
+    }
+
+    public function testNewsletterSubscribeFormControllerRateLimit(): void
+    {
+        $now = new \DateTimeImmutable('2026-01-01 00:00:00');
+        static::mockTime($now);
+
+        $newsletterRequestRoute = static::createStub(AbstractNewsletterSubscribeRoute::class);
+        $newsletterRequestRoute->method('subscribeWithResponse')->willThrowException(new RateLimitExceededException($now->getTimestamp() + 5));
+
+        $controller = new FormController(
+            static::getContainer()->get(ContactFormRoute::class),
+            $newsletterRequestRoute,
+            static::getContainer()->get(NewsletterUnsubscribeRoute::class),
+            static::getContainer()->get(RevocationRequestRoute::class),
+            static::getContainer()->get(ConstraintViolationTranslator::class),
+        );
+        $controller->setContainer(static::getContainer());
+
+        $response = $controller->handleNewsletter(new Request(), new RequestDataBag(['option' => FormController::SUBSCRIBE]), $this->salesChannelContext);
+
+        $content = \json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertCount(1, $content);
+        static::assertArrayHasKey('type', $content[0]);
+        static::assertSame('info', $content[0]['type']);
+
+        $contentReturn = $content[0]['alert'];
+        $crawler = new Crawler();
+        $crawler->addHtmlContent($contentReturn);
+
+        $errorContent = $crawler->filterXPath('//div[@class="alert-content-container"]')->text();
+
+        static::assertStringContainsString($this->translator->trans('error.rateLimitExceeded', ['%seconds%' => 5]), $errorContent);
+    }
+
+    public function testNewsletterUnsubscribeFormControllerRateLimit(): void
+    {
+        $now = new \DateTimeImmutable('2026-01-01 00:00:00');
+        static::mockTime($now);
+
+        $newsletterRequestRoute = static::createStub(NewsletterUnsubscribeRoute::class);
+        $newsletterRequestRoute->method('unsubscribeWithResponse')->willThrowException(new RateLimitExceededException($now->getTimestamp() + 5));
+
+        $controller = new FormController(
+            static::getContainer()->get(ContactFormRoute::class),
+            static::getContainer()->get(NewsletterSubscribeRoute::class),
+            $newsletterRequestRoute,
+            static::getContainer()->get(RevocationRequestRoute::class),
+            static::getContainer()->get(ConstraintViolationTranslator::class),
+        );
+        $controller->setContainer(static::getContainer());
+
+        $response = $controller->handleNewsletter(new Request(), new RequestDataBag([]), $this->salesChannelContext);
+
+        $content = \json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertCount(1, $content);
+        static::assertArrayHasKey('type', $content[0]);
+        static::assertSame('info', $content[0]['type']);
+
+        $contentReturn = $content[0]['alert'];
+        $crawler = new Crawler();
+        $crawler->addHtmlContent($contentReturn);
+
+        $errorContent = $crawler->filterXPath('//div[@class="alert-content-container"]')->text();
+
+        static::assertStringContainsString($this->translator->trans('error.rateLimitExceeded', ['%seconds%' => 5]), $errorContent);
+    }
+
+    public function testRevocationRequestFormControllerRateLimit(): void
+    {
+        $now = new \DateTimeImmutable('2026-01-01 00:00:00');
+        static::mockTime($now);
+
+        $abstractRevocationRequestRoute = static::createStub(AbstractRevocationRequestRoute::class);
+        $abstractRevocationRequestRoute->method('request')->willThrowException(new RateLimitExceededException($now->getTimestamp() + 5));
+
+        $controller = new FormController(
+            static::getContainer()->get(ContactFormRoute::class),
+            static::getContainer()->get(NewsletterSubscribeRoute::class),
+            static::getContainer()->get(NewsletterUnsubscribeRoute::class),
+            $abstractRevocationRequestRoute,
+            static::getContainer()->get(ConstraintViolationTranslator::class),
+        );
+        $controller->setContainer(static::getContainer());
+
+        $response = $controller->sendRevocationRequest(new RequestDataBag([
+        ]), $this->salesChannelContext);
+
+        $content = \json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertCount(1, $content);
+        static::assertArrayHasKey('type', $content[0]);
+        static::assertSame('info', $content[0]['type']);
+
+        $contentReturn = $content[0]['alert'];
+        $crawler = new Crawler();
+        $crawler->addHtmlContent($contentReturn);
+
+        $errorContent = $crawler->filterXPath('//div[@class="alert-content-container"]')->text();
+
+        static::assertStringContainsString($this->translator->trans('error.rateLimitExceeded', ['%seconds%' => 5]), $errorContent);
+    }
+
+    public function testResetAccountOrderRateLimit(): void
+    {
+        $orderRoute = new OrderRoute(
+            static::getContainer()->get('order.repository'),
+            static::getContainer()->get('promotion.repository'),
+            $this->mockResetLimiter([
+                RateLimiter::GUEST_LOGIN => 1,
+            ]),
+            static::getContainer()->get('event_dispatcher'),
+            static::getContainer()->get(AccountService::class),
+            new GuestAuthenticator(),
+            new NativeClock(),
+        );
+
+        $order = $this->createCustomerWithOrder();
+
+        $controller = new AccountOrderPageLoader(
+            static::createStub(GenericPageLoader::class),
+            static::createStub(EventDispatcher::class),
+            $orderRoute,
+            static::createStub(AbstractTranslator::class)
+        );
+
+        $controller->load(new Request([
+            'email' => 'orderTest@example.com',
+            'zipcode' => '12345',
+        ], [], [
+            'deepLinkCode' => $order->getDeepLinkCode(),
+        ]), $this->salesChannelContext);
+    }
+
+    public function testAccountOrderRateLimit(): void
+    {
+        $order = $this->createCustomerWithOrder();
+
+        for ($i = 0; $i <= 10; ++$i) {
+            $this->browser->request(
+                'POST',
+                '/account/order/' . $order->getDeepLinkCode(),
+                $this->tokenize('frontend.account.order.single.page', [
+                    'email' => 'orderTest@example.com',
+                    'zipcode' => 'wrong',
+                ])
+            );
+
+            $response = $this->browser->getResponse();
+            static::assertInstanceOf(RedirectResponse::class, $response);
+
+            $waitTime = $i >= 10 ? $this->queryFromString($response->getTargetUrl(), 'waitTime') : 0;
+
+            $this->browser->request(
+                'GET',
+                $response->getTargetUrl()
+            );
+
+            $contentReturn = $this->browser->getResponse()->getContent();
+            $crawler = new Crawler();
+            $crawler->addHtmlContent((string) $contentReturn);
+
+            $errorContent = $crawler->filterXPath('//div[@class="flashbags container"]//div[@class="alert-content-container"]')->text();
+
+            if ($i >= 10) {
+                static::assertStringContainsString($this->translator->trans('account.loginThrottled', ['%seconds%' => $waitTime]), $errorContent);
+            } else {
+                static::assertStringContainsString($this->translator->trans('account.orderGuestLoginWrongCredentials'), $errorContent);
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    private function createRequest(string $route, array $params = []): Request
+    {
+        $request = new Request();
+        $request->query->add($params);
+        $request->setSession($this->getSession());
+        $request->headers->set('HOST', 'localhost');
+        $request->attributes->add([
+            '_route' => $route,
+            SalesChannelRequest::ATTRIBUTE_IS_SALES_CHANNEL_REQUEST => true,
+            PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID => $this->ids->get('sales-channel'),
+            PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT => $this->salesChannelContext,
+            RequestTransformer::STOREFRONT_URL => 'http://localhost',
+        ]);
+
+        return $request;
+    }
+
+    private function createCustomerWithOrder(): OrderEntity
+    {
+        $orderId = Uuid::randomHex();
+        $customerId = $this->createCustomer('orderTest@example.com', true);
+
+        static::getContainer()->get('customer.repository')->update([
+            [
+                'id' => $customerId,
+                'salesChannelId' => $this->ids->get('sales-channel'),
+            ],
+        ], $this->context);
+
+        $orderData = $this->getOrderData($orderId, $this->context);
+        $orderData[0]['orderCustomer']['customer'] = ['id' => $customerId];
+        $orderData[0]['orderCustomer']['email'] = 'orderTest@example.com';
+        $orderData[0]['orderCustomer']['addresses'][0]['zipcode'] = '12345';
+        $orderData[0]['addresses'][0]['zipcode'] = '12345';
+        $orderData[0]['salesChannelId'] = $this->ids->get('sales-channel');
+
+        $orderRepository = static::getContainer()->get('order.repository');
+        $orderRepository->create($orderData, $this->context);
+
+        $order = $orderRepository->search(new Criteria([$orderId]), $this->context)->getEntities()->first();
+
+        static::assertNotNull($order);
+        static::assertInstanceOf(OrderEntity::class, $order);
+
+        return $order;
+    }
+
+    private function queryFromString(string $url, string $param): string
+    {
+        $rawParams = \parse_url($url, \PHP_URL_QUERY);
+        static::assertIsString($rawParams);
+
+        \parse_str($rawParams, $params);
+
+        static::assertArrayHasKey($param, $params);
+        static::assertIsString($params[$param]);
+
+        return $params[$param];
+    }
+}

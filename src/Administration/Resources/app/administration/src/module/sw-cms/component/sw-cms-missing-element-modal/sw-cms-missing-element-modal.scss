@@ -1,0 +1,22 @@
+.sw-cms-missing-element-modal {
+    font-size: var(--font-size-xs);
+
+    &__title {
+        span {
+            text-transform: lowercase;
+            font-weight: var(--font-weight-semibold);
+        }
+    }
+
+    &__subtitle {
+        margin: 12px 0 18px;
+    }
+
+    &__paragraph {
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__dont-remind {
+        margin-top: 24px;
+    }
+}

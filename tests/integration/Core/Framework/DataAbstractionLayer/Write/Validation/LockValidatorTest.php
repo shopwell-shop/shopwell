@@ -1,0 +1,279 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\Write\Validation;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Api\Context\SystemSource;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriterInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\LockValidator;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteContext;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteException;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\DataAbstractionLayer\Write\Validation\TestDefinition\TestDefinition;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Validation\WriteConstraintViolationException;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class LockValidatorTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    private Connection $connection;
+
+    private EntityWriterInterface $entityWriter;
+
+    private EntityDefinition $testDefinition;
+
+    protected function setUp(): void
+    {
+        $this->connection = static::getContainer()->get(Connection::class);
+        $definition = static::getContainer()->get(TestDefinition::class);
+        static::assertInstanceOf(TestDefinition::class, $definition);
+        $this->testDefinition = $definition;
+        $this->entityWriter = static::getContainer()->get(EntityWriter::class);
+
+        $table = <<<EOF
+DROP TABLE IF EXISTS _test_lock;
+CREATE TABLE `_test_lock` (
+  `id` binary(16) NOT NULL,
+  `description` varchar(255) NULL,
+  `locked` TINYINT(1) NOT NULL DEFAULT '0',
+  `created_at` DATETIME(3) NOT NULL,
+  `updated_at` DATETIME(3) NULL,
+  PRIMARY KEY `id` (`id`)
+);
+
+DROP TABLE IF EXISTS _test_lock_translation;
+CREATE TABLE `_test_lock_translation` (
+  `_test_lock_id` binary(16) NOT NULL,
+  `language_id` binary(16) NOT NULL,
+  `name` varchar(255) NULL,
+  `created_at` DATETIME(3) NOT NULL,
+  `updated_at` DATETIME(3) NULL,
+  PRIMARY KEY `id` (`_test_lock_id`, `language_id`)
+);
+EOF;
+        $this->connection->rollBack();
+        $this->connection->executeStatement($table);
+        $this->connection->beginTransaction();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->connection->rollBack();
+        $this->connection->executeStatement('DROP TABLE IF EXISTS `_test_lock`');
+        $this->connection->executeStatement('DROP TABLE IF EXISTS `_test_lock_translation`');
+        $this->connection->beginTransaction();
+
+        parent::tearDown();
+    }
+
+    public function testCreateShouldNotBeBlocked(): void
+    {
+        $data = [
+            'id' => Uuid::randomHex(),
+            'description' => 'foo',
+        ];
+
+        $r = $this->entityWriter->insert($this->testDefinition, [$data], $this->getWriteContext());
+
+        static::assertCount(1, $r);
+    }
+
+    public function testCreateWithLockShouldNotBeWritten(): void
+    {
+        $data = [
+            'id' => Uuid::randomHex(),
+            'description' => 'foo',
+            'locked' => true,
+        ];
+
+        $r = $this->entityWriter->insert($this->testDefinition, [$data], $this->getWriteContext());
+
+        static::assertCount(1, $r);
+
+        $isLocked = (bool) $this->connection->fetchOne('SELECT `locked` FROM `_test_lock` WHERE `id` = :id', ['id' => Uuid::fromHexToBytes($data['id'])]);
+
+        static::assertFalse($isLocked);
+    }
+
+    public function testUpdateOnUnlockedShouldPass(): void
+    {
+        $data = ['id' => Uuid::randomHex(), 'description' => 'foo'];
+        $r = $this->entityWriter->insert($this->testDefinition, [$data], $this->getWriteContext());
+        static::assertCount(1, $r);
+
+        $data = ['id' => $data['id'], 'description' => 'bar'];
+        $r = $this->entityWriter->update($this->testDefinition, [$data], $this->getWriteContext());
+        static::assertCount(1, $r);
+
+        $description = $this->connection->fetchOne('SELECT `description` FROM `_test_lock` WHERE `id` = :id', ['id' => Uuid::fromHexToBytes($data['id'])]);
+
+        static::assertSame('bar', $description);
+    }
+
+    public function testUpdateTranslationOnUnlockedShouldPass(): void
+    {
+        $data = ['id' => Uuid::randomHex(), 'description' => 'foo', 'name' => 'shop'];
+        $r = $this->entityWriter->insert($this->testDefinition, [$data], $this->getWriteContext());
+        static::assertCount(2, $r);
+
+        $data = ['id' => $data['id'], 'description' => 'bar', 'name' => 'ware'];
+        $r = $this->entityWriter->update($this->testDefinition, [$data], $this->getWriteContext());
+        static::assertCount(2, $r);
+
+        $description = $this->connection->fetchOne('SELECT `description` FROM `_test_lock` WHERE `id` = :id', ['id' => Uuid::fromHexToBytes($data['id'])]);
+        $name = $this->connection->fetchOne('SELECT `name` FROM `_test_lock_translation` WHERE `_test_lock_id` = :id', ['id' => Uuid::fromHexToBytes($data['id'])]);
+
+        static::assertSame('bar', $description);
+        static::assertSame('ware', $name);
+    }
+
+    public function testUpdateOnLockedShouldBePrevented(): void
+    {
+        $data = ['id' => Uuid::randomHex(), 'description' => 'foo'];
+        $r = $this->entityWriter->insert($this->testDefinition, [$data], $this->getWriteContext());
+        static::assertCount(1, $r);
+
+        $this->connection->executeStatement('UPDATE `_test_lock` SET `locked` = 1 WHERE `id` = :id', ['id' => Uuid::fromHexToBytes($data['id'])]);
+
+        $exception = null;
+
+        try {
+            $data = ['id' => $data['id'], 'description' => 'bar'];
+            $this->entityWriter->update($this->testDefinition, [$data], $this->getWriteContext());
+        } catch (WriteException $exception) {
+        }
+
+        $this->assertLockException($exception);
+    }
+
+    public function testDeleteOnLockedShouldBePrevented(): void
+    {
+        $data = ['id' => Uuid::randomHex(), 'description' => 'foo'];
+        $r = $this->entityWriter->insert($this->testDefinition, [$data], $this->getWriteContext());
+        static::assertCount(1, $r);
+
+        $this->connection->executeStatement('UPDATE `_test_lock` SET `locked` = 1 WHERE `id` = :id', ['id' => Uuid::fromHexToBytes($data['id'])]);
+
+        $exception = null;
+
+        try {
+            $data = ['id' => $data['id']];
+            $this->entityWriter->delete($this->testDefinition, [$data], $this->getWriteContext());
+        } catch (WriteException $exception) {
+        }
+
+        $this->assertLockException($exception);
+    }
+
+    public function testUpdateOnTranslationShouldBePrevented(): void
+    {
+        $data = ['id' => Uuid::randomHex(), 'description' => 'foo', 'name' => 'shop'];
+        $r = $this->entityWriter->insert($this->testDefinition, [$data], $this->getWriteContext());
+        static::assertCount(2, $r);
+
+        $this->connection->executeStatement('UPDATE `_test_lock` SET `locked` = 1 WHERE `id` = :id', ['id' => Uuid::fromHexToBytes($data['id'])]);
+
+        $exception = null;
+
+        try {
+            $data = ['id' => $data['id'], 'name' => 'ware'];
+            $this->entityWriter->update($this->testDefinition, [$data], $this->getWriteContext());
+        } catch (WriteException $exception) {
+        }
+
+        $this->assertLockException($exception);
+    }
+
+    public function testUpdateOnLockedShouldBePreventedAndUpdateTranslationOnUnlockedShouldPass(): void
+    {
+        \assert($this->testDefinition instanceof TestDefinition);
+        $this->testDefinition->unlockTranslation();
+
+        $data = ['id' => Uuid::randomHex(), 'description' => 'foo', 'name' => 'shop'];
+        $r = $this->entityWriter->insert($this->testDefinition, [$data], $this->getWriteContext());
+        static::assertCount(2, $r);
+
+        $this->connection->executeStatement('UPDATE `_test_lock` SET `locked` = 1 WHERE `id` = :id', ['id' => Uuid::fromHexToBytes($data['id'])]);
+
+        $exception = null;
+
+        try {
+            $data = ['id' => $data['id'], 'description' => 'bar', 'name' => 'ware'];
+            $this->entityWriter->update($this->testDefinition, [$data], $this->getWriteContext());
+        } catch (WriteException $exception) {
+        }
+
+        $this->assertLockException($exception);
+
+        $data = ['id' => $data['id'], 'name' => 'ware'];
+        $r = $this->entityWriter->update($this->testDefinition, [$data], $this->getWriteContext());
+        static::assertCount(2, $r);
+
+        $description = $this->connection->fetchOne('SELECT `description` FROM `_test_lock` WHERE `id` = :id', ['id' => Uuid::fromHexToBytes($data['id'])]);
+        $name = $this->connection->fetchOne('SELECT `name` FROM `_test_lock_translation` WHERE `_test_lock_id` = :id', ['id' => Uuid::fromHexToBytes($data['id'])]);
+
+        static::assertSame('foo', $description);
+        static::assertSame('ware', $name);
+
+        $exception = null;
+
+        try {
+            $data = ['id' => $data['id'], 'description' => 'bar', 'name' => 'Ware'];
+            $this->entityWriter->update($this->testDefinition, [$data], $this->getWriteContext($this->getDeDeLanguageId()));
+        } catch (WriteException $exception) {
+        }
+
+        $this->assertLockException($exception);
+
+        $data = ['id' => $data['id'], 'name' => 'Ware'];
+        $r = $this->entityWriter->update($this->testDefinition, [$data], $this->getWriteContext($this->getDeDeLanguageId()));
+        static::assertCount(2, $r);
+
+        $name = $this->connection->fetchOne('SELECT `name` FROM `_test_lock_translation` WHERE `_test_lock_id` = :id AND `language_id` = :languageId', [
+            'id' => Uuid::fromHexToBytes($data['id']),
+            'languageId' => Uuid::fromHexToBytes($this->getDeDeLanguageId()),
+        ]);
+
+        static::assertSame('Ware', $name);
+
+        \assert($this->testDefinition instanceof TestDefinition);
+        $this->testDefinition->lockTranslation();
+    }
+
+    private function getWriteContext(?string $languageId = null): WriteContext
+    {
+        $context = new Context(
+            new SystemSource(),
+            [],
+            Defaults::CURRENCY,
+            [$languageId ?? Defaults::LANGUAGE_SYSTEM],
+        );
+
+        return WriteContext::createFromContext($context);
+    }
+
+    private function assertLockException(?\Exception $exception): void
+    {
+        static::assertInstanceOf(WriteException::class, $exception);
+
+        static::assertCount(1, $exception->getExceptions());
+
+        /** @var WriteConstraintViolationException $violationException */
+        $violationException = $exception->getExceptions()[0];
+        $violation = $violationException->getViolations()->findByCodes(LockValidator::VIOLATION_LOCKED);
+
+        static::assertNotNull($violation);
+        static::assertSame(LockValidator::VIOLATION_LOCKED, $violation->get(0)->getCode());
+    }
+}

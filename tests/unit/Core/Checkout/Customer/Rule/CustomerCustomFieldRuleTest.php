@@ -1,0 +1,299 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Customer\Rule;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\CheckoutRuleScope;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Rule\CustomerCustomFieldRule;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+#[CoversClass(CustomerCustomFieldRule::class)]
+#[Group('rules')]
+class CustomerCustomFieldRuleTest extends TestCase
+{
+    private const CUSTOM_FIELD_NAME = 'custom_test';
+
+    private Stub $customer;
+
+    private CheckoutRuleScope $scope;
+
+    protected function setUp(): void
+    {
+        $salesChannelContext = static::createStub(SalesChannelContext::class);
+        $salesChannelContext->method('getContext')->willReturn(Context::createDefaultContext());
+
+        $this->customer = static::createStub(CustomerEntity::class);
+        $salesChannelContext->method('getCustomer')->willReturn($this->customer);
+
+        $this->scope = new CheckoutRuleScope($salesChannelContext);
+    }
+
+    public function testGetName(): void
+    {
+        $rule = new CustomerCustomFieldRule();
+        static::assertSame('customerCustomField', $rule->getName());
+    }
+
+    public function testGetConstraints(): void
+    {
+        $rule = new CustomerCustomFieldRule();
+        $ruleConstraints = $rule->getConstraints();
+
+        static::assertArrayHasKey('operator', $ruleConstraints, 'Rule Constraint operator is not defined');
+        static::assertArrayHasKey('renderedField', $ruleConstraints, 'Rule Constraint renderedField is not defined');
+        static::assertArrayHasKey('renderedFieldValue', $ruleConstraints, 'Rule Constraint renderedFieldValue is not defined');
+        static::assertArrayHasKey('selectedField', $ruleConstraints, 'Rule Constraint selectedField is not defined');
+        static::assertArrayHasKey('selectedFieldSet', $ruleConstraints, 'Rule Constraint selectedFieldSet is not defined');
+    }
+
+    public function testBooleanCustomFieldFalseWithNoValue(): void
+    {
+        $rule = self::setupBoolRule(false);
+        $this->setCustomerCustomFields([]);
+        static::assertTrue($rule->match($this->scope));
+    }
+
+    public function testMatchWithWrongRuleScope(): void
+    {
+        $scope = static::createStub(TestRuleScope::class);
+
+        $rule = new CustomerCustomFieldRule();
+        $match = $rule->match($scope);
+
+        static::assertFalse($match);
+    }
+
+    public function testMatchWithoutCustomer(): void
+    {
+        $context = static::createStub(SalesChannelContext::class);
+        $context->method('getCustomer')->willReturn(null);
+
+        $scope = new CheckoutRuleScope($context);
+
+        $rule = self::setupBoolRule(true);
+
+        static::assertFalse($rule->match($scope));
+    }
+
+    #[DataProvider('getStringRuleValueWhichShouldBeConsideredAsTrueProvider')]
+    public function testBooleanCustomFieldTrueWhenIsRuleIsSetupAsString(string $value): void
+    {
+        $rule = self::setupBoolRule($value);
+        $this->setCustomerCustomFields([
+            self::CUSTOM_FIELD_NAME => true,
+        ]);
+        static::assertTrue($rule->match($this->scope));
+    }
+
+    #[DataProvider('getStringRuleValueWhichShouldBeConsideredAsFalseProvider')]
+    public function testBooleanCustomFieldFalseWhenIsRuleIsSetupAsString(string $value): void
+    {
+        $rule = self::setupBoolRule($value);
+        $this->setCustomerCustomFields([
+            self::CUSTOM_FIELD_NAME => false,
+        ]);
+        static::assertTrue($rule->match($this->scope));
+    }
+
+    #[DataProvider('getStringRuleValueWhichShouldBeConsideredAsTrueProvider')]
+    public function testBooleanCustomFieldInvalidAsString(string $value): void
+    {
+        $rule = self::setupBoolRule($value);
+        $this->setCustomerCustomFields([
+            self::CUSTOM_FIELD_NAME => false,
+        ]);
+        static::assertFalse($rule->match($this->scope));
+    }
+
+    public function testTextCustomFieldUnequalOperator(): void
+    {
+        // Case: the rule checks for some text but the line item custom field value is null
+        // 'testValue' != null -> true
+        $rule = new CustomerCustomFieldRule();
+        $rule->assign(
+            [
+                'operator' => Rule::OPERATOR_NEQ,
+                'renderedField' => [
+                    'type' => 'text',
+                    'name' => self::CUSTOM_FIELD_NAME,
+                ],
+                'renderedFieldValue' => 'testValue',
+            ]
+        );
+        $this->setCustomerCustomFields([self::CUSTOM_FIELD_NAME => null]);
+        static::assertTrue($rule->match($this->scope));
+    }
+
+    /**
+     * @param array<int>|bool|string|null $customFieldValueInCustomer
+     */
+    #[DataProvider('customFieldCheckoutScopeProvider')]
+    public function testCustomFieldCheckoutScope(
+        CustomerCustomFieldRule $rule,
+        array|bool|string|null $customFieldValueInCustomer,
+        bool $result
+    ): void {
+        $this->setCustomerCustomFields([self::CUSTOM_FIELD_NAME => $customFieldValueInCustomer]);
+        static::assertSame($result, $rule->match($this->scope));
+    }
+
+    /**
+     * @return iterable<string, array<string, array<int, int>|CustomerCustomFieldRule|string|bool>>
+     */
+    public static function customFieldCheckoutScopeProvider(): iterable
+    {
+        yield 'testBooleanCustomFieldTrue' => [
+            'rule' => self::setupBoolRule(true),
+            'customFieldValueInCustomer' => true,
+            'result' => true,
+        ];
+        yield 'testBooleanCustomFieldFalse' => [
+            'rule' => self::setupBoolRule(false),
+            'customFieldValueInCustomer' => false,
+            'result' => true,
+        ];
+        yield 'testBooleanCustomFieldNull' => [
+            'rule' => self::setupBoolRule(null),
+            'customFieldValueInCustomer' => false,
+            'result' => true,
+        ];
+        yield 'testBooleanCustomFieldInvalid' => [
+            'rule' => self::setupBoolRule(false),
+            'customFieldValueInCustomer' => true,
+            'result' => false,
+        ];
+        yield 'matching string custom field satisfies the rule' => [
+            'rule' => self::setupStringRule('my_test_value'),
+            'customFieldValueInCustomer' => 'my_test_value',
+            'result' => true,
+        ];
+        yield 'different string custom field does not satisfy the rule' => [
+            'rule' => self::setupStringRule('my_test_value'),
+            'customFieldValueInCustomer' => 'my_invalid_value',
+            'result' => false,
+        ];
+        yield 'overlapping multi select custom field satisfies the rule' => [
+            'rule' => self::setupSelectRule([1, 2], ['componentName' => 'sw-multi-select']),
+            'customFieldValueInCustomer' => [1],
+            'result' => true,
+        ];
+        yield 'different multi select custom field does not satisfy the rule' => [
+            'rule' => self::setupSelectRule([1, 2], ['componentName' => 'sw-multi-select']),
+            'customFieldValueInCustomer' => [3],
+            'result' => false,
+        ];
+        yield 'null multi select rule value does not satisfy the rule' => [
+            'rule' => self::setupSelectRule(null, ['componentName' => 'sw-multi-select']),
+            'customFieldValueInCustomer' => [3],
+            'result' => false,
+        ];
+    }
+
+    /**
+     * @return iterable<array<string>>
+     */
+    public static function getStringRuleValueWhichShouldBeConsideredAsTrueProvider(): iterable
+    {
+        yield 'yes string is treated as true' => ['yes'];
+        yield 'uppercase true string is treated as true' => ['True'];
+        yield 'one string is treated as true' => ['1'];
+        yield 'lowercase true string is treated as true' => ['true'];
+        yield 'yes string with trailing space is treated as true' => ['yes '];
+    }
+
+    /**
+     * @return iterable<array<string>>
+     */
+    public static function getStringRuleValueWhichShouldBeConsideredAsFalseProvider(): iterable
+    {
+        yield 'no string is treated as false' => ['no'];
+        yield 'uppercase false string is treated as false' => ['False'];
+        yield 'zero string is treated as false' => ['0'];
+        yield 'lowercase false string is treated as false' => ['false'];
+        yield 'no string with trailing space is treated as false' => ['no '];
+        yield 'unknown string is treated as false' => ['some string'];
+    }
+
+    /**
+     * @param array<string, mixed> $customFields
+     */
+    private function setCustomerCustomFields(array $customFields = []): void
+    {
+        $this->customer->method('getCustomFields')->willReturn($customFields);
+    }
+
+    /**
+     * @param array<int>|bool|string|null $customFieldValue
+     */
+    private static function setupBoolRule(array|bool|string|null $customFieldValue): CustomerCustomFieldRule
+    {
+        $rule = new CustomerCustomFieldRule();
+        $rule->assign(
+            [
+                'operator' => Rule::OPERATOR_EQ,
+                'renderedField' => [
+                    'type' => 'bool',
+                    'name' => self::CUSTOM_FIELD_NAME,
+                ],
+                'renderedFieldValue' => $customFieldValue,
+            ]
+        );
+
+        return $rule;
+    }
+
+    /**
+     * @param array<int>|bool|string|null $customFieldValue
+     */
+    private static function setupStringRule(array|bool|string|null $customFieldValue): CustomerCustomFieldRule
+    {
+        $rule = new CustomerCustomFieldRule();
+
+        $rule->assign(
+            [
+                'operator' => Rule::OPERATOR_EQ,
+                'renderedField' => [
+                    'type' => 'string',
+                    'name' => self::CUSTOM_FIELD_NAME,
+                ],
+                'renderedFieldValue' => $customFieldValue,
+            ]
+        );
+
+        return $rule;
+    }
+
+    /**
+     * @param array<int>|bool|string|null $customFieldValue
+     * @param array<string, string> $config
+     */
+    private static function setupSelectRule(array|bool|string|null $customFieldValue, array $config = []): CustomerCustomFieldRule
+    {
+        $rule = new CustomerCustomFieldRule();
+        $rule->assign(
+            [
+                'operator' => Rule::OPERATOR_EQ,
+                'renderedField' => [
+                    'type' => 'select',
+                    'name' => self::CUSTOM_FIELD_NAME,
+                    'config' => $config,
+                ],
+                'renderedFieldValue' => $customFieldValue,
+            ]
+        );
+
+        return $rule;
+    }
+}

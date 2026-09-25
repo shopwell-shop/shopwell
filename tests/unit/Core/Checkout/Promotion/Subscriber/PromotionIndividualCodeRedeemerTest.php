@@ -1,0 +1,202 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Promotion\Subscriber;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemDefinition;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Checkout\Order\OrderEvents;
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionIndividualCode\PromotionIndividualCodeCollection;
+use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionIndividualCode\PromotionIndividualCodeEntity;
+use Shopwell\Core\Checkout\Promotion\Cart\PromotionProcessor;
+use Shopwell\Core\Checkout\Promotion\Subscriber\PromotionIndividualCodeRedeemer;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Generator;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(PromotionIndividualCodeRedeemer::class)]
+class PromotionIndividualCodeRedeemerTest extends TestCase
+{
+    /**
+     * This test verifies that our subscriber has the
+     * correct event that it's listening to.
+     * This is important, because we have to ensure that
+     * we save metadata in the payload of the line item
+     * when the order is created.
+     * This payload data helps us to reference used individual codes
+     * with placed orders.
+     */
+    #[Group('promotions')]
+    public function testSubscribeToOrderLineItemWritten(): void
+    {
+        // we need to have a key for the Shopwell event
+        static::assertArrayHasKey(OrderEvents::ORDER_LINE_ITEM_WRITTEN_EVENT, PromotionIndividualCodeRedeemer::getSubscribedEvents());
+    }
+
+    public function testOnOrderCreateWithOtherLineItem(): void
+    {
+        $codeRepository = $this->createMock(EntityRepository::class);
+        $codeRepository->expects($this->never())->method('search');
+        $codeRepository->expects($this->never())->method('searchIds');
+        $redeemer = new PromotionIndividualCodeRedeemer($codeRepository, static::createStub(EntityRepository::class));
+
+        $customer = new OrderCustomerEntity();
+        $customer->setId(Uuid::randomHex());
+        $customer->setFirstName('foo');
+        $customer->setLastName('bar');
+        $customer->setCustomerId(Uuid::randomHex());
+
+        $lineItem = new OrderLineItemEntity();
+        $lineItem->setId(Uuid::randomHex());
+        $lineItem->setType('test');
+
+        $order = new OrderEntity();
+        $order->setId(Uuid::randomHex());
+        $order->setLineItems(new OrderLineItemCollection([$lineItem]));
+        $order->setOrderCustomer($customer);
+
+        $lineItem->setOrderId($order->getId());
+
+        $context = Generator::generateSalesChannelContext();
+
+        $event = new EntityWrittenEvent(
+            'order_line_item',
+            [
+                new EntityWriteResult($lineItem->getId(), $lineItem->jsonSerialize(), OrderLineItemDefinition::ENTITY_NAME, EntityWriteResult::OPERATION_INSERT),
+            ],
+            $context->getContext()
+        );
+
+        $redeemer->onOrderLineItemWritten($event);
+    }
+
+    public function testOnOrderLineItemWrittenWillProcessMultipleCodes(): void
+    {
+        $code = new PromotionIndividualCodeEntity();
+        $code->setId(Uuid::randomHex());
+        $code->setCode('ÄXISTING');
+
+        $codeRepository = new StaticEntityRepository([
+            static function (Criteria $criteria) use ($code) {
+                $filter = $criteria->getFilters()[0];
+                static::assertInstanceOf(EqualsAnyFilter::class, $filter);
+                static::assertSame(['äxisting'], $filter->getValue());
+
+                return new PromotionIndividualCodeCollection([$code]);
+            },
+        ]);
+
+        $orderRepository = $this->createMock(EntityRepository::class);
+        $redeemer = new PromotionIndividualCodeRedeemer($codeRepository, $orderRepository);
+
+        $order = new OrderEntity();
+        $order->setId(Uuid::randomHex());
+
+        $customer = new OrderCustomerEntity();
+        $customer->setId(Uuid::randomHex());
+        $customer->setFirstName('foo');
+        $customer->setLastName('bar');
+        $customer->setCustomerId(Uuid::randomHex());
+
+        $lineItem1 = new OrderLineItemEntity();
+        $lineItem1->setId(Uuid::randomHex());
+        $lineItem1->setOrderId($order->getId());
+        $lineItem1->setType('test');
+
+        $lineItem2 = new OrderLineItemEntity();
+        $lineItem2->setId(Uuid::randomHex());
+        $lineItem2->setOrderId($order->getId());
+        $lineItem2->setType(PromotionProcessor::LINE_ITEM_TYPE);
+        $lineItem2->setPayload(['code' => 'äxisting']);
+
+        $context = Context::createDefaultContext();
+
+        $order->setLineItems(new OrderLineItemCollection([$lineItem1, $lineItem2]));
+        $order->setOrderCustomer($customer);
+
+        $orderRepository->expects($this->once())->method('search')->willReturn(
+            new EntitySearchResult('order_customer', 1, new OrderCustomerCollection([$customer]), null, new Criteria(), $context),
+        );
+
+        $event = new EntityWrittenEvent(
+            'order_line_item',
+            [
+                new EntityWriteResult($lineItem1->getId(), $lineItem1->jsonSerialize(), OrderLineItemDefinition::ENTITY_NAME, EntityWriteResult::OPERATION_INSERT),
+                new EntityWriteResult($lineItem2->getId(), $lineItem2->jsonSerialize(), OrderLineItemDefinition::ENTITY_NAME, EntityWriteResult::OPERATION_INSERT),
+            ],
+            $context
+        );
+
+        $redeemer->onOrderLineItemWritten($event);
+
+        static::assertSame([[[
+            'id' => $code->getId(),
+            'payload' => [
+                'orderId' => $order->getId(),
+                'customerId' => $customer->getCustomerId(),
+                'customerName' => 'foo bar',
+            ],
+        ]]], $codeRepository->updates);
+    }
+
+    public function testPayloadWithoutTypeIsSkipped(): void
+    {
+        $codeRepository = new StaticEntityRepository([]);
+
+        $redeemer = new PromotionIndividualCodeRedeemer(
+            $codeRepository,
+            static::createStub(EntityRepository::class)
+        );
+
+        $customer = new OrderCustomerEntity();
+        $customer->setId(Uuid::randomHex());
+        $customer->setFirstName('foo');
+        $customer->setLastName('bar');
+        $customer->setCustomerId(Uuid::randomHex());
+
+        $lineItem = new OrderLineItemEntity();
+        $lineItem->setId(Uuid::randomHex());
+
+        $order = new OrderEntity();
+        $order->setId(Uuid::randomHex());
+        $order->setLineItems(new OrderLineItemCollection([$lineItem]));
+        $order->setOrderCustomer($customer);
+
+        $lineItem->setOrderId($order->getId());
+
+        $context = Generator::generateSalesChannelContext();
+
+        $payload = $lineItem->jsonSerialize();
+        unset($payload['type']);
+
+        $event = new EntityWrittenEvent(
+            'order_line_item',
+            [
+                new EntityWriteResult($lineItem->getId(), $payload, OrderLineItemDefinition::ENTITY_NAME, EntityWriteResult::OPERATION_INSERT),
+            ],
+            $context->getContext()
+        );
+
+        $redeemer->onOrderLineItemWritten($event);
+
+        static::assertEmpty($codeRepository->updates);
+    }
+}

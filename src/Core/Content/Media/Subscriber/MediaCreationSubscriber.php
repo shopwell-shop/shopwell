@@ -1,0 +1,66 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Media\Subscriber;
+
+use Shopwell\Core\Content\Media\Aggregate\MediaFolder\MediaFolderDefinition;
+use Shopwell\Core\Content\Media\Aggregate\MediaThumbnail\MediaThumbnailDefinition;
+use Shopwell\Core\Content\Media\Exception\IllegalFileNameException;
+use Shopwell\Core\Content\Media\MediaDefinition;
+use Shopwell\Core\Content\Media\Util\PathHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWriteEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\DeleteCommand;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommand;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+class MediaCreationSubscriber implements EventSubscriberInterface
+{
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            EntityWriteEvent::class => 'beforeWrite',
+        ];
+    }
+
+    public function beforeWrite(EntityWriteEvent $event): void
+    {
+        $this->filterFilePath($this->getAffected(MediaThumbnailDefinition::ENTITY_NAME, $event));
+        $this->filterFilePath($this->getAffected(MediaFolderDefinition::ENTITY_NAME, $event));
+        $this->filterFilePath($this->getAffected(MediaDefinition::ENTITY_NAME, $event));
+    }
+
+    /**
+     * @param array<WriteCommand> $commands
+     */
+    private function filterFilePath(array $commands): void
+    {
+        foreach ($commands as $command) {
+            // Remove control characters and invisible formatting characters
+            try {
+                $path = PathHelper::stripControlAndFormatChars($command->getPayload()['path']);
+            } catch (IllegalFileNameException) {
+                $path = null;
+            }
+
+            $command->addPayload('path', $path);
+        }
+    }
+
+    /**
+     * @return array<WriteCommand>
+     */
+    private function getAffected(string $entityName, EntityWriteEvent $event): array
+    {
+        return array_filter($event->getCommandsForEntity($entityName), static function (WriteCommand $command) {
+            if ($command instanceof DeleteCommand) {
+                return false;
+            }
+
+            return $command->hasField('path') && $command->getPayload()['path'] !== null;
+        });
+    }
+}

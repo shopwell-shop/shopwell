@@ -1,0 +1,26 @@
+@use "sass:math";
+
+$sw-progress-bar-height: 8px;
+
+.sw-progress-bar {
+    width: 100%;
+    height: $sw-progress-bar-height;
+
+    .sw-progress-bar__total {
+        width: 100%;
+        height: 100%;
+        background-color: var(--color-background-secondary-default);
+        border-radius: math.div($sw-progress-bar-height, 2);
+    }
+
+    .sw-progress-bar__value {
+        transition: 1s width linear;
+        height: 100%;
+        background-color: var(--color-interaction-primary-default);
+        border-radius: math.div($sw-progress-bar-height, 2);
+    }
+
+    .sw-progress-bar__value--no-transition {
+        transition: 0s width linear;
+    }
+}

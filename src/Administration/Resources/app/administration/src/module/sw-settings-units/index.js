@@ -1,0 +1,64 @@
+/**
+ * @sw-package inventory
+ */
+import './acl';
+
+/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+Shopwell.Component.register('sw-settings-units-list', () => import('./page/sw-settings-units-list'));
+Shopwell.Component.register('sw-settings-units-detail', () => import('./page/sw-settings-units-detail'));
+/* eslint-enable sw-deprecation-rules/private-feature-declarations */
+
+const { Module } = Shopwell;
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Module.register('sw-settings-units', {
+    type: 'core',
+    name: 'settings-units',
+    title: 'sw-settings-units.general.mainMenuItemGeneral',
+    description: 'Units section in the settings module',
+    color: 'var(--sw-color-module-neutral-default)',
+    icon: 'regular-box',
+    favicon: 'icon-module-settings.svg',
+    entity: 'units',
+
+    routes: {
+        index: {
+            component: 'sw-settings-units-list',
+            path: 'index',
+            meta: {
+                parentPath: 'sw.settings.index',
+                privilege: 'scale_unit.viewer',
+            },
+        },
+        detail: {
+            component: 'sw-settings-units-detail',
+            path: 'detail/:id',
+            meta: {
+                parentPath: 'sw.settings.units.index',
+                privilege: 'scale_unit.viewer',
+            },
+            props: {
+                default(route) {
+                    return {
+                        unitId: route.params.id.toLowerCase(),
+                    };
+                },
+            },
+        },
+        create: {
+            component: 'sw-settings-units-detail',
+            path: 'create',
+            meta: {
+                parentPath: 'sw.settings.units.index',
+                privilege: 'scale_unit.creator',
+            },
+        },
+    },
+
+    settingsItem: {
+        group: 'general',
+        to: 'sw.settings.units.index',
+        icon: 'regular-box',
+        privilege: 'scale_unit.viewer',
+    },
+});

@@ -1,0 +1,81 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": [],
+    "components": {
+        "schemas": {
+            "Breadcrumb": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "categoryId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/Category/properties/type"
+                    },
+                    "translated": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                            "customFields": {
+                                "type": "object"
+                            },
+                            "slotConfig": {
+                                "type": "object"
+                            },
+                            "linkType": {
+                                "$ref": "#/components/schemas/Category/properties/linkType"
+                            },
+                            "internalLink": {
+                                "type": "string"
+                            },
+                            "externalLink": {
+                                "type": "string"
+                            },
+                            "linkNewTab": {
+                                "type": "boolean"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "metaTitle": {
+                                "type": "string"
+                            },
+                            "metaDescription": {
+                                "type": "string"
+                            },
+                            "keywords": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "path": {
+                        "type": "string"
+                    },
+                    "seoUrls": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SeoUrl"
+                        }
+                    },
+                    "apiAlias": {
+                        "type": "string",
+                        "const": "breadcrumb"
+                    }
+                },
+                "required": [
+                    "name",
+                    "categoryId",
+                    "type",
+                    "translated",
+                    "path",
+                    "apiAlias"
+                ]
+            }
+        }
+    }
+}

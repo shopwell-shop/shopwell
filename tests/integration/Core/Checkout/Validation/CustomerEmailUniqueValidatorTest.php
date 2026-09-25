@@ -1,0 +1,175 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Checkout\Validation;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerEmailUnique;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Validation\DataValidationDefinition;
+use Shopwell\Core\Framework\Validation\DataValidator;
+use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\Test\TestDefaults;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+class CustomerEmailUniqueValidatorTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    protected function tearDown(): void
+    {
+        static::getContainer()
+            ->get(SystemConfigService::class)
+            ->delete('core.systemWideLoginRegistration.isCustomerBoundToSalesChannel');
+
+        parent::tearDown();
+    }
+
+    public function testSameCustomerEmailWithExistingBoundAccountOnDifferentSalesChannel(): void
+    {
+        static::getContainer()
+            ->get(SystemConfigService::class)
+            ->set('core.systemWideLoginRegistration.isCustomerBoundToSalesChannel', true);
+
+        $email = 'john.doe@example.com';
+
+        $this->createCustomerOfSalesChannel(TestDefaults::SALES_CHANNEL, $email);
+        $constraint = $this->createConstraint(Uuid::randomHex());
+
+        $validation = new DataValidationDefinition('customer.email.update');
+        $validation->add('email', $constraint);
+
+        $validator = static::getContainer()->get(DataValidator::class);
+        $violations = [];
+        try {
+            $validator->validate(['email' => $email], $validation);
+        } catch (ConstraintViolationException $exception) {
+            $violations = $exception->getViolations();
+        }
+        static::assertCount(0, $violations, 'No violations are expected');
+    }
+
+    public function testSameCustomerEmailOnSameSalesChannel(): void
+    {
+        static::getContainer()
+            ->get(SystemConfigService::class)
+            ->set('core.systemWideLoginRegistration.isCustomerBoundToSalesChannel', true);
+
+        $email = 'john.doe@example.com';
+
+        $this->createCustomerOfSalesChannel(TestDefaults::SALES_CHANNEL, $email);
+        $constraint = $this->createConstraint(TestDefaults::SALES_CHANNEL);
+
+        $validation = new DataValidationDefinition('customer.email.update');
+
+        $validation->add('email', $constraint);
+
+        $validator = static::getContainer()->get(DataValidator::class);
+
+        try {
+            $validator->validate([
+                'email' => $email,
+            ], $validation);
+
+            static::fail('No exception is thrown');
+        } catch (\Throwable $exception) {
+            static::assertInstanceOf(ConstraintViolationException::class, $exception);
+            $violations = $exception->getViolations();
+            $violation = $violations->get(1);
+
+            static::assertNotEmpty($violation);
+            static::assertSame($constraint->getMessage(), $violation->getMessageTemplate());
+        }
+    }
+
+    public function testSameCustomerEmailWithExistingNonBoundAccount(): void
+    {
+        static::getContainer()
+            ->get(SystemConfigService::class)
+            ->set('core.systemWideLoginRegistration.isCustomerBoundToSalesChannel', true);
+
+        $email = 'john.doe@example.com';
+
+        $this->createCustomerOfSalesChannel(TestDefaults::SALES_CHANNEL, $email, false);
+
+        $constraint = $this->createConstraint(TestDefaults::SALES_CHANNEL);
+
+        $validation = new DataValidationDefinition('customer.email.update');
+
+        $validation->add('email', $constraint);
+
+        $validator = static::getContainer()->get(DataValidator::class);
+
+        try {
+            $validator->validate([
+                'email' => $email,
+            ], $validation);
+
+            static::fail('No exception is thrown');
+        } catch (\Throwable $exception) {
+            static::assertInstanceOf(ConstraintViolationException::class, $exception);
+            $violations = $exception->getViolations();
+            $violation = $violations->get(1);
+
+            static::assertNotEmpty($violation);
+            static::assertSame($constraint->getMessage(), $violation->getMessageTemplate());
+        }
+    }
+
+    private function createCustomerOfSalesChannel(string $salesChannelId, string $email, bool $boundToSalesChannel = true): string
+    {
+        $customerId = Uuid::randomHex();
+        $addressId = Uuid::randomHex();
+
+        $customer = [
+            'id' => $customerId,
+            'number' => '1337',
+            'salutationId' => $this->getValidSalutationId(),
+            'firstName' => 'Max',
+            'lastName' => 'Mustermann',
+            'customerNumber' => '1337',
+            'email' => $email,
+            'password' => TestDefaults::HASHED_PASSWORD,
+            'boundSalesChannelId' => $boundToSalesChannel ? $salesChannelId : null,
+            'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
+            'salesChannelId' => $salesChannelId,
+            'defaultBillingAddressId' => $addressId,
+            'defaultShippingAddressId' => $addressId,
+            'addresses' => [
+                [
+                    'id' => $addressId,
+                    'customerId' => $customerId,
+                    'countryId' => $this->getValidCountryId(),
+                    'salutationId' => $this->getValidSalutationId(),
+                    'firstName' => 'Max',
+                    'lastName' => 'Mustermann',
+                    'street' => 'Ebbinghoff 10',
+                    'zipcode' => '48624',
+                    'city' => 'Schöppingen',
+                ],
+            ],
+        ];
+
+        static::getContainer()
+            ->get('customer.repository')
+            ->upsert([$customer], Context::createDefaultContext());
+
+        return $customerId;
+    }
+
+    private function createConstraint(string $salesChannelId): CustomerEmailUnique
+    {
+        $salesChannelContext = static::createStub(SalesChannelContext::class);
+        $salesChannelContext->method('getSalesChannelId')
+            ->willReturn($salesChannelId);
+
+        return new CustomerEmailUnique(salesChannelContext: $salesChannelContext);
+    }
+}

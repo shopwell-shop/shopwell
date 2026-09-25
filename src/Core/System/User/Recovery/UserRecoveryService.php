@@ -1,0 +1,224 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\User\Recovery;
+
+use Psr\Clock\ClockInterface;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\DevOps\Environment\EnvironmentHelper;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\NotEqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Random;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextServiceInterface;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
+use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
+use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
+use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryCollection;
+use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryEntity;
+use Shopwell\Core\System\User\UserCollection;
+use Shopwell\Core\System\User\UserEntity;
+use Shopwell\Core\System\User\UserException;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\RouterInterface;
+
+#[Package('fundamentals@framework')]
+class UserRecoveryService
+{
+    /**
+     * @param EntityRepository<UserRecoveryCollection> $userRecoveryRepo
+     * @param EntityRepository<UserCollection> $userRepo
+     * @param EntityRepository<SalesChannelCollection> $salesChannelRepository
+     *
+     * @internal
+     */
+    public function __construct(
+        private readonly EntityRepository $userRecoveryRepo,
+        private readonly EntityRepository $userRepo,
+        private readonly RouterInterface $router,
+        private readonly EventDispatcherInterface $dispatcher,
+        private readonly SalesChannelContextServiceInterface $salesChannelContextService,
+        private readonly EntityRepository $salesChannelRepository,
+        private readonly ClockInterface $clock,
+    ) {
+    }
+
+    public function generateUserRecovery(string $userEmail, Context $context): void
+    {
+        $user = $this->getUserByEmail($userEmail, $context);
+
+        if (!$user) {
+            return;
+        }
+
+        $userId = $user->getId();
+
+        $userIdCriteria = new Criteria();
+        $userIdCriteria->addFilter(new EqualsFilter('userId', $userId));
+        $userIdCriteria->addAssociation('user');
+
+        if ($existingRecovery = $this->getUserRecovery($userIdCriteria, $context)) {
+            $this->deleteRecoveryForUser($existingRecovery, $context);
+        }
+
+        $recoveryData = [
+            'userId' => $userId,
+            'hash' => Random::getAlphanumericString(32),
+        ];
+
+        $this->userRecoveryRepo->create([$recoveryData], $context);
+
+        $recovery = $this->getUserRecovery($userIdCriteria, $context);
+
+        if (!$recovery) {
+            return;
+        }
+
+        $hash = $recovery->getHash();
+
+        if (Request::getTrustedHosts() === []) {
+            // The router takes the host from the incoming request, which Symfony only validates against
+            // configured trusted hosts. Without them the host can't be trusted, because it's client provided, therefore we fall back to use the APP_URL
+            $url = $this->buildAdministrationUrlFromAppUrl();
+        } else {
+            try {
+                $url = $this->router->generate('administration.index', [], UrlGeneratorInterface::ABSOLUTE_URL);
+            } catch (RouteNotFoundException) {
+                // fallback if admin bundle is not installed, the url should work once the bundle is installed
+                $url = $this->buildAdministrationUrlFromAppUrl();
+            }
+        }
+
+        $recoveryUrl = $url . '#/login/user-recovery/' . $hash;
+
+        $salesChannel = $this->getSalesChannel($context);
+
+        $salesChannelContext = $this->salesChannelContextService->get(
+            new SalesChannelContextServiceParameters(
+                $salesChannel->getId(),
+                Uuid::randomHex(),
+                $salesChannel->getLanguageId(),
+                $salesChannel->getCurrencyId(),
+                null,
+                $context,
+                null,
+            )
+        );
+
+        $this->dispatcher->dispatch(
+            new UserRecoveryRequestEvent($recovery, $recoveryUrl, $salesChannelContext->getContext()),
+            UserRecoveryRequestEvent::EVENT_NAME
+        );
+    }
+
+    public function checkHash(string $hash, Context $context): bool
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(
+            new EqualsFilter('hash', $hash)
+        );
+
+        $recovery = $this->getUserRecovery($criteria, $context);
+
+        $validDateTime = $this->clock->now()->sub(new \DateInterval('PT2H'));
+
+        return $recovery && $validDateTime < $recovery->getCreatedAt();
+    }
+
+    public function updatePassword(string $hash, #[\SensitiveParameter] string $password, Context $context): bool
+    {
+        if (!$this->checkHash($hash, $context)) {
+            return false;
+        }
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('hash', $hash));
+
+        $recovery = $this->getUserRecovery($criteria, $context);
+        \assert($recovery instanceof UserRecoveryEntity); // It can't be null as we checked the hash before
+
+        $updateData = [
+            'id' => $recovery->getUserId(),
+            'password' => $password,
+        ];
+
+        $this->userRepo->update([$updateData], $context);
+
+        $this->deleteRecoveryForUser($recovery, $context);
+
+        return true;
+    }
+
+    public function getUserByHash(string $hash, Context $context): ?UserEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('hash', $hash));
+        $criteria->addAssociation('user');
+
+        $user = $this->getUserRecovery($criteria, $context);
+
+        return $user?->getUser();
+    }
+
+    private function getUserByEmail(string $userEmail, Context $context): ?UserEntity
+    {
+        $criteria = new Criteria();
+
+        $criteria->addFilter(
+            new EqualsFilter('email', $userEmail)
+        );
+
+        return $this->userRepo->search($criteria, $context)->getEntities()->first();
+    }
+
+    private function getUserRecovery(Criteria $criteria, Context $context): ?UserRecoveryEntity
+    {
+        return $this->userRecoveryRepo->search($criteria, $context)->getEntities()->first();
+    }
+
+    private function deleteRecoveryForUser(UserRecoveryEntity $userRecoveryEntity, Context $context): void
+    {
+        $recoveryData = [
+            'id' => $userRecoveryEntity->getId(),
+        ];
+
+        $this->userRecoveryRepo->delete([$recoveryData], $context);
+    }
+
+    private function buildAdministrationUrlFromAppUrl(): string
+    {
+        $appUrl = rtrim((string) EnvironmentHelper::getVariable('APP_URL', ''), '/');
+
+        if (!filter_var($appUrl, \FILTER_VALIDATE_URL) || !\in_array(parse_url($appUrl, \PHP_URL_SCHEME), ['http', 'https'], true)) {
+            throw UserException::invalidAppUrl($appUrl);
+        }
+
+        $pathName = trim((string) EnvironmentHelper::getVariable('SHOPWARE_ADMINISTRATION_PATH_NAME', 'admin'), '/');
+
+        return $appUrl . '/' . $pathName;
+    }
+
+    /**
+     * pick a random sales channel to form sales channel context as flow builder requires it
+     */
+    private function getSalesChannel(Context $context): SalesChannelEntity
+    {
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+        $criteria->addFilter(new NotEqualsFilter('typeId', Defaults::SALES_CHANNEL_TYPE_PRODUCT_COMPARISON));
+
+        $salesChannel = $this->salesChannelRepository->search($criteria, $context)->getEntities()->first();
+
+        if (!$salesChannel instanceof SalesChannelEntity) {
+            throw UserException::salesChannelNotFound();
+        }
+
+        return $salesChannel;
+    }
+}

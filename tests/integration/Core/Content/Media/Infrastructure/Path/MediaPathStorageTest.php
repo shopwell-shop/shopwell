@@ -1,0 +1,109 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\Media\Infrastructure\Path;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Statement;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Media\Infrastructure\Path\SqlMediaPathStorage;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\MultiInsertQueryQueue;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+class MediaPathStorageTest extends TestCase
+{
+    use DatabaseTransactionBehaviour;
+    use KernelTestBehaviour;
+
+    public function testStoreMediaPath(): void
+    {
+        $ids = new IdsCollection();
+
+        $inserts = new MultiInsertQueryQueue(static::getContainer()->get(Connection::class));
+
+        $inserts->addInsert('media', [
+            'id' => $ids->getBytes('media'),
+            'file_name' => 'test-file-1',
+            'file_extension' => 'png',
+            'created_at' => '2022-01-01',
+        ]);
+
+        $inserts->execute();
+
+        $storage = new SqlMediaPathStorage(static::getContainer()->get(Connection::class));
+
+        $storage->media([
+            $ids->get('media') => 'test.jpg',
+        ]);
+
+        $path = static::getContainer()
+            ->get(Connection::class)
+            ->fetchOne('SELECT path FROM media WHERE id = :id', ['id' => $ids->getBytes('media')]);
+
+        static::assertSame('test.jpg', $path);
+    }
+
+    public function testStoreThumbnailPath(): void
+    {
+        $ids = new IdsCollection();
+
+        $inserts = new MultiInsertQueryQueue(static::getContainer()->get(Connection::class));
+
+        $inserts->addInsert('media', [
+            'id' => $ids->getBytes('media'),
+            'file_name' => 'test-file-1',
+            'file_extension' => 'png',
+            'created_at' => '2022-01-01',
+        ]);
+
+        $inserts->addInsert('media_thumbnail_size', [
+            'id' => $ids->getBytes('thumbnail-size-1'),
+            'width' => 100,
+            'height' => 100,
+            'created_at' => '2022-01-01',
+        ]);
+
+        $inserts->addInsert('media_thumbnail', [
+            'id' => $ids->getBytes('media_thumbnail'),
+            'media_id' => $ids->getBytes('media'),
+            'width' => 100,
+            'height' => 100,
+            'media_thumbnail_size_id' => $ids->getBytes('thumbnail-size-1'),
+            'created_at' => '2022-01-01',
+        ]);
+
+        $inserts->execute();
+
+        $storage = new SqlMediaPathStorage(static::getContainer()->get(Connection::class));
+
+        $storage->thumbnails([
+            $ids->get('media_thumbnail') => 'test.jpg',
+        ]);
+
+        $path = static::getContainer()
+            ->get(Connection::class)
+            ->fetchOne('SELECT path FROM media_thumbnail WHERE id = :id', ['id' => $ids->getBytes('media_thumbnail')]);
+
+        static::assertSame('test.jpg', $path);
+    }
+
+    public function testEmptyParametersDoesNotTriggerDatabaseQueries(): void
+    {
+        $statement = $this->createMock(Statement::class);
+        $statement->expects($this->never())->method('executeStatement');
+
+        $connection = static::createStub(Connection::class);
+        $connection->method('prepare')->willReturn($statement);
+
+        $storage = new SqlMediaPathStorage(static::getContainer()->get(Connection::class));
+
+        $storage->media([]);
+        $storage->thumbnails([]);
+    }
+}

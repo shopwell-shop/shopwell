@@ -1,0 +1,20 @@
+.sw-search-preferences-modal {
+    &.sw-modal .sw-modal__body {
+        padding: 0;
+    }
+
+    &.sw-modal .sw-modal__footer {
+        justify-content: space-between;
+    }
+
+    &__description {
+        padding: 20px 32px;
+        font-size: var(--font-size-xs);
+    }
+
+    &__description span {
+        cursor: pointer;
+        color: var(--color-text-brand-default);
+        text-decoration: underline;
+    }
+}

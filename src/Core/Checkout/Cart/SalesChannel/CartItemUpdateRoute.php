@@ -1,0 +1,63 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Cart\SalesChannel;
+
+use Shopwell\Core\Checkout\Cart\AbstractCartPersister;
+use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\CartCalculator;
+use Shopwell\Core\Checkout\Cart\CartLocker;
+use Shopwell\Core\Checkout\Cart\Event\AfterLineItemQuantityChangedEvent;
+use Shopwell\Core\Checkout\Cart\Event\CartChangedEvent;
+use Shopwell\Core\Checkout\Cart\LineItemFactoryRegistry;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+#[Package('checkout')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
+class CartItemUpdateRoute extends AbstractCartItemUpdateRoute
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly AbstractCartPersister $cartPersister,
+        private readonly CartCalculator $cartCalculator,
+        private readonly LineItemFactoryRegistry $lineItemFactory,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly CartLocker $cartLocker
+    ) {
+    }
+
+    public function getDecorated(): AbstractCartItemUpdateRoute
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    #[Route(path: '/store-api/checkout/cart/line-item', name: 'store-api.checkout.cart.update-lineitem', methods: ['PATCH'])]
+    public function change(Request $request, Cart $cart, SalesChannelContext $context): CartResponse
+    {
+        return $this->cartLocker->locked($context, function () use ($request, $cart, $context) {
+            $itemsToUpdate = $request->request->all('items');
+
+            foreach ($itemsToUpdate as $item) {
+                $this->lineItemFactory->update($cart, $item, $context);
+            }
+
+            $cart->markModified();
+
+            $cart = $this->cartCalculator->calculate($cart, $context);
+            $this->cartPersister->save($cart, $context);
+
+            $this->eventDispatcher->dispatch(new AfterLineItemQuantityChangedEvent($cart, $itemsToUpdate, $context));
+            $this->eventDispatcher->dispatch(new CartChangedEvent($cart, $context));
+
+            return new CartResponse($cart);
+        });
+    }
+}

@@ -1,0 +1,13 @@
+.sw-import-export-new-profile-wizard-mapping-page {
+    &__text {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-primary-default);
+        font-weight: var(--font-weight-regular);
+        margin: var(--scale-size-12) 0 var(--scale-size-32);
+    }
+
+    &__mapping {
+        margin-left: -30px;
+        margin-right: -30px;
+    }
+}

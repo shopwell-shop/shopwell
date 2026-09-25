@@ -1,0 +1,74 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Media\Aggregate\MediaThumbnail;
+
+use Shopwell\Core\Content\Media\Aggregate\MediaThumbnailSize\MediaThumbnailSizeDefinition;
+use Shopwell\Core\Content\Media\MediaDefinition;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\CustomFields;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Runtime;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\WriteProtected;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('discovery')]
+class MediaThumbnailDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'media_thumbnail';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function getCollectionClass(): string
+    {
+        return MediaThumbnailCollection::class;
+    }
+
+    public function getEntityClass(): string
+    {
+        return MediaThumbnailEntity::class;
+    }
+
+    public function since(): ?string
+    {
+        return '6.0.0.0';
+    }
+
+    protected function getParentDefinitionClass(): ?string
+    {
+        return MediaDefinition::class;
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new ApiAware(), new PrimaryKey(), new Required())->setDescription('Unique identity of media thumbnail.'),
+
+            (new FkField('media_id', 'mediaId', MediaDefinition::class))->addFlags(new ApiAware(), new Required())->setDescription('Unique identity of media.'),
+            /** @deprecated tag:v6.8.0 - Will be required */
+            (new FkField('media_thumbnail_size_id', 'mediaThumbnailSizeId', MediaThumbnailSizeDefinition::class))->addFlags(new ApiAware()),
+
+            (new IntField('width', 'width'))->addFlags(new ApiAware(), new Required(), new WriteProtected(Context::SYSTEM_SCOPE))->setDescription('Width of the thumbnail.'),
+            (new IntField('height', 'height'))->addFlags(new ApiAware(), new Required(), new WriteProtected(Context::SYSTEM_SCOPE))->setDescription('Height of the thumbnail.'),
+            (new StringField('url', 'url'))->addFlags(new ApiAware(), new Runtime(['path', 'updatedAt']))->setDescription('Public url of media thumbnail.'),
+            (new StringField('path', 'path', 2048))->addFlags(new ApiAware()),
+            new ManyToOneAssociationField('media', 'media_id', MediaDefinition::class, 'id', false),
+            new ManyToOneAssociationField('mediaThumbnailSize', 'media_thumbnail_size_id', MediaThumbnailSizeDefinition::class, 'id', false),
+            (new CustomFields())->addFlags(new ApiAware())->setDescription('Additional fields that offer a possibility to add own fields for the different program-areas.'),
+        ]);
+    }
+}

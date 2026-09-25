@@ -1,0 +1,661 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\Api\Controller;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Category\CategoryDefinition;
+use Shopwell\Core\Content\Product\DataAbstractionLayer\ProductIndexer;
+use Shopwell\Core\Content\Product\DataAbstractionLayer\ProductIndexingMessage;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Api\Controller\SyncController;
+use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\QueueTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\PlatformRequest;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class SyncControllerTest extends TestCase
+{
+    use AdminApiTestBehaviour;
+    use IntegrationTestBehaviour;
+    use QueueTestBehaviour;
+
+    private Connection $connection;
+
+    protected function setUp(): void
+    {
+        $this->connection = static::getContainer()->get(Connection::class);
+    }
+
+    public function testMultipleProductInsert(): void
+    {
+        $id1 = Uuid::randomHex();
+        $id2 = Uuid::randomHex();
+        $data = [
+            [
+                'action' => SyncController::ACTION_UPSERT,
+                'entity' => static::getContainer()->get(ProductDefinition::class)->getEntityName(),
+                'payload' => [
+                    [
+                        'id' => $id1,
+                        'productNumber' => Uuid::randomHex(),
+                        'stock' => 1,
+                        'manufacturer' => ['name' => 'manufacturer'],
+                        'tax' => ['name' => 'tax', 'taxRate' => 15],
+                        'name' => 'CREATE-1',
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                    ],
+                    [
+                        'id' => $id2,
+                        'productNumber' => Uuid::randomHex(),
+                        'stock' => 1,
+                        'manufacturer' => ['name' => 'manufacturer'],
+                        'name' => 'CREATE-2',
+                        'tax' => ['name' => 'tax', 'taxRate' => 15],
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], [], json_encode($data, \JSON_THROW_ON_ERROR));
+        $response = $this->getBrowser()->getResponse();
+
+        static::assertSame(200, $response->getStatusCode(), (string) $response->getContent());
+
+        $this->getBrowser()->request('GET', '/api/product/' . $id1);
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        $this->getBrowser()->request('GET', '/api/product/' . $id2);
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        $this->getBrowser()->request('DELETE', '/api/product/' . $id1);
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
+
+        $this->getBrowser()->request('DELETE', '/api/product/' . $id2);
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
+    }
+
+    public function testInsertAndUpdateSameEntity(): void
+    {
+        $id = Uuid::randomHex();
+        $productNumber = Uuid::randomHex();
+
+        $data = [
+            [
+                'action' => SyncController::ACTION_UPSERT,
+                'entity' => static::getContainer()->get(ProductDefinition::class)->getEntityName(),
+                'payload' => [
+                    [
+                        'id' => $id,
+                        'productNumber' => $productNumber,
+                        'active' => true,
+                        'stock' => 1,
+                        'tax' => ['name' => 'test', 'taxRate' => 15],
+                        'name' => 'CREATE-1',
+                        'manufacturer' => ['name' => 'test'],
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                    ],
+                    [
+                        'id' => $id,
+                        'productNumber' => $productNumber,
+                        'manufacturer' => ['name' => 'test'],
+                        'stock' => 1,
+                        'tax' => ['name' => 'test', 'taxRate' => 15],
+                        'active' => false,
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], [], json_encode($data, \JSON_THROW_ON_ERROR));
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(200, $response->getStatusCode(), (string) $response->getContent());
+
+        $this->getBrowser()->request('GET', '/api/product/' . $id);
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        $responseData = json_decode((string) $response->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertFalse($responseData['data']['attributes']['active']);
+
+        $this->getBrowser()->request('DELETE', '/api/product/' . $id);
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
+    }
+
+    public function testInsertAndLinkEntities(): void
+    {
+        $categoryId = Uuid::randomHex();
+        $productId = Uuid::randomHex();
+
+        $data = [
+            [
+                'action' => SyncController::ACTION_UPSERT,
+                'entity' => static::getContainer()->get(CategoryDefinition::class)->getEntityName(),
+                'payload' => [
+                    [
+                        'id' => $categoryId,
+                        'name' => $productId,
+                        'manufacturer' => ['name' => 'test'],
+                    ],
+                ],
+            ],
+            [
+                'action' => SyncController::ACTION_UPSERT,
+                'entity' => static::getContainer()->get(ProductDefinition::class)->getEntityName(),
+                'payload' => [
+                    [
+                        'id' => $productId,
+                        'productNumber' => Uuid::randomHex(),
+                        'stock' => 1,
+                        'tax' => ['name' => 'test', 'taxRate' => 15],
+                        'name' => 'PROD-1',
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                        'manufacturer' => ['name' => 'test'],
+                        'categories' => [
+                            ['id' => $categoryId],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], [], json_encode($data, \JSON_THROW_ON_ERROR));
+
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(200, $response->getStatusCode());
+
+        $this->getBrowser()->request('GET', '/api/product/' . $productId . '/categories');
+        $response = $this->getBrowser()->getResponse();
+        $responseData = json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $categories = array_column($responseData['data'], 'id');
+
+        static::assertContains($categoryId, $categories);
+        static::assertCount(1, $categories, 'Category Ids should not contain: ' . print_r(array_diff($categories, [$categoryId]), true));
+
+        $this->getBrowser()->request('DELETE', '/api/category/' . $categoryId);
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode(), (string) $response->getContent());
+
+        $this->getBrowser()->request('DELETE', '/api/product/' . $productId);
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode(), (string) $response->getContent());
+    }
+
+    public function testNestedInsertAndLinkAfter(): void
+    {
+        $product = Uuid::randomHex();
+        $product2 = Uuid::randomHex();
+        $category = Uuid::randomHex();
+
+        $data = [
+            [
+                'action' => SyncController::ACTION_UPSERT,
+                'entity' => static::getContainer()->get(ProductDefinition::class)->getEntityName(),
+                'payload' => [
+                    [
+                        'id' => $product,
+                        'productNumber' => Uuid::randomHex(),
+                        'name' => 'PROD-1',
+                        'stock' => 1,
+                        'manufacturer' => ['name' => 'test'],
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                        'tax' => ['name' => 'test', 'taxRate' => 15],
+                        'categories' => [
+                            ['id' => $category, 'name' => 'NESTED-CAT-1'],
+                        ],
+                    ],
+                    [
+                        'id' => $product2,
+                        'productNumber' => Uuid::randomHex(),
+                        'name' => 'PROD-2',
+                        'stock' => 1,
+                        'tax' => ['name' => 'test', 'taxRate' => 15],
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                        'manufacturer' => ['name' => 'test'],
+                        'categories' => [
+                            ['id' => $category],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], [], json_encode($data, \JSON_THROW_ON_ERROR));
+
+        $this->getBrowser()->request('GET', '/api/product/' . $product . '/categories');
+        $responseData = json_decode((string) $this->getBrowser()->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        $categories = array_column($responseData['data'], 'id');
+        static::assertContains($category, $categories);
+        static::assertCount(1, $categories);
+
+        $this->getBrowser()->request('GET', '/api/product/' . $product2 . '/categories');
+        $responseData = json_decode((string) $this->getBrowser()->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        $categories = array_column($responseData['data'], 'id');
+        static::assertContains($category, $categories);
+        static::assertCount(1, $categories);
+
+        $this->getBrowser()->request('GET', '/api/category/' . $category . '/products/');
+        $responseData = json_decode((string) $this->getBrowser()->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertSame(Response::HTTP_OK, $this->getBrowser()->getResponse()->getStatusCode());
+
+        $products = array_column($responseData['data'], 'id');
+
+        static::assertContains($product, $products);
+        static::assertContains($product2, $products);
+    }
+
+    public function testMultiDelete(): void
+    {
+        $product = Uuid::randomHex();
+        $product2 = Uuid::randomHex();
+
+        $data = [
+            [
+                'action' => SyncController::ACTION_UPSERT,
+                'entity' => static::getContainer()->get(ProductDefinition::class)->getEntityName(),
+                'payload' => [
+                    [
+                        'id' => $product,
+                        'productNumber' => Uuid::randomHex(),
+                        'stock' => 1,
+                        'name' => 'PROD-1',
+                        'tax' => ['name' => 'test', 'taxRate' => 15],
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                        'manufacturer' => ['name' => 'test'],
+                    ],
+                    [
+                        'id' => $product2,
+                        'productNumber' => Uuid::randomHex(),
+                        'stock' => 1,
+                        'tax' => ['name' => 'test', 'taxRate' => 15],
+                        'name' => 'PROD-2',
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                        'manufacturer' => ['name' => 'test'],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], [], json_encode($data, \JSON_THROW_ON_ERROR));
+
+        $exists = $this->connection->fetchAllAssociative(
+            'SELECT * FROM product WHERE id IN(:id)',
+            ['id' => [Uuid::fromHexToBytes($product), Uuid::fromHexToBytes($product2)]],
+            ['id' => ArrayParameterType::BINARY]
+        );
+        static::assertCount(2, $exists);
+
+        $data = [
+            [
+                'action' => SyncController::ACTION_DELETE,
+                'entity' => static::getContainer()->get(ProductDefinition::class)->getEntityName(),
+                'payload' => [
+                    ['id' => $product],
+                    ['id' => $product2],
+                ],
+            ],
+        ];
+
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], [], json_encode($data, \JSON_THROW_ON_ERROR));
+
+        $exists = $this->connection->fetchAllAssociative(
+            'SELECT * FROM product WHERE id IN (:id)',
+            ['id' => [Uuid::fromHexToBytes($product), Uuid::fromHexToBytes($product2)]],
+            ['id' => ArrayParameterType::BINARY]
+        );
+        static::assertEmpty($exists);
+    }
+
+    public function testCriteriaDeleteRequiresReadPrivilegesForCriteriaSelection(): void
+    {
+        $victimId = Uuid::randomHex();
+        $controlId = Uuid::randomHex();
+        $manufacturerName = Uuid::randomHex();
+
+        foreach ([$victimId => $manufacturerName, $controlId => Uuid::randomHex()] as $productId => $name) {
+            $this->getBrowser()->jsonRequest('POST', '/api/product', [
+                'id' => $productId,
+                'productNumber' => Uuid::randomHex(),
+                'stock' => 1,
+                'name' => Uuid::randomHex(),
+                'tax' => ['name' => Uuid::randomHex(), 'taxRate' => 15],
+                'manufacturer' => ['name' => $name],
+                'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+            ]);
+
+            static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode(), (string) $this->getBrowser()->getResponse()->getContent());
+        }
+
+        TestUser::createNewTestUser($this->connection, ['product:delete'])->authorizeBrowser($this->getBrowser());
+
+        $this->getBrowser()->jsonRequest('POST', '/api/_action/sync', [[
+            'action' => SyncController::ACTION_DELETE,
+            'entity' => ProductDefinition::ENTITY_NAME,
+            'criteria' => [[
+                'type' => 'equals',
+                'field' => 'manufacturer.name',
+                'value' => $manufacturerName,
+            ]],
+        ]]);
+
+        $response = $this->getBrowser()->getResponse();
+        $content = (string) $response->getContent();
+
+        static::assertSame(Response::HTTP_FORBIDDEN, $response->getStatusCode(), $content);
+        static::assertSame(
+            ['product:read', 'product_manufacturer:read'],
+            json_decode(json_decode($content, true, flags: \JSON_THROW_ON_ERROR)['errors'][0]['detail'], true, flags: \JSON_THROW_ON_ERROR)['missingPrivileges']
+        );
+
+        $existingIds = $this->connection->fetchFirstColumn(
+            'SELECT LOWER(HEX(id)) FROM product WHERE id IN (:ids)',
+            ['ids' => [Uuid::fromHexToBytes($victimId), Uuid::fromHexToBytes($controlId)]],
+            ['ids' => ArrayParameterType::BINARY]
+        );
+
+        static::assertEqualsCanonicalizing([$victimId, $controlId], $existingIds);
+    }
+
+    public function testIndexingByQueueHeader(): void
+    {
+        $product = Uuid::randomHex();
+
+        $data = [
+            [
+                'action' => SyncController::ACTION_UPSERT,
+                'entity' => ProductDefinition::ENTITY_NAME,
+                'payload' => [
+                    [
+                        'id' => $product,
+                        'productNumber' => Uuid::randomHex(),
+                        'stock' => 1,
+                        'name' => 'PROD-1',
+                        'tax' => ['name' => 'test', 'taxRate' => 15],
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->getBrowser()->request(
+            'POST',
+            '/api/_action/sync',
+            [],
+            [],
+            ['HTTP_Fail-On-Error' => 'false', 'HTTP_indexing-behavior' => EntityIndexerRegistry::USE_INDEXING_QUEUE],
+            json_encode($data, \JSON_THROW_ON_ERROR)
+        );
+
+        $exists = $this->connection->fetchAllAssociative(
+            'SELECT * FROM product WHERE id IN(:id)',
+            ['id' => [Uuid::fromHexToBytes($product)]],
+            ['id' => ArrayParameterType::BINARY]
+        );
+
+        static::assertNotEmpty($exists);
+
+        $queuedMessages = $this->getDispatchedMessageCount(ProductIndexingMessage::class);
+        static::assertSame(1, $queuedMessages);
+    }
+
+    public function testDirectIndexing(): void
+    {
+        $product = Uuid::randomHex();
+
+        $data = [
+            [
+                'action' => SyncController::ACTION_UPSERT,
+                'entity' => ProductDefinition::ENTITY_NAME,
+                'payload' => [
+                    [
+                        'id' => $product,
+                        'productNumber' => Uuid::randomHex(),
+                        'stock' => 1,
+                        'name' => 'PROD-1',
+                        'tax' => ['name' => 'test', 'taxRate' => 15],
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->getBrowser()->request(
+            'POST',
+            '/api/_action/sync',
+            [],
+            [],
+            ['HTTP_Fail-On-Error' => 'false'],
+            json_encode($data, \JSON_THROW_ON_ERROR)
+        );
+
+        $exists = $this->connection->fetchAllAssociative(
+            'SELECT * FROM product WHERE id IN(:id)',
+            ['id' => [Uuid::fromHexToBytes($product)]],
+            ['id' => ArrayParameterType::BINARY]
+        );
+
+        static::assertNotEmpty($exists);
+
+        static::assertSame(0, $this->getDispatchedMessageCount(ProductIndexingMessage::class));
+    }
+
+    public function testSkipIndexer(): void
+    {
+        $id1 = Uuid::randomHex();
+        $data = [
+            [
+                'action' => SyncController::ACTION_UPSERT,
+                'entity' => ProductDefinition::ENTITY_NAME,
+                'payload' => [
+                    [
+                        'id' => $id1,
+                        'productNumber' => Uuid::randomHex(),
+                        'stock' => 1,
+                        'manufacturer' => ['name' => 'test'],
+                        'tax' => ['name' => 'test', 'taxRate' => 15],
+                        'name' => 'CREATE-1',
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                    ],
+                ],
+            ],
+        ];
+
+        $headers = [
+            'HTTP_' . PlatformRequest::HEADER_LANGUAGE_ID => Defaults::LANGUAGE_SYSTEM,
+            'HTTP_' . PlatformRequest::HEADER_INDEXING_SKIP => ProductIndexer::SEARCH_KEYWORD_UPDATER,
+        ];
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], $headers, json_encode($data, \JSON_THROW_ON_ERROR));
+
+        static::assertSame(200, $this->getBrowser()->getResponse()->getStatusCode());
+
+        $connection = static::getContainer()->get(Connection::class);
+        $count = (int) $connection->fetchOne('SELECT COUNT(*) FROM product_search_keyword WHERE product_id = ?', [Uuid::fromHexToBytes($id1)]);
+        static::assertSame(0, $count, 'Search keywords should be empty as we skipped it');
+    }
+
+    public function testOnlyIndexer(): void
+    {
+        $id1 = Uuid::randomHex();
+        $data = [
+            [
+                'action' => SyncController::ACTION_UPSERT,
+                'entity' => ProductDefinition::ENTITY_NAME,
+                'payload' => [
+                    [
+                        'id' => $id1,
+                        'productNumber' => Uuid::randomHex(),
+                        'stock' => 1,
+                        'manufacturer' => ['name' => 'test'],
+                        'description' => 'This is a detailed product used to test search indexing.',
+                        'tax' => ['name' => 'test', 'taxRate' => 15],
+                        'name' => 'CREATE-1',
+                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+                        'keywords' => 'a,b,c',
+                    ],
+                ],
+            ],
+        ];
+
+        $headers = [
+            'HTTP_' . PlatformRequest::HEADER_INDEXING_ONLY => ProductIndexer::SEARCH_KEYWORD_UPDATER,
+            'HTTP_' . PlatformRequest::HEADER_INDEXING_BEHAVIOR => EntityIndexerRegistry::USE_INDEXING_QUEUE,
+        ];
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], $headers, json_encode($data, \JSON_THROW_ON_ERROR));
+
+        static::assertSame(200, $this->getBrowser()->getResponse()->getStatusCode());
+
+        // Get messsage from queue.
+        $sqlMessengerMessageBody = $this->connection->fetchOne('SELECT body FROM messenger_messages WHERE headers LIKE \'%ProductIndexingMessage%\'');
+        static::assertIsString($sqlMessengerMessageBody);
+        $data = json_decode($sqlMessengerMessageBody, true, 512, \JSON_THROW_ON_ERROR);
+        $indexerOnly = $data['context']['extensions']['indexer-only']['onlies'];
+        $skip = $data['skip'];
+
+        // Assert message is as expected.
+        static::assertCount(1, $indexerOnly);
+        static::assertSame(ProductIndexer::SEARCH_KEYWORD_UPDATER, $indexerOnly[0], 'Only indexer does not match passed `product.search-keyword` indexer in message.');
+
+        // Assert message contains skip for everything except our only indexer.
+        $productIndexerClassReflection = new \ReflectionClass(ProductIndexer::class);
+        $productIndexerClassInstance = $productIndexerClassReflection->newInstanceWithoutConstructor();
+        $productIndexerOptions = $productIndexerClassReflection->getMethod('getOptions')->invoke($productIndexerClassInstance);
+        $allProductIndexerMinusSearchKeyword = array_filter($productIndexerOptions, static function ($index) {
+            return $index !== ProductIndexer::SEARCH_KEYWORD_UPDATER;
+        });
+
+        static::assertEqualsCanonicalizing(array_values($allProductIndexerMinusSearchKeyword), array_values($skip));
+    }
+
+    public static function invalidOperationProvider(): \Generator
+    {
+        yield 'Invalid entity argument' => [
+            'invalid-entity',
+            '',
+            'upsert',
+            [
+                ['id' => 'id1', 'name' => 'first manufacturer'],
+                ['id' => 'id2', 'name' => 'second manufacturer'],
+            ],
+            'entity',
+        ];
+
+        yield 'Missing action argument' => [
+            'missing-action',
+            ProductDefinition::ENTITY_NAME,
+            '',
+            [
+                ['id' => 'id1', 'name' => 'first manufacturer'],
+                ['id' => 'id2', 'name' => 'second manufacturer'],
+            ],
+            'action',
+        ];
+
+        yield 'Invalid action argument' => [
+            'missing-action',
+            ProductDefinition::ENTITY_NAME,
+            'invalid-action',
+            [
+                ['id' => 'id1', 'name' => 'first manufacturer'],
+                ['id' => 'id2', 'name' => 'second manufacturer'],
+            ],
+            'action',
+        ];
+
+        yield 'Missing payload argument' => [
+            'missing-action',
+            ProductDefinition::ENTITY_NAME,
+            'upsert',
+            [],
+            'payload',
+        ];
+    }
+
+    /**
+     * @param array<mixed> $payload
+     */
+    #[DataProvider('invalidOperationProvider')]
+    public function testItThrows400WithInvalidSyncOperation(string $key, string $entity, string $action, array $payload, string $actor): void
+    {
+        $data = [
+            [
+                'action' => $action,
+                'entity' => $entity,
+                'payload' => $payload,
+            ],
+        ];
+
+        $this->getBrowser()->jsonRequest('POST', '/api/_action/sync', $data, ['HTTP_Fail-On-Error' => 'true']);
+
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
+
+        $content = json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertSame('FRAMEWORK__INVALID_SYNC_OPERATION', $content['errors'][0]['code']);
+        static::assertStringContainsString($actor, $content['errors'][0]['detail']);
+    }
+
+    #[DataProvider('invalidPayloadProvider')]
+    public function testInvalidPayloadIsConvertedToBadRequest(string $payload, string $message): void
+    {
+        $client = $this->getBrowser();
+
+        $client->request('POST', '/api/_action/sync', content: $payload);
+
+        $response = $client->getResponse()->getContent();
+        static::assertIsString($response);
+
+        $response = json_decode($response, true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $client->getResponse()->getStatusCode());
+        static::assertSame(Response::HTTP_BAD_REQUEST, (int) $response['errors'][0]['status']);
+        static::assertSame($message, $response['errors'][0]['detail']);
+    }
+
+    public static function invalidPayloadProvider(): \Generator
+    {
+        yield 'Invalid payload format' => [
+            json_encode([
+                [
+                    'action' => 'delete',
+                    'entity' => 'product',
+                    'payload' => [
+                        'test' => true,
+                    ],
+                ],
+            ], \JSON_THROW_ON_ERROR),
+            'Invalid payload. Should contain a list of associative arrays',
+        ];
+
+        yield 'Malformed JSON payload' => [
+            'not a json',
+            'Parameter type json is invalid.',
+        ];
+
+        yield 'Missing required keys' => [
+            json_encode(['delete-mapping' => 'action:delete'], \JSON_THROW_ON_ERROR),
+            'Invalid payload format. Expected an array of operations.',
+        ];
+    }
+}

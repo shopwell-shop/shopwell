@@ -1,0 +1,298 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Api\Controller;
+
+use Shopwell\Core\Content\Flow\Api\FlowActionCollector;
+use Shopwell\Core\Content\Media\Upload\MediaFileExtensionListProvider;
+use Shopwell\Core\Content\Media\Upload\PresignedMediaUploadService;
+use Shopwell\Core\DevOps\Environment\EnvironmentHelper;
+use Shopwell\Core\Framework\Api\ApiDefinition\DefinitionService;
+use Shopwell\Core\Framework\Api\ApiDefinition\Generator\EntitySchemaGenerator;
+use Shopwell\Core\Framework\Api\ApiDefinition\Generator\OpenApi3Generator;
+use Shopwell\Core\Framework\Api\ApiException;
+use Shopwell\Core\Framework\Api\Event\AdminInfoConfigEvent;
+use Shopwell\Core\Framework\Api\Route\ApiRouteInfoResolver;
+use Shopwell\Core\Framework\Api\Route\RouteInfo;
+use Shopwell\Core\Framework\App\Exception\ShopIdChangeSuggestedException;
+use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Event\BusinessEventCollector;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Increment\Exception\IncrementGatewayNotFoundException;
+use Shopwell\Core\Framework\Increment\IncrementGatewayRegistry;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\MessageQueue\Stats\StatsService;
+use Shopwell\Core\Framework\Migration\MigrationInfo;
+use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\Framework\Store\InAppPurchase;
+use Shopwell\Core\Kernel;
+use Shopwell\Core\Maintenance\Staging\Event\SetupStagingEvent;
+use Shopwell\Core\Maintenance\System\Service\AppUrlVerifier;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+#[Package('framework')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [ApiRouteScope::ID]])]
+class InfoController extends AbstractController
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly DefinitionService $definitionService,
+        private readonly ParameterBagInterface $params,
+        private readonly BusinessEventCollector $eventCollector,
+        private readonly IncrementGatewayRegistry $incrementGatewayRegistry,
+        private readonly MigrationInfo $migrationInfo,
+        private readonly AppUrlVerifier $appUrlVerifier,
+        private readonly FlowActionCollector $flowActionCollector,
+        private readonly SystemConfigService $systemConfigService,
+        private readonly ApiRouteInfoResolver $apiRouteInfoResolver,
+        private readonly InAppPurchase $inAppPurchase,
+        private readonly ShopIdProvider $shopIdProvider,
+        private readonly StatsService $messageStatsService,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly ?PresignedMediaUploadService $presignedMediaUploadService,
+        private readonly MediaFileExtensionListProvider $mediaFileExtensionListProvider,
+    ) {
+    }
+
+    #[Route(
+        path: '/api/_info/openapi3.json',
+        name: 'api.info.openapi3',
+        defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'],
+        methods: ['GET']
+    )]
+    public function info(Request $request): JsonResponse
+    {
+        $type = $request->query->getAlpha('type', DefinitionService::TYPE_JSON_API);
+
+        $apiType = $this->definitionService->toApiType($type);
+        if ($apiType === null) {
+            throw ApiException::invalidApiType($type);
+        }
+
+        $data = $this->definitionService->generate(OpenApi3Generator::FORMAT, DefinitionService::API, $apiType);
+
+        return new JsonResponse($data);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Route will be removed. Use /api/_info/message-stats.json instead.
+     */
+    #[Route(path: '/api/_info/queue.json', name: 'api.info.queue', defaults: [PlatformRequest::ATTRIBUTE_ACL => ['message_queue_stats:read']], methods: ['GET'])]
+    public function queue(): JsonResponse
+    {
+        if (Feature::isActive('v6.8.0.0')) { // avoiding polluting logs, as our code still calling this endpoint
+            Feature::triggerDeprecationOrThrow('v6.8.0.0', Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0', '\Shopwell\Core\Framework\Api\Controller\InfoController::messageStats'));
+        }
+
+        try {
+            $gateway = $this->incrementGatewayRegistry->get(IncrementGatewayRegistry::MESSAGE_QUEUE_POOL);
+        } catch (IncrementGatewayNotFoundException) {
+            // In case message_queue pool is disabled
+            return new JsonResponse([]);
+        }
+
+        // Fetch unlimited message_queue_stats
+        $entries = $gateway->list('message_queue_stats', -1);
+
+        return new JsonResponse(array_map(static fn (array $entry) => [
+            'name' => $entry['key'],
+            'size' => $entry['count'],
+        ], array_values($entries)));
+    }
+
+    #[Route(path: '/api/_info/message-stats.json', name: 'api.info.message-stats', defaults: [PlatformRequest::ATTRIBUTE_ACL => ['message_queue_stats:read']], methods: ['GET'])]
+    public function messageStats(): JsonResponse
+    {
+        $response = new JsonResponse();
+        $response->setEncodingOptions($response->getEncodingOptions() | \JSON_PRESERVE_ZERO_FRACTION);
+        $response->setData($this->messageStatsService->getStats());
+
+        return $response;
+    }
+
+    #[Route(
+        path: '/api/_info/open-api-schema.json',
+        name: 'api.info.open-api-schema',
+        defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'],
+        methods: ['GET']
+    )]
+    public function openApiSchema(): JsonResponse
+    {
+        $data = $this->definitionService->getSchema(OpenApi3Generator::FORMAT);
+
+        return new JsonResponse($data);
+    }
+
+    #[Route(path: '/api/_info/entity-schema.json', name: 'api.info.entity-schema', methods: ['GET'])]
+    public function entitySchema(): JsonResponse
+    {
+        $data = $this->definitionService->getSchema(EntitySchemaGenerator::FORMAT);
+
+        return new JsonResponse($data);
+    }
+
+    #[Route(path: '/api/_info/events.json', name: 'api.info.business-events', methods: ['GET'])]
+    public function businessEvents(Context $context): JsonResponse
+    {
+        $events = $this->eventCollector->collect($context);
+
+        return new JsonResponse($events);
+    }
+
+    #[Route(
+        path: '/api/_info/stoplightio.html',
+        name: 'api.info.stoplightio',
+        defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'],
+        methods: ['GET']
+    )]
+    public function stoplightIoInfoHtml(Request $request): Response
+    {
+        $nonce = $request->attributes->get(PlatformRequest::ATTRIBUTE_CSP_NONCE);
+        $apiType = $request->query->getAlpha('type', DefinitionService::TYPE_JSON);
+        $response = $this->render(
+            '@Framework/stoplightio.html.twig',
+            [
+                'schemaUrl' => 'api.info.openapi3',
+                'cspNonce' => $nonce,
+                'apiType' => $apiType,
+            ]
+        );
+
+        $cspTemplate = trim($this->params->get('shopware.security.csp_templates')['administration'] ?? '');
+        if ($cspTemplate !== '') {
+            $csp = str_replace(['%nonce%', "\n", "\r"], [$nonce, ' ', ' '], $cspTemplate);
+            $response->headers->set('Content-Security-Policy', $csp);
+        }
+
+        return $response;
+    }
+
+    #[Route(path: '/api/_info/config', name: 'api.info.config', methods: ['GET'])]
+    public function config(Context $context, Request $request): JsonResponse
+    {
+        $adminWorker = [
+            'enableAdminWorker' => $this->params->get('shopware.admin_worker.enable_admin_worker'),
+            'enableNotificationWorker' => $this->params->get('shopware.admin_worker.enable_notification_worker'),
+            'transports' => $this->getAdminWorkerTransports(),
+        ];
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            $adminWorker['enableQueueStatsWorker'] = $this->params->get('shopware.admin_worker.enable_queue_stats_worker');
+        }
+
+        // Resolve the private extension whitelist ONCE: getMimeTypesByExtension() internally
+        // calls getAllowedExtensions(), which dispatches MediaFileExtensionWhitelistEvent.
+        // Calling both would dispatch that event twice per request; the array keys are exactly
+        // the allowed extensions (see MediaFileExtensionListProvider::normalizeExtensions()).
+        $privateMimeTypesByExtension = $this->mediaFileExtensionListProvider->getMimeTypesByExtension(true, $context);
+
+        $config = [
+            'version' => $this->getShopwellVersion(),
+            'shopId' => $this->getShopId(),
+            'appUrl' => (string) EnvironmentHelper::getVariable('APP_URL'),
+            'versionRevision' => $this->params->get('kernel.shopware_version_revision'),
+            'adminWorker' => $adminWorker,
+            'bundles' => [],
+            'settings' => [
+                'enableUrlFeature' => $this->params->get('shopware.media.enable_url_upload_feature'),
+                'presignedUploadSupported' => $this->presignedMediaUploadService !== null
+                    && $this->presignedMediaUploadService->isAvailable(),
+                'appUrlReachable' => $this->appUrlVerifier->isAppUrlReachable($request),
+                'appsRequireAppUrl' => $this->appUrlVerifier->hasAppsThatNeedAppUrl(),
+                'firstMigrationDate' => $this->migrationInfo->getFirstMigrationDate(),
+                'private_allowed_extensions' => array_keys($privateMimeTypesByExtension),
+                'private_allowed_mime_types_by_extension' => $privateMimeTypesByExtension,
+                'enableHtmlSanitizer' => $this->params->get('shopware.html_sanitizer.enabled'),
+                'enableStagingMode' => $this->params->get('shopware.staging.administration.show_banner') && $this->systemConfigService->getBool(SetupStagingEvent::CONFIG_FLAG),
+                'disableExtensionManagement' => !$this->params->get('shopware.deployment.runtime_extension_management'),
+                'hideUpdateModule' => (bool) $this->params->get('shopware.auto_update.hide_module'),
+                'minSearchTermLength' => $this->systemConfigService->getInt('core.search.minSearchTermLength') ?: 2,
+            ],
+            'inAppPurchases' => $this->inAppPurchase->all(),
+        ];
+
+        $config = $this->eventDispatcher->dispatch(new AdminInfoConfigEvent($config))->getConfig();
+
+        return new JsonResponse($config);
+    }
+
+    #[Route(path: '/api/_info/version', name: 'api.info.shopware.version', methods: ['GET'])]
+    #[Route(path: '/api/v1/_info/version', name: 'api.info.shopware.version_old_version', methods: ['GET'])]
+    public function infoShopwellVersion(): JsonResponse
+    {
+        return new JsonResponse([
+            'version' => $this->getShopwellVersion(),
+        ]);
+    }
+
+    #[Route(path: '/api/_info/flow-actions.json', name: 'api.info.actions', methods: ['GET'])]
+    public function flowActions(Context $context): JsonResponse
+    {
+        return new JsonResponse($this->flowActionCollector->collect($context));
+    }
+
+    #[Route(
+        path: '/api/_info/routes',
+        name: 'api.info.routes',
+        defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'],
+        methods: ['GET']
+    )]
+    public function getRoutes(): JsonResponse
+    {
+        $endpoints = array_map(
+            static fn (RouteInfo $endpoint) => ['path' => $endpoint->path, 'methods' => $endpoint->methods],
+            $this->apiRouteInfoResolver->getApiRoutes(ApiRouteScope::ID)
+        );
+
+        return new JsonResponse(['endpoints' => $endpoints]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function getAdminWorkerTransports(): array
+    {
+        $transports = $this->params->get('shopware.admin_worker.transports');
+        if (!\is_array($transports)) {
+            return [];
+        }
+
+        /** @var list<string> $transports */
+        $transports = array_values($transports);
+
+        if (Feature::isActive('WEBHOOKS_REWORK')) {
+            return $transports;
+        }
+
+        return array_values(array_filter($transports, static fn (string $transport): bool => $transport !== 'webhook'));
+    }
+
+    private function getShopwellVersion(): string
+    {
+        $shopwareVersion = $this->params->get('kernel.shopware_version');
+        if ($shopwareVersion === Kernel::SHOPWARE_FALLBACK_VERSION) {
+            $shopwareVersion = str_replace('.9999999-dev', '.9999999.9999999-dev', $shopwareVersion);
+        }
+
+        return $shopwareVersion;
+    }
+
+    private function getShopId(): string
+    {
+        try {
+            return $this->shopIdProvider->getShopId()->id;
+        } catch (ShopIdChangeSuggestedException $e) {
+            return $e->shopId->id;
+        }
+    }
+}

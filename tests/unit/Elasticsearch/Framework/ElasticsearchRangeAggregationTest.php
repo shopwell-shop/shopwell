@@ -1,0 +1,34 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Elasticsearch\Framework;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Elasticsearch\Framework\ElasticsearchRangeAggregation;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(ElasticsearchRangeAggregation::class)]
+class ElasticsearchRangeAggregationTest extends TestCase
+{
+    public function testElasticsearchAggregationBuild(): void
+    {
+        $ranges = [
+            ['from' => 1, 'to' => 2],
+            ['from' => 2, 'to' => 3],
+            ['from' => 3, 'to' => 4],
+        ];
+
+        $agg = new ElasticsearchRangeAggregation('test-name', 'test-field', $ranges);
+
+        static::assertSame([
+            'ranges' => [
+                'field' => 'test-field',
+                'ranges' => $ranges,
+            ],
+        ], $agg->toArray());
+    }
+}

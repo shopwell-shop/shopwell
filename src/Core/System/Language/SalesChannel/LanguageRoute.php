@@ -1,0 +1,61 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\Language\SalesChannel;
+
+use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\Language\LanguageCollection;
+use Shopwell\Core\System\Language\LanguageDefinition;
+use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Package('fundamentals@discovery')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
+class LanguageRoute extends AbstractLanguageRoute
+{
+    final public const ALL_TAG = 'language-route';
+
+    /**
+     * @internal
+     *
+     * @param SalesChannelRepository<LanguageCollection> $repository
+     */
+    public function __construct(
+        private readonly SalesChannelRepository $repository,
+        private readonly CacheTagCollector $cacheTagCollector,
+    ) {
+    }
+
+    public static function buildName(string $id): string
+    {
+        return 'language-route-' . $id;
+    }
+
+    public function getDecorated(): AbstractLanguageRoute
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    #[Route(
+        path: '/store-api/language',
+        name: 'store-api.language',
+        methods: [Request::METHOD_GET, Request::METHOD_POST],
+        defaults: [PlatformRequest::ATTRIBUTE_ENTITY => LanguageDefinition::ENTITY_NAME, PlatformRequest::ATTRIBUTE_HTTP_CACHE => true],
+    )]
+    public function load(Request $request, SalesChannelContext $context, Criteria $criteria): LanguageRouteResponse
+    {
+        $this->cacheTagCollector->addTag(self::buildName($context->getSalesChannelId()), self::ALL_TAG);
+
+        $criteria->addAssociation('translationCode');
+
+        return new LanguageRouteResponse(
+            $this->repository->search($criteria, $context)
+        );
+    }
+}

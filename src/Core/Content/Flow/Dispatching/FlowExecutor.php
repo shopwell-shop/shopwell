@@ -1,0 +1,277 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Flow\Dispatching;
+
+use Doctrine\DBAL\Connection;
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Checkout\Cart\AbstractRuleLoader;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Content\Flow\Dispatching\Action\FlowAction;
+use Shopwell\Core\Content\Flow\Dispatching\Struct\ActionSequence;
+use Shopwell\Core\Content\Flow\Dispatching\Struct\Flow;
+use Shopwell\Core\Content\Flow\Dispatching\Struct\IfSequence;
+use Shopwell\Core\Content\Flow\Dispatching\Struct\Sequence;
+use Shopwell\Core\Content\Flow\Exception\ExecuteSequenceException;
+use Shopwell\Core\Content\Flow\Extension\FlowExecutorExtension;
+use Shopwell\Core\Content\Flow\FlowException;
+use Shopwell\Core\Content\Flow\Rule\CustomerRuleScope;
+use Shopwell\Core\Content\Flow\Rule\FlowRuleScopeBuilder;
+use Shopwell\Core\Content\Flow\Telemetry\FlowMetricsInstrumentor;
+use Shopwell\Core\Framework\App\Event\AppFlowActionEvent;
+use Shopwell\Core\Framework\App\Flow\Action\AppFlowActionProvider;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
+use Shopwell\Core\Framework\Event\CustomerAware;
+use Shopwell\Core\Framework\Event\OrderAware;
+use Shopwell\Core\Framework\Event\SalesChannelContextAware;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+
+/**
+ * @internal not intended for decoration or replacement
+ *
+ * @final
+ *
+ * @phpstan-import-type FlowHolder from AbstractFlowLoader
+ */
+#[Package('after-sales')]
+class FlowExecutor
+{
+    /**
+     * @var array<string, FlowAction>
+     */
+    private readonly array $actions;
+
+    /**
+     * @param FlowAction[] $actions
+     */
+    public function __construct(
+        private readonly EventDispatcherInterface $dispatcher,
+        private readonly AppFlowActionProvider $appFlowActionProvider,
+        private readonly AbstractRuleLoader $ruleLoader,
+        private readonly FlowRuleScopeBuilder $scopeBuilder,
+        private readonly Connection $connection,
+        private readonly ExtensionDispatcher $extensions,
+        private readonly LoggerInterface $logger,
+        $actions,
+        private readonly FlowMetricsInstrumentor $flowMetrics,
+    ) {
+        $this->actions = $actions instanceof \Traversable ? iterator_to_array($actions) : $actions;
+    }
+
+    /**
+     * @param array<FlowHolder> $flowHolders
+     */
+    public function executeFlows(array $flowHolders, StorableFlow $event): void
+    {
+        foreach ($flowHolders as $flowHolder) {
+            $flow = $flowHolder['payload'];
+            $id = $flowHolder['id'];
+            $name = $flowHolder['name'];
+
+            try {
+                $this->runFlow($flow, $event);
+            } catch (ExecuteSequenceException $e) {
+                $this->logger->error(
+                    "Could not execute flow with error message:\n"
+                    . 'Flow name: ' . $name . "\n"
+                    . 'Flow id: ' . $id . "\n"
+                    . 'Sequence id: ' . $e->getSequenceId() . "\n"
+                    . $e->getMessage() . "\n"
+                    . 'Error Code: ' . $e->getCode() . "\n",
+                    ['exception' => $e]
+                );
+            } catch (\Throwable $e) {
+                $this->logger->error(
+                    "Could not execute flow with error message:\n"
+                    . 'Flow name: ' . $name . "\n"
+                    . 'Flow id: ' . $id . "\n"
+                    . $e->getMessage() . "\n"
+                    . 'Error Code: ' . $e->getCode() . "\n",
+                    ['exception' => $e]
+                );
+            }
+        }
+    }
+
+    public function execute(Flow $flow, StorableFlow $event): void
+    {
+        $this->runFlow($flow, $event);
+    }
+
+    public function executeSequence(?Sequence $sequence, StorableFlow $event): void
+    {
+        if ($sequence === null) {
+            return;
+        }
+
+        $event->getFlowState()->currentSequence = $sequence;
+
+        if ($sequence instanceof IfSequence) {
+            $this->executeIf($sequence, $event);
+
+            return;
+        }
+
+        if ($sequence instanceof ActionSequence) {
+            $this->executeAction($sequence, $event);
+        }
+    }
+
+    public function executeAction(ActionSequence $sequence, StorableFlow $event): void
+    {
+        if (!$sequence->action) {
+            return;
+        }
+
+        if ($event->getFlowState()->stop) {
+            return;
+        }
+
+        $event->setConfig($sequence->config);
+        $event->getFlowState()->currentSequence = $sequence;
+
+        $this->callHandle($sequence, $event);
+
+        if ($event->getFlowState()->delayed) {
+            return;
+        }
+
+        if (!$sequence->nextAction instanceof ActionSequence) {
+            return;
+        }
+
+        $this->executeAction($sequence->nextAction, $event);
+    }
+
+    public function executeIf(IfSequence $sequence, StorableFlow $event): void
+    {
+        if ($this->sequenceRuleMatches($event, $sequence->ruleId)) {
+            $this->executeSequence($sequence->trueCase, $event);
+
+            return;
+        }
+
+        $this->executeSequence($sequence->falseCase, $event);
+    }
+
+    private function runFlow(Flow $flow, StorableFlow $event): void
+    {
+        // Metric covers extension too: an extension may stop propagation and replace _execute entirely - and
+        // every flow execution still will be covered, and the duration will include extension pre/post overhead.
+        $this->flowMetrics->measureExecution(
+            $event,
+            fn () => $this->extensions->publish(
+                name: FlowExecutorExtension::NAME,
+                extension: new FlowExecutorExtension($flow, $event),
+                function: $this->_execute(...)
+            ),
+        );
+    }
+
+    private function _execute(Flow $flow, StorableFlow $event): void
+    {
+        $state = new FlowState();
+
+        $event->setFlowState($state);
+        $state->flowId = $flow->getId();
+        foreach ($flow->getSequences() as $sequence) {
+            $state->delayed = false;
+
+            try {
+                $this->executeSequence($sequence, $event);
+            } catch (\Exception $e) {
+                throw ExecuteSequenceException::sequenceExecutionFailed(
+                    $sequence->flowId,
+                    $sequence->sequenceId,
+                    $e->getMessage(),
+                    $e->getCode(),
+                    $e
+                );
+            }
+
+            if ($state->stop) {
+                return;
+            }
+        }
+    }
+
+    private function callHandle(ActionSequence $sequence, StorableFlow $event): void
+    {
+        if ($sequence->appFlowActionId) {
+            $eventData = $this->appFlowActionProvider->getWebhookPayloadAndHeaders($event, $sequence->appFlowActionId);
+
+            $globalEvent = new AppFlowActionEvent(
+                $sequence->action,
+                $eventData['headers'],
+                $eventData['payload'],
+            );
+
+            $this->dispatcher->dispatch($globalEvent, $sequence->action);
+
+            return;
+        }
+
+        $action = $this->actions[$sequence->action] ?? null;
+
+        if (!$action instanceof FlowAction) {
+            return;
+        }
+
+        if (!$action instanceof TransactionalAction) {
+            $action->handleFlow($event);
+
+            return;
+        }
+
+        try {
+            RetryableTransaction::transactional($this->connection, static function () use ($action, $event): void {
+                $action->handleFlow($event);
+            });
+        } catch (\Throwable $e) {
+            throw FlowException::transactionFailed($e);
+        }
+    }
+
+    private function sequenceRuleMatches(StorableFlow $event, string $ruleId): bool
+    {
+        $baseContextEvaluation = \in_array($ruleId, $event->getContext()->getRuleIds(), true);
+
+        if (!$event->hasData(OrderAware::ORDER) && !$event->hasData(CustomerAware::CUSTOMER)) {
+            return $baseContextEvaluation;
+        }
+
+        $context = $event->getData(SalesChannelContextAware::SALES_CHANNEL_CONTEXT);
+
+        if ($event->hasData(OrderAware::ORDER)) {
+            $entity = $event->getData(OrderAware::ORDER);
+
+            if (!$entity instanceof OrderEntity) {
+                return $baseContextEvaluation;
+            }
+        } elseif (!$context instanceof SalesChannelContext || $context->getCustomer() !== null) {
+            return $baseContextEvaluation;
+        } else {
+            $entity = $event->getData(CustomerAware::CUSTOMER);
+
+            if (!$entity instanceof CustomerEntity) {
+                return $baseContextEvaluation;
+            }
+        }
+
+        $rule = $this->ruleLoader->load($event->getContext())->filterForFlow()->get($ruleId);
+
+        if (!$rule || !$rule->getPayload() instanceof Rule) {
+            return $baseContextEvaluation;
+        }
+
+        if ($entity instanceof OrderEntity) {
+            return $rule->getPayload()->match($this->scopeBuilder->build($entity, $event->getContext()));
+        }
+
+        return $rule->getPayload()->match(new CustomerRuleScope($entity, $context));
+    }
+}

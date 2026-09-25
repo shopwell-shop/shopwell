@@ -1,0 +1,1255 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\Flow;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Event\CustomerRegisterEvent;
+use Shopwell\Core\Checkout\Document\DocumentCollection;
+use Shopwell\Core\Checkout\Document\DocumentEntity;
+use Shopwell\Core\Checkout\Document\FileGenerator\FileTypes;
+use Shopwell\Core\Checkout\Document\Renderer\DeliveryNoteRenderer;
+use Shopwell\Core\Checkout\Document\Renderer\InvoiceRenderer;
+use Shopwell\Core\Checkout\Document\Service\DocumentGenerator;
+use Shopwell\Core\Checkout\Document\Struct\DocumentGenerateOperation;
+use Shopwell\Core\Checkout\Order\Event\OrderStateMachineStateChangeEvent;
+use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Checkout\Order\OrderStates;
+use Shopwell\Core\Content\ContactForm\Event\ContactFormEvent;
+use Shopwell\Core\Content\Flow\Dispatching\Action\SendMailAction;
+use Shopwell\Core\Content\Flow\Dispatching\FlowFactory;
+use Shopwell\Core\Content\Flow\Dispatching\StorableFlow;
+use Shopwell\Core\Content\Flow\Events\FlowSendMailActionEvent;
+use Shopwell\Core\Content\Mail\Service\MailAttachmentsBuilder;
+use Shopwell\Core\Content\Mail\Service\MailFactory;
+use Shopwell\Core\Content\Mail\Service\MailService;
+use Shopwell\Core\Content\Mail\Transport\MailerTransportDecorator;
+use Shopwell\Core\Content\MailTemplate\Aggregate\MailTemplateType\MailTemplateTypeEntity;
+use Shopwell\Core\Content\MailTemplate\Exception\MailEventConfigurationException;
+use Shopwell\Core\Content\MailTemplate\MailTemplateCollection;
+use Shopwell\Core\Content\MailTemplate\MailTemplateEntity;
+use Shopwell\Core\Content\MailTemplate\MailTemplateTypes;
+use Shopwell\Core\Content\MailTemplate\Subscriber\MailSendSubscriberConfig;
+use Shopwell\Core\Content\Media\File\FileSaver;
+use Shopwell\Core\Content\Media\File\MediaFile;
+use Shopwell\Core\Content\Media\MediaEntity;
+use Shopwell\Core\Content\RevocationRequest\Event\RevocationRequestEvent;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Api\Serializer\JsonEntityEncoder;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Event\EventData\MailRecipientStruct;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Validation\DataBag\DataBag;
+use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
+use Shopwell\Core\Test\Generator;
+use Shopwell\Core\Test\TestDefaults;
+use Symfony\Component\Mailer\Transport\TransportInterface;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Part\DataPart;
+
+/**
+ * @internal
+ */
+#[Package('after-sales')]
+class SendMailActionTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    /**
+     * @var EntityRepository<OrderCollection>
+     */
+    private EntityRepository $orderRepository;
+
+    private Connection $connection;
+
+    /**
+     * @var EntityRepository<DocumentCollection>
+     */
+    private EntityRepository $documentRepository;
+
+    /**
+     * @var EntityRepository<MailTemplateCollection>
+     */
+    private EntityRepository $mailTemplateRepository;
+
+    protected function setUp(): void
+    {
+        $this->orderRepository = static::getContainer()->get('order.repository');
+        $this->connection = static::getContainer()->get(Connection::class);
+        $this->documentRepository = static::getContainer()->get('document.repository');
+        $this->mailTemplateRepository = static::getContainer()->get('mail_template.repository');
+    }
+
+    /**
+     * @param array{type: 'customer'|'admin'|'custom', data?: array<string, string>} $recipients
+     * @param list<string>|array{}|array{data: array<string, string>} $documentTypeIds
+     */
+    #[DataProvider('sendMailProvider')]
+    public function testEmailSend(array $recipients, array $documentTypeIds = [], bool $hasOrderSettingAttachment = true): void
+    {
+        /** @var EntityRepository<DocumentCollection> $documentRepository */
+        $documentRepository = static::getContainer()->get('document.repository');
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+
+        $context = Generator::generateSalesChannelContext();
+
+        $customerId = $this->createCustomer($context->getContext());
+        $orderId = $this->createOrder($customerId, $context->getContext());
+
+        $mailTemplateId = $this->retrieveMailTemplateId();
+
+        $config = array_filter([
+            'mailTemplateId' => $mailTemplateId,
+            'recipient' => $recipients,
+            'documentTypeIds' => $documentTypeIds,
+        ]);
+
+        $criteria = new Criteria([$orderId]);
+        $criteria->addAssociation('transactions.stateMachineState');
+        $order = $orderRepository->search($criteria, $context->getContext())->getEntities()->first();
+        static::assertNotNull($order);
+        $event = new CheckoutOrderPlacedEvent($context, $order);
+
+        $documentIdOlder = null;
+        $documentIdNewer = null;
+        $documentIds = [];
+
+        if ($documentTypeIds !== [] || $hasOrderSettingAttachment) {
+            $documentIdOlder = $this->createDocumentWithFile($orderId, $context->getContext());
+            $documentIdNewer = $this->createDocumentWithFile($orderId, $context->getContext());
+            $documentIds[] = $documentIdNewer;
+        }
+
+        if ($hasOrderSettingAttachment) {
+            $event->getContext()->addExtension(
+                SendMailAction::MAIL_CONFIG_EXTENSION,
+                new MailSendSubscriberConfig(
+                    false,
+                    $documentIds,
+                )
+            );
+        }
+
+        $transportDecorator = new MailerTransportDecorator(
+            static::createStub(TransportInterface::class),
+            static::getContainer()->get(MailAttachmentsBuilder::class),
+            static::getContainer()->get('shopware.filesystem.public'),
+            static::getContainer()->get('document.repository')
+        );
+        $mailService = new TestEmailService(static::getContainer()->get(MailFactory::class), $transportDecorator);
+        $subscriber = new SendMailAction(
+            $mailService,
+            static::getContainer()->get('mail_template.repository'),
+            static::getContainer()->get('logger'),
+            static::getContainer()->get('event_dispatcher'),
+            static::getContainer()->get('mail_template_type.repository'),
+            static::getContainer()->get(Connection::class),
+            static::getContainer()->get(JsonEntityEncoder::class),
+            static::getContainer()->get(DefinitionInstanceRegistry::class),
+            true
+        );
+
+        $mailFilterEvent = null;
+        static::getContainer()->get('event_dispatcher')->addListener(FlowSendMailActionEvent::class, static function ($event) use (&$mailFilterEvent): void {
+            $mailFilterEvent = $event;
+        });
+
+        static::assertIsString($documentIdNewer);
+        static::assertIsString($documentIdOlder);
+        $criteria = new Criteria(array_filter([$documentIdOlder, $documentIdNewer]));
+        $documents = $documentRepository->search($criteria, $context->getContext())->getEntities();
+
+        $newDocument = $documents->get($documentIdNewer);
+        static::assertNotNull($newDocument);
+        static::assertInstanceOf(DocumentEntity::class, $newDocument);
+        static::assertFalse($newDocument->getSent());
+        $newDocumentOrderVersionId = $newDocument->getOrderVersionId();
+
+        $oldDocument = $documents->get($documentIdOlder);
+        static::assertInstanceOf(DocumentEntity::class, $oldDocument);
+        static::assertFalse($oldDocument->getSent());
+        $oldDocumentOrderVersionId = $oldDocument->getOrderVersionId();
+
+        // new version is created
+        static::assertNotSame($newDocumentOrderVersionId, Defaults::LIVE_VERSION);
+        static::assertNotSame($oldDocumentOrderVersionId, Defaults::LIVE_VERSION);
+
+        $flowFactory = static::getContainer()->get(FlowFactory::class);
+        $flow = $flowFactory->create($event);
+        $flow->setConfig($config);
+
+        $subscriber->handleFlow($flow);
+
+        static::assertInstanceOf(FlowSendMailActionEvent::class, $mailFilterEvent);
+        static::assertSame(1, $mailService->calls);
+        static::assertIsArray($mailService->data);
+        static::assertArrayHasKey('recipients', $mailService->data);
+
+        switch ($recipients['type']) {
+            case 'admin':
+                // SendMailAction sends to ALL admin users, not just one
+                $admins = static::getContainer()->get(Connection::class)->fetchAllAssociative(
+                    'SELECT `first_name`, `last_name`, `email` FROM `user` WHERE `admin` = 1'
+                );
+                static::assertNotEmpty($admins, 'Expected at least one admin user to exist');
+
+                $expectedRecipients = [];
+                foreach ($admins as $admin) {
+                    $expectedRecipients[$admin['email']] = $admin['first_name'] . ' ' . $admin['last_name'];
+                }
+
+                static::assertSame($expectedRecipients, $mailService->data['recipients']);
+
+                break;
+            case 'custom':
+                $data = $recipients['data'] ?? null;
+                static::assertSame($mailService->data['recipients'], $data);
+
+                break;
+            default:
+                $email = $order->getOrderCustomer()?->getEmail();
+                static::assertNotNull($email);
+                static::assertSame(
+                    $mailService->data['recipients'],
+                    [$email => $order->getOrderCustomer()?->getFirstName() . ' ' . $order->getOrderCustomer()?->getLastName()]
+                );
+        }
+
+        if ($documentTypeIds !== []) {
+            $criteria = new Criteria(array_filter([$documentIdOlder, $documentIdNewer]));
+            $documents = $documentRepository->search($criteria, $context->getContext())->getEntities();
+
+            $newDocument = $documents->get($documentIdNewer);
+            static::assertNotNull($newDocument);
+            static::assertInstanceOf(DocumentEntity::class, $newDocument);
+            static::assertTrue($newDocument->getSent());
+
+            $oldDocument = $documents->get($documentIdOlder);
+            static::assertNotNull($oldDocument);
+            static::assertInstanceOf(DocumentEntity::class, $oldDocument);
+            static::assertFalse($oldDocument->getSent());
+
+            // new document with new version id, old document with old version id
+            static::assertSame($newDocumentOrderVersionId, $newDocument->getOrderVersionId());
+            static::assertSame($oldDocumentOrderVersionId, $oldDocument->getOrderVersionId());
+        }
+    }
+
+    /**
+     * @return \Generator<string, array{0: array{type: 'customer'|'admin'|'custom', data?: array<string, string>}, 1?: list<string>|array{}|array{data: array<string, string>}, 2?: bool}>
+     */
+    public static function sendMailProvider(): \Generator
+    {
+        yield 'Test send mail default' => [['type' => 'customer']];
+        yield 'Test send mail admin' => [['type' => 'admin']];
+        yield 'Test send mail custom' => [[
+            'type' => 'custom',
+            'data' => [
+                'test2@example.com' => 'Overwrite',
+            ],
+        ]];
+        yield 'Test send mail without attachments' => [['type' => 'customer'], []];
+        yield 'Test send mail with attachments from order setting' => [['type' => 'customer'], [], true];
+        yield 'Test send mail with attachments from order setting and flow setting ' => [
+            ['type' => 'customer'],
+            [self::getDocIdByType(DeliveryNoteRenderer::TYPE)],
+            true,
+        ];
+    }
+
+    public function testUpdateMailTemplateTypeWithMailTemplateTypeIdIsNull(): void
+    {
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+
+        $context = Context::createDefaultContext();
+
+        $context->addExtension(SendMailAction::MAIL_CONFIG_EXTENSION, new MailSendSubscriberConfig(false, [], []));
+
+        $mailTemplateId = $this->retrieveMailTemplateId();
+
+        static::getContainer()->get(Connection::class)->executeStatement(
+            'UPDATE mail_template SET mail_template_type_id = null WHERE id =:id',
+            [
+                'id' => Uuid::fromHexToBytes($mailTemplateId),
+            ]
+        );
+
+        static::assertNotEmpty($mailTemplateId);
+
+        $config = [
+            'mailTemplateId' => $mailTemplateId,
+            'recipient' => [
+                'type' => 'admin',
+                'data' => [
+                    'test@test.com' => 'shopware',
+                    'test.x@test.com' => 'shopware',
+                ],
+            ],
+        ];
+
+        $event = new ContactFormEvent($context, TestDefaults::SALES_CHANNEL, new MailRecipientStruct(['test@example.com' => 'Shopwell ag']), new DataBag());
+
+        $mailService = new TestEmailService();
+        $subscriber = new SendMailAction(
+            $mailService,
+            static::getContainer()->get('mail_template.repository'),
+            static::getContainer()->get('logger'),
+            static::getContainer()->get('event_dispatcher'),
+            static::getContainer()->get('mail_template_type.repository'),
+            static::getContainer()->get(Connection::class),
+            static::getContainer()->get(JsonEntityEncoder::class),
+            static::getContainer()->get(DefinitionInstanceRegistry::class),
+            true
+        );
+
+        $mailFilterEvent = null;
+        static::getContainer()->get('event_dispatcher')->addListener(FlowSendMailActionEvent::class, static function ($event) use (&$mailFilterEvent): void {
+            $mailFilterEvent = $event;
+        });
+
+        $flowFactory = static::getContainer()->get(FlowFactory::class);
+        $flow = $flowFactory->create($event);
+        $flow->setConfig($config);
+
+        $subscriber->handleFlow($flow);
+
+        static::assertIsObject($mailFilterEvent);
+        static::assertSame(1, $mailService->calls);
+    }
+
+    #[DataProvider('sendMailContactFormProvider')]
+    public function testSendContactFormMail(bool $hasEmail, bool $hasFname, bool $hasLname): void
+    {
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+
+        $context = Context::createDefaultContext();
+
+        $context->addExtension(SendMailAction::MAIL_CONFIG_EXTENSION, new MailSendSubscriberConfig(false, [], []));
+
+        $mailTemplateId = $this->retrieveMailTemplateId();
+
+        static::getContainer()->get(Connection::class)->executeStatement(
+            'UPDATE mail_template SET mail_template_type_id = null WHERE id =:id',
+            [
+                'id' => Uuid::fromHexToBytes($mailTemplateId),
+            ]
+        );
+
+        static::assertNotEmpty($mailTemplateId);
+
+        $config = [
+            'mailTemplateId' => $mailTemplateId,
+            'recipient' => [
+                'type' => 'contactFormMail',
+            ],
+        ];
+        $data = new DataBag();
+        if ($hasEmail) {
+            $data->set('email', 'test@example.com');
+        }
+        if ($hasFname) {
+            $data->set('firstName', 'Shopwell');
+        }
+        if ($hasLname) {
+            $data->set('lastName', 'AG');
+        }
+        $event = new ContactFormEvent($context, TestDefaults::SALES_CHANNEL, new MailRecipientStruct(['test2@example.com' => 'Shopwell ag 2']), $data);
+
+        $mailService = new TestEmailService();
+        $subscriber = new SendMailAction(
+            $mailService,
+            static::getContainer()->get('mail_template.repository'),
+            static::getContainer()->get('logger'),
+            static::getContainer()->get('event_dispatcher'),
+            static::getContainer()->get('mail_template_type.repository'),
+            static::getContainer()->get(Connection::class),
+            static::getContainer()->get(JsonEntityEncoder::class),
+            static::getContainer()->get(DefinitionInstanceRegistry::class),
+            true
+        );
+
+        $mailFilterEvent = null;
+        static::getContainer()->get('event_dispatcher')->addListener(FlowSendMailActionEvent::class, static function ($event) use (&$mailFilterEvent): void {
+            $mailFilterEvent = $event;
+        });
+
+        $flowFactory = static::getContainer()->get(FlowFactory::class);
+        $flow = $flowFactory->create($event);
+        $flow->setConfig($config);
+
+        $subscriber->handleFlow($flow);
+
+        if ($hasEmail) {
+            static::assertIsArray($mailService->data);
+            static::assertArrayHasKey('recipients', $mailService->data);
+            static::assertIsObject($mailFilterEvent);
+            static::assertSame(1, $mailService->calls);
+            static::assertSame([$data->get('email') => trim($data->get('firstName') . ' ' . $data->get('lastName'))], $mailService->data['recipients']);
+        } else {
+            static::assertIsNotObject($mailFilterEvent);
+            static::assertSame(0, $mailService->calls);
+        }
+    }
+
+    public function testSendContactFormMailType(): void
+    {
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+
+        $context = Generator::generateSalesChannelContext();
+
+        $context->addExtension(SendMailAction::MAIL_CONFIG_EXTENSION, new MailSendSubscriberConfig(false, [], []));
+
+        $mailTemplateId = $this->retrieveMailTemplateId();
+
+        static::getContainer()->get(Connection::class)->executeStatement(
+            'UPDATE mail_template SET mail_template_type_id = null WHERE id =:id',
+            [
+                'id' => Uuid::fromHexToBytes($mailTemplateId),
+            ]
+        );
+
+        static::assertNotEmpty($mailTemplateId);
+
+        $config = [
+            'mailTemplateId' => $mailTemplateId,
+            'recipient' => [
+                'type' => 'contactFormMail',
+            ],
+        ];
+
+        $customerId = $this->createCustomer($context->getContext());
+        $orderId = $this->createOrder($customerId, $context->getContext());
+        $criteria = new Criteria([$orderId]);
+        $criteria->addAssociation('orderCustomer');
+
+        $order = static::getContainer()->get('order.repository')->search($criteria, $context->getContext())->getEntities()->get($orderId);
+        static::assertInstanceOf(OrderEntity::class, $order);
+        $event = new CheckoutOrderPlacedEvent($context, $order);
+
+        $mailService = new TestEmailService();
+        $subscriber = new SendMailAction(
+            $mailService,
+            static::getContainer()->get('mail_template.repository'),
+            static::getContainer()->get('logger'),
+            static::getContainer()->get('event_dispatcher'),
+            static::getContainer()->get('mail_template_type.repository'),
+            static::getContainer()->get(Connection::class),
+            static::getContainer()->get(JsonEntityEncoder::class),
+            static::getContainer()->get(DefinitionInstanceRegistry::class),
+            true
+        );
+
+        $mailFilterEvent = null;
+        static::getContainer()->get('event_dispatcher')->addListener(FlowSendMailActionEvent::class, static function ($event) use (&$mailFilterEvent): void {
+            $mailFilterEvent = $event;
+        });
+
+        $flowFactory = static::getContainer()->get(FlowFactory::class);
+        $flow = $flowFactory->create($event);
+        $flow->setConfig($config);
+
+        $subscriber->handleFlow($flow);
+
+        static::assertIsNotObject($mailFilterEvent);
+        static::assertSame(0, $mailService->calls);
+    }
+
+    public function testSendRevocationRequestFormMailType(): void
+    {
+        $email = 'max@muster.com';
+        $mailTemplateId = $this->getMailTemplateId(MailTemplateTypes::MAILTYPE_REVOCATION_REQUEST_CUSTOMER);
+        $config = [
+            'mailTemplateId' => $mailTemplateId,
+            'recipient' => [
+                'type' => 'revocationRequestCustomerFormMail',
+            ],
+        ];
+
+        $mailRecipientStruct = new MailRecipientStruct(['' => '']);
+        $context = Generator::generateSalesChannelContext();
+        $dataBag = new DataBag([
+            'firstName' => 'Max',
+            'lastName' => 'Mustermann',
+            'email' => $email,
+        ]);
+        $event = new RevocationRequestEvent(
+            $context->getContext(),
+            $context->getSalesChannelId(),
+            $mailRecipientStruct,
+            $dataBag
+        );
+
+        $flowFactory = static::getContainer()->get(FlowFactory::class);
+        $flow = $flowFactory->create($event);
+        $flow->setConfig($config);
+
+        $mailService = new TestEmailService();
+        $subscriber = new SendMailAction(
+            $mailService,
+            static::getContainer()->get('mail_template.repository'),
+            static::getContainer()->get('logger'),
+            static::getContainer()->get('event_dispatcher'),
+            static::getContainer()->get('mail_template_type.repository'),
+            static::getContainer()->get(Connection::class),
+            static::getContainer()->get(JsonEntityEncoder::class),
+            static::getContainer()->get(DefinitionInstanceRegistry::class),
+            true
+        );
+
+        $subscriber->handleFlow($flow);
+
+        static::assertIsArray($mailService->data);
+        static::assertArrayHasKey('recipients', $mailService->data);
+        $recipients = $mailService->data['recipients'];
+        static::assertArrayHasKey($email, $recipients);
+        static::assertSame('Max Mustermann', $recipients[$email]);
+    }
+
+    /**
+     * @return iterable<string, array<int, bool>>
+     */
+    public static function sendMailContactFormProvider(): iterable
+    {
+        yield 'Test send mail has data valid' => [true, true, true];
+        yield 'Test send mail contact form without email' => [false, true, true];
+        yield 'Test send mail contact form without firstName' => [true, false, true];
+        yield 'Test send mail contact form without lastName' => [true, false, true];
+    }
+
+    public function testSendMailWithConfigIsNull(): void
+    {
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+
+        $context = Context::createDefaultContext();
+
+        $context->addExtension(SendMailAction::MAIL_CONFIG_EXTENSION, new MailSendSubscriberConfig(false, [], []));
+
+        $mailTemplateId = $this->retrieveMailTemplateId();
+
+        $config = array_filter([
+            'mailTemplateId' => $mailTemplateId,
+            'recipient' => [],
+        ]);
+
+        $event = new ContactFormEvent($context, TestDefaults::SALES_CHANNEL, new MailRecipientStruct(['test@example.com' => 'Shopwell ag']), new DataBag());
+
+        $mailService = new TestEmailService();
+        $subscriber = new SendMailAction(
+            $mailService,
+            static::getContainer()->get('mail_template.repository'),
+            static::getContainer()->get('logger'),
+            static::getContainer()->get('event_dispatcher'),
+            static::getContainer()->get('mail_template_type.repository'),
+            static::getContainer()->get(Connection::class),
+            static::getContainer()->get(JsonEntityEncoder::class),
+            static::getContainer()->get(DefinitionInstanceRegistry::class),
+            true
+        );
+
+        $mailFilterEvent = null;
+        static::getContainer()->get('event_dispatcher')->addListener(FlowSendMailActionEvent::class, static function ($event) use (&$mailFilterEvent): void {
+            $mailFilterEvent = $event;
+        });
+
+        $this->expectExceptionObject(new MailEventConfigurationException('The recipient value in the flow action configuration is missing.', StorableFlow::class));
+
+        $flowFactory = static::getContainer()->get(FlowFactory::class);
+        $flow = $flowFactory->create($event);
+        $flow->setConfig($config);
+
+        try {
+            $subscriber->handleFlow($flow);
+        } finally {
+            static::assertNull($mailFilterEvent);
+            static::assertSame(0, $mailService->calls);
+        }
+    }
+
+    #[DataProvider('updateTemplateDataProvider')]
+    public function testUpdateAndSanitizeTemplateData(bool $shouldUpdate): void
+    {
+        Feature::skipTestIfActive('v6.8.0.0', $this);
+
+        $salesChannelContext = Generator::generateSalesChannelContext();
+
+        $mailTemplate = static::getContainer()
+            ->get('mail_template.repository')
+            ->search(new Criteria(), $salesChannelContext->getContext())->getEntities()
+            ->first();
+
+        static::getContainer()->get(Connection::class)->executeStatement('UPDATE mail_template_type SET template_data = NULL');
+        static::assertInstanceOf(MailTemplateEntity::class, $mailTemplate);
+
+        $customerId = $this->createCustomer($salesChannelContext->getContext());
+        $customer = static::getContainer()
+            ->get('customer.repository')
+            ->search(new Criteria([$customerId]), $salesChannelContext->getContext())->getEntities()
+            ->first();
+
+        static::assertInstanceOf(CustomerEntity::class, $customer);
+        $event = new CustomerRegisterEvent($salesChannelContext, $customer);
+
+        $mailService = new TestEmailService();
+
+        $subscriber = new SendMailAction(
+            $mailService,
+            static::getContainer()->get('mail_template.repository'),
+            static::getContainer()->get('logger'),
+            static::getContainer()->get('event_dispatcher'),
+            static::getContainer()->get('mail_template_type.repository'),
+            static::getContainer()->get(Connection::class),
+            static::getContainer()->get(JsonEntityEncoder::class),
+            static::getContainer()->get(DefinitionInstanceRegistry::class),
+            $shouldUpdate,
+        );
+
+        $mailFilterEvent = null;
+        static::getContainer()->get('event_dispatcher')->addListener(FlowSendMailActionEvent::class, static function ($event) use (&$mailFilterEvent): void {
+            $mailFilterEvent = $event;
+        });
+
+        $flowFactory = static::getContainer()->get(FlowFactory::class);
+        $flow = $flowFactory->create($event);
+        $flow->setConfig([
+            'mailTemplateId' => $mailTemplate->getId(),
+            'recipient' => [
+                'type' => 'admin',
+                'data' => [
+                    'test@test.com' => 'shopware',
+                    'test.x@test.com' => 'shopware',
+                ],
+            ],
+        ]);
+
+        $subscriber->handleFlow($flow);
+
+        static::assertIsObject($mailFilterEvent);
+        static::assertSame(1, $mailService->calls);
+        static::assertNotNull($mailTemplate->getMailTemplateTypeId());
+
+        $templateType = static::getContainer()
+            ->get('mail_template_type.repository')
+            ->search(new Criteria([$mailTemplate->getMailTemplateTypeId()]), $salesChannelContext->getContext())->getEntities()
+            ->first();
+
+        static::assertInstanceOf(MailTemplateTypeEntity::class, $templateType);
+        $data = $templateType->getTemplateData();
+
+        if ($shouldUpdate) {
+            static::assertNotNull($data);
+            static::assertArrayNotHasKey('password', $data['customer']);
+        } else {
+            static::assertNull($data);
+        }
+    }
+
+    public static function updateTemplateDataProvider(): \Generator
+    {
+        yield 'Test disable mail template updates' => [false];
+        yield 'Test enable mail template updates' => [true];
+    }
+
+    public function testNumberOfDocumentAttachmentsInCaseFlowSequencesAttachDifferentDocuments(): void
+    {
+        $context = Context::createDefaultContext();
+        $customerId = $this->createCustomer($context);
+        $orderId = $this->createOrder($customerId, $context);
+        $order = $this->orderRepository->search(new Criteria([$orderId]), $context)->getEntities()->first();
+        static::assertInstanceOf(OrderEntity::class, $order);
+
+        /** @var list<array{id: string, technical_name: string}> $documentTypes */
+        $documentTypes = $this->connection->fetchAllAssociative(
+            'SELECT HEX(`id`) AS `id`, `technical_name` FROM document_type WHERE `technical_name` IN (:type1, :type2);',
+            [
+                'type1' => InvoiceRenderer::TYPE,
+                'type2' => DeliveryNoteRenderer::TYPE,
+            ]
+        );
+        static::assertCount(2, $documentTypes);
+
+        foreach ($documentTypes as $index => $documentType) {
+            $generatedDocumentId = $this->createDocumentWithFile($orderId, $context, $documentType['technical_name']);
+            $documentTypes[$index]['documentId'] = $generatedDocumentId;
+
+            $criteria = new Criteria([$generatedDocumentId]);
+            $criteria->addAssociation('documentMediaFile');
+            $document = $this->documentRepository->search($criteria, $context)->getEntities()->first();
+            static::assertInstanceOf(DocumentEntity::class, $document);
+
+            $documentMediaFile = $document->getDocumentMediaFile();
+            static::assertInstanceOf(MediaEntity::class, $documentMediaFile);
+            $documentTypes[$index]['filename'] = $documentMediaFile->getFileName() . '.' . $documentMediaFile->getFileExtension();
+        }
+
+        $mailTemplateId = $this->retrieveMailTemplateId();
+
+        $context->addExtension(
+            SendMailAction::MAIL_CONFIG_EXTENSION,
+            new MailSendSubscriberConfig(
+                false,
+                [],
+                []
+            )
+        );
+
+        $event = new OrderStateMachineStateChangeEvent('state_enter.order.state.in_progress', $order, $context);
+        $flowFactory = static::getContainer()->get(FlowFactory::class);
+        $flow = $flowFactory->create($event);
+
+        $sequencesConfig = $this->createFlowSequencesConfig($mailTemplateId, $documentTypes);
+
+        $transportDecorator = new MailerTransportDecorator(
+            static::createStub(TransportInterface::class),
+            static::getContainer()->get(MailAttachmentsBuilder::class),
+            static::getContainer()->get('shopware.filesystem.public'),
+            $this->documentRepository
+        );
+
+        $logger = static::getContainer()->get('logger');
+        $eventDispatcher = static::getContainer()->get('event_dispatcher');
+        $mailTemplateTypeRepository = static::getContainer()->get('mail_template_type.repository');
+        $jsonEntityEncoder = static::getContainer()->get(JsonEntityEncoder::class);
+        $definitionInstanceRegistry = static::getContainer()->get(DefinitionInstanceRegistry::class);
+
+        foreach ($sequencesConfig as $config) {
+            $flow->setConfig($config);
+
+            $mailService = new TestEmailService(static::getContainer()->get(MailFactory::class), $transportDecorator);
+
+            $sendMailAction = new SendMailAction(
+                $mailService,
+                $this->mailTemplateRepository,
+                $logger,
+                $eventDispatcher,
+                $mailTemplateTypeRepository,
+                $this->connection,
+                $jsonEntityEncoder,
+                $definitionInstanceRegistry,
+                true
+            );
+
+            $sendMailAction->handleFlow($flow);
+
+            static::assertInstanceOf(Email::class, $mailService->mail);
+            $attachments = $mailService->mail->getAttachments();
+
+            static::assertCount(\count($config['documentTypeIds']), $attachments);
+
+            foreach ($config['documentTypeIds'] as $sequenzDocumentTypeId) {
+                $documentInfos = $this->getMatchingDocument($sequenzDocumentTypeId, $documentTypes);
+                static::assertNotEmpty($documentInfos);
+
+                static::assertArrayHasKey('filename', $documentInfos);
+                $found = $this->isDocumentPartOfAttachments($attachments, $documentInfos['filename']);
+                static::assertTrue($found, 'Attachment not found for document type: ' . $documentInfos['technical_name']);
+
+                static::assertArrayHasKey('documentId', $documentInfos);
+                $markedAsSent = $this->isDocumentMarkedAsSent($documentInfos['documentId'], $context);
+                static::assertTrue($markedAsSent, 'Successfully sent document with id ' . $documentInfos['documentId'] . ' was not marked as sent.');
+            }
+        }
+    }
+
+    public function testMailAttachmentsRemainForMultipleMailActionsWhenProvidedViaContextExtension(): void
+    {
+        $context = Context::createDefaultContext();
+        $customerId = $this->createCustomer($context);
+        $orderId = $this->createOrder($customerId, $context);
+
+        $documentIdOne = $this->createDocumentWithFile($orderId, $context);
+        $documentIdTwo = $this->createDocumentWithFile($orderId, $context);
+
+        $mailTemplateId = $this->retrieveMailTemplateId();
+
+        $context->addExtension(
+            SendMailAction::MAIL_CONFIG_EXTENSION,
+            new MailSendSubscriberConfig(false, [$documentIdOne, $documentIdTwo], [])
+        );
+
+        $order = $this->orderRepository->search(new Criteria([$orderId]), $context)->getEntities()->first();
+        static::assertInstanceOf(OrderEntity::class, $order);
+
+        $event = new OrderStateMachineStateChangeEvent('state_enter.order.state.in_progress', $order, $context);
+        $flowFactory = static::getContainer()->get(FlowFactory::class);
+        $flow = $flowFactory->create($event);
+
+        $transportDecorator = new MailerTransportDecorator(
+            static::createStub(TransportInterface::class),
+            static::getContainer()->get(MailAttachmentsBuilder::class),
+            static::getContainer()->get('shopware.filesystem.public'),
+            $this->documentRepository
+        );
+
+        $mailService = new TestEmailService(static::getContainer()->get(MailFactory::class), $transportDecorator);
+
+        $sendMailAction = new SendMailAction(
+            $mailService,
+            $this->mailTemplateRepository,
+            static::getContainer()->get('logger'),
+            static::getContainer()->get('event_dispatcher'),
+            static::getContainer()->get('mail_template_type.repository'),
+            $this->connection,
+            static::getContainer()->get(JsonEntityEncoder::class),
+            static::getContainer()->get(DefinitionInstanceRegistry::class),
+            true
+        );
+
+        $flow->setConfig([
+            'mailTemplateId' => $mailTemplateId,
+            'recipient' => [
+                'type' => 'custom',
+                'data' => [
+                    'first@test.com' => 'first recipient',
+                ],
+            ],
+        ]);
+
+        $sendMailAction->handleFlow($flow);
+
+        static::assertInstanceOf(Email::class, $mailService->mail);
+        static::assertCount(2, $mailService->mail->getAttachments());
+
+        $extension = $context->getExtension(SendMailAction::MAIL_CONFIG_EXTENSION);
+        static::assertInstanceOf(MailSendSubscriberConfig::class, $extension);
+        static::assertCount(2, $extension->getDocumentIds());
+
+        $flow->setConfig([
+            'mailTemplateId' => $mailTemplateId,
+            'recipient' => [
+                'type' => 'custom',
+                'data' => [
+                    'second@test.com' => 'second recipient',
+                ],
+            ],
+        ]);
+
+        $sendMailAction->handleFlow($flow);
+
+        static::assertCount(2, $mailService->mail->getAttachments());
+    }
+
+    public function testSendMailWithMailTemplateMediaAttachment(): void
+    {
+        $salesChannelContext = Generator::generateSalesChannelContext();
+        $context = $salesChannelContext->getContext();
+
+        $mailTemplateId = $this->retrieveMailTemplateId();
+
+        $mediaId = Uuid::randomHex();
+        $mediaPath = __DIR__ . '/../ImportExport/fixtures/shopware-logo.png';
+
+        $tempFile = \tempnam(\sys_get_temp_dir(), '');
+        static::assertIsString($tempFile);
+
+        \copy($mediaPath, $tempFile);
+
+        $fileSize = \filesize($tempFile);
+        static::assertIsInt($fileSize);
+
+        $mediaFile = new MediaFile($tempFile, 'image/png', 'png', $fileSize);
+
+        static::getContainer()->get('media.repository')->create([
+            [
+                'id' => $mediaId,
+                'fileExtension' => 'png',
+                'mimeType' => 'image/png',
+                'fileSize' => $fileSize,
+                'path' => $mediaPath,
+            ],
+        ], $context);
+
+        static::getContainer()->get('mail_template_media.repository')->create([
+            [
+                'id' => Uuid::randomHex(),
+                'mailTemplateId' => $mailTemplateId,
+                'mediaId' => $mediaId,
+                'languageId' => $context->getLanguageId(),
+                'position' => 0,
+            ],
+        ], $context);
+
+        static::getContainer()->get(FileSaver::class)->persistFileToMedia(
+            $mediaFile,
+            'test-file',
+            $mediaId,
+            $context
+        );
+
+        $transportDecorator = new MailerTransportDecorator(
+            static::createStub(TransportInterface::class),
+            static::getContainer()->get(MailAttachmentsBuilder::class),
+            static::getContainer()->get('shopware.filesystem.public'),
+            $this->documentRepository
+        );
+
+        $mailService = new TestEmailService(
+            static::getContainer()->get(MailFactory::class),
+            $transportDecorator
+        );
+
+        $sendMailAction = new SendMailAction(
+            $mailService,
+            $this->mailTemplateRepository,
+            static::getContainer()->get('logger'),
+            static::getContainer()->get('event_dispatcher'),
+            static::getContainer()->get('mail_template_type.repository'),
+            $this->connection,
+            static::getContainer()->get(JsonEntityEncoder::class),
+            static::getContainer()->get(DefinitionInstanceRegistry::class),
+            true
+        );
+
+        $customerId = $this->createCustomer($context);
+        $orderId = $this->createOrder($customerId, $context);
+
+        $criteria = new Criteria([$orderId]);
+        $criteria->addAssociation('transactions.stateMachineState');
+
+        $order = $this->orderRepository->search($criteria, $context)->getEntities()->first();
+        static::assertNotNull($order);
+
+        $event = new CheckoutOrderPlacedEvent($salesChannelContext, $order);
+        $flowFactory = static::getContainer()->get(FlowFactory::class);
+
+        $flow = $flowFactory->create($event);
+        $flow->setConfig([
+            'mailTemplateId' => $mailTemplateId,
+            'recipient' => ['type' => 'customer'],
+        ]);
+
+        $sendMailAction->handleFlow($flow);
+
+        static::assertInstanceOf(Email::class, $mailService->mail);
+        static::assertCount(1, $mailService->mail->getAttachments());
+    }
+
+    private function createCustomer(Context $context): string
+    {
+        $customerId = Uuid::randomHex();
+        $addressId = Uuid::randomHex();
+
+        $customer = [
+            'id' => $customerId,
+            'number' => '1337',
+            'salutationId' => $this->getValidSalutationId(),
+            'firstName' => 'Max',
+            'lastName' => 'Mustermann',
+            'customerNumber' => '1337',
+            'email' => Uuid::randomHex() . '@example.com',
+            'password' => 'shopware',
+            'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
+            'salesChannelId' => TestDefaults::SALES_CHANNEL,
+            'defaultBillingAddressId' => $addressId,
+            'defaultShippingAddressId' => $addressId,
+            'addresses' => [
+                [
+                    'id' => $addressId,
+                    'customerId' => $customerId,
+                    'countryId' => $this->getValidCountryId(),
+                    'salutationId' => $this->getValidSalutationId(),
+                    'firstName' => 'Max',
+                    'lastName' => 'Mustermann',
+                    'street' => 'Ebbinghoff 10',
+                    'zipcode' => '48624',
+                    'city' => 'Schöppingen',
+                ],
+            ],
+        ];
+
+        static::getContainer()
+            ->get('customer.repository')
+            ->upsert([$customer], $context);
+
+        return $customerId;
+    }
+
+    private function createOrder(string $customerId, Context $context): string
+    {
+        $orderId = Uuid::randomHex();
+        $stateId = static::getContainer()->get(InitialStateIdLoader::class)->get(OrderStates::STATE_MACHINE);
+        $billingAddressId = Uuid::randomHex();
+
+        $order = [
+            'id' => $orderId,
+            'itemRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+            'totalRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+            'orderNumber' => Uuid::randomHex(),
+            'orderDateTime' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            'price' => new CartPrice(10, 10, 10, new CalculatedTaxCollection(), new TaxRuleCollection(), CartPrice::TAX_STATE_NET),
+            'shippingCosts' => new CalculatedPrice(10, 10, new CalculatedTaxCollection(), new TaxRuleCollection()),
+            'orderCustomer' => [
+                'customerId' => $customerId,
+                'email' => 'test@example.com',
+                'salutationId' => $this->getValidSalutationId(),
+                'firstName' => 'Max',
+                'lastName' => 'Mustermann',
+            ],
+            'stateId' => $stateId,
+            'paymentMethodId' => $this->getValidPaymentMethodId(),
+            'currencyId' => Defaults::CURRENCY,
+            'currencyFactor' => 1.0,
+            'salesChannelId' => TestDefaults::SALES_CHANNEL,
+            'billingAddressId' => $billingAddressId,
+            'addresses' => [
+                [
+                    'id' => $billingAddressId,
+                    'salutationId' => $this->getValidSalutationId(),
+                    'firstName' => 'Max',
+                    'lastName' => 'Mustermann',
+                    'street' => 'Ebbinghoff 10',
+                    'zipcode' => '48624',
+                    'city' => 'Schöppingen',
+                    'countryId' => $this->getValidCountryId(),
+                ],
+            ],
+            'lineItems' => [],
+            'deliveries' => [
+            ],
+            'transactions' => [
+                [
+                    'paymentMethodId' => $this->getValidPaymentMethodId(),
+                    'stateId' => $stateId,
+                    'amount' => new CalculatedPrice(200, 200, new CalculatedTaxCollection(), new TaxRuleCollection()),
+                ],
+            ],
+            'context' => '{}',
+            'payload' => '{}',
+        ];
+
+        $this->orderRepository->upsert([$order], $context);
+
+        return $orderId;
+    }
+
+    private function createDocumentWithFile(string $orderId, Context $context, string $documentType = InvoiceRenderer::TYPE): string
+    {
+        $documentGenerator = static::getContainer()->get(DocumentGenerator::class);
+
+        $operation = new DocumentGenerateOperation($orderId, FileTypes::PDF, []);
+        $document = $documentGenerator->generate($documentType, [$orderId => $operation], $context)->getSuccess()->first();
+
+        static::assertNotNull($document);
+
+        return $document->getId();
+    }
+
+    private static function getDocIdByType(string $documentType): string
+    {
+        return (string) KernelLifecycleManager::getConnection()->fetchOne(
+            'SELECT LOWER(HEX(`id`)) FROM `document_type` WHERE `technical_name` = :documentType',
+            [
+                'documentType' => $documentType,
+            ]
+        );
+    }
+
+    private function retrieveMailTemplateId(): string
+    {
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+
+        $id = $this->mailTemplateRepository
+            ->searchIds($criteria, Context::createDefaultContext())
+            ->firstId();
+
+        static::assertIsString($id);
+
+        return $id;
+    }
+
+    /**
+     * @param array<int, array<string, string>> $documentTypes
+     *
+     * @return array<array{mailTemplateId: string, documentTypeIds: array<int, string>, recipient: array<string, string|array<string, string>>}>
+     */
+    private function createFlowSequencesConfig(string $mailTemplateId, array $documentTypes): array
+    {
+        return [
+            [
+                'mailTemplateId' => $mailTemplateId,
+                'documentTypeIds' => [
+                    $documentTypes[0]['id'],
+                    $documentTypes[1]['id'],
+                ],
+                'recipient' => [
+                    'type' => 'custom',
+                    'data' => [
+                        'first@test.com' => 'first recipient',
+                    ],
+                ],
+            ],
+            [
+                'mailTemplateId' => $mailTemplateId,
+                'documentTypeIds' => [
+                    $documentTypes[0]['id'],
+                ],
+                'recipient' => [
+                    'type' => 'custom',
+                    'data' => [
+                        'second@test.com' => 'second recipient',
+                    ],
+                ],
+            ],
+            [
+                'mailTemplateId' => $mailTemplateId,
+                'documentTypeIds' => [
+                    $documentTypes[1]['id'],
+                ],
+                'recipient' => [
+                    'type' => 'custom',
+                    'data' => [
+                        'third@test.com' => 'third recipient',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @param list<array{id: string, technical_name: string, documentId?: string, filename?: string}> $documentTypes
+     *
+     * @return array{id: string, technical_name: string, documentId?: string, filename?: string}|array{}
+     */
+    private function getMatchingDocument(string $sequenzDocumentTypeId, array $documentTypes): array
+    {
+        foreach ($documentTypes as $documentType) {
+            if ($documentType['id'] === $sequenzDocumentTypeId) {
+                return $documentType;
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * @param array<DataPart> $attachments
+     */
+    private function isDocumentPartOfAttachments(array $attachments, string $documentName): bool
+    {
+        foreach ($attachments as $attachment) {
+            if ($attachment->getFilename() === $documentName) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isDocumentMarkedAsSent(string $documentId, Context $context): bool
+    {
+        $document = $this->documentRepository->search(new Criteria([$documentId]), $context)->getEntities()->first();
+        static::assertInstanceOf(DocumentEntity::class, $document);
+
+        return $document->getSent();
+    }
+
+    private function getMailTemplateId(string $technicalName): ?string
+    {
+        $mailTemplateTypeId = $this->getMailTemplateTypeId($technicalName);
+        static::assertNotEmpty($mailTemplateTypeId);
+
+        $result = $this->connection->fetchOne(
+            'SELECT `id` FROM `mail_template` WHERE `mail_template_type_id` = :mailTemplateTypeId',
+            ['mailTemplateTypeId' => $mailTemplateTypeId]
+        );
+
+        if ($result === false) {
+            return null;
+        }
+
+        $result = Uuid::fromBytesToHex($result);
+        static::assertTrue(Uuid::isValid($result));
+
+        return $result;
+    }
+
+    private function getMailTemplateTypeId(string $technicalName): ?string
+    {
+        $result = $this->connection->fetchOne(
+            'SELECT `id` FROM `mail_template_type` WHERE `technical_name` = :technicalName',
+            ['technicalName' => $technicalName]
+        );
+
+        if ($result === false) {
+            return null;
+        }
+
+        return $result;
+    }
+}
+
+/**
+ * @internal
+ */
+#[Package('after-sales')]
+class TestEmailService extends MailService
+{
+    public int $calls = 0;
+
+    public ?Email $mail = null;
+
+    /**
+     * @var array<string, mixed>|null
+     */
+    public ?array $data = null;
+
+    public function __construct(
+        private readonly ?MailFactory $mailFactory = null,
+        private readonly ?MailerTransportDecorator $decorator = null
+    ) {
+    }
+
+    public function send(array $data, Context $context, array $templateData = []): ?Email
+    {
+        $this->data = $data;
+        ++$this->calls;
+
+        TestCase::assertArrayHasKey('subject', $data);
+        TestCase::assertIsString($data['subject']);
+        TestCase::assertArrayHasKey('recipients', $data);
+        TestCase::assertIsArray($data['recipients']);
+
+        if ($this->mailFactory && $this->decorator) {
+            $mail = $this->mailFactory->create(
+                $data['subject'],
+                ['foo@example.com' => 'foobar'],
+                $data['recipients'],
+                [],
+                [],
+                $data,
+                $data['binAttachments'] ?? null
+            );
+            $this->decorator->send($mail);
+
+            $this->mail = $mail;
+
+            return $mail;
+        }
+
+        return null;
+    }
+}

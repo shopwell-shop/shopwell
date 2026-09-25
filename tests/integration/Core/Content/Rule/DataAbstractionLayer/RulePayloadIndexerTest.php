@@ -1,0 +1,564 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\Rule\DataAbstractionLayer;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
+use Shopwell\Core\Content\Rule\DataAbstractionLayer\RuleIndexer;
+use Shopwell\Core\Content\Rule\RuleCollection;
+use Shopwell\Core\Content\Rule\RuleEntity;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexingMessage;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Migration\MigrationCollection;
+use Shopwell\Core\Framework\Migration\MigrationRuntime;
+use Shopwell\Core\Framework\Migration\MigrationSource;
+use Shopwell\Core\Framework\Plugin;
+use Shopwell\Core\Framework\Plugin\Context\ActivateContext;
+use Shopwell\Core\Framework\Plugin\Context\DeactivateContext;
+use Shopwell\Core\Framework\Plugin\Context\InstallContext;
+use Shopwell\Core\Framework\Plugin\Context\UninstallContext;
+use Shopwell\Core\Framework\Plugin\Context\UpdateContext;
+use Shopwell\Core\Framework\Plugin\Event\PluginLifecycleEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostActivateEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostDeactivateEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostInstallEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostUninstallEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostUpdateEvent;
+use Shopwell\Core\Framework\Plugin\PluginEntity;
+use Shopwell\Core\Framework\Rule\Container\AndRule;
+use Shopwell\Core\Framework\Rule\Container\OrRule;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Rule\SalesChannelRule;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Migration\Test\NullConnection;
+use Shopwell\Core\System\Currency\Rule\CurrencyRule;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+class RulePayloadIndexerTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    private Context $context;
+
+    /**
+     * @var EntityRepository<RuleCollection>
+     */
+    private EntityRepository $ruleRepository;
+
+    private RuleIndexer $indexer;
+
+    private Connection $connection;
+
+    private EventDispatcherInterface $eventDispatcher;
+
+    protected function setUp(): void
+    {
+        $this->ruleRepository = static::getContainer()->get('rule.repository');
+        $this->indexer = static::getContainer()->get(RuleIndexer::class);
+        $this->connection = static::getContainer()->get(Connection::class);
+        $this->context = Context::createDefaultContext();
+        $this->eventDispatcher = static::getContainer()->get('event_dispatcher');
+    }
+
+    public function testIndex(): void
+    {
+        $id = Uuid::randomHex();
+        $currencyId1 = Uuid::randomHex();
+        $currencyId2 = Uuid::randomHex();
+
+        $data = [
+            'id' => $id,
+            'name' => 'test rule',
+            'priority' => 1,
+            'conditions' => [
+                [
+                    'type' => (new OrRule())->getName(),
+                    'children' => [
+                        [
+                            'type' => (new CurrencyRule())->getName(),
+                            'value' => [
+                                'currencyIds' => [
+                                    $currencyId1,
+                                    $currencyId2,
+                                ],
+                                'operator' => CurrencyRule::OPERATOR_EQ,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->ruleRepository->create([$data], $this->context);
+
+        $this->connection->update('rule', ['payload' => null, 'invalid' => '1'], ['HEX(1)' => '1']);
+        $rule = $this->ruleRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertNull($rule->get('payload'));
+
+        $this->indexer->handle(new EntityIndexingMessage([$id]));
+
+        $rule = $this->ruleRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertInstanceOf(Rule::class, $rule->getPayload());
+        static::assertEquals(
+            new AndRule([new OrRule([(new CurrencyRule())->assign(['currencyIds' => [$currencyId1, $currencyId2]])])]),
+            $rule->getPayload()
+        );
+    }
+
+    public function testRefresh(): void
+    {
+        $id = Uuid::randomHex();
+        $currencyId1 = Uuid::randomHex();
+        $currencyId2 = Uuid::randomHex();
+
+        $data = [
+            'id' => $id,
+            'name' => 'test rule',
+            'priority' => 1,
+            'conditions' => [
+                [
+                    'type' => (new OrRule())->getName(),
+                    'children' => [
+                        [
+                            'type' => (new CurrencyRule())->getName(),
+                            'value' => [
+                                'currencyIds' => [
+                                    $currencyId1,
+                                    $currencyId2,
+                                ],
+                                'operator' => CurrencyRule::OPERATOR_EQ,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->ruleRepository->create([$data], $this->context);
+
+        $rule = $this->ruleRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertInstanceOf(Rule::class, $rule->getPayload());
+        static::assertEquals(
+            new AndRule([new OrRule([(new CurrencyRule())->assign(['currencyIds' => [$currencyId1, $currencyId2]])])]),
+            $rule->getPayload()
+        );
+    }
+
+    public function testRefreshWithMultipleRules(): void
+    {
+        $id = Uuid::randomHex();
+        $rule2Id = Uuid::randomHex();
+        $currencyId1 = Uuid::randomHex();
+        $currencyId2 = Uuid::randomHex();
+        $salesChannelId1 = Uuid::randomHex();
+        $salesChannelId2 = Uuid::randomHex();
+
+        $data = [
+            [
+                'id' => $id,
+                'name' => 'test rule',
+                'priority' => 1,
+                'conditions' => [
+                    [
+                        'type' => (new OrRule())->getName(),
+                        'children' => [
+                            [
+                                'type' => (new CurrencyRule())->getName(),
+                                'value' => [
+                                    'currencyIds' => [
+                                        $currencyId1,
+                                        $currencyId2,
+                                    ],
+                                    'operator' => CurrencyRule::OPERATOR_EQ,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'id' => $rule2Id,
+                'name' => 'second rule',
+                'priority' => 42,
+                'conditions' => [
+                    [
+                        'type' => (new SalesChannelRule())->getName(),
+                        'value' => [
+                            'salesChannelIds' => [
+                                $salesChannelId1,
+                                $salesChannelId2,
+                            ],
+                            'operator' => CurrencyRule::OPERATOR_EQ,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->ruleRepository->create($data, $this->context);
+
+        $this->connection->update('rule', ['payload' => null, 'invalid' => '1'], ['HEX(1)' => '1']);
+        $rule = $this->ruleRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertNull($rule->get('payload'));
+
+        $this->indexer->handle(new EntityIndexingMessage([$id, $rule2Id]));
+
+        $rules = $this->ruleRepository->search(new Criteria([$id, $rule2Id]), $this->context)->getEntities();
+        $rule = $rules->get($id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertInstanceOf(Rule::class, $rule->getPayload());
+        static::assertEquals(
+            new AndRule([new OrRule([(new CurrencyRule())->assign(['currencyIds' => [$currencyId1, $currencyId2]])])]),
+            $rule->getPayload()
+        );
+        $rule = $rules->get($rule2Id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertInstanceOf(Rule::class, $rule->getPayload());
+        static::assertEquals(
+            new AndRule([(new SalesChannelRule())->assign(['salesChannelIds' => [$salesChannelId1, $salesChannelId2]])]),
+            $rule->getPayload()
+        );
+    }
+
+    public function testIndexWithMultipleRules(): void
+    {
+        $id = Uuid::randomHex();
+        $rule2Id = Uuid::randomHex();
+        $currencyId1 = Uuid::randomHex();
+        $currencyId2 = Uuid::randomHex();
+        $salesChannelId1 = Uuid::randomHex();
+        $salesChannelId2 = Uuid::randomHex();
+
+        $data = [
+            [
+                'id' => $id,
+                'name' => 'test rule',
+                'priority' => 1,
+                'conditions' => [
+                    [
+                        'type' => (new OrRule())->getName(),
+                        'children' => [
+                            [
+                                'type' => (new CurrencyRule())->getName(),
+                                'value' => [
+                                    'currencyIds' => [
+                                        $currencyId1,
+                                        $currencyId2,
+                                    ],
+                                    'operator' => CurrencyRule::OPERATOR_EQ,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'id' => $rule2Id,
+                'name' => 'second rule',
+                'priority' => 42,
+                'conditions' => [
+                    [
+                        'type' => (new SalesChannelRule())->getName(),
+                        'value' => [
+                            'salesChannelIds' => [
+                                $salesChannelId1,
+                                $salesChannelId2,
+                            ],
+                            'operator' => SalesChannelRule::OPERATOR_EQ,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->ruleRepository->create($data, $this->context);
+
+        $rules = $this->ruleRepository->search(new Criteria([$id, $rule2Id]), $this->context)->getEntities();
+        $rule = $rules->get($id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertInstanceOf(Rule::class, $rule->getPayload());
+        static::assertEquals(
+            new AndRule([new OrRule([(new CurrencyRule())->assign(['currencyIds' => [$currencyId1, $currencyId2]])])]),
+            $rule->getPayload()
+        );
+        $rule = $rules->get($rule2Id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertInstanceOf(Rule::class, $rule->getPayload());
+        static::assertEquals(
+            new AndRule([(new SalesChannelRule())->assign(['salesChannelIds' => [$salesChannelId1, $salesChannelId2]])]),
+            $rule->getPayload()
+        );
+    }
+
+    public function testIndexWithMultipleRootConditions(): void
+    {
+        $id = Uuid::randomHex();
+
+        $data = [
+            'id' => $id,
+            'name' => 'test rule',
+            'priority' => 1,
+            'conditions' => [
+                [
+                    'type' => (new OrRule())->getName(),
+                    'children' => [
+                        [
+                            'type' => (new AndRule())->getName(),
+                            'children' => [
+                                [
+                                    'type' => (new CurrencyRule())->getName(),
+                                    'value' => [
+                                        'currencyIds' => [
+                                            Uuid::randomHex(),
+                                            Uuid::randomHex(),
+                                        ],
+                                        'operator' => CurrencyRule::OPERATOR_EQ,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'type' => (new OrRule())->getName(),
+                ],
+            ],
+        ];
+
+        $this->ruleRepository->create([$data], $this->context);
+
+        $this->connection->update('rule', ['payload' => null, 'invalid' => '1'], ['HEX(1)' => '1']);
+        $rule = $this->ruleRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertNull($rule->get('payload'));
+        $this->indexer->handle(new EntityIndexingMessage([$id]));
+
+        $rule = $this->ruleRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertInstanceOf(AndRule::class, $rule->getPayload());
+
+        static::assertCount(2, $rule->getPayload()->getRules());
+        static::assertContainsOnlyInstancesOf(OrRule::class, $rule->getPayload()->getRules());
+    }
+
+    public function testIndexWithRootRuleNotAndRule(): void
+    {
+        $id = Uuid::randomHex();
+        $currencyId1 = Uuid::randomHex();
+        $currencyId2 = Uuid::randomHex();
+
+        $data = [
+            'id' => $id,
+            'name' => 'test rule',
+            'priority' => 1,
+            'conditions' => [
+                [
+                    'type' => (new CurrencyRule())->getName(),
+                    'value' => [
+                        'currencyIds' => [
+                            $currencyId1,
+                            $currencyId2,
+                        ],
+                        'operator' => CurrencyRule::OPERATOR_EQ,
+                    ],
+                ],
+            ],
+        ];
+
+        $this->ruleRepository->create([$data], $this->context);
+
+        $this->connection->update('rule', ['payload' => null, 'invalid' => '1'], ['HEX(1)' => '1']);
+        $rule = $this->ruleRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertNull($rule->get('payload'));
+
+        $this->indexer->handle(new EntityIndexingMessage([$id]));
+
+        $rule = $this->ruleRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertInstanceOf(Rule::class, $rule->getPayload());
+        static::assertEquals(
+            new AndRule([(new CurrencyRule())->assign(['currencyIds' => [$currencyId1, $currencyId2]])]),
+            $rule->getPayload()
+        );
+    }
+
+    public function testRefreshWithRootRuleNotAndRule(): void
+    {
+        $id = Uuid::randomHex();
+        $currencyId1 = Uuid::randomHex();
+        $currencyId2 = Uuid::randomHex();
+
+        $data = [
+            'id' => $id,
+            'name' => 'test rule',
+            'priority' => 1,
+            'conditions' => [
+                [
+                    'type' => (new CurrencyRule())->getName(),
+                    'value' => [
+                        'currencyIds' => [
+                            $currencyId1,
+                            $currencyId2,
+                        ],
+                        'operator' => CurrencyRule::OPERATOR_EQ,
+                    ],
+                ],
+            ],
+        ];
+
+        $this->ruleRepository->create([$data], $this->context);
+
+        $rule = $this->ruleRepository->search(new Criteria([$id]), $this->context)->getEntities()->get($id);
+        static::assertInstanceOf(RuleEntity::class, $rule);
+        static::assertInstanceOf(Rule::class, $rule->getPayload());
+        static::assertEquals(
+            new AndRule([(new CurrencyRule())->assign(['currencyIds' => [$currencyId1, $currencyId2]])]),
+            $rule->getPayload()
+        );
+    }
+
+    public function testRuleUpdatedAtIsUpdatedWhenConditionChanges(): void
+    {
+        $ruleId = Uuid::randomHex();
+        $conditionId = Uuid::randomHex();
+        $currencyId = Uuid::randomHex();
+
+        $data = [
+            'id' => $ruleId,
+            'name' => 'test rule',
+            'priority' => 1,
+            'conditions' => [
+                [
+                    'id' => $conditionId,
+                    'type' => (new CurrencyRule())->getName(),
+                    'value' => [
+                        'currencyIds' => [$currencyId],
+                        'operator' => CurrencyRule::OPERATOR_EQ,
+                    ],
+                ],
+            ],
+        ];
+
+        $this->ruleRepository->create([$data], $this->context);
+
+        $this->connection->executeStatement(
+            'UPDATE `rule` SET updated_at = DATE_SUB(NOW(), INTERVAL 1 HOUR) WHERE id = :id',
+            ['id' => Uuid::fromHexToBytes($ruleId)]
+        );
+
+        $updatedAtBefore = $this->connection->fetchOne(
+            'SELECT updated_at FROM rule WHERE id = :id',
+            ['id' => Uuid::fromHexToBytes($ruleId)]
+        );
+
+        static::assertIsString($updatedAtBefore, 'Rule updated_at should be set after creation');
+
+        $conditionRepository = static::getContainer()->get('rule_condition.repository');
+        $conditionRepository->update([
+            [
+                'id' => $conditionId,
+                'value' => [
+                    'currencyIds' => [$currencyId, Uuid::randomHex()],
+                    'operator' => CurrencyRule::OPERATOR_EQ,
+                ],
+            ],
+        ], $this->context);
+
+        $updatedAtAfter = $this->connection->fetchOne(
+            'SELECT updated_at FROM rule WHERE id = :id',
+            ['id' => Uuid::fromHexToBytes($ruleId)]
+        );
+
+        static::assertNotSame(
+            $updatedAtBefore,
+            $updatedAtAfter,
+            'Rule updated_at should change when a condition is updated'
+        );
+    }
+
+    #[DataProvider('dataProviderForTestPostEventNullsPayload')]
+    public function testPostEventNullsPayload(PluginLifecycleEvent $event): void
+    {
+        $payload = serialize(new AndRule());
+
+        for ($i = 0; $i < 21; ++$i) {
+            $this->connection->createQueryBuilder()
+                ->insert('rule')
+                ->values(['id' => ':id', 'name' => ':name', 'priority' => 1, 'payload' => ':payload', 'created_at' => ':createdAt'])
+                ->setParameter('id', Uuid::randomBytes())
+                ->setParameter('payload', $payload)
+                ->setParameter('name', 'Rule' . $i)
+                ->setParameter('createdAt', (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT))
+                ->executeStatement();
+        }
+
+        $this->eventDispatcher->dispatch($event);
+
+        $rules = $this->connection->createQueryBuilder()
+            ->select('id', 'payload', 'invalid')
+            ->from('rule')
+            ->executeQuery()
+            ->fetchAllAssociative();
+
+        foreach ($rules as $rule) {
+            static::assertSame('0', $rule['invalid']);
+            static::assertNull($rule['payload']);
+            static::assertNotNull($rule['id']);
+        }
+    }
+
+    /**
+     * @return list<array<PluginLifecycleEvent>>
+     */
+    public static function dataProviderForTestPostEventNullsPayload(): array
+    {
+        $plugin = new PluginEntity();
+        $plugin->setName('TestPlugin');
+        $plugin->setBaseClass(RulePlugin::class);
+        $plugin->setPath('');
+
+        $context = Context::createDefaultContext();
+        $rulePlugin = new RulePlugin(false, '');
+
+        $nullConnection = new NullConnection();
+        $nullLogger = new NullLogger();
+        $collection = new MigrationCollection(
+            new MigrationSource('asd', []),
+            new MigrationRuntime($nullConnection, $nullLogger),
+            $nullConnection,
+            $nullLogger,
+        );
+
+        return [
+            [new PluginPostInstallEvent($plugin, new InstallContext($rulePlugin, $context, '', '', $collection))],
+            [new PluginPostActivateEvent($plugin, new ActivateContext($rulePlugin, $context, '', '', $collection))],
+            [new PluginPostUpdateEvent($plugin, new UpdateContext($rulePlugin, $context, '', '', $collection, ''))],
+            [new PluginPostDeactivateEvent($plugin, new DeactivateContext($rulePlugin, $context, '', '', $collection))],
+            [new PluginPostUninstallEvent($plugin, new UninstallContext($rulePlugin, $context, '', '', $collection, true))],
+        ];
+    }
+}
+
+/**
+ * @internal
+ */
+#[Package('fundamentals@after-sales')]
+class RulePlugin extends Plugin
+{
+}

@@ -1,0 +1,144 @@
+@import "~scss/variables";
+
+.sw-select {
+    position: relative;
+
+    .sw-block-field__block {
+        background-color: var(--color-background-primary-default);
+        position: relative;
+        overflow: visible;
+    }
+
+    .sw-select__selection {
+        position: relative;
+        height: 100%;
+        padding: 0 var(--scale-size-8);
+        border: none;
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        color: var(--color-text-primary-default);
+        outline: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+    }
+
+    .sw-select__selection-indicators {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        gap: var(--scale-size-8);
+        top: 50%;
+        right: var(--scale-size-16);
+        transform: translate(0, -50%);
+        z-index: 1;
+    }
+
+    .sw-select__selection-indicators .sw-loader {
+        position: static;
+        width: var(--scale-size-16);
+        height: var(--scale-size-16);
+        margin: 0;
+
+        .sw-loader__container {
+            transform: none;
+            left: 0;
+            top: 0;
+        }
+    }
+
+    .sw-select__select-indicator-hitbox {
+        background-color: transparent;
+        border: 0 solid transparent;
+        padding: 0 var(--scale-size-4);
+        cursor: pointer;
+        border-radius: var(--border-radius-xs);
+
+        &:focus-visible {
+            outline: var(--scale-size-2) solid var(--color-border-brand-default);
+            outline-offset: var(--scale-size-2);
+        }
+
+        .sw-select__select-indicator {
+            display: block;
+        }
+
+        &:focus {
+            .sw-select__select-indicator-clear {
+                opacity: 1;
+                pointer-events: all;
+                cursor: pointer;
+            }
+        }
+    }
+
+    .sw-select__select-indicator {
+        flex-shrink: 0;
+        cursor: pointer;
+
+        &.sw-select__select-indicator-expand {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        &.sw-select__select-indicator-expand--rotated {
+            transition: transform 0.3s ease-in-out;
+            transform: rotate(180deg);
+        }
+    }
+
+    .sw-select__select-indicator-clear {
+        width: var(--scale-size-16);
+        height: var(--scale-size-16);
+        padding: 3px;
+        transition: 0.1s opacity ease;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    &:hover .sw-select__select-indicator-clear,
+    &.has--focus .sw-select__select-indicator-clear {
+        opacity: 1;
+        pointer-events: all;
+        cursor: pointer;
+    }
+
+    &.sw-field--medium .sw-select__selection {
+        padding: 4px var(--scale-size-16) 0;
+    }
+
+    &.sw-field--small .sw-block-field__block {
+        height: auto;
+    }
+
+    &.is--disabled {
+        .sw-block-field__block {
+            background-color: var(--color-background-tertiary-default);
+        }
+
+        .sw-label,
+        .sw-label--dismissable:hover {
+            background-color: var(--color-background-tertiary-default);
+            color: var(--color-text-primary-default);
+            border-color: var(--color-border-primary-default);
+
+            .sw-label__dismiss {
+                color: var(--color-icon-primary-disabled);
+            }
+        }
+
+        input {
+            background-color: var(--color-background-tertiary-default);
+        }
+    }
+}
+
+// Vue.js transitions
+.sw-select-result-list-fade-down-enter-active,
+.sw-select-result-list-fade-down-leave-active {
+    transform: translateY(0);
+}
+
+.sw-select-result-list-fade-down-enter,
+.sw-select-result-list-fade-down-leave-to {
+    transform: translateY(-10px);
+    opacity: 0;
+}

@@ -1,0 +1,78 @@
+import template from './sw-product-deliverability-downloadable-form.html.twig';
+import './sw-product-deliverability-downloadable-form.scss';
+
+const { Mixin } = Shopwell;
+const { mapPropertyErrors } = Shopwell.Component.getComponentHelper();
+
+/*
+ * @sw-package inventory
+ * @private
+ */
+export default {
+    template,
+
+    mixins: [Mixin.getByName('placeholder')],
+
+    props: {
+        disabled: {
+            type: Boolean,
+            required: false,
+            default: false,
+        },
+    },
+
+    data() {
+        return {
+            persistedStock: null,
+        };
+    },
+
+    computed: {
+        product() {
+            return Shopwell.Store.get('swProductDetail').product;
+        },
+
+        parentProduct() {
+            return Shopwell.Store.get('swProductDetail').parentProduct;
+        },
+
+        showModeSetting() {
+            return Shopwell.Store.get('swProductDetail').showModeSetting;
+        },
+
+        showStockSetting() {
+            if (this.product.isCloseout !== null || !this.parentProduct?.id) {
+                return this.product.isCloseout;
+            }
+
+            return this.parentProduct.isCloseout;
+        },
+
+        ...mapPropertyErrors('product', [
+            'stock',
+            'deliveryTimeId',
+            'isCloseout',
+            'maxPurchase',
+        ]),
+    },
+
+    created() {
+        this.createdComponent();
+    },
+
+    methods: {
+        createdComponent() {
+            if (typeof this.product.stock === 'undefined') {
+                this.product.stock = 0;
+            }
+
+            this.persistedStock = this.product.stock;
+        },
+
+        onSwitchInput(event) {
+            if (event === false) {
+                this.product.stock = this.persistedStock;
+            }
+        },
+    },
+};

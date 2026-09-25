@@ -1,0 +1,81 @@
+/**
+ * @sw-package inventory
+ */
+
+import './acl';
+
+/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+Shopwell.Component.register(
+    'sw-settings-product-feature-sets-list',
+    () => import('./page/sw-settings-product-feature-sets-list'),
+);
+Shopwell.Component.register(
+    'sw-settings-product-feature-sets-detail',
+    () => import('./page/sw-settings-product-feature-sets-detail'),
+);
+Shopwell.Component.register(
+    'sw-settings-product-feature-sets-values-card',
+    () => import('./component/sw-settings-product-feature-sets-values-card'),
+);
+Shopwell.Component.register(
+    'sw-settings-product-feature-sets-modal',
+    () => import('./component/sw-settings-product-feature-sets-modal'),
+);
+/* eslint-enable sw-deprecation-rules/private-feature-declarations */
+
+const { Module } = Shopwell;
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Module.register('sw-settings-product-feature-sets', {
+    type: 'core',
+    name: 'settings-product-feature-sets',
+    title: 'sw-settings-product-feature-sets.general.mainMenuItemGeneral',
+    description: 'Essential characteristics section in the settings module',
+    color: 'var(--sw-color-module-neutral-default)',
+    icon: 'regular-check-square',
+    favicon: 'icon-module-settings.svg',
+    entity: 'product_feature_set',
+
+    routes: {
+        index: {
+            component: 'sw-settings-product-feature-sets-list',
+            path: 'index',
+            meta: {
+                parentPath: 'sw.settings.index',
+                privilege: 'product_feature_sets.viewer',
+            },
+        },
+
+        detail: {
+            component: 'sw-settings-product-feature-sets-detail',
+            path: 'detail/:id',
+            meta: {
+                parentPath: 'sw.settings.product.feature.sets.index',
+                privilege: 'product_feature_sets.viewer',
+            },
+            props: {
+                default(route) {
+                    return {
+                        productFeatureSetId: route.params.id.toLowerCase(),
+                    };
+                },
+            },
+        },
+
+        create: {
+            component: 'sw-settings-product-feature-sets-detail',
+            path: 'create',
+            meta: {
+                parentPath: 'sw.settings.product.feature.sets.index',
+                privilege: 'product_feature_sets.creator',
+            },
+        },
+    },
+
+    settingsItem: {
+        group: 'commerce',
+        to: 'sw.settings.product.feature.sets.index',
+        icon: 'regular-check-square',
+        privilege: 'product_feature_sets.viewer',
+    },
+});

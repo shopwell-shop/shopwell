@@ -1,0 +1,38 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Adapter\Cache;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Adapter\Cache\InvalidateCacheTask;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(InvalidateCacheTask::class)]
+class InvalidateCacheTaskTest extends TestCase
+{
+    public function testGetTaskName(): void
+    {
+        static::assertSame('shopware.invalidate_cache', InvalidateCacheTask::getTaskName());
+    }
+
+    public function testShouldRun(): void
+    {
+        static::assertTrue(InvalidateCacheTask::shouldRun(new ParameterBag()));
+    }
+
+    public function testGetDefaultInterval(): void
+    {
+        static::assertSame(300, InvalidateCacheTask::getDefaultInterval());
+    }
+
+    public function testDeduplicationId(): void
+    {
+        $task = new InvalidateCacheTask();
+        static::assertSame('invalidate-cache-task', $task->deduplicationId());
+    }
+}

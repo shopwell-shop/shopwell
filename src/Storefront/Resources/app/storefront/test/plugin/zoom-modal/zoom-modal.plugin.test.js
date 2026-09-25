@@ -1,0 +1,255 @@
+import ZoomModalPlugin from 'src/plugin/zoom-modal/zoom-modal.plugin';
+import GallerySliderPlugin from 'src/plugin/slider/gallery-slider.plugin';
+
+/**
+ * @package storefront
+ */
+describe('ZoomModalPlugin tests', () => {
+    let zoomModalPlugin = undefined;
+    let gallerySliderPlugin = undefined;
+    let parentSliderPlugin = undefined;
+
+    beforeEach(() => {
+        document.body.innerHTML = `
+            <div class="js-gallery-zoom-modal-container" data-gallery-slider="true">
+                <div data-zoom-modal="true">
+
+                    <div id="gallery-slider" class="gallery-slider-container">
+                        <img src="#" alt="" class="gallery-slider-image magnifier-image js-magnifier-image" tabindex="0">
+                        <img src="#" alt="" class="gallery-slider-image magnifier-image js-magnifier-image" tabindex="0">
+                        <img src="#" alt="" class="gallery-slider-image magnifier-image js-magnifier-image" tabindex="0">
+                    </div>
+
+                    <div class="modal js-zoom-modal">
+                        <div class="modal-dialog">
+                            <div class="modal-content" data-modal-gallery-slider="true">
+                                <div class="modal-body">
+                                    <div class="zoom-modal-actions">
+                                        <button class="image-zoom-btn js-image-zoom-out">Zoom Out</button>
+                                        <button class="image-zoom-btn js-image-zoom-reset">Reset</button>
+                                        <button class="image-zoom-btn js-image-zoom-in">Zoom In</button>
+                                    </div>
+                                    <div id="zoom-modal-gallery-slider" class="gallery-slider">
+                                        <div class="gallery-slider-item">
+                                            <div class="image-zoom-container">
+                                                <img src="#" alt="Test" class="gallery-slider-image" tabindex="0">
+                                            </div>
+                                        </div>
+                                        <div class="gallery-slider-item">
+                                            <div class="image-zoom-container">
+                                                <img src="#" alt="Test" class="gallery-slider-image" tabindex="0">
+                                            </div>
+                                        </div>
+                                        <div class="gallery-slider-item">
+                                            <div class="image-zoom-container">
+                                                <img src="#" alt="Test" class="gallery-slider-image" tabindex="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        window.PluginManager.register = jest.fn();
+        window.PluginManager.initializePlugin = jest.fn(() => Promise.resolve());
+
+        window.focusHandler = {
+            saveFocusState: jest.fn(),
+            resumeFocusState: jest.fn(),
+            setFocus: jest.fn(),
+        };
+
+        window.breakpoints = {
+            lg: 992,
+            md: 768,
+            sm: 576,
+            xl: 1200,
+            xs: 0,
+        };
+
+        const element = document.querySelector('[data-zoom-modal]');
+        const modalGalleryElement = document.querySelector('[data-modal-gallery-slider]');
+        const parentSliderElement = document.querySelector('[data-gallery-slider]');
+
+        zoomModalPlugin = new ZoomModalPlugin(element);
+        gallerySliderPlugin = new GallerySliderPlugin(modalGalleryElement);
+        parentSliderPlugin = new GallerySliderPlugin(parentSliderElement);
+
+        gallerySliderPlugin._slider = {
+            goTo: jest.fn(),
+            events: {
+                off: jest.fn(),
+                on: jest.fn,
+            },
+        };
+
+        parentSliderPlugin.getCurrentSliderIndex = jest.fn();
+
+        // Access the parent slider plugin instance
+        window.PluginManager.getPluginInstanceFromElement = (element, name) => {
+            if (name === 'GallerySlider' && element === parentSliderElement) {
+                return parentSliderPlugin;
+            }
+        };
+
+        zoomModalPlugin.gallerySliderPlugin = gallerySliderPlugin;
+        zoomModalPlugin._parentSliderPlugin = parentSliderPlugin;
+    });
+
+    afterEach(() => {
+        zoomModalPlugin = undefined;
+        gallerySliderPlugin = undefined;
+    });
+
+    test('zoom modal plugin exists', () => {
+        expect(typeof zoomModalPlugin).toBe('object');
+    });
+
+    test('zoom modal show modal has only one listener', () => {
+        zoomModalPlugin.$emitter.publish = jest.fn();
+
+        const modal = document.querySelector('.js-zoom-modal');
+
+        zoomModalPlugin._showModal(modal);
+        zoomModalPlugin._showModal(modal);
+
+        expect(zoomModalPlugin.$emitter.publish).toHaveBeenCalledWith('modalShow', { modal });
+        expect(zoomModalPlugin.$emitter.publish).toHaveBeenCalledTimes(2);
+    });
+
+    test('zoom modal opens via click event on img trigger element', () => {
+        const gallerySlider = document.getElementById('gallery-slider');
+        const zoomModalSlider = document.getElementById('zoom-modal-gallery-slider');
+
+        const activeIndex = 2;
+
+        const triggerImgElement = gallerySlider.querySelectorAll('img').item(activeIndex);
+        const activeModalImgElement = zoomModalSlider.querySelectorAll('img').item(activeIndex);
+        const modal = document.querySelector('.js-zoom-modal');
+
+        const getParentSliderIndexSpy = jest.spyOn(zoomModalPlugin, '_getParentSliderIndex');
+
+        // Mock the current index of the parent GallerySlider, so the ZoomModal attempts to slide to the correct image when opening.
+        zoomModalPlugin._parentSliderPlugin.getCurrentSliderIndex.mockReturnValue(activeIndex);
+
+        // Click on image trigger element to open the zoom modal
+        triggerImgElement.dispatchEvent(new Event('click'));
+
+        expect(window.focusHandler.saveFocusState).toHaveBeenCalled();
+
+        // Expect zoom modal to be shown and backdrop to be present
+        expect(modal.classList.contains('show')).toBe(true);
+        expect(document.querySelector('.modal-backdrop.show')).toBeTruthy();
+
+        expect(getParentSliderIndexSpy).toHaveBeenCalled();
+        expect(zoomModalPlugin.gallerySliderPlugin._slider.goTo).toHaveBeenCalledWith(activeIndex);
+        expect(window.focusHandler.setFocus).toHaveBeenCalledWith(activeModalImgElement);
+    });
+
+    test('zoom modal opens via enter key on img trigger element', () => {
+        const gallerySlider = document.getElementById('gallery-slider');
+        const zoomModalSlider = document.getElementById('zoom-modal-gallery-slider');
+
+        const activeIndex = 2;
+
+        const triggerImgElement = gallerySlider.querySelectorAll('img').item(activeIndex);
+        const activeModalImgElement = zoomModalSlider.querySelectorAll('img').item(activeIndex);
+        const modal = document.querySelector('.js-zoom-modal');
+
+        const getParentSliderIndexSpy = jest.spyOn(zoomModalPlugin, '_getParentSliderIndex');
+
+        // Mock the current index of the parent GallerySlider, so the ZoomModal attempts to slide to the correct image when opening.
+        zoomModalPlugin._parentSliderPlugin.getCurrentSliderIndex.mockReturnValue(activeIndex);
+
+        const keydownEvent = new Event('keydown');
+        keydownEvent.key = 'Enter';
+
+        triggerImgElement.dispatchEvent(keydownEvent);
+
+        expect(window.focusHandler.saveFocusState).toHaveBeenCalled();
+
+        // Expect zoom modal to be shown and backdrop to be present
+        expect(modal.classList.contains('show')).toBe(true);
+        expect(document.querySelector('.modal-backdrop.show')).toBeTruthy();
+
+        expect(getParentSliderIndexSpy).toHaveBeenCalled();
+        expect(zoomModalPlugin.gallerySliderPlugin._slider.goTo).toHaveBeenCalledWith(activeIndex);
+        expect(window.focusHandler.setFocus).toHaveBeenCalledWith(activeModalImgElement);
+    });
+
+    test('zoom modal registers listeners on triggers only once when init runs multiple times', () => {
+        const onClickSpy = jest.spyOn(ZoomModalPlugin.prototype, '_onClick').mockImplementation(() => {});
+        const onKeyDownSpy = jest.spyOn(ZoomModalPlugin.prototype, '_onKeyDown').mockImplementation(() => {});
+
+        const element = document.querySelector('[data-zoom-modal]');
+        const plugin = new ZoomModalPlugin(element);
+
+        // Re-run init multiple times to simulate repeated plugin initialization
+        plugin.init();
+        plugin.init();
+        plugin.init();
+
+        const triggerImgElement = document.getElementById('gallery-slider').querySelector('img');
+
+        triggerImgElement.dispatchEvent(new Event('click'));
+
+        const keydownEvent = new Event('keydown');
+        keydownEvent.key = 'Enter';
+        triggerImgElement.dispatchEvent(keydownEvent);
+
+        // Both listeners should only fire once even though init was called multiple times
+        expect(onClickSpy).toHaveBeenCalledTimes(1);
+        expect(onKeyDownSpy).toHaveBeenCalledTimes(1);
+    });
+
+    test('zoom modal re-registers trigger listeners after viewport changes', () => {
+        const registerEventsSpy = jest.spyOn(ZoomModalPlugin.prototype, '_registerEvents');
+        const onClickSpy = jest.spyOn(ZoomModalPlugin.prototype, '_onClick').mockImplementation(() => {});
+
+        const element = document.querySelector('[data-zoom-modal]');
+
+        const plugin = new ZoomModalPlugin(element);
+
+        expect(registerEventsSpy).toHaveBeenCalledTimes(1);
+
+        document.getElementById('gallery-slider').innerHTML = `
+            <img src="#" alt="" class="gallery-slider-image magnifier-image js-magnifier-image" tabindex="0" id="updated-trigger">
+        `;
+
+        document.dispatchEvent(new Event('Viewport/hasChanged'));
+
+        expect(registerEventsSpy).toHaveBeenCalledTimes(2);
+
+        document.getElementById('updated-trigger').dispatchEvent(new Event('click'));
+
+        expect(onClickSpy).toHaveBeenCalledTimes(1);
+
+        expect(plugin).toBeInstanceOf(ZoomModalPlugin);
+    });
+
+    test('zoom modal closes via ESC key', () => {
+        const triggerImgElement = document.querySelector('img');
+        const modal = document.querySelector('.js-zoom-modal');
+        const escEvent = new Event('keydown');
+        escEvent.key = 'Escape';
+
+        // Click on image trigger element to open the zoom modal
+        triggerImgElement.dispatchEvent(new Event('click'));
+
+        // Expect zoom modal to be shown and backdrop to be present
+        expect(modal.classList.contains('show')).toBe(true);
+        expect(document.querySelector('.modal-backdrop.show')).toBeTruthy();
+
+        // Now close the modal via ESC key
+        modal.dispatchEvent(escEvent);
+
+        // Expect zoom modal to be closed again
+        expect(modal.classList.contains('show')).toBe(false);
+        expect(document.querySelector('.modal-backdrop.show')).toBeFalsy();
+        expect(window.focusHandler.resumeFocusState).toHaveBeenCalled();
+    });
+});

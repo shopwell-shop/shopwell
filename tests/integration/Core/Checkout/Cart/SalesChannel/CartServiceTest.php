@@ -1,0 +1,555 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Checkout\Cart\SalesChannel;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Event\AfterLineItemAddedEvent;
+use Shopwell\Core\Checkout\Cart\Event\AfterLineItemQuantityChangedEvent;
+use Shopwell\Core\Checkout\Cart\Event\AfterLineItemRemovedEvent;
+use Shopwell\Core\Checkout\Cart\Event\BeforeLineItemAddedEvent;
+use Shopwell\Core\Checkout\Cart\Event\BeforeLineItemQuantityChangedEvent;
+use Shopwell\Core\Checkout\Cart\Event\BeforeLineItemRemovedEvent;
+use Shopwell\Core\Checkout\Cart\Event\CartCreatedEvent;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\ProductLineItemFactory;
+use Shopwell\Core\Checkout\Cart\PriceDefinitionFactory;
+use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopwell\Core\Checkout\Customer\CustomerCollection;
+use Shopwell\Core\Checkout\Customer\SalesChannel\AccountService;
+use Shopwell\Core\Content\Flow\Dispatching\BufferedFlowExecutor;
+use Shopwell\Core\Content\MailTemplate\Service\Event\MailSentEvent;
+use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\CountryAddToSalesChannelTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\MailTemplateTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\TaxAddToSalesChannelTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseHelper\CallableClass;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
+use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\Test\TestDefaults;
+use Shopwell\Storefront\Controller\AccountOrderController;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+class CartServiceTest extends TestCase
+{
+    use CountryAddToSalesChannelTestBehaviour;
+    use IntegrationTestBehaviour;
+    use MailTemplateTestBehaviour;
+    use TaxAddToSalesChannelTestBehaviour;
+
+    /**
+     * @var EntityRepository<CustomerCollection>
+     */
+    private EntityRepository $customerRepository;
+
+    private AccountService $accountService;
+
+    private Connection $connection;
+
+    private string $productId;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->connection = static::getContainer()->get(Connection::class);
+        $this->customerRepository = static::getContainer()->get('customer.repository');
+        $this->accountService = static::getContainer()->get(AccountService::class);
+
+        $context = Context::createDefaultContext();
+        $this->productId = Uuid::randomHex();
+        $product = [
+            'id' => $this->productId,
+            'productNumber' => $this->productId,
+            'name' => 'test',
+            'stock' => 10,
+            'price' => [
+                ['currencyId' => Defaults::CURRENCY, 'gross' => 100, 'net' => 100, 'linked' => false],
+            ],
+            'tax' => ['name' => 'test', 'taxRate' => 18],
+            'manufacturer' => ['name' => 'test'],
+            'active' => true,
+            'visibilities' => [
+                ['salesChannelId' => TestDefaults::SALES_CHANNEL, 'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL],
+            ],
+        ];
+
+        static::getContainer()->get('product.repository')
+            ->create([$product], $context);
+    }
+
+    public function testCreateNewWithEvent(): void
+    {
+        $caughtEvent = null;
+        $this->addEventListener(static::getContainer()->get('event_dispatcher'), CartCreatedEvent::class, static function (CartCreatedEvent $event) use (&$caughtEvent): void {
+            $caughtEvent = $event;
+        });
+
+        $cartService = static::getContainer()->get(CartService::class);
+
+        $token = Uuid::randomHex();
+        $newCart = $cartService->createNew($token);
+
+        static::assertInstanceOf(CartCreatedEvent::class, $caughtEvent);
+        static::assertSame($newCart, $caughtEvent->getCart());
+        static::assertSame($newCart, $cartService->getCart($token, $this->getSalesChannelContext()));
+        static::assertNotSame($newCart, $cartService->createNew($token));
+    }
+
+    public function testLineItemAddedEventFired(): void
+    {
+        $dispatcher = static::getContainer()->get('event_dispatcher');
+
+        $isMerged = null;
+        $this->addEventListener($dispatcher, BeforeLineItemAddedEvent::class, static function (BeforeLineItemAddedEvent $addedEvent) use (&$isMerged): void {
+            $isMerged = $addedEvent->isMerged();
+        });
+
+        $cartService = static::getContainer()->get(CartService::class);
+
+        $context = $this->getSalesChannelContext();
+
+        $cartId = Uuid::randomHex();
+        $cart = $cartService->getCart($cartId, $context);
+        $cartService->add(
+            $cart,
+            (new LineItem('test', 'test'))->setStackable(true),
+            $context
+        );
+
+        static::assertNotNull($isMerged);
+        static::assertFalse($isMerged);
+
+        $cartService->add(
+            $cart,
+            new LineItem('test', 'test'),
+            $context
+        );
+
+        /** @phpstan-ignore staticMethod.impossibleType ($isMerged modified by listener) */
+        static::assertTrue($isMerged);
+    }
+
+    public function testAfterLineItemAddedEventFired(): void
+    {
+        $dispatcher = static::getContainer()->get('event_dispatcher');
+
+        $listener = $this->createMock(CallableClass::class);
+        $listener->expects($this->once())->method('__invoke');
+
+        $this->addEventListener($dispatcher, AfterLineItemAddedEvent::class, $listener);
+
+        $cartService = static::getContainer()->get(CartService::class);
+
+        $context = $this->getSalesChannelContext();
+
+        $cartId = Uuid::randomHex();
+        $cart = $cartService->getCart($cartId, $context);
+        $cartService->add(
+            $cart,
+            new LineItem('test', 'test'),
+            $context
+        );
+    }
+
+    public function testLineItemRemovedEventFired(): void
+    {
+        $dispatcher = static::getContainer()->get('event_dispatcher');
+
+        $listener = $this->createMock(CallableClass::class);
+        $listener->expects($this->once())->method('__invoke');
+
+        $this->addEventListener($dispatcher, BeforeLineItemRemovedEvent::class, $listener);
+
+        $cartService = static::getContainer()->get(CartService::class);
+
+        $context = $this->getSalesChannelContext();
+
+        $lineItem = (new ProductLineItemFactory(new PriceDefinitionFactory()))->create(['id' => $this->productId, 'referencedId' => $this->productId], $context);
+
+        $cart = $cartService->getCart($context->getToken(), $context);
+
+        $cart = $cartService->add($cart, $lineItem, $context);
+
+        static::assertTrue($cart->has($this->productId));
+
+        $cart = $cartService->remove($cart, $this->productId, $context);
+
+        static::assertFalse($cart->has($this->productId));
+    }
+
+    public function testAfterLineItemRemovedEventFired(): void
+    {
+        $dispatcher = static::getContainer()->get('event_dispatcher');
+
+        $listener = $this->createMock(CallableClass::class);
+        $listener->expects($this->once())->method('__invoke');
+
+        $this->addEventListener($dispatcher, AfterLineItemRemovedEvent::class, $listener);
+
+        $cartService = static::getContainer()->get(CartService::class);
+
+        $context = $this->getSalesChannelContext();
+
+        $lineItem = (new ProductLineItemFactory(new PriceDefinitionFactory()))->create(['id' => $this->productId, 'referencedId' => $this->productId], $context);
+
+        $cart = $cartService->getCart($context->getToken(), $context);
+
+        $cart = $cartService->add($cart, $lineItem, $context);
+
+        static::assertTrue($cart->has($this->productId));
+
+        $cart = $cartService->remove($cart, $this->productId, $context);
+
+        static::assertFalse($cart->has($this->productId));
+    }
+
+    public function testLineItemQuantityChangedEventFired(): void
+    {
+        $dispatcher = static::getContainer()->get('event_dispatcher');
+
+        $listener = $this->createMock(CallableClass::class);
+        $listener->expects($this->once())->method('__invoke');
+
+        $this->addEventListener($dispatcher, BeforeLineItemQuantityChangedEvent::class, $listener);
+
+        $cartService = static::getContainer()->get(CartService::class);
+
+        $context = $this->getSalesChannelContext();
+
+        $lineItem = (new ProductLineItemFactory(new PriceDefinitionFactory()))->create(['id' => $this->productId, 'referencedId' => $this->productId], $context);
+
+        $cart = $cartService->getCart($context->getToken(), $context);
+
+        $cart = $cartService->add($cart, $lineItem, $context);
+
+        static::assertTrue($cart->has($this->productId));
+
+        $cartService->changeQuantity($cart, $this->productId, 100, $context);
+    }
+
+    public function testAfterLineItemQuantityChangedEventFired(): void
+    {
+        $dispatcher = static::getContainer()->get('event_dispatcher');
+
+        $listener = $this->createMock(CallableClass::class);
+        $listener->expects($this->once())->method('__invoke');
+
+        $this->addEventListener($dispatcher, AfterLineItemQuantityChangedEvent::class, $listener);
+
+        $cartService = static::getContainer()->get(CartService::class);
+
+        $context = $this->getSalesChannelContext();
+
+        $lineItem = (new ProductLineItemFactory(new PriceDefinitionFactory()))->create(['id' => $this->productId, 'referencedId' => $this->productId], $context);
+
+        $cart = $cartService->getCart($context->getToken(), $context);
+
+        $cart = $cartService->add($cart, $lineItem, $context);
+
+        static::assertTrue($cart->has($this->productId));
+
+        $cartService->changeQuantity($cart, $this->productId, 100, $context);
+    }
+
+    public function testLineItemAddAndUpdate(): void
+    {
+        $cartService = static::getContainer()->get(CartService::class);
+
+        $context = $this->getSalesChannelContext();
+
+        $productId = Uuid::randomHex();
+        $product = [
+            'id' => $productId,
+            'productNumber' => $productId,
+            'name' => 'test',
+            'stock' => 10,
+            'price' => [
+                ['currencyId' => Defaults::CURRENCY, 'gross' => 5, 'net' => 5, 'linked' => false],
+            ],
+            'tax' => ['id' => Uuid::randomHex(), 'name' => 'test', 'taxRate' => 18],
+            'manufacturer' => ['name' => 'test'],
+            'active' => true,
+            'visibilities' => [
+                ['salesChannelId' => TestDefaults::SALES_CHANNEL, 'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL],
+            ],
+        ];
+
+        static::getContainer()->get('product.repository')
+            ->create([$product], $context->getContext());
+        $this->addTaxDataToSalesChannel($context, $product['tax']);
+
+        $lineItem = (new ProductLineItemFactory(new PriceDefinitionFactory()))->create(['id' => $productId, 'referencedId' => $productId], $context);
+        $cart = $cartService->getCart($context->getToken(), $context);
+        $cart = $cartService->add($cart, $lineItem, $context);
+
+        $lineItem = $cart->getLineItems()->get($productId);
+
+        static::assertInstanceOf(LineItem::class, $lineItem);
+        static::assertSame(1, $lineItem->getQuantity());
+        static::assertTrue($lineItem->isStackable());
+        static::assertTrue($lineItem->isRemovable());
+
+        $cart = $cartService->update($cart, ['foo' => [
+            'id' => $productId,
+            'quantity' => 20,
+            'payload' => ['foo' => 'bar'],
+            'stackable' => false,
+            'removable' => false,
+        ]], $context);
+
+        static::assertSame(20, $lineItem->getQuantity());
+        static::assertTrue($lineItem->isStackable());
+        static::assertTrue($lineItem->isRemovable());
+        static::assertSame('bar', $lineItem->getPayloadValue('foo'));
+    }
+
+    public function testRemoveLineItems(): void
+    {
+        $cartService = static::getContainer()->get(CartService::class);
+
+        $context = $this->getSalesChannelContext();
+
+        $productId1 = Uuid::randomHex();
+        $productId2 = Uuid::randomHex();
+        $productId3 = Uuid::randomHex();
+
+        $products = [];
+        foreach ([$productId1, $productId2, $productId3] as $productId) {
+            $products[] = [
+                'id' => $productId,
+                'productNumber' => $productId,
+                'name' => 'test',
+                'stock' => 10,
+                'price' => [
+                    ['currencyId' => Defaults::CURRENCY, 'gross' => 5, 'net' => 5, 'linked' => false],
+                ],
+                'tax' => ['id' => Uuid::randomHex(), 'name' => 'test', 'taxRate' => 18],
+                'manufacturer' => ['name' => 'test'],
+                'active' => true,
+                'visibilities' => [
+                    ['salesChannelId' => TestDefaults::SALES_CHANNEL, 'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL],
+                ],
+            ];
+        }
+
+        static::getContainer()->get('product.repository')
+            ->create($products, $context->getContext());
+
+        $lineItems = [];
+        foreach ($products as $product) {
+            $this->addTaxDataToSalesChannel($context, $product['tax']);
+
+            $lineItems[] = (new ProductLineItemFactory(new PriceDefinitionFactory()))->create(['id' => $product['id'], 'referencedId' => $product['id']], $context);
+        }
+
+        $cart = $cartService->getCart($context->getToken(), $context);
+        $cart = $cartService->add($cart, $lineItems, $context);
+
+        static::assertCount(3, $cart->getLineItems());
+
+        $cart = $cartService->removeItems($cart, [
+            $productId1,
+            $productId2,
+        ], $context);
+
+        static::assertCount(1, $cart->getLineItems());
+
+        $remainingLineItem = $cart->getLineItems()->get($productId3);
+        static::assertInstanceOf(LineItem::class, $remainingLineItem);
+        static::assertSame($productId3, $remainingLineItem->getReferencedId());
+    }
+
+    public function testZeroPricedItemsCanBeAddedToCart(): void
+    {
+        $cartService = static::getContainer()->get(CartService::class);
+
+        $context = $this->getSalesChannelContext();
+
+        $productId = Uuid::randomHex();
+        $product = [
+            'id' => $productId,
+            'productNumber' => $productId,
+            'name' => 'test',
+            'stock' => 10,
+            'price' => [
+                ['currencyId' => Defaults::CURRENCY, 'gross' => 0, 'net' => 0, 'linked' => false],
+            ],
+            'tax' => ['id' => Uuid::randomHex(), 'name' => 'test', 'taxRate' => 18],
+            'manufacturer' => ['name' => 'test'],
+            'active' => true,
+            'visibilities' => [
+                ['salesChannelId' => TestDefaults::SALES_CHANNEL, 'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL],
+            ],
+        ];
+
+        static::getContainer()->get('product.repository')
+            ->create([$product], $context->getContext());
+        $this->addTaxDataToSalesChannel($context, $product['tax']);
+
+        $lineItem = (new ProductLineItemFactory(new PriceDefinitionFactory()))->create(['id' => $productId, 'referencedId' => $productId], $context);
+
+        $cart = $cartService->getCart($context->getToken(), $context);
+
+        $cart = $cartService->add($cart, $lineItem, $context);
+
+        static::assertTrue($cart->has($productId));
+        static::assertSame(0.0, $cart->getPrice()->getTotalPrice());
+
+        $calculatedLineItem = $cart->getLineItems()->get($productId);
+        static::assertNotNull($calculatedLineItem);
+        static::assertNotNull($calculatedLineItem->getPrice());
+        static::assertSame(0.0, $calculatedLineItem->getPrice()->getTotalPrice());
+
+        $calculatedTaxes = $calculatedLineItem->getPrice()->getCalculatedTaxes();
+        static::assertNotNull($calculatedTaxes);
+        static::assertSame(0.0, $calculatedTaxes->getAmount());
+    }
+
+    public function testOrderCartSendMail(): void
+    {
+        if (!static::getContainer()->has(AccountOrderController::class)) {
+            // ToDo: NEXT-16882 - Reactivate tests again
+            static::markTestSkipped('Order mail tests should be fixed without storefront in NEXT-16882');
+        }
+
+        $context = $this->getSalesChannelContext();
+
+        $contextService = static::getContainer()->get(SalesChannelContextService::class);
+
+        $addressId = Uuid::randomHex();
+
+        $mail = 'test@shopwell.cn';
+        $password = 'shopware';
+
+        $this->createCustomer($addressId, $mail, $password, $context->getContext());
+
+        $newtoken = $this->accountService->loginByCredentials($mail, $password, $context);
+
+        $context = $contextService->get(new SalesChannelContextServiceParameters(TestDefaults::SALES_CHANNEL, $newtoken));
+
+        $lineItem = (new ProductLineItemFactory(new PriceDefinitionFactory()))->create(['id' => $this->productId, 'referencedId' => $this->productId], $context);
+
+        $cartService = static::getContainer()->get(CartService::class);
+
+        $cart = $cartService->getCart($context->getToken(), $context);
+
+        $cart = $cartService->add($cart, $lineItem, $context);
+
+        $this->setDomainForSalesChannel('http://shopware.local', Defaults::LANGUAGE_SYSTEM, $context->getContext());
+
+        $systemConfigService = static::getContainer()->get(SystemConfigService::class);
+
+        $systemConfigService->set('core.basicInformation.email', 'test@example.org');
+
+        /** @var EventDispatcher $dispatcher */
+        $dispatcher = static::getContainer()->get('event_dispatcher');
+
+        $eventDidRun = false;
+        $listenerClosure = static function (MailSentEvent $event) use (&$eventDidRun): void {
+            $eventDidRun = true;
+            $htmlText = $event->getContents()['text/html'];
+            self::assertIsString($htmlText);
+            static::assertStringContainsString('Shipping costs: €0.00', $htmlText);
+        };
+
+        $this->addEventListener($dispatcher, MailSentEvent::class, $listenerClosure);
+
+        $cartService->order($cart, $context, new RequestDataBag());
+        static::getContainer()->get(BufferedFlowExecutor::class)->executeBufferedFlows();
+
+        $dispatcher->removeListener(MailSentEvent::class, $listenerClosure);
+
+        static::assertTrue($eventDidRun, 'The mail.sent Event did not run');
+    }
+
+    public function testCartCreatedWithGivenToken(): void
+    {
+        $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
+        $context = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+
+        $token = Uuid::randomHex();
+        $cartService = static::getContainer()->get(CartService::class);
+        $cart = $cartService->getCart($token, $context);
+
+        static::assertSame($token, $cart->getToken());
+    }
+
+    private function createCustomer(string $addressId, string $mail, string $password, Context $context): void
+    {
+        $this->connection->executeStatement('DELETE FROM customer WHERE email = :mail', [
+            'mail' => $mail,
+        ]);
+
+        $customer = [
+            'salesChannelId' => TestDefaults::SALES_CHANNEL,
+            'defaultShippingAddress' => [
+                'id' => $addressId,
+                'firstName' => 'not',
+                'lastName' => 'not',
+                'street' => 'test',
+                'city' => 'not',
+                'zipcode' => 'not',
+                'salutationId' => $this->getValidSalutationId(),
+                'countryId' => $this->getValidCountryId(),
+            ],
+            'defaultBillingAddressId' => $addressId,
+            'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
+            'email' => $mail,
+            'password' => $password,
+            'lastName' => 'not',
+            'firstName' => 'match',
+            'salutationId' => $this->getValidSalutationId(),
+            'customerNumber' => 'not',
+        ];
+
+        $this->customerRepository->create([$customer], $context);
+    }
+
+    private function getSalesChannelContext(): SalesChannelContext
+    {
+        $this->addCountriesToSalesChannel();
+
+        return static::getContainer()->get(SalesChannelContextFactory::class)
+            ->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+    }
+
+    private function setDomainForSalesChannel(string $domain, string $languageId, Context $context): void
+    {
+        /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
+        $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+
+        try {
+            $data = [
+                'id' => TestDefaults::SALES_CHANNEL,
+                'domains' => [
+                    [
+                        'languageId' => $languageId,
+                        'currencyId' => Defaults::CURRENCY,
+                        'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                        'url' => $domain,
+                    ],
+                ],
+            ];
+
+            $salesChannelRepository->update([$data], $context);
+        } catch (\Exception) {
+            // ignore if domain already exists
+        }
+    }
+}

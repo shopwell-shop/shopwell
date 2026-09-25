@@ -1,0 +1,244 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\Script\Api;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Test\Product\ProductBuilder;
+use Shopwell\Core\Framework\App\AppEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Test\AppSystemTestBehaviour;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class ScriptApiRouteTest extends TestCase
+{
+    use AdminApiTestBehaviour;
+    use AppSystemTestBehaviour;
+    use IntegrationTestBehaviour;
+
+    public function testApiEndpoint(): void
+    {
+        $this->loadAppsFromDir(__DIR__ . '/_fixtures');
+
+        $this->kernelBrowser = null;
+        $browser = $this->getBrowser();
+        $browser->jsonRequest('POST', '/api/script/simple-script');
+
+        static::assertNotFalse($browser->getResponse()->getContent());
+        $response = \json_decode($browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertSame(Response::HTTP_OK, $browser->getResponse()->getStatusCode(), print_r($response, true));
+
+        $traces = $this->getScriptTraces($browser->getContainer());
+        static::assertArrayHasKey('api-simple-script', $traces);
+        static::assertCount(1, $traces['api-simple-script']);
+        static::assertSame('some debug information', $traces['api-simple-script'][0]['output'][0]);
+
+        static::assertArrayHasKey('foo', $response);
+        static::assertSame('bar', $response['foo']);
+    }
+
+    public function testApiEndpointWithSlashInHookName(): void
+    {
+        $this->loadAppsFromDir(__DIR__ . '/_fixtures');
+
+        $browser = $this->getBrowser();
+        $browser->jsonRequest('POST', '/api/script/simple/script');
+
+        static::assertNotFalse($browser->getResponse()->getContent());
+        $response = \json_decode($browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertSame(Response::HTTP_OK, $browser->getResponse()->getStatusCode(), print_r($response, true));
+
+        $traces = $this->getScriptTraces($browser->getContainer());
+        static::assertArrayHasKey('api-simple-script', $traces);
+        static::assertCount(1, $traces['api-simple-script']);
+        static::assertSame('some debug information', $traces['api-simple-script'][0]['output'][0]);
+
+        static::assertArrayHasKey('foo', $response);
+        static::assertSame('bar', $response['foo']);
+    }
+
+    public function testAppNotAllowed(): void
+    {
+        $this->loadAppsFromDir(__DIR__ . '/_fixtures');
+
+        $browser = $this->getBrowser(true, [], ['app.shop-owner']);
+        $browser->jsonRequest('POST', '/api/script/simple-script');
+
+        static::assertNotFalse($browser->getResponse()->getContent());
+        $response = \json_decode($browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertSame(Response::HTTP_FORBIDDEN, $browser->getResponse()->getStatusCode());
+        static::assertArrayHasKey('errors', $response);
+        static::assertSame('FRAMEWORK__PERMISSION_DENIED', $response['errors'][0]['code']);
+
+        $this->kernelBrowser = null;
+        $browser = $this->getBrowser(true, [], ['app.all']);
+        $browser->jsonRequest('POST', '/api/script/simple-script');
+        static::assertSame(Response::HTTP_OK, $browser->getResponse()->getStatusCode());
+
+        $this->kernelBrowser = null;
+        $browser = $this->getBrowser(true, [], ['app.api-endpoint-cases']);
+        $browser->jsonRequest('POST', '/api/script/simple-script');
+        static::assertSame(Response::HTTP_OK, $browser->getResponse()->getStatusCode());
+    }
+
+    public function testRepositoryCall(): void
+    {
+        $this->loadAppsFromDir(__DIR__ . '/_fixtures');
+
+        $ids = new IdsCollection();
+
+        $products = [
+            (new ProductBuilder($ids, 'p1'))->price(100)->build(),
+            (new ProductBuilder($ids, 'p2'))->price(200)->build(),
+        ];
+
+        static::getContainer()->get('product.repository')->create($products, Context::createDefaultContext());
+
+        $criteria = [
+            'filter' => [
+                ['type' => 'equals', 'field' => 'productNumber', 'value' => 'p1'],
+            ],
+            'includes' => [
+                'dal_entity_search_result' => ['elements'],
+                'product' => ['id', 'productNumber'],
+            ],
+            'limit' => 1,
+        ];
+
+        $this->kernelBrowser = null;
+        $browser = $this->getBrowser();
+        $browser->jsonRequest('POST', '/api/script/repository-test', $criteria);
+
+        static::assertNotFalse($browser->getResponse()->getContent());
+        $response = \json_decode($browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertSame(Response::HTTP_OK, $browser->getResponse()->getStatusCode());
+
+        $expected = [
+            'apiAlias' => 'api_repository_test_response',
+            'products' => [
+                'apiAlias' => 'dal_entity_search_result',
+                'elements' => [
+                    ['id' => $ids->get('p1'), 'productNumber' => 'p1', 'apiAlias' => 'product'],
+                ],
+            ],
+        ];
+
+        static::assertEquals($expected, $response);
+    }
+
+    public function testInsufficientPermissionException(): void
+    {
+        $this->loadAppsFromDir(__DIR__ . '/_fixtures');
+
+        $this->kernelBrowser = null;
+        $browser = $this->getBrowser();
+        $browser->jsonRequest('POST', '/api/script/insufficient-permissions');
+
+        static::assertSame(Response::HTTP_FORBIDDEN, $browser->getResponse()->getStatusCode());
+        static::assertNotFalse($browser->getResponse()->getContent());
+
+        $response = \json_decode($browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertArrayHasKey('errors', $response);
+        static::assertCount(1, $response['errors']);
+        static::assertSame('Forbidden', $response['errors'][0]['title']);
+        static::assertStringContainsString('api-insufficient-permissions', $response['errors'][0]['detail']);
+        static::assertStringContainsString('Missing privilege', $response['errors'][0]['detail']);
+    }
+
+    public function testMissingAclPrivilegesToAccessRoute(): void
+    {
+        $this->loadAppsFromDir(__DIR__ . '/_fixtures');
+
+        $browser = $this->getBrowser();
+        // no admin permissions
+        $this->authorizeBrowser($browser, [], []);
+        $browser->jsonRequest('POST', '/api/script/simple-script');
+        static::assertNotFalse($browser->getResponse()->getContent());
+
+        $response = \json_decode($browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertSame(Response::HTTP_FORBIDDEN, $browser->getResponse()->getStatusCode(), print_r($response, true));
+
+        static::assertArrayHasKey('errors', $response);
+        static::assertCount(1, $response['errors']);
+        static::assertSame('Forbidden', $response['errors'][0]['title']);
+        static::assertSame('The user does not have the permission to do this action.', $response['errors'][0]['detail']);
+    }
+
+    public function testAccessFromAppIntegrationIsAllowed(): void
+    {
+        $this->loadAppsFromDir(__DIR__ . '/_fixtures');
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('name', 'api-endpoint-cases'));
+        /** @var AppEntity $app */
+        $app = static::getContainer()->get('app.repository')->search($criteria, Context::createDefaultContext())->getEntities()->first();
+
+        $browser = $this->getBrowserAuthenticatedWithIntegration($app->getIntegrationId());
+        $browser->jsonRequest('POST', '/api/script/simple-script');
+        static::assertNotFalse($browser->getResponse()->getContent());
+
+        $response = \json_decode($browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertSame(Response::HTTP_OK, $browser->getResponse()->getStatusCode(), print_r($response, true));
+    }
+
+    public function testRedirectResponse(): void
+    {
+        $this->loadAppsFromDir(__DIR__ . '/_fixtures');
+
+        $ids = new IdsCollection();
+
+        $products = [
+            (new ProductBuilder($ids, 'p1'))->price(100)->build(),
+        ];
+
+        static::getContainer()->get('product.repository')->create($products, Context::createDefaultContext());
+
+        $browser = $this->getBrowser();
+        $browser->followRedirects(false);
+        $browser->jsonRequest('POST', '/api/script/redirect-response', ['productId' => $ids->get('p1')]);
+        $response = $browser->getResponse();
+
+        static::assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+
+        static::assertTrue($response->headers->has('location'));
+        static::assertSame('/api/product/' . $ids->get('p1'), $response->headers->get('location'));
+    }
+
+    public function testAccessToInnerSymfonyResponseIsProhibited(): void
+    {
+        $this->loadAppsFromDir(__DIR__ . '/_fixtures');
+
+        $ids = new IdsCollection();
+
+        $products = [
+            (new ProductBuilder($ids, 'p1'))->price(100)->build(),
+        ];
+
+        static::getContainer()->get('product.repository')->create($products, Context::createDefaultContext());
+
+        $browser = $this->getBrowser();
+        $browser->followRedirects(false);
+        $browser->jsonRequest('POST', '/api/script/access-inner', ['productId' => $ids->get('p1')]);
+        $response = $browser->getResponse();
+        static::assertNotFalse($response->getContent());
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $response->getStatusCode());
+
+        $content = \json_decode($response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertArrayHasKey('errors', $content);
+        static::assertCount(1, $content['errors']);
+        static::assertSame('FRAMEWORK__ACCESS_FROM_SCRIPT_EXECUTION_NOT_ALLOWED', $content['errors'][0]['code']);
+    }
+}

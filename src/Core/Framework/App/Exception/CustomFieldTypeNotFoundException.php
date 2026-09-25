@@ -1,0 +1,22 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\App\Exception;
+
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal only for use by the app-system
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('framework')]
+class CustomFieldTypeNotFoundException extends \InvalidArgumentException
+{
+    public function __construct(
+        string $type,
+        int $code = 0,
+        ?\Throwable $previous = null
+    ) {
+        parent::__construct(\sprintf('CustomFieldType for XML-Element "%s" not found.', $type), $code, $previous);
+    }
+}

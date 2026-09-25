@@ -1,0 +1,791 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\App;
+
+use Shopwell\Core\Framework\Api\Acl\Role\AclRoleEntity;
+use Shopwell\Core\Framework\App\Aggregate\ActionButton\ActionButtonCollection;
+use Shopwell\Core\Framework\App\Aggregate\AppMcpPrompt\AppMcpPromptCollection;
+use Shopwell\Core\Framework\App\Aggregate\AppMcpResource\AppMcpResourceCollection;
+use Shopwell\Core\Framework\App\Aggregate\AppMcpTool\AppMcpToolCollection;
+use Shopwell\Core\Framework\App\Aggregate\AppPaymentMethod\AppPaymentMethodCollection;
+use Shopwell\Core\Framework\App\Aggregate\AppScriptCondition\AppScriptConditionCollection;
+use Shopwell\Core\Framework\App\Aggregate\AppShippingMethod\AppShippingMethodEntity;
+use Shopwell\Core\Framework\App\Aggregate\AppTranslation\AppTranslationCollection;
+use Shopwell\Core\Framework\App\Aggregate\CmsBlock\AppCmsBlockCollection;
+use Shopwell\Core\Framework\App\Aggregate\FlowAction\AppFlowActionCollection;
+use Shopwell\Core\Framework\App\Aggregate\FlowEvent\AppFlowEventCollection;
+use Shopwell\Core\Framework\App\Template\TemplateCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Script\ScriptCollection;
+use Shopwell\Core\Framework\Webhook\WebhookCollection;
+use Shopwell\Core\System\CustomField\Aggregate\CustomFieldSet\CustomFieldSetCollection;
+use Shopwell\Core\System\Integration\IntegrationEntity;
+use Shopwell\Core\System\TaxProvider\TaxProviderCollection;
+
+/**
+ * @phpstan-type Module array{name: string, label: array<string, string>, parent: string, source?: string|null, position: int}
+ * @phpstan-type Cookie array{snippet_name: string, snippet_description?: string, cookie?: string, value?: string, expiration?: string, entries?: list<array{snippet_name: string, snippet_description?: string, cookie: string, value?: string, expiration?: string}>}
+ *
+ * @phpstan-import-type SourceConfig from AppDefinition
+ */
+#[Package('framework')]
+class AppEntity extends Entity
+{
+    use EntityCustomFieldsTrait;
+    use EntityIdTrait;
+
+    protected string $name;
+
+    protected string $path;
+
+    protected ?string $author = null;
+
+    protected ?string $copyright = null;
+
+    protected ?string $license = null;
+
+    protected ?string $privacy = null;
+
+    protected string $version;
+
+    protected bool $allowDisable;
+
+    protected ?string $baseAppUrl = null;
+
+    protected ?string $checkoutGatewayUrl = null;
+
+    protected ?string $contextGatewayUrl = null;
+
+    protected ?string $inAppPurchasesGatewayUrl = null;
+
+    /**
+     * @var list<Module>
+     */
+    protected array $modules;
+
+    /**
+     * @var Module|null
+     */
+    protected ?array $mainModule = null;
+
+    /**
+     * @var list<Cookie>
+     */
+    protected array $cookies;
+
+    /**
+     * @var list<string>|null
+     */
+    protected ?array $allowedHosts = null;
+
+    /**
+     * @internal
+     */
+    protected ?string $iconRaw = null;
+
+    protected ?string $icon = null;
+
+    protected ?AppTranslationCollection $translations = null;
+
+    protected ?string $label = null;
+
+    protected ?string $description = null;
+
+    protected ?string $privacyPolicyExtensions = null;
+
+    /**
+     * @internal
+     */
+    protected ?string $appSecret = null;
+
+    /**
+     * @internal
+     *
+     * The uncommitted secrets the app might still hold, most-recent first.
+     *
+     * @var list<string>|null
+     */
+    protected ?array $unconfirmedAppSecrets = null;
+
+    protected string $integrationId;
+
+    protected bool $active;
+
+    protected bool $configurable;
+
+    protected ?IntegrationEntity $integration = null;
+
+    protected string $aclRoleId;
+
+    protected ?AclRoleEntity $aclRole = null;
+
+    protected ?TemplateCollection $templates = null;
+
+    /**
+     * @internal
+     */
+    protected ?ScriptCollection $scripts = null;
+
+    protected ?CustomFieldSetCollection $customFieldSets = null;
+
+    protected ?ActionButtonCollection $actionButtons = null;
+
+    protected ?WebhookCollection $webhooks = null;
+
+    protected ?AppPaymentMethodCollection $paymentMethods = null;
+
+    protected ?TaxProviderCollection $taxProviders = null;
+
+    /**
+     * @internal
+     */
+    protected ?AppScriptConditionCollection $scriptConditions = null;
+
+    /**
+     * @internal
+     */
+    protected ?AppCmsBlockCollection $cmsBlocks = null;
+
+    protected ?AppFlowActionCollection $flowActions = null;
+
+    protected ?AppFlowEventCollection $flowEvents = null;
+
+    /**
+     * @var EntityCollection<AppShippingMethodEntity>|null
+     */
+    protected ?EntityCollection $appShippingMethods = null;
+
+    protected ?AppMcpToolCollection $mcpTools = null;
+
+    protected ?AppMcpPromptCollection $mcpPrompts = null;
+
+    protected ?AppMcpResourceCollection $mcpResources = null;
+
+    protected int $templateLoadPriority;
+
+    protected string $sourceType = 'local';
+
+    /**
+     * @var SourceConfig
+     */
+    protected array $sourceConfig = [];
+
+    protected bool $selfManaged = false;
+
+    /**
+     * @var list<string>
+     */
+    protected array $requestedPrivileges = [];
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
+
+    /**
+     * @return string the path relative to project dir
+     */
+    public function getPath(): string
+    {
+        return $this->path;
+    }
+
+    public function setPath(string $path): void
+    {
+        $this->path = $path;
+    }
+
+    public function getAuthor(): ?string
+    {
+        return $this->author;
+    }
+
+    public function setAuthor(?string $author): void
+    {
+        $this->author = $author;
+    }
+
+    public function getCopyright(): ?string
+    {
+        return $this->copyright;
+    }
+
+    public function setCopyright(?string $copyright): void
+    {
+        $this->copyright = $copyright;
+    }
+
+    public function getLicense(): ?string
+    {
+        return $this->license;
+    }
+
+    public function setLicense(?string $license): void
+    {
+        $this->license = $license;
+    }
+
+    public function getPrivacy(): ?string
+    {
+        return $this->privacy;
+    }
+
+    public function setPrivacy(?string $privacy): void
+    {
+        $this->privacy = $privacy;
+    }
+
+    public function getVersion(): string
+    {
+        return $this->version;
+    }
+
+    public function setVersion(string $version): void
+    {
+        $this->version = $version;
+    }
+
+    public function getBaseAppUrl(): ?string
+    {
+        return $this->baseAppUrl;
+    }
+
+    public function setBaseAppUrl(?string $baseAppUrl): void
+    {
+        $this->baseAppUrl = $baseAppUrl;
+    }
+
+    public function getCheckoutGatewayUrl(): ?string
+    {
+        return $this->checkoutGatewayUrl;
+    }
+
+    public function setCheckoutGatewayUrl(?string $checkoutGatewayUrl): void
+    {
+        $this->checkoutGatewayUrl = $checkoutGatewayUrl;
+    }
+
+    public function getContextGatewayUrl(): ?string
+    {
+        return $this->contextGatewayUrl;
+    }
+
+    public function setContextGatewayUrl(?string $contextGatewayUrl): void
+    {
+        $this->contextGatewayUrl = $contextGatewayUrl;
+    }
+
+    public function getInAppPurchasesGatewayUrl(): ?string
+    {
+        return $this->inAppPurchasesGatewayUrl;
+    }
+
+    public function setInAppPurchasesGatewayUrl(?string $inAppPurchasesGatewayUrl): void
+    {
+        $this->inAppPurchasesGatewayUrl = $inAppPurchasesGatewayUrl;
+    }
+
+    /**
+     * @return list<Module>
+     */
+    public function getModules(): array
+    {
+        return $this->modules;
+    }
+
+    /**
+     * @param list<Module> $modules
+     */
+    public function setModules(array $modules): void
+    {
+        $this->modules = $modules;
+    }
+
+    /**
+     * @return Module|null
+     */
+    public function getMainModule(): ?array
+    {
+        return $this->mainModule;
+    }
+
+    /**
+     * @param Module $mainModule
+     */
+    public function setMainModule(array $mainModule): void
+    {
+        $this->mainModule = $mainModule;
+    }
+
+    /**
+     * @return list<Cookie>
+     */
+    public function getCookies(): array
+    {
+        return $this->cookies;
+    }
+
+    /**
+     * @param list<Cookie> $cookies
+     */
+    public function setCookies(array $cookies): void
+    {
+        $this->cookies = $cookies;
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    public function getAllowedHosts(): ?array
+    {
+        return $this->allowedHosts;
+    }
+
+    /**
+     * @param list<string>|null $allowedHosts
+     */
+    public function setAllowedHosts(?array $allowedHosts): void
+    {
+        $this->allowedHosts = $allowedHosts;
+    }
+
+    /**
+     * @internal
+     */
+    public function getIconRaw(): ?string
+    {
+        $this->checkIfPropertyAccessIsAllowed('iconRaw');
+
+        return $this->iconRaw;
+    }
+
+    /**
+     * @internal
+     */
+    public function setIconRaw(?string $iconRaw): void
+    {
+        $this->iconRaw = $iconRaw;
+    }
+
+    public function getIcon(): ?string
+    {
+        return $this->icon;
+    }
+
+    public function setIcon(?string $icon): void
+    {
+        $this->icon = $icon;
+    }
+
+    public function getTranslations(): ?AppTranslationCollection
+    {
+        return $this->translations;
+    }
+
+    public function setTranslations(AppTranslationCollection $translations): void
+    {
+        $this->translations = $translations;
+    }
+
+    public function getLabel(): ?string
+    {
+        return $this->label;
+    }
+
+    public function setLabel(?string $label): void
+    {
+        $this->label = $label;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): void
+    {
+        $this->description = $description;
+    }
+
+    public function getIntegrationId(): string
+    {
+        return $this->integrationId;
+    }
+
+    public function setIntegrationId(string $integrationId): void
+    {
+        $this->integrationId = $integrationId;
+    }
+
+    public function getIntegration(): ?IntegrationEntity
+    {
+        return $this->integration;
+    }
+
+    public function setIntegration(?IntegrationEntity $integration): void
+    {
+        $this->integration = $integration;
+    }
+
+    public function getAclRoleId(): string
+    {
+        return $this->aclRoleId;
+    }
+
+    public function setAclRoleId(string $aclRoleId): void
+    {
+        $this->aclRoleId = $aclRoleId;
+    }
+
+    public function getAclRole(): ?AclRoleEntity
+    {
+        return $this->aclRole;
+    }
+
+    public function setAclRole(?AclRoleEntity $aclRole): void
+    {
+        $this->aclRole = $aclRole;
+    }
+
+    public function getCustomFieldSets(): ?CustomFieldSetCollection
+    {
+        return $this->customFieldSets;
+    }
+
+    public function setCustomFieldSets(CustomFieldSetCollection $customFieldSets): void
+    {
+        $this->customFieldSets = $customFieldSets;
+    }
+
+    /**
+     * @internal
+     */
+    public function getAppSecret(): ?string
+    {
+        $this->checkIfPropertyAccessIsAllowed('appSecret');
+
+        return $this->appSecret;
+    }
+
+    /**
+     * @internal
+     */
+    public function setAppSecret(#[\SensitiveParameter] ?string $appSecret): void
+    {
+        $this->appSecret = $appSecret;
+    }
+
+    /**
+     * @internal
+     *
+     * @return list<string>|null
+     */
+    public function getUnconfirmedAppSecrets(): ?array
+    {
+        $this->checkIfPropertyAccessIsAllowed('unconfirmedAppSecrets');
+
+        return $this->unconfirmedAppSecrets;
+    }
+
+    /**
+     * @internal
+     *
+     * @param list<string>|null $unconfirmedAppSecrets
+     */
+    public function setUnconfirmedAppSecrets(#[\SensitiveParameter] ?array $unconfirmedAppSecrets): void
+    {
+        $this->unconfirmedAppSecrets = $unconfirmedAppSecrets;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): void
+    {
+        $this->active = $active;
+    }
+
+    public function isConfigurable(): bool
+    {
+        return $this->configurable;
+    }
+
+    public function setConfigurable(bool $configurable): void
+    {
+        $this->configurable = $configurable;
+    }
+
+    public function getActionButtons(): ?ActionButtonCollection
+    {
+        return $this->actionButtons;
+    }
+
+    public function setActionButtons(ActionButtonCollection $actionButtons): void
+    {
+        $this->actionButtons = $actionButtons;
+    }
+
+    public function getWebhooks(): ?WebhookCollection
+    {
+        return $this->webhooks;
+    }
+
+    public function setWebhooks(WebhookCollection $webhooks): void
+    {
+        $this->webhooks = $webhooks;
+    }
+
+    public function getTemplates(): ?TemplateCollection
+    {
+        return $this->templates;
+    }
+
+    public function setTemplates(TemplateCollection $templates): void
+    {
+        $this->templates = $templates;
+    }
+
+    /**
+     * @internal
+     */
+    public function getScripts(): ?ScriptCollection
+    {
+        $this->checkIfPropertyAccessIsAllowed('scripts');
+
+        return $this->scripts;
+    }
+
+    /**
+     * @internal
+     */
+    public function setScripts(ScriptCollection $scripts): void
+    {
+        $this->scripts = $scripts;
+    }
+
+    public function getPrivacyPolicyExtensions(): ?string
+    {
+        return $this->privacyPolicyExtensions;
+    }
+
+    public function setPrivacyPolicyExtensions(?string $privacyPolicyExtensions): void
+    {
+        $this->privacyPolicyExtensions = $privacyPolicyExtensions;
+    }
+
+    public function getPaymentMethods(): ?AppPaymentMethodCollection
+    {
+        return $this->paymentMethods;
+    }
+
+    public function setPaymentMethods(AppPaymentMethodCollection $paymentMethods): void
+    {
+        $this->paymentMethods = $paymentMethods;
+    }
+
+    public function getTaxProviders(): ?TaxProviderCollection
+    {
+        return $this->taxProviders;
+    }
+
+    public function setTaxProviders(TaxProviderCollection $taxProviders): void
+    {
+        $this->taxProviders = $taxProviders;
+    }
+
+    /**
+     * @internal
+     */
+    public function getScriptConditions(): ?AppScriptConditionCollection
+    {
+        $this->checkIfPropertyAccessIsAllowed('scriptConditions');
+
+        return $this->scriptConditions;
+    }
+
+    /**
+     * @internal
+     */
+    public function setScriptConditions(AppScriptConditionCollection $scriptConditions): void
+    {
+        $this->scriptConditions = $scriptConditions;
+    }
+
+    /**
+     * @internal
+     */
+    public function getCmsBlocks(): ?AppCmsBlockCollection
+    {
+        return $this->cmsBlocks;
+    }
+
+    /**
+     * @internal
+     */
+    public function setCmsBlocks(AppCmsBlockCollection $cmsBlocks): void
+    {
+        $this->cmsBlocks = $cmsBlocks;
+    }
+
+    public function getFlowActions(): ?AppFlowActionCollection
+    {
+        return $this->flowActions;
+    }
+
+    public function setFlowActions(AppFlowActionCollection $flowActions): void
+    {
+        $this->flowActions = $flowActions;
+    }
+
+    public function getFlowEvents(): ?AppFlowEventCollection
+    {
+        return $this->flowEvents;
+    }
+
+    public function setFlowEvents(AppFlowEventCollection $flowEvents): void
+    {
+        $this->flowEvents = $flowEvents;
+    }
+
+    /**
+     * @return EntityCollection<AppShippingMethodEntity>|null
+     */
+    public function getAppShippingMethods(): ?EntityCollection
+    {
+        return $this->appShippingMethods;
+    }
+
+    /**
+     * @param EntityCollection<AppShippingMethodEntity> $appShippingMethods
+     */
+    public function setAppShippingMethods(EntityCollection $appShippingMethods): void
+    {
+        $this->appShippingMethods = $appShippingMethods;
+    }
+
+    public function getMcpTools(): ?AppMcpToolCollection
+    {
+        return $this->mcpTools;
+    }
+
+    public function setMcpTools(AppMcpToolCollection $mcpTools): void
+    {
+        $this->mcpTools = $mcpTools;
+    }
+
+    public function getMcpPrompts(): ?AppMcpPromptCollection
+    {
+        return $this->mcpPrompts;
+    }
+
+    public function setMcpPrompts(AppMcpPromptCollection $mcpPrompts): void
+    {
+        $this->mcpPrompts = $mcpPrompts;
+    }
+
+    public function getMcpResources(): ?AppMcpResourceCollection
+    {
+        return $this->mcpResources;
+    }
+
+    public function setMcpResources(AppMcpResourceCollection $mcpResources): void
+    {
+        $this->mcpResources = $mcpResources;
+    }
+
+    public function jsonSerialize(): array
+    {
+        $serializedData = parent::jsonSerialize();
+        unset($serializedData['iconRaw']);
+
+        return $serializedData;
+    }
+
+    public function getAllowDisable(): bool
+    {
+        return $this->allowDisable;
+    }
+
+    public function setAllowDisable(bool $allowDisable): void
+    {
+        $this->allowDisable = $allowDisable;
+    }
+
+    public function getTemplateLoadPriority(): int
+    {
+        return $this->templateLoadPriority;
+    }
+
+    public function setTemplateLoadPriority(int $templateLoadPriority): void
+    {
+        $this->templateLoadPriority = $templateLoadPriority;
+    }
+
+    public function getSourceType(): string
+    {
+        return $this->sourceType;
+    }
+
+    public function setSourceType(string $sourceType): void
+    {
+        $this->sourceType = $sourceType;
+    }
+
+    /**
+     * @return SourceConfig
+     */
+    public function getSourceConfig(): array
+    {
+        return $this->sourceConfig;
+    }
+
+    /**
+     * @param SourceConfig $config
+     */
+    public function setSourceConfig(array $config): void
+    {
+        $this->sourceConfig = $config;
+    }
+
+    /**
+     * Is this App managed by itself?
+     *
+     * If so, it should not be presented to the client, it is managed and updated by itself
+     */
+    public function isSelfManaged(): bool
+    {
+        return $this->selfManaged;
+    }
+
+    public function setSelfManaged(bool $selfManaged): void
+    {
+        $this->selfManaged = $selfManaged;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getRequestedPrivileges(): array
+    {
+        return $this->requestedPrivileges;
+    }
+
+    /**
+     * @param list<string> $requestedPrivileges
+     */
+    public function setRequestedPrivileges(array $requestedPrivileges): void
+    {
+        $this->requestedPrivileges = $requestedPrivileges;
+    }
+}

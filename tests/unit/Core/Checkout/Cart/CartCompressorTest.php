@@ -1,0 +1,98 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\CartCompressor;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Random;
+use Shopwell\Core\Test\Assert\Serialization;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(CartCompressor::class)]
+class CartCompressorTest extends TestCase
+{
+    public function testSerializeNone(): void
+    {
+        $compressor = new CartCompressor(false, 'gzip');
+        [$compression, $result] = $compressor->serialize('test');
+
+        static::assertSame(0, $compression);
+        static::assertIsString($result);
+
+        $back = $compressor->unserialize($result, $compression);
+
+        static::assertSame('test', $back);
+
+        Serialization::assertUnserializedSame('test', $result);
+    }
+
+    public function testSerializeGzip(): void
+    {
+        $compressor = new CartCompressor(true, 'gzip');
+        [$compression, $result] = $compressor->serialize('test');
+
+        static::assertSame(1, $compression);
+        static::assertIsString($result);
+
+        $back = $compressor->unserialize($result, $compression);
+
+        static::assertSame('test', $back);
+    }
+
+    public function testSerializeZstd(): void
+    {
+        if (!\function_exists('zstd_compress')) {
+            static::markTestSkipped('zstd extension is not installed');
+        }
+
+        $compressor = new CartCompressor(true, 'zstd');
+        [$compression, $result] = $compressor->serialize('test');
+
+        static::assertSame(2, $compression);
+        static::assertIsString($result);
+
+        $back = $compressor->unserialize($result, $compression);
+
+        static::assertSame('test', $back);
+    }
+
+    public function testInvalidCompression(): void
+    {
+        static::expectExceptionObject(CartException::invalidCompressionMethod('invalid'));
+        new CartCompressor(true, 'invalid');
+    }
+
+    public function testInvalidUnserialize(): void
+    {
+        $compressor = new CartCompressor(true, 'gzip');
+
+        static::expectExceptionObject(CartException::deserializeFailed());
+        $compressor->unserialize('invalid', 1);
+    }
+
+    public function testSerializationMaxSizeWithCompress(): void
+    {
+        $this->expectExceptionObject(CartException::serializedCartTooLarge());
+
+        $compressor = new CartCompressor(true, 'gzip', 1);
+
+        // necessary to get the limit of 1 mb
+        $compressor->serialize(Random::getString(1500000));
+    }
+
+    public function testSerializationMaxSizeWithOutCompress(): void
+    {
+        $this->expectExceptionObject(CartException::serializedCartTooLarge());
+
+        $compressor = new CartCompressor(false, 'gzip', 1);
+
+        // necessary to get the limit of 1 mb
+        $compressor->serialize(Random::getString(1500000));
+    }
+}

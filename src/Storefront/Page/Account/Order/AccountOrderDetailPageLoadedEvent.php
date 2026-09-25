@@ -1,0 +1,39 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Page\Account\Order;
+
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Storefront\Page\PageLoadedEvent;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @deprecated tag:v6.8.0 - Will be removed without replacement
+ */
+#[Package('checkout')]
+class AccountOrderDetailPageLoadedEvent extends PageLoadedEvent
+{
+    public function __construct(
+        protected AccountOrderDetailPage $page,
+        SalesChannelContext $salesChannelContext,
+        Request $request,
+    ) {
+        Feature::triggerDeprecationOrThrow(
+            'v6.8.0.0',
+            Feature::deprecatedClassMessage(self::class, 'v6.8.0.0')
+        );
+
+        parent::__construct($salesChannelContext, $request);
+    }
+
+    public function getPage(): AccountOrderDetailPage
+    {
+        Feature::triggerDeprecationOrThrow(
+            'v6.8.0.0',
+            Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0')
+        );
+
+        return $this->page;
+    }
+}

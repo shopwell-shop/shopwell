@@ -1,0 +1,50 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Api\EventListener;
+
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\PlatformRequest;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
+use Symfony\Component\HttpKernel\KernelEvents;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class ResponseHeaderListener implements EventSubscriberInterface
+{
+    private const HEADERS = [
+        PlatformRequest::HEADER_VERSION_ID,
+        PlatformRequest::HEADER_LANGUAGE_ID,
+    ];
+
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            KernelEvents::RESPONSE => 'onResponse',
+        ];
+    }
+
+    public function onResponse(ResponseEvent $event): void
+    {
+        $headers = self::HEADERS;
+        if (!Feature::isActive('v6.8.0.0') && !Feature::isActive('CACHE_REWORK')) {
+            $headers[] = PlatformRequest::HEADER_CONTEXT_TOKEN;
+        }
+
+        $headersBag = $event->getResponse()->headers;
+        foreach ($headers as $header) {
+            if ($headersBag->has($header) || !$event->getRequest()->headers->has($header)) {
+                continue;
+            }
+
+            $headersBag->set(
+                $header,
+                $event->getRequest()->headers->get($header),
+                false
+            );
+        }
+    }
+}

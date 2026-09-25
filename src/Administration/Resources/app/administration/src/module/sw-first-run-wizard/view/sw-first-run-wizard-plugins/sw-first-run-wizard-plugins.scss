@@ -1,0 +1,90 @@
+.sw-first-run-wizard-plugins {
+    height: 100%;
+    position: relative;
+
+    .recommended-plugins__headline {
+        font-size: var(--font-size-s);
+        font-weight: var(--font-weight-medium);
+        line-height: var(--font-line-height-s);
+        color: var(--color-text-primary-default);
+        margin-top: var(--scale-size-20);
+        margin-bottom: var(--scale-size-8);
+    }
+
+    .recommended-plugins__headline-main {
+        margin-top: 0;
+    }
+
+    .recommended-plugins__description {
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        font-weight: var(--font-weight-regular);
+        color: var(--color-text-primary-default);
+        margin-bottom: var(--scale-size-24);
+    }
+
+    .select-region,
+    .select-category {
+        p {
+            font-size: var(--font-size-xs);
+            line-height: var(--font-line-height-xs);
+            color: var(--color-text-primary-default);
+            margin: var(--scale-size-10) 0;
+        }
+    }
+
+    .sw-label-region,
+    .sw-label-category {
+        &.sw-label {
+            background: var(--color-background-secondary-default);
+            font-size: var(--font-size-2xs);
+            font-weight: var(--font-weight-medium);
+            text-align: center;
+
+            &:hover {
+                cursor: pointer;
+            }
+        }
+
+        &.sw-label--neutral {
+            color: var(--color-text-primary-default);
+            border: 1px solid var(--color-border-primary-default);
+        }
+
+        &.sw-label--info {
+            border: 1px solid var(--color-border-brand-default);
+            color: var(--color-text-brand-default);
+        }
+    }
+
+    .spacer {
+        border: none;
+        height: 1px;
+        background-color: var(--color-border-secondary-default);
+        margin: var(--scale-size-20) 0;
+    }
+
+    .plugins-category-lead {
+        .sw-plugin-card {
+            margin-bottom: var(--scale-size-24);
+        }
+    }
+
+    .plugins-not-category-lead {
+        .sw-plugin-card__icon {
+            width: var(--scale-size-96);
+            height: var(--scale-size-96);
+        }
+
+        .bottom {
+            display: flex;
+            flex: 1;
+            align-items: flex-end;
+        }
+    }
+
+    .plugins-category-lead,
+    .plugins-not-category-lead {
+        margin: var(--scale-size-20) 0;
+    }
+}

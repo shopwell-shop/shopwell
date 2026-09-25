@@ -1,0 +1,69 @@
+{% block sw_first_run_wizard_store %}
+<div class="sw-first-run-wizard-store">
+    <template v-if="loadStatus">
+        <sw-loader />
+
+        <p class="message">
+            <span>{{ $t('sw-first-run-wizard.store.loadStatusCollect') }}</span>
+            <br>
+            <span>{{ $t('sw-first-run-wizard.store.takeMinutes') }}</span>
+        </p>
+    </template>
+
+    <template v-else-if="extensionStatus && extensionStatus.active">
+        <div class="sw-first-run-wizard-store__label success">
+            <mt-icon
+                name="regular-check-circle"
+                size="30px"
+            />
+        </div>
+
+        <h2 class="sw-first-run-wizard-store__label-text">
+            {{ $t('sw-first-run-wizard.store.alreadyActivated') }}
+        </h2>
+    </template>
+
+    <template v-else-if="isActivating">
+        <sw-loader />
+
+        <p class="message">
+            <span>{{ $t('sw-first-run-wizard.store.enablingStore') }}</span>
+            <br>
+            <span>{{ $t('sw-first-run-wizard.store.takeMinutes') }}</span>
+        </p>
+    </template>
+
+    <template v-else-if="activationError">
+        <div class="sw-first-run-wizard-store__label error">
+            <mt-icon
+                name="regular-times-circle"
+                size="30px"
+            />
+        </div>
+
+        <h2 class="sw-first-run-wizard-store__label-text">
+            {{ error && error.title || $t('sw-first-run-wizard.store.activationErrorTitle') }}
+        </h2>
+        <p class="sw-first-run-wizard-store__label-description">
+            {{ error && error.detail || $t('sw-first-run-wizard.store.activationErrorDescription') }}
+        </p>
+    </template>
+
+    <template v-else>
+        <img
+            :src="assetFilter('/administration/administration/static/img/extension-store/store_illustration.svg')"
+            alt=""
+        >
+
+        <h2 class="sw-first-run-wizard-store__heading">
+            <span>{{ $t('sw-first-run-wizard.store.headingOne') }}</span>
+            <br>
+            <span>{{ $t('sw-first-run-wizard.store.headingTwo') }}</span>
+        </h2>
+
+        <p>
+            {{ $t('sw-first-run-wizard.store.description') }}
+        </p>
+    </template>
+</div>
+{% endblock %}

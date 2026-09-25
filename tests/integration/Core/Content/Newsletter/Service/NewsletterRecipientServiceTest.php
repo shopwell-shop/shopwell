@@ -1,0 +1,285 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\Newsletter\Service;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientCollection;
+use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientEntity;
+use Shopwell\Core\Content\Newsletter\NewsletterException;
+use Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterConfirmRoute;
+use Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute;
+use Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterUnsubscribeRoute;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Util\Hasher;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\Test\TestDefaults;
+
+/**
+ * @internal
+ */
+#[Package('after-sales')]
+class NewsletterRecipientServiceTest extends TestCase
+{
+    use IntegrationTestBehaviour;
+
+    /**
+     * @param array{email: string|null, salutationId: string|null, option: string|null} $testData
+     */
+    #[DataProvider('dataProvider_testSubscribeNewsletterExpectsConstraintViolationException')]
+    public function testSubscribeNewsletterExpectsConstraintViolationException(array $testData): void
+    {
+        $this->installTestData();
+        $dataBag = new RequestDataBag($testData);
+
+        $this->expectException(ConstraintViolationException::class);
+
+        $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
+        $context = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+
+        static::getContainer()->get(NewsletterSubscribeRoute::class)
+            ->subscribeWithResponse($dataBag, $context, false);
+    }
+
+    /**
+     * @return list<array{array{email: string|null, salutationId: string|null, option: string|null}}>
+     */
+    public static function dataProvider_testSubscribeNewsletterExpectsConstraintViolationException(): array
+    {
+        $testData1 = ['email' => null, 'salutationId' => null, 'option' => null];
+        $testData2 = ['email' => '', 'salutationId' => null, 'option' => null];
+        $testData3 = ['email' => '', 'salutationId' => '', 'option' => null];
+        $testData4 = ['email' => '', 'salutationId' => '', 'option' => null];
+        $testData5 = ['email' => '', 'salutationId' => '', 'option' => ''];
+
+        // test Not Valid Email
+        $testDataEmail1 = ['email' => '', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
+        $testDataEmail2 = ['email' => 'notValid', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
+        $testDataEmail3 = ['email' => 'notValid@', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
+        $testDataEmail4 = ['email' => 'notValid@foo', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
+        $testDataEmail5 = ['email' => 'notValid@foo.', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
+
+        // test not valid option
+        $testDataOption1 = ['email' => 'valid@email.foo', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => ''];
+        $testDataOption2 = ['email' => 'valid@email.foo', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'notValid'];
+        $testDataOption3 = ['email' => 'valid@email.foo', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'unitTest'];
+        $testDataOption4 = ['email' => 'valid@email.foo', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'otherValue'];
+
+        return [
+            [$testData1],
+            [$testData2],
+            [$testData3],
+            [$testData4],
+            [$testData5],
+            [$testDataEmail1],
+            [$testDataEmail2],
+            [$testDataEmail3],
+            [$testDataEmail4],
+            [$testDataEmail5],
+            [$testDataOption1],
+            [$testDataOption2],
+            [$testDataOption3],
+            [$testDataOption4],
+        ];
+    }
+
+    public function testSubscribeNewsletterShouldSaveRecipientToDatabase(): void
+    {
+        $this->installTestData();
+        $email = 'valid@email.foo';
+        $dataBag = new RequestDataBag([
+            'storefrontUrl' => '',
+            'email' => $email,
+            'salutationId' => 'ad165c1faac14059832b6258ac0a7339',
+            'baseUrl' => '',
+            'option' => 'subscribe',
+            'firstName' => 'max',
+            'lastName' => 'mustermann',
+        ]);
+
+        $id = Uuid::randomHex();
+        $salesChannel = [
+            'id' => $id,
+            'name' => 'test',
+            'typeId' => Defaults::SALES_CHANNEL_TYPE_STOREFRONT,
+            'customerGroupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
+            'currencyId' => Defaults::CURRENCY,
+            'paymentMethodId' => $this->getRandomId('payment_method'),
+            'shippingMethodId' => $this->getRandomId('shipping_method'),
+            'countryId' => $this->getRandomId('country'),
+            'navigationCategoryId' => $this->getRandomId('category'),
+            'accessKey' => 'test',
+            'currencies' => [
+                ['id' => Defaults::CURRENCY],
+            ],
+            'languages' => [
+                ['id' => Defaults::LANGUAGE_SYSTEM],
+            ],
+            'domains' => [
+                [
+                    'url' => 'https://test.de',
+                    'currencyId' => Defaults::CURRENCY,
+                    'languageId' => Defaults::LANGUAGE_SYSTEM,
+                    'snippetSetId' => $this->getRandomId('snippet_set'),
+                ],
+            ],
+        ];
+
+        static::getContainer()->get('sales_channel.repository')
+            ->create([$salesChannel], Context::createDefaultContext());
+
+        $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
+        $context = $salesChannelContextFactory->create(Uuid::randomHex(), $id);
+        static::getContainer()
+            ->get(NewsletterSubscribeRoute::class)
+            ->subscribeWithResponse($dataBag, $context, false);
+
+        /** @var EntityRepository<NewsletterRecipientCollection> $repository */
+        $repository = static::getContainer()->get('newsletter_recipient.repository');
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('email', $email));
+
+        $result = $repository->search($criteria, $context->getContext())->getEntities()->first();
+
+        static::assertInstanceOf(NewsletterRecipientEntity::class, $result);
+        static::assertSame($email, $result->getEmail());
+        static::assertSame('notSet', $result->getStatus());
+    }
+
+    public function testConfirmSubscribeNewsletterExpectsNewsletterRecipientNotFoundException(): void
+    {
+        $dataBag = new RequestDataBag(['hash' => 'notExistentHash']);
+
+        $this->expectException(NewsletterException::class);
+
+        $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
+        $context = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+        static::getContainer()
+            ->get(NewsletterConfirmRoute::class)
+            ->confirmWithResponse($dataBag, $context);
+    }
+
+    public function testConfirmSubscribeNewsletterExpectsConstraintViolationException(): void
+    {
+        $this->installTestData();
+
+        $dataBag = new RequestDataBag(['em' => 'notValidHash', 'hash' => 'b4b45f58088d41289490db956ca19af7']);
+
+        $this->expectException(ConstraintViolationException::class);
+
+        $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
+        $context = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+        static::getContainer()
+            ->get(NewsletterConfirmRoute::class)
+            ->confirmWithResponse($dataBag, $context);
+    }
+
+    public function testConfirmSubscribeNewsletterExpectedUpdatedDatabaseRow(): void
+    {
+        $this->installTestData();
+
+        $email = 'unit@test.foo';
+        $dataBag = new RequestDataBag([
+            'em' => Hasher::hash($email, 'sha1'),
+            'hash' => 'b4b45f58088d41289490db956ca19af7',
+        ]);
+
+        $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
+        $context = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+
+        static::getContainer()
+            ->get(NewsletterConfirmRoute::class)
+            ->confirmWithResponse($dataBag, $context);
+
+        /** @var EntityRepository<NewsletterRecipientCollection> $repository */
+        $repository = static::getContainer()->get('newsletter_recipient.repository');
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('email', $email));
+
+        $result = $repository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+
+        static::assertInstanceOf(NewsletterRecipientEntity::class, $result);
+        static::assertNotNull($result->getConfirmedAt());
+        static::assertSame((new \DateTime())->format('y-m-d'), $result->getConfirmedAt()->format('y-m-d'));
+        static::assertSame('optIn', $result->getStatus());
+    }
+
+    public function testUnsubscribeNewsletterExpectsNewsletterRecipientNotFoundException(): void
+    {
+        $this->installTestData();
+        $email = 'not@existend.email';
+        $dataBag = new RequestDataBag([
+            'email' => $email,
+            'salutationId' => 'ad165c1faac14059832b6258ac0a7339',
+            'option' => 'unsubscribe',
+        ]);
+
+        $this->expectException(NewsletterException::class);
+
+        $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
+        $context = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+        static::getContainer()
+            ->get(NewsletterUnsubscribeRoute::class)
+            ->unsubscribeWithResponse($dataBag, $context);
+    }
+
+    public function testConfirmSubscribeNewsletterExpectsUpdatedDatabaseRow(): void
+    {
+        $this->installTestData();
+
+        $email = 'unit@test.foo';
+        $dataBag = new RequestDataBag([
+            'email' => $email,
+            'salutationId' => 'AD165C1FAAC14059832B6258AC0A7339',
+            'option' => 'unsubscribe',
+        ]);
+
+        $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
+        $context = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+        static::getContainer()
+            ->get(NewsletterUnsubscribeRoute::class)
+            ->unsubscribeWithResponse($dataBag, $context);
+
+        /** @var EntityRepository<NewsletterRecipientCollection> $repository */
+        $repository = static::getContainer()->get('newsletter_recipient.repository');
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('email', $email));
+
+        $result = $repository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+
+        static::assertInstanceOf(NewsletterRecipientEntity::class, $result);
+        static::assertSame($email, $result->getEmail());
+        static::assertNotNull($result->getUpdatedAt());
+        static::assertSame((new \DateTime())->format('y-m-d'), $result->getUpdatedAt()->format('y-m-d'));
+    }
+
+    private function getRandomId(string $table): string
+    {
+        return static::getContainer()->get(Connection::class)
+            ->fetchOne('SELECT LOWER(HEX(id)) FROM ' . $table);
+    }
+
+    private function installTestData(): void
+    {
+        $salutationSql = file_get_contents(__DIR__ . '/../fixtures/salutation.sql');
+        static::assertIsString($salutationSql);
+        static::getContainer()->get(Connection::class)->executeStatement($salutationSql);
+
+        $recipientSql = file_get_contents(__DIR__ . '/../fixtures/recipient.sql');
+        static::assertIsString($recipientSql);
+        $recipientSql = str_replace(':now', (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT), $recipientSql);
+        static::getContainer()->get(Connection::class)->executeStatement($recipientSql);
+    }
+}

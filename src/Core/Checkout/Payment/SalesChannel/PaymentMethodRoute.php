@@ -1,0 +1,90 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Payment\SalesChannel;
+
+use Shopwell\Core\Checkout\Payment\Hook\PaymentMethodRouteHook;
+use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
+use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
+use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
+use Shopwell\Core\Framework\Rule\RuleIdMatcher;
+use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Package('checkout')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
+class PaymentMethodRoute extends AbstractPaymentMethodRoute
+{
+    final public const ALL_TAG = 'payment-method-route';
+
+    /**
+     * @internal
+     *
+     * @param SalesChannelRepository<PaymentMethodCollection> $paymentMethodRepository
+     */
+    public function __construct(
+        private readonly SalesChannelRepository $paymentMethodRepository,
+        private readonly CacheTagCollector $cacheTagCollector,
+        private readonly ScriptExecutor $scriptExecutor,
+        private readonly RuleIdMatcher $ruleIdMatcher,
+    ) {
+    }
+
+    public function getDecorated(): AbstractPaymentMethodRoute
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    public static function buildName(string $salesChannelId): string
+    {
+        return 'payment-method-route-' . $salesChannelId;
+    }
+
+    /**
+     * Though this is a GET route, caching was not added as the output may be altered depending on dynamic rules,
+     * which is not taken into account during the cache hash calculation.
+     */
+    #[Route(
+        path: '/store-api/payment-method',
+        name: 'store-api.payment.method',
+        defaults: [PlatformRequest::ATTRIBUTE_ENTITY => PaymentMethodDefinition::ENTITY_NAME],
+        methods: [Request::METHOD_GET, Request::METHOD_POST]
+    )]
+    public function load(Request $request, SalesChannelContext $context, Criteria $criteria): PaymentMethodRouteResponse
+    {
+        $this->cacheTagCollector->addTag(self::buildName($context->getSalesChannelId()));
+
+        $criteria
+            ->addFilter(new EqualsFilter('active', true))
+            ->addSorting(new FieldSorting('position'))
+            ->addAssociation('media');
+
+        $result = $this->paymentMethodRepository->search($criteria, $context);
+
+        $paymentMethods = $result->getEntities();
+        $paymentMethods->sortPaymentMethodsByPreference($context);
+
+        if ($request->query->getBoolean('onlyAvailable') || $request->request->getBoolean('onlyAvailable')) {
+            $paymentMethods = $this->ruleIdMatcher->filterCollection($paymentMethods, $context->getRuleIds());
+        }
+
+        $result->assign(['entities' => $paymentMethods, 'elements' => $paymentMethods->getElements(), 'total' => $paymentMethods->count()]);
+
+        $this->scriptExecutor->execute(new PaymentMethodRouteHook(
+            $paymentMethods,
+            $request->query->getBoolean('onlyAvailable') || $request->request->getBoolean('onlyAvailable'),
+            $context,
+        ));
+
+        return new PaymentMethodRouteResponse($result);
+    }
+}

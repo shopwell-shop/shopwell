@@ -1,0 +1,199 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Dbal;
+
+use Doctrine\DBAL\Query\QueryBuilder as DBALQueryBuilder;
+use Shopwell\Core\Framework\Log\Package;
+
+#[Package('framework')]
+class QueryBuilder extends DBALQueryBuilder
+{
+    /**
+     * @var array<string, string>
+     */
+    private array $states = [];
+
+    /**
+     * @var array<string, array{fromAlias: string, queryBuilder: self, joinCondition: string}>
+     */
+    private array $translationJoins = [];
+
+    /**
+     * @var array<string>
+     */
+    private array $selectParts = [];
+
+    /**
+     * @var list<array{string, string}>
+     */
+    private array $orderBy = [];
+
+    private ?string $title = null;
+
+    public function addState(string $state): void
+    {
+        $this->states[$state] = $state;
+    }
+
+    public function removeState(string $state): void
+    {
+        unset($this->states[$state]);
+    }
+
+    public function hasState(string $state): bool
+    {
+        return \in_array($state, $this->states, true);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getStates(): array
+    {
+        return $this->states;
+    }
+
+    public function addTranslationJoin(
+        string $fromAlias,
+        string $joinAlias,
+        self $queryBuilder,
+        string $joinCondition,
+    ): void {
+        $this->translationJoins[$joinAlias] = [
+            'fromAlias' => $fromAlias,
+            'queryBuilder' => $queryBuilder,
+            'joinCondition' => $joinCondition,
+        ];
+    }
+
+    public function getTranslationQueryBuilder(string $joinAlias): ?self
+    {
+        return $this->translationJoins[$joinAlias]['queryBuilder'] ?? null;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(?string $title): void
+    {
+        $this->title = $title;
+    }
+
+    public function getSQL(): string
+    {
+        // Use a copy of this query builder to generate the SQL including the translation joins. This way calling this
+        // getter does not have any side effects on the original instance.
+        $query = clone $this;
+        foreach ($this->translationJoins as $joinAlias => $translationJoin) {
+            $query->leftJoin(
+                $translationJoin['fromAlias'],
+                '(' . $translationJoin['queryBuilder']->getSQL() . ')',
+                $joinAlias,
+                $translationJoin['joinCondition'],
+            );
+        }
+        $sql = $query->getUnmodifiedSQL();
+
+        if ($this->title) {
+            $sql = '-- ' . self::sanitizeSqlComment($this->title) . \PHP_EOL . $sql;
+        }
+
+        return $sql;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function select(string ...$expressions): self
+    {
+        $this->selectParts = $expressions;
+
+        return parent::select(...$expressions);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function addSelect(string $expression, string ...$expressions): self
+    {
+        $this->selectParts = array_merge($this->selectParts, [$expression], $expressions);
+
+        return parent::addSelect($expression, ...$expressions);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function orderBy(string $sort, ?string $order = null): self
+    {
+        $this->orderBy = [[$sort, $order ?? 'ASC']];
+
+        return parent::orderBy($sort, $order);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function addOrderBy(string $sort, ?string $order = null): self
+    {
+        $this->orderBy[] = [$sort, $order ?? 'ASC'];
+
+        return parent::addOrderBy($sort, $order);
+    }
+
+    /**
+     * This method is a hacky way to fix deprecations in the Doctrine DBAL QueryBuilder. It's usage is strongly discouraged.
+     *
+     * @internal
+     *
+     * @return array<string>
+     */
+    public function getSelectParts(): array
+    {
+        return $this->selectParts;
+    }
+
+    /**
+     * This method is a hacky way to fix deprecations in the Doctrine DBAL QueryBuilder. It's usage is strongly discouraged.
+     *
+     * @return array<string>
+     *
+     *@internal
+     */
+    public function getOrderByParts(): array
+    {
+        return array_map(static fn (array $part) => $part[0] . ' ' . $part[1], $this->orderBy);
+    }
+
+    /**
+     * @internal
+     *
+     * @return list<array{string, string}> the expression and the direction of every order by clause
+     */
+    public function getOrderByPairs(): array
+    {
+        return $this->orderBy;
+    }
+
+    /**
+     * SQL has no built-in escaping for comments. Line breaks terminate a `--` comment, and other control characters
+     * can be interpreted differently by SQL parsers. Replacing Unicode control characters prevents titles from
+     * changing the query grammar.
+     */
+    private static function sanitizeSqlComment(string $comment): string
+    {
+        // https://www.php.net/manual/en/regexp.reference.unicode.php
+        return preg_replace('/\p{Cc}/u', ' ', $comment) ?? '';
+    }
+
+    /**
+     * A helper function allowing to get the SQL without applying translation joins. This is necessary for preventing
+     * infinite recursion in {@link self::getSQL()}.
+     */
+    private function getUnmodifiedSQL(): string
+    {
+        return parent::getSQL();
+    }
+}

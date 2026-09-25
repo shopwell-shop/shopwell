@@ -1,0 +1,81 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\App\Template;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\Manifest\Manifest;
+use Shopwell\Core\Framework\App\Template\TemplateLoader;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Filesystem;
+use Shopwell\Core\Test\Stub\App\StaticSourceResolver;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(TemplateLoader::class)]
+class TemplateLoaderTest extends TestCase
+{
+    private Manifest $manifest;
+
+    protected function setUp(): void
+    {
+        $this->manifest = Manifest::createFromXmlFile(__DIR__ . '/../Manifest/_fixtures/test/manifest.xml');
+    }
+
+    public function testGetTemplatePathsForApp(): void
+    {
+        $templateLoader = new TemplateLoader(
+            new StaticSourceResolver([
+                'test' => new Filesystem(__DIR__ . '/../Manifest/_fixtures/test'),
+            ])
+        );
+
+        $templates = $templateLoader->getTemplatePathsForApp($this->manifest);
+        \sort($templates);
+
+        static::assertSame(
+            [
+                'components/Demo/Badge.html.twig',
+                'files/agentic/.well-known/ucp.json.twig',
+                'storefront/layout/header/header.html.twig',
+                'storefront/layout/header/logo.html.twig',
+                'storefront/page/sitemap/sitemap.xml.twig',
+            ],
+            $templates
+        );
+    }
+
+    public function testGetTemplatePathsForAppWhenViewDirDoesntExist(): void
+    {
+        $templateLoader = new TemplateLoader(new StaticSourceResolver([]));
+
+        static::assertSame(
+            [],
+            $templateLoader->getTemplatePathsForApp($this->manifest)
+        );
+    }
+
+    public function testGetTemplateContent(): void
+    {
+        $templateLoader = new TemplateLoader(
+            new StaticSourceResolver([
+                'test' => new Filesystem(__DIR__ . '/../Manifest/_fixtures/test'),
+            ])
+        );
+
+        static::assertStringEqualsFile(
+            __DIR__ . '/../Manifest/_fixtures/test/Resources/views/storefront/layout/header/logo.html.twig',
+            $templateLoader->getTemplateContent('storefront/layout/header/logo.html.twig', $this->manifest)
+        );
+    }
+
+    public function testGetTemplateContentThrowsOnNotFoundFile(): void
+    {
+        $templateLoader = new TemplateLoader(new StaticSourceResolver([]));
+
+        static::expectException(\RuntimeException::class);
+        $templateLoader->getTemplateContent('does/not/exist', $this->manifest);
+    }
+}

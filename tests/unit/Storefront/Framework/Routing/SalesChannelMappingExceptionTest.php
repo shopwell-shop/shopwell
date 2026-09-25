@@ -1,0 +1,24 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Storefront\Framework\Routing;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Storefront\Framework\Routing\Exception\SalesChannelMappingException;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[CoversClass(SalesChannelMappingException::class)]
+class SalesChannelMappingExceptionTest extends TestCase
+{
+    public function testException(): void
+    {
+        $exception = new SalesChannelMappingException('test');
+        static::assertSame('Unable to find a matching sales channel for the request: "test". Please make sure the domain mapping is correct.', $exception->getMessage());
+        static::assertSame('FRAMEWORK__INVALID_SALES_CHANNEL_MAPPING', $exception->getErrorCode());
+        static::assertSame(404, $exception->getStatusCode());
+    }
+}

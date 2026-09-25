@@ -1,0 +1,33 @@
+.sw-extension-adding-failed {
+    text-align: center;
+
+    .sw-circle-icon {
+        margin: 16px auto;
+    }
+
+    h3 {
+        font-size: var(--font-size-m);
+        margin-bottom: 0.5em;
+    }
+
+    p {
+        font-size: var(--font-size-xs);
+        line-height: 1.5;
+        color: var(--color-text-secondary-default);
+        margin-bottom: 8px;
+    }
+
+    a {
+        color: var(--color-text-brand-default);
+        text-decoration: underline;
+    }
+
+    &__text-licence-cancellation {
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-primary-default);
+    }
+
+    .mt-button {
+        margin-top: 16px;
+    }
+}

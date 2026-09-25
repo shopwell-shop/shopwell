@@ -1,0 +1,596 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/shipping-cost/product/{productId}": {
+            "get": {
+                "tags": [
+                    "Cart",
+                    "Endpoints supporting Criteria "
+                ],
+                "summary": "Calculate shipping costs for a product",
+                "description": "Calculates shipping costs for a single product using criteria-based shipping method selection.",
+                "operationId": "readShippingCostByProduct",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "The product identifier.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    },
+                    {
+                        "name": "sw-language-id",
+                        "in": "header",
+                        "description": "Instructs Shopwell to return the response in the given language.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    },
+                    {
+                        "x-parameter-group": "criteria"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The calculated shipping costs.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "shippingCost",
+                                            "deliveryDate",
+                                            "shippingMethod"
+                                        ],
+                                        "properties": {
+                                            "shippingCost": {
+                                                "$ref": "#/components/schemas/CalculatedPrice"
+                                            },
+                                            "deliveryDate": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "earliest": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "latest": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                }
+                                            },
+                                            "shippingMethod": {
+                                                "$ref": "#/components/schemas/ShippingMethod"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "No product exists for the given `productId` in this sales channel."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        },
+        "/shipping-cost/cart": {
+            "get": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Calculate shipping costs for the cart",
+                "description": "Calculates shipping costs for the current cart across available shipping methods.",
+                "operationId": "readShippingCostsByCart",
+                "parameters": [
+                    {
+                        "name": "sw-language-id",
+                        "in": "header",
+                        "description": "Instructs Shopwell to return the response in the given language.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The calculated shipping costs.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "shippingCost",
+                                            "deliveryDate",
+                                            "shippingMethod"
+                                        ],
+                                        "properties": {
+                                            "shippingCost": {
+                                                "$ref": "#/components/schemas/CalculatedPrice"
+                                            },
+                                            "deliveryDate": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "earliest": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "latest": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                }
+                                            },
+                                            "shippingMethod": {
+                                                "$ref": "#/components/schemas/ShippingMethod"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        },
+        "/checkout/cart": {
+            "get": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Fetch or create a cart",
+                "description": "Used to fetch the current cart or for creating a new one.",
+                "operationId": "readCart",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cart",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cart"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Delete a cart",
+                "description": "This route deletes the cart of the customer.",
+                "operationId": "deleteCart",
+                "responses": {
+                    "204": {
+                        "description": "Successfully deleted the cart"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        },
+        "/checkout/cart/line-item": {
+            "post": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Add items to the cart",
+                "description": "This route adds items to the cart. An item can be a product or promotion for example. They are referenced by the `referencedId`-parameter.\n\nExample: [Working with the cart - Guide](https://developer.shopwell.cn/docs/guides/integrations-api/store-api-guide/work-with-the-cart#adding-new-items-to-the-cart)",
+                "operationId": "addLineItem",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CartItems"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The updated cart.",
+                        "headers": {
+                            "sw-context-token": {
+                                "description": "Contains sw-context-token value",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cart"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Remove items from the cart",
+                "description": "DEPRECATED: use removeLineItem instead. This route removes items from the cart and recalculates it.\n\nExample: [Working with the cart - Guide](https://developer.shopwell.cn/docs/guides/integrations-api/store-api-guide/work-with-the-cart#deleting-items-in-the-cart)",
+                "operationId": "removeLineItemDeprecated",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "name": "ids",
+                        "in": "query",
+                        "description": "A list of product identifiers.",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "pattern": "^[0-9a-f]{32}$"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The updated cart.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cart"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "One of the given ids does not reference a line item of the current cart."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Update items in the cart",
+                "description": "This route updates items in the cart. A typical example is updating the quantity of an item.\n\nExample: [Working with the cart - Guide](https://developer.shopwell.cn/docs/guides/integrations-api/store-api-guide/work-with-the-cart#updating-items-in-the-cart)",
+                "operationId": "updateLineItem",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CartItemsUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The updated cart.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cart"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "A line item cannot be updated, e.g. a quantity that is not a positive integer, a quantity that is not a multiple of the parent quantity or a line item type that does not support updates."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "One of the given ids does not reference a line item of the current cart."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        },
+        "/checkout/cart/line-item/delete": {
+            "post": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Remove items from the cart",
+                "description": "This route removes items from the cart and recalculates it.\n\nExample: [Working with the cart - Guide](https://developer.shopwell.cn/docs/guides/integrations-api/store-api-guide/work-with-the-cart#deleting-items-in-the-cart)",
+                "operationId": "removeLineItem",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "ids"
+                                ],
+                                "properties": {
+                                    "ids": {
+                                        "description": "A list of product identifiers.",
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "items": {
+                                            "type": "string",
+                                            "pattern": "^[0-9a-f]{32}$"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The updated cart.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cart"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "One of the given ids does not reference a line item of the current cart."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        },
+        "/checkout/order": {
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Create an order from a cart",
+                "description": "Creates a new order from the current cart and deletes the cart.\n\nIf you are using the [prepared payment flow](https://developer.shopwell.cn/docs/concepts/commerce/checkout-concept/payments#2.1-prepare-payment-optional), this endpoint also receives additional transaction details. The exact name of the parameters depends on the implementation of the corresponding *payment handler*.",
+                "operationId": "createOrder",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "description": "Contains additional metadata which is stored together with the order. It can also contain payment transaction details.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "customerComment": {
+                                        "description": "Adds a comment from the customer to the order.",
+                                        "type": "string"
+                                    },
+                                    "affiliateCode": {
+                                        "description": "The affiliate code can be used to track which referrer the customer came through. An example could be `Price-comparison-company-XY`.",
+                                        "type": "string"
+                                    },
+                                    "campaignCode": {
+                                        "description": "The campaign code is used to track which action the customer came from. An example could be `Summer-Deals`",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Order",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Order"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The cart cannot be turned into an order, e.g. because it is empty."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403",
+                        "description": "No customer is logged in."
+                    },
+                    "409": {
+                        "description": "The `hash` sent by the client does not match the current cart content, so the cart changed since it was last read."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": [],
+                        "ContextToken": []
+                    }
+                ]
+            }
+        },
+        "/checkout/gateway": {
+            "get": {
+                "tags": [
+                    "Gateway"
+                ],
+                "summary": "Call the checkout gateway",
+                "description": "Call the checkout gateway, which is used to manipulate certain aspects of the checkout process (e.g. available payment methods).",
+                "operationId": "checkoutGateway",
+                "responses": {
+                    "200": {
+                        "description": "Checkout gateway response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "payments",
+                                        "shipments",
+                                        "errors"
+                                    ],
+                                    "properties": {
+                                        "payments": {
+                                            "description": "Payment methods that are available after the gateway ran.",
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PaymentMethod"
+                                            }
+                                        },
+                                        "shipments": {
+                                            "description": "Shipping methods that are available after the gateway ran.",
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ShippingMethod"
+                                            }
+                                        },
+                                        "errors": {
+                                            "description": "Cart errors added by the gateway. An empty list is returned as `[]`, otherwise the errors are keyed by their id.",
+                                            "anyOf": [
+                                                {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/CartError"
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "additionalProperties": {
+                                                        "$ref": "#/components/schemas/CartError"
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ]
+            }
+        }
+    }
+}

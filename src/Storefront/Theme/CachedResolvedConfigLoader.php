@@ -1,0 +1,52 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Theme;
+
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+
+/**
+ * @deprecated tag:v6.8.0 - Will be removed in 6.8.0 as it was not used anymore
+ */
+#[Package('discovery')]
+class CachedResolvedConfigLoader extends AbstractResolvedConfigLoader
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly AbstractResolvedConfigLoader $decorated,
+    ) {
+    }
+
+    public function getDecorated(): AbstractResolvedConfigLoader
+    {
+        Feature::triggerDeprecationOrThrow(
+            'v6.8.0.0',
+            Feature::deprecatedClassMessage(self::class, 'v6.8.0.0'),
+        );
+
+        return $this->decorated;
+    }
+
+    public function load(string $themeId, SalesChannelContext $context): array
+    {
+        Feature::triggerDeprecationOrThrow(
+            'v6.8.0.0',
+            Feature::deprecatedClassMessage(self::class, 'v6.8.0.0'),
+        );
+
+        return $this->getDecorated()->load($themeId, $context);
+    }
+
+    public static function buildName(string $themeId): string
+    {
+        Feature::triggerDeprecationOrThrow(
+            'v6.8.0.0',
+            Feature::deprecatedClassMessage(self::class, 'v6.8.0.0'),
+        );
+
+        return ThemeConfigCacheInvalidator::buildCacheTag($themeId);
+    }
+}

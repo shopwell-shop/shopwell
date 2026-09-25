@@ -1,0 +1,9 @@
+.sw-extension-uninstall-modal {
+    font-size: var(--font-size-xs);
+    line-height: 22px;
+
+    .sw-extension-removal-modal__bold-paragraph {
+        margin-block-start: 1em;
+        font-weight: var(--font-weight-semibold);
+    }
+}

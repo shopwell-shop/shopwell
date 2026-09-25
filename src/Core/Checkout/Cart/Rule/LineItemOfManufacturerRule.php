@@ -1,0 +1,100 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Cart\Rule;
+
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerDefinition;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Exception\UnsupportedOperatorException;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Rule\RuleComparison;
+use Shopwell\Core\Framework\Rule\RuleConfig;
+use Shopwell\Core\Framework\Rule\RuleConstraints;
+use Shopwell\Core\Framework\Rule\RuleScope;
+
+/**
+ * @final
+ */
+#[Package('fundamentals@after-sales')]
+class LineItemOfManufacturerRule extends Rule
+{
+    final public const RULE_NAME = 'cartLineItemOfManufacturer';
+
+    /**
+     * @param list<string> $manufacturerIds
+     *
+     * @internal
+     */
+    public function __construct(
+        protected string $operator = self::OPERATOR_EQ,
+        protected array $manufacturerIds = []
+    ) {
+        parent::__construct();
+    }
+
+    /**
+     * @throws UnsupportedOperatorException
+     * @throws CartException
+     */
+    public function match(RuleScope $scope): bool
+    {
+        if ($scope instanceof LineItemScope) {
+            return $this->matchesOneOfManufacturers($scope->getLineItem());
+        }
+
+        if (!$scope instanceof CartRuleScope) {
+            return false;
+        }
+
+        foreach ($scope->getCart()->getLineItems()->filterGoodsFlat() as $lineItem) {
+            if ($this->matchesOneOfManufacturers($lineItem)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function getConstraints(): array
+    {
+        $constraints = [
+            'operator' => RuleConstraints::uuidOperators(),
+        ];
+
+        if ($this->operator === self::OPERATOR_EMPTY) {
+            return $constraints;
+        }
+
+        $constraints['manufacturerIds'] = RuleConstraints::uuids();
+
+        return $constraints;
+    }
+
+    public function getConfig(): RuleConfig
+    {
+        return (new RuleConfig())
+            ->operatorSet(RuleConfig::OPERATOR_SET_STRING, true, true)
+            ->entitySelectField('manufacturerIds', ProductManufacturerDefinition::ENTITY_NAME, true);
+    }
+
+    /**
+     * @throws UnsupportedOperatorException
+     * @throws CartException
+     */
+    private function matchesOneOfManufacturers(LineItem $lineItem): bool
+    {
+        if ($lineItem->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
+            return false;
+        }
+
+        $manufacturerId = (string) $lineItem->getPayloadValue('manufacturerId');
+        $manufacturerArray = ($manufacturerId === '') ? [] : [$manufacturerId];
+
+        if ($this->operator === self::OPERATOR_NEQ) {
+            return !\in_array($manufacturerId, $this->manufacturerIds, true);
+        }
+
+        return RuleComparison::uuids($manufacturerArray, $this->manufacturerIds, $this->operator);
+    }
+}

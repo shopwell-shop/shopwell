@@ -1,0 +1,98 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelAnalytics;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
+
+#[Package('discovery')]
+class SalesChannelAnalyticsEntity extends Entity
+{
+    use EntityIdTrait;
+
+    protected string $trackingId;
+
+    protected bool $active;
+
+    protected bool $trackOrders;
+
+    protected bool $anonymizeIp;
+
+    protected bool $trackOffcanvasCart = false;
+
+    protected bool $enhancedConversions = false;
+
+    protected ?SalesChannelEntity $salesChannel = null;
+
+    public function getTrackingId(): string
+    {
+        return $this->trackingId;
+    }
+
+    public function setTrackingId(string $trackingId): void
+    {
+        $this->trackingId = $trackingId;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): void
+    {
+        $this->active = $active;
+    }
+
+    public function isTrackOrders(): bool
+    {
+        return $this->trackOrders;
+    }
+
+    public function setTrackOrders(bool $trackOrders): void
+    {
+        $this->trackOrders = $trackOrders;
+    }
+
+    public function isAnonymizeIp(): bool
+    {
+        return $this->anonymizeIp;
+    }
+
+    public function setAnonymizeIp(bool $anonymizeIp): void
+    {
+        $this->anonymizeIp = $anonymizeIp;
+    }
+
+    public function isTrackOffcanvasCart(): bool
+    {
+        return $this->trackOffcanvasCart;
+    }
+
+    public function setTrackOffcanvasCart(bool $trackOffcanvasCart): void
+    {
+        $this->trackOffcanvasCart = $trackOffcanvasCart;
+    }
+
+    public function isEnhancedConversions(): bool
+    {
+        return $this->enhancedConversions;
+    }
+
+    public function setEnhancedConversions(bool $enhancedConversions): void
+    {
+        $this->enhancedConversions = $enhancedConversions;
+    }
+
+    public function getSalesChannel(): ?SalesChannelEntity
+    {
+        return $this->salesChannel;
+    }
+
+    public function setSalesChannel(SalesChannelEntity $salesChannel): void
+    {
+        $this->salesChannel = $salesChannel;
+    }
+}

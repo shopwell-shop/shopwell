@@ -1,0 +1,47 @@
+/**
+ * @sw-package framework
+ */
+
+import './acl';
+
+/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+Shopwell.Component.register('sw-settings-logging-list', () => import('./page/sw-settings-logging-list'));
+Shopwell.Component.register('sw-settings-logging-entry-info', () => import('./component/sw-settings-logging-entry-info'));
+Shopwell.Component.extend(
+    'sw-settings-logging-mail-sent-info',
+    'sw-settings-logging-entry-info',
+    () => import('./component/sw-settings-logging-mail-sent-info'),
+);
+/* eslint-enable sw-deprecation-rules/private-feature-declarations */
+
+const { Module } = Shopwell;
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Module.register('sw-settings-logging', {
+    type: 'core',
+    name: 'settings-logging',
+    title: 'sw-settings-logging.general.mainMenuItemGeneral',
+    description: 'Log viewer',
+    color: 'var(--sw-color-module-neutral-default)',
+    icon: 'regular-server',
+    favicon: 'icon-module-settings.svg',
+    entity: 'log_entry',
+
+    routes: {
+        index: {
+            component: 'sw-settings-logging-list',
+            path: 'list',
+            meta: {
+                parentPath: 'sw.settings.index.system',
+                privilege: 'system.logging',
+            },
+        },
+    },
+
+    settingsItem: {
+        group: 'system',
+        to: 'sw.settings.logging.index',
+        icon: 'regular-server',
+        privilege: 'system.logging',
+    },
+});

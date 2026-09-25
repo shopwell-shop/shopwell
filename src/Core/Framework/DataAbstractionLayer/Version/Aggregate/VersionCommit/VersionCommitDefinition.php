@@ -1,0 +1,84 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Version\Aggregate\VersionCommit;
+
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\AutoIncrementField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Version\Aggregate\VersionCommitData\VersionCommitDataDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Version\VersionDefinition;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\Clock\Clock;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('framework')]
+class VersionCommitDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'version_commit';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function isVersionAware(): bool
+    {
+        return false;
+    }
+
+    public function getCollectionClass(): string
+    {
+        return VersionCommitCollection::class;
+    }
+
+    public function getEntityClass(): string
+    {
+        return VersionCommitEntity::class;
+    }
+
+    public function getDefaults(): array
+    {
+        return [
+            'name' => 'auto-save',
+            'createdAt' => Clock::get()->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ];
+    }
+
+    public function since(): ?string
+    {
+        return '6.0.0.0';
+    }
+
+    protected function getParentDefinitionClass(): ?string
+    {
+        return VersionDefinition::class;
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
+            (new FkField('version_id', 'versionId', VersionDefinition::class))->addFlags(new Required()),
+            new IdField('user_id', 'userId'),
+            new IdField('integration_id', 'integrationId'),
+            new AutoIncrementField(),
+            new BoolField('is_merge', 'isMerge'),
+            (new StringField('message', 'message'))->addFlags(new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)),
+            (new OneToManyAssociationField('data', VersionCommitDataDefinition::class, 'version_commit_id'))->addFlags(new CascadeDelete()),
+            new ManyToOneAssociationField('version', 'version_id', VersionDefinition::class, 'id', false),
+        ]);
+    }
+}

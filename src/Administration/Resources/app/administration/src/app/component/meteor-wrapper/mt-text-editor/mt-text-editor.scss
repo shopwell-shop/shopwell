@@ -1,0 +1,35 @@
+.mt-text-editor {
+    .mt-text-editor__content-editor {
+        .btn {
+            background: var(--color-background-secondary-default);
+            color: var(--color-text-primary-default);
+            display: inline-block;
+            border-radius: var(--border-radius-button);
+            padding: 2px 24px;
+            font-size: var(--font-size-xs);
+            outline: none;
+            font-weight: var(--font-weight-semibold);
+            vertical-align: middle;
+            text-decoration: none;
+            user-select: none;
+            margin: 0;
+            position: relative;
+            line-height: 36px;
+            border: 0 none;
+
+            &-primary {
+                background-color: var(--color-interaction-primary-default);
+                color: var(--color-static-white);
+            }
+
+            &-secondary {
+                background-color: var(--color-interaction-secondary-default);
+                color: var(--color-text-primary-default);
+            }
+
+            &-sm {
+                line-height: var(--font-line-height-l);
+            }
+        }
+    }
+}

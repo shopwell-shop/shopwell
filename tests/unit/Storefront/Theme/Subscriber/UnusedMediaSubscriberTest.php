@@ -1,0 +1,136 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Storefront\Theme\Subscriber;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Media\Event\UnusedMediaSearchEvent;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Storefront\Theme\Subscriber\UnusedMediaSubscriber;
+use Shopwell\Storefront\Theme\ThemeCollection;
+use Shopwell\Storefront\Theme\ThemeService;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[CoversClass(UnusedMediaSubscriber::class)]
+class UnusedMediaSubscriberTest extends TestCase
+{
+    public function testSubscribedEvents(): void
+    {
+        static::assertSame(
+            [
+                UnusedMediaSearchEvent::class => 'removeUsedMedia',
+            ],
+            UnusedMediaSubscriber::getSubscribedEvents()
+        );
+    }
+
+    public function testUsedThemeMediaIdsAreRemoved(): void
+    {
+        $themeId1 = Uuid::randomHex();
+        $themeId2 = Uuid::randomHex();
+
+        $mediaId1 = Uuid::randomHex();
+        $mediaId2 = Uuid::randomHex();
+        $mediaId3 = Uuid::randomHex();
+        $mediaId4 = Uuid::randomHex();
+        $mediaId5 = Uuid::randomHex();
+
+        $themeConfig1 = [
+            'fields' => [
+                ['type' => 'media', 'value' => $mediaId1],
+            ],
+        ];
+        $themeConfig2 = [
+            'fields' => [
+                ['type' => 'media', 'value' => $mediaId2],
+                ['type' => 'media', 'value' => $mediaId3],
+            ],
+        ];
+
+        $themeRepository = StaticEntityRepository::of(ThemeCollection::class, [
+            static function (Criteria $criteria, Context $context) use ($themeId1, $themeId2) {
+                return new IdSearchResult(2, [
+                    $themeId1 => ['primaryKey' => $themeId1, 'data' => []],
+                    $themeId2 => ['primaryKey' => $themeId2, 'data' => []],
+                ], $criteria, $context);
+            },
+        ]);
+
+        $themeConfigMap = [
+            $themeId1 => $themeConfig1,
+            $themeId2 => $themeConfig2,
+        ];
+
+        $themeService = static::createStub(ThemeService::class);
+        $themeService->method('getPlainThemeConfiguration')
+            ->willReturnCallback(static function (string $themeId, ...$params) use ($themeConfigMap) {
+                return $themeConfigMap[$themeId];
+            });
+
+        $event = new UnusedMediaSearchEvent([$mediaId1, $mediaId2, $mediaId3, $mediaId4, $mediaId5], Context::createDefaultContext());
+        $listener = new UnusedMediaSubscriber($themeRepository, $themeService);
+        $listener->removeUsedMedia($event);
+
+        static::assertSame([$mediaId4, $mediaId5], $event->getUnusedIds());
+    }
+
+    public function testNoMediaRemovedWhenNoThemesExist(): void
+    {
+        $themeRepository = StaticEntityRepository::of(ThemeCollection::class, [
+            static function (Criteria $criteria, Context $context) {
+                return new IdSearchResult(0, [], $criteria, $context);
+            },
+        ]);
+
+        $themeService = $this->createMock(ThemeService::class);
+        $themeService->expects($this->never())->method('getPlainThemeConfiguration');
+
+        $mediaId1 = Uuid::randomHex();
+        $mediaId2 = Uuid::randomHex();
+
+        $event = new UnusedMediaSearchEvent([$mediaId1, $mediaId2], Context::createDefaultContext());
+        $listener = new UnusedMediaSubscriber($themeRepository, $themeService);
+        $listener->removeUsedMedia($event);
+
+        static::assertSame([$mediaId1, $mediaId2], $event->getUnusedIds());
+    }
+
+    public function testNoMediaRemovedWhenThemeHasNoMediaFields(): void
+    {
+        $themeId = Uuid::randomHex();
+
+        $themeRepository = StaticEntityRepository::of(ThemeCollection::class, [
+            static function (Criteria $criteria, Context $context) use ($themeId) {
+                return new IdSearchResult(1, [
+                    $themeId => ['primaryKey' => $themeId, 'data' => []],
+                ], $criteria, $context);
+            },
+        ]);
+
+        $themeService = static::createStub(ThemeService::class);
+        $themeService->method('getPlainThemeConfiguration')
+            ->willReturn([
+                'fields' => [
+                    ['type' => 'color', 'value' => '#ff0000'],
+                    ['type' => 'text', 'value' => 'some text'],
+                ],
+            ]);
+
+        $mediaId1 = Uuid::randomHex();
+        $mediaId2 = Uuid::randomHex();
+
+        $event = new UnusedMediaSearchEvent([$mediaId1, $mediaId2], Context::createDefaultContext());
+        $listener = new UnusedMediaSubscriber($themeRepository, $themeService);
+        $listener->removeUsedMedia($event);
+
+        static::assertSame([$mediaId1, $mediaId2], $event->getUnusedIds());
+    }
+}

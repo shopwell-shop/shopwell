@@ -1,0 +1,74 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\JWT\Constraints;
+
+use Lcobucci\JWT\Encoding\JoseEncoder;
+use Lcobucci\JWT\Token\Parser;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\JWT\Constraints\MatchesLicenceDomain;
+use Shopwell\Core\Framework\JWT\JWTException;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Store\Services\StoreService;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(MatchesLicenceDomain::class)]
+class MatchesLicenceDomainTest extends TestCase
+{
+    public function testAssert(): void
+    {
+        $jwt = \file_get_contents(__DIR__ . '/../_fixtures/valid-jwt.txt');
+        static::assertIsString($jwt);
+        $jwt = \trim($jwt);
+
+        $this->validate($jwt);
+    }
+
+    public function testAssertNoDomainSet(): void
+    {
+        $jwt = \file_get_contents(__DIR__ . '/../_fixtures/valid-jwt.txt');
+        static::assertIsString($jwt);
+        $jwt = \trim($jwt);
+
+        $this->expectExceptionObject(JWTException::missingDomain());
+
+        $this->validate($jwt, '');
+    }
+
+    public function testAssertInvalidDomain(): void
+    {
+        $jwt = \file_get_contents(__DIR__ . '/../_fixtures/invalid-jwts.json');
+        static::assertIsString($jwt);
+        $jwt = \trim($jwt);
+
+        $jwts = json_decode($jwt, true, 512, \JSON_THROW_ON_ERROR);
+        static::assertIsArray($jwts);
+
+        $this->expectExceptionObject(JWTException::invalidDomain('examples.com'));
+
+        $this->validate(array_values($jwts)[3][0]);
+    }
+
+    private function validate(string $token, string $returnDomain = 'example.com'): void
+    {
+        static::assertNotEmpty($token);
+
+        $configService = $this->createMock(SystemConfigService::class);
+        $configService
+            ->expects($this->once())
+            ->method('get')
+            ->with(StoreService::CONFIG_KEY_STORE_LICENSE_DOMAIN)
+            ->willReturn($returnDomain);
+
+        $validator = new MatchesLicenceDomain($configService);
+
+        $parser = new Parser(new JoseEncoder());
+        $token = $parser->parse($token);
+
+        $validator->assert($token);
+    }
+}

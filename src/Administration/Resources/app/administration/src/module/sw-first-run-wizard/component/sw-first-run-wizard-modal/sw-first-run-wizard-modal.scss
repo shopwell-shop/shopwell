@@ -1,0 +1,89 @@
+.sw-first-run-wizard-modal {
+    &.sw-modal--large .sw-modal__dialog {
+        height: 45rem;
+        max-height: calc(100dvh - 2rem);
+        display: flex;
+        justify-content: space-between;
+        max-width: 64rem !important;
+    }
+
+    &.sw-modal .sw-modal__body {
+        height: 100%;
+        overflow-y: hidden !important;
+        padding: 0;
+    }
+
+    .sw-first-run-wizard-modal-content {
+        height: 100%;
+
+        .sw-first-run-wizard-modal-content__columns {
+            height: 100%;
+
+            &.one {
+                grid-template-columns: 1fr;
+            }
+
+            &.two {
+                grid-template-columns: var(--scale-size-224) 4fr;
+            }
+        }
+
+        .sw-first-run-wizard-modal-content__steps {
+            min-width: 100%;
+            padding: var(--scale-size-24);
+            margin-right: 25%;
+            border-right: 1px solid var(--color-border-secondary-default);
+        }
+
+        .sw-first-run-wizard-modal-content__page {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+            padding: var(--scale-size-24);
+        }
+    }
+
+    .sw-first-run-wizard-modal__loader {
+        background: rgba(255, 255, 255, 80%);
+    }
+
+    .sw-modal__footer {
+        display: flex !important;
+
+        .footer-left .mt-button {
+            margin-right: var(--scale-size-12);
+
+            &:last-child {
+                margin-right: 0;
+            }
+        }
+
+        .footer-right .mt-button {
+            margin-left: var(--scale-size-12);
+
+            &:first-child {
+                margin-left: 0;
+            }
+        }
+    }
+
+    .sw-first-run-wizard-modal__footer {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+
+        .footer-right {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+
+            .skip-button {
+                margin-right: var(--scale-size-12);
+            }
+        }
+    }
+}

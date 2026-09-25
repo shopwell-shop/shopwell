@@ -1,0 +1,95 @@
+@import "~scss/variables";
+
+.sw-cms-list {
+    .sw-cms-list__content {
+        max-width: $content-width;
+        position: relative;
+        margin: auto;
+    }
+
+    .sw-data-grid__cell:not(.sw-data-grid__cell--header) {
+        .sw-data-grid__cell-content {
+            .is--inactive {
+                color: var(--color-text-critical-default);
+                margin: auto;
+            }
+
+            .is--active {
+                color: var(--color-icon-positive-default);
+                margin: auto;
+            }
+        }
+    }
+
+    .sw-cms-list__sidebar {
+        width: 180px;
+        padding-top: 64px;
+        position: absolute;
+        left: -180px;
+
+        @media screen and (max-width: 1400px) {
+            display: none;
+        }
+    }
+
+    .sw-cms-list__actions {
+        display: grid;
+        grid-template-columns: auto 380px max-content;
+        grid-column-gap: var(--scale-size-8);
+        align-items: center;
+        align-content: center;
+        margin-bottom: var(--scale-size-32);
+
+        @media screen and (max-width: 700px) {
+            grid-template-columns: auto max-content;
+        }
+
+        h3 {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-semibold);
+            margin: 0;
+        }
+    }
+
+    .sw-cms-list__list-grid-content {
+        --sw-cms-list-grid-gap: var(--scale-size-24);
+
+        display: grid;
+
+        // min() keeps at least two columns on very narrow pages by subtracting half the gap
+        grid-template-columns: repeat(auto-fill, minmax(min(260px, calc(50% - var(--sw-cms-list-grid-gap) / 2)), 1fr));
+        grid-gap: var(--sw-cms-list-grid-gap);
+        align-content: start;
+
+        @media screen and (max-width: 700px) {
+            --sw-cms-list-grid-gap: var(--scale-size-16);
+        }
+
+        .sw-skeleton__gallery::before {
+            padding-top: 65%;
+        }
+    }
+
+    .sw-cms-list__list-data-grid {
+        border-radius: 4px;
+    }
+
+    .sw-cms-list__icon-lock {
+        margin-right: 10px;
+        color: var(--color-icon-secondary-default);
+    }
+
+    .sw-cms-list__list-pagination {
+        margin-top: 20px;
+        background: none;
+        border: none;
+    }
+}
+
+.sw-cms-list__actions-sorting {
+    display: grid;
+
+    @media screen and (max-width: 700px) {
+        display: none;
+    }
+}

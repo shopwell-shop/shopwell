@@ -1,0 +1,75 @@
+{% block sw_language_switch %}
+<div class="sw-language-switch">
+    {% block sw_language_switch_modal %}
+    <sw-modal
+        v-if="showUnsavedChangesModal"
+        :title="$t('sw-language-switch.titleModalUnsavedChanges')"
+        variant="small"
+        @modal-close="onCloseChangesModal"
+    >
+        {% block sw_language_switch_message %}
+        <p>{{ $t('sw-language-switch.messageModalUnsavedChanges') }}</p>
+        {% endblock %}
+
+        {% block sw_language_switch_footer %}
+        <template #modal-footer>
+            {% block sw_language_switch_footer_button_close %}
+            <mt-button
+                id="sw-language-switch-close-button"
+                size="small"
+                variant="secondary"
+                @click="onCloseChangesModal"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+            {% endblock %}
+
+            {% block sw_language_switch_footer_button_revert %}
+            <mt-button
+                id="sw-language-switch-revert-changes-button"
+                size="small"
+                variant="secondary"
+                @click="onClickRevertUnsavedChanges"
+            >
+                {{ $t('sw-language-switch.titleModalButtonRevertUnsavedChanges') }}
+            </mt-button>
+            {% endblock %}
+
+            {% block sw_language_switch_footer_button_save %}
+            <mt-button
+                id="sw-language-switch-save-changes-button"
+                v-tooltip="{
+                    message: $t('sw-privileges.tooltip.warning'),
+                    disabled: allowEdit,
+                    showOnDisabledElements: true
+                }"
+                variant="primary"
+                :disabled="!allowEdit || undefined"
+                size="small"
+                @click="onClickSaveChanges"
+            >
+                {{ $t('global.default.save') }}
+            </mt-button>
+            {% endblock %}
+        </template>
+        {% endblock %}
+    </sw-modal>
+    {% endblock %}
+    {% block sw_language_switch_select %}
+    <sw-entity-single-select
+        id="language"
+        class="sw-language-switch__select"
+        entity="language"
+        :disabled="disabled || undefined"
+        :criteria="languageCriteria"
+        :cache-key="languageCacheKey"
+        :cache-ttl="5 * 60 * 1000"
+        size="medium"
+        required
+        :value="languageId"
+        :result-limit="Infinity"
+        @update:value="onInput"
+    />
+    {% endblock %}
+</div>
+{% endblock %}

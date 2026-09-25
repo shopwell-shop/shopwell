@@ -1,0 +1,31 @@
+.sw-cms-section__actions {
+    display: grid;
+    grid-auto-rows: 40px;
+    justify-content: center;
+    align-items: center;
+    grid-gap: 8px;
+    padding: 16px 0;
+    box-shadow: inset -7px 0 9px -7px var(--color-elevation-shadow-default);
+
+    &.is--disabled {
+        .sw-cms-section__action {
+            cursor: not-allowed;
+            color: var(--color-icon-secondary-default);
+
+            &:hover,
+            .is--active {
+                color: var(--color-icon-secondary-default);
+            }
+        }
+    }
+
+    .sw-cms-section__action {
+        cursor: pointer;
+        color: var(--color-icon-primary-default);
+
+        &:hover,
+        .is--active {
+            color: var(--color-icon-brand-default);
+        }
+    }
+}

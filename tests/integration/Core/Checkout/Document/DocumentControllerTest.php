@@ -1,0 +1,645 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Checkout\Document;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Checkout\Document\Aggregate\DocumentType\DocumentTypeCollection;
+use Shopwell\Core\Checkout\Document\DocumentConfiguration;
+use Shopwell\Core\Checkout\Document\DocumentIdCollection;
+use Shopwell\Core\Checkout\Document\DocumentIdStruct;
+use Shopwell\Core\Checkout\Document\FileGenerator\FileTypes;
+use Shopwell\Core\Checkout\Document\Renderer\InvoiceRenderer;
+use Shopwell\Core\Checkout\Document\Service\DocumentGenerator;
+use Shopwell\Core\Checkout\Document\Service\PdfRenderer;
+use Shopwell\Core\Checkout\Document\Struct\DocumentGenerateOperation;
+use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Checkout\Order\OrderStates;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\CountryAddToSalesChannelTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
+use Shopwell\Core\Test\TestDefaults;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @internal
+ */
+#[Package('after-sales')]
+class DocumentControllerTest extends TestCase
+{
+    use AdminApiTestBehaviour;
+    use CountryAddToSalesChannelTestBehaviour;
+    use DocumentTrait;
+
+    private SalesChannelContext $salesChannelContext;
+
+    private Context $context;
+
+    private Connection $connection;
+
+    private DocumentGenerator $documentGenerator;
+
+    /**
+     * @var EntityRepository<OrderCollection>
+     */
+    private EntityRepository $orderRepository;
+
+    private string $customerId;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->connection = static::getContainer()->get(Connection::class);
+
+        $this->context = Context::createDefaultContext();
+
+        $paymentMethod = $this->getAvailablePaymentMethod();
+
+        $this->customerId = $this->createCustomer();
+        $shippingMethod = $this->getAvailableShippingMethod();
+
+        $this->addCountriesToSalesChannel();
+
+        $this->salesChannelContext = static::getContainer()->get(SalesChannelContextFactory::class)->create(
+            Uuid::randomHex(),
+            TestDefaults::SALES_CHANNEL,
+            [
+                SalesChannelContextService::CUSTOMER_ID => $this->customerId,
+                SalesChannelContextService::SHIPPING_METHOD_ID => $shippingMethod->getId(),
+                SalesChannelContextService::PAYMENT_METHOD_ID => $paymentMethod->getId(),
+            ]
+        );
+
+        $ruleIds = [];
+        if ($shippingRuleId = $shippingMethod->getAvailabilityRuleId()) {
+            $ruleIds[] = $shippingRuleId;
+        }
+        if ($paymentRuleId = $paymentMethod->getAvailabilityRuleId()) {
+            $ruleIds[] = $paymentRuleId;
+        }
+        $this->salesChannelContext->setRuleIds($ruleIds);
+
+        $this->connection = static::getContainer()->get(Connection::class);
+
+        $this->documentGenerator = static::getContainer()->get(DocumentGenerator::class);
+
+        $this->orderRepository = static::getContainer()->get('order.repository');
+    }
+
+    public function testCustomUploadDocument(): void
+    {
+        $context = Context::createDefaultContext();
+
+        /** @var EntityRepository<DocumentTypeCollection> $documentTypeRepository */
+        $documentTypeRepository = static::getContainer()->get('document_type.repository');
+        $criteria = (new Criteria())->addFilter(new EqualsFilter('technicalName', 'invoice'));
+        $type = $documentTypeRepository->search($criteria, $context)->getEntities()->first();
+        static::assertNotNull($type);
+        $cart = $this->generateDemoCart(2);
+        $orderId = $this->persistCart($cart);
+
+        $documentId = Uuid::randomHex();
+
+        $document = [
+            'id' => $documentId,
+            'orderId' => $orderId,
+            'documentTypeId' => $type->getId(),
+            'fileType' => 'pdf',
+            'static' => true,
+            'config' => [],
+        ];
+
+        $baseResource = '/api/';
+
+        $this->getBrowser()->jsonRequest(
+            'POST',
+            $baseResource . '_action/order/document/invoice/create',
+            [$document]
+        );
+
+        $response = json_decode((string) $this->getBrowser()->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertArrayHasKey('data', $response);
+
+        $filename = 'invoice';
+        $expectedFileContent = 'simple invoice';
+        $expectedContentType = 'application/pdf';
+
+        $this->getBrowser()->request(
+            'POST',
+            $baseResource . '_action/document/' . $response['data'][0]['documentId'] . '/upload?fileName=' . $filename . '&extension=pdf',
+            [],
+            [],
+            ['HTTP_CONTENT_TYPE' => $expectedContentType, 'HTTP_CONTENT_LENGTH' => mb_strlen($expectedFileContent)],
+            $expectedFileContent
+        );
+
+        $response = json_decode((string) $this->getBrowser()->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        $this->getBrowser()->request('GET', $baseResource . '_action/document/' . $response['documentId'] . '/' . $response['documentDeepLink']);
+        $response = $this->getBrowser()->getResponse();
+
+        static::assertSame(200, $response->getStatusCode());
+
+        static::assertSame($expectedFileContent, $response->getContent());
+        static::assertSame($expectedContentType, $response->headers->get('content-type'));
+    }
+
+    public function testPreview(): void
+    {
+        $cart = $this->generateDemoCart(2);
+        $orderId = $this->persistCart($cart);
+
+        $order = $this->orderRepository->search(new Criteria([$orderId]), $this->context)->getEntities()->get($orderId);
+        static::assertNotNull($order);
+
+        $deepLinkCode = $order->getDeepLinkCode();
+        static::assertIsString($deepLinkCode);
+        $endpoint = \sprintf('/api/_action/order/%s/%s/document/invoice/preview', Uuid::randomHex(), $deepLinkCode);
+        $this->getBrowser()->request('GET', $endpoint);
+
+        static::assertSame($this->getBrowser()->getResponse()->getStatusCode(), Response::HTTP_NOT_FOUND);
+        $response = json_decode((string) $this->getBrowser()->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertNotEmpty($response['errors']);
+        static::assertSame('DOCUMENT__GENERATION_ERROR', $response['errors'][0]['code']);
+
+        $endpoint = \sprintf('/api/_action/order/%s/%s/document/invoice/preview', $orderId, 'wrong deep link code');
+        $this->getBrowser()->request('GET', $endpoint);
+
+        static::assertSame($this->getBrowser()->getResponse()->getStatusCode(), Response::HTTP_NOT_FOUND);
+        $response = json_decode((string) $this->getBrowser()->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertNotEmpty($response['errors']);
+        static::assertSame('DOCUMENT__GENERATION_ERROR', $response['errors'][0]['code']);
+
+        $deepLinkCode = $order->getDeepLinkCode();
+        static::assertIsString($deepLinkCode);
+        $endpoint = \sprintf('/api/_action/order/%s/%s/document/invoice/preview', $orderId, $deepLinkCode);
+
+        $this->getBrowser()->request('GET', $endpoint);
+
+        static::assertSame($this->getBrowser()->getResponse()->getStatusCode(), Response::HTTP_OK);
+        static::assertNotNull($this->getBrowser()->getResponse()->getContent());
+        static::assertSame(PdfRenderer::FILE_CONTENT_TYPE, $this->getBrowser()->getResponse()->headers->get('content-type'));
+    }
+
+    public function testPreviewPermission(): void
+    {
+        $cart = $this->generateDemoCart(2);
+        $orderId = $this->persistCart($cart);
+
+        $order = $this->orderRepository->search(new Criteria([$orderId]), $this->context)->getEntities()->get($orderId);
+        static::assertNotNull($order);
+
+        TestUser::createNewTestUser(
+            static::getContainer()->get(Connection::class),
+            []
+        )->authorizeBrowser($this->getBrowser());
+
+        $deepLinkCode = $order->getDeepLinkCode();
+        static::assertIsString($deepLinkCode);
+        $endpoint = \sprintf('/api/_action/order/%s/%s/document/invoice/preview', $orderId, $deepLinkCode);
+
+        $this->getBrowser()->request('GET', $endpoint);
+
+        static::assertSame(Response::HTTP_FORBIDDEN, $this->getBrowser()->getResponse()->getStatusCode());
+        $response = json_decode((string) $this->getBrowser()->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertNotEmpty($response['errors']);
+        static::assertSame($response['errors'][0]['code'], 'FRAMEWORK__MISSING_PRIVILEGE_ERROR');
+
+        TestUser::createNewTestUser(
+            static::getContainer()->get(Connection::class),
+            ['document:read']
+        )->authorizeBrowser($this->getBrowser());
+
+        $this->getBrowser()->request('GET', $endpoint);
+
+        static::assertSame($this->getBrowser()->getResponse()->getStatusCode(), Response::HTTP_OK);
+        static::assertNotNull($this->getBrowser()->getResponse()->getContent());
+        static::assertSame(PdfRenderer::FILE_CONTENT_TYPE, $this->getBrowser()->getResponse()->headers->get('content-type'));
+    }
+
+    #[DataProvider('documentGenerationDataProvider')]
+    public function testCreateDocuments(
+        string $documentType,
+        bool $requiresExistingInvoice,
+        bool $requiresCreditItem,
+    ): void {
+        static::assertNotNull($customer = $this->salesChannelContext->getCustomer());
+
+        $orders = [];
+        for ($i = 0; $i < 2; ++$i) {
+            $orders[] = $this->createOrder($customer->getId(), $this->context);
+        }
+
+        if ($requiresExistingInvoice) {
+            $this->generateInvoice($orders);
+        }
+
+        if ($requiresCreditItem) {
+            $this->createCreditItems($orders);
+        }
+
+        $this->getBrowser()->jsonRequest(
+            'POST',
+            \sprintf('/api/_action/order/document/%s/create', $documentType),
+            [
+                [
+                    'orderId' => $orders[0]->getId(),
+                ],
+                [
+                    'orderId' => $orders[1]->getId(),
+                ],
+            ]
+        );
+
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(200, $response->getStatusCode());
+        $response = json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertArrayHasKey('data', $response);
+
+        $data = $response['data'];
+        static::assertNotEmpty($data);
+        static::assertCount(2, $data);
+
+        $documentIds = $this->getDocumentIds($data);
+        $documents = $this->getDocumentByDocumentIds($documentIds);
+
+        static::assertNotEmpty($documents);
+        static::assertCount(2, $documents);
+    }
+
+    public static function documentGenerationDataProvider(): \Generator
+    {
+        yield 'create invoice' => [
+            'documentType' => 'invoice',
+            'requiresExistingInvoice' => false,
+            'requiresCreditItem' => false,
+        ];
+
+        yield 'create credit note' => [
+            'documentType' => 'credit_note',
+            'requiresExistingInvoice' => true,
+            'requiresCreditItem' => true,
+        ];
+
+        yield 'create delivery note' => [
+            'documentType' => 'delivery_note',
+            'requiresExistingInvoice' => false,
+            'requiresCreditItem' => false,
+        ];
+
+        yield 'create storno' => [
+            'documentType' => 'storno',
+            'requiresExistingInvoice' => true,
+            'requiresCreditItem' => false,
+        ];
+    }
+
+    public function testCreateDocumentWithInvalidDocumentTypeName(): void
+    {
+        static::assertNotNull($customer = $this->salesChannelContext->getCustomer());
+        $order = $this->createOrder($customer->getId(), $this->context);
+        $content = [
+            [
+                'orderId' => $order->getId(),
+                'fileType' => 'MP3',
+            ],
+        ];
+
+        $this->getBrowser()->jsonRequest(
+            'POST',
+            '/api/_action/order/document/receipt/create',
+            $content
+        );
+
+        $response = json_decode((string) $this->getBrowser()->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertArrayHasKey('errors', $response);
+        static::assertSame(400, $this->getBrowser()->getResponse()->getStatusCode());
+        static::assertNotEmpty($response['errors']);
+        static::assertSame('VIOLATION::NO_SUCH_CHOICE_ERROR', $response['errors'][0]['code']);
+    }
+
+    public function testCreateStornoDocumentsWithoutInvoiceDocument(): void
+    {
+        static::assertNotNull($customer = $this->salesChannelContext->getCustomer());
+        $order = $this->createOrder($customer->getId(), $this->context);
+
+        $content = [
+            [
+                'orderId' => $order->getId(),
+                'fileType' => FileTypes::PDF,
+            ],
+        ];
+
+        $this->getBrowser()->jsonRequest(
+            'POST',
+            '/api/_action/order/document/storno/create',
+            $content
+        );
+
+        $response = $this->getBrowser()->getResponse();
+
+        $response = json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertSame(200, $this->getBrowser()->getResponse()->getStatusCode());
+        static::assertArrayHasKey('errors', $response);
+        static::assertSame('DOCUMENT__GENERATION_ERROR', $response['errors'][$order->getId()][0]['code']);
+    }
+
+    public function testDownloadWithoutDocuments(): void
+    {
+        $this->getBrowser()->jsonRequest(
+            'POST',
+            '/api/_action/order/document/download',
+            []
+        );
+
+        static::assertIsString($this->getBrowser()->getResponse()->getContent());
+        $response = json_decode($this->getBrowser()->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertSame(400, $this->getBrowser()->getResponse()->getStatusCode());
+        static::assertArrayHasKey('errors', $response);
+        static::assertSame('FRAMEWORK__INVALID_REQUEST_PARAMETER', $response['errors'][0]['code']);
+
+        $this->getBrowser()->jsonRequest(
+            'POST',
+            '/api/_action/order/document/download',
+            [
+                'documentIds' => [Uuid::randomHex()],
+            ]
+        );
+
+        static::assertSame(204, $this->getBrowser()->getResponse()->getStatusCode());
+    }
+
+    public function testDownload(): void
+    {
+        $order = $this->createOrder($this->customerId, $this->context);
+        $documentTypes = [
+            'invoice' => [
+                'documentType' => 'invoice',
+                'documentRangerType' => 'document_invoice',
+                'documentNumber' => '1100',
+                'custom' => [
+                    'invoiceNumber' => '1100',
+                ],
+            ],
+        ];
+
+        static::assertNotNull($document = $this->createDocuments($order->getId(), $documentTypes, $this->context)->first());
+        static::assertInstanceOf(DocumentIdStruct::class, $document);
+
+        $documentId = $document->getId();
+
+        $this->getBrowser()->jsonRequest(
+            'POST',
+            '/api/_action/order/document/download',
+            [
+                'documentIds' => [$documentId],
+            ]
+        );
+
+        $response = $this->getBrowser()->getResponse();
+
+        static::assertSame(200, $response->getStatusCode());
+        static::assertSame('application/pdf', $response->headers->get('Content-Type'));
+    }
+
+    public function testDownloadPermission(): void
+    {
+        TestUser::createNewTestUser(
+            static::getContainer()->get(Connection::class),
+            []
+        )->authorizeBrowser($this->getBrowser());
+
+        $this->getBrowser()->request('POST', '/api/_action/order/document/download');
+
+        static::assertSame($this->getBrowser()->getResponse()->getStatusCode(), Response::HTTP_FORBIDDEN);
+        $response = json_decode((string) $this->getBrowser()->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertNotEmpty($response['errors']);
+        static::assertSame($response['errors'][0]['code'], 'FRAMEWORK__MISSING_PRIVILEGE_ERROR');
+
+        TestUser::createNewTestUser(
+            static::getContainer()->get(Connection::class),
+            ['document:read']
+        )->authorizeBrowser($this->getBrowser());
+
+        $order = $this->createOrder($this->customerId, $this->context);
+        $documentTypes = [
+            'invoice' => [
+                'documentType' => 'invoice',
+                'documentRangerType' => 'document_invoice',
+                'documentNumber' => '1100',
+                'custom' => [
+                    'invoiceNumber' => '1100',
+                ],
+            ],
+        ];
+
+        static::assertNotNull($document = $this->createDocuments($order->getId(), $documentTypes, $this->context)->first());
+        static::assertInstanceOf(DocumentIdStruct::class, $document);
+        $documentId = $document->getId();
+
+        $this->getBrowser()->jsonRequest(
+            'POST',
+            '/api/_action/order/document/download',
+            [
+                'documentIds' => [$documentId],
+            ]
+        );
+
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(200, $response->getStatusCode());
+        static::assertSame('application/pdf', $response->headers->get('Content-Type'));
+    }
+
+    private function createOrder(string $customerId, Context $context): OrderEntity
+    {
+        $orderId = Uuid::randomHex();
+        $stateId = static::getContainer()->get(InitialStateIdLoader::class)->get(OrderStates::STATE_MACHINE);
+        $billingAddressId = Uuid::randomHex();
+
+        $order = [
+            'id' => $orderId,
+            'itemRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+            'totalRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+            'orderNumber' => Uuid::randomHex(),
+            'orderDateTime' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            'price' => new CartPrice(10, 10, 10, new CalculatedTaxCollection(), new TaxRuleCollection(), CartPrice::TAX_STATE_NET),
+            'shippingCosts' => new CalculatedPrice(10, 10, new CalculatedTaxCollection(), new TaxRuleCollection()),
+            'orderCustomer' => [
+                'customerId' => $customerId,
+                'email' => 'test@example.com',
+                'salutationId' => $this->getValidSalutationId(),
+                'firstName' => 'Max',
+                'lastName' => 'Mustermann',
+            ],
+            'stateId' => $stateId,
+            'paymentMethodId' => $this->getValidPaymentMethodId(),
+            'currencyId' => Defaults::CURRENCY,
+            'currencyFactor' => 1.0,
+            'salesChannelId' => TestDefaults::SALES_CHANNEL,
+            'billingAddressId' => $billingAddressId,
+            'addresses' => [
+                [
+                    'id' => $billingAddressId,
+                    'salutationId' => $this->getValidSalutationId(),
+                    'firstName' => 'Max',
+                    'lastName' => 'Mustermann',
+                    'street' => 'Ebbinghoff 10',
+                    'zipcode' => '48624',
+                    'city' => 'Schöppingen',
+                    'countryId' => $this->getValidCountryId(),
+                ],
+            ],
+            'lineItems' => [
+                [
+                    'id' => Uuid::randomHex(),
+                    'identifier' => Uuid::randomHex(),
+                    'quantity' => 1,
+                    'label' => 'label',
+                    'type' => LineItem::CREDIT_LINE_ITEM_TYPE,
+                    'price' => new CalculatedPrice(200, 200, new CalculatedTaxCollection(), new TaxRuleCollection()),
+                    'priceDefinition' => new QuantityPriceDefinition(200, new TaxRuleCollection(), 2),
+                ],
+            ],
+            'deliveries' => [
+            ],
+            'context' => '{}',
+            'payload' => '{}',
+        ];
+
+        $this->orderRepository->upsert([$order], $context);
+        $order = $this->orderRepository->search(new Criteria([$orderId]), $context)->getEntities()->first();
+        static::assertInstanceOf(OrderEntity::class, $order);
+
+        return $order;
+    }
+
+    /**
+     * @param array<string, string[]> $data
+     *
+     * @return mixed[]
+     */
+    private function getDocumentIds(array $data): array
+    {
+        $ids = [];
+
+        foreach ($data as $value) {
+            $ids[] = $value['documentId'];
+        }
+
+        return $ids;
+    }
+
+    /**
+     * @param array<string|int, string> $documentIds
+     *
+     * @return array<string|int, string|array<string, mixed>>
+     */
+    private function getDocumentByDocumentIds(array $documentIds): array
+    {
+        return $this->connection->fetchAllAssociative(
+            'SELECT `id`
+                    FROM `document`
+                    WHERE hex(`id`) IN (:documentIds)',
+            [
+                'documentIds' => $documentIds,
+            ],
+            ['documentIds' => ArrayParameterType::STRING]
+        );
+    }
+
+    /**
+     * @param array<string, array<string, array<string, string>|string>> $documentTypes
+     */
+    private function createDocuments(string $orderId, array $documentTypes, Context $context): DocumentIdCollection
+    {
+        $operations = [];
+
+        $collection = new DocumentIdCollection();
+
+        foreach ($documentTypes as $documentType => $config) {
+            $operation = new DocumentGenerateOperation($orderId, FileTypes::PDF, $config);
+            $operations[$orderId] = $operation;
+
+            $result = $this->documentGenerator->generate($documentType, $operations, $context);
+
+            static::assertNotNull($document = $result->getSuccess()->first());
+            $collection->add($document);
+        }
+
+        return $collection;
+    }
+
+    /**
+     * @param array<int, OrderEntity> $orders
+     */
+    private function generateInvoice(array $orders): void
+    {
+        foreach ($orders as $index => $order) {
+            static::assertInstanceOf(OrderEntity::class, $order);
+
+            $invoiceConfig = new DocumentConfiguration();
+            $invoiceConfig->setDocumentNumber('INVOICE-' . (string) $index + 1);
+
+            $operationInvoiceA = new DocumentGenerateOperation(
+                $order->getId(),
+                FileTypes::PDF,
+                $invoiceConfig->jsonSerialize()
+            );
+
+            $invoice = $this->documentGenerator->generate(
+                InvoiceRenderer::TYPE,
+                [$order->getId() => $operationInvoiceA],
+                $this->context
+            )->getSuccess()->first();
+
+            static::assertNotNull($invoice);
+        }
+    }
+
+    /**
+     * @param array<int, OrderEntity> $orders
+     */
+    private function createCreditItems(array $orders): void
+    {
+        foreach ($orders as $order) {
+            $this->orderRepository->upsert([[
+                'id' => $order->getId(),
+                'lineItems' => [
+                    [
+                        'id' => Uuid::randomHex(),
+                        'identifier' => Uuid::randomHex(),
+                        'quantity' => 1,
+                        'label' => 'Credit item',
+                        'type' => LineItem::CREDIT_LINE_ITEM_TYPE,
+                        'price' => new CalculatedPrice(200, 200, new CalculatedTaxCollection(), new TaxRuleCollection()),
+                        'priceDefinition' => new QuantityPriceDefinition(200, new TaxRuleCollection(), 2),
+                    ],
+                ],
+            ]], $this->context);
+        }
+    }
+}

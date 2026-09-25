@@ -1,0 +1,73 @@
+.sw-first-run-wizard-finish {
+    text-align: center;
+    align-self: center;
+
+    &__bubble {
+        width: var(--scale-size-40);
+        height: var(--scale-size-40);
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--color-background-positive-default);
+        margin-bottom: var(--scale-size-16);
+    }
+
+    &__icon {
+        color: var(--color-icon-positive-default);
+    }
+
+    .headline {
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+        margin-bottom: var(--scale-size-2);
+        text-align: center;
+    }
+
+    .message {
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        font-weight: var(--font-weight-regular);
+        color: var(--color-text-primary-default);
+        text-align: center;
+        margin-bottom: var(--scale-size-20) 0;
+    }
+
+    .headline-useful-links {
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+        text-align: center;
+        margin-top: var(--scale-size-40);
+        margin-bottom: var(--scale-size-8);
+    }
+
+    .list-useful-links {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        gap: var(--scale-size-18);
+    }
+
+    .restart-progress {
+        transform: translate(0, calc(-1 * var(--scale-size-48)));
+
+        .sw-loader {
+            background: none;
+        }
+
+        .sw-loader-info-text {
+            font-size: var(--font-size-s);
+            line-height: var(--font-line-height-s);
+            font-weight: var(--font-weight-medium);
+            color: var(--color-text-primary-default);
+            padding-top: var(--scale-size-22);
+            position: relative;
+            top: var(--scale-size-48);
+        }
+    }
+}

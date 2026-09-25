@@ -1,0 +1,30 @@
+.sw-tree-input-field {
+    .sw-tree-item__element {
+        grid-template-columns: var(--scale-size-20) auto;
+        padding: 0 var(--scale-size-36) 0 var(--scale-size-72);
+    }
+
+    &.is--disabled {
+        .sw-tree-item__element {
+            height: auto;
+            align-content: start;
+
+            &:hover {
+                background: 0 none;
+
+                .sw-tree-item__icon,
+                .sw-tree-item__content {
+                    color: var(--color-text-primary-disabled);
+                }
+            }
+        }
+
+        .sw-confirm-field {
+            margin-bottom: var(--scale-size-10);
+        }
+
+        .sw-tree-input-field__language-warning {
+            white-space: normal;
+        }
+    }
+}

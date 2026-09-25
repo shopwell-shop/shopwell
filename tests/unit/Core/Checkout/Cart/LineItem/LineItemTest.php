@@ -1,0 +1,478 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart\LineItem;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\CartException;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(LineItem::class)]
+class LineItemTest extends TestCase
+{
+    /**
+     * @throws CartException
+     */
+    public function testCreateLineItem(): void
+    {
+        $lineItem = new LineItem('A', 'type');
+
+        static::assertSame('A', $lineItem->getId());
+        static::assertSame('type', $lineItem->getType());
+        static::assertSame(1, $lineItem->getQuantity());
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testCreateLineItemWithInvalidQuantity(): void
+    {
+        $this->expectExceptionObject(CartException::invalidQuantity(-1));
+
+        new LineItem('A', 'type', null, -1);
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testChangeLineItemToInvalidQuantity(): void
+    {
+        $lineItem = new LineItem('A', 'type');
+
+        $this->expectExceptionObject(CartException::invalidQuantity(0));
+
+        $lineItem->setQuantity(0);
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testChangeLineItemQuantity(): void
+    {
+        $lineItem = new LineItem('A', 'type');
+        $lineItem->setStackable(true);
+        $lineItem->setQuantity(5);
+        static::assertSame(5, $lineItem->getQuantity());
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testChangeNonStackableLineItemQuantity(): void
+    {
+        $lineItem = new LineItem('A', 'type');
+        $lineItem->setStackable(false);
+
+        $this->expectExceptionObject(CartException::lineItemNotStackable('A'));
+
+        try {
+            $lineItem->setQuantity(5);
+        } finally {
+            static::assertSame(1, $lineItem->getQuantity());
+        }
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testChangeQuantityOfParentLineItem(): void
+    {
+        $lineItem = (new LineItem('A', 'type'))->setStackable(true);
+
+        $child1 = (new LineItem('A.1', 'child', null, 3))->setStackable(true);
+        $child2 = (new LineItem('A.2', 'child', null, 2))->setStackable(true);
+        $child3 = (new LineItem('A.3', 'child'))->setStackable(true);
+
+        $child4 = (new LineItem('A.3.1', 'child', null, 5))->setStackable(true);
+        $child5 = (new LineItem('A.3.2', 'child', null, 10))->setStackable(true);
+
+        $child3->setChildren(new LineItemCollection([$child4, $child5]));
+
+        $lineItem->setChildren(new LineItemCollection([$child1, $child2, $child3]));
+
+        $lineItem->setQuantity(2);
+
+        static::assertSame(2, $lineItem->getQuantity());
+        static::assertSame(6, $child1->getQuantity());
+        static::assertSame(4, $child2->getQuantity());
+        static::assertSame(2, $child3->getQuantity());
+        static::assertSame(10, $child4->getQuantity());
+        static::assertSame(20, $child5->getQuantity());
+
+        $lineItem->setQuantity(3);
+
+        static::assertSame(3, $lineItem->getQuantity());
+        static::assertSame(9, $child1->getQuantity());
+        static::assertSame(6, $child2->getQuantity());
+        static::assertSame(3, $child3->getQuantity());
+        static::assertSame(15, $child4->getQuantity());
+        static::assertSame(30, $child5->getQuantity());
+
+        $lineItem->setQuantity(1);
+
+        static::assertSame(1, $lineItem->getQuantity());
+        static::assertSame(3, $child1->getQuantity());
+        static::assertSame(2, $child2->getQuantity());
+        static::assertSame(1, $child3->getQuantity());
+        static::assertSame(5, $child4->getQuantity());
+        static::assertSame(10, $child5->getQuantity());
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testChangeQuantityOfParentLineItemWithNonStackableChildren(): void
+    {
+        $lineItem = new LineItem('A', 'type');
+
+        $child1 = new LineItem('A.1', 'child', null, 3);
+        $child2 = new LineItem('A.2', 'child', null, 2);
+        $child2->setStackable(false);
+        $child3 = new LineItem('A.3', 'child');
+        $child3->setStackable(false);
+
+        $child4 = new LineItem('A.3.1', 'child', null, 5);
+        $child5 = new LineItem('A.3.2', 'child', null, 10);
+
+        $child3->setChildren(new LineItemCollection([$child4, $child5]));
+
+        $lineItem->setChildren(new LineItemCollection([$child1, $child2, $child3]));
+
+        $this->expectExceptionObject(CartException::lineItemNotStackable('A'));
+
+        try {
+            $lineItem->setQuantity(2);
+        } finally {
+            static::assertSame(1, $lineItem->getQuantity());
+            static::assertSame(3, $child1->getQuantity());
+            static::assertSame(2, $child2->getQuantity());
+            static::assertSame(1, $child3->getQuantity());
+            static::assertSame(5, $child4->getQuantity());
+            static::assertSame(10, $child5->getQuantity());
+        }
+    }
+
+    /**
+     * Child quantities are derived from the parent, so propagation ignores child stackability:
+     * a stackable parent scales non-stackable children exactly like stackable ones.
+     *
+     * @throws CartException
+     */
+    public function testChangeQuantityOfStackableParentPropagatesToNonStackableChildren(): void
+    {
+        $lineItem = (new LineItem('A', 'type'))->setStackable(true);
+
+        $child1 = (new LineItem('A.1', 'child', null, 3))->setStackable(true);
+        $child2 = new LineItem('A.2', 'child', null, 2);
+        $child2->setStackable(false);
+        $child3 = new LineItem('A.3', 'child');
+        $child3->setStackable(false);
+
+        $child4 = new LineItem('A.3.1', 'child', null, 5);
+        $child5 = new LineItem('A.3.2', 'child', null, 10);
+
+        $child3->setChildren(new LineItemCollection([$child4, $child5]));
+
+        $lineItem->setChildren(new LineItemCollection([$child1, $child2, $child3]));
+
+        $lineItem->setQuantity(2);
+
+        static::assertSame(2, $lineItem->getQuantity());
+        static::assertSame(6, $child1->getQuantity());
+        static::assertSame(4, $child2->getQuantity());
+        static::assertSame(2, $child3->getQuantity());
+        static::assertSame(10, $child4->getQuantity());
+        static::assertSame(20, $child5->getQuantity());
+
+        $lineItem->setQuantity(3);
+
+        static::assertSame(3, $lineItem->getQuantity());
+        static::assertSame(9, $child1->getQuantity());
+        static::assertSame(6, $child2->getQuantity());
+        static::assertSame(3, $child3->getQuantity());
+        static::assertSame(15, $child4->getQuantity());
+        static::assertSame(30, $child5->getQuantity());
+
+        $lineItem->setQuantity(1);
+
+        static::assertSame(1, $lineItem->getQuantity());
+        static::assertSame(3, $child1->getQuantity());
+        static::assertSame(2, $child2->getQuantity());
+        static::assertSame(1, $child3->getQuantity());
+        static::assertSame(5, $child4->getQuantity());
+        static::assertSame(10, $child5->getQuantity());
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testAddChildrenToLineItemWithInvalidQuantity(): void
+    {
+        $lineItem = new LineItem('A', 'type', null, 15);
+
+        $child1 = new LineItem('A.1', 'child', null, 3);
+        $child2 = new LineItem('A.2', 'child', null, 2);
+        $child3 = new LineItem('A.3', 'child');
+
+        $this->expectExceptionObject(CartException::invalidChildQuantity(3, 15));
+
+        $lineItem->addChild($child1);
+        $lineItem->addChild($child2);
+        $lineItem->addChild($child3);
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testSetChildrenToLineItemWithInvalidQuantity(): void
+    {
+        $lineItem = new LineItem('A', 'type', null, 15);
+
+        $child1 = new LineItem('A.1', 'child', null, 3);
+        $child2 = new LineItem('A.2', 'child', null, 2);
+        $child3 = new LineItem('A.3', 'child');
+
+        $this->expectExceptionObject(CartException::invalidChildQuantity(3, 15));
+
+        $lineItem->setChildren(new LineItemCollection([$child1, $child2, $child3]));
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testAddChildToLineItemWithQuantity1(): void
+    {
+        $lineItem = new LineItem('abc', 'type', null, 5);
+
+        $child = new LineItem('123', 'child');
+
+        $lineItem->addChild($child);
+
+        $childTest = $lineItem->getChildren()->first();
+        static::assertNotNull($childTest);
+        static::assertSame(1, $childTest->getQuantity());
+        static::assertSame(5, $lineItem->getQuantity());
+    }
+
+    /**
+     * @throws CartException
+     */
+    public function testAddChildToLineItemWithQuantity1AndParentStackable(): void
+    {
+        $lineItem = new LineItem('abc', 'type', null, 5);
+        $lineItem->setStackable(true);
+
+        $child = new LineItem('123', 'child');
+
+        $this->expectExceptionObject(CartException::invalidChildQuantity(1, 5));
+
+        $lineItem->addChild($child);
+    }
+
+    public function testLineItemGetAndSetPayloadValue(): void
+    {
+        $lineItem = new LineItem('abc', 'type', null, 5);
+        $lineItem->setPayloadValue('test', 2);
+
+        static::assertSame(2, $lineItem->getPayloadValue('test'));
+    }
+
+    public function testSetPayloadValueCanProtectPayloadValue(): void
+    {
+        $lineItem = new LineItem('abc', 'type', null, 5);
+        $lineItem->setPayloadValue('visible', 'test', false);
+        $lineItem->setPayloadValue('protected', 'test', true);
+
+        static::assertSame('test', $lineItem->getPayloadValue('protected'));
+        static::assertArrayHasKey('protected', $lineItem->getPayload());
+
+        $payload = self::getSerializedPayload($lineItem);
+
+        static::assertArrayHasKey('visible', $payload);
+        static::assertArrayNotHasKey('protected', $payload);
+    }
+
+    public function testSetPayloadValueCanRemovePayloadProtection(): void
+    {
+        $lineItem = new LineItem('abc', 'type', null, 5);
+        $lineItem->setPayloadValue('test', 'protected', true);
+
+        $payload = self::getSerializedPayload($lineItem);
+
+        static::assertArrayNotHasKey('test', $payload);
+
+        $lineItem->setPayloadValue('test', 'visible', false);
+
+        $payload = self::getSerializedPayload($lineItem);
+
+        static::assertSame('visible', $payload['test']);
+    }
+
+    public function testSetPayloadValueKeepsProtectionWithoutThirdArgument(): void
+    {
+        $lineItem = new LineItem('abc', 'type', null, 5);
+        $lineItem->setPayloadValue('test', 'protected', true);
+        $lineItem->setPayloadValue('test', 'updated');
+
+        static::assertSame('updated', $lineItem->getPayloadValue('test'));
+
+        $payload = self::getSerializedPayload($lineItem);
+
+        static::assertArrayNotHasKey('test', $payload);
+    }
+
+    public function testReplacePayloadNonRecursively(): void
+    {
+        $lineItem = new LineItem('abc', 'type', null, 5);
+        $lineItem->setPayload([
+            'test' => 5,
+            'categoryIds' => ['a', 'b'],
+        ]);
+
+        $lineItem->replacePayload([
+            'test' => 2,
+            'categoryIds' => ['a'],
+        ]);
+
+        static::assertSame(2, $lineItem->getPayloadValue('test'));
+        static::assertSame(['a'], $lineItem->getPayloadValue('categoryIds'));
+    }
+
+    public function testIsProductType(): void
+    {
+        $lineItem = new LineItem('abc', 'product');
+
+        $lineItem->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_DIGITAL);
+
+        static::assertTrue($lineItem->isProductType(ProductDefinition::TYPE_DIGITAL));
+        static::assertFalse($lineItem->isProductType(ProductDefinition::TYPE_PHYSICAL));
+
+        $lineItem->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_PHYSICAL);
+
+        static::assertFalse($lineItem->isProductType(ProductDefinition::TYPE_DIGITAL));
+        static::assertTrue($lineItem->isProductType(ProductDefinition::TYPE_PHYSICAL));
+    }
+
+    #[DataProvider('provideValidIdentifiers')]
+    public function testIdentifierValidationForValidIdentifiers(string $identifier): void
+    {
+        $lineItem = new LineItem($identifier, 'type');
+
+        static::assertSame($identifier, $lineItem->getId());
+    }
+
+    /**
+     * @return iterable<array<string>>
+     */
+    public static function provideValidIdentifiers(): iterable
+    {
+        return [
+            [''],
+            ['test'],
+            ['a-'],
+            ['a_'],
+            ['a.'],
+            ['a-._'],
+            ['uuid'],
+            ['UUID'],
+            ['uuid-uuid_2'],
+            ['UUID-UUID_2'],
+            ['123'],
+            ['123.123'],
+            [str_repeat('a', 100)],
+        ];
+    }
+
+    #[DataProvider('provideInvalidIdentifiers')]
+    public function testIdentifierValidationForInvalidFormat(string $identifier): void
+    {
+        $this->expectExceptionObject(CartException::lineItemInvalid('Identifier contains invalid characters. Only alphanumeric characters, dashes, underscores and dots are allowed.'));
+
+        new LineItem($identifier, 'type');
+    }
+
+    /**
+     * @return iterable<array<string>>
+     */
+    public static function provideInvalidIdentifiers(): iterable
+    {
+        return [
+            ['a-@'],
+            ['@!§$%&/()=?'],
+            [' '],
+            ['uuid test'],
+            ['123 uuid'],
+            ['a '],
+        ];
+    }
+
+    public function testIdentifierValidationForInvalidLength(): void
+    {
+        $this->expectExceptionObject(CartException::lineItemInvalid('Identifier is too long. Maximum length is 100 characters.'));
+
+        new LineItem(str_repeat('a', 101), 'type');
+    }
+
+    public function testGetHashContent(): void
+    {
+        $parent = new LineItem(
+            'line-item-parent-id',
+            'type'
+        );
+
+        $child = new LineItem(
+            'line-item-child-id',
+            'type'
+        );
+
+        $parent->addChild($child);
+
+        $grandchild = new LineItem('line-item-grandchild-id', 'type');
+
+        $child->addChild($grandchild);
+
+        $expectedArray = [
+            'quantity' => 1,
+            'price' => null,
+            'referenceId' => null,
+            'children' => [
+                'line-item-child-id' => [
+                    'quantity' => 1,
+                    'price' => null,
+                    'referenceId' => null,
+                    'children' => [
+                        'line-item-grandchild-id' => [
+                            'quantity' => 1,
+                            'price' => null,
+                            'referenceId' => null,
+                            'children' => [],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        static::assertSame($expectedArray, $parent->getHashContent());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function getSerializedPayload(LineItem $lineItem): array
+    {
+        $data = $lineItem->jsonSerialize();
+
+        static::assertArrayHasKey('payload', $data);
+        static::assertIsArray($data['payload']);
+
+        return $data['payload'];
+    }
+}

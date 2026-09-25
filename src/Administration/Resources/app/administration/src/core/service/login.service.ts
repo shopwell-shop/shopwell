@@ -1,0 +1,791 @@
+/**
+ * @sw-package framework
+ */
+
+import { CookieStorage } from 'cookie-storage';
+import type { CookieOptions } from 'cookie-storage/lib/cookie-options';
+import type { Router } from 'vue-router';
+import type { ContextStore } from '../../app/store/context.store';
+
+/** @private */
+export interface AuthObject {
+    access: string;
+    refresh: string;
+    expiry: number;
+}
+
+/** @private */
+export interface LoginConfig {
+    useDefault: boolean;
+    url: string;
+}
+
+interface TokenResponse {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+}
+
+interface RetryBackoffOptions {
+    maxRetries?: number;
+    initialDelay?: number;
+    factor?: number;
+}
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+export interface LoginService {
+    loginByUsername: (user: string, pass: string) => Promise<AuthObject>;
+    verifyUserByUsername: (user: string, pass: string) => Promise<AuthObject>;
+    refreshToken: () => Promise<AuthObject['access']>;
+    getToken: () => string;
+    getBearerAuthentication: <K extends keyof AuthObject>(section?: K) => AuthObject[K];
+    setBearerAuthentication: ({ access, refresh, expiry }: AuthObject) => AuthObject;
+    restartAutoTokenRefresh: (expiryTimestamp: number) => void;
+    logout: (isInactivityLogout?: boolean, shouldRedirect?: boolean) => boolean;
+    logoutSso: () => Promise<void>;
+    forwardLogout(isInactivityLogout: boolean, shouldRedirect: boolean): void;
+    isLoggedIn: () => boolean;
+    addOnTokenChangedListener: (listener: (auth?: AuthObject) => void) => void;
+    addOnLogoutListener: (listener: () => void) => void;
+    addOnLoginListener: (listener: () => unknown) => void;
+    getStorageKey: () => string;
+    notifyOnLoginListener: () => void[] | null;
+    verifyUserToken: (password: string) => Promise<string>;
+    getStorage: () => CookieStorage;
+    setRememberMe: (active?: boolean) => void;
+    getLoginTemplateConfig: () => Promise<LoginConfig>;
+    subscribeToTokenRefresh: (successCallback: (token: string) => void, errorCallback: (error: Error) => void) => void;
+    isRefreshing: () => Promise<boolean>;
+    /** @internal */
+    _navigateTo: (url: string) => void;
+}
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+export default function createLoginService(
+    httpClient: InitContainer['httpClient'],
+    context: ContextStore['api'],
+    bearerAuth: AuthObject | null = null,
+): LoginService {
+    /** @var {String} storageKey token */
+    const storageKey = 'bearerAuth';
+    const onTokenChangedListener: ((auth: AuthObject) => void)[] = [];
+    const onLogoutListener: (() => void)[] = [];
+    const onLoginListener: (() => void)[] = [];
+    const cookieStorage = cookieStorageFactory();
+    let autoRefreshTokenTimeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    /**
+     * Tracks an in-flight token refresh request so that concurrent calls
+     * to the refresh logic can share the same promise and avoid duplicate
+     * network requests.
+     */
+    let refreshPromise: Promise<string> | null = null;
+
+    // Subscriber pattern for token refresh events
+    const refreshSubscribers: Array<(token: string) => void> = [];
+    const refreshErrorSubscribers: Array<(error: Error) => void> = [];
+
+    // Wraps window.location.href assignment to enable test mocking (JSDOM
+    // marks window.location as non-configurable). Mirrors the upstream
+    // _navigateTo pattern used in sw-login-login component.
+    let navigateToFn = (url: string): void => {
+        window.location.href = url;
+    };
+
+    return {
+        loginByUsername,
+        verifyUserByUsername,
+        refreshToken,
+        getToken,
+        getBearerAuthentication,
+        setBearerAuthentication,
+        restartAutoTokenRefresh,
+        logout,
+        logoutSso,
+        forwardLogout,
+        isLoggedIn,
+        addOnTokenChangedListener,
+        addOnLogoutListener,
+        addOnLoginListener,
+        getStorageKey,
+        notifyOnLoginListener,
+        verifyUserToken,
+        getStorage,
+        setRememberMe,
+        getLoginTemplateConfig,
+        subscribeToTokenRefresh,
+        isRefreshing,
+
+        /** @internal */
+        get _navigateTo() {
+            return navigateToFn;
+        },
+        set _navigateTo(fn: (url: string) => void) {
+            navigateToFn = fn;
+        },
+    };
+
+    /**
+     * Helper function to receive a logged in user token
+     */
+    function verifyUserToken(password: string): Promise<string> {
+        return verifyUserByUsername(Shopwell.Store.get('session').currentUser?.username ?? '', password)
+            .then(({ access }) => {
+                if (Shopwell.Utils.types.isString(access)) {
+                    return access;
+                }
+                throw new Error('access Token should be of type String');
+            })
+            .catch((e) => {
+                throw e;
+            });
+    }
+
+    /**
+     * Sends an AJAX request to the authentication end point and tries to log in the user with the provided
+     * password.
+     */
+    function loginByUsername(user: string, pass: string): Promise<AuthObject> {
+        return httpClient
+            .post<TokenResponse>(
+                '/oauth/token',
+                {
+                    grant_type: 'password',
+                    client_id: 'administration',
+                    scope: 'write',
+                    username: user,
+                    password: pass,
+                },
+                {
+                    baseURL: context.apiPath!,
+                },
+            )
+            .then((response) => {
+                Shopwell.Service('userActivityService').updateLastUserActivity();
+
+                const auth = setBearerAuthentication({
+                    access: response.data.access_token,
+                    refresh: response.data.refresh_token,
+                    expiry: response.data.expires_in,
+                });
+
+                sessionStorage.setItem('redirectFromLogin', 'true');
+
+                return auth;
+            });
+    }
+
+    /**
+     * Refreshes the access token with retry/backoff and cross-tab synchronization.
+     *
+     * Uses the Web Locks API to coordinate token refresh across browser tabs.
+     * Only one tab at a time will perform the actual HTTP request; other tabs
+     * wait for the lock and then re-check whether the token was already refreshed.
+     */
+    function refreshToken(): Promise<AuthObject['access']> {
+        // Avoid parallel refresh requests within the same tab by reusing the in-flight promise.
+        if (refreshPromise) {
+            return refreshPromise;
+        }
+
+        const refreshTokenValue = getRefreshToken();
+        if (!refreshTokenValue || !refreshTokenValue.length) {
+            return Promise.reject(new Error('No refresh token found.'));
+        }
+
+        // Capture the current access token before requesting the lock,
+        // so we can detect whether another tab refreshed it while we were waiting.
+        const accessTokenBeforeLock = getToken();
+
+        refreshPromise = synchronizedTokenRefresh(async () => {
+            // Another tab may already have refreshed the token while we were waiting for the lock.
+            const currentAccessToken = getToken();
+            if (currentAccessToken && currentAccessToken !== accessTokenBeforeLock) {
+                notifyRefreshSubscribers(currentAccessToken);
+                return currentAccessToken;
+            }
+
+            return retryRefreshWithBackoff(refreshTokenValue);
+        })
+            .catch((error) => {
+                throw error instanceof Error ? error : new Error(String(error));
+            })
+            .finally(() => {
+                refreshPromise = null;
+            });
+
+        return refreshPromise;
+    }
+
+    /**
+     * Executes refresh logic under a cross-tab lock when the Web Locks API is available.
+     */
+    async function synchronizedTokenRefresh<T>(fn: () => Promise<T>): Promise<T> {
+        if (typeof navigator === 'undefined' || typeof navigator.locks?.request !== 'function') {
+            return fn();
+        }
+
+        const result = await (navigator.locks.request('sw-admin-token-refresh', fn) as Promise<T>);
+
+        return result;
+    }
+
+    /**
+     * Performs the token refresh HTTP request with exponential backoff retry logic.
+     *
+     * On success: updates authentication and notifies subscribers.
+     * On failure after all retries: triggers an inactivity logout and notifies error subscribers.
+     *
+     * @private
+     */
+    function retryRefreshWithBackoff(token: string): Promise<string> {
+        return retryPromiseWithBackoff(
+            () => {
+                return httpClient.post<TokenResponse>(
+                    '/oauth/token',
+                    {
+                        grant_type: 'refresh_token',
+                        client_id: 'administration',
+                        scope: 'write',
+                        refresh_token: token,
+                    },
+                    {
+                        baseURL: context.apiPath!,
+                    },
+                );
+            },
+            {
+                maxRetries: 2,
+                initialDelay: 500,
+                factor: 2,
+            },
+        )
+            .then((response) => {
+                const expiry = response.data.expires_in;
+                const newToken = response.data.access_token;
+
+                setBearerAuthentication({
+                    access: newToken,
+                    expiry: expiry,
+                    refresh: response.data.refresh_token,
+                });
+
+                notifyRefreshSubscribers(newToken);
+
+                return newToken;
+            })
+            .catch((error) => {
+                logout(true);
+
+                // Notify all error subscribers
+                const errorObj = error instanceof Error ? error : new Error(String(error));
+                refreshErrorSubscribers.forEach((callback) => {
+                    callback(errorObj);
+                });
+                refreshSubscribers.length = 0;
+                refreshErrorSubscribers.length = 0;
+
+                return Promise.reject(errorObj);
+            });
+    }
+
+    /**
+     * Retries a promise-returning function with exponential backoff.
+     *
+     * @param fn - Function that returns the promise to execute
+     * @param options - Retry and backoff configuration
+     */
+    function retryPromiseWithBackoff<T>(fn: () => Promise<T>, options: RetryBackoffOptions = {}): Promise<T> {
+        const { maxRetries = 3, initialDelay = 1000, factor = 2 } = options;
+
+        return new Promise<T>((resolve, reject) => {
+            let attempt = 0;
+
+            const execute = (): void => {
+                Promise.resolve()
+                    .then(fn)
+                    .then(resolve)
+                    .catch((error) => {
+                        if (attempt >= maxRetries) {
+                            const errorObj = error instanceof Error ? error : new Error(String(error));
+                            reject(errorObj);
+                            return;
+                        }
+
+                        const delay = initialDelay * factor ** attempt;
+                        attempt += 1;
+
+                        setTimeout(execute, delay);
+                    });
+            };
+
+            execute();
+        });
+    }
+
+    /**
+     * Notifies all refresh subscribers with the latest token and clears all refresh subscriber queues.
+     *
+     * @param token - The refreshed access token
+     */
+    function notifyRefreshSubscribers(token: string): void {
+        refreshSubscribers.forEach((callback) => {
+            callback(token);
+        });
+        refreshSubscribers.length = 0;
+        refreshErrorSubscribers.length = 0;
+    }
+
+    /**
+     * Subscribe to token refresh events. Callbacks will be called when token refresh succeeds or fails.
+     *
+     * @param successCallback - Called with the new token when refresh succeeds
+     * @param errorCallback - Called with the error when refresh fails
+     */
+    function subscribeToTokenRefresh(successCallback: (token: string) => void, errorCallback: (error: Error) => void): void {
+        refreshSubscribers.push(successCallback);
+        refreshErrorSubscribers.push(errorCallback);
+    }
+
+    /**
+     * Returns whether a token refresh is currently in progress.
+     *
+     * Checks both this tab's in-flight refresh promise and, where supported,
+     * the shared Web Lock used for cross-tab refresh synchronization.
+     */
+    async function isRefreshing(): Promise<boolean> {
+        if (refreshPromise !== null) {
+            return true;
+        }
+
+        if (typeof navigator === 'undefined' || typeof navigator.locks?.query !== 'function') {
+            return false;
+        }
+
+        try {
+            const lockState = await navigator.locks.query();
+            const heldLocks = lockState.held ?? [];
+            const pendingLocks = lockState.pending ?? [];
+
+            return (
+                heldLocks.some((lock) => lock.name === 'sw-admin-token-refresh') ||
+                pendingLocks.some((lock) => lock.name === 'sw-admin-token-refresh')
+            );
+        } catch {
+            return false;
+        }
+    }
+
+    function verifyUserByUsername(user: string, pass: string): Promise<AuthObject> {
+        return httpClient
+            .post<TokenResponse>(
+                '/oauth/token',
+                {
+                    grant_type: 'password',
+                    client_id: 'administration',
+                    scope: 'user-verified',
+                    username: user,
+                    password: pass,
+                },
+                {
+                    baseURL: context.apiPath!,
+                },
+            )
+            .then((response) => {
+                return {
+                    access: response.data.access_token,
+                    expiry: response.data.expires_in,
+                    refresh: response.data.refresh_token,
+                };
+            });
+    }
+
+    /**
+     * Adds an Listener for the onTokenChangedEvent
+     */
+    function addOnTokenChangedListener(listener: (auth?: AuthObject) => void): void {
+        onTokenChangedListener.push(listener);
+    }
+
+    /**
+     * Adds an Listener for the onLogoutEvent
+     */
+    function addOnLogoutListener(listener: () => void): void {
+        onLogoutListener.push(listener);
+    }
+
+    /**
+     * Adds an Listener for the onLoginEvent
+     */
+    function addOnLoginListener(listener: () => void): void {
+        onLoginListener.push(listener);
+    }
+
+    /**
+     * notifies the listener for the onTokenChangedEvent
+     */
+    function notifyOnTokenChangedListener(auth: AuthObject): void {
+        onTokenChangedListener.forEach((callback) => {
+            callback.call(null, auth);
+        });
+    }
+
+    /**
+     * notifies the listener for the onLogoutEvent
+     */
+    function notifyOnLogoutListener(): void {
+        onLogoutListener.forEach((callback) => {
+            callback.call(null);
+        });
+    }
+
+    /**
+     * notifies the listener for the onLoginEvent
+     */
+    function notifyOnLoginListener(): void[] | null {
+        if (!sessionStorage.getItem('redirectFromLogin')) {
+            return null;
+        }
+
+        sessionStorage.removeItem('redirectFromLogin');
+
+        return onLoginListener.map((callback) => {
+            return callback.call(null);
+        });
+    }
+
+    /**
+     * Saves the bearer authentication object in the cookies using the {@link storageKey} as the
+     * object identifier.
+     */
+    function setBearerAuthentication({ access, refresh, expiry }: AuthObject): AuthObject {
+        expiry = Date.now() + expiry * 1000;
+
+        const cookieOptions: CookieOptions = {
+            expires: new Date(expiry),
+        };
+
+        if (!shouldConsiderUserActivity()) {
+            const rememberMeDuration = context.refreshTokenTtl || 7 * 86400 * 1000;
+            cookieOptions.expires = new Date(Date.now() + Number(rememberMeDuration));
+        }
+
+        const authObject = { access, refresh, expiry };
+        if (typeof document !== 'undefined' && typeof document.cookie !== 'undefined') {
+            cookieStorage.setItem(storageKey, JSON.stringify(authObject), cookieOptions);
+        } else {
+            bearerAuth = authObject;
+        }
+
+        if (getToken()) {
+            notifyOnTokenChangedListener(authObject);
+        }
+
+        context.authToken = authObject;
+
+        restartAutoTokenRefresh(expiry);
+
+        return authObject;
+    }
+
+    /**
+     * Refresh token in half of expiry time
+     */
+    function restartAutoTokenRefresh(expiryTimestamp: number): void {
+        if (autoRefreshTokenTimeoutId) {
+            clearTimeout(autoRefreshTokenTimeoutId);
+            autoRefreshTokenTimeoutId = undefined;
+        }
+
+        const timeUntilExpiry = (expiryTimestamp - Date.now()) / 2;
+
+        autoRefreshTokenTimeoutId = setTimeout(() => {
+            autoRefreshTokenTimeoutId = undefined;
+
+            if (shouldConsiderUserActivity() && lastActivityOverThreshold()) {
+                logout(true);
+                return;
+            }
+
+            void refreshToken();
+        }, timeUntilExpiry);
+    }
+
+    /**
+     * Returns true if the last user activity is over the 30-minute threshold
+     *
+     * @private
+     */
+    function lastActivityOverThreshold(): boolean {
+        const lastActivity = Shopwell.Service('userActivityService').getLastUserActivity().getTime();
+
+        // (Current time) - (30 minutes)
+        const threshold = Date.now() - 30 * 60 * 1000;
+
+        return lastActivity <= threshold;
+    }
+
+    function setRememberMe(active = true): void {
+        if (!active) {
+            localStorage.removeItem('rememberMe');
+            return;
+        }
+
+        localStorage.setItem('rememberMe', 'true');
+    }
+
+    function shouldConsiderUserActivity(): boolean {
+        const rememberMe = Boolean(localStorage.getItem('rememberMe'));
+        const devEnv = Shopwell.Context.app.environment === 'development';
+
+        return !devEnv && !rememberMe;
+    }
+
+    /**
+     * Returns saved bearer authentication object. Either you're getting the full object or when you're specifying
+     * the `section` argument and getting either the token or the expiry date.
+     */
+    function getBearerAuthentication<K extends keyof AuthObject>(section?: K): AuthObject[K];
+
+    function getBearerAuthentication<K extends keyof AuthObject>(
+        section: K | null = null,
+    ): false | AuthObject | AuthObject[K] {
+        if (typeof document !== 'undefined' && typeof document.cookie !== 'undefined') {
+            try {
+                bearerAuth = JSON.parse(cookieStorage.getItem(storageKey) as string) as AuthObject;
+            } catch {
+                bearerAuth = null;
+            }
+        }
+
+        context.authToken = bearerAuth;
+
+        if (!bearerAuth) {
+            return false;
+        }
+
+        if (!section) {
+            return bearerAuth;
+        }
+
+        return bearerAuth[section] ? bearerAuth[section] : false;
+    }
+
+    /**
+     * Clears local authentication state: cookies, context token, bearer cache,
+     * remember-me flag, and auto-refresh timer. Shared by logout() and logoutSso().
+     */
+    function clearAuthState(): void {
+        if (typeof document !== 'undefined' && typeof document.cookie !== 'undefined') {
+            cookieStorage.removeItem(storageKey, { path: context.basePath });
+            cookieStorage.removeItem(storageKey);
+        }
+
+        context.authToken = null;
+        bearerAuth = null;
+        setRememberMe(false);
+
+        if (autoRefreshTokenTimeoutId) {
+            clearTimeout(autoRefreshTokenTimeoutId);
+            autoRefreshTokenTimeoutId = undefined;
+        }
+    }
+
+    /**
+     * Clears the cookie stored bearer authentication object.
+     */
+    function logout(isInactivityLogout = false, shouldRedirect = true): boolean {
+        clearAuthState();
+        forwardLogout(isInactivityLogout, shouldRedirect);
+
+        return true;
+    }
+
+    /**
+     * Revokes server-side tokens, clears local auth state, and navigates
+     * to the appropriate login surface:
+     * - SSO sessions → full-page redirect to the SSO provider (prompt=login)
+     * - Non-SSO sessions → standard logout via {@link forwardLogout}
+     *
+     * Falls back to regular logout if the SSO configuration cannot be loaded.
+     */
+    async function logoutSso(): Promise<void> {
+        let loginConfig: LoginConfig;
+
+        try {
+            loginConfig = await getLoginTemplateConfig();
+        } catch {
+            logout();
+            return;
+        }
+
+        if (!loginConfig.url) {
+            logout();
+            return;
+        }
+
+        const token = getToken();
+
+        try {
+            // Use native fetch to bypass Axios interceptors — the refresh-token
+            // interceptor would otherwise attempt a token refresh during logout.
+            await fetch(`${context.apiPath}/_action/user/logout`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+        } catch {
+            // Best-effort: continue even if server-side revocation fails
+        }
+
+        const isSsoSession = !!sessionStorage.getItem('sw-sso-session');
+
+        if (!loginConfig.useDefault || isSsoSession) {
+            clearAuthState();
+            notifyOnLogoutListener();
+            sessionStorage.setItem('sw-sso-session', 'true');
+            navigateToFn(`${loginConfig.url}&usePromptLogin=1`);
+            return;
+        }
+
+        sessionStorage.removeItem('sw-sso-session');
+        logout();
+    }
+
+    /**
+     * @private
+     */
+    function forwardLogout(isInactivityLogout: boolean, shouldRedirect: boolean): void {
+        notifyOnLogoutListener();
+
+        // @ts-expect-error
+        const router = Shopwell.Application.view.router as null | Router;
+        if (router) {
+            const id = Shopwell.Utils.createId();
+
+            sessionStorage.setItem(
+                `sw-admin-previous-route_${id}`,
+                JSON.stringify({
+                    fullPath: router.currentRoute.value.fullPath,
+                    name: router.currentRoute.value.name,
+                }),
+            );
+
+            if (isInactivityLogout && shouldRedirect) {
+                // Prevent multiple logout calls
+                if (window.processingInactivityLogout) {
+                    return;
+                }
+
+                // Dynamically import html2canvas only when needed to reduce initial bundle size
+                void import('html2canvas')
+                    .then((module) => {
+                        const html2canvas = module.default;
+                        const appElement = document.querySelector('#app') as HTMLElement;
+                        if (!appElement) {
+                            throw new Error('App element not found');
+                        }
+                        return html2canvas(appElement, {
+                            scale: 0.1,
+                        });
+                    })
+                    .then((canvas) => {
+                        try {
+                            sessionStorage.setItem(`inactivityBackground_${id}`, canvas.toDataURL('image/jpeg'));
+                        } catch (_e) {
+                            // empty catch intended
+                            // Calling toDataURL on a canvas with images from a different origin or css rules
+                            // that contain urls to images from a different origin will throw a security error in Safari.
+                        }
+                    })
+                    .catch((error) => {
+                        // If html2canvas fails to load or execute, still proceed with logout
+                        // in ".finally" block below
+                        console.error('Failed to capture inactivity logout screenshot:', error);
+                    })
+                    .finally(() => {
+                        sessionStorage.setItem('lastKnownUser', Shopwell.Store.get('session').currentUser?.username ?? '');
+
+                        window.processingInactivityLogout = true;
+
+                        void router.push({
+                            name: 'sw.inactivity.login.index',
+                            params: { id },
+                        });
+                    });
+            } else {
+                sessionStorage.setItem('refresh-after-logout', 'true');
+
+                void router.push({ name: 'sw.login.index' });
+            }
+        }
+    }
+
+    /**
+     * Returns the bearer token
+     */
+    function getToken(): string {
+        return getBearerAuthentication('access');
+    }
+
+    /**
+     * Returns the refresh token
+     */
+    function getRefreshToken(): string {
+        return getBearerAuthentication('refresh');
+    }
+
+    /**
+     * Checks if the user is logged in by checking if the bearer token exists
+     * in the cookies.
+     *
+     * If the user was logged in but the last activity was over the threshold,
+     * the user will be logged out and the function will return false.
+     */
+    function isLoggedIn(): boolean {
+        const tokenExists = !!getToken();
+
+        if (tokenExists && shouldConsiderUserActivity() && lastActivityOverThreshold()) {
+            logout(true);
+            return false;
+        }
+
+        return tokenExists;
+    }
+
+    /**
+     * Returns the storage key.
+     */
+    function getStorageKey(): string {
+        return storageKey;
+    }
+
+    /**
+     * Returns a CookieStorage instance with the right domain and path from the context.
+     */
+    function cookieStorageFactory(): CookieStorage {
+        const path = context.basePath! + context.pathInfo!;
+
+        // Set default cookie values
+        return new CookieStorage({
+            path: path,
+            domain: null,
+            secure: false, // only allow HTTPs
+            sameSite: 'Strict', // Should be Strict
+        });
+    }
+
+    /**
+     * Returns the current cookie storage
+     */
+    function getStorage(): CookieStorage {
+        return cookieStorage;
+    }
+
+    function getLoginTemplateConfig(): Promise<LoginConfig> {
+        return httpClient
+            .get<LoginConfig>('/oauth/sso/config', {
+                baseURL: context.apiPath!,
+            })
+            .then((response) => response.data);
+    }
+}

@@ -1,0 +1,73 @@
+{% block sw_login_recovery %}
+<div class="sw-login-recovery">
+    {% block sw_login_recovery_headline %}
+    <div class="sw-login__heading">
+        <h1 class="sw-login__content-headline">
+            {{ $t('sw-login.recovery.headline') }}
+        </h1>
+
+        {% block sw_login_recovery_text %}
+        <p class="sw-login__content-description">
+            {{ $t('sw-login.recovery.text') }}
+        </p>
+        {% endblock %}
+    </div>
+    {% endblock %}
+
+    {% block sw_login_recovery_alert %}
+    <mt-banner
+        v-if="isRateLimited"
+        class="sw-login__alert-banner"
+        variant="attention"
+        :show-icon="true"
+        :closable="false"
+    >
+        {{ rateLimitMessage }}
+    </mt-banner>
+    {% endblock %}
+
+    {% block sw_login_recovery_link_expired %}
+    <mt-banner
+        v-if="showLinkExpiredError"
+        class="sw-login__alert-banner"
+        variant="critical"
+        :show-icon="true"
+        :closable="false"
+    >
+        {{ $t('sw-login.recovery.messageLinkExpired') }}
+    </mt-banner>
+    {% endblock %}
+
+    {% block sw_login_recovery_form %}
+    <form
+        class="sw-login__recovery-form"
+        @submit.prevent="sendRecoveryMail"
+    >
+        {% block sw_login_recovery_form_email_field %}
+        <mt-text-field
+            ref="swLoginRecoveryEmailField"
+            v-model="email"
+            :label="$t('sw-login.recovery.email.label')"
+            :disabled="isRateLimited"
+            required
+            @input="debouncedEmailValidation"
+        />
+        {% endblock %}
+
+        {% block sw_login_recovery_form_submit %}
+        <div class="sw-login__submit">
+            <mt-button
+                variant="primary"
+                size="default"
+                :block="true"
+                :disabled="!isEmailValid || isRateLimited"
+                type="submit"
+            >
+                {{ $t('sw-login.recovery.submit') }}
+            </mt-button>
+        </div>
+        {% endblock %}
+    </form>
+    {% endblock %}
+</div>
+{% endblock %}

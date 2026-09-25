@@ -1,0 +1,1244 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Elasticsearch\Product;
+
+use Doctrine\DBAL\Connection;
+use OpenSearchDSL\Query\Compound\BoolQuery;
+use OpenSearchDSL\Query\FullText\MatchQuery;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Product\Aggregate\ProductTranslation\ProductTranslationDefinition;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterface;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\CustomField\CustomFieldTypes;
+use Shopwell\Core\System\Language\LanguageLoaderInterface;
+use Shopwell\Core\System\Language\SalesChannelLanguageLoader;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticDefinitionInstanceRegistry;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Shopwell\Core\Test\TestDefaults;
+use Shopwell\Elasticsearch\Framework\AbstractElasticsearchDefinition;
+use Shopwell\Elasticsearch\Framework\ElasticsearchFieldBuilder;
+use Shopwell\Elasticsearch\Framework\ElasticsearchFieldMapper;
+use Shopwell\Elasticsearch\Framework\ElasticsearchIndexingUtils;
+use Shopwell\Elasticsearch\Product\ElasticsearchProductDefinition;
+use Shopwell\Elasticsearch\Product\ProductSearchQueryBuilder;
+use Shopwell\Tests\Unit\Core\System\Language\Stubs\StaticLanguageLoader;
+use Shopwell\Tests\Unit\Core\System\Language\Stubs\StaticSalesChannelLanguageLoader;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(ElasticsearchProductDefinition::class)]
+class ElasticsearchProductDefinitionTest extends TestCase
+{
+    private const TRANSLATABLE_SEARCHABLE_MAPPING = [
+        'properties' => [
+            'lang_en' => [
+                'type' => 'keyword',
+                'ignore_above' => 10000,
+                'normalizer' => 'sw_lowercase_normalizer',
+                'fields' => [
+                    'search' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_english_analyzer',
+                    ],
+                    'ngram' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_ngram_analyzer',
+                    ],
+                ],
+            ],
+            'lang_de' => [
+                'type' => 'keyword',
+                'ignore_above' => 10000,
+                'normalizer' => 'sw_lowercase_normalizer',
+                'fields' => [
+                    'search' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_german_analyzer',
+                    ],
+                    'ngram' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_ngram_analyzer',
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    private const TRANSLATABLE_EXACT_TECHNICAL_SEARCHABLE_MAPPING = [
+        'properties' => [
+            'lang_en' => [
+                'type' => 'keyword',
+                'ignore_above' => 10000,
+                'normalizer' => 'sw_lowercase_normalizer',
+                'fields' => [
+                    'exact' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_whitespace_analyzer',
+                        'search_analyzer' => 'sw_whitespace_analyzer',
+                        'norms' => false,
+                    ],
+                    'search' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_english_technical_term_index_analyzer',
+                        'search_analyzer' => 'sw_english_technical_term_search_analyzer',
+                    ],
+                    'ngram' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_ngram_analyzer',
+                    ],
+                ],
+            ],
+            'lang_de' => [
+                'type' => 'keyword',
+                'ignore_above' => 10000,
+                'normalizer' => 'sw_lowercase_normalizer',
+                'fields' => [
+                    'exact' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_whitespace_analyzer',
+                        'search_analyzer' => 'sw_whitespace_analyzer',
+                        'norms' => false,
+                    ],
+                    'search' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_german_technical_term_index_analyzer',
+                        'search_analyzer' => 'sw_german_technical_term_search_analyzer',
+                    ],
+                    'ngram' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_ngram_analyzer',
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    private const TRANSLATABLE_EXACT_TECHNICAL_SEARCHABLE_LENGTH_NORM_MAPPING = [
+        'properties' => [
+            'lang_en' => [
+                'type' => 'keyword',
+                'ignore_above' => 10000,
+                'normalizer' => 'sw_lowercase_normalizer',
+                'fields' => [
+                    'exact' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_whitespace_analyzer',
+                        'search_analyzer' => 'sw_whitespace_analyzer',
+                        'norms' => false,
+                    ],
+                    'search' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_english_technical_term_index_analyzer',
+                        'search_analyzer' => 'sw_english_technical_term_search_analyzer',
+                        'similarity' => 'sw_length_norm',
+                    ],
+                    'ngram' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_ngram_analyzer',
+                    ],
+                ],
+            ],
+            'lang_de' => [
+                'type' => 'keyword',
+                'ignore_above' => 10000,
+                'normalizer' => 'sw_lowercase_normalizer',
+                'fields' => [
+                    'exact' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_whitespace_analyzer',
+                        'search_analyzer' => 'sw_whitespace_analyzer',
+                        'norms' => false,
+                    ],
+                    'search' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_german_technical_term_index_analyzer',
+                        'search_analyzer' => 'sw_german_technical_term_search_analyzer',
+                        'similarity' => 'sw_length_norm',
+                    ],
+                    'ngram' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_ngram_analyzer',
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    private const TRANSLATABLE_SEARCHABLE_LENGTH_NORM_MAPPING = [
+        'properties' => [
+            'lang_en' => [
+                'type' => 'keyword',
+                'ignore_above' => 10000,
+                'normalizer' => 'sw_lowercase_normalizer',
+                'fields' => [
+                    'search' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_english_analyzer',
+                        'similarity' => 'sw_length_norm',
+                    ],
+                    'ngram' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_ngram_analyzer',
+                    ],
+                ],
+            ],
+            'lang_de' => [
+                'type' => 'keyword',
+                'ignore_above' => 10000,
+                'normalizer' => 'sw_lowercase_normalizer',
+                'fields' => [
+                    'search' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_german_analyzer',
+                        'similarity' => 'sw_length_norm',
+                    ],
+                    'ngram' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_ngram_analyzer',
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    private const SEARCHABLE_MAPPING = [
+        'type' => 'keyword',
+        'ignore_above' => 10000,
+        'normalizer' => 'sw_lowercase_normalizer',
+        'fields' => [
+            'search' => [
+                'type' => 'text',
+                'analyzer' => 'sw_whitespace_analyzer',
+            ],
+            'ngram' => [
+                'type' => 'text',
+                'analyzer' => 'sw_ngram_analyzer',
+            ],
+        ],
+    ];
+
+    private const EXACT_TECHNICAL_SEARCHABLE_MAPPING = [
+        'type' => 'keyword',
+        'ignore_above' => 10000,
+        'normalizer' => 'sw_lowercase_normalizer',
+        'fields' => [
+            'exact' => [
+                'type' => 'text',
+                'analyzer' => 'sw_whitespace_analyzer',
+                'search_analyzer' => 'sw_whitespace_analyzer',
+                'norms' => false,
+            ],
+            'search' => [
+                'type' => 'text',
+                'analyzer' => 'sw_whitespace_technical_term_index_analyzer',
+                'search_analyzer' => 'sw_whitespace_technical_term_search_analyzer',
+            ],
+            'ngram' => [
+                'type' => 'text',
+                'analyzer' => 'sw_ngram_analyzer',
+            ],
+        ],
+    ];
+
+    private readonly IdsCollection $ids;
+
+    protected function setUp(): void
+    {
+        $this->ids = new IdsCollection();
+    }
+
+    public function testMapping(): void
+    {
+        $languageLoader = new StaticLanguageLoader([
+            'lang_en' => [
+                'id' => 'lang_en',
+                'parentId' => 'parentId',
+                'code' => 'en-GB',
+            ],
+            'lang_de' => [
+                'id' => 'lang_de',
+                'parentId' => 'parentId',
+                'code' => 'de-DE',
+            ],
+        ]);
+
+        $salesChannelLanguageLoader = new StaticSalesChannelLanguageLoader([
+            'lang_en' => [TestDefaults::SALES_CHANNEL],
+            'lang_de' => [TestDefaults::SALES_CHANNEL],
+        ]);
+
+        $parameterBag = new ParameterBag([
+            'elasticsearch.product.custom_fields_mapping' => [
+                'bool' => CustomFieldTypes::BOOL,
+                'int' => CustomFieldTypes::INT,
+            ],
+        ]);
+
+        $connection = static::createStub(Connection::class);
+
+        $utils = new ElasticsearchIndexingUtils($connection, new EventDispatcher(), $parameterBag);
+        $fieldBuilder = new ElasticsearchFieldBuilder($languageLoader, $utils, [
+            'en' => 'sw_english_analyzer',
+            'de' => 'sw_german_analyzer',
+        ]);
+        $fieldMapper = new ElasticsearchFieldMapper($utils);
+
+        $definition = new ElasticsearchProductDefinition(
+            static::createStub(ProductDefinition::class),
+            $connection,
+            static::createStub(ProductSearchQueryBuilder::class),
+            $fieldBuilder,
+            $fieldMapper,
+            $salesChannelLanguageLoader,
+            false,
+            'dev',
+            static::createStub(LanguageLoaderInterface::class)
+        );
+
+        $expectedMapping = [
+            'properties' => [
+                'id' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'parentId' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'parent' => [
+                    'type' => 'nested',
+                    'properties' => [
+                        'id' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                        '_count' => [
+                            'type' => 'long',
+                        ],
+                        'name' => self::TRANSLATABLE_EXACT_TECHNICAL_SEARCHABLE_MAPPING,
+                    ],
+                ],
+                'categoryTree' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'categoryIds' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'propertyIds' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'optionIds' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'tagIds' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'streamIds' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'active' => [
+                    'type' => 'boolean',
+                ],
+                'available' => [
+                    'type' => 'boolean',
+                ],
+                'isCloseout' => [
+                    'type' => 'boolean',
+                ],
+                'categoriesRo' => [
+                    'type' => 'nested',
+                    'properties' => [
+                        'id' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                        '_count' => [
+                            'type' => 'long',
+                        ],
+                    ],
+                ],
+                'categories' => [
+                    'type' => 'nested',
+                    'properties' => [
+                        'id' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                        'name' => self::TRANSLATABLE_SEARCHABLE_MAPPING,
+                        '_count' => [
+                            'type' => 'long',
+                        ],
+                    ],
+                ],
+                'childCount' => [
+                    'type' => 'long',
+                ],
+                'autoIncrement' => [
+                    'type' => 'long',
+                ],
+                'manufacturerNumber' => self::EXACT_TECHNICAL_SEARCHABLE_MAPPING,
+                'description' => self::TRANSLATABLE_SEARCHABLE_LENGTH_NORM_MAPPING,
+                'metaTitle' => self::TRANSLATABLE_SEARCHABLE_MAPPING,
+                'metaDescription' => self::TRANSLATABLE_SEARCHABLE_LENGTH_NORM_MAPPING,
+                'displayGroup' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'ean' => self::EXACT_TECHNICAL_SEARCHABLE_MAPPING,
+                'height' => [
+                    'type' => 'double',
+                ],
+                'length' => [
+                    'type' => 'double',
+                ],
+                'manufacturer' => [
+                    'type' => 'nested',
+                    'properties' => [
+                        'id' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                        'name' => self::TRANSLATABLE_SEARCHABLE_MAPPING,
+                        '_count' => [
+                            'type' => 'long',
+                        ],
+                    ],
+                ],
+                'markAsTopseller' => [
+                    'type' => 'boolean',
+                ],
+                'name' => self::TRANSLATABLE_EXACT_TECHNICAL_SEARCHABLE_MAPPING,
+                'options' => [
+                    'type' => 'nested',
+                    'properties' => [
+                        'id' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                        'name' => self::TRANSLATABLE_SEARCHABLE_MAPPING,
+                        'groupId' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                        '_count' => [
+                            'type' => 'long',
+                        ],
+                    ],
+                ],
+                'productNumber' => self::EXACT_TECHNICAL_SEARCHABLE_MAPPING,
+                'properties' => [
+                    'type' => 'nested',
+                    'properties' => [
+                        'id' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                        'name' => self::TRANSLATABLE_SEARCHABLE_MAPPING,
+                        'groupId' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                        'group' => [
+                            'type' => 'nested',
+                            'properties' => [
+                                'id' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                                '_count' => [
+                                    'type' => 'long',
+                                ],
+                            ],
+                        ],
+                        '_count' => [
+                            'type' => 'long',
+                        ],
+                    ],
+                ],
+                'ratingAverage' => [
+                    'type' => 'double',
+                ],
+                'releaseDate' => [
+                    'type' => 'date',
+                    'format' => 'yyyy-MM-dd HH:mm:ss.SSS||strict_date_optional_time||epoch_millis',
+                    'ignore_malformed' => true,
+                ],
+                'createdAt' => [
+                    'type' => 'date',
+                    'format' => 'yyyy-MM-dd HH:mm:ss.SSS||strict_date_optional_time||epoch_millis',
+                    'ignore_malformed' => true,
+                ],
+                'sales' => [
+                    'type' => 'long',
+                ],
+                'stock' => [
+                    'type' => 'long',
+                ],
+                'availableStock' => [
+                    'type' => 'long',
+                ],
+                'shippingFree' => [
+                    'type' => 'boolean',
+                ],
+                'taxId' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'tags' => [
+                    'type' => 'nested',
+                    'properties' => [
+                        'id' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                        'name' => self::SEARCHABLE_MAPPING,
+                        '_count' => [
+                            'type' => 'long',
+                        ],
+                    ],
+                ],
+                'visibilities' => [
+                    'type' => 'nested',
+                    'properties' => [
+                        'salesChannelId' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                        'visibility' => [
+                            'type' => 'long',
+                        ],
+                        '_count' => [
+                            'type' => 'long',
+                        ],
+                    ],
+                ],
+                'coverId' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'weight' => [
+                    'type' => 'double',
+                ],
+                'width' => [
+                    'type' => 'double',
+                ],
+                'customFields' => [
+                    'properties' => [
+                        'lang_en' => [
+                            'type' => 'object',
+                            'dynamic' => true,
+                        ],
+                        'lang_de' => [
+                            'type' => 'object',
+                            'dynamic' => true,
+                        ],
+                    ],
+                ],
+                'customSearchKeywords' => self::TRANSLATABLE_EXACT_TECHNICAL_SEARCHABLE_LENGTH_NORM_MAPPING,
+                'type' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'states' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'manufacturerId' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'deliveryTimeId' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                'deliveryTime' => [
+                    'type' => 'nested',
+                    'properties' => [
+                        'id' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+                        'name' => self::TRANSLATABLE_SEARCHABLE_MAPPING,
+                        '_count' => [
+                            'type' => 'long',
+                        ],
+                    ],
+                ],
+                'visibility_' . TestDefaults::SALES_CHANNEL => [
+                    'type' => 'integer',
+                ],
+            ],
+            'dynamic_templates' => [
+                ['cheapest_price' => [
+                    'match' => 'cheapest_price_rule*',
+                    'mapping' => [
+                        'type' => 'double',
+                    ],
+                ],
+                ],
+                ['price_percentage' => [
+                    'path_match' => 'price.*.percentage.*',
+                    'mapping' => [
+                        'type' => 'double',
+                    ],
+                ],
+                ],
+                [
+                    'long_to_double' => [
+                        'match_mapping_type' => 'long',
+                        'mapping' => [
+                            'type' => 'double',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        if (Feature::isActive('v6.8.0.0')) {
+            unset($expectedMapping['properties']['states']);
+        }
+
+        static::assertEquals($expectedMapping, $definition->getMapping(Context::createDefaultContext()));
+    }
+
+    public function testMappingCustomFields(): void
+    {
+        $connection = static::createStub(Connection::class);
+
+        $languageLoader = new StaticLanguageLoader([
+            'lang_en' => [
+                'id' => 'lang_en',
+                'parentId' => 'parentId',
+                'code' => 'en-GB',
+            ],
+            'lang_de' => [
+                'id' => 'lang_de',
+                'parentId' => 'parentId',
+                'code' => 'de-DE',
+            ],
+        ]);
+
+        $salesChannelLoader = new StaticSalesChannelLanguageLoader([
+            'lang_en' => [TestDefaults::SALES_CHANNEL],
+            'lang_de' => [TestDefaults::SALES_CHANNEL],
+        ]);
+
+        $parameterBag = new ParameterBag([
+            'elasticsearch.product.custom_fields_mapping' => [
+                'bool' => CustomFieldTypes::BOOL,
+                'int' => CustomFieldTypes::INT,
+                'test1' => CustomFieldTypes::TEXT,
+                'test2' => 'unknown',
+            ],
+        ]);
+
+        $instanceRegistry = $this->getDefinitionRegistry();
+
+        $utils = new ElasticsearchIndexingUtils($connection, new EventDispatcher(), $parameterBag);
+        $fieldBuilder = new ElasticsearchFieldBuilder($languageLoader, $utils, []);
+        $fieldMapper = new ElasticsearchFieldMapper($utils);
+
+        $definition = new ElasticsearchProductDefinition(
+            $instanceRegistry->get(ProductDefinition::class),
+            $connection,
+            static::createStub(ProductSearchQueryBuilder::class),
+            $fieldBuilder,
+            $fieldMapper,
+            $salesChannelLoader,
+            false,
+            'dev',
+            static::createStub(LanguageLoaderInterface::class)
+        );
+
+        $mapping = $definition->getMapping(Context::createDefaultContext());
+
+        $customFields = $mapping['properties']['customFields'];
+
+        static::assertArrayHasKey('lang_en', $customFields['properties']);
+        static::assertArrayHasKey('lang_de', $customFields['properties']);
+        static::assertArrayHasKey('properties', $customFields['properties']['lang_en']);
+        static::assertArrayHasKey('properties', $customFields['properties']['lang_de']);
+        static::assertArrayHasKey('test1', $customFields['properties']['lang_en']['properties']);
+        static::assertArrayHasKey('test1', $customFields['properties']['lang_de']['properties']);
+        static::assertSame(
+            [
+                'type' => 'keyword',
+                'ignore_above' => 10000,
+                'normalizer' => 'sw_lowercase_normalizer',
+                'fields' => [
+                    'search' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_whitespace_analyzer',
+                    ],
+                    'ngram' => ['type' => 'text', 'analyzer' => 'sw_ngram_analyzer'],
+                ],
+            ],
+            $customFields['properties']['lang_en']['properties']['test1']
+        );
+        static::assertSame(
+            [
+                'type' => 'keyword',
+                'ignore_above' => 10000,
+                'normalizer' => 'sw_lowercase_normalizer',
+                'fields' => [
+                    'search' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_whitespace_analyzer',
+                    ],
+                    'ngram' => ['type' => 'text', 'analyzer' => 'sw_ngram_analyzer'],
+                ],
+            ],
+            $customFields['properties']['lang_de']['properties']['test1']
+        );
+
+        static::assertArrayHasKey('test2', $customFields['properties']['lang_en']['properties']);
+        static::assertArrayHasKey('test2', $customFields['properties']['lang_de']['properties']);
+        static::assertSame(
+            [
+                'type' => 'keyword',
+                'ignore_above' => 10000,
+                'normalizer' => 'sw_lowercase_normalizer',
+                'fields' => [
+                    'search' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_whitespace_analyzer',
+                    ],
+                    'ngram' => ['type' => 'text', 'analyzer' => 'sw_ngram_analyzer'],
+                ],
+            ],
+            $customFields['properties']['lang_en']['properties']['test2']
+        );
+        static::assertSame(
+            [
+                'type' => 'keyword',
+                'ignore_above' => 10000,
+                'normalizer' => 'sw_lowercase_normalizer',
+                'fields' => [
+                    'search' => [
+                        'type' => 'text',
+                        'analyzer' => 'sw_whitespace_analyzer',
+                    ],
+                    'ngram' => ['type' => 'text', 'analyzer' => 'sw_ngram_analyzer'],
+                ],
+            ],
+            $customFields['properties']['lang_de']['properties']['test2']
+        );
+    }
+
+    public function testGetDefinition(): void
+    {
+        $registry = $this->getDefinitionRegistry();
+
+        $definition = $registry->get(ProductDefinition::class);
+
+        static::assertInstanceOf(ProductDefinition::class, $definition);
+
+        $esDefinition = new ElasticsearchProductDefinition(
+            $definition,
+            static::createStub(Connection::class),
+            static::createStub(ProductSearchQueryBuilder::class),
+            static::createStub(ElasticsearchFieldBuilder::class),
+            static::createStub(ElasticsearchFieldMapper::class),
+            static::createStub(SalesChannelLanguageLoader::class),
+            false,
+            'dev',
+            static::createStub(LanguageLoaderInterface::class)
+        );
+
+        static::assertSame($definition, $esDefinition->getEntityDefinition());
+    }
+
+    public function testBuildTermQueryUsingSearchQueryBuilder(): void
+    {
+        $searchQueryBuilder = static::createStub(ProductSearchQueryBuilder::class);
+        $boolQuery = new BoolQuery();
+        $boolQuery->add(new MatchQuery('name', 'test'));
+        $searchQueryBuilder
+            ->method('build')
+            ->willReturn($boolQuery);
+
+        $registry = $this->getDefinitionRegistry();
+        $definition = $registry->get(ProductDefinition::class);
+        static::assertInstanceOf(ProductDefinition::class, $definition);
+
+        $utils = new ElasticsearchIndexingUtils(static::createStub(Connection::class), new EventDispatcher(), new ParameterBag([]));
+        $fieldBuilder = new ElasticsearchFieldBuilder(new StaticLanguageLoader([]), $utils, []);
+        $fieldMapper = new ElasticsearchFieldMapper($utils);
+
+        $definition = new ElasticsearchProductDefinition(
+            $definition,
+            static::createStub(Connection::class),
+            $searchQueryBuilder,
+            $fieldBuilder,
+            $fieldMapper,
+            static::createStub(SalesChannelLanguageLoader::class),
+            false,
+            'dev',
+            static::createStub(LanguageLoaderInterface::class)
+        );
+
+        $criteria = new Criteria();
+        $criteria->setTerm('test');
+        $query = $definition->buildTermQuery(Context::createDefaultContext(), $criteria);
+
+        $queries = $query->toArray();
+
+        static::assertSame([
+            'match' => [
+                'name' => [
+                    'query' => 'test',
+                ],
+            ],
+        ], $queries);
+    }
+
+    public function testFetching(): void
+    {
+        $registry = $this->getDefinitionRegistry();
+        $definition = $registry->get(ProductDefinition::class);
+        static::assertInstanceOf(ProductDefinition::class, $definition);
+
+        $salesChannelLanguageLoader = new StaticSalesChannelLanguageLoader([
+            Defaults::LANGUAGE_SYSTEM => [TestDefaults::SALES_CHANNEL],
+        ]);
+
+        $connection = $this->getConnection();
+        $definition = new ElasticsearchProductDefinition(
+            $definition,
+            $connection,
+            static::createStub(ProductSearchQueryBuilder::class),
+            static::createStub(ElasticsearchFieldBuilder::class),
+            static::createStub(ElasticsearchFieldMapper::class),
+            $salesChannelLanguageLoader,
+            false,
+            'dev',
+            static::createStub(LanguageLoaderInterface::class)
+        );
+
+        $uuid = $this->ids->get('product-1');
+        $documents = $definition->fetch([$uuid], Context::createDefaultContext());
+        static::assertArrayHasKey($uuid, $documents);
+
+        $document = $documents[$uuid];
+
+        static::assertSame($uuid, $document['id']);
+        static::assertArrayHasKey('name', $document);
+        static::assertArrayHasKey(Defaults::LANGUAGE_SYSTEM, $document['name']);
+        static::assertSame('Test', $document['name'][Defaults::LANGUAGE_SYSTEM]);
+
+        $prices = [
+            'cheapest_price_rule-1_b7d2554b0ce847cd82f3ac9bd1c0dfca_gross' => 5,
+            'cheapest_price_rule-1_b7d2554b0ce847cd82f3ac9bd1c0dfca_net' => 4,
+            'cheapest_price_rule-1_b7d2554b0ce847cd82f3ac9bd1c0dfc2_gross' => 5,
+            'cheapest_price_rule-1_b7d2554b0ce847cd82f3ac9bd1c0dfc2_net' => 4,
+            'cheapest_price_rule-1_b7d2554b0ce847cd82f3ac9bd1c0dfc2_gross_percentage' => 1,
+            'cheapest_price_rule-1_b7d2554b0ce847cd82f3ac9bd1c0dfc2_net_percentage' => 2,
+        ];
+
+        foreach ($prices as $key => $price) {
+            static::assertArrayHasKey($key, $document);
+
+            static::assertSame($price, $document[$key]);
+        }
+
+        static::assertSame(
+            [
+                '809c1844f4734243b6aa04aba860cd45',
+                'e4a08f9dd88f4a228240de7107e4ae4b',
+            ],
+            $document['propertyIds']
+        );
+
+        static::assertSame(
+            [
+                '8a31464f3686451aad355aa21a3eab38',
+                '9b42575f4797562bbe466bb32b4fbc49',
+            ],
+            $document['streamIds']
+        );
+
+        if (Feature::isActive('v6.8.0.0')) {
+            static::assertArrayHasKey('visibility_sc-1', $document);
+            static::assertArrayHasKey('visibility_sc-2', $document);
+            static::assertSame(30, $document['visibility_sc-1']);
+            static::assertSame(20, $document['visibility_sc-2']);
+        } else {
+            static::assertArrayHasKey('visibilities', $document);
+
+            static::assertSame(
+                [
+                    [
+                        '_count' => 1,
+                        'visibility' => 20,
+                        'salesChannelId' => 'sc-2',
+                    ],
+                    [
+                        '_count' => 1,
+                        'visibility' => 20,
+                        'salesChannelId' => 'sc-2',
+                    ],
+                    [
+                        '_count' => 1,
+                        'visibility' => 20,
+                        'salesChannelId' => 'sc-2',
+                    ],
+                    [
+                        '_count' => 1,
+                        'visibility' => 30,
+                        'salesChannelId' => 'sc-1',
+                    ],
+                    [
+                        '_count' => 1,
+                        'visibility' => 30,
+                        'salesChannelId' => 'sc-1',
+                    ],
+                    [
+                        '_count' => 1,
+                        'visibility' => 20,
+                        'salesChannelId' => 'sc-2',
+                    ],
+                ],
+                $document['visibilities']
+            );
+        }
+
+        static::assertSame(
+            [
+                [
+                    'id' => '809c1844f4734243b6aa04aba860cd45',
+                    '_count' => 1,
+                    'groupId' => 'a73b9355da654243b92ce16c63e9b6cd',
+                    'group' => [
+                        'id' => 'a73b9355da654243b92ce16c63e9b6cd',
+                        '_count' => 1,
+                    ],
+                    'name' => [
+                        Defaults::LANGUAGE_SYSTEM => 'Property A',
+                    ],
+                ],
+                [
+                    'id' => 'e4a08f9dd88f4a228240de7107e4ae4b',
+                    '_count' => 1,
+                    'groupId' => 'a73b9355da654243b92ce16c63e9b6cd',
+                    'group' => [
+                        'id' => 'a73b9355da654243b92ce16c63e9b6cd',
+                        '_count' => 1,
+                    ],
+                    'name' => [
+                        Defaults::LANGUAGE_SYSTEM => 'Property B',
+                    ],
+                ],
+            ],
+            $document['properties']
+        );
+    }
+
+    public function testFetchingWithSalesChannelLanguageMissingDefaultLang(): void
+    {
+        $registry = $this->getDefinitionRegistry();
+        $definition = $registry->get(ProductDefinition::class);
+        static::assertInstanceOf(ProductDefinition::class, $definition);
+
+        $lang1 = Uuid::randomHex();
+
+        $salesChannelLanguageLoader = new StaticSalesChannelLanguageLoader([
+            $lang1 => [TestDefaults::SALES_CHANNEL],
+        ]);
+
+        $connection = $this->getConnection(2);
+        $definition = new ElasticsearchProductDefinition(
+            $definition,
+            $connection,
+            static::createStub(ProductSearchQueryBuilder::class),
+            static::createStub(ElasticsearchFieldBuilder::class),
+            static::createStub(ElasticsearchFieldMapper::class),
+            $salesChannelLanguageLoader,
+            false,
+            'dev',
+            static::createStub(LanguageLoaderInterface::class)
+        );
+
+        $uuid = $this->ids->get('product-1');
+        $documents = $definition->fetch([$uuid], Context::createDefaultContext());
+        static::assertArrayHasKey($uuid, $documents);
+
+        $document = $documents[$uuid];
+
+        static::assertSame($uuid, $document['id']);
+        static::assertArrayHasKey('name', $document);
+        static::assertArrayHasKey(Defaults::LANGUAGE_SYSTEM, $document['name']);
+        static::assertSame('Test', $document['name'][Defaults::LANGUAGE_SYSTEM]);
+    }
+
+    public function testFetchFormatsCustomFieldsAndRemovesNotMappedFields(): void
+    {
+        $connection = $this->getConnection();
+
+        $languageLoader = new StaticLanguageLoader([
+            Defaults::LANGUAGE_SYSTEM => [
+                'id' => Defaults::LANGUAGE_SYSTEM,
+                'parentId' => 'parentId',
+                'code' => 'en-GB',
+            ],
+        ]);
+
+        $salesChannelLanguageLoader = new StaticSalesChannelLanguageLoader([
+            Defaults::LANGUAGE_SYSTEM => [TestDefaults::SALES_CHANNEL],
+        ]);
+
+        $parameterBag = new ParameterBag([
+            'elasticsearch.product.custom_fields_mapping' => ['bool' => CustomFieldTypes::BOOL, 'int' => CustomFieldTypes::INT],
+        ]);
+
+        $instanceRegistry = $this->getDefinitionRegistry();
+
+        $utils = new ElasticsearchIndexingUtils($connection, new EventDispatcher(), $parameterBag);
+        $fieldBuilder = new ElasticsearchFieldBuilder($languageLoader, $utils, []);
+        $fieldMapper = new ElasticsearchFieldMapper($utils);
+
+        $definition = new ElasticsearchProductDefinition(
+            $instanceRegistry->get(ProductDefinition::class),
+            $connection,
+            static::createStub(ProductSearchQueryBuilder::class),
+            $fieldBuilder,
+            $fieldMapper,
+            $salesChannelLanguageLoader,
+            false,
+            'dev',
+            static::createStub(LanguageLoaderInterface::class)
+        );
+
+        $uuid = $this->ids->get('product-1');
+        $documents = $definition->fetch([$uuid], Context::createDefaultContext());
+
+        static::assertArrayHasKey($uuid, $documents);
+        static::assertArrayHasKey('customFields', $documents[$uuid]);
+        static::assertArrayHasKey(Defaults::LANGUAGE_SYSTEM, $documents[$uuid]['customFields']);
+        static::assertArrayHasKey('bool', $documents[$uuid]['customFields'][Defaults::LANGUAGE_SYSTEM]);
+        static::assertIsBool($documents[$uuid]['customFields'][Defaults::LANGUAGE_SYSTEM]['bool']);
+        static::assertArrayHasKey('int', $documents[$uuid]['customFields'][Defaults::LANGUAGE_SYSTEM]);
+        static::assertIsFloat($documents[$uuid]['customFields'][Defaults::LANGUAGE_SYSTEM]['int']);
+        static::assertArrayNotHasKey('unknown', $documents[$uuid]['customFields'][Defaults::LANGUAGE_SYSTEM]);
+    }
+
+    public function testProductNumberIncludesParentProductNumber(): void
+    {
+        $registry = $this->getDefinitionRegistry();
+        $definition = $registry->get(ProductDefinition::class);
+        static::assertInstanceOf(ProductDefinition::class, $definition);
+
+        $salesChannelLanguageLoader = new StaticSalesChannelLanguageLoader([
+            Defaults::LANGUAGE_SYSTEM => [TestDefaults::SALES_CHANNEL],
+        ]);
+
+        $connection = $this->getConnectionWithProductData('PARENT-456');
+        $definition = new ElasticsearchProductDefinition(
+            $definition,
+            $connection,
+            static::createStub(ProductSearchQueryBuilder::class),
+            static::createStub(ElasticsearchFieldBuilder::class),
+            static::createStub(ElasticsearchFieldMapper::class),
+            $salesChannelLanguageLoader,
+            false,
+            'dev',
+            static::createStub(LanguageLoaderInterface::class)
+        );
+
+        $uuid = $this->ids->get('product-1');
+        $documents = $definition->fetch([$uuid], Context::createDefaultContext());
+        static::assertArrayHasKey($uuid, $documents);
+
+        $document = $documents[$uuid];
+
+        static::assertArrayHasKey('productNumber', $document);
+        static::assertIsArray($document['productNumber']);
+        static::assertContains('PRODUCT-123', $document['productNumber']);
+        static::assertContains('PARENT-456', $document['productNumber']);
+        static::assertCount(2, $document['productNumber']);
+    }
+
+    public function testProductNumberExcludesNullParentProductNumber(): void
+    {
+        $registry = $this->getDefinitionRegistry();
+        $definition = $registry->get(ProductDefinition::class);
+        static::assertInstanceOf(ProductDefinition::class, $definition);
+
+        $salesChannelLanguageLoader = new StaticSalesChannelLanguageLoader([
+            Defaults::LANGUAGE_SYSTEM => [TestDefaults::SALES_CHANNEL],
+        ]);
+
+        $connection = $this->getConnectionWithProductData(null);
+        $definition = new ElasticsearchProductDefinition(
+            $definition,
+            $connection,
+            static::createStub(ProductSearchQueryBuilder::class),
+            static::createStub(ElasticsearchFieldBuilder::class),
+            static::createStub(ElasticsearchFieldMapper::class),
+            $salesChannelLanguageLoader,
+            false,
+            'dev',
+            static::createStub(LanguageLoaderInterface::class)
+        );
+
+        $uuid = $this->ids->get('product-1');
+        $documents = $definition->fetch([$uuid], Context::createDefaultContext());
+        static::assertArrayHasKey($uuid, $documents);
+
+        $document = $documents[$uuid];
+
+        static::assertArrayHasKey('productNumber', $document);
+        static::assertIsArray($document['productNumber']);
+        static::assertContains('PRODUCT-123', $document['productNumber']);
+        static::assertNotContains(null, $document['productNumber']);
+        static::assertCount(1, $document['productNumber']);
+    }
+
+    public function testParentContainsParentName(): void
+    {
+        $registry = $this->getDefinitionRegistry();
+        $definition = $registry->get(ProductDefinition::class);
+        static::assertInstanceOf(ProductDefinition::class, $definition);
+
+        $salesChannelLanguageLoader = new StaticSalesChannelLanguageLoader([
+            Defaults::LANGUAGE_SYSTEM => [TestDefaults::SALES_CHANNEL],
+        ]);
+
+        $connection = $this->getConnectionWithProductData(
+            parentProductNumber: 'PARENT-456',
+            name: 'Child Product',
+            parentName: 'Parent Product'
+        );
+        $definition = new ElasticsearchProductDefinition(
+            $definition,
+            $connection,
+            static::createStub(ProductSearchQueryBuilder::class),
+            static::createStub(ElasticsearchFieldBuilder::class),
+            static::createStub(ElasticsearchFieldMapper::class),
+            $salesChannelLanguageLoader,
+            false,
+            'dev',
+            static::createStub(LanguageLoaderInterface::class)
+        );
+
+        $uuid = $this->ids->get('product-1');
+        $documents = $definition->fetch([$uuid], Context::createDefaultContext());
+        static::assertArrayHasKey($uuid, $documents);
+
+        $document = $documents[$uuid];
+
+        static::assertArrayHasKey('parent', $document);
+        static::assertArrayHasKey('name', $document['parent']);
+        static::assertArrayHasKey(Defaults::LANGUAGE_SYSTEM, $document['parent']['name']);
+        static::assertSame(
+            'Parent Product',
+            $document['parent']['name'][Defaults::LANGUAGE_SYSTEM]
+        );
+    }
+
+    private function getConnection(int $numberOfTranslations = 1): Stub&Connection
+    {
+        $connection = static::createStub(Connection::class);
+
+        $calls = [
+            [
+                $this->ids->get('product-1') => [
+                    'id' => $this->ids->get('product-1'),
+                    'parentId' => null,
+                    'productNumber' => 1,
+                    'autoIncrement' => 1,
+                    'ean' => '',
+                    'active' => true,
+                    'available' => true,
+                    'isCloseout' => true,
+                    'shippingFree' => true,
+                    'markAsTopseller' => true,
+                    'availableStock' => 5,
+                    'tags' => '{}',
+                    'ratingAverage' => 4,
+                    'sales' => 4,
+                    'stock' => 4,
+                    'weight' => 4,
+                    'width' => 4,
+                    'height' => 4,
+                    'length' => 4,
+                    'productManufacturerId' => null,
+                    'deliveryTimeId' => null,
+                    'manufacturerNumber' => null,
+                    'taxId' => 'tax',
+                    'displayGroup' => '1',
+                    'coverId' => null,
+                    'childCount' => 0,
+                    'cheapest_price_accessor' => '{"rule-1": {"b7d2554b0ce847cd82f3ac9bd1c0dfca": {"gross": 5, "net": 4}, "b7d2554b0ce847cd82f3ac9bd1c0dfc2": {"gross": 5, "net": 4, "percentage": {"gross": 1, "net": 2}}}}',
+                    'visibilities' => '[{"visibility": 20, "salesChannelId": "sc-2"}, {"visibility": 20, "salesChannelId": "sc-2"}, {"visibility": 20, "salesChannelId": "sc-2"}, {"visibility": 30, "salesChannelId": "sc-1"}, {"visibility": 30, "salesChannelId": "sc-1"}, {"visibility": 20, "salesChannelId": "sc-2"}]',
+                    'propertyIds' => '["809c1844f4734243b6aa04aba860cd45", "e4a08f9dd88f4a228240de7107e4ae4b"]',
+                    'optionIds' => '["809c1844f4734243b6aa04aba860cd45", "e4a08f9dd88f4a228240de7107e4ae4b"]',
+                    'streamIds' => '["8a31464f3686451aad355aa21a3eab38", "9b42575f4797562bbe466bb32b4fbc49"]',
+                    'tagIds' => '["c3f9a1e2b5d64a8e9f7c3b2a1e5d4c8b", "d4e8b2f1c5a64d9e8c7b3a2f1e5d4c9a"]',
+                    'categoryIds' => '["7f8d9e2c4b5a64f9e8d7c6b5a4e3d2c1", "8e9f3d4c5a6b7e8d9c7f6e5d4c3b2a1f"]',
+                    'categoryTree' => '["7f8d9e2c4b5a64f9e8d7c6b5a4e3d2c1", "8e9f3d4c5a6b7e8d9c7f6e5d4c3b2a1f"]',
+                    'type' => ProductDefinition::TYPE_PHYSICAL,
+                    'states' => '["9f7e6d5c4b3a2e1d9c8b7a6f5e4d3c2b"]',
+                ],
+            ],
+        ];
+
+        for ($i = 0; $i < $numberOfTranslations; ++$i) {
+            $calls[] = [
+                $this->ids->get('product-1') => [
+                    'id' => $this->ids->get('product-1'),
+                    'name' => 'Test',
+                    'customFields' => '{"bool": "1", "int": 2, "unknown": "foo"}',
+                    'manufacturerName' => 'Shopwell AG',
+                    'categories' => '[{"id": null, "languageId": null, "name": null}, {"id": 1, "languageId": "2fbb5fe2e29a4d70aa5854ce7ce3e20b", "name": "Cat Test"}]',
+                ],
+            ];
+        }
+
+        $calls[] = [
+            '809c1844f4734243b6aa04aba860cd45' => [
+                'id' => '809c1844f4734243b6aa04aba860cd45',
+                'groupId' => 'a73b9355da654243b92ce16c63e9b6cd',
+                'group' => [
+                    'id' => 'a73b9355da654243b92ce16c63e9b6cd',
+                ],
+                'translations' => json_encode([
+                    [
+                        'languageId' => '2fbb5fe2e29a4d70aa5854ce7ce3e20b',
+                        'name' => 'Property A',
+                    ],
+                ]),
+            ],
+            'e4a08f9dd88f4a228240de7107e4ae4b' => [
+                'id' => 'e4a08f9dd88f4a228240de7107e4ae4b',
+                'groupId' => 'a73b9355da654243b92ce16c63e9b6cd',
+                'group' => [
+                    'id' => 'a73b9355da654243b92ce16c63e9b6cd',
+                ],
+                'translations' => json_encode([
+                    [
+                        'languageId' => '2fbb5fe2e29a4d70aa5854ce7ce3e20b',
+                        'name' => 'Property B',
+                    ],
+                ]),
+            ],
+        ];
+
+        $connection
+            ->method('fetchAllAssociativeIndexed')
+            ->willReturnOnConsecutiveCalls(...$calls);
+
+        return $connection;
+    }
+
+    private function getConnectionWithProductData(
+        ?string $parentProductNumber,
+        string $name = 'Test Product',
+        ?string $parentName = null
+    ): Stub&Connection {
+        $connection = static::createStub(Connection::class);
+
+        $baseProductData = [
+            'id' => $this->ids->get('product-1'),
+            'parentId' => $parentProductNumber,
+            'productNumber' => 'PRODUCT-123',
+            'parentProductNumber' => $parentProductNumber,
+            'autoIncrement' => 1,
+            'ean' => '',
+            'active' => true,
+            'available' => true,
+            'isCloseout' => true,
+            'shippingFree' => true,
+            'markAsTopseller' => true,
+            'availableStock' => 5,
+            'tags' => '{}',
+            'ratingAverage' => 4,
+            'sales' => 4,
+            'stock' => 4,
+            'weight' => 4,
+            'width' => 4,
+            'height' => 4,
+            'length' => 4,
+            'productManufacturerId' => null,
+            'deliveryTimeId' => null,
+            'manufacturerNumber' => null,
+            'taxId' => 'tax',
+            'displayGroup' => '1',
+            'coverId' => null,
+            'childCount' => 0,
+            'cheapest_price_accessor' => '{}',
+            'visibilities' => '[{"visibility": 20, "salesChannelId": "sc-2"}]',
+            'propertyIds' => '[]',
+            'optionIds' => '[]',
+            'type' => ProductDefinition::TYPE_PHYSICAL,
+        ];
+
+        $translationData = [
+            'id' => $this->ids->get('product-1'),
+            'name' => $name,
+            'parentName' => $parentName,
+            'customFields' => '{}',
+            'manufacturerName' => 'Test Manufacturer',
+            'categories' => '[]',
+        ];
+
+        $connection
+            ->method('fetchAllAssociativeIndexed')
+            ->willReturnOnConsecutiveCalls(
+                [$this->ids->get('product-1') => $baseProductData],
+                [$this->ids->get('product-1') => $translationData]
+            );
+
+        return $connection;
+    }
+
+    private function getDefinitionRegistry(): DefinitionInstanceRegistry
+    {
+        return new StaticDefinitionInstanceRegistry(
+            [
+                ProductDefinition::class,
+                ProductTranslationDefinition::class,
+            ],
+            static::createStub(ValidatorInterface::class),
+            static::createStub(EntityWriteGatewayInterface::class)
+        );
+    }
+}

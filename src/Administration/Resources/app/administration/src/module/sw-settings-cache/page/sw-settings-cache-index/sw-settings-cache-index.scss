@@ -1,0 +1,93 @@
+.sw-settings-cache {
+    .sw-card-section {
+        width: 100%;
+        padding: var(--scale-size-30) 0;
+    }
+
+    &__card {
+        &-toolbar {
+            display: flex;
+            column-gap: var(--scale-size-32);
+            row-gap: var(--scale-size-16);
+            flex-wrap: wrap;
+            padding: var(--scale-size-6) 0;
+            width: 100%;
+            font-size: var(--font-size-xs);
+            line-height: var(--font-line-height-xs);
+
+            &-heading {
+                font-weight: var(--font-weight-semi-bold);
+            }
+        }
+
+        &-section-heading {
+            font-size: var(--font-size-xs);
+            line-height: var(--font-line-height-xs);
+            font-weight: var(--font-weight-semi-bold);
+        }
+
+        .mt-card__content {
+            .sw-card-section:first-child {
+                padding-top: 0;
+            }
+
+            .sw-card-section:last-child {
+                padding-bottom: 0;
+            }
+        }
+    }
+
+    &__card-indexes {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-24);
+
+        .mt-select {
+            margin-bottom: 0;
+        }
+    }
+
+    &__indexers-entry {
+        padding: var(--scale-size-12) var(--scale-size-16);
+        border-radius: var(--border-radius-xs);
+
+        &:hover {
+            background: var(--color-background-brand-default);
+
+            .mt-field__label {
+                color: var(--color-text-brand-default);
+            }
+        }
+    }
+
+    &__indexers-list {
+        list-style: none;
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+
+        & > li > ul {
+            list-style: none;
+            margin-left: var(--scale-size-24);
+        }
+    }
+
+    &__indexers-placeholder {
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        color: var(--color-text-secondary-default) !important;
+        padding-left: var(--scale-size-8);
+        padding-top: 5px;
+    }
+
+    &__indexers-select {
+        &.sw-field {
+            margin: 0;
+        }
+
+        &.sw-select {
+            .sw-select__selection {
+                padding-top: var(--scale-size-8);
+            }
+        }
+    }
+}

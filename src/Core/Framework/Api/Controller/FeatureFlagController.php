@@ -1,0 +1,84 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Api\Controller;
+
+use Shopwell\Core\Framework\Adapter\Cache\CacheClearer;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Feature\FeatureFlagRegistry;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\PlatformRequest;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Package('framework')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [ApiRouteScope::ID]])]
+class FeatureFlagController
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly FeatureFlagRegistry $featureFlagService,
+        private readonly CacheClearer $cacheClearer
+    ) {
+    }
+
+    #[Route(
+        path: '/api/_action/feature-flag/enable/{feature}',
+        name: 'api.action.feature-flag.enable',
+        defaults: [
+            'auth_required' => true,
+            PlatformRequest::ATTRIBUTE_ACL => ['api_feature_flag_toggle'],
+        ],
+        methods: [Request::METHOD_POST]
+    )]
+    public function enable(string $feature): JsonResponse
+    {
+        $this->featureFlagService->enable($feature);
+
+        $this->cacheClearer->clear();
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route(
+        path: '/api/_action/feature-flag/disable/{feature}',
+        name: 'api.action.feature-flag.disable',
+        defaults: [
+            'auth_required' => true,
+            PlatformRequest::ATTRIBUTE_ACL => ['api_feature_flag_toggle'],
+        ],
+        methods: [Request::METHOD_POST]
+    )]
+    public function disable(string $feature): JsonResponse
+    {
+        $this->featureFlagService->disable($feature);
+
+        $this->cacheClearer->clear();
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route(
+        path: '/api/_action/feature-flag',
+        name: 'api.action.feature-flag.load',
+        defaults: [
+            'auth_required' => true,
+            PlatformRequest::ATTRIBUTE_ACL => ['api_feature_flag_toggle'],
+        ],
+        methods: [Request::METHOD_GET]
+    )]
+    public function load(): JsonResponse
+    {
+        $featureFlags = Feature::getRegisteredFeatures();
+
+        foreach ($featureFlags as $featureKey => $feature) {
+            $featureFlags[$featureKey]['active'] = Feature::isActive($featureKey);
+        }
+
+        return new JsonResponse($featureFlags);
+    }
+}

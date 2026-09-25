@@ -1,0 +1,10 @@
+.DS_Store
+node_modules/
+dist/
+public/
+npm-debug.log
+yarn-error.log
+test/unit/coverage
+selenium-debug.log
+.tmp
+sw-plugin-dev.json

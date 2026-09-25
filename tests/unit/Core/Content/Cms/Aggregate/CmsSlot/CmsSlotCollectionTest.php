@@ -1,0 +1,69 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Cms\Aggregate\CmsSlot;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotCollection;
+use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[CoversClass(CmsSlotCollection::class)]
+class CmsSlotCollectionTest extends TestCase
+{
+    public function testGetSlot(): void
+    {
+        $collection = new CmsSlotCollection([
+            $this->getSlot('left'),
+            $this->getSlot('right'),
+            $this->getSlot('top'),
+            $this->getSlot('bottom'),
+        ]);
+
+        static::assertInstanceOf(CmsSlotEntity::class, $collection->getSlot('left'));
+        static::assertInstanceOf(CmsSlotEntity::class, $collection->getSlot('right'));
+        static::assertInstanceOf(CmsSlotEntity::class, $collection->getSlot('top'));
+        static::assertInstanceOf(CmsSlotEntity::class, $collection->getSlot('bottom'));
+
+        static::assertSame('left', $collection->getSlot('left')->getSlot());
+        static::assertSame('right', $collection->getSlot('right')->getSlot());
+        static::assertSame('top', $collection->getSlot('top')->getSlot());
+        static::assertSame('bottom', $collection->getSlot('bottom')->getSlot());
+    }
+
+    public function testGetSlotAfterAdding(): void
+    {
+        $leftSlot = $this->getSlot('left');
+
+        $collection = new CmsSlotCollection([
+            $this->getSlot('top'),
+            $this->getSlot('bottom'),
+        ]);
+
+        static::assertInstanceOf(CmsSlotEntity::class, $collection->getSlot('top'));
+        static::assertInstanceOf(CmsSlotEntity::class, $collection->getSlot('bottom'));
+
+        static::assertSame('top', $collection->getSlot('top')->getSlot());
+        static::assertSame('bottom', $collection->getSlot('bottom')->getSlot());
+        static::assertNull($collection->getSlot('left'));
+
+        $collection->add($leftSlot);
+
+        static::assertNotNull($collection->getSlot('left'));
+        static::assertSame('left', $collection->getSlot('left')->getSlot());
+    }
+
+    private function getSlot(string $slotName): CmsSlotEntity
+    {
+        $slot = new CmsSlotEntity();
+        $slot->setUniqueIdentifier(Uuid::randomHex());
+        $slot->setSlot($slotName);
+
+        return $slot;
+    }
+}

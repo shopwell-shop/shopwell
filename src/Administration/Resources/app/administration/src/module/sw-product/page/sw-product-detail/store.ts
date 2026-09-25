@@ -1,0 +1,285 @@
+/*
+ * @sw-package inventory
+ */
+
+import type EntityCollection from '@shopware-ag/meteor-admin-sdk/es/_internals/data/EntityCollection';
+import type { ContextStore } from '../../../../app/store/context.store';
+
+type LoadingProperties =
+    | 'init'
+    | 'product'
+    | 'parentProduct'
+    | 'manufacturers'
+    | 'currencies'
+    | 'taxes'
+    | 'customFieldSets'
+    | 'media'
+    | 'rules'
+    | 'variants'
+    | 'defaultFeatureSet'
+    /**
+     * @deprecated tag:v6.8.0 - Remove "advancedMode" from the list.
+     */
+    | 'advancedMode';
+
+type ProductDetailProduct = Entity<'product'> & {
+    isNew: () => boolean;
+    /**
+     * @deprecated tag:v6.8.0 - Will be removed, use `type` instead.
+     */
+    states?: string[];
+};
+
+const swProductDetail = Shopwell.Store.register({
+    id: 'swProductDetail',
+
+    state() {
+        return {
+            product: {} as ProductDetailProduct,
+            parentProduct: {} as Entity<'product'>,
+            currencies: [] as Entity<'currency'>[],
+            apiContext: {} as ContextStore['api'],
+            taxes: [] as Entity<'tax'>[],
+            variants: [],
+            customFieldSets: [] as { id: EntityKey<'custom_field_set'> }[],
+            defaultFeatureSet: {} as Entity<'product_feature_set'>,
+            loading: {
+                init: false,
+                product: false,
+                parentProduct: false,
+                manufacturers: false,
+                currencies: false,
+                taxes: false,
+                customFieldSets: false,
+                media: false,
+                rules: false,
+                variants: false,
+                defaultFeatureSet: false,
+                /**
+                 * @deprecated tag:v6.8.0 - will be removed without replacement
+                 */
+                advancedMode: false,
+            },
+            localMode: false,
+            /**
+             * @deprecated tag:v6.8.0 - will be removed without replacement
+             */
+            advancedModeSetting: {} as { value?: { advancedMode: { enabled: boolean } } },
+            modeSettings: [
+                'general_information',
+                'prices',
+                'deliverability',
+                'visibility_structure',
+                'media',
+                'labelling',
+                'measurement',
+                'selling_packaging',
+                'properties',
+                'essential_characteristics',
+                'custom_fields',
+            ],
+            /**
+             * @deprecated tag:v6.8.0 - Will be removed, use `creationType` instead.
+             */
+            creationStates: [] as string[],
+            /* Product "types" provided by the split button for creating a new product through a router parameter */
+            creationType: 'physical' as string,
+            lengthUnit: 'mm',
+            weightUnit: 'kg',
+        };
+    },
+
+    getters: {
+        isLoading: (state): boolean => {
+            return Object.values(state.loading).some((loadState) => loadState);
+        },
+
+        defaultCurrency(state): Entity<'currency'> | { id: undefined } {
+            if (!state.currencies || !state.currencies.length) {
+                return { id: undefined };
+            }
+
+            const defaultCurrency = state.currencies.find((currency) => currency.isSystemDefault);
+
+            return defaultCurrency || { id: undefined };
+        },
+
+        defaultPrice(state): object {
+            let productPrice: [] = state.product.price as [];
+
+            // check if price exist
+            if (!productPrice) {
+                // if parent price does not exist
+                if (!state.parentProduct.price) {
+                    return {};
+                }
+
+                productPrice = state.parentProduct.price as [];
+            }
+
+            // get default price bases on currency
+            return (
+                productPrice.find((price: { currencyId: 'string' }) => {
+                    return price.currencyId === this.defaultCurrency.id;
+                }) ?? {}
+            );
+        },
+
+        getDefaultFeatureSet(state): Entity<'product_feature_set'> | object {
+            if (!state.defaultFeatureSet) {
+                return {};
+            }
+
+            return state.defaultFeatureSet;
+        },
+
+        productTaxRate(state): Entity<'tax'> | object {
+            if (!state.taxes) {
+                return {};
+            }
+
+            return (
+                state.taxes.find((tax) => {
+                    if (!state.product.taxId) {
+                        if (!state.parentProduct.taxId) {
+                            return {};
+                        }
+
+                        return tax.id === state.parentProduct.taxId;
+                    }
+
+                    return tax.id === state.product.taxId;
+                }) ?? {}
+            );
+        },
+
+        isChild(state): boolean {
+            return !!state.product?.parentId;
+        },
+
+        /**
+         * @deprecated tag:v6.8.0 - will be removed without replacement
+         */
+        showModeSetting(state): boolean {
+            return !!state.product?.parentId || this.advanceModeEnabled;
+        },
+
+        /**
+         * @deprecated tag:v6.8.0 - will be removed without replacement
+         */
+        advanceModeEnabled(state): boolean {
+            return !!state.advancedModeSetting.value?.advancedMode.enabled;
+        },
+
+        productType(state): string {
+            if (state.product.isNew?.() && state.creationType) {
+                return state.creationType;
+            }
+
+            if (state.product.type) {
+                return state.product.type;
+            }
+
+            return 'physical';
+        },
+
+        /**
+         * @deprecated tag:v6.8.0 - Will be removed, use `productType` instead.
+         */
+        productStates(state): string[] {
+            if (state.product.isNew?.() && state.creationStates) {
+                return state.creationStates;
+            }
+
+            if (state.product.states) {
+                return state.product.states;
+            }
+
+            return [];
+        },
+    },
+
+    actions: {
+        showProductCard(key: string) {
+            if (this.product?.parentId) {
+                return true;
+            }
+
+            const cardKeys = ['essential_characteristics', 'custom_fields', 'labelling'];
+
+            if (cardKeys.includes(key) && !this.showModeSetting) {
+                return false;
+            }
+
+            return this.modeSettings?.includes(key);
+        },
+
+        setCustomFields(fieldSet: { id: EntityKey<'custom_field_set'> }) {
+            this.customFieldSets = this.customFieldSets.map((set) => {
+                if (set.id === fieldSet.id) {
+                    return fieldSet;
+                }
+                return set;
+            });
+        },
+
+        setLoading(value: [LoadingProperties, boolean]) {
+            const name = value[0];
+            const data = value[1];
+
+            // check for using from JS
+            if (typeof data !== 'boolean') {
+                return false;
+            }
+
+            if (this.loading[name] !== undefined) {
+                this.loading[name] = data;
+                return true;
+            }
+            return false;
+        },
+
+        setAssignedProductsFromCrossSelling({
+            id,
+            collection,
+        }: {
+            id: EntityKey<'product_cross_selling'>;
+            collection: EntityCollection<'product_cross_selling_assigned_products'>;
+        }) {
+            const entity = this.product.crossSellings?.get(id);
+            if (!entity) return;
+            entity.assignedProducts = collection;
+        },
+
+        setTaxes(newTaxes: Entity<'tax'>[]) {
+            this.taxes = newTaxes;
+
+            // if product has no tax id and is not a child product, set the first tax id
+            if (this.product && this.product.taxId === null && !this.isChild) {
+                this.product.taxId = this.taxes[0]?.id;
+            }
+        },
+
+        setDefaultFeatureSet(newDefaultFeatureSet: Entity<'product_feature_set'>) {
+            this.defaultFeatureSet = newDefaultFeatureSet;
+        },
+
+        setLengthUnit(unit: string) {
+            this.lengthUnit = unit;
+        },
+
+        setWeightUnit(unit: string) {
+            this.weightUnit = unit;
+        },
+    },
+});
+
+/**
+ * @private
+ */
+export default swProductDetail;
+
+/**
+ * @private
+ */
+export type SwProductDetailStore = ReturnType<typeof swProductDetail>;

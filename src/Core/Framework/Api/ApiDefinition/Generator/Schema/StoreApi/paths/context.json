@@ -1,0 +1,245 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/context": {
+            "get": {
+                "tags": [
+                    "System & Context"
+                ],
+                "summary": "Fetch the current context",
+                "description": "Fetches the current context. This includes for example the `customerGroup`, `currency`, `taxRules` and many more.",
+                "operationId": "readContext",
+                "responses": {
+                    "200": {
+                        "description": "Returns the current context.",
+                        "headers": {
+                            "sw-context-token": {
+                                "description": "Contains sw-context-token value",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SalesChannelContext"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "System & Context"
+                ],
+                "summary": "Modify the current context",
+                "description": "Used for switching the context. A typical example would be changing the language or changing the currency.",
+                "operationId": "updateContext",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "currencyId": {
+                                        "description": "Currency",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    },
+                                    "languageId": {
+                                        "description": "Language",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    },
+                                    "billingAddressId": {
+                                        "description": "Billing Address",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    },
+                                    "shippingAddressId": {
+                                        "description": "Shipping Address",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    },
+                                    "paymentMethodId": {
+                                        "description": "Payment Method",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    },
+                                    "shippingMethodId": {
+                                        "description": "Shipping Method",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    },
+                                    "countryId": {
+                                        "description": "Country",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    },
+                                    "countryStateId": {
+                                        "description": "Country State",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ContextTokenResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "One of the submitted ids is not a string, or does not reference an entity that is available in the current sales channel."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403",
+                        "description": "A billing or shipping address id was sent without a logged in customer."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ]
+            }
+        },
+        "/context/gateway": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "appName"
+                                ],
+                                "properties": {
+                                    "appName": {
+                                        "type": "string"
+                                    },
+                                    "data": {
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Gateway"
+                ],
+                "summary": "Call the context gateway",
+                "description": "Call the context gateway, which is used to manipulate certain aspects of context (e.g. selected payment methods, register customer, etc.).",
+                "operationId": "contextGateway",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/GatewayContextTokenResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "App server communication error"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "422": {
+                        "description": "Error provided by App Server with message to show customer"
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Gateway"
+                ],
+                "summary": "Call the context gateway",
+                "description": "Call the context gateway, which is used to manipulate certain aspects of context (e.g. selected payment methods, register customer, etc.). Please prefer using the POST version of this endpoint.",
+                "operationId": "contextGatewayGet",
+                "parameters": [
+                    {
+                        "name": "appName",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "data",
+                        "in": "query",
+                        "schema": {
+                            "type": "object"
+                        },
+                        "style": "deepObject"
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/GatewayContextTokenResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "App server communication error"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "422": {
+                        "description": "Error provided by App Server with message to show customer"
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        }
+    }
+}

@@ -1,0 +1,50 @@
+{# @sw-package framework #}
+
+{% block cookie_configuration_group %}
+
+    {% if cookieGroup.cookie is defined or cookieGroup.entries is defined %}
+        <div class="offcanvas-cookie-group">
+            {% sw_include '@Storefront/storefront/layout/cookie/cookie-configuration-parent.html.twig' with {
+                parent: cookieGroup
+            } only %}
+
+            {# @deprecated tag:v6.8.0 - Use `cookieGroup.description` instead of `cookieGroup.snippet_description`. Support for `cookieGroup.snippet_description` will be removed. #}
+            {% set snippetDescription = cookieGroup.snippet_description ?? cookieGroup.description %}
+            {# @deprecated tag:v6.8.0 - Use `cookieGroup.name` instead of `cookieGroup.snippet_name`. Support for `cookieGroup.snippet_name` will be removed. #}
+            {% set snippetName = cookieGroup.snippet_name ?? cookieGroup.name %}
+
+            {% if cookieGroup.entries is not empty or snippetDescription %}
+
+                {% set cookieGroupName = (snippetName|default(''))|replace({'cookie.': '', ' ': '-'}) %}
+                {% set cookieGroupId = 'offcanvas-cookie-entries-' ~ cookieGroupName|lower %}
+
+                {% block cookie_configuration_group_collapse_button %}
+                    <button type="button"
+                            aria-label="{{ 'general.expand'|trans|sw_sanitize }}"
+                            aria-controls="{{ cookieGroupId }}"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#{{ cookieGroupId }}"
+                            class="btn btn-link-inline offcanvas-cookie-entries-toggle">
+
+                        {% sw_icon 'arrow-head-right' style {
+                            size: 'sm',
+                        } %}
+                    </button>
+                {% endblock %}
+
+                <div id="{{ cookieGroupId }}" class="offcanvas-cookie-entries collapse">
+
+                    {% if snippetDescription %}
+                        <p>{{ snippetDescription|trans|sw_sanitize }}</p>
+                    {% endif %}
+
+                    {% for entry in cookieGroup.entries %}
+                        {% sw_include '@Storefront/storefront/layout/cookie/cookie-configuration-child.html.twig' with {
+                            child: entry, isRequired: cookieGroup.isRequired
+                        } only %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

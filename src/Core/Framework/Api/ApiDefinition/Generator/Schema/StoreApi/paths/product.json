@@ -1,0 +1,859 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/product/{productId}/cross-selling": {
+            "post": {
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Fetch cross-selling groups of a product",
+                "description": "This route is used to load the cross sellings for a product. A product has several cross selling definitions in which several products are linked. The route returns the cross sellings together with the linked products",
+                "operationId": "readProductCrossSellings",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sw-include-seo-urls",
+                        "in": "header",
+                        "description": "Instructs Shopwell to try and resolve SEO URLs for the given navigation item",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Found cross sellings",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CrossSellingElementCollection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Fetch cross-selling groups of a product",
+                "description": "This route is used to load the cross sellings for a product. A product has several cross selling definitions in which several products are linked. The route returns the cross sellings together with the linked products",
+                "operationId": "readProductCrossSellingsGet",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sw-include-seo-urls",
+                        "in": "header",
+                        "description": "Instructs Shopwell to try and resolve SEO URLs for the given navigation item",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Found cross sellings",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CrossSellingElementCollection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        },
+        "/product/{productId}": {
+            "post": {
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Fetch a single product",
+                "description": "This route is used to load a single product with the corresponding details. In addition to loading the data, the best variant of the product is determined when a parent id is passed.\n\n**Available Associations:**\n- `downloads` - Downloadable files associated with the product (e.g., manuals, digital content)\n- `children` - Product variants that inherit from this parent product\n- `deliveryTime` - Estimated delivery time for the product\n- `tax` - Tax configuration (rate and calculation rules)\n- `manufacturer` - Product manufacturer or brand information\n- `unit` - Product unit of measure (e.g., piece, liter, kg)\n- `cover` - Main product image displayed in listings and detail pages\n- `openGraphMedia` - Open Graph image for social media sharing\n- `cmsPage` - Custom CMS page layout for the product detail page\n- `canonicalProduct` - Canonical product reference for variant consolidation and SEO purposes\n- `media` - Product images and media gallery\n- `crossSellings` - Cross-selling configurations (related products, accessories, similar items)\n- `configuratorSettings` - Variant configurator settings defining available options for product variants\n- `productReviews` - Customer reviews and ratings for the product\n- `mainCategories` - Primary category assignments per sales channel for SEO and navigation\n- `seoUrls` - SEO-friendly URLs for the product across different sales channels\n- `options` - Product variant options (e.g., size, color) that define different variants\n- `properties` - Product properties and characteristics for filtering\n- `categories` - Categories this product is assigned to\n- `streams` - Dynamic product streams this product belongs to based on defined filters\n- `categoriesRo` - Read-only category tree including all parent categories for optimized queries\n- `tags` - Tags for organizing and filtering products\n- `seoCategory` - Main category used for SEO URL generation in the current sales channel",
+                "operationId": "readProductDetail",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$'"
+                        }
+                    },
+                    {
+                        "description": "Instructs Shopwell to try and resolve SEO URLs for the given navigation item",
+                        "in": "header",
+                        "name": "sw-include-seo-urls",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "sw-include-search-info",
+                        "in": "header",
+                        "description": "Controls whether API search information is included in the response. Default is 1 (enabled), will be 0 (disabled) in the next major version.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "0",
+                                "1"
+                            ],
+                            "default": "1"
+                        }
+                    },
+                    {
+                        "description": "Instructs Shopwell to skip loading the configurator data",
+                        "in": "query",
+                        "name": "skipConfigurator",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "description": "Instructs Shopwell to skip loading the CMS page data",
+                        "in": "query",
+                        "name": "skipCmsPage",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NoneFieldsCriteria"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product information along with variant groups and options",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "No product exists for the given `productId` in this sales channel."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Fetch a single product",
+                "description": "This route is used to load a single product with the corresponding details. In addition to loading the data, the best variant of the product is determined when a parent id is passed.\n\n**Available Associations:**\n- `downloads` - Downloadable files associated with the product (e.g., manuals, digital content)\n- `children` - Product variants that inherit from this parent product\n- `deliveryTime` - Estimated delivery time for the product\n- `tax` - Tax configuration (rate and calculation rules)\n- `manufacturer` - Product manufacturer or brand information\n- `unit` - Product unit of measure (e.g., piece, liter, kg)\n- `cover` - Main product image displayed in listings and detail pages\n- `openGraphMedia` - Open Graph image for social media sharing\n- `cmsPage` - Custom CMS page layout for the product detail page\n- `canonicalProduct` - Canonical product reference for variant consolidation and SEO purposes\n- `media` - Product images and media gallery\n- `crossSellings` - Cross-selling configurations (related products, accessories, similar items)\n- `configuratorSettings` - Variant configurator settings defining available options for product variants\n- `productReviews` - Customer reviews and ratings for the product\n- `mainCategories` - Primary category assignments per sales channel for SEO and navigation\n- `seoUrls` - SEO-friendly URLs for the product across different sales channels\n- `options` - Product variant options (e.g., size, color) that define different variants\n- `properties` - Product properties and characteristics for filtering\n- `categories` - Categories this product is assigned to\n- `streams` - Dynamic product streams this product belongs to based on defined filters\n- `categoriesRo` - Read-only category tree including all parent categories for optimized queries\n- `tags` - Tags for organizing and filtering products\n- `seoCategory` - Main category used for SEO URL generation in the current sales channel",
+                "operationId": "readProductDetailGet",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$'"
+                        }
+                    },
+                    {
+                        "description": "Instructs Shopwell to try and resolve SEO URLs for the given navigation item",
+                        "in": "header",
+                        "name": "sw-include-seo-urls",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "description": "Instructs Shopwell to skip loading the configurator data",
+                        "in": "query",
+                        "name": "skipConfigurator",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "description": "Instructs Shopwell to skip loading the CMS page data",
+                        "in": "query",
+                        "name": "skipCmsPage",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "x-parameter-group": "noneFieldsCriteria"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product information along with variant groups and options",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "No product exists for the given `productId` in this sales channel."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        },
+        "/product": {
+            "post": {
+                "tags": [
+                    "Product",
+                    "Endpoints supporting Criteria "
+                ],
+                "summary": "Fetch a list of products",
+                "description": "List products that match the given criteria. For performance reasons a limit should always be set.\n\n**Available Associations:**\n- `downloads` - Downloadable files associated with the product (e.g., manuals, digital content)\n- `children` - Product variants that inherit from this parent product\n- `deliveryTime` - Estimated delivery time for the product\n- `tax` - Tax configuration (rate and calculation rules)\n- `manufacturer` - Product manufacturer or brand information\n- `unit` - Product unit of measure (e.g., piece, liter, kg)\n- `cover` - Main product image displayed in listings and detail pages\n- `openGraphMedia` - Open Graph image for social media sharing\n- `cmsPage` - Custom CMS page layout for the product detail page\n- `canonicalProduct` - Canonical product reference for variant consolidation and SEO purposes\n- `media` - Product images and media gallery\n- `crossSellings` - Cross-selling configurations (related products, accessories, similar items)\n- `configuratorSettings` - Variant configurator settings defining available options for product variants\n- `productReviews` - Customer reviews and ratings for the product\n- `mainCategories` - Primary category assignments per sales channel for SEO and navigation\n- `seoUrls` - SEO-friendly URLs for the product across different sales channels\n- `options` - Product variant options (e.g., size, color) that define different variants\n- `properties` - Product properties and characteristics for filtering\n- `categories` - Categories this product is assigned to\n- `streams` - Dynamic product streams this product belongs to based on defined filters\n- `categoriesRo` - Read-only category tree including all parent categories for optimized queries\n- `tags` - Tags for organizing and filtering products\n- `seoCategory` - Main category used for SEO URL generation in the current sales channel",
+                "operationId": "readProduct",
+                "parameters": [
+                    {
+                        "name": "sw-include-search-info",
+                        "in": "header",
+                        "description": "Controls whether API search information is included in the response. Default is 1 (enabled), will be 0 (disabled) in the next major version.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "0",
+                                "1"
+                            ],
+                            "default": "1"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Criteria"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ProductListResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Product",
+                    "Endpoints supporting Criteria "
+                ],
+                "summary": "Fetch a list of products",
+                "description": "List products that match the given criteria. For performance reasons a limit should always be set.\n\n**Available Associations:**\n- `downloads` - Downloadable files associated with the product (e.g., manuals, digital content)\n- `children` - Product variants that inherit from this parent product\n- `deliveryTime` - Estimated delivery time for the product\n- `tax` - Tax configuration (rate and calculation rules)\n- `manufacturer` - Product manufacturer or brand information\n- `unit` - Product unit of measure (e.g., piece, liter, kg)\n- `cover` - Main product image displayed in listings and detail pages\n- `openGraphMedia` - Open Graph image for social media sharing\n- `cmsPage` - Custom CMS page layout for the product detail page\n- `canonicalProduct` - Canonical product reference for variant consolidation and SEO purposes\n- `media` - Product images and media gallery\n- `crossSellings` - Cross-selling configurations (related products, accessories, similar items)\n- `configuratorSettings` - Variant configurator settings defining available options for product variants\n- `productReviews` - Customer reviews and ratings for the product\n- `mainCategories` - Primary category assignments per sales channel for SEO and navigation\n- `seoUrls` - SEO-friendly URLs for the product across different sales channels\n- `options` - Product variant options (e.g., size, color) that define different variants\n- `properties` - Product properties and characteristics for filtering\n- `categories` - Categories this product is assigned to\n- `streams` - Dynamic product streams this product belongs to based on defined filters\n- `categoriesRo` - Read-only category tree including all parent categories for optimized queries\n- `tags` - Tags for organizing and filtering products\n- `seoCategory` - Main category used for SEO URL generation in the current sales channel",
+                "operationId": "readProductGet",
+                "parameters": [
+                    {
+                        "x-parameter-group": "criteria"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ProductListResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        },
+        "/product/{productId}/reviews": {
+            "post": {
+                "tags": [
+                    "Product",
+                    "Endpoints supporting Criteria "
+                ],
+                "summary": "Fetch product reviews",
+                "description": "Perform a filtered search for product reviews.",
+                "operationId": "readProductReviews",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Identifier of the product.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sw-include-search-info",
+                        "in": "header",
+                        "description": "Controls whether API search information is included in the response. Default is 1 (enabled), will be 0 (disabled) in the next major version.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "0",
+                                "1"
+                            ],
+                            "default": "1"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Criteria"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Entity search result containing product reviews",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "allOf": [
+                                        {
+                                            "properties": {
+                                                "elements": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/ProductReview"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/EntitySearchResult"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403",
+                        "description": "Product reviews are disabled for this sales channel."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Product",
+                    "Endpoints supporting Criteria "
+                ],
+                "summary": "Fetch product reviews",
+                "description": "Perform a filtered search for product reviews.",
+                "operationId": "readProductReviewsGet",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Identifier of the product.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "x-parameter-group": "criteria"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Entity search result containing product reviews",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "allOf": [
+                                        {
+                                            "properties": {
+                                                "elements": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/ProductReview"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/EntitySearchResult"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403",
+                        "description": "Product reviews are disabled for this sales channel."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        },
+        "/product/{productId}/review": {
+            "post": {
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Save a product review",
+                "description": "Saves a review for a product. Reviews have to be activated in the settings.",
+                "operationId": "saveProductReview",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Identifier of the product which is reviewed.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "content",
+                                    "points"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "The name of the review author. If not set, the first name of the customer is chosen.",
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "description": "The email address of the review author. If not set, the email of the customer is chosen.",
+                                        "type": "string"
+                                    },
+                                    "title": {
+                                        "description": "The title of the review.",
+                                        "type": "string"
+                                    },
+                                    "content": {
+                                        "description": "The content of review.",
+                                        "type": "string"
+                                    },
+                                    "points": {
+                                        "description": "The review rating for the product.",
+                                        "type": "number",
+                                        "format": "double"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "Success response indicating the review was saved successfully."
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The submitted review failed validation, e.g. a missing title or content, or a rating outside the allowed range."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403",
+                        "description": "No customer is logged in, the logged in customer is a guest, or product reviews are disabled for this sales channel."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "No product exists for the given `productId` in this sales channel."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": [],
+                        "ContextToken": []
+                    }
+                ]
+            }
+        },
+        "/product/purchase-limit": {
+            "get": {
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Fetch current purchase quantity limits for products",
+                "description": "Returns the current min/max/step purchase constraints for the given products, reflecting live stock or configured limitations. Intended for use on PDP to show actual values on product pages.",
+                "operationId": "readProductsPurchaseLimit",
+                "parameters": [
+                    {
+                        "name": "ids[]",
+                        "in": "query",
+                        "description": "List of product IDs to fetch quantity limits for.",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "pattern": "^[0-9a-f]{32}$"
+                            }
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Current quantity limits for the requested products",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ProductPurchaseLimit"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        },
+        "/product/{productId}/find-variant": {
+            "post": {
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Search for a matching variant by product options.",
+                "description": "Performs a search for product variants and returns the best matching variant.",
+                "operationId": "searchProductVariantIds",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "options"
+                                ],
+                                "properties": {
+                                    "options": {
+                                        "oneOf": [
+                                            {
+                                                "description": "The options parameter for the variant to find.",
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            {
+                                                "description": "The options parameter as a map of groupId => optionId.",
+                                                "type": "object",
+                                                "additionalProperties": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    "switchedGroup": {
+                                        "description": "The id of the option group that has been switched.",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Returns an FoundCombination struct containing the ids matching the search.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FindProductVariantRouteResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `options` parameter contains a value that is not a string."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "No variant of the product matches the given options."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Search for a matching variant by product options.",
+                "description": "Performs a search for product variants and returns the best matching variant.",
+                "operationId": "searchProductVariantIdsGet",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "options[]",
+                        "in": "query",
+                        "description": "The options parameter for the variant to find. Array of option IDs.",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    {
+                        "name": "switchedGroup",
+                        "in": "query",
+                        "description": "The id of the option group that has been switched.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns an FoundCombination struct containing the ids matching the search.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FindProductVariantRouteResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `options` parameter contains a value that is not a string."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "No variant of the product matches the given options."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        }
+    }
+}

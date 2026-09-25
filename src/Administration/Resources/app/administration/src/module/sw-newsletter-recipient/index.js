@@ -1,0 +1,65 @@
+/**
+ * @sw-package after-sales
+ */
+import './acl';
+import defaultSearchConfiguration from './default-search-configuration';
+
+const { Module } = Shopwell;
+
+/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+Shopwell.Component.register('sw-newsletter-recipient-list', () => import('./page/sw-newsletter-recipient-list/index'));
+Shopwell.Component.register('sw-newsletter-recipient-detail', () => import('./page/sw-newsletter-recipient-detail/index'));
+Shopwell.Component.register(
+    'sw-newsletter-recipient-filter-switch',
+    () => import('./component/sw-newsletter-recipient-filter-switch'),
+);
+/* eslint-enable sw-deprecation-rules/private-feature-declarations */
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Module.register('sw-newsletter-recipient', {
+    type: 'core',
+    name: 'newsletter-recipient',
+    title: 'sw-newsletter-recipient.general.mainMenuItemGeneral',
+    description: 'sw-newsletter-recipient.general.description',
+    version: '1.0.0',
+    targetVersion: '1.0.0',
+    color: 'var(--sw-color-module-yellow-default)',
+    icon: 'regular-inbox',
+    favicon: 'icon-module-marketing.svg',
+    entity: 'newsletter_recipient',
+    entityDisplayProperty: 'email',
+
+    routes: {
+        index: {
+            component: 'sw-newsletter-recipient-list',
+            path: 'index',
+            meta: {
+                privilege: 'newsletter_recipient.viewer',
+            },
+        },
+
+        detail: {
+            component: 'sw-newsletter-recipient-detail',
+            path: 'detail/:id',
+            meta: {
+                privilege: 'newsletter_recipient.viewer',
+                parentPath: 'sw.newsletter.recipient.index',
+            },
+        },
+    },
+
+    navigation: [
+        {
+            id: 'sw-newsletter-recipient',
+            icon: 'regular-inbox',
+            color: 'var(--sw-color-module-yellow-default)',
+            path: 'sw.newsletter.recipient.index',
+            privilege: 'newsletter_recipient.viewer',
+            label: 'sw-newsletter-recipient.general.mainMenuItemGeneral',
+            parent: 'sw-marketing',
+            position: 20,
+        },
+    ],
+
+    defaultSearchConfiguration,
+});

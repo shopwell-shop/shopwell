@@ -1,0 +1,129 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\SystemConfig;
+
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ConfigJsonField;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Kernel;
+
+#[Package('framework')]
+class SystemConfigLoader extends AbstractSystemConfigLoader
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        protected Connection $connection,
+        protected Kernel $kernel
+    ) {
+    }
+
+    public function getDecorated(): AbstractSystemConfigLoader
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    public function load(?string $salesChannelId): array
+    {
+        $query = $this->connection->createQueryBuilder();
+
+        $query->from('system_config');
+        $query->select('configuration_key', 'configuration_value');
+
+        if ($salesChannelId === null) {
+            $query
+                ->andWhere('sales_channel_id IS NULL');
+        } else {
+            $query->andWhere('sales_channel_id = :salesChannelId OR system_config.sales_channel_id IS NULL');
+            $query->setParameter('salesChannelId', Uuid::fromHexToBytes($salesChannelId));
+        }
+
+        $query->addOrderBy('sales_channel_id', 'ASC');
+
+        $result = $query->executeQuery();
+
+        return $this->buildSystemConfigArray($result->fetchAllKeyValue());
+    }
+
+    /**
+     * @param array<string, mixed> $systemConfigs
+     *
+     * @return array<string, mixed>
+     */
+    private function buildSystemConfigArray(array $systemConfigs): array
+    {
+        $configValues = [];
+
+        foreach ($systemConfigs as $key => $value) {
+            $keys = \explode('.', $key);
+
+            if ($value !== null) {
+                $value = \json_decode((string) $value, true, 512, \JSON_THROW_ON_ERROR);
+
+                if ($value === false || !isset($value[ConfigJsonField::STORAGE_KEY])) {
+                    $value = null;
+                } else {
+                    $value = $value[ConfigJsonField::STORAGE_KEY];
+                }
+            }
+
+            $configValues = $this->getSubArray($configValues, $keys, $value);
+        }
+
+        return $this->filterNotActivatedPlugins($configValues);
+    }
+
+    /**
+     * @param array<string, mixed> $configValues
+     * @param non-empty-array<string> $keys
+     * @param array<string, mixed>|bool|float|int|string|null $value
+     *
+     * @return array<string, mixed>
+     */
+    private function getSubArray(array $configValues, array $keys, $value): array
+    {
+        $key = \array_shift($keys);
+
+        if ($keys === []) {
+            // Configs can be overwritten with sales_channel_id
+            $inheritedValuePresent = \array_key_exists($key, $configValues);
+            $valueConsideredEmpty = !\is_bool($value) && empty($value);
+
+            if ($inheritedValuePresent && $valueConsideredEmpty) {
+                return $configValues;
+            }
+
+            $configValues[$key] = $value;
+        } else {
+            if (!\array_key_exists($key, $configValues)) {
+                $configValues[$key] = [];
+            }
+
+            $configValues[$key] = $this->getSubArray($configValues[$key], $keys, $value);
+        }
+
+        return $configValues;
+    }
+
+    /**
+     * @param array<string, mixed> $configValues
+     *
+     * @return array<string, mixed>
+     */
+    private function filterNotActivatedPlugins(array $configValues): array
+    {
+        $notActivatedPlugins = $this->kernel->getPluginLoader()->getPluginInstances()->filter(static fn (Plugin $plugin) => !$plugin->isActive())->all();
+
+        foreach ($notActivatedPlugins as $plugin) {
+            if (isset($configValues[$plugin->getName()])) {
+                unset($configValues[$plugin->getName()]);
+            }
+        }
+
+        return $configValues;
+    }
+}

@@ -1,0 +1,216 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Media\Subscriber;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
+use Shopwell\Core\Content\Media\Event\UnusedMediaSearchEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+/**
+ * @internal
+ *
+ * @codeCoverageIgnore
+ *
+ * @see \Shopwell\Tests\Integration\Core\Content\Media\Subscriber\CustomFieldsUnusedMediaSubscriberTest
+ */
+#[Package('discovery')]
+class CustomFieldsUnusedMediaSubscriber implements EventSubscriberInterface
+{
+    public function __construct(
+        private readonly Connection $connection,
+        private readonly DefinitionInstanceRegistry $definitionRegistry,
+    ) {
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            UnusedMediaSearchEvent::class => 'removeUsedMedia',
+        ];
+    }
+
+    public function removeUsedMedia(UnusedMediaSearchEvent $event): void
+    {
+        $this->findMediaIds($event);
+        $this->findMediaIdsWithEntitySelect($event);
+        $this->findMediaIdsWithEntityMultiSelect($event);
+    }
+
+    private function findMediaIds(UnusedMediaSearchEvent $event): void
+    {
+        /** @var list<array{id: string, name: string, entity_name: string}> $customMediaFields */
+        $customMediaFields = $this->connection->fetchAllAssociative(
+            <<<'SQL'
+            SELECT f.id, f.name, fsr.entity_name
+            FROM custom_field f
+            INNER JOIN custom_field_set fs ON (f.set_id = fs.id)
+            INNER JOIN custom_field_set_relation fsr ON (fs.id = fsr.set_id)
+            WHERE JSON_UNQUOTE(JSON_EXTRACT(f.config, '$.customFieldType')) = 'media'
+            SQL
+        );
+
+        $fieldsPerEntity = $this->groupFieldsPerEntity($customMediaFields);
+
+        $template = <<<'SQL'
+            SELECT JSON_UNQUOTE(JSON_EXTRACT(%1$s.custom_fields, CONCAT('$.', JSON_QUOTE(:field)))) as media_id
+            FROM %1$s
+            WHERE JSON_UNQUOTE(JSON_EXTRACT(%1$s.custom_fields, CONCAT('$.', JSON_QUOTE(:field)))) IN (:ids)
+            SQL;
+        $statements = [];
+        foreach ($fieldsPerEntity as $entity => $fields) {
+            $table = EntityDefinitionQueryHelper::escape($this->getTableName((string) $entity));
+            $statement = \sprintf($template, $table);
+
+            foreach ($fields as $field) {
+                $usedMediaIds = $this->connection->fetchFirstColumn(
+                    $statement,
+                    [
+                        'field' => $field,
+                        'ids' => $event->getUnusedIds(),
+                    ],
+                    [
+                        'field' => ParameterType::STRING,
+                        'ids' => ArrayParameterType::STRING,
+                    ],
+                );
+
+                $event->markAsUsed($usedMediaIds);
+            }
+        }
+    }
+
+    /**
+     * @return list<array{id: string, name: string, entity_name: string}>
+     */
+    private function findCustomFieldsWithEntitySelect(string $componentType): array
+    {
+        /** @var list<array{id: string, name: string, entity_name: string}> $results */
+        $results = $this->connection->fetchAllAssociative(
+            <<<'SQL'
+            SELECT f.id, f.name, fsr.entity_name
+            FROM custom_field f
+            INNER JOIN custom_field_set fs ON (f.set_id = fs.id)
+            INNER JOIN custom_field_set_relation fsr ON (fs.id = fsr.set_id)
+            WHERE f.type = 'select' AND JSON_UNQUOTE(JSON_EXTRACT(f.config, '$.entity')) = 'media' AND JSON_UNQUOTE(JSON_EXTRACT(f.config, '$.componentName')) = :componentType
+            SQL,
+            ['componentType' => $componentType],
+            ['componentType' => ParameterType::STRING]
+        );
+
+        return $results;
+    }
+
+    private function findMediaIdsWithEntitySelect(UnusedMediaSearchEvent $event): void
+    {
+        $fieldsPerEntity = $this->groupFieldsPerEntity(
+            $this->findCustomFieldsWithEntitySelect('sw-entity-single-select')
+        );
+
+        $template = <<<'SQL'
+            SELECT JSON_UNQUOTE(JSON_EXTRACT(%1$s.custom_fields, CONCAT('$.', JSON_QUOTE(:field)))) as media_id
+            FROM %1$s
+            WHERE JSON_UNQUOTE(JSON_EXTRACT(%1$s.custom_fields, CONCAT('$.', JSON_QUOTE(:field)))) IN (:ids)
+            SQL;
+        $statements = [];
+        foreach ($fieldsPerEntity as $entity => $fields) {
+            $table = EntityDefinitionQueryHelper::escape($this->getTableName((string) $entity));
+            $statement = \sprintf($template, $table);
+
+            foreach ($fields as $field) {
+                $usedMediaIds = $this->connection->fetchFirstColumn(
+                    $statement,
+                    [
+                        'field' => $field,
+                        'ids' => $event->getUnusedIds(),
+                    ],
+                    [
+                        'field' => ParameterType::STRING,
+                        'ids' => ArrayParameterType::STRING,
+                    ],
+                );
+
+                $event->markAsUsed($usedMediaIds);
+            }
+        }
+    }
+
+    private function findMediaIdsWithEntityMultiSelect(UnusedMediaSearchEvent $event): void
+    {
+        $fieldsPerEntity = $this->groupFieldsPerEntity(
+            $this->findCustomFieldsWithEntitySelect('sw-entity-multi-id-select')
+        );
+
+        $template = <<<'SQL'
+            SELECT JSON_EXTRACT(custom_fields, CONCAT('$.', JSON_QUOTE(:field))) as mediaIds
+            FROM %s
+            WHERE JSON_OVERLAPS(
+                JSON_EXTRACT(custom_fields, CONCAT('$.', JSON_QUOTE(:field))),
+                JSON_ARRAY(:ids)
+            );
+            SQL;
+        $statements = [];
+        foreach ($fieldsPerEntity as $entity => $fields) {
+            $table = EntityDefinitionQueryHelper::escape($this->getTableName((string) $entity));
+            $statement = \sprintf($template, $table);
+
+            foreach ($fields as $field) {
+                $usedMediaIds = $this->connection->fetchFirstColumn(
+                    $statement,
+                    [
+                        'field' => $field,
+                        'ids' => $event->getUnusedIds(),
+                    ],
+                    [
+                        'field' => ParameterType::STRING,
+                        'ids' => ArrayParameterType::STRING,
+                    ],
+                );
+
+                $event->markAsUsed(
+                    array_merge(
+                        ...array_map(static fn (string $ids) => json_decode($ids, true, flags: \JSON_THROW_ON_ERROR), $usedMediaIds)
+                    )
+                );
+            }
+        }
+    }
+
+    private function getTableName(string $entity): string
+    {
+        $definition = $this->definitionRegistry->getByEntityName($entity);
+
+        $customFields = $definition->getField('customFields');
+
+        $table = $definition->getEntityName();
+
+        if ($customFields instanceof TranslatedField) {
+            $table = $definition->getTranslationDefinition()?->getEntityName() ?? $table;
+        }
+
+        return $table;
+    }
+
+    /**
+     * @param list<array{id: string, name: string, entity_name: string}> $customMediaFields
+     *
+     * @return array<string, array<string>>
+     */
+    private function groupFieldsPerEntity(array $customMediaFields): array
+    {
+        $fieldsPerEntity = [];
+        foreach ($customMediaFields as $field) {
+            if (!isset($fieldsPerEntity[$field['entity_name']])) {
+                $fieldsPerEntity[$field['entity_name']] = [];
+            }
+            $fieldsPerEntity[$field['entity_name']][] = $field['name'];
+        }
+
+        return $fieldsPerEntity;
+    }
+}

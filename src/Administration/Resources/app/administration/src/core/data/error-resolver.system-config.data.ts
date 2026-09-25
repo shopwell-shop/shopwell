@@ -1,0 +1,121 @@
+import ShopwellError from 'src/core/data/ShopwellError';
+
+interface ApiError {
+    code: string;
+    title: string;
+    detail: string;
+    meta: {
+        parameters: Record<string, string>;
+    };
+    status: string;
+    source?: {
+        pointer?: string;
+    };
+}
+
+/**
+ * @sw-package framework
+ *
+ * @private
+ */
+export default class ErrorResolverSystemConfig {
+    public static ENTITY_NAME = 'SYSTEM_CONFIG';
+
+    private readonly merge;
+
+    constructor() {
+        this.merge = Shopwell.Utils.object.merge;
+    }
+
+    public handleWriteErrors(errors?: ApiError[]) {
+        if (!errors) {
+            throw new Error('[error-resolver] handleWriteError was called without errors');
+        }
+
+        const writeErrors = this.reduceErrorsByWriteIndex(errors);
+
+        if (writeErrors.systemError.length > 0) {
+            this.addSystemErrors(writeErrors.systemError);
+        }
+
+        this.handleErrors(writeErrors.apiError);
+    }
+
+    public cleanWriteErrors() {
+        void Shopwell.Store.get('error').resetApiErrors();
+    }
+
+    private reduceErrorsByWriteIndex(errors: ApiError[]) {
+        const writeErrors: {
+            systemError: ShopwellError[];
+            apiError: {
+                [key: string]: ShopwellError;
+            };
+        } = {
+            systemError: [],
+            apiError: {},
+        };
+
+        errors.forEach((current) => {
+            if (!current.source || !current.source.pointer) {
+                const systemError = new ShopwellError({
+                    code: current.code,
+                    meta: current.meta,
+                    detail: current.detail,
+                    status: current.status,
+                });
+                writeErrors.systemError.push(systemError);
+
+                return;
+            }
+
+            const segments = current.source.pointer.split('/');
+
+            // remove first empty element in list
+            if (segments[0] === '') {
+                segments.shift();
+            }
+
+            const denormalized = {};
+            const lastIndex = segments.length - 1;
+
+            segments.reduce((pointer: { [key: string]: Partial<ShopwellError> }, segment, index) => {
+                // skip translations
+                if (segment === 'translations' || segments[index - 1] === 'translations') {
+                    return pointer;
+                }
+
+                if (index === lastIndex) {
+                    pointer[segment] = new ShopwellError(current);
+                } else {
+                    pointer[segment] = {};
+                }
+
+                return pointer[segment];
+            }, denormalized);
+
+            writeErrors.apiError = this.merge(writeErrors.apiError, denormalized);
+        });
+
+        return writeErrors;
+    }
+
+    private addSystemErrors(errors: ShopwellError[]) {
+        errors.forEach((error) => {
+            void Shopwell.Store.get('error').addSystemError({ error });
+        });
+    }
+
+    private handleErrors(errors: { [key: string]: ShopwellError }) {
+        Object.keys(errors).forEach((key: string) => {
+            void Shopwell.Store.get('error').addApiError({
+                expression: this.getErrorPath(key),
+                error: errors[key],
+            });
+        });
+    }
+
+    private getErrorPath(key: string) {
+        return `${ErrorResolverSystemConfig.ENTITY_NAME}.${key}`;
+    }
+}

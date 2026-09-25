@@ -1,0 +1,31 @@
+.sw-customer-detail__customer-registration-alert {
+    max-width: 60rem;
+    margin: 0 auto;
+
+    .mt-banner {
+        display: flex;
+        align-items: center;
+    }
+
+    .mt-banner__message {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &-hint {
+        color: var(--color-text-secondary-default);
+    }
+}
+
+.sw-customer-detail {
+    .smart-bar__header {
+        display: flex;
+        align-items: center;
+    }
+
+    &__created-by-admin-label {
+        margin: 0 var(--scale-size-10);
+    }
+}

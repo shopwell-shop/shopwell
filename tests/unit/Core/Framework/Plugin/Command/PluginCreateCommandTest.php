@@ -1,0 +1,261 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Plugin\Command;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Command\PluginCreateCommand;
+use Shopwell\Core\Framework\Plugin\Command\Scaffolding\Generator\ScaffoldingGenerator;
+use Shopwell\Core\Framework\Plugin\Command\Scaffolding\ScaffoldingCollector;
+use Shopwell\Core\Framework\Plugin\Command\Scaffolding\ScaffoldingWriter;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Filesystem\Filesystem;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(PluginCreateCommand::class)]
+class PluginCreateCommandTest extends TestCase
+{
+    /**
+     * @param array<string, string|true> $arguments
+     * @param list<string> $inputs
+     * @param array<int, array<string, mixed>> $generators
+     */
+    #[DataProvider('commandProvider')]
+    public function testSuccessfulCreateCommandWithArgumentsOrInputs(
+        array $arguments,
+        array $inputs,
+        array $generators = []
+    ): void {
+        $generatorMocks = [];
+        foreach ($generators as $generator) {
+            /** @var MockObject&ScaffoldingGenerator $generatorMock */
+            $generatorMock = static::createStub(ScaffoldingGenerator::class);
+
+            $generatorMock->method('hasCommandOption')->willReturn($generator['hasCommandOption']);
+            $generatorMock->method('getCommandOptionName')->willReturn($generator['getCommandOptionName']);
+
+            $generatorMocks[] = $generatorMock;
+        }
+
+        $commandTester = $this->getCommandTester($generatorMocks);
+
+        $commandTester->setInputs($inputs);
+
+        $commandTester->execute($arguments);
+
+        $commandTester->assertCommandIsSuccessful();
+
+        static::assertStringContainsString(
+            'Plugin created successfully',
+            (string) preg_replace('/\s+/', ' ', trim($commandTester->getDisplay(true)))
+        );
+    }
+
+    public static function commandProvider(): \Generator
+    {
+        yield 'with arguments' => [
+            'arguments' => [
+                'plugin-name' => 'TestPlugin',
+                'plugin-namespace' => 'Test',
+            ],
+            'inputs' => [],
+        ];
+
+        yield 'with inputs' => [
+            'arguments' => [],
+            'inputs' => [
+                'TestPlugin',
+                'Test',
+            ],
+        ];
+
+        yield 'with generators and options' => [
+            'arguments' => [
+                'plugin-name' => 'TestPlugin',
+                'plugin-namespace' => 'Test',
+                '--test-option' => true,
+                '--static' => true,
+            ],
+            'inputs' => [],
+            'generators' => [
+                [
+                    'hasCommandOption' => true,
+                    'getCommandOptionName' => 'test-option',
+                ],
+            ],
+        ];
+
+        yield 'with generators but no option' => [
+            'arguments' => [
+                'plugin-name' => 'TestPlugin',
+                'plugin-namespace' => 'Test',
+            ],
+            'inputs' => [],
+            'generators' => [
+                [
+                    'hasCommandOption' => false,
+                    'getCommandOptionName' => '',
+                ],
+            ],
+        ];
+
+        yield 'with --no-scaffold skips optional generators' => [
+            'arguments' => [
+                'plugin-name' => 'TestPlugin',
+                'plugin-namespace' => 'Test',
+                '--no-scaffold' => true,
+            ],
+            'inputs' => [],
+            'generators' => [
+                [
+                    'hasCommandOption' => true,
+                    'getCommandOptionName' => 'test-option',
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @param list<string> $inputs
+     */
+    #[DataProvider('invalidInputsProvider')]
+    public function testInvalidInputs(array $inputs, string $expectedErrorMessage, bool $interactive = true): void
+    {
+        $commandTester = $this->getCommandTester();
+
+        $commandTester->setInputs($inputs);
+
+        $commandTester->execute([], ['interactive' => $interactive]);
+
+        static::assertStringContainsString(
+            $expectedErrorMessage,
+            (string) preg_replace('/\s+/', ' ', trim($commandTester->getDisplay(true)))
+        );
+    }
+
+    public static function invalidInputsProvider(): \Generator
+    {
+        yield 'empty inputs' => [
+            'inputs' => [''],
+            'expectedErrorMessage' => 'Answer cannot be empty',
+        ];
+
+        yield 'invalid plugin name' => [
+            'inputs' => ['test'],
+            'expectedErrorMessage' => 'The name must start with an uppercase character',
+        ];
+
+        yield 'non-interactive without arguments' => [
+            'inputs' => [],
+            'expectedErrorMessage' => 'This command requires interactive mode or the argument must be provided.',
+            'interactive' => false,
+        ];
+    }
+
+    public function testNoScaffoldSkipsOptionalGenerators(): void
+    {
+        /** @var MockObject&ScaffoldingGenerator $optionalGenerator */
+        $optionalGenerator = $this->createMock(ScaffoldingGenerator::class);
+        $optionalGenerator->method('hasCommandOption')->willReturn(true);
+        $optionalGenerator->method('getCommandOptionName')->willReturn('test-option');
+        $optionalGenerator->expects($this->never())->method('addScaffoldConfig');
+
+        /** @var MockObject&ScaffoldingGenerator $requiredGenerator */
+        $requiredGenerator = $this->createMock(ScaffoldingGenerator::class);
+        $requiredGenerator->method('hasCommandOption')->willReturn(false);
+        $requiredGenerator->expects($this->once())->method('addScaffoldConfig');
+
+        $commandTester = $this->getCommandTester([$optionalGenerator, $requiredGenerator]);
+
+        $commandTester->execute([
+            'plugin-name' => 'TestPlugin',
+            'plugin-namespace' => 'Test',
+            '--no-scaffold' => true,
+        ]);
+
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    public function testInteractiveScaffoldQuestionNo(): void
+    {
+        /** @var MockObject&ScaffoldingGenerator $optionalGenerator */
+        $optionalGenerator = $this->createMock(ScaffoldingGenerator::class);
+        $optionalGenerator->method('hasCommandOption')->willReturn(true);
+        $optionalGenerator->method('getCommandOptionName')->willReturn('test-option');
+        $optionalGenerator->expects($this->never())->method('addScaffoldConfig');
+
+        $commandTester = $this->getCommandTester([$optionalGenerator]);
+        $commandTester->setInputs(['no']);
+
+        $commandTester->execute([
+            'plugin-name' => 'TestPlugin',
+            'plugin-namespace' => 'Test',
+        ]);
+
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    public function testInteractiveScaffoldQuestionYes(): void
+    {
+        /** @var MockObject&ScaffoldingGenerator $optionalGenerator */
+        $optionalGenerator = $this->createMock(ScaffoldingGenerator::class);
+        $optionalGenerator->method('hasCommandOption')->willReturn(true);
+        $optionalGenerator->method('getCommandOptionName')->willReturn('test-option');
+        $optionalGenerator->expects($this->once())->method('addScaffoldConfig');
+
+        $commandTester = $this->getCommandTester([$optionalGenerator]);
+        $commandTester->setInputs(['yes']);
+
+        $commandTester->execute([
+            'plugin-name' => 'TestPlugin',
+            'plugin-namespace' => 'Test',
+        ]);
+
+        $commandTester->assertCommandIsSuccessful();
+    }
+
+    public function testDirectoryExists(): void
+    {
+        $commandTester = $this->getCommandTester([], true);
+
+        $commandTester->execute([
+            'plugin-name' => 'TestPlugin',
+            'plugin-namespace' => 'Test',
+        ]);
+
+        static::assertStringContainsString(
+            'Plugin directory shopware/custom/plugins/TestPlugin already exists',
+            (string) preg_replace('/\s+/', ' ', trim($commandTester->getDisplay(true)))
+        );
+    }
+
+    /**
+     * @param array<ScaffoldingGenerator> $generators
+     */
+    private function getCommandTester(array $generators = [], bool $directoryExists = false): CommandTester
+    {
+        $filesystem = static::createStub(Filesystem::class);
+        $filesystem->method('exists')->willReturn($directoryExists);
+
+        $command = new PluginCreateCommand(
+            'shopware',
+            static::createStub(ScaffoldingCollector::class),
+            static::createStub(ScaffoldingWriter::class),
+            $filesystem,
+            $generators
+        );
+
+        $commandTester = new CommandTester($command);
+        $application = new Application();
+        $application->addCommand($command);
+
+        return $commandTester;
+    }
+}

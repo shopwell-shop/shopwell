@@ -1,0 +1,93 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\Locale;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Language\LanguageCollection;
+use Shopwell\Core\System\Locale\Aggregate\LocaleTranslation\LocaleTranslationCollection;
+use Shopwell\Core\System\User\UserCollection;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('discovery')]
+class LocaleEntity extends Entity
+{
+    use EntityCustomFieldsTrait;
+    use EntityIdTrait;
+
+    protected string $code;
+
+    protected ?string $name = null;
+
+    protected ?string $territory = null;
+
+    protected ?LocaleTranslationCollection $translations = null;
+
+    protected ?UserCollection $users = null;
+
+    protected ?LanguageCollection $languages = null;
+
+    public function getCode(): string
+    {
+        return $this->code;
+    }
+
+    public function setCode(string $code): void
+    {
+        $this->code = $code;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(?string $name): void
+    {
+        $this->name = $name;
+    }
+
+    public function getTerritory(): ?string
+    {
+        return $this->territory;
+    }
+
+    public function setTerritory(?string $territory): void
+    {
+        $this->territory = $territory;
+    }
+
+    public function getTranslations(): ?LocaleTranslationCollection
+    {
+        return $this->translations;
+    }
+
+    public function setTranslations(LocaleTranslationCollection $translations): void
+    {
+        $this->translations = $translations;
+    }
+
+    public function getUsers(): ?UserCollection
+    {
+        return $this->users;
+    }
+
+    public function setUsers(UserCollection $users): void
+    {
+        $this->users = $users;
+    }
+
+    public function getLanguages(): ?LanguageCollection
+    {
+        return $this->languages;
+    }
+
+    public function setLanguages(LanguageCollection $languages): void
+    {
+        $this->languages = $languages;
+    }
+}

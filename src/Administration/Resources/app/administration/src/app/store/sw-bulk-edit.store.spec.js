@@ -1,0 +1,65 @@
+/**
+ * @sw-package framework
+ */
+
+describe('src/app/store/sw-bulk-edit.store', () => {
+    it('should be able to setIsFlowTriggered', async () => {
+        const state = Shopwell.Store.get('swBulkEdit');
+
+        Shopwell.Store.get('swBulkEdit').setIsFlowTriggered(true);
+        expect(state.isFlowTriggered).toBe(true);
+
+        Shopwell.Store.get('swBulkEdit').setIsFlowTriggered(false);
+        expect(state.isFlowTriggered).toBe(false);
+    });
+
+    it('should be able to setOrderDocumentsIsChanged', async () => {
+        const state = Shopwell.Store.get('swBulkEdit');
+
+        Shopwell.Store.get('swBulkEdit').setOrderDocumentsIsChanged({
+            type: 'invoice',
+            isChanged: true,
+        });
+        expect(state.orderDocuments.invoice.isChanged).toBe(true);
+
+        Shopwell.Store.get('swBulkEdit').setOrderDocumentsIsChanged({
+            type: 'invoice',
+            isChanged: false,
+        });
+        expect(state.orderDocuments.invoice.isChanged).toBe(false);
+    });
+
+    it('should be able to update fileFormats via setOrderDocumentsValue', async () => {
+        const store = Shopwell.Store.get('swBulkEdit');
+
+        store.setOrderDocumentsValue({
+            type: 'invoice',
+            value: {
+                ...store.orderDocuments.invoice.value,
+                fileFormats: ['pdf', 'html'],
+            },
+        });
+
+        expect(store.orderDocuments.invoice.value.fileFormats).toEqual(['pdf', 'html']);
+    });
+
+    it('should be able to resetOrderDocumentsIsChanged', async () => {
+        const store = Shopwell.Store.get('swBulkEdit');
+
+        store.setOrderDocumentsIsChanged({ type: 'invoice', isChanged: true });
+        store.setOrderDocumentsIsChanged({ type: 'delivery_note', isChanged: true });
+        store.setOrderDocumentsIsChanged({ type: 'storno', isChanged: true });
+
+        expect(store.orderDocuments.invoice.isChanged).toBe(true);
+        expect(store.orderDocuments.delivery_note.isChanged).toBe(true);
+        expect(store.orderDocuments.storno.isChanged).toBe(true);
+
+        store.resetOrderDocumentsIsChanged();
+
+        expect(store.orderDocuments.invoice.isChanged).toBe(false);
+        expect(store.orderDocuments.storno.isChanged).toBe(false);
+        expect(store.orderDocuments.delivery_note.isChanged).toBe(false);
+        expect(store.orderDocuments.credit_note.isChanged).toBe(false);
+        expect(store.orderDocuments.download.isChanged).toBe(false);
+    });
+});

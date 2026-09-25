@@ -1,0 +1,1071 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer;
+
+use Psr\Clock\ClockInterface;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
+use Shopwell\Core\Framework\Api\Sync\SyncOperation;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\CloneProtection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\BeforeVersionMergeEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\AssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ChildrenAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Field;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Extension;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ResetOnClone;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\WriteProtected;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ListField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ParentFkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StorageAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\VersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\WasModifiedByUserField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\DataAbstractionLayer\Version\Aggregate\VersionCommit\VersionCommitCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Version\Aggregate\VersionCommit\VersionCommitDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Version\Aggregate\VersionCommit\VersionCommitEntity;
+use Shopwell\Core\Framework\DataAbstractionLayer\Version\Aggregate\VersionCommitData\VersionCommitDataDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Version\Aggregate\VersionCommitData\VersionCommitDataEntity;
+use Shopwell\Core\Framework\DataAbstractionLayer\Version\VersionDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\CloneBehavior;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\InsertCommand;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriterInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteContext;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteResult;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Hasher;
+use Shopwell\Core\Framework\Util\Json;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\ConstraintViolation;
+use Symfony\Component\Validator\ConstraintViolationList;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class VersionManager
+{
+    final public const DISABLE_AUDIT_LOG = 'disable-audit-log';
+    final public const MERGE_SCOPE = 'merge-scope';
+
+    public function __construct(
+        private readonly EntityWriterInterface $entityWriter,
+        private readonly EntityReaderInterface $entityReader,
+        private readonly EntitySearcherInterface $entitySearcher,
+        private readonly EntityWriteGatewayInterface $entityWriteGateway,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly SerializerInterface $serializer,
+        private readonly DefinitionInstanceRegistry $registry,
+        private readonly VersionCommitDefinition $versionCommitDefinition,
+        private readonly VersionCommitDataDefinition $versionCommitDataDefinition,
+        private readonly VersionDefinition $versionDefinition,
+        private readonly LockFactory $lockFactory,
+        private readonly ClockInterface $clock
+    ) {
+    }
+
+    /**
+     * @param array<array<string, mixed|null>> $rawData
+     *
+     * @return array<string, list<EntityWriteResult>>
+     */
+    public function upsert(EntityDefinition $definition, array $rawData, WriteContext $writeContext): array
+    {
+        $result = $this->entityWriter->upsert($definition, $rawData, $writeContext);
+
+        $this->writeAuditLog($result, $writeContext);
+
+        return $result;
+    }
+
+    /**
+     * @param array<array<string, mixed|null>> $rawData
+     *
+     * @return array<string, list<EntityWriteResult>>
+     */
+    public function insert(EntityDefinition $definition, array $rawData, WriteContext $writeContext): array
+    {
+        $result = $this->entityWriter->insert($definition, $rawData, $writeContext);
+
+        $this->writeAuditLog($result, $writeContext);
+
+        return $result;
+    }
+
+    /**
+     * @param array<array<string, mixed|null>> $rawData
+     *
+     * @return array<string, list<EntityWriteResult>>
+     */
+    public function update(EntityDefinition $definition, array $rawData, WriteContext $writeContext): array
+    {
+        $result = $this->entityWriter->update($definition, $rawData, $writeContext);
+
+        $this->writeAuditLog($result, $writeContext);
+
+        return $result;
+    }
+
+    /**
+     * @param array<array<string, mixed|null>> $ids
+     */
+    public function delete(EntityDefinition $definition, array $ids, WriteContext $writeContext): WriteResult
+    {
+        $result = $this->entityWriter->delete($definition, $ids, $writeContext);
+
+        $this->writeAuditLog($result->getDeleted(), $writeContext);
+
+        return $result;
+    }
+
+    public function createVersion(EntityDefinition $definition, string $id, WriteContext $context, ?string $name = null, ?string $versionId = null): string
+    {
+        $versionId ??= Uuid::randomHex();
+        $versionData = ['id' => $versionId];
+
+        if ($name) {
+            $versionData['name'] = $name;
+        }
+
+        $context->scope(Context::SYSTEM_SCOPE, function ($context) use ($versionData): void {
+            $this->entityWriter->upsert($this->versionDefinition, [$versionData], $context);
+        });
+
+        $affected = $this->cloneEntity($definition, $id, $id, $versionId, $context, new CloneBehavior());
+
+        $versionContext = $context->createWithVersionId($versionId);
+
+        $event = EntityWrittenContainerEvent::createWithWrittenEvents($affected, $versionContext->getContext(), []);
+        $versionContext->getContext()->scope(Context::SYSTEM_SCOPE, fn () => $this->eventDispatcher->dispatch($event), [Context::SYSTEM_SCOPE_DAL_WRITE_EVENT]);
+
+        $this->writeAuditLog($affected, $context, $versionId, true);
+
+        return $versionId;
+    }
+
+    public function merge(string $versionId, WriteContext $writeContext): void
+    {
+        $targetVersionId = $writeContext->getContext()->getVersionId();
+        if ($targetVersionId === $versionId) {
+            throw DataAbstractionLayerException::versionMergeSameVersion($versionId);
+        }
+
+        // acquire a lock to prevent multiple merges of the same version
+        $lock = $this->lockFactory->createLock('sw-merge-version-' . $versionId);
+
+        if (!$lock->acquire()) {
+            throw DataAbstractionLayerException::versionMergeAlreadyLocked($versionId);
+        }
+
+        if (!$this->versionExists($versionId)) {
+            throw DataAbstractionLayerException::versionNotExists($versionId);
+        }
+
+        // load all commits of the provided version
+        $commits = $this->getCommits($versionId, $writeContext);
+
+        // create context for source and target versions
+        $versionContext = $writeContext->createWithVersionId($versionId);
+        $targetContext = $writeContext->createWithVersionId($targetVersionId);
+
+        $versionContext->addState(self::MERGE_SCOPE);
+        $targetContext->addState(self::MERGE_SCOPE);
+
+        // group all payloads by their action (insert, update, delete) and by their entity name
+        $writes = $this->buildWrites($commits, $versionId, $targetVersionId);
+
+        $this->eventDispatcher->dispatch($event = new BeforeVersionMergeEvent($writes));
+        $writes = $event->filterWrites(static function ($operation) {
+            return $operation !== [];
+        });
+
+        // execute writes and get access to the write result to dispatch events later on
+        $result = $this->executeWrites($writes, $targetContext);
+
+        // remove commits which reference the version and create a "merge commit" for the target version with all payloads
+        $this->updateVersionData($commits, $writeContext, $versionId, $targetVersionId);
+
+        // delete all versioned records
+        $this->deleteClones($commits, $versionContext, $versionId);
+
+        // release lock to ensure no other merge is running
+        $lock->release();
+
+        // dispatch events to trigger indexer and other subscribers
+        $writes = EntityWrittenContainerEvent::createWithWrittenEvents($result->getWritten(), $targetContext->getContext(), []);
+
+        $deletes = EntityWrittenContainerEvent::createWithDeletedEvents($result->getDeleted(), $targetContext->getContext(), []);
+
+        if ($deletes->getEvents() !== null) {
+            $writes->addEvent(...$deletes->getEvents()->getElements());
+        }
+        $targetContext->getContext()->scope(Context::SYSTEM_SCOPE, fn () => $this->eventDispatcher->dispatch($writes), [Context::SYSTEM_SCOPE_DAL_WRITE_EVENT]);
+
+        $versionContext->removeState(self::MERGE_SCOPE);
+        $targetContext->removeState(self::MERGE_SCOPE);
+    }
+
+    /**
+     * @return array<string, list<EntityWriteResult>>
+     */
+    public function clone(
+        EntityDefinition $definition,
+        string $id,
+        string $newId,
+        string $versionId,
+        WriteContext $context,
+        CloneBehavior $behavior
+    ): array {
+        return $this->cloneEntity($definition, $id, $newId, $versionId, $context, $behavior, true);
+    }
+
+    /**
+     * @return array<string, list<EntityWriteResult>>
+     */
+    private function cloneEntity(
+        EntityDefinition $definition,
+        string $id,
+        string $newId,
+        string $versionId,
+        WriteContext $context,
+        CloneBehavior $behavior,
+        bool $writeAuditLog = false
+    ): array {
+        if ($this->isCloneProtected($definition, $context->getContext())) {
+            throw DataAbstractionLayerException::cloneProtected($definition->getEntityName(), $context->getContext()->getScope());
+        }
+
+        $criteria = new Criteria([$id]);
+        $this->addCloneAssociations($definition, $criteria, $behavior->cloneChildren(), $context->getContext());
+
+        $detail = $this->entityReader->read($definition, $criteria, $context->getContext())->first();
+
+        if ($detail === null) {
+            throw DataAbstractionLayerException::cannotCreateNewVersion($definition->getEntityName(), $id);
+        }
+
+        $data = json_decode($this->serializer->serialize($detail, 'json'), true, 512, \JSON_THROW_ON_ERROR);
+
+        $keepIds = $newId === $id;
+
+        $data = $this->filterPropertiesForClone($definition, $data, $keepIds, $id, $definition, $context->getContext());
+        $data['id'] = $newId;
+
+        $createdAtField = $definition->getField('createdAt');
+        $updatedAtField = $definition->getField('updatedAt');
+
+        if ($createdAtField instanceof DateTimeField) {
+            $data['createdAt'] = $this->clock->now();
+        }
+
+        if ($updatedAtField instanceof DateTimeField) {
+            if ($updatedAtField->getFlag(Required::class)) {
+                $data['updatedAt'] = $this->clock->now();
+            } else {
+                $data['updatedAt'] = null;
+            }
+        }
+
+        $this->validateOverwriteWriteProtection($definition, $behavior->getOverwrites(), $context->getContext());
+
+        $data = Feature::isActive('v6.8.0.0')
+            ? $this->mergeOverwrites($definition, $data, $behavior->getOverwrites())
+            : array_replace_recursive($data, $behavior->getOverwrites());
+
+        $versionContext = $context->createWithVersionId($versionId);
+        $result = null;
+        $versionContext->scope(Context::SYSTEM_SCOPE, function (WriteContext $context) use ($definition, $data, &$result): void {
+            $result = $this->entityWriter->insert($definition, [$data], $context);
+        });
+        \assert(\is_array($result));
+
+        if ($writeAuditLog) {
+            $this->writeAuditLog($result, $versionContext);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $overwrites
+     */
+    private function validateOverwriteWriteProtection(EntityDefinition $definition, array $overwrites, Context $context): void
+    {
+        foreach ($overwrites as $propertyName => $value) {
+            $field = $definition->getFields()->get($propertyName);
+            $writeProtection = $field?->getFlag(WriteProtected::class);
+
+            if ($writeProtection === null || $writeProtection->isAllowed($context->getScope())) {
+                continue;
+            }
+
+            $message = 'This field is write-protected.';
+            $allowedScopes = implode(' or ', $writeProtection->getAllowedScopes());
+
+            if ($allowedScopes !== '') {
+                $message .= ' (Got: "%s" scope and "%s" is required)';
+            }
+
+            throw DataAbstractionLayerException::invalidWriteConstraintViolation(
+                new ConstraintViolationList([
+                    new ConstraintViolation(
+                        \sprintf($message, $context->getScope(), $allowedScopes),
+                        $message,
+                        [$context->getScope(), $allowedScopes],
+                        $value,
+                        $propertyName,
+                        $value
+                    ),
+                ]),
+                '/' . $propertyName
+            );
+        }
+    }
+
+    /**
+     * @param array<string, array<string, mixed|null>|null> $data
+     *
+     * @return array<string, array<string, mixed|null>|string|null>
+     */
+    private function filterPropertiesForClone(EntityDefinition $definition, array $data, bool $keepIds, string $cloneId, EntityDefinition $cloneDefinition, Context $context): array
+    {
+        $extensions = [];
+        $payload = [];
+
+        $fields = $definition->getFields();
+
+        foreach ($fields as $field) {
+            if ($field->is(ResetOnClone::class)) {
+                continue;
+            }
+
+            $writeProtection = $field->getFlag(WriteProtected::class);
+            if ($writeProtection && !$writeProtection->isAllowed(Context::SYSTEM_SCOPE)) {
+                continue;
+            }
+
+            // Autoloaded associations are not added to the clone criteria, but can still be present in the serialized entity.
+            if ($field instanceof AssociationField && $this->isCloneProtected($this->getCloneReferenceDefinition($field), $context)) {
+                continue;
+            }
+
+            // set data and payload cursor to root or extensions to simplify following if conditions
+            $dataCursor = $data;
+
+            $payloadCursor = &$payload;
+
+            if ($field instanceof VersionField || $field instanceof ReferenceVersionField) {
+                continue;
+            }
+
+            // wasModifiedByUser is derived from the write scope and rejects explicit values;
+            // a clone is a fresh, system-created record, so let the serializer set it to false.
+            if ($field instanceof WasModifiedByUserField) {
+                continue;
+            }
+
+            if ($field->is(Extension::class)) {
+                $dataCursor = $data['extensions'] ?? [];
+                $payloadCursor = &$extensions;
+                if (isset($dataCursor['foreignKeys'])) {
+                    $fields = $definition->getFields();
+                    foreach ($dataCursor['foreignKeys'] as $key => $value) {
+                        \assert(\is_string($key));
+                        // Clone FK extension and add it to payload
+                        if (\is_string($value) && Uuid::isValid($value) && $fields->has($key) && $fields->get($key) instanceof FkField) {
+                            $payload[$key] = $value;
+                        }
+                    }
+                }
+            }
+
+            if (!\array_key_exists($field->getPropertyName(), $dataCursor)) {
+                continue;
+            }
+
+            if (!$keepIds && $field instanceof ParentFkField) {
+                continue;
+            }
+
+            $value = $dataCursor[$field->getPropertyName()];
+
+            // remove reference of cloned entity in all sub entity routes. Appears in a parent-child nested data tree
+            if ($field instanceof FkField && !$keepIds && $value === $cloneId && $cloneDefinition === $field->getReferenceDefinition()) {
+                continue;
+            }
+
+            if ($value === null) {
+                continue;
+            }
+
+            // scalar value? assign directly
+            if (!$field instanceof AssociationField) {
+                $payloadCursor[$field->getPropertyName()] = $value;
+
+                continue;
+            }
+
+            // many to one should be skipped because it is no part of the root entity
+            if ($field instanceof ManyToOneAssociationField) {
+                continue;
+            }
+
+            $flag = $field->getFlag(CascadeDelete::class);
+            if (!$flag || !$flag->isCloneRelevant()) {
+                continue;
+            }
+
+            if ($field instanceof OneToManyAssociationField) {
+                $reference = $field->getReferenceDefinition();
+
+                $nested = [];
+                foreach ($value as $item) {
+                    $nestedItem = $this->filterPropertiesForClone($reference, $item, $keepIds, $cloneId, $cloneDefinition, $context);
+
+                    if (!$keepIds) {
+                        $nestedItem = $this->removePrimaryKey($field, $nestedItem);
+                    }
+
+                    $nested[] = $nestedItem;
+                }
+
+                $nested = array_filter($nested);
+                if ($nested === []) {
+                    continue;
+                }
+
+                $payloadCursor[$field->getPropertyName()] = $nested;
+
+                continue;
+            }
+
+            if ($field instanceof ManyToManyAssociationField) {
+                $nested = [];
+
+                foreach ($value as $item) {
+                    $nested[] = ['id' => $item['id']];
+                }
+
+                if ($nested === []) {
+                    continue;
+                }
+
+                $payloadCursor[$field->getPropertyName()] = $nested;
+
+                continue;
+            }
+
+            if ($field instanceof OneToOneAssociationField && $value) {
+                $reference = $field->getReferenceDefinition();
+
+                $nestedItem = $this->filterPropertiesForClone($reference, $value, $keepIds, $cloneId, $cloneDefinition, $context);
+
+                if (!$keepIds) {
+                    $nestedItem = $this->removePrimaryKey($field, $nestedItem);
+                }
+
+                $payloadCursor[$field->getPropertyName()] = $nestedItem;
+            }
+        }
+
+        if ($extensions !== []) {
+            $payload['extensions'] = $extensions;
+        }
+
+        return $payload;
+    }
+
+    private function isCloneProtected(EntityDefinition $definition, Context $context): bool
+    {
+        $protection = $definition->getProtections()->get(CloneProtection::class);
+
+        return $protection !== null && !$protection->isAllowed($context->getScope());
+    }
+
+    private function getCloneReferenceDefinition(AssociationField $field): EntityDefinition
+    {
+        if ($field instanceof ManyToManyAssociationField) {
+            return $field->getToManyReferenceDefinition();
+        }
+
+        return $field->getReferenceDefinition();
+    }
+
+    /**
+     * @param array<string, array<EntityWriteResult>> $writtenEvents
+     */
+    private function writeAuditLog(array $writtenEvents, WriteContext $writeContext, ?string $versionId = null, bool $isClone = false): void
+    {
+        if ($writeContext->getContext()->hasState(self::DISABLE_AUDIT_LOG)) {
+            return;
+        }
+
+        $versionId ??= $writeContext->getContext()->getVersionId();
+        if ($versionId === Defaults::LIVE_VERSION) {
+            return;
+        }
+
+        $commitId = Uuid::randomBytes();
+
+        $date = $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+
+        $source = $writeContext->getContext()->getSource();
+        $userId = $source instanceof AdminApiSource && $source->getUserId()
+            ? Uuid::fromHexToBytes($source->getUserId())
+            : null;
+
+        $insert = new InsertCommand(
+            $this->versionCommitDefinition,
+            [
+                'id' => $commitId,
+                'user_id' => $userId,
+                'version_id' => Uuid::fromHexToBytes($versionId),
+                'created_at' => $date,
+            ],
+            ['id' => $commitId],
+            EntityExistence::createForEntity(
+                $this->versionCommitDefinition->getEntityName(),
+                ['id' => Uuid::fromBytesToHex($commitId)],
+            ),
+            ''
+        );
+
+        $commands = [$insert];
+
+        foreach ($writtenEvents as $items) {
+            if (\count($items) === 0) {
+                continue;
+            }
+
+            $definition = $this->registry->getByEntityName($items[0]->getEntityName());
+            $entityName = $definition->getEntityName();
+
+            if (!$definition->isVersionAware()) {
+                continue;
+            }
+
+            if (str_starts_with('version', $entityName)) {
+                continue;
+            }
+
+            foreach ($items as $item) {
+                $payload = $item->getPayload();
+
+                $primary = $item->getPrimaryKey();
+                if (!\is_array($primary)) {
+                    $primary = ['id' => $primary];
+                }
+                $primary['versionId'] = $versionId;
+
+                $id = Uuid::randomBytes();
+
+                $commands[] = new InsertCommand(
+                    $this->versionCommitDataDefinition,
+                    [
+                        'id' => $id,
+                        'version_commit_id' => $commitId,
+                        'entity_name' => $entityName,
+                        'entity_id' => Json::encode($primary),
+                        'payload' => Json::encode($payload),
+                        'user_id' => $userId,
+                        'action' => $isClone ? 'clone' : $item->getOperation(),
+                        'created_at' => $date,
+                    ],
+                    ['id' => $id],
+                    EntityExistence::createForEntity(
+                        $this->versionCommitDataDefinition->getEntityName(),
+                        ['id' => Uuid::fromBytesToHex($id)],
+                    ),
+                    ''
+                );
+            }
+        }
+
+        if (\count($commands) <= 1) {
+            return;
+        }
+
+        $writeContext->scope(Context::SYSTEM_SCOPE, function () use ($commands, $writeContext): void {
+            $this->entityWriteGateway->execute($commands, $writeContext);
+        });
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     *
+     * @return array<string, mixed>
+     */
+    private function addVersionToPayload(array $payload, EntityDefinition $definition, string $versionId, ?string $sourceVersionId = null): array
+    {
+        $fields = $definition->getFields()->filter(static fn (Field $field) => $field instanceof VersionField || $field instanceof ReferenceVersionField);
+
+        foreach ($fields as $field) {
+            if ($field instanceof ReferenceVersionField && $sourceVersionId !== null) {
+                $propertyName = $field->getPropertyName();
+
+                if (\array_key_exists($propertyName, $payload)) {
+                    if ($payload[$propertyName] !== $sourceVersionId) {
+                        continue;
+                    }
+                } elseif ($field->getVersionReferenceDefinition() !== $definition->getParentDefinition()) {
+                    continue;
+                }
+            }
+
+            $payload[$field->getPropertyName()] = $versionId;
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @param array<string, array<string, mixed>|string|null> $nestedItem
+     *
+     * @return array<string, array<string, mixed>|string|null>
+     */
+    private function removePrimaryKey(AssociationField $field, array $nestedItem): array
+    {
+        $pkFields = $field->getReferenceDefinition()->getPrimaryKeys();
+
+        foreach ($pkFields as $pkField) {
+            /*
+             * `EntityTranslationDefinition` doesn't have an `id`; they use a composite primary key consisting of the
+             * entity id and the `languageId`. When cloning the entity, we want to copy the `languageId`. The entity id
+             * has to be unset so that it's set by the parent, resulting in a valid primary key.
+             */
+            if (
+                $field instanceof TranslationsAssociationField
+                && $pkField instanceof StorageAware
+                && $pkField->getStorageName() === $field->getLanguageField()
+            ) {
+                continue;
+            }
+
+            if (\array_key_exists($pkField->getPropertyName(), $nestedItem)) {
+                unset($nestedItem[$pkField->getPropertyName()]);
+            }
+        }
+
+        return $nestedItem;
+    }
+
+    private function addCloneAssociations(
+        EntityDefinition $definition,
+        Criteria $criteria,
+        bool $cloneChildren,
+        Context $context,
+        int $childCounter = 1
+    ): void {
+        // add all cascade delete associations
+        $cascades = $definition->getFields()->filter(static function (Field $field) {
+            $flag = $field->getFlag(CascadeDelete::class);
+
+            return $flag ? $flag->isCloneRelevant() : false;
+        });
+
+        foreach ($cascades as $cascade) {
+            if ($cascade instanceof AssociationField && $this->isCloneProtected($this->getCloneReferenceDefinition($cascade), $context)) {
+                continue;
+            }
+
+            $nested = $criteria->getAssociation($cascade->getPropertyName());
+
+            if ($cascade instanceof ManyToManyAssociationField) {
+                continue;
+            }
+
+            // many to one shouldn't be cascaded
+            if ($cascade instanceof ManyToOneAssociationField) {
+                continue;
+            }
+
+            if (!$cascade instanceof AssociationField) {
+                continue;
+            }
+
+            $reference = $cascade->getReferenceDefinition();
+
+            $childrenAware = $reference->isChildrenAware();
+
+            // first level of parent-child tree?
+            if ($childrenAware && $reference !== $definition) {
+                // where product.children.parentId IS NULL
+                $nested->addFilter(new EqualsFilter($reference->getEntityName() . '.parentId', null));
+            }
+
+            if ($cascade instanceof ChildrenAssociationField) {
+                // break endless loop
+                if ($childCounter >= 30 || !$cloneChildren) {
+                    $criteria->removeAssociation($cascade->getPropertyName());
+
+                    continue;
+                }
+
+                ++$childCounter;
+                $this->addCloneAssociations($reference, $nested, $cloneChildren, $context, $childCounter);
+
+                continue;
+            }
+
+            $this->addCloneAssociations($reference, $nested, $cloneChildren, $context);
+        }
+    }
+
+    private function translationHasParent(VersionCommitEntity $commit, VersionCommitDataEntity $translationData): bool
+    {
+        $translationDefinition = $this->registry->getByEntityName($translationData->getEntityName());
+        $parentDefinition = $translationDefinition->getParentDefinition();
+        \assert($parentDefinition !== null);
+
+        $parentEntity = $parentDefinition->getEntityName();
+
+        $parentPropertyName = $this->getEntityForeignKeyName($parentEntity);
+
+        $payload = $translationData->getPayload();
+        \assert(\is_array($payload));
+        $parentId = $payload[$parentPropertyName];
+
+        foreach ($commit->getData() as $data) {
+            if ($data->getEntityName() !== $parentEntity) {
+                continue;
+            }
+
+            $primary = $data->getEntityId();
+
+            if (!isset($primary['id'])) {
+                continue;
+            }
+
+            if ($primary['id'] === $parentId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string> $entityId
+     * @param array<string, mixed> $payload
+     *
+     * @return array<string, mixed>
+     */
+    private function addTranslationToPayload(
+        array $entityId,
+        array $payload,
+        EntityDefinition $definition,
+        VersionCommitEntity $commit,
+        string $sourceVersionId,
+        string $targetVersionId
+    ): array {
+        $translationDefinition = $definition->getTranslationDefinition();
+
+        if (!$translationDefinition) {
+            return $payload;
+        }
+        if (!isset($entityId['id'])) {
+            return $payload;
+        }
+
+        $id = $entityId['id'];
+
+        $translations = [];
+
+        $foreignKeyName = $this->getEntityForeignKeyName($definition->getEntityName());
+
+        foreach ($commit->getData() as $data) {
+            if ($data->getEntityName() !== $translationDefinition->getEntityName()) {
+                continue;
+            }
+
+            $translation = $data->getPayload();
+            if (!isset($translation[$foreignKeyName])) {
+                continue;
+            }
+
+            if ($translation[$foreignKeyName] !== $id) {
+                continue;
+            }
+
+            $translations[] = $this->addVersionToPayload($translation, $translationDefinition, $targetVersionId, $sourceVersionId);
+        }
+
+        $payload['translations'] = $translations;
+
+        return $payload;
+    }
+
+    private function getEntityForeignKeyName(string $parentEntity): string
+    {
+        $parentPropertyName = explode('_', $parentEntity);
+        $parentPropertyName = array_map('ucfirst', $parentPropertyName);
+
+        return lcfirst(implode('', $parentPropertyName)) . 'Id';
+    }
+
+    private function getCommits(string $versionId, WriteContext $writeContext): VersionCommitCollection
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('version_commit.versionId', $versionId));
+        $criteria->addSorting(new FieldSorting('version_commit.autoIncrement'));
+        $commitIds = $this->entitySearcher->search($this->versionCommitDefinition, $criteria, $writeContext->getContext());
+
+        if ($commitIds->getTotal() <= 0) {
+            throw DataAbstractionLayerException::noCommitsFound($versionId);
+        }
+
+        $readCriteria = new Criteria($commitIds->getIds());
+        $readCriteria->addAssociation('data');
+
+        $readCriteria
+            ->getAssociation('data')
+            ->addSorting(new FieldSorting('autoIncrement'));
+
+        $commits = $this->entityReader->read($this->versionCommitDefinition, $readCriteria, $writeContext->getContext());
+        \assert($commits instanceof VersionCommitCollection);
+
+        return $commits;
+    }
+
+    /**
+     * @return array{insert:array<string, list<array<string, mixed>>>, update:array<string, list<array<string, mixed>>>, delete:array<string, list<array<string, mixed>>>}
+     */
+    private function buildWrites(VersionCommitCollection $commits, string $sourceVersionId, string $targetVersionId): array
+    {
+        $writes = [
+            'insert' => [],
+            'update' => [],
+            'delete' => [],
+        ];
+
+        foreach ($commits as $commit) {
+            foreach ($commit->getData() as $data) {
+                $definition = $this->registry->getByEntityName($data->getEntityName());
+
+                switch ($data->getAction()) {
+                    case 'insert':
+                    case 'update':
+                        if ($definition instanceof EntityTranslationDefinition && $this->translationHasParent($commit, $data)) {
+                            break;
+                        }
+
+                        $payload = $data->getPayload();
+                        if ($payload === null || $payload === []) {
+                            break;
+                        }
+                        $payload = $this->addVersionToPayload($payload, $definition, $targetVersionId, $sourceVersionId);
+                        $payload = $this->addTranslationToPayload(
+                            $data->getEntityId(),
+                            $payload,
+                            $definition,
+                            $commit,
+                            $sourceVersionId,
+                            $targetVersionId
+                        );
+                        $writes[$data->getAction()][$definition->getEntityName()][] = $payload;
+
+                        break;
+                    case 'delete':
+                        $id = $data->getEntityId();
+                        $id = $this->addVersionToPayload($id, $definition, $targetVersionId, $sourceVersionId);
+                        $writes['delete'][$definition->getEntityName()][] = $id;
+
+                        break;
+                }
+            }
+            $writes['delete']['version_commit'][] = ['id' => $commit->getId()];
+        }
+
+        return $writes;
+    }
+
+    /**
+     * @param array{insert:array<string, list<array<string, mixed>>>, update:array<string, list<array<string, mixed>>>, delete:array<string, list<array<string, mixed>>>} $writes
+     */
+    private function executeWrites(array $writes, WriteContext $targetContext): WriteResult
+    {
+        $operations = [];
+
+        foreach (array_filter($writes['insert'] ?? []) as $entity => $payload) {
+            $operations[] = new SyncOperation('insert-' . $entity, $entity, 'upsert', $payload);
+        }
+
+        foreach (array_filter($writes['update'] ?? []) as $entity => $payload) {
+            $operations[] = new SyncOperation('update-' . $entity, $entity, 'upsert', $payload);
+        }
+
+        foreach (array_filter($writes['delete'] ?? []) as $entity => $payload) {
+            $operations[] = new SyncOperation('delete-' . $entity, $entity, 'delete', $payload);
+        }
+
+        if ($operations === []) {
+            return new WriteResult([], [], []);
+        }
+
+        return $this->entityWriter->sync($operations, $targetContext);
+    }
+
+    private function updateVersionData(VersionCommitCollection $commits, WriteContext $writeContext, string $versionId, string $targetVersionId): void
+    {
+        $new = [];
+
+        foreach ($commits as $commit) {
+            foreach ($commit->getData() as $data) {
+                // skip clone action, otherwise the payload would contain all data
+                if ($data->getAction() === 'clone' || $data->getPayload() === null) {
+                    continue;
+                }
+                $definition = $this->registry->getByEntityName($data->getEntityName());
+
+                $id = $data->getEntityId();
+                $id = $this->addVersionToPayload($id, $definition, $targetVersionId, $versionId);
+
+                $payload = $this->addVersionToPayload($data->getPayload(), $definition, $targetVersionId, $versionId);
+
+                $new[] = [
+                    'entityId' => $id,
+                    'payload' => Json::encode($payload),
+                    'userId' => $data->getUserId(),
+                    'integrationId' => $data->getIntegrationId(),
+                    'entityName' => $data->getEntityName(),
+                    'action' => $data->getAction(),
+                    'createdAt' => $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+                ];
+            }
+        }
+
+        $commit = [
+            'versionId' => $targetVersionId,
+            'data' => $new,
+            'userId' => $writeContext->getContext()->getSource() instanceof AdminApiSource ? $writeContext->getContext()->getSource()->getUserId() : null,
+            'isMerge' => true,
+            'message' => 'merge commit ' . $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ];
+
+        // create new version commit for merge commit
+        $this->entityWriter->insert($this->versionCommitDefinition, [$commit], $writeContext);
+
+        // delete version
+        $this->entityWriter->delete($this->versionDefinition, [['id' => $versionId]], $writeContext);
+    }
+
+    private function deleteClones(VersionCommitCollection $commits, WriteContext $versionContext, string $versionId): void
+    {
+        $handled = [];
+
+        foreach ($commits as $commit) {
+            foreach ($commit->getData() as $data) {
+                $definition = $this->registry->getByEntityName($data->getEntityName());
+
+                $entity = [
+                    'definition' => $definition->getEntityName(),
+                    'primary' => $data->getEntityId(),
+                ];
+
+                // deduplicate to prevent deletion errors
+                $entityKey = Hasher::hash($entity);
+                if (isset($handled[$entityKey])) {
+                    continue;
+                }
+                $handled[$entityKey] = $entity;
+
+                $primary = $this->addVersionToPayload($data->getEntityId(), $definition, $versionId);
+
+                $this->entityWriter->delete($definition, [$primary], $versionContext);
+            }
+        }
+    }
+
+    private function versionExists(string $versionId): bool
+    {
+        $exists = $this->entitySearcher->search(
+            $this->versionDefinition,
+            new Criteria([$versionId]),
+            Context::createDefaultContext()
+        );
+
+        return $exists->has($versionId);
+    }
+
+    /**
+     * Merge overwrite data with cloned entity data, properly handling ListField
+     * This method recursively handles nested fields in any field type that has property mappings.
+     *
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $overwrites
+     * @param list<Field>|null $nestedFields Optional nested field definitions for recursive calls
+     *
+     * @return array<string, mixed>
+     */
+    private function mergeOverwrites(EntityDefinition $definition, array $data, array $overwrites, ?array $nestedFields = null): array
+    {
+        foreach ($overwrites as $key => $value) {
+            $field = $this->getFieldDefinition($key, $definition, $nestedFields);
+
+            // ListField should be completely replaced, not merged
+            if ($field instanceof ListField) {
+                $data[$key] = $value;
+                continue;
+            }
+
+            $isBothArrays = \is_array($value) && \array_key_exists($key, $data) && \is_array($data[$key]);
+
+            // For fields with nested property mappings, recursively handle them
+            if ($isBothArrays && $field && method_exists($field, 'getPropertyMapping')) {
+                $propertyMapping = $field->getPropertyMapping();
+                if ($propertyMapping !== []) {
+                    $data[$key] = $this->mergeOverwrites($definition, $data[$key], $value, $propertyMapping);
+                    continue;
+                }
+            }
+
+            // For other arrays, use array_replace_recursive; otherwise assign directly
+            $data[$key] = $isBothArrays
+                ? array_replace_recursive($data[$key], $value)
+                : $value;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Get field definition from nested fields or entity definition.
+     *
+     * @param list<Field>|null $nestedFields
+     */
+    private function getFieldDefinition(string $key, EntityDefinition $definition, ?array $nestedFields): ?Field
+    {
+        if ($nestedFields !== null) {
+            foreach ($nestedFields as $field) {
+                if ($field->getPropertyName() === $key) {
+                    return $field;
+                }
+            }
+
+            return null;
+        }
+
+        return $definition->getFields()->get($key);
+    }
+}

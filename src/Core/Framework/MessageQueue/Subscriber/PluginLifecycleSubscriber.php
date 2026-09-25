@@ -1,0 +1,50 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\MessageQueue\Subscriber;
+
+use Psr\Cache\CacheItemPoolInterface;
+use Psr\Clock\ClockInterface;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\MessageQueue\ScheduledTask\Registry\TaskRegistry;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostActivateEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostDeactivateEvent;
+use Shopwell\Core\Framework\Plugin\Event\PluginPostUpdateEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Messenger\EventListener\StopWorkerOnRestartSignalListener;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+final readonly class PluginLifecycleSubscriber implements EventSubscriberInterface
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private TaskRegistry $registry,
+        private CacheItemPoolInterface $restartSignalCachePool,
+        private ClockInterface $clock,
+    ) {
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            PluginPostActivateEvent::class => 'afterPluginStateChange',
+            PluginPostDeactivateEvent::class => 'afterPluginStateChange',
+            PluginPostUpdateEvent::class => 'afterPluginStateChange',
+        ];
+    }
+
+    public function afterPluginStateChange(): void
+    {
+        $this->registry->registerTasks();
+
+        // signal worker restart
+        $cacheItem = $this->restartSignalCachePool->getItem(StopWorkerOnRestartSignalListener::RESTART_REQUESTED_TIMESTAMP_KEY);
+        $cacheItem->set((float) $this->clock->now()->format(Defaults::MICROTIME_FORMAT));
+        $this->restartSignalCachePool->save($cacheItem);
+    }
+}

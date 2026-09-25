@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "esModuleInterop": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@fixtures/*": ["fixtures/*"],
+      "@page-objects/*": ["page-objects/*"],
+      "@tasks/*": ["tasks/*"],
+      "@data/*": ["test-data/*"],
+      "@helpers/*": ["helpers/*"]
+    }
+  }
+}

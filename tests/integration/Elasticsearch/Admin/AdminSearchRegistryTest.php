@@ -1,0 +1,283 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Elasticsearch\Admin;
+
+use Doctrine\DBAL\Connection;
+use OpenSearch\Client;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopwell\Core\Framework\Event\NestedEventCollection;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\QueueTestBehaviour;
+use Shopwell\Core\Framework\Util\Random;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Integration\Traits\OrderFixture;
+use Shopwell\Elasticsearch\Admin\AdminElasticsearchHelper;
+use Shopwell\Elasticsearch\Admin\AdminIndexingBehavior;
+use Shopwell\Elasticsearch\Admin\AdminSearchRegistry;
+use Shopwell\Elasticsearch\Admin\Indexer\OrderAdminSearchIndexer;
+use Shopwell\Elasticsearch\Admin\Indexer\PromotionAdminSearchIndexer;
+use Shopwell\Elasticsearch\Framework\ElasticsearchFieldBuilder;
+use Shopwell\Elasticsearch\Test\AdminElasticsearchTestBehaviour;
+use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+class AdminSearchRegistryTest extends TestCase
+{
+    use AdminApiTestBehaviour;
+    use AdminElasticsearchTestBehaviour;
+    use KernelTestBehaviour;
+    use OrderFixture;
+    use QueueTestBehaviour;
+
+    private Connection $connection;
+
+    private AdminSearchRegistry $registry;
+
+    private Client $client;
+
+    protected function setUp(): void
+    {
+        $this->clearElasticsearch();
+
+        $this->connection = static::getContainer()->get(Connection::class);
+
+        $this->client = static::getContainer()->get(Client::class);
+
+        $indexer = new PromotionAdminSearchIndexer(
+            $this->connection,
+            static::getContainer()->get(IteratorFactory::class),
+            static::getContainer()->get('promotion.repository'),
+            static::getContainer()->get(ElasticsearchFieldBuilder::class),
+            100
+        );
+
+        $searchHelper = new AdminElasticsearchHelper(true, true, 'sw-admin', 'test', true, static::createStub(LoggerInterface::class));
+        $this->registry = new AdminSearchRegistry(
+            ['promotion' => $indexer, 'order' => static::getContainer()->get(OrderAdminSearchIndexer::class)],
+            $this->connection,
+            $this->getDiContainer()->get(MessageBusInterface::class),
+            static::createStub(EventDispatcherInterface::class),
+            $this->client,
+            $searchHelper,
+            static::createStub(LoggerInterface::class),
+            [
+                'settings' => [
+                    'analysis' => [
+                        'normalizer' => [
+                            'sw_lowercase_normalizer' => [
+                                'type' => 'custom',
+                                'filter' => ['lowercase'],
+                            ],
+                        ],
+                        'char_filter' => [
+                            'sw_decimal_normalize' => [
+                                'type' => 'pattern_replace',
+                                'pattern' => '(\\d),(\\d)',
+                                'replacement' => '$1.$2',
+                            ],
+                            'sw_unit_glue' => [
+                                'type' => 'pattern_replace',
+                                'pattern' => '(^|\\s)(\\d+(?:[./,\'\\-]\\d+)*)\\s+([^\\d\\s])',
+                                'replacement' => '$1$2$3',
+                            ],
+                        ],
+                        'analyzer' => [
+                            'sw_whitespace_analyzer' => [
+                                'type' => 'custom',
+                                'tokenizer' => 'whitespace',
+                                'filter' => ['lowercase'],
+                            ],
+                            'sw_ngram_analyzer' => [
+                                'type' => 'custom',
+                                'tokenizer' => 'whitespace',
+                                'filter' => [
+                                    'lowercase',
+                                    'sw_ngram_filter',
+                                ],
+                            ],
+                            'sw_admin_completion_index_analyzer' => [
+                                'type' => 'custom',
+                                'tokenizer' => 'whitespace',
+                                'char_filter' => ['sw_decimal_normalize', 'sw_unit_glue'],
+                                'filter' => ['sw_word_delimiter_filter', 'flatten_graph', 'lowercase', 'sw_length_min', 'remove_duplicates'],
+                            ],
+                            'sw_admin_completion_search_analyzer' => [
+                                'type' => 'custom',
+                                'tokenizer' => 'whitespace',
+                                'char_filter' => ['sw_decimal_normalize', 'sw_unit_glue'],
+                                'filter' => ['sw_word_delimiter_filter', 'lowercase', 'sw_length_min', 'remove_duplicates', 'sw_unique_filter'],
+                            ],
+                        ],
+                        'filter' => [
+                            'sw_ngram_filter' => [
+                                'type' => 'ngram',
+                                'min_gram' => 4,
+                                'max_gram' => 5,
+                            ],
+                            'sw_word_delimiter_filter' => [
+                                'type' => 'word_delimiter_graph',
+                                'preserve_original' => true,
+                                'catenate_all' => true,
+                                'catenate_words' => true,
+                                'catenate_numbers' => true,
+                                'split_on_case_change' => true,
+                                'generate_word_parts' => true,
+                                'split_on_numerics' => true,
+                            ],
+                            'sw_length_min' => [
+                                'type' => 'length',
+                                'min' => 2,
+                            ],
+                            'sw_unique_filter' => [
+                                'type' => 'unique',
+                                'only_on_same_position' => false,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [],
+            'test',
+            new NativeClock()
+        );
+    }
+
+    protected function tearDown(): void
+    {
+        $this->clearElasticsearch();
+    }
+
+    public function testIterate(): void
+    {
+        $c = static::getContainer()->get(Connection::class);
+        static::assertEmpty($c->fetchAllAssociative('SELECT `index` FROM `admin_elasticsearch_index_task`'));
+
+        $this->registry->iterate(new AdminIndexingBehavior(true));
+
+        $index = $c->fetchOne('SELECT `index` FROM `admin_elasticsearch_index_task` WHERE `entity` = \'promotion\'');
+
+        static::assertNotFalse($index);
+
+        static::assertTrue($this->client->indices()->exists(['index' => $index]));
+
+        $indices = array_values($this->client->indices()->getMapping(['index' => $index]))[0];
+        $properties = $indices['mappings']['properties'];
+
+        // Assert base properties exist
+        static::assertArrayHasKey('id', $properties);
+        static::assertArrayHasKey('text', $properties);
+        static::assertArrayHasKey('entityName', $properties);
+        static::assertArrayHasKey('parameters', $properties);
+        static::assertArrayHasKey('textBoosted', $properties);
+
+        if (Feature::isActive('ENABLE_OPENSEARCH_FOR_ADMIN_API')) {
+            // Assert promotion-specific properties from mapping()
+            static::assertArrayHasKey('active', $properties);
+            static::assertArrayHasKey('name', $properties);
+            static::assertArrayHasKey('validFrom', $properties);
+            static::assertArrayHasKey('validUntil', $properties);
+            static::assertArrayHasKey('createdAt', $properties);
+        }
+    }
+
+    public function testRefresh(): void
+    {
+        $c = static::getContainer()->get(Connection::class);
+        static::assertEmpty($c->fetchAllAssociative('SELECT `index` FROM `admin_elasticsearch_index_task`'));
+
+        $this->registry->refresh(new EntityWrittenContainerEvent(Context::createDefaultContext(), new NestedEventCollection([
+            new EntityWrittenEvent('promotion', [
+                new EntityWriteResult(
+                    'c1a28776116d4431a2208eb2960ec340',
+                    [],
+                    'promotion',
+                    EntityWriteResult::OPERATION_INSERT
+                ),
+            ], Context::createDefaultContext()),
+        ]), []));
+
+        $this->runWorker();
+
+        $index = $c->fetchOne('SELECT `index` FROM `admin_elasticsearch_index_task` WHERE `entity` = \'promotion\'');
+
+        static::assertNotFalse($index);
+
+        static::assertTrue($this->client->indices()->exists(['index' => $index]));
+
+        $indices = array_values($this->client->indices()->getMapping(['index' => $index]))[0];
+        $properties = $indices['mappings']['properties'];
+
+        // Assert base properties exist
+        static::assertArrayHasKey('id', $properties);
+        static::assertArrayHasKey('text', $properties);
+        static::assertArrayHasKey('entityName', $properties);
+        static::assertArrayHasKey('parameters', $properties);
+        static::assertArrayHasKey('textBoosted', $properties);
+
+        if (Feature::isActive('ENABLE_OPENSEARCH_FOR_ADMIN_API')) {
+            // Assert promotion-specific properties from mapping()
+            static::assertArrayHasKey('active', $properties);
+            static::assertArrayHasKey('name', $properties);
+            static::assertArrayHasKey('validFrom', $properties);
+            static::assertArrayHasKey('validUntil', $properties);
+            static::assertArrayHasKey('createdAt', $properties);
+        }
+    }
+
+    public function testRefreshReachesOrderIndexerThroughDocumentWrite(): void
+    {
+        $context = Context::createDefaultContext();
+        $orderId = Uuid::randomHex();
+
+        $this->connection->beginTransaction();
+
+        try {
+            static::getContainer()->get('order.repository')->create($this->getOrderData($orderId, $context), $context);
+
+            $documentTypeId = $this->connection->fetchOne(
+                'SELECT LOWER(HEX(id)) FROM document_type WHERE technical_name = :name',
+                ['name' => 'invoice']
+            );
+            static::assertIsString($documentTypeId);
+
+            $event = static::getContainer()->get('document.repository')->create([[
+                'id' => Uuid::randomHex(),
+                'orderId' => $orderId,
+                'orderVersionId' => Defaults::LIVE_VERSION,
+                'documentTypeId' => $documentTypeId,
+                'typeName' => 'invoice',
+                'deepLinkCode' => Random::getAlphanumericString(32),
+                'config' => ['documentNumber' => '1000'],
+            ]], $context);
+
+            $this->registry->refresh($event);
+
+            $index = $this->connection->fetchOne('SELECT `index` FROM `admin_elasticsearch_index_task` WHERE `entity` = \'order\'');
+            static::assertIsString($index);
+            static::assertTrue($this->client->exists(['index' => $index, 'id' => $orderId]));
+        } finally {
+            $this->connection->rollBack();
+        }
+    }
+
+    protected function getDiContainer(): ContainerInterface
+    {
+        return static::getContainer();
+    }
+}

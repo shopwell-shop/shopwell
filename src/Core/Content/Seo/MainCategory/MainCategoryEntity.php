@@ -1,0 +1,119 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Seo\MainCategory;
+
+use Shopwell\Core\Content\Category\CategoryEntity;
+use Shopwell\Core\Content\Product\ProductEntity;
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopwell\Core\Framework\Deprecation\BCChange\ReturnTypeWidening;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
+
+#[Package('inventory')]
+class MainCategoryEntity extends Entity
+{
+    use EntityIdTrait;
+
+    protected string $salesChannelId;
+
+    protected ?SalesChannelEntity $salesChannel = null;
+
+    protected string $categoryId;
+
+    protected string $categoryVersionId;
+
+    protected ?CategoryEntity $category = null;
+
+    protected string $productId;
+
+    protected string $productVersionId;
+
+    protected ?ProductEntity $product = null;
+
+    public function getSalesChannelId(): string
+    {
+        return $this->salesChannelId;
+    }
+
+    public function setSalesChannelId(string $salesChannelId): void
+    {
+        $this->salesChannelId = $salesChannelId;
+    }
+
+    public function getSalesChannel(): ?SalesChannelEntity
+    {
+        return $this->salesChannel;
+    }
+
+    public function setSalesChannel(?SalesChannelEntity $salesChannel): void
+    {
+        $this->salesChannel = $salesChannel;
+    }
+
+    public function getCategoryId(): string
+    {
+        return $this->categoryId;
+    }
+
+    public function setCategoryId(string $categoryId): void
+    {
+        $this->categoryId = $categoryId;
+    }
+
+    #[ReturnTypeWidening(version: 'v6.8.0', newType: '?' . CategoryEntity::class)]
+    public function getCategory(): CategoryEntity
+    {
+        /** @deprecated tag:v6.8.0 - remove this fallback condition */
+        if ($this->category === null) {
+            return new CategoryEntity();
+        }
+
+        return $this->category;
+    }
+
+    public function setCategory(CategoryEntity $category): void
+    {
+        $this->category = $category;
+    }
+
+    public function getProductId(): string
+    {
+        return $this->productId;
+    }
+
+    public function setProductId(string $productId): void
+    {
+        $this->productId = $productId;
+    }
+
+    public function getProduct(): ?ProductEntity
+    {
+        return $this->product;
+    }
+
+    public function setProduct(?ProductEntity $product): void
+    {
+        $this->product = $product;
+    }
+
+    public function getCategoryVersionId(): string
+    {
+        return $this->categoryVersionId;
+    }
+
+    public function setCategoryVersionId(string $categoryVersionId): void
+    {
+        $this->categoryVersionId = $categoryVersionId;
+    }
+
+    public function getProductVersionId(): string
+    {
+        return $this->productVersionId;
+    }
+
+    public function setProductVersionId(string $productVersionId): void
+    {
+        $this->productVersionId = $productVersionId;
+    }
+}

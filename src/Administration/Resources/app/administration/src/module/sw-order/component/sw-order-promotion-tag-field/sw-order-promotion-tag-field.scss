@@ -1,0 +1,15 @@
+.sw-order-promotion-tag-field {
+    .sw-tagged-field__tag-list {
+        background: var(--color-elevation-surface-raised);
+
+        &--disabled {
+            background: var(--color-background-tertiary-default);
+        }
+    }
+
+    .sw-label {
+        &.sw-label--danger {
+            border-color: var(--color-border-critical-default);
+        }
+    }
+}

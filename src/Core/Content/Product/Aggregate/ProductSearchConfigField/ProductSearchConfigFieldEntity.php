@@ -1,0 +1,131 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Product\Aggregate\ProductSearchConfigField;
+
+use Shopwell\Core\Content\Product\Aggregate\ProductSearchConfig\ProductSearchConfigEntity;
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\CustomField\CustomFieldEntity;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('inventory')]
+class ProductSearchConfigFieldEntity extends Entity
+{
+    use EntityIdTrait;
+
+    protected string $searchConfigId;
+
+    protected ?string $customFieldId = null;
+
+    protected string $field;
+
+    protected bool $tokenize;
+
+    protected bool $searchable;
+
+    protected bool $useExactSubfield;
+
+    protected int $ranking;
+
+    protected ?ProductSearchConfigEntity $searchConfig = null;
+
+    protected ?CustomFieldEntity $customField = null;
+
+    public function getSearchConfigId(): string
+    {
+        return $this->searchConfigId;
+    }
+
+    public function setSearchConfigId(string $searchConfigId): void
+    {
+        $this->searchConfigId = $searchConfigId;
+    }
+
+    public function getCustomFieldId(): ?string
+    {
+        return $this->customFieldId;
+    }
+
+    public function setCustomFieldId(?string $customFieldId): void
+    {
+        $this->customFieldId = $customFieldId;
+    }
+
+    public function getField(): string
+    {
+        return $this->field;
+    }
+
+    public function setField(string $field): void
+    {
+        $this->field = $field;
+    }
+
+    public function getTokenize(): bool
+    {
+        return $this->tokenize;
+    }
+
+    public function setTokenize(bool $tokenize): void
+    {
+        $this->tokenize = $tokenize;
+    }
+
+    public function getSearchable(): bool
+    {
+        return $this->searchable;
+    }
+
+    public function setSearchable(bool $searchable): void
+    {
+        $this->searchable = $searchable;
+    }
+
+    public function getUseExactSubfield(): bool
+    {
+        return $this->useExactSubfield;
+    }
+
+    public function setUseExactSubfield(bool $useExactSubfield): void
+    {
+        $this->useExactSubfield = $useExactSubfield;
+    }
+
+    public function getRanking(): int
+    {
+        return $this->ranking;
+    }
+
+    public function setRanking(int $ranking): void
+    {
+        $this->ranking = $ranking;
+    }
+
+    public function getSearchConfig(): ?ProductSearchConfigEntity
+    {
+        return $this->searchConfig;
+    }
+
+    public function setSearchConfig(ProductSearchConfigEntity $searchConfig): void
+    {
+        $this->searchConfig = $searchConfig;
+    }
+
+    public function getCustomField(): ?CustomFieldEntity
+    {
+        return $this->customField;
+    }
+
+    public function setCustomField(?CustomFieldEntity $customField): void
+    {
+        $this->customField = $customField;
+    }
+
+    public function getApiAlias(): string
+    {
+        return 'product_search_config_field';
+    }
+}

@@ -1,0 +1,42 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Event;
+
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Contracts\EventDispatcher\Event;
+
+/**
+ * @internal
+ *
+ * This event is dispatched during the version merge process and allows listeners to manipulate the writes array before they are applied.
+ *
+ * @phpstan-type WriteOperation array<string, list<array<string, mixed>>>
+ * @phpstan-type Writes array{
+ *     insert: WriteOperation,
+ *     update: WriteOperation,
+ *     delete: WriteOperation
+ * }
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('framework')]
+class BeforeVersionMergeEvent extends Event
+{
+    /**
+     * @param Writes $writes
+     */
+    public function __construct(public array $writes)
+    {
+    }
+
+    /**
+     * @return Writes
+     */
+    public function filterWrites(callable $callback): array
+    {
+        $filtered = array_filter($this->writes, $callback);
+
+        /** @var Writes $filtered */
+        return $filtered;
+    }
+}

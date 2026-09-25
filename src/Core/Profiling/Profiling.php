@@ -1,0 +1,69 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Profiling;
+
+use Composer\InstalledVersions;
+use Shopwell\Core\Framework\Bundle;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Profiling\Compiler\RemoveDevServices;
+use Shopwell\Core\Profiling\DependencyInjection\CompilerPass\CartServiceCompilerPass;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class Profiling extends Bundle
+{
+    public function getTemplatePriority(): int
+    {
+        return -2;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function build(ContainerBuilder $container): void
+    {
+        $environment = $container->getParameter('kernel.environment');
+
+        parent::build($container);
+
+        if (InstalledVersions::isInstalled('symfony/web-profiler-bundle')) {
+            $this->buildDefaultConfig($container);
+        }
+
+        $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/DependencyInjection/'));
+        $loader->load('services.php');
+
+        if ($environment === 'dev') {
+            $loader->load('services_dev.php');
+            $container->addCompilerPass(new CartServiceCompilerPass());
+        }
+
+        $container->addCompilerPass(new RemoveDevServices());
+    }
+
+    public function boot(): void
+    {
+        parent::boot();
+        \assert($this->container instanceof ContainerInterface, 'Container is not set yet, please call setContainer() before calling boot(), see `src/Core/Kernel.php:186`.');
+
+        // The profiler registers all profiler integrations in the constructor
+        // Therefore we need to get the service once to initialize it
+        $this->container->get(Profiler::class);
+    }
+
+    public function configureRoutes(RoutingConfigurator $routes, string $environment): void
+    {
+        if (!InstalledVersions::isInstalled('symfony/web-profiler-bundle')) {
+            return;
+        }
+
+        parent::configureRoutes($routes, $environment);
+    }
+}

@@ -1,0 +1,58 @@
+.sw-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    font-size: var(--font-size-2xs);
+    line-height: var(--font-size-2xs);
+    border-radius: var(--border-radius-round);
+
+    .sw-color-badge {
+        margin: 0;
+    }
+
+    &--gray {
+        background-color: var(--color-background-tertiary-default);
+        color: var(--color-text-primary-default);
+
+        .sw-color-badge {
+            background-color: var(--color-icon-secondary-default);
+        }
+    }
+
+    &--blue {
+        background-color: var(--color-background-brand-default);
+        color: var(--color-text-primary-default);
+
+        .sw-color-badge {
+            background-color: var(--color-icon-brand-default);
+        }
+    }
+
+    &--red {
+        background-color: var(--color-background-critical-default);
+        color: var(--color-text-primary-default);
+
+        .sw-color-badge {
+            background-color: var(--color-icon-critical-default);
+        }
+    }
+
+    &--orange {
+        background-color: var(--color-background-attention-default);
+        color: var(--color-text-primary-default);
+
+        .sw-color-badge {
+            background-color: var(--color-icon-attention-default);
+        }
+    }
+
+    &--green {
+        background-color: var(--color-background-positive-default);
+        color: var(--color-text-primary-default);
+
+        .sw-color-badge {
+            background-color: var(--color-icon-positive-default);
+        }
+    }
+}

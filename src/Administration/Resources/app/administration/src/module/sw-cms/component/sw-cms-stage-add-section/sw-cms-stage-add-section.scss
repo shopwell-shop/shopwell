@@ -1,0 +1,37 @@
+.sw-cms-stage-add-section {
+    width: 100%;
+    padding: 19px 0;
+    text-align: center;
+    z-index: 200;
+    background: var(--color-elevation-surface-sunken);
+    display: grid;
+
+    &.is--disabled {
+        .sw-cms-stage-add-section__button {
+            color: var(--color-icon-secondary-default);
+            cursor: not-allowed;
+
+            &:hover {
+                color: var(--color-icon-secondary-default);
+            }
+        }
+    }
+
+    .sw-cms-stage-add-section__button {
+        width: 30px;
+        height: 30px;
+        justify-self: center;
+        align-self: center;
+        cursor: pointer;
+        color: var(--color-icon-primary-default);
+        transition: 0.5s;
+
+        &:hover {
+            color: var(--color-icon-brand-default);
+        }
+
+        &.is--open {
+            transform: rotate(45deg);
+        }
+    }
+}

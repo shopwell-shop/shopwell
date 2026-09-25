@@ -1,0 +1,51 @@
+@import "~scss/mixins";
+
+.sw-media-breadcrumbs {
+    display: grid;
+    grid-auto-flow: column;
+    justify-content: start;
+    align-items: center;
+    margin-bottom: 16px;
+
+    a {
+        cursor: pointer;
+    }
+
+    // The breadcrumb folder images have no intrinsic layout size of their
+    // own — pin them to the former artwork size (28x24).
+    .sw-media-breadcrumbs__button-back-to-root img,
+    .sw-media-breadcrumbs__button-back-to-root .sw-media-folder-thumbnail {
+        width: 28px;
+        display: block;
+    }
+
+    .sw-media-breadcrumbs__entry {
+        font-size: var(--font-size-m);
+        display: flex;
+        align-items: center;
+        margin-top: 5px;
+
+        @include truncate;
+    }
+
+    .sw-media-breadcrumbs__parent-folder {
+        color: var(--color-text-secondary-default);
+    }
+
+    .sw-media-breadcrumbs__arrow-separator {
+        color: var(--color-text-primary-default);
+
+        &.mt-icon {
+            width: 22px;
+            height: 22px;
+            padding-top: 7px;
+            padding-right: 7px;
+            padding-bottom: 6px;
+            padding-left: 10px;
+        }
+    }
+
+    &.is--small .sw-media-breadcrumbs__entry {
+        font-size: var(--font-size-xs);
+    }
+}

@@ -1,0 +1,157 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Elasticsearch\Admin\Indexer;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupDefinition;
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Event\NestedEventCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Elasticsearch\Admin\Indexer\CustomerGroupAdminSearchIndexer;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+#[CoversClass(CustomerGroupAdminSearchIndexer::class)]
+class CustomerGroupAdminSearchIndexerTest extends TestCase
+{
+    private CustomerGroupAdminSearchIndexer $searchIndexer;
+
+    protected function setUp(): void
+    {
+        $this->searchIndexer = new CustomerGroupAdminSearchIndexer(
+            static::createStub(Connection::class),
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            100
+        );
+    }
+
+    public function testGetUpdatedIds(): void
+    {
+        $indexer = new CustomerGroupAdminSearchIndexer(
+            static::createStub(Connection::class),
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            100
+        );
+
+        $cgId = Uuid::randomHex();
+
+        $event = new EntityWrittenContainerEvent(
+            Context::createDefaultContext(),
+            new NestedEventCollection([
+                new EntityWrittenEvent('customer_group_translation', [
+                    new EntityWriteResult(['customerGroupId' => $cgId], ['name' => 'VIP'], 'customer_group', EntityWriteResult::OPERATION_UPDATE),
+                ], Context::createDefaultContext()),
+            ]),
+            []
+        );
+
+        static::assertSame([$cgId], $indexer->getUpdatedIds($event));
+    }
+
+    public function testGetEntity(): void
+    {
+        static::assertSame(CustomerGroupDefinition::ENTITY_NAME, $this->searchIndexer->getEntity());
+    }
+
+    public function testGetName(): void
+    {
+        static::assertSame('customer-group-listing', $this->searchIndexer->getName());
+    }
+
+    public function testGetDecoratedShouldThrowException(): void
+    {
+        static::expectException(DecorationPatternException::class);
+        $this->searchIndexer->getDecorated();
+    }
+
+    public function testGlobalData(): void
+    {
+        $context = Context::createDefaultContext();
+        $repository = static::createStub(EntityRepository::class);
+        $customerGroup = new CustomerGroupEntity();
+        $customerGroup->setUniqueIdentifier(Uuid::randomHex());
+        $repository->method('search')->willReturn(
+            new EntitySearchResult(
+                'customer_group',
+                1,
+                new EntityCollection([$customerGroup]),
+                null,
+                new Criteria(),
+                $context
+            )
+        );
+
+        $indexer = new CustomerGroupAdminSearchIndexer(
+            static::createStub(Connection::class),
+            static::createStub(IteratorFactory::class),
+            $repository,
+            100
+        );
+
+        $result = [
+            'total' => 1,
+            'hits' => [
+                ['id' => '809c1844f4734243b6aa04aba860cd45'],
+            ],
+        ];
+
+        $data = $indexer->globalData($result, $context);
+
+        static::assertSame($result['total'], $data['total']);
+    }
+
+    public function testFetching(): void
+    {
+        $connection = $this->getConnection();
+
+        $indexer = new CustomerGroupAdminSearchIndexer(
+            $connection,
+            static::createStub(IteratorFactory::class),
+            static::createStub(EntityRepository::class),
+            100
+        );
+
+        $id = '809c1844f4734243b6aa04aba860cd45';
+        $documents = $indexer->fetch([$id]);
+
+        static::assertArrayHasKey($id, $documents);
+
+        $document = $documents[$id];
+
+        static::assertSame($id, $document['id']);
+        static::assertSame('809c1844f4734243b6aa04aba860cd45 customer group', $document['text']);
+    }
+
+    private function getConnection(): Connection
+    {
+        $connection = static::createStub(Connection::class);
+
+        $connection->method('fetchAllAssociative')->willReturn(
+            [
+                [
+                    'id' => '809c1844f4734243b6aa04aba860cd45',
+                    'name' => 'Customer group',
+                ],
+            ],
+        );
+
+        return $connection;
+    }
+}

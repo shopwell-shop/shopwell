@@ -1,0 +1,537 @@
+/**
+ * @sw-package fundamentals@framework
+ */
+import { email } from 'src/core/service/validation.service';
+import { KEY_USER_SEARCH_PREFERENCE } from 'src/app/service/search-ranking.service';
+import useTheme from 'src/app/composables/use-theme';
+import useModuleIconColors from 'src/app/composables/use-module-icon-colors';
+import template from './sw-profile-index.html.twig';
+import '../../store/sw-profile.store';
+
+const { Component, Mixin, Store } = Shopwell;
+const { Criteria } = Shopwell.Data;
+const { mapPropertyErrors } = Component.getComponentHelper();
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+export default {
+    template,
+
+    inject: [
+        'userService',
+        'loginService',
+        'mediaDefaultFolderService',
+        'repositoryFactory',
+        'acl',
+        'searchPreferencesService',
+        'searchRankingService',
+        'ssoSettingsService',
+        'validationApiService',
+        'feature',
+    ],
+
+    mixins: [Mixin.getByName('notification')],
+
+    data() {
+        return {
+            user: { username: '', email: '' },
+            languages: [],
+            imageSize: 140,
+            newPassword: null,
+            newPasswordConfirm: null,
+            confirmPassword: null,
+            avatarMediaItem: null,
+            uploadTag: 'sw-profile-upload-tag',
+            isLoading: false,
+            isUserLoading: true,
+            isSaveSuccessful: false,
+            confirmPasswordModal: false,
+            mediaDefaultFolderId: null,
+            showMediaModal: false,
+            timezoneOptions: [],
+            userThemeSelection: null,
+            userModuleIconColors: useModuleIconColors().enabled.value,
+        };
+    },
+
+    metaInfo() {
+        return {
+            title: this.$createTitle(),
+        };
+    },
+
+    computed: {
+        userTheme() {
+            return this.userThemeSelection ?? useTheme().theme.value;
+        },
+
+        minSearchTermLength() {
+            return Store.get('swProfile').minSearchTermLength;
+        },
+
+        searchPreferences() {
+            return Store.get('swProfile').searchPreferences;
+        },
+
+        ...mapPropertyErrors('user', ['email', 'timeZone']),
+
+        userSearchPreferences: {
+            get() {
+                return Store.get('swProfile').userSearchPreferences;
+            },
+            set(userSearchPreferences) {
+                Store.get('swProfile').userSearchPreferences = userSearchPreferences;
+            },
+        },
+
+        isDisabled() {
+            return true;
+        },
+
+        userRepository() {
+            return this.repositoryFactory.create('user');
+        },
+
+        languageRepository() {
+            return this.repositoryFactory.create('language');
+        },
+
+        localeRepository() {
+            return this.repositoryFactory.create('locale');
+        },
+
+        mediaRepository() {
+            return this.repositoryFactory.create('media');
+        },
+
+        languageId() {
+            return Shopwell.Store.get('session').languageId;
+        },
+
+        profileTabs() {
+            const createRouteTab = (label, routeName) => {
+                return {
+                    label: this.$t(label),
+                    name: routeName,
+                    onClick: () => {
+                        void this.$router.push({ name: routeName });
+                    },
+                };
+            };
+
+            return [
+                createRouteTab('sw-profile.tabGeneral.title', 'sw.profile.index.general'),
+                createRouteTab('sw-profile.tabSearchPreferences.title', 'sw.profile.index.searchPreferences'),
+                createRouteTab('sw-profile.tabPrivacyPreferences.title', 'sw.profile.index.privacyPreferences'),
+            ];
+        },
+    },
+
+    watch: {
+        $route(newValue) {
+            if (!newValue || newValue.name === 'sw.profile.index.searchPreferences') {
+                return;
+            }
+
+            this.resetGeneralData();
+        },
+
+        'user.avatarMedia.id'() {
+            if (!this.user.avatarMedia?.id) {
+                return;
+            }
+
+            if (!this.acl.can('media.creator')) {
+                return;
+            }
+
+            this.setMediaItem({ targetId: this.user.avatarMedia.id });
+        },
+
+        languageId() {
+            this.createdComponent();
+        },
+    },
+
+    created() {
+        this.createdComponent();
+    },
+
+    beforeMount() {
+        this.beforeMountComponent();
+    },
+
+    methods: {
+        createdComponent() {
+            // Create the theme singleton before the first render — creating it inside a computed would trigger Vue's onMounted warning
+            useTheme();
+
+            this.isUserLoading = true;
+
+            const languagePromise = new Promise((resolve) => {
+                resolve(this.languageId);
+            });
+
+            this.userPromise = this.getUserData();
+            this.timezoneOptions = Shopwell.Service('timezoneService').getTimezoneOptions();
+
+            const promises = [languagePromise, this.userPromise];
+
+            if (this.acl.can('media.creator')) {
+                this.getMediaDefaultFolderId()
+                    .then((id) => {
+                        this.mediaDefaultFolderId = id;
+                    })
+                    .catch(() => {
+                        this.mediaDefaultFolderId = null;
+                    });
+            }
+
+            Promise.all(promises)
+                .then(() => {
+                    this.loadLanguages();
+                })
+                .then(() => {
+                    this.isUserLoading = false;
+                });
+        },
+
+        beforeMountComponent() {
+            this.userPromise.then((user) => {
+                this.user = user;
+
+                if (this.user.avatarId) {
+                    this.loadMediaItem(this.user.avatarId);
+                }
+            });
+        },
+
+        loadLanguages() {
+            const factoryContainer = Shopwell.Application.getContainer('factory');
+            const localeFactory = factoryContainer.locale;
+            const registeredLocales = Array.from(localeFactory.getLocaleRegistry().keys());
+
+            const languageCriteria = new Criteria(1, 500);
+            languageCriteria.addAssociation('locale');
+            languageCriteria.addSorting(Criteria.sort('locale.name', 'ASC'));
+            languageCriteria.addSorting(Criteria.sort('locale.territory', 'ASC'));
+            languageCriteria.addFilter(Criteria.equalsAny('locale.code', registeredLocales));
+
+            return this.languageRepository.search(languageCriteria).then((result) => {
+                this.languages = [];
+                const localeIds = [];
+                let fallbackId = '';
+
+                result.forEach((lang) => {
+                    lang.customLabel = `${lang.locale.translated.name} (${lang.locale.translated.territory})`;
+                    this.languages.push(lang);
+
+                    localeIds.push(lang.localeId);
+                    if (lang.locale.code === Shopwell.Context.app.fallbackLocale) {
+                        fallbackId = lang.localeId;
+                    }
+                });
+
+                if (!localeIds.includes(this.user.localeId)) {
+                    this.user.localeId = fallbackId;
+                }
+                this.isUserLoading = false;
+
+                return this.languages;
+            });
+        },
+
+        async getUserData() {
+            const routeUser = this.$route.params.user;
+            if (routeUser) {
+                return this.userRepository.get(routeUser.id);
+            }
+
+            const user = await this.userService.getUser();
+            return this.userRepository.get(user.data.id);
+        },
+
+        resetGeneralData() {
+            this.newPassword = null;
+            this.newPasswordConfirm = null;
+
+            this.createdComponent();
+            this.beforeMountComponent();
+        },
+
+        async saveFinish() {
+            this.isSaveSuccessful = false;
+            this.user = await this.getUserData();
+        },
+
+        onSave() {
+            if (this.$route.name === 'sw.profile.index.searchPreferences') {
+                Promise.all([this.saveMinSearchTermLength(), this.saveUserSearchPreferences()]);
+
+                return;
+            }
+
+            this.ssoSettingsService.isSso().then(async (response) => {
+                if (response.isSso) {
+                    this.saveUser();
+
+                    return;
+                }
+
+                const isValid = await this.validationApiService.validateEmailAddress(this.user.email);
+
+                if (isValid) {
+                    const passwordCheck = this.checkPassword();
+                    if (passwordCheck === null || passwordCheck === true) {
+                        this.confirmPasswordModal = true;
+                    }
+
+                    return;
+                }
+
+                this.createErrorMessage(this.$t('sw-profile.index.notificationInvalidEmailErrorMessage'));
+            });
+        },
+
+        /**
+         * @deprecated tag:v6.8.0 - Will be removed.
+         * @returns {boolean}
+         */
+        checkEmail() {
+            if (!this.user.email || !email(this.user.email)) {
+                this.createErrorMessage(this.$t('sw-profile.index.notificationInvalidEmailErrorMessage'));
+
+                return false;
+            }
+            return true;
+        },
+
+        checkPassword() {
+            if (this.newPassword && this.newPassword.length > 0) {
+                if (this.newPassword !== this.newPasswordConfirm) {
+                    this.createErrorMessage(this.$t('sw-profile.index.notificationPasswordErrorMessage'));
+                    return false;
+                }
+
+                this.user.password = this.newPassword;
+
+                return true;
+            }
+
+            return null;
+        },
+
+        createErrorMessage(errorMessage) {
+            this.createNotificationError({
+                message: errorMessage,
+            });
+        },
+
+        saveUser(context) {
+            if (!this.acl.can('user:editor')) {
+                const changes = this.userRepository.getSyncChangeset([this.user]);
+                delete changes.changeset[0].changes.id;
+
+                this.userService
+                    .updateUser(changes.changeset[0].changes)
+                    .then(async () => {
+                        if (this.newPassword) {
+                            try {
+                                await this.loginService.loginByUsername(this.user.username, this.newPassword);
+                            } catch {
+                                this.loginService.logout();
+                                return;
+                            }
+                        }
+
+                        await this.updateCurrentUser();
+                        await this.saveUserTheme();
+                        await this.saveUserModuleIconColors();
+
+                        this.isLoading = false;
+                        this.isSaveSuccessful = true;
+
+                        Shopwell.Service('localeHelper').setLocaleWithId(this.user.localeId);
+                    })
+                    .catch((error) => {
+                        if (error?.response?.data?.errors?.[0]) {
+                            Shopwell.Store.get('error').addApiError({
+                                expression: `user.${this.user?.id}.password`,
+                                error: new Shopwell.Classes.ShopwellError(error.response.data.errors[0]),
+                            });
+                        }
+                        this.createNotificationError({
+                            message: this.$t('sw-profile.index.notificationSaveErrorMessage'),
+                        });
+                        this.isLoading = false;
+                        this.isSaveSuccessful = false;
+                    });
+
+                return;
+            }
+
+            this.userRepository
+                .save(this.user, context)
+                .then(async () => {
+                    if (this.newPassword) {
+                        try {
+                            await this.loginService.loginByUsername(this.user.username, this.newPassword);
+                        } catch {
+                            this.loginService.logout();
+                            return;
+                        }
+                    }
+
+                    await this.updateCurrentUser();
+                    await this.saveUserTheme();
+                    await this.saveUserModuleIconColors();
+                    Shopwell.Service('localeHelper').setLocaleWithId(this.user.localeId);
+
+                    this.isLoading = false;
+                    this.isSaveSuccessful = true;
+
+                    this.confirmPassword = '';
+                    this.newPassword = '';
+                    this.newPasswordConfirm = '';
+                })
+                .catch(() => {
+                    this.handleUserSaveError();
+                    this.isLoading = false;
+                    this.isSaveSuccessful = false;
+                });
+        },
+
+        updateCurrentUser() {
+            return this.userService.getUser().then((response) => {
+                const data = response.data;
+                delete data.password;
+
+                return Shopwell.Store.get('session').setCurrentUser(data);
+            });
+        },
+
+        loadMediaItem(targetId) {
+            this.mediaRepository.get(targetId).then((media) => {
+                this.avatarMediaItem = media;
+            });
+        },
+
+        setMediaItem({ targetId }) {
+            this.user.avatarId = targetId;
+            this.loadMediaItem(targetId);
+        },
+
+        onDropMedia(mediaItem) {
+            this.setMediaItem({ targetId: mediaItem.id });
+        },
+
+        onCloseConfirmPasswordModal() {
+            this.confirmPassword = '';
+            this.confirmPasswordModal = false;
+        },
+
+        onUnlinkAvatar() {
+            this.avatarMediaItem = null;
+            this.user.avatarId = null;
+        },
+
+        openMediaModal() {
+            this.showMediaModal = true;
+        },
+
+        handleUserSaveError() {
+            if (this.$route.name.includes('sw.profile.index')) {
+                this.createNotificationError({
+                    message: this.$t('sw-profile.index.notificationSaveErrorMessage'),
+                });
+            }
+            this.isLoading = false;
+        },
+
+        onChangeNewPassword(newPassword) {
+            this.newPassword = newPassword;
+        },
+
+        onChangeNewPasswordConfirm(newPasswordConfirm) {
+            this.newPasswordConfirm = newPasswordConfirm;
+        },
+
+        onChangeUserTheme(userTheme) {
+            this.userThemeSelection = userTheme;
+        },
+
+        onChangeUserModuleIconColors(userModuleIconColors) {
+            this.userModuleIconColors = userModuleIconColors;
+        },
+
+        saveUserTheme() {
+            return useTheme()
+                .saveUserTheme(this.userTheme)
+                .then(() => {
+                    this.userThemeSelection = null;
+                })
+                .catch(() => {
+                    this.createErrorMessage(this.$t('sw-profile.index.notificationSaveErrorMessage'));
+                });
+        },
+
+        saveUserModuleIconColors() {
+            return useModuleIconColors()
+                .saveUserModuleIconColors(this.userModuleIconColors)
+                .catch(() => {
+                    this.createErrorMessage(this.$t('sw-profile.index.notificationSaveErrorMessage'));
+                });
+        },
+
+        onMediaSelectionChange([mediaEntity]) {
+            this.avatarMediaItem = mediaEntity;
+            this.user.avatarId = mediaEntity.id;
+        },
+
+        getMediaDefaultFolderId() {
+            return this.mediaDefaultFolderService.getDefaultFolderId('user');
+        },
+
+        saveMinSearchTermLength() {
+            return this.searchRankingService.saveMinSearchTermLength(this.minSearchTermLength);
+        },
+
+        saveUserSearchPreferences() {
+            this.userSearchPreferences =
+                this.userSearchPreferences ?? this.searchPreferencesService.createUserSearchPreferences();
+            this.userSearchPreferences.value = this.searchPreferences.map(({ entityName, _searchable, fields }) => {
+                return {
+                    [entityName]: {
+                        _searchable,
+                        ...this.searchPreferencesService.processSearchPreferencesFields(fields),
+                    },
+                };
+            });
+
+            this.searchRankingService.clearCacheUserSearchConfiguration();
+
+            this.isLoading = true;
+            this.isSaveSuccessful = false;
+            return Shopwell.Service('userConfigService')
+                .upsert({
+                    [KEY_USER_SEARCH_PREFERENCE]: this.userSearchPreferences.value,
+                })
+                .then(() => {
+                    this.isLoading = false;
+                    this.isSaveSuccessful = true;
+                })
+                .catch((error) => {
+                    this.isLoading = false;
+                    this.isSaveSuccessful = false;
+                    this.createNotificationError({ message: error.message });
+                });
+        },
+
+        onVerifyPasswordFinished(context) {
+            this.confirmPasswordModal = false;
+            this.isSaveSuccessful = false;
+            this.isLoading = true;
+
+            this.saveUser(context);
+        },
+    },
+};

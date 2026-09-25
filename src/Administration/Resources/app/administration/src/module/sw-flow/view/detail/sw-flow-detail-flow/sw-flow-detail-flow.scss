@@ -1,0 +1,157 @@
+.sw-flow-detail-flow {
+    &__content {
+        display: flex;
+        flex-direction: column;
+        margin: auto;
+        max-width: 60rem;
+        transition: max-width 0.3s ease-in-out;
+    }
+
+    &__warning-unknow-trigger {
+        &-list {
+            margin-top: var(--scale-size-20);
+        }
+    }
+
+    &__trigger-card {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-gap: var(--scale-size-48);
+        align-items: start;
+    }
+
+    &__trigger-select {
+        min-width: 20.5rem;
+        background: var(--color-elevation-surface-raised);
+        border-radius: var(--border-radius-card);
+        border: 1px solid var(--color-border-secondary-default);
+        padding: var(--scale-size-24);
+        transition: all 100ms ease-in-out;
+        box-shadow: 0 3px 6px 0 var(--color-elevation-shadow-default);
+    }
+
+    &__trigger-explain {
+        width: 26.25rem;
+        border: 2px dashed var(--color-border-secondary-default);
+        border-radius: var(--border-radius-card);
+        padding: var(--scale-size-24);
+        color: var(--color-text-primary-default);
+
+        h4 {
+            font-size: var(--font-size-s);
+            line-height: var(--font-line-height-s);
+            font-weight: var(--font-weight-medium);
+            margin-bottom: var(--scale-size-4);
+        }
+
+        p {
+            font-size: var(--font-size-xs);
+            line-height: var(--font-line-height-xs);
+            font-weight: var(--font-weight-regular);
+        }
+    }
+
+    &__oval {
+        z-index: 2;
+        position: absolute;
+        top: -8px;
+        left: -5px;
+        width: var(--scale-size-12);
+        height: var(--scale-size-12);
+        background: var(--color-elevation-surface-raised);
+        border: 1px solid var(--color-border-secondary-default);
+        border-radius: var(--border-radius-round);
+    }
+
+    &__sequence-diagram {
+        position: relative;
+        margin-left: var(--scale-size-30);
+        padding: 0 0 var(--scale-size-40);
+    }
+
+    &__position {
+        position: relative;
+        display: flex;
+
+        &:not(:last-child) .sw-flow-detail-flow__sequences {
+            width: 100%;
+            padding-bottom: var(--scale-size-64);
+            border-bottom: 1px solid var(--color-border-secondary-default);
+        }
+
+        & .sw-flow-detail-flow__sequences {
+            padding-top: var(--scale-size-64);
+        }
+
+        & .sw-flow-detail-flow__position-connection {
+            position: absolute;
+            left: 0;
+            top: 64px;
+            width: var(--scale-size-32);
+            height: 58px;
+            border-bottom: 2px dashed var(--color-border-secondary-default);
+            border-left: 2px dashed var(--color-border-secondary-default);
+            border-bottom-left-radius: 40px;
+        }
+
+        &:last-child .sw-flow-detail-flow__position-plus {
+            z-index: 2;
+            border-radius: var(--border-radius-round);
+            position: absolute;
+            top: 155px;
+            left: -11px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .icon--regular-chevron-right-xs {
+            position: absolute;
+            bottom: -7px;
+            right: -10px;
+            color: var(--color-border-secondary-default);
+        }
+
+        &:not(:last-child) .sw-flow-detail-flow__position-plus {
+            display: none;
+        }
+
+        &::before {
+            content: "";
+            display: block;
+            border-left: 2px dashed var(--color-border-secondary-default);
+            z-index: 1;
+        }
+
+        &:last-child::before {
+            content: "";
+            display: block;
+            height: 165px;
+            border-left: 2px dashed var(--color-border-secondary-default);
+            z-index: 1;
+        }
+    }
+
+    &__sequences {
+        margin-left: var(--scale-size-40);
+    }
+
+    .sw-block-field__block {
+        height: auto;
+    }
+}
+
+.sw-flow-detail-flow-template {
+    pointer-events: none;
+}
+
+.list-enter-active,
+.list-leave-active {
+    transition: all 0.5s ease-in-out;
+}
+
+.list-enter,
+.list-leave-to {
+    opacity: 0;
+    transform: translateX(var(--scale-size-30));
+}

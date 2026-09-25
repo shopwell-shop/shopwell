@@ -1,0 +1,320 @@
+import type { TabItem } from '@shopware-ag/meteor-component-library/dist/esm/MtTabs';
+import type {
+    AdminTabsDefinition,
+    CustomEntityDefinition,
+    CustomEntityProperties,
+    AdminUiDefinition,
+} from 'src/app/service/custom-entity-definition.service';
+import type Repository from 'src/core/data/repository.data';
+
+import template from './sw-generic-custom-entity-detail.html.twig';
+import './sw-generic-custom-entity-detail.scss';
+
+const { Mixin } = Shopwell;
+
+type GenericCustomEntityDetailData = {
+    isLoading: boolean;
+    isSaveSuccessful: boolean;
+    customEntityData: Entity<'generic_custom_entity'> | null;
+    customEntityDataInstances?: EntityCollection<'generic_custom_entity'>;
+    activeTab: string | null;
+};
+
+/**
+ * @private
+ * @sw-package framework
+ */
+export default Shopwell.Component.wrapComponentConfig({
+    template,
+
+    inject: [
+        'customEntityDefinitionService',
+        'repositoryFactory',
+        'acl',
+        'feature',
+    ],
+
+    mixins: [Mixin.getByName('placeholder'), Mixin.getByName('notification')],
+
+    data(): GenericCustomEntityDetailData {
+        return {
+            isLoading: true,
+            isSaveSuccessful: false,
+            customEntityData: null,
+            customEntityDataInstances: undefined,
+            activeTab: null,
+        };
+    },
+
+    computed: {
+        customEntityDataId(): EntityKey<'generic_custom_entity'> | null {
+            return ((this.$route.params?.id as null | string)?.toLowerCase() as EntityKey<'generic_custom_entity'>) ?? null;
+        },
+
+        customEntityName(): string | string[] {
+            return this.$route.params.entityName || '';
+        },
+
+        customEntityDataDefinition(): Readonly<CustomEntityDefinition | null> {
+            if (!this.customEntityName) {
+                return null;
+            }
+
+            return this.customEntityDefinitionService.getDefinitionByName(this.customEntityName as string) ?? null;
+        },
+
+        customEntityDataRepository(): Repository<'generic_custom_entity'> | null {
+            if (this.customEntityDataDefinition === null) {
+                return null;
+            }
+
+            return this.repositoryFactory.create(this.customEntityDataDefinition.entity as 'generic_custom_entity');
+        },
+
+        customEntityProperties(): CustomEntityProperties | undefined {
+            return this.customEntityDataDefinition?.properties;
+        },
+
+        adminConfig(): AdminUiDefinition | undefined {
+            return this.customEntityDataDefinition?.flags['admin-ui'];
+        },
+
+        entityAccentColor(): string | undefined {
+            return this.adminConfig?.color;
+        },
+
+        detailTabs(): AdminTabsDefinition[] {
+            return this.customEntityDataDefinition?.flags['admin-ui']?.detail?.tabs ?? [];
+        },
+
+        detailTabItems(): TabItem[] {
+            const detailTabItems = this.detailTabs.map((tab) => {
+                return {
+                    label: this.getLabel('tabs', tab.name),
+                    name: tab.name,
+                };
+            });
+
+            if (this.customEntityDataDefinition?.flags?.['cms-aware']) {
+                detailTabItems.push(
+                    {
+                        label: this.$t('sw-custom-entity.detail.tabs.layout'),
+                        name: 'cms-aware-tab-layout',
+                    },
+                    {
+                        label: this.$t('sw-custom-entity.detail.tabs.seo'),
+                        name: 'cms-aware-tab-seo',
+                    },
+                );
+            }
+
+            return detailTabItems;
+        },
+
+        activeTabName(): string {
+            if (this.activeTab && this.detailTabItems.some((tab) => tab.name === this.activeTab)) {
+                return this.activeTab;
+            }
+
+            return this.detailTabItems[0]?.name ?? '';
+        },
+
+        mainTabName(): string | undefined {
+            return this.detailTabs?.[0]?.name;
+        },
+
+        titlePropertyName(): string | undefined {
+            return this.detailTabs?.[0]?.cards?.[0].fields?.[0]?.ref;
+        },
+    },
+
+    created(): void {
+        this.createdComponent();
+    },
+
+    methods: {
+        createdComponent(): void {
+            this.initializeCustomEntity();
+        },
+
+        initializeCustomEntity(): void {
+            if (this.adminConfig !== null) {
+                // @ts-expect-error
+                this.$route.meta.$module.icon = this.adminConfig?.icon;
+            }
+
+            // eslint-disable-next-line no-warning-comments
+            // ToDo NEXT-22874 - Favicon handling
+            void this.loadData();
+        },
+
+        async loadData(): Promise<void> {
+            this.isLoading = true;
+
+            try {
+                if (!this.customEntityDataRepository) {
+                    throw new Error(`Custom entity repository for "${this.customEntityName as string}" not found`);
+                }
+
+                if (!this.customEntityDataId) {
+                    this.customEntityData = this.customEntityDataRepository.create();
+                    this.isLoading = false;
+
+                    return;
+                }
+
+                this.customEntityData = await this.customEntityDataRepository.get(this.customEntityDataId);
+            } catch (e) {
+                console.error(e);
+
+                // Methods from mixins are not recognized
+                this.createNotificationError({
+                    message: this.$t('global.notification.notificationLoadingDataErrorMessage'),
+                });
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async onSave(): Promise<void> {
+            this.isLoading = true;
+
+            if (!this.customEntityData) {
+                // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+                return Promise.reject();
+            }
+
+            return this.customEntityDataRepository
+                ?.save(this.customEntityData)
+                .then(async () => {
+                    this.isSaveSuccessful = true;
+
+                    if (!this.customEntityDataId && this.customEntityData?.id) {
+                        await this.$router.push({
+                            name: 'sw.custom.entity.detail',
+                            params: {
+                                id: this.customEntityData.id,
+                            },
+                        });
+                    }
+
+                    void this.loadData();
+                })
+                .finally(() => {
+                    this.isLoading = false;
+                });
+        },
+
+        saveFinish(): void {
+            this.isSaveSuccessful = false;
+        },
+
+        onChangeLanguage(languageId: EntityKey<'language'>): void {
+            Shopwell.Store.get('context').setApiLanguageId(languageId);
+            void this.loadData();
+        },
+
+        getFieldTranslation(namespace: string, name: string, suffix = '', checkExistence = false): string {
+            const snippetKey = [this.customEntityName, namespace, name].join('.').concat(suffix);
+            if (checkExistence && !this.$te(snippetKey)) {
+                return '';
+            }
+
+            return this.$t(snippetKey);
+        },
+
+        getLabel(namespace: string, name: string): string {
+            return this.getFieldTranslation(namespace, name);
+        },
+
+        getPlaceholder(namespace: string, name: string): string {
+            return this.getFieldTranslation(namespace, name, 'Placeholder', true);
+        },
+
+        getHelpText(namespace: string, name: string): string {
+            return this.getFieldTranslation(namespace, name, 'HelpText', true);
+        },
+
+        getType(field: string): string {
+            return this.customEntityProperties?.[field]?.type || '';
+        },
+
+        updateCmsPageId(cmsPageId: EntityKey<'cms_page'> | null): void {
+            if (!this.customEntityData) {
+                return;
+            }
+
+            this.customEntityData.swCmsPageId = cmsPageId;
+        },
+
+        updateCmsSlotOverwrites(cmsSlotOverwrites: Entity<'generic_custom_entity'>['swSlotConfig'] | null): void {
+            if (!this.customEntityData) {
+                return;
+            }
+
+            this.customEntityData.swSlotConfig = cmsSlotOverwrites;
+        },
+
+        updateSeoMetaTitle(swSeoMetaTitle: string | null) {
+            if (!this.customEntityData) {
+                return;
+            }
+
+            this.customEntityData.swSeoMetaTitle = swSeoMetaTitle;
+        },
+
+        updateSeoMetaDescription(swSeoMetaDescription: string | null) {
+            if (!this.customEntityData) {
+                return;
+            }
+
+            this.customEntityData.swSeoMetaDescription = swSeoMetaDescription;
+        },
+
+        updateSeoUrl(swSeoUrl: string | null) {
+            if (!this.customEntityData) {
+                return;
+            }
+
+            this.customEntityData.swSeoUrl = swSeoUrl;
+        },
+
+        updateOgTitle(swOgTitle: string | null) {
+            if (!this.customEntityData) {
+                return;
+            }
+
+            this.customEntityData.swOgTitle = swOgTitle;
+        },
+
+        updateOgDescription(swOgDescription: string | null) {
+            if (!this.customEntityData) {
+                return;
+            }
+
+            this.customEntityData.swOgDescription = swOgDescription;
+        },
+
+        updateOgImageId(swOgImageId: EntityKey<'media'> | null) {
+            if (!this.customEntityData) {
+                return;
+            }
+
+            this.customEntityData.swOgImageId = swOgImageId;
+        },
+
+        onCreateLayout(): void {
+            if (!this.customEntityData) {
+                return;
+            }
+
+            void this.$router.push({
+                name: 'sw.cms.create',
+                params: {
+                    id: this.customEntityData.id,
+                    type: this.customEntityName,
+                },
+            });
+        },
+    },
+});

@@ -1,0 +1,130 @@
+@import "~scss/mixins";
+
+.sw-extension-card-base {
+    &__select {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &.is--deactivated {
+        background: var(--color-background-tertiary-default);
+        box-shadow: none;
+        border: 1px solid var(--color-border-secondary-default);
+
+        .sw-extension-card-base__extension-activation-switch {
+            background: var(--color-background-secondary-default);
+        }
+
+        .sw-loader {
+            background-color: var(--color-background-tertiary-default);
+        }
+    }
+
+    &.deactivate-prevented {
+        .mt-switch .mt-switch__switch {
+            background: var(--color-background-brand-default);
+            opacity: 0.5;
+
+            &::after {
+                background: var(--color-background-primary-default);
+            }
+        }
+    }
+
+    &.is--not-installed {
+        background-color: var(--color-background-secondary-default);
+        box-shadow: none;
+        border: 1px solid var(--color-border-secondary-default);
+    }
+
+    .sw-loader {
+        border-radius: 8px;
+    }
+
+    .sw-extension-card-base__switch {
+        .mt-switch {
+            margin: 0;
+            min-height: auto;
+
+            label {
+                display: none;
+            }
+        }
+    }
+
+    .sw-extension-icon {
+        background-color: var(--color-background-secondary-default);
+
+        &::after {
+            border-color: var(--color-border-secondary-default);
+        }
+    }
+
+    .sw-meteor-card__content .sw-meteor-card__content-wrapper {
+        display: grid;
+        grid-column-gap: 24px;
+        grid-template-columns: auto 24px 56px 5fr 2fr minmax(min-content, 1fr) auto;
+        align-items: center;
+        padding: 16px 32px;
+        border: none;
+    }
+
+    .sw-extension-card-base__info {
+        margin-left: -8px;
+        overflow: hidden;
+        font-size: var(--font-size-2xs);
+
+        .sw-extension-card-base__info-name {
+            @include truncate;
+
+            font-size: var(--font-size-xs);
+            color: var(--color-text-primary-default);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        .sw-extension-card-base__info-inactive {
+            font-size: var(--font-size-xs);
+        }
+    }
+
+    .sw-extension-card-base__main-action {
+        white-space: nowrap;
+        text-align: center;
+    }
+
+    .sw-extension-card-base__meta-info {
+        font-size: var(--font-size-2xs);
+        text-align: right;
+
+        a {
+            color: var(--color-text-brand-default);
+            margin-left: 4px;
+        }
+
+        &-version {
+            font-weight: var(--font-weight-semibold);
+        }
+    }
+
+    .sw-extension-card-base__open-extension {
+        cursor: pointer;
+        text-decoration: underline;
+        color: var(--color-text-brand-default);
+        transition: color 0.1s ease;
+        font-weight: var(--font-weight-medium);
+
+        &:hover {
+            color: var(--color-text-brand-hover);
+        }
+    }
+}
+
+.sw-extension-card-base__context-menu-privacy-link {
+    display: flex;
+    align-items: center;
+
+    .mt-icon {
+        margin-left: 4px;
+    }
+}

@@ -1,0 +1,83 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\MailTemplate\Service\Event;
+
+use Monolog\Level;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
+use Shopwell\Core\Content\Flow\Dispatching\StorableFlow;
+use Shopwell\Core\Content\Flow\Dispatching\Storer\ScalarValuesStorer;
+use Shopwell\Core\Content\MailTemplate\Service\Event\MailErrorEvent;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('after-sales')]
+#[CoversClass(MailErrorEvent::class)]
+class MailErrorEventTest extends TestCase
+{
+    public function testScalarValuesCorrectly(): void
+    {
+        $event = new MailErrorEvent(
+            Context::createDefaultContext()
+        );
+
+        $storer = new ScalarValuesStorer();
+
+        $stored = $storer->store($event, []);
+
+        $flow = new StorableFlow('foo', Context::createDefaultContext(), $stored);
+
+        $storer->restore($flow);
+
+        static::assertArrayHasKey('name', $flow->data());
+        static::assertSame('mail.sent.error', $flow->getData('name'));
+    }
+
+    public function testInstantiate(): void
+    {
+        $exception = new \Exception('exception');
+        $context = Context::createDefaultContext();
+
+        $event = new MailErrorEvent(
+            $context,
+            Level::Error,
+            $exception,
+            'Test',
+            '{{ subject }}',
+            [
+                'eventName' => CheckoutOrderPlacedEvent::EVENT_NAME,
+                'shopName' => 'Storefront',
+            ],
+        );
+
+        static::assertSame('Test', $event->getMessage());
+        static::assertSame(Level::Error, $event->getLogLevel());
+        static::assertSame([
+            'exception' => (string) $exception,
+            'message' => 'Test',
+            'template' => '{{ subject }}',
+            'eventName' => 'checkout.order.placed',
+            'templateData' => [
+                'eventName' => 'checkout.order.placed',
+                'shopName' => 'Storefront',
+            ],
+        ], $event->getLogData());
+        static::assertSame('mail.sent.error', $event->getName());
+        static::assertSame($context, $event->getContext());
+        static::assertSame($exception, $event->getThrowable());
+        static::assertSame('{{ subject }}', $event->getTemplate());
+        static::assertSame([
+            'eventName' => 'checkout.order.placed',
+            'shopName' => 'Storefront',
+        ], $event->getTemplateData());
+    }
+
+    public function testAvailableDataDescribesTheFlowPayload(): void
+    {
+        static::assertSame(['name'], array_keys(MailErrorEvent::getAvailableData()->toArray()));
+    }
+}

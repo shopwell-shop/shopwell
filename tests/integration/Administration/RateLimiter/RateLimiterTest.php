@@ -1,0 +1,105 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Administration\RateLimiter;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\AppCollection;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\RateLimiter\DisableRateLimiterCompilerPass;
+use Shopwell\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
+use Shopwell\Core\Test\Integration\Traits\CustomerTestTrait;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class RateLimiterTest extends TestCase
+{
+    use AdminApiTestBehaviour;
+    use CustomerTestTrait;
+
+    private Context $context;
+
+    /**
+     * @var EntityRepository<AppCollection>
+     */
+    private EntityRepository $appRepository;
+
+    public static function setUpBeforeClass(): void
+    {
+        DisableRateLimiterCompilerPass::disableNoLimit();
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        DisableRateLimiterCompilerPass::enableNoLimit();
+    }
+
+    protected function setUp(): void
+    {
+        $this->context = Context::createDefaultContext();
+        $this->appRepository = static::getContainer()->get('app.repository');
+    }
+
+    protected function tearDown(): void
+    {
+        DisableRateLimiterCompilerPass::enableNoLimit();
+    }
+
+    public function testRateLimitNotificationRoute(): void
+    {
+        $ids = new IdsCollection();
+        $integrationId = $ids->create('integration');
+        $client = $this->getBrowserAuthenticatedWithIntegration($integrationId);
+
+        $this->createApp($integrationId);
+        $url = '/api/notification';
+        $data = [
+            'status' => 'success',
+            'message' => 'This is a notification',
+        ];
+
+        for ($i = 0; $i <= 10; ++$i) {
+            $client->jsonRequest('POST', $url, $data);
+
+            $response = json_decode((string) $client->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+            if ($i >= 10) {
+                static::assertArrayHasKey('errors', $response);
+                static::assertSame(Response::HTTP_TOO_MANY_REQUESTS, (int) $response['errors'][0]['status']);
+                static::assertSame('FRAMEWORK__NOTIFICATION_THROTTLED', $response['errors'][0]['code']);
+            } else {
+                static::assertSame(200, $client->getResponse()->getStatusCode());
+            }
+        }
+    }
+
+    private function createApp(string $integrationId): void
+    {
+        $payload = [
+            'name' => 'TestNotification',
+            'active' => true,
+            'path' => __DIR__ . '/Manifest/_fixtures/test',
+            'version' => '0.0.1',
+            'label' => 'Test notification',
+            'accessToken' => 'test',
+            'appSecret' => 's3cr3t',
+            'mainModule' => [
+                'source' => 'http://main-module-1',
+            ],
+            'integrationId' => $integrationId,
+            'aclRole' => [
+                'name' => 'TestNotification',
+                'privileges' => [
+                    'notification:create',
+                ],
+            ],
+        ];
+
+        $this->appRepository->create([$payload], $this->context);
+    }
+}

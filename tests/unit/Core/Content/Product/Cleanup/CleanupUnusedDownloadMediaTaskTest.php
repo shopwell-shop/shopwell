@@ -1,0 +1,26 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Product\Cleanup;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Product\Cleanup\CleanupUnusedDownloadMediaTask;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+#[CoversClass(CleanupUnusedDownloadMediaTask::class)]
+class CleanupUnusedDownloadMediaTaskTest extends TestCase
+{
+    public function testGetTaskName(): void
+    {
+        static::assertSame('product_download.media.cleanup', CleanupUnusedDownloadMediaTask::getTaskName());
+    }
+
+    public function testGetDefaultInterval(): void
+    {
+        static::assertSame(2628000, CleanupUnusedDownloadMediaTask::getDefaultInterval());
+    }
+}

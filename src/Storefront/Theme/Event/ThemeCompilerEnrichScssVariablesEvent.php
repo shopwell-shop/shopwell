@@ -1,0 +1,49 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Theme\Event;
+
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Event\ShopwellEvent;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Contracts\EventDispatcher\Event;
+
+#[Package('discovery')]
+class ThemeCompilerEnrichScssVariablesEvent extends Event implements ShopwellEvent
+{
+    /**
+     * @param array<string, string|int|null> $variables
+     */
+    public function __construct(
+        private array $variables,
+        private readonly string $salesChannelId,
+        private readonly Context $context
+    ) {
+    }
+
+    public function addVariable(string $name, string $value, bool $sanitize = false): void
+    {
+        if ($sanitize) {
+            $this->variables[$name] = '\'' . addslashes($value) . '\'';
+        } else {
+            $this->variables[$name] = $value;
+        }
+    }
+
+    /**
+     * @return array<string, string|int|null>
+     */
+    public function getVariables(): array
+    {
+        return $this->variables;
+    }
+
+    public function getSalesChannelId(): string
+    {
+        return $this->salesChannelId;
+    }
+
+    public function getContext(): Context
+    {
+        return $this->context;
+    }
+}

@@ -1,0 +1,308 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\System\SalesChannel\Entity;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityAggregationResultLoadedEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntitySearchResultLoadedEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\AssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\RepositorySearchDetector;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\AggregationResult\AggregationResultCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntityAggregatorInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Telemetry\DalSearchInstrumentor;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Struct\ArrayEntity;
+use Shopwell\Core\Profiling\Profiler;
+use Shopwell\Core\System\SalesChannel\Event\SalesChannelProcessCriteriaEvent;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SalesChannel\SalesChannelException;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+
+/**
+ * @final
+ *
+ * @template TEntityCollection of EntityCollection
+ */
+#[Package('discovery')]
+class SalesChannelRepository
+{
+    /**
+     * The criteria nodes the walk restricts. A criteria that needs more than this is not a shape any
+     * storefront produces, and answering it would mean returning data the remaining criteria never
+     * restricted, so it is rejected.
+     */
+    private const CRITERIA_LIMIT = 100;
+
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly EntityDefinition $definition,
+        private readonly EntityReaderInterface $reader,
+        private readonly EntitySearcherInterface $searcher,
+        private readonly EntityAggregatorInterface $aggregator,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly EntityLoadedEventFactory $eventFactory,
+        // wired by SalesChannelEntityCompilerPass; null only for hand-built repositories (tests), which run uninstrumented
+        private readonly ?DalSearchInstrumentor $dalSearchInstrumentor = null,
+    ) {
+    }
+
+    public function getDefinition(): EntityDefinition
+    {
+        return $this->definition;
+    }
+
+    /**
+     * @throws InconsistentCriteriaIdsException
+     *
+     * @return EntitySearchResult<TEntityCollection>
+     */
+    public function search(Criteria $criteria, SalesChannelContext $salesChannelContext): EntitySearchResult
+    {
+        $searchFn = fn (): EntitySearchResult => $this->profile($criteria, fn (): EntitySearchResult => $this->_search($criteria, $salesChannelContext));
+
+        return $this->dalSearchInstrumentor?->measure(
+            DalSearchInstrumentor::OPERATION_SEARCH,
+            $this->definition,
+            $criteria,
+            $searchFn,
+        ) ?? $searchFn();
+    }
+
+    public function aggregate(Criteria $criteria, SalesChannelContext $salesChannelContext): AggregationResultCollection
+    {
+        $aggregateFn = fn (): AggregationResultCollection => $this->profile($criteria, fn (): AggregationResultCollection => $this->_aggregate($criteria, $salesChannelContext));
+
+        return $this->dalSearchInstrumentor?->measure(
+            DalSearchInstrumentor::OPERATION_AGGREGATE,
+            $this->definition,
+            $criteria,
+            $aggregateFn,
+        ) ?? $aggregateFn();
+    }
+
+    public function searchIds(Criteria $criteria, SalesChannelContext $salesChannelContext): IdSearchResult
+    {
+        $searchIdsFn = fn (): IdSearchResult => $this->profile($criteria, fn (): IdSearchResult => $this->_searchIds($criteria, $salesChannelContext));
+
+        return $this->dalSearchInstrumentor?->measure(
+            DalSearchInstrumentor::OPERATION_SEARCH_IDS,
+            $this->definition,
+            $criteria,
+            $searchIdsFn,
+        ) ?? $searchIdsFn();
+    }
+
+    /**
+     * @throws InconsistentCriteriaIdsException
+     *
+     * @return EntitySearchResult<TEntityCollection>
+     */
+    private function _search(Criteria $criteria, SalesChannelContext $salesChannelContext): EntitySearchResult
+    {
+        $criteria = clone $criteria;
+
+        $this->processCriteria($criteria, $salesChannelContext);
+
+        $aggregations = null;
+        if ($criteria->getAggregations()) {
+            // nested sub-operation: profiled (span) but not metered; keep in sync with EntityRepository
+            $aggregations = $this->profile($criteria, fn (): AggregationResultCollection => $this->_aggregate($criteria, $salesChannelContext));
+        }
+        if (!RepositorySearchDetector::isSearchRequired($this->definition, $criteria)) {
+            $entities = $this->read($criteria, $salesChannelContext);
+
+            return new EntitySearchResult($this->definition->getEntityName(), $entities->count(), $entities, $aggregations, $criteria, $salesChannelContext->getContext());
+        }
+
+        // nested sub-operation: profiled (span) but not metered; keep in sync with EntityRepository
+        $ids = $this->profile($criteria, fn (): IdSearchResult => $this->doSearch($criteria, $salesChannelContext));
+
+        if ($ids->getIds() === []) {
+            /** @var TEntityCollection $collection */
+            $collection = $this->definition->getCollectionClass();
+
+            return new EntitySearchResult($this->definition->getEntityName(), $ids->getTotal(), new $collection(), $aggregations, $criteria, $salesChannelContext->getContext());
+        }
+
+        $readCriteria = $criteria->cloneForRead($ids->getIds());
+
+        $entities = $this->read($readCriteria, $salesChannelContext);
+
+        $search = $ids->getData();
+
+        if (!$criteria->hasState(Criteria::STATE_DISABLE_SEARCH_INFO)) {
+            foreach ($entities as $element) {
+                if (!\array_key_exists($element->getUniqueIdentifier(), $search)) {
+                    continue;
+                }
+
+                $data = $search[$element->getUniqueIdentifier()];
+                unset($data['id']);
+
+                if ($data === []) {
+                    continue;
+                }
+
+                $element->addExtension('search', new ArrayEntity($data));
+            }
+        }
+
+        $result = new EntitySearchResult($this->definition->getEntityName(), $ids->getTotal(), $entities, $aggregations, $criteria, $salesChannelContext->getContext());
+        $result->addState(...$ids->getStates());
+
+        $event = new EntitySearchResultLoadedEvent($this->definition, $result);
+        $this->eventDispatcher->dispatch($event, $event->getName());
+
+        $event = new SalesChannelEntitySearchResultLoadedEvent($this->definition, $result, $salesChannelContext);
+        $this->eventDispatcher->dispatch($event, $event->getName());
+
+        return $result;
+    }
+
+    private function _aggregate(Criteria $criteria, SalesChannelContext $salesChannelContext): AggregationResultCollection
+    {
+        $criteria = clone $criteria;
+
+        $this->processCriteria($criteria, $salesChannelContext);
+
+        $result = $this->aggregator->aggregate($this->definition, $criteria, $salesChannelContext->getContext());
+
+        $event = new EntityAggregationResultLoadedEvent($this->definition, $result, $salesChannelContext->getContext());
+        $this->eventDispatcher->dispatch($event, $event->getName());
+
+        return $result;
+    }
+
+    private function _searchIds(Criteria $criteria, SalesChannelContext $salesChannelContext): IdSearchResult
+    {
+        $criteria = clone $criteria;
+
+        $this->processCriteria($criteria, $salesChannelContext);
+
+        return $this->doSearch($criteria, $salesChannelContext);
+    }
+
+    /**
+     * Wraps a read operation in a profiler span (title-gated), independent of metric emission, so nested
+     * sub-operations of a search are visible in the profiler without emitting a duplicate metric sample.
+     *
+     * @template TReturn
+     *
+     * @param \Closure(): TReturn $fn
+     *
+     * @return TReturn
+     */
+    private function profile(Criteria $criteria, \Closure $fn): mixed
+    {
+        $title = $criteria->getTitle();
+
+        return $title === null ? $fn() : Profiler::trace($title, $fn, 'saleschannel-repository');
+    }
+
+    /**
+     * @return TEntityCollection
+     */
+    private function read(Criteria $criteria, SalesChannelContext $salesChannelContext): EntityCollection
+    {
+        $criteria = clone $criteria;
+
+        /** @var TEntityCollection $entities */
+        // @phpstan-ignore varTag.type (phpstan can't detect that TEntityCollection is always an EntityCollection<Entity>)
+        $entities = $this->reader->read($this->definition, $criteria, $salesChannelContext->getContext());
+
+        if ($criteria->getFields() === []) {
+            $events = $this->eventFactory->createForSalesChannel($entities->getElements(), $salesChannelContext);
+        } else {
+            $events = $this->eventFactory->createPartialForSalesChannel($entities->getElements(), $salesChannelContext);
+        }
+
+        foreach ($events as $event) {
+            $this->eventDispatcher->dispatch($event);
+        }
+
+        return $entities;
+    }
+
+    private function doSearch(Criteria $criteria, SalesChannelContext $salesChannelContext): IdSearchResult
+    {
+        $result = $this->searcher->search($this->definition, $criteria, $salesChannelContext->getContext());
+
+        $event = new SalesChannelEntityIdSearchResultLoadedEvent($this->definition, $result, $salesChannelContext);
+        $this->eventDispatcher->dispatch($event, $event->getName());
+
+        return $result;
+    }
+
+    private function processCriteria(Criteria $topCriteria, SalesChannelContext $salesChannelContext): void
+    {
+        if (!$this->definition instanceof SalesChannelDefinitionInterface) {
+            return;
+        }
+
+        $queue = [
+            ['definition' => $this->definition, 'criteria' => $topCriteria, 'path' => ''],
+        ];
+
+        $processed = [];
+
+        $maxCount = self::CRITERIA_LIMIT;
+
+        // process all associations breadth-first
+        while ($queue !== [] && --$maxCount > 0) {
+            $cur = array_shift($queue);
+
+            $definition = $cur['definition'];
+            $criteria = $cur['criteria'];
+            $path = $cur['path'];
+            $processedKey = $path . $definition::class;
+
+            if (isset($processed[$processedKey])) {
+                continue;
+            }
+
+            if ($definition instanceof SalesChannelDefinitionInterface) {
+                $definition->processCriteria($criteria, $salesChannelContext);
+
+                $eventName = \sprintf('sales_channel.%s.process.criteria', $definition->getEntityName());
+                $event = new SalesChannelProcessCriteriaEvent($criteria, $salesChannelContext);
+
+                $this->eventDispatcher->dispatch($event, $eventName);
+            }
+
+            $processed[$processedKey] = true;
+
+            foreach ($criteria->getAssociations() as $associationName => $associationCriteria) {
+                // find definition
+                $field = $definition->getField($associationName);
+                if (!$field instanceof AssociationField) {
+                    continue;
+                }
+
+                $referenceDefinition = $field->getReferenceDefinition();
+                $queue[] = ['definition' => $referenceDefinition, 'criteria' => $associationCriteria, 'path' => $path . '.' . $associationName];
+
+                if (!$field instanceof ManyToManyAssociationField) {
+                    continue;
+                }
+
+                $referenceDefinition = $field->getToManyReferenceDefinition();
+                $queue[] = ['definition' => $referenceDefinition, 'criteria' => $associationCriteria, 'path' => $path . '.' . $associationName];
+            }
+        }
+
+        if ($queue !== []) {
+            throw SalesChannelException::tooManyNestedCriteria(self::CRITERIA_LIMIT);
+        }
+    }
+}

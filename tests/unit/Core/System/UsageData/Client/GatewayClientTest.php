@@ -1,0 +1,51 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\System\UsageData\Client;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\UsageData\Client\GatewayClient;
+use Shopwell\Core\System\UsageData\Services\ShopIdProvider;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
+
+/**
+ * @internal
+ */
+#[Package('data-services')]
+#[CoversClass(GatewayClient::class)]
+class GatewayClientTest extends TestCase
+{
+    public function testGatewayAllowsPush(): void
+    {
+        $client = new MockHttpClient(static function (): MockResponse {
+            $gatewayKillSwitchOff = json_encode(['killswitch' => false], \JSON_THROW_ON_ERROR);
+
+            return new MockResponse($gatewayKillSwitchOff);
+        });
+
+        $gatewayClient = new GatewayClient(
+            $client,
+            static::createStub(ShopIdProvider::class),
+        );
+
+        static::assertTrue($gatewayClient->isGatewayAllowsPush());
+    }
+
+    public function testGatewayDoesNotAllowPush(): void
+    {
+        $client = new MockHttpClient(static function (): MockResponse {
+            $gatewayKillSwitchOn = json_encode(['killswitch' => true], \JSON_THROW_ON_ERROR);
+
+            return new MockResponse($gatewayKillSwitchOn);
+        });
+
+        $gatewayClient = new GatewayClient(
+            $client,
+            static::createStub(ShopIdProvider::class),
+        );
+
+        static::assertFalse($gatewayClient->isGatewayAllowsPush());
+    }
+}

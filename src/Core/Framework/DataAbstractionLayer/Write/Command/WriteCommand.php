@@ -1,0 +1,144 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Write\Command;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Field;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StorageAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\VersionField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+abstract class WriteCommand
+{
+    protected string $entityName;
+
+    protected bool $failed = false;
+
+    /**
+     * @var array<string, string>
+     */
+    protected array $decodedPrimaryKey = [];
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, string> $primaryKey
+     */
+    public function __construct(
+        EntityDefinition $definition,
+        protected array $payload,
+        protected array $primaryKey,
+        protected EntityExistence $existence,
+        protected string $path
+    ) {
+        $this->entityName = $definition->getEntityName();
+
+        $this->setDecodedPrimaryKey($definition);
+    }
+
+    abstract public function getPrivilege(): ?string;
+
+    public function isValid(): bool
+    {
+        return (bool) \count($this->payload);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getPayload(): array
+    {
+        return $this->payload;
+    }
+
+    /**
+     * @internal
+     */
+    public function addPayload(string $key, mixed $value): void
+    {
+        $this->payload[$key] = $value;
+    }
+
+    public function getEntityName(): string
+    {
+        return $this->entityName;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getPrimaryKey(): array
+    {
+        return $this->primaryKey;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getDecodedPrimaryKey(): array
+    {
+        return $this->decodedPrimaryKey;
+    }
+
+    public function getEntityExistence(): EntityExistence
+    {
+        return $this->existence;
+    }
+
+    public function getPath(): string
+    {
+        return $this->path;
+    }
+
+    public function hasField(string $storageName): bool
+    {
+        return \array_key_exists($storageName, $this->getPayload());
+    }
+
+    public function hasAnyField(string ...$storageNames): bool
+    {
+        return \array_intersect(array_keys($this->getPayload()), $storageNames) !== [];
+    }
+
+    public function setFailed(bool $failed): void
+    {
+        $this->failed = $failed;
+    }
+
+    public function isFailed(): bool
+    {
+        return $this->failed;
+    }
+
+    private function setDecodedPrimaryKey(EntityDefinition $definition): void
+    {
+        $primaryKeys = $definition->getPrimaryKeys()->filter(static fn (Field $field) => !$field instanceof VersionField
+            && !$field instanceof ReferenceVersionField
+            && $field instanceof StorageAware);
+
+        foreach ($primaryKeys as $primaryKey) {
+            if (!$primaryKey instanceof StorageAware) {
+                continue;
+            }
+
+            if (!isset($this->primaryKey[$primaryKey->getStorageName()])) {
+                continue;
+            }
+
+            if (!$primaryKey instanceof IdField) {
+                $this->decodedPrimaryKey[$primaryKey->getPropertyName()] = $this->primaryKey[$primaryKey->getStorageName()];
+
+                continue;
+            }
+
+            $this->decodedPrimaryKey[$primaryKey->getPropertyName()] = Uuid::fromBytesToHex($this->primaryKey[$primaryKey->getStorageName()]);
+        }
+    }
+}

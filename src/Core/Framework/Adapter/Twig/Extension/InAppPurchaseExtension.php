@@ -1,0 +1,45 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Adapter\Twig\Extension;
+
+use Shopwell\Core\Framework\Deprecation\BCChange\BecomesInternal;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Store\InAppPurchase;
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFunction;
+
+#[Package('checkout')]
+#[BecomesInternal(version: 'v6.8.0')]
+class InAppPurchaseExtension extends AbstractExtension
+{
+    /**
+     * @internal
+     */
+    public function __construct(private readonly InAppPurchase $inAppPurchase)
+    {
+    }
+
+    /**
+     * @return list<TwigFunction>
+     */
+    public function getFunctions(): array
+    {
+        return [
+            new TwigFunction('inAppPurchase', $this->isActive(...)),
+            new TwigFunction('allInAppPurchases', $this->all(...)),
+        ];
+    }
+
+    public function isActive(string $extensionName, string $identifier): bool
+    {
+        return $this->inAppPurchase->isActive($extensionName, $identifier);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function all(): array
+    {
+        return $this->inAppPurchase->formatPurchases();
+    }
+}

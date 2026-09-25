@@ -1,0 +1,269 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Cart\Order\Transformer;
+
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryInformation;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryTime;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\LineItem\QuantityInformation;
+use Shopwell\Core\Checkout\Cart\Order\IdStruct;
+use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadEntity;
+use Shopwell\Core\Checkout\Promotion\Cart\PromotionProcessor;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Product\ProductEntity;
+use Shopwell\Core\Content\Product\State;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+#[Package('checkout')]
+class LineItemTransformer
+{
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    public static function transformCollection(LineItemCollection $lineItems, ?string $parentId = null): array
+    {
+        $output = [];
+        $position = 1;
+        foreach ($lineItems as $lineItem) {
+            $output = array_replace($output, self::transform($lineItem, $parentId, $position));
+            ++$position;
+        }
+
+        return $output;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    public static function transform(LineItem $lineItem, ?string $parentId = null, int $position = 1): array
+    {
+        $output = [];
+
+        $id = $lineItem->getExtensionOfType(OrderConverter::ORIGINAL_ID, IdStruct::class)?->getId() ?? Uuid::randomHex();
+
+        $productId = null;
+        if ($lineItem->getType() === LineItem::PRODUCT_LINE_ITEM_TYPE) {
+            $productId = $lineItem->getReferencedId();
+        }
+
+        $promotionId = null;
+        if ($lineItem->getType() === PromotionProcessor::LINE_ITEM_TYPE) {
+            $promotionId = $lineItem->getPayloadValue('promotionId');
+        }
+
+        $definition = $lineItem->getPriceDefinition();
+
+        $data = [
+            'id' => $id,
+            'identifier' => $lineItem->getId(),
+            'productId' => $productId,
+            'promotionId' => $promotionId,
+            'referencedId' => $lineItem->getReferencedId(),
+            'quantity' => $lineItem->getQuantity(),
+            'type' => $lineItem->getType(),
+            'label' => $lineItem->getLabel(),
+            'description' => $lineItem->getDescription(),
+            'good' => $lineItem->isGood(),
+            'removable' => $lineItem->isRemovable(),
+            'stackable' => $lineItem->isStackable(),
+            'position' => $position,
+            'price' => $lineItem->getPrice(),
+            'priceDefinition' => $definition,
+            'parentId' => $parentId,
+            'coverId' => $lineItem->getCover()?->getId(),
+            'payload' => $lineItem->getPayload(),
+        ];
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            Feature::callSilentIfInactive('v6.8.0.0', static function () use (&$data, $lineItem): void {
+                $data['states'] = $lineItem->getStates();
+            });
+        }
+
+        $downloads = $lineItem->getExtensionOfType(OrderConverter::ORIGINAL_DOWNLOADS, OrderLineItemDownloadCollection::class);
+        if ($downloads instanceof OrderLineItemDownloadCollection) {
+            $data['downloads'] = array_values($downloads->map(static fn (OrderLineItemDownloadEntity $download): array => ['id' => $download->getId()]));
+        }
+
+        $output[$lineItem->getId()] = array_filter($data, static fn ($value) => $value !== null);
+
+        if ($lineItem->hasChildren()) {
+            $output = [...$output, ...self::transformCollection($lineItem->getChildren(), $id)];
+        }
+
+        return $output;
+    }
+
+    public static function transformFlatToNested(OrderLineItemCollection $lineItems): LineItemCollection
+    {
+        $lineItems->sortByPosition();
+        $index = [];
+        $root = new LineItemCollection();
+
+        foreach ($lineItems as $id => $lineItem) {
+            if (!\array_key_exists($id, $index)) {
+                $index[$id] = self::createLineItem($lineItem);
+            }
+
+            $currentLineItem = $index[$id];
+
+            self::updateLineItem($currentLineItem, $lineItem, $id);
+
+            if ($lineItem->getParentId() === null) {
+                $root->add($currentLineItem);
+
+                continue;
+            }
+
+            if (!\array_key_exists($lineItem->getParentId(), $index)) {
+                $parentItem = $lineItems->get($lineItem->getParentId());
+                if ($parentItem === null) {
+                    continue;
+                }
+
+                // @codeCoverageIgnoreStart - This is covered randomly
+                $index[$lineItem->getParentId()] = self::createLineItem($parentItem);
+                // @codeCoverageIgnoreEnd
+            }
+
+            $index[$lineItem->getParentId()]->addChild($currentLineItem);
+        }
+
+        return $root;
+    }
+
+    private static function updateLineItem(LineItem $lineItem, OrderLineItemEntity $entity, string $id): void
+    {
+        $lineItem->setId($entity->getIdentifier())
+            ->setLabel($entity->getLabel())
+            ->setGood($entity->getGood())
+            ->setRemovable($entity->getRemovable())
+            ->setStackable($entity->getStackable())
+            ->addExtension(OrderConverter::ORIGINAL_ID, new IdStruct($id));
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            $lineItem->setStates($entity->getStates());
+        }
+
+        if ($entity->getPayload() !== null) {
+            $lineItem->setPayload($entity->getPayload());
+        }
+
+        if ($entity->getPrice() !== null) {
+            $lineItem->setPrice($entity->getPrice());
+        }
+
+        if ($entity->getPriceDefinition() !== null) {
+            $lineItem->setPriceDefinition($entity->getPriceDefinition());
+        }
+
+        if ($entity->getDownloads() !== null) {
+            $lineItem->addExtension(OrderConverter::ORIGINAL_DOWNLOADS, $entity->getDownloads());
+        }
+
+        if ($entity->getProduct() !== null) {
+            self::setProductData($lineItem, $entity->getProduct());
+        }
+    }
+
+    private static function createLineItem(OrderLineItemEntity $entity): LineItem
+    {
+        $item = new LineItem(
+            $entity->getIdentifier(),
+            $entity->getType() ?? '',
+            $entity->getReferencedId(),
+            $entity->getQuantity()
+        );
+
+        $isNonProduct = \in_array($entity->getType(), [
+            LineItem::CREDIT_LINE_ITEM_TYPE,
+            LineItem::DISCOUNT_LINE_ITEM,
+        ], true);
+        $isProduct = \in_array($entity->getType(), [
+            LineItem::PRODUCT_LINE_ITEM_TYPE,
+            LineItem::CUSTOM_LINE_ITEM_TYPE,
+        ], true);
+
+        if ($isProduct && !$entity->hasPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE)) {
+            $item->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_PHYSICAL);
+        }
+
+        $isDownloadState = $entity->getPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE) === ProductDefinition::TYPE_DIGITAL;
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            Feature::callSilentIfInactive('v6.8.0.0', static function () use (&$isDownloadState, $entity): void {
+                $isDownloadState = $isDownloadState || \in_array(State::IS_DOWNLOAD, $entity->getStates(), true);
+            });
+        }
+
+        if ($isNonProduct || ($isProduct && $isDownloadState)) {
+            $item->setShippingCostAware(false);
+
+            return $item;
+        }
+
+        return $item;
+    }
+
+    private static function setProductData(LineItem $lineItem, ProductEntity $product): void
+    {
+        if ($product->getCover()) {
+            $lineItem->setCover($product->getCover()->getMedia());
+        }
+
+        $quantityInformation = new QuantityInformation();
+
+        $quantityInformation->setMinPurchase(
+            $product->getMinPurchase() ?? 1
+        );
+
+        if ($product->getMaxPurchase() !== null) {
+            $quantityInformation->setMaxPurchase(
+                $product->getMaxPurchase()
+            );
+        }
+
+        $quantityInformation->setPurchaseSteps(
+            $product->getPurchaseSteps() ?? 1
+        );
+
+        $lineItem->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, $product->getType());
+
+        $lineItem->setQuantityInformation($quantityInformation);
+
+        $isPhysicalLineItem = $lineItem->isProductType(ProductDefinition::TYPE_PHYSICAL);
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            Feature::callSilentIfInactive('v6.8.0.0', static function () use ($lineItem, &$isPhysicalLineItem): void {
+                $isPhysicalLineItem = $isPhysicalLineItem || $lineItem->hasState(State::IS_PHYSICAL);
+            });
+        }
+
+        if ($isPhysicalLineItem) {
+            $deliveryTime = null;
+            if ($product->getDeliveryTime() !== null) {
+                $deliveryTime = DeliveryTime::createFromEntity($product->getDeliveryTime());
+            }
+
+            $lineItem->setDeliveryInformation(
+                new DeliveryInformation(
+                    $product->getStock(),
+                    $product->getWeight(),
+                    $product->getShippingFree() === true,
+                    $product->getRestockTime(),
+                    $deliveryTime,
+                    $product->getHeight(),
+                    $product->getWidth(),
+                    $product->getLength()
+                )
+            );
+        }
+    }
+}

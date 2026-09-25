@@ -1,0 +1,48 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Cart;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\CartFactory;
+use Shopwell\Core\Checkout\Cart\Event\CartCreatedEvent;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(CartFactory::class)]
+class CartFactoryTest extends TestCase
+{
+    public function testCreatesNewCart(): void
+    {
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with(static::isInstanceOf(CartCreatedEvent::class));
+
+        $factory = new CartFactory($dispatcher);
+
+        $cart = $factory->createNew('test');
+        static::assertSame('test', $cart->getToken());
+        static::assertNull($cart->getSource());
+    }
+
+    public function testCreatesNewCartWithSource(): void
+    {
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with(static::isInstanceOf(CartCreatedEvent::class));
+
+        $factory = new CartFactory($dispatcher, 'source');
+
+        $cart = $factory->createNew('test');
+        static::assertSame('test', $cart->getToken());
+        static::assertSame('source', $cart->getSource());
+    }
+}

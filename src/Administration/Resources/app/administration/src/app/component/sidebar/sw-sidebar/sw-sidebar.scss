@@ -1,0 +1,36 @@
+.sw-sidebar {
+    height: 100%;
+    background-color: var(--color-elevation-surface-default);
+    border-left: 1px solid var(--color-border-secondary-default);
+    display: grid;
+    grid-template-columns: var(--scale-size-64) auto;
+    width: var(--scale-size-64);
+    transition: width cubic-bezier(0.5, 0.32, 0.01, 1) 0.3s;
+
+    &.is--opened {
+        width: calc(var(--scale-size-64) + 25rem);
+    }
+
+    .sw-sidebar__navigation {
+        height: 100%;
+        display: grid;
+        grid-template-rows: 1fr auto;
+        grid-template-areas:
+            "navigationTop"
+            "navigationBottom";
+    }
+
+    .sw_sidebar__navigation-list {
+        list-style: none;
+
+        &.is--top {
+            grid-area: navigationTop;
+            align-self: start;
+        }
+
+        &.is--bottom {
+            grid-area: navigationBottom;
+            align-self: end;
+        }
+    }
+}

@@ -1,0 +1,167 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Content\Media\Infrastructure\Command;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Media\Core\Application\MediaLocationBuilder;
+use Shopwell\Core\Content\Media\Core\Application\MediaPathStorage;
+use Shopwell\Core\Content\Media\Core\Application\MediaPathUpdater;
+use Shopwell\Core\Content\Media\Core\Strategy\PlainPathStrategy;
+use Shopwell\Core\Content\Media\Infrastructure\Command\UpdatePathCommand;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\MultiInsertQueryQueue;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\NullOutput;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+class UpdatePathTest extends TestCase
+{
+    use DatabaseTransactionBehaviour;
+    use KernelTestBehaviour;
+
+    /**
+     * @param array<mixed> $media
+     * @param array<mixed> $thumbnail
+     * @param array<mixed> $mediaThumbnailSize
+     * @param array<string, string> $expected
+     */
+    #[DataProvider('commandProvider')]
+    public function testCommand(array $media, array $thumbnail, array $mediaThumbnailSize, ArrayInput $input, array $expected): void
+    {
+        $ids = new IdsCollection();
+
+        $queue = new MultiInsertQueryQueue(static::getContainer()->get(Connection::class));
+
+        $media['id'] = $ids->getBytes('media');
+        $queue->addInsert('media', $media);
+
+        $mediaThumbnailSize['id'] = $ids->getBytes('media_thumbnail_size');
+        $queue->addInsert('media_thumbnail_size', $mediaThumbnailSize);
+
+        $thumbnail['id'] = $ids->getBytes('media_thumbnail');
+        $thumbnail['media_id'] = $ids->getBytes('media');
+        $thumbnail['media_thumbnail_size_id'] = $ids->getBytes('media_thumbnail_size');
+        $queue->addInsert('media_thumbnail', $thumbnail);
+
+        $queue->execute();
+
+        $command = new UpdatePathCommand(
+            new MediaPathUpdater(
+                new PlainPathStrategy(),
+                static::getContainer()->get(MediaLocationBuilder::class),
+                static::getContainer()->get(MediaPathStorage::class)
+            ),
+            static::getContainer()->get(Connection::class)
+        );
+
+        $command->run($input, new NullOutput());
+
+        $paths = static::getContainer()
+            ->get(Connection::class)
+            ->fetchAllKeyValue(
+                'SELECT LOWER(HEX(id)), path FROM media WHERE id IN (:ids)',
+                ['ids' => $ids->getByteList(['media'])],
+                ['ids' => ArrayParameterType::BINARY]
+            );
+
+        static::assertArrayHasKey($ids->get('media'), $paths);
+        static::assertSame($expected['media'], $paths[$ids->get('media')]);
+
+        $paths = static::getContainer()
+            ->get(Connection::class)
+            ->fetchAllKeyValue(
+                'SELECT LOWER(HEX(id)), path FROM media_thumbnail WHERE id IN (:ids)',
+                ['ids' => $ids->getByteList(['media_thumbnail'])],
+                ['ids' => ArrayParameterType::BINARY]
+            );
+
+        static::assertArrayHasKey($ids->get('media_thumbnail'), $paths);
+        static::assertSame($expected['thumbnail'], $paths[$ids->get('media_thumbnail')]);
+    }
+
+    public static function commandProvider(): \Generator
+    {
+        yield 'Test generate' => [
+            [
+                'file_name' => 'test',
+                'file_extension' => 'png',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ],
+            [
+                'width' => 100,
+                'height' => 100,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ],
+            [
+                'width' => 100,
+                'height' => 100,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ],
+            new ArrayInput([]),
+            [
+                'media' => 'media/test.png',
+                'thumbnail' => 'thumbnail/test_100x100.png',
+            ],
+        ];
+
+        yield 'Test skip generation when path is already set' => [
+            [
+                'file_name' => 'test',
+                'file_extension' => 'png',
+                'path' => 'foo/test.png',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ],
+            [
+                'width' => 100,
+                'height' => 100,
+                'path' => 'foo/test_100x100.png',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ],
+            [
+                'width' => 100,
+                'height' => 100,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ],
+            new ArrayInput([]),
+            [
+                'media' => 'foo/test.png',
+                'thumbnail' => 'foo/test_100x100.png',
+            ],
+        ];
+
+        yield 'Test force parameter overwrites the path' => [
+            [
+                'file_name' => 'test',
+                'file_extension' => 'png',
+                'path' => 'foo/test.png',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ],
+            [
+                'width' => 100,
+                'height' => 100,
+                'path' => 'foo/test_100x100.png',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ],
+            [
+                'width' => 100,
+                'height' => 100,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ],
+            new ArrayInput(['--force' => true]),
+            [
+                'media' => 'media/test.png',
+                'thumbnail' => 'thumbnail/test_100x100.png',
+            ],
+        ];
+    }
+}

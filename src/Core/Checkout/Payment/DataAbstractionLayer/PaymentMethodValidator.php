@@ -1,0 +1,56 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Payment\DataAbstractionLayer;
+
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Checkout\Payment\PaymentException;
+use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+final readonly class PaymentMethodValidator implements EventSubscriberInterface
+{
+    /**
+     * @internal
+     */
+    public function __construct(private Connection $connection)
+    {
+    }
+
+    /**
+     * @return array<string, string|array{0: string, 1: int}|list<array{0: string, 1?: int}>>
+     */
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            PreWriteValidationEvent::class => 'validate',
+        ];
+    }
+
+    public function validate(PreWriteValidationEvent $event): void
+    {
+        $ids = $event->getDeletedPrimaryKeys(PaymentMethodDefinition::ENTITY_NAME);
+
+        $ids = \array_column($ids, 'id');
+
+        if ($ids === []) {
+            return;
+        }
+
+        $pluginId = $this->connection->fetchOne(
+            'SELECT id FROM payment_method WHERE id IN (:ids) AND plugin_id IS NOT NULL',
+            ['ids' => $ids],
+            ['ids' => ArrayParameterType::BINARY]
+        );
+
+        if ($pluginId !== false) {
+            throw PaymentException::pluginPaymentMethodDeleteRestriction();
+        }
+    }
+}

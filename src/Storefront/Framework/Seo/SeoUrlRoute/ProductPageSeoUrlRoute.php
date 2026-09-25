@@ -1,0 +1,75 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Storefront\Framework\Seo\SeoUrlRoute;
+
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Product\ProductEntity;
+use Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlMapping;
+use Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteConfig;
+use Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\PartialEntity;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
+use Shopwell\Storefront\Framework\StorefrontFrameworkException;
+
+#[Package('inventory')]
+class ProductPageSeoUrlRoute implements SeoUrlRouteInterface
+{
+    final public const ROUTE_NAME = 'frontend.detail.page';
+    final public const DEFAULT_TEMPLATE = '{{ product.translated.name }}/{{ product.productNumber }}';
+
+    /**
+     * @internal
+     */
+    public function __construct(private readonly ProductDefinition $productDefinition)
+    {
+    }
+
+    public function getConfig(): SeoUrlRouteConfig
+    {
+        return new SeoUrlRouteConfig(
+            $this->productDefinition,
+            self::ROUTE_NAME,
+            self::DEFAULT_TEMPLATE,
+            true,
+            'productId'
+        );
+    }
+
+    public function prepareCriteria(Criteria $criteria, SalesChannelEntity $salesChannel): void
+    {
+        $criteria->addFilter(new EqualsFilter('active', true));
+        $criteria->addFilter(new EqualsFilter('visibilities.salesChannelId', $salesChannel->getId()));
+        $criteria->addAssociation('options.group');
+    }
+
+    public function getMapping(Entity $product, ?SalesChannelEntity $salesChannel): SeoUrlMapping
+    {
+        if (!$product instanceof ProductEntity && !$product instanceof PartialEntity) {
+            throw StorefrontFrameworkException::invalidArgument('SEO URL Mapping expects argument to be a ProductEntity');
+        }
+
+        $categories = $product->get('mainCategories');
+        if ($categories instanceof EntityCollection && $salesChannel !== null) {
+            $filtered = $categories->filter(
+                static fn (Entity $category) => $category->get('salesChannelId') === $salesChannel->getId()
+            );
+
+            $product->assign(['mainCategories' => $filtered]);
+        }
+
+        $productJson = $product->jsonSerialize();
+
+        return new SeoUrlMapping(
+            $product,
+            $this->getConfig()->getPrimaryKeyParameter($product->getId()),
+            [
+                'product' => $productJson,
+            ]
+        );
+    }
+}

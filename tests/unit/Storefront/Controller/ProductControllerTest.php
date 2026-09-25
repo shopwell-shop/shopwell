@@ -1,0 +1,367 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Storefront\Controller;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Cms\CmsPageEntity;
+use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewCollection;
+use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewEntity;
+use Shopwell\Core\Content\Product\Exception\VariantNotFoundException;
+use Shopwell\Core\Content\Product\ProductEntity;
+use Shopwell\Core\Content\Product\SalesChannel\FindVariant\FindProductVariantRoute;
+use Shopwell\Core\Content\Product\SalesChannel\FindVariant\FindProductVariantRouteResponse;
+use Shopwell\Core\Content\Product\SalesChannel\FindVariant\FoundCombination;
+use Shopwell\Core\Content\Product\SalesChannel\PurchaseLimit\AbstractProductPurchaseLimitRoute;
+use Shopwell\Core\Content\Product\SalesChannel\PurchaseLimit\ProductPurchaseLimit;
+use Shopwell\Core\Content\Product\SalesChannel\PurchaseLimit\ProductPurchaseLimitCollection;
+use Shopwell\Core\Content\Product\SalesChannel\PurchaseLimit\ProductPurchaseLimitRouteResponse;
+use Shopwell\Core\Content\Product\SalesChannel\Review\AbstractProductReviewSaveRoute;
+use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewLoader;
+use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewResult;
+use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewsWidgetLoadedHook;
+use Shopwell\Core\Content\Product\SalesChannel\Review\RatingMatrix;
+use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
+use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
+use Shopwell\Core\System\SalesChannel\NoContentResponse;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Shopwell\Storefront\Controller\ProductController;
+use Shopwell\Storefront\Page\Product\ProductPage;
+use Shopwell\Storefront\Page\Product\ProductPageLoader;
+use Shopwell\Storefront\Page\Product\QuickView\MinimalQuickViewPage;
+use Shopwell\Storefront\Page\Product\QuickView\MinimalQuickViewPageLoader;
+use Shopwell\Storefront\Page\Product\QuickView\ProductQuickViewWidgetLoadedHook;
+use Shopwell\Tests\Unit\Storefront\Controller\Stub\ProductControllerStub;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Validator\ConstraintViolationList;
+
+/**
+ * @internal
+ */
+#[Package('inventory')]
+#[CoversClass(ProductController::class)]
+class ProductControllerTest extends TestCase
+{
+    private Stub&ProductPageLoader $productPageLoaderMock;
+
+    private Stub&FindProductVariantRoute $findVariantRouteMock;
+
+    private Stub&SeoUrlPlaceholderHandlerInterface $seoUrlPlaceholderHandlerMock;
+
+    private Stub&MinimalQuickViewPageLoader $minimalQuickViewPageLoaderMock;
+
+    private Stub&AbstractProductReviewSaveRoute $productReviewSaveRouteMock;
+
+    private Stub&ProductReviewLoader $productReviewLoaderMock;
+
+    private Stub&AbstractProductPurchaseLimitRoute $productPurchaseLimitRouteMock;
+
+    private ProductControllerStub $controller;
+
+    protected function setUp(): void
+    {
+        $this->productPageLoaderMock = static::createStub(ProductPageLoader::class);
+        $this->findVariantRouteMock = static::createStub(FindProductVariantRoute::class);
+        $this->seoUrlPlaceholderHandlerMock = static::createStub(SeoUrlPlaceholderHandlerInterface::class);
+        $this->minimalQuickViewPageLoaderMock = static::createStub(MinimalQuickViewPageLoader::class);
+        $this->productReviewSaveRouteMock = static::createStub(AbstractProductReviewSaveRoute::class);
+        $this->productReviewLoaderMock = static::createStub(ProductReviewLoader::class);
+        $this->productPurchaseLimitRouteMock = static::createStub(AbstractProductPurchaseLimitRoute::class);
+
+        $this->controller = new ProductControllerStub(
+            $this->productPageLoaderMock,
+            $this->findVariantRouteMock,
+            $this->minimalQuickViewPageLoaderMock,
+            $this->productReviewSaveRouteMock,
+            $this->seoUrlPlaceholderHandlerMock,
+            $this->productReviewLoaderMock,
+            $this->productPurchaseLimitRouteMock,
+        );
+    }
+
+    public function testIndexCmsPage(): void
+    {
+        $productEntity = new SalesChannelProductEntity();
+        $productEntity->setId('test');
+        $productPage = new ProductPage();
+        $productPage->setProduct($productEntity);
+        $productPage->setCmsPage(new CmsPageEntity());
+
+        $this->productPageLoaderMock->method('load')->willReturn($productPage);
+
+        $response = $this->controller->index(static::createStub(SalesChannelContext::class), new Request());
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        static::assertInstanceOf(ProductPage::class, $this->controller->renderStorefrontParameters['page']);
+        static::assertSame('test', $this->controller->renderStorefrontParameters['page']->getProduct()->getId());
+        static::assertSame('@Storefront/storefront/page/content/product-detail.html.twig', $this->controller->renderStorefrontView);
+    }
+
+    public function testSwitchNoVariantReturn(): void
+    {
+        $response = $this->controller->switch(Uuid::randomHex(), new Request(), static::createStub(SalesChannelContext::class));
+
+        static::assertSame('{"url":"","productId":""}', $response->getContent());
+    }
+
+    public function testSwitchVariantReturn(): void
+    {
+        $ids = new IdsCollection();
+
+        $options = [
+            $ids->get('group1') => $ids->get('option1'),
+            $ids->get('group2') => $ids->get('option2'),
+        ];
+
+        $request = new Request(
+            [
+                'switched' => $ids->get('element'),
+                'options' => json_encode($options, \JSON_THROW_ON_ERROR),
+            ]
+        );
+
+        $expectedDuplicatedRequestData = [
+            'options' => $options,
+            'switchedGroup' => $ids->get('element'),
+        ];
+        $expectedClonedRequest = $request->duplicate($expectedDuplicatedRequestData);
+
+        $this->findVariantRouteMock->method('load')
+            ->willReturn(
+                new FindProductVariantRouteResponse(new FoundCombination($ids->get('variantId'), $options))
+            );
+
+        $this->seoUrlPlaceholderHandlerMock->method('generate')->willReturn('https://test.com/test');
+
+        $this->seoUrlPlaceholderHandlerMock->method('replace')->willReturnArgument(0);
+
+        $response = $this->controller->switch($ids->get('product'), $request, static::createStub(SalesChannelContext::class));
+
+        static::assertSame('{"url":"https:\/\/test.com\/test","productId":"' . $ids->get('variantId') . '"}', $response->getContent());
+    }
+
+    public function testSwitchVariantException(): void
+    {
+        $ids = new IdsCollection();
+
+        $options = [
+            $ids->get('group1') => $ids->get('option1'),
+            $ids->get('group2') => $ids->get('option2'),
+        ];
+
+        $this->findVariantRouteMock->method('load')->willThrowException(new VariantNotFoundException($ids->get('product'), $options));
+
+        $response = $this->controller->switch($ids->get('product'), new Request(), static::createStub(SalesChannelContext::class));
+
+        static::assertSame('{"url":"","productId":"' . $ids->get('product') . '"}', $response->getContent());
+    }
+
+    public function testQuickViewMinimal(): void
+    {
+        $ids = new IdsCollection();
+
+        $request = new Request(['productId' => $ids->get('productId')]);
+        $this->minimalQuickViewPageLoaderMock->method('load')->willReturn(new MinimalQuickViewPage(new ProductEntity()));
+
+        $response = $this->controller->quickviewMinimal(
+            $request,
+            static::createStub(SalesChannelContext::class)
+        );
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        static::assertInstanceOf(MinimalQuickViewPage::class, $this->controller->renderStorefrontParameters['page']);
+        static::assertInstanceOf(ProductQuickViewWidgetLoadedHook::class, $this->controller->calledHook);
+    }
+
+    public function testSaveReview(): void
+    {
+        $ids = new IdsCollection();
+
+        $requestBag = new RequestDataBag(['test' => 'test']);
+
+        $this->productReviewSaveRouteMock->method('save')->willReturn(new NoContentResponse());
+
+        $response = $this->controller->saveReview(
+            $ids->get('productId'),
+            $requestBag,
+            static::createStub(SalesChannelContext::class)
+        );
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        static::assertSame('frontend.product.reviews', $this->controller->forwardToRoute);
+        static::assertSame(
+            [
+                'productId' => $ids->get('productId'),
+                'success' => 1,
+                'data' => $requestBag,
+                'parentId' => null,
+            ],
+            $this->controller->forwardToRouteAttributes
+        );
+        static::assertSame(['productId' => $ids->get('productId')], $this->controller->forwardToRouteParameters);
+
+        $requestBag->set('id', 'any');
+
+        $response = $this->controller->saveReview(
+            $ids->get('productId'),
+            $requestBag,
+            static::createStub(SalesChannelContext::class)
+        );
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        static::assertSame('frontend.product.reviews', $this->controller->forwardToRoute);
+        static::assertSame(
+            [
+                'productId' => $ids->get('productId'),
+                'success' => 2,
+                'data' => $requestBag,
+                'parentId' => null,
+            ],
+            $this->controller->forwardToRouteAttributes
+        );
+    }
+
+    public function testSaveReviewViolation(): void
+    {
+        $ids = new IdsCollection();
+
+        $requestBag = new RequestDataBag(['test' => 'test']);
+
+        $violations = new ConstraintViolationException(new ConstraintViolationList(), []);
+
+        $this->productReviewSaveRouteMock->method('save')->willThrowException($violations);
+
+        $response = $this->controller->saveReview(
+            $ids->get('productId'),
+            new RequestDataBag(['test' => 'test']),
+            static::createStub(SalesChannelContext::class)
+        );
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        static::assertSame('frontend.product.reviews', $this->controller->forwardToRoute);
+        static::assertEquals(
+            [
+                'productId' => $ids->get('productId'),
+                'success' => -1,
+                'data' => $requestBag,
+                'formViolations' => $violations,
+            ],
+            $this->controller->forwardToRouteAttributes
+        );
+        static::assertSame(['productId' => $ids->get('productId')], $this->controller->forwardToRouteParameters);
+    }
+
+    public function testLoadReviewResults(): void
+    {
+        $ids = new IdsCollection();
+
+        $productId = Uuid::randomHex();
+        $parentId = Uuid::randomHex();
+
+        $request = new Request([
+            'test' => 'test',
+            'productId' => $productId,
+            'parentId' => $parentId,
+            'redirectTo' => 'frontend.product.reviews',
+        ]);
+
+        $productReview = new ProductReviewEntity();
+        $productReview->setUniqueIdentifier($ids->get('productReview'));
+        $reviewResult = ProductReviewResult::fromSearchResult(
+            new EntitySearchResult(
+                'product_review',
+                1,
+                new ProductReviewCollection([$productReview]),
+                null,
+                new Criteria(),
+                Context::createDefaultContext()
+            ),
+            new RatingMatrix([]),
+            $productId,
+            1,
+            null,
+            $parentId,
+        );
+
+        $this->productReviewLoaderMock->method('load')->willReturn($reviewResult);
+
+        $response = $this->controller->loadReviews(
+            $productId,
+            $request,
+            static::createStub(SalesChannelContext::class)
+        );
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        static::assertSame('storefront/component/review/review.html.twig', $this->controller->renderStorefrontView);
+        static::assertSame(
+            [
+                'reviews' => $reviewResult,
+                'ratingSuccess' => null,
+                'redirectTo' => 'frontend.product.reviews',
+            ],
+            $this->controller->renderStorefrontParameters
+        );
+
+        static::assertInstanceOf(ProductReviewsWidgetLoadedHook::class, $this->controller->calledHook);
+    }
+
+    public function testPurchaseLimit(): void
+    {
+        $productId = Uuid::randomHex();
+        $collection = new ProductPurchaseLimitCollection([
+            new ProductPurchaseLimit(
+                productId: $productId,
+                minPurchase: 1,
+                purchaseSteps: 1,
+                maxPurchase: 10,
+                stock: 100
+            ),
+        ]);
+
+        $this->productPurchaseLimitRouteMock
+            ->method('readProductsPurchaseLimit')
+            ->willReturn(new ProductPurchaseLimitRouteResponse($collection));
+
+        $response = $this->controller->purchaseLimit(
+            $productId,
+            new Request(),
+            static::createStub(SalesChannelContext::class)
+        );
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        static::assertSame(
+            json_encode([
+                'productId' => $productId,
+                'minPurchase' => 1,
+                'purchaseSteps' => 1,
+                'maxPurchase' => 10,
+            ]),
+            $response->getContent()
+        );
+    }
+
+    public function testPurchaseLimit404WhenProductNotFound(): void
+    {
+        $this->productPurchaseLimitRouteMock
+            ->method('readProductsPurchaseLimit')
+            ->willReturn(new ProductPurchaseLimitRouteResponse(new ProductPurchaseLimitCollection()));
+
+        $response = $this->controller->purchaseLimit(
+            Uuid::randomHex(),
+            new Request(),
+            static::createStub(SalesChannelContext::class)
+        );
+
+        static::assertSame(Response::HTTP_NOT_FOUND, $response->getStatusCode());
+    }
+}

@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Api\ApiDefinition\Generator\OpenApi\_fixtures;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Tests\Unit\Core\Framework\Api\ApiDefinition\Generator\_fixtures\SimpleDefinition;
+
+/**
+ * @internal
+ */
+class ComplexDefinition extends EntityDefinition
+{
+    final public const ENTITY_NAME = 'complex';
+
+    public function getEntityName(): string
+    {
+        return self::ENTITY_NAME;
+    }
+
+    public function since(): ?string
+    {
+        return '6.0.0.0';
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection(
+            [
+                (new IdField('id_field', 'idField'))->addFlags(new ApiAware(), new Required()),
+                (new ManyToOneAssociationField('simpleTo', 'simpleToId', SimpleDefinition::class))
+                    ->addFlags(new ApiAware())
+                    ->setDescription('A reference to a simple entity'),
+                (new OneToManyAssociationField('simpleManys', SimpleDefinition::class, 'ref_field'))
+                    ->addFlags(new ApiAware(), new Required())
+                    ->setDescription('Multiple simple entities'),
+                (new ManyToOneAssociationField('simpleToWithEmptyDescription', 'simpleToId', SimpleDefinition::class))
+                    ->addFlags(new ApiAware())
+                    ->setDescription(''),
+            ]
+        );
+    }
+}

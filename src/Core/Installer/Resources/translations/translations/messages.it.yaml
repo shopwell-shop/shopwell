@@ -1,0 +1,192 @@
+shopware.installer:
+    header_title: Installazione
+    menuitem:
+        start: Avvia
+        configure_php: File binario PHP
+        download: Download
+        requirements: Requisiti di sistema
+        license: CGV
+        database-configuration: Configurazione del database
+        database-import: Installazione
+        configuration: Configurazione del negozio
+        translation: Download lingue
+        finish: Fine
+    license_incorrect: 'La chiave di licenza inserita non è valida.'
+    license_does_not_match: 'La chiave di licenza inserita non è adatta ad alcuna versione commerciale dello Shopwell'
+    license_domain_error: 'La chiave di licenza inserita non è valida per il dominio: '
+    version_text: 'Versione:'
+    back: Indietro
+    forward: Avanti
+    start: Avvia
+    start_installation: 'Avvia installazione'
+    select_language_bg-BG: Bulgaro
+    select_language_bs-BA: Bosniaco
+    select_language_cs-CZ: Ceco
+    select_language_da-DK: Danese
+    select_language_de-DE: Tedesco (Germania)
+    select_language_de-CH: Tedesco (Svizzera)
+    select_language_de-AT: Tedesco (Austria)
+    select_language_el-GR: Greco
+    select_language_en-US: Inglese (Stati Uniti)
+    select_language_en-GB: Inglese (Regno Unito)
+    select_language_es-ES: Spagnolo
+    select_language_fi-FI: Finlandese
+    select_language_fr-FR: Francese
+    select_language_hi-IN: Hindi
+    select_language_hr-HR: Croato
+    select_language_hu-HU: Ungherese
+    select_language_id-ID: Indonesiano
+    select_language_it-IT: Italiano
+    select_language_ko-KR: Coreano
+    select_language_lv-LV: Lettone
+    select_language_nl-NL: Olandese
+    select_language_nn-NO: Norvegese
+    select_language_pl-PL: Polacco
+    select_language_pt-PT: Portoghese
+    select_language_ro-RO: Rumeno
+    select_language_ru-RU: Russo
+    select_language_sk-SK: Slovacco
+    select_language_sl-SI: Sloveno
+    select_language_sr-RS: Serbo
+    select_language_sv-SE: Svedese
+    select_language_tr-TR: Turco
+    select_language_uk-UA: Ucraino
+    select_language_vi-VN: Vietnamita
+    language-selection_select_language: 'Lingua dell’assistente di installazione'
+    welcome:
+        title: 'Benvenuto in Shopwell 6'
+        header: 'La tua installazione Shopwell'
+        message: >
+            Siamo lieti che tu abbia deciso di entrare a far parte della nostra comunità globale Shopwell! Questo
+            programma di installazione ti guiderà attraverso tutti i passaggi necessari per installare Shopwell 6
+            senza problemi.
+    requirements_header: 'Requisiti di sistema'
+    requirements_header_files: 'File e directory'
+    requirements_header_system: Sistema
+    requirements_files_info: 'I seguenti file e directory devono essere presenti e non devono essere protetti in scrittura.'
+    requirements_table_files_col_check: File/Directory
+    requirements_table_files_col_status: Stato
+    requirements_error: 'Non sono stati rispettati tutti i requisiti per l’installazione.'
+    requirements_error_title: 'Il tuo sistema non è ancora pronto per Shopwell 6'
+    requirements_success: 'Sono stati rispettati tutti i requisiti per l’installazione.'
+    requirements_success_title: 'Il tuo sistema è pronto per Shopwell 6'
+    requirements_php_info: 'Il tuo server deve soddisfare i seguenti requisiti di sistema per poter utilizzare appieno Shopwell.'
+    requirements_php_max_compatible_version: 'Questa versione di Shopwell supporta PHP fino alla versione %s. Non è possibile garantire una funzionalità completa con le versioni più recenti di PHP.'
+    requirements_system_col_check: Requisito
+    requirements_system_col_required: Necessario
+    requirements_system_col_found: 'Il tuo sistema'
+    requirements_system_col_status: Stato
+    requirements_show_all: '(mostra tutti)'
+    requirements_hide_all: '(nascondi tutti)'
+    requirements_status_error: Errore
+    requirements_status_warning: Avviso
+    requirements_status_ready: Pronto
+    license_agreement_header: 'Condizioni generali di vendita (“CGV”)'
+    license_agreement_info: 'Qui puoi trovare le nostre condizioni generali di vendita. Per continuare l''installazione di Shopwell 6, è necessario prima leggere e accettare le CGV. La Community Edition di Shopwell 6 è rilasciata secondo le condizioni della licenza MIT.'
+    license_agreement_error: 'Ti preghiamo di accettare le nostre CGV.'
+    license_agreement_checkbox: 'Accetto le CGV.'
+    database-configuration_header: 'Configurazione database'
+    database-configuration_field_host: 'Server:'
+    database-configuration_advanced_settings: 'Impostazioni estese'
+    database-configuration_field_port: 'Porta:'
+    database-configuration_field_user: 'Utente:'
+    database-configuration_field_password: 'Password:'
+    database-configuration_field_database: 'Nome database:'
+    database-configuration_field_new_database: 'Nuovo database:'
+    database-configuration_info: 'Per installare Shopwell sul tuo sistema, ti servono i dati di accesso al tuo database. In caso di dubbi sui dati da inserire, contatta il tuo amministratore / hosting.'
+    database-configuration-create_new_database: 'Crea nuovo database'
+    database-configuration_non_empty_database: 'Il database selezionato contiene già i dati. Seleziona un database vuoto o creane uno nuovo.'
+    database-configuration_error_required_fields: 'Ti preghiamo di compilare tutti i campi.'
+    database-configuration_fetch_error: 'Si è verificato un errore durante il recupero delle informazioni del database'
+    database-configuration_access_denied: 'Accesso negato, le credenziali non sono corrette'
+    database-configuration_host_not_found: 'Impossibile connettersi al server di database'
+    database-configuration_invalid_requirements: 'Shopwell 6 richiede almeno MySQL 8.0.22 o MariaDB 10.11'
+    database-configuration_refresh_databases: 'Aggiornare i database'
+    database-import_header: Installazione
+    database-import_skip_import: Salta
+    database-import_progress: 'Progresso: '
+    database-import-hint: '<strong>Avvertenza:</strong> Se nel database configurato sono già presenti tabelle Shopwell, verranno rimosse attraverso l’installazione/l’aggiornamento!'
+    database-import_info_text: 'Shopwell 6 è installato dal database selezionato. Questo processo può richiedere qualche minuto, a seconda del tuo sistema.'
+    database_import_success: 'Shopwell 6 è stato installato con successo.'
+    database_import_install_label: 'Installazione database:'
+    database_import_install_step_text: Fase
+    database_import_install_from_text: di
+    migration_counter_text_migrations: 'Aggiornamento database in corso'
+    migration_counter_text_snippets: 'Aggiornamento moduli di testo in corso'
+    migration_update_success: 'Import database riuscito!'
+    edition_header: 'Hai già una licenza Shopwell?'
+    edition_info: 'Shopwell è disponibile nella <a href="https://de.shopwell.cn/versionen/" target="_blank">Community Edition </a> gratuita e nelle <a href="https://de.shopwell.cn/versionen/" target="_blank">edizioni Professional ed Enterprise</a> a pagamento.'
+    edition_ce: 'No, desidero utilizzare la <a href="https://de.shopwell.cn/versionen/" target="_blank">Community Edition</a> gratuita.'
+    edition_cm: 'Sì, ho una licenza Shopwell a pagamento (<a href="https://de.shopwell.cn/versionen/" target="_blank">Professional o Enterprise</a>).'
+    edition_license: 'Inserisci qui la tua chiave di licenza. La trovi nel tuo account Shopwell sotto “Licenze" → “Licenze dei prodotti" → “Dettagli / Download":'
+    edition_license_error: 'Per l’installazione di una versione di Shopwell a pagamento, è necessaria una licenza valida.'
+    configuration_header: Configurazione
+    configuration_sconfig_text: 'Quasi finito. Adesso devi solo definire alcune impostazioni fondamentali per il tuo shop, poi avrai concluso l’installazione.'
+    configuration_sconfig_name: 'Nome shop'
+    configuration_sconfig_name_info: 'Inserisci il nome del tuo shop'
+    configuration_sconfig_mail: 'Indirizzo e-mail dello shop:'
+    configuration_sconfig_mail_info: 'Inserisci l’indirizzo e-mail per la posta in uscita'
+    configuration_sconfig_domain: 'Dominio shop:'
+    configuration_sconfig_language: 'Lingua standard di sistema:'
+    configuration_sconfig_currency: 'Valuta standard:'
+    configuration_sconfig_currency_info: 'Questa valuta è normalmente utilizzata per i prezzi dei prodotti.'
+    configuration_admin_currency_eur: Euro
+    configuration_admin_currency_usd: 'Dollari (US)'
+    configuration_admin_currency_gbp: 'Sterlina britannica (GB)'
+    configuration_admin_currency_pln: 'Złoty polacco'
+    configuration_admin_currency_chf: 'Franco svizzero'
+    configuration_admin_currency_sek: 'Corona svedese'
+    configuration_admin_currency_dkk: 'Corona danese'
+    configuration_admin_currency_nok: 'Corona norvegese'
+    configuration_admin_currency_czk: 'Corona ceca'
+    configuration_admin_username: 'Nome login admin:'
+    configuration_admin_mail: 'Indirizzo e-mail admin:'
+    configuration_admin_firstName: 'Nome admin:'
+    configuration_admin_lastName: 'Cognome admin:'
+    configuration_defaults_warning: 'La lingua e la valuta standard di sistema non possono essere modificate in un secondo momento.'
+    configuration_email_help_text: 'Questo indirizzo e-mail verrà utilizzato per le mail in uscita del negozio.'
+    configuration_admin_currency_headline: 'Valute disponibili'
+    configuration_admin_currency_text: 'Aggiungi altre valute al tuo negozio Shopwell. Se volete aggiungere altre valute in seguito, potete farlo in qualsiasi momento nell''amministrazione.'
+    configuration_admin_language_de: Tedesco
+    configuration_admin_language_en: Inglese
+    configuration_admin_password: 'Password admin:'
+    finish_header: 'Installazione completata'
+    finish_info: 'Installazione Shopwell riuscita!'
+    finish_info_heading: Evvai!
+    finish_first_steps: 'Guida “Primi passi”'
+    finish_frontend: 'Vai allo storefront'
+    finish_backend: 'Vai alla Administration (gestione)'
+    finish_message: "
+        <p>
+            <strong>Benvenuto in Shopwell,</strong>
+        </p>
+        <p>
+            siamo lieti di accoglierti nella nostra Community. Hai installato Shopwell correttamente!
+        <p>
+            Il tuo shop è ora pronto per l’utilizzo. Se non conosci ancora bene Shopwell, ti suggeriamo di consultare la guida <a href=\"https://docs.shopwell.cn/en/shopware-6-en/first-steps/welcome-to-shopware\" target=\"_blank\">“Primi passi in Shopwell\"</a>. Se è la prima volta che ti colleghi a Gestione, il nostro First Run Wizard ti accompagnerà lungo la creazione del tuo shop.
+        </p>
+        <p>
+            Ti auguriamo buon divertimento e tanto successo con il tuo shop online!
+        </p>"
+    configuration_admin_shop_headline: 'Dati del negozio'
+    configuration_admin_language_headline: 'Lingue'
+    configuration_admin_language_select_all: 'Seleziona tutto'
+    configuration_admin_language_clear_all: 'Cancella tutto'
+    configuration_admin_user_headline: 'Dati utente amministratore'
+    configuration_admin_language_text: "Aggiungi più lingue al tuo negozio Shopwell. Se vuoi aggiungere o rimuovere lingue in seguito, puoi farlo in qualsiasi momento nell'amministrazione."
+    configuration_admin_language_search_placeholder: 'Cerca lingua...'
+    translations_header: 'Download lingue'
+    translations_import_install_label: 'Download e installazione di lingue aggiuntive.'
+    translations_install_duration_info: 'Questo potrebbe richiedere alcuni minuti.'
+    finish_title: 'La configurazione del tuo negozio Shopwell è completata.'
+    finish_subtitle: "Clicca su \"Continua al negozio\" per aprire l'amministrazione del tuo negozio e iniziare a costruire il negozio dei tuoi sogni."
+    finish_continue: 'Continua al negozio'
+    translations_install_error_message: "Qualcosa è andato storto durante l'installazione delle traduzioni."
+    translations_install_retry_link: 'Clicca qui per riprovare'
+    help:
+        title: Hai bisogno di aiuto?
+        support_channel: Scegli il canale di assistenza che preferisci
+        forum: Forum
+        phone_number_call: +492555928850
+        phone_number_formatted: (+49) 2555 928850
+        email: E-mail

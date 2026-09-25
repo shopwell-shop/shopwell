@@ -1,0 +1,369 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Store\Services;
+
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Framework\App\Aggregate\AppTranslation\AppTranslationCollection;
+use Shopwell\Core\Framework\App\AppCollection;
+use Shopwell\Core\Framework\App\AppEntity;
+use Shopwell\Core\Framework\App\Lifecycle\AppLoader;
+use Shopwell\Core\Framework\App\Privileges\Utils;
+use Shopwell\Core\Framework\App\Source\SourceResolver;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\PluginCollection;
+use Shopwell\Core\Framework\Plugin\PluginEntity;
+use Shopwell\Core\Framework\Store\Authentication\LocaleProvider;
+use Shopwell\Core\Framework\Store\Event\ExtensionLoadedEvent;
+use Shopwell\Core\Framework\Store\InAppPurchase;
+use Shopwell\Core\Framework\Store\Struct\BinaryCollection;
+use Shopwell\Core\Framework\Store\Struct\ExtensionCollection;
+use Shopwell\Core\Framework\Store\Struct\ExtensionStruct;
+use Shopwell\Core\Framework\Store\Struct\FaqCollection;
+use Shopwell\Core\Framework\Store\Struct\ImageCollection;
+use Shopwell\Core\Framework\Store\Struct\PermissionCollection;
+use Shopwell\Core\Framework\Store\Struct\StoreCategoryCollection;
+use Shopwell\Core\Framework\Store\Struct\StoreCollection;
+use Shopwell\Core\Framework\Store\Struct\VariantCollection;
+use Shopwell\Core\System\Locale\LanguageLocaleCodeProvider;
+use Shopwell\Core\System\SystemConfig\Service\ConfigurationService;
+use Symfony\Component\Intl\Languages;
+use Symfony\Component\Intl\Locales;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+class ExtensionLoader
+{
+    private const DEFAULT_LOCALE = 'en_GB';
+
+    public function __construct(
+        private readonly AppLoader $appLoader,
+        private readonly SourceResolver $sourceResolver,
+        private readonly ConfigurationService $configurationService,
+        private readonly LocaleProvider $localeProvider,
+        private readonly LanguageLocaleCodeProvider $languageLocaleProvider,
+        private readonly InAppPurchase $inAppPurchase,
+        private readonly LoggerInterface $logger,
+        private readonly EventDispatcherInterface $eventDispatcher,
+    ) {
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function loadFromArray(Context $context, array $data, ?string $locale = null): ExtensionStruct
+    {
+        if ($locale === null) {
+            $locale = $this->localeProvider->getLocaleFromContext($context);
+        }
+
+        $localeWithUnderscore = str_replace('-', '_', $locale);
+        $data = $this->prepareArrayData($data, $localeWithUnderscore);
+
+        return ExtensionStruct::fromArray($data);
+    }
+
+    /**
+     * @param array<array<string, mixed>> $data
+     */
+    public function loadFromListingArray(Context $context, array $data): ExtensionCollection
+    {
+        $locale = $this->localeProvider->getLocaleFromContext($context);
+        $localeWithUnderscore = str_replace('-', '_', $locale);
+        $extensions = new ExtensionCollection();
+
+        foreach ($data as $extension) {
+            $extension = ExtensionStruct::fromArray($this->prepareArrayData($extension, $localeWithUnderscore));
+            $extensions->set($extension->getName(), $extension);
+        }
+
+        return $extensions;
+    }
+
+    public function loadFromAppCollection(Context $context, AppCollection $collection): ExtensionCollection
+    {
+        $data = [];
+        foreach ($collection as $app) {
+            $data[] = $this->prepareAppData($context, $app);
+        }
+
+        $registeredApps = $this->loadFromListingArray($context, $data);
+
+        foreach ($collection as $app) {
+            $extension = $registeredApps->get($app->getName());
+            if ($extension !== null) {
+                $this->eventDispatcher->dispatch(new ExtensionLoadedEvent($app, $extension, $context));
+            }
+        }
+
+        // Enrich apps from filesystem
+        $localApps = $this->loadLocalAppsCollection($context);
+
+        foreach ($localApps as $name => $app) {
+            if ($registeredApps->has($name)) {
+                /** @var ExtensionStruct $registeredApp */
+                $registeredApp = $registeredApps->get($name);
+
+                $registeredApp->setIsTheme($app->isTheme());
+
+                // Set version of local app to registered app if newer
+                if (version_compare((string) $app->getVersion(), (string) $registeredApp->getVersion(), '>')) {
+                    $registeredApp->setLatestVersion($app->getVersion());
+                }
+
+                continue;
+            }
+
+            $registeredApps->set($name, $app);
+        }
+
+        return $registeredApps;
+    }
+
+    public function loadFromPluginCollection(Context $context, PluginCollection $collection): ExtensionCollection
+    {
+        $extensions = new ExtensionCollection();
+
+        foreach ($collection as $plugin) {
+            try {
+                $extension = $this->loadFromPlugin($context, $plugin);
+                $extensions->set($extension->getName(), $extension);
+            } catch (\Throwable $e) {
+                $this->logger->error('Failed to load plugin extension data', [
+                    'plugin' => $plugin->getName(),
+                    'exception' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $extensions;
+    }
+
+    public function getLocaleCodeFromLanguageId(Context $context, ?string $languageId = null): ?string
+    {
+        if ($languageId === null) {
+            $languageId = $context->getLanguageId();
+        }
+
+        $id = $this->getLocalesCodesFromLanguageIds([$languageId]);
+
+        if ($id === []) {
+            return null;
+        }
+
+        return $id[0];
+    }
+
+    /**
+     * @param array<string> $languageIds
+     *
+     * @return array<string>
+     */
+    public function getLocalesCodesFromLanguageIds(array $languageIds): array
+    {
+        $codes = array_values($this->languageLocaleProvider->getLocalesForLanguageIds($languageIds));
+        sort($codes);
+
+        return array_map(static fn (string $locale): string => str_replace('-', '_', $locale), $codes);
+    }
+
+    private function loadFromPlugin(Context $context, PluginEntity $plugin): ExtensionStruct
+    {
+        $data = [
+            'localId' => $plugin->getId(),
+            'description' => $plugin->getTranslation('description'),
+            'name' => $plugin->getName(),
+            'label' => $plugin->getTranslation('label'),
+            'producerName' => $plugin->getAuthor(),
+            'license' => $plugin->getLicense(),
+            'version' => $plugin->getVersion(),
+            'latestVersion' => $plugin->getUpgradeVersion(),
+            'iconRaw' => $plugin->getIcon(),
+            'installedAt' => $plugin->getInstalledAt(),
+            'active' => $plugin->getActive(),
+            'type' => ExtensionStruct::EXTENSION_TYPE_PLUGIN,
+            'isTheme' => false,
+            'configurable' => $this->configurationService->checkConfiguration(\sprintf('%s.config', $plugin->getName()), $context),
+            'updatedAt' => $plugin->getUpgradedAt(),
+            'allowDisable' => true,
+            'allowUpdate' => !$plugin->getManagedByComposer() || $plugin->isLocatedInCustomPluginDirectory(),
+            'managedByComposer' => $plugin->getManagedByComposer(),
+            'inAppPurchases' => $this->inAppPurchase->getByExtension($plugin->getName()),
+        ];
+
+        $extension = ExtensionStruct::fromArray($this->replaceCollections($data));
+
+        $this->eventDispatcher->dispatch(new ExtensionLoadedEvent($plugin, $extension, $context));
+
+        return $extension;
+    }
+
+    private function loadLocalAppsCollection(Context $context): ExtensionCollection
+    {
+        $apps = $this->appLoader->load();
+        $collection = new ExtensionCollection();
+        $language = $this->localeProvider->getLocaleFromContext($context);
+
+        foreach ($apps as $name => $app) {
+            if ($icon = $app->getMetadata()->getIcon()) {
+                $fs = $this->sourceResolver->filesystemForManifest($app);
+
+                if ($fs->has($icon)) {
+                    $icon = $fs->read($icon);
+                }
+            }
+
+            $appArray = $app->getMetadata()->toArray($language);
+
+            $row = [
+                'description' => isset($appArray['description']) ? $this->getTranslationFromArray($appArray['description'], $language) : '',
+                'name' => $name,
+                'label' => isset($appArray['label']) ? $this->getTranslationFromArray($appArray['label'], $language) : '',
+                'producerName' => $app->getMetadata()->getAuthor(),
+                'license' => $app->getMetadata()->getLicense(),
+                'version' => $app->getMetadata()->getVersion(),
+                'latestVersion' => $app->getMetadata()->getVersion(),
+                'iconRaw' => $icon ? base64_encode($icon) : null,
+                'installedAt' => null,
+                'active' => false,
+                'type' => ExtensionStruct::EXTENSION_TYPE_APP,
+                'allowUpdate' => !$app->isManagedByComposer(),
+                'managedByComposer' => $app->isManagedByComposer(),
+                'isTheme' => is_file($app->getPath() . '/Resources/theme.json'),
+                'privacyPolicyExtension' => isset($appArray['privacyPolicyExtensions']) ? $this->getTranslationFromArray($appArray['privacyPolicyExtensions'], $language, 'en-GB') : '',
+                'privacyPolicyLink' => $app->getMetadata()->getPrivacy(),
+                'inAppPurchases' => $this->inAppPurchase->getByExtension($app->getMetadata()->getName()),
+                'permissions' => Utils::makePermissions($app->getPermissions()?->asParsedPrivileges() ?? []),
+                'requestedPermissions' => [],
+            ];
+
+            $collection->set($name, $this->loadFromArray($context, $row, $language));
+        }
+
+        return $collection;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, StoreCollection|mixed|null>
+     */
+    private function prepareArrayData(array $data, ?string $locale): array
+    {
+        return $this->translateExtensionLanguages($this->replaceCollections($data), $locale);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function prepareAppData(Context $context, AppEntity $app): array
+    {
+        $data = [
+            'localId' => $app->getId(),
+            'description' => $app->getTranslation('description'),
+            'name' => $app->getName(),
+            'label' => $app->getTranslation('label'),
+            'producerName' => $app->getAuthor(),
+            'license' => $app->getLicense(),
+            'version' => $app->getVersion(),
+            'privacyPolicyLink' => $app->getPrivacy(),
+            'iconRaw' => $app->getIcon(),
+            'installedAt' => $app->getCreatedAt(),
+            'permissions' => $app->getAclRole() !== null ? Utils::makePermissions($app->getAclRole()->getPrivileges()) : [],
+            'requestedPermissions' => Utils::makePermissions($app->getRequestedPrivileges()),
+            'active' => $app->isActive(),
+            'languages' => [],
+            'type' => ExtensionStruct::EXTENSION_TYPE_APP,
+            'isTheme' => false,
+            'configurable' => $app->isConfigurable(),
+            'privacyPolicyExtension' => $app->getPrivacyPolicyExtensions(),
+            'updatedAt' => $app->getUpdatedAt(),
+            'allowDisable' => $app->getAllowDisable(),
+            'domains' => $app->getAllowedHosts(),
+        ];
+
+        $appTranslations = $app->getTranslations();
+
+        if ($appTranslations) {
+            $data['languages'] = $this->makeLanguagesArray($appTranslations);
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, StoreCollection|mixed|null>
+     */
+    private function replaceCollections(array $data): array
+    {
+        $replacements = [
+            'variants' => VariantCollection::class,
+            'faq' => FaqCollection::class,
+            'binaries' => BinaryCollection::class,
+            'images' => ImageCollection::class,
+            'categories' => StoreCategoryCollection::class,
+            'permissions' => PermissionCollection::class,
+            'requestedPermissions' => PermissionCollection::class,
+        ];
+
+        foreach ($replacements as $key => $collectionClass) {
+            $data[$key] = new $collectionClass($data[$key] ?? []);
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param array<string, StoreCollection|mixed|null> $data
+     *
+     * @return array<string, StoreCollection|mixed|null>
+     */
+    private function translateExtensionLanguages(array $data, ?string $locale = self::DEFAULT_LOCALE): array
+    {
+        if (!isset($data['languages'])) {
+            return $data;
+        }
+
+        $locale = $locale && Locales::exists($locale) ? $locale : self::DEFAULT_LOCALE;
+
+        foreach ($data['languages'] as $key => $language) {
+            $data['languages'][$key] = Languages::getName($language['name'], $locale);
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return array<array{name: string}>
+     */
+    private function makeLanguagesArray(AppTranslationCollection $translations): array
+    {
+        $languageIds = array_map(
+            static fn ($translation) => $translation->getLanguageId(),
+            $translations->getElements()
+        );
+
+        $translationLocales = $this->getLocalesCodesFromLanguageIds($languageIds);
+
+        return array_map(
+            static fn ($translationLocale) => ['name' => $translationLocale],
+            $translationLocales
+        );
+    }
+
+    /**
+     * @param array<string, string> $translations
+     */
+    private function getTranslationFromArray(
+        array $translations,
+        string $currentLanguage,
+        string $fallbackLanguage = self::DEFAULT_LOCALE
+    ): ?string {
+        return $translations[$currentLanguage] ?? $translations[$fallbackLanguage] ?? null;
+    }
+}

@@ -1,0 +1,25 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DataAbstractionLayer\Field;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\PriceDefinitionFieldSerializer;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('framework')]
+class PriceDefinitionField extends JsonField
+{
+    public function __construct(
+        string $storageName,
+        string $propertyName
+    ) {
+        parent::__construct($storageName, $propertyName);
+    }
+
+    protected function getSerializerClass(): string
+    {
+        return PriceDefinitionFieldSerializer::class;
+    }
+}

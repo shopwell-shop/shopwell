@@ -1,0 +1,21 @@
+{% block sw_gtc_checkbox %}
+<div class="sw-gtc-checkbox">
+    {% block sw_gtc_checkbox_input %}
+    <mt-checkbox
+        :checked="value"
+        @update:checked="onChange"
+    >
+        <template #label>
+            {{ $t('global.sw-gtc-checkbox.label') }}
+            <mt-link
+                type="external"
+                as="a"
+                :href="$t('global.sw-gtc-checkbox.url')"
+            >
+                {{ $t('global.sw-gtc-checkbox.link') }}
+            </mt-link>
+        </template>
+    </mt-checkbox>
+    {% endblock %}
+</div>
+{% endblock %}

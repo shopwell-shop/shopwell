@@ -1,0 +1,57 @@
+.sw-product-detail-cross-selling {
+    & &__restore-inheritance-btn.mt-button {
+        display: block;
+        margin: 0 auto var(--scale-size-40);
+
+        .mt-icon {
+            color: var(--color-module-purple-900);
+        }
+
+        &:disabled,
+        &.mt-button--disabled {
+            .mt-icon {
+                color: var(--color-module-purple-200);
+            }
+        }
+    }
+
+    &__inherit-toggle-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        line-height: var(--scale-size-16);
+        font-size: var(--font-size-xs);
+        margin: var(--scale-size-20) 0;
+        color: var(--color-text-secondary-default);
+
+        &.is--inherited {
+            color: var(--color-module-purple-900);
+        }
+    }
+
+    &__inherit-switch {
+        margin: 0 var(--scale-size-10) 0 0;
+
+        .sw-field--switch__input {
+            height: var(--scale-size-16);
+            padding: 0;
+        }
+    }
+
+    &__inheritance-icon {
+        margin-right: var(--scale-size-8);
+    }
+
+    &__cross-selling-list + .sw-tooltip--wrapper {
+        margin: 0 auto;
+        width: fit-content;
+    }
+
+    &__empty-state {
+        .mt-empty-state__button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+}

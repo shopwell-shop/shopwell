@@ -1,0 +1,79 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Rule\Container;
+
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Rule\RuleComparison;
+use Shopwell\Core\Framework\Rule\RuleConfig;
+use Shopwell\Core\Framework\Rule\RuleConstraints;
+use Shopwell\Core\Framework\Rule\RuleException;
+use Shopwell\Core\Framework\Rule\RuleScope;
+use Symfony\Component\Clock\Clock;
+
+#[Package('fundamentals@after-sales')]
+abstract class DaysSinceRule extends Rule
+{
+    protected string $operator = Rule::OPERATOR_EQ;
+
+    protected ?float $daysPassed = null;
+
+    public function match(RuleScope $scope): bool
+    {
+        if (!$this->supportsScope($scope)) {
+            return false;
+        }
+
+        $currentDate = $scope->getCurrentTime()->setTime(0, 0, 0, 0);
+
+        if ($this->daysPassed === null && $this->operator !== self::OPERATOR_EMPTY) {
+            throw RuleException::unsupportedValue(\gettype($this->daysPassed), self::class);
+        }
+
+        if (!$date = $this->getDate($scope)) {
+            return RuleComparison::isNegativeOperator($this->operator);
+        }
+
+        if ($this->daysPassed === null) {
+            return false;
+        }
+
+        $dateTime = \DateTime::createFromImmutable(Clock::get()->now())
+            ->setTimestamp($date->getTimestamp())
+            ->setTime(0, 0);
+
+        $interval = $dateTime->diff($currentDate);
+
+        if ($this->operator === self::OPERATOR_EMPTY) {
+            return false;
+        }
+
+        return RuleComparison::numeric((int) $interval->days, $this->daysPassed, $this->operator);
+    }
+
+    public function getConstraints(): array
+    {
+        $constraints = [
+            'operator' => RuleConstraints::numericOperators(),
+        ];
+
+        if ($this->operator === self::OPERATOR_EMPTY) {
+            return $constraints;
+        }
+
+        $constraints['daysPassed'] = RuleConstraints::float();
+
+        return $constraints;
+    }
+
+    public function getConfig(): RuleConfig
+    {
+        return (new RuleConfig())
+            ->operatorSet(RuleConfig::OPERATOR_SET_NUMBER, true)
+            ->numberField('daysPassed', ['unit' => RuleConfig::UNIT_TIME]);
+    }
+
+    abstract protected function getDate(RuleScope $scope): ?\DateTimeInterface;
+
+    abstract protected function supportsScope(RuleScope $scope): bool;
+}

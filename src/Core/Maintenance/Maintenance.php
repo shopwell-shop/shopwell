@@ -1,0 +1,27 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Maintenance;
+
+use Shopwell\Core\Framework\Bundle;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class Maintenance extends Bundle
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function build(ContainerBuilder $container): void
+    {
+        parent::build($container);
+
+        $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/DependencyInjection'));
+        $loader->load('services.php');
+    }
+}

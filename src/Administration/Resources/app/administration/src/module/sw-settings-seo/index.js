@@ -1,0 +1,42 @@
+/**
+ * @sw-package inventory
+ */
+
+/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+Shopwell.Component.register('sw-seo-url-template-card', () => import('./component/sw-seo-url-template-card'));
+Shopwell.Component.register('sw-seo-url', () => import('./component/sw-seo-url'));
+Shopwell.Component.register('sw-seo-main-category', () => import('./component/sw-seo-main-category'));
+Shopwell.Component.register('sw-settings-seo', () => import('./page/sw-settings-seo'));
+/* eslint-enable sw-deprecation-rules/private-feature-declarations */
+
+const { Module } = Shopwell;
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Module.register('sw-settings-seo', {
+    type: 'core',
+    name: 'settings-seo',
+    title: 'sw-settings-seo.general.mainMenuItemGeneral',
+    description: 'SEO section in the settings module',
+    color: 'var(--sw-color-module-neutral-default)',
+    icon: 'regular-search',
+    favicon: 'icon-module-settings.svg',
+    entity: 'seo',
+
+    routes: {
+        index: {
+            component: 'sw-settings-seo',
+            path: 'index',
+            meta: {
+                parentPath: 'sw.settings.index',
+                privilege: 'system.system_config',
+            },
+        },
+    },
+
+    settingsItem: {
+        group: 'content',
+        to: 'sw.settings.seo.index',
+        icon: 'regular-search',
+        privilege: 'system.system_config',
+    },
+});

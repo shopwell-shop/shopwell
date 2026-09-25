@@ -1,0 +1,65 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Gateway\Command\Handler;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Error\Error;
+use Shopwell\Core\Checkout\Cart\Error\ErrorCollection;
+use Shopwell\Core\Checkout\Gateway\CheckoutGatewayResponse;
+use Shopwell\Core\Checkout\Gateway\Command\AddCartErrorCommand;
+use Shopwell\Core\Checkout\Gateway\Command\Handler\AddCartErrorCommandHandler;
+use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodCollection;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Generator;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(AddCartErrorCommandHandler::class)]
+class AddCartErrorCommandHandlerTest extends TestCase
+{
+    public function testSupportedCommands(): void
+    {
+        static::assertSame(
+            [AddCartErrorCommand::class],
+            AddCartErrorCommandHandler::supportedCommands()
+        );
+    }
+
+    public function testHandle(): void
+    {
+        $response = new CheckoutGatewayResponse(
+            new PaymentMethodCollection(),
+            new ShippingMethodCollection(),
+            new ErrorCollection()
+        );
+
+        $firstCommand = new AddCartErrorCommand('Test Error', true, Error::LEVEL_ERROR);
+        $secondCommand = new AddCartErrorCommand('A notice', false, Error::LEVEL_NOTICE);
+
+        $context = Generator::generateSalesChannelContext();
+
+        $handler = new AddCartErrorCommandHandler();
+        $handler->handle($firstCommand, $response, $context);
+        $handler->handle($secondCommand, $response, $context);
+
+        static::assertCount(2, $response->getCartErrors());
+
+        $error1 = $response->getCartErrors()->first();
+
+        static::assertNotNull($error1);
+        static::assertSame('Test Error', $error1->getMessage());
+        static::assertSame(Error::LEVEL_ERROR, $error1->getLevel());
+        static::assertTrue($error1->blockOrder());
+
+        $error2 = $response->getCartErrors()->last();
+
+        static::assertNotNull($error2);
+        static::assertSame('A notice', $error2->getMessage());
+        static::assertSame(Error::LEVEL_NOTICE, $error2->getLevel());
+        static::assertFalse($error2->blockOrder());
+    }
+}

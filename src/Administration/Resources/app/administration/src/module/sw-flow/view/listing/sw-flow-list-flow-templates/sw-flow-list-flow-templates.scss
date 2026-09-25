@@ -1,0 +1,14 @@
+.sw-flow-list-flow-templates-card {
+    overflow: hidden;
+
+    .mt-card__content {
+        padding: 0;
+    }
+}
+
+.sw-data-grid.sw-flow-list-my-templates__grid {
+    .sw-flow-list-my-flows__content__update-flow-template-link {
+        text-decoration: none;
+        color: inherit;
+    }
+}

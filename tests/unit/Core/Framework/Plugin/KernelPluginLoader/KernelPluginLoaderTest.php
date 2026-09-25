@@ -1,0 +1,93 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Plugin\KernelPluginLoader;
+
+use Composer\Autoload\ClassLoader;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\KernelPluginLoader\KernelPluginLoader;
+use Shopwell\Core\Framework\Plugin\KernelPluginLoader\StaticKernelPluginLoader;
+use Shopwell\Tests\Unit\Core\Framework\Plugin\_fixtures\ExampleBundle\ExampleBundle;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(KernelPluginLoader::class)]
+class KernelPluginLoaderTest extends TestCase
+{
+    #[DataProvider('classLoaderDataProvider')]
+    public function testClassMapAuthoritativeWillBeDeactivated(bool $enabled): void
+    {
+        $classLoader = new ClassLoader();
+        $classLoader->setClassMapAuthoritative($enabled);
+
+        $fakeLoader = new StaticKernelPluginLoader(
+            $classLoader,
+            null,
+            [
+                [
+                    'name' => 'ExampleBundle',
+                    'version' => '1.0.0',
+                    'baseClass' => ExampleBundle::class,
+                    'path' => __DIR__ . '/../_fixtures/ExampleBundle',
+                    'active' => true,
+                    'managedByComposer' => false,
+                    'composerName' => 'Swag\ExampleBundle',
+                    'autoload' => [
+                        'psr-4' => [
+                            'ExampleBundle\\' => '',
+                        ],
+                    ],
+                ],
+            ]
+        );
+
+        $fakeLoader->initializePlugins(__DIR__);
+
+        static::assertFalse($classLoader->isClassMapAuthoritative());
+    }
+
+    #[DataProvider('classLoaderDataProvider')]
+    public function testWithComposerManaged(bool $enabled): void
+    {
+        $classLoader = new ClassLoader();
+        $classLoader->setClassMapAuthoritative($enabled);
+
+        $fakeLoader = new StaticKernelPluginLoader(
+            $classLoader,
+            null,
+            [
+                [
+                    'name' => 'ExampleBundle',
+                    'version' => '1.0.0',
+                    'baseClass' => ExampleBundle::class,
+                    'path' => __DIR__ . '/../_fixtures/ExampleBundle',
+                    'active' => true,
+                    'managedByComposer' => true,
+                    'composerName' => 'Swag\ExampleBundle',
+                    'autoload' => [
+                        'psr-4' => [
+                            'ExampleBundle\\' => '',
+                        ],
+                    ],
+                ],
+            ]
+        );
+
+        $fakeLoader->initializePlugins(__DIR__);
+
+        static::assertSame($enabled, $classLoader->isClassMapAuthoritative());
+    }
+
+    /**
+     * @return iterable<array<bool>>
+     */
+    public static function classLoaderDataProvider(): iterable
+    {
+        yield 'classMapAuthoritative' => [true];
+        yield 'notClassMapAuthoritative' => [false];
+    }
+}

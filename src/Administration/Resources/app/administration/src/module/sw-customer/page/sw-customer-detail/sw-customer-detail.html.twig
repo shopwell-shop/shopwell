@@ -1,0 +1,207 @@
+{% block sw_customer_detail %}
+<sw-page class="sw-customer-detail">
+    {% block sw_customer_detail_header %}
+    <template
+        v-if="!isLoading"
+        #smart-bar-header
+    >
+        <h2>
+            {{ salutation(customer) }}
+        </h2>
+
+        <mt-badge
+            v-if="customer?.createdById"
+            class="sw-customer-detail__created-by-admin-label"
+        >
+            {{ $t('sw-customer.detail.labelCreatedByAdmin') }}
+        </mt-badge>
+    </template>
+    {% endblock %}
+
+    {% block sw_customer_detail_actions %}
+    <template #smart-bar-actions>
+        {% block sw_customer_detail_actions_edit %}
+        <span v-if="!editMode">
+            <mt-button
+                v-tooltip="{
+                    message: $t('sw-privileges.tooltip.warning'),
+                    disabled: acl.can('customer.editor'),
+                    showOnDisabledElements: true
+                }"
+                class="sw-customer-detail__open-edit-mode-action"
+                variant="primary"
+                :disabled="isLoading || !acl.can('customer.editor')"
+                size="default"
+                @click.prevent="onActivateCustomerEditMode"
+            >
+                {{ $t('global.default.edit') }}
+            </mt-button>
+        </span>
+        {% endblock %}
+
+        <span v-else>
+            {% block sw_customer_detail_actions_cancel %}
+            <mt-button
+                :disabled="isLoading"
+                variant="secondary"
+                size="default"
+                @click="onAbortButtonClick"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+            {% endblock %}
+
+            {% block sw_customer_detail_actions_save %}
+            <sw-button-process
+                class="sw-customer-detail__save-action"
+                :is-loading="isLoading"
+                :process-success="isSaveSuccessful"
+                :disabled="isLoading"
+                variant="primary"
+                @update:process-success="saveFinish"
+                @click.prevent="onSave"
+            >
+                {{ $t('global.default.save') }}
+            </sw-button-process>
+            {% endblock %}
+        </span>
+    </template>
+    {% endblock %}
+
+    <template #language-switch>
+        <sw-language-switch
+            :abort-change-function="abortOnLanguageChange"
+            :save-changes-function="saveOnLanguageChange"
+            @on-change="onChangeLanguage"
+        />
+    </template>
+
+    {% block sw_customer_detail_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_customer_detail_content_customer_group_registration %}
+            <div class="sw-customer-detail__customer-registration-alert">
+                <mt-banner
+                    v-if="customer && customer.requestedGroup"
+                    variant="info"
+                >
+                    {% block sw_customer_detail_content_customer_group_registration_content %}
+                    <div class="sw-customer-detail__customer-registration-alert-text">
+                        {% block sw_customer_detail_content_customer_group_registration_message %}
+                        <span>
+                            {{ $t('sw-customer.customerGroupRegistration.alert', {name: this.customer.requestedGroup.translated.name }, 0) }}
+                        </span>
+
+                        <p
+                            v-if="!customer.active"
+                            class="sw-customer-detail__customer-registration-alert-hint"
+                        >
+                            {{  $t('sw-customer.customerGroupRegistration.customerInactiveMessage') }}
+                        </p>
+                        {% endblock %}
+                    </div>
+
+                    <div class="sw-customer-detail__customer-registration-alert-actions">
+                        {% block sw_customer_detail_content_customer_group_registration_actions %}
+                        <mt-button
+                            variant="critical"
+                            @click="declineCustomerGroupRegistration"
+                        >
+                            {{ $t('sw-customer.customerGroupRegistration.decline') }}
+                        </mt-button>
+
+                        <mt-button
+                            variant="primary"
+                            @click="acceptCustomerGroupRegistration"
+                        >
+                            {{ $t('sw-customer.customerGroupRegistration.accept') }}
+                        </mt-button>
+                        {% endblock %}
+                    </div>
+                    {% endblock %}
+                </mt-banner>
+            </div>
+            {% endblock %}
+
+            {% block sw_customer_detail_content_tabs %}
+            <template v-if="feature.isActive('v6.8.0.0')">
+                {% block sw_customer_detail_content_mt_tabs %}
+                <mt-tabs
+                    class="sw-customer-detail-page__tabs"
+                    position-identifier="sw-customer-detail-tabs"
+                    :default-item="$route.name"
+                    :items="customerDetailTabs"
+                    :small="true"
+                />
+                {% endblock %}
+            </template>
+
+            <template v-else>
+                <sw-tabs
+                    class="sw-customer-detail-page__tabs"
+                    position-identifier="sw-customer-detail-tabs"
+                >
+                    {% block sw_customer_detail_content_tab_general %}
+                    <sw-tabs-item
+                        class="sw-customer-detail__tab-general"
+                        :route="generalRoute"
+                        :title="$t('sw-customer.detail.tabGeneral')"
+                        :has-error="swCustomerDetailBaseError"
+                    >
+                        {{ $t('sw-customer.detail.tabGeneral') }}
+                    </sw-tabs-item>
+                    {% endblock %}
+
+                    {% block sw_customer_detail_content_tab_addresses %}
+                    <sw-tabs-item
+                        class="sw-customer-detail__tab-addresses"
+                        :route="addressesRoute"
+                        :title="$t('sw-customer.detail.tabAddresses')"
+                    >
+                        {{ $t('sw-customer.detail.tabAddresses') }}
+                    </sw-tabs-item>
+                    {% endblock %}
+
+                    {% block sw_customer_detail_content_tab_order %}
+                    <sw-tabs-item
+                        class="sw-customer-detail__tab-order"
+                        :route="ordersRoute"
+                        :title="$t('sw-customer.detailBase.labelOrderCard')"
+                    >
+                        {{ $t('sw-customer.detailBase.labelOrderCard') }}
+                    </sw-tabs-item>
+                    {% endblock %}
+
+                    {% block sw_customer_detail_content_tab_after %}{% endblock %}
+                </sw-tabs>
+            </template>
+            {% endblock %}
+
+            <sw-extension-component-section
+                position-identifier="sw-customer-detail__before-content"
+            />
+
+            {% block sw_customer_detail_content_view %}
+            <template v-if="isLoading">
+                <sw-skeleton variant="detail-bold" />
+                <sw-skeleton />
+            </template>
+
+            <router-view
+                v-if="customer"
+                v-slot="{ Component }"
+            >
+                {# v-show is used here as underlying components influence the loading state and v-if would destroy this behaviour #}
+                <component
+                    :is="Component"
+                    v-show="!isLoading"
+                    :customer="customer"
+                    :customer-edit-mode="editMode"
+                />
+            </router-view>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

@@ -1,0 +1,76 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Integration\Core\Framework\Telemetry;
+
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
+use Shopwell\Core\Framework\Telemetry\Metrics\Metric\ConfiguredMetric;
+use Shopwell\Core\Framework\Telemetry\Metrics\Transport\TransportCollection;
+use Shopwell\Core\Framework\Test\Telemetry\Transport\TraceableTransport;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+
+use function PHPUnit\Framework\assertInstanceOf;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class MeterTest extends TestCase
+{
+    use KernelTestBehaviour;
+
+    private TraceableTransport $traceableTransport;
+
+    /**
+     * @var array<string, array{type: string, description: string, enabled?: bool, parameters: array<mixed>, labels: array<mixed>, unit?: string}>
+     */
+    private array $definitions;
+
+    private Meter $meter;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $meter = static::getContainer()->get(Meter::class);
+        $definitions = static::getContainer()->getParameter('shopware.telemetry.metrics.definitions');
+        $transportsCollection = static::getContainer()->get(TransportCollection::class);
+        assertInstanceOf(TransportCollection::class, $transportsCollection);
+        $traceableTransport = current(iterator_to_array($transportsCollection->getIterator()));
+
+        static::assertInstanceOf(Meter::class, $meter);
+        static::assertIsArray($definitions);
+        static::assertInstanceOf(TraceableTransport::class, $traceableTransport);
+
+        $this->meter = $meter;
+        $this->definitions = $definitions;
+        $this->traceableTransport = $traceableTransport;
+    }
+
+    public function testMeterEmitsAllConfiguredEnabledMetrics(): void
+    {
+        Feature::skipTestIfInActive('TELEMETRY_METRICS', $this);
+
+        $definitions = array_filter($this->definitions, static fn (array $definition) => ($definition['enabled'] ?? true) === true);
+
+        $this->traceableTransport->reset();
+        foreach ($definitions as $name => $definition) {
+            $configuredMetric = new ConfiguredMetric(name: $name, value: random_int(1, 10), labels: []);
+            $this->meter->emit($configuredMetric);
+        }
+
+        $transportedMetrics = $this->traceableTransport->getEmittedMetrics();
+        static::assertSameSize($definitions, $transportedMetrics);
+    }
+
+    public function testNotEmittedWithFeatureFlagOff(): void
+    {
+        Feature::skipTestIfActive('TELEMETRY_METRICS', $this);
+        $firstConfiguredMetric = array_keys($this->definitions)[0];
+        static::assertIsString($firstConfiguredMetric);
+        $this->traceableTransport->reset();
+        $this->meter->emit(new ConfiguredMetric(name: $firstConfiguredMetric, value: 1, labels: []));
+        static::assertEmpty($this->traceableTransport->getEmittedMetrics());
+    }
+}

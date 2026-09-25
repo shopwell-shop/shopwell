@@ -1,0 +1,52 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Plugin\Composer;
+
+use Composer\IO\NullIO;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Composer\PackageProvider;
+use Shopwell\Core\Framework\Plugin\PluginException;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(PackageProvider::class)]
+class PackageProviderTest extends TestCase
+{
+    public function testGetPluginInformation(): void
+    {
+        $packageProvider = $this->createProvider();
+        $pluginPath = __DIR__ . '/_fixture/valid';
+        $package = $packageProvider->getPluginComposerPackage($pluginPath, new NullIO());
+
+        static::assertSame('test/test', $package->getName());
+    }
+
+    public function testGetPluginInformationInvalidJson(): void
+    {
+        $packageProvider = $this->createProvider();
+        $pluginPath = __DIR__ . '/_fixture/invalid';
+
+        $this->expectExceptionObject(PluginException::composerJsonInvalid($pluginPath . '/composer.json', []));
+
+        $packageProvider->getPluginComposerPackage($pluginPath, new NullIO());
+    }
+
+    public function testGetPluginInformationInvalidJsonPath(): void
+    {
+        $packageProvider = $this->createProvider();
+        $pluginPath = __DIR__ . '/invalid_path';
+
+        $this->expectExceptionObject(PluginException::composerJsonInvalid($pluginPath . '/composer.json', []));
+
+        $packageProvider->getPluginComposerPackage($pluginPath, new NullIO());
+    }
+
+    private function createProvider(): PackageProvider
+    {
+        return new PackageProvider();
+    }
+}

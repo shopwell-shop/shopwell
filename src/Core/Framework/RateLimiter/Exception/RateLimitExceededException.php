@@ -1,0 +1,37 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\RateLimiter\Exception;
+
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\RateLimiter\RateLimiterException;
+use Symfony\Component\Clock\Clock;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @codeCoverageIgnore
+ */
+#[Package('framework')]
+class RateLimitExceededException extends RateLimiterException
+{
+    private readonly int $now;
+
+    public function __construct(
+        private readonly int $retryAfter,
+        ?\Throwable $e = null
+    ) {
+        $this->now = Clock::get()->now()->getTimestamp();
+
+        parent::__construct(
+            Response::HTTP_TOO_MANY_REQUESTS,
+            RateLimiterException::RATE_LIMIT_EXCEEDED,
+            'Too many requests, try again in {{ seconds }} seconds.',
+            ['seconds' => $this->getWaitTime()],
+            $e
+        );
+    }
+
+    public function getWaitTime(): int
+    {
+        return $this->retryAfter - $this->now;
+    }
+}

@@ -1,0 +1,112 @@
+import { defineComponent } from 'vue';
+import { type RuntimeSlot } from '../service/cms.service';
+import './sw-cms-state.mixin';
+
+const { Mixin } = Shopwell;
+const { types } = Shopwell.Utils;
+const { cloneDeep, merge, get, set, has } = Shopwell.Utils.object;
+
+/**
+ * @private
+ * @sw-package discovery
+ *
+ * Duplicated in `src/app/composables/use-cms-element-deprecated`; change both together.
+ */
+export default Mixin.register(
+    'cms-element',
+    defineComponent({
+        inject: ['cmsService'],
+
+        mixins: [Mixin.getByName('cms-state')],
+
+        props: {
+            element: {
+                type: Object as PropType<RuntimeSlot>,
+                required: true,
+            },
+
+            defaultConfig: {
+                type: Object,
+                required: false,
+                default: null,
+            },
+
+            disabled: {
+                type: Boolean,
+                required: false,
+                default: false,
+            },
+        },
+
+        computed: {
+            cmsPageState() {
+                return Shopwell.Store.get('cmsPage');
+            },
+
+            cmsElements() {
+                return this.cmsService.getCmsElementRegistry();
+            },
+        },
+
+        methods: {
+            initElementConfig() {
+                this.initBaseConfig();
+                this.applyContentOverride();
+            },
+
+            initBaseConfig() {
+                if (!this.element.type) {
+                    return;
+                }
+
+                const config = merge({}, this.cmsElements[this.element.type]?.defaultConfig, this.defaultConfig);
+
+                if (!this.element.config) {
+                    set(this.element, 'config', {});
+                }
+
+                Object.entries(config).forEach(([key, value]) => {
+                    const path = `config.${key}`;
+
+                    if (has(this.element, path)) {
+                        return;
+                    }
+
+                    const newValue: unknown = cloneDeep(get(this.element, `translated.${path}`, value));
+
+                    set(this.element, path, newValue);
+                });
+            },
+
+            applyContentOverride() {
+                if (!this.contentEntity || !this.inheritedSlotConfig || !this.element.id) {
+                    return;
+                }
+
+                const overrideConfig = this.inheritedSlotConfig[this.element.id];
+
+                if (!overrideConfig) {
+                    return;
+                }
+
+                Object.entries(overrideConfig).forEach(([key, value]) => {
+                    set(this.element, `config.${key}`, cloneDeep(value));
+                });
+            },
+
+            initElementData(elementName: string) {
+                if (types.isPlainObject(this.element.data) && Object.keys(this.element.data).length > 0) {
+                    return;
+                }
+
+                const elementConfig = this.cmsElements[elementName];
+                const defaultData = elementConfig?.defaultData ?? {};
+                this.element.data = merge(cloneDeep(defaultData), this.element.data || {});
+            },
+
+            getDemoValue(mappingPath: string) {
+                return this.cmsService.getPropertyByMappingPath(this.cmsPageState.currentDemoEntity, mappingPath);
+            },
+        },
+    }),
+);

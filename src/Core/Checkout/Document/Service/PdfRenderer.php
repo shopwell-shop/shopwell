@@ -1,0 +1,171 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Document\Service;
+
+use Dompdf\Adapter\CPDF;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use Shopwell\Core\Checkout\Document\DocumentConfiguration;
+use Shopwell\Core\Checkout\Document\DocumentConfigurationFactory;
+use Shopwell\Core\Checkout\Document\DocumentException;
+use Shopwell\Core\Checkout\Document\Extension\PdfRendererExtension;
+use Shopwell\Core\Checkout\Document\FileGenerator\FileTypes;
+use Shopwell\Core\Checkout\Document\Renderer\RenderedDocument;
+use Shopwell\Core\Checkout\Document\Twig\DocumentTemplateRenderer;
+use Shopwell\Core\Checkout\DocumentV2\Renderer\AbstractDocumentRenderer;
+use Shopwell\Core\Framework\Deprecation\BCChange\ExperimentalReplacement;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+
+#[Package('after-sales')]
+#[ExperimentalReplacement(
+    version: 'v6.9.0',
+    feature: 'DOCUMENT_GENERATION_REWORK',
+    replacement: AbstractDocumentRenderer::class,
+    description: 'DocumentV2 ships its own HTML, PDF and ZUGFeRD renderers. Implement AbstractDocumentRenderer to add a custom output format.',
+)]
+class PdfRenderer extends AbstractDocumentTypeRenderer
+{
+    public const FILE_EXTENSION = FileTypes::PDF;
+
+    public const FILE_CONTENT_TYPE = FileTypes::PDF_CONTENT_TYPE;
+
+    private const PAGE_COUNT_PLACEHOLDER = 'DOMPDF_PAGE_COUNT_PLACEHOLDER';
+
+    /**
+     * @internal
+     *
+     * @param array<string, mixed> $dompdfOptions
+     */
+    public function __construct(
+        private readonly array $dompdfOptions,
+        private readonly DocumentTemplateRenderer $documentTemplateRenderer,
+        private readonly string $rootDir,
+        private readonly ExtensionDispatcher $extensions
+    ) {
+    }
+
+    public function getContentType(): string
+    {
+        return self::FILE_CONTENT_TYPE;
+    }
+
+    public function render(RenderedDocument $document): string
+    {
+        return $this->extensions->publish(
+            name: PdfRendererExtension::NAME,
+            extension: new PdfRendererExtension($document),
+            function: $this->_render(...)
+        );
+    }
+
+    public function getDecorated(): AbstractDocumentTypeRenderer
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    private function _render(RenderedDocument $document): string
+    {
+        $dompdf = new Dompdf();
+
+        $options = new Options($this->dompdfOptions);
+
+        $dompdf->setOptions($options);
+        $dompdf->setPaper($document->getPageSize(), $document->getPageOrientation());
+        $dompdf->loadHtml($this->getHtml($document));
+
+        /*
+         * Dompdf creates and destroys a lot of objects. The garbage collector slows the process down by ~50% for
+         * PHP <7.3 and still some ms for 7.4
+         */
+        $gcEnabledAtStart = gc_enabled();
+        if ($gcEnabledAtStart) {
+            gc_collect_cycles();
+            gc_disable();
+        }
+
+        $dompdf->render();
+
+        $this->injectPageCount($dompdf);
+
+        if ($gcEnabledAtStart) {
+            gc_enable();
+        }
+
+        return $dompdf->output();
+    }
+
+    private function getHtml(RenderedDocument $document): string
+    {
+        $document->setContentType(self::FILE_CONTENT_TYPE);
+        $document->setFileExtension(self::FILE_EXTENSION);
+
+        if (!$document->getOrder() || !$document->getContext()) {
+            throw DocumentException::documentGenerationException('No options provided for rendering the document.');
+        }
+
+        $config = DocumentConfigurationFactory::mergeConfiguration(
+            new DocumentConfiguration(),
+            $document->getConfig(),
+        );
+
+        $language = $document->getOrder()->getLanguage();
+
+        $parameters = [
+            ...$document->getParameters(),
+            'order' => $document->getOrder(),
+            'config' => $config,
+            'rootDir' => $this->rootDir,
+            'context' => $document->getContext(),
+            ...$document->getExtensions(),
+        ];
+
+        return $this->documentTemplateRenderer->render(
+            $document->getTemplate(),
+            $parameters,
+            $document->getContext(),
+            $document->getOrder()->getSalesChannelId(),
+            $document->getOrder()->getLanguageId(),
+            $language?->getLocale()?->getCode(),
+        );
+    }
+
+    /**
+     * Replace a predefined placeholder with the total page count in the whole PDF document.
+     *
+     * Unicode TrueType fonts encode text in the CPDF stream as UTF-16BE (null-byte padded),
+     * while built-in standard 14 AFM fonts (such as Helvetica, when external fonts are blocked
+     * or fallback is used) encode text as single-byte strings. Both encodings are replaced.
+     */
+    private function injectPageCount(Dompdf $dompdf): void
+    {
+        /** @var CPDF $canvas */
+        $canvas = $dompdf->getCanvas();
+        $pageCount = (string) $canvas->get_page_count();
+
+        $search = [
+            $this->insertNullByteBeforeEachCharacter(self::PAGE_COUNT_PLACEHOLDER),
+            self::PAGE_COUNT_PLACEHOLDER,
+        ];
+        $replace = [
+            $this->insertNullByteBeforeEachCharacter($pageCount),
+            $pageCount,
+        ];
+
+        $pdf = $canvas->get_cpdf();
+
+        foreach ($pdf->objects as &$o) {
+            if ($o['t'] === 'contents') {
+                $o['c'] = str_replace($search, $replace, (string) $o['c']);
+            }
+        }
+
+        unset($o);
+    }
+
+    private function insertNullByteBeforeEachCharacter(string $string): string
+    {
+        return "\u{0000}" . substr(chunk_split($string, 1, "\u{0000}"), 0, -1);
+    }
+}

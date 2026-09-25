@@ -1,0 +1,114 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Content\Media\SalesChannel;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Media\MediaCollection;
+use Shopwell\Core\Content\Media\MediaEntity;
+use Shopwell\Core\Content\Media\MediaException;
+use Shopwell\Core\Content\Media\SalesChannel\MediaRoute;
+use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[CoversClass(MediaRoute::class)]
+class MediaRouteTest extends TestCase
+{
+    /**
+     * @var EntityRepository<MediaCollection>&Stub
+     */
+    private EntityRepository&Stub $mediaRepository;
+
+    private CacheTagCollector&Stub $cacheTagCollector;
+
+    private MediaRoute $mediaRoute;
+
+    protected function setUp(): void
+    {
+        $this->mediaRepository = static::createStub(EntityRepository::class);
+        $this->cacheTagCollector = static::createStub(CacheTagCollector::class);
+        $this->mediaRoute = new MediaRoute(
+            $this->mediaRepository,
+            $this->cacheTagCollector,
+        );
+    }
+
+    public function testLoadReturnsMediaRouteResponse(): void
+    {
+        $ids = ['testMediaId1', 'testMediaId2'];
+
+        $mediaEntity1 = new MediaEntity();
+        $mediaEntity1->setId('testMediaId1');
+        $mediaEntity1->setPath('testPath1');
+
+        $mediaEntity2 = new MediaEntity();
+        $mediaEntity2->setId('testMediaId2');
+        $mediaEntity2->setPath('testPath2');
+
+        $salesChannelContext = $this->createMock(SalesChannelContext::class);
+        $salesChannelContext
+            ->expects($this->once())
+            ->method('getContext')
+            ->willReturn(Context::createDefaultContext());
+
+        $request = new Request([], ['ids' => $ids]);
+
+        $mediaEntitySearchResult = new EntitySearchResult(
+            'media',
+            2,
+            new MediaCollection([$mediaEntity1, $mediaEntity2]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        $mediaRepository = $this->createMock(EntityRepository::class);
+        $mediaRepository
+            ->expects($this->once())
+            ->method('search')
+            ->willReturn($mediaEntitySearchResult);
+
+        $cacheTagCollector = $this->createMock(CacheTagCollector::class);
+        $cacheTagCollector
+            ->expects($this->once())
+            ->method('addTag')
+            ->with('media-testMediaId1', 'media-testMediaId2');
+
+        $mediaRoute = new MediaRoute($mediaRepository, $cacheTagCollector);
+
+        $response = $mediaRoute->load($request, $salesChannelContext);
+        $mediaCollection = $response->getMediaCollection();
+        $firstMediaEntity = $mediaCollection->first();
+
+        static::assertCount(2, $mediaCollection);
+        static::assertInstanceOf(MediaEntity::class, $firstMediaEntity);
+        static::assertSame('testMediaId1', $firstMediaEntity->getId());
+        static::assertSame('testPath1', $firstMediaEntity->getPath());
+    }
+
+    public function testLoadThrowsMediaExceptionWhenMediaNotFound(): void
+    {
+        $this->expectExceptionObject(MediaException::emptyMediaId());
+
+        $salesChannelContext = $this->createMock(SalesChannelContext::class);
+        $salesChannelContext
+            ->expects($this->never())
+            ->method('getContext')
+            ->willReturn(Context::createDefaultContext());
+
+        $request = new Request([], ['ids' => '']);
+
+        $this->mediaRoute->load($request, $salesChannelContext);
+    }
+}

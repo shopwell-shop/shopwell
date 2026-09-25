@@ -1,0 +1,75 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\System\CustomEntity;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\CustomEntity\CustomEntityException;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(CustomEntityException::class)]
+class CustomEntityExceptionTest extends TestCase
+{
+    public function testNoLabelProperty(): void
+    {
+        $exception = CustomEntityException::noLabelProperty();
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getStatusCode());
+        static::assertSame(CustomEntityException::CUSTOM_FIELDS_AWARE_NO_LABEL_PROPERTY, $exception->getErrorCode());
+        static::assertSame('Entity must have a label property when it is custom field aware', $exception->getMessage());
+    }
+
+    public function testLabelPropertyNotDefined(): void
+    {
+        $labelProperty = 'some_label';
+        $exception = CustomEntityException::labelPropertyNotDefined($labelProperty);
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getStatusCode());
+        static::assertSame(CustomEntityException::CUSTOM_FIELDS_AWARE_LABEL_PROPERTY_NOT_DEFINED, $exception->getErrorCode());
+        static::assertSame('Entity label_property "some_label" is not defined in fields', $exception->getMessage());
+    }
+
+    public function testLabelPropertyWrongType(): void
+    {
+        $labelProperty = 'some_label';
+        $exception = CustomEntityException::labelPropertyWrongType($labelProperty);
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getStatusCode());
+        static::assertSame(CustomEntityException::CUSTOM_FIELDS_AWARE_LABEL_PROPERTY_WRONG_TYPE, $exception->getErrorCode());
+        static::assertSame('Entity label_property "some_label" must be a string field', $exception->getMessage());
+    }
+
+    public function testInvalidEntityName(): void
+    {
+        $exception = CustomEntityException::invalidEntityName('ce_test`x');
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $exception->getStatusCode());
+        static::assertSame(CustomEntityException::CUSTOM_ENTITY_INVALID_NAME, $exception->getErrorCode());
+        static::assertSame('Custom entity name "ce_test`x" is invalid. It may only contain letters, digits, underscores and dollar signs.', $exception->getMessage());
+    }
+
+    public function testInvalidFieldName(): void
+    {
+        $exception = CustomEntityException::invalidFieldName('ce_test', 'my-field');
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $exception->getStatusCode());
+        static::assertSame(CustomEntityException::CUSTOM_ENTITY_INVALID_FIELD_NAME, $exception->getErrorCode());
+        static::assertSame('Field name "my-field" of custom entity "ce_test" is invalid. It may only contain letters, digits, underscores and dollar signs.', $exception->getMessage());
+    }
+
+    public function testUnsupportedOnDeletePropertyOnField(): void
+    {
+        $onDelete = 'some_on_delete';
+        $name = 'some_name';
+        $exception = CustomEntityException::unsupportedOnDeletePropertyOnField($onDelete, $name);
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getStatusCode());
+        static::assertSame(CustomEntityException::CUSTOM_ENTITY_ON_DELETE_PROPERTY_NOT_SUPPORTED, $exception->getErrorCode());
+        static::assertSame('onDelete property some_on_delete are not supported on field some_name', $exception->getMessage());
+    }
+}

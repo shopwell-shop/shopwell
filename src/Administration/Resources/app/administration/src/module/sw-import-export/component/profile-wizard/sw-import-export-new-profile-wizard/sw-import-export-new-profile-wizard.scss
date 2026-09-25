@@ -1,0 +1,17 @@
+.sw-import-export-new-profile-wizard {
+    &__violation-modal {
+        ul {
+            margin-left: var(--scale-size-32);
+            margin-top: var(--scale-size-18);
+        }
+    }
+
+    &__footer-right-button-group {
+        display: grid;
+        grid-auto-columns: min-content;
+        grid-auto-flow: column;
+        grid-column-gap: var(--scale-size-8);
+        justify-content: end;
+        align-items: center;
+    }
+}

@@ -1,0 +1,17 @@
+.sw-cms-el-preview-text {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-s);
+        margin: 0 0 6px;
+    }
+
+    p {
+        font-size: var(--font-size-2xs);
+        line-height: 15px;
+    }
+}

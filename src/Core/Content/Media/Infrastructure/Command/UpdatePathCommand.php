@@ -1,0 +1,82 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Media\Infrastructure\Command;
+
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Content\Media\Core\Application\MediaPathUpdater;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[AsCommand(
+    name: 'media:update-path',
+    description: 'Iterates over the media and updates the path column.',
+)]
+class UpdatePathCommand extends Command
+{
+    /**
+     * @internal
+     */
+    public function __construct(
+        private readonly MediaPathUpdater $updater,
+        private readonly Connection $connection
+    ) {
+        parent::__construct();
+    }
+
+    protected function configure(): void
+    {
+        $this->addOption('force', 'f', null, 'Force update of all media paths');
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $output->writeln('Updating media paths...');
+
+        if ($input->getOption('force')) {
+            $ids = $this->connection->fetchFirstColumn('SELECT LOWER(HEX(id)) FROM media');
+        } else {
+            $ids = $this->connection->fetchFirstColumn('SELECT LOWER(HEX(id)) FROM media WHERE path IS NULL');
+        }
+
+        $progressBar = new ProgressBar($output, \count($ids));
+        $progressBar->start();
+
+        $chunks = array_chunk($ids, 200);
+        foreach ($chunks as $chunkIds) {
+            $this->updater->updateMedia($chunkIds);
+            $progressBar->advance(\count($chunkIds));
+        }
+
+        $progressBar->finish();
+
+        $output->writeln('');
+        $output->writeln('Updating thumbnail paths...');
+        $output->writeln('');
+
+        if ($input->getOption('force')) {
+            $ids = $this->connection->fetchFirstColumn('SELECT LOWER(HEX(id)) FROM media_thumbnail');
+        } else {
+            $ids = $this->connection->fetchFirstColumn('SELECT LOWER(HEX(id)) FROM media_thumbnail WHERE path IS NULL');
+        }
+
+        $progressBar = new ProgressBar($output, \count($ids));
+
+        $progressBar->start();
+        $chunks = array_chunk($ids, 200);
+        foreach ($chunks as $chunkIds) {
+            $this->updater->updateThumbnails($chunkIds);
+            $progressBar->advance(\count($chunkIds));
+        }
+        $progressBar->finish();
+
+        return 0;
+    }
+}

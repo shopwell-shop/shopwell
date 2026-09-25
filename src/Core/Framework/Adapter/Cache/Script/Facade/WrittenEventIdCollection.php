@@ -1,0 +1,72 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Adapter\Cache\Script\Facade;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @template IDStructure of string|array<string, string> = string
+ *
+ * @implements \IteratorAggregate<int, string|array>
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('framework')]
+class WrittenEventIdCollection implements \IteratorAggregate
+{
+    /**
+     * @param list<EntityWriteResult<IDStructure>> $writeResults
+     */
+    public function __construct(private readonly array $writeResults)
+    {
+    }
+
+    /**
+     * `only()` filters the writeResults by the given operation names and returns a new collection.
+     *
+     * @param string ...$operations The operations which should be filters, one of `insert`, `update` od `delete`.
+     */
+    public function only(string ...$operations): self
+    {
+        $writeResults = array_values(array_filter(
+            $this->writeResults,
+            static fn (EntityWriteResult $result): bool => \in_array($result->getOperation(), $operations, true)
+        ));
+
+        return new self($writeResults);
+    }
+
+    /**
+     * `with()` filters the writeResults by changes to the given properties and returns a new collection.
+     * At least one of the given properties need to be in the change-set.
+     *
+     * @param string ...$properties The properties that should be in the change-set of the writeResult.
+     */
+    public function with(string ...$properties): self
+    {
+        $writeResults = array_values(array_filter(
+            $this->writeResults,
+            static fn (EntityWriteResult $result): bool => \array_intersect(array_keys($result->getPayload()), $properties) !== []
+        ));
+
+        return new self($writeResults);
+    }
+
+    public function empty(): bool
+    {
+        return \count($this->writeResults) < 1;
+    }
+
+    /**
+     * @internal should not be used directly, loop over an ItemsFacade directly inside twig instead
+     *
+     * @return \ArrayIterator<int, string|array<string, string>>
+     */
+    public function getIterator(): \ArrayIterator
+    {
+        $primaryKeys = array_values(\array_map(static fn (EntityWriteResult $result) => $result->getPrimaryKey(), $this->writeResults));
+
+        return new \ArrayIterator($primaryKeys);
+    }
+}

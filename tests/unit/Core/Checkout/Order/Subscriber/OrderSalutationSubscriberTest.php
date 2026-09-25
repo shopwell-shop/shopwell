@@ -1,0 +1,107 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Order\Subscriber;
+
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Order\OrderEvents;
+use Shopwell\Core\Checkout\Order\Subscriber\OrderSalutationSubscriber;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(OrderSalutationSubscriber::class)]
+class OrderSalutationSubscriberTest extends TestCase
+{
+    private Stub&Connection $connection;
+
+    private OrderSalutationSubscriber $salutationSubscriber;
+
+    protected function setUp(): void
+    {
+        $this->connection = static::createStub(Connection::class);
+
+        $this->salutationSubscriber = new OrderSalutationSubscriber($this->connection);
+    }
+
+    public function testGetSubscribedEvents(): void
+    {
+        static::assertSame([
+            OrderEvents::ORDER_ADDRESS_WRITTEN_EVENT => 'setDefaultSalutation',
+            OrderEvents::ORDER_CUSTOMER_WRITTEN_EVENT => 'setDefaultSalutation',
+        ], $this->salutationSubscriber->getSubscribedEvents());
+    }
+
+    public function testSkip(): void
+    {
+        $writeResults = [
+            new EntityWriteResult(
+                'created-id',
+                ['id' => Uuid::randomHex(), 'salutationId' => Uuid::randomHex()],
+                'order_address',
+                EntityWriteResult::OPERATION_INSERT
+            ),
+        ];
+
+        $event = new EntityWrittenEvent(
+            'order_address',
+            $writeResults,
+            Context::createDefaultContext(),
+            [],
+        );
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->never())->method('executeStatement');
+
+        $salutationSubscriber = new OrderSalutationSubscriber($connection);
+        $salutationSubscriber->setDefaultSalutation($event);
+    }
+
+    public function testDefaultSalutation(): void
+    {
+        $orderAddressId = Uuid::randomHex();
+
+        $writeResults = [new EntityWriteResult('created-id', ['id' => $orderAddressId], 'order_address', EntityWriteResult::OPERATION_INSERT)];
+
+        $event = new EntityWrittenEvent(
+            'order_address',
+            $writeResults,
+            Context::createDefaultContext(),
+            [],
+        );
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('executeStatement')
+            ->willReturnCallback(static function ($sql, $params) use ($orderAddressId): int {
+                static::assertSame($params, [
+                    'id' => Uuid::fromHexToBytes($orderAddressId),
+                    'notSpecified' => 'not_specified',
+                ]);
+
+                static::assertSame('
+                UPDATE `order_address`
+                SET `salutation_id` = (
+                    SELECT `id`
+                    FROM `salutation`
+                    WHERE `salutation_key` = :notSpecified
+                    LIMIT 1
+                )
+                WHERE `id` = :id AND `salutation_id` is NULL
+            ', $sql);
+
+                return 1;
+            });
+
+        $salutationSubscriber = new OrderSalutationSubscriber($connection);
+        $salutationSubscriber->setDefaultSalutation($event);
+    }
+}

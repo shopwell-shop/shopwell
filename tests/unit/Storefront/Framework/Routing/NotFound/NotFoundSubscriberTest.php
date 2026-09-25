@@ -1,0 +1,289 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Storefront\Framework\Routing\NotFound;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Kernel;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextRequestRestorer;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\Event\SystemConfigChangedEvent;
+use Shopwell\Core\Test\Assert\Serialization;
+use Shopwell\Storefront\Framework\Routing\Exception\ErrorRedirectRequestEvent;
+use Shopwell\Storefront\Framework\Routing\NotFound\NotFoundSubscriber;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\Cache\Adapter\TagAwareAdapter;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpFoundation\Cookie;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Event\ExceptionEvent;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Contracts\Cache\CacheInterface;
+
+/**
+ * @internal
+ */
+#[Package('discovery')]
+#[CoversClass(NotFoundSubscriber::class)]
+class NotFoundSubscriberTest extends TestCase
+{
+    public function testDebugIsOnDoesNothing(): void
+    {
+        $subscriber = new NotFoundSubscriber(
+            static::createStub(HttpKernelInterface::class),
+            static::createStub(SalesChannelContextRequestRestorer::class),
+            true,
+            static::createStub(CacheInterface::class),
+            static::createStub(EntityCacheKeyGenerator::class),
+            static::createStub(CacheInvalidator::class),
+            new EventDispatcher()
+        );
+
+        $event = new ExceptionEvent(
+            static::createStub(Kernel::class),
+            new Request(),
+            0,
+            new \Exception()
+        );
+        $subscriber->onError($event);
+
+        static::assertNull($event->getResponse());
+    }
+
+    public function testErrorHandled(): void
+    {
+        $httpKernel = $this->createMock(HttpKernelInterface::class);
+        $httpKernel
+            ->expects($this->once())
+            ->method('handle')
+            ->willReturn(new Response());
+
+        $requestStack = static::createStub(RequestStack::class);
+        $requestStack->method('getMainRequest')->willReturn(new Request());
+
+        $subscriber = new NotFoundSubscriber(
+            $httpKernel,
+            $this->createContextRestorer(),
+            false,
+            new TagAwareAdapter(new ArrayAdapter(), new ArrayAdapter()),
+            static::createStub(EntityCacheKeyGenerator::class),
+            static::createStub(CacheInvalidator::class),
+            new EventDispatcher()
+        );
+
+        $request = new Request();
+
+        $event = new ExceptionEvent(
+            static::createStub(Kernel::class),
+            $request,
+            0,
+            new HttpException(Response::HTTP_NOT_FOUND)
+        );
+        $subscriber->onError($event);
+
+        $response = $event->getResponse();
+
+        static::assertInstanceOf(Response::class, $response);
+    }
+
+    public function testCookiesAreNotPersistedToNotFoundPages(): void
+    {
+        $httpKernel = $this->createMock(HttpKernelInterface::class);
+        $response = new Response();
+        $response->headers->setCookie(new Cookie('extension-cookie', '1'));
+        $response->headers->setCookie(new Cookie(PlatformRequest::FALLBACK_SESSION_NAME, '1'));
+        $httpKernel
+            ->expects($this->once())
+            ->method('handle')
+            ->willReturn($response);
+
+        $requestStack = static::createStub(RequestStack::class);
+        $requestStack->method('getMainRequest')->willReturn(new Request());
+
+        $arrayAdapter = new ArrayAdapter();
+        $subscriber = new NotFoundSubscriber(
+            $httpKernel,
+            $this->createContextRestorer(),
+            false,
+            new TagAwareAdapter($arrayAdapter, $arrayAdapter),
+            static::createStub(EntityCacheKeyGenerator::class),
+            static::createStub(CacheInvalidator::class),
+            new EventDispatcher(),
+            []
+        );
+
+        $request = new Request();
+
+        $event = new ExceptionEvent(
+            static::createStub(Kernel::class),
+            $request,
+            0,
+            new HttpException(Response::HTTP_NOT_FOUND)
+        );
+
+        $subscriber->onError($event);
+
+        $writtenCaches = array_values($arrayAdapter->getValues());
+
+        static::assertArrayHasKey(0, $writtenCaches);
+
+        $cacheItem = Serialization::assertUnserializedInstanceOf(Response::class, $writtenCaches[0]);
+
+        $cookies = $cacheItem->headers->getCookies();
+        static::assertCount(1, $cookies);
+
+        static::assertSame('extension-cookie', $cookies[0]->getName());
+    }
+
+    public function testOtherExceptionsDoNotGetCached(): void
+    {
+        $httpKernel = $this->createMock(HttpKernelInterface::class);
+        $httpKernel
+            ->expects($this->once())
+            ->method('handle')
+            ->willReturn(new Response());
+
+        $requestStack = static::createStub(RequestStack::class);
+        $requestStack->method('getMainRequest')->willReturn(new Request());
+
+        $subscriber = new NotFoundSubscriber(
+            $httpKernel,
+            $this->createContextRestorer(),
+            false,
+            new TagAwareAdapter(new ArrayAdapter(), new ArrayAdapter()),
+            static::createStub(EntityCacheKeyGenerator::class),
+            static::createStub(CacheInvalidator::class),
+            new EventDispatcher()
+        );
+
+        $request = new Request();
+
+        $event = new ExceptionEvent(
+            static::createStub(Kernel::class),
+            $request,
+            0,
+            new \Exception()
+        );
+        $subscriber->onError($event);
+
+        static::assertInstanceOf(Response::class, $event->getResponse());
+
+        $subscriber->reset();
+    }
+
+    public function testErrorRedirectIsModifiableAndNotCaptchaValidated(): void
+    {
+        $httpKernel = $this->createMock(HttpKernelInterface::class);
+        $httpKernel
+            ->expects($this->once())
+            ->method('handle')
+            ->with(static::callback(static function (Request $request) {
+                return $request->attributes->get(PlatformRequest::ATTRIBUTE_CAPTCHA) === false;
+            }))
+            ->willReturn(new Response());
+
+        $requestStack = static::createStub(RequestStack::class);
+        $requestStack->method('getMainRequest')->willReturn(new Request());
+
+        $eventDispatcher = $this->createMock(EventDispatcher::class);
+        $eventDispatcher
+            ->expects($this->once())
+            ->method('dispatch')
+            ->with(static::isInstanceOf(ErrorRedirectRequestEvent::class));
+
+        $subscriber = new NotFoundSubscriber(
+            $httpKernel,
+            $this->createContextRestorer(),
+            false,
+            new TagAwareAdapter(new ArrayAdapter(), new ArrayAdapter()),
+            static::createStub(EntityCacheKeyGenerator::class),
+            static::createStub(CacheInvalidator::class),
+            $eventDispatcher,
+        );
+
+        $request = new Request();
+        $request->attributes->set(PlatformRequest::ATTRIBUTE_CAPTCHA, true);
+
+        $event = new ExceptionEvent(
+            static::createStub(Kernel::class),
+            $request,
+            0,
+            new \Exception()
+        );
+        $subscriber->onError($event);
+        $subscriber->reset();
+    }
+
+    #[DataProvider('providerSystemConfigKeys')]
+    public function testInvalidationHappensOnSystemConfigChange(string $key, bool $shouldInvalidate): void
+    {
+        $cacheInvalidator = $this->createMock(CacheInvalidator::class);
+        $cacheInvalidator
+            ->expects($shouldInvalidate ? $this->once() : $this->never())
+            ->method('invalidate');
+
+        $subscriber = new NotFoundSubscriber(
+            static::createStub(HttpKernelInterface::class),
+            static::createStub(SalesChannelContextRequestRestorer::class),
+            true,
+            static::createStub(CacheInterface::class),
+            static::createStub(EntityCacheKeyGenerator::class),
+            $cacheInvalidator,
+            new EventDispatcher()
+        );
+
+        $subscriber->onSystemConfigChanged(new SystemConfigChangedEvent($key, 'foo', null));
+    }
+
+    /**
+     * @return iterable<string, array<mixed>>
+     */
+    public static function providerSystemConfigKeys(): iterable
+    {
+        yield 'key matches' => [
+            'core.basicInformation.http404Page',
+            true,
+        ];
+
+        yield 'key not matches' => [
+            'core.http404Page',
+            false,
+        ];
+    }
+
+    public function testSubscribedEvents(): void
+    {
+        static::assertArrayHasKey(SystemConfigChangedEvent::class, NotFoundSubscriber::getSubscribedEvents());
+
+        static::assertArrayHasKey(KernelEvents::EXCEPTION, NotFoundSubscriber::getSubscribedEvents());
+    }
+
+    private function createContextRestorer(): SalesChannelContextRequestRestorer
+    {
+        $context = static::createStub(SalesChannelContext::class);
+        $context
+            ->method('getContext')
+            ->willReturn(Context::createDefaultContext());
+
+        $contextRestorer = static::createStub(SalesChannelContextRequestRestorer::class);
+        $contextRestorer
+            ->method('restore')
+            ->willReturnCallback(static function (Request $request) use ($context): SalesChannelContext {
+                $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
+
+                return $context;
+            });
+
+        return $contextRestorer;
+    }
+}

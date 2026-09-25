@@ -1,0 +1,168 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Adapter\Kernel;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Adapter\Kernel\HttpKernel;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\CanonicalRedirectService;
+use Shopwell\Core\Framework\Routing\RequestTransformerInterface;
+use Shopwell\Storefront\Framework\StorefrontFrameworkException;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Controller\ArgumentResolverInterface;
+use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
+use Symfony\Component\HttpKernel\Event\ExceptionEvent;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(HttpKernel::class)]
+class HttpKernelTest extends TestCase
+{
+    private ControllerResolverInterface&Stub $controllerResolver;
+
+    protected function setUp(): void
+    {
+        $this->controllerResolver = static::createStub(ControllerResolverInterface::class);
+        $this->controllerResolver
+            ->method('getController')
+            ->willReturn(static function (): Response {
+                return new Response();
+            });
+    }
+
+    public function testNoTransformOnErrorPages(): void
+    {
+        $requestTransformer = $this->createMock(RequestTransformerInterface::class);
+        $requestTransformer
+            ->expects($this->never())
+            ->method('transform');
+
+        $kernel = new HttpKernel(
+            new EventDispatcher(),
+            $this->controllerResolver,
+            static::createStub(RequestStack::class),
+            static::createStub(ArgumentResolverInterface::class),
+            $requestTransformer,
+            static::createStub(CanonicalRedirectService::class)
+        );
+
+        $request = new Request();
+        $request->attributes->set('exception', new \Exception());
+
+        $kernel->handle($request);
+    }
+
+    public function testTransformThrowsUnknownException(): void
+    {
+        $requestTransformer = $this->createMock(RequestTransformerInterface::class);
+        $requestTransformer
+            ->expects($this->once())
+            ->method('transform')
+            ->willThrowException(new \Exception());
+
+        $kernel = new HttpKernel(
+            new EventDispatcher(),
+            $this->controllerResolver,
+            static::createStub(RequestStack::class),
+            static::createStub(ArgumentResolverInterface::class),
+            $requestTransformer,
+            static::createStub(CanonicalRedirectService::class)
+        );
+
+        $request = new Request();
+
+        $this->expectException(\Exception::class);
+
+        $kernel->handle($request);
+    }
+
+    public function testTransformThrowsDomainException(): void
+    {
+        $requestTransformer = $this->createMock(RequestTransformerInterface::class);
+        $requestTransformer
+            ->expects($this->once())
+            ->method('transform')
+            ->willThrowException(StorefrontFrameworkException::salesChannelMappingException('test'));
+
+        $dispatcher = new EventDispatcher();
+
+        $dispatcher->addListener('kernel.exception', static function (ExceptionEvent $event): void {
+            $event->setResponse(new Response('event'));
+        });
+
+        $kernel = new HttpKernel(
+            $dispatcher,
+            $this->controllerResolver,
+            static::createStub(RequestStack::class),
+            static::createStub(ArgumentResolverInterface::class),
+            $requestTransformer,
+            static::createStub(CanonicalRedirectService::class)
+        );
+
+        $request = new Request();
+
+        $response = $kernel->handle($request);
+
+        static::assertSame('event', $response->getContent());
+    }
+
+    public function testHandleNormalRequest(): void
+    {
+        $requestTransformer = $this->createMock(RequestTransformerInterface::class);
+        $requestTransformer
+            ->expects($this->once())
+            ->method('transform')
+            ->willReturnArgument(0);
+
+        $kernel = new HttpKernel(
+            new EventDispatcher(),
+            $this->controllerResolver,
+            static::createStub(RequestStack::class),
+            static::createStub(ArgumentResolverInterface::class),
+            $requestTransformer,
+            static::createStub(CanonicalRedirectService::class)
+        );
+
+        $request = new Request();
+
+        $kernel->handle($request);
+    }
+
+    public function testHandleRedirect(): void
+    {
+        $requestTransformer = $this->createMock(RequestTransformerInterface::class);
+        $requestTransformer
+            ->expects($this->once())
+            ->method('transform')
+            ->willReturnArgument(0);
+
+        $canonicalRedirectService = static::createStub(CanonicalRedirectService::class);
+        $canonicalRedirectService
+            ->method('getRedirect')
+            ->willReturn(new RedirectResponse('/foo'));
+
+        $kernel = new HttpKernel(
+            new EventDispatcher(),
+            $this->controllerResolver,
+            static::createStub(RequestStack::class),
+            static::createStub(ArgumentResolverInterface::class),
+            $requestTransformer,
+            $canonicalRedirectService
+        );
+
+        $request = new Request();
+
+        $response = $kernel->handle($request);
+
+        static::assertInstanceOf(RedirectResponse::class, $response);
+        static::assertSame('/foo', $response->getTargetUrl());
+    }
+}

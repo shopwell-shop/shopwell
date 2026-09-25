@@ -1,0 +1,74 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Elasticsearch\Framework;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Maintenance\Staging\Event\SetupStagingEvent;
+use Shopwell\Elasticsearch\Framework\ElasticsearchHelper;
+use Shopwell\Elasticsearch\Framework\ElasticsearchOutdatedIndexDetector;
+use Shopwell\Elasticsearch\Framework\ElasticsearchStagingHandler;
+use Symfony\Component\Console\Style\SymfonyStyle;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(ElasticsearchStagingHandler::class)]
+class ElasticsearchStagingHandlerTest extends TestCase
+{
+    public function testCancel(): void
+    {
+        $event = new SetupStagingEvent(
+            Context::createDefaultContext(),
+            static::createStub(SymfonyStyle::class),
+            false,
+            [],
+        );
+
+        $helper = static::createStub(ElasticsearchHelper::class);
+        $helper->method('allowIndexing')->willReturn(true);
+
+        $detector = static::createStub(ElasticsearchOutdatedIndexDetector::class);
+        $detector->method('getAllUsedIndices')->willReturn(['index1', 'index2']);
+
+        $handler = new ElasticsearchStagingHandler(true, $helper, $detector);
+        $handler($event);
+
+        static::assertTrue($event->canceled);
+    }
+
+    #[DataProvider('disabledProvider')]
+    public function testDisabled(bool $check, bool $indexing): void
+    {
+        $event = new SetupStagingEvent(
+            Context::createDefaultContext(),
+            static::createStub(SymfonyStyle::class),
+            false,
+            [],
+        );
+
+        $helper = static::createStub(ElasticsearchHelper::class);
+        $helper->method('allowIndexing')->willReturn($indexing);
+
+        $detector = $this->createMock(ElasticsearchOutdatedIndexDetector::class);
+        $detector
+            ->expects($this->never())
+            ->method('getAllUsedIndices');
+        $handler = new ElasticsearchStagingHandler($check, $helper, $detector);
+
+        $handler($event);
+
+        static::assertFalse($event->canceled);
+    }
+
+    public static function disabledProvider(): \Generator
+    {
+        yield 'check disabled, but indexing enabled' => [false, true];
+        yield 'check enabled, but indexing disabled' => [true, false];
+        yield 'both disabled' => [false, false];
+    }
+}

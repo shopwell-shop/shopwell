@@ -1,0 +1,51 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Adapter\Command;
+
+use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
+use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
+
+#[Package('framework')]
+#[AsCommand(name: 'cache:clear:delayed', description: 'Invalidates the delayed cache keys/tags')]
+class CacheInvalidateDelayedCommand extends Command
+{
+    /**
+     * @internal
+     */
+    public function __construct(private readonly CacheInvalidator $invalidator)
+    {
+        parent::__construct();
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $tags = $this->invalidator->invalidateExpired();
+
+        $style = new SymfonyStyle($input, $output);
+
+        if ($tags === []) {
+            $style->success('No delayed cache tags found');
+
+            return 0;
+        }
+
+        if (!$style->isVerbose()) {
+            $style->success(\sprintf('Invalidated %d delayed cache tags', \count($tags)));
+
+            return 0;
+        }
+
+        $table = new Table($output);
+        $table->setHeaders(['Tag']);
+        $table->setRows(array_map(static fn ($tag) => [$tag], $tags));
+        $table->render();
+
+        return 0;
+    }
+}

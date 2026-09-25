@@ -1,0 +1,197 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Order;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCollection;
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
+use Shopwell\Core\Checkout\Order\OrderAddressService;
+use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Checkout\Order\OrderException;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[CoversClass(OrderAddressService::class)]
+class OrderAddressServiceTest extends TestCase
+{
+    /**
+     * @param list<array{customerAddressId?: string, type?: string, deliveryId?: string}> $mappings
+     */
+    #[DataProvider('provideInvalidMappings')]
+    public function testValidateInvalidMapping(array $mappings): void
+    {
+        $orderAddressService = new OrderAddressService(
+            static::createStub(EntityRepository::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(EntityRepository::class)
+        );
+
+        $this->expectException(OrderException::class);
+
+        /** @phpstan-ignore argument.type (Intentionally wrong array shape for test purpose) */
+        $orderAddressService->updateOrderAddresses(Uuid::randomHex(), $mappings, Context::createDefaultContext());
+    }
+
+    public static function provideInvalidMappings(): \Generator
+    {
+        yield 'missing type' => [
+            'mappings' => [
+                [
+                    'customerAddressId' => '123',
+                ],
+            ],
+        ];
+
+        yield 'missing customerAddressId' => [
+            'mappings' => [
+                [
+                    'type' => 'billing',
+                ],
+            ],
+        ];
+
+        yield 'invalid type' => [
+            'mappings' => [
+                [
+                    'customerAddressId' => '123',
+                    'type' => 'invalid',
+                ],
+            ],
+        ];
+
+        yield 'missing deliveryId' => [
+            'mappings' => [
+                [
+                    'customerAddressId' => '123',
+                    'type' => 'shipping',
+                ],
+            ],
+        ];
+
+        yield 'multiple billing addresses' => [
+            'mappings' => [
+                [
+                    'customerAddressId' => '123',
+                    'type' => 'billing',
+                ],
+                [
+                    'customerAddressId' => '123',
+                    'type' => 'billing',
+                ],
+            ],
+        ];
+    }
+
+    public function testMissingOrder(): void
+    {
+        $orderRepository = new StaticEntityRepository([new OrderCollection([])]);
+
+        $orderAddressService = new OrderAddressService(
+            $orderRepository,
+            static::createStub(EntityRepository::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(EntityRepository::class)
+        );
+
+        $this->expectException(OrderException::class);
+
+        $orderAddressService->updateOrderAddresses(Uuid::randomHex(), [], Context::createDefaultContext());
+    }
+
+    public function testUpdateOrderAddresses(): void
+    {
+        $customerAddress = new CustomerAddressEntity();
+        $customerAddress->setFirstName('Max');
+        $customerAddress->setLastName('Mustermann');
+        $customerAddress->setStreet('Musterstreet 1');
+        $customerAddress->setCity('Musterstadt');
+        $customerAddress->setCountryId(Uuid::randomHex());
+
+        $addressArray = array_filter($customerAddress->getVars());
+        $customerAddress->setId(Uuid::randomHex());
+
+        $mapping = [
+            [
+                'type' => 'billing',
+                'customerAddressId' => $customerAddress->getId(),
+            ],
+            [
+                'type' => 'shipping',
+                'customerAddressId' => $customerAddress->getId(),
+                'deliveryId' => 'order-delivery-id',
+            ],
+        ];
+
+        $billingAddressUpsert = null;
+        $shippingAddressUpsert = null;
+        $orderAddressRepository = static::createStub(EntityRepository::class);
+        $orderAddressRepository
+            ->method('upsert')
+            ->willReturnCallback(function ($upsert) use (&$billingAddressUpsert, &$shippingAddressUpsert): EntityWrittenContainerEvent {
+                unset($upsert[0]['id']);
+
+                if ($billingAddressUpsert === null) {
+                    // First call
+                    $billingAddressUpsert = $upsert[0];
+                } else {
+                    // Second call
+                    $shippingAddressUpsert = $upsert[0];
+                }
+
+                return $this->createStub(EntityWrittenContainerEvent::class);
+            });
+
+        $customerAddressRepository = new StaticEntityRepository([new CustomerAddressCollection([$customerAddress]), new CustomerAddressCollection([$customerAddress])]);
+
+        $orderDeliveryRepository = $this->createMock(EntityRepository::class);
+        $orderDeliveryRepository
+            ->expects($this->once())
+            ->method('update');
+
+        $order = $this->createOrderEntity();
+
+        $orderRepository = new StaticEntityRepository([new OrderCollection([$order])]);
+
+        $orderAddressService = new OrderAddressService(
+            $orderRepository,
+            $orderAddressRepository,
+            $customerAddressRepository,
+            $orderDeliveryRepository
+        );
+
+        $orderAddressService->updateOrderAddresses($order->getId(), $mapping, Context::createDefaultContext());
+
+        $addressArray['orderId'] = $order->getId();
+
+        static::assertEquals($addressArray, $billingAddressUpsert);
+        static::assertEquals($addressArray, $shippingAddressUpsert);
+    }
+
+    protected function createOrderEntity(): OrderEntity
+    {
+        $order = new OrderEntity();
+        $order->setId(Uuid::randomHex());
+        $order->setBillingAddressId(Uuid::randomHex());
+
+        $orderDelivery = new OrderDeliveryEntity();
+        $orderDelivery->setId('order-delivery-id');
+        $orderDelivery->setShippingOrderAddressId($order->getBillingAddressId());
+        $order->setDeliveries(new OrderDeliveryCollection([$orderDelivery]));
+
+        return $order;
+    }
+}

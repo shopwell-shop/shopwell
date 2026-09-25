@@ -1,0 +1,30 @@
+.sw-flow-mail-send-modal {
+    .sw-flow-mail-send-modal__mail-template-select {
+        margin-bottom: var(--scale-size-4);
+    }
+
+    .sw-flow-mail-send-modal__mail-template-type-name {
+        color: var(--color-text-secondary-default);
+    }
+
+    .sw-flow-mail-send-modal__mail-template-detail {
+        margin-bottom: var(--scale-size-16);
+        display: flex;
+
+        &-link {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+    }
+
+    &__recipient-grid {
+        border: 1px solid var(--color-border-secondary-default);
+        border-radius: var(--border-radius-xs);
+        margin-bottom: var(--scale-size-32);
+
+        &.has--error {
+            border-color: var(--color-border-critical-default);
+        }
+    }
+}

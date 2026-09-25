@@ -1,0 +1,452 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Mail\Service;
+
+use Monolog\Level;
+use Psr\Log\LoggerInterface;
+use Shopwell\Core\Content\Mail\Telemetry\MailMetricsInstrumentor;
+use Shopwell\Core\Content\MailTemplate\Service\Event\MailBeforeSentEvent;
+use Shopwell\Core\Content\MailTemplate\Service\Event\MailBeforeValidateEvent;
+use Shopwell\Core\Content\MailTemplate\Service\Event\MailErrorEvent;
+use Shopwell\Core\Content\MailTemplate\Service\Event\MailSentEvent;
+use Shopwell\Core\Content\MailTemplate\Service\Event\MailTemplateRenderContextEvent;
+use Shopwell\Core\Content\MailTemplate\Service\MailTemplateContentBuilder;
+use Shopwell\Core\Content\Media\MediaCollection;
+use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
+use Shopwell\Core\Framework\Adapter\Twig\StringTemplateRenderer;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Validation\DataValidationDefinition;
+use Shopwell\Core\Framework\Validation\DataValidator;
+use Shopwell\Core\Maintenance\Staging\Event\SetupStagingEvent;
+use Shopwell\Core\System\Locale\LanguageLocaleCodeProvider;
+use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
+use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
+use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Part\DataPart;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Type;
+
+/**
+ * @phpstan-import-type MailData from AbstractMailFactory
+ * @phpstan-import-type MailNameCombination from AbstractMailFactory
+ * @phpstan-import-type BinAttachments from AbstractMailFactory
+ *
+ * @phpstan-type ValidatedMailData array{
+ *     attachmentsConfig?: MailAttachmentsConfig|null,
+ *     recipientsCc?: string|array<string, string|null>,
+ *     recipientsBcc?: string|array<string, string|null>,
+ *     replyTo?: string|array<string, string|null>,
+ *     returnPath?: string|array<string, string|null>,
+ *     testMode?: bool,
+ *     salesChannelId?: string,
+ *     senderMail?: string,
+ *     senderEmail?: string,
+ *     senderName?: string|null,
+ *     subject: string,
+ *     contentHtml: non-empty-string,
+ *     contentPlain: non-empty-string,
+ *     recipients: MailNameCombination,
+ *     binAttachments?: BinAttachments,
+ *     mediaIds?: list<string>,
+ *     attachments?: list<DataPart|mixed>,
+ *     documentIds?: list<string>,
+ *     extensions?: array<string, mixed>,
+ *     ...<string, mixed>,
+ * }
+ */
+#[Package('after-sales')]
+class MailService extends AbstractMailService
+{
+    /**
+     * @internal
+     *
+     * @param EntityRepository<MediaCollection> $mediaRepository
+     * @param EntityRepository<SalesChannelCollection> $salesChannelRepository
+     */
+    public function __construct(
+        private readonly DataValidator $dataValidator,
+        private readonly StringTemplateRenderer $templateRenderer,
+        private readonly AbstractMailFactory $mailFactory,
+        private readonly AbstractMailSender $mailSender,
+        private readonly EntityRepository $mediaRepository,
+        private readonly EntityRepository $salesChannelRepository,
+        private readonly SystemConfigService $systemConfigService,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly LoggerInterface $logger,
+        private readonly LanguageLocaleCodeProvider $languageLocaleProvider,
+        private readonly MailTemplateContentBuilder $mailTemplateContentBuilder,
+        private readonly MailMetricsInstrumentor $mailMetrics,
+        private readonly AbstractTranslator $translator,
+    ) {
+    }
+
+    public function getDecorated(): AbstractMailService
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    public function send(array $data, Context $context, array $templateData = []): ?Email
+    {
+        $beforeValidateEvent = new MailBeforeValidateEvent($data, $context, $templateData);
+        $this->eventDispatcher->dispatch($beforeValidateEvent);
+        if ($beforeValidateEvent->isPropagationStopped()) {
+            return null;
+        }
+
+        $data = $beforeValidateEvent->getData();
+        $templateData = $beforeValidateEvent->getTemplateData();
+
+        $this->dataValidator->validate($data, $this->getValidationDefinition($context));
+
+        // existence and values validated in step before
+        \assert(\array_key_exists('recipients', $data) && \is_array($data['recipients']) && $data['recipients'] !== []);
+        \assert(\array_key_exists('contentHtml', $data) && \is_string($data['contentHtml']) && $data['contentHtml'] !== '');
+        \assert(\array_key_exists('contentPlain', $data) && \is_string($data['contentPlain']) && $data['contentPlain'] !== '');
+        \assert(\array_key_exists('subject', $data) && \is_string($data['subject']) && $data['subject'] !== '');
+
+        $salesChannel = $this->getSalesChannel($data, $templateData, $context);
+        $injectTranslator = $salesChannel !== null && $this->translator->getSnippetSetId() === null;
+
+        try {
+            if ($injectTranslator) {
+                $this->translator->injectSettings(
+                    $salesChannel->getId(),
+                    $context->getLanguageId(),
+                    $this->languageLocaleProvider->getLocaleForLanguageId($context->getLanguageId()),
+                    $context
+                );
+            }
+
+            $mail = $this->createMail($data, $templateData, $context, $salesChannel);
+        } finally {
+            if ($injectTranslator) {
+                $this->translator->resetInjection();
+            }
+        }
+
+        if ($mail === null) {
+            return null;
+        }
+
+        if (trim($mail->getBody()->toString()) === '') {
+            $this->mailError('Mail body is null', $context, $templateData);
+
+            return null;
+        }
+
+        if (isset($data['attachments']) && \is_array($data['attachments'])) {
+            foreach ($data['attachments'] as $attachment) {
+                if (!$attachment instanceof DataPart) {
+                    $this->mailError(
+                        errorMessage: 'Invalid attachment to mail provided, skipping this attachment',
+                        context: $context,
+                        templateData: $templateData,
+                        level: Level::Warning,
+                    );
+
+                    continue;
+                }
+
+                $mail->addPart($attachment);
+            }
+        }
+
+        $beforeSentEvent = new MailBeforeSentEvent($data, $mail, $context, $templateData['eventName'] ?? null);
+        $this->eventDispatcher->dispatch($beforeSentEvent);
+        if ($beforeSentEvent->isPropagationStopped()) {
+            return null;
+        }
+
+        try {
+            $this->sendMail($mail, $templateData);
+        } catch (\Throwable $exception) {
+            $this->mailError(
+                errorMessage: \sprintf('Could not send mail with error message: %s', $exception->getMessage()),
+                context: $context,
+                templateData: $templateData,
+                template: (string) $mail->getHtmlBody(),
+                exception: $exception,
+            );
+
+            return null;
+        }
+
+        $this->eventDispatcher->dispatch(new MailSentEvent(
+            $data['subject'],
+            $data['recipients'],
+            ['text/html' => $mail->getHtmlBody(), 'text/plain' => $mail->getTextBody()],
+            $context,
+            $templateData['eventName'] ?? null,
+        ));
+
+        return $mail;
+    }
+
+    /**
+     * @param array<string, mixed> $templateData
+     */
+    private function sendMail(Email $mail, array $templateData): void
+    {
+        $eventName = $templateData['eventName'] ?? null;
+
+        $this->mailMetrics->measureSend(
+            \is_string($eventName) ? $eventName : null,
+            fn () => $this->mailSender->send($mail),
+        );
+    }
+
+    private function getValidationDefinition(Context $context): DataValidationDefinition
+    {
+        $definition = new DataValidationDefinition('mail_service.send');
+
+        $definition->add('recipients', new NotBlank(), new Type('array'));
+        $definition->add('salesChannelId', new EntityExists(entity: SalesChannelDefinition::ENTITY_NAME, context: $context));
+        $definition->add('contentHtml', new NotBlank(), new Type('string'));
+        $definition->add('contentPlain', new NotBlank(), new Type('string'));
+        $definition->add('subject', new NotBlank(), new Type('string'));
+
+        return $definition;
+    }
+
+    /**
+     * @param ValidatedMailData $data
+     * @param array<string, mixed> $templateData
+     */
+    private function createMail(array &$data, array $templateData, Context $context, ?SalesChannelEntity $salesChannel): ?Email
+    {
+        $testMode = $this->systemConfigService->getBool(SetupStagingEvent::CONFIG_FLAG) || ($data['testMode'] ?? false);
+
+        $templateData['salesChannel'] = $salesChannel;
+        $templateData['salesChannelId'] = $salesChannel?->getId();
+
+        $renderContextEvent = new MailTemplateRenderContextEvent($templateData, $context, $salesChannel);
+        $this->eventDispatcher->dispatch($renderContextEvent);
+        $templateData = $renderContextEvent->getTemplateData();
+
+        $senderEmail = $this->getSender($data, $salesChannel?->getId());
+        if ($senderEmail === '') {
+            $this->mailError(
+                \sprintf(
+                    'senderMail not configured for salesChannel: %s. Please check system_config \'core.basicInformation.email\'',
+                    (string) $salesChannel?->getId(),
+                ),
+                $context,
+                $templateData,
+            );
+        }
+
+        if ($testMode) {
+            $this->templateRenderer->enableTestMode();
+            if (\is_array($templateData['order'] ?? [])
+                && (!isset($templateData['order']['deepLinkCode']) || !\is_string($templateData['order']['deepLinkCode']) || $templateData['order']['deepLinkCode'] === '')
+            ) {
+                $templateData['order']['deepLinkCode'] = 'home';
+            }
+        }
+        $mailOptions = ['subject'];
+        if (\is_string($data['senderName'] ?? null)) {
+            $mailOptions[] = 'senderName';
+        }
+        foreach ($mailOptions as $renderDataIndex) {
+            try {
+                $data[$renderDataIndex] = $this->templateRenderer->render($data[$renderDataIndex] ?? '', $templateData, $context, false);
+            } catch (\Throwable $e) {
+                $this->mailError(
+                    \sprintf(
+                        'Could not render Mail-%s with error message: %s',
+                        ucfirst($renderDataIndex),
+                        $e->getMessage(),
+                    ),
+                    $context,
+                    $templateData,
+                    $data[$renderDataIndex],
+                    $e,
+                    Level::Warning,
+                );
+
+                return null;
+            }
+        }
+
+        $contents = [];
+        foreach ($this->buildContents($data['contentPlain'], $data['contentHtml'], $salesChannel) as $index => $template) {
+            try {
+                $contents[$index] = $this->templateRenderer->render($template, $templateData, $context, $index !== 'text/plain');
+            } catch (\Throwable $e) {
+                $this->mailError(
+                    \sprintf('Could not render Mail-Content (%s) with error message: %s', $index, $e->getMessage()),
+                    $context,
+                    $templateData,
+                    $template,
+                    $e,
+                    Level::Warning,
+                );
+
+                return null;
+            }
+        }
+
+        if ($testMode) {
+            $this->templateRenderer->disableTestMode();
+        }
+
+        $mail = $this->mailFactory->create(
+            $data['subject'],
+            [$senderEmail => $data['senderName'] ?? null],
+            $data['recipients'],
+            $contents,
+            $this->getMediaUrls($data, $context),
+            $data,
+            $data['binAttachments'] ?? null
+        );
+
+        $mail->getHeaders()->addTextHeader(
+            'Content-Language',
+            $this->languageLocaleProvider->getLocaleForLanguageId($context->getLanguageId())
+        );
+
+        if ($testMode) {
+            $headers = $mail->getHeaders();
+            $headers->addTextHeader('X-Shopwell-Language-Id', $context->getLanguageId());
+
+            $eventName = $templateData['eventName'] ?? '';
+            if (\is_string($eventName) && $eventName !== '') {
+                $headers->addTextHeader('X-Shopwell-Event-Name', $eventName);
+            }
+
+            if ($salesChannel instanceof SalesChannelEntity) {
+                $headers->addTextHeader('X-Shopwell-Sales-Channel-Id', $salesChannel->getId());
+            }
+        }
+
+        return $mail;
+    }
+
+    /**
+     * @param array<string, mixed> $templateData
+     */
+    private function mailError(
+        string $errorMessage,
+        Context $context,
+        array $templateData,
+        ?string $template = null,
+        ?\Throwable $exception = null,
+        Level $level = Level::Error
+    ): void {
+        $this->eventDispatcher->dispatch(
+            new MailErrorEvent($context, $level, $exception, $errorMessage, $template, $templateData)
+        );
+
+        $this->logger->log($level, $errorMessage, array_merge([
+            'template' => $template,
+            'exception' => (string) $exception,
+        ], $templateData));
+    }
+
+    /**
+     * @param ValidatedMailData $data
+     */
+    private function getSender(array $data, ?string $salesChannelId): string
+    {
+        $senderEmail = $data['senderMail'] ?? $data['senderEmail'] ?? null;
+        if (\is_string($senderEmail) && trim($senderEmail) !== '') {
+            return trim($senderEmail);
+        }
+
+        return trim(
+            $this->systemConfigService->getString(
+                'core.basicInformation.email',
+                $salesChannelId
+            )
+        ) ?: trim(
+            $this->systemConfigService->getString(
+                'core.mailerSettings.senderAddress',
+                $salesChannelId
+            )
+        );
+    }
+
+    /**
+     * Attaches header and footer to given email bodies
+     *
+     * @return array{'text/plain': string, 'text/html': string} e.g. ['text/plain' => '{{foobar}}', 'text/html' => '<h1>{{foobar}}</h1>']
+     */
+    private function buildContents(string $contentPlain, string $contentHtml, ?SalesChannelEntity $salesChannel): array
+    {
+        $content = $this->mailTemplateContentBuilder->build([
+            'contentPlain' => $contentPlain,
+            'contentHtml' => $contentHtml,
+        ], $salesChannel);
+
+        return [
+            'text/plain' => $content['contentPlain'],
+            'text/html' => $content['contentHtml'],
+        ];
+    }
+
+    /**
+     * @param MailData $data
+     *
+     * @return list<string>
+     */
+    private function getMediaUrls(array $data, Context $context): array
+    {
+        $mediaIds = $data['mediaIds'] ?? [];
+        if ($mediaIds === []) {
+            return [];
+        }
+        $criteria = new Criteria($mediaIds);
+        $criteria->setTitle('mail-service::resolve-media-ids');
+        $media = new MediaCollection();
+        $context->scope(Context::SYSTEM_SCOPE, function (Context $context) use ($criteria, &$media): void {
+            $media = $this->mediaRepository->search($criteria, $context)->getEntities();
+        });
+
+        $urls = [];
+        foreach ($media as $mediaItem) {
+            $urls[] = $mediaItem->getPath();
+        }
+
+        return $urls;
+    }
+
+    /**
+     * @param ValidatedMailData $data
+     * @param array<string, mixed> $templateData
+     */
+    private function getSalesChannel(array $data, array $templateData, Context $context): ?SalesChannelEntity
+    {
+        $salesChannel = $templateData['salesChannel'] ?? null;
+        if ($salesChannel instanceof SalesChannelEntity) {
+            return $salesChannel;
+        }
+
+        $salesChannelId = $data['salesChannelId'] ?? null;
+        if (\is_string($salesChannelId)) {
+            $criteria = new Criteria([$salesChannelId]);
+            $criteria->setTitle('mail-service::resolve-sales-channel-domain');
+            $criteria->addAssociation('mailHeaderFooter');
+            $criteria->getAssociation('domains')
+                ->addFilter(
+                    new EqualsFilter('languageId', $context->getLanguageId())
+                );
+
+            // Should never be null, since we check in the validation that if a salesChannelId is present it is valid...
+            return $this->salesChannelRepository->search(
+                $criteria,
+                $context
+            )->getEntities()->first();
+        }
+
+        return null;
+    }
+}

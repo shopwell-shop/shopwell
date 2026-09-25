@@ -1,0 +1,92 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\Adapter\Twig\Extension;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Adapter\Twig\Extension\NodeExtension;
+use Shopwell\Core\Framework\Adapter\Twig\Extension\TwigFeaturesWithInheritanceExtension;
+use Shopwell\Core\Framework\Adapter\Twig\SwTwigFunction;
+use Shopwell\Core\Framework\Adapter\Twig\TemplateFinder;
+use Shopwell\Core\Framework\Adapter\Twig\TemplateScopeDetector;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
+use Twig\Node\Expression\AbstractExpression;
+use Twig\Node\Node;
+use Twig\Node\Nodes;
+use Twig\Parser;
+use Twig\TwigFunction;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(SwTwigFunction::class)]
+#[CoversClass(TwigFeaturesWithInheritanceExtension::class)]
+class TwigFeaturesWithInheritanceExtensionTest extends TestCase
+{
+    public function testRenderSourceReferencingFromInheritedTemplate(): void
+    {
+        static::assertSame(
+            'start {% block inner %}content{% endblock %} end',
+            $this->parseTemplate('{{ sw_source("foo.html.twig") }}')
+        );
+    }
+
+    public function testRenderIncludeReferencingFromInheritedTemplate(): void
+    {
+        static::assertSame(
+            'start content end',
+            $this->parseTemplate('{{ sw_include("foo.html.twig") }}')
+        );
+    }
+
+    public function testGetTag(): void
+    {
+        $extension = new TwigFeaturesWithInheritanceExtension(static::createStub(TemplateFinder::class));
+        $functionNames = \array_map(
+            static fn (TwigFunction $function) => $function->getName(),
+            $extension->getFunctions(),
+        );
+
+        static::assertContains('sw_source', $functionNames);
+        static::assertContains('sw_include', $functionNames);
+    }
+
+    public function testAbstractExpressionIsThrown(): void
+    {
+        $this->expectExceptionObject(new \RuntimeException('The first argument of the "sw_block" function must be an instance of AbstractExpression.'));
+
+        $extension = new TwigFeaturesWithInheritanceExtension(static::createStub(TemplateFinder::class));
+        $extension->parseSwBlockFunction(
+            static::createStub(Parser::class),
+            static::createStub(AbstractExpression::class),
+            new Nodes([static::createStub(Node::class)]),
+            100
+        );
+    }
+
+    private function parseTemplate(string $template): string
+    {
+        $templateName = Uuid::randomHex() . '.html.twig';
+        $templateFinder = $this->createMock(TemplateFinder::class);
+        $templateFinder->expects($this->once())
+            ->method('find')
+            ->with('foo.html.twig', false, null)
+            ->willReturn('bar.html.twig');
+
+        $twig = new Environment(new ArrayLoader([
+            $templateName => $template,
+            'bar.html.twig' => 'start {% block inner %}content{% endblock %} end',
+        ]));
+        $twig->addExtension(new NodeExtension(
+            $templateFinder,
+            static::createStub(TemplateScopeDetector::class),
+        ));
+        $twig->addExtension(new TwigFeaturesWithInheritanceExtension($templateFinder));
+
+        return $twig->render($templateName);
+    }
+}

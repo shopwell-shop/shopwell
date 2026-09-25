@@ -1,0 +1,42 @@
+.sw-import-export-edit-profile-modal-mapping {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--color-border-secondary-default);
+
+    &__toolbar {
+        display: flex;
+        padding: var(--scale-size-24) var(--scale-size-32);
+        background-color: var(--color-elevation-surface-sunken);
+        border-bottom: 1px solid var(--color-border-secondary-default);
+
+        .mt-search {
+            flex-basis: 100%;
+            margin-right: var(--scale-size-16);
+        }
+    }
+
+    &__grid,
+    &__empty-state {
+        flex-grow: 1;
+    }
+
+    .sw-data-grid__cell-content .mt-switch {
+        margin-top: 0;
+    }
+
+    &__default-value-switch {
+        margin-right: var(--scale-size-12);
+    }
+
+    .sw-data-grid__cell-content .mt-switch,
+    .sw-data-grid__cell-content .mt-field {
+        margin-bottom: 0;
+    }
+
+    &__position-buttons {
+        .mt-icon {
+            display: flex;
+            margin: 0 auto;
+        }
+    }
+}

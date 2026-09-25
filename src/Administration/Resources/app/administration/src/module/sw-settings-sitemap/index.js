@@ -1,0 +1,39 @@
+/**
+ * @sw-package discovery
+ */
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Shopwell.Component.register('sw-settings-sitemap', () => import('./page/sw-settings-sitemap'));
+
+const { Module } = Shopwell;
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Module.register('sw-settings-sitemap', {
+    type: 'core',
+    name: 'settings-sitemap',
+    title: 'sw-settings-sitemap.general.mainMenuItemGeneral',
+    description: 'sw-settings-sitemap.general.description',
+    version: '1.0.0',
+    targetVersion: '1.0.0',
+    color: 'var(--sw-color-module-neutral-default)',
+    icon: 'regular-sitemap',
+    favicon: 'icon-module-settings.svg',
+
+    routes: {
+        index: {
+            component: 'sw-settings-sitemap',
+            path: 'index',
+            meta: {
+                parentPath: 'sw.settings.index',
+                privilege: 'system.system_config',
+            },
+        },
+    },
+
+    settingsItem: {
+        group: 'content',
+        to: 'sw.settings.sitemap.index',
+        icon: 'regular-sitemap',
+        privilege: 'system.system_config',
+    },
+});

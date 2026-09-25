@@ -1,0 +1,355 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/order/state/cancel": {
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Cancel an order",
+                "description": "Cancels an order. The order state will be set to 'cancelled'.",
+                "operationId": "cancelOrder",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "orderId": {
+                                        "description": "The identifier of the order to be canceled.",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "orderId"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Returns the state of the state machine\n\n    example: More information about the state machine can be found in the corresponding guide: [Using the state machine](https://developer.shopwell.cn/docs/guides/plugins/plugins/checkout/order/using-the-state-machine)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StateMachineState"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `orderId` parameter is missing."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403",
+                        "description": "No customer is logged in, or the order can no longer be cancelled from its current state."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "No order exists for the given `orderId`."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": [],
+                        "ContextToken": []
+                    }
+                ]
+            }
+        },
+        "/order": {
+            "post": {
+                "tags": [
+                    "Order",
+                    "Endpoints supporting Criteria "
+                ],
+                "summary": "Fetch a list of orders",
+                "description": "List orders of a customer.\n\n**Available Associations:**\n- `stateMachineState` - Current order state (e.g., open, in_progress, completed, cancelled)\n- `primaryOrderDelivery` - Primary delivery information for the order\n- `primaryOrderTransaction` - Primary payment transaction for the order\n- `orderCustomer` - Customer information associated with the order\n- `currency` - Currency used for the order\n- `language` - Language used when placing the order\n- `addresses` - All addresses associated with the order (billing and shipping)\n- `billingAddress` - Billing address for the order\n- `deliveries` - Delivery information including shipping address and tracking\n- `lineItems` - Order line items (products, discounts, fees)\n- `transactions` - Payment transactions for the order\n- `documents` - Generated documents (invoices, delivery notes, credit notes)\n- `tags` - Tags assigned to the order for organization and filtering",
+                "operationId": "readOrder",
+                "parameters": [
+                    {
+                        "name": "sw-include-search-info",
+                        "in": "header",
+                        "description": "Controls whether API search information is included in the response. Default is 1 (enabled), will be 0 (disabled) in the next major version.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "0",
+                                "1"
+                            ],
+                            "default": "1"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/NoneFieldsCriteria"
+                                    },
+                                    {
+                                        "properties": {
+                                            "checkPromotion": {
+                                                "description": "Check if the payment method of the order is still changeable.",
+                                                "type": "boolean"
+                                            },
+                                            "filter": {
+                                                "type": "array",
+                                                "description": "Pass the deepLinkCode criteria filter to allow for guest user authentification. Not required, if a user (guest or not) is already logged in.",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "type": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "equals"
+                                                            ]
+                                                        },
+                                                        "field": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "deepLinkCode"
+                                                            ]
+                                                        },
+                                                        "value": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "type",
+                                                        "field",
+                                                        "value"
+                                                    ]
+                                                }
+                                            },
+                                            "email": {
+                                                "description": "The email address of the customer. Pass this value to allow for guest user authentification. Not required, if a user (guest or not) is already logged in.",
+                                                "type": "string",
+                                                "format": "email"
+                                            },
+                                            "zipcode": {
+                                                "description": "The zip/postal code of the billing address of the customer. Pass this value to allow for guest user authentification. Not required, if a user (guest or not) is already logged in.",
+                                                "type": "string"
+                                            },
+                                            "login": {
+                                                "description": "If set and when handling a guest order, a context token will be returned in the response header with a logged-in session.",
+                                                "type": "boolean"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "An array of orders and an indicator if the payment of the order can be changed.",
+                        "headers": {
+                            "sw-context-token": {
+                                "description": "Contains sw-context-token value, if login parameter is set to true and a guest order was found and the correct credentials were provided.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderRouteResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `Criteria` sent with the request is invalid, e.g. an unknown filter field, sorting field or association."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403",
+                        "description": "No customer is logged in and the request did not provide a `deepLinkCode` with matching guest credentials."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/429",
+                        "description": "Too many failed guest authentication attempts for this deep link code and client IP."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": [],
+                        "ContextToken": []
+                    }
+                ]
+            }
+        },
+        "/order/payment": {
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Update the payment method of an order",
+                "description": "Changes the payment method of a specific order. You can use the /order route to find out if the payment method of an order can be changed - take a look at the `paymentChangeable`- array in the response.",
+                "operationId": "orderSetPayment",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "paymentMethodId",
+                                    "orderId"
+                                ],
+                                "properties": {
+                                    "paymentMethodId": {
+                                        "description": "The identifier of the paymentMethod to be set",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    },
+                                    "orderId": {
+                                        "description": "The identifier of the order.",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successfully updated the payment method of the order.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `orderId` is not a valid UUID."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403",
+                        "description": "No customer is logged in, or the payment method of this order can no longer be changed."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "The order, its transaction, or the requested payment method was not found."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": [],
+                        "ContextToken": []
+                    }
+                ]
+            }
+        },
+        "/order/download/{orderId}/{downloadId}": {
+            "get": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Download a purchased file",
+                "description": "Download a file included in the given order and with the given id. Access must be granted.",
+                "operationId": "orderDownloadFile",
+                "parameters": [
+                    {
+                        "name": "orderId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    },
+                    {
+                        "name": "downloadId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An arbitrary binary file.",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400",
+                        "description": "The `orderId` or `downloadId` route parameter is missing."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The `sw-access-key` header is missing."
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/403",
+                        "description": "No customer is logged in."
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/404",
+                        "description": "The download does not exist, or does not belong to a paid order of the logged in customer."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": [],
+                        "ContextToken": []
+                    }
+                ]
+            }
+        }
+    }
+}

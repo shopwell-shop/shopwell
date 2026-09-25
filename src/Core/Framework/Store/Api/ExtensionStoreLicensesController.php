@@ -1,0 +1,54 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\Store\Api;
+
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\Framework\Store\Services\AbstractExtensionStoreLicensesService;
+use Shopwell\Core\Framework\Store\Struct\ReviewStruct;
+use Shopwell\Core\PlatformRequest;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+/**
+ * @internal
+ */
+#[Package('checkout')]
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [ApiRouteScope::ID], PlatformRequest::ATTRIBUTE_ACL => ['system.plugin_maintain']])]
+class ExtensionStoreLicensesController extends AbstractController
+{
+    public function __construct(private readonly AbstractExtensionStoreLicensesService $extensionStoreLicensesService)
+    {
+    }
+
+    #[Route(
+        path: '/api/license/cancel/{licenseId}',
+        name: 'api.license.cancel',
+        methods: [Request::METHOD_DELETE]
+    )]
+    public function cancelSubscription(int $licenseId, Context $context): JsonResponse
+    {
+        $this->extensionStoreLicensesService->cancelSubscription($licenseId, $context);
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route(
+        path: '/api/license/rate/{extensionId}',
+        name: 'api.license.rate',
+        methods: [Request::METHOD_POST]
+    )]
+    public function rateLicensedExtension(int $extensionId, Request $request, Context $context): JsonResponse
+    {
+        $this->extensionStoreLicensesService->rateLicensedExtension(
+            ReviewStruct::fromRequest($extensionId, $request),
+            $context
+        );
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+}

@@ -1,0 +1,15 @@
+.sw-address {
+    margin-bottom: var(--scale-size-24);
+    font-size: var(--font-size-xs);
+    line-height: var(--font-line-height-xs);
+    color: var(--color-text-primary-default);
+
+    &__headline {
+        margin: 0 0 var(--scale-size-8);
+        font-size: var(--font-size-s);
+        font-weight: var(--font-weight-medium);
+        display: flex;
+        align-items: center;
+        gap: var(--scale-size-8);
+    }
+}

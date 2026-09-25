@@ -1,0 +1,144 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Checkout\Document\Twig;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Document\Event\DocumentTemplateRendererParameterEvent;
+use Shopwell\Core\Checkout\Document\Twig\DocumentTemplateRenderer;
+use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
+use Shopwell\Core\Framework\Adapter\Translation\Translator;
+use Shopwell\Core\Framework\Adapter\Twig\TemplateFinder;
+use Shopwell\Core\Framework\Adapter\Twig\TwigEnvironment;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Twig\Extension\CoreExtension;
+use Twig\Extra\Intl\IntlExtension;
+use Twig\Loader\ArrayLoader;
+
+/**
+ * @internal
+ */
+#[Package('after-sales')]
+#[CoversClass(DocumentTemplateRenderer::class)]
+class DocumentTemplateRendererTest extends TestCase
+{
+    private static bool $rendererParameterEventCalled = false;
+
+    public function testDocumentTemplateRendererParameterEventIsDispatched(): void
+    {
+        $templateFinder = $this->createMock(TemplateFinder::class);
+        $templateFinder->expects($this->once())->method('reset');
+        $templateFinder->expects($this->once())->method('find')->willReturnCallback(static function (string $template): string {
+            static::assertTrue(self::$rendererParameterEventCalled, 'Expected DocumentTemplateRendererParameterEvent being thrown before TemplateFinder is called to ensure that the TemplateFinder is configured correctly');
+
+            return $template;
+        });
+
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->once())
+            ->method('dispatch')
+            ->with(static::isInstanceOf(DocumentTemplateRendererParameterEvent::class))
+            ->willReturnCallback(static function (DocumentTemplateRendererParameterEvent $event) {
+                static::assertFalse(self::$rendererParameterEventCalled);
+                self::$rendererParameterEventCalled = true;
+
+                return $event;
+            });
+
+        $documentTemplateRenderer = new DocumentTemplateRenderer(
+            $templateFinder,
+            static::createStub(TwigEnvironment::class),
+            static::createStub(Translator::class),
+            static::createStub(SalesChannelContextFactory::class),
+            $eventDispatcher,
+        );
+
+        $salesChannelId = Uuid::randomHex();
+        $documentTemplateRenderer->render('view', [], Context::createDefaultContext(), $salesChannelId, Uuid::randomHex(), 'en-GB');
+    }
+
+    public function testRenderUsesSalesChannelBusinessTimeZone(): void
+    {
+        $twig = $this->createTwig('{{ testDate|format_date(pattern="yyyy-MM-dd", locale="en-GB") }}');
+
+        $renderer = $this->createRenderer($twig, 'Europe/Berlin');
+
+        $result = $renderer->render(
+            'view',
+            ['testDate' => new \DateTimeImmutable('2026-01-01 23:30:00', new \DateTimeZone('UTC'))],
+            Context::createDefaultContext(),
+            Uuid::randomHex(),
+            Uuid::randomHex(),
+            'en-GB'
+        );
+
+        static::assertSame('2026-01-02', $result);
+        static::assertSame('UTC', $twig->getExtension(CoreExtension::class)->getTimezone()->getName());
+    }
+
+    public function testRenderKeepsCurrentTimeZoneWithoutBusinessTimeZone(): void
+    {
+        $twig = $this->createTwig('{{ testDate|format_date(pattern="yyyy-MM-dd", locale="en-GB") }}');
+
+        $renderer = $this->createRenderer($twig, null);
+
+        $result = $renderer->render(
+            'view',
+            ['testDate' => new \DateTimeImmutable('2026-01-01 23:30:00', new \DateTimeZone('UTC'))],
+            Context::createDefaultContext(),
+            Uuid::randomHex(),
+            Uuid::randomHex(),
+            'en-GB'
+        );
+
+        static::assertSame('2026-01-01', $result);
+        static::assertSame('UTC', $twig->getExtension(CoreExtension::class)->getTimezone()->getName());
+    }
+
+    private function createRenderer(TwigEnvironment $twig, ?string $businessTimeZone): DocumentTemplateRenderer
+    {
+        $templateFinder = static::createStub(TemplateFinder::class);
+        $templateFinder->method('find')->willReturnArgument(0);
+
+        $salesChannel = new SalesChannelEntity();
+        $salesChannel->setBusinessTimeZone($businessTimeZone);
+
+        $salesChannelContext = static::createStub(SalesChannelContext::class);
+        $salesChannelContext->method('getSalesChannel')->willReturn($salesChannel);
+
+        $contextFactory = static::createStub(AbstractSalesChannelContextFactory::class);
+        $contextFactory->method('create')->willReturn($salesChannelContext);
+
+        $eventDispatcher = static::createStub(EventDispatcherInterface::class);
+        $eventDispatcher->method('dispatch')->willReturnArgument(0);
+
+        return new DocumentTemplateRenderer(
+            $templateFinder,
+            $twig,
+            static::createStub(AbstractTranslator::class),
+            $contextFactory,
+            $eventDispatcher,
+        );
+    }
+
+    private function createTwig(string $template): TwigEnvironment
+    {
+        $twig = new TwigEnvironment(new ArrayLoader([
+            'view' => $template,
+        ]));
+        $twig->addExtension(new IntlExtension());
+
+        /** @var CoreExtension $coreExtension */
+        $coreExtension = $twig->getExtension(CoreExtension::class);
+        $coreExtension->setTimezone('UTC');
+
+        return $twig;
+    }
+}
