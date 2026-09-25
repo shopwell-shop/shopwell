@@ -2,13 +2,13 @@
     "name": "swag/test-execute-composer-commands",
     "description": "Test plugin",
     "version": "1.0.0",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "license": "MIT",
     "require": {
-        "shopware/core": "*"
+        "shopwell/core": "*"
     },
     "extra": {
-        "shopware-plugin-class": "SwagTestExecuteComposerCommands\\SwagTestExecuteComposerCommands",
+        "shopwell-plugin-class": "SwagTestExecuteComposerCommands\\SwagTestExecuteComposerCommands",
         "label": {
             "de-DE": "Deutscher Pluginname",
             "de-CH": "Schweizerdeutsch Pluginname",

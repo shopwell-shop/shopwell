@@ -46,7 +46,7 @@ export default {
         buttonConfig() {
             const disabledExtensionManagement =
                 Shopwell.Store.get('context').app.config.settings?.disableExtensionManagement;
-            const prevRoute = disabledExtensionManagement ? 'shopware.account' : 'store';
+            const prevRoute = disabledExtensionManagement ? 'shopwell.account' : 'store';
 
             return [
                 {

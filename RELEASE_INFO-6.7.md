@@ -12,12 +12,12 @@ The following classes moved to their canonical Core namespaces. Their previous n
 
 | Previous name | Canonical name |
 |---|---|
-| `Shopware\Administration\Controller\NotificationController` | `Shopware\Core\Framework\Notification\Api\NotificationController` |
-| `Shopware\Administration\Notification\NotificationCollection` | `Shopware\Core\Framework\Notification\NotificationCollection` |
-| `Shopware\Administration\Notification\NotificationDefinition` | `Shopware\Core\Framework\Notification\NotificationDefinition` |
-| `Shopware\Administration\Notification\NotificationEntity` | `Shopware\Core\Framework\Notification\NotificationEntity` |
-| `Shopware\Core\Framework\Plugin\Util\AssetService` | `Shopware\Core\Framework\Adapter\Asset\AssetService` |
-| `Shopware\Elasticsearch\Product\SearchConfigLoader` | `Shopware\Core\Framework\DataAbstractionLayer\Search\SearchConfigLoader` |
+| `Shopwell\Administration\Controller\NotificationController` | `Shopwell\Core\Framework\Notification\Api\NotificationController` |
+| `Shopwell\Administration\Notification\NotificationCollection` | `Shopwell\Core\Framework\Notification\NotificationCollection` |
+| `Shopwell\Administration\Notification\NotificationDefinition` | `Shopwell\Core\Framework\Notification\NotificationDefinition` |
+| `Shopwell\Administration\Notification\NotificationEntity` | `Shopwell\Core\Framework\Notification\NotificationEntity` |
+| `Shopwell\Core\Framework\Plugin\Util\AssetService` | `Shopwell\Core\Framework\Adapter\Asset\AssetService` |
+| `Shopwell\Elasticsearch\Product\SearchConfigLoader` | `Shopwell\Core\Framework\DataAbstractionLayer\Search\SearchConfigLoader` |
 
 Update imports, type declarations, static references, and service IDs to the canonical names.
 The aliases preserve runtime class identity during the transition; they do not create compatibility subclasses.
@@ -70,7 +70,7 @@ It was previously the only context menu item in either view without a block, so 
 In addition, `sw-cms-list` has a new `isDefaultLayout(page)` method that decides whether a layout is a default layout. It backs the `is-default` property of `sw-cms-list-item`, the label built in `getPageType()`, and the visibility of the delete action in both views, all of which previously repeated the same check inline. Extensions that add their own default layout type can override this single method instead of the template, and their default layout is then marked and protected from deletion like the built-in ones:
 
 ```js
-Shopware.Component.override('sw-cms-list', {
+Shopwell.Component.override('sw-cms-list', {
     methods: {
         isDefaultLayout(page) {
             return this.myDefaultLayoutId === page.id || this.$super('isDefaultLayout', page);
@@ -85,7 +85,7 @@ Together, these two changes remove the need to override the surrounding blocks, 
 
 The prominent empty states of the Administration render `mt-empty-state` instead of `sw-empty-state`, plain text or illustration markup. List pages whose empty state means "nothing exists yet" offer their create action in its `button` slot, and the customer group, flow and rule lists hide their listing while the empty state shows, so blocks nested inside those listings no longer render.
 
-The Twig blocks that wrapped the former icon, image or label are now empty anchors, deprecated for removal in v6.8.0; pass a custom icon through the `icon` prop by overriding the surrounding `*_empty_state` block instead. `sw_promotion_v2_individual_codes_behavior_empty_state_actions` fills the `button` slot now, so overrides must switch from `<template #actions>` to `<template #button>`, and the former icon and label classes of these empty states no longer exist. The `assetFilter` computed of these components is deprecated for removal in v6.8.0; use `Shopware.Filter.getByName('asset')` instead.
+The Twig blocks that wrapped the former icon, image or label are now empty anchors, deprecated for removal in v6.8.0; pass a custom icon through the `icon` prop by overriding the surrounding `*_empty_state` block instead. `sw_promotion_v2_individual_codes_behavior_empty_state_actions` fills the `button` slot now, so overrides must switch from `<template #actions>` to `<template #button>`, and the former icon and label classes of these empty states no longer exist. The `assetFilter` computed of these components is deprecated for removal in v6.8.0; use `Shopwell.Filter.getByName('asset')` instead.
 
 #### Deprecated Twig blocks and computed properties
 
@@ -105,7 +105,7 @@ These Twig blocks are empty extension anchors now and are removed in v6.8.0:
 - `sw-settings-product-feature-sets-values-card`: `sw_product_feature_set_card_empty_state_image`, `sw_product_feature_set_card_empty_state_label`
 - `sw-tax-rule-card`: `sw_tax_rule_card_empty_state_image`, `sw_tax_rule_card_empty_state_label`
 
-The `assetFilter` computed property is removed in v6.8.0 in these components; use `Shopware.Filter.getByName('asset')` instead:
+The `assetFilter` computed property is removed in v6.8.0 in these components; use `Shopwell.Filter.getByName('asset')` instead:
 
 - `sw-cms-layout-assignment-modal`
 - `sw-flow-list`
@@ -150,7 +150,7 @@ The combined `checkout.confirmTermsTextModalWithGuarantee` snippet was replaced 
 
 ### App requests keep body and signature across redirects
 
-Shopware now follows a `301` or `302` from an app endpoint without dropping the `POST` method, the request body or the `shopware-shop-signature` header, so the redirect target receives the same signed request.
+Shopwell now follows a `301` or `302` from an app endpoint without dropping the `POST` method, the request body or the `shopwell-shop-signature` header, so the redirect target receives the same signed request.
 
 # 6.7.15.0
 
@@ -158,7 +158,7 @@ Shopware now follows a `301` or `302` from an app endpoint without dropping the 
 
 ### Connect-time toolset selection for the MCP server
 
-MCP toolsets can now be named in the URL an agent connects to, so their tools are advertised on the first `tools/list` instead of after a `shopware-toolset-enable` round trip:
+MCP toolsets can now be named in the URL an agent connects to, so their tools are advertised on the first `tools/list` instead of after a `shopwell-toolset-enable` round trip:
 
 ```
 https://<shop>/api/_mcp?toolsets=order,media
@@ -171,15 +171,15 @@ This is for agents that read `tools/list` once per connection. It changes visibi
 
 The Admin API now supports the OAuth 2.0 authorization code grant with PKCE for registered public clients such as CLI tools and native apps. Users sign in to the Administration and approve access in the browser. The client receives access and refresh tokens with the approving user's permissions, without storing the user's password or an integration secret.
 
-Shopware ships the `shopware-cli` client. Operators can register their own public clients, see the Hosting & Configuration section.
+Shopwell ships the `shopwell-cli` client. Operators can register their own public clients, see the Hosting & Configuration section.
 
 ### Document generation v2 (experimental)
 
-Shopware ships a new, opt-in implementation of order document generation. It replaces the legacy pipeline, which is marked with the `#[ExperimentalReplacement]` attribute, will be deprecated with Shopware 6.8 and removed with Shopware 6.9. Enable it with the `DOCUMENT_GENERATION_REWORK` feature flag. Without the flag, Shopware runs purely on the legacy implementation.
+Shopwell ships a new, opt-in implementation of order document generation. It replaces the legacy pipeline, which is marked with the `#[ExperimentalReplacement]` attribute, will be deprecated with Shopwell 6.8 and removed with Shopwell 6.9. Enable it with the `DOCUMENT_GENERATION_REWORK` feature flag. Without the flag, Shopwell runs purely on the legacy implementation.
 
-The architecture and all extension points are documented in the [Document (v2) concept guide](https://developer.shopware.com/docs/concepts/commerce/checkout-concept/document/). The coexistence and migration strategy is defined in the [migration ADR](adr/2026-08-05-document-generation-v1-to-v2-migration-strategy.md).
+The architecture and all extension points are documented in the [Document (v2) concept guide](https://developer.shopwell.com/docs/concepts/commerce/checkout-concept/document/). The coexistence and migration strategy is defined in the [migration ADR](adr/2026-08-05-document-generation-v1-to-v2-migration-strategy.md).
 
-Classes intended to become public API are annotated `@experimental stableVersion:v6.8.0 feature:DOCUMENT_GENERATION_REWORK` and may change in any release. With Shopware 6.8, v2 becomes the default and the annotated surface becomes the stable public API.
+Classes intended to become public API are annotated `@experimental stableVersion:v6.8.0 feature:DOCUMENT_GENERATION_REWORK` and may change in any release. With Shopwell 6.8, v2 becomes the default and the annotated surface becomes the stable public API.
 
 #### One document, multiple formats
 
@@ -191,7 +191,7 @@ Each generation snapshots the order into a dedicated order version. A document a
 
 #### Opting in
 
-The flag switches all Shopware-driven surfaces to v2: the order documents section in the Administration, Flow Builder document actions, mail attachments, bulk edit, and the customer-facing download routes. The legacy APIs stay functional in both flag states and remain a public contract until their removal in 6.9. Merchants can switch back at any time.
+The flag switches all Shopwell-driven surfaces to v2: the order documents section in the Administration, Flow Builder document actions, mail attachments, bulk edit, and the customer-facing download routes. The legacy APIs stay functional in both flag states and remain a public contract until their removal in 6.9. Merchants can switch back at any time.
 
 #### Company information moves to basic information
 
@@ -214,16 +214,16 @@ The v2 routes are available regardless of the flag state:
 
 Two new events give extensions a hook into the document lifecycle without polling or fetching the document to discover its type, number, order and file:
 
-- `document.generation.completed` (`Shopware\Core\Checkout\DocumentV2\Event\DocumentGeneratedEvent`) is dispatched when a document is generated or uploaded for an order. It exposes `documentId`, `orderId`, `orderVersionId`, `documentType` and `documentNumber`.
-- `document.generation.deleted` (`Shopware\Core\Checkout\DocumentV2\Event\DocumentDeletedEvent`) is dispatched when a document is deleted, for both legacy and Document V2 documents. It exposes `documentId`, `orderId`, `orderVersionId`, `documentNumber` and `deletedAt`.
+- `document.generation.completed` (`Shopwell\Core\Checkout\DocumentV2\Event\DocumentGeneratedEvent`) is dispatched when a document is generated or uploaded for an order. It exposes `documentId`, `orderId`, `orderVersionId`, `documentType` and `documentNumber`.
+- `document.generation.deleted` (`Shopwell\Core\Checkout\DocumentV2\Event\DocumentDeletedEvent`) is dispatched when a document is deleted, for both legacy and Document V2 documents. It exposes `documentId`, `orderId`, `orderVersionId`, `documentNumber` and `deletedAt`.
 
-Both events are selectable as triggers in Flow Builder. `document.generation.completed` fires for both the legacy document pipeline (`Shopware\Core\Checkout\Document\Service\DocumentGenerator::generate()` and `::upload()`) and the Document V2 pipeline (`POST /_action/order/document-v2/create` and `POST /_action/order/document-v2/upload`); `document.generation.deleted` already covers both, since deletion goes through the shared `document` entity regardless of which pipeline created it.
+Both events are selectable as triggers in Flow Builder. `document.generation.completed` fires for both the legacy document pipeline (`Shopwell\Core\Checkout\Document\Service\DocumentGenerator::generate()` and `::upload()`) and the Document V2 pipeline (`POST /_action/order/document-v2/create` and `POST /_action/order/document-v2/upload`); `document.generation.deleted` already covers both, since deletion goes through the shared `document` entity regardless of which pipeline created it.
 
 #### Extending document generation with a plugin
 
-Plugins register document types, data providers, and renderers as tagged services: `shopware.document_v2.type`, `shopware.document_v2.provider`, and `shopware.document_v2.renderer`. Twig template overrides keep working. v2 renders the same `@Framework/documents/*.html.twig` templates.
+Plugins register document types, data providers, and renderers as tagged services: `shopwell.document_v2.type`, `shopwell.document_v2.provider`, and `shopwell.document_v2.renderer`. Twig template overrides keep working. v2 renders the same `@Framework/documents/*.html.twig` templates.
 
-The legacy extension points (the `document.renderer` and `document_type.renderer` tags, the legacy document events, decorators of the legacy `DocumentGenerator`) are never invoked by the v2 pipeline. Both variants can be registered side by side during the transition. See the [extension points guide](https://developer.shopware.com/docs/concepts/commerce/checkout-concept/document/extension-points.html).
+The legacy extension points (the `document.renderer` and `document_type.renderer` tags, the legacy document events, decorators of the legacy `DocumentGenerator`) are never invoked by the v2 pipeline. Both variants can be registered side by side during the transition. See the [extension points guide](https://developer.shopwell.com/docs/concepts/commerce/checkout-concept/document/extension-points.html).
 
 #### Apps can register document types
 
@@ -242,7 +242,7 @@ Apps register custom document types through the new `<documents>` manifest block
 </documents>
 ```
 
-Shopware seeds a number range per app document type and blocks install or update when the identifier collides with a core type or another app. The new `document-generation` app script hook runs after the order is loaded and the number is allocated. Apps can enrich the render data and override template blocks via `sw_extends`.
+Shopwell seeds a number range per app document type and blocks install or update when the identifier collides with a core type or another app. The new `document-generation` app script hook runs after the order is loaded and the number is allocated. Apps can enrich the render data and override template blocks via `sw_extends`.
 
 #### Storefront and customer account
 
@@ -254,7 +254,7 @@ The `document.orderId` and `document.orderVersionId` fields are now optional. Ex
 
 #### Marking of the legacy implementation
 
-The legacy PHP document domain in `Shopware\Core\Checkout\Document` is superseded by v2 but not deprecated yet. Its classes carry `#[ExperimentalReplacement(version: 'v6.9.0', feature: 'DOCUMENT_GENERATION_REWORK', ...)]`, which stays silent for static analysis. The `@deprecated tag:v6.9.0` annotation follows with Shopware 6.8 once v2 is stable. The legacy Administration services and modals and the `document_type` and `document_type_translation` entities are deprecated with `@deprecated tag:v6.9.0` already. Document types and formats become code-registered strings. Surviving shared classes move into the `DocumentV2` namespace with 6.9.
+The legacy PHP document domain in `Shopwell\Core\Checkout\Document` is superseded by v2 but not deprecated yet. Its classes carry `#[ExperimentalReplacement(version: 'v6.9.0', feature: 'DOCUMENT_GENERATION_REWORK', ...)]`, which stays silent for static analysis. The `@deprecated tag:v6.9.0` annotation follows with Shopwell 6.8 once v2 is stable. The legacy Administration services and modals and the `document_type` and `document_type_translation` entities are deprecated with `@deprecated tag:v6.9.0` already. Document types and formats become code-registered strings. Surviving shared classes move into the `DocumentV2` namespace with 6.9.
 
 Timeline: 6.7 opt-in, 6.8 default (opt-out), 6.9 legacy implementation and flag removed. Migration steps are in `UPGRADE-6.9.md`.
 
@@ -262,7 +262,7 @@ Timeline: 6.7 opt-in, 6.8 default (opt-out), 6.9 legacy implementation and flag 
 
 ### New `#[ExperimentalReplacement]` BC-change attribute
 
-Core classes that are superseded by a feature which is still `@experimental` are no longer deprecated ahead of time. A `@deprecated` annotation asks you to migrate now, but an experimental replacement has no backwards-compatibility promise yet. Such classes now carry `#[ExperimentalReplacement]` from `Shopware\Core\Framework\Deprecation\BCChange` instead.
+Core classes that are superseded by a feature which is still `@experimental` are no longer deprecated ahead of time. A `@deprecated` annotation asks you to migrate now, but an experimental replacement has no backwards-compatibility promise yet. Such classes now carry `#[ExperimentalReplacement]` from `Shopwell\Core\Framework\Deprecation\BCChange` instead.
 
 ### Configurator groups can be built from a supplied combination result
 
@@ -273,26 +273,26 @@ Core classes that are superseded by a feature which is still `@experimental` are
 ### Store API responses vary on `sw-include-seo-urls`
 
 The `sw-include-seo-urls` request header adds `seoUrls` to Store API responses, but it was not part of `Vary` or of the built-in HTTP cache key. A cached response without `seoUrls` could be served to a request that asked for them. The header is now listed in `HttpCacheVariantHeaders::HEADERS`, so it is emitted in `Vary` and folded into the cache key. Reverse proxies that honor `Vary` need no change. Setups with a custom cache key should add the header. An empty header value now counts as absent, matching the cache key.
-### Shopware Services reconcile their full state daily
+### Shopwell Services reconcile their full state daily
 
 A service that missed an account login or logout, a consent change, a failed update, or a deactivation during a system update stayed in that state until the next event for it fired. The daily `services.install` task now completes compatible service updates and repairs activation and permissions of every installed service according to its current requirements, even when no new revision is available. Account-bound services stay active while their permissions follow the account state. Permitted manual deactivation is preserved. A failure in one service no longer prevents the others from being reconciled. No configuration change is required.
 
 ### Extensions can change the API CORS header lists
 
 The API answers CORS preflight requests with a fixed list of allowed and exposed headers, so a custom request header of an extension was rejected by the browser on cross-origin calls.
-An extension can now contribute its own header names by registering a service implementing `Shopware\Core\Framework\Api\Cors\CorsHeaderProviderInterface`; autoconfigured services are picked up automatically, otherwise tag them with `shopware.api.cors_header_provider`.
-Every provider receives the same `Shopware\Core\Framework\Api\Cors\CorsHeaders` instance and can add to or remove from `Access-Control-Allow-Headers` and `Access-Control-Expose-Headers`, matching header names case-insensitively.
-Shopware's own header names are unchanged and are now contributed the same way, by `CoreCorsHeaderProvider`; it runs first, so a provider with a lower tag priority can remove one of them.
+An extension can now contribute its own header names by registering a service implementing `Shopwell\Core\Framework\Api\Cors\CorsHeaderProviderInterface`; autoconfigured services are picked up automatically, otherwise tag them with `shopwell.api.cors_header_provider`.
+Every provider receives the same `Shopwell\Core\Framework\Api\Cors\CorsHeaders` instance and can add to or remove from `Access-Control-Allow-Headers` and `Access-Control-Expose-Headers`, matching header names case-insensitively.
+Shopwell's own header names are unchanged and are now contributed the same way, by `CoreCorsHeaderProvider`; it runs first, so a provider with a lower tag priority can remove one of them.
 
 ### Authorization code grant on the Admin API authorization server
 
 Decorators of `ClientRepository` or `ScopeRepository` should handle the new `authorization_code` grant identifier. Public clients may use only the `authorization_code` and `refresh_token` grants; the `write` scope is granted as for the password grant.
 
-`Shopware\Core\Framework\Api\OAuth\Client\ApiClient` accepts optional `$redirectUris` and `$grantTypes` constructor arguments and exposes `supportsGrantType()`. Existing constructor calls remain compatible; `getRedirectUri()` returns an empty array when no redirect URIs are configured.
+`Shopwell\Core\Framework\Api\OAuth\Client\ApiClient` accepts optional `$redirectUris` and `$grantTypes` constructor arguments and exposes `supportsGrantType()`. Existing constructor calls remain compatible; `getRedirectUri()` returns an empty array when no redirect URIs are configured.
 
 ### New method `IdSearchResult::getPrimaryKeyData`
 
-The new `Shopware\Core\Framework\DataAbstractionLayer\Search\IdSearchResult::getPrimaryKeyData()` method returns IDs in repository write format.
+The new `Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult::getPrimaryKeyData()` method returns IDs in repository write format.
 Single ID lists are formatted like this: `list<['id' => $id]>`.
 Composite primary keys remain unchanged.
 E.g: The returned array can then be passed directly to `EntityRepository::delete()`:
@@ -343,19 +343,19 @@ Installations that ran `--all` before this change and do not want the pseudo-lan
 
 ### `system:install` dispatches `SystemInstallCompletedEvent`
 
-`Shopware\Core\Framework\Event\SystemInstallCompletedEvent` is dispatched after a successful `bin/console system:install`. The event exposes the CLI `Context`. Extensions can subscribe to run post-install work.
+`Shopwell\Core\Framework\Event\SystemInstallCompletedEvent` is dispatched after a successful `bin/console system:install`. The event exposes the CLI `Context`. Extensions can subscribe to run post-install work.
 
 When Elasticsearch indexing is enabled and the cluster is reachable, the Elasticsearch bundle listens to this event and creates empty storefront indices and aliases. Storefront search after a fresh install no longer fails with `index_not_found_exception` because the alias is missing. Population stays a later `es:index` run.
 
 ### Sitemap generation for headless sales channels
 
-Sitemaps are now generated for headless (API type) sales channels that have a domain flagged as external storefront (introduced in 6.7.14.0, see "SEO URLs for headless sales channels"). This applies to all refresh strategies: the scheduled task and `sitemap:generate` now include such sales channels, and the live strategy on `GET /store-api/sitemap` generates their files on request. The `<loc>` entries point at the external storefront domain and use the headless SEO URL paths; the file URLs returned by `GET /store-api/sitemap` point at the configured sitemap filesystem (the Shopware host or its CDN), since the external storefront does not serve the files — headless frontends can serve or proxy them from there, or download them via `GET /store-api/sitemap/{filePath}`.
+Sitemaps are now generated for headless (API type) sales channels that have a domain flagged as external storefront (introduced in 6.7.14.0, see "SEO URLs for headless sales channels"). This applies to all refresh strategies: the scheduled task and `sitemap:generate` now include such sales channels, and the live strategy on `GET /store-api/sitemap` generates their files on request. The `<loc>` entries point at the external storefront domain and use the headless SEO URL paths; the file URLs returned by `GET /store-api/sitemap` point at the configured sitemap filesystem (the Shopwell host or its CDN), since the external storefront does not serve the files — headless frontends can serve or proxy them from there, or download them via `GET /store-api/sitemap/{filePath}`.
 
 Headless sales channels without an external storefront domain for the requested language are skipped silently — matching the behavior of the SEO URL generation — instead of failing with `CONTENT__INVALID_DOMAIN` under the live strategy. Storefront sales channels are unaffected.
 
 ### Concurrent sitemap generation is skipped gracefully again
 
-`sitemap:generate` (without `--force`) no longer aborts with `CONTENT__SITEMAP_ALREADY_LOCKED` when another process is currently generating the sitemap of the same sales channel and language — the affected channel is skipped with an error message and the command continues, as originally intended. The generation lock throws `Shopware\Core\Content\Sitemap\Exception\AlreadyLockedException` again (now extending `SitemapException`, error code and HTTP status 400 unchanged), so existing `catch (AlreadyLockedException)` blocks — including those in plugins — work as they did before the sitemap exceptions were consolidated into `SitemapException`.
+`sitemap:generate` (without `--force`) no longer aborts with `CONTENT__SITEMAP_ALREADY_LOCKED` when another process is currently generating the sitemap of the same sales channel and language — the affected channel is skipped with an error message and the command continues, as originally intended. The generation lock throws `Shopwell\Core\Content\Sitemap\Exception\AlreadyLockedException` again (now extending `SitemapException`, error code and HTTP status 400 unchanged), so existing `catch (AlreadyLockedException)` blocks — including those in plugins — work as they did before the sitemap exceptions were consolidated into `SitemapException`.
 
 ### Customer imports validate customer number patterns
 
@@ -375,7 +375,7 @@ A group left without conditions, or invalid for another reason, now loses its as
 
 ### `JsonField::addPropertyMapping()` for entity extensions
 
-`Shopware\Core\Framework\DataAbstractionLayer\Field\JsonField` now has `addPropertyMapping()`. Plugins can call it from `EntityExtension::modifyFields()` to extend an existing JSON schema, for example to add another entity key to a structured `hitCount` map. The field collection passed to `modifyFields()` is keyed by property name, so `$collection->get('hitCount')` returns the field.
+`Shopwell\Core\Framework\DataAbstractionLayer\Field\JsonField` now has `addPropertyMapping()`. Plugins can call it from `EntityExtension::modifyFields()` to extend an existing JSON schema, for example to add another entity key to a structured `hitCount` map. The field collection passed to `modifyFields()` is keyed by property name, so `$collection->get('hitCount')` returns the field.
 
 ```php
 public function modifyFields(FieldCollection $collection): void
@@ -398,7 +398,7 @@ Installing or updating an app no longer overwrites existing payment method name 
 
 ### New event to register product listing sortings at runtime
 
-`Shopware\Core\Content\Product\Events\ProductListingCollectSortingEvent` is dispatched while the product listing, search and suggest criteria are built, before the requested sorting is resolved. Add a `ProductSortingEntity` to `$event->getSortings()` to make it selectable and applicable at runtime:
+`Shopwell\Core\Content\Product\Events\ProductListingCollectSortingEvent` is dispatched while the product listing, search and suggest criteria are built, before the requested sorting is resolved. Add a `ProductSortingEntity` to `$event->getSortings()` to make it selectable and applicable at runtime:
 
 ```php
 public static function getSubscribedEvents(): array
@@ -420,7 +420,7 @@ When the calculation replaces the added line item, or adds further line items ne
 
 ### `PromotionCartInformationTrait` helper methods deprecated
 
-The helper methods `\Shopware\Core\Checkout\Promotion\Cart\PromotionCartInformationTrait::{addPromotionNotFoundError,addPromotionNotEligibleError}` are deprecated and will be removed in Shopware 6.8, call `$cart->addErrors()` directly instead:
+The helper methods `\Shopwell\Core\Checkout\Promotion\Cart\PromotionCartInformationTrait::{addPromotionNotFoundError,addPromotionNotEligibleError}` are deprecated and will be removed in Shopwell 6.8, call `$cart->addErrors()` directly instead:
 
 ```php
 // Before
@@ -444,7 +444,7 @@ This completes the pairing with `translation:download`, which fetches the files 
 
 The presence of the files is verified per locale before anything is installed. Locales named with `--locales` are installed as a unit: if one of them has no files, the command fails and lists every missing locale instead of leaving a language with no translations behind it. `--offline --all` instead installs every locale that is provisioned and reports the rest, because a locale the translation repository does not offer must not make the command unusable for the others. The metadata store is neither read nor written in this mode, so a later regular `translation:install` or `translation:update` behaves exactly as before.
 
-`Shopware\Core\System\Snippet\Service\AbstractTranslationLoader` gained `link()` and `hasTranslationFiles()` for this, and decorators inherit both from the abstract class without being adjusted. Installing now calls `download()` and `link()` instead of `load()`, so a decorator that wraps `load()` to observe installs has to wrap `link()` as well; `translation:update` keeps going through `load()`. Extensions that listen to `TranslationLoadedEvent` need no change, because `link()` dispatches it exactly like `load()` does.
+`Shopwell\Core\System\Snippet\Service\AbstractTranslationLoader` gained `link()` and `hasTranslationFiles()` for this, and decorators inherit both from the abstract class without being adjusted. Installing now calls `download()` and `link()` instead of `load()`, so a decorator that wraps `load()` to observe installs has to wrap `link()` as well; `translation:update` keeps going through `load()`. Extensions that listen to `TranslationLoadedEvent` need no change, because `link()` dispatches it exactly like `load()` does.
 
 ### Installing a translation ensures its language and snippet set again
 
@@ -471,7 +471,7 @@ The tag association routes and a nested `tags` payload on the order or category 
 
 `POST /store-api/checkout/order` re-checks inside its cart lock whether the cart is still stored, and answers `404 CHECKOUT__CART_TOKEN_NOT_FOUND` when it is not. Two overlapping submits of the same cart — two browser tabs on the checkout confirm page, a retried request — previously produced two orders whenever the second request had loaded its cart before the first one deleted it, because that stale cart still passed the cart hash check.
 
-`Shopware\Core\Checkout\Cart\AbstractCartPersister` gained `exists()` for this. The abstract class carries a default implementation that delegates to the decorated persister, so existing implementations keep working, but the method becomes abstract with 6.8.0.0 — implement it in every cart persister of yours before upgrading.
+`Shopwell\Core\Checkout\Cart\AbstractCartPersister` gained `exists()` for this. The abstract class carries a default implementation that delegates to the decorated persister, so existing implementations keep working, but the method becomes abstract with 6.8.0.0 — implement it in every cart persister of yours before upgrading.
 
 ### Storefront snippets of apps are served from a persisted snapshot
 
@@ -486,7 +486,7 @@ Changed snippets of an app reach the storefront on update: raise the manifest ve
 If you replace `AbstractMailService` without calling the decorated service, configure the translator in your implementation with `AbstractTranslator::injectSettings()` and `resetInjection()`. Because the settings only apply during rendering, listeners of `FlowSendMailActionEvent` and `MailBeforeValidateEvent` see the translator's default configuration.
 ### MCP servers are registered declaratively
 
-Shopware runs on `symfony/mcp-bundle` 0.13 with `mcp/sdk` 0.8, which register both MCP servers declaratively. The extension tags `shopware.mcp.tool`, `shopware.mcp.prompt`, `shopware.mcp.resource` and their `shopware.store_api_mcp.*` equivalents are unchanged, so plugins and apps that register tools, prompts, or resources need no adjustment. Code that integrates with the MCP internals has to be updated; those classes are marked `@experimental stableVersion:v6.8.0`. The motivation, the considered alternatives, and the consequences are described in [MCP capability registration via the container](adr/2026-08-31-mcp-capability-registration-via-container.md).
+Shopwell runs on `symfony/mcp-bundle` 0.13 with `mcp/sdk` 0.8, which register both MCP servers declaratively. The extension tags `shopwell.mcp.tool`, `shopwell.mcp.prompt`, `shopwell.mcp.resource` and their `shopwell.store_api_mcp.*` equivalents are unchanged, so plugins and apps that register tools, prompts, or resources need no adjustment. Code that integrates with the MCP internals has to be updated; those classes are marked `@experimental stableVersion:v6.8.0`. The motivation, the considered alternatives, and the consequences are described in [MCP capability registration via the container](adr/2026-08-31-mcp-capability-registration-via-container.md).
 
 The bundle registers one set of services per server, so the flat service IDs are gone:
 
@@ -503,9 +503,9 @@ Protocol request and notification handlers are scoped per server. Use `mcp.admin
 
 The `discovery.scan_dirs` option of the `mcp` extension was removed. Capabilities are registered from their DI tag at compile time, so an in-tree bundle capability needs no directory listing. Each server declares the namespace prefixes it exposes under `mcp.servers.<name>.registry`, and a capability whose namespace no server names is not registered. Run `bin/console debug:mcp --native` to list capabilities that ended up assigned to no server. Capabilities of plugins and third-party bundles are assigned by `McpToolDiscoveryCompilerPass` instead of by prefix.
 
-The bundle's `mcp.pagination_limit` parameter was removed. Shopware sets both servers from its own `shopware.mcp.pagination_limit` parameter (default 50).
+The bundle's `mcp.pagination_limit` parameter was removed. Shopwell sets both servers from its own `shopwell.mcp.pagination_limit` parameter (default 50).
 
-The MCP bundle ships a `debug:mcp` command of its own. Shopware keeps that name for its command and moves the bundle's command to `debug:mcp:native`, also reachable as `bin/console debug:mcp --native`.
+The MCP bundle ships a `debug:mcp` command of its own. Shopwell keeps that name for its command and moves the bundle's command to `debug:mcp:native`, also reachable as `bin/console debug:mcp --native`.
 
 Each server owns its own session store, defaulting to `%kernel.cache_dir%/mcp-sessions/<server>`. Store API MCP sessions that existed before the update are not carried over, so clients re-initialize once.
 
@@ -536,7 +536,7 @@ Store API responses no longer echo the request `sw-context-token` header on cach
 
 `GET|POST /store-api/checkout/cart` returns the cart that the sales channel context resolution already loaded and calculated for the context token, instead of reading and calculating it a second time. `CartLoadedEvent` is therefore dispatched once per request instead of twice, and the cart processors run once. The response itself is unchanged.
 
-`Shopware\Core\Checkout\Cart\SalesChannel\CartLoadRoute::load()` takes the cart as an optional third argument for this, filled by the `CartValueResolver` like on the other cart routes. Calling the route without a cart, or with a `token` that differs from the passed cart, still reads from the cart storage.
+`Shopwell\Core\Checkout\Cart\SalesChannel\CartLoadRoute::load()` takes the cart as an optional third argument for this, filled by the `CartValueResolver` like on the other cart routes. Calling the route without a cart, or with a `token` that differs from the passed cart, still reads from the cart storage.
 
 `AbstractCartLoadRoute::load()` is unchanged for now, so decorations keep working, but the parameter is added there in 6.8. Add it to your own `load()` declaration and forward it to the decorated route before you upgrade. Until you do, the route reads and calculates the cart again behind your decoration, because the resolver has no parameter to fill.
 
@@ -555,8 +555,8 @@ Store API responses requested with the `sw-include-seo-urls` header now also inc
 
 ### Remote media request timeouts are configurable
 
-Installations can configure `shopware.media.url_upload_timeout` and
-`shopware.media.external_link_timeout` in seconds to bound remote media URL
+Installations can configure `shopwell.media.url_upload_timeout` and
+`shopwell.media.external_link_timeout` in seconds to bound remote media URL
 uploads and external-media link checks. Both values default to `0.0`, which
 preserves the previous unlimited behavior.
 
@@ -567,17 +567,17 @@ preserves the previous unlimited behavior.
 The changeset generator turned an empty string into `null` for every field. Fields flagged `Required` and `AllowEmptyString` reject `null` but accept an empty string, so clearing such a field in the Administration always failed with "This value should not be null." The generator now keeps the empty string for exactly those fields; every other field is unchanged.
 
 The entity validation service follows the same rule and no longer reports an empty string on such a field as missing. This affects `snippet.value` and `app_administration_snippet.value`, where clearing the field now saves an empty value instead of returning an error.
-### Update wizard recommends Shopware CLI
+### Update wizard recommends Shopwell CLI
 
-The administration update wizard now asks you to choose an update method before starting the web installer. `shopware-cli project upgrade` is the recommended path for developers and managed deployments. The existing web installer flow remains available.
+The administration update wizard now asks you to choose an update method before starting the web installer. `shopwell-cli project upgrade` is the recommended path for developers and managed deployments. The existing web installer flow remains available.
 
-On cluster setups (`shopware.deployment.cluster_setup: true`) the web installer is no longer offered: the update button in the wizard is disabled with a hint towards Shopware CLI, and `GET /api/_action/update/download-recovery` responds with `403` (`FRAMEWORK__UPDATE_CLUSTER_SETUP_NOT_SUPPORTED`).
+On cluster setups (`shopwell.deployment.cluster_setup: true`) the web installer is no longer offered: the update button in the wizard is disabled with a hint towards Shopwell CLI, and `GET /api/_action/update/download-recovery` responds with `403` (`FRAMEWORK__UPDATE_CLUSTER_SETUP_NOT_SUPPORTED`).
 
 ### Update module can be hidden from the Administration
 
-Operators who manage updates through Shopware CLI or their deployment pipeline can now remove the update module from the Administration entirely. Set `shopware.auto_update.hide_module: true` or the environment variable `SHOPWARE_AUTO_UPDATE_HIDE_MODULE=1` and the module is no longer registered: the "Shopware updates" settings item and its wizard route do not exist, and the update-available notification is suppressed. The flag is also exposed to API consumers as `settings.hideUpdateModule` in `GET /api/_info/config`.
+Operators who manage updates through Shopwell CLI or their deployment pipeline can now remove the update module from the Administration entirely. Set `shopwell.auto_update.hide_module: true` or the environment variable `SHOPWELL_AUTO_UPDATE_HIDE_MODULE=1` and the module is no longer registered: the "Shopwell updates" settings item and its wizard route do not exist, and the update-available notification is suppressed. The flag is also exposed to API consumers as `settings.hideUpdateModule` in `GET /api/_info/config`.
 
-The update API endpoints enforce both flags server-side: all `GET /api/_action/update/*` endpoints respond with `403` (`FRAMEWORK__UPDATE_MODULE_HIDDEN`) while the module is hidden, and the mutating `download-recovery` and `deactivate-plugins` actions respond with `403` (`FRAMEWORK__AUTO_UPDATE_DISABLED`) while `shopware.auto_update.enabled` is `false`.
+The update API endpoints enforce both flags server-side: all `GET /api/_action/update/*` endpoints respond with `403` (`FRAMEWORK__UPDATE_MODULE_HIDDEN`) while the module is hidden, and the mutating `download-recovery` and `deactivate-plugins` actions respond with `403` (`FRAMEWORK__AUTO_UPDATE_DISABLED`) while `shopwell.auto_update.enabled` is `false`.
 ### Consent page for OAuth clients
 
 The new route `#/oauth/authorize` renders a standalone consent page showing which client wants access to the shop as which user, with Approve and Deny buttons. Logged-out users are sent through the login first and return to the consent page afterwards. The page is backed by the new `oauthAuthorizeApiService`.
@@ -728,13 +728,13 @@ The Twig blocks of `sw-product-detail-context-prices.html.twig` and `sw-product-
 
 `sw_product_detail_cross_selling_empty_state_icon` and `sw_product_detail_cross_selling_empty_state_actions` no longer wrap a `<template #icon>` / `<template #actions>`; overrides that reproduced these slot wrappers must drop them. The add button lives in `sw_product_detail_cross_selling_empty_state_actions_add` inside the `button` slot of `mt-empty-state`.
 
-The `assetFilter` computed of both components is deprecated for removal in v6.8.0; use `Shopware.Filter.getByName('asset')` instead.
+The `assetFilter` computed of both components is deprecated for removal in v6.8.0; use `Shopwell.Filter.getByName('asset')` instead.
 
 The classes `.sw-product-detail-context-prices__parent-prices-link` and `.sw-product-detail-cross-selling__parent-cross-sellings-link` no longer exist; the parent link is rendered as `.mt-empty-state__link`.
 
 ### Native-setup editor support comes from the extension tooling
 
-Editor support for native-setup authoring is now generated by the extension tooling instead of copied by hand. Run `composer admin:setup-extension-tooling` (or `bin/console administration:setup-extension-tooling` in a Composer install): the generated ESLint config declares the compile-time macro globals (`swDefinePublic`, `swDefineOverride`, `useSwPreviousState`, `useSwProps`, `useSwContext`) and enables the `sw-core-rules/valid-shopware-setup` and `sw-core-rules/native-setup-filename` guards, and the generated type surface carries the macro declarations so they type-check.
+Editor support for native-setup authoring is now generated by the extension tooling instead of copied by hand. Run `composer admin:setup-extension-tooling` (or `bin/console administration:setup-extension-tooling` in a Composer install): the generated ESLint config declares the compile-time macro globals (`swDefinePublic`, `swDefineOverride`, `useSwPreviousState`, `useSwProps`, `useSwContext`) and enables the `sw-core-rules/valid-shopwell-setup` and `sw-core-rules/native-setup-filename` guards, and the generated type surface carries the macro declarations so they type-check.
 
 The workspace templates in `build/vue-setup-transform/templates/custom-plugin-workspace` are removed with it. They imported `eslint-plugin-vue` and `@typescript-eslint/parser` through explicit paths into the Administration's `node_modules`, so a dependency bump broke every copied workspace at once. If you copied `eslint.config.mjs` to `custom/eslint.config.mjs` or `plugin-tsconfig.json` to `custom/plugins/<PluginName>/tsconfig.json`, delete them and run the setup command instead.
 
@@ -742,7 +742,7 @@ The workspace templates in `build/vue-setup-transform/templates/custom-plugin-wo
 
 The empty states of Extensions > My extensions (previously a `sw-meteor-card` with custom markup) and the extension store landing page (previously custom markup with an illustration) now render `mt-empty-state`. The existing Twig blocks are unchanged and wrap the new markup.
 
-The `assetFilter` computed of `sw-extension-my-extensions-listing` and `sw-extension-store-landing-page` is deprecated for removal in v6.9.0; use `Shopware.Filter.getByName('asset')` instead.
+The `assetFilter` computed of `sw-extension-my-extensions-listing` and `sw-extension-store-landing-page` is deprecated for removal in v6.9.0; use `Shopwell.Filter.getByName('asset')` instead.
 
 The landing page copy moved to the new snippets `sw-extension-store.landing-page.activationHeadline` and `.activationDescription`; shops that overrode the removed keys below need to move their text there. The "Now available" badge (`landing-page.label`) was removed without replacement:
 
@@ -770,9 +770,9 @@ Calling `defineExpose()` yourself is rejected in base and override components: i
 
 ### Extension empty states use `mt-empty-state`
 
-The empty states of Extensions > My extensions and the Shopware Store activation page render `mt-empty-state`. The Twig blocks and snippet keys are unchanged, but overrides that build on the previous markup need to adapt: the listing empty state is no longer a `sw-meteor-card`, and on the activation page the "Now available" badge (`.sw-extension-store-landing-page__wrapper-label`) and the `sw-label` of the success and error states no longer exist.
+The empty states of Extensions > My extensions and the Shopwell Store activation page render `mt-empty-state`. The Twig blocks and snippet keys are unchanged, but overrides that build on the previous markup need to adapt: the listing empty state is no longer a `sw-meteor-card`, and on the activation page the "Now available" badge (`.sw-extension-store-landing-page__wrapper-label`) and the `sw-label` of the success and error states no longer exist.
 
-The `assetFilter` computed of both components is deprecated for removal in v6.9.0; use `Shopware.Filter.getByName('asset')` instead.
+The `assetFilter` computed of both components is deprecated for removal in v6.9.0; use `Shopwell.Filter.getByName('asset')` instead.
 
 ## Storefront
 
@@ -808,7 +808,7 @@ Applying a second (individual) code that belongs to a promotion already present 
 
 ### Edit order page selects the payment method of the order
 
-The payment selection on `/account/order/edit/{orderId}` belongs to the order instead of the session. `Shopware\Storefront\Page\Account\Order\AccountEditOrderPage::getSelectedPaymentMethodId()` returns the payment method of the order, or the one the customer picked on the page, and the templates of that page use `page.selectedPaymentMethodId` instead of `context.paymentMethod.id`. Themes that override `page_checkout_aside_actions_payment_method_id` or `page_checkout_change_payment_form` should do the same.
+The payment selection on `/account/order/edit/{orderId}` belongs to the order instead of the session. `Shopwell\Storefront\Page\Account\Order\AccountEditOrderPage::getSelectedPaymentMethodId()` returns the payment method of the order, or the one the customer picked on the page, and the templates of that page use `page.selectedPaymentMethodId` instead of `context.paymentMethod.id`. Themes that override `page_checkout_aside_actions_payment_method_id` or `page_checkout_change_payment_form` should do the same.
 
 `frontend.account.edit-order.change-payment-method` passes the selected method to the edit order page as the `paymentMethodId` query parameter. It still switches the payment method of the sales channel context, so templates that render `context.paymentMethod` on that page keep working, but that context switch is deprecated and will be removed with v6.8.0.0.
 
@@ -860,10 +860,10 @@ Never list parameters that change the rendered content, such as `p`, `order`, `s
 
 ### Registering public OAuth clients
 
-Public OAuth clients that may use the authorization code grant are configured under `shopware.api.oauth_clients`. Shopware ships `shopware-cli` with the loopback redirect URIs `http://127.0.0.1/callback` and `http://[::1]/callback`. Loopback URIs accept any port (RFC 8252), all other redirect URIs must match exactly. Additional clients are added per project:
+Public OAuth clients that may use the authorization code grant are configured under `shopwell.api.oauth_clients`. Shopwell ships `shopwell-cli` with the loopback redirect URIs `http://127.0.0.1/callback` and `http://[::1]/callback`. Loopback URIs accept any port (RFC 8252), all other redirect URIs must match exactly. Additional clients are added per project:
 
 ```yaml
-shopware:
+shopwell:
     api:
         oauth_clients:
             my-tool:
@@ -871,15 +871,15 @@ shopware:
                 redirect_uris: ['http://127.0.0.1/callback']
 ```
 
-The lifetime of authorization codes is configurable with `shopware.api.auth_code_ttl` (default `PT5M`).
+The lifetime of authorization codes is configurable with `shopwell.api.auth_code_ttl` (default `PT5M`).
 
 ## App System
 
 ### Target validation can be disabled for local development
 
-The new `shopware.app_system.enable_url_validation` option turns off app system and webhook target validation, including the HTTPS requirement, the private network checks and the DNS pinning. It defaults to `true` and is shipped as `false` for the `dev` environment, so local app and webhook endpoints work over HTTP and on private or unresolvable hosts without further configuration.
+The new `shopwell.app_system.enable_url_validation` option turns off app system and webhook target validation, including the HTTPS requirement, the private network checks and the DNS pinning. It defaults to `true` and is shipped as `false` for the `dev` environment, so local app and webhook endpoints work over HTTP and on private or unresolvable hosts without further configuration.
 
-While it is `false`, `shopware.app_system.allow_unencrypted_traffic` and `shopware.app_system.allowed_private_ip_addresses` have no effect. Keep the validation enabled in production.
+While it is `false`, `shopwell.app_system.allow_unencrypted_traffic` and `shopwell.app_system.allowed_private_ip_addresses` have no effect. Keep the validation enabled in production.
 
 # 6.7.14.2
 
@@ -911,7 +911,7 @@ Aggregation names and range aggregation keys containing a backtick, question mar
 
 App manifests subscribing to them keep validating until 6.8, so such apps can still be installed and updated. Doing so triggers a deprecation; from 6.8 the manifest is rejected.
 
-An event opts out of webhook delivery with the `#[Shopware\Core\Framework\Webhook\NotHookable]` attribute.
+An event opts out of webhook delivery with the `#[Shopwell\Core\Framework\Webhook\NotHookable]` attribute.
 
 ### Session tokens and opt-in links are no longer sent to webhooks
 
@@ -933,7 +933,7 @@ Customer registration confirmation hashes are no longer included in API response
 
 ### `EventDataCollection` will become final
 
-`\Shopware\Core\Framework\Event\EventData\EventDataCollection` will be declared `final` in Shopware 6.8.
+`\Shopwell\Core\Framework\Event\EventData\EventDataCollection` will be declared `final` in Shopwell 6.8.
 
 ## API
 
@@ -951,7 +951,7 @@ Rule Builder and Flow Builder are now reachable from a dedicated top-level "Auto
 
 ### New app script hook `cookie-group-collect`
 
-Apps can now modify or remove cookie consent groups and entries with an app script under `Resources/scripts/cookie-group-collect/`. The hook exposes the collected `cookieGroups` collection and the current sales channel context, and provides the `services.repository`, `services.store` and `services.config` script services. Scripts run after cookies from plugins and app manifests were collected, so an app can, for example, declare its cookies in the manifest and remove them when the related payment method is not active in the current sales channel — with full backwards compatibility, since older Shopware versions simply ignore scripts for unknown hooks.
+Apps can now modify or remove cookie consent groups and entries with an app script under `Resources/scripts/cookie-group-collect/`. The hook exposes the collected `cookieGroups` collection and the current sales channel context, and provides the `services.repository`, `services.store` and `services.config` script services. Scripts run after cookies from plugins and app manifests were collected, so an app can, for example, declare its cookies in the manifest and remove them when the related payment method is not active in the current sales channel — with full backwards compatibility, since older Shopwell versions simply ignore scripts for unknown hooks.
 
 ### Order state history records where a state change came from
 
@@ -1049,7 +1049,7 @@ The new privileges are part of the existing "Plugin maintain" (`system:app:chang
 
 ### `sw-expect-packages` is rejected on endpoints that do not require authentication
 
-The `sw-expect-packages` header is no longer evaluated on API endpoints that do not require authentication, because the failure messages disclose the installed versions of Shopware and its dependencies. Sending it to such an endpoint now returns `417` with the new error code `FRAMEWORK__API_EXPECTATION_NOT_SUPPORTED` instead of evaluating the constraint. Affected endpoints include `GET /api/_info/health-check`, `POST /api/oauth/token`, `GET /api/app-system/shop/verify`, and the `POST /api/_action/user/user-recovery` routes.
+The `sw-expect-packages` header is no longer evaluated on API endpoints that do not require authentication, because the failure messages disclose the installed versions of Shopwell and its dependencies. Sending it to such an endpoint now returns `417` with the new error code `FRAMEWORK__API_EXPECTATION_NOT_SUPPORTED` instead of evaluating the constraint. Affected endpoints include `GET /api/_info/health-check`, `POST /api/oauth/token`, `GET /api/app-system/shop/verify`, and the `POST /api/_action/user/user-recovery` routes.
 
 Send the header with an authenticated Admin API request, where the behaviour is unchanged: a violated constraint still returns `417` with `FRAMEWORK__API_EXPECTATION_FAILED` and the installed version. Clients that set the header as a default on their HTTP client must remove it from unauthenticated calls — most importantly from the token request, which otherwise fails before the token is issued. Requests that do not send the header are unaffected.
 
@@ -1089,9 +1089,9 @@ Replace a matrix in a single request, so the method is never priceless in betwee
 
 ZUGFeRD invoices previously wrote the product's purchase unit (`product.purchaseUnit`, the package content used for base price display) as the item price base quantity (BT-149). Recipients validating against EN16931 saw `PEPPOL-EN16931-R120` violations for every line whose product has a purchase unit other than 1, and Peppol access points may have rejected such invoices. Line positions now always state a base quantity of 1, matching the per-unit item net price. Additionally, the item net price (BT-146) is now written with 4 decimals instead of 2, so the line amount calculation stays within the rule's rounding tolerance for higher quantities.
 ### New shop settings route classes
-- Added `Shopware\Core\System\SystemConfig\SalesChannel\AbstractShopSettingsRoute` as a decoratable extension point.
-- Added `Shopware\Core\System\SystemConfig\SalesChannel\ShopSettingsRoute`.
-- Added `Shopware\Core\System\SystemConfig\SalesChannel\ShopSettingsRouteResponse` and the structs `ShopSettings`, `ShopGeneralSettings`, `ShopLoginRegistrationSettings`, `ShopCartSettings`, `ShopListingSettings`, `ShopNewsletterSettings` in the same namespace.
+- Added `Shopwell\Core\System\SystemConfig\SalesChannel\AbstractShopSettingsRoute` as a decoratable extension point.
+- Added `Shopwell\Core\System\SystemConfig\SalesChannel\ShopSettingsRoute`.
+- Added `Shopwell\Core\System\SystemConfig\SalesChannel\ShopSettingsRouteResponse` and the structs `ShopSettings`, `ShopGeneralSettings`, `ShopLoginRegistrationSettings`, `ShopCartSettings`, `ShopListingSettings`, `ShopNewsletterSettings` in the same namespace.
 ### Plugins can customize version cleanup
 
 Plugins can subscribe to the new `CleanupVersionEvent` to protect version records from scheduled cleanup. The event provides the cleanup cutoff through `getCleanupTime()`, allowing plugins to apply retention rules consistently with the scheduled cleanup task.
@@ -1105,16 +1105,16 @@ The `media:delete-local-thumbnails` command also accepts a new `--force` (`-f`) 
 
 A new `--orphans` (`-o`) option deletes only those orphaned files. Referenced thumbnails and their records are kept, so this cleanup is safe in every setup and works regardless of the remote thumbnail configuration. The two options cannot be combined.
 
-`ThumbnailService::updateThumbnails()` accepts a matching optional `$force` argument; classes overriding this method must add the parameter with Shopware 6.8 (see `UPGRADE-6.8.md`).
+`ThumbnailService::updateThumbnails()` accepts a matching optional `$force` argument; classes overriding this method must add the parameter with Shopwell 6.8 (see `UPGRADE-6.8.md`).
 ### New `Criteria::resetFields()` and `Criteria::resetExcludedFields()`
 
-`Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria::resetFields()` drops an allowlist added via `addFields()`, `Criteria::resetExcludedFields()` drops a denylist added via `excludeFields()`. Both selections are mutually exclusive, so the new methods also allow switching a criteria from one to the other.
+`Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria::resetFields()` drops an allowlist added via `addFields()`, `Criteria::resetExcludedFields()` drops a denylist added via `excludeFields()`. Both selections are mutually exclusive, so the new methods also allow switching a criteria from one to the other.
 
 They affect the database read, unlike `includes` and `excludes`, which only shape the API response.
 
 ### Failed payment mail flow
 
-Shopware now ships a default Flow Builder flow, flow template, and mail template for `state_enter.order_transaction.state.failed`.
+Shopwell now ships a default Flow Builder flow, flow template, and mail template for `state_enter.order_transaction.state.failed`.
 
 ### GARAN commercial guarantee label and EU legal guarantee notice
 
@@ -1131,13 +1131,13 @@ Concurrent category writes through the Sync API frequently hit InnoDB deadlocks 
 
 ### Deprecated XML configuration
 
-Loading Symfony configuration from XML files is deprecated for Shopware bundles, plugins, and the project-level `config/` directory of an installation, and will stop working with Shopware 6.8, because Symfony 8 removes XML configuration support entirely. This covers service definitions (`Resources/config/services.xml`, `services_test.xml`, `config/services.xml`), route definitions (`Resources/config/routes.xml`, `routes_<env>.xml`, `routes_overwrite.xml`, and any XML file below a `routes/` config directory), and package configuration (`packages/**/*.xml`). Symfony already logs a runtime deprecation for every loaded XML file since Symfony 7.4; Shopware now additionally reports which file — and for bundles and plugins, which bundle — is affected. Shopware-specific XML formats such as `config.xml`, `custom-fields.xml`, or app manifests are not affected.
+Loading Symfony configuration from XML files is deprecated for Shopwell bundles, plugins, and the project-level `config/` directory of an installation, and will stop working with Shopwell 6.8, because Symfony 8 removes XML configuration support entirely. This covers service definitions (`Resources/config/services.xml`, `services_test.xml`, `config/services.xml`), route definitions (`Resources/config/routes.xml`, `routes_<env>.xml`, `routes_overwrite.xml`, and any XML file below a `routes/` config directory), and package configuration (`packages/**/*.xml`). Symfony already logs a runtime deprecation for every loaded XML file since Symfony 7.4; Shopwell now additionally reports which file — and for bundles and plugins, which bundle — is affected. Shopwell-specific XML formats such as `config.xml`, `custom-fields.xml`, or app manifests are not affected.
 
 **Plugin authors:** migrate your `services.xml` to `services.php` using Symfony's `ContainerConfigurator` and your `routes.xml` to `routes.php` using the `RoutingConfigurator`; package configuration can move to YAML or PHP. PHP configuration has been fully supported by the plugin system for years, service ids and wiring stay identical, and both formats can coexist during the transition. YAML definitions remain supported. See the migration example in `UPGRADE-6.8.md`.
 
 ### Document templates use the DocumentV2 VAT display condition behind the 6.8 feature flag
 
-The document templates now use the shipping-based `intraCommunityDelivery` condition for displaying VAT information when the `v6.8.0.0` feature flag is active, matching the DocumentV2 document generation path. With the feature flag disabled, the existing billing-address and configured delivery-country behavior remains unchanged. Extensions and themes that render or assert the legacy document templates should test their output with the feature flag enabled before upgrading to Shopware 6.8.
+The document templates now use the shipping-based `intraCommunityDelivery` condition for displaying VAT information when the `v6.8.0.0` feature flag is active, matching the DocumentV2 document generation path. With the feature flag disabled, the existing billing-address and configured delivery-country behavior remains unchanged. Extensions and themes that render or assert the legacy document templates should test their output with the feature flag enabled before upgrading to Shopwell 6.8.
 
 ### Line item rule conditions only evaluate product line items
 
@@ -1150,7 +1150,7 @@ Product specific line item rule conditions (manufacturer, category, tags, proper
 The property becomes `readonly`; use the constructor rather than the deprecated `setEntity()` method to provide the entity name. For a non-empty collection, the constructor asserts that the supplied entity name matches the collection's entity name.
 ### Media path cache busting is configurable
 
-The new `shopware.cdn.path_cache_buster` setting defaults to `true`, preserving timestamped media paths. Set it to `false` to keep paths stable for future media uploads and replacements while retaining `?ts=` query-string cache busting. Configure the CDN to include query strings in its cache key. Existing media paths are not migrated.
+The new `shopwell.cdn.path_cache_buster` setting defaults to `true`, preserving timestamped media paths. Set it to `false` to keep paths stable for future media uploads and replacements while retaining `?ts=` query-string cache busting. Configure the CDN to include query strings in its cache key. Existing media paths are not migrated.
 
 ### `product-export:generate --force` now regenerates scheduler-managed exports
 
@@ -1160,17 +1160,17 @@ The new `shopware.cdn.path_cache_buster` setting defaults to `true`, preserving 
 
 When updating an Elasticsearch/OpenSearch mapping references an analyzer/normalizer that the live index's analysis settings do not define (for example after an update introduced a new analyzer), `putMapping` fails with `analyzer [...] has not been configured in mappings`. Analysis settings are fixed at index creation and cannot be added to a live index, so this is now handled like the other unrecoverable mapping errors: the affected entity is scheduled for a reindex into a freshly created index, which rebuilds it with the current analysis settings instead of leaving the outdated mapping in place.
 
-### Built-in translation system configurable via `shopware.translation`
+### Built-in translation system configurable via `shopwell.translation`
 
-The built-in translation system's configuration (previously only editable by decorating `AbstractTranslationConfigLoader`) can now be overridden through the standard Symfony configuration in `config/packages`. Add a `shopware.translation` section to override individual options; any option left unset falls back to the shipped defaults in `translation.yaml`:
+The built-in translation system's configuration (previously only editable by decorating `AbstractTranslationConfigLoader`) can now be overridden through the standard Symfony configuration in `config/packages`. Add a `shopwell.translation` section to override individual options; any option left unset falls back to the shipped defaults in `translation.yaml`:
 
 ```yaml
 # config/packages/translation.yaml
-shopware:
+shopwell:
     translation:
         repository_url: 'https://example.com/translations'
         metadata_url: 'https://example.com/crowdin-metadata.json'
-        community_translations_url: 'https://translate.shopware.com'
+        community_translations_url: 'https://translate.shopwell.com'
         documentation_url_snippet_key: 'sw-settings-language.addModal.docsUrl'
         completeness_threshold: 90
         plugins:
@@ -1210,11 +1210,11 @@ Migration DDL now retries once with `restrict_fk_on_non_standard_key` relaxed wh
 
 ### Polyfill packages are installed as declared dependencies
 
-The `shopware/core` and `shopware/platform` package manifests no longer replace Symfony polyfill packages or `paragonie/random_compat`. Composer now installs the polyfills required by the resolved dependency graph instead of treating them as supplied by Shopware. Extension projects that depend on these packages continue to work; their production dependency tree can gain the required polyfill packages. Projects that guarantee the required native PHP functionality can add relevant packages to their own root `replace` section to avoid installing them and reduce their vendor directory size; they must not replace `symfony/polyfill-mbstring`, which Core requires for `mb_ltrim()` on PHP 8.2 and 8.3.
+The `shopwell/core` and `shopwell/platform` package manifests no longer replace Symfony polyfill packages or `paragonie/random_compat`. Composer now installs the polyfills required by the resolved dependency graph instead of treating them as supplied by Shopwell. Extension projects that depend on these packages continue to work; their production dependency tree can gain the required polyfill packages. Projects that guarantee the required native PHP functionality can add relevant packages to their own root `replace` section to avoid installing them and reduce their vendor directory size; they must not replace `symfony/polyfill-mbstring`, which Core requires for `mb_ltrim()` on PHP 8.2 and 8.3.
 
 ### OpenAPI generation uses swagger-php 6.4
 
-Shopware now requires `zircote/swagger-php` 6.4 for OpenAPI 3.2 generation.
+Shopwell now requires `zircote/swagger-php` 6.4 for OpenAPI 3.2 generation.
 Most extensions are not affected: OpenAPI annotations and attributes continue to be read by swagger-php 6, and extensions that only define `OpenApi\Annotations` or `OpenApi\Attributes` metadata usually do not need code changes.
 
 Extensions or development tools that call swagger-php programmatically should check for removed v4/v5 APIs such as `OpenApi\Generator::scan()` and `OpenApi\Util::finder()`.
@@ -1223,7 +1223,7 @@ See `UPGRADE-6.7.md` for concrete examples.
 
 ### Locale-aware sorting for product property group options
 
-`Shopware\Core\Content\Product\AbstractPropertyGroupSorter::sort()` is deprecated and will be removed with Shopware 6.8. Use the new `sortUsingLocaleCode()` method instead, which sorts property group options using locale-aware (ICU) collation.
+`Shopwell\Core\Content\Product\AbstractPropertyGroupSorter::sort()` is deprecated and will be removed with Shopwell 6.8. Use the new `sortUsingLocaleCode()` method instead, which sorts property group options using locale-aware (ICU) collation.
 
 ### MCP server no longer requires the `MCP_SERVER` feature flag
 
@@ -1231,10 +1231,10 @@ The MCP server is now always enabled. The `MCP_SERVER` feature flag has been rem
 
 ### MCP entity tools validate association read privileges
 
-The experimental MCP tools `shopware-entity-read`, `shopware-entity-search`, and `shopware-entity-aggregate` now validate the supplied criteria with the same association ACL checks as the Admin API. Loading, filtering, sorting, or aggregating over an association now requires the `<association-entity>:read` privilege in addition to the top-level `<entity>:read` privilege — for example, reading `order` with the `orderCustomer` association requires both `order:read` and `order_customer:read`. Integrations that relied on the missing check must add the association read privileges to their ACL role; requests without such criteria are unaffected.
+The experimental MCP tools `shopwell-entity-read`, `shopwell-entity-search`, and `shopwell-entity-aggregate` now validate the supplied criteria with the same association ACL checks as the Admin API. Loading, filtering, sorting, or aggregating over an association now requires the `<association-entity>:read` privilege in addition to the top-level `<entity>:read` privilege — for example, reading `order` with the `orderCustomer` association requires both `order:read` and `order_customer:read`. Integrations that relied on the missing check must add the association read privileges to their ACL role; requests without such criteria are unaffected.
 ### MCP tools can be enabled per session through toolsets
 
-The experimental MCP server now advertises only its default meta-tools until a client enables additional toolsets for the current MCP session. Clients can call `shopware-toolsets-list` to inspect available toolsets and `shopware-toolset-enable` to enable one. Enabling a toolset emits `notifications/tools/list_changed` so clients that support MCP list-change notifications can refresh `tools/list`.
+The experimental MCP server now advertises only its default meta-tools until a client enables additional toolsets for the current MCP session. Clients can call `shopwell-toolsets-list` to inspect available toolsets and `shopwell-toolset-enable` to enable one. Enabling a toolset emits `notifications/tools/list_changed` so clients that support MCP list-change notifications can refresh `tools/list`.
 
 Tool execution is still bounded by the configured MCP allowlist. Enabling a toolset only changes which allowlisted tools are advertised for that session.
 
@@ -1244,9 +1244,9 @@ The experimental MCP server now queues `notifications/*/list_changed` messages f
 
 ### MCP tools can be discovered on demand
 
-A fresh MCP session advertises only the three server-owned discovery meta-tools in `tools/list`: `shopware-tool-search`, `shopware-toolsets-list`, and `shopware-toolset-enable`. Every other tool is deferred and reachable in two ways: `shopware-tool-search` returns relevant tool definitions inline for a free-text query, and `shopware-toolset-enable` enables a whole toolset for the session (see the toolset section above). Tool visibility is derived solely from the tool's group — the `discovery` group is the always-advertised surface — so a tool opts into the default surface via `#[McpToolGroup('discovery')]`, not a per-tool flag.
+A fresh MCP session advertises only the three server-owned discovery meta-tools in `tools/list`: `shopwell-tool-search`, `shopwell-toolsets-list`, and `shopwell-toolset-enable`. Every other tool is deferred and reachable in two ways: `shopwell-tool-search` returns relevant tool definitions inline for a free-text query, and `shopwell-toolset-enable` enables a whole toolset for the session (see the toolset section above). Tool visibility is derived solely from the tool's group — the `discovery` group is the always-advertised surface — so a tool opts into the default surface via `#[McpToolGroup('discovery')]`, not a per-tool flag.
 
-The per-integration MCP allowlist remains the call-time security boundary. `shopware-tool-search` only returns tools that are already allowed for the current integration, and tools outside the allowlist remain uncallable.
+The per-integration MCP allowlist remains the call-time security boundary. `shopwell-tool-search` only returns tools that are already allowed for the current integration, and tools outside the allowlist remain uncallable.
 
 ### MCP list responses apply allowlists before pagination
 
@@ -1269,9 +1269,9 @@ Headless (API type) sales channels can now generate SEO URLs and be used for pro
 
 ### New BC-change attributes for planned API changes
 
-Shopware previously used `@deprecated tag:vX.Y.Z - reason:*` PHPDoc annotations to document planned backwards-compatibility-affecting changes that are not actual deprecations, such as return type narrowing, new optional parameters, or classes becoming internal or final. In plugin projects these annotations surfaced as `Call to deprecated method` errors in static analysis, although there is no replacement API to migrate to.
+Shopwell previously used `@deprecated tag:vX.Y.Z - reason:*` PHPDoc annotations to document planned backwards-compatibility-affecting changes that are not actual deprecations, such as return type narrowing, new optional parameters, or classes becoming internal or final. In plugin projects these annotations surfaced as `Call to deprecated method` errors in static analysis, although there is no replacement API to migrate to.
 
-Such changes are now documented with dedicated PHP attributes under `Shopware\Core\Framework\Deprecation\BCChange`, for example `#[ReturnTypeNarrowing]`, `#[NewOptionalParameter]`, or `#[BecomesFinal]`. For your project this means:
+Such changes are now documented with dedicated PHP attributes under `Shopwell\Core\Framework\Deprecation\BCChange`, for example `#[ReturnTypeNarrowing]`, `#[NewOptionalParameter]`, or `#[BecomesFinal]`. For your project this means:
 
 * Static analysis no longer reports deprecation errors for core methods that merely carry a BC-planning note, so these errors disappear from your pipelines without configuration changes.
 * A `@deprecated` annotation on core code is now always an actual deprecation: the functionality will be removed or replaced, and you should migrate as described in the annotation.
@@ -1286,7 +1286,7 @@ Cron-driven product export generation no longer derives the next run from `gener
 
 ### `debug:mcp` lists Store API capabilities
 
-`bin/console debug:mcp` was wired to the Admin MCP server only, so no capability of the Store API MCP server (`/store-api/_mcp`) appeared in its output, and looking one up by name reported "No capability found". Store API tools registered with `shopware.store_api_mcp.tool` were therefore invisible to the standard debugging command.
+`bin/console debug:mcp` was wired to the Admin MCP server only, so no capability of the Store API MCP server (`/store-api/_mcp`) appeared in its output, and looking one up by name reported "No capability found". Store API tools registered with `shopwell.store_api_mcp.tool` were therefore invisible to the standard debugging command.
 
 The command now inspects both MCP servers and groups the output per server, with every section heading naming the server it belongs to (`Store API: Tools (17)`). A new `--scope` option limits it to one of them:
 
@@ -1294,7 +1294,7 @@ The command now inspects both MCP servers and groups the output per server, with
 bin/console debug:mcp                          # both servers
 bin/console debug:mcp --scope=store-api        # /store-api/_mcp only
 bin/console debug:mcp --scope=api              # /api/_mcp only
-bin/console debug:mcp shopware-store-api-context
+bin/console debug:mcp shopwell-store-api-context
 ```
 
 Looking up a capability by name resolves across both servers and the detail view names the owning server. `--integration` still applies to the Admin server only, because integration allowlists are not evaluated for Store API requests; a note points this out when both servers are listed.
@@ -1308,7 +1308,7 @@ Elasticsearch product search now adds an explicit phrase-proximity boost for mul
 The product export now paginates products by an `autoIncrement` keyset cursor instead of `LIMIT`/`OFFSET`, removing the `getTotalCount()` timeout on large catalogs.
 
 - `ProductExportResult::getTotal()` and its `$total` constructor argument are deprecated; the export no longer computes a grand total. Use `hasNextBatch()` and `getOffset()` instead.
-- The read buffer size is now configurable via `shopware.product_export.read_buffer_size` (default 200). Raise it to reduce per-batch overhead, lower it if a batch hits the worker memory limit.
+- The read buffer size is now configurable via `shopwell.product_export.read_buffer_size` (default 200). Raise it to reduce per-batch overhead, lower it if a batch hits the worker memory limit.
 
 ### `SalesChannelRepositoryIterator` supports autoIncrement keyset pagination
 
@@ -1325,7 +1325,7 @@ Writing the `template` field of a `seo_url_template` row now regenerates the SEO
 
 This affects every write path, not just Settings > Shop > SEO:
 
-- Both storefront routes (registered in the `SeoUrlRouteRegistry`) and headless store-api routes (tagged `shopware.entity.seo_url.route`) are covered.
+- Both storefront routes (registered in the `SeoUrlRouteRegistry`) and headless store-api routes (tagged `shopwell.entity.seo_url.route`) are covered.
 - Writes that do not change the stored `template` value do not queue anything: update commands request a DAL change set, so an idempotent Sync API push of an identical template stays inert. Inserts with an empty or `null` template are skipped as well.
 - Extensions and deployment scripts that write `seo_url_template` rows on every install or update will therefore queue a full regeneration pass for the affected route each time. Guard such writes with a value comparison if that is not intended.
 
@@ -1350,7 +1350,7 @@ Admin Elasticsearch searches (`ENABLE_OPENSEARCH_FOR_ADMIN_API`) now fall back t
 
 ### Admin Worker loads correctly when the Administration is hosted under a base path
 
-The Vite `asset-path-plugin` now also prefixes the literal `Worker`/`SharedWorker` script URLs that Vite bakes into the Administration bundle with `window.__sw__.assetPath`, the same prefix that is already applied to every other admin asset through the `assetsURL()` helper. Previously these worker URLs were emitted as absolute paths against the domain root (e.g. `new SharedWorker("/bundles/administration/administration/assets/adminWorker-*.js")`) and never passed through `assetsURL()`, so on any Shopware install served from a subdirectory / base path — including Shopware-hosted staging environments mounted under a subpath such as `/staging` — the Admin Worker's `SharedWorker` failed to load (404 against the domain root instead of the base path). This broke admin-worker-driven message-queue and scheduled-task processing in the Administration. Operators running the Administration under a base path now get a working Admin Worker; no action is required.
+The Vite `asset-path-plugin` now also prefixes the literal `Worker`/`SharedWorker` script URLs that Vite bakes into the Administration bundle with `window.__sw__.assetPath`, the same prefix that is already applied to every other admin asset through the `assetsURL()` helper. Previously these worker URLs were emitted as absolute paths against the domain root (e.g. `new SharedWorker("/bundles/administration/administration/assets/adminWorker-*.js")`) and never passed through `assetsURL()`, so on any Shopwell install served from a subdirectory / base path — including Shopwell-hosted staging environments mounted under a subpath such as `/staging` — the Admin Worker's `SharedWorker` failed to load (404 against the domain root instead of the base path). This broke admin-worker-driven message-queue and scheduled-task processing in the Administration. Operators running the Administration under a base path now get a working Admin Worker; no action is required.
 
 ### Vue Single File Components for Administration extensions
 
@@ -1390,7 +1390,7 @@ A few things to know before you start:
 * **An override only works when the base component is itself native-setup.** `sw-my-component.override.vue` extends a base declared with `swDefinePublic()`; it cannot override a component registered through the component factory (Twig / Options API). The base must be authored as a native-setup SFC for `useSwPreviousState()` and the override to resolve.
 * **The API is experimental until 6.8.0.** It is marked `@experimental stableVersion:v6.8.0` and may still change.
 
-Rejections surface in your editor as well as in the build: the `valid-shopware-setup` ESLint rule runs the same validation, and `build/vue-setup-transform/templates/custom-plugin-workspace` contains ESLint and TypeScript templates to copy into `custom/` for local plugin development. Full authoring reference: `src/Administration/Resources/app/administration/technical-docs/03-extensibility/07-native-setup-authoring.md`.
+Rejections surface in your editor as well as in the build: the `valid-shopwell-setup` ESLint rule runs the same validation, and `build/vue-setup-transform/templates/custom-plugin-workspace` contains ESLint and TypeScript templates to copy into `custom/` for local plugin development. Full authoring reference: `src/Administration/Resources/app/administration/technical-docs/03-extensibility/07-native-setup-authoring.md`.
 
 ### SFC migration codemod now emits native setup components
 
@@ -1400,7 +1400,7 @@ What changed for users of the tool: every generated file must pass the build tra
 
 ### System config forms show validation errors for the selected sales channel scope
 
-Extension and app configuration forms, and any settings page built on `sw-system-config`, now display server-side validation errors on the field that caused them, for the sales channel selected in the scope switcher. Previously these errors were returned by `POST /api/_action/system-config/batch` but did not reach the field: for sales-channel-specific scopes they were stored under a key that did not match the lookup, the lookup only ever used the initially passed scope, and most field types were never passed the error at all. If your `config.xml` uses `required`, `minLength`, `maxLength`, `min`, `max` or `dataType`, merchants now see why a save was rejected on the scope they have selected. No API changes; the error resolver and error store remain `@private`. (shopware/shopware#18741)
+Extension and app configuration forms, and any settings page built on `sw-system-config`, now display server-side validation errors on the field that caused them, for the sales channel selected in the scope switcher. Previously these errors were returned by `POST /api/_action/system-config/batch` but did not reach the field: for sales-channel-specific scopes they were stored under a key that did not match the lookup, the lookup only ever used the initially passed scope, and most field types were never passed the error at all. If your `config.xml` uses `required`, `minLength`, `maxLength`, `min`, `max` or `dataType`, merchants now see why a save was rejected on the scope they have selected. No API changes; the error resolver and error store remain `@private`. (shopwell/shopwell#18741)
 ### System config component exposes the selected sales channel scope
 
 The `sw-system-config` component now exposes which sales channel is selected in its scope switcher. The value is seeded from the `salesChannelId` prop and afterwards follows the switcher; later changes to the prop are ignored. It is `null` while the global scope is selected.
@@ -1422,7 +1422,7 @@ const salesChannelId = inject('swSystemConfigCurrentSalesChannelId', ref(null));
 
 The provided value is a read-only computed ref. Note that the form body is torn down and rebuilt while the configuration of a not yet visited sales channel loads, so embedded components must not assume instance continuity across a switch.
 
-Existing slot usages keep working unchanged. Previously, following the switcher required traversing `$parent` into private component state or overriding `sw-system-config` itself, both of which break across Administration refactors. (shopware/shopware#18731)
+Existing slot usages keep working unchanged. Previously, following the switcher required traversing `$parent` into private component state or overriding `sw-system-config` itself, both of which break across Administration refactors. (shopwell/shopwell#18731)
 ### Conditional visibility for app-registered tabs
 
 `sw.ui.tabs('<position>').addTabItem()` now accepts an optional `visible` boolean, so an app can show or hide its own registered tab depending on the current context (for example the currently opened entity). When omitted, the tab is shown as before, so existing extensions are unaffected.
@@ -1444,7 +1444,7 @@ Administration now reuses a generic cache layer for current-user configuration a
 Current-user configuration is cached per current user through `userConfigService`. Read individual keys from the shared cached `_info/config-me` response and write changes through the same service:
 
 ```js
-const userConfigService = Shopware.Service('userConfigService');
+const userConfigService = Shopwell.Service('userConfigService');
 
 const response = await userConfigService.search(['my-plugin.config-key']);
 const value = response?.data?.['my-plugin.config-key'];
@@ -1457,13 +1457,13 @@ await userConfigService.upsert({
 Shared entity reads can be cached directly on repository reads by passing a stable `cacheKey`:
 
 ```js
-const criteria = new Shopware.Data.Criteria(1, 500);
-criteria.addSorting(Shopware.Data.Criteria.sort('name', 'ASC', false));
+const criteria = new Shopwell.Data.Criteria(1, 500);
+criteria.addSorting(Shopwell.Data.Criteria.sort('name', 'ASC', false));
 
-const currencies = await Shopware.Service('repositoryFactory')
+const currencies = await Shopwell.Service('repositoryFactory')
     .create('currency')
-    .search(criteria, Shopware.Context.api, {
-        cacheKey: ['shared-data', 'currencies', Shopware.Context.api.languageId ?? 'default'],
+    .search(criteria, Shopwell.Context.api, {
+        cacheKey: ['shared-data', 'currencies', Shopwell.Context.api.languageId ?? 'default'],
         ttl: 5 * 60 * 1000,
     });
 ```
@@ -1471,16 +1471,16 @@ const currencies = await Shopware.Service('repositoryFactory')
 If your plugin changes cached data and needs a fresh follow-up read, either invalidate the affected cache key prefix or force the next read to reload:
 
 ```js
-const cacheService = Shopware.Service('cacheService');
-const taxRepository = Shopware.Service('repositoryFactory').create('tax');
+const cacheService = Shopwell.Service('cacheService');
+const taxRepository = Shopwell.Service('repositoryFactory').create('tax');
 
 cacheService.invalidateCaches({
     // Invalidate only the cached tax entries.
     cacheKey: ['shared-data', 'taxes'],
 });
 
-const freshTaxes = await taxRepository.search(criteria, Shopware.Context.api, {
-    cacheKey: ['shared-data', 'taxes', Shopware.Context.api.languageId ?? 'default'],
+const freshTaxes = await taxRepository.search(criteria, Shopwell.Context.api, {
+    cacheKey: ['shared-data', 'taxes', Shopwell.Context.api.languageId ?? 'default'],
     // true bypasses the cached result for this read and stores the fresh response again.
     forceReload: true,
     ttl: 5 * 60 * 1000,
@@ -1494,7 +1494,7 @@ cacheService.invalidateCaches({
 
 ### Plugins can use the global Meteor snackbar
 
-Administration plugins can now add and remove snackbars through `Shopware.Service('snackbarService')`. Use `addSnackbar()` with a Meteor snackbar configuration and `removeSnackbar(id)` to dismiss it. Composition API extensions can use the experimental `useSnackbar()` composable, which becomes stable with Shopware 6.8.
+Administration plugins can now add and remove snackbars through `Shopwell.Service('snackbarService')`. Use `addSnackbar()` with a Meteor snackbar configuration and `removeSnackbar(id)` to dismiss it. Composition API extensions can use the experimental `useSnackbar()` composable, which becomes stable with Shopwell 6.8.
 ### App action buttons in the Media Manager multiselect sidebar
 
 Apps can now surface a custom action button when multiple media are selected in the Media Manager. Registering an action button via the Admin SDK with `entity: 'media'` and `view: 'list'` renders it in the multiselect sidebar's quick-actions list. The button is only shown when **every** selected media item matches the configured `fileTypes` (case-insensitive; omit `fileTypes` to always show it), and the `callback` receives the full list of selected media entities (`{ id, url, fileName, mimeType, fileSize }`). This complements the existing single-item button (`view: 'item'`) and lets apps offer bulk operations — e.g. exporting or converting all selected files — without an extra API round-trip. No changes are required for existing single-item action buttons.
@@ -1505,7 +1505,7 @@ can render their own content next to a selected media file. A new
 `sw-extension-component-section` with the position identifier
 `sw-media-quickinfo-metadata` is rendered directly below the metadata list, and
 the currently selected media entity is published as the `sw-media-quickinfo__item`
-dataset (`Shopware.ExtensionAPI.publishData`).
+dataset (`Shopwell.ExtensionAPI.publishData`).
 
 Extensions can register a component at the `sw-media-quickinfo-metadata` position
 and read the selected item through the data API. App (iframe) extensions must
@@ -1521,22 +1521,22 @@ The dataset updates reactively as the user selects a different media file.
 
 ### Opt-in TypeScript and ESLint configuration for Administration extensions (experimental)
 
-This toolchain is **experimental** and not covered by the backwards-compatibility promise: it is shipped early to gather feedback while it is still being shaped, so the command names and their options, the layout of the generated files, and the `manifest.json` schema can change in any release without a deprecation cycle. Re-running setup after a Shopware update is the supported migration path — the generated files are disposable by design, so nothing should be hand-edited or automated on top of. Stabilization is targeted for v6.8.0 (annotated `@experimental stableVersion:v6.8.0 feature:ADMIN_EXTENSION_TOOLING` in the source); the experimental marker is removed once the surfaces have settled. Not running the command leaves a project exactly as it was.
+This toolchain is **experimental** and not covered by the backwards-compatibility promise: it is shipped early to gather feedback while it is still being shaped, so the command names and their options, the layout of the generated files, and the `manifest.json` schema can change in any release without a deprecation cycle. Re-running setup after a Shopwell update is the supported migration path — the generated files are disposable by design, so nothing should be hand-edited or automated on top of. Stabilization is targeted for v6.8.0 (annotated `@experimental stableVersion:v6.8.0 feature:ADMIN_EXTENSION_TOOLING` in the source); the experimental marker is removed once the surfaces have settled. Not running the command leaves a project exactly as it was.
 
-`composer admin:setup-extension-tooling` generates the TypeScript and ESLint configuration that lets an Administration extension be type-checked and linted against the **installed** Shopware version — its live types, its entity schema and its pinned tool versions — instead of against a toolchain the extension vendors itself and that drifts.
+`composer admin:setup-extension-tooling` generates the TypeScript and ESLint configuration that lets an Administration extension be type-checked and linted against the **installed** Shopwell version — its live types, its entity schema and its pinned tool versions — instead of against a toolchain the extension vendors itself and that drifts.
 
-- **Every extension is bridged automatically.** Setup discovers every installed extension with Administration sources from `var/plugins.json` and writes a git-ignored, self-explaining `.shopware/` bridge beside each Administration folder — custom and vendor-installed alike — plus small committable `tsconfig.json` / `eslint.config.mjs` that extend it when the extension has none yet. Existing configs are never overwritten — the report prints the single line to add instead. One bridge is written per directory that owns a config, so a multi-bundle package whose shared config governs several Administration roots gets a single shared bridge (`-- --root-config=<Extension>:<dir>` forces one for a layout the grouping cannot infer). Root `tsconfig.json` / `eslint.config.mjs` projections and IDE bootstraps for VS Code and Zed are generated at the project root (PhpStorm settings are printed); editors then resolve the full Administration API, including installation-specific entity types.
+- **Every extension is bridged automatically.** Setup discovers every installed extension with Administration sources from `var/plugins.json` and writes a git-ignored, self-explaining `.shopwell/` bridge beside each Administration folder — custom and vendor-installed alike — plus small committable `tsconfig.json` / `eslint.config.mjs` that extend it when the extension has none yet. Existing configs are never overwritten — the report prints the single line to add instead. One bridge is written per directory that owns a config, so a multi-bundle package whose shared config governs several Administration roots gets a single shared bridge (`-- --root-config=<Extension>:<dir>` forces one for a layout the grouping cannot infer). Root `tsconfig.json` / `eslint.config.mjs` projections and IDE bootstraps for VS Code and Zed are generated at the project root (PhpStorm settings are printed); editors then resolve the full Administration API, including installation-specific entity types.
 - **Unwritable directories degrade gracefully.** A bridge that cannot be written (e.g. a read-only vendor directory) is skipped with a warning; the extension's sources stay covered by the generated root `tsconfig.json`, which includes whatever no extension config governs. Files written under `vendor/` are local only: a composer update removes them and re-running setup restores them.
 - **The report says what is missing, not just what happened.** Each extension is classified `ready`, `bridged`, `bridge-unwired` or `not bridged`, changed files are listed by path, git-ignored bridge files are distinguished from committable plugin-owned ones, and only the actually-missing next step is printed.
 - **CI can verify the projection is current** with `composer admin:setup-extension-tooling:check` — a guaranteed read-only dry run that writes nothing and exits 1 on drift.
 
-Options belong after Composer's `--` separator; `-- --help` prints the generated reference, and an unknown flag exits 2 before anything is written. In a Composer/Flex install, where the Administration lives under `vendor/shopware/administration` and the Composer scripts do not exist, the same commands are available as `bin/console administration:setup-extension-tooling` and `bin/console administration:generate-entity-schema-types` — run `npm ci` in the Administration directory once, since its Node dependencies are not part of the Composer package.
+Options belong after Composer's `--` separator; `-- --help` prints the generated reference, and an unknown flag exits 2 before anything is written. In a Composer/Flex install, where the Administration lives under `vendor/shopwell/administration` and the Composer scripts do not exist, the same commands are available as `bin/console administration:setup-extension-tooling` and `bin/console administration:generate-entity-schema-types` — run `npm ci` in the Administration directory once, since its Node dependencies are not part of the Composer package.
 
-`composer admin:check-extensions` then runs that configuration: per extension it executes `vue-tsc` and ESLint with the Administration's own pinned tool versions and prints their native, unmodified output under a per-extension header, paths relativized to the project root. Pass `-- --only=<name[,name]>` to narrow it; without that it checks everything. Extension configs that do not compose the Shopware preset are visibly skipped with a reason-specific `why:` and the exact `fix:` — never silently green — and a run that skipped a writable extension carries a prominent warning so `exit 0` cannot be mistaken for full coverage. TypeScript is blocked with the fix command while the entity schema is missing, rather than flooding the report with cascade errors, and a JavaScript-only extension reports an honest qualified pass (`0 TypeScript files — .js is not type-checked`) instead of a vacuous green. `-- --fix` applies ESLint autofixes, including the Shopware `sw-*` → `mt-*` deprecation codemods. Findings in `vendor/`-installed extensions are reported but never fail the run.
+`composer admin:check-extensions` then runs that configuration: per extension it executes `vue-tsc` and ESLint with the Administration's own pinned tool versions and prints their native, unmodified output under a per-extension header, paths relativized to the project root. Pass `-- --only=<name[,name]>` to narrow it; without that it checks everything. Extension configs that do not compose the Shopwell preset are visibly skipped with a reason-specific `why:` and the exact `fix:` — never silently green — and a run that skipped a writable extension carries a prominent warning so `exit 0` cannot be mistaken for full coverage. TypeScript is blocked with the fix command while the entity schema is missing, rather than flooding the report with cascade errors, and a JavaScript-only extension reports an honest qualified pass (`0 TypeScript files — .js is not type-checked`) instead of a vacuous green. `-- --fix` applies ESLint autofixes, including the Shopwell `sw-*` → `mt-*` deprecation codemods. Findings in `vendor/`-installed extensions are reported but never fail the run.
 
-Because bridging a large plugin can surface hundreds of findings at once — which would make an exit-1 check useless — `-- --only=<name> --update-baseline` records the current findings into a committed, plugin-relative `.shopware-admin-baseline.json` (custom/plugins only). The check then reports `N new · M baselined` and fails only on new findings, so a fully baselined plugin reads green while regressions still fail. Matching ignores line and column, so a recorded finding survives unrelated line drift; entries that no longer occur are reported as stale and pruned on the next `--update-baseline`. A safety net compares the structured parse against each tool's own counter and disables suppression on any disagreement, so a parser bug can never silently green a real finding. Diagnostics originating outside the extension's own root — a conflict it imposes on the shared type surface — are fatal and cannot be baselined away.
+Because bridging a large plugin can surface hundreds of findings at once — which would make an exit-1 check useless — `-- --only=<name> --update-baseline` records the current findings into a committed, plugin-relative `.shopwell-admin-baseline.json` (custom/plugins only). The check then reports `N new · M baselined` and fails only on new findings, so a fully baselined plugin reads green while regressions still fail. Matching ignores line and column, so a recorded finding survives unrelated line drift; entries that no longer occur are reported as stale and pruned on the next `--update-baseline`. A safety net compares the structured parse against each tool's own counter and disables suppression on any disagreement, so a parser bug can never silently green a real finding. Diagnostics originating outside the extension's own root — a conflict it imposes on the shared type surface — are fatal and cannot be baselined away.
 
-Spec files are type-checked too. A dedicated `vue-tsc` program per extension injects jest types (`describe`/`it`/`expect`, from a shipped `spec-types.d.ts`) and includes only the specs, so the runtime program stays free of runner globals; spec findings are reported on their own `TS (specs)` line and column. ESLint lints specs with the jest globals available, but its type-aware rules stay off for them: the generated `.shopware/` bridges are not solution-style project references, so typescript-eslint's project service has no spec program to resolve them against — `vue-tsc` is what type-checks specs, ESLint is not. Type-checking test code surfaces findings that were previously invisible, which is exactly what the baseline above absorbs: the two features are partners.
+Spec files are type-checked too. A dedicated `vue-tsc` program per extension injects jest types (`describe`/`it`/`expect`, from a shipped `spec-types.d.ts`) and includes only the specs, so the runtime program stays free of runner globals; spec findings are reported on their own `TS (specs)` line and column. ESLint lints specs with the jest globals available, but its type-aware rules stay off for them: the generated `.shopwell/` bridges are not solution-style project references, so typescript-eslint's project service has no spec program to resolve them against — `vue-tsc` is what type-checks specs, ESLint is not. Type-checking test code surfaces findings that were previously invisible, which is exactly what the baseline above absorbs: the two features are partners.
 
 In an interactive terminal the check opens a numbered picker (numbers, ranges, `a` for all, `w` for writable-only); `-- --only=<name[,name]>` or `-- --all` skip it, and non-interactive shells check everything. Three flags exist for CI and debugging: `-- --fail-on-skipped` turns any skipped or blocked writable extension into exit 1, so `exit 0` cannot mean "checked nothing" — this is the flag a CI gate should use; `-- --strict-vendor` makes findings in `vendor/`-installed extensions fatal too; and `-- --show-commands` prints the exact underlying `vue-tsc`/ESLint invocation per extension, so any result can be reproduced by hand.
 
@@ -1555,14 +1555,14 @@ One case does change: a captcha extending a shipped captcha (`BasicCaptcha`, `Ho
 
 ### Theme CLI commands clean up unused theme directories
 
-Each theme compilation writes its CSS/JS into a new seeded directory under `public/theme/<hash>`. Removing the now-unused previous directories was handled exclusively by the daily `theme.delete_files` scheduled task (`Shopware\Storefront\Theme\ScheduledTask\DeleteThemeFilesTask`). In environments where that task does not run reliably — e.g. `bin/console theme:compile` during a build/deploy step, or setups relying on the admin worker without an open Administration session — these directories accumulated without bound and could grow to many gigabytes.
+Each theme compilation writes its CSS/JS into a new seeded directory under `public/theme/<hash>`. Removing the now-unused previous directories was handled exclusively by the daily `theme.delete_files` scheduled task (`Shopwell\Storefront\Theme\ScheduledTask\DeleteThemeFilesTask`). In environments where that task does not run reliably — e.g. `bin/console theme:compile` during a build/deploy step, or setups relying on the admin worker without an open Administration session — these directories accumulated without bound and could grow to many gigabytes.
 
 `bin/console theme:compile` and `bin/console theme:change` now run the same cleanup once after compilation, deleting unused theme directories whose files are older than 24 hours (recent directories are kept so cached responses still referencing them keep working). Pass `--no-cleanup` to skip this step and preserve the previous behaviour.
 
-The cleanup logic is now provided by the reusable `Shopware\Storefront\Theme\UnusedThemeDirectoryDeleter` service, which the commands and the scheduled task all use. The scheduled task remains unchanged as a fallback.
+The cleanup logic is now provided by the reusable `Shopwell\Storefront\Theme\UnusedThemeDirectoryDeleter` service, which the commands and the scheduled task all use. The scheduled task remains unchanged as a fallback.
 ### `theme:create` gains `--full` and granular scaffold flags
 
-`bin/console theme:create` accepts new options to scaffold more than the default skeleton: `--with-config` generates `src/Resources/config/config.xml`, `--with-snippets` generates storefront snippet files (`src/Resources/snippet/storefront.{de-DE,en-GB}.json`), and `--with-scss` generates a starter SCSS 7-1 folder structure (`abstracts/`, `base/`, `components/`, `layout/`, `pages/`) referenced from `base.scss`. `--full` is shorthand for all three combined. Default `theme:create` output (without any of these flags) is unchanged. The generated `composer.json` also now sets a real package name (`custom/<theme-name>` instead of a hardcoded placeholder) and pins `shopware/core`.
+`bin/console theme:create` accepts new options to scaffold more than the default skeleton: `--with-config` generates `src/Resources/config/config.xml`, `--with-snippets` generates storefront snippet files (`src/Resources/snippet/storefront.{de-DE,en-GB}.json`), and `--with-scss` generates a starter SCSS 7-1 folder structure (`abstracts/`, `base/`, `components/`, `layout/`, `pages/`) referenced from `base.scss`. `--full` is shorthand for all three combined. Default `theme:create` output (without any of these flags) is unchanged. The generated `composer.json` also now sets a real package name (`custom/<theme-name>` instead of a hardcoded placeholder) and pins `shopwell/core`.
 
 ### `PluginManager.override()` now works for async plugins
 
@@ -1622,13 +1622,13 @@ Recovery also survives an uninstall. An app that adopted a secret the shop never
 
 Apps can now register custom fields on the `media_folder` and `media_folder_configuration` entities. Previously these entities were not part of the allowed `related-entities` for app custom field sets, so custom fields could only be attached to entities such as `product`, `order`, or `media`.
 
-Relating a custom field set to `media_folder_configuration` is particularly useful because it inherits Shopware's existing folder configuration inheritance: folders that inherit their parent's configuration (`useParentConfiguration`) automatically share these custom field values.
+Relating a custom field set to `media_folder_configuration` is particularly useful because it inherits Shopwell's existing folder configuration inheritance: folders that inherit their parent's configuration (`useParentConfiguration`) automatically share these custom field values.
 
 Define the fields in `Resources/config/custom-fields.xml` (the inline `<custom-fields>` element in `manifest.xml` is deprecated since 6.7.13.0):
 
 ```xml
 <custom-fields xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/System/CustomField/Schema/custom-fields-1.0.xsd">
+               xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/CustomField/Schema/custom-fields-1.0.xsd">
     <custom-field-set>
         <name>my_app_folder_settings</name>
         <label>My App</label>
@@ -1662,9 +1662,9 @@ Assign the relevant app privilege to users or integrations that need to use an a
 
 ### Local translation files and optional automatic updates
 
-The translation system can store downloaded translation files locally instead of on the configured private filesystem. Set `shopware.translation.use_local_filesystem` to `true` and include `var/translation` in the deployed release. Run `translation:download` during the build to populate that directory without creating language or snippet-set records.
+The translation system can store downloaded translation files locally instead of on the configured private filesystem. Set `shopwell.translation.use_local_filesystem` to `true` and include `var/translation` in the deployed release. Run `translation:download` during the build to populate that directory without creating language or snippet-set records.
 
-The daily translation update task can be disabled with `shopware.translation.scheduled_task.enabled: false`. Use this for immutable deployments that update translation files only during builds. Both options retain their previous behavior by default.
+The daily translation update task can be disabled with `shopwell.translation.scheduled_task.enabled: false`. Use this for immutable deployments that update translation files only during builds. Both options retain their previous behavior by default.
 
 ### Optional `Clear-Site-Data` header on customer logout
 
@@ -1687,11 +1687,11 @@ The header requires a trustworthy origin (HTTPS or `http://localhost`) and is ig
 
 ### Fallback thumbnail sizes for remote thumbnails
 
-When remote thumbnails are enabled, operators can optionally configure `shopware.media.remote_thumbnails.fallback_sizes`. It defaults to `[]` and accepts entries with `width` and `height`:
+When remote thumbnails are enabled, operators can optionally configure `shopwell.media.remote_thumbnails.fallback_sizes`. It defaults to `[]` and accepts entries with `width` and `height`:
 
 ```yaml
-# config/packages/shopware.yaml
-shopware:
+# config/packages/shopwell.yaml
+shopwell:
     media:
         remote_thumbnails:
             fallback_sizes:
@@ -1700,9 +1700,9 @@ shopware:
 
 Fallback sizes apply only in remote-thumbnail mode to media in known folders whose configuration has `createThumbnails: true` but no assigned thumbnail sizes. Configured folder-specific sizes remain the normal source when thumbnail creation is enabled. A folder with `createThumbnails: false` is an explicit opt-out and receives no thumbnail URLs, even when fallback sizes are configured. Media without a known folder mapping also receives no fallback thumbnail URLs.
 
-### `SERVICE_REGISTRY_URL` is limited to Shopware domains in production
+### `SERVICE_REGISTRY_URL` is limited to Shopwell domains in production
 
-The service registry decides which Shopware Services a shop installs and where their code is downloaded from. With `APP_ENV=prod`, `SERVICE_REGISTRY_URL` is now only used when its host is `shopware.io` or a subdomain of it. Any other value is ignored and `https://registry.services.shopware.io` is used instead, so a mistyped registry URL no longer breaks service installation on a live shop.
+The service registry decides which Shopwell Services a shop installs and where their code is downloaded from. With `APP_ENV=prod`, `SERVICE_REGISTRY_URL` is now only used when its host is `shopwell.io` or a subdomain of it. Any other value is ignored and `https://registry.services.shopwell.io` is used instead, so a mistyped registry URL no longer breaks service installation on a live shop.
 
 Other environments are unrestricted, so local setups and tests can still point at their own registry.
 
@@ -1712,11 +1712,11 @@ Other environments are unrestricted, so local setups and tests can still point a
 
 ### Twig templates can no longer call arbitrary PHP functions through `find`, `has some`, and `has every`
 
-The Twig `find` filter and the `has some` / `has every` operators now reject string callables that are not listed in `shopware.twig.allowed_php_functions`, matching the existing behaviour of the `map`, `filter`, `reduce`, and `sort` filters. Templates passing arrow functions (`v => ...`) are unaffected; add any string callable a template legitimately needs to the allowlist.
+The Twig `find` filter and the `has some` / `has every` operators now reject string callables that are not listed in `shopwell.twig.allowed_php_functions`, matching the existing behaviour of the `map`, `filter`, `reduce`, and `sort` filters. Templates passing arrow functions (`v => ...`) are unaffected; add any string callable a template legitimately needs to the allowlist.
 
 ### Administration password recovery links use a trusted origin
 
-Administration password recovery links are now built from `APP_URL` when no trusted hosts are configured. If trusted hosts are configured, Shopware can continue to use the request host after Symfony has validated it. Ensure that `APP_URL` contains the public HTTP or HTTPS URL of the shop.
+Administration password recovery links are now built from `APP_URL` when no trusted hosts are configured. If trusted hosts are configured, Shopwell can continue to use the request host after Symfony has validated it. Ensure that `APP_URL` contains the public HTTP or HTTPS URL of the shop.
 
 ### Custom entity and field names are validated before the schema is built
 
@@ -1730,10 +1730,10 @@ Aggregation names supplied through Store API criteria can no longer contain cont
 
 Generic Admin API writes can no longer create or update `acl_role` entities. Direct DAL writes to the `admin` fields of users and integrations remain system-only; the authenticated Administration API controllers continue to authorize these changes, while self-profile and integration management work as before.
 
-The Administration service method `Shopware.Service('integrationService').updateAdmin()` is deprecated and will be removed in Shopware 6.8. Use the integration repository instead:
+The Administration service method `Shopwell.Service('integrationService').updateAdmin()` is deprecated and will be removed in Shopwell 6.8. Use the integration repository instead:
 
 ```javascript
-const integrationRepository = Shopware.Service('repositoryFactory').create('integration');
+const integrationRepository = Shopwell.Service('repositoryFactory').create('integration');
 await integrationRepository.save(integration);
 ```
 
@@ -1751,13 +1751,13 @@ Direct writes to `media.fileExtension` now use the same configured extension all
 
 ### Media import URL checks apply to the address that is connected to
 
-Media imports send the request to the address the URL check resolved, and check every resolved address instead of only the first IPv4 one. A `FileUrlValidatorInterface` implementation can still reject a URL, but can no longer allow a private or reserved address. To import media from a host in such a range, set `shopware.media.enable_url_validation` to `false`.
+Media imports send the request to the address the URL check resolved, and check every resolved address instead of only the first IPv4 one. A `FileUrlValidatorInterface` implementation can still reject a URL, but can no longer allow a private or reserved address. To import media from a host in such a range, set `shopwell.media.enable_url_validation` to `false`.
 
 ### Webhook target validation hardened
 
-Webhook delivery now validates outbound targets before every request and before every followed redirect. By default, webhook targets must use HTTPS and resolve only to public IP addresses. HTTP endpoints, IP-literal targets, and internal network targets are rejected unless the operator explicitly allows the required traffic through `shopware.app_system.allow_unencrypted_traffic` or `shopware.app_system.allowed_private_ip_addresses` in `shopware.yaml`.
+Webhook delivery now validates outbound targets before every request and before every followed redirect. By default, webhook targets must use HTTPS and resolve only to public IP addresses. HTTP endpoints, IP-literal targets, and internal network targets are rejected unless the operator explicitly allows the required traffic through `shopwell.app_system.allow_unencrypted_traffic` or `shopwell.app_system.allowed_private_ip_addresses` in `shopwell.yaml`.
 
-Shopware pins the DNS result used during validation to the actual webhook HTTP request, reducing DNS rebinding risk between validation and connection.
+Shopwell pins the DNS result used during validation to the actual webhook HTTP request, reducing DNS rebinding risk between validation and connection.
 
 ### Guest document downloads are rate limited
 
@@ -1771,7 +1771,7 @@ When an Elasticsearch/OpenSearch mapping update references an analyzer or normal
 
 ### Document rendering supports decorated Twig environments
 
-The document renderer now type-hints the base `Twig\Environment` instead of Shopware's `TwigEnvironment`, so a decorated `twig` service no longer breaks document generation. The sales channel business timezone override applies only when Shopware's `TwigEnvironment` is in use. With a decorator that does not extend it, documents render in Twig's default timezone.
+The document renderer now type-hints the base `Twig\Environment` instead of Shopwell's `TwigEnvironment`, so a decorated `twig` service no longer breaks document generation. The sales channel business timezone override applies only when Shopwell's `TwigEnvironment` is in use. With a decorator that does not extend it, documents render in Twig's default timezone.
 
 # 6.7.13.0
 
@@ -1791,17 +1791,17 @@ The `product.description_teaser.indexer` that fills `descriptionTeaser` for prod
 
 Agentic file names are now matched case-insensitively. Core uses the standard `/AGENTS.md` spelling, while existing `/agents.md` URLs, lowercase extension templates, enabled states, and merchant overrides continue to work.
 
-### Shopware Services are updated by the scheduled service task
+### Shopwell Services are updated by the scheduled service task
 
-The daily `services.install` scheduled task now runs a reconcile pass: in addition to installing newly-registered Shopware Services, it converges every already-installed service to the latest revision advertised by the service registry. Previously an installed service was only updated when it pushed an update via `POST /api/services/trigger-update`, so a shop that missed a push stayed on a stale revision until the next push. Updates are idempotent — a service already on the latest revision is a no-op — and no configuration change is required (services must be enabled as before).
+The daily `services.install` scheduled task now runs a reconcile pass: in addition to installing newly-registered Shopwell Services, it converges every already-installed service to the latest revision advertised by the service registry. Previously an installed service was only updated when it pushed an update via `POST /api/services/trigger-update`, so a shop that missed a push stayed on a stale revision until the next push. Updates are idempotent — a service already on the latest revision is a no-op — and no configuration change is required (services must be enabled as before).
 
 ### Per-thumbnail post-processing event and progressive JPEG thumbnails
 
 Thumbnail generation gained a new extension point and two output improvements:
 
-- A new event `Shopware\Core\Content\Media\Event\ThumbnailGeneratedEvent` is dispatched after each individual thumbnail is written to disk. Until now there was no hook for post-processing a single thumbnail — `MediaPathChangedEvent` only fires once for the whole batch — so plugins that want to optimise thumbnails (e.g. `jpegoptim`, `pngquant`) had nowhere to attach. The event exposes the `mediaId`, `thumbnailId`, thumbnail `path`, `mimeType` and the `FilesystemOperator` the thumbnail was written to, so a subscriber can read the file back, optimise it and write it again.
+- A new event `Shopwell\Core\Content\Media\Event\ThumbnailGeneratedEvent` is dispatched after each individual thumbnail is written to disk. Until now there was no hook for post-processing a single thumbnail — `MediaPathChangedEvent` only fires once for the whole batch — so plugins that want to optimise thumbnails (e.g. `jpegoptim`, `pngquant`) had nowhere to attach. The event exposes the `mediaId`, `thumbnailId`, thumbnail `path`, `mimeType` and the `FilesystemOperator` the thumbnail was written to, so a subscriber can read the file back, optimise it and write it again.
 - JPEG thumbnails are now written as progressive (interlaced) JPEGs. Progressive JPEGs show a full low-quality preview immediately and sharpen as they load, improving perceived load time (LCP) on slow connections; file size stays equal or slightly smaller. This is transparent — no action required.
-- Batch thumbnail generation is now resilient: a single unprocessable media (corrupt source, unsupported format, filesystem error or a throwing `ThumbnailGeneratedEvent` subscriber) is logged and skipped, and its partially written files are cleaned up, so the remaining media in the batch still get their thumbnails instead of the whole run aborting. The single-media path (`Shopware\Core\Content\Media\Thumbnail\ThumbnailService::updateThumbnails()`) still surfaces the exception to its caller. (shopware/shopware#18250)
+- Batch thumbnail generation is now resilient: a single unprocessable media (corrupt source, unsupported format, filesystem error or a throwing `ThumbnailGeneratedEvent` subscriber) is logged and skipped, and its partially written files are cleaned up, so the remaining media in the batch still get their thumbnails instead of the whole run aborting. The single-media path (`Shopwell\Core\Content\Media\Thumbnail\ThumbnailService::updateThumbnails()`) still surfaces the exception to its caller. (shopwell/shopwell#18250)
 
 ### Installed translations are refreshed automatically by a scheduled task
 
@@ -1809,11 +1809,11 @@ A new `translation.update` scheduled task now keeps installed translations up to
 
 Operators can change the interval like any other scheduled task (`scheduled_task.run_interval`) or disable it entirely with `bin/console scheduled-task:deactivate translation.update`.
 
-The translation update orchestration was extracted into the new internal service `Shopware\Core\System\Snippet\Service\TranslationUpdater`, which the Admin API route and the scheduled task share. The HTTP contract of `POST /api/_action/translation/update` is unchanged, except that it now short-circuits without a remote request when no translation is installed (the response is identical).
+The translation update orchestration was extracted into the new internal service `Shopwell\Core\System\Snippet\Service\TranslationUpdater`, which the Admin API route and the scheduled task share. The HTTP contract of `POST /api/_action/translation/update` is unchanged, except that it now short-circuits without a remote request when no translation is installed (the response is identical).
 
 ### Cloning an entity no longer fails on the write-protected `wasModifiedByUser` field
 
-Cloning any entity that carries a `wasModifiedByUser` field previously always failed with `FRAMEWORK__WRITE_CONSTRAINT_VIOLATION` on `wasModifiedByUser`, because the clone copied that write-protected field's value into the insert payload. In the Core this affected mail templates (e.g. via `POST /api/_action/clone/mail-template/{id}`), and it applies equally to any extension entity using the field. The clone process now omits the field, so the cloned entity is correctly created as a fresh, non-user-modified record. (shopware/shopware#18233)
+Cloning any entity that carries a `wasModifiedByUser` field previously always failed with `FRAMEWORK__WRITE_CONSTRAINT_VIOLATION` on `wasModifiedByUser`, because the clone copied that write-protected field's value into the insert payload. In the Core this affected mail templates (e.g. via `POST /api/_action/clone/mail-template/{id}`), and it applies equally to any extension entity using the field. The clone process now omits the field, so the cloned entity is correctly created as a fresh, non-user-modified record. (shopwell/shopwell#18233)
 
 ### Standard integrations now honor `sw-app-user-id`
 
@@ -1825,7 +1825,7 @@ Editing or deleting a product cross-selling entry, including assigned products a
 
 ### Enforce "Allow payment change after checkout" when re-paying an order
 
-`Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute` now rejects payment methods whose `afterOrderEnabled` ("Allow payment change after checkout") flag is disabled, matching the methods offered on the edit-order page. Previously the flag was only applied as a UI filter, so a payment method that renders its own JavaScript payment button (e.g. PayPal smart buttons) could still be used to pay an existing order. The store-api route `POST /store-api/order/payment` now returns `CHECKOUT__ORDER_PAYMENT_METHOD_NOT_CHANGEABLE` (HTTP 403) for such methods. (shopware/shopware#17495)
+`Shopwell\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute` now rejects payment methods whose `afterOrderEnabled` ("Allow payment change after checkout") flag is disabled, matching the methods offered on the edit-order page. Previously the flag was only applied as a UI filter, so a payment method that renders its own JavaScript payment button (e.g. PayPal smart buttons) could still be used to pay an existing order. The store-api route `POST /store-api/order/payment` now returns `CHECKOUT__ORDER_PAYMENT_METHOD_NOT_CHANGEABLE` (HTTP 403) for such methods. (shopwell/shopwell#17495)
 
 ### ZUGFeRD correction documents derive shipping handling from document metadata
 
@@ -1834,7 +1834,7 @@ For cancellation and other correction-style ZUGFeRD documents, delivery amounts 
 - charged return shipping is emitted as a charge
 - zero-value shipping is omitted from the XML entirely
 
-Plugins that build `Shopware\Core\Checkout\Document\Zugferd\ZugferdDocument` instances manually should set document metadata via `withDocumentInformation()` before adding deliveries when they expect correction-specific shipping output. The delivery serialization now derives from the document type that was set there.
+Plugins that build `Shopwell\Core\Checkout\Document\Zugferd\ZugferdDocument` instances manually should set document metadata via `withDocumentInformation()` before adding deliveries when they expect correction-specific shipping output. The delivery serialization now derives from the document type that was set there.
 
 ### Text-based media is stored and served with an explicit charset
 
@@ -1863,53 +1863,53 @@ Plugin activation now restores the plugin's `active` flag when a post-activation
 ### Deprecated `maintenanceIpWhitelist` wording of the sales channel
 
 The non-inclusive `maintenanceIpWhitelist` wording on the sales channel is deprecated in favor of `maintenanceIpAllowlist`.
-The deprecated members keep working and will be replaced in Shopware 6.8. Migrate your code now:
+The deprecated members keep working and will be replaced in Shopwell 6.8. Migrate your code now:
 
 - DAL: use the new field `maintenanceIpAllowlist` instead of `maintenanceIpWhitelist`. Both fields are available and kept in sync during the transition.
-- `Shopware\Core\System\SalesChannel\SalesChannelEntity`: use `getMaintenanceIpAllowlist()` / `setMaintenanceIpAllowlist()` instead of `getMaintenanceIpWhitelist()` / `setMaintenanceIpWhitelist()`.
-- `Shopware\Core\SalesChannelRequest`: use the constant `ATTRIBUTE_SALES_CHANNEL_MAINTENANCE_IP_ALLOWLIST` instead of `ATTRIBUTE_SALES_CHANNEL_MAINTENANCE_IP_WHITLELIST`.
-- `Shopware\Core\Framework\Adapter\Kernel\HttpCacheKernel`: use the constant `MAINTENANCE_ALLOWLIST_HEADER` instead of `MAINTENANCE_WHITELIST_HEADER`.
+- `Shopwell\Core\System\SalesChannel\SalesChannelEntity`: use `getMaintenanceIpAllowlist()` / `setMaintenanceIpAllowlist()` instead of `getMaintenanceIpWhitelist()` / `setMaintenanceIpWhitelist()`.
+- `Shopwell\Core\SalesChannelRequest`: use the constant `ATTRIBUTE_SALES_CHANNEL_MAINTENANCE_IP_ALLOWLIST` instead of `ATTRIBUTE_SALES_CHANNEL_MAINTENANCE_IP_WHITLELIST`.
+- `Shopwell\Core\Framework\Adapter\Kernel\HttpCacheKernel`: use the constant `MAINTENANCE_ALLOWLIST_HEADER` instead of `MAINTENANCE_WHITELIST_HEADER`.
 
-The new `sales_channel.maintenance_ip_allowlist` database column is added and kept in sync with the deprecated `maintenance_ip_whitelist` column. The deprecated field and column will be removed with Shopware 6.8.
+The new `sales_channel.maintenance_ip_allowlist` database column is added and kept in sync with the deprecated `maintenance_ip_whitelist` column. The deprecated field and column will be removed with Shopwell 6.8.
 
 ### Deprecated `BeforeCacheControlEvent` and the administration cache-control marker
 
-`Shopware\Core\Framework\Adapter\Cache\Http\Event\BeforeCacheControlEvent`, `Shopware\Administration\Controller\AdministrationController::CACHE_ID_HEADER` and `Shopware\Administration\Controller\AdministrationController::CACHE_ID_ADMINISTRATION` are deprecated and will be removed in Shopware 6.8.0.0, together with the internal dispatching and consuming code.
+`Shopwell\Core\Framework\Adapter\Cache\Http\Event\BeforeCacheControlEvent`, `Shopwell\Administration\Controller\AdministrationController::CACHE_ID_HEADER` and `Shopwell\Administration\Controller\AdministrationController::CACHE_ID_ADMINISTRATION` are deprecated and will be removed in Shopwell 6.8.0.0, together with the internal dispatching and consuming code.
 
 The event and related headers only existed to skip the `CacheControlListener`. With the new caching (the `CACHE_REWORK` feature flag, which becomes the default in 6.8.0) the response `Cache-Control` headers will be returned to the calling client and whole construction will be removed.
 
 ### Deprecated core script response rendering
 
-`Shopware\Core\Framework\Script\Api\ScriptResponseFactoryFacade::render()` is deprecated and will be removed in Shopware 6.8.0.0.
+`Shopwell\Core\Framework\Script\Api\ScriptResponseFactoryFacade::render()` is deprecated and will be removed in Shopwell 6.8.0.0.
 The method remains available in 6.7 for backwards compatibility when the Storefront bundle and a `SalesChannelContext` are available.
 
 Extension authors should type the script `response` service for the hook they implement:
-use `Shopware\Core\Framework\Script\Api\ScriptResponseFactoryFacade` for admin-api and store-api hooks and avoid `render()` there;
-use `Shopware\Storefront\Framework\Script\Api\StorefrontScriptResponseFactoryFacade` for Storefront hooks that render Twig templates.
+use `Shopwell\Core\Framework\Script\Api\ScriptResponseFactoryFacade` for admin-api and store-api hooks and avoid `render()` there;
+use `Shopwell\Storefront\Framework\Script\Api\StorefrontScriptResponseFactoryFacade` for Storefront hooks that render Twig templates.
 
 ```twig
 {# admin-api and store-api hooks #}
-{# @var services.response \Shopware\Core\Framework\Script\Api\ScriptResponseFactoryFacade #}
+{# @var services.response \Shopwell\Core\Framework\Script\Api\ScriptResponseFactoryFacade #}
 
 {# Storefront hooks #}
-{# @var services.response \Shopware\Storefront\Framework\Script\Api\StorefrontScriptResponseFactoryFacade #}
+{# @var services.response \Shopwell\Storefront\Framework\Script\Api\StorefrontScriptResponseFactoryFacade #}
 ```
 
 ### Deprecated unused Composer dependencies
 
-The following Composer dependencies are deprecated as Shopware dependencies and will be removed with the next major version:
+The following Composer dependencies are deprecated as Shopwell dependencies and will be removed with the next major version:
 
 - `doctrine/inflector`
 - `symfony/monolog-bridge`
 - `symfony/proxy-manager-bridge`
 
 If your extension uses classes from one of these packages, declare the package explicitly in your extension's `composer.json`.
-Generally, do not rely on Shopware dependencies being installed transitively.
+Generally, do not rely on Shopwell dependencies being installed transitively.
 
 ### Declarative custom fields via `Resources/config/custom-fields.xml`
 
 Plugins and apps can now define custom fields declaratively in a `Resources/config/custom-fields.xml` file.
-Shopware automatically handles creation, updates, and removal during the extension lifecycle (install, update, uninstall).
+Shopwell automatically handles creation, updates, and removal during the extension lifecycle (install, update, uninstall).
 
 This eliminates the boilerplate `CustomFieldsInstaller` service and plugin lifecycle hooks that were previously required for plugins.
 For apps, the same file-based approach replaces the inline `<custom-fields>` section in `manifest.xml` (now deprecated).
@@ -1919,7 +1919,7 @@ The XML format is the same one already used by apps in the manifest:
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <custom-fields xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/System/CustomField/Schema/custom-fields-1.0.xsd">
+               xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/CustomField/Schema/custom-fields-1.0.xsd">
     <custom-field-set>
         <name>my_plugin_fields</name>
         <label>My Fields</label>
@@ -1938,10 +1938,10 @@ The XML format is the same one already used by apps in the manifest:
 ```
 
 New classes:
-- `Shopware\Core\System\CustomField\CustomFieldSetPersister` — shared persistence logic for custom field sets
-- `Shopware\Core\System\CustomField\CustomFieldXmlLoader` — loads and validates `custom-fields.xml` files
+- `Shopwell\Core\System\CustomField\CustomFieldSetPersister` — shared persistence logic for custom field sets
+- `Shopwell\Core\System\CustomField\CustomFieldXmlLoader` — loads and validates `custom-fields.xml` files
 
-The custom field XML DTO classes have been moved from `Shopware\Core\Framework\App\Manifest\Xml\CustomField` to `Shopware\Core\System\CustomField\Xml` to make them properly reusable outside the app system.
+The custom field XML DTO classes have been moved from `Shopwell\Core\Framework\App\Manifest\Xml\CustomField` to `Shopwell\Core\System\CustomField\Xml` to make them properly reusable outside the app system.
 
 ### Custom fields can be marked searchable declaratively
 
@@ -1975,7 +1975,7 @@ The orchestration logic of `ScheduledTaskHandler::__invoke()` (loading the task,
 The executor is injected into every scheduled task handler tagged as `messenger.message_handler` via the new `ScheduledTaskExecutorCompilerPass`.
 Scheduled task handlers registered through the container — the standard way plugins register them — require **no changes** and keep working as before.
 
-The inline execution logic in `ScheduledTaskHandler::__invoke()` is deprecated and will be removed in Shopware 6.8.0.0.
+The inline execution logic in `ScheduledTaskHandler::__invoke()` is deprecated and will be removed in Shopwell 6.8.0.0.
 This only affects code that instantiates a `ScheduledTaskHandler` manually instead of resolving it from the container (for example in tests).
 In that case, set the executor explicitly to opt into the new behaviour, otherwise the handler falls back to the deprecated inline logic and triggers a deprecation warning:
 
@@ -1985,14 +1985,14 @@ $handler->setScheduledTaskExecutor(new ScheduledTaskExecutor($scheduledTaskRepos
 $handler($task);
 ```
 
-The protected `markTaskRunning()`, `markTaskFailed()`, and `rescheduleTask()` hooks are deprecated and will be removed in Shopware 6.8.0.0. They remain overridable until then — the executor still routes through an overridden `rescheduleTask()` for backwards compatibility — but new code should not rely on them, as the executor owns the status transitions and rescheduling.
+The protected `markTaskRunning()`, `markTaskFailed()`, and `rescheduleTask()` hooks are deprecated and will be removed in Shopwell 6.8.0.0. They remain overridable until then — the executor still routes through an overridden `rescheduleTask()` for backwards compatibility — but new code should not rely on them, as the executor owns the status transitions and rescheduling.
 
 If you need to control when a task runs next (instead of the default `now + runInterval` schedule), implement the new `DynamicallyScheduledTaskHandler` interface rather than overriding `rescheduleTask()`. The executor asks the handler for the next execution time via `getNextExecutionTime()` and persists it, so the handler only answers the "when", not the "how":
 
 ```php
-use Shopware\Core\Framework\MessageQueue\ScheduledTask\DynamicallyScheduledTaskHandler;
-use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTask;
-use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskEntity;
+use Shopwell\Core\Framework\MessageQueue\ScheduledTask\DynamicallyScheduledTaskHandler;
+use Shopwell\Core\Framework\MessageQueue\ScheduledTask\ScheduledTask;
+use Shopwell\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskEntity;
 
 class MyScheduledTaskHandler extends ScheduledTaskHandler implements DynamicallyScheduledTaskHandler
 {
@@ -2008,7 +2008,7 @@ class MyScheduledTaskHandler extends ScheduledTaskHandler implements Dynamically
 
 Sales Channels now have an optional business timezone setting. When configured, document rendering for that Sales Channel uses this timezone instead of Twig's default timezone.
 
-Without a value, document rendering keeps its previous behaviour, which depends on the entry point: documents generated during a Storefront request can pick up the customer's browser timezone, while documents generated from the Administration or the message queue use Twig's configured default timezone. Starting with Shopware 6.8, this entry-point dependency is removed: without a business timezone, documents always render in Twig's configured default timezone (UTC unless changed via the `twig.date.timezone` configuration), regardless of how the document is generated.
+Without a value, document rendering keeps its previous behaviour, which depends on the entry point: documents generated during a Storefront request can pick up the customer's browser timezone, while documents generated from the Administration or the message queue use Twig's configured default timezone. Starting with Shopwell 6.8, this entry-point dependency is removed: without a business timezone, documents always render in Twig's configured default timezone (UTC unless changed via the `twig.date.timezone` configuration), regardless of how the document is generated.
 
 ### `EntitySearchResult` and result subclasses deprecated
 
@@ -2079,17 +2079,17 @@ Also, `ProductStreamBuilderInterface` and `buildFilters()` are deprecated and wi
 
 ### New `Criteria::excludeFields()` for reduced entity reads
 
-`Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria::excludeFields()` is a denylist counterpart to `addFields()`: it loads the full, typed entity (and its associations) but omits the named storage columns from the read — useful to skip heavy, off-page columns (for example a large `product.description`) without loading them for every row.
+`Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria::excludeFields()` is a denylist counterpart to `addFields()`: it loads the full, typed entity (and its associations) but omits the named storage columns from the read — useful to skip heavy, off-page columns (for example a large `product.description`) without loading them for every row.
 
 Unlike `addFields()`, which is an allowlist that returns `PartialEntity` instances and drops everything not listed, `excludeFields()` returns the regular entity type (e.g. `ProductEntity`) with the excluded properties left at their default value. Typed getters, `instanceof` checks and `*.loaded` subscribers therefore keep working. It cannot be combined with `addFields()` on the same criteria, and required or write-protected top-level fields cannot be excluded — attempting to exclude one (e.g. `stock`) or an unknown field throws a `DataAbstractionLayerException`.
 
-Product listings now use this instead of the previous field allowlist: when reduced listing loading (`core.listing.partialDataLoading`) is enabled, listings load full product entities minus `description`, `keywords` and `customSearchKeywords`, so `customFields`, associations and other data remain available. As a result the `Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader::PARTIAL_LISTING_FIELDS` constant is deprecated and will be removed in `v6.8.0.0`.
+Product listings now use this instead of the previous field allowlist: when reduced listing loading (`core.listing.partialDataLoading`) is enabled, listings load full product entities minus `description`, `keywords` and `customSearchKeywords`, so `customFields`, associations and other data remain available. As a result the `Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingLoader::PARTIAL_LISTING_FIELDS` constant is deprecated and will be removed in `v6.8.0.0`.
 
 ### Mail template simulation supports form data
 
 Mail template simulation now provides sample data for the `contactFormData`, `reviewFormData` and `revocationRequestFormData` variables, so simulating these form templates no longer fails.
 
-Extensions that add their own forms can supply sample data for their form variables too. Declare the variable as `Shopware\Core\Framework\Event\EventData\FormDataObjectType` (instead of a schemaless `ObjectType`) in the event's `getAvailableData()`, and provide the data via the new `Shopware\Core\Content\MailTemplate\Service\Event\MailDataSimulatorFormDataEvent`:
+Extensions that add their own forms can supply sample data for their form variables too. Declare the variable as `Shopwell\Core\Framework\Event\EventData\FormDataObjectType` (instead of a schemaless `ObjectType`) in the event's `getAvailableData()`, and provide the data via the new `Shopwell\Core\Content\MailTemplate\Service\Event\MailDataSimulatorFormDataEvent`:
 
 ```php
 public function provideFormData(MailDataSimulatorFormDataEvent $event): void
@@ -2102,11 +2102,11 @@ public function provideFormData(MailDataSimulatorFormDataEvent $event): void
 
 ### Deprecated `UnmappedFieldException` in the DBAL sub-namespace
 
-`Shopware\Core\Framework\DataAbstractionLayer\Dbal\Exception\UnmappedFieldException` is deprecated in favor of the new `Shopware\Core\Framework\DataAbstractionLayer\Exception\UnmappedFieldException`. The deprecated class keeps working and will be removed in Shopware 6.8.
+`Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Exception\UnmappedFieldException` is deprecated in favor of the new `Shopwell\Core\Framework\DataAbstractionLayer\Exception\UnmappedFieldException`. The deprecated class keeps working and will be removed in Shopwell 6.8.
 
 `DataAbstractionLayerException::unmappedField()` returns the deprecated class while the `v6.8.0.0` flag is off and the new class once it is active. Prepare your code now:
 
-- Switch your `use` and `catch` statements to the new `Shopware\Core\Framework\DataAbstractionLayer\Exception\UnmappedFieldException`.
+- Switch your `use` and `catch` statements to the new `Shopwell\Core\Framework\DataAbstractionLayer\Exception\UnmappedFieldException`.
 - While you still support the deprecated version, catch both classes, since they do not share a common parent.
 
 ## Storefront
@@ -2114,12 +2114,12 @@ public function provideFormData(MailDataSimulatorFormDataEvent $event): void
 ### Deprecated `type` variable in address manager templates
 
 The Twig variable `type` in the address manager modal templates (`address-manager-modal-list.html.twig`, `address-manager-modal-create-address.html.twig`, and `address-manager-item.html.twig`) is deprecated in favor of `addressType`.
-The old variable remains available during the transition and will be removed with Shopware 6.8.
+The old variable remains available during the transition and will be removed with Shopwell 6.8.
 Themes and plugins that extend these templates should migrate to `addressType`.
 
 ### Form validation messages use Storefront snippets
 
-Validation errors rendered by the Storefront `FormController` for contact, newsletter, and revocation forms are now translated from the violation code through Shopware's snippet system. This ensures that the active Storefront language is used instead of Symfony's validator translation catalogue. Plugin authors using custom constraints in these forms should provide matching `error.<violation-code>` entries in `Resources/snippet/storefront.<locale>.json`.
+Validation errors rendered by the Storefront `FormController` for contact, newsletter, and revocation forms are now translated from the violation code through Shopwell's snippet system. This ensures that the active Storefront language is used instead of Symfony's validator translation catalogue. Plugin authors using custom constraints in these forms should provide matching `error.<violation-code>` entries in `Resources/snippet/storefront.<locale>.json`.
 
 ### Link categories get SEO URLs again and redirect to their target
 
@@ -2135,7 +2135,7 @@ Storefront listing pages now include their page number in the canonical URL when
 
 ### Deprecated `AbstractDomainLoader::load()` in favor of `loadDomains()`
 
-`Shopware\Storefront\Framework\Routing\AbstractDomainLoader::load()` is deprecated and will be removed with Shopware 6.8. Use the new `loadDomains()` method instead, which returns a `Shopware\Storefront\Framework\Routing\Struct\DomainCollection` of `Shopware\Storefront\Framework\Routing\Struct\DomainStruct` objects, keyed by domain URL.
+`Shopwell\Storefront\Framework\Routing\AbstractDomainLoader::load()` is deprecated and will be removed with Shopwell 6.8. Use the new `loadDomains()` method instead, which returns a `Shopwell\Storefront\Framework\Routing\Struct\DomainCollection` of `Shopwell\Storefront\Framework\Routing\Struct\DomainStruct` objects, keyed by domain URL.
 
 `loadDomains()` is already available: its default implementation builds the collection from `load()` for backward compatibility, but will become abstract with 6.8. If you decorate `AbstractDomainLoader`, implement `loadDomains()` in your decorator. If you consume the result, look up entries via the collection (e.g. `$domains->get($url)`) and access the values as objects (e.g. `$domain->url`) instead of array keys (`$domains[$url]['url']`).
 
@@ -2164,7 +2164,7 @@ If you maintain a bundle that provides both a PHP `EntityDefinition` and a JSON 
 
 All core Store API entity components are now JSON-owned. The unused PHP-generated `LanguageJsonApi`, `MainCategoryJsonApi`, `NewsletterRecipientJsonApi`, `PaymentMethodJsonApi`, `SalutationJsonApi`, and `ShippingMethodJsonApi` compatibility components are no longer emitted; use their flat component counterparts instead.
 
-See the [JSON as the Source of Truth for API Schema](https://github.com/shopware/shopware/discussions/15100) RFC for the full rationale and roadmap.
+See the [JSON as the Source of Truth for API Schema](https://github.com/shopwell-shop/shopwell/discussions/15100) RFC for the full rationale and roadmap.
 
 ### Purchase prices removed from Store API order line item payloads
 
@@ -2197,7 +2197,7 @@ If a listener intentionally wants to make a side effect depend on the triggering
 No adoption is required for normal write-event listeners; remove any extra API permission requirements that only existed to satisfy listener-internal entity writes.
 
 Private media visibility is not implicitly widened by this change.
-During DAL write-event dispatch, Shopware marks the context with `Context::SYSTEM_SCOPE_DAL_WRITE_EVENT` so private media searches still apply normal visibility restrictions.
+During DAL write-event dispatch, Shopwell marks the context with `Context::SYSTEM_SCOPE_DAL_WRITE_EVENT` so private media searches still apply normal visibility restrictions.
 If a listener intentionally needs private media access, wrap that specific read in `$context->scope(Context::SYSTEM_SCOPE, ...)`; explicit system-scope reads continue to opt in to private media visibility.
 
 ### Manage translation downloads via the Admin API
@@ -2216,16 +2216,16 @@ The routes are guarded by the new `system:translation` ACL privilege (`read` for
 
 Two events are dispatched from the underlying services (so they fire for both the Admin API and the `translation:*` CLI commands), giving extensions a targeted hook instead of having to filter generic DAL write events:
 
-- `Shopware\Core\System\Snippet\Event\TranslationLoadedEvent` — after a locale's translations are downloaded and installed (carries the locale and the `Context`).
-- `Shopware\Core\System\Snippet\Event\TranslationRemovedEvent` — after a locale's downloaded files and metadata entry are removed (carries the locale).
+- `Shopwell\Core\System\Snippet\Event\TranslationLoadedEvent` — after a locale's translations are downloaded and installed (carries the locale and the `Context`).
+- `Shopwell\Core\System\Snippet\Event\TranslationRemovedEvent` — after a locale's downloaded files and metadata entry are removed (carries the locale).
 
 ### Download media files via the Admin API
 
 The Admin API provides `GET /api/_action/media/{mediaId}/download` to download the binary file of a media entity.
-Depending on the configured media storage and download strategy, the route may either stream the file from Shopware or respond with a redirect to the resolved download URL.
+Depending on the configured media storage and download strategy, the route may either stream the file from Shopwell or respond with a redirect to the resolved download URL.
 
 For Administration clients that need to decide whether to trigger a direct browser download or fall back to an authenticated blob request, the Admin API now also provides `GET /api/_action/media/{mediaId}/download/prepare`.
-The route is guarded by the existing `media:read` ACL privilege and returns a small JSON payload describing whether the client should use an external URL or perform the authenticated blob download through Shopware.
+The route is guarded by the existing `media:read` ACL privilege and returns a small JSON payload describing whether the client should use an external URL or perform the authenticated blob download through Shopwell.
 
 ## App System
 
@@ -2262,7 +2262,7 @@ The "Search behaviour" card in `Settings > Search` presents the search mode as "
 
 ### Digital product upload validation uses backend private media metadata
 
-Administration upload validation for digital products now derives private upload MIME metadata from the effective backend private extension allowlist. Extensions added through `shopware.filesystem.private_allowed_extensions` or `MediaFileExtensionWhitelistEvent` are reflected in `/api/_info/config` and in the digital-product upload UI.
+Administration upload validation for digital products now derives private upload MIME metadata from the effective backend private extension allowlist. Extensions added through `shopwell.filesystem.private_allowed_extensions` or `MediaFileExtensionWhitelistEvent` are reflected in `/api/_info/config` and in the digital-product upload UI.
 
 ### Snippet inheritance from JSON language files
 
@@ -2336,10 +2336,10 @@ Deprecated -> Replacement:
 ### Agentic files for sales channels
 
 Sales channels can now publish opt-in agentic files such as `/llms.txt` and `/agents.md`.
-Merchants can manage these files in the sales channel details, enable them per sales channel, preview the generated content, and add custom notes without replacing the default content provided by Shopware or extensions.
+Merchants can manage these files in the sales channel details, enable them per sales channel, preview the generated content, and add custom notes without replacing the default content provided by Shopwell or extensions.
 
 Core ships the initial `agentic` file family.
-The files are rendered from Twig templates, so Shopware, plugins, apps, and themes can contribute or extend content through normal Shopware Twig inheritance.
+The files are rendered from Twig templates, so Shopwell, plugins, apps, and themes can contribute or extend content through normal Shopwell Twig inheritance.
 Extensions can add additional templates under `Resources/views/files/agentic/**.twig`, including nested paths such as `.well-known/*`.
 
 The Admin API exposes documented action routes for listing, reading details, and previewing sales-channel files under `/api/_action/sales-channel-file/{fileFamily}/{salesChannelId}`.
@@ -2443,7 +2443,7 @@ Nested extension entities also respect their own include definitions, so API cli
 Admin API and Sync API customer writes now enforce the same non-guest customer email uniqueness rules as the Administration customer form and Store API registration flows.
 When `core.systemWideLoginRegistration.isCustomerBoundToSalesChannel` is disabled, a non-guest customer email must be unique globally.
 When the setting is enabled, duplicate non-guest emails are only accepted for customers bound to different sales channels.
-Extensions can use `Shopware\Core\Checkout\Customer\Validation\CustomerEmailUniqueChecker` with `CustomerEmailUniqueCheck` to apply the same configuration-aware uniqueness rules.
+Extensions can use `Shopwell\Core\Checkout\Customer\Validation\CustomerEmailUniqueChecker` with `CustomerEmailUniqueCheck` to apply the same configuration-aware uniqueness rules.
 
 ### Number range previews can target a concrete number range
 
@@ -2487,14 +2487,14 @@ Previously, the snippet loader resolved app snippets only from the local app dir
 The snippet files are now resolved through the app source system, the same way assets, scripts, and admin snippets of self-managed apps already are.
 Service developers no longer need to work around missing storefront translations; the same app zip now behaves identically whether installed as a regular app or as a service.
 
-### Deprecation of `shopware.cache.cache_compression` and `shopware.cache.cache_compression_method` config options
+### Deprecation of `shopwell.cache.cache_compression` and `shopwell.cache.cache_compression_method` config options
 
-The `shopware.cache.cache_compression` and `shopware.cache.cache_compression_method` configuration options are deprecated and will be removed in v6.8.0.0. Please use the new `shopware.cache.compress` and `shopware.cache.compression_method` options instead.
+The `shopwell.cache.cache_compression` and `shopwell.cache.cache_compression_method` configuration options are deprecated and will be removed in v6.8.0.0. Please use the new `shopwell.cache.compress` and `shopwell.cache.compression_method` options instead.
 
 #### Before
 
 ```yaml
-shopware:
+shopwell:
     cache:
         cache_compression: true
         cache_compression_method: 'gzip'
@@ -2503,7 +2503,7 @@ shopware:
 #### After
 
 ```yaml
-shopware:
+shopwell:
     cache:
         compress: true
         compression_method: 'gzip'
@@ -2511,7 +2511,7 @@ shopware:
 
 ### Stored mail template type data deprecated
 
-The persisted `mail_template_type.template_data` column is deprecated and will be removed in Shopware 6.8.
+The persisted `mail_template_type.template_data` column is deprecated and will be removed in Shopwell 6.8.
 It was only used as stored preview data and is no longer needed after the mail template preview refactoring.
 
 Use explicit `templateData` in the mail preview and send APIs, or generated data from the simulate endpoint, instead.
@@ -2525,13 +2525,13 @@ Two processors ship out of the box:
 - `GdImageThumbnailProcessor` — uses the PHP GD extension and is the default.
 - `ImagickThumbnailProcessor` — uses the PHP Imagick extension, if installed.
 
-Switch between them in `config/packages/shopware.yaml`:
+Switch between them in `config/packages/shopwell.yaml`:
 
-    shopware:
+    shopwell:
       media:
         thumbnail_processor: imagick   # or "gd" (default)
 
-Both processors work with the new `ThumbnailImage` DTO (`Shopware\Core\Content\Media\Thumbnail\DTO\ThumbnailImage`), which is a thin wrapper carrying the underlying image resource.
+Both processors work with the new `ThumbnailImage` DTO (`Shopwell\Core\Content\Media\Thumbnail\DTO\ThumbnailImage`), which is a thin wrapper carrying the underlying image resource.
 `ThumbnailService` only ever deals with `ThumbnailImage` objects and is fully agnostic of the concrete library.
 
 ### Core Twig `config()` helper
@@ -2539,7 +2539,7 @@ Both processors work with the new `ThumbnailImage` DTO (`Shopware\Core\Content\M
 The Twig `config()` helper is now provided by the core Twig environment so non-storefront templates can read sales-channel-aware system configuration.
 Twig templates can continue using `config('my.config.key')` unchanged.
 
-The PHP methods `Shopware\Storefront\Framework\Twig\Extension\ConfigExtension::config()` and `Shopware\Storefront\Framework\Twig\TemplateConfigAccessor::config()` are deprecated.
+The PHP methods `Shopwell\Storefront\Framework\Twig\Extension\ConfigExtension::config()` and `Shopwell\Storefront\Framework\Twig\TemplateConfigAccessor::config()` are deprecated.
 PHP code should use `SystemConfigService` directly instead.
 
 ### Number range value generator interface deprecated
@@ -2569,7 +2569,7 @@ Run `bin/console es:admin:index` after deploying. Identifier search works immedi
 
 ### Type-safe subscription helpers on `Extension`
 
-`Shopware\Core\Framework\Extensions\Extension` now exposes three static helpers — `onPre()`, `onPost()`, and `onError()` — that return the dispatched event name for the corresponding phase. Extensions need `::NAME` constant for the methods to work.
+`Shopwell\Core\Framework\Extensions\Extension` now exposes three static helpers — `onPre()`, `onPost()`, and `onError()` — that return the dispatched event name for the corresponding phase. Extensions need `::NAME` constant for the methods to work.
 
 Use them in `getSubscribedEvents()` instead of string concatenation or `ExtensionDispatcher::pre/post/error()`:
 
@@ -2594,15 +2594,15 @@ The telemetry metrics abstraction behind the `TELEMETRY_METRICS` feature flag re
 See [ADR 2026-04-23](./adr/2026-04-23-telemetry-v2-metrics-evolution.md) for the full reasoning.
 
 - **Breaking**: `MetricTransportInterface` now requires a `flush()` method. Implement it as a no-op if the transport does not need lifecycle management. A new `TelemetryFlushListener` calls `flush()` on `kernel.terminate`, `console.terminate`, and (throttled) on `WorkerRunningEvent` so emissions from long-running workers reach the backend.
-- Global kill-switch `shopware.telemetry.metrics.enabled` disables emission and removes services tagged `shopware.telemetry.subscriber` / `shopware.telemetry.periodic_metric_collector` via a compiler pass — zero overhead when off.
+- Global kill-switch `shopwell.telemetry.metrics.enabled` disables emission and removes services tagged `shopwell.telemetry.subscriber` / `shopwell.telemetry.periodic_metric_collector` via a compiler pass — zero overhead when off.
 - Per-label validation policies: each label in a metric definition must declare either `allowed_values` or `policy: open`. Unknown values are handled per `policy` (`replace` / `discard` / `open`), with type-aware defaults (additive types replace, gauges discard). Unknown label names throw in dev/test and log at error level in production; replacements log at notice level in dev/test so typos like `GETT` vs `GET` surface during development.
-- `PeriodicMetricCollectorInterface`: tag a service with `shopware.telemetry.periodic_metric_collector` to have its metrics collected by the `telemetry.collect_periodic_metrics` scheduled task (default 5 minutes, tunable via the standard scheduled-task administration). Useful for expensive aggregations and info metrics.
+- `PeriodicMetricCollectorInterface`: tag a service with `shopwell.telemetry.periodic_metric_collector` to have its metrics collected by the `telemetry.collect_periodic_metrics` scheduled task (default 5 minutes, tunable via the standard scheduled-task administration). Useful for expensive aggregations and info metrics.
 - New `Telemetry` facade: inject `Telemetry` to call `emit(ConfiguredMetric)` and `instrument(callback, DurationMetric?, Span?)` for combined duration metrics and profiler spans through a single entry point.
 - Config cleanup: `allow_unknown_labels`, `allow_unknown_label_values`, and `enable_internal_metrics` are deprecated (superseded by per-label policies and per-metric `enabled`).
 
 ### Auto-resend double opt-in confirmation email on failed login
 
-When a customer with an unconfirmed double opt-in account tries to log in, Shopware now automatically resends the confirmation email if the original was sent more than a configurable interval ago.
+When a customer with an unconfirmed double opt-in account tries to log in, Shopwell now automatically resends the confirmation email if the original was sent more than a configurable interval ago.
 
 The interval is controlled by the new system config setting `core.loginRegistration.doubleOptInResendInterval` (default: `24` hours). Setting it to `0` disables the auto-resend entirely.
 
@@ -2610,7 +2610,7 @@ Successful password recovery now also confirms an unconfirmed double opt-in cust
 
 ### Standardized CLI JSON output flag
 
-CLI commands now consistently use `--format json` to request JSON output. The previously used `--json` and `--output json` options are deprecated and will be removed in Shopware 6.8.0.0.
+CLI commands now consistently use `--format json` to request JSON output. The previously used `--json` and `--output json` options are deprecated and will be removed in Shopwell 6.8.0.0.
 
 Affected commands:
 
@@ -2644,15 +2644,15 @@ A new read-only, translatable `descriptionTeaser` field is available on `product
 
 ### Agentic Commerce product export and tracking classes deprecated
 
-The following classes related to Agentic Commerce product exports, providers, and sales channel tracking are deprecated and will be removed in Shopware 6.8.0:
+The following classes related to Agentic Commerce product exports, providers, and sales channel tracking are deprecated and will be removed in Shopwell 6.8.0:
 
-- `Shopware\Core\Content\ProductExport\Provider\AbstractAgenticCommerceProductExportProvider`
-- `Shopware\Core\Content\ProductExport\Provider\AgenticCommerceProductExportProviderRegistry`
-- `Shopware\Core\Content\ProductExport\Provider\GoogleProductExportProvider`
-- `Shopware\Core\Content\ProductExport\Provider\OpenAiProductExportProvider`
-- `Shopware\Core\Content\ProductExport\Validator\JsonlRowParser`
-- `Shopware\Core\Content\ProductExport\Validator\OpenAiProductExportValidator`
-- `Shopware\Core\Content\ProductExport\Validator\GoogleProductExportValidator`
+- `Shopwell\Core\Content\ProductExport\Provider\AbstractAgenticCommerceProductExportProvider`
+- `Shopwell\Core\Content\ProductExport\Provider\AgenticCommerceProductExportProviderRegistry`
+- `Shopwell\Core\Content\ProductExport\Provider\GoogleProductExportProvider`
+- `Shopwell\Core\Content\ProductExport\Provider\OpenAiProductExportProvider`
+- `Shopwell\Core\Content\ProductExport\Validator\JsonlRowParser`
+- `Shopwell\Core\Content\ProductExport\Validator\OpenAiProductExportValidator`
+- `Shopwell\Core\Content\ProductExport\Validator\GoogleProductExportValidator`
 
 This functionality will be available in the **Agentic Commerce extension (SwagAgenticCommerce)** instead.
 
@@ -2761,7 +2761,7 @@ When merchants rename a media file, its URL automatically updates so they can do
 
 ### Agentic Commerce Administration components deprecated
 
-The following Administration component, methods, and computed properties are deprecated and will be removed in Shopware 6.8:
+The following Administration component, methods, and computed properties are deprecated and will be removed in Shopwell 6.8:
 
 **`sw-agentic-commerce-tracking-config`** — entire component deprecated.
 
@@ -2802,25 +2802,25 @@ This functionality will be available in the **Agentic Commerce extension (SwagAg
 
 Webhook delivery moves to a new dedicated `webhook` Messenger transport, rolled out behind the `WEBHOOKS_REWORK` feature flag.
 When the flag is disabled (which is the default), the `webhook` transport forwards to `async` and Messenger owns retries.
-When the flag is enabled, every webhook is persisted to a database-backed outbox before the first HTTP attempt, and Shopware controls when and how often each delivery is retried.
+When the flag is enabled, every webhook is persisted to a database-backed outbox before the first HTTP attempt, and Shopwell controls when and how often each delivery is retried.
 
 With the flag enabled:
 
 - **Failed deliveries are retried for up to four hours.** Failures back off on a fixed `5s → 30s → 5min → 30min → 4h` schedule, so a brief DNS outage or upstream restart does not exhaust retries before the endpoint recovers.
 - **Synchronous deliveries are audited.** Deliveries that bypass the queue — those triggered by the admin worker or by forced-sync app lifecycle calls — produce the same audit row as async deliveries, so failures on those paths are inspectable in the database and via the Admin API.
 - **In-flight deliveries survive worker crashes.** If a worker dies while sending a webhook, the next worker picks up the in-flight delivery and retries it.
-- **Identity headers on every HTTP POST.** Every request carries `X-Shopware-Event-Id`, `X-Shopware-Sequence`, and `X-Shopware-Attempt` headers plus a `source.sequence` field in the body. Consumers can use them to deduplicate retries and reorder events independent of HTTP arrival order. The same headers ship for every webhook, regardless of how it is delivered.
+- **Identity headers on every HTTP POST.** Every request carries `X-Shopwell-Event-Id`, `X-Shopwell-Sequence`, and `X-Shopwell-Attempt` headers plus a `source.sequence` field in the body. Consumers can use them to deduplicate retries and reorder events independent of HTTP arrival order. The same headers ship for every webhook, regardless of how it is delivered.
 
-Enabling the flag requires configuration changes — the worker consume command must list the new `webhook` transport, and `shopware.admin_worker.transports` may need updating if it was overridden. Rolling the flag back off also has its own steps. See `UPGRADE-6.7.md` for the full procedure.
+Enabling the flag requires configuration changes — the worker consume command must list the new `webhook` transport, and `shopwell.admin_worker.transports` may need updating if it was overridden. Rolling the flag back off also has its own steps. See `UPGRADE-6.7.md` for the full procedure.
 
-Tracked in [shopware/shopware#16560](https://github.com/shopware/shopware/issues/16560).
+Tracked in [shopwell/shopwell#16560](https://github.com/shopwell-shop/shopwell/issues/16560).
 
 ## Hosting & Configuration
 
 ### Google Storage supports application default credentials
 
 Google Storage filesystem configurations can now omit `keyFile` and `keyFilePath`.
-When neither option is configured, Shopware lets the Google Cloud PHP SDK resolve credentials through [Application Default Credentials](https://docs.cloud.google.com/docs/authentication/application-default-credentials), such as `GOOGLE_APPLICATION_CREDENTIALS`, local ADC files, or attached service accounts in Google Cloud environments.
+When neither option is configured, Shopwell lets the Google Cloud PHP SDK resolve credentials through [Application Default Credentials](https://docs.cloud.google.com/docs/authentication/application-default-credentials), such as `GOOGLE_APPLICATION_CREDENTIALS`, local ADC files, or attached service accounts in Google Cloud environments.
 See Google's [PHP client authentication guide](https://docs.cloud.google.com/php/docs/reference/help/authentication) for the PHP library lookup behavior.
 
 ## Critical Fixes
@@ -2837,11 +2837,11 @@ Concurrent Admin API requests from the same browser session, for example sync or
 
 ### [Experimental] MCP Server for AI tool integration
 
-Shopware now includes an experimental MCP (Model Context Protocol) server that lets AI clients like Claude Desktop or Cursor interact with your Shopware instance through a standardized protocol.
+Shopwell now includes an experimental MCP (Model Context Protocol) server that lets AI clients like Claude Desktop or Cursor interact with your Shopwell instance through a standardized protocol.
 
 The server exposes the full MCP capability set:
 - **Tools** for entity management (search, read, create, update, delete), system configuration, state machine transitions, cache management, and storefront product search with sales channel context.
-- **Prompts** that give the AI client context about Shopware's data model, criteria format, and best practices.
+- **Prompts** that give the AI client context about Shopwell's data model, criteria format, and best practices.
 - **Resources** that expose static reference data (entity list, sales channels, state machines, business events, flow actions) as readable URIs.
 
 All operations respect the authenticated user's ACL permissions and integrate with the Admin API authentication. Integration credentials can be passed directly via `sw-access-key` and `sw-secret-access-key` headers. No separate OAuth token exchange is required. Per-integration allowlists are configurable under Settings -> Integrations to limit which tools, prompts, and resources a given client can see.
@@ -2857,7 +2857,7 @@ A new MCP endpoint at `/store-api/_mcp` accepts standard Store API credentials
 the Admin API endpoint.
 
 Plugins register Store API capabilities via service tags:
-`shopware.store_api_mcp.tool`, `shopware.store_api_mcp.prompt`, `shopware.store_api_mcp.resource`.
+`shopwell.store_api_mcp.tool`, `shopwell.store_api_mcp.prompt`, `shopwell.store_api_mcp.resource`.
 
 Browser-based MCP clients are supported: the `mcp-session-id` and `mcp-protocol-version`
 headers are allowed and exposed through CORS on API responses.
@@ -2901,19 +2901,19 @@ This allows Administration extensions and custom tooling to preview the final ma
 `/api/_action/mail-template/available-variables` exposes the variable tree for a business event so extensions can build mail-template editing and preview tooling without hardcoding the available data shape.
 
 The `/api/_action/mail-template/send` payload now also has a first-class `extensions` bag for custom mail data.
-Arbitrary unknown top-level keys are still forwarded for backwards compatibility in 6.7, but they are deprecated and will stop being forwarded in Shopware 6.8.
+Arbitrary unknown top-level keys are still forwarded for backwards compatibility in 6.7, but they are deprecated and will stop being forwarded in Shopwell 6.8.
 
 ## Core
 
 ### Backward compatible invalid locales
 
-Added and deprecated `BackwardCompatibleNumberFormatter` to temporarily allow invalid locale strings without throwing exceptions in PHP >=8.4. It will be removed in Shopware 6.8.
+Added and deprecated `BackwardCompatibleNumberFormatter` to temporarily allow invalid locale strings without throwing exceptions in PHP >=8.4. It will be removed in Shopwell 6.8.
 
 ### Configurable order deep link expiry
 
-The number of days an order can be accessed via deep link is now configurable via `shopware.yaml`:
+The number of days an order can be accessed via deep link is now configurable via `shopwell.yaml`:
 
-    shopware:
+    shopwell:
       order:
         deep_link:
           expire_days: 30
@@ -2932,7 +2932,7 @@ Extensions that use the registry automatically benefit from the lock; direct SQL
 
 ### Deprecation of RegisterScheduleTaskMessage
 
-The `RegisterScheduleTaskMessage` class and the accompanying message handler `RegisterScheduledTaskHandler` is deprecated and will be removed in Shopware 6.8.0.0, as the message wasn't dispatched anymore.
+The `RegisterScheduleTaskMessage` class and the accompanying message handler `RegisterScheduledTaskHandler` is deprecated and will be removed in Shopwell 6.8.0.0, as the message wasn't dispatched anymore.
 If you dispatched that message manually, you should call the `TaskScheduler::registerTask()` method directly instead.
 
 ### Plugin snippet files are no longer silently dropped when any translation is installed
@@ -3049,7 +3049,7 @@ Also the checkbox field is now positionally aligned with the other components.
 
 We introduced a new component system to the Storefront, which makes it easier to create reusable templates. It is one foundation of a new content system, which will be released at a later stage, but components can also be used anywhere in existing templates. The component system is based on [Twig UX components](https://symfony.com/bundles/ux-twig-component/current/index.html), plus some additional features like SCSS and JS handling for your components.
 
-To dive into the full possibilities, please refer to the [official documentation](https://developer.shopware.com/docs/concepts/framework/storefront-components.html).
+To dive into the full possibilities, please refer to the [official documentation](https://developer.shopwell.com/docs/concepts/framework/storefront-components.html).
 
 ### New Dev-Server for development based on Vite
 
@@ -3097,14 +3097,14 @@ This is available for both `style` and `script` entries:
 
 ### New global JavaScript event system
 
-With the new component system we also start to improve the general possibilities in the Storefront. One of these improvements is a new global event system that is available via a new central `Shopware` object. This system is easier to use than the instance scoped events from the current JS plugin system. The event system is based on the native Node [event emitter](https://nodejs.org/en/learn/asynchronous-work/the-nodejs-event-emitter) and can be used in a similar way. You will find some additional features, like interceptable events which can be used to hook into certain methods, like changing request parameters before they get send. We want to offer this as a new extension system, especially for the new component system.
+With the new component system we also start to improve the general possibilities in the Storefront. One of these improvements is a new global event system that is available via a new central `Shopwell` object. This system is easier to use than the instance scoped events from the current JS plugin system. The event system is based on the native Node [event emitter](https://nodejs.org/en/learn/asynchronous-work/the-nodejs-event-emitter) and can be used in a similar way. You will find some additional features, like interceptable events which can be used to hook into certain methods, like changing request parameters before they get send. We want to offer this as a new extension system, especially for the new component system.
 
 ```JavaScript
-window.Shopware.emit('Filter:Change', { foo: 'bar' });
+window.Shopwell.emit('Filter:Change', { foo: 'bar' });
 ```
 
 ```JavaScript
-window.Shopware.on('Filter:Change', ({ foo }) => {
+window.Shopwell.on('Filter:Change', ({ foo }) => {
     // do something
 });
 ```
@@ -3125,7 +3125,7 @@ The storefront search already redirected to the product detail page when a searc
 The same redirect now triggers when the term exactly matches the product's `ean` or `manufacturerNumber`.
 The condition still requires exactly one matching product, so listings with multiple hits remain unaffected.
 
-The set of fields that trigger the redirect is configurable via the `shopware.storefront.redirect_on_single_hit_fields` container parameter (defaults to `['productNumber', 'ean', 'manufacturerNumber']`).
+The set of fields that trigger the redirect is configurable via the `shopwell.storefront.redirect_on_single_hit_fields` container parameter (defaults to `['productNumber', 'ean', 'manufacturerNumber']`).
 Any string-valued property declared on `ProductEntity` may be configured — unknown or non-string properties are skipped.
 Set the parameter to a narrower list (for example `['productNumber']`) to restore the previous behaviour.
 
@@ -3134,7 +3134,7 @@ Set the parameter to a narrower list (for example `['productNumber']`) to restor
 ### Local filesystem permission enforcement can be disabled
 
 Local filesystem adapters now support `config.enforce_file_permissions: false` to preserve existing file permissions after writes.
-This is useful for installations that manage permissions outside Shopware, for example with ACLs or shared deployment users, where writes are allowed but `chmod()` calls should not be enforced by the application.
+This is useful for installations that manage permissions outside Shopwell, for example with ACLs or shared deployment users, where writes are allowed but `chmod()` calls should not be enforced by the application.
 
 ### Partial filesystem visibility overrides preserve adapter configuration
 
@@ -3147,7 +3147,7 @@ Replacing the adapter `config` block still replaces it as a whole, so adapter-sp
 
 `ElasticsearchHelper::allowIndexing()` now catches transport-level exceptions thrown from `Client::ping()` (e.g. DNS failures, connection refused, timeouts) and routes them through `logAndThrowException()`.
 
-Previously, a transient Elasticsearch / OpenSearch outage during checkout caused a `ConnectException` to bubble out of `ProductUpdater::update()` (triggered by `ProductStockAlteredEvent` after stock decrement), aborting the request after the order had already been written to the database. With `SHOPWARE_ES_THROW_EXCEPTION=0`, the indexing call is now logged at `critical` and skipped for that request; order placement completes normally. With `SHOPWARE_ES_THROW_EXCEPTION=1` (the default) behavior is unchanged — the exception is still re-thrown.
+Previously, a transient Elasticsearch / OpenSearch outage during checkout caused a `ConnectException` to bubble out of `ProductUpdater::update()` (triggered by `ProductStockAlteredEvent` after stock decrement), aborting the request after the order had already been written to the database. With `SHOPWELL_ES_THROW_EXCEPTION=0`, the indexing call is now logged at `critical` and skipped for that request; order placement completes normally. With `SHOPWELL_ES_THROW_EXCEPTION=1` (the default) behavior is unchanged — the exception is still re-thrown.
 
 # 6.7.10.1
 
@@ -3160,7 +3160,7 @@ Active content such as scripts, event handlers, processing instructions, externa
 
 The default allowlist covers the W3C SVG2 presentation attribute set (https://www.w3.org/TR/SVG2/attindex.html#PresentationAttributes), ARIA accessibility attributes, the `lang` and `xml:lang` accessibility attributes, and the common safe structural elements `a`, `image`, `marker`, `metadata`, `switch`, `symbol`, and `view`. Anchor `href` / `xlink:href` references remain restricted to local document fragments (`#id`), so `javascript:`, `data:`, and remote URLs are rejected. Active content (scripts, event handlers, animations, foreign objects, processing instructions, DOCTYPEs, entities) and any external `url(...)` / `@import` references remain blocked regardless of the attribute that carries them.
 
-The accepted SVG subset can be adjusted on installation level via `shopware.media.svg.allowed_elements`, `shopware.media.svg.allowed_attributes`, and `shopware.media.svg.allowed_reference_attributes` in `shopware.yaml`.
+The accepted SVG subset can be adjusted on installation level via `shopwell.media.svg.allowed_elements`, `shopwell.media.svg.allowed_attributes`, and `shopwell.media.svg.allowed_reference_attributes` in `shopwell.yaml`.
 
 ### `external-link` endpoint URL validation aligned with `upload-from-url`
 
@@ -3180,7 +3180,7 @@ The Administration includes dedicated views for configuration, product mapping, 
 
 ### [Experimental] Breadcrumb category referrer
 
-Shopware now supports building product breadcrumbs based on the referring category. When a customer lands on a product detail page from a category listing, the breadcrumb can dynamically reflect the category path they came from.
+Shopwell now supports building product breadcrumbs based on the referring category. When a customer lands on a product detail page from a category listing, the breadcrumb can dynamically reflect the category path they came from.
 
 To enable this feature, set the `BREADCRUMB_REWORK` feature flag to `true` and activate the "Build breadcrumb based on referrer category" setting in Settings > Products.
 
@@ -3208,13 +3208,13 @@ Percent-encode the value (`%25` for a literal `%`) or sanitise it on the client 
 ### Per-user and per-IP rate limiters for login and OAuth
 
 The login and OAuth token endpoints now support optional per user (`login_user`, `oauth_user`) and per IP (`login_client`, `oauth_client`) rate limiters, in addition to the existing combined user and IP limiter.
-These are optional and can be enabled via `shopware.api.rate_limiter` in `shopware.yaml`.
+These are optional and can be enabled via `shopwell.api.rate_limiter` in `shopwell.yaml`.
 
 ### Store API routes for shipping cost calculation
 
 The Store API now provides dedicated shipping-cost endpoints for product and cart previews. This allows headless storefronts and integrations to fetch shipping prices and delivery dates for multiple shipping methods without changing the customer's persisted cart or selected shipping method.
 
-For product previews, `/store-api/shipping-cost/product/{productId}` uses Shopware criteria parameters to select which shipping methods should be loaded for the calculation.
+For product previews, `/store-api/shipping-cost/product/{productId}` uses Shopwell criteria parameters to select which shipping methods should be loaded for the calculation.
 For cart previews, `/store-api/shipping-cost/cart` returns the shipping costs for the current cart across the available shipping methods.
 
 The response contains the calculated shipping price, delivery date, and shipping method data for each result, which makes it easier to build shipping-method selectors or delivery previews in custom storefronts and apps.
@@ -3268,9 +3268,9 @@ The `TokenQueryBuilder` has been refactored to use a decoration-based architectu
 - nested field wrapping (`NestedFieldQueryBuilder`)
 - and explain metadata for preview mode(`ExplainFieldQueryBuilder`).
 
-Additionally, `TokenQueryBuilder` now extends a new `AbstractTokenQueryBuilder` abstract class, enabling decoration of token-level query composition. The old `Shopware\Elasticsearch\TokenQueryBuilder` service ID is preserved as an alias for backward compatibility.
+Additionally, `TokenQueryBuilder` now extends a new `AbstractTokenQueryBuilder` abstract class, enabling decoration of token-level query composition. The old `Shopwell\Elasticsearch\TokenQueryBuilder` service ID is preserved as an alias for backward compatibility.
 
-Plugins that need to customize Elasticsearch field query generation can now decorate either `Shopware\Elasticsearch\AbstractFieldQueryBuilder` or `Shopware\Elasticsearch\AbstractTokenQueryBuilder` instead of replacing the entire token query builder.
+Plugins that need to customize Elasticsearch field query generation can now decorate either `Shopwell\Elasticsearch\AbstractFieldQueryBuilder` or `Shopwell\Elasticsearch\AbstractTokenQueryBuilder` instead of replacing the entire token query builder.
 
 ### Elasticsearch: Added configurable tie_breaker to dis_max queries
 
@@ -3289,7 +3289,7 @@ Custom salutations keep the default value of `100` - review them in Administrati
 
 ### Deprecated non-used `MAIL_TEMPLATE_SALES_CHANNEL_*_EVENT` constants
 
-Deprecated the constants `Shopware\Core\Content\MailTemplate\MAIL_TEMPLATE_SALES_CHANNEL_{WRITTEN,DELETED,LOADED,SEARCH_RESULT_LOADED,AGGREGATION_LOADED,ID_SEARCH_RESULT_LOADED}_EVENT` as the entity has been removed with Shopware 6.5 and the events were not fired anymore.
+Deprecated the constants `Shopwell\Core\Content\MailTemplate\MAIL_TEMPLATE_SALES_CHANNEL_{WRITTEN,DELETED,LOADED,SEARCH_RESULT_LOADED,AGGREGATION_LOADED,ID_SEARCH_RESULT_LOADED}_EVENT` as the entity has been removed with Shopwell 6.5 and the events were not fired anymore.
 
 ### JSONL product export format
 
@@ -3303,7 +3303,7 @@ The new `AbstractAgenticCommerceProductExportProvider` can be used to implement 
 
 ### SFC migration codemod for Administration components
 
-A new developer tool is available to migrate Shopware Administration components from the legacy two-file format (`index.js` + `.html.twig`) to single-file components (`.vue` SFCs).
+A new developer tool is available to migrate Shopwell Administration components from the legacy two-file format (`index.js` + `.html.twig`) to single-file components (`.vue` SFCs).
 
 Run it via:
 
@@ -3313,7 +3313,7 @@ npm run codemod:sfc-migration -- --write <target-directory> # write .vue files
 ```
 
 The codemod converts Options API to Composition API (`data` → `ref`, `computed`, `watch`, `methods`, lifecycle hooks), rewrites Twig block syntax to `<sw-block>` elements, and merges template + script into a single `.vue` file.
-Components with `render()` functions are skipped; components using `mixins` or `Shopware.Component.extend()` receive a backoff to plain `<script>` so they can be migrated manually.
+Components with `render()` functions are skipped; components using `mixins` or `Shopwell.Component.extend()` receive a backoff to plain `<script>` so they can be migrated manually.
 
 See `src/Administration/Resources/app/administration/scripts/codemods/sfc-migration/README.md` for full usage, flags, and known limitations.
 
@@ -3385,7 +3385,7 @@ Apps can now declare requirements in their manifest via a new `<requirements>` e
 Requirements are validated during app installation and updates in production.
 If a requirement is not met, the process fails with `FRAMEWORK__APP_REQUIREMENTS_NOT_MET` and an actionable message.
 
-The first introduced requirement, `<public-access/>`, verifies that `APP_URL` uses HTTPS, does not point to an IP or reserved/local development host, and that `/api/_info/health-check` returns HTTP 200 when called from the Shopware server.
+The first introduced requirement, `<public-access/>`, verifies that `APP_URL` uses HTTPS, does not point to an IP or reserved/local development host, and that `/api/_info/health-check` returns HTTP 200 when called from the Shopwell server.
 This helps catch misconfigurations before apps that rely on webhooks or other external communication fail silently.
 
 ```xml
@@ -3400,12 +3400,12 @@ Unknown requirements are ignored and logged as warnings.
 
 ### Possibility to disable product search keyword indexing
 
-The new configuration key `shopware.product.search_keyword.indexing` can be used to disable the product search keyword indexing.
+The new configuration key `shopwell.product.search_keyword.indexing` can be used to disable the product search keyword indexing.
 This is helpful for stores that do not require search keywords and want to avoid the overhead of maintaining those indices while still having basic search functionality or using third-party search solutions.
 
 ### Configurable product search keyword relevance limit
 
-The new configuration key `shopware.product.search_keyword.relevant_keyword_count` can be used to configure how many interpreted product search keywords are used for MySQL product search queries.
+The new configuration key `shopwell.product.search_keyword.relevant_keyword_count` can be used to configure how many interpreted product search keywords are used for MySQL product search queries.
 The default value remains `8` to preserve the current performance characteristics.
 Increasing the value can improve result completeness for reordered search terms with AND logic, but can also increase query complexity.
 
@@ -3474,7 +3474,7 @@ The `Product` schema on the product detail page is significantly more complete c
 
 #### Extending the schema templates
 
-Each schema lives in its own Twig template under `storefront/layout/structured-data/`. Every template exposes two blocks: an outer block that contains the full data-building logic, and an inner `_script` block that wraps just the `<script>` output. Plugins and themes can override either level using Shopware's standard template extension mechanism.
+Each schema lives in its own Twig template under `storefront/layout/structured-data/`. Every template exposes two blocks: an outer block that contains the full data-building logic, and an inner `_script` block that wraps just the `<script>` output. Plugins and themes can override either level using Shopwell's standard template extension mechanism.
 
 To add or change properties, override the `_script` block, merge your changes into the data variable (`productData`, `orgData`, `webPageData`, etc.), and call `{{ parent() }}`.
 
@@ -3544,16 +3544,16 @@ The same `thumbnails` payload shape is accepted by `POST /api/_action/media/{id}
 ### Support of long-running MySQL connections
 
 It is now possible to use libraries like [`doctrine-mysql-come-back`](https://github.com/facile-it/doctrine-mysql-come-back), which wrap the default DBAL connection.
-More information on how to set up, can be found here: https://developer.shopware.com/docs/guides/hosting/infrastructure/database.html#setup-for-long-running-environments
+More information on how to set up, can be found here: https://developer.shopwell.com/docs/guides/hosting/infrastructure/database.html#setup-for-long-running-environments
 
 ### System config overrides in staging mode
 
-The `system:setup:staging` command now supports pre-configuring system config keys during staging setup. Both global and sales channel-specific values can be set, following the same YAML structure used for [static system configuration](https://developer.shopware.com/docs/guides/hosting/configurations/shopware/static-system-config.md).
+The `system:setup:staging` command now supports pre-configuring system config keys during staging setup. Both global and sales channel-specific values can be set, following the same YAML structure used for [static system configuration](https://developer.shopwell.com/docs/guides/hosting/configurations/shopwell/static-system-config.md).
 
 Use `default` for global config values and sales channel IDs for channel-specific overrides:
 
 ```yaml
-shopware:
+shopwell:
   staging:
     system_config:
       default:
@@ -3620,7 +3620,7 @@ This rule is additionally enforced on database level by changing the foreign key
 
 This prevents "invalidation storms" where writing internal config values (e.g. timestamps, license keys, store secrets) would wipe big amount of HTTP-cached pages.
 
-Internal Shopware call sites that write non-storefront config values now pass `silent=true`. The `ConfigSet` CLI command accepts `--silent`, and the Admin API `POST /_action/system-config` and `POST /_action/system-config/batch` accept a `?silent` query parameter.
+Internal Shopwell call sites that write non-storefront config values now pass `silent=true`. The `ConfigSet` CLI command accepts `--silent`, and the Admin API `POST /_action/system-config` and `POST /_action/system-config/batch` accept a `?silent` query parameter.
 
 In v6.8.0.0, `silent` parameter in SystemConfigService methods will default to `true`. Clients should pass value explicitly to prepare for changes.
 
@@ -3652,19 +3652,19 @@ Note that this only affects the update case, in the case of newly inserted or de
 
 ### Existing cart recalculations no longer recreate deleted carts
 
-When an existing cart is recalculated, Shopware now uses the cart's persisted state to avoid recreating carts that were already deleted.
+When an existing cart is recalculated, Shopwell now uses the cart's persisted state to avoid recreating carts that were already deleted.
 This prevents race conditions where a concurrent request, such as placing an order, deletes the cart and a stale recalculation writes it back afterwards.
 
 ### Deprecation of unused `TemplateGroup` class
 
-The class `\Shopware\Core\Content\Seo\SeoUrlTemplate\TemplateGroup` has been deprecated as it is unused and will be removed in the next major version v6.8.0.
+The class `\Shopwell\Core\Content\Seo\SeoUrlTemplate\TemplateGroup` has been deprecated as it is unused and will be removed in the next major version v6.8.0.
 
 ### New criteria events for product slider CMS element
 
 Two new events are dispatched when the product slider CMS element resolves its product criteria, allowing subscribers to modify the criteria:
 
-- `Shopware\Core\Content\Product\Events\ProductSliderStaticCriteriaEvent` is fired by the `StaticProductProcessor` when resolving a static product list.
-- `Shopware\Core\Content\Product\Events\ProductSliderStreamCriteriaEvent` is fired by the `ProductStreamProcessor` when resolving a product stream.
+- `Shopwell\Core\Content\Product\Events\ProductSliderStaticCriteriaEvent` is fired by the `StaticProductProcessor` when resolving a static product list.
+- `Shopwell\Core\Content\Product\Events\ProductSliderStreamCriteriaEvent` is fired by the `ProductStreamProcessor` when resolving a product stream.
 
 ### Allow custom HTTP client injection for S3 client creation
 
@@ -3673,24 +3673,24 @@ now accepts an optional `HttpClientInterface` parameter. When provided, this HTT
 forwarded to the underlying AsyncAws `S3Client` instead of letting it create its own default.
 
 Both `AwsS3v3Factory` and `PresignedUploadUrlGenerator` are wired via DI to the new
-`shopware.filesystem.s3.client` service ID. This service is not registered by default, so
+`shopwell.filesystem.s3.client` service ID. This service is not registered by default, so
 `null` is injected and AsyncAws uses its own internal HTTP client. Integrators can register
-the `shopware.filesystem.s3.client` service to provide a custom Symfony HTTP client with
+the `shopwell.filesystem.s3.client` service to provide a custom Symfony HTTP client with
 custom timeouts, retry strategies, or HTTP protocol version for S3 operations.
 
-### Events gain `Context` and implement `ShopwareEvent`
+### Events gain `Context` and implement `ShopwellEvent`
 
-The events below now accept an optional `Context` as the last constructor argument and implement `ShopwareEvent`. Shopware's own dispatch sites already pass the context. Third-party code that instantiates these events without `$context` will see a deprecation notice; in 6.8, the parameter becomes required. A temporary `getNullableContext()` method is available for consumers who cannot guarantee the dispatcher passed context.
+The events below now accept an optional `Context` as the last constructor argument and implement `ShopwellEvent`. Shopwell's own dispatch sites already pass the context. Third-party code that instantiates these events without `$context` will see a deprecation notice; in 6.8, the parameter becomes required. A temporary `getNullableContext()` method is available for consumers who cannot guarantee the dispatcher passed context.
 
-- `Shopware\Core\Content\ImportExport\Event\EnrichExportCriteriaEvent`
-- `Shopware\Core\Content\ImportExport\Event\ImportExportBeforeExportRecordEvent`
-- `Shopware\Core\Content\ImportExport\Event\ImportExportExceptionImportExportHandlerEvent`
-- `Shopware\Core\Content\Seo\Event\SeoUrlUpdateEvent`
-- `Shopware\Core\Content\Media\Event\MediaFileExtensionWhitelistEvent`
-- `Shopware\Core\Content\Media\Event\UnusedMediaSearchEvent`
-- `Shopware\Storefront\Theme\Event\ThemeAssignedEvent`
-- `Shopware\Storefront\Theme\Event\ThemeConfigChangedEvent`
-- `Shopware\Storefront\Theme\Event\ThemeConfigResetEvent`
+- `Shopwell\Core\Content\ImportExport\Event\EnrichExportCriteriaEvent`
+- `Shopwell\Core\Content\ImportExport\Event\ImportExportBeforeExportRecordEvent`
+- `Shopwell\Core\Content\ImportExport\Event\ImportExportExceptionImportExportHandlerEvent`
+- `Shopwell\Core\Content\Seo\Event\SeoUrlUpdateEvent`
+- `Shopwell\Core\Content\Media\Event\MediaFileExtensionWhitelistEvent`
+- `Shopwell\Core\Content\Media\Event\UnusedMediaSearchEvent`
+- `Shopwell\Storefront\Theme\Event\ThemeAssignedEvent`
+- `Shopwell\Storefront\Theme\Event\ThemeConfigChangedEvent`
+- `Shopwell\Storefront\Theme\Event\ThemeConfigResetEvent`
 
 ### `#[Field]` attribute supports custom `maxLength` for string fields
 
@@ -3765,10 +3765,10 @@ If you have good reasons to use `@extend` and can ensure that the combined selec
 
 ### Add custom HTML element configuration for HTML Sanitizer
 
-A new config option `custom_tags` was added, to allow the usage of custom HTML elements using the Shopware CMS Pages and other text fields.
+A new config option `custom_tags` was added, to allow the usage of custom HTML elements using the Shopwell CMS Pages and other text fields.
 
 ```yaml
-shopware:
+shopwell:
     html_sanitizer:
         sets:
             - name: basic
@@ -3815,7 +3815,7 @@ This change enhances security by preventing potential attackers from enumerating
 
 ### Improve OrderRoute deepLinkCode filter type validation
 
-Improve the logic in `\Shopware\Core\Checkout\Order\SalesChannel\OrderRoute::load` to ensure the `deepLinkCode` filter is an instance of `\Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter`.
+Improve the logic in `\Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute::load` to ensure the `deepLinkCode` filter is an instance of `\Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter`.
 
 # 6.7.8.0
 
@@ -3842,20 +3842,20 @@ The increment-based message queue statistics system is deprecated and will be re
 - API endpoint `GET /api/_info/queue.json` is deprecated - use `GET /api/_info/message-stats.json` instead
 
 **Deprecated configuration options:**
-- `shopware.admin_worker.enable_queue_stats_worker`
-- `shopware.increment.message_queue`
+- `shopwell.admin_worker.enable_queue_stats_worker`
+- `shopwell.increment.message_queue`
 
 **Deprecated code:**
 - `IncrementGatewayRegistry::MESSAGE_QUEUE_POOL` constant
 - Increment-based handling in `MessageQueueStatsSubscriber::onMessageHandled()`
 
 **Why?**
-The increment-based statistics were often inaccurate due to hardcoded multipliers and missing decrements in edge cases. The replacement functionality was introduced in https://github.com/shopware/shopware/pull/8698
+The increment-based statistics were often inaccurate due to hardcoded multipliers and missing decrements in edge cases. The replacement functionality was introduced in https://github.com/shopwell-shop/shopwell/pull/8698
 
 **Immediate disable:**
 To disable the deprecated functionality before v6.8.0.0:
 ```yaml
-shopware:
+shopwell:
     admin_worker:
         enable_queue_stats_worker: false
 ```
@@ -3869,15 +3869,15 @@ Use this feature when you need to create product streams programmatically that s
 
 ### Database table helper class
 
-A new helper class `\Shopware\Core\Framework\Util\Database\TableHelper` was introduced,
+A new helper class `\Shopwell\Core\Framework\Util\Database\TableHelper` was introduced,
 which could be used to check the table for existence, columns, indexes, and foreign keys.
 
-#### Deprecation of helper methods in `\Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper`
+#### Deprecation of helper methods in `\Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper`
 
 As consequence of the introduction of the new table helper class following methods are deprecated and will be removed with the next major version:
-- \Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper::columnExists
-- \Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper::columnIsNullable
-- \Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper::tableExists
+- \Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper::columnExists
+- \Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper::columnIsNullable
+- \Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper::tableExists
 
 ### Migration generator improvements
 
@@ -3911,13 +3911,13 @@ Additionally, the `SerializerField` will become internal in the next major relea
 
 ### Options API backward-compatibility shim for Composition API components
 
-When a Shopware core component is migrated from Options API to Composition API using `createExtendableSetup()`, existing plugin overrides written with `Shopware.Component.override()` now continue to work automatically via a compatibility shim — no immediate changes to your plugin are required.
+When a Shopwell core component is migrated from Options API to Composition API using `createExtendableSetup()`, existing plugin overrides written with `Shopwell.Component.override()` now continue to work automatically via a compatibility shim — no immediate changes to your plugin are required.
 
-The shim is activated transparently whenever an Options API override (containing `methods`, `computed`, `data`, `watch`, `mixins`, or lifecycle hooks) targets a component that has been converted to Composition API. It converts the override at runtime and logs a deprecation warning in the browser console directing developers to migrate to `Shopware.Component.overrideComponentSetup()`.
+The shim is activated transparently whenever an Options API override (containing `methods`, `computed`, `data`, `watch`, `mixins`, or lifecycle hooks) targets a component that has been converted to Composition API. It converts the override at runtime and logs a deprecation warning in the browser console directing developers to migrate to `Shopwell.Component.overrideComponentSetup()`.
 
 **What this means for you:**
 
-- **No immediate action required.** Your existing `Shopware.Component.override()` calls continue to work, including `this.$super()` chaining, `data`, `computed`, `watch`, and `mixins`.
+- **No immediate action required.** Your existing `Shopwell.Component.override()` calls continue to work, including `this.$super()` chaining, `data`, `computed`, `watch`, and `mixins`.
 - **A deprecation warning will appear** in the browser console for each affected override. This is your signal to migrate.
 - **Lifecycle hooks** (`mounted`, `created`, etc.) are supported by the shim and mapped to their Composition API equivalents.
 - Dot-notation watch paths (e.g. `watch: { 'a.b.c': handler }`) are not supported and will be skipped with a console warning.
@@ -4044,7 +4044,7 @@ Custom headers defined in app flow action configurations are now correctly sent 
 
 ### New webhook event: `app.system_heartbeat`
 
-A new hookable event `app.system_heartbeat` was added to indicate that a Shopware instance is up and running.
+A new hookable event `app.system_heartbeat` was added to indicate that a Shopwell instance is up and running.
 This gives app developers a lightweight, platform-native heartbeat signal they can use for operational monitoring or connectivity checks without relying on custom polling.
 
 The heartbeat is emitted by a recurrent scheduled task on a weekly basis, so apps should treat it as a periodic liveness signal, not as a strict scheduling mechanism or real-time telemetry signal.
@@ -4054,7 +4054,7 @@ No additional ACL privileges are required for this event.
 
 ### OpenSearch PHP client updated to 2.6
 
-Shopware now uses `opensearch-project/opensearch-php` `^2.6.0` and `shyim/opensearch-php-dsl` `^1.1.4` (PR #15832).
+Shopwell now uses `opensearch-project/opensearch-php` `^2.6.0` and `shyim/opensearch-php-dsl` `^1.1.4` (PR #15832).
 The Elasticsearch integration was migrated to the newer OpenSearch client transport for regular single-host configurations, and query generation now uses newer DSL APIs for tracked totals, result collapsing, and nested sorting.
 
 Existing installations that configure a single OpenSearch endpoint via `OPENSEARCH_URL` or `ADMIN_OPENSEARCH_URL` do not need to change their configuration.
@@ -4072,27 +4072,27 @@ Once enabled, supported Admin API entities reuse the Admin OpenSearch indices fo
 ### New config option to fine tune Admin OpenSearch indexing
 
 There is a new config option `elasticsearch.admin.indexing_batch_size` that allows you to configure the batch size for Admin OpenSearch indexing.
-The same config can be set via environment variable `SHOPWARE_ADMIN_ES_INDEXING_BATCH_SIZE`. The default value is `1000`, which means that entities will be indexed in batches of 1000.
+The same config can be set via environment variable `SHOPWELL_ADMIN_ES_INDEXING_BATCH_SIZE`. The default value is `1000`, which means that entities will be indexed in batches of 1000.
 This should reduce the overhead needed when running the admin index process.
 Before the admin indexing process shared the same config `elasticsearch.indexing_batch_size` (default value: 100) with the Storefront/Store API indexing, which could lead to performance issues when you had a large amount of data in your shop, as the admin indexing process is usually way faster and therefore can benefit from higher batch sizes.
 
 ### Optional precision threshold for grouped OpenSearch product counts
 
 There is a new optional config option `elasticsearch.search.precision_threshold` that allows you to configure the `precision_threshold` sent for grouped Storefront product count aggregations in OpenSearch.
-When the config is not set, Shopware keeps the current OpenSearch behavior and does not send `precision_threshold`.
+When the config is not set, Shopwell keeps the current OpenSearch behavior and does not send `precision_threshold`.
 This can be useful for large catalogs that use grouped product listings and need to trade higher count accuracy against additional OpenSearch memory usage.
 
 ### Deprecated HTTP cache reverse proxy configuration
 
 The following HTTP cache reverse proxy configuration options have been doing nothing since 6.7.0.0 and are therefore now deprecated. They will be removed in version 6.8.0.0:
 
-- `shopware.http_cache.reverse_proxy.use_varnish_xkey`
-- `shopware.http_cache.reverse_proxy.ban_method`
-- `shopware.http_cache.reverse_proxy.ban_headers`
-- `shopware.http_cache.reverse_proxy.purge_all`
-  - `shopware.http_cache.reverse_proxy.purge_all.ban_method`
-  - `shopware.http_cache.reverse_proxy.purge_all.ban_headers`
-  - `shopware.http_cache.reverse_proxy.purge_all.urls`
+- `shopwell.http_cache.reverse_proxy.use_varnish_xkey`
+- `shopwell.http_cache.reverse_proxy.ban_method`
+- `shopwell.http_cache.reverse_proxy.ban_headers`
+- `shopwell.http_cache.reverse_proxy.purge_all`
+  - `shopwell.http_cache.reverse_proxy.purge_all.ban_method`
+  - `shopwell.http_cache.reverse_proxy.purge_all.ban_headers`
+  - `shopwell.http_cache.reverse_proxy.purge_all.urls`
 
 If you are currently using any of these options, you can safely remove them from your configuration.
 
@@ -4101,27 +4101,27 @@ If you are currently using any of these options, you can safely remove them from
 The `number_of_shards` and `number_of_replicas` settings for Elasticsearch indices are now configurable via environment variables instead of being hardcoded.
 
 For the Storefront/Store API Elasticsearch:
-- `SHOPWARE_ES_NUMBER_OF_SHARDS` (default: empty, meaning Elasticsearch default)
-- `SHOPWARE_ES_NUMBER_OF_REPLICAS` (default: empty, meaning Elasticsearch default)
+- `SHOPWELL_ES_NUMBER_OF_SHARDS` (default: empty, meaning Elasticsearch default)
+- `SHOPWELL_ES_NUMBER_OF_REPLICAS` (default: empty, meaning Elasticsearch default)
 
 For the Admin Elasticsearch:
-- `SHOPWARE_ADMIN_ES_NUMBER_OF_SHARDS` (default: `3`, will also be empty with next major)
-- `SHOPWARE_ADMIN_ES_NUMBER_OF_REPLICAS` (default: `3`, will also be empty with next major)
+- `SHOPWELL_ADMIN_ES_NUMBER_OF_SHARDS` (default: `3`, will also be empty with next major)
+- `SHOPWELL_ADMIN_ES_NUMBER_OF_REPLICAS` (default: `3`, will also be empty with next major)
 
 ## Critical Fixes
 
 ### Session deadlock fix for file-based sessions
 
-A new configuration option `shopware.cache.disable_stampede_protection` has been added to prevent deadlocks when using file-based sessions with Symfony's cache stampede protection.
+A new configuration option `shopwell.cache.disable_stampede_protection` has been added to prevent deadlocks when using file-based sessions with Symfony's cache stampede protection.
 
 **Problem**: A deadlock (ABBA pattern) can occur when:
 - Process 1: Acquires Session File Lock → Needs Cache → Tries to acquire Cache Lock
 - Process 2: Acquires Cache Lock (stampede protection) → Needs Session → Tries to acquire Session File Lock
 
-**Solution**: Set `shopware.cache.disable_stampede_protection: true` in your configuration to disable file-based cache locking when file-based sessions are in use.
+**Solution**: Set `shopwell.cache.disable_stampede_protection: true` in your configuration to disable file-based cache locking when file-based sessions are in use.
 
 ```yaml
-shopware:
+shopwell:
     cache:
         disable_stampede_protection: true
 ```
@@ -4236,10 +4236,10 @@ A new field `product.type` was introduced to clearly indicate whether a product 
 
 As part of this change, the following deprecations were made:
 - The `order_line_item.states` field is deprecated in favor of `order_line_item.payload.product_type`.
-- `\Shopware\Core\Checkout\Cart\LineItem\LineItem::$states` is deprecated in favor of `\Shopware\Core\Checkout\Cart\LineItem\LineItem::$payload['productType']`.
+- `\Shopwell\Core\Checkout\Cart\LineItem\LineItem::$states` is deprecated in favor of `\Shopwell\Core\Checkout\Cart\LineItem\LineItem::$payload['productType']`.
 - The `LineItemProductStatesRule` is deprecated in favor of the new `LineItemProductTypeRule`.
 - The `StatesUpdater` service and its related dispatched events (`ProductStatesBeforeChangeEvent`, `ProductStatesChangedEvent`) are deprecated.
-- A new parameter `shopware.product.allowed_types` was introduced to allow third-party developers to register additional product types.
+- A new parameter `shopwell.product.allowed_types` was introduced to allow third-party developers to register additional product types.
 - For more details, please refer to the [2025-11-14-introduce-product-type-and-deprecate-states.md](adr%2F2025-11-14-introduce-product-type-and-deprecate-states.md)
 
 If you are using the rule `LineItemProductStatesRule`, product stream filters, or product listing filters that rely on `product.states`, you should update them to use the new `product.type` field instead.
@@ -4484,7 +4484,7 @@ When no `Accept` header is set or with `*/*`, `PDF` will be returned. (PR #12944
 
 ### PHP 8.5 support
 
-Shopware is now fully compatible with PHP 8.5.
+Shopwell is now fully compatible with PHP 8.5.
 
 ### Deprecation of `sw-states` and `sw-currency` handling and new way to disable caching
 
@@ -4494,19 +4494,19 @@ You can opt in to the new behaviour by activating either the `v6.8.0.0` (all upc
 Due to the rework of the contained rules in the cache hash, this becomes efficiently possible. The complete caching behaviour is now controlled by the `sw-cache-hash` cookie.
 
 You should rework you extensions to also work with enabled cache for logged in customers and when the cart is filled.
-To modify the default behaviour there are several extension points you can hook into, for a detailed explanation please take a look at the [caching docs](https://developer.shopware.com/docs/guides/plugins/plugins/framework/caching/#manipulating-the-cache-key).
+To modify the default behaviour there are several extension points you can hook into, for a detailed explanation please take a look at the [caching docs](https://developer.shopwell.com/docs/guides/plugins/plugins/framework/caching/#manipulating-the-cache-key).
 
 The following classes and constants were deprecated as they will not be used anymore:
-* `\Shopware\Core\Framework\Adapter\Cache\Http\CacheStateValidator`
-* `\Shopware\Core\Framework\Adapter\Cache\CacheStateSubscriber`
-* `\Shopware\Core\Framework\Adapter\Cache\Http\HttpCacheKeyGenerator::SYSTEM_STATE_COOKIE`
-* `\Shopware\Core\Framework\Adapter\Cache\Http\HttpCacheKeyGenerator::INVALIDATION_STATES_HEADER`
-* `\Shopware\Core\Framework\Adapter\Cache\Http\HttpCacheKeyGenerator::CURRENCY_COOKIE`
-* `\Shopware\Core\Framework\Adapter\Cache\CacheStateSubscriber::STATE_LOGGED_IN`
-* `\Shopware\Core\Framework\Adapter\Cache\CacheStateSubscriber::STATE_CART_FILLED`
+* `\Shopwell\Core\Framework\Adapter\Cache\Http\CacheStateValidator`
+* `\Shopwell\Core\Framework\Adapter\Cache\CacheStateSubscriber`
+* `\Shopwell\Core\Framework\Adapter\Cache\Http\HttpCacheKeyGenerator::SYSTEM_STATE_COOKIE`
+* `\Shopwell\Core\Framework\Adapter\Cache\Http\HttpCacheKeyGenerator::INVALIDATION_STATES_HEADER`
+* `\Shopwell\Core\Framework\Adapter\Cache\Http\HttpCacheKeyGenerator::CURRENCY_COOKIE`
+* `\Shopwell\Core\Framework\Adapter\Cache\CacheStateSubscriber::STATE_LOGGED_IN`
+* `\Shopwell\Core\Framework\Adapter\Cache\CacheStateSubscriber::STATE_CART_FILLED`
 
 Additionally, the following configuration was deprecated:
-* `shopware.cache.invalidation.http_cache`
+* `shopwell.cache.invalidation.http_cache`
 
 ### HTTP Caching Policies
 
@@ -4514,11 +4514,11 @@ Added support for caching policies to define HTTP cache behavior via configurati
 
 You can now configure named caching policies that define how the Cache-Control header is formed. These policies can be assigned per area (`storefront`, `store_api`) and per route. The header controls how caches (browser, reverse proxy, CDN, Symfony cache layer) should cache the response.
 
-The feature is enabled using the `CACHE_REWORK` feature flag. For more details see the [caching policies documentation](https://developer.shopware.com/docs/guides/hosting/performance/caches.html#http-caching-policies).
+The feature is enabled using the `CACHE_REWORK` feature flag. For more details see the [caching policies documentation](https://developer.shopwell.com/docs/guides/hosting/performance/caches.html#http-caching-policies).
 
 ### Add recursive assign method to AssignArrayTrait
 
-A new method `assignRecursive` has been added to `Shopware\Core\Framework\Struct\AssignArrayTrait`. Along with it, the new `Shopware\Core\Framework\Struct\AssignArrayInterface` has been introduced.
+A new method `assignRecursive` has been added to `Shopwell\Core\Framework\Struct\AssignArrayTrait`. Along with it, the new `Shopwell\Core\Framework\Struct\AssignArrayInterface` has been introduced.
 To make full use of `assignRecursive`, every class using `AssignArrayTrait` must also implement the new `AssignArrayInterface`.
 The `assignRecursive` method enables deeply nested, JSON-serialized data structures - for example, a fully serialized `ProductEntity` including associations such as `properties` - to be converted back into a fully populated `ProductEntity` instance, including all nested `Struct` and `Collection` objects.
 
@@ -4536,7 +4536,7 @@ This prevents cases where SEO-Urls were generated multiple times for the same ca
 
 ### Make the find best variant on searching as non default behaviour
 
-Since [6.7.2.0](https://github.com/shopware/shopware/pull/11107), the "find best variant" feature was always the default behaviour on the search. It means that if a product has variants, the best matching variant is returned instead of what merchant has configured in the product's Storefront presentation > Product listings > "Show main product or variant" setting.
+Since [6.7.2.0](https://github.com/shopwell-shop/shopwell/pull/11107), the "find best variant" feature was always the default behaviour on the search. It means that if a product has variants, the best matching variant is returned instead of what merchant has configured in the product's Storefront presentation > Product listings > "Show main product or variant" setting.
 This behaviour is now optional and can be enabled by setting the `core.listing.findBestVariant` config to `true` or setting it via the admin interface under Settings > Products > "Preview best matching variant for search results"
 
 ## Administration
@@ -4550,7 +4550,7 @@ The Administration now supports axios 1.x alongside the existing axios 0.30.2 to
 - Opt-in: Add `useAxiosV1: true` to request configuration to use axios 1.x
 - Repository requests use axios 1.x internally. Their transport is not configurable through repository options because repositories do not expose axios as part of their public contract.
 - Existing `httpClient.interceptors` and `httpClient.defaults` customizations are mirrored to both internal clients, so extensions do not need version-specific setup.
-- The Shopware HTTP client remains structurally compatible with the previous `AxiosInstance` type and `axios-mock-adapter`, while new code can use Shopware's `HttpClient` contract.
+- The Shopwell HTTP client remains structurally compatible with the previous `AxiosInstance` type and `axios-mock-adapter`, while new code can use Shopwell's `HttpClient` contract.
 
 **Future behavior (6.8.0+):**
 - Direct HTTP request default: axios 1.x (when `V6_8_0_0` feature flag is active)
@@ -4574,7 +4574,7 @@ In the settings module, there is now a search bar in the top right. It can be us
 
 ### The email validation supports IDN email addresses
 
-The domain part of email addresses may now contain internationalized domain names (IDN). The Storefront validation will properly check these domains. The form validation in PHP may still deny IDN emails addresses, but the default Shopware forms already allow them.
+The domain part of email addresses may now contain internationalized domain names (IDN). The Storefront validation will properly check these domains. The form validation in PHP may still deny IDN emails addresses, but the default Shopwell forms already allow them.
 
 ### BuyBox JavaScript Plugin
 
@@ -4596,20 +4596,20 @@ Admins can override policies per script using `route_policies` with `route#hook`
 
 ### Control language analyzer usage in Elasticsearch search queries
 
-A new environment variable `SHOPWARE_ES_USE_LANGUAGE_ANALYZER` has been added to control whether language-specific analyzers (like `sw_english_analyzer`, `sw_german_analyzer`) are used for search queries.
+A new environment variable `SHOPWELL_ES_USE_LANGUAGE_ANALYZER` has been added to control whether language-specific analyzers (like `sw_english_analyzer`, `sw_german_analyzer`) are used for search queries.
 
-By default (`SHOPWARE_ES_USE_LANGUAGE_ANALYZER=1`), search queries use the same analyzer as the indexed field, which includes language-specific features like stopword filtering and stemming. This provides broader, more fuzzy search results.
+By default (`SHOPWELL_ES_USE_LANGUAGE_ANALYZER=1`), search queries use the same analyzer as the indexed field, which includes language-specific features like stopword filtering and stemming. This provides broader, more fuzzy search results.
 
-When set to `0` (`SHOPWARE_ES_USE_LANGUAGE_ANALYZER=0`), search queries use `sw_whitespace_analyzer` instead, providing less fuzzy search results with fewer matches.
+When set to `0` (`SHOPWELL_ES_USE_LANGUAGE_ANALYZER=0`), search queries use `sw_whitespace_analyzer` instead, providing less fuzzy search results with fewer matches.
 
 **Note:** This setting only affects search queries, not indexing. Indexed data continues to use language analyzers for proper tokenization.
 
 ### Possibility to disable extensions when setting up staging mode
 
-A new config option `shopware.staging.extensions.disable` was added to allow configuring extensions that should be automatically disabled when the staging mode gets activated via `system:setup:staging` command.
+A new config option `shopwell.staging.extensions.disable` was added to allow configuring extensions that should be automatically disabled when the staging mode gets activated via `system:setup:staging` command.
 
 ```yaml
-shopware:
+shopwell:
     staging:
         extensions:
             disable: ["TheExtensionName", "AnotherExtensionName"]
@@ -4617,10 +4617,10 @@ shopware:
 
 ### Deprecated HTTP cache configuration
 
-- `SHOPWARE_HTTP_DEFAULT_TTL` environment variable.
-- `shopware.http.cache.default_ttl` parameter.
-- `shopware.http_cache.stale_while_revalidate` parameter.
-- `shopware.http_cache.stale_if_error` parameter.
+- `SHOPWELL_HTTP_DEFAULT_TTL` environment variable.
+- `shopwell.http.cache.default_ttl` parameter.
+- `shopwell.http_cache.stale_while_revalidate` parameter.
+- `shopwell.http_cache.stale_if_error` parameter.
 
 Deprecated parameters will have no effect when `CACHE_REWORK` feature flag is enabled, and will be removed in 6.8.0.0.
 
@@ -4637,7 +4637,7 @@ Now, tax rules are applied **correctly** based on the customer type.
 ### Robots.txt configuration
 
 The rendering of the `robots.txt` file has been changed to support custom `User-agent` blocks and the full `robots.txt` standard.
-For a detailed guide on how to use the new features and extend the functionality, please refer to our documentation guide [Extend robots.txt configuration](https://developer.shopware.com/docs/guides/plugins/plugins/content/seo/extend-robots-txt.html).
+For a detailed guide on how to use the new features and extend the functionality, please refer to our documentation guide [Extend robots.txt configuration](https://developer.shopwell.com/docs/guides/plugins/plugins/content/seo/extend-robots-txt.html).
 
 ### Scheduled Task for cleaning up corrupted media entries
 
@@ -4700,17 +4700,17 @@ composer require facile-it/doctrine-mysql-come-back ^3.0
 Then specify the `wrapperClass` in the `.env` file:
 
 ```
-DATABASE_URL=mysql://root:root@database/shopware?driverOptions[x_reconnect_attempts]=5&wrapperClass=Facile\DoctrineMySQLComeBack\Doctrine\DBAL\Connection
+DATABASE_URL=mysql://root:root@database/shopwell?driverOptions[x_reconnect_attempts]=5&wrapperClass=Facile\DoctrineMySQLComeBack\Doctrine\DBAL\Connection
 ```
 
 ### Robots.txt parsing
 
-A new `Shopware\Storefront\Page\Robots\Parser\RobotsDirectiveParser` has been introduced to parse `robots.txt` files. This new service provides improved error tracking and adds new events for better extensibility.
-As part of this change, the constructor for `Shopware\Storefront\Page\Robots\Struct\DomainRuleStruct` is now deprecated for string parameters. You should use the new parser to create a `ParsedRobots` object to pass to the constructor instead.
+A new `Shopwell\Storefront\Page\Robots\Parser\RobotsDirectiveParser` has been introduced to parse `robots.txt` files. This new service provides improved error tracking and adds new events for better extensibility.
+As part of this change, the constructor for `Shopwell\Storefront\Page\Robots\Struct\DomainRuleStruct` is now deprecated for string parameters. You should use the new parser to create a `ParsedRobots` object to pass to the constructor instead.
 
 ### new JWT helper
 
-Added new `Shopware\Core\Framework\JWT\SalesChannel\JWTGenerator` and `Shopware\Core\Framework\JWT\Struct\JWTStruct` to build general structure for encoding and decoding JWT.
+Added new `Shopwell\Core\Framework\JWT\SalesChannel\JWTGenerator` and `Shopwell\Core\Framework\JWT\Struct\JWTStruct` to build general structure for encoding and decoding JWT.
 
 ### Added PHP 8.5 polyfill
 
@@ -4720,12 +4720,12 @@ The new dependency `symfony/polyfill-php85` was added, to make it possible to al
 
 As we changed how we process and generate changelogs the "old" changelog files are no longer needed.
 Therefore, we removed all the internal code used to generate and validate them.
-The whole `Shopware\Core\Framework\Changelog` namespace was removed.
+The whole `Shopwell\Core\Framework\Changelog` namespace was removed.
 The code is not needed anymore, you should adjust the `RELEASE_INFO` and `UPGRADE` files manually instead.
 
-### Deprecated the `\Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper`
+### Deprecated the `\Shopwell\Core\Framework\Test\TestCaseHelper\ReflectionHelper`
 
-Refection has significantly improved in particular since PHP 8.1, therefore the `Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper` was deprecated and will be removed in the next major release.
+Refection has significantly improved in particular since PHP 8.1, therefore the `Shopwell\Core\Framework\Test\TestCaseHelper\ReflectionHelper` was deprecated and will be removed in the next major release.
 See below for the explicit replacements:
 
 ```diff
@@ -4750,7 +4750,7 @@ See below for the explicit replacements:
 
 ### New constraint to check for existing routes
 
-The new constraint `\Shopware\Core\Framework\Routing\Validation\Constraint\RouteNotBlocked` checks if a route is available or already taken by another part of the application.
+The new constraint `\Shopwell\Core\Framework\Routing\Validation\Constraint\RouteNotBlocked` checks if a route is available or already taken by another part of the application.
 
 ### Multiple payment finalize calls allowed
 
@@ -4862,8 +4862,8 @@ To not break plugins that might check for the old flag unnecessarily, the old fl
 
 ### Staging configuration
 
-The disabled delivery check in `MailSender` now checks for the Staging Mode `core.staging`, the `shopware.staging.mailing.disable_delivery` configuration and the config setting `shopware.mailing.disable_delivery`.
-Regardless of mode the config setting `shopware.mailing.disable_delivery` always allows disabling mail delivery.
+The disabled delivery check in `MailSender` now checks for the Staging Mode `core.staging`, the `shopwell.staging.mailing.disable_delivery` configuration and the config setting `shopwell.mailing.disable_delivery`.
+Regardless of mode the config setting `shopwell.mailing.disable_delivery` always allows disabling mail delivery.
 
 ## Critical fixes
 
@@ -4884,22 +4884,22 @@ This makes it more consistent as otherwise the types could change when they are 
 
 The exceptions
 
-* `\Shopware\Core\System\SystemConfig\Exception\InvalidDomainException`
-* `\Shopware\Core\System\SystemConfig\Exception\InvalidKeyException`
-* `\Shopware\Core\System\SystemConfig\Exception\InvalidSettingValueException`
+* `\Shopwell\Core\System\SystemConfig\Exception\InvalidDomainException`
+* `\Shopwell\Core\System\SystemConfig\Exception\InvalidKeyException`
+* `\Shopwell\Core\System\SystemConfig\Exception\InvalidSettingValueException`
 
 are now deprecated and will be removed in v6.8.0.0.
-Use the respective factory methods in `\Shopware\Core\System\SystemConfig\SystemConfigException` instead.
+Use the respective factory methods in `\Shopwell\Core\System\SystemConfig\SystemConfigException` instead.
 
 ### Deprecated SystemConfigService tracing methods
 
-The methods `\Shopware\Core\System\SystemConfig\SystemConfigService::trace()` and `\Shopware\Core\System\SystemConfig\SystemConfigService::getTrace()` are deprecated and will be removed.
+The methods `\Shopwell\Core\System\SystemConfig\SystemConfigService::trace()` and `\Shopwell\Core\System\SystemConfig\SystemConfigService::getTrace()` are deprecated and will be removed.
 The tracing is not needed anymore since the cache rework for 6.7.0.0.
 For now the methods are still available, but they do nothing.
 
 ### Add the correct interface to filterable price definitions
 
-If a price definition should be filterable, explicitly implement the `Shopware\Core\Checkout\Cart\Price\Struct\FilterableInterface`, which defines the required `getFilter()` method.
+If a price definition should be filterable, explicitly implement the `Shopwell\Core\Checkout\Cart\Price\Struct\FilterableInterface`, which defines the required `getFilter()` method.
 
 ## Storefront
 
@@ -4923,18 +4923,18 @@ implementation to use event delegation as well.
 
 #### American English can be used in installer
 
-American English can now be downloaded in the installer and can become the default shop language like any other language in Shopware.
+American English can now be downloaded in the installer and can become the default shop language like any other language in Shopwell.
 
-#### Available languages can be managed from Shopware core
+#### Available languages can be managed from Shopwell core
 
-No plugin is needed anymore to install languages available from the Shopware translation platform.
+No plugin is needed anymore to install languages available from the Shopwell translation platform.
 The entire plugin has been built into the core.
 Simply fetch and activate the language of your choice via the new bin/console commands.
 Later, this feature will become available in the administration.
 
-However, for any other language pack not available from the Shopware translation platform, you will still need a plugin.
+However, for any other language pack not available from the Shopwell translation platform, you will still need a plugin.
 
-You can fetch Shopware translations from the Shopware translation platform, which are stored on Github.
+You can fetch Shopwell translations from the Shopwell translation platform, which are stored on Github.
 You can even help provide translations and use them in your shop a short time later!
 
 Please note: As these are community-provided translations, we cannot guarantee that everything is translated 100% correctly.
@@ -4945,7 +4945,7 @@ Please see the [ADR](adr/2025-06-03-integrating-the-language-pack-into-platform.
 
 #### Country-Agnostic Language Layer
 
-Working with language codes in Shopware, such as en-GB (a combination of language and country), generally works well.
+Working with language codes in Shopwell, such as en-GB (a combination of language and country), generally works well.
 However, this approach can be quite maintenance-heavy: using multiple dialects, for example, British and American English, always leads to duplicated language snippets and can quickly become frustrating for translators.
 
 To address this, we introduced an additional translation layer that reduces dialects to patch files, limiting duplication to only a small portion of the snippets.
@@ -4960,32 +4960,32 @@ See the type of blocks directly when working with it as an editor.
 This is especially useful if using third party plugins.
 Thanks to @amenk!
 
-https://github.com/shopware/shopware/pull/12334
+https://github.com/shopwell-shop/shopwell/pull/12334
 
 #### 3D/canvas switching
 
 Slider viewers are now rendered in respect to their visibility modus. This gives us a bit of more performance.
 Thanks to @ffrank913 😉
 
-https://github.com/shopware/shopware/pull/12642
+https://github.com/shopwell-shop/shopwell/pull/12642
 
 #### Performance: Faster product category loading with a new index
 
-Thanks to this pull request, queries on product.categories shall run ways faster than before: See https://github.com/shopware/shopware/pull/12657 by @vienthuong
+Thanks to this pull request, queries on product.categories shall run ways faster than before: See https://github.com/shopwell-shop/shopwell/pull/12657 by @vienthuong
 
 #### Checkout & Promotions: More reliable shipping price matrix, credit notes, and promotion discount calculations
 
-https://github.com/shopware/shopware/pull/12560 by @untilu29 actually fixes Shipping method cannot be applied to products below 1 EUR due to “Cart price from” default by @cramytech.
+https://github.com/shopwell-shop/shopwell/pull/12560 by @untilu29 actually fixes Shipping method cannot be applied to products below 1 EUR due to “Cart price from” default by @cramytech.
 
-https://github.com/shopware/shopware/pull/12589 by @ennasus4sun fixes Credit notes are created cumulatively by @swagTKA.
+https://github.com/shopwell-shop/shopwell/pull/12589 by @ennasus4sun fixes Credit notes are created cumulatively by @swagTKA.
 
-https://github.com/shopware/shopware/pull/12603 by @socrec fixes Fixed Price delivery promotions cannot be excluded by janobi
+https://github.com/shopwell-shop/shopwell/pull/12603 by @socrec fixes Fixed Price delivery promotions cannot be excluded by janobi
 
 #### 3D Viewer: Improved visuals with better camera distance and model placement
 
-https://github.com/shopware/shopware/pull/12682 by ffrank913 fixes Incorrect model focus in SW6 standard CMS by himself
+https://github.com/shopwell-shop/shopwell/pull/12682 by ffrank913 fixes Incorrect model focus in SW6 standard CMS by himself
 
-https://github.com/shopware/shopware/pull/12654 by ffrank913 fixes Incorrect frontend display of 3D glb files in SW6 standard CMS by MaximilianFo
+https://github.com/shopwell-shop/shopwell/pull/12654 by ffrank913 fixes Incorrect frontend display of 3D glb files in SW6 standard CMS by MaximilianFo
 
 ### More tech updates
 
@@ -4994,5 +4994,5 @@ https://github.com/shopware/shopware/pull/12654 by ffrank913 fixes Incorrect fro
 * Build tooling: Admin build target updated to ES2023 (plugin authors should check compatibility)
 * Deprecations / Breaking changes:
   * Removal of `controllerName` and `controllerAction` variables in templates
-  * Deprecation of `Shopware\Core\System\SalesChannel\SalesChannel\SalesChannelContextSwitcher`
+  * Deprecation of `Shopwell\Core\System\SalesChannel\SalesChannel\SalesChannelContextSwitcher`
 * Upgrade notes: DB migration for the new category index, admin build target upgrade, profiler defaults

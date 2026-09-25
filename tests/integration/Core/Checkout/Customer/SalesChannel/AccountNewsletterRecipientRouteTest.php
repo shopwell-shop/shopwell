@@ -74,7 +74,7 @@ class AccountNewsletterRecipientRouteTest extends TestCase
                 '/store-api/account/login',
                 [
                     'email' => $email,
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                 ]
             );
 
@@ -123,7 +123,7 @@ class AccountNewsletterRecipientRouteTest extends TestCase
                 '/store-api/account/login',
                 [
                     'email' => $email,
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                 ]
             );
 

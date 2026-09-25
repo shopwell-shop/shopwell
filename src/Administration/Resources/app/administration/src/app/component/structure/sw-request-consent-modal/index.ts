@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  */
-import { MtModal, MtModalRoot, MtModalAction, MtModalClose } from '@shopware-ag/meteor-component-library';
+import { MtModal, MtModalRoot, MtModalAction, MtModalClose } from '@shopwell-ag/meteor-component-library';
 import DOMPurify from 'dompurify';
 import useConsentStore from 'src/core/consent/consent.store';
 import useNotificationStore from 'src/app/store/notification.store';

@@ -11,9 +11,9 @@ use Shopwell\Core\Framework\Mcp\AllowList\McpAllowlistProvider;
 #[Package('framework')]
 class McpToolsetRegistry
 {
-    final public const LIST_TOOLSETS_TOOL = 'shopware-toolsets-list';
+    final public const LIST_TOOLSETS_TOOL = 'shopwell-toolsets-list';
 
-    final public const ENABLE_TOOLSET_TOOL = 'shopware-toolset-enable';
+    final public const ENABLE_TOOLSET_TOOL = 'shopwell-toolset-enable';
 
     /**
      * The always-advertised discovery interface (tool-search + toolsets-list/-enable). It is the

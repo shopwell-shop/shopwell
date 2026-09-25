@@ -104,42 +104,42 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(SalesChannelDefinition::class)
-        ->tag('shopware.entity.definition')
-        ->tag('shopware.entity.hookable');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.entity.hookable');
 
     $services->set(SalesChannelTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelCountryDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelCurrencyDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelDomainDefinition::class)
-        ->tag('shopware.entity.definition')
-        ->tag('shopware.entity.hookable');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.entity.hookable');
 
     $services->set(SalesChannelLanguageDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelPaymentMethodDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelShippingMethodDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelTypeDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelTypeTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelAnalyticsDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'sales_channel_analytics']);
+        ->tag('shopwell.entity.definition', ['entity' => 'sales_channel_analytics']);
 
     $services->set(SalesChannelFileDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelFileTemplateOverrideLoader::class)
         ->tag('twig.loader', ['priority' => 100])
@@ -232,7 +232,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(CartPersister::class),
             service(ClockInterface::class),
-            param('shopware.api.store.context_lifetime'),
+            param('shopwell.api.store.context_lifetime'),
         ]);
 
     $services->set(SalesChannelContextRequestRestorer::class)
@@ -330,7 +330,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(DefinitionService::class),
             service('twig'),
-            param('shopware.security.csp_templates'),
+            param('shopwell.security.csp_templates'),
             service(ApiRouteInfoResolver::class),
         ]);
 
@@ -370,7 +370,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('controller.argument_value_resolver', ['priority' => 1000]);
 
     $services->set(SalesChannelExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(StoreApiResponseListener::class)
         ->tag('kernel.event_subscriber')
@@ -396,17 +396,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(ManyToManyIdFieldUpdater::class),
         ])
-        ->tag('shopware.entity_indexer');
+        ->tag('shopwell.entity_indexer');
 
     $services->set(CleanupSalesChannelContextTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(CleanupSalesChannelContextTaskHandler::class)
         ->args([
             service('scheduled_task.repository'),
             service('logger'),
             service(Connection::class),
-            param('shopware.sales_channel_context.expire_days'),
+            param('shopwell.sales_channel_context.expire_days'),
             service(ClockInterface::class),
         ])
         ->tag('messenger.message_handler');
@@ -455,52 +455,52 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ContextGatewayCommandRegistry::class)
         ->args([
-            tagged_iterator('shopware.context.gateway.command'),
+            tagged_iterator('shopwell.context.gateway.command'),
         ]);
 
     $services->set(AddCustomerMessageCommandHandler::class)
-        ->tag('shopware.context.gateway.command');
+        ->tag('shopwell.context.gateway.command');
 
     $services->set(ChangeAddressCommandHandler::class)
-        ->tag('shopware.context.gateway.command');
+        ->tag('shopwell.context.gateway.command');
 
     $services->set(ChangeCheckoutOptionsCommandHandler::class)
         ->args([
             service('payment_method.repository'),
             service('shipping_method.repository'),
         ])
-        ->tag('shopware.context.gateway.command');
+        ->tag('shopwell.context.gateway.command');
 
     $services->set(ChangeCurrencyCommandHandler::class)
         ->args([
             service('currency.repository'),
         ])
-        ->tag('shopware.context.gateway.command');
+        ->tag('shopwell.context.gateway.command');
 
     $services->set(ChangeLanguageCommandHandler::class)
         ->args([
             service('language.repository'),
         ])
-        ->tag('shopware.context.gateway.command');
+        ->tag('shopwell.context.gateway.command');
 
     $services->set(ChangeShippingLocationCommandHandler::class)
         ->args([
             service('country.repository'),
             service('country_state.repository'),
         ])
-        ->tag('shopware.context.gateway.command');
+        ->tag('shopwell.context.gateway.command');
 
     $services->set(LoginCustomerCommandHandler::class)
         ->args([
             service(AccountService::class),
         ])
-        ->tag('shopware.context.gateway.command');
+        ->tag('shopwell.context.gateway.command');
 
     $services->set(RegisterCustomerCommandHandler::class)
         ->args([
             service(RegisterRoute::class),
         ])
-        ->tag('shopware.context.gateway.command');
+        ->tag('shopwell.context.gateway.command');
 
     $services->set(SalesChannelMaintenanceIpAllowlistSyncSubscriber::class)
         ->tag('kernel.event_subscriber');

@@ -4,9 +4,9 @@ UPGRADE FROM 6.2.x to 6.3
 # 6.3.5.1
 ## Api aware fields
 So far, we have used a protection pattern on the entities, to define which fields are available through the APIs. This pattern has been used for the `/admin` API as well as for the `/sales-channel-api` and `/store-api`.
-A field could previously be excluded from an API via the `Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ReadProtected`. This has now changed as follows:
+A field could previously be excluded from an API via the `Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ReadProtected`. This has now changed as follows:
 
-* Every field is enabled for the `/admin` API by default. This happens via the base `\Shopware\Core\Framework\DataAbstractionLayer\Field\Field` class where we add the flag by default for the `/admin` API.
+* Every field is enabled for the `/admin` API by default. This happens via the base `\Shopwell\Core\Framework\DataAbstractionLayer\Field\Field` class where we add the flag by default for the `/admin` API.
 * To make a field available in the `/store-api` as well, the flag can be overwritten and the correct source can be specified in the new flag.
 * By default, no information for an entity is available in the `/store-api`. Only by adding the flag the data becomes visible.
 * If no source is passed to the flag, the flag will use all sources as default.
@@ -30,7 +30,7 @@ A field could previously be excluded from an API via the `Shopware\Core\Framewor
 # 6.3.5.0
 ## Plugin acl - Use `enrichPrivileges` instead of `addPrivileges`
 The current behaviour of adding privileges via plugins is deprecated for 6.4.0.0.
-Instead of writing custom plugin privileges via `Shopware\Core\Framework\Plugin::addPrivileges()` right into the database, 
+Instead of writing custom plugin privileges via `Shopwell\Core\Framework\Plugin::addPrivileges()` right into the database, 
 plugins now should override the new `enrichPrivileges()` method to add privileges on runtime.
 This method should return an array in the following structure:
 
@@ -39,7 +39,7 @@ This method should return an array in the following structure:
 
 namespace MyPlugin;
 
-use Shopware\Core\Framework\Plugin;
+use Shopwell\Core\Framework\Plugin;
 
 class SwagTestPluginAcl extends Plugin
 {
@@ -63,19 +63,19 @@ class SwagTestPluginAcl extends Plugin
 ## Require CustomerEntity parameter in store api routes
 * Added `CustomerEntity $customer` parameter in store api routes. The parameter will be required in 6.4. At the moment, the parameter is commented out in the `*AbstractRoute`, but it is already passed. If you decorate on of the following routes, you have to change your sources as follows:
     * Affected routes:
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractAddWishlistProductRoute`
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractChangeCustomerProfileRoute`
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractChangeEmailRoute`
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractChangePasswordRoute`
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractChangePaymentMethodRoute`
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractCustomerRoute`
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractDeleteAddressRoute`
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractDeleteCustomerRoute`
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractListAddressRoute`
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractMergeWishlistProductRoute`
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractRemoveWishlistProductRoute`
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractSwitchDefaultAddressRoute`
-        * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractUpsertAddressRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractAddWishlistProductRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractChangeCustomerProfileRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractChangeEmailRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractChangePasswordRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractChangePaymentMethodRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractCustomerRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractDeleteAddressRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractDeleteCustomerRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractListAddressRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractMergeWishlistProductRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractRemoveWishlistProductRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractSwitchDefaultAddressRoute`
+        * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractUpsertAddressRoute`
     * Sources before:
         ```
         /**
@@ -93,7 +93,7 @@ class SwagTestPluginAcl extends Plugin
         ```
     * Sources after:
         ```
-        use Shopware\Core\Checkout\Customer\CustomerEntity;
+        use Shopwell\Core\Checkout\Customer\CustomerEntity;
 
         /**
          * 
@@ -144,15 +144,15 @@ $criteria->addFilter(
 - Each customer now has a unique sales channel context, which means it will be shared across devices and browsers, including its cart.
 - Which this change, when working with `SalesChannelContextPersister`, you should pass a 3rd parameter `sales_channel_id` and 4th parameter `customer_id` in `SalesChannelContextPersister::save()` to save customer's customer's context.
 *  Customer email is not unique from all customers anymore, instead it will unique from other customers' email in a same sales channel.
-*  The `$context` property in `Shopware\Core\Checkout\Customer\Validation\Constraint\CustomerEmailUnique` is deprecated, using `SalesChannelContext $salesChannelContext` to get the context instead.
+*  The `$context` property in `Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerEmailUnique` is deprecated, using `SalesChannelContext $salesChannelContext` to get the context instead.
 Use `import from src/module` instead of `import from 'module'`. However we discourage you to directly use imports of the administration's source in your plugins.
- Use the administration's open API through the global Shopware object.
+ Use the administration's open API through the global Shopwell object.
 ## Usage of DBAL connection methods in migrations
 For compatibility with main/replica database environments and blue green deployment,
 it is important to use the correct methods of the DBAL connection in migrations.
 Use `Doctrine\DBAL\Connection::executeUpdate` for these operations: `UPDATE|ALTER|BACKUP|CREATE|DELETE|DROP|EXEC|INSERT|TRUNCATE`
 For everything else `Doctrine\DBAL\Connection::executeQuery` could be used.
-Using `executeQuery` for the mentioned operations above is deprecated and will throw an exception with Shopware 6.4.0.0.
+Using `executeQuery` for the mentioned operations above is deprecated and will throw an exception with Shopwell 6.4.0.0.
 ## Removed associations in customer group criteria
 We have to remove the associations `salesChannels` and `customers` 
 in these computed properties: `allCustomerGroupsCriteria` and `customerGroupCriteriaWithFilter`
@@ -176,15 +176,15 @@ The current defined sortings in the service definition xml are deprecated for re
 
 If you have defined custom sorting options in the service definition, please consider upgrading to the new logic via migration.
 
-Before, custom sortings were handled by defining them as services and tagging them as `shopware.sales_channel.product_listing.sorting`:
+Before, custom sortings were handled by defining them as services and tagging them as `shopwell.sales_channel.product_listing.sorting`:
 ```xml
-<service id="product_listing.sorting.name_ascending" class="Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingSorting">
+<service id="product_listing.sorting.name_ascending" class="Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingSorting">
     <argument>name-asc</argument>
     <argument>filter.sortByNameAscending</argument>
     <argument type="collection">
         <argument key="product.name">asc</argument>
     </argument>
-    <tag name="shopware.sales_channel.product_listing.sorting" />
+    <tag name="shopwell.sales_channel.product_listing.sorting" />
 </service>
 ```
 Now it is possible to store custom sortings in the database `product_sorting` and its translatable label in `product_sorting_translation`
@@ -192,9 +192,9 @@ Now it is possible to store custom sortings in the database `product_sorting` an
 We optimized the product listing aggregation handling. 
 
 In order to implement a filter for a product listing before, you had to register for the following events:
-* `\Shopware\Core\Content\Product\Events\ProductListingCriteriaEvent`
+* `\Shopwell\Core\Content\Product\Events\ProductListingCriteriaEvent`
     * Adds the filter and aggregations to the criteria
-* `\Shopware\Core\Content\Product\Events\ProductListingResultEvent`
+* `\Shopwell\Core\Content\Product\Events\ProductListingResultEvent`
     * Adds the filtered values to the result
 
 ### Before
@@ -245,7 +245,7 @@ class ExampleListingSubscriber implements EventSubscriberInterface
 
 ### After
 As we have now introduced a new mode for the filters, where the filters have been further reduced with each filtering, we have simplified the system.
-For this, the event `\Shopware\Core\Content\Product\Events\ProductListingCollectFilterEvent` was introduced, where every developer can specify the meta data for a filter. 
+For this, the event `\Shopwell\Core\Content\Product\Events\ProductListingCollectFilterEvent` was introduced, where every developer can specify the meta data for a filter. 
 The handling, if and how a filter is added, is done by the core.
 
 ```
@@ -315,10 +315,10 @@ by calling loginService.verifyUserToken(userPassword) and provide the current us
 fetched from the session.
 ## `name` attribute of `ProductFeatureSetTranslationDefinition` will be non-nullable
 
-With [4456](https://github.com/shopware/shopware/issues/4456), the `name` attribute in
-[ProductFeatureSetTranslationDefinition](https://github.com/shopware/platform/blob/master/src/Core/Content/Product/Aggregate/ProductFeatureSetTranslation/ProductFeatureSetTranslationDefinition.php)
+With [4456](https://github.com/shopwell-shop/shopwell/issues/4456), the `name` attribute in
+[ProductFeatureSetTranslationDefinition](https://github.com/shopwell-shop/platform/blob/master/src/Core/Content/Product/Aggregate/ProductFeatureSetTranslation/ProductFeatureSetTranslationDefinition.php)
 was marked non-nullable. This change is also implemented on database-level with
-[Migration1601388975RequireFeatureSetName.php](https://github.com/shopware/platform/blob/master/src/Core/Migration/Migration1601388975RequireFeatureSetName.php).
+[Migration1601388975RequireFeatureSetName.php](https://github.com/shopwell-shop/platform/blob/master/src/Core/Migration/Migration1601388975RequireFeatureSetName.php).
 For blue-green deployment compatibility, the now non-nullable field will have an empty string as default value.
 The upcoming **6.4.0.0** release will contain major **breaking changes** to the payment and shipping method selection templates in the storefront.
 The modal to select payment or shipping methods was removed entirely.
@@ -397,7 +397,7 @@ client.get('/store-api/v2/country', function(response) {
 });
 ```
 ## Entity Foreign Key Resolver
-There are currently systems that have performance problems with the `\Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityForeignKeyResolver`.
+There are currently systems that have performance problems with the `\Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityForeignKeyResolver`.
 We have now created a solution for this, but we have to change the format of the return value of the different functions as follow:
 
 ### getAffectedDeleteRestrictions & getAffectedDeletes
@@ -450,7 +450,7 @@ We have now created a solution for this, but we have to change the format of the
     [
         'pk' => '43c6baad756140d8aabbbca533a8284f'
         restrictions => [
-            'Shopware\Core\Content\Product\ProductDefinition' => [
+            'Shopwell\Core\Content\Product\ProductDefinition' => [
                 '1ffd7ea958c643558256927aae8efb07' => ['category_id'],
                 '1ffd7ea958c643558256927aae8efb07' => ['category_id', 'main_category_id']
             ]
@@ -477,20 +477,20 @@ We have now created a solution for this, but we have to change the format of the
 API
 ----
 ## Drop support of API version V1
-With Shopware 6.3.0.0 we increased the API version to `v3` and therefore dropped the API version `v1` and removed all corresponding deprecations which where marked for the 6.3 version tag. This mainly affects deprecations which where made during the development of the 6.1 version. As we try to keep the downwards compatibility always one API version backwards, there are now two available API versions: `v3` and `v2`.
+With Shopwell 6.3.0.0 we increased the API version to `v3` and therefore dropped the API version `v1` and removed all corresponding deprecations which where marked for the 6.3 version tag. This mainly affects deprecations which where made during the development of the 6.1 version. As we try to keep the downwards compatibility always one API version backwards, there are now two available API versions: `v3` and `v2`.
 
 Core
 ----
 
-* The `\Shopware\Core\System\Snippet\Files\SnippetFileInterface` is deprecated, please provide your snippet files in the right directory with the right name so shopware is able to autoload them.
+* The `\Shopwell\Core\System\Snippet\Files\SnippetFileInterface` is deprecated, please provide your snippet files in the right directory with the right name so shopwell is able to autoload them.
 Take a look at the `Autoloading of Storefront snippets` section in this guide: `Docs/Resources/current/30-theme-guide/40-snippets.md`, for more information.
 After that you are able to delete your implementation of the `SnippetFileInterface`.
 * Deprecated configuration `api.allowed_limits` in `src/Core/Framework/DependencyInjection/Configuration.php`
 * Removed deprecations:
-    * Removed deprecated property `allowedLimits` and method `getAllowedLimits` in `Shopware\Core\Framework\DataAbstractionLayer\Search/RequestCriteriaBuilder.php`
-    * Removed deprecated configuration `api.allowed_limits` in `src/Core/Framework/Resources/config/packages/shopware.yaml`
-    * Removed class `Shopware\Core\Framework\DataAbstractionLayer\Exception\DisallowedLimitQueryException`
-* Added `CloneBehavior $behavior` parameter to `\Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface::clone`. This parameter will be introduced in 6.4.0.
+    * Removed deprecated property `allowedLimits` and method `getAllowedLimits` in `Shopwell\Core\Framework\DataAbstractionLayer\Search/RequestCriteriaBuilder.php`
+    * Removed deprecated configuration `api.allowed_limits` in `src/Core/Framework/Resources/config/packages/shopwell.yaml`
+    * Removed class `Shopwell\Core\Framework\DataAbstractionLayer\Exception\DisallowedLimitQueryException`
+* Added `CloneBehavior $behavior` parameter to `\Shopwell\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface::clone`. This parameter will be introduced in 6.4.0.
     * If you implement an own class of EntityRepository, you have to change your clone function as follow:
     * Before:
     ```
@@ -514,17 +514,17 @@ After that you are able to delete your implementation of the `SnippetFileInterfa
         // ...
     }
     ```
-* Changed status code of `\Shopware\Core\System\SalesChannel\NoContentResponse` from `200` to `204`.
-* Added two new arguments `$package` and `$cacheClearer` to constructor of `\Shopware\Storefront\Theme\ThemeCompiler`.
+* Changed status code of `\Shopwell\Core\System\SalesChannel\NoContentResponse` from `200` to `204`.
+* Added two new arguments `$package` and `$cacheClearer` to constructor of `\Shopwell\Storefront\Theme\ThemeCompiler`.
 * Replaced Symfony `asset:install` command with a Flysystem compatible own implementation
-* Added new filesystem adapters `shopware.filesystem.theme`, `shopware.filesystem.asset` and `shopware.filesystem.sitemap`. They can be configured to use external storages for saving of theme contents, bundle assets or sitemap.
-* Added new argument `$package` to constructor of `\Shopware\Core\Content\Sitemap\Service\SitemapLister`.
-* Deprecated config `shopware.cdn.url`. Use `shopware.filesystem.public.url` instead.
+* Added new filesystem adapters `shopwell.filesystem.theme`, `shopwell.filesystem.asset` and `shopwell.filesystem.sitemap`. They can be configured to use external storages for saving of theme contents, bundle assets or sitemap.
+* Added new argument `$package` to constructor of `\Shopwell\Core\Content\Sitemap\Service\SitemapLister`.
+* Deprecated config `shopwell.cdn.url`. Use `shopwell.filesystem.public.url` instead.
 * Added new scss variable `sw-asset-theme-url` which refers to the theme asset url.
-* If you subscribed to one of the following `\Shopware\Storefront\Event\RouteRequest\RouteRequestEvent` events, you must now extend the provided criteria instead of adding the query to the request:
+* If you subscribed to one of the following `\Shopwell\Storefront\Event\RouteRequest\RouteRequestEvent` events, you must now extend the provided criteria instead of adding the query to the request:
     * Before
     ```php
-    use Shopware\Storefront\Event\RouteRequest\OrderRouteRequestEvent;
+    use Shopwell\Storefront\Event\RouteRequest\OrderRouteRequestEvent;
     use Symfony\Component\EventDispatcher\EventSubscriberInterface;
     
     class MySubscriber implements EventSubscriberInterface
@@ -547,7 +547,7 @@ After that you are able to delete your implementation of the `SnippetFileInterfa
   
     * After
     ```php
-    use Shopware\Storefront\Event\RouteRequest\OrderRouteRequestEvent;
+    use Shopwell\Storefront\Event\RouteRequest\OrderRouteRequestEvent;
     use Symfony\Component\EventDispatcher\EventSubscriberInterface;
     
     class MySubscriber implements EventSubscriberInterface
@@ -567,17 +567,17 @@ After that you are able to delete your implementation of the `SnippetFileInterfa
     ```
 * Added `Criteria $criteria` parameter in store api routes. The parameter will be required in 6.4. At the moment, the parameter is commented out in the `*AbstractRoute`, but it is already passed. If you decorate on of the following routes, you have to change your sources as follows:
       * Affected routes:
-          * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractCustomerRoute`           
-          * `Shopware\Core\Checkout\Order\SalesChannel\AbstractOrderRoute`                 
-          * `Shopware\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute`       
-          * `Shopware\Core\Checkout\Shipping\SalesChannel\AbstractShippingMethodRoute`     
-          * `Shopware\Core\Content\Category\SalesChannel\AbstractNavigationRoute`          
-          * `Shopware\Core\Content\Product\SalesChannel\Listing/AbstractProductListingRoute`
-          * `Shopware\Core\Content\Product\SalesChannel\Search/AbstractProductSearchRoute` 
-          * `Shopware\Core\Content\Seo\SalesChannel\AbstractSeoUrlRoute`                   
-          * `Shopware\Core\System\Currency\SalesChannel\AbstractCurrencyRoute`             
-          * `Shopware\Core\System\Language\SalesChannel\AbstractLanguageRoute`             
-          * `Shopware\Core\System\Salutation\SalesChannel\AbstractSalutationRoute`         
+          * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractCustomerRoute`           
+          * `Shopwell\Core\Checkout\Order\SalesChannel\AbstractOrderRoute`                 
+          * `Shopwell\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute`       
+          * `Shopwell\Core\Checkout\Shipping\SalesChannel\AbstractShippingMethodRoute`     
+          * `Shopwell\Core\Content\Category\SalesChannel\AbstractNavigationRoute`          
+          * `Shopwell\Core\Content\Product\SalesChannel\Listing/AbstractProductListingRoute`
+          * `Shopwell\Core\Content\Product\SalesChannel\Search/AbstractProductSearchRoute` 
+          * `Shopwell\Core\Content\Seo\SalesChannel\AbstractSeoUrlRoute`                   
+          * `Shopwell\Core\System\Currency\SalesChannel\AbstractCurrencyRoute`             
+          * `Shopwell\Core\System\Language\SalesChannel\AbstractLanguageRoute`             
+          * `Shopwell\Core\System\Salutation\SalesChannel\AbstractSalutationRoute`         
       * Sources before:
           ```
           /**
@@ -595,7 +595,7 @@ After that you are able to delete your implementation of the `SnippetFileInterfa
           ```
       * Sources after:
           ```
-          use Shopware\Core\Framework\Routing\Annotation\Entity;
+          use Shopwell\Core\Framework\Routing\Annotation\Entity;
           
           /**
            * the below @Entity() annotation builds the criteria automatically for the current request
@@ -612,20 +612,20 @@ After that you are able to delete your implementation of the `SnippetFileInterfa
           ```
 
 
-* The behaviour when uninstalling a plugin has changed: `keepMigrations` now has the same value as `keepUserData` in `\Shopware\Core\Framework\Plugin\Context\UninstallContext` by default.
+* The behaviour when uninstalling a plugin has changed: `keepMigrations` now has the same value as `keepUserData` in `\Shopwell\Core\Framework\Plugin\Context\UninstallContext` by default.
     * From now on migrations will be removed if the user data should be removed, and kept if the user data should be kept.
     * The `enableKeepMigrations()` function is no longer to be used and will be removed along with `keepMigrations()` in v6.4.0.
     * Please note: In case of a complete uninstall all tables should be removed as well. Please verify the uninstall method of your plugin complies with this.
 * Adding custom sortings to the storefront is now supported in the administration
-    * Before, custom sortings were handled by defining them as services and tagging them as `shopware.sales_channel.product_listing.sorting`:
+    * Before, custom sortings were handled by defining them as services and tagging them as `shopwell.sales_channel.product_listing.sorting`:
     ```xml
-    <service id="product_listing.sorting.name_ascending" class="Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingSorting">
+    <service id="product_listing.sorting.name_ascending" class="Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingSorting">
         <argument>name-asc</argument>
         <argument>filter.sortByNameAscending</argument>
         <argument type="collection">
             <argument key="product.name">asc</argument>
         </argument>
-        <tag name="shopware.sales_channel.product_listing.sorting" />
+        <tag name="shopwell.sales_channel.product_listing.sorting" />
     </service>
     ```
     * Now it is possible to store custom sortings in the database `product_sorting` and its translatable label in `product_sorting_translation`
@@ -643,32 +643,32 @@ After that you are able to delete your implementation of the `SnippetFileInterfa
     ```
 
 * We have moved the logic for loading the detail page to Store-Api routes. The following extension points have been adapted for this:
-    * Some services and struct classes moved from the `Shopware\Storefront` domain to the `Shopware\Core` domain. The public api are still the same but if you decorated one of the following classes you have to change your `extends` expression and the `decorates` definition in your services.xml:
-        * `\Shopware\Storefront\Page\Product\Configurator\AvailableCombinationLoader` => `Shopware\Core\Content\Product\SalesChannel\Detail\AvailableCombinationLoader`
-        * `\Shopware\Storefront\Page\Product\Configurator\ProductPageConfiguratorLoader` => `Shopware\Core\Content\Product\SalesChannel\Detail\ProductConfiguratorLoader`
-        * `\Shopware\Storefront\Page\Product\CrossSelling\CrossSellingLoader` => `\Shopware\Core\Content\Product\SalesChannel\CrossSelling\AbstractProductCrossSellingRoute`
-        * `\Shopware\Storefront\Page\Product\ProductLoader` => `Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute`
-    * Usage of the `\Shopware\Storefront\Page\Product\ProductLoader` are no longer recommend. To fetch the product data of a single product, use the `Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute`
-        * With this deprecation we also deprecated the `\Shopware\Storefront\Page\Product\ProductLoaderCriteriaEvent`. 
-            * If you have subscribed to this event to extend the product detail page, replace the event with `\Shopware\Storefront\Page\Product\ProductPageCriteriaEvent`
-            * If you have subscribed to this event to extend the listing quick view, replace the event with `\Shopware\Storefront\Page\Product\QuickView\MinimalQuickViewPageCriteriaEvent`  
+    * Some services and struct classes moved from the `Shopwell\Storefront` domain to the `Shopwell\Core` domain. The public api are still the same but if you decorated one of the following classes you have to change your `extends` expression and the `decorates` definition in your services.xml:
+        * `\Shopwell\Storefront\Page\Product\Configurator\AvailableCombinationLoader` => `Shopwell\Core\Content\Product\SalesChannel\Detail\AvailableCombinationLoader`
+        * `\Shopwell\Storefront\Page\Product\Configurator\ProductPageConfiguratorLoader` => `Shopwell\Core\Content\Product\SalesChannel\Detail\ProductConfiguratorLoader`
+        * `\Shopwell\Storefront\Page\Product\CrossSelling\CrossSellingLoader` => `\Shopwell\Core\Content\Product\SalesChannel\CrossSelling\AbstractProductCrossSellingRoute`
+        * `\Shopwell\Storefront\Page\Product\ProductLoader` => `Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute`
+    * Usage of the `\Shopwell\Storefront\Page\Product\ProductLoader` are no longer recommend. To fetch the product data of a single product, use the `Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute`
+        * With this deprecation we also deprecated the `\Shopwell\Storefront\Page\Product\ProductLoaderCriteriaEvent`. 
+            * If you have subscribed to this event to extend the product detail page, replace the event with `\Shopwell\Storefront\Page\Product\ProductPageCriteriaEvent`
+            * If you have subscribed to this event to extend the listing quick view, replace the event with `\Shopwell\Storefront\Page\Product\QuickView\MinimalQuickViewPageCriteriaEvent`  
     * As with the services, we have also moved some events from the storefront to the core. The public API of the events is the same. The following events can be replaced 1:1:
-        * `\Shopware\Storefront\Page\Product\CrossSelling\CrossSellingLoadedEvent` => `\Shopware\Core\Content\Product\Events\ProductCrossSellingsLoadedEvent` instead
-        * `\Shopware\Storefront\Page\Product\CrossSelling\CrossSellingProductCriteriaEvent` => `\Shopware\Core\Content\Product\Events\ProductCrossSellingCriteriaEvent` instead
-        * `\Shopware\Storefront\Page\Product\CrossSelling\CrossSellingProductListCriteriaEvent` => `\Shopware\Core\Content\Product\Events\ProductCrossSellingIdsCriteriaEvent` instead
-        * `\Shopware\Storefront\Page\Product\CrossSelling\CrossSellingProductStreamCriteriaEvent` => `\Shopware\Core\Content\Product\Events\ProductCrossSellingStreamCriteriaEvent` instead
+        * `\Shopwell\Storefront\Page\Product\CrossSelling\CrossSellingLoadedEvent` => `\Shopwell\Core\Content\Product\Events\ProductCrossSellingsLoadedEvent` instead
+        * `\Shopwell\Storefront\Page\Product\CrossSelling\CrossSellingProductCriteriaEvent` => `\Shopwell\Core\Content\Product\Events\ProductCrossSellingCriteriaEvent` instead
+        * `\Shopwell\Storefront\Page\Product\CrossSelling\CrossSellingProductListCriteriaEvent` => `\Shopwell\Core\Content\Product\Events\ProductCrossSellingIdsCriteriaEvent` instead
+        * `\Shopwell\Storefront\Page\Product\CrossSelling\CrossSellingProductStreamCriteriaEvent` => `\Shopwell\Core\Content\Product\Events\ProductCrossSellingStreamCriteriaEvent` instead
         
 Administration
 --------------
 
 * Removed LanguageStore
     * Use Context State instead
-    * Replace `languageStore.setCurrentId(this.languageId)` with `Shopware.State.commit('context/setApiLanguageId', languageId)`
-    * Replace `languageStore.getCurrentId()` with `Shopware.Context.api.languageId`
+    * Replace `languageStore.setCurrentId(this.languageId)` with `Shopwell.State.commit('context/setApiLanguageId', languageId)`
+    * Replace `languageStore.getCurrentId()` with `Shopwell.Context.api.languageId`
     * Replace `getCurrentLanguage` with the Repository
     * Removed `getLanguageStore`
-    * Replace `languageStore.systemLanguageId` with `Shopware.Context.api.systemLanguageId`
-    * Replace `languageStore.currentLanguageId` with `Shopware.Context.api.languageId`
+    * Replace `languageStore.systemLanguageId` with `Shopwell.Context.api.systemLanguageId`
+    * Replace `languageStore.currentLanguageId` with `Shopwell.Context.api.languageId`
     * Removed `languageStore.init`
     * Added mutation to Context State: `setApiLanguageId`
     * Added mutation to Context State: `resetLanguageToDefault`
@@ -729,20 +729,20 @@ Refactorings
 ## Flysystem adapters
 With 6.3 we have refactored the url handling of including resources like images, js, css etc. We have also created three new adapters: `asset` (plugin public files), `theme` (theme resources) and `sitemap`.
 For comparability reason they inherit from the `public` filesytem. So after the update all new filesystem are using the config from public filesystem.
-[See the updated documentation to how to configure all filesystems.](https://docs.shopware.com/en/shopware-platform-dev-en/how-to/use-s3-datastorage)
+[See the updated documentation to how to configure all filesystems.](https://docs.shopwell.com/en/shopwell-platform-dev-en/how-to/use-s3-datastorage)
 All file system configuration have now an `url` config option, this url will be used for url generation to the files.
 
 ## Usage of the Symfony asset
 To unify the URL generation, we create a Symfony asset for each public filesystem adapter. This will build the correct URL with a version cache busting.
-These assets are prefixed in dependency injection with `shopware.asset.{ADAPTER_NAME}`:  
-*  `shopware.asset.public`
-*  `shopware.asset.theme`
-*  `shopware.asset.asset`
+These assets are prefixed in dependency injection with `shopwell.asset.{ADAPTER_NAME}`:  
+*  `shopwell.asset.public`
+*  `shopwell.asset.theme`
+*  `shopwell.asset.asset`
 
 Example in PHP:
 ```php
 // This is an example. Please use dependency injection
-$publicAsset = $container->get('shopware.asset.public');
+$publicAsset = $container->get('shopwell.asset.public');
 
 // Get the full url to the image
 $imageUrl = $publicAsset->getUrl('folder/image.png');

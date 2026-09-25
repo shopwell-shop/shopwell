@@ -9,7 +9,7 @@
 /**
  * @private
  */
-export const SHOPWARE_ACCOUNT_REQUIREMENT = 'shopware_account';
+export const SHOPWELL_ACCOUNT_REQUIREMENT = 'shopwell_account';
 
 /**
  * @private
@@ -34,7 +34,7 @@ export interface ServiceDescription extends ServiceWithShopwellAccountRequiremen
  * @private
  */
 export function serviceHasShopwellAccountRequirement(requirements: string[]): boolean {
-    return requirements.includes(SHOPWARE_ACCOUNT_REQUIREMENT);
+    return requirements.includes(SHOPWELL_ACCOUNT_REQUIREMENT);
 }
 
 /**

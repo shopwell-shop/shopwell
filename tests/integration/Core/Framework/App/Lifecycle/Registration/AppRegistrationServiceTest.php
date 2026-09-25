@@ -84,8 +84,8 @@ class AppRegistrationServiceTest extends TestCase
         $uriWithoutQuery = $registrationRequest->getUri()->withQuery('');
         static::assertSame($setup->getRegistrationUrl(), (string) $uriWithoutQuery);
         static::assertNotEmpty($registrationRequest->getHeaderLine('sw-version'));
-        static::assertNotEmpty($registrationRequest->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
-        static::assertNotEmpty($registrationRequest->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($registrationRequest->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
+        static::assertNotEmpty($registrationRequest->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
 
         $secret = $setup->getSecret();
         static::assertNotNull($secret);
@@ -116,16 +116,16 @@ class AppRegistrationServiceTest extends TestCase
 
         static::assertSame(
             \hash_hmac('sha256', $json, $appSecret),
-            $confirmationReq->getHeaderLine('shopware-shop-signature')
+            $confirmationReq->getHeaderLine('shopwell-shop-signature')
         );
 
         // A fresh install has no earlier secret, so it must NOT send the previous-signature header that a
         // re-registration uses.
-        static::assertFalse($confirmationReq->hasHeader('shopware-shop-signature-previous'));
+        static::assertFalse($confirmationReq->hasHeader('shopwell-shop-signature-previous'));
 
         static::assertNotEmpty($confirmationReq->getHeaderLine('sw-version'));
-        static::assertNotEmpty($registrationRequest->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
-        static::assertNotEmpty($registrationRequest->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($registrationRequest->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
+        static::assertNotEmpty($registrationRequest->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
     }
 
     public function testRegistrationConfirmFails(): void
@@ -225,7 +225,7 @@ class AppRegistrationServiceTest extends TestCase
             $this->shopUrl,
             $shopIdProviderMock,
             static::getContainer()->get(StoreClient::class),
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             new NativeClock()
         );
 
@@ -236,11 +236,11 @@ class AppRegistrationServiceTest extends TestCase
 
         $registrator = new AppRegistrationService(
             $handshakeFactory,
-            static::getContainer()->get('shopware.app_system.guzzle'),
+            static::getContainer()->get('shopwell.app_system.guzzle'),
             static::getContainer()->get('app.repository'),
             $this->shopUrl,
             $shopIdMock,
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             new NativeClock(),
             new NullLogger(),
         );
@@ -261,11 +261,11 @@ class AppRegistrationServiceTest extends TestCase
         $registrationRequest = $this->getPastRequest(0);
         $confirmationRequest = $this->getPastRequest(1);
         static::assertNotEmpty($registrationRequest->getHeaderLine('sw-version'));
-        static::assertNotEmpty($registrationRequest->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
-        static::assertNotEmpty($registrationRequest->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($registrationRequest->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
+        static::assertNotEmpty($registrationRequest->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
         static::assertNotEmpty($confirmationRequest->getHeaderLine('sw-version'));
-        static::assertNotEmpty($confirmationRequest->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
-        static::assertNotEmpty($confirmationRequest->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($confirmationRequest->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
+        static::assertNotEmpty($confirmationRequest->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
     }
 
     public function testDoesNotRegisterIfNoSetupElementIsProvided(): void
@@ -374,7 +374,7 @@ class AppRegistrationServiceTest extends TestCase
     {
         static::assertSame(
             hash_hmac('sha256', $registrationRequest->getUri()->getQuery(), $secret),
-            $registrationRequest->getHeaderLine('shopware-app-signature')
+            $registrationRequest->getHeaderLine('shopwell-app-signature')
         );
     }
 

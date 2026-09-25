@@ -41,21 +41,21 @@ class InstallerTest extends TestCase
         $installer = new Installer();
         $installer->build($this->container);
 
-        $preselection = $this->container->getParameter('shopware.installer.configurationPreselection');
+        $preselection = $this->container->getParameter('shopwell.installer.configurationPreselection');
         static::assertIsArray($preselection);
         static::assertArrayHasKey('de', $preselection);
         $germanPreselection = $preselection['de'];
         static::assertArrayHasKey('currency', $germanPreselection);
         $this->preselection = $preselection;
 
-        $currencies = $this->container->getParameter('shopware.installer.supportedCurrencies');
+        $currencies = $this->container->getParameter('shopwell.installer.supportedCurrencies');
         static::assertIsArray($currencies);
         static::assertArrayHasKey('EUR', $currencies);
         $euroCurrency = $currencies['EUR'];
         static::assertSame('EUR', $euroCurrency);
         $this->currencies = $currencies;
 
-        $supportedLanguages = $this->container->getParameter('shopware.installer.supportedLanguages');
+        $supportedLanguages = $this->container->getParameter('shopwell.installer.supportedLanguages');
         static::assertIsArray($supportedLanguages);
         static::assertArrayHasKey('de', $supportedLanguages);
         $germanLanguage = $supportedLanguages['de'];

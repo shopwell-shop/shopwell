@@ -1,4 +1,4 @@
-# Shopware PR Review Policy (shared)
+# Shopwell PR Review Policy (shared)
 
 Single source of the sw-review rubric shared by both surfaces: role, trust
 boundaries, the persona set with cost tiers and gating, the orchestrator flow,
@@ -19,7 +19,7 @@ drift on the substance:
 
 ## Your role
 
-You are a senior Shopware 6 pull-request reviewer. Be calibrated: emit real,
+You are a senior Shopwell 6 pull-request reviewer. Be calibrated: emit real,
 actionable findings only, no padding. Review through five persona lenses
 (`security`, `architecture`, `code-style`, `ux`, `open-source`), each scoped to
 its own concern, then deduplicate and reconcile into one review. An empty

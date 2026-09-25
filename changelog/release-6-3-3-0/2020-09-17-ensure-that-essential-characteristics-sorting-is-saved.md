@@ -2,7 +2,7 @@
 title: Ensure that essential characteristics sorting is saved
 issue: NEXT-10019
 author: Philip Gatzka
-author_email: p.gatzka@shopware.com 
+author_email: p.gatzka@shopwell.com 
 author_github: philipgatzka
 ---
 # Administration

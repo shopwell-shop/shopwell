@@ -194,7 +194,7 @@ class ConsentRepositoryTest extends TestCase
                 'firstName' => 'Test',
                 'lastName' => 'User',
                 'email' => $name . '@example.com',
-                'password' => 'shopware',
+                'password' => 'shopwell',
                 'locale' => [
                     'code' => 'de-DE-' . $name,
                     'name' => 'Test Locale',

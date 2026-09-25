@@ -896,7 +896,7 @@ class ProductSearchRouteTest extends TestCase
                 ->name(Uuid::randomHex())
                 ->visibility($ids->get('sales-channel'))
                 ->price(10, 9)
-                ->manufacturer('shopware AG')
+                ->manufacturer('Shopwell')
                 ->add('customSearchKeywords', ['bmw'])
                 ->variant(
                     (new ProductBuilder($ids, 'bmw.1'))
@@ -909,7 +909,7 @@ class ProductSearchRouteTest extends TestCase
                 ->name(Uuid::randomHex())
                 ->visibility($ids->get('sales-channel'))
                 ->price(10, 9)
-                ->manufacturer('shopware AG')
+                ->manufacturer('Shopwell')
                 ->add('customSearchKeywords', ['bmw'])
                 ->variant(
                     (new ProductBuilder($ids, 'mercedes.1'))
@@ -923,14 +923,14 @@ class ProductSearchRouteTest extends TestCase
                 ->name(Uuid::randomHex())
                 ->visibility($ids->get('sales-channel'))
                 ->price(10, 9)
-                ->manufacturer('shopware AG')
+                ->manufacturer('Shopwell')
                 ->add('customSearchKeywords', ['volvo'])
                 ->build(),
             (new ProductBuilder($ids, 'audi'))
                 ->name(Uuid::randomHex())
                 ->visibility($ids->get('sales-channel'))
                 ->price(10, 9)
-                ->manufacturer('shopware AG')
+                ->manufacturer('Shopwell')
                 ->add('customSearchKeywords', ['audi'])
                 ->variant(
                     (new ProductBuilder($ids, 'audi.1'))
@@ -985,7 +985,7 @@ class ProductSearchRouteTest extends TestCase
                 ->name($name)
                 ->stock(1)
                 ->price(19.99, 10)
-                ->manufacturer('shopware AG')
+                ->manufacturer('Shopwell')
                 ->tax('15', 15)
                 ->category('random cat')
                 ->visibility($ids->get('sales-channel'))

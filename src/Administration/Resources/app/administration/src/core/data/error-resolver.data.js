@@ -32,14 +32,14 @@ export default class ErrorResolver {
 
     handleDeleteError(errors) {
         errors.forEach(({ error, entityName, id }) => {
-            const shopwareError = new this.ShopwellError(error);
+            const shopwellError = new this.ShopwellError(error);
             Shopwell.Store.get('error').addSystemError({
-                error: shopwareError,
+                error: shopwellError,
             });
 
             Shopwell.Store.get('error').addApiError({
                 expression: `${entityName}.${id}`,
-                error: shopwareError,
+                error: shopwellError,
             });
         });
     }

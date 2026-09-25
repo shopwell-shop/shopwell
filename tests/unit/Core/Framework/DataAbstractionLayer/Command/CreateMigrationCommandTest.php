@@ -48,9 +48,9 @@ class CreateMigrationCommandTest extends TestCase
         $migrationFileRenderer = $this->createMock(MigrationFileRenderer::class);
 
         $coreDir = '/path/to/core';
-        $shopwareVersion = '6.5.0';
+        $shopwellVersion = '6.5.0';
 
-        $command = new CreateMigrationCommand($registry, $queryGenerator, $kernel, $filesystem, $migrationFileRenderer, $coreDir, $shopwareVersion, new MockClock($now));
+        $command = new CreateMigrationCommand($registry, $queryGenerator, $kernel, $filesystem, $migrationFileRenderer, $coreDir, $shopwellVersion, new MockClock($now));
 
         $commandTester = new CommandTester($command);
 

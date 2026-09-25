@@ -11,7 +11,7 @@
     "noUncheckedIndexedAccess": true,
     "baseUrl": "./",
     "paths": {
-      "shopware": ["./src/shopware.ts"],
+      "shopwell": ["./src/shopwell.ts"],
       "vitest": ["./node_modules/vitest/dist/index.d.ts"],
       "vitest/*": ["./node_modules/vitest/dist/*"]
     }

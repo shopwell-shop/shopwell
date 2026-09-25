@@ -14,7 +14,7 @@ The MCP protocol defines three capability types. Each serves a different purpose
 Actions the AI client can invoke. Tools execute logic and return results. Think of them as API endpoints the AI can call.
 - **Triggered by**: the AI client decides when to call them
 - **Can have side effects**: yes (writes, deletes, command execution)
-- **Examples**: `shopware-entity-search`, `shopware-entity-upsert`, `shopware-order-state`
+- **Examples**: `shopwell-entity-search`, `shopwell-entity-upsert`, `shopwell-order-state`
 - **Attribute**: `#[McpTool(name: '...', description: '...')]`
 - **Implementation**: `__invoke()` returns a JSON string
 
@@ -22,7 +22,7 @@ Actions the AI client can invoke. Tools execute logic and return results. Think 
 Pre-written instructions the AI client can request to get context. Prompts help the AI understand the system before it starts working.
 - **Triggered by**: the AI client requests them during setup or when it needs guidance
 - **Can have side effects**: no, read-only text
-- **Examples**: `shopware-context` -- explains the data model, criteria format, and best practices
+- **Examples**: `shopwell-context` -- explains the data model, criteria format, and best practices
 - **Attribute**: `#[McpPrompt(name: '...', description: '...')]`
 - **Implementation**: `__invoke()` returns an array of `['role' => '...', 'content' => '...']` messages
 
@@ -30,7 +30,7 @@ Pre-written instructions the AI client can request to get context. Prompts help 
 Static data the AI client can read. Resources are identified by URIs and provide reference data without executing logic.
 - **Triggered by**: the AI client reads them like files
 - **Can have side effects**: no, read-only data
-- **Examples**: `shopware://entities`, `shopware://sales-channels`, `shopware://state-machines`, `shopware://business-events`, `shopware://flow-actions`
+- **Examples**: `shopwell://entities`, `shopwell://sales-channels`, `shopwell://state-machines`, `shopwell://business-events`, `shopwell://flow-actions`
 - **Attribute**: `#[McpResource(uri: '...', name: '...', description: '...')]`
 - **Implementation**: `__invoke()` returns `['uri' => '...', 'mimeType' => '...', 'text' => '...']`
 
@@ -43,15 +43,15 @@ Static data the AI client can read. Resources are identified by URIs and provide
 
 ## Tool discovery: three routes, one of them universal
 
-The Admin API endpoint uses progressive disclosure: `tools/list` advertises only a small set (`shopware-tool-search`, `shopware-toolsets-list`, `shopware-toolset-enable`, plus anything the connection advertises up front or has enabled), not the full catalogue. There are three ways to reach a deferred tool, and they differ in what they demand of the client:
+The Admin API endpoint uses progressive disclosure: `tools/list` advertises only a small set (`shopwell-tool-search`, `shopwell-toolsets-list`, `shopwell-toolset-enable`, plus anything the connection advertises up front or has enabled), not the full catalogue. There are three ways to reach a deferred tool, and they differ in what they demand of the client:
 
-- **Connect-time selection (works on every client).** Naming toolsets in the MCP URL as `?toolsets=order,media` or `?toolsets=all` advertises those tools from the first `tools/list` of the connection. The only client behaviour this relies on is posting to the URL it was configured with, which is the Streamable HTTP transport itself. `McpRequestedToolsetResolver` reads the parameter off the main request, and `McpToolsetRegistry::advertisedToolsForNames()` validates it and resolves `all`. The result is paginated like any other list (`shopware.mcp.pagination_limit`, 50), so a client that ignores `nextCursor` sees the first page only — a constraint `?toolsets=all` can reach once enough apps contribute toolsets.
-- **`shopware-toolset-enable` + `listChanged` (only for clients that re-read `tools/list`).** Enabling a toolset stores it on the session, advertises its tools, and emits a `tools/listChanged` notification. The notification is advisory: a client MAY refresh, and nothing obliges it to. claude.ai reads `tools/list` once per connection and ignores the notification, so an enable mid-conversation never becomes visible there. Claude Code re-lists but does not re-index its deferred-tool store ([claude-code#66084](https://github.com/anthropics/claude-code/issues/66084)). Treat this path as an optimisation for well-behaved clients.
-- **`shopware-tool-search` inline definitions (only for tool-search-capable clients).** Search returns full tool definitions inline. This requires the client to promote inline results into its callable set. Anthropic expands a `tool_reference` only for tools already present in the request's top-level `tools` array, so a tool that was never advertised cannot be promoted this way. `tools/call` itself never blocks an allowlisted tool for being unadvertised, so the server never dead-ends, though a client that treats `tools/list` as the immutable callable set will loop. The admin `shopware-tool-search` result carries a `_meta.usage` hint pointing at the enable path.
+- **Connect-time selection (works on every client).** Naming toolsets in the MCP URL as `?toolsets=order,media` or `?toolsets=all` advertises those tools from the first `tools/list` of the connection. The only client behaviour this relies on is posting to the URL it was configured with, which is the Streamable HTTP transport itself. `McpRequestedToolsetResolver` reads the parameter off the main request, and `McpToolsetRegistry::advertisedToolsForNames()` validates it and resolves `all`. The result is paginated like any other list (`shopwell.mcp.pagination_limit`, 50), so a client that ignores `nextCursor` sees the first page only — a constraint `?toolsets=all` can reach once enough apps contribute toolsets.
+- **`shopwell-toolset-enable` + `listChanged` (only for clients that re-read `tools/list`).** Enabling a toolset stores it on the session, advertises its tools, and emits a `tools/listChanged` notification. The notification is advisory: a client MAY refresh, and nothing obliges it to. claude.ai reads `tools/list` once per connection and ignores the notification, so an enable mid-conversation never becomes visible there. Claude Code re-lists but does not re-index its deferred-tool store ([claude-code#66084](https://github.com/anthropics/claude-code/issues/66084)). Treat this path as an optimisation for well-behaved clients.
+- **`shopwell-tool-search` inline definitions (only for tool-search-capable clients).** Search returns full tool definitions inline. This requires the client to promote inline results into its callable set. Anthropic expands a `tool_reference` only for tools already present in the request's top-level `tools` array, so a tool that was never advertised cannot be promoted this way. `tools/call` itself never blocks an allowlisted tool for being unadvertised, so the server never dead-ends, though a client that treats `tools/list` as the immutable callable set will loop. The admin `shopwell-tool-search` result carries a `_meta.usage` hint pointing at the enable path.
 
-Every registered tool belongs to a group, and group membership is the single source of truth for visibility. The `discovery` group holds the always-advertised meta-tools (`shopware-tool-search`, `shopware-toolsets-list`, `shopware-toolset-enable`) and is never an enable-able toolset; it is the only thing on a fresh `tools/list`. Every other tool is **deferred** — advertised only once its toolset is enabled — so no domain tool can leak into the default surface and the model is forced through discovery. Core and plugin tools declare their group with `#[McpToolGroup]` at compile time (`McpToolDiscoveryCompilerPass` derives `shopware.mcp.advertised_tools` from the `discovery` group); app tools (loaded at runtime, so they carry no attribute) are grouped under their owning app's technical name via `AppMcpPrivilegeProvider::getAppToolGroups()`, so each app forms its own toolset. Anything still without a group falls to the `other` catch-all, which is itself an enable-able toolset so that no allowlisted tool is ever reachable through `shopware-tool-search` alone.
+Every registered tool belongs to a group, and group membership is the single source of truth for visibility. The `discovery` group holds the always-advertised meta-tools (`shopwell-tool-search`, `shopwell-toolsets-list`, `shopwell-toolset-enable`) and is never an enable-able toolset; it is the only thing on a fresh `tools/list`. Every other tool is **deferred** — advertised only once its toolset is enabled — so no domain tool can leak into the default surface and the model is forced through discovery. Core and plugin tools declare their group with `#[McpToolGroup]` at compile time (`McpToolDiscoveryCompilerPass` derives `shopwell.mcp.advertised_tools` from the `discovery` group); app tools (loaded at runtime, so they carry no attribute) are grouped under their owning app's technical name via `AppMcpPrivilegeProvider::getAppToolGroups()`, so each app forms its own toolset. Anything still without a group falls to the `other` catch-all, which is itself an enable-able toolset so that no allowlisted tool is ever reachable through `shopwell-tool-search` alone.
 
-The Store API endpoint (`/store-api/_mcp`) uses the same progressive disclosure via its own toolset meta-tools (`StoreApiToolsetsListTool` / `StoreApiToolsetEnableTool`) and a `store-api` toolset group, and its `shopware-tool-search` carries the same `_meta.usage` hint. Both endpoints' server `instructions` (returned in every `initialize` response) point clients at `shopware-tool-search` as the discovery entry point when no advertised tool matches the requested action.
+The Store API endpoint (`/store-api/_mcp`) uses the same progressive disclosure via its own toolset meta-tools (`StoreApiToolsetsListTool` / `StoreApiToolsetEnableTool`) and a `store-api` toolset group, and its `shopwell-tool-search` carries the same `_meta.usage` hint. Both endpoints' server `instructions` (returned in every `initialize` response) point clients at `shopwell-tool-search` as the discovery entry point when no advertised tool matches the requested action.
 
 ## Architecture
 - **Transport**: HTTP via Symfony MCP Bundle (`/api/_mcp`), authenticated through Shopwell's Admin API OAuth stack
@@ -61,11 +61,11 @@ The Store API endpoint (`/store-api/_mcp`) uses the same progressive disclosure 
 
 ## Naming convention
 All capability names use hyphen-separated prefixes (`a-zA-Z0-9_-` only, no dots):
-- **Core**: `shopware-{name}` (e.g., `shopware-entity-search`, `shopware-entity-upsert`)
+- **Core**: `shopwell-{name}` (e.g., `shopwell-entity-search`, `shopwell-entity-upsert`)
 - **Plugin**: `{plugin-name}-{capability-name}` (e.g., `swag-admin-users-list-admins`)
 - **App**: `{app-name}-{capability-name}` (e.g., `my-erp-sync-orders`)
 
-`McpToolDiscoveryCompilerPass` enforces unique names per server and throws on conflicts. The `shopware-` prefix is reserved for core tools; `AppMcpToolLoader` skips app tools whose computed name starts with `shopware-`.
+`McpToolDiscoveryCompilerPass` enforces unique names per server and throws on conflicts. The `shopwell-` prefix is reserved for core tools; `AppMcpToolLoader` skips app tools whose computed name starts with `shopwell-`.
 
 ## Folder structure
 - `AllowList/` -- Per-integration capability allowlist (`McpAllowlistProvider`, `McpAllowlistFilter`, `McpAllowlist`)
@@ -133,11 +133,11 @@ Each MCP server declares in `packages/mcp.php` which capabilities it exposes, as
 **`McpCapabilityDiscoveryTest`** (`tests/integration/Core/Framework/Mcp/McpCapabilityDiscoveryTest.php`) boots the full kernel, authenticates, and calls the live MCP HTTP endpoint. It is the authoritative check that mirrors what the MCP Inspector does interactively. Add new capability names to its `expectedTools()` / `expectedPrompts()` / `expectedResources()` lists when adding new core capabilities.
 
 ## Extensibility
-- **Plugins**: Tag services with `shopware.mcp.tool` -- `McpToolDiscoveryCompilerPass` re-tags them as `mcp.tool` and assigns them to the Admin API server, so they appear in both `debug:mcp` and the HTTP endpoint. Use `McpToolResponse` for consistent error handling and response formatting.
-- **Third-party Symfony bundles**: Same `shopware.mcp.tool` tag mechanism as plugins -- `McpToolDiscoveryCompilerPass` handles it. See `custom/bundles/SwagMcpExampleBundle/` for a worked example.
+- **Plugins**: Tag services with `shopwell.mcp.tool` -- `McpToolDiscoveryCompilerPass` re-tags them as `mcp.tool` and assigns them to the Admin API server, so they appear in both `debug:mcp` and the HTTP endpoint. Use `McpToolResponse` for consistent error handling and response formatting.
+- **Third-party Symfony bundles**: Same `shopwell.mcp.tool` tag mechanism as plugins -- `McpToolDiscoveryCompilerPass` handles it. See `custom/bundles/SwagMcpExampleBundle/` for a worked example.
 - **Apps**: Declare capabilities in `Resources/mcp.xml` -- parsed by `Mcp::createFromXmlFile()` (XXE-safe via `XmlUtils::loadFile()`), persisted by the respective Persister (`McpToolPersister`, `McpPromptPersister`, `McpResourcePersister`), loaded at runtime by the corresponding Loader (`AppMcpToolLoader`, `AppMcpPromptLoader`, `AppMcpResourceLoader`). App tool webhook payloads include `shopId` and `appVersion` in the `source` object. **App tools also support internal dispatch via `/api/script/{path}` -- see the Serverless app tools section below.**
-- **In-tree Shopwell bundles** (Storefront, etc.): Tag with **`mcp.tool`** directly (not `shopware.mcp.tool`), and make sure the class sits under a namespace the Admin API server's `registry` prefixes in `packages/mcp.php` cover -- otherwise add it there.
-- **Reserved prefix**: The `shopware-` prefix is reserved for core tools. App tools with names starting with `shopware-` are skipped during loading.
+- **In-tree Shopwell bundles** (Storefront, etc.): Tag with **`mcp.tool`** directly (not `shopwell.mcp.tool`), and make sure the class sits under a namespace the Admin API server's `registry` prefixes in `packages/mcp.php` cover -- otherwise add it there.
+- **Reserved prefix**: The `shopwell-` prefix is reserved for core tools. App tools with names starting with `shopwell-` are skipped during loading.
 
 ## Serverless app tools (app scripts)
 
@@ -189,11 +189,11 @@ Create the Twig script at `Resources/scripts/api-my-app-my-tool/script.twig`:
 ## Future ideas / backlog
 
 ### ACL / visibility
-- **Filter `shopware://entities` resource by ACL** — `EntityListResource` currently returns all registered entities regardless of the caller's permissions. It should inject `McpContextProvider` and filter by `$context->isAllowed($entity . ':read')`, with a null-safe fallback for CLI/system contexts (return full list when there is no HTTP request).
-- **`debug:mcp` entity visibility** — when `--integration SWIA...` is passed, add an "Entities" count column to the tools table (how many entities that integration can read for entity-tools). In the detail view (`debug:mcp shopware-entity-read --integration ...`), show the full sorted list of accessible entity names.
+- **Filter `shopwell://entities` resource by ACL** — `EntityListResource` currently returns all registered entities regardless of the caller's permissions. It should inject `McpContextProvider` and filter by `$context->isAllowed($entity . ':read')`, with a null-safe fallback for CLI/system contexts (return full list when there is no HTTP request).
+- **`debug:mcp` entity visibility** — when `--integration SWIA...` is passed, add an "Entities" count column to the tools table (how many entities that integration can read for entity-tools). In the detail view (`debug:mcp shopwell-entity-read --integration ...`), show the full sorted list of accessible entity names.
 
 ### Rate limiting
-The two MCP endpoints are rate-limited via the core `RateLimiter` through `McpRateLimiter` (`RateLimit/McpRateLimiter.php`), which owns the throttle/`McpException::throttled()` translation and the per-scope key derivation. Each scope has its own config route: `mcp_admin_api` (keyed per OAuth token, generous) and `mcp_store_api` (keyed per sales-channel context token, tighter because it is public and the key is rotatable). Both are defined in `shopware.yaml` under `shopware.api.rate_limiter`.
+The two MCP endpoints are rate-limited via the core `RateLimiter` through `McpRateLimiter` (`RateLimit/McpRateLimiter.php`), which owns the throttle/`McpException::throttled()` translation and the per-scope key derivation. Each scope has its own config route: `mcp_admin_api` (keyed per OAuth token, generous) and `mcp_store_api` (keyed per sales-channel context token, tighter because it is public and the key is rotatable). Both are defined in `shopwell.yaml` under `shopwell.api.rate_limiter`.
 
 Open improvements:
 - **Per-tool rate limiting** — the current limit is per-endpoint: a cheap `tools/list` and an expensive `entity-upsert`/`entity-delete`/`media-upload`/`system-config-write` draw from the same bucket. The industry consensus for MCP servers is to bucket cheap reads (`entity-search`, `entity-schema`) high (~100-200/min) and expensive/mutating tools low (~5-30/min). This needs a per-tool key (e.g. derive the tool name from the JSON-RPC body, which `McpServerController` already parses into `ATTRIBUTE_JSONRPC_BODY`) and a route per cost class.
@@ -227,9 +227,9 @@ Every MCP request passes through three layers in order:
 1. **Authentication** — `sw-access-key` + `sw-secret-access-key` headers required on every request
 2. **Per-principal capability allowlist** — each integration and each user stores a `mcp_allowlist` JSON object with `tools`, `resources`, and `prompts` keys. Configured via Settings → Integrations → Edit MCP Allowlist, and on the user detail page. `tools/list`, `resources/list`, and `prompts/list` responses are filtered; `tools/call`, `resources/read`, and `prompts/get` are rejected early with a clear error. Tool allowlist auto-expands transitive `#[McpToolDependsOn]` dependencies.
    **The selection must be explicit.** `McpAllowlist::restrictedFromJson()` resolves every value that is not an explicit list to an empty list, i.e. deny all: an unset column, an empty column, unparseable JSON, JSON that is not an object, a missing per-type key, an explicit `null` per-type value, and a per-type value that is not a JSON list (a string, or an object — which `json_decode` would otherwise hand over as an associative array of names). The save endpoints reject the object shape outright rather than storing a selection that reads back empty. **The only bypass is an administrator user** (`user.admin = 1`), for whom `McpAllowlistProvider::forUserId()` returns `McpAllowlist::unrestricted()`. An integration never bypasses the allowlist, not even one flagged `admin`; the `admin` flag still bypasses layer 3 (ACL).
-   Note that resources are allowlisted by **URI** (`shopware://currencies`) while `resources/list` reports the **name** (`shopware-currencies`). Tools and prompts use the name for both.
+   Note that resources are allowlisted by **URI** (`shopwell://currencies`) while `resources/list` reports the **name** (`shopwell-currencies`). Tools and prompts use the name for both.
    **Scope**: resolved for every auth mode `McpAllowlistProvider::forCurrentRequest()` recognises — integration access key, user access key, bearer token from either grant, and a delegated `sw-app-user-id` request, where the integration and user allowlists are intersected. A request whose principal cannot be resolved at all is treated as having no selection, so the endpoint fails closed.
-   **Exception**: the discovery meta-tools `shopware-tool-search`, `shopware-toolsets-list` and `shopware-toolset-enable` stay advertised and callable for every principal (`McpAllowlistListRequestHandler::DISCOVERY_META_TOOLS`). They surface only capability names the effective allowlist already permits, so for a principal with no selection they resolve to nothing.
+   **Exception**: the discovery meta-tools `shopwell-tool-search`, `shopwell-toolsets-list` and `shopwell-toolset-enable` stay advertised and callable for every principal (`McpAllowlistListRequestHandler::DISCOVERY_META_TOOLS`). They surface only capability names the effective allowlist already permits, so for a principal with no selection they resolve to nothing.
    Parsing rules are pinned by `tests/unit/Core/Framework/Mcp/AllowList/`; the end-to-end behaviour per auth mode by `tests/integration/Core/Framework/Mcp/McpAllowlistEnforcementTest.php`.
 3. **ACL / Privileges** — tools call `requirePrivilege()` before touching data. Missing privileges return `{"success": false, "error": "Missing privilege: ..."}` (single canonical prefix — use `McpToolResponse::missingPrivilegesError()`, never a hand-rolled message). Entity tools that accept criteria JSON additionally validate the built `Criteria` with `AclCriteriaValidator` (same association ACL model as the Admin API), so reading, filtering, or aggregating over an association also requires the associated entity's `:read` privilege. Tools may also annotate their static requirements with `#[McpToolRequires]` so operators can configure roles correctly upfront — but this is informational only and does not replace the `requirePrivilege()` check.
 
@@ -239,7 +239,7 @@ Additional safeguards:
 - **App HMAC**: app tool calls signed with `RequestSigner` using the app secret
 - **XML parsing**: `mcp.xml` parsed with `XmlUtils::loadFile()` to prevent XXE attacks
 - **Entity validation**: entity tools check `registry->has()` before ACL to give clear "entity not found" errors
-- **Global compile-time allowlist**: `shopware.mcp.allowed_tools` acts as an installation-wide safety switch (secondary to per-integration allowlists)
+- **Global compile-time allowlist**: `shopwell.mcp.allowed_tools` acts as an installation-wide safety switch (secondary to per-integration allowlists)
 - **Error visibility**: `McpExceptionListener` converts exceptions on the MCP route to JSON-RPC error responses instead of HTML. It also handles `POST /register` — some clients (e.g. Cursor) fall back to that path when the primary connection fails; without the listener they receive an HTML 404 or a storefront redirect that hides the real error. The gate is `POST` method (not `Accept: application/json`) since browser navigation to a register page uses GET.
 
 ## Admin UI — integration list

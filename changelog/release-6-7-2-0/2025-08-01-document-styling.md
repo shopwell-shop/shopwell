@@ -2,7 +2,7 @@
 title: Fixing document squished line item listing
 issue: 11654
 author: Simon Fiebranz
-author_email: s.fiebranz@shopware.com
+author_email: s.fiebranz@shopwell.com
 author_github: @CR0YD
 ---
 # Core

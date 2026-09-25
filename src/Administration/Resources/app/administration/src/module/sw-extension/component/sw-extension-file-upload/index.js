@@ -54,7 +54,7 @@ export default {
             return this.extensionStoreActionService
                 .upload(formData)
                 .then(() => {
-                    Shopwell.Service('shopwareExtensionService')
+                    Shopwell.Service('shopwellExtensionService')
                         .updateExtensionData()
                         .then(() => {
                             return this.createNotificationSuccess({

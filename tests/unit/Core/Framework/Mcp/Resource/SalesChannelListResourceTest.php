@@ -63,7 +63,7 @@ class SalesChannelListResourceTest extends TestCase
         $resource = new SalesChannelListResource($repository);
         $result = ($resource)();
 
-        static::assertSame('shopware://sales-channels', $result['uri']);
+        static::assertSame('shopwell://sales-channels', $result['uri']);
         static::assertSame('application/json', $result['mimeType']);
 
         $data = json_decode($result['text'], true, 512, \JSON_THROW_ON_ERROR);

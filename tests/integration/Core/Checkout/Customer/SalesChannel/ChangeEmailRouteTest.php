@@ -53,7 +53,7 @@ class ChangeEmailRouteTest extends TestCase
         $this->customerRepository = static::getContainer()->get('customer.repository');
 
         $email = Uuid::randomHex() . '@example.com';
-        $this->customerId = $this->createCustomer('shopware', $email);
+        $this->customerId = $this->createCustomer('shopwell', $email);
 
         $this->browser
             ->request(
@@ -61,7 +61,7 @@ class ChangeEmailRouteTest extends TestCase
                 '/store-api/account/login',
                 [
                     'email' => $email,
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                 ]
             );
 
@@ -121,7 +121,7 @@ class ChangeEmailRouteTest extends TestCase
                 'POST',
                 '/store-api/account/change-email',
                 [
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                     'email' => 'test@fooware.de',
                     'emailConfirmation' => 'test@fooware.de',
                 ]
@@ -161,7 +161,7 @@ class ChangeEmailRouteTest extends TestCase
                 'POST',
                 '/store-api/account/change-email',
                 [
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                     'email' => 'test@fooware.de',
                     'emailConfirmation' => 'test@fooware.de',
                 ]
@@ -219,7 +219,7 @@ class ChangeEmailRouteTest extends TestCase
                 'POST',
                 '/store-api/account/change-email',
                 [
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                     'email' => $newEmail,
                     'emailConfirmation' => $newEmail,
                 ]
@@ -254,7 +254,7 @@ class ChangeEmailRouteTest extends TestCase
                 'POST',
                 '/store-api/account/change-email',
                 [
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                     'email' => $newEmail,
                     'emailConfirmation' => $newEmail,
                 ]
@@ -312,7 +312,7 @@ class ChangeEmailRouteTest extends TestCase
                 'POST',
                 '/store-api/account/change-email',
                 [
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                     'email' => 'test@fooware.de',
                     'emailConfirmation' => 'test@fooware.de',
                 ]
@@ -374,7 +374,7 @@ class ChangeEmailRouteTest extends TestCase
             'lastName' => 'Mustermann',
             'customerNumber' => $customerId,
             'email' => $email,
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'salesChannelId' => $salesChannelId,
             'defaultBillingAddressId' => $addressId,

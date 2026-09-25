@@ -59,7 +59,7 @@ class AppPayloadServiceHelper
     public function createWebhookRequest(
         array $payload,
         string $url,
-        string $shopwareVersion,
+        string $shopwellVersion,
         int $connectionTimeout,
         int $requestTimeout,
         ?string $secret = null,
@@ -76,14 +76,14 @@ class AppPayloadServiceHelper
         $headers = array_merge(
             [
                 'Content-Type' => 'application/json',
-                'sw-version' => $shopwareVersion,
+                'sw-version' => $shopwellVersion,
             ],
             $webhookHeaders
         );
 
         if ($languageId !== null && $userLocale !== null) {
-            $headers[AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE] = $languageId;
-            $headers[AuthMiddleware::SHOPWARE_USER_LANGUAGE] = $userLocale;
+            $headers[AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE] = $languageId;
+            $headers[AuthMiddleware::SHOPWELL_USER_LANGUAGE] = $userLocale;
         }
 
         $request = new Request(

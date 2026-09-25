@@ -56,7 +56,7 @@ class InternalMethodRule implements Rule
                 if ($this->hasInternalComment($node) && $this->hasDeprecatedComment($node)) {
                     return [
                         RuleErrorBuilder::message('A deprecation annotation must not be used on internal constructors of DI services. Put it on the affected constructor parameter instead.')
-                            ->identifier('shopware.internalMethod')
+                            ->identifier('shopwell.internalMethod')
                             ->build(),
                     ];
                 }
@@ -67,7 +67,7 @@ class InternalMethodRule implements Rule
 
                 return [
                     RuleErrorBuilder::message('__construct of di container services has to be @internal')
-                        ->identifier('shopware.internalMethod')
+                        ->identifier('shopwell.internalMethod')
                         ->build(),
                 ];
             }

@@ -6,4 +6,4 @@ author_email: code@joshua-behrens.de
 author_github: @JoshuaBehrens
 ---
 # Core
-* Added new method `addSkip` in `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexingMessage` to allow easier adding more skip tags
+* Added new method `addSkip` in `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexingMessage` to allow easier adding more skip tags

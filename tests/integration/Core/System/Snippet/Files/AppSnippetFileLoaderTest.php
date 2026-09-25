@@ -41,7 +41,7 @@ class AppSnippetFileLoaderTest extends TestCase
     protected function setUp(): void
     {
         $flySystem = new Flysystem(new InMemoryFilesystemAdapter(), ['public_url' => 'http://localhost:8000']);
-        $this->mirrorDirectory = sys_get_temp_dir() . '/' . uniqid('shopware-app-snippet-mirror-', true);
+        $this->mirrorDirectory = sys_get_temp_dir() . '/' . uniqid('shopwell-app-snippet-mirror-', true);
         $this->snippetFileLoader = new SnippetFileLoader(
             static::createStub(Kernel::class),
             static::getContainer()->get(Connection::class),
@@ -88,7 +88,7 @@ class AppSnippetFileLoaderTest extends TestCase
             $snippetFile->getPath()
         );
         static::assertSame('de', $snippetFile->getIso());
-        static::assertSame('shopware AG', $snippetFile->getAuthor());
+        static::assertSame('Shopwell', $snippetFile->getAuthor());
         static::assertFalse($snippetFile->isBase());
 
         $snippetFile = $collection->getSnippetFilesByIso('en')[0];
@@ -99,7 +99,7 @@ class AppSnippetFileLoaderTest extends TestCase
             $snippetFile->getPath()
         );
         static::assertSame('en', $snippetFile->getIso());
-        static::assertSame('shopware AG', $snippetFile->getAuthor());
+        static::assertSame('Shopwell', $snippetFile->getAuthor());
         static::assertFalse($snippetFile->isBase());
     }
 
@@ -132,7 +132,7 @@ class AppSnippetFileLoaderTest extends TestCase
             $snippetFile->getPath()
         );
         static::assertSame('de', $snippetFile->getIso());
-        static::assertSame('shopware AG', $snippetFile->getAuthor());
+        static::assertSame('Shopwell', $snippetFile->getAuthor());
         static::assertTrue($snippetFile->isBase());
 
         $snippetFile = $collection->getSnippetFilesByIso('en')[0];
@@ -143,7 +143,7 @@ class AppSnippetFileLoaderTest extends TestCase
             $snippetFile->getPath()
         );
         static::assertSame('en', $snippetFile->getIso());
-        static::assertSame('shopware AG', $snippetFile->getAuthor());
+        static::assertSame('Shopwell', $snippetFile->getAuthor());
         static::assertTrue($snippetFile->isBase());
     }
 

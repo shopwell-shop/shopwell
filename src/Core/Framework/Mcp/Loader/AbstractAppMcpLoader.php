@@ -52,8 +52,8 @@ abstract class AbstractAppMcpLoader implements LoaderInterface
 
     protected function isReservedName(string $capabilityName, string $appName, string $type): bool
     {
-        if (str_starts_with($capabilityName, 'shopware-')) {
-            $this->logger->warning(\sprintf('App %s name uses reserved "shopware-" prefix, skipping', $type), [
+        if (str_starts_with($capabilityName, 'shopwell-')) {
+            $this->logger->warning(\sprintf('App %s name uses reserved "shopwell-" prefix, skipping', $type), [
                 'capabilityName' => $capabilityName,
                 'appName' => $appName,
             ]);

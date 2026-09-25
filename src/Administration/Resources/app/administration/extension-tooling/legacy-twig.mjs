@@ -3,7 +3,7 @@
  *
  * Transitional Twig linting for extensions that still use the legacy
  * component factory with `.html.twig` templates. New SFC-based extensions
- * can disable this preset via `shopwareAdminExtension({ legacyTwig: false })`.
+ * can disable this preset via `shopwellAdminExtension({ legacyTwig: false })`.
  */
 
 import pluginVue from 'eslint-plugin-vue';
@@ -41,7 +41,7 @@ export function legacyTwigConfig(files = defaultTwigFiles) {
             files,
         })),
         {
-            name: 'shopware/admin-extension/legacy-twig',
+            name: 'shopwell/admin-extension/legacy-twig',
             files,
             languageOptions: {
                 parser: vueParser,

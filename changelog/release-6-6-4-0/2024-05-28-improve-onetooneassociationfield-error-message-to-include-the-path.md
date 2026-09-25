@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Added field name to payload path for `FRAMEWORK__WRITE_MALFORMED_INPUT` / `\Shopware\Core\Framework\DataAbstractionLayer\Write\FieldException\ExpectedArrayException` when using invalid payload of `OneToOneAssociationField`
+* Added field name to payload path for `FRAMEWORK__WRITE_MALFORMED_INPUT` / `\Shopwell\Core\Framework\DataAbstractionLayer\Write\FieldException\ExpectedArrayException` when using invalid payload of `OneToOneAssociationField`

@@ -2,26 +2,26 @@
 title: Sign outgoing requests of action buttons
 issue: NEXT-18240
 author: Frederik Schmitt
-author_email: f.schmitt@shopware.com 
+author_email: f.schmitt@shopwell.com 
 author_github: fschmtt
 ---
 # Core
-* Changed `Shopware\Core\Framework\App\ActionButton\Response\ActionButtonResponse` to hold only the property `$actionType`
-* Changed `Shopware\Core\Framework\App\ActionButton\Response\ActionButtonResponseFactory` to have the `ActionButtonResponse` created by distinct factories
-* Added `Shopware\Core\Framework\App\ActionButton\Response\ActionButtonResponseFactoryInterface`
-* Changed `Shopware\Core\Framework\App\ActionButton\Response\NotificationResponse` to only hold properties
-* Added `Shopware\Core\Framework\App\ActionButton\Response\NotificationResponseFactory`
-* Changed `Shopware\Core\Framework\App\ActionButton\Response\OpenModalResponse` to only hold properties
-* Added `Shopware\Core\Framework\App\ActionButton\Response\OpenModalResponseFactory`
-* Changed `Shopware\Core\Framework\App\ActionButton\Response\OpenNewTabResponse` to only hold properties
-* Added `Shopware\Core\Framework\App\ActionButton\Response\OpenNewTabResponseFactory`
-* Changed `Shopware\Core\Framework\App\ActionButton\Response\ReloadDataResponse` to only hold properties
-* Added `Shopware\Core\Framework\App\ActionButton\Response\ReloadDataResponseFactory`
-* Changed `Shopware\Core\Framework\App\ActionButton\Executor::execute()` to use new factories
-* Added `Shopware\Core\Framework\App\Hmac\QuerySigner` which adds and signs query parameters
-* Added `Shopware\Core\Framework\App\Hmac\RequestSigner::signUri()` to allow signing of query parameters
-* Removed `Shopware\Core\Framework\App\ActionButton\Response\ActionButtonResponse::create()` as the creation is now done by the factories
-* Removed `Shopware\Core\Framework\App\ActionButton\Response\ActionButtonResponse::validate()` as the validation is now done by the factories
+* Changed `Shopwell\Core\Framework\App\ActionButton\Response\ActionButtonResponse` to hold only the property `$actionType`
+* Changed `Shopwell\Core\Framework\App\ActionButton\Response\ActionButtonResponseFactory` to have the `ActionButtonResponse` created by distinct factories
+* Added `Shopwell\Core\Framework\App\ActionButton\Response\ActionButtonResponseFactoryInterface`
+* Changed `Shopwell\Core\Framework\App\ActionButton\Response\NotificationResponse` to only hold properties
+* Added `Shopwell\Core\Framework\App\ActionButton\Response\NotificationResponseFactory`
+* Changed `Shopwell\Core\Framework\App\ActionButton\Response\OpenModalResponse` to only hold properties
+* Added `Shopwell\Core\Framework\App\ActionButton\Response\OpenModalResponseFactory`
+* Changed `Shopwell\Core\Framework\App\ActionButton\Response\OpenNewTabResponse` to only hold properties
+* Added `Shopwell\Core\Framework\App\ActionButton\Response\OpenNewTabResponseFactory`
+* Changed `Shopwell\Core\Framework\App\ActionButton\Response\ReloadDataResponse` to only hold properties
+* Added `Shopwell\Core\Framework\App\ActionButton\Response\ReloadDataResponseFactory`
+* Changed `Shopwell\Core\Framework\App\ActionButton\Executor::execute()` to use new factories
+* Added `Shopwell\Core\Framework\App\Hmac\QuerySigner` which adds and signs query parameters
+* Added `Shopwell\Core\Framework\App\Hmac\RequestSigner::signUri()` to allow signing of query parameters
+* Removed `Shopwell\Core\Framework\App\ActionButton\Response\ActionButtonResponse::create()` as the creation is now done by the factories
+* Removed `Shopwell\Core\Framework\App\ActionButton\Response\ActionButtonResponse::validate()` as the validation is now done by the factories
 ___
 # Administration
 * Changed `actionTypeConstants.ACTION_SHOW_NOTITFICATION` to `actionTypeConstants.ACTION_SHOW_NOTIFICATION` in `src/app/component/app/sw-app-actions/index.js`
@@ -34,10 +34,10 @@ App manufacturers who add action buttons which provide feedback to the Administr
 | Query parameter | Example value | Description |
 |---|---|---|
 | shop-id | KvhpuoEVXWmtjkQa | The ID of the shop where the action button was triggered. |
-| shop-url | https://shopware.com | The URL of the shop where the action button was triggered. |
-| sw-version | 6.4.7.0 | The installed Shopware version of the shop where the action button was triggered. |
+| shop-url | https://shopwell.com | The URL of the shop where the action button was triggered. |
+| sw-version | 6.4.7.0 | The installed Shopwell version of the shop where the action button was triggered. |
 | sw-context-language | 2fbb5fe2e29a4d70aa5854ce7ce3e20b | The language (UUID) of the context (`Context::getLanguageId()`). |
 | sw-user-language | en-GB | The language (ISO code) of the user who triggered the action button. |
-| shopware-shop-signature | `hash_hmac('sha256', $query, $shopSecret)` | The hash of the query, signed with the shop's secret. |
+| shopwell-shop-signature | `hash_hmac('sha256', $query, $shopSecret)` | The hash of the query, signed with the shop's secret. |
 
-You **must** make sure to verify the authenticity of the incoming request by checking the `shopware-shop-signature`!
+You **must** make sure to verify the authenticity of the incoming request by checking the `shopwell-shop-signature`!

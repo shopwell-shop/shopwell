@@ -6,4 +6,4 @@ author_email: oliver@goblin-coders.de
 author_github: OliverSkroblin
 ---
 # Core
-* Removed `@internal` flag from `\Shopware\Core\Defaults`
+* Removed `@internal` flag from `\Shopwell\Core\Defaults`

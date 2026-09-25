@@ -272,7 +272,7 @@ class AttributeEntityIntegrationTest extends TestCase
                 ['currencyId' => Defaults::CURRENCY, 'gross' => 1, 'net' => 1, 'linked' => true],
             ],
             'email' => 'test@example.com',
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'tags' => ['foo', 'bar'],
             'differentName' => 'string',
             'transString' => 'string',
@@ -325,8 +325,8 @@ class AttributeEntityIntegrationTest extends TestCase
 
         static::assertSame('test@example.com', $record->email);
         static::assertNotNull($record->password);
-        static::assertNotSame('shopware', $record->password); // password should be hashed
-        static::assertTrue(password_verify('shopware', $record->password));
+        static::assertNotSame('shopwell', $record->password); // password should be hashed
+        static::assertTrue(password_verify('shopwell', $record->password));
         static::assertSame(['foo', 'bar'], $record->tags);
 
         static::assertSame('string', $record->transString);

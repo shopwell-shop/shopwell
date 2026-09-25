@@ -98,7 +98,7 @@ class CoversTargetInCoverageSourceRule implements Rule
                 $errors[] = RuleErrorBuilder::message(\sprintf(
                     '%s is not part of the coverage source in phpunit.xml.dist, so it is not a valid coverage target under PHPUnit 12. Cover a class from the coverage source instead.',
                     $target,
-                ))->identifier('shopware.coversExcludedTarget')->build();
+                ))->identifier('shopwell.coversExcludedTarget')->build();
 
                 continue;
             }
@@ -107,7 +107,7 @@ class CoversTargetInCoverageSourceRule implements Rule
                 $errors[] = RuleErrorBuilder::message(\sprintf(
                     '%s is excluded from the coverage source in phpunit.xml.dist, so it is not a valid coverage target under PHPUnit 12. Cover a class from the coverage source instead, or resolve the exclude.',
                     $target,
-                ))->identifier('shopware.coversExcludedTarget')->build();
+                ))->identifier('shopwell.coversExcludedTarget')->build();
             }
         }
 

@@ -1,17 +1,17 @@
 import { createPinia, setActivePinia } from 'pinia';
 import * as permissions from './permissions';
-import { useShopwellServicesStore } from '../store/shopware-services.store';
+import { useShopwellServicesStore } from '../store/shopwell-services.store';
 
 describe('src/module/sw-settings-services/composables/permissions', () => {
     let reloadMock;
-    const serviceOrigin = 'https://copilot.staging-apps.shopware.io';
+    const serviceOrigin = 'https://copilot.staging-apps.shopwell.cn';
 
     const serviceRequest = () => ({
         _event_: new MessageEvent('message', { origin: serviceOrigin }),
     });
 
     beforeAll(() => {
-        Shopwell.Service().register('shopwareServicesService', () => ({
+        Shopwell.Service().register('shopwellServicesService', () => ({
             acceptRevision: jest.fn(),
             revokePermissions: jest.fn(),
             getServicesContext: jest.fn(async () => ({ disabled: false, permissionsConsent: undefined })),
@@ -41,10 +41,10 @@ describe('src/module/sw-settings-services/composables/permissions', () => {
         };
     });
 
-    it('calls shopware service and reloads', async () => {
-        const shopwareServicesStore = useShopwellServicesStore();
+    it('calls shopwell service and reloads', async () => {
+        const shopwellServicesStore = useShopwellServicesStore();
 
-        shopwareServicesStore.revisions = {
+        shopwellServicesStore.revisions = {
             'latest-revision': '2025-06-25',
             'available-revisions': [
                 {
@@ -56,7 +56,7 @@ describe('src/module/sw-settings-services/composables/permissions', () => {
 
         await permissions.grantPermissions();
 
-        expect(Shopwell.Service('shopwareServicesService').acceptRevision).toHaveBeenCalledWith('2025-06-25');
+        expect(Shopwell.Service('shopwellServicesService').acceptRevision).toHaveBeenCalledWith('2025-06-25');
         expect(reloadMock).toHaveBeenCalled();
     });
 
@@ -64,16 +64,16 @@ describe('src/module/sw-settings-services/composables/permissions', () => {
         await expect(() => permissions.grantPermissions()).rejects.toThrow(new Error('No revision available'));
     });
 
-    it('calls shopware service to revoke permissions and reloads', async () => {
+    it('calls shopwell service to revoke permissions and reloads', async () => {
         await permissions.revokePermissions();
 
-        expect(Shopwell.Service('shopwareServicesService').revokePermissions).toHaveBeenCalled();
+        expect(Shopwell.Service('shopwellServicesService').revokePermissions).toHaveBeenCalled();
         expect(reloadMock).toHaveBeenCalled();
     });
 
     it('grants permissions and reloads the Administration for a Service SDK request', async () => {
-        const shopwareServicesStore = useShopwellServicesStore();
-        shopwareServicesStore.revisions = {
+        const shopwellServicesStore = useShopwellServicesStore();
+        shopwellServicesStore.revisions = {
             'latest-revision': '2025-06-25',
             'available-revisions': [
                 {
@@ -95,7 +95,7 @@ describe('src/module/sw-settings-services/composables/permissions', () => {
 
         await permissions.grantPermissionsFromSdk({}, serviceRequest());
 
-        expect(Shopwell.Service('shopwareServicesService').acceptRevision).toHaveBeenCalledWith('2025-06-25');
+        expect(Shopwell.Service('shopwellServicesService').acceptRevision).toHaveBeenCalledWith('2025-06-25');
         expect(reloadMock).toHaveBeenCalled();
     });
 
@@ -158,19 +158,19 @@ describe('src/module/sw-settings-services/composables/permissions', () => {
     });
 
     it('reports permission as granted when Shopwell Services are disabled', async () => {
-        const shopwareServicesStore = useShopwellServicesStore();
-        shopwareServicesStore.config = { disabled: true };
+        const shopwellServicesStore = useShopwellServicesStore();
+        shopwellServicesStore.config = { disabled: true };
 
         await expect(permissions.isPermissionGrantedFromSdk({}, serviceRequest())).resolves.toBe(true);
     });
 
     it('reports permission as granted when the latest revision has been consented to', async () => {
-        const shopwareServicesStore = useShopwellServicesStore();
-        shopwareServicesStore.config = {
+        const shopwellServicesStore = useShopwellServicesStore();
+        shopwellServicesStore.config = {
             disabled: false,
             permissionsConsent: { revision: '2025-06-25' },
         };
-        shopwareServicesStore.revisions = {
+        shopwellServicesStore.revisions = {
             'latest-revision': '2025-06-25',
             'available-revisions': [],
         };
@@ -179,12 +179,12 @@ describe('src/module/sw-settings-services/composables/permissions', () => {
     });
 
     it('reports permission as not granted when no consent exists for the latest revision', async () => {
-        const shopwareServicesStore = useShopwellServicesStore();
-        shopwareServicesStore.config = {
+        const shopwellServicesStore = useShopwellServicesStore();
+        shopwellServicesStore.config = {
             disabled: false,
             permissionsConsent: { revision: '2024-01-01' },
         };
-        shopwareServicesStore.revisions = {
+        shopwellServicesStore.revisions = {
             'latest-revision': '2025-06-25',
             'available-revisions': [],
         };
@@ -193,9 +193,9 @@ describe('src/module/sw-settings-services/composables/permissions', () => {
     });
 
     it('loads the services context on demand when it is not present yet', async () => {
-        Shopwell.Service('shopwareServicesService').getServicesContext.mockResolvedValueOnce({ disabled: true });
+        Shopwell.Service('shopwellServicesService').getServicesContext.mockResolvedValueOnce({ disabled: true });
 
         await expect(permissions.isPermissionGrantedFromSdk({}, serviceRequest())).resolves.toBe(true);
-        expect(Shopwell.Service('shopwareServicesService').getServicesContext).toHaveBeenCalled();
+        expect(Shopwell.Service('shopwellServicesService').getServicesContext).toHaveBeenCalled();
     });
 });

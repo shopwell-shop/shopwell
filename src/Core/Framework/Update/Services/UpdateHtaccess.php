@@ -18,8 +18,8 @@ class UpdateHtaccess implements EventSubscriberInterface
     private const INSTRUCTIONS = '# The directives (lines) between "# BEGIN Shopwell" and "# END Shopwell" are dynamically generated. Any changes to the directives between these markers will be overwritten.';
 
     private const OLD_FILES = [
-        '9ab5be8c4bbff3490f3ae367af8a30d7', // https://github.com/shopware/production/commit/bebf9adc90bf5d7b0d53a149cc5bdba328696086
-        'ba812f2a64b337b032b10685ca6e2308', // https://github.com/shopware/production/commit/18ce6ffc904b8d2d237dc4ee6654c1fa9a6df719
+        '9ab5be8c4bbff3490f3ae367af8a30d7', // https://github.com/shopwell-shop/production/commit/bebf9adc90bf5d7b0d53a149cc5bdba328696086
+        'ba812f2a64b337b032b10685ca6e2308', // https://github.com/shopwell-shop/production/commit/18ce6ffc904b8d2d237dc4ee6654c1fa9a6df719
     ];
 
     /**

@@ -8,8 +8,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Content/Cms/Subscriber/CmsVersionMergeSubscriber.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Content/Flow/Dispatching/Storer/ScalarValuesStorer.php',
 ];
@@ -56,14 +56,14 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Content/ImportExport/ImportExport.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Content/ImportExport/Processing/Mapping/Mapping.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Content/ImportExport/Processing/Mapping/UpdateBy.php',
 ];
@@ -80,14 +80,14 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Content/ImportExport/Processing/Pipe/EntityPipe.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Content/ImportExport/Processing/Reader/AbstractReader.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Content/ImportExport/Processing/Reader/CsvReader.php',
 ];
@@ -104,8 +104,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Content/ImportExport/Service/MappingService.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 2,
     'path' => __DIR__ . '/src/Core/Content/ImportExport/Service/SupportedFeaturesService.php',
 ];
@@ -134,14 +134,14 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Content/Product/SalesChannel/FindVariant/FoundCombination.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Content/Rule/DataAbstractionLayer/RulePayloadUpdater.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Content/Sitemap/Service/ConfigHandler.php',
 ];
@@ -152,20 +152,20 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Content/Test/Category/Service/CountingEntitySearcher.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 2,
     'path' => __DIR__ . '/src/Core/DevOps/Docs/App/HookableEventDoc.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/DevOps/Docs/ArrayWriter.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/DevOps/Environment/EnvironmentHelper.php',
 ];
@@ -176,8 +176,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/Adapter/Twig/Extension/ComparisonExtension.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/Api/EventListener/JsonRequestTransformerListener.php',
 ];
@@ -194,14 +194,14 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/Api/Exception/ResourceNotFoundException.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/Api/Response/ResponseFactoryRegistry.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 7,
     'path' => __DIR__ . '/src/Core/Framework/Api/Serializer/JsonApiDecoder.php',
 ];
@@ -224,62 +224,62 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/App/ActionButton/Response/OpenNewTabResponseFactory.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/App/AppLocaleProvider.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 2,
     'path' => __DIR__ . '/src/Core/Framework/App/Cms/BlockTemplateLoader.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/System/CustomField/Xml/CustomFieldTypes/CustomFieldTypeFactory.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/App/Validation/ManifestValidator.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/CompiledFieldCollection.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/Dbal/FieldAccessorBuilder/DefaultFieldAccessorBuilder.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/Dbal/FieldResolver/ManyToManyAssociationFieldResolver.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 2,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/Dbal/FieldResolver/ManyToOneAssociationFieldResolver.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/Dbal/FieldResolver/TranslationFieldResolver.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 4,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/EntityProtection/EntityProtectionValidator.php',
 ];
@@ -290,8 +290,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/EntityProtection/WriteProtection.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 2,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/EntityTranslationDefinition.php',
 ];
@@ -326,8 +326,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/FieldSerializer/AbstractFieldSerializer.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/FieldSerializer/AbstractFieldSerializer.php',
 ];
@@ -374,8 +374,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/FieldSerializer/PriceDefinitionFieldSerializer.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 7,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/FieldSerializer/PriceDefinitionFieldSerializer.php',
 ];
@@ -386,8 +386,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/FieldSerializer/PriceFieldSerializer.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/FieldSerializer/StateMachineStateFieldSerializer.php',
 ];
@@ -428,8 +428,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/Indexing/TreeUpdaterBag.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 2,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/MappingEntityDefinition.php',
 ];
@@ -452,14 +452,14 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/Pricing/Price.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 3,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/Search/ApiCriteriaValidator.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 2,
     'path' => __DIR__ . '/src/Core/Framework/DataAbstractionLayer/Search/Filter/MultiFilter.php',
 ];
@@ -566,8 +566,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/Demodata/Generator/FlowGenerator.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 2,
     'path' => __DIR__ . '/src/Core/Framework/DependencyInjection/CompilerPass/FeatureFlagCompilerPass.php',
 ];
@@ -608,8 +608,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/Plugin/Command/Lifecycle/AbstractPluginLifecycleCommand.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/Plugin/Requirement/RequirementExceptionStack.php',
 ];
@@ -620,38 +620,38 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/Plugin/Util/PluginFinder.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 2,
     'path' => __DIR__ . '/src/Core/Framework/RateLimiter/Policy/TimeBackoffLimiter.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/Routing/RouteScopeRegistry.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/Rule/Collector/RuleConditionRegistry.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/Store/Authentication/AbstractStoreRequestOptionsProvider.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/Store/Authentication/FrwRequestOptionsProvider.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/Store/Authentication/LocaleProvider.php',
 ];
@@ -674,38 +674,38 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/Store/Search/FilterStruct.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/Store/Search/FilterStruct.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 2,
     'path' => __DIR__ . '/src/Core/Framework/Store/Services/FirstRunWizardClient.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/Store/Services/StoreSessionExpiredMiddleware.php',
 ];
 $ignoreErrors[] = [
     'rawMessage' => 'Expected domain exception class Shopwell\\Core\\Framework\\Store\\StoreException, got Shopwell\\Core\\Framework\\Routing\\RoutingException',
-    'identifier' => 'shopware.domainException',
+    'identifier' => 'shopwell.domainException',
     'count' => 4,
     'path' => __DIR__ . '/src/Core/Framework/Store/Struct/ReviewStruct.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/Store/Struct/ReviewStruct.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 4,
     'path' => __DIR__ . '/src/Core/Framework/Struct/Serializer/StructNormalizer.php',
 ];
@@ -746,8 +746,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Installer/Controller/InstallerController.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Installer/InstallerKernel.php',
 ];
@@ -812,32 +812,32 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Profiling/Integration/Tideways.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 3,
     'path' => __DIR__ . '/src/Core/System/CustomEntity/Xml/CustomEntityXmlSchemaValidator.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/System/CustomEntity/Xml/Field/FieldFactory.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/System/Language/TranslationValidator.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/System/SalesChannel/Entity/SalesChannelDefinitionInstanceRegistry.php',
 ];
 $ignoreErrors[] = [
     'rawMessage' => 'Expected domain exception class Shopwell\\Core\\System\\SalesChannel\\SalesChannelException, got Shopwell\\Core\\Framework\\Routing\\RoutingException',
-    'identifier' => 'shopware.domainException',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/System/SalesChannel/SalesChannel/StoreApiInfoController.php',
 ];
@@ -854,8 +854,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/System/Snippet/Subscriber/CustomFieldSubscriber.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 3,
     'path' => __DIR__ . '/src/Core/System/SystemConfig/Facade/SystemConfigFacade.php',
 ];
@@ -938,14 +938,14 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Storefront/Event/CartMergedSubscriber.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Storefront/Framework/Seo/SeoUrlRoute/LandingPageSeoUrlRoute.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Storefront/Theme/ConfigLoader/StaticFileAvailableThemeProvider.php',
 ];
@@ -962,20 +962,20 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Storefront/Theme/ConfigLoader/StaticFileConfigLoader.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Storefront/Theme/ConfigLoader/StaticFileConfigLoader.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Storefront/Theme/Subscriber/FirstRunWizardSubscriber.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Storefront/Theme/Subscriber/PluginLifecycleSubscriber.php',
 ];
@@ -986,8 +986,8 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Storefront/Theme/ThemeConfigFieldFactory.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopware.domainException',
+    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
+    'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Storefront/Theme/ThemeConfigFieldFactory.php',
 ];

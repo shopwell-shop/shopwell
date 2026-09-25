@@ -48,7 +48,7 @@ class ErrorPageLoader implements ErrorPageLoaderInterface
         $cmsPage = $pages->first();
         if ($cmsPage === null) {
             if (!Feature::isActive('v6.8.0.0')) {
-                /** @phpstan-ignore shopware.domainException (Will be fixed with next major) */
+                /** @phpstan-ignore shopwell.domainException (Will be fixed with next major) */
                 throw new PageNotFoundException($cmsErrorLayoutId);
             }
             throw CmsException::pageNotFound($cmsErrorLayoutId);

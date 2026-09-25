@@ -20,7 +20,7 @@ class AssignTestStruct extends Struct
     /**
      * @var mixed
      */
-    // @phpstan-ignore shopware.propertyNativeType
+    // @phpstan-ignore shopwell.propertyNativeType
     protected $noType;
 
     protected ?int $int = null;

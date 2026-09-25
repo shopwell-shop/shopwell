@@ -20,7 +20,7 @@ async function createWrapper(plugin, showDescription) {
                 extensionHelperService: {
                     downloadAndActivateExtension: jest.fn().mockResolvedValue(),
                 },
-                shopwareExtensionService: {
+                shopwellExtensionService: {
                     updateExtensionData: () => {
                         return Promise.resolve();
                     },
@@ -44,7 +44,7 @@ describe('src/module/sw-first-run-wizard/component/sw-plugin-card', () => {
             iconPath: 'path/to/plugin-icon',
             active: true,
             label: 'example extension',
-            manufacturer: 'shopware AG',
+            manufacturer: 'Shopwell',
             shortDescription: 'this is a example extension',
             type: 'plugin',
         };
@@ -67,7 +67,7 @@ describe('src/module/sw-first-run-wizard/component/sw-plugin-card', () => {
             iconPath: 'path/to/plugin-icon',
             active: true,
             label: 'example extension',
-            manufacturer: 'shopware AG',
+            manufacturer: 'Shopwell',
             shortDescription: 'this is a example extension',
             type: 'plugin',
         };
@@ -85,7 +85,7 @@ describe('src/module/sw-first-run-wizard/component/sw-plugin-card', () => {
             iconPath: 'path/to/plugin-icon',
             active: true,
             label: 'example extension',
-            manufacturer: 'shopware AG',
+            manufacturer: 'Shopwell',
             shortDescription,
             type: 'plugin',
         };
@@ -105,7 +105,7 @@ describe('src/module/sw-first-run-wizard/component/sw-plugin-card', () => {
                 iconPath: 'path/to/plugin-icon',
                 active: true,
                 label: 'example extension',
-                manufacturer: 'shopware AG',
+                manufacturer: 'Shopwell',
                 shortDescription: 'short description',
                 type: 'plugin',
             },
@@ -125,7 +125,7 @@ describe('src/module/sw-first-run-wizard/component/sw-plugin-card', () => {
                 iconPath: 'path/to/plugin-icon',
                 active: false,
                 label: 'example extension',
-                manufacturer: 'shopware AG',
+                manufacturer: 'Shopwell',
                 shortDescription: 'short description',
                 type: 'plugin',
             },
@@ -134,7 +134,7 @@ describe('src/module/sw-first-run-wizard/component/sw-plugin-card', () => {
 
         const downloadSpy = jest.spyOn(wrapper.vm.extensionHelperService, 'downloadAndActivateExtension');
         const cacheApiSpy = jest.spyOn(wrapper.vm.cacheApiService, 'clear');
-        const extensionServiceSpy = jest.spyOn(wrapper.vm.shopwareExtensionService, 'updateExtensionData');
+        const extensionServiceSpy = jest.spyOn(wrapper.vm.shopwellExtensionService, 'updateExtensionData');
 
         await wrapper.find('.button-plugin-install').trigger('click');
         await flushPromises();
@@ -153,7 +153,7 @@ describe('src/module/sw-first-run-wizard/component/sw-plugin-card', () => {
                 iconPath: 'path/to/plugin-icon',
                 active: false,
                 label: 'example extension',
-                manufacturer: 'shopware AG',
+                manufacturer: 'Shopwell',
                 shortDescription: 'short description',
                 type: 'app',
             },
@@ -162,7 +162,7 @@ describe('src/module/sw-first-run-wizard/component/sw-plugin-card', () => {
 
         const downloadSpy = jest.spyOn(wrapper.vm.extensionHelperService, 'downloadAndActivateExtension');
         const cacheApiSpy = jest.spyOn(wrapper.vm.cacheApiService, 'clear');
-        const extensionServiceSpy = jest.spyOn(wrapper.vm.shopwareExtensionService, 'updateExtensionData');
+        const extensionServiceSpy = jest.spyOn(wrapper.vm.shopwellExtensionService, 'updateExtensionData');
 
         await wrapper.find('.button-plugin-install').trigger('click');
         await flushPromises();
@@ -182,7 +182,7 @@ describe('src/module/sw-first-run-wizard/component/sw-plugin-card', () => {
                 iconPath: 'path/to/plugin-icon',
                 active: false,
                 label: 'example extension',
-                manufacturer: 'shopware AG',
+                manufacturer: 'Shopwell',
                 shortDescription: 'short description',
                 type: 'plugin',
             },
@@ -201,7 +201,7 @@ describe('src/module/sw-first-run-wizard/component/sw-plugin-card', () => {
 
         const cacheApiSpy = jest.spyOn(wrapper.vm.cacheApiService, 'clear');
 
-        const extensionServiceSpy = jest.spyOn(wrapper.vm.shopwareExtensionService, 'updateExtensionData');
+        const extensionServiceSpy = jest.spyOn(wrapper.vm.shopwellExtensionService, 'updateExtensionData');
 
         await wrapper.find('.button-plugin-install').trigger('click');
         await flushPromises();

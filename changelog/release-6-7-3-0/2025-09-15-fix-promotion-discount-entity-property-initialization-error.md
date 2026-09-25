@@ -3,4 +3,4 @@ title: Fix promotion discount entity property initialization error in shopping c
 issue: #11962
 ---
 # Core
-* Changed property declarations in `\Shopware\Core\Checkout\Promotion\Aggregate\PromotionDiscount\PromotionDiscountEntity` to make `sorterKey` and `applierKey` nullable
+* Changed property declarations in `\Shopwell\Core\Checkout\Promotion\Aggregate\PromotionDiscount\PromotionDiscountEntity` to make `sorterKey` and `applierKey` nullable

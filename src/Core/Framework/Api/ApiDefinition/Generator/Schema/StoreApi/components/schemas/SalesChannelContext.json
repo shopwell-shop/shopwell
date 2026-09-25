@@ -155,7 +155,7 @@
                         "properties": {
                             "apiAlias": {
                                 "type": "string",
-                                "const": "shopware_core_framework_data_abstraction_layer_pricing_cash_rounding_config"
+                                "const": "shopwell_core_framework_data_abstraction_layer_pricing_cash_rounding_config"
                             },
                             "decimals": {
                                 "type": "integer",
@@ -181,7 +181,7 @@
                         "properties": {
                             "apiAlias": {
                                 "type": "string",
-                                "const": "shopware_core_framework_data_abstraction_layer_pricing_cash_rounding_config"
+                                "const": "shopwell_core_framework_data_abstraction_layer_pricing_cash_rounding_config"
                             },
                             "decimals": {
                                 "type": "integer",

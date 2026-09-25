@@ -51,13 +51,13 @@ describe('src/module/sw-sso-error/page/index', () => {
         expect(components.has('sw-sso-error-index')).toBeTruthy();
     });
 
-    it('should load the shopware logo', async () => {
+    it('should load the shopwell logo', async () => {
         const wrapper = await createWrapper(false);
         await flushPromises();
 
-        const shopwareLogo = wrapper.get('img.sw-sso-error__logo');
+        const shopwellLogo = wrapper.get('img.sw-sso-error__logo');
 
-        expect(shopwareLogo.attributes('src')).toBe('administration/administration/static/img/shopware_logo_blue.svg');
+        expect(shopwellLogo.attributes('src')).toBe('administration/administration/static/img/shopwell_logo_blue.svg');
     });
 
     it('should have the right text modules', async () => {

@@ -21,6 +21,6 @@ class CanNotDeletePluginManagedByComposerException extends ShopwellHttpException
 
     public function getErrorCode(): string
     {
-        return 'FRAMEWORK__STORE_CANNOT_DELETE_PLUGIN_MANAGED_BY_SHOPWARE';
+        return 'FRAMEWORK__STORE_CANNOT_DELETE_PLUGIN_MANAGED_BY_SHOPWELL';
     }
 }

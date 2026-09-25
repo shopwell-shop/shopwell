@@ -103,10 +103,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(FlowDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(FlowSequenceDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(FlowDispatcher::class)
         ->decorate('event_dispatcher', null, 1000)
@@ -147,7 +147,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(OrderConverter::class),
             service(DeliveryBuilder::class),
-            tagged_iterator('shopware.cart.collector'),
+            tagged_iterator('shopwell.cart.collector'),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
 
@@ -225,7 +225,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(JsonEntityEncoder::class),
             service(DefinitionInstanceRegistry::class),
-            param('shopware.mail.update_mail_variables_on_send'),
+            param('shopwell.mail.update_mail_variables_on_send'),
         ])
         ->tag('flow.action', ['priority' => 500, 'key' => 'action.mail.send']);
 
@@ -320,7 +320,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(FlowPayloadUpdater::class),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.entity_indexer');
+        ->tag('shopwell.entity_indexer');
 
     $services->set(FlowIndexerSubscriber::class)
         ->args([
@@ -437,41 +437,41 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(OrderTagRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(OrderTrackingCodeRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(OrderDeliveryStatusRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(OrderCreatedByAdminRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(OrderTransactionStatusRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(OrderStatusRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(OrderCustomFieldRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(OrderDocumentTypeRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(OrderDocumentTypeSentRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(FlowTemplateDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(FlowTemplateConfigFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(TriggerFlowController::class)
         ->public()

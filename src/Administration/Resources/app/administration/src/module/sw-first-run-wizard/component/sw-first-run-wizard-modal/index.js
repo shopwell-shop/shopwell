@@ -128,13 +128,13 @@ export default {
                         variant: 'large',
                         navigationIndex: 2,
                     },
-                    'shopware.account': {
-                        name: 'sw.first.run.wizard.index.shopware.account',
+                    'shopwell.account': {
+                        name: 'sw.first.run.wizard.index.shopwell.account',
                         variant: 'large',
                         navigationIndex: 3,
                     },
-                    'shopware.domain': {
-                        name: 'sw.first.run.wizard.index.shopware.domain',
+                    'shopwell.domain': {
+                        name: 'sw.first.run.wizard.index.shopwell.domain',
                         variant: 'large',
                         navigationIndex: 3,
                     },
@@ -192,13 +192,13 @@ export default {
                     variant: 'large',
                     navigationIndex: 5,
                 },
-                'shopware.account': {
-                    name: 'sw.first.run.wizard.index.shopware.account',
+                'shopwell.account': {
+                    name: 'sw.first.run.wizard.index.shopwell.account',
                     variant: 'large',
                     navigationIndex: 6,
                 },
-                'shopware.domain': {
-                    name: 'sw.first.run.wizard.index.shopware.domain',
+                'shopwell.domain': {
+                    name: 'sw.first.run.wizard.index.shopwell.domain',
                     variant: 'large',
                     navigationIndex: 6,
                 },

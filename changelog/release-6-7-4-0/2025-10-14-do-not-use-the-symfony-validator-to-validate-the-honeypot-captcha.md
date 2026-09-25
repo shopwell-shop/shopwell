@@ -6,7 +6,7 @@ author_github: @aragon999
 ---
 
 # Storefront
-* Changed the `Shopware\Storefront\Framework\Captcha\HoneypotCaptcha` to not use the Symfony validator to validate the captcha, if the behavior of the captcha should be changed, overwrite the `isValid` method directly
+* Changed the `Shopwell\Storefront\Framework\Captcha\HoneypotCaptcha` to not use the Symfony validator to validate the captcha, if the behavior of the captcha should be changed, overwrite the `isValid` method directly
 ___
 # Next Major Version Changes
 ## Symfony validator is not used to validate the honeypot captcha

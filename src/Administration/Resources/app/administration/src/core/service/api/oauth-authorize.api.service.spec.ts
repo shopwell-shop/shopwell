@@ -10,7 +10,7 @@ import MockAdapter from 'axios-mock-adapter';
 
 const params: OAuthAuthorizationParams = {
     response_type: 'code',
-    client_id: 'shopware-cli',
+    client_id: 'shopwell-cli',
     redirect_uri: 'http://127.0.0.1:53421/callback',
     state: 'xyz',
     code_challenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
@@ -39,7 +39,7 @@ describe('src/core/service/api/oauth-authorize.api.service', () => {
     it('requests the authorization info with the authorization params as query', async () => {
         const { oauthAuthorizeApiService, clientMock } = createOAuthAuthorizeApiService();
         const info = {
-            client: { id: 'shopware-cli', name: 'Shopwell CLI' },
+            client: { id: 'shopwell-cli', name: 'Shopwell CLI' },
             redirectUri: 'http://127.0.0.1:53421/callback',
             scopes: ['write'],
         };

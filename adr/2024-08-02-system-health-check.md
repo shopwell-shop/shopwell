@@ -1,5 +1,5 @@
 ---
-title: System Health Checks in Shopware
+title: System Health Checks in Shopwell
 date: 2024-08-02
 area: core
 tags: [health-check, system, monitoring]
@@ -13,17 +13,17 @@ A software system is made up of many components that work together to provide a 
 
 ## Decision
 
-We will implement system health checks in Shopware to monitor certain parts of the system with the aim to detect failures and issues early.
+We will implement system health checks in Shopwell to monitor certain parts of the system with the aim to detect failures and issues early.
 This system should be extensible and allow for custom health checks to be added with ease.
 
 ### Abstractions and Core concepts
 
 The following abstractions and concepts, are core to the implementation:
 
-1. **Shopware\Core\Framework\SystemCheck\BaseCheck**:
+1. **Shopwell\Core\Framework\SystemCheck\BaseCheck**:
     - Defines a base class for all system checks.
 
-2. **Shopware\Core\Framework\Health\Check\Category**:
+2. **Shopwell\Core\Framework\Health\Check\Category**:
     - Represents the category of functionality that the check is covering. 
     - Categories:
         - `SYSTEM`: System checks makes sure that the backbone of the software is functioning correctly. Example: Database connection.
@@ -31,10 +31,10 @@ The following abstractions and concepts, are core to the implementation:
         - `EXTERNAL`: External checks make sure that external services are responding correctly. Example: SMTP server is online.
         - `AUXILIARY`: Auxiliary checks make sure that auxiliary services are functioning correctly. Example: background tasks are running.
 
-3. **Shopware\Core\Framework\SystemCheck\Check\Result**:
+3. **Shopwell\Core\Framework\SystemCheck\Check\Result**:
     - Represents the outcome state of a check.
 
-4. **Shopware\Core\Framework\SystemCheck\Check\Status**:
+4. **Shopwell\Core\Framework\SystemCheck\Check\Status**:
     - Represents the status of a health check result.
     - Statuses (in order of severity):
       - `OK`: The component is functioning correctly.
@@ -44,7 +44,7 @@ The following abstractions and concepts, are core to the implementation:
       - `ERROR`: The component has runtime errors, but some parts of it could still be functioning.
       - `FAILURE`: The component has failed with irrecoverable errors.
 
-5. **Shopware\Core\Framework\SystemCheck\Check\SystemCheckExecutionContext**:
+5. **Shopwell\Core\Framework\SystemCheck\Check\SystemCheckExecutionContext**:
     - Represents the context in which a health check is executed.
     - Contexts:
         - `WEB`: The check is running in a web environment.
@@ -55,7 +55,7 @@ The following abstractions and concepts, are core to the implementation:
 #### System Check Guidelines
 
 System checks can differ in complexity, purpose, and computational cost. The types are logical categorizations based on the need and cost for the test and is used to determine the appropriate execution context for a check.
-This distinction is primarily reflected in the `Shopware\Core\Framework\SystemCheck\BaseCheck` class method:
+This distinction is primarily reflected in the `Shopwell\Core\Framework\SystemCheck\BaseCheck` class method:
 ```php
     protected function allowedSystemCheckExecutionContexts(): array
     {...}
@@ -72,7 +72,7 @@ Those system checks would have:
 ```php
     protected function allowedSystemCheckExecutionContexts(): array
     {
-        return \Shopware\Core\Framework\SystemCheck\Check\SystemCheckExecutionContext::readiness();
+        return \Shopwell\Core\Framework\SystemCheck\Check\SystemCheckExecutionContext::readiness();
     }
 ```
 
@@ -87,7 +87,7 @@ Those system checks would have:
 ```php
     protected function allowedSystemCheckExecutionContexts(): array
     {
-        return \Shopware\Core\Framework\SystemCheck\Check\SystemCheckExecutionContext::cases();
+        return \Shopwell\Core\Framework\SystemCheck\Check\SystemCheckExecutionContext::cases();
     }
 ```
 
@@ -101,7 +101,7 @@ Those system checks would have:
 ```php
     protected function allowedSystemCheckExecutionContexts(): array
     {
-        return \Shopware\Core\Framework\SystemCheck\Check\SystemCheckExecutionContext::longRunning();
+        return \Shopwell\Core\Framework\SystemCheck\Check\SystemCheckExecutionContext::longRunning();
     }
 ```
 

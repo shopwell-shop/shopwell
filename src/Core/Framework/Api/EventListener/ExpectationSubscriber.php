@@ -22,12 +22,12 @@ use Symfony\Component\HttpKernel\KernelEvents;
 #[Package('framework')]
 class ExpectationSubscriber implements EventSubscriberInterface
 {
-    private const SHOPWARE_CORE_PACKAGES = [
-        'shopware/platform',
-        'shopware/core',
-        'shopware/administration',
-        'shopware/elasticsearch',
-        'shopware/storefront',
+    private const SHOPWELL_CORE_PACKAGES = [
+        'shopwell/platform',
+        'shopwell/core',
+        'shopwell/administration',
+        'shopwell/elasticsearch',
+        'shopwell/storefront',
     ];
 
     /**
@@ -36,7 +36,7 @@ class ExpectationSubscriber implements EventSubscriberInterface
      * @param list<PluginData> $plugins
      */
     public function __construct(
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
         private readonly array $plugins
     ) {
     }
@@ -117,8 +117,8 @@ class ExpectationSubscriber implements EventSubscriberInterface
                     continue;
                 }
 
-                if (\in_array($name, self::SHOPWARE_CORE_PACKAGES, true)) {
-                    $installedVersion = $this->shopwareVersion;
+                if (\in_array($name, self::SHOPWELL_CORE_PACKAGES, true)) {
+                    $installedVersion = $this->shopwellVersion;
                 }
             }
 

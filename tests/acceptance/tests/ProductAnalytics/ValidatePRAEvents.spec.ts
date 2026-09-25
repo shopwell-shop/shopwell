@@ -54,7 +54,7 @@ test.describe('Product Analytics - Validate events.', { tag: '@ProductAnalytics'
                 await page.route(`**/${CONSENTS_ENDPOINT}`, consentHandler);
             });
 
-            await test.step('Login to shopware administration', async () => {
+            await test.step('Login to shopwell administration', async () => {
                 const user: User = await TestDataService.createUser();
 
                 await loginToAdministration(page, user, TestDataService.AdminApiClient);

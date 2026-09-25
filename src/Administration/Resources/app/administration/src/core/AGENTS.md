@@ -31,7 +31,7 @@ import { Component } from 'src/core/factory/component.factory';
 ### `data/` - Repository System (See: AGENTS.md)
 - **repository-factory**: Creates repositories
 - **entity**: Reactive entities with `.getOrigin()`, `.getDraft()`
-- **criteria**: Query builder from `@shopware-ag/meteor-admin-sdk`
+- **criteria**: Query builder from `@shopwell-ag/meteor-admin-sdk`
 - **changeset-generator**: Minimal diff (only changed fields)
 - **error-resolver**: Maps API errors to fields
 

@@ -329,7 +329,7 @@ class Feature
             return;
         }
 
-        (self::$triggerer ??= new Triggerer())->deprecation('shopware/core', $introducedIn, $message);
+        (self::$triggerer ??= new Triggerer())->deprecation('shopwell/core', $introducedIn, $message);
     }
 
     public static function deprecatedMethodMessage(string $class, string $method, string $majorVersion, ?string $replacement = null): string

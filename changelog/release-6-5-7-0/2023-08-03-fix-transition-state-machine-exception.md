@@ -8,4 +8,4 @@ author_github: @JasperP98
 
 # Core
 
-* Changed exception messages for `stateMachineStateNotFound` in `Shopware\Core\System\StateMachine\StateMachineException` thrown in `Shopware\Core\Checkout\Order\SalesChannel\OrderService`
+* Changed exception messages for `stateMachineStateNotFound` in `Shopwell\Core\System\StateMachine\StateMachineException` thrown in `Shopwell\Core\Checkout\Order\SalesChannel\OrderService`

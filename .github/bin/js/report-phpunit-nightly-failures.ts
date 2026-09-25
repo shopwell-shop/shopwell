@@ -275,7 +275,7 @@ export function groupByDomain(tests: FailedTest[], repoRoot: string): DomainGrou
 }
 
 function formatTest(test: FailedTest): string {
-  const shortClass = test.className.replace(/^Shopware\\Tests\\/, '');
+  const shortClass = test.className.replace(/^Shopwell\\Tests\\/, '');
   const message = test.message === '' ? '' : `: ${test.message}`;
   return `- \`${shortClass}::${test.testName}\`${message}`;
 }

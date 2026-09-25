@@ -5,5 +5,5 @@ author_email: Discord.Benjamin@web.de
 author_github: gecolay
 ---
 # Core
-* Added `Shopware\Core\Framework\Routing\Extension\CanonicalRedirectExtension`
-* Changed `Shopware\Core\Framework\Routing\CanonicalRedirectService` to publish `CanonicalRedirectExtension`
+* Added `Shopwell\Core\Framework\Routing\Extension\CanonicalRedirectExtension`
+* Changed `Shopwell\Core\Framework\Routing\CanonicalRedirectService` to publish `CanonicalRedirectExtension`

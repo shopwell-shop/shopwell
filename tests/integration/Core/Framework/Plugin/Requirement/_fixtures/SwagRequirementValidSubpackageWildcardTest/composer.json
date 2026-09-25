@@ -2,21 +2,21 @@
     "name": "swag/requirement-valid-subpackage-wildcard-test",
     "description": "Test requirement validator",
     "version": "v1.0.0",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "license": "MIT",
     "authors": [
         {
-            "name": "shopware AG",
+            "name": "Shopwell",
             "role": "Manufacturer"
         }
     ],
     "require": {
         "ext-json": "*",
-        "shopware/core": "*"
+        "shopwell/core": "*"
     },
     "extra": {
-        "shopware-plugin-class": "SwagRequirementValidSubpackageWildcardTest\\SwagRequirementValidSubpackageWildcardTest",
-        "copyright": "(c) by shopware AG",
+        "shopwell-plugin-class": "SwagRequirementValidSubpackageWildcardTest\\SwagRequirementValidSubpackageWildcardTest",
+        "copyright": "(c) by Shopwell",
         "label": {
             "de-DE": "Test für Requirement Validator",
             "en-GB": "Test for requirement validator"

@@ -2,7 +2,7 @@
 title: Remove number truncate
 issue: NEXT-12912
 author: OliverSkroblin
-author_email: o.skroblin@shopware.com 
+author_email: o.skroblin@shopwell.com 
 author_github: OliverSkroblin
 ---
 # Core

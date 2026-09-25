@@ -6,4 +6,4 @@ author_email: andreas.allacher@massiveart.com
 author_github: @AndreasA
 ---
 # Core
-* Changed `Shopware\Core\System\SystemConfig\SystemConfigService` to use the value provided by the subscribers of the BeforeSystemConfigChangedEvent to set the config value.
+* Changed `Shopwell\Core\System\SystemConfig\SystemConfigService` to use the value provided by the subscribers of the BeforeSystemConfigChangedEvent to set the config value.

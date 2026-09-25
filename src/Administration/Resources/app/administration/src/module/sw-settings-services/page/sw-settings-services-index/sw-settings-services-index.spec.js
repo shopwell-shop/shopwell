@@ -8,9 +8,9 @@ import {
     MtModalRoot,
     MtButton,
     MtBanner,
-} from '@shopware-ag/meteor-component-library';
+} from '@shopwell-ag/meteor-component-library';
 import SwSettingsServicesIndex from './index';
-import { useShopwellServicesStore } from '../../store/shopware-services.store';
+import { useShopwellServicesStore } from '../../store/shopwell-services.store';
 import SwSettingsServicesHero from '../../component/sw-settings-services-hero';
 import SwSettingsServicesGrantPermissionsCard from '../../component/sw-settings-services-grant-permissions-card';
 import SwSettingsServicesRevokePermissionsModal from '../../component/sw-settings-services-revoke-permissions-modal';
@@ -18,18 +18,18 @@ import SwSettingsServicesDeactivateModal from '../../component/sw-settings-servi
 import * as permissionsComposable from '../../composables/permissions';
 
 jest.mock('../../composables/permissions', () => {
-    const useShopwellServicesStore = require('../../store/shopware-services.store').useShopwellServicesStore;
+    const useShopwellServicesStore = require('../../store/shopwell-services.store').useShopwellServicesStore;
     const _reloadPageMock = jest.fn();
     return {
         async grantPermissions() {
             const store = useShopwellServicesStore();
             const revision = store.currentRevision?.revision;
             if (!revision) throw new Error('No revision available');
-            await Shopwell.Service('shopwareServicesService').acceptRevision(revision);
+            await Shopwell.Service('shopwellServicesService').acceptRevision(revision);
             _reloadPageMock();
         },
         async revokePermissions() {
-            await Shopwell.Service('shopwareServicesService').revokePermissions();
+            await Shopwell.Service('shopwellServicesService').revokePermissions();
             _reloadPageMock();
         },
         _reloadPage: _reloadPageMock,
@@ -54,7 +54,7 @@ describe('/src/module/sw-setting-services/page/sw-settings-services-index', () =
             })),
         }));
 
-        Shopwell.Service().register('shopwareServicesService', () => ({
+        Shopwell.Service().register('shopwellServicesService', () => ({
             getInstalledServices: jest.fn(async () => [
                 {
                     id: 'service-id',
@@ -68,7 +68,7 @@ describe('/src/module/sw-setting-services/page/sw-settings-services-index', () =
                     active: true,
                     name: 'second-service-name',
                     label: 'Second Service',
-                    requirements: ['shopware_account'],
+                    requirements: ['shopwell_account'],
                 },
             ]),
             getServicesContext: jest.fn(async () => ({
@@ -180,7 +180,7 @@ describe('/src/module/sw-setting-services/page/sw-settings-services-index', () =
     });
 
     it('can grant permissions', async () => {
-        Shopwell.Service('shopwareServicesService').getServicesContext.mockImplementationOnce(async () => ({
+        Shopwell.Service('shopwellServicesService').getServicesContext.mockImplementationOnce(async () => ({
             disabled: false,
             permissionConsent: null,
         }));
@@ -212,9 +212,9 @@ describe('/src/module/sw-setting-services/page/sw-settings-services-index', () =
     });
 
     it('does not show grant permissions card if services are deactivated', async () => {
-        Shopwell.Service('shopwareServicesService').getInstalledServices.mockImplementationOnce(async () => []);
+        Shopwell.Service('shopwellServicesService').getInstalledServices.mockImplementationOnce(async () => []);
 
-        Shopwell.Service('shopwareServicesService').getServicesContext.mockImplementationOnce(async () => ({
+        Shopwell.Service('shopwellServicesService').getServicesContext.mockImplementationOnce(async () => ({
             disabled: true,
             permissionConsent: null,
         }));
@@ -228,17 +228,17 @@ describe('/src/module/sw-setting-services/page/sw-settings-services-index', () =
     });
 
     it('shows installed services that remain available when services are deactivated', async () => {
-        Shopwell.Service('shopwareServicesService').getInstalledServices.mockImplementationOnce(async () => [
+        Shopwell.Service('shopwellServicesService').getInstalledServices.mockImplementationOnce(async () => [
             {
                 id: 'gmv-service-id',
                 active: true,
                 name: 'gmv',
                 label: 'GMV',
-                requirements: ['shopware_account'],
+                requirements: ['shopwell_account'],
             },
         ]);
 
-        Shopwell.Service('shopwareServicesService').getServicesContext.mockImplementationOnce(async () => ({
+        Shopwell.Service('shopwellServicesService').getServicesContext.mockImplementationOnce(async () => ({
             disabled: true,
             permissionsConsent: null,
         }));
@@ -256,9 +256,9 @@ describe('/src/module/sw-setting-services/page/sw-settings-services-index', () =
     });
 
     it('can activate services', async () => {
-        Shopwell.Service('shopwareServicesService').getInstalledServices.mockImplementationOnce(async () => []);
+        Shopwell.Service('shopwellServicesService').getInstalledServices.mockImplementationOnce(async () => []);
 
-        Shopwell.Service('shopwareServicesService').getServicesContext.mockImplementationOnce(async () => ({
+        Shopwell.Service('shopwellServicesService').getServicesContext.mockImplementationOnce(async () => ({
             disabled: true,
             permissionConsent: null,
         }));
@@ -277,7 +277,7 @@ describe('/src/module/sw-setting-services/page/sw-settings-services-index', () =
     });
 
     it('shows error banner', async () => {
-        Shopwell.Service('shopwareServicesService').getInstalledServices.mockImplementationOnce(async () => {
+        Shopwell.Service('shopwellServicesService').getInstalledServices.mockImplementationOnce(async () => {
             throw new Error('failed loading services');
         });
 

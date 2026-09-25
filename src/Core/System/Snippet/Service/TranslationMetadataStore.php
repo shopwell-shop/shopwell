@@ -27,7 +27,7 @@ class TranslationMetadataStore
 {
     private const CROWDIN_METADATA_LOCK = 'crowdin-metadata.lock';
 
-    private const REMOTE_METADATA_CACHE_KEY = 'shopware.translation.remote_metadata';
+    private const REMOTE_METADATA_CACHE_KEY = 'shopwell.translation.remote_metadata';
 
     private const REMOTE_METADATA_CACHE_TTL = 300;
 

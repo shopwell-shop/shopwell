@@ -234,7 +234,7 @@ class EntityGeneratorTest extends TestCase
     public function testDoesNotGenerateMigrationWhenEntityMigrationAlreadyExists(): void
     {
         $filesystem = new Filesystem();
-        $directory = sys_get_temp_dir() . '/shopware-entity-generator-' . uniqid('', true);
+        $directory = sys_get_temp_dir() . '/shopwell-entity-generator-' . uniqid('', true);
         $filesystem->dumpFile(
             $directory . '/src/Migration/Migration123456789CreateTestTable.php',
             '<?php'

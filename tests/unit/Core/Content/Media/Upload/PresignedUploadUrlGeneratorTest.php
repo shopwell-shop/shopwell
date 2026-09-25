@@ -147,10 +147,10 @@ class PresignedUploadUrlGeneratorTest extends TestCase
     {
         $generator = PresignedUploadUrlGenerator::create(
             $this->mediaPathStrategy,
-            $this->s3Config('public-bucket', ['root' => 'shopware/media']),
+            $this->s3Config('public-bucket', ['root' => 'shopwell/media']),
             new NullLogger(),
             new NativeClock(),
-            privateFilesystemConfig: $this->s3Config('private-bucket', ['root' => 'shopware/media']),
+            privateFilesystemConfig: $this->s3Config('private-bucket', ['root' => 'shopwell/media']),
         );
 
         static::assertTrue($generator->isSupported());

@@ -2,7 +2,7 @@
 persona: open-source
 display_name: Open Source
 description: >
-    Open-source-focused Shopware reviewer: PR/commit hygiene, UPGRADE notes,
+    Open-source-focused Shopwell reviewer: PR/commit hygiene, UPGRADE notes,
     deprecations, public ecosystem impact, external-contributor tone.
 ---
 

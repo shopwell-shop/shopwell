@@ -6,4 +6,4 @@ author_email: martin.bens@it-bens.de
 author_github: @spigandromeda
 ---
 # Core
-* Changed `Shopware\Elasticsearch\Framework\DataAbstractionLayer\CriteriaParser` to resolve related definitions before parsing a value while parsing a filter
+* Changed `Shopwell\Elasticsearch\Framework\DataAbstractionLayer\CriteriaParser` to resolve related definitions before parsing a value while parsing a filter

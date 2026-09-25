@@ -43,7 +43,7 @@ class ShippingAddressCountryRegionMissingError extends CountryRegionMissingError
         Feature::triggerDeprecationOrThrow('v6.8.0.0', Feature::deprecatedMethodMessage(self::class, 'getRoute', 'v6.8.0.0'));
 
         return new ErrorRoute(
-            /** @phpstan-ignore shopware.storefrontRouteUsage (Do not use Storefront routes in the core. Will be fixed with https://github.com/shopware/shopware/issues/12969) */
+            /** @phpstan-ignore shopwell.storefrontRouteUsage (Do not use Storefront routes in the core. Will be fixed with https://github.com/shopwell-shop/shopwell/issues/12969) */
             'frontend.account.address.edit.page',
             $this->parameters
         );

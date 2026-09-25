@@ -6,4 +6,4 @@ author_github: @JoshuaBehrens
 issue: NEXT-31261
 ---
 # Core
-* Changed `\Shopware\Core\Content\Product\SearchKeyword\ProductSearchTermInterpreter::slop` to skip typo correction slop generation for numeric search tokens
+* Changed `\Shopwell\Core\Content\Product\SearchKeyword\ProductSearchTermInterpreter::slop` to skip typo correction slop generation for numeric search tokens

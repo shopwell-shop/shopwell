@@ -2,7 +2,7 @@
 title: Add administration module to control event actions
 issue: NEXT-10498
 author: Tobias Berge
-author_email: t.berge@shopware.com 
+author_email: t.berge@shopwell.com 
 author_github: @tobiasberge
 ---
 # Administration
@@ -43,8 +43,8 @@ author_github: @tobiasberge
 * Changed the `mailTemplatesExist` prop assignment value of `sw-order-state-change-modal` to `true` in `Resources/app/administration/src/module/sw-order/component/sw-order-state-history-card.html.twig`
 ___
 # Core
-* Added new flag `Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking` to field `event_name` in `Shopware\Core\Framework\Event\EventAction\EventActionDefinition::defineFields`
-* Added new flag `Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking` to field `action_name` in `Shopware\Core\Framework\Event\EventAction\EventActionDefinition::defineFields`
+* Added new flag `Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking` to field `event_name` in `Shopwell\Core\Framework\Event\EventAction\EventActionDefinition::defineFields`
+* Added new flag `Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking` to field `action_name` in `Shopwell\Core\Framework\Event\EventAction\EventActionDefinition::defineFields`
 ---
 # Upgrade Information
 

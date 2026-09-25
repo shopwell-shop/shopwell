@@ -2,7 +2,7 @@
 title: Prevent setting company field as required in shipping address with personal account type
 issue: NEXT-15809
 author: d.neustadt
-author_email: d.neustadt@shopware.com 
+author_email: d.neustadt@shopwell.com 
 author_github: dneustadt
 ---
 # Storefront

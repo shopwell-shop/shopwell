@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  *
- * The generated spec tsconfig inside the `.shopware/` bridge: a companion
+ * The generated spec tsconfig inside the `.shopwell/` bridge: a companion
  * type-check program that composes the runtime bridge, swaps in jest types, and
  * includes only the spec files the runtime program excludes.
  */

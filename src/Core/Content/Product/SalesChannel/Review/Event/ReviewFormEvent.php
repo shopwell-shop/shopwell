@@ -98,7 +98,7 @@ final class ReviewFormEvent extends Event implements SalesChannelAware, MailAwar
         return $this->productId;
     }
 
-    // @phpstan-ignore-next-line shopware.bcChangeAttribute (The constructor still permits a missing product, so the return type cannot be narrowed yet.)
+    // @phpstan-ignore-next-line shopwell.bcChangeAttribute (The constructor still permits a missing product, so the return type cannot be narrowed yet.)
     #[ReturnTypeNarrowing(version: 'v6.8.0', newType: ProductEntity::class, description: 'The return value becomes non-nullable once constructing the event without a product is removed.')]
     public function getProduct(): ?ProductEntity
     {

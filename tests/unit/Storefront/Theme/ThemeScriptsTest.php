@@ -149,7 +149,7 @@ class ThemeScriptsTest extends TestCase
 
         $importMap = [
             'imports' => [
-                'shopware' => '/bundles/storefront/storefront/shopware/shopware.js',
+                'shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js',
                 'Sw:Button' => 'js/components/Sw/Button.js',
             ],
             'scopes' => [
@@ -184,7 +184,7 @@ class ThemeScriptsTest extends TestCase
 
     public function testGetDevImportMapReturnsParsedMapWhenFlagFilePresent(): void
     {
-        $devMap = ['imports' => ['shopware' => 'http://localhost:5176/src/shopware.ts']];
+        $devMap = ['imports' => ['shopwell' => 'http://localhost:5176/src/shopwell.ts']];
 
         $this->tempFilesystem->method('fileExists')->willReturn(true);
         $this->tempFilesystem->method('read')->willReturn((string) json_encode($devMap));
@@ -211,7 +211,7 @@ class ThemeScriptsTest extends TestCase
 
         $this->tempFilesystem->method('fileExists')->willReturn(true);
         $this->tempFilesystem->method('read')->willReturn((string) json_encode([
-            'imports' => ['shopware' => 'http://localhost:5176/src/shopware.ts'],
+            'imports' => ['shopwell' => 'http://localhost:5176/src/shopwell.ts'],
             'themeId' => 'dev-theme',
         ]));
         $logger = $this->createMock(LoggerInterface::class);
@@ -237,7 +237,7 @@ class ThemeScriptsTest extends TestCase
         $this->requestStack->push($request);
 
         $devMap = [
-            'imports' => ['shopware' => 'http://localhost:5176/src/shopware.ts'],
+            'imports' => ['shopwell' => 'http://localhost:5176/src/shopwell.ts'],
             'themeId' => 'storefront',
         ];
 
@@ -253,7 +253,7 @@ class ThemeScriptsTest extends TestCase
         $this->requestStack->push($request);
 
         $devMap = [
-            'imports' => ['shopware' => 'http://localhost:5176/src/shopware.ts'],
+            'imports' => ['shopwell' => 'http://localhost:5176/src/shopwell.ts'],
             'themeId' => 'storefront',
         ];
 
@@ -270,7 +270,7 @@ class ThemeScriptsTest extends TestCase
         $this->requestStack->push($request);
 
         $devMap = [
-            'imports' => ['shopware' => 'http://localhost:5176/src/shopware.ts'],
+            'imports' => ['shopwell' => 'http://localhost:5176/src/shopwell.ts'],
             'themeId' => 123,
         ];
 

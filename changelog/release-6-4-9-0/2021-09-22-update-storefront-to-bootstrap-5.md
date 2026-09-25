@@ -2,7 +2,7 @@
 title: Update Storefront to Bootstrap 5
 issue: NEXT-15229
 author: Tobias Berge
-author_email: t.berge@shopware.com 
+author_email: t.berge@shopwell.com 
 author_github: @tobiasberge
 ---
 # Storefront
@@ -10,7 +10,7 @@ author_github: @tobiasberge
 * Added npm dependency `@popperjs/core` with version `2.10.1`
 * Added new block `layout_head_javascript_jquery` in `Resources/views/storefront/layout/meta.html.twig`
 * Added new block `base_script_jquery` in `Resources/views/storefront/base.html.twig`
-* Added global twig variables in `\Shopware\Storefront\Framework\Twig\TemplateDataExtension::getGlobals`
+* Added global twig variables in `\Shopwell\Storefront\Framework\Twig\TemplateDataExtension::getGlobals`
     * Added variable `dataBsToggleAttr` to replace `data-toggle` with `data-bs-toggle`
     * Added variable `dataBsDismissAttr` to replace `data-dismiss` with `data-bs-dismiss`
     * Added variable `dataBsTargetAttr` to replace `data-target` with `data-bs-target`
@@ -40,7 +40,7 @@ author_github: @tobiasberge
     * `Resources/views/storefront/layout/header/search.html.twig`
     * `Resources/views/storefront/page/checkout/cart/index.html.twig`
     * `Resources/views/storefront/component/checkout/offcanvas-cart.html.twig`
-* Added new breakpoint `xxl` to `\Shopware\Storefront\Theme\ThemeConfigValueAccessor::getThemeConfig`
+* Added new breakpoint `xxl` to `\Shopwell\Storefront\Theme\ThemeConfigValueAccessor::getThemeConfig`
 * Added new breakpoint `xxl` to twig variable `breakpoint` in `Resources/views/storefront/base.html.twig`
 * Added new breakpoint `xxl` to twig variable `gallerySliderOptions` in `Resources/views/storefront/element/cms-element-image-gallery.html.twig`
 * Added new static `isXXL` in `viewport-detection.helper.js`
@@ -62,10 +62,10 @@ author_github: @tobiasberge
     * `ajax-modal-extension.util.js`
         * Added new const `MODAL_TRIGGER_DATA_ATTRIBUTE`
     * `pseudo-modal.util.js`
-* Added new default SCSS variable overwrite `$link-decoration: none !default;` in `Resources/app/storefront/src/scss/skin/shopware/abstract/variables/_bootstrap.scss`
-* Added new default SCSS variable overwrite `$link-hover-decoration: underline !default;` in `Resources/app/storefront/src/scss/skin/shopware/abstract/variables/_bootstrap.scss`
+* Added new default SCSS variable overwrite `$link-decoration: none !default;` in `Resources/app/storefront/src/scss/skin/shopwell/abstract/variables/_bootstrap.scss`
+* Added new default SCSS variable overwrite `$link-hover-decoration: underline !default;` in `Resources/app/storefront/src/scss/skin/shopwell/abstract/variables/_bootstrap.scss`
 * Deprecated CSS class `.modal-close` in `Resources/app/storefront/src/scss/component/_zoom-modal.scss`
-* Deprecated CSS class `.input-group-append` in `Resources/app/storefront/src/scss/skin/shopware/layout/_header.scss`
+* Deprecated CSS class `.input-group-append` in `Resources/app/storefront/src/scss/skin/shopwell/layout/_header.scss`
 * Deprecated usages of the next breakpoint for mixin call `media-breakpoint-down()` in the following SCSS files:
     * `Resources/app/storefront/src/scss/component/_base-slider.scss`
     * `Resources/app/storefront/src/scss/component/_cms-block.scss`
@@ -80,18 +80,18 @@ author_github: @tobiasberge
     * `Resources/app/storefront/src/scss/page/account/_order.scss`
     * `Resources/app/storefront/src/scss/page/account/_order-detail.scss`
     * `Resources/app/storefront/src/scss/page/wishlist/_wishlist.scss`
-    * `Resources/app/storefront/src/scss/skin/shopware/page/account/_order.scss`
-    * `Resources/app/storefront/src/scss/skin/shopware/page/account/_order-detail.scss`
-    * `Resources/app/storefront/src/scss/skin/shopware/page/checkout/_cart.scss`
-    * `Resources/app/storefront/src/scss/skin/shopware/page/product-detail/_cross-selling.scss`
-    * `Resources/app/storefront/src/scss/skin/shopware/page/product-detail/_product-detail.scss`
-    * `Resources/app/storefront/src/scss/skin/shopware/page/product-detail/_tabs.scss`
+    * `Resources/app/storefront/src/scss/skin/shopwell/page/account/_order.scss`
+    * `Resources/app/storefront/src/scss/skin/shopwell/page/account/_order-detail.scss`
+    * `Resources/app/storefront/src/scss/skin/shopwell/page/checkout/_cart.scss`
+    * `Resources/app/storefront/src/scss/skin/shopwell/page/product-detail/_cross-selling.scss`
+    * `Resources/app/storefront/src/scss/skin/shopwell/page/product-detail/_product-detail.scss`
+    * `Resources/app/storefront/src/scss/skin/shopwell/page/product-detail/_tabs.scss`
 ___
 # Upgrade Information
 
 ## Bootstrap v5 preview
 
-We want to update the Storefront to Bootstrap v5 in the next major release of Shopware.
+We want to update the Storefront to Bootstrap v5 in the next major release of Shopwell.
 Because Bootstrap v5 introduces breaking changes when updating from Bootstrap v4, we have implemented the update behind a feature flag.
 This gives you the possibility to test Bootstrap v5 with your apps or themes before the next major release. The current Bootstrap v4 implementation is still the default.
 With the next major release Bootstrap v5 will be the default.
@@ -119,7 +119,7 @@ You can find a full migration guide on the official Bootstrap website: [Migratin
 
 ## How to consider Bootstrap v5
 
-Because of the breaking changes inside Bootstrap v5 you will find several places with backward-compatibility code in the Shopware platform.
+Because of the breaking changes inside Bootstrap v5 you will find several places with backward-compatibility code in the Shopwell platform.
 This code is being used to already provide the Bootstrap v5 implementation while keeping the Bootstrap v4 implementation for backward-compatibility.
 Depending, if you are an app/theme developer or a platform contributor you need to adapt the backward-compatibility for your use case.
 
@@ -130,7 +130,7 @@ Depending, if you are an app/theme developer or a platform contributor you need 
     The major feature flag `V6_5_0_0` can be used to activate Bootstrap v5 during development.
   * Option B: Depending on you app/plugin/theme it might be more feasible to you to use the major feature flag `V6_5_0_0` to create compatibility to Bootstrap v5. 
     You can use feature flag conditions with `V6_5_0_0` inside your app/plugin/theme. 
-    The major feature flag `V6_5_0_0` will remain inside the shopware platform and will be `true` by default after the release of `v6.5.0.0`
+    The major feature flag `V6_5_0_0` will remain inside the shopwell platform and will be `true` by default after the release of `v6.5.0.0`
 
 You can find some code examples below which will illustrate this. There are always three examples for the same code snippet:
 
@@ -257,8 +257,8 @@ The following list contains issues that we are aware of. We want to address this
 * **Styling**<br>
   There might be smaller styling issues here and there. Mostly spacing or slightly wrong colors.
 * **Bootstrap v5 OffCanvas**<br>
-  Bootstrap v5 ships its own OffCanvas component. Shopware is still using its custom OffCanvas at the moment.
-  It is planned to migrate the Shopware OffCanvas to the Bootstrap OffCanvas.
+  Bootstrap v5 ships its own OffCanvas component. Shopwell is still using its custom OffCanvas at the moment.
+  It is planned to migrate the Shopwell OffCanvas to the Bootstrap OffCanvas.
 * **Modifying SCSS $theme-colors**<br>
   Currently it is not possible to add or remove custom colors to $theme-colors like it is described in the [Bootstrap documentation](https://getbootstrap.com/docs/5.1/customize/sass/#add-to-map).
 
@@ -266,7 +266,7 @@ ___
 # Next Major Version Changes
 
 Bootstrap v5 introduces breaking changes in HTML, (S)CSS and JavaScript.
-Below you can find a migration overview of the effected areas in the Shopware platform.
+Below you can find a migration overview of the effected areas in the Shopwell platform.
 Please consider that we cannot provide code migration examples for every possible scenario of a UI-Framework like Bootstrap.
 You can find a full migration guide on the official Bootstrap website: [Migrating to v5](https://getbootstrap.com/docs/5.1/migration)
 
@@ -356,7 +356,7 @@ Please consider that the classes documented in "HTML/Twig" must also be replaced
 
 ## JavaScript/jQuery
 
-With the update to Bootstrap v5, the jQuery dependency will be removed from the shopware platform.
+With the update to Bootstrap v5, the jQuery dependency will be removed from the shopwell platform.
 We strongly recommend migrating jQuery implementations to Vanilla JavaScript.
 
 ### Initializing Bootstrap JavaScript plugins
@@ -402,15 +402,15 @@ collapse.addEventListener('hide.bs.collapse', this._myMethod.bind(this));
 ### Still need jQuery?
 
 In case you still need jQuery, you can add it to your own app or theme.
-This is the recommended method for all apps/themes which do not have control over the Shopware environment in which they are running in.
+This is the recommended method for all apps/themes which do not have control over the Shopwell environment in which they are running in.
 
 * Extend the file `platform/src/Storefront/Resources/views/storefront/layout/meta.html.twig`.
 * Use the block `layout_head_javascript_jquery` to add a `<script>` tag containing jQuery. **Only use this block to add jQuery**.
-* This block is not deprecated and can be used in the long term beyond the next major version of shopware.
+* This block is not deprecated and can be used in the long term beyond the next major version of shopwell.
 * Do **not** use the `{{ parent() }}` call. This prevents multiple usages of jQuery. Even if multiple other plugins/apps use this method, the jQuery script will only be added once.
 * Please use jQuery version `3.5.1` (slim minified) to avoid compatibility issues between different plugins/apps.
 * If you don't want to use a CDN for jQuery, [download jQuery from the official website](https://releases.jquery.com/jquery/) (jQuery Core 3.5.1 - slim minified) and add it to `MyExtension/src/Resources/app/storefront/src/assets/jquery-3.5.1.slim.min.js`
-* After executing `bin/console asset:install`, you can reference the file using the `assset()` function. See also: https://developer.shopware.com/docs/guides/plugins/plugins/storefront/add-custom-assets
+* After executing `bin/console asset:install`, you can reference the file using the `assset()` function. See also: https://developer.shopwell.com/docs/guides/plugins/plugins/storefront/add-custom-assets
 
 ```html
 {% sw_extends '@Storefront/storefront/layout/meta.html.twig' %}

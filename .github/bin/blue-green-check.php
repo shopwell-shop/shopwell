@@ -3,9 +3,9 @@
 
 declare(strict_types=1);
 
-use Shopware\Core\Framework\Adapter\Kernel\KernelFactory;
-use Shopware\Core\Framework\Plugin\KernelPluginLoader\DbalKernelPluginLoader;
-use Shopware\Core\Kernel;
+use Shopwell\Core\Framework\Adapter\Kernel\KernelFactory;
+use Shopwell\Core\Framework\Plugin\KernelPluginLoader\DbalKernelPluginLoader;
+use Shopwell\Core\Kernel;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -26,8 +26,8 @@ $kernel = KernelFactory::create('dev', true, $classLoader, $pluginLoader);
 $kernel->boot();
 
 $application = new Application($kernel);
-$application->setName('Shopware');
-$application->setVersion($kernel->getContainer()->getParameter('kernel.shopware_version'));
+$application->setName('Shopwell');
+$application->setVersion($kernel->getContainer()->getParameter('kernel.shopwell_version'));
 $application->setDefaultCommand('dal:validate', true);
 $application->setCatchErrors(false);
 $application->setCatchExceptions(false);

@@ -3,12 +3,12 @@ title: Deprecated composite search, use administration search instead
 issue: NEXT-16926
 ---
 # Core
-*  Deprecated the class `\Shopware\Core\Framework\DataAbstractionLayer\Search\CompositeEntitySearcher`
-*  Deprecated service tag `shopware.composite_search.definition` as we are no longer using it
+*  Deprecated the class `\Shopwell\Core\Framework\DataAbstractionLayer\Search\CompositeEntitySearcher`
+*  Deprecated service tag `shopwell.composite_search.definition` as we are no longer using it
 ___
 # Administration
-*  Added new class `\Shopware\Administration\Service\AdminSearcher`
-*  Added new controller `\Shopware\Administration\Controller\AdminSearchController`
+*  Added new class `\Shopwell\Administration\Service\AdminSearcher`
+*  Added new controller `\Shopwell\Administration\Controller\AdminSearchController`
 *  Deprecated method `SearchApiService::search` in `src/core/service/api/search.api.service.js` which will be replaced by `searchQuery` method in the same service
 *  Added a new method `SearchApiService::searchQuery` in `src/core/service/api/search.api.service.js`
 ___

@@ -6,7 +6,7 @@ import {
     createWrapper,
     setMyExtensions,
     setupListingHooks,
-    shopwareService,
+    shopwellService,
 } from './sw-extension-my-extensions-listing.fixtures';
 
 describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () => {
@@ -29,7 +29,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             expect(wrapper.vm.showBulkUninstallModal).toBe(true);
             expect(wrapper.vm.bulkUninstallItems.map((item) => item.name)).toEqual(['A', 'B']);
-            expect(shopwareService.uninstallExtension).not.toHaveBeenCalled();
+            expect(shopwellService.uninstallExtension).not.toHaveBeenCalled();
             expect(reload).not.toHaveBeenCalled();
             expect(wrapper.vm.isBulkRunning).toBe(true);
         });
@@ -52,8 +52,8 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
                 await wrapper.vm.confirmBulkUninstall(removeData);
 
-                expect(shopwareService.uninstallExtension).toHaveBeenCalledWith('A', 'app', removeData);
-                expect(shopwareService.uninstallExtension).toHaveBeenCalledWith('B', 'theme', removeData);
+                expect(shopwellService.uninstallExtension).toHaveBeenCalledWith('A', 'app', removeData);
+                expect(shopwellService.uninstallExtension).toHaveBeenCalledWith('B', 'theme', removeData);
                 expect(wrapper.vm.showBulkUninstallModal).toBe(false);
                 expect(reload).toHaveBeenCalledTimes(1);
                 expect(wrapper.vm.isBulkRunning).toBe(false);
@@ -72,7 +72,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             wrapper.vm.cancelBulkUninstall();
 
-            expect(shopwareService.uninstallExtension).not.toHaveBeenCalled();
+            expect(shopwellService.uninstallExtension).not.toHaveBeenCalled();
             expect(wrapper.vm.showBulkUninstallModal).toBe(false);
             expect(wrapper.vm.bulkUninstallItems).toEqual([]);
             expect(reload).not.toHaveBeenCalled();
@@ -107,7 +107,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             expect(wrapper.vm.showBulkDeactivationModal).toBe(true);
             expect(wrapper.vm.bulkDeactivationItems.map((item) => item.name)).toEqual(['Rented']);
-            expect(shopwareService.deactivateExtension).not.toHaveBeenCalled();
+            expect(shopwellService.deactivateExtension).not.toHaveBeenCalled();
             expect(reload).not.toHaveBeenCalled();
             expect(wrapper.vm.isBulkRunning).toBe(true);
         });
@@ -137,7 +137,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             expect(wrapper.vm.showBulkDeactivationModal).toBe(true);
             expect(wrapper.vm.bulkDeactivationItems.map((item) => item.name)).toEqual(['Rented', 'Free']);
             expect(wrapper.vm.rentedBulkDeactivationItems.map((item) => item.name)).toEqual(['Rented']);
-            expect(shopwareService.deactivateExtension).not.toHaveBeenCalled();
+            expect(shopwellService.deactivateExtension).not.toHaveBeenCalled();
             expect(reload).not.toHaveBeenCalled();
             expect(wrapper.vm.isBulkRunning).toBe(true);
         });
@@ -166,9 +166,9 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             await wrapper.vm.confirmBulkDeactivation();
 
-            expect(shopwareService.deactivateExtension).toHaveBeenCalledWith('Rented', 'app');
-            expect(shopwareService.deactivateExtension).toHaveBeenCalledWith('Free', 'theme');
-            expect(shopwareService.deactivateExtension).toHaveBeenCalledTimes(2);
+            expect(shopwellService.deactivateExtension).toHaveBeenCalledWith('Rented', 'app');
+            expect(shopwellService.deactivateExtension).toHaveBeenCalledWith('Free', 'theme');
+            expect(shopwellService.deactivateExtension).toHaveBeenCalledTimes(2);
             expect(wrapper.vm.showBulkDeactivationModal).toBe(false);
             expect(wrapper.vm.bulkDeactivationItems).toEqual([]);
             expect(wrapper.vm.cacheApiService.clear).toHaveBeenCalledTimes(1);
@@ -188,7 +188,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             wrapper.vm.cancelBulkDeactivation();
 
-            expect(shopwareService.deactivateExtension).not.toHaveBeenCalled();
+            expect(shopwellService.deactivateExtension).not.toHaveBeenCalled();
             expect(wrapper.vm.showBulkDeactivationModal).toBe(false);
             expect(wrapper.vm.bulkDeactivationItems).toEqual([]);
             expect(reload).not.toHaveBeenCalled();

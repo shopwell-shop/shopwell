@@ -74,7 +74,7 @@ class AssetServiceTest extends TestCase
 
     public function testCopyAssetsFromBundlePluginWithoutInvalidation(): void
     {
-        $this->setEnvVars(['SHOPWARE_SKIP_ASSET_INSTALL_CACHE_INVALIDATION' => '1']);
+        $this->setEnvVars(['SHOPWELL_SKIP_ASSET_INSTALL_CACHE_INVALIDATION' => '1']);
 
         $filesystem = $this->createFilesystem();
 
@@ -99,9 +99,9 @@ class AssetServiceTest extends TestCase
         $assetService = $this->createAssetService(
             $filesystem,
             parameterBag: new ParameterBag([
-                'shopware.filesystem.asset.type' => 's3',
-                'shopware.filesystem.asset.visibility' => Visibility::PRIVATE,
-                'shopware.filesystem.asset.config' => [
+                'shopwell.filesystem.asset.type' => 's3',
+                'shopwell.filesystem.asset.visibility' => Visibility::PRIVATE,
+                'shopwell.filesystem.asset.config' => [
                     'visibility' => Visibility::PUBLIC,
                 ],
             ])
@@ -122,9 +122,9 @@ class AssetServiceTest extends TestCase
         $assetService = $this->createAssetService(
             $filesystem,
             parameterBag: new ParameterBag([
-                'shopware.filesystem.asset.type' => 's3',
-                'shopware.filesystem.asset.visibility' => Visibility::PUBLIC,
-                'shopware.filesystem.asset.config' => [
+                'shopwell.filesystem.asset.type' => 's3',
+                'shopwell.filesystem.asset.visibility' => Visibility::PUBLIC,
+                'shopwell.filesystem.asset.config' => [
                     'visibility' => Visibility::PRIVATE,
                 ],
             ])
@@ -145,9 +145,9 @@ class AssetServiceTest extends TestCase
         $assetService = $this->createAssetService(
             $filesystem,
             parameterBag: new ParameterBag([
-                'shopware.filesystem.asset.type' => 's3',
-                'shopware.filesystem.asset.visibility' => Visibility::PRIVATE,
-                'shopware.filesystem.asset.config' => [],
+                'shopwell.filesystem.asset.type' => 's3',
+                'shopwell.filesystem.asset.visibility' => Visibility::PRIVATE,
+                'shopwell.filesystem.asset.config' => [],
             ])
         );
 
@@ -165,8 +165,8 @@ class AssetServiceTest extends TestCase
         $assetService = $this->createAssetService(
             $filesystem,
             parameterBag: new ParameterBag([
-                'shopware.filesystem.asset.type' => 's3',
-                'shopware.filesystem.asset.config' => [],
+                'shopwell.filesystem.asset.type' => 's3',
+                'shopwell.filesystem.asset.config' => [],
             ])
         );
 
@@ -436,9 +436,9 @@ class AssetServiceTest extends TestCase
                 'ExampleBundle' => new ThemeFilesystem(__DIR__ . '/../_fixtures/ExampleBundle'),
             ]),
             parameterBag: new ParameterBag([
-                'shopware.filesystem.asset.type' => 'local',
-                'shopware.filesystem.asset.visibility' => Visibility::PUBLIC,
-                'shopware.filesystem.asset.config' => [],
+                'shopwell.filesystem.asset.type' => 'local',
+                'shopwell.filesystem.asset.visibility' => Visibility::PUBLIC,
+                'shopwell.filesystem.asset.config' => [],
             ])
         );
 
@@ -552,9 +552,9 @@ class AssetServiceTest extends TestCase
             $cacheInvalidator ?? static::createStub(CacheInvalidator::class),
             $staticSourceResolver ?? new StaticSourceResolver(),
             $parameterBag ?? new ParameterBag([
-                'shopware.filesystem.asset.type' => 's3',
-                'shopware.filesystem.asset.visibility' => Visibility::PUBLIC,
-                'shopware.filesystem.asset.config' => [],
+                'shopwell.filesystem.asset.type' => 's3',
+                'shopwell.filesystem.asset.visibility' => Visibility::PUBLIC,
+                'shopwell.filesystem.asset.config' => [],
             ]),
             new EventDispatcher(),
         );

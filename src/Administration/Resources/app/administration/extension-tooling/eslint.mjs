@@ -74,7 +74,7 @@ const vueParser = resolveVueParser();
  *   type-checked rules off; `'typed'` omits that block entirely, for hosts
  *   whose tsconfig covers spec files with jest types.
  */
-export function shopwareAdminExtension(options = {}) {
+export function shopwellAdminExtension(options = {}) {
     const {
         tsconfigRootDir,
         extensionRoots = [],
@@ -89,9 +89,9 @@ export function shopwareAdminExtension(options = {}) {
 
     if (!tsconfigRootDir) {
         throw new Error(
-            'shopwareAdminExtension requires the "tsconfigRootDir" option. ' +
+            'shopwellAdminExtension requires the "tsconfigRootDir" option. ' +
                 'Pass the directory that contains your eslint config, e.g. ' +
-                'shopwareAdminExtension({ tsconfigRootDir: import.meta.dirname }).',
+                'shopwellAdminExtension({ tsconfigRootDir: import.meta.dirname }).',
         );
     }
 
@@ -110,7 +110,7 @@ export function shopwareAdminExtension(options = {}) {
     // and the type-checked rules switched off.
     const specFilesConfig = {
         ...tseslint.configs.disableTypeChecked,
-        name: 'shopware/admin-extension/spec-files',
+        name: 'shopwell/admin-extension/spec-files',
         files: scope(specFilePatterns),
         languageOptions: {
             ...tseslint.configs.disableTypeChecked.languageOptions,
@@ -120,7 +120,7 @@ export function shopwareAdminExtension(options = {}) {
 
     const config = [
         {
-            name: 'shopware/admin-extension/ignores',
+            name: 'shopwell/admin-extension/ignores',
             ignores: [
                 '**/node_modules/**',
                 '**/Resources/public/**',
@@ -130,12 +130,12 @@ export function shopwareAdminExtension(options = {}) {
         },
         {
             ...eslintJs.configs.recommended,
-            name: 'shopware/admin-extension/javascript',
+            name: 'shopwell/admin-extension/javascript',
             files: scope(javascriptFilePatterns),
         },
         ...tseslint.configs.recommendedTypeChecked.map((typescriptConfig, index) => ({
             ...typescriptConfig,
-            name: `shopware/admin-extension/typescript-${index}`,
+            name: `shopwell/admin-extension/typescript-${index}`,
             files: scope(typescriptFilePatterns),
             languageOptions: {
                 ...typescriptConfig.languageOptions,
@@ -148,11 +148,11 @@ export function shopwareAdminExtension(options = {}) {
         })),
         ...pluginVue.configs['flat/recommended'].map((vueConfig, index) => ({
             ...vueConfig,
-            name: `shopware/admin-extension/vue-${index}`,
+            name: `shopwell/admin-extension/vue-${index}`,
             files: scope(vueFilePatterns),
         })),
         {
-            name: 'shopware/admin-extension/vue-typescript',
+            name: 'shopwell/admin-extension/vue-typescript',
             files: scope(vueFilePatterns),
             languageOptions: {
                 parser: vueParser,
@@ -172,7 +172,7 @@ export function shopwareAdminExtension(options = {}) {
             },
         },
         {
-            name: 'shopware/admin-extension/native-setup',
+            name: 'shopwell/admin-extension/native-setup',
             files: scope(vueFilePatterns),
             languageOptions: {
                 // Compile-time macros the Shopwell setup transform removes: they
@@ -192,12 +192,12 @@ export function shopwareAdminExtension(options = {}) {
             rules: {
                 // Native-setup correctness guards. vue/no-dupe-keys — the third
                 // native-setup guard — is already error via vue/essential.
-                'sw-core-rules/valid-shopware-setup': 'error',
+                'sw-core-rules/valid-shopwell-setup': 'error',
                 'sw-core-rules/native-setup-filename': 'error',
             },
         },
         {
-            name: 'shopware/admin-extension/runtime-contract',
+            name: 'shopwell/admin-extension/runtime-contract',
             files: scope([...javascriptFilePatterns, ...typescriptFilePatterns, ...vueFilePatterns]),
             languageOptions: {
                 ecmaVersion: 'latest',
@@ -216,14 +216,14 @@ export function shopwareAdminExtension(options = {}) {
             },
         },
         {
-            name: 'shopware/admin-extension/api-boundary',
+            name: 'shopwell/admin-extension/api-boundary',
             files: scope([...typescriptFilePatterns, ...vueFilePatterns]),
             rules: {
                 '@typescript-eslint/no-deprecated': deprecatedApiSeverity,
             },
         },
         {
-            name: 'shopware/admin-extension/template-deprecations',
+            name: 'shopwell/admin-extension/template-deprecations',
             files: scope(templateFilePatterns),
             plugins: {
                 'sw-deprecation-rules': swDeprecationRules,
@@ -243,7 +243,7 @@ export function shopwareAdminExtension(options = {}) {
         // `allowComponentTypeUnsafety` default. The resolvable type-aware rules
         // (no-deprecated, no-floating-promises) and no-unused-vars stay on.
         {
-            name: 'shopware/admin-extension/vue-component-type-unsafety',
+            name: 'shopwell/admin-extension/vue-component-type-unsafety',
             files: scope(vueFilePatterns),
             rules: {
                 '@typescript-eslint/no-unsafe-argument': 'off',
@@ -265,4 +265,4 @@ export function shopwareAdminExtension(options = {}) {
 
 export { legacyTwigConfig, pluginVue, swCoreRules, swDeprecationRules, swPluginRules, tseslint };
 
-export default shopwareAdminExtension;
+export default shopwellAdminExtension;

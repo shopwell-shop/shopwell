@@ -2,15 +2,15 @@
 title: Make AsyncAwsS3WriteBatchAdapter batch size configurable
 ---
 # Core
-* Added configurable batch size for `AsyncAwsS3WriteBatchAdapter` via the `shopware.filesystem.batch_write_size` configuration with a default value of 250
+* Added configurable batch size for `AsyncAwsS3WriteBatchAdapter` via the `shopwell.filesystem.batch_write_size` configuration with a default value of 250
 * Changed `AwsS3v3Factory` to inject the batch size parameter from configuration
 ___
 # Upgrade Information
 ## Configuration
-You can now configure the batch size for S3 file writing operations in your `config/packages/shopware.yaml`:
+You can now configure the batch size for S3 file writing operations in your `config/packages/shopwell.yaml`:
 
 ```yaml
-shopware:
+shopwell:
     filesystem:
         batch_write_size: 100  # Default is 250
 ```

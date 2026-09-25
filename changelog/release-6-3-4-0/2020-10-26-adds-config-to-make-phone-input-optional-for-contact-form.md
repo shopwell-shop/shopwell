@@ -7,7 +7,7 @@ author_github: @claudiobianco
 ---
 # Core
 * Added `BuildValidationEvent` in `ContactFormValidationFactory` in order to change the validation definition via subscriber.
-* Added `Shopware\Core\Migration\Migration1604499476AddDefaultSettingConfigValueForContactForm` to preserve the default behaviour that first name, last name and phone number are required. 
+* Added `Shopwell\Core\Migration\Migration1604499476AddDefaultSettingConfigValueForContactForm` to preserve the default behaviour that first name, last name and phone number are required. 
 ___
 # Administration
 * Added configuration for optional first name, last name and phone number in "Basic information -> Security and Privacy".

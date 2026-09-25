@@ -1,6 +1,6 @@
 ---
-title: Shopware-Version supports new semantic versioning and dev-versions
+title: Shopwell-Version supports new semantic versioning and dev-versions
 issue: NEXT-11070
 ---
 # Core
-* Changed regex of `Shopware\Core\Kernel::parseShopwareVersion` to support new semantic versioning and the dev-versions
+* Changed regex of `Shopwell\Core\Kernel::parseShopwellVersion` to support new semantic versioning and the dev-versions

@@ -18,7 +18,7 @@ use Shopwell\Core\Framework\Util\Json;
 #[Package('framework')]
 abstract class AbstractToolSearchTool extends McpToolResponse
 {
-    final public const NAME = 'shopware-tool-search';
+    final public const NAME = 'shopwell-tool-search';
 
     public function __construct(
         private readonly ?RegistryInterface $registry,

@@ -2,29 +2,29 @@
 title: Add esi tags
 issue: NEXT-30261
 author: Oliver Skroblin
-author_email: o.skroblin@shopware.com
+author_email: o.skroblin@shopwell.com
 ---
 
 # Core
-* Deprecated all classes in `Shopware\Storefront\Framework\Cache\ReverseProxy` domain. Domain will be moved to core and will be marked as internal, except `Shopware\Storefront\Framework\Cache\ReverseProxy\AbstractReverseProxyGateway`
-* Deprecated all classes in `Shopware\Storefront\Framework\Cache` domain. Domain will be moved to core and will be marked as internal.
-* Deprecated `\Shopware\Core\HttpKernel`, use `\Shopware\Core\Framework\Adapter\Kernel\KernelFactory::create` to create the kernel
-* Deprecated `\Shopware\Core\Kernel::__construct`, will be internal and parameter will be all required. Use KernelFactory instead to initialize the kernel
-* Deprecated `\Shopware\Storefront\Framework\Cache\Event\HttpCacheHitEvent`, use `\Shopware\Core\Framework\Routing\Event\HttpCacheHitEvent` instead
-* Deprecated `\Shopware\Storefront\Framework\Cache\Event\HttpCacheGenerateKeyEvent`, use `\Shopware\Core\Framework\Adapter\Cache\Event\HttpCacheKeyEvent` instead
-* Deprecated `\Shopware\Storefront\Framework\Cache\Event\HttpCacheItemWrittenEvent`, use `\Shopware\Core\Framework\Adapter\Cache\Event\HttpCacheStoreEvent` instead
-* Deprecated `\Shopware\Storefront\Framework\Cache\ReverseProxy\AbstractReverseProxyGateway`, reverse proxy will be moved to core, use `\Shopware\Core\Framework\Adapter\Cache\ReverseProxy\AbstractReverseProxyGateway` instead  
-* Deprecated `\Shopware\Storefront\Framework\Cache\ReverseProxy\FastlyReverseProxyGateway`, class will be moved to core and becomes internal
-* Deprecated `\Shopware\Storefront\Framework\Cache\ReverseProxy\ReverseProxyGatewayRedisReverseProxyGateway`, class will be moved to core and becomes internal
-* Deprecated `\Shopware\Storefront\Framework\Cache\ReverseProxy\ReverseProxyCache`, class will be moved to core and becomes internal
-* Deprecated `\Shopware\Storefront\Framework\Cache\ReverseProxy\ReverseProxyCacheClearer`, class will be moved to core and becomes internal
-* Deprecated `\Shopware\Storefront\Framework\Cache\ReverseProxy\VarnishReverseProxyGateway`, class will be moved to core and becomes internal
-* Deprecated `\Shopware\Storefront\Framework\Cache\AbstractHttpCacheKeyGenerator`, class will be removed, use `\Shopware\Core\Framework\Adapter\Cache\Event\HttpCacheKeyEvent` instead
-* Deprecated `\Shopware\Storefront\Framework\Cache\CacheStateValidator`, class becomes internal
-* Deprecated `\Shopware\Storefront\Framework\Cache\CacheStateValidatorInterface`, class becomes internal
-* Deprecated `\Shopware\Storefront\Framework\Cache\CacheStore`, class becomes internal
-* Deprecated `\Shopware\Storefront\Framework\Cache\CacheTracer`, class becomes internal
-* Deprecated `\Shopware\Storefront\Framework\Cache\HttpCacheKeyGenerator`, class becomes internal and will be moved to core comain
+* Deprecated all classes in `Shopwell\Storefront\Framework\Cache\ReverseProxy` domain. Domain will be moved to core and will be marked as internal, except `Shopwell\Storefront\Framework\Cache\ReverseProxy\AbstractReverseProxyGateway`
+* Deprecated all classes in `Shopwell\Storefront\Framework\Cache` domain. Domain will be moved to core and will be marked as internal.
+* Deprecated `\Shopwell\Core\HttpKernel`, use `\Shopwell\Core\Framework\Adapter\Kernel\KernelFactory::create` to create the kernel
+* Deprecated `\Shopwell\Core\Kernel::__construct`, will be internal and parameter will be all required. Use KernelFactory instead to initialize the kernel
+* Deprecated `\Shopwell\Storefront\Framework\Cache\Event\HttpCacheHitEvent`, use `\Shopwell\Core\Framework\Routing\Event\HttpCacheHitEvent` instead
+* Deprecated `\Shopwell\Storefront\Framework\Cache\Event\HttpCacheGenerateKeyEvent`, use `\Shopwell\Core\Framework\Adapter\Cache\Event\HttpCacheKeyEvent` instead
+* Deprecated `\Shopwell\Storefront\Framework\Cache\Event\HttpCacheItemWrittenEvent`, use `\Shopwell\Core\Framework\Adapter\Cache\Event\HttpCacheStoreEvent` instead
+* Deprecated `\Shopwell\Storefront\Framework\Cache\ReverseProxy\AbstractReverseProxyGateway`, reverse proxy will be moved to core, use `\Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\AbstractReverseProxyGateway` instead  
+* Deprecated `\Shopwell\Storefront\Framework\Cache\ReverseProxy\FastlyReverseProxyGateway`, class will be moved to core and becomes internal
+* Deprecated `\Shopwell\Storefront\Framework\Cache\ReverseProxy\ReverseProxyGatewayRedisReverseProxyGateway`, class will be moved to core and becomes internal
+* Deprecated `\Shopwell\Storefront\Framework\Cache\ReverseProxy\ReverseProxyCache`, class will be moved to core and becomes internal
+* Deprecated `\Shopwell\Storefront\Framework\Cache\ReverseProxy\ReverseProxyCacheClearer`, class will be moved to core and becomes internal
+* Deprecated `\Shopwell\Storefront\Framework\Cache\ReverseProxy\VarnishReverseProxyGateway`, class will be moved to core and becomes internal
+* Deprecated `\Shopwell\Storefront\Framework\Cache\AbstractHttpCacheKeyGenerator`, class will be removed, use `\Shopwell\Core\Framework\Adapter\Cache\Event\HttpCacheKeyEvent` instead
+* Deprecated `\Shopwell\Storefront\Framework\Cache\CacheStateValidator`, class becomes internal
+* Deprecated `\Shopwell\Storefront\Framework\Cache\CacheStateValidatorInterface`, class becomes internal
+* Deprecated `\Shopwell\Storefront\Framework\Cache\CacheStore`, class becomes internal
+* Deprecated `\Shopwell\Storefront\Framework\Cache\CacheTracer`, class becomes internal
+* Deprecated `\Shopwell\Storefront\Framework\Cache\HttpCacheKeyGenerator`, class becomes internal and will be moved to core comain
 ___
 # Upgrade Information
 ## Cache rework preparation
@@ -32,7 +32,7 @@ With 6.6 we are marking a lot of HTTP Cache and Reverse Proxy classes as @intern
 We are preparing a bigger cache rework in the next releases. The cache rework will be done within the v6.6 version lane and and will be released with 6.7.0 major version. 
 The cache rework will be a breaking change and will be announced in the changelog of 6.7.0. We will provide a migration guide for the cache rework, so that you can prepare your project for the cache rework.
 
-You can find more details about the cache rework in the [shopware/shopware discussions](https://github.com/shopware/shopware/discussions/3299)
+You can find more details about the cache rework in the [shopwell/shopwell discussions](https://github.com/shopwell-shop/shopwell/discussions/3299)
 
 Since the cache is a critical component for systems, we have taken the liberty of marking almost all classes as @internal for the time being. However, we have left the important events and interfaces public so that you can prepare your systems for the changes now.
 Even though there were a lot of deprecations in this release, 99% of them involved moving the classes to the core domain.
@@ -117,9 +117,9 @@ Since we are moving the cache to the core, you have to change the way you can ma
 
 namespace Foo;
 
-use Shopware\Storefront\Framework\Cache\Event\HttpCacheGenerateKeyEvent;
-use Shopware\Storefront\Framework\Cache\Event\HttpCacheHitEvent;
-use Shopware\Storefront\Framework\Cache\Event\HttpCacheItemWrittenEvent;
+use Shopwell\Storefront\Framework\Cache\Event\HttpCacheGenerateKeyEvent;
+use Shopwell\Storefront\Framework\Cache\Event\HttpCacheHitEvent;
+use Shopwell\Storefront\Framework\Cache\Event\HttpCacheItemWrittenEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class Subscriber implements EventSubscriberInterface
@@ -139,9 +139,9 @@ class Subscriber implements EventSubscriberInterface
 
 namespace Foo;
 
-use Shopware\Core\Framework\Adapter\Cache\Event\HttpCacheHitEvent;
-use Shopware\Core\Framework\Adapter\Cache\Event\HttpCacheKeyEvent;
-use Shopware\Core\Framework\Adapter\Cache\Event\HttpCacheStoreEvent;
+use Shopwell\Core\Framework\Adapter\Cache\Event\HttpCacheHitEvent;
+use Shopwell\Core\Framework\Adapter\Cache\Event\HttpCacheKeyEvent;
+use Shopwell\Core\Framework\Adapter\Cache\Event\HttpCacheStoreEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class Subscriber implements EventSubscriberInterface
@@ -166,7 +166,7 @@ If you implement an own reverse proxy gateway, you have to change the namespace 
 ```php
 #### Before
 
-class RedisReverseProxyGateway extends \Shopware\Storefront\Framework\Cache\ReverseProxy\AbstractReverseProxyGateway
+class RedisReverseProxyGateway extends \Shopwell\Storefront\Framework\Cache\ReverseProxy\AbstractReverseProxyGateway
 {
     // ...
 }
@@ -174,7 +174,7 @@ class RedisReverseProxyGateway extends \Shopware\Storefront\Framework\Cache\Reve
 
 #### After
 
-class RedisReverseProxyGateway extends \Shopware\Core\Framework\Adapter\Cache\ReverseProxy\AbstractReverseProxyGateway
+class RedisReverseProxyGateway extends \Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\AbstractReverseProxyGateway
 {
     // ...
 }
@@ -183,7 +183,7 @@ class RedisReverseProxyGateway extends \Shopware\Core\Framework\Adapter\Cache\Re
 ### Http cache warmer
 
 We deprecated all Http cache warmer, because they will be not usable with the new http kernel anymore. 
-They are also not suitable for the new cache rework or for systems which have a reverse proxy or a load balancer in front of the shopware system.
+They are also not suitable for the new cache rework or for systems which have a reverse proxy or a load balancer in front of the shopwell system.
 Therefore, we marked them as deprecated and will remove them in the next major version.
 You should use instead a real website crawler to warmup your desired sites, which is much more suitable and realistic for your system.
 

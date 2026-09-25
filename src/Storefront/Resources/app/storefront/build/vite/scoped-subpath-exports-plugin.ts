@@ -6,7 +6,7 @@ type ExportEntry = { import?: string; require?: string; default?: string } | str
 
 /**
  * Vite plugin that correctly resolves scoped-package subpath imports
- * (e.g. `@shopware-ag/dive/quickview`) via the package's `exports` field.
+ * (e.g. `@shopwell-ag/dive/quickview`) via the package's `exports` field.
  *
  * Rolldown rc.12 has a bug where these imports resolve to the package's main
  * entry (`exports["."]`) instead of the declared subpath entry

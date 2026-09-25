@@ -7,9 +7,9 @@ tags: [ai, agentic, sales-channel, storefront, administration, twig]
 
 ## Context
 
-Merchants need a way to expose agentic public files such as `llms.txt`, `AGENTS.md`, and metadata below `.well-known/` for each sales channel. These files should be generated from Shopware context, be customizable by merchants, and be extensible by core, plugins, apps, and themes.
+Merchants need a way to expose agentic public files such as `llms.txt`, `AGENTS.md`, and metadata below `.well-known/` for each sales channel. These files should be generated from Shopwell context, be customizable by merchants, and be extensible by core, plugins, apps, and themes.
 
-The feature should reuse Shopware's established Twig extension model. Core should be able to ship base templates, and extensions should be able to overwrite or extend those templates through normal Twig behavior. We should not introduce an explicit provider interface because the existence of a template in a known location is enough to declare the file.
+The feature should reuse Shopwell's established Twig extension model. Core should be able to ship base templates, and extensions should be able to overwrite or extend those templates through normal Twig behavior. We should not introduce an explicit provider interface because the existence of a template in a known location is enough to declare the file.
 
 The merchant-facing configuration belongs to the sales channel detail module. Enablement, preview, public URL, and overrides are sales-channel specific and should not be stored in global system config.
 
@@ -38,7 +38,7 @@ Subfolders are supported explicitly. Dot-prefixed folders such as `.well-known` 
 
 Discovery is intentionally split into two steps:
 
-1. Catalogue registered file templates from Shopware's Twig template iterator.
+1. Catalogue registered file templates from Shopwell's Twig template iterator.
 2. Resolve the contributing Twig template chain for each catalogued file through the existing `TemplateFinder`.
 
 This keeps file discovery aligned with the templates registered in the main Twig environment. The catalogue step determines which public files exist, while the chain resolution step follows the same namespace hierarchy Twig uses during rendering.
@@ -71,7 +71,7 @@ Core can ship a base template:
 {% endblock %}
 
 {% block agentic_llms_summary %}
-This shop is powered by Shopware.
+This shop is powered by Shopwell.
 {% endblock %}
 
 {% block agentic_llms_guidance %}
@@ -104,7 +104,7 @@ The same plugin can introduce a nested `.well-known` file:
 {
     "schema_version": "1",
     "name_for_model": "{{ context.salesChannel.name|e('js') }}",
-    "description_for_model": "Shopware sales channel with UCP capabilities."
+    "description_for_model": "Shopwell sales channel with UCP capabilities."
 }
 ```
 
@@ -215,7 +215,7 @@ The detail route accepts `fileName` as a query parameter because public file pat
 
 ### Designed Extension Point
 
-Public file template files are the designed extension point for template content. Core, plugins, apps, and themes can ship templates below `Resources/views/files/<file-family>/**/*.twig` and use normal Shopware Twig inheritance through Twig namespaces.
+Public file template files are the designed extension point for template content. Core, plugins, apps, and themes can ship templates below `Resources/views/files/<file-family>/**/*.twig` and use normal Shopwell Twig inheritance through Twig namespaces.
 
 The initial extension point is the `agentic` file family with the built-in file paths `files/agentic/llms.txt.twig`, `files/agentic/AGENTS.md.twig`, and `files/agentic/.well-known/ai-catalog.json.twig`. Subfolders below the file family are supported, including dot-prefixed folders such as `.well-known`.
 
@@ -247,7 +247,7 @@ A normalized one-row-per-Twig-namespace model would make individual overrides ad
 
 ### Add a provider interface
 
-A provider interface would make file registration explicit, but it would duplicate information already encoded by the template path. Template discovery keeps the extension point smaller and closer to Shopware's existing Twig model.
+A provider interface would make file registration explicit, but it would duplicate information already encoded by the template path. Template discovery keeps the extension point smaller and closer to Shopwell's existing Twig model.
 
 ### Put the UI in global settings
 

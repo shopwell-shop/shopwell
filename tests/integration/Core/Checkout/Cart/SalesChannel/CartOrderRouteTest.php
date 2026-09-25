@@ -310,12 +310,12 @@ class CartOrderRouteTest extends TestCase
         ], Context::createDefaultContext());
 
         $email = Uuid::randomHex() . '@example.com';
-        $password = 'shopware';
+        $password = 'shopwell';
         $originalToken = $this->createCustomerAndLogin($email, $password);
 
         $this->addProductToCart();
 
-        $interval = new \DateInterval(static::getContainer()->getParameter('shopware.api.store.context_lifetime'));
+        $interval = new \DateInterval(static::getContainer()->getParameter('shopwell.api.store.context_lifetime'));
         $intervalInSeconds = (new \DateTime())->setTimestamp(0)->add($interval)->getTimestamp();
         $intervalInDays = $intervalInSeconds / 86400 + 1;
 
@@ -461,7 +461,7 @@ class CartOrderRouteTest extends TestCase
     public function testOrderWithExistingNotSpecifiedSalutation(): void
     {
         $email = Uuid::randomHex() . '@example.com';
-        $password = 'shopware';
+        $password = 'shopwell';
 
         $this->createCustomerAndLogin($email, $password, true);
         $this->addProductToCart();
@@ -486,7 +486,7 @@ class CartOrderRouteTest extends TestCase
         $connection = static::getContainer()->get(Connection::class);
 
         $email = Uuid::randomHex() . '@example.com';
-        $password = 'shopware';
+        $password = 'shopwell';
 
         $connection->executeStatement(
             '
@@ -602,7 +602,7 @@ class CartOrderRouteTest extends TestCase
         bool $invalidSalutationId = false
     ): string {
         $email ??= Uuid::randomHex() . '@example.com';
-        $password ??= 'shopware';
+        $password ??= 'shopwell';
         $this->createCustomer(
             $password,
             $email,

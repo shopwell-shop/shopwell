@@ -6,5 +6,5 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Removed unnecessary cache hash creation in the `Shopware\Core\System\Currency\CurrencyFormatter` for performance
-* Added `reset` method to the `Shopware\Core\System\Currency\CurrencyFormatter` to reset the internal `NumberFormatter` cache on `kernel.reset`
+* Removed unnecessary cache hash creation in the `Shopwell\Core\System\Currency\CurrencyFormatter` for performance
+* Added `reset` method to the `Shopwell\Core\System\Currency\CurrencyFormatter` to reset the internal `NumberFormatter` cache on `kernel.reset`

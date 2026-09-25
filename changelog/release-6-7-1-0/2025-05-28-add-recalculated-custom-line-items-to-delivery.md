@@ -2,7 +2,7 @@
 title: Add recalculated custom line-items to delivery
 issue: #8763
 author: Michel Bade
-author_email: m.bade@shopware.com
+author_email: m.bade@shopwell.com
 author_github: @cyl3x
 ---
 # Core

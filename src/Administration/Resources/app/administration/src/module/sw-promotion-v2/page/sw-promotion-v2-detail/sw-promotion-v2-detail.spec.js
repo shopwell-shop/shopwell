@@ -141,14 +141,14 @@ async function createWrapper({
 
 describe('src/module/sw-promotion-v2/page/sw-promotion-v2-detail', () => {
     afterEach(() => {
-        Shopwell.Store.get('shopwareApps').selectedIds = [];
+        Shopwell.Store.get('shopwellApps').selectedIds = [];
     });
 
     it('should select the displayed promotion for app action buttons', async () => {
         await createWrapper({ promotionId: 'promotionId' });
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual(['promotionId']);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual(['promotionId']);
     });
 
     it('should select the new promotion for app action buttons when navigating to another promotion', async () => {
@@ -158,7 +158,7 @@ describe('src/module/sw-promotion-v2/page/sw-promotion-v2-detail', () => {
         await wrapper.setProps({ promotionId: 'otherPromotionId' });
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual(['otherPromotionId']);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual(['otherPromotionId']);
     });
 
     it('should deselect the promotion for app action buttons when creating a new promotion', async () => {
@@ -168,7 +168,7 @@ describe('src/module/sw-promotion-v2/page/sw-promotion-v2-detail', () => {
         await wrapper.setProps({ promotionId: null });
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual([]);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual([]);
     });
 
     it('should deselect the promotion for app action buttons when leaving the detail page', async () => {
@@ -177,7 +177,7 @@ describe('src/module/sw-promotion-v2/page/sw-promotion-v2-detail', () => {
 
         wrapper.vm.$options.beforeRouteLeave.call(wrapper.vm);
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual([]);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual([]);
     });
 
     it('should disable the save button when privilege does not exist', async () => {

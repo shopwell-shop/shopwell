@@ -25,7 +25,7 @@ class CartRedisCompilerPassTest extends TestCase
     {
         $this->container = new ContainerBuilder();
         $this->container->addDefinitions([
-            'shopware.cart.redis' => new Definition(),
+            'shopwell.cart.redis' => new Definition(),
             RedisCartPersister::class => new Definition(),
             CartPersister::class => new Definition(),
         ]);
@@ -33,20 +33,20 @@ class CartRedisCompilerPassTest extends TestCase
 
     public function testCompilerPassMysqlStorage(): void
     {
-        $this->container->setParameter('shopware.cart.storage.type', 'mysql');
+        $this->container->setParameter('shopwell.cart.storage.type', 'mysql');
 
         $compilerPass = new CartStorageCompilerPass();
         $compilerPass->process($this->container);
 
         static::assertTrue($this->container->hasDefinition(CartPersister::class));
-        static::assertFalse($this->container->hasDefinition('shopware.cart.redis'));
+        static::assertFalse($this->container->hasDefinition('shopwell.cart.redis'));
         static::assertFalse($this->container->hasDefinition(RedisCartPersister::class));
     }
 
     public function testCompilerPassRedisStorageConnectionName(): void
     {
-        $this->container->setParameter('shopware.cart.storage.type', 'redis');
-        $this->container->setParameter('shopware.cart.storage.config.connection', 'persistent');
+        $this->container->setParameter('shopwell.cart.storage.type', 'redis');
+        $this->container->setParameter('shopwell.cart.storage.config.connection', 'persistent');
 
         $compilerPass = new CartStorageCompilerPass();
         $compilerPass->process($this->container);
@@ -57,9 +57,9 @@ class CartRedisCompilerPassTest extends TestCase
 
     public function testCompilerPassRedisStorageWithoutDsn(): void
     {
-        $this->container->setParameter('shopware.cart.storage.config.connection', null); // equal to default in config
-        $this->container->setParameter('shopware.cart.storage.type', 'redis');
-        $this->container->getParameterBag()->remove('shopware.cart.storage.config.dsn');
+        $this->container->setParameter('shopwell.cart.storage.config.connection', null); // equal to default in config
+        $this->container->setParameter('shopwell.cart.storage.type', 'redis');
+        $this->container->getParameterBag()->remove('shopwell.cart.storage.config.dsn');
 
         $compilerPass = new CartStorageCompilerPass();
 

@@ -36,7 +36,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(ScheduledTaskDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ScheduledTaskHealthGateway::class)
         ->args([
@@ -48,7 +48,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ScheduledTaskHealthGateway::class),
             service(ClockInterface::class),
         ])
-        ->tag('shopware.telemetry.periodic_metric_collector');
+        ->tag('shopwell.telemetry.periodic_metric_collector');
 
     $services->set(TaskNameResolver::class);
 
@@ -59,7 +59,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(WorkerMessageTimingHelper::class),
         ])
         ->tag('kernel.event_subscriber')
-        ->tag('shopware.telemetry.subscriber');
+        ->tag('shopwell.telemetry.subscriber');
 
     $services->set(ScheduledTaskExecutor::class)
         ->args([
@@ -74,13 +74,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('messenger.default_bus'),
             service('parameter_bag'),
             service('logger'),
-            param('shopware.messenger.scheduled_task.requeue_timeout'),
+            param('shopwell.messenger.scheduled_task.requeue_timeout'),
             service(ClockInterface::class),
         ]);
 
     $services->set(TaskRegistry::class)
         ->args([
-            tagged_iterator('shopware.scheduled.task'),
+            tagged_iterator('shopwell.scheduled.task'),
             service('scheduled_task.repository'),
             service('parameter_bag'),
             service(ClockInterface::class),
@@ -88,12 +88,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ScheduleProvider::class)
         ->args([
-            tagged_iterator('shopware.scheduled.task'),
+            tagged_iterator('shopwell.scheduled.task'),
             service(Connection::class),
             service('cache.object'),
             service('lock.factory'),
         ])
-        ->tag('scheduler.schedule_provider', ['name' => 'shopware']);
+        ->tag('scheduler.schedule_provider', ['name' => 'shopwell']);
 
     $services->set(RegisterScheduledTaskHandler::class)
         ->args([

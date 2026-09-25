@@ -8,8 +8,8 @@
       "INVALID_MEDIA_URL": "Bitte gib eine gültige URL ein, um eine Datei hochzuladen.",
       "CONTENT__MISSING_RULE_TYPE_EXCEPTION": "Du musst einen Typ für diese Regel auswählen.",
       "CONTENT__INVALID_CATEGORY_TYPE_AS_ENTRY_POINT": "Dieser Typ kann nicht gewählt werden, während die Kategorie als Einstiegspunkt festgelegt ist.",
-      "SHOPWARE_INVALID_IP": "Bitte gib eine gültige IP-Adresse ein.",
-      "SHOPWARE_INVALID_IP_CIDR": "Bitte gib eine gültige IP-Adresse oder eine IP-Adresse mit CIDR-Maske ein.",
+      "SHOPWELL_INVALID_IP": "Bitte gib eine gültige IP-Adresse ein.",
+      "SHOPWELL_INVALID_IP_CIDR": "Bitte gib eine gültige IP-Adresse oder eine IP-Adresse mit CIDR-Maske ein.",
       "INVALID_URL": "Bitte gib eine gültige URL ein.",
       "INVALID_MAIL": "Bitte gib eine gültige E-Mail-Adresse ein.",
       "FRAMEWORK__RATE_LIMIT_EXCEEDED": "Zu viele Anfragen. Bitte warte {seconds} Sekunden, bevor Du es erneut versuchst.",
@@ -164,7 +164,7 @@
         "updatesAvailableTitle": "Updates verfügbar.",
         "updatesAvailableMessage": "Für einige Erweiterungen stehen Updates bereit."
       },
-      "shopware-updates-listener": {
+      "shopwell-updates-listener": {
         "updatesAvailableTitle": "Die neue Shopwell-Version {version} ist verfügbar",
         "updatesAvailableMessage": "Starte den Auto-Updater, um die Installation zu starten.",
         "updateNow": "Update öffnen"
@@ -1234,7 +1234,7 @@
       "documentation": {
         "headline": "Brauchst Du Hilfe?",
         "linkText": "Dokumentation ansehen",
-        "linkUrl": "https://docs.shopwell.cn/de/shopware-6-de"
+        "linkUrl": "https://docs.shopwell.cn/de/shopwell-6-de"
       },
       "support": {
         "headline": "Wir sind für dich da!",
@@ -1407,7 +1407,7 @@
   "sw-license-violation": {
     "title": "Erweiterungs-Warnung",
     "reload": "Neu laden",
-    "alertText": "Für mindestens eine der Erweiterungen in dieser Installation liegt eine Lizenzverletzung vor. Buche ein Abonnement für die Erweiterung nach oder kaufe/miete die Erweiterung (je nach Art des Verstoßes), um die Lizenzverletzung zu beheben und rechtliche Konsequenzen zu vermeiden.\nNutzt Du die Erweiterung nicht mehr? Dann lösche sie vollständig. Falls Du keinen dieser Schritte vollziehst, behält sich die shopware AG vor, Strafgebühren für die Lizenzverletzung zu berechnen.",
+    "alertText": "Für mindestens eine der Erweiterungen in dieser Installation liegt eine Lizenzverletzung vor. Buche ein Abonnement für die Erweiterung nach oder kaufe/miete die Erweiterung (je nach Art des Verstoßes), um die Lizenzverletzung zu beheben und rechtliche Konsequenzen zu vermeiden.\nNutzt Du die Erweiterung nicht mehr? Dann lösche sie vollständig. Falls Du keinen dieser Schritte vollziehst, behält sich die Shopwell vor, Strafgebühren für die Lizenzverletzung zu berechnen.",
     "deletePlugin": "Erweiterung vollständig entfernen",
     "messageDeleteConfirm": "Möchtest Du die Erweiterung \"{pluginName}\" vollständig löschen?",
     "checkboxMessage": "Ich habe die Warnung gelesen und verstehe die möglichen Konsequenzen.",
@@ -1669,7 +1669,7 @@
         "explanation": "Erweiterungen können keine Verbindung zu deinem Shop aufbauen, aufgrund einer Fehlkonfiguration in deinem System.",
         "textDetails": "Technische Details: Die Konfiguration der APP_URL ist fehlerhaft.",
         "labelLearnMoreButton": "Erfahre mehr",
-        "linkToDocsArticle": "https://docs.shopwell.cn/de/shopware-6-de/tutorials-und-faq/hinweise-zur-app-url"
+        "linkToDocsArticle": "https://docs.shopwell.cn/de/shopwell-6-de/tutorials-und-faq/hinweise-zur-app-url"
       }
     }
   },

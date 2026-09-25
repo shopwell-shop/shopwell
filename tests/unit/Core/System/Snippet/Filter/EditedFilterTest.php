@@ -34,7 +34,7 @@ class EditedFilterTest extends TestCase
                     '1.bar' => [
                         'value' => '1_bar',
                         'id' => '1',
-                        'author' => 'shopware',
+                        'author' => 'shopwell',
                         'origin' => '',
                         'resetTo' => '',
                         'translationKey' => '',
@@ -44,7 +44,7 @@ class EditedFilterTest extends TestCase
                     '1.bas' => [
                         'value' => '1_bas',
                         'id' => null,
-                        'author' => 'shopware',
+                        'author' => 'shopwell',
                         'origin' => '',
                         'resetTo' => '',
                         'translationKey' => '',
@@ -58,7 +58,7 @@ class EditedFilterTest extends TestCase
                     '2.bar' => [
                         'value' => '2_bar',
                         'id' => '2',
-                        'author' => 'shopware',
+                        'author' => 'shopwell',
                         'origin' => '',
                         'resetTo' => '',
                         'translationKey' => '',
@@ -68,7 +68,7 @@ class EditedFilterTest extends TestCase
                     '2.baz' => [
                         'value' => '2_baz',
                         'id' => null,
-                        'author' => 'shopware',
+                        'author' => 'shopwell',
                         'origin' => '',
                         'resetTo' => '',
                         'translationKey' => '',
@@ -85,7 +85,7 @@ class EditedFilterTest extends TestCase
                     '1.bar' => [
                         'value' => '1_bar',
                         'id' => '1',
-                        'author' => 'shopware',
+                        'author' => 'shopwell',
                         'origin' => '',
                         'resetTo' => '',
                         'translationKey' => '',
@@ -109,7 +109,7 @@ class EditedFilterTest extends TestCase
                     '2.bar' => [
                         'value' => '2_bar',
                         'id' => '2',
-                        'author' => 'shopware',
+                        'author' => 'shopwell',
                         'origin' => '',
                         'resetTo' => '',
                         'translationKey' => '',
@@ -143,7 +143,7 @@ class EditedFilterTest extends TestCase
                     '1.bar' => [
                         'value' => '1_bar',
                         'id' => '1',
-                        'author' => 'shopware',
+                        'author' => 'shopwell',
                         'origin' => '',
                         'resetTo' => '',
                         'translationKey' => '',
@@ -153,7 +153,7 @@ class EditedFilterTest extends TestCase
                     '1.bas' => [
                         'value' => '1_bas',
                         'id' => null,
-                        'author' => 'shopware',
+                        'author' => 'shopwell',
                         'origin' => '',
                         'resetTo' => '',
                         'translationKey' => '',
@@ -177,7 +177,7 @@ class EditedFilterTest extends TestCase
                     '2.baz' => [
                         'value' => '2_baz',
                         'id' => null,
-                        'author' => 'shopware',
+                        'author' => 'shopwell',
                         'origin' => '',
                         'resetTo' => '',
                         'translationKey' => '',
@@ -194,7 +194,7 @@ class EditedFilterTest extends TestCase
                     '1.bar' => [
                         'value' => '1_bar',
                         'id' => '1',
-                        'author' => 'shopware',
+                        'author' => 'shopwell',
                         'origin' => '',
                         'resetTo' => '',
                         'translationKey' => '',

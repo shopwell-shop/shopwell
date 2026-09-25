@@ -181,7 +181,7 @@ class VideoCmsElementResolverTest extends TestCase
     public function testEnrichWithDefaultMedia(): void
     {
         $config = new FieldConfigCollection([
-            new FieldConfig('media', FieldConfig::SOURCE_DEFAULT, 'bundles/storefront/assets/default/cms/shopware.mp4'),
+            new FieldConfig('media', FieldConfig::SOURCE_DEFAULT, 'bundles/storefront/assets/default/cms/shopwell.mp4'),
         ]);
 
         $slot = new CmsSlotEntity();

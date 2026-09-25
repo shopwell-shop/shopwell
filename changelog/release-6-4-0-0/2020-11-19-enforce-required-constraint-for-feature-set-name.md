@@ -2,11 +2,11 @@
 title: Enforce required constraint for feature set name
 issue: NEXT-11000
 author: Philip Gatzka
-author_email: p.gatzka@shopware.com 
+author_email: p.gatzka@shopwell.com 
 author_github: @philipgatzka
 ---
 # Core
-* Added required flag to the `TranslationAssociationField` in `\Shopware\Core\Content\Product\Aggregate\ProductFeatureSet\ProductFeatureSetDefinition`
+* Added required flag to the `TranslationAssociationField` in `\Shopwell\Core\Content\Product\Aggregate\ProductFeatureSet\ProductFeatureSetDefinition`
 ___
 # Administration
 * Changed `mapPropertyErrors` call to actually reflect the entity name in `platform/src/Administration/Resources/app/administration/src/module/sw-settings-product-feature-sets/page/sw-settings-product-feature-sets-detail/index.js`

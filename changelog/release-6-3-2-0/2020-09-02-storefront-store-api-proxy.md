@@ -3,7 +3,7 @@ title: Storefront Store-API Proxy
 issue: NEXT-10272
 ---
 # Core
-* Added `\Shopware\Storefront\Controller\StoreApiProxyController` for proxying Store-API calls in the Storefront with the correct context
+* Added `\Shopwell\Storefront\Controller\StoreApiProxyController` for proxying Store-API calls in the Storefront with the correct context
 ___
 # Upgrade Information
 ## HTTP Client for Store API

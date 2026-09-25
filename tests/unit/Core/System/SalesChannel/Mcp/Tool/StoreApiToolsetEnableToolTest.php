@@ -29,7 +29,7 @@ class StoreApiToolsetEnableToolTest extends TestCase
                 'name' => 'store-api',
                 'title' => 'Store API tools',
                 'description' => 'Store API',
-                'tools' => ['shopware-store-api-context'],
+                'tools' => ['shopwell-store-api-context'],
             ]);
 
         $storage = $this->createMock(McpToolsetSessionStorage::class);

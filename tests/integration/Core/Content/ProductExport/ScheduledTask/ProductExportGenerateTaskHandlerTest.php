@@ -53,7 +53,7 @@ class ProductExportGenerateTaskHandlerTest extends TestCase
 
         $this->productExportRepository = static::getContainer()->get('product_export.repository');
         $this->context = Context::createDefaultContext();
-        $this->fileSystem = static::getContainer()->get('shopware.filesystem.private');
+        $this->fileSystem = static::getContainer()->get('shopwell.filesystem.private');
     }
 
     public function testSkipGenerateByCronjobFalseProductExports(): void

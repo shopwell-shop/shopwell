@@ -75,22 +75,22 @@ live in [`.github/aw/README.md`](aw/README.md).
 Locally: `composer lint:actions` runs the workflow linters,
 `cd .github/bin/js && node --test` runs the automation-script tests.
 
-## Every workflow also runs in shopware-private
+## Every workflow also runs in shopwell-private
 
 `sync.yml` force-pushes trunk and every maintenance branch to
-`shopware/shopware-private`, so every workflow file lands there and fires on that
+`shopwell/shopwell-private`, so every workflow file lands there and fires on that
 repository's own pushes, pull requests, issues and schedules. Decide which side a
 new or changed workflow belongs on, and make the decision explicit:
 
 - **Both repositories** — the octo-sts identity has to allow the mirror. The
   policies live in
-  [`shopware/.github`](https://github.com/shopware/.github/tree/main/.github/chainguard);
-  `subject_pattern: repo:shopware/shopware(-private)?:.*` is the convention
-  (`ShopwareBackport`, `ShopwareDownstream`, `ShopwareNightly`).
+  [`shopwell/.github`](https://github.com/shopwell-shop/.github/tree/main/.github/chainguard);
+  `subject_pattern: repo:shopwell/shopwell(-private)?:.*` is the convention
+  (`ShopwellBackport`, `ShopwellDownstream`, `ShopwellNightly`).
 - **Public repository only** — guard the job with
-  `if: github.repository == 'shopware/shopware'`. Without it the mirrored run
+  `if: github.repository == 'shopwell/shopwell'`. Without it the mirrored run
   fails at octo-sts with `Failed to get a token`, and any script that resolves an
-  issue or PR number against `shopware/shopware` acts on an unrelated item.
+  issue or PR number against `shopwell/shopwell` acts on an unrelated item.
 
 No linter can decide this: the subject pattern lives in another repository.
 
@@ -99,7 +99,7 @@ No linter can decide this: the subject pattern lives in another repository.
 A convention that only lives in prose is not enforced. Prefer, in this order:
 
 1. **A guard inside the tool or its bootstrap** — protects every caller at once.
-   `Shopware\Core\Test\PHPUnit\CompletionGuard`, registered from
+   `Shopwell\Core\Test\PHPUnit\CompletionGuard`, registered from
    `TestBootstrapper::bootstrap()`, is the reference: it fails any PHPUnit run
    that dies before the suite finishes, for core, plugins, and downstream
    projects alike.
@@ -148,7 +148,7 @@ the exception has to be narrow.
 - Do not parse JSON, YAML, or Markdown in Bash. Use `jq`, or move the logic into
   a script (below).
 - Pin third-party actions to a commit hash with a version comment
-  (`uses: actions/checkout@9c091bb… # v7.0.0`). `shopware/*` actions may use a
+  (`uses: actions/checkout@9c091bb… # v7.0.0`). `shopwell/*` actions may use a
   mutable ref such as `@main`.
 
 ## Logic lives in a tested script

@@ -2,7 +2,7 @@
 title: Fix issue with defaulting release date to current day in product schema
 issue: NEXT-38490
 author: Stefan Pilz
-author_email: shopware@stefanpilz.ltd
+author_email: shopwell@stefanpilz.ltd
 author_github: @StefanPilzLtd
 ---
 

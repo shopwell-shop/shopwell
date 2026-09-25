@@ -2,7 +2,7 @@
 title: Remove message queue error notification in admin
 issue: NEXT-35021
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com
+author_email: j.leifeld@shopwell.com
 author_github: @Jannis Leifeld
 ---
 # Administration

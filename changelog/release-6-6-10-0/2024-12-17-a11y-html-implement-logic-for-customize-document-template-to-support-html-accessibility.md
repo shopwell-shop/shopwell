@@ -3,35 +3,35 @@ title: [A11y-HTML] Offer HTML alternative to our pdf standard documents
 issue: NEXT-40059
 ---
 # Core
-* Changed `Shopware\Core\Checkout\Document\Renderer\CreditNoteRenderer::render`
+* Changed `Shopwell\Core\Checkout\Document\Renderer\CreditNoteRenderer::render`
   * to `setTemplate` for `RenderedDocument`
   * to `setContext` for `RenderedDocument`
   * to `setOrder` for `RenderedDocument`
-* Changed `Shopware\Core\Checkout\Document\Renderer\DeliveryNoteRenderer::render`
+* Changed `Shopwell\Core\Checkout\Document\Renderer\DeliveryNoteRenderer::render`
   * to `setTemplate` for `RenderedDocument`
   * to `setContext` for `RenderedDocument`
   * to `setOrder` for `RenderedDocument`
-* Changed `Shopware\Core\Checkout\Document\Renderer\InvoiceRenderer::render`
+* Changed `Shopwell\Core\Checkout\Document\Renderer\InvoiceRenderer::render`
   * to `setTemplate` for `RenderedDocument`
   * to `setContext` for `RenderedDocument`
   * to `setOrder` for `RenderedDocument`
-* Changed `Shopware\Core\Checkout\Document\Renderer\StornoRenderer::render`
+* Changed `Shopwell\Core\Checkout\Document\Renderer\StornoRenderer::render`
   * to `setTemplate` for `RenderedDocument`
   * to `setContext` for `RenderedDocument`
   * to `setOrder` for `RenderedDocument`
-* Added parameters `template`, `context`, `order` in `Shopware\Core\Checkout\Document\Renderer\RenderedDocument`.
-* Changed `Shopware\Core\Checkout\Document\SalesChannel\DocumentRoute::download` to implement authenticate for customer.
-* Changed `Shopware\Core\Checkout\Document\Service\DocumentGenerator::readDocument` to load the media based on `fileType`.
-* Changed `Shopware\Core\Checkout\Document\Service\DocumentGenerator::generate` to save `documentA11yMediaFileId` field.
-* Changed `Shopware\Core\Checkout\Document\Service\DocumentGenerator::preview` to set the content based on `fileType`.
-* Added `Shopware\Core\Checkout\Document\Service\DocumentFileRendererRegistry` to callable render by contentType.
-* Added `Shopware\Core\Checkout\Document\Service\HtmlRenderer` to render the document file.
-* Changed `Shopware\Core\Checkout\Document\Service\PdfRenderer` to use `documentTemplateRenderer` render the document.
-* Changed `Shopware\Core\Checkout\Document\Controller\DocumentController::downloadDocument` to add the `fileType` configuration to the `DocumentGenerator`.
+* Added parameters `template`, `context`, `order` in `Shopwell\Core\Checkout\Document\Renderer\RenderedDocument`.
+* Changed `Shopwell\Core\Checkout\Document\SalesChannel\DocumentRoute::download` to implement authenticate for customer.
+* Changed `Shopwell\Core\Checkout\Document\Service\DocumentGenerator::readDocument` to load the media based on `fileType`.
+* Changed `Shopwell\Core\Checkout\Document\Service\DocumentGenerator::generate` to save `documentA11yMediaFileId` field.
+* Changed `Shopwell\Core\Checkout\Document\Service\DocumentGenerator::preview` to set the content based on `fileType`.
+* Added `Shopwell\Core\Checkout\Document\Service\DocumentFileRendererRegistry` to callable render by contentType.
+* Added `Shopwell\Core\Checkout\Document\Service\HtmlRenderer` to render the document file.
+* Changed `Shopwell\Core\Checkout\Document\Service\PdfRenderer` to use `documentTemplateRenderer` render the document.
+* Changed `Shopwell\Core\Checkout\Document\Controller\DocumentController::downloadDocument` to add the `fileType` configuration to the `DocumentGenerator`.
 * Changed `src/Core/Framework/Resources/views/documents/base.html.twig` to implement accessibility for HTML documents.
-* Added `Shopware\Core\Framework\Event\A11yRenderedDocumentAware` to provide the document ids to render the A11y document.
-* Added `Shopware\Core\Content\Flow\Dispatching\Storer\A11yRenderedDocumentStorer` to store the document ids and documents to render the A11y documents.
-* Changed `Shopware\Core\Checkout\Order\Event\OrderStateMachineStateChangeEvent` to implements `A11yRenderedDocumentAware`
+* Added `Shopwell\Core\Framework\Event\A11yRenderedDocumentAware` to provide the document ids to render the A11y document.
+* Added `Shopwell\Core\Content\Flow\Dispatching\Storer\A11yRenderedDocumentStorer` to store the document ids and documents to render the A11y documents.
+* Changed `Shopwell\Core\Checkout\Order\Event\OrderStateMachineStateChangeEvent` to implements `A11yRenderedDocumentAware`
 ___
 # Administration
 * Changed method `getDocumentPreview` in `document.api.service` service to add the `fileType` like <html or pdf> attributes.

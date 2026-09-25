@@ -1,4 +1,4 @@
-import type { TabItem } from '@shopware-ag/meteor-component-library/dist/esm/MtTabs';
+import type { TabItem } from '@shopwell-ag/meteor-component-library/dist/esm/MtTabs';
 import template from './sw-settings-usage-data.html.twig';
 
 const usageDataGeneralRoute = 'sw.settings.usage.data.index.general';

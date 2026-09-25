@@ -1,7 +1,7 @@
 /**
  * @sw-package inventory
  */
-import Criteria from '@shopware-ag/meteor-admin-sdk/es/data/Criteria';
+import Criteria from '@shopwell-ag/meteor-admin-sdk/es/data/Criteria';
 import template from './sw-settings-units-detail.html.twig';
 import type Repository from '../../../../core/data/repository.data';
 import { mapPropertyErrors } from '../../../../app/service/map-errors.service';

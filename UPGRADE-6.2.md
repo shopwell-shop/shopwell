@@ -7,7 +7,7 @@ UPGRADE FROM 6.2.x to 6.2.3
         'grant_type' => 'password',
         'client_id' => 'administration',
         'username' => 'admin',
-        'password' => 'shopware',
+        'password' => 'shopwell',
         'scope' => ['user-verified'],
     ]);
     ```
@@ -35,11 +35,11 @@ Table of content
 Core
 ----
 
-* The usage of `entity` in the `shopware.entity.definition` tag is deprecated and will be removed with 6.4.
+* The usage of `entity` in the `shopwell.entity.definition` tag is deprecated and will be removed with 6.4.
     * Therefore change:
-        `<tag name="shopware.entity.definition" entity="product"/>`
+        `<tag name="shopwell.entity.definition" entity="product"/>`
       To:
-        `<tag name="shopware.entity.definition"/>`
+        `<tag name="shopwell.entity.definition"/>`
     * As a fallback, this function is used first 
 * We deprecated the `LongTextWithHtmlField` in 6.2, use `LongTextField` with `AllowHtml` flag instead
 * The Mailer is not overwritten anymore, instead the swiftmailer.transport is decorated.
@@ -71,39 +71,39 @@ Core
 `$connection->executeUpdate()` instead.
 * For the possibility to add individual product to across selling, you need to use a new field for creating a cross selling
     * Please use type `productList` or `productStream` in order to create a corresponding cross selling
-* The `\Shopware\Core\Framework\DataAbstractionLayer\EntityExtensionInterface` will be removed, extend from the abstract class `\Shopware\Core\Framework\DataAbstractionLayer\EntityExtension` instead.
-* Deprecated `\Shopware\Core\Framework\Routing\RouteScopeInterface` use abstract class `\Shopware\Core\Framework\Routing\AbstractRouteScope` instead
-* Deprecated `\Shopware\Core\Content\ContactForm\ContactFormService` use the new service `\Shopware\Core\Content\ContactForm\SalesChannel\ContactFormRoute` instead
-* Deprecated `\Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingGateway` use `\Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingRouteInterface` instead
-* Deprecated `\Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingGatewayInterface` use `\Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingRouteInterface` instead
-* Deprecated `\Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchGateway` use `\Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRouteInterface` instead
-* Deprecated `\Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchGatewayInterface` use `\Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRouteInterface` instead
-* Deprecated `\Shopware\Core\Content\Product\SalesChannel\Suggest\ProductSuggestGatewayInterface` use `\Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRouteInterface` instead
-* Deprecated `\Shopware\Core\Content\Product\SalesChannel\Suggest\ProductSuggestGateway` use `\Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRouteInterface` instead
-* Deprecated `\Shopware\Core\Checkout\Customer\SalesChannel\AccountService` use one of the following new services
-    * `\Shopware\Core\Checkout\Customer\SalesChannel\ChangeCustomerProfileRoute`
-    * `\Shopware\Core\Checkout\Customer\SalesChannel\ChangeEmailRoute`
-    * `\Shopware\Core\Checkout\Customer\SalesChannel\ChangePasswordRoute`
-    * `\Shopware\Core\Checkout\Customer\SalesChannel\ChangePaymentMethodRoute`
-    * `\Shopware\Core\Checkout\Customer\SalesChannel\LoginRoute`
-    * `\Shopware\Core\Checkout\Customer\SalesChannel\LogoutRoute`
-    * `\Shopware\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute`
-    * `\Shopware\Core\Checkout\Customer\SalesChannel\ResetPasswordRoute`
-* Deprecated `\Shopware\Core\Content\Newsletter\NewsletterSubscriptionServiceInterface` and `\Shopware\Core\Content\Newsletter\NewsletterSubscriptionService` use one of the following new services
-    * `\Shopware\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute`
-    * `\Shopware\Core\Content\Newsletter\SalesChannel\NewsletterUnsubscribeRoute`
-    * `\Shopware\Core\Content\Newsletter\SalesChannel\NewsletterConfirmRoute`
-* Deprecated `\Shopware\Core\Checkout\Customer\SalesChannel\AccountRegistrationService` use one of the following new services
-    * `\Shopware\Core\Checkout\Customer\SalesChannel\RegisterRouteInterface`
-    * `\Shopware\Core\Checkout\Customer\SalesChannel\RegisterConfirmRouteInterface`
-* Deprecated `\Shopware\Core\Checkout\Promotion\Cart\Discount\DiscountPackagerInterface` use `\Shopware\Core\Checkout\Promotion\Cart\Discount\DiscountPackager` instead
-* Added optional second parameter `$context` to `\Shopware\Core\Framework\Plugin\PluginManagementService::uploadPlugin` and `\Shopware\Core\Framework\Plugin\PluginManagementService::deletePlugin`. It will be required in 6.3.0
-* Deprecated `\Shopware\Core\Framework\Plugin\PluginManagementService::extractPluginZip` which will be private in 6.3.0
-* Added optional third parameter `$definition` to `Shopware\Elasticsearch\Framework\ElasticsearchHelper::addTerm`. It will be required in 6.3.0.
-* Added a new translatable `label` property to `\Shopware\Core\Content\ImportExport\ImportExportProfileDefinition`
+* The `\Shopwell\Core\Framework\DataAbstractionLayer\EntityExtensionInterface` will be removed, extend from the abstract class `\Shopwell\Core\Framework\DataAbstractionLayer\EntityExtension` instead.
+* Deprecated `\Shopwell\Core\Framework\Routing\RouteScopeInterface` use abstract class `\Shopwell\Core\Framework\Routing\AbstractRouteScope` instead
+* Deprecated `\Shopwell\Core\Content\ContactForm\ContactFormService` use the new service `\Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRoute` instead
+* Deprecated `\Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingGateway` use `\Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingRouteInterface` instead
+* Deprecated `\Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingGatewayInterface` use `\Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingRouteInterface` instead
+* Deprecated `\Shopwell\Core\Content\Product\SalesChannel\Search\ProductSearchGateway` use `\Shopwell\Core\Content\Product\SalesChannel\Search\ProductSearchRouteInterface` instead
+* Deprecated `\Shopwell\Core\Content\Product\SalesChannel\Search\ProductSearchGatewayInterface` use `\Shopwell\Core\Content\Product\SalesChannel\Search\ProductSearchRouteInterface` instead
+* Deprecated `\Shopwell\Core\Content\Product\SalesChannel\Suggest\ProductSuggestGatewayInterface` use `\Shopwell\Core\Content\Product\SalesChannel\Search\ProductSearchRouteInterface` instead
+* Deprecated `\Shopwell\Core\Content\Product\SalesChannel\Suggest\ProductSuggestGateway` use `\Shopwell\Core\Content\Product\SalesChannel\Search\ProductSearchRouteInterface` instead
+* Deprecated `\Shopwell\Core\Checkout\Customer\SalesChannel\AccountService` use one of the following new services
+    * `\Shopwell\Core\Checkout\Customer\SalesChannel\ChangeCustomerProfileRoute`
+    * `\Shopwell\Core\Checkout\Customer\SalesChannel\ChangeEmailRoute`
+    * `\Shopwell\Core\Checkout\Customer\SalesChannel\ChangePasswordRoute`
+    * `\Shopwell\Core\Checkout\Customer\SalesChannel\ChangePaymentMethodRoute`
+    * `\Shopwell\Core\Checkout\Customer\SalesChannel\LoginRoute`
+    * `\Shopwell\Core\Checkout\Customer\SalesChannel\LogoutRoute`
+    * `\Shopwell\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute`
+    * `\Shopwell\Core\Checkout\Customer\SalesChannel\ResetPasswordRoute`
+* Deprecated `\Shopwell\Core\Content\Newsletter\NewsletterSubscriptionServiceInterface` and `\Shopwell\Core\Content\Newsletter\NewsletterSubscriptionService` use one of the following new services
+    * `\Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute`
+    * `\Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterUnsubscribeRoute`
+    * `\Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterConfirmRoute`
+* Deprecated `\Shopwell\Core\Checkout\Customer\SalesChannel\AccountRegistrationService` use one of the following new services
+    * `\Shopwell\Core\Checkout\Customer\SalesChannel\RegisterRouteInterface`
+    * `\Shopwell\Core\Checkout\Customer\SalesChannel\RegisterConfirmRouteInterface`
+* Deprecated `\Shopwell\Core\Checkout\Promotion\Cart\Discount\DiscountPackagerInterface` use `\Shopwell\Core\Checkout\Promotion\Cart\Discount\DiscountPackager` instead
+* Added optional second parameter `$context` to `\Shopwell\Core\Framework\Plugin\PluginManagementService::uploadPlugin` and `\Shopwell\Core\Framework\Plugin\PluginManagementService::deletePlugin`. It will be required in 6.3.0
+* Deprecated `\Shopwell\Core\Framework\Plugin\PluginManagementService::extractPluginZip` which will be private in 6.3.0
+* Added optional third parameter `$definition` to `Shopwell\Elasticsearch\Framework\ElasticsearchHelper::addTerm`. It will be required in 6.3.0.
+* Added a new translatable `label` property to `\Shopwell\Core\Content\ImportExport\ImportExportProfileDefinition`
     * This property is required
     * The name may be omitted now
-* Added new message `\Shopware\Core\Framework\Adapter\Cache\Message\CleanupOldCacheFolders` to cleanup old cache folders in `var/cache`
+* Added new message `\Shopwell\Core\Framework\Adapter\Cache\Message\CleanupOldCacheFolders` to cleanup old cache folders in `var/cache`
 
 Administration
 --------------
@@ -239,7 +239,7 @@ Administration
                     to:     'my.awesome.plugin.index',       // dot notated route to your plugin's settings index page  
                     label:  'my.awesome.plugin.title',       // translation snippet key
                     group:  'plugins',                       // register plugin under "plugins" tab in settings page
-                    icon:   'use a shopware icon here',
+                    icon:   'use a shopwell icon here',
                     // OR
                     component: 'component'                   // use a component here, if you want to render the icon in any other way            
                 }
@@ -261,18 +261,18 @@ on the corresponding label.
 Storefront
 ----------
 
-* We removed the SCSS skin import `@import 'skin/shopware/base'` inside `/Users/tberge/www/sw6/platform/src/Storefront/Resources/app/storefront/src/scss/base.scss`.
-    * If you don't use the `@Storefront` bundle in your `theme.json` and you are importing the shopware core `base.scss` manually you have to import the shopware skin too in order to get the same result:
+* We removed the SCSS skin import `@import 'skin/shopwell/base'` inside `/Users/tberge/www/sw6/platform/src/Storefront/Resources/app/storefront/src/scss/base.scss`.
+    * If you don't use the `@Storefront` bundle in your `theme.json` and you are importing the shopwell core `base.scss` manually you have to import the shopwell skin too in order to get the same result:
 
         Before
         ```
-        @import "../../../../vendor/shopware/platform/src/Storefront/Resources/app/storefront/src/scss/base.scss";
+        @import "../../../../vendor/shopwell/platform/src/Storefront/Resources/app/storefront/src/scss/base.scss";
         ```
 
         After
         ```
-        @import "../../../../vendor/shopware/platform/src/Storefront/Resources/app/storefront/src/scss/base.scss";
-        @import "../../../../vendor/shopware/platform/src/Storefront/Resources/app/storefront/src/scss/skin/shopware/base";
+        @import "../../../../vendor/shopwell/platform/src/Storefront/Resources/app/storefront/src/scss/base.scss";
+        @import "../../../../vendor/shopwell/platform/src/Storefront/Resources/app/storefront/src/scss/skin/shopwell/base";
 * We changed the storefront ESLint rule `comma-dangle` to `never`, so that trailing commas won't be forcefully added anymore
 * The theme manager supports now tabs. Usage: 
 ```json
@@ -349,7 +349,7 @@ Now the variable can be overwritten with `replace_recursive`:
 
 * Added basic captcha support to the storefront
   * Routes annotated with `@Captcha` will now require all active captchas to be valid
-  * Captchas may be registered using the `shopware.storefront.captcha` tag and need to extend the `AbstractCaptcha` class
+  * Captchas may be registered using the `shopwell.storefront.captcha` tag and need to extend the `AbstractCaptcha` class
 * Added `HoneypotCaptcha`
   * This captcha checks wether a form field hidden from the user was filled out and stops the request if that's the case
   * The `HoneypotCaptcha` is active by default
@@ -396,25 +396,25 @@ With 6.2 we have refactored the implementation of the indexers. We had to make t
 
 #### Consequences
 This now has the following consequences:
-1. all indexers in the shopware core have been marked as deprecated and will be removed in 6.3. Accordingly, new indexers have been implemented.
+1. all indexers in the shopwell core have been marked as deprecated and will be removed in 6.3. Accordingly, new indexers have been implemented.
 2. if you have called the indexers, please use the new indexers. The old indexers are still available in the system, but without source code. 
 3. if you have implemented your own indexer, you have to adapt it to the new system - as described below.
 4. if you are using DAL fields, which were previously filled automatically by an indexer, you will now have to write your own indexer - we have provided classes for this purpose. The following DAL fields are affected:
-    4.1 `\Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyIdField`
-    4.2 `\Shopware\Core\Framework\DataAbstractionLayer\Field\TreeLevelField`
-    4.3 `\Shopware\Core\Framework\DataAbstractionLayer\Field\TreePathField`
-    4.4 `\Shopware\Core\Framework\DataAbstractionLayer\Field\ChildCountField`
+    4.1 `\Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyIdField`
+    4.2 `\Shopwell\Core\Framework\DataAbstractionLayer\Field\TreeLevelField`
+    4.3 `\Shopwell\Core\Framework\DataAbstractionLayer\Field\TreePathField`
+    4.4 `\Shopwell\Core\Framework\DataAbstractionLayer\Field\ChildCountField`
 
 #### Function of an indexer
 The new indexers work as follows:
-1. each indexer extends abstract `Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer`
+1. each indexer extends abstract `Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer`
 2. each indexer takes care of indexing a whole entity
 3. if several data on an entity need to be indexed, a single indexer takes care of the successive updating of the data
 4. an event is thrown at the end of the indexer so that plugins can subscribe to the event to index additional data for this entity
 
 
 #### The new base class
-The base `Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer` class looks as follows:
+The base `Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer` class looks as follows:
 ```php
 
 abstract class EntityIndexer
@@ -454,15 +454,15 @@ The following `ProductIndexer` is intended to illustrate once again how such an 
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\Content\Product\DataAbstractionLayer;
+namespace Shopwell\Core\Content\Product\DataAbstractionLayer;
 
-use Shopware\Core\Content\Product\Events\ProductIndexerEvent;
-use Shopware\Core\Content\Product\ProductDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
-use Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer;
-use Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexingMessage;
+use Shopwell\Core\Content\Product\Events\ProductIndexerEvent;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer;
+use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexingMessage;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class ProductIndexer extends EntityIndexer
@@ -527,16 +527,16 @@ class ProductIndexer extends EntityIndexer
 In case you have used fields from the DAL, which filled automatically by an indexer, you have now to trigger the data indexing for this fields by yourself. We provide updater classes which you call from your indexer.
 However, we have adapted the previous indexers so that they will continue to update your entities automatically during the 6.2 version. If you have started the indexing process yourself, you can set a flag to prevent the old indexing process from working for your entity.
 
-* `\Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyIdField` 
-    * Can be updated by `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\ManyToManyIdFieldUpdater`
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyIdField` 
+    * Can be updated by `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ManyToManyIdFieldUpdater`
     * Old indexing can be disabled by `public function hasManyToManyIdFields(): bool { return false; }` in your entity definition
  
-* `\Shopware\Core\Framework\DataAbstractionLayer\Field\TreeLevelField` and `\Shopware\Core\Framework\DataAbstractionLayer\Field\TreePathField` 
-    * can be updated by `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater`
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Field\TreeLevelField` and `\Shopwell\Core\Framework\DataAbstractionLayer\Field\TreePathField` 
+    * can be updated by `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater`
     * Old indexing can be disabled by `public function isTreeAware(): bool { return false; }` in your entity definition
     
-* `\Shopware\Core\Framework\DataAbstractionLayer\Field\ChildCountField` 
-    * can be updated by `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater`
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Field\ChildCountField` 
+    * can be updated by `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater`
     * Old indexing can be disabled by `public function isChildCountAware(): bool { return false; }` in your entity definition
 
 Simply create an indexer as above, inject the service and call it when your entity is updated.
@@ -544,17 +544,17 @@ Simply create an indexer as above, inject the service and call it when your enti
 #### Seo Urls
 If you have implemented your own seo urls in the system, you will have to initiate the indexing of these urls yourself in the future. For the 6.2 version we have implemented a flag which defines whether the old indexing process should continue to work.
 To update the seo urls correctly you need an indexer which indexes the entity behind the seo url. If there is already an indexer for the entity in the core you can register yourself on the indexer event, otherwise you have to write your own indexer.
-In the indexer you can use the `\Shopware\Core\Content\Seo\SeoUrlUpdater` service to generate the seo urls. Here is an example how to call it:
+In the indexer you can use the `\Shopwell\Core\Content\Seo\SeoUrlUpdater` service to generate the seo urls. Here is an example how to call it:
 
 ```php
 
 <?php declare(strict_types=1);
 
-namespace Shopware\Storefront\Framework\Seo\SeoUrlRoute;
+namespace Shopwell\Storefront\Framework\Seo\SeoUrlRoute;
 
-use Shopware\Core\Content\Product\Events\ProductIndexerEvent;
-use Shopware\Core\Content\Product\ProductEvents;
-use Shopware\Core\Content\Seo\SeoUrlUpdater;
+use Shopwell\Core\Content\Product\Events\ProductIndexerEvent;
+use Shopwell\Core\Content\Product\ProductEvents;
+use Shopwell\Core\Content\Seo\SeoUrlUpdater;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class SeoUrlUpdateListener implements EventSubscriberInterface
@@ -583,7 +583,7 @@ class SeoUrlUpdateListener implements EventSubscriberInterface
 }
 ``` 
 
-To disable the old indexing process for a seo url route you have to set the flag `\Shopware\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteConfig::$supportsNewIndexer`. This is easily done in the `getConfig` method of your `SeoUrlRoute` class.
+To disable the old indexing process for a seo url route you have to set the flag `\Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteConfig::$supportsNewIndexer`. This is easily done in the `getConfig` method of your `SeoUrlRoute` class.
 
 ```php
 public function getConfig(): SeoUrlRouteConfig
@@ -599,7 +599,7 @@ public function getConfig(): SeoUrlRouteConfig
 ```
 
 #### MySQL Deadlocks
-Since the new indexers are now designed to be processed in parallel via the message queue, MySQL deadlocks can quickly occur when the same table is written by different processes. For this we have provided the helper class `\Shopware\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery`.
+Since the new indexers are now designed to be processed in parallel via the message queue, MySQL deadlocks can quickly occur when the same table is written by different processes. For this we have provided the helper class `\Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery`.
 This offers various possibilities to avoid a MySQL deadlock:
 
 ```php

@@ -37,22 +37,22 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(NumberRangeDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(NumberRangeSalesChannelDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(NumberRangeStateDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(NumberRangeTypeDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(NumberRangeTypeTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(NumberRangeTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     // Value Generator
     $services->set(MigrateIncrementStorageCommand::class)
@@ -66,7 +66,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(ClockInterface::class),
         ])
-        ->tag('shopware.value_generator_connector', ['storage' => 'mysql']);
+        ->tag('shopwell.value_generator_connector', ['storage' => 'mysql']);
 
     $services->set(AbstractIncrementStorage::class)
         ->factory([service(IncrementStorageRegistry::class), 'getStorage']);
@@ -79,27 +79,27 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(IncrementStorageMetricsDecorator::class . '.inner'),
             service(Meter::class),
             service(NumberRangeTypeResolver::class),
-            param('shopware.number_range.increment_storage'),
+            param('shopwell.number_range.increment_storage'),
         ]);
 
     $services->set(IncrementRedisStorage::class)
         ->args([
-            service('shopware.number_range.redis'),
+            service('shopwell.number_range.redis'),
             service('lock.factory'),
             service('number_range.repository'),
         ])
-        ->tag('shopware.value_generator_connector', ['storage' => 'redis']);
+        ->tag('shopwell.value_generator_connector', ['storage' => 'redis']);
 
     $services->set(IncrementStorageRegistry::class)
         ->args([
-            tagged_locator('shopware.value_generator_connector', 'storage'),
-            param('shopware.number_range.increment_storage'),
+            tagged_locator('shopwell.value_generator_connector', 'storage'),
+            param('shopwell.number_range.increment_storage'),
         ]);
 
-    $services->set('shopware.number_range.redis', \Redis::class)
+    $services->set('shopwell.number_range.redis', \Redis::class)
         ->factory([service(RedisConnectionProvider::class), 'getConnection'])
         ->args([
-            param('shopware.number_range.config.connection'),
+            param('shopwell.number_range.config.connection'),
         ]);
 
     $services->set(NumberRangeValueGeneratorInterface::class, NumberRangeValueGenerator::class)
@@ -115,17 +115,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ValueGeneratorPatternRegistry::class)
         ->args([
-            tagged_iterator('shopware.value_generator_pattern'),
+            tagged_iterator('shopwell.value_generator_pattern'),
         ]);
 
     $services->set(ValueGeneratorPatternIncrement::class)
         ->args([
             service(AbstractIncrementStorage::class),
         ])
-        ->tag('shopware.value_generator_pattern');
+        ->tag('shopwell.value_generator_pattern');
 
     $services->set(ValueGeneratorPatternDate::class)
-        ->tag('shopware.value_generator_pattern');
+        ->tag('shopwell.value_generator_pattern');
 
     $services->set(NumberRangeController::class)
         ->public()

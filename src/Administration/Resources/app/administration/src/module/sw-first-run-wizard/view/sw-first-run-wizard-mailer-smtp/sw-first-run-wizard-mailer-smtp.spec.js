@@ -74,7 +74,7 @@ describe('module/sw-first-run-wizard/view/sw-first-run-wizard-mailer-smtp', () =
 
         expect(wrapper.find('.sw-first-run-wizard-mailer-smtp').exists()).toBe(true);
 
-        expect(wrapper.vm.nextAction).toBe('sw.first.run.wizard.index.shopware.account');
+        expect(wrapper.vm.nextAction).toBe('sw.first.run.wizard.index.shopwell.account');
 
         Shopwell.Store.get('context').app.config.settings.disableExtensionManagement = false;
     });

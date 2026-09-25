@@ -19,7 +19,7 @@ class ComposerInfoProviderTest extends TestCase
     {
         $packages = [
             new ComposerPackage(
-                name: 'shopware/core',
+                name: 'shopwell/core',
                 version: '6.4.0.0',
                 prettyVersion: '6.4.0.0',
                 path: '/sw/core',
@@ -28,10 +28,10 @@ class ComposerInfoProviderTest extends TestCase
 
         ComposerInfoProvider::fake($packages);
 
-        static::assertSame($packages, ComposerInfoProvider::getComposerPackages('shopware-platform-plugin'));
+        static::assertSame($packages, ComposerInfoProvider::getComposerPackages('shopwell-platform-plugin'));
 
         ComposerInfoProvider::reset();
 
-        static::assertNotSame($packages, ComposerInfoProvider::getComposerPackages('shopware-platform-plugin'));
+        static::assertNotSame($packages, ComposerInfoProvider::getComposerPackages('shopwell-platform-plugin'));
     }
 }

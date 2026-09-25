@@ -1,6 +1,6 @@
 ---
 title: Add primary order delivery and primary order transaction reference
-issue: https://github.com/shopware/shopware/issues/4936
+issue: https://github.com/shopwell-shop/shopwell/issues/4936
 author: Hannes Wernery
 author_email: hannes.wernery@pickware.de
 author_github: @hanneswernery

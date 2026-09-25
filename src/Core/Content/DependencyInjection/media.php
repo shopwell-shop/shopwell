@@ -104,7 +104,7 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->parameters()
-        ->set('shopware.media.metadata.types', [
+        ->set('shopwell.media.metadata.types', [
             '\Shopwell\Core\Content\Media\Metadata\Type\ImageMetadata',
             '\Shopwell\Core\Content\Media\Metadata\Type\DocumentMetadata',
             '\Shopwell\Core\Content\Media\Metadata\Type\VideoMetadata',
@@ -114,32 +114,32 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     // region Entity definitions
     $services->set(MediaDefinition::class)
-        ->tag('shopware.entity.definition')
-        ->tag('shopware.entity.hookable');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.entity.hookable');
 
     $services->set(MediaDefaultFolderDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(MediaThumbnailDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(MediaTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(MediaFolderDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(MediaThumbnailSizeDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(MediaFolderConfigurationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(MediaFolderConfigurationMediaThumbnailSizeDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(MediaTagDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
     // endregion Entity definitions
 
     // region Message handlers
@@ -148,14 +148,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ThumbnailService::class),
             service('media.repository'),
             service('logger'),
-            param('shopware.media.remote_thumbnails.enable'),
+            param('shopwell.media.remote_thumbnails.enable'),
         ])
         ->tag('messenger.message_handler');
 
     $services->set(DeleteFileHandler::class)
         ->args([
-            service('shopware.filesystem.public'),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.public'),
+            service('shopwell.filesystem.private'),
         ])
         ->tag('messenger.message_handler');
 
@@ -175,7 +175,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(TrustedUrlResolver::class)
         ->args([
             null,
-            param('shopware.media.enable_url_validation'),
+            param('shopwell.media.enable_url_validation'),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
 
@@ -185,10 +185,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(FileService::class),
             service(TrustedUrlResolver::class),
             service('http_client'),
-            param('shopware.media.enable_url_upload_feature'),
-            param('shopware.media.enable_url_validation'),
-            param('shopware.media.url_upload_max_size'),
-            param('shopware.media.url_upload_timeout'),
+            param('shopwell.media.enable_url_upload_feature'),
+            param('shopwell.media.enable_url_validation'),
+            param('shopwell.media.url_upload_max_size'),
+            param('shopwell.media.url_upload_timeout'),
         ]);
 
     $services->set(FileUrlValidatorInterface::class, FileUrlValidator::class)
@@ -198,23 +198,23 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(FileContentValidationStrategy::class)
         ->args([
-            tagged_iterator('shopware.media.file_content.validator'),
+            tagged_iterator('shopwell.media.file_content.validator'),
         ]);
 
     $services->set(SvgContentValidator::class)
         ->args([
-            param('shopware.media.svg.allowed_elements'),
-            param('shopware.media.svg.allowed_attributes'),
-            param('shopware.media.svg.allowed_reference_attributes'),
+            param('shopwell.media.svg.allowed_elements'),
+            param('shopwell.media.svg.allowed_attributes'),
+            param('shopwell.media.svg.allowed_reference_attributes'),
         ])
-        ->tag('shopware.media.file_content.validator');
+        ->tag('shopwell.media.file_content.validator');
 
     $services->set(FileSaver::class)
         ->public()
         ->args([
             service('media.repository'),
-            service('shopware.filesystem.public'),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.public'),
+            service('shopwell.filesystem.private'),
             service(FileContentValidationStrategy::class),
             service(MetadataLoader::class),
             service(TypeDetector::class),
@@ -224,13 +224,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(MediaFileCleanupService::class),
             service(MediaFileExtensionValidator::class),
             service(ClockInterface::class),
-            param('shopware.media.remote_thumbnails.enable'),
+            param('shopwell.media.remote_thumbnails.enable'),
         ]);
 
     $services->set(FileLoader::class)
         ->args([
-            service('shopware.filesystem.public'),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.public'),
+            service('shopwell.filesystem.private'),
             service('media.repository'),
             service(Psr17Factory::class),
         ]);
@@ -243,13 +243,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(DownloadResponseGenerator::class)
         ->args([
             service('logger'),
-            service('shopware.filesystem.public'),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.public'),
+            service('shopwell.filesystem.private'),
             service(MediaService::class),
-            param('shopware.filesystem.private_local_download_strategy'),
+            param('shopwell.filesystem.private_local_download_strategy'),
             service(AbstractMediaUrlGenerator::class),
             service(ClockInterface::class),
-            param('shopware.filesystem.private_local_path_prefix'),
+            param('shopwell.filesystem.private_local_path_prefix'),
         ]);
     // endregion File Services
 
@@ -260,7 +260,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('media.repository'),
             service('media_folder.repository'),
             service('messenger.default_bus'),
-            param('shopware.media.remote_thumbnails.enable'),
+            param('shopwell.media.remote_thumbnails.enable'),
         ])
         ->tag('console.command');
 
@@ -283,9 +283,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(Connection::class),
             service('media_thumbnail.repository'),
-            service('shopware.filesystem.public'),
-            service('shopware.filesystem.private'),
-            param('shopware.media.remote_thumbnails.enable'),
+            service('shopwell.filesystem.public'),
+            service('shopwell.filesystem.private'),
+            param('shopwell.media.remote_thumbnails.enable'),
         ])
         ->tag('console.command');
     // endregion Commands
@@ -351,36 +351,36 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     // region Metadata
     $services->set(ImageMetadataLoader::class)
-        ->tag('shopware.metadata.loader');
+        ->tag('shopwell.metadata.loader');
 
     $services->set(MetadataLoader::class)
         ->args([
-            tagged_iterator('shopware.metadata.loader'),
+            tagged_iterator('shopwell.metadata.loader'),
         ]);
     // endregion Metadata
 
     // region TypeDetector
     $services->set(AudioTypeDetector::class)
-        ->tag('shopware.media_type.detector', ['priority' => 10]);
+        ->tag('shopwell.media_type.detector', ['priority' => 10]);
 
     $services->set(DefaultTypeDetector::class)
-        ->tag('shopware.media_type.detector', ['priority' => 0]);
+        ->tag('shopwell.media_type.detector', ['priority' => 0]);
 
     $services->set(DocumentTypeDetector::class)
-        ->tag('shopware.media_type.detector', ['priority' => 10]);
+        ->tag('shopwell.media_type.detector', ['priority' => 10]);
 
     $services->set(ImageTypeDetector::class)
-        ->tag('shopware.media_type.detector', ['priority' => 10]);
+        ->tag('shopwell.media_type.detector', ['priority' => 10]);
 
     $services->set(VideoTypeDetector::class)
-        ->tag('shopware.media_type.detector', ['priority' => 10]);
+        ->tag('shopwell.media_type.detector', ['priority' => 10]);
 
     $services->set(SpatialObjectTypeDetector::class)
-        ->tag('shopware.media_type.detector', ['priority' => 10]);
+        ->tag('shopwell.media_type.detector', ['priority' => 10]);
 
     $services->set(TypeDetector::class)
         ->args([
-            tagged_iterator('shopware.media_type.detector'),
+            tagged_iterator('shopwell.media_type.detector'),
         ]);
     // endregion TypeDetector
 
@@ -405,8 +405,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ThumbnailService::class)
         ->args([
             service('media_thumbnail.repository'),
-            service('shopware.filesystem.public'),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.public'),
+            service('shopwell.filesystem.private'),
             service('media_folder.repository'),
             service('event_dispatcher'),
             service(MediaIndexer::class),
@@ -414,7 +414,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(ThumbnailProcessorInterface::class),
             service('logger'),
-            param('shopware.media.remote_thumbnails.enable'),
+            param('shopwell.media.remote_thumbnails.enable'),
         ]);
 
     $services->set(MediaService::class)
@@ -432,13 +432,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(FileFetcher::class),
             service(FileSaver::class),
             service('event_dispatcher'),
-            service('shopware.media.upload.http_client'),
+            service('shopwell.media.upload.http_client'),
             service('media_thumbnail.repository'),
             service('media_thumbnail_size.repository'),
             service(FileUrlValidatorInterface::class),
             service(TrustedUrlResolver::class),
-            param('shopware.media.enable_url_validation'),
-            param('shopware.media.external_link_timeout'),
+            param('shopwell.media.enable_url_validation'),
+            param('shopwell.media.external_link_timeout'),
         ]);
 
     $services->set(VideoCoverService::class)
@@ -450,38 +450,38 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     // endregion Services
 
     // region Testable service aliases
-    $services->alias('shopware.media.upload.http_client', 'http_client');
+    $services->alias('shopwell.media.upload.http_client', 'http_client');
     // endregion Testable service aliases
 
     $services->set(PresignedUploadUrlGenerator::class)
         ->factory([PresignedUploadUrlGenerator::class, 'create'])
         ->args([
             service(AbstractMediaPathStrategy::class),
-            param('shopware.filesystem.public'),
+            param('shopwell.filesystem.public'),
             service('logger'),
             service(ClockInterface::class),
-            service('shopware.filesystem.s3.client')->nullOnInvalid(),
-            param('shopware.media.presigned_upload.expiration_minutes'),
-            param('shopware.media.presigned_upload.enabled'),
-            param('shopware.filesystem.private'),
+            service('shopwell.filesystem.s3.client')->nullOnInvalid(),
+            param('shopwell.media.presigned_upload.expiration_minutes'),
+            param('shopwell.media.presigned_upload.enabled'),
+            param('shopwell.filesystem.private'),
         ]);
 
     $services->alias(PresignedUrlGeneratorInterface::class, PresignedUploadUrlGenerator::class);
 
     $services->set(MediaFileCleanupService::class)
         ->args([
-            service('shopware.filesystem.public'),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.public'),
+            service('shopwell.filesystem.private'),
             service(ThumbnailService::class),
             service('messenger.default_bus'),
-            param('shopware.media.remote_thumbnails.enable'),
+            param('shopwell.media.remote_thumbnails.enable'),
         ]);
 
     $services->set(MediaFileExtensionListProvider::class)
         ->args([
             service('event_dispatcher'),
-            param('shopware.filesystem.allowed_extensions'),
-            param('shopware.filesystem.private_allowed_extensions'),
+            param('shopwell.filesystem.allowed_extensions'),
+            param('shopwell.filesystem.private_allowed_extensions'),
         ]);
 
     $services->set(MediaFileExtensionValidator::class)
@@ -525,54 +525,54 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     // region Resolver
     $services->set(DefaultMediaResolver::class)
         ->args([
-            service('shopware.filesystem.public'),
+            service('shopwell.filesystem.public'),
         ]);
 
     $services->set(ImageCmsElementResolver::class)
         ->args([
             service(DefaultMediaResolver::class),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(ImageSliderTypeDataResolver::class)
         ->args([
             service(DefaultMediaResolver::class),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(ImageGalleryTypeDataResolver::class)
         ->args([
             service(DefaultMediaResolver::class),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(VideoCmsElementResolver::class)
         ->args([
             service(DefaultMediaResolver::class),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(YoutubeVideoCmsElementResolver::class)
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(VimeoVideoCmsElementResolver::class)
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
     // endregion Resolver
 
     // region DBAL
     $services->set(MediaIndexer::class)
-        ->tag('shopware.entity_indexer')
+        ->tag('shopwell.entity_indexer')
         ->args([
             service(IteratorFactory::class),
             service('media.repository'),
             service('media_thumbnail.repository'),
             service(Connection::class),
             service('event_dispatcher'),
-            param('shopware.media.remote_thumbnails.enable'),
+            param('shopwell.media.remote_thumbnails.enable'),
         ]);
 
     $services->set(MediaFolderConfigurationIndexer::class)
-        ->tag('shopware.entity_indexer')
+        ->tag('shopwell.entity_indexer')
         ->args([
             service(IteratorFactory::class),
             service('media_folder_configuration.repository'),
@@ -589,7 +589,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ChildCountUpdater::class),
             service(TreeUpdater::class),
         ])
-        ->tag('shopware.entity_indexer');
+        ->tag('shopwell.entity_indexer');
     // endregion DBAL
 
     // region Event handling
@@ -652,6 +652,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     // region Tasks
     $services->set(CleanupCorruptedMediaTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
     // endregion Tasks
 };

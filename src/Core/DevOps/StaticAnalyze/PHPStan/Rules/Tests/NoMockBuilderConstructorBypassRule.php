@@ -93,7 +93,7 @@ class NoMockBuilderConstructorBypassRule implements Rule
 
         return [
             RuleErrorBuilder::message(self::ERROR_REDUNDANT)
-                ->identifier('shopware.mockBuilderConstructorBypass')
+                ->identifier('shopwell.mockBuilderConstructorBypass')
                 ->build(),
         ];
     }

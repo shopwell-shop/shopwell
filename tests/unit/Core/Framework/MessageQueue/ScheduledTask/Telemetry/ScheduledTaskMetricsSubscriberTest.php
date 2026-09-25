@@ -57,7 +57,7 @@ class ScheduledTaskMetricsSubscriberTest extends TestCase
         $duration = $this->findMetric('scheduled_task.run.duration');
         static::assertInstanceOf(ConfiguredMetric::class, $duration);
         static::assertSame(
-            ['task_name' => 'task_name_label:shopware.invalidate_cache', 'result' => 'success'],
+            ['task_name' => 'task_name_label:shopwell.invalidate_cache', 'result' => 'success'],
             $duration->labels
         );
         static::assertIsFloat($duration->value);
@@ -93,7 +93,7 @@ class ScheduledTaskMetricsSubscriberTest extends TestCase
         $duration = $this->findMetric('scheduled_task.run.duration');
         static::assertInstanceOf(ConfiguredMetric::class, $duration);
         static::assertSame(
-            ['task_name' => 'task_name_label:shopware.invalidate_cache', 'result' => 'failed'],
+            ['task_name' => 'task_name_label:shopwell.invalidate_cache', 'result' => 'failed'],
             $duration->labels
         );
     }

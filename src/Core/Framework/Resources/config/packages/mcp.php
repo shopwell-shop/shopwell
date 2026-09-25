@@ -21,7 +21,7 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
     //
     // A pattern that matches nothing is a fatal error in the bundle, so the Storefront prefix is only
     // added when that bundle is actually installed. It can still be emptied out later -- the
-    // namespace holds exactly one tool, so `shopware.mcp.allowed_tools` without `shopware-theme-config`
+    // namespace holds exactly one tool, so `shopwell.mcp.allowed_tools` without `shopwell-theme-config`
     // orphans the prefix. McpToolDiscoveryCompilerPass::pruneUnmatchedPatterns() drops it again in
     // that case, so hiding a tool never aborts the container build.
     $bundles = $builder->getParameter('kernel.bundles');
@@ -38,7 +38,7 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
                 'name' => 'Shopwell',
                 'version' => '1.0.0',
                 'description' => 'Shopwell MCP server providing tools for entity management, system configuration, and storefront operations.',
-                'instructions' => "This MCP server exposes Shopwell e-commerce platform capabilities.\nUse entity tools to search, read, and manage shop data.\nThe advertised tool list is not the full catalogue. If no advertised tool matches the requested action, call shopware-tool-search first instead of assuming the action is unsupported; use shopware-toolsets-list and shopware-toolset-enable to make a matched tool callable if your client cannot invoke it inline.\nAll operations respect the authenticated user's ACL permissions.\n",
+                'instructions' => "This MCP server exposes Shopwell e-commerce platform capabilities.\nUse entity tools to search, read, and manage shop data.\nThe advertised tool list is not the full catalogue. If no advertised tool matches the requested action, call shopwell-tool-search first instead of assuming the action is unsupported; use shopwell-toolsets-list and shopwell-toolset-enable to make a matched tool callable if your client cannot invoke it inline.\nAll operations respect the authenticated user's ACL permissions.\n",
                 // Both endpoints are routed by Shopwell's own controllers (api.mcp.endpoint and
                 // store-api.mcp.endpoint), which apply authentication, rate limiting and the
                 // capability allowlist. The bundle's controller and route loader stay switched off.
@@ -49,7 +49,7 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
                 'name' => 'Shopwell Store API',
                 'version' => '1.0.0',
                 'description' => 'Shopwell Store API MCP server for sales-channel and customer-context operations.',
-                'instructions' => 'This MCP server exposes Store API capabilities. All operations run in the current sales-channel context and use Store API authentication headers. The advertised tool list is not the full catalogue: if no advertised tool matches the requested action, call shopware-tool-search first instead of assuming the action is unsupported, then use shopware-toolsets-list and shopware-toolset-enable to make a matched tool callable if your client cannot invoke it inline.',
+                'instructions' => 'This MCP server exposes Store API capabilities. All operations run in the current sales-channel context and use Store API authentication headers. The advertised tool list is not the full catalogue: if no advertised tool matches the requested action, call shopwell-tool-search first instead of assuming the action is unsupported, then use shopwell-toolsets-list and shopwell-toolset-enable to make a matched tool callable if your client cannot invoke it inline.',
                 'transports' => ['http' => false, 'stdio' => false],
                 'registry' => ['tools' => ['Shopwell\\Core\\System\\SalesChannel\\Mcp\\']],
             ],

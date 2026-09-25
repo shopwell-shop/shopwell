@@ -17,7 +17,7 @@ class ThumbnailProcessorCompilerPass implements CompilerPassInterface
     public function process(ContainerBuilder $container): void
     {
         if (
-            $container->getParameter('shopware.media.thumbnail_processor') === 'imagick'
+            $container->getParameter('shopwell.media.thumbnail_processor') === 'imagick'
             && \extension_loaded('imagick')
         ) {
             $container->getDefinition(ThumbnailProcessorInterface::class)

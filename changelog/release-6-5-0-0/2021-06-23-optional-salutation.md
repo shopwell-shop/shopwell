@@ -103,7 +103,7 @@ ___
   - `src/Administration/Resources/app/administration/src/module/sw-customer/component/sw-customer-address-form/sw-customer-address-form.html.twig`
   - `src/Administration/Resources/app/administration/src/module/sw-customer/component/sw-customer-base-form/sw-customer-base-form.html.twig`
   - `src/Administration/Resources/app/administration/src/module/sw-customer/component/sw-customer-card/sw-customer-card.html.twig`
-* Added `defaultSalutationId` to `src/Administration/Resources/app/administration/src/core/shopware.js`
+* Added `defaultSalutationId` to `src/Administration/Resources/app/administration/src/core/shopwell.js`
 ___
 # Storefront
 * Changed `src/Storefront/Controller/RegisterController.php` so a salutation is mandatory when signing up via storefront
@@ -114,7 +114,7 @@ ___
 * Changed `src/Storefront/Resources/views/storefront/component/address/address-personal.html.twig` so the default salutation is filtered out
 ___
 # Upgrade information
-The salutation is now optional as far as the Shopware core is concerned. Validations are still in place for orders, so
+The salutation is now optional as far as the Shopwell core is concerned. Validations are still in place for orders, so
 a salutation needs to be set by customers during checkout in case there's none defined.
 
 ## Plugin compatibility tasks

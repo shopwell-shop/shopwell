@@ -58,6 +58,6 @@ This approach reduces frustration, allows for direct discussions, clarifies exis
 
 ## Sources & Further Reading
 This guide was inspired by [Google’s Engineering Practices documentation](https://google.github.io/eng-practices/review/), which provides a solid foundation for effective code reviews. 
-However, my focus here was to tailor these principles specifically to Shopware and our code review process, addressing the unique challenges we face in our daily development work. 
+However, my focus here was to tailor these principles specifically to Shopwell and our code review process, addressing the unique challenges we face in our daily development work. 
 For those who want to explore code review best practices in more detail, I recommend the curated collection of resources in [this repository](https://github.com/joho/awesome-code-review), 
 which provides a comprehensive overview of useful articles, tools, and techniques.

@@ -44,17 +44,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(CategoryDefinition::class)
-        ->tag('shopware.entity.definition')
-        ->tag('shopware.entity.hookable');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.entity.hookable');
 
     $services->set(CategoryTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CategoryTagDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelCategoryDefinition::class)
-        ->tag('shopware.sales_channel.entity.definition');
+        ->tag('shopwell.sales_channel.entity.definition');
 
     $services->set(NavigationLoader::class)
         ->args([
@@ -123,7 +123,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('messenger.default_bus'),
         ])
         // Must run before ProductIndexer so ProductCategoryDenormalizer can include parent category paths.
-        ->tag('shopware.entity_indexer', ['priority' => 105]);
+        ->tag('shopwell.entity_indexer', ['priority' => 105]);
 
     $services->set(CategoryBreadcrumbUpdater::class)
         ->args([
@@ -170,17 +170,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('kernel.event_subscriber');
 
     $services->set(CategoryNonExistentExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(CategoryNavigationCmsElementResolver::class)
         ->args([
             service(NavigationLoader::class),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(CategoryNameCmsElementResolver::class)
         ->args([
             service(HtmlSanitizer::class),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 };

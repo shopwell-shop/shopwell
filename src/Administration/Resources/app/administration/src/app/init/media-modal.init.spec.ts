@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 import initializeMediaModal from 'src/app/init/media-modal.init';
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 
 const mediaModalConfig = {
     allowMultiSelect: false,

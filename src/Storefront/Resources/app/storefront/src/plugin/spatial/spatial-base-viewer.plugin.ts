@@ -25,7 +25,7 @@ export default class SpatialBaseViewerPlugin extends Plugin {
     };
 
     // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-    protected dive: import('@shopware-ag/dive/quickview').QuickView | undefined;
+    protected dive: import('@shopwell-ag/dive/quickview').QuickView | undefined;
 
     /**
      * initialize plugin

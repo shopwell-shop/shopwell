@@ -5,7 +5,7 @@ title: Add div wrapper support for extensions api
 * Added support for rendering the extension iframe inside a html div element using component sections.
 
 ```
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 
 ui.componentSection.add({
     component: 'div',

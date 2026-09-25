@@ -435,7 +435,7 @@ class AppMcpToolLoaderTest extends TestCase
             'name' => 'orders',
             'url' => 'https://app.example.com/mcp/sync',
             'input_schema' => null,
-            'app_name' => 'shopware',
+            'app_name' => 'shopwell',
             'app_secret' => 'secret',
             'version' => '0.0.0',
             'label' => 'Sync',

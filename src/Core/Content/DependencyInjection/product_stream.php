@@ -22,13 +22,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(ProductStreamDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductStreamTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductStreamFilterDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductStreamBuilder::class)
         ->public()
@@ -38,7 +38,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->alias(ProductStreamBuilderInterface::class, ProductStreamBuilder::class)
-        ->deprecate('shopware/core', '6.8.0', 'The %alias_id% service is deprecated and will be removed in 6.8.0. Use Shopwell\Core\Content\ProductStream\Service\AbstractProductStreamBuilder instead');
+        ->deprecate('shopwell/core', '6.8.0', 'The %alias_id% service is deprecated and will be removed in 6.8.0. Use Shopwell\Core\Content\ProductStream\Service\AbstractProductStreamBuilder instead');
 
     $services->set(ProductStreamIndexer::class)
         ->args([
@@ -50,13 +50,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
         ])
         // Must run before ProductIndexer so it compiles stream filters before ProductStreamUpdater creates mappings.
-        ->tag('shopware.entity_indexer', ['priority' => 110]);
+        ->tag('shopwell.entity_indexer', ['priority' => 110]);
 
     $services->set(ProductStreamFilterChangeSetSubscriber::class)
         ->tag('kernel.event_subscriber');
 
     $services->set(UpdateProductStreamMappingTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(UpdateProductStreamMappingTaskHandler::class)
         ->args([

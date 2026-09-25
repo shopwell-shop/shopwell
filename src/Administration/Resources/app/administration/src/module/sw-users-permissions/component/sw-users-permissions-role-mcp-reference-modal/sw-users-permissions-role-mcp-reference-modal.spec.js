@@ -5,17 +5,17 @@ import { mount, flushPromises } from '@vue/test-utils';
 
 const mockTools = [
     {
-        name: 'shopware-system-config-read',
+        name: 'shopwell-system-config-read',
         description: 'Read system config',
         requiredPrivileges: { static: ['system_config:read'], entityParam: null, operations: [] },
     },
     {
-        name: 'shopware-entity-read',
+        name: 'shopwell-entity-read',
         description: 'Read entities',
         requiredPrivileges: { static: [], entityParam: 'entity', operations: ['read'] },
     },
     {
-        name: 'shopware-entity-upsert',
+        name: 'shopwell-entity-upsert',
         description: 'Write entities',
         requiredPrivileges: {
             static: [],
@@ -49,7 +49,7 @@ async function createWrapper(options = {}) {
         {
             id: 'int-1',
             mcpAllowlist: {
-                tools: ['shopware-system-config-read', 'shopware-entity-read'],
+                tools: ['shopwell-system-config-read', 'shopwell-entity-read'],
                 resources: null,
                 prompts: null,
             },
@@ -89,7 +89,7 @@ describe('module/sw-users-permissions/component/sw-users-permissions-role-mcp-re
         const labels = wrapper.findAll('.sw-users-permissions-role-mcp-reference-modal__row-label').map((el) => el.text());
 
         expect(labels).toContain('system_config');
-        expect(labels).not.toContain('shopware-system-config-read');
+        expect(labels).not.toContain('shopwell-system-config-read');
     });
 
     it('by-tool view shows one row per tool', async () => {
@@ -101,9 +101,9 @@ describe('module/sw-users-permissions/component/sw-users-permissions-role-mcp-re
 
         const labels = wrapper.findAll('.sw-users-permissions-role-mcp-reference-modal__row-label').map((el) => el.text());
 
-        expect(labels).toContain('shopware-system-config-read');
-        expect(labels).toContain('shopware-entity-read');
-        expect(labels).not.toContain('shopware-entity-upsert');
+        expect(labels).toContain('shopwell-system-config-read');
+        expect(labels).toContain('shopwell-entity-read');
+        expect(labels).not.toContain('shopwell-entity-upsert');
     });
 
     it('marks a granted static privilege with is--granted class', async () => {
@@ -155,8 +155,8 @@ describe('module/sw-users-permissions/component/sw-users-permissions-role-mcp-re
     it('unions allowlists across multiple integrations', async () => {
         const wrapper = await createWrapper({
             mcpIntegrations: [
-                { id: 'int-1', mcpAllowlist: { tools: ['shopware-system-config-read'], resources: null, prompts: null } },
-                { id: 'int-2', mcpAllowlist: { tools: ['shopware-entity-read'], resources: null, prompts: null } },
+                { id: 'int-1', mcpAllowlist: { tools: ['shopwell-system-config-read'], resources: null, prompts: null } },
+                { id: 'int-2', mcpAllowlist: { tools: ['shopwell-entity-read'], resources: null, prompts: null } },
             ],
         });
         await flushPromises();
@@ -166,8 +166,8 @@ describe('module/sw-users-permissions/component/sw-users-permissions-role-mcp-re
 
         const labels = wrapper.findAll('.sw-users-permissions-role-mcp-reference-modal__row-label').map((el) => el.text());
 
-        expect(labels).toContain('shopware-system-config-read');
-        expect(labels).toContain('shopware-entity-read');
+        expect(labels).toContain('shopwell-system-config-read');
+        expect(labels).toContain('shopwell-entity-read');
     });
 
     it('treats integrations with tools=null as "all tools allowed"', async () => {
@@ -181,15 +181,15 @@ describe('module/sw-users-permissions/component/sw-users-permissions-role-mcp-re
 
         const labels = wrapper.findAll('.sw-users-permissions-role-mcp-reference-modal__row-label').map((el) => el.text());
 
-        expect(labels).toContain('shopware-system-config-read');
-        expect(labels).toContain('shopware-entity-read');
-        expect(labels).toContain('shopware-entity-upsert');
+        expect(labels).toContain('shopwell-system-config-read');
+        expect(labels).toContain('shopwell-entity-read');
+        expect(labels).toContain('shopwell-entity-upsert');
     });
 
     it('shows all tools when one integration is unrestricted alongside a restricted one', async () => {
         const wrapper = await createWrapper({
             mcpIntegrations: [
-                { id: 'int-1', mcpAllowlist: { tools: ['shopware-system-config-read'], resources: null, prompts: null } },
+                { id: 'int-1', mcpAllowlist: { tools: ['shopwell-system-config-read'], resources: null, prompts: null } },
                 { id: 'int-2', mcpAllowlist: { tools: null, resources: [], prompts: null } },
             ],
         });
@@ -200,7 +200,7 @@ describe('module/sw-users-permissions/component/sw-users-permissions-role-mcp-re
 
         const labels = wrapper.findAll('.sw-users-permissions-role-mcp-reference-modal__row-label').map((el) => el.text());
 
-        expect(labels).toContain('shopware-entity-upsert');
+        expect(labels).toContain('shopwell-entity-upsert');
     });
 
     // ── Grant actions ──────────────────────────────────────────────────────────
@@ -253,7 +253,7 @@ describe('module/sw-users-permissions/component/sw-users-permissions-role-mcp-re
                 {
                     id: 'int-1',
                     mcpAllowlist: {
-                        tools: ['shopware-system-config-read', 'merchant-product-create'],
+                        tools: ['shopwell-system-config-read', 'merchant-product-create'],
                         resources: null,
                         prompts: null,
                     },
@@ -330,7 +330,7 @@ describe('module/sw-users-permissions/component/sw-users-permissions-role-mcp-re
                 {
                     id: 'int-1',
                     mcpAllowlist: {
-                        tools: ['shopware-system-config-read', 'merchant-product-create'],
+                        tools: ['shopwell-system-config-read', 'merchant-product-create'],
                         resources: null,
                         prompts: null,
                     },

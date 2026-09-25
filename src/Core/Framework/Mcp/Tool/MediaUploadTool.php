@@ -18,7 +18,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  */
 #[Package('framework')]
 #[McpTool(
-    name: 'shopware-media-upload',
+    name: 'shopwell-media-upload',
     title: 'Media Upload',
     description: 'Upload any image or file — including product cover images — to Shopwell\'s media library from a URL. url is the only required parameter; productId, fileName, and mediaFolderId are all optional. Call this tool immediately with just the URL whenever the user asks to upload, import, or add an image. Returns the new mediaId.'
 )]

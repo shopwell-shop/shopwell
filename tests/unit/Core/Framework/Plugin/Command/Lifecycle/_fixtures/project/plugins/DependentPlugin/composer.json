@@ -2,11 +2,11 @@
     "name": "swag/dependent-plugin",
     "description": "Plugin install command test fixture",
     "version": "1.0.0",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "require": {
         "swag/base-plugin": "*"
     },
     "extra": {
-        "shopware-plugin-class": "DependentPlugin\\DependentPlugin"
+        "shopwell-plugin-class": "DependentPlugin\\DependentPlugin"
     }
 }

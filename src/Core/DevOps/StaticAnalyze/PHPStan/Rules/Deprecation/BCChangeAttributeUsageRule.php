@@ -104,7 +104,7 @@ class BCChangeAttributeUsageRule implements Rule
         ParameterTypeWidening::class,
     ];
 
-    // TODO: Remove once https://github.com/shopware/shopware/pull/19817 adds the required compatibility methods.
+    // TODO: Remove once https://github.com/shopwell-shop/shopwell/pull/19817 adds the required compatibility methods.
     private const CLASS_HIERARCHY_CHANGE_EXCEPTIONS = [
         'Shopwell\\Core\\Content\\Product\\SalesChannel\\Listing\\ProductListingResult' => true,
         'Shopwell\\Core\\Content\\Product\\SalesChannel\\Review\\ProductReviewResult' => true,
@@ -910,7 +910,7 @@ class BCChangeAttributeUsageRule implements Rule
     private function error(int $line, string $message): IdentifierRuleError
     {
         return RuleErrorBuilder::message($message)
-            ->identifier('shopware.bcChangeAttribute')
+            ->identifier('shopwell.bcChangeAttribute')
             ->line($line)
             ->build();
     }

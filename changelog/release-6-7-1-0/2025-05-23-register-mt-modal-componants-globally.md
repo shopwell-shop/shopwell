@@ -1,7 +1,7 @@
 ---
 title: Register mt-modal componants globally
 author: Sebastian Franze
-author_email: s.franze@shopware.com
+author_email: s.franze@shopwell.com
 ---
 # Administration
 * Added MtModalTrigger as a global component

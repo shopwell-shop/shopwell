@@ -6,7 +6,7 @@ use League\OAuth2\Server\RedirectUriValidators\RedirectUriValidator;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * Holds the public OAuth clients configured under `shopware.api.oauth_clients`.
+ * Holds the public OAuth clients configured under `shopwell.api.oauth_clients`.
  *
  * Public clients cannot keep a secret (CLI tools, native apps) and are therefore limited to the
  * authorization code grant with PKCE and the refresh token grant. Redirect URIs are matched exactly,

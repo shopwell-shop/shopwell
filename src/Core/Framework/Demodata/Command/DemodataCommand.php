@@ -174,7 +174,7 @@ class DemodataCommand extends Command
     {
         foreach ($this->requiredClasses as $class) {
             if (!class_exists($class)) {
-                $io->error('Please install composer package "shopware/dev-tools" to use the demo-data command.');
+                $io->error('Please install composer package "shopwell/dev-tools" to use the demo-data command.');
 
                 return false;
             }

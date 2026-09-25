@@ -46,7 +46,7 @@ describe('components/media/sw-media-modal-replace', () => {
         jest.spyOn(Shopwell.Utils, 'createId').mockReturnValue('random-conflict-free-id');
         const wrapper = await createWrapper();
 
-        const uploadData = [{ fileName: 'shopware', extension: 'png', src: 'blob:...' }];
+        const uploadData = [{ fileName: 'shopwell', extension: 'png', src: 'blob:...' }];
         wrapper.vm.onNewUpload({ data: uploadData });
 
         expect(uploadData[0].fileName).toBe('random-conflict-free-id');

@@ -2,11 +2,11 @@
     "name": "swag/requirement-valid-test",
     "description": "Test requirement validator",
     "version": "v1.0.0",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "license": "MIT",
     "authors": [
         {
-            "name": "shopware AG",
+            "name": "Shopwell",
             "role": "Manufacturer"
         }
     ],
@@ -14,8 +14,8 @@
         "ext-json": "*"
     },
     "extra": {
-        "shopware-plugin-class": "SwagRequirement\\SwagRequirement",
-        "copyright": "(c) by shopware AG",
+        "shopwell-plugin-class": "SwagRequirement\\SwagRequirement",
+        "copyright": "(c) by Shopwell",
         "label": {
             "de-DE": "Test für Requirement Validator",
             "en-GB": "Test for requirement validator"

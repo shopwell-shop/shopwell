@@ -73,7 +73,7 @@ class ResetPasswordRouteTest extends TestCase
 
     public function testSuccessReset(): void
     {
-        $customerId = $this->createCustomer('shopware1234', 'foo-test@test.de');
+        $customerId = $this->createCustomer('shopwell1234', 'foo-test@test.de');
 
         $this->browser
             ->request(
@@ -128,7 +128,7 @@ class ResetPasswordRouteTest extends TestCase
 
     public function testSuccessResetWithLegacyPassword(): void
     {
-        $customerId = $this->createCustomer('shopware1234', 'foo-test@test.de', true);
+        $customerId = $this->createCustomer('shopwell1234', 'foo-test@test.de', true);
 
         $this->browser
             ->request(
@@ -192,7 +192,7 @@ class ResetPasswordRouteTest extends TestCase
 
     public function testSuccessResetConfirmsUnconfirmedDoubleOptInCustomer(): void
     {
-        $customerId = $this->createCustomer('shopware1234', 'double-opt-in@test.de', false, true);
+        $customerId = $this->createCustomer('shopwell1234', 'double-opt-in@test.de', false, true);
 
         $this->browser
             ->request(

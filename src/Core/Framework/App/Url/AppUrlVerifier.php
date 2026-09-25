@@ -37,7 +37,7 @@ class AppUrlVerifier
 
     public function __construct(
         private readonly string $appEnv,
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
         private readonly CacheItemPoolInterface&CacheInterface $cache,
         private readonly HttpClientInterface $httpClient,
         private readonly LockFactory $lockFactory,
@@ -297,7 +297,7 @@ class AppUrlVerifier
             'headers' => [
                 'Cache-Control' => 'no-store, no-cache, max-age=0',
                 'Pragma' => 'no-cache',
-                'User-Agent' => 'Shopwell-AppUrlVerifier/' . $this->shopwareVersion,
+                'User-Agent' => 'Shopwell-AppUrlVerifier/' . $this->shopwellVersion,
             ],
         ];
     }

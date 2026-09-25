@@ -1,7 +1,7 @@
 ---
 title: Improved initial camera position of 3D viewer
 author: Felix Frank
-author_email: f.frank@shopware.com
+author_email: f.frank@shopwell.com
 author_github: @ffrank913
 ---
 # Storefront

@@ -24,7 +24,7 @@ class CollectPeriodicMetricsTask extends ScheduledTask
 
     public static function shouldRun(ParameterBagInterface $bag): bool
     {
-        return (bool) $bag->get('shopware.telemetry.metrics.enabled');
+        return (bool) $bag->get('shopwell.telemetry.metrics.enabled');
     }
 
     public static function shouldRescheduleOnFailure(): bool

@@ -113,7 +113,7 @@ class OrderService
         if (!$toPlace) {
             // @deprecated tag:v6.8.0 - remove this if block
             if (!Feature::isActive('v6.8.0.0')) {
-                throw StateMachineException::stateMachineStateNotFound('order', $transition); // @phpstan-ignore shopware.domainException
+                throw StateMachineException::stateMachineStateNotFound('order', $transition); // @phpstan-ignore shopwell.domainException
             }
             throw OrderException::stateMachineStateNotFound('order', $transition);
         }
@@ -149,7 +149,7 @@ class OrderService
         if (!$toPlace) {
             // @deprecated tag:v6.8.0 - remove this if block
             if (!Feature::isActive('v6.8.0.0')) {
-                throw StateMachineException::stateMachineStateNotFound('order_transaction', $transition); // @phpstan-ignore shopware.domainException
+                throw StateMachineException::stateMachineStateNotFound('order_transaction', $transition); // @phpstan-ignore shopwell.domainException
             }
             throw OrderException::stateMachineStateNotFound('order_transaction', $transition);
         }
@@ -185,7 +185,7 @@ class OrderService
         if (!$toPlace) {
             // @deprecated tag:v6.8.0 - remove this if block
             if (!Feature::isActive('v6.8.0.0')) {
-                throw StateMachineException::stateMachineStateNotFound('order_delivery', $transition); // @phpstan-ignore shopware.domainException
+                throw StateMachineException::stateMachineStateNotFound('order_delivery', $transition); // @phpstan-ignore shopwell.domainException
             }
             throw OrderException::stateMachineStateNotFound('order_delivery', $transition);
         }
@@ -228,7 +228,7 @@ class OrderService
                 if (!\in_array($paymentMethod->getPaymentMethodId(), $paymentMethods->getIds(), true)) {
                     // @deprecated tag:v6.8.0 - remove this if block
                     if (!Feature::isActive('v6.8.0.0')) {
-                        throw new PaymentMethodNotAvailableException($paymentMethod->getPaymentMethodId()); // @phpstan-ignore shopware.domainException
+                        throw new PaymentMethodNotAvailableException($paymentMethod->getPaymentMethodId()); // @phpstan-ignore shopwell.domainException
                     }
                     throw OrderException::paymentMethodNotAvailable($paymentMethod->getPaymentMethodId());
                 }

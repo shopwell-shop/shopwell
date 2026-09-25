@@ -2,12 +2,12 @@
  * @sw-package framework
  */
 import type { SubContainer } from '../../../global.types';
-import ShopwellServicesService from './shopware-services.service';
+import ShopwellServicesService from './shopwell-services.service';
 import ServiceRegistryClient from './service-registry-client';
 
 declare global {
     interface ServiceContainer extends SubContainer<'service'> {
-        shopwareServicesService: ShopwellServicesService;
+        shopwellServicesService: ShopwellServicesService;
         serviceRegistryClient: ServiceRegistryClient;
     }
 }
@@ -15,7 +15,7 @@ declare global {
 /**
  * @private
  */
-Shopwell.Service().register('shopwareServicesService', () => {
+Shopwell.Service().register('shopwellServicesService', () => {
     return new ShopwellServicesService(
         Shopwell.Application.getContainer('init').httpClient,
         Shopwell.Service('loginService'),

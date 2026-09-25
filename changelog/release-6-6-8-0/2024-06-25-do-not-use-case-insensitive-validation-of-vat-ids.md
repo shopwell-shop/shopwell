@@ -6,8 +6,8 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Changed `Shopware\Core\Checkout\Cart\Tax\TaxDetector` and `Shopware\Core\Checkout\Customer\Validation\Constraint\CustomerVatIdentificationValidator` to not use a case insensitive matching of vat ids
-* Changed `Shopware\Core\Checkout\Customer\Validation\Constraint\CustomerVatIdentificationValidator` to reduce the amount of database calls
+* Changed `Shopwell\Core\Checkout\Cart\Tax\TaxDetector` and `Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerVatIdentificationValidator` to not use a case insensitive matching of vat ids
+* Changed `Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerVatIdentificationValidator` to reduce the amount of database calls
 ___
 # Next Major Version Changes
 ## Vat Ids will be validated case sensitive

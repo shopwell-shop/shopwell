@@ -1,7 +1,7 @@
 import template from './sw-order-create-initial-modal.html.twig';
 import './sw-order-create-initial-modal.scss';
 
-import type { TabItem } from '@shopware-ag/meteor-component-library/dist/esm/MtTabs';
+import type { TabItem } from '@shopwell-ag/meteor-component-library/dist/esm/MtTabs';
 import type { Cart, LineItem, SalesChannelContext, ContextSwitchParameters, CartDelivery } from '../../order.types';
 
 import { LineItemType } from '../../order.types';

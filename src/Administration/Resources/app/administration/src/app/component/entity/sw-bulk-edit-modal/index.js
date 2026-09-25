@@ -91,7 +91,7 @@ export default {
             this.$emit('modal-close');
 
             if (this.itemCount > 0) {
-                Shopwell.Store.get('shopwareApps').selectedIds = Object.keys(this.bulkEditSelection);
+                Shopwell.Store.get('shopwellApps').selectedIds = Object.keys(this.bulkEditSelection);
                 Shopwell.Store.get('swBulkEdit').selectedIds = Object.keys(this.bulkEditSelection);
                 this.$emit('edit-items');
             }

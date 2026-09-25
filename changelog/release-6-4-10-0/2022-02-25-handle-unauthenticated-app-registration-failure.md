@@ -2,13 +2,13 @@
 title: Handle unauthenticated app registration failure
 issue: NEXT-20097
 author: Frederik Schmitt
-author_email: f.schmitt@shopware.com
+author_email: f.schmitt@shopwell.com
 author_github: fschmtt
 ---
 # Core
-* Changed `Shopware\Core\Framework\App\Exception\AppRegistrationException` to extend `Shopware\Core\Framework\ShopwareHttpException`
-* Added `Shopware\Core\Framework\App\Exception\AppLicenseCouldNotBeVerifiedException`
-* Changed `Shopware\Core\Framework\App\Lifecycle\Registration\StoreHandshake::signPayload()` to throw `Shopware\Core\Framework\App\Exception\AppLicenseCouldNotBeVerifiedException`
+* Changed `Shopwell\Core\Framework\App\Exception\AppRegistrationException` to extend `Shopwell\Core\Framework\ShopwellHttpException`
+* Added `Shopwell\Core\Framework\App\Exception\AppLicenseCouldNotBeVerifiedException`
+* Changed `Shopwell\Core\Framework\App\Lifecycle\Registration\StoreHandshake::signPayload()` to throw `Shopwell\Core\Framework\App\Exception\AppLicenseCouldNotBeVerifiedException`
 ___
 # Administration
 * Changed `src/module/sw-extension/service/index.js` to pass error codes to the `ExtensionErrorService` constructor

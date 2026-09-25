@@ -127,7 +127,7 @@ class AddCustomerTagActionTest extends TestCase
             ],
         ]], Context::createDefaultContext());
 
-        $this->login($email, 'shopware');
+        $this->login($email, 'shopwell');
 
         $customerTag = $this->connection->fetchAllAssociative(
             'SELECT tag_id FROM customer_tag WHERE tag_id IN (:ids)',

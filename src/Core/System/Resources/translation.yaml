@@ -1,5 +1,5 @@
-repository-url: https://raw.githubusercontent.com/shopware/translations/main/translations
-metadata-url: https://raw.githubusercontent.com/shopware/translations/main/crowdin-metadata.json
+repository-url: https://raw.githubusercontent.com/shopwell/translations/main/translations
+metadata-url: https://raw.githubusercontent.com/shopwell/translations/main/crowdin-metadata.json
 community-translations-url: https://translate.shopwell.cn
 documentation-url-snippet-key: sw-settings-language.addModal.docsUrl
 completeness-threshold: 90

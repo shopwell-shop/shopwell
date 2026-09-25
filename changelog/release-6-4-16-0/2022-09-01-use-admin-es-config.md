@@ -5,7 +5,7 @@ issue: NEXT-22900
 
 # Core
 
-* Added new service `\Shopware\Elasticsearch\Product\ProductSearchQueryBuilder` to build an Elasticsearch query from the admin search configuration.
+* Added new service `\Shopwell\Elasticsearch\Product\ProductSearchQueryBuilder` to build an Elasticsearch query from the admin search configuration.
 * Added some new fields to the `product` Elasticsearch index:
   * `manufacturerNumber`
   * `manufacturer.name`
@@ -13,5 +13,5 @@ issue: NEXT-22900
   * `properties.name`
   * `categories.id`
   * `categories.name`
-* Deprecated `\Shopware\Elasticsearch\Product\ElasticsearchProductDefinition::extendDocuments`, use `\Shopware\Elasticsearch\Product\ElasticsearchProductDefinition::fetch` instead
+* Deprecated `\Shopwell\Elasticsearch\Product\ElasticsearchProductDefinition::extendDocuments`, use `\Shopwell\Elasticsearch\Product\ElasticsearchProductDefinition::fetch` instead
 * Deprecated `fullText` and `fullTextBoosted` search fields in `product` Elasticsearch index, use ProductSearchQueryBuilder instead

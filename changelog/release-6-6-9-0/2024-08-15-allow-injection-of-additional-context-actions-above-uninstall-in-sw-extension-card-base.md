@@ -2,7 +2,7 @@
 title: Allow injection of additional context actions above dangerous actions in sw-extension-card-base
 issue: NEXT-37409
 author: Lennart Tinkloh
-author_email: l.tinkloh@shopware.com
+author_email: l.tinkloh@shopwell.com
 author_github: @lernhart
 ---
 # Administration

@@ -2,16 +2,16 @@
     "name": "swag/root-plugin",
     "description": "Test description",
     "version": "v1.0.2",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "license": "MIT",
     "authors": [
         {
-            "name": "shopware AG",
+            "name": "Shopwell",
             "role": "Manufacturer"
         }
     ],
     "require": {
-        "shopware/platform": "^v6.6.2.0"
+        "shopwell/platform": "^v6.6.2.0"
     },
     "autoload": {
         "psr-4": {
@@ -19,7 +19,7 @@
         }
     },
     "extra": {
-        "shopware-plugin-class": "Swag\\RootTest\\RootPlugin",
+        "shopwell-plugin-class": "Swag\\RootTest\\RootPlugin",
         "label": {
             "en-GB": "Root test plugin",
             "de-DE": "Root Test plugin"

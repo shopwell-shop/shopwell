@@ -6,4 +6,4 @@ author_email: development@silvio-kennecke.de
 author_github: @silviokennecke
 ---
 # Administration
-* Changed `Shopware\Core\Framework\Api\Controller\HealthCheckController` to dispatch a `Shopware\Core\Framework\Api\HealthCheck\Event\HealthCheckEvent` 
+* Changed `Shopwell\Core\Framework\Api\Controller\HealthCheckController` to dispatch a `Shopwell\Core\Framework\Api\HealthCheck\Event\HealthCheckEvent` 

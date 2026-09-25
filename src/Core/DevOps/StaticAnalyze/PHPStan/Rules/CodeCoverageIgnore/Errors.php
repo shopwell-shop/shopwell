@@ -27,7 +27,7 @@ final class Errors
             $className,
             $methodName,
         ))
-            ->identifier('shopware.codeCoverageIgnoreOnLogic')
+            ->identifier('shopwell.codeCoverageIgnoreOnLogic')
             ->line($line)
             ->build();
     }
@@ -39,7 +39,7 @@ final class Errors
             $className,
             $methodName,
         ))
-            ->identifier('shopware.codeCoverageIgnoreOnLogic')
+            ->identifier('shopwell.codeCoverageIgnoreOnLogic')
             ->line($line)
             ->build();
     }

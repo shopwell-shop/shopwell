@@ -34,7 +34,7 @@ class PluginException extends HttpException
      */
     public const PROJECT_DIR_IS_NOT_A_STRING = 'FRAMEWORK__PROJECT_DIR_IS_NOT_A_STRING';
 
-    public const CANNOT_DELETE_SHOPWARE_MIGRATIONS = 'FRAMEWORK__PLUGIN_CANNOT_DELETE_SHOPWARE_MIGRATIONS';
+    public const CANNOT_DELETE_SHOPWELL_MIGRATIONS = 'FRAMEWORK__PLUGIN_CANNOT_DELETE_SHOPWELL_MIGRATIONS';
     public const PLUGIN_INVALID_CONTAINER_PARAMETER = 'FRAMEWORK__PLUGIN_INVALID_CONTAINER_PARAMETER';
     public const PLUGIN_KERNEL_REBOOT_FAILED = 'FRAMEWORK__PLUGIN_KERNEL_REBOOT_FAILED';
     public const PLUGIN_WRONG_BASE_CLASS = 'FRAMEWORK__PLUGIN_WRONG_BASE_CLASS';
@@ -156,7 +156,7 @@ class PluginException extends HttpException
     {
         return new self(
             Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::CANNOT_DELETE_SHOPWARE_MIGRATIONS,
+            self::CANNOT_DELETE_SHOPWELL_MIGRATIONS,
             'Deleting Shopwell migrations is not allowed'
         );
     }

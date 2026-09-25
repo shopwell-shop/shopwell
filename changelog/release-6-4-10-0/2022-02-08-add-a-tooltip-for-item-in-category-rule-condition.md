@@ -2,7 +2,7 @@
 title: Add a tooltip for Item in category rule condition
 issue: NEXT-17446
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com
+author_email: k.luetjann@shopwell.com
 author_github: King-of-Babylon
 ---
 # Administration

@@ -51,7 +51,7 @@ class LoginRouteTest extends TestCase
         $requestStack->push(new Request(server: ['REMOTE_ADDR' => $ip]));
 
         $route = new LoginRoute($accountService, $requestStack, $rateLimiter);
-        $route->login(new RequestDataBag(['email' => $email, 'password' => 'shopware']), static::createStub(SalesChannelContext::class));
+        $route->login(new RequestDataBag(['email' => $email, 'password' => 'shopwell']), static::createStub(SalesChannelContext::class));
 
         static::assertSame([[RateLimiter::LOGIN_ROUTE, $expectedCombinedKey]], $ensureAcceptedCalls);
         static::assertSame([
@@ -85,7 +85,7 @@ class LoginRouteTest extends TestCase
         $requestStack->push(new Request(server: ['REMOTE_ADDR' => $ip]));
 
         $route = new LoginRoute($accountService, $requestStack, $rateLimiter);
-        $route->login(new RequestDataBag(['email' => $email, 'password' => 'shopware']), static::createStub(SalesChannelContext::class));
+        $route->login(new RequestDataBag(['email' => $email, 'password' => 'shopwell']), static::createStub(SalesChannelContext::class));
 
         static::assertSame([
             [RateLimiter::LOGIN_CLIENT, $ip],

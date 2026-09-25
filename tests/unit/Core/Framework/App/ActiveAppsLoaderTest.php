@@ -88,7 +88,7 @@ class ActiveAppsLoaderTest extends TestCase
             [
                 'name' => 'test',
                 'path' => \basename(\dirname($xmlFile)),
-                'author' => 'shopware AG',
+                'author' => 'Shopwell',
                 'selfManaged' => false,
                 'version' => '1.0.0',
             ],

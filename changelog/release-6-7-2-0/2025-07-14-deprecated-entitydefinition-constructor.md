@@ -7,7 +7,7 @@ author_github: @aragon999
 
 # Core
 
-* Deprecated constructor of the entity definition `Shopware\Core\Framework\DataAbstractionLayer::__construct`
+* Deprecated constructor of the entity definition `Shopwell\Core\Framework\DataAbstractionLayer::__construct`
 
 ___
 
@@ -21,9 +21,9 @@ The constructor of the `EntityDefinition` will be removed, therefore the call of
 
  namespace MyCustomEntity\Content\Entity;
 
- use Shopware\Core\Content\Media\MediaDefinition;
- use Shopware\Core\Content\Product\ProductDefinition;
- use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
+ use Shopwell\Core\Content\Media\MediaDefinition;
+ use Shopwell\Core\Content\Product\ProductDefinition;
+ use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 
  class MyCustomEntity extends EntityDefinition
  {
@@ -49,9 +49,9 @@ The constructor of the `EntityDefinition` has been removed, therefore the call o
 
  namespace MyCustomEntity\Content\Entity;
 
- use Shopware\Core\Content\Media\MediaDefinition;
- use Shopware\Core\Content\Product\ProductDefinition;
- use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
+ use Shopwell\Core\Content\Media\MediaDefinition;
+ use Shopwell\Core\Content\Product\ProductDefinition;
+ use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 
  class MyCustomEntity extends EntityDefinition
  {

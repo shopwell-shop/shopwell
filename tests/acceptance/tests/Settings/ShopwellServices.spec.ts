@@ -50,7 +50,7 @@ test.describe('Shopwell Services', () => {
             tag: '@Settings',
             annotation: {
                 type: 'issue',
-                description: 'https://github.com/shopware/shopware/issues/17082',
+                description: 'https://github.com/shopwell-shop/shopwell/issues/17082',
             },
         },
         async ({ ShopAdmin, AdminShopwellServices, InstanceMeta }) => {
@@ -105,7 +105,7 @@ test.describe('Shopwell Services', () => {
             test.skip(satisfies(InstanceMeta.version, '<6.7.1'), 'Feature not available until version 6.7.1.0');
             // The `CheckAccessToShopwellServices` task enters the services page through the dashboard
             // advertisement banner, which was removed from the dashboard. Re-enable once the task in
-            // @shopware-ag/acceptance-test-suite navigates to `sw.settings.services.index` directly.
+            // @shopwell-ag/acceptance-test-suite navigates to `sw.settings.services.index` directly.
             test.skip(true, 'Task depends on the removed services dashboard banner.');
 
             await test.step('Verify insufficient permissions prevent access to services.', async () => {

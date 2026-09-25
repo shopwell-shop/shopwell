@@ -1,6 +1,6 @@
 # Twig → Native Block Runtime Adapter
 
-**Issue**: [shopware/shopware#14970](https://github.com/shopware/shopware/issues/14970)
+**Issue**: [shopwell/shopwell#14970](https://github.com/shopwell-shop/shopwell/issues/14970)
 
 ---
 

@@ -20,7 +20,7 @@ Loaded by the triage agent on-demand when it needs the full tool catalogue. Cost
 
 ## GitHub (network calls — use sparingly, max ~5 per run)
 
-The default repository is set via `GH_REPO` / `AI_TRIAGE_REPO` env (typically `shopware/shopware`). `gh` honours `GH_REPO` automatically — no `--repo` flag needed.
+The default repository is set via `GH_REPO` / `AI_TRIAGE_REPO` env (typically `shopwell/shopwell`). `gh` honours `GH_REPO` automatically — no `--repo` flag needed.
 
 - `gh issue list --search "<keywords>" --state all --limit 10 --json number,title,state,closedAt,labels` — find related/similar issues
 - `gh issue view <number> --json number,title,body,state,labels,closedAt` — read a candidate duplicate

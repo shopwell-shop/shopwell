@@ -12,7 +12,7 @@ const { Filter } = Shopwell;
  * <sw-image-slider
  *     :images="[
  *         {
- *             src: 'https://www.shopwell.cn/media/unknown/29/03/ce/shopware_logo_white_on_blue.svg',
+ *             src: 'https://www.shopwell.cn/media/unknown/29/03/ce/shopwell_logo_white_on_blue.svg',
  *             description: 'This Image is awesome!'
  *         },
  *         'https://www.shopwell.cn/media/image/5e/98/6d/small-differentiator-illustration-01.png',

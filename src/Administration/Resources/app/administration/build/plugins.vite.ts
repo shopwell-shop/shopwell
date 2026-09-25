@@ -26,7 +26,7 @@ import AssetPathPlugin from './vite-plugins/asset-path-plugin';
 import ExternalsPlugin from './vite-plugins/externals-plugin';
 import AssetCssPostprocessPlugin from './vite-plugins/asset-css-postprocess-plugin';
 import OverrideComponentRegisterPlugin from './vite-plugins/override-component-register';
-import ShopwellSetupPlugin from './vite-plugins/shopware-setup';
+import ShopwellSetupPlugin from './vite-plugins/shopwell-setup';
 import { loadExtensions, getViteServerPorts, isInsideDockerContainer } from './vite-plugins/utils';
 import type { ExtensionDefinition } from './vite-plugins/utils';
 import injectHtml from './vite-plugins/inject-html';
@@ -45,7 +45,7 @@ const getBaseConfig = (extension: ExtensionDefinition, isProd = false) => {
     const extensionInfoDebug = debug(`vite:${extension.isPlugin ? 'plugin' : 'app'}:${extension.technicalName}`);
     const configInfoDebug = debug('vite:config');
     const useSourceMap =
-        (!isProd && process.env.SHOPWARE_ADMIN_SKIP_SOURCEMAP_GENERATION !== '1') ||
+        (!isProd && process.env.SHOPWELL_ADMIN_SKIP_SOURCEMAP_GENERATION !== '1') ||
         (isProd && process.env.GENERATE_SOURCEMAPS === 'true');
 
     const logger = createLogger();
@@ -162,7 +162,7 @@ const main = async () => {
 
         // Create sw-plugin-dev.json for development mode
         const swPluginDevJsonData = {
-            metadata: 'shopware',
+            metadata: 'shopwell',
         } as {
             metadata: string;
         } & Record<

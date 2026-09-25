@@ -24,7 +24,7 @@ class HiddenEntityBusinessEvent implements FlowEventAware, BusinessEventEncoderT
             ->add('tax', new EntityType(TaxDefinition::class), [EventDataCollection::HIDDEN_FROM_WEBHOOK => true]);
     }
 
-    public function getEncodeValues(string $shopwareVersion): array
+    public function getEncodeValues(string $shopwellVersion): array
     {
         return [];
     }

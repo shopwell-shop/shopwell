@@ -2,7 +2,7 @@
 title: Final storable flow
 issue: NEXT-25696
 author: Oliver Skroblin
-author_email: o.skroblin@shopware.com
+author_email: o.skroblin@shopwell.com
 author_github: @OliverSkroblin
 ---
 # Core
@@ -17,4 +17,4 @@ author_github: @OliverSkroblin
 * Changed @internal flag for demo data domain classes which are required to add own demo data as developer. 
 * Changed @internal flag for `EntityScoreQueryBuilder` to @final to allow developers to use the service (including BC promise)
 * Changed @internal flag for `IncrementGatewayRegistry` to @final to allow developers to use the service (including BC promise)
-* Added `\Shopware\Core\Framework\Util\Json` public api class for unified json encoding
+* Added `\Shopwell\Core\Framework\Util\Json` public api class for unified json encoding

@@ -8,7 +8,7 @@ import './sw-extension-adding-failed.scss';
 export default {
     template,
 
-    inject: ['shopwareExtensionService'],
+    inject: ['shopwellExtensionService'],
 
     emits: ['close'],
 
@@ -39,7 +39,7 @@ export default {
 
     computed: {
         myExtensions() {
-            return Shopwell.Store.get('shopwareExtensions').myExtensions;
+            return Shopwell.Store.get('shopwellExtensions').myExtensions;
         },
 
         extension() {
@@ -52,7 +52,7 @@ export default {
             const storeLicense = this.extension?.storeLicense;
 
             return (
-                storeLicense?.variant === this.shopwareExtensionService.EXTENSION_VARIANT_TYPES.RENT &&
+                storeLicense?.variant === this.shopwellExtensionService.EXTENSION_VARIANT_TYPES.RENT &&
                 storeLicense.expirationDate === null
             );
         },

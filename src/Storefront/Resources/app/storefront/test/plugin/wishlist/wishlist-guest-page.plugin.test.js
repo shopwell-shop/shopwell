@@ -66,7 +66,7 @@ describe('GuestWishlistPagePlugin tests', () => {
 
         const responseProductForms = responseProductIds.map(productId => {
             const form = document.createElement('form');
-            form.action = 'shopware.test/' + productId;
+            form.action = 'shopwell.test/' + productId;
             return form;
         })
 

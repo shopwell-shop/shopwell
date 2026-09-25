@@ -15,7 +15,7 @@ module.exports = {
                         loc: node.source.loc.start,
                         message: `\
 You can't use imports directly from the Shopwell Core via "${node.source.value}". \
-Use the global Shopwell object directly instead (https://developer.shopwell.cn/docs/guides/plugins/plugins/administration/the-shopware-object)`,
+Use the global Shopwell object directly instead (https://developer.shopwell.cn/docs/guides/plugins/plugins/administration/the-shopwell-object)`,
                     });
                 }
             },

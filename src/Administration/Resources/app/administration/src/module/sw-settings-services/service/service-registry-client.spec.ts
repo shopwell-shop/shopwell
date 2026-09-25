@@ -1,6 +1,6 @@
 import ServiceRegistryClient from './service-registry-client';
 
-const registryURL = 'https://registry.services.shopware.io';
+const registryURL = 'https://registry.services.shopwell.cn';
 const registryClient = new ServiceRegistryClient(registryURL);
 const revisionsResponse = {
     revisions: {

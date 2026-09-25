@@ -7,7 +7,7 @@ tags: [app-system, administration]
 
 ## Context
 
-Recent improvements in Shopware, including the introduction of the fingerprinting mechanism for the Shop ID (see PR https://github.com/shopware/shopware/pull/11677), have made it possible to detect changes in the Shopware environment that should trigger a Shop ID change. Examples include when the APP_URL changes or the environment otherwise looks different, such as when a production shop is copied to a staging system.
+Recent improvements in Shopwell, including the introduction of the fingerprinting mechanism for the Shop ID (see PR https://github.com/shopwell-shop/shopwell/pull/11677), have made it possible to detect changes in the Shopwell environment that should trigger a Shop ID change. Examples include when the APP_URL changes or the environment otherwise looks different, such as when a production shop is copied to a staging system.
 
 Detecting these changes allows us to cut off communication with app servers until the Shop ID has been updated. Amongst other issues, this prevents two different shops from communicating as the same shop to an app server.
 
@@ -17,17 +17,17 @@ However, risks remain:
 * A shop might be configured with an incorrect APP_URL.
 * Copying a production shop to a staging system might not be detected as a change (installation path, sales channel domains, etc. remain the same).
 
-Some APP URL verification already exists in the Shopware Administration, but we want to improve its robustness.
+Some APP URL verification already exists in the Shopwell Administration, but we want to improve its robustness.
 
 ## Decision
 
-When a Shop ID changes (see scenarios below): we verify that the APP_URL points back to the same instance of Shopware (itself).
+When a Shop ID changes (see scenarios below): we verify that the APP_URL points back to the same instance of Shopwell (itself).
 
 We achieve this by introducing a new public API end point `api/app-system/shop/verify`.
 
 Verification flow:
 
-1. Shopware calls this endpoint on the instance defined by the configured APP_URL environment variable.
+1. Shopwell calls this endpoint on the instance defined by the configured APP_URL environment variable.
 2. The request includes a random token and a cache key stored in a short-lived cache.
 3. The endpoint loads the cached value using the key and verifies the token matches.
 4. If successful, we can assume with high probability that the APP_URL points to the correct instance.
@@ -51,7 +51,7 @@ flowchart TD
 Shop ID change scenarios:
 * Migration from v1 to v2 structure (on Shop ID load).
 * APP_URL changed (when no apps installed).
-* The installation path of Shopware changed (when no apps installed).
+* The installation path of Shopwell changed (when no apps installed).
 * New Shop ID generated (where no ID existed before).
 * After app communication was cut off due to fingerprint mismatches and the user manually resolved using one of the provided strategies.
 

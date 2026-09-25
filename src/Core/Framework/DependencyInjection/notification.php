@@ -14,7 +14,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(NotificationBulkEntityExtension::class)
-        ->tag('shopware.bulk.entity.extension');
+        ->tag('shopwell.bulk.entity.extension');
 
     $services->set(NotificationService::class)
         ->public()
@@ -25,11 +25,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(NotificationController::class)
         ->public()
         ->args([
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
             service(NotificationService::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
     $services->set(NotificationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 };

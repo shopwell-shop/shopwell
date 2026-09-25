@@ -43,12 +43,12 @@ class BusinessEventEncoderTest extends TestCase
     #[DataProvider('getEvents')]
     public function testScalarEvents(FlowEventAware $event): void
     {
-        $shopwareVersion = static::getContainer()->getParameter('kernel.shopware_version');
+        $shopwellVersion = static::getContainer()->getParameter('kernel.shopwell_version');
         static::assertTrue(
             method_exists($event, 'getEncodeValues'),
             'Event does not have method getEncodeValues'
         );
-        static::assertEquals($event->getEncodeValues($shopwareVersion), $this->businessEventEncoder->encode($event));
+        static::assertEquals($event->getEncodeValues($shopwellVersion), $this->businessEventEncoder->encode($event));
     }
 
     public static function getEvents(): \Generator

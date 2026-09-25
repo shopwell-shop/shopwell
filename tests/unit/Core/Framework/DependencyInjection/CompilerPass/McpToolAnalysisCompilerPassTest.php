@@ -33,7 +33,7 @@ class McpToolAnalysisCompilerPassTest extends TestCase
         $pass = new McpToolAnalysisCompilerPass();
         $pass->process($container);
 
-        static::assertSame([], $container->getParameter('shopware.mcp.tool_dependencies'));
+        static::assertSame([], $container->getParameter('shopwell.mcp.tool_dependencies'));
     }
 
     public function testToolDependencyIsResolvedAndStoredInParameter(): void
@@ -52,10 +52,10 @@ class McpToolAnalysisCompilerPassTest extends TestCase
         $pass->process($container);
 
         /** @var array<string, list<string>> $deps */
-        $deps = $container->getParameter('shopware.mcp.tool_dependencies');
+        $deps = $container->getParameter('shopwell.mcp.tool_dependencies');
 
         static::assertArrayHasKey('my-analysis-dep-tool', $deps);
-        static::assertSame(['shopware-analysis-core-tool'], $deps['my-analysis-dep-tool']);
+        static::assertSame(['shopwell-analysis-core-tool'], $deps['my-analysis-dep-tool']);
     }
 
     public function testUnknownToolDependencyThrows(): void
@@ -67,7 +67,7 @@ class McpToolAnalysisCompilerPassTest extends TestCase
         $container->setDefinition('tool.primary', $def);
 
         $this->expectException(DependencyInjectionException::class);
-        $this->expectExceptionMessageMatches('/shopware-analysis-core-tool/');
+        $this->expectExceptionMessageMatches('/shopwell-analysis-core-tool/');
 
         $pass = new McpToolAnalysisCompilerPass();
         $pass->process($container);
@@ -84,7 +84,7 @@ class McpToolAnalysisCompilerPassTest extends TestCase
         $pass = new McpToolAnalysisCompilerPass();
         $pass->process($container);
 
-        static::assertSame([], $container->getParameter('shopware.mcp.tool_privileges'));
+        static::assertSame([], $container->getParameter('shopwell.mcp.tool_privileges'));
     }
 
     public function testStaticToolPrivilegeIsResolvedAndStored(): void
@@ -99,7 +99,7 @@ class McpToolAnalysisCompilerPassTest extends TestCase
         $pass->process($container);
 
         /** @var array<string, array{static: list<string>, entityParam: ?string, operations: list<string>}> $privileges */
-        $privileges = $container->getParameter('shopware.mcp.tool_privileges');
+        $privileges = $container->getParameter('shopwell.mcp.tool_privileges');
 
         static::assertArrayHasKey('my-analysis-static-priv-tool', $privileges);
         static::assertSame(['system_config:read'], $privileges['my-analysis-static-priv-tool']['static']);
@@ -119,7 +119,7 @@ class McpToolAnalysisCompilerPassTest extends TestCase
         $pass->process($container);
 
         /** @var array<string, array{static: list<string>, entityParam: ?string, operations: list<string>}> $privileges */
-        $privileges = $container->getParameter('shopware.mcp.tool_privileges');
+        $privileges = $container->getParameter('shopwell.mcp.tool_privileges');
 
         static::assertArrayHasKey('my-analysis-dynamic-priv-tool', $privileges);
         static::assertSame([], $privileges['my-analysis-dynamic-priv-tool']['static']);
@@ -138,7 +138,7 @@ class McpToolAnalysisCompilerPassTest extends TestCase
         $pass = new McpToolAnalysisCompilerPass();
         $pass->process($container);
 
-        static::assertSame([], $container->getParameter('shopware.mcp.tool_privileges'));
+        static::assertSame([], $container->getParameter('shopwell.mcp.tool_privileges'));
     }
 
     public function testToolGroupsAreResolvedAndStored(): void
@@ -161,9 +161,9 @@ class McpToolAnalysisCompilerPassTest extends TestCase
         $pass->process($container);
 
         static::assertSame([
-            'shopware-analysis-explicit-group-tool' => 'catalogue',
-            'shopware-analysis-method-level-group-tool' => 'orders',
-        ], $container->getParameter('shopware.mcp.tool_groups'));
+            'shopwell-analysis-explicit-group-tool' => 'catalogue',
+            'shopwell-analysis-method-level-group-tool' => 'orders',
+        ], $container->getParameter('shopwell.mcp.tool_groups'));
     }
 
     public function testToolWithMissingClassIsSkippedAndWarns(): void
@@ -176,7 +176,7 @@ class McpToolAnalysisCompilerPassTest extends TestCase
 
         (new McpToolAnalysisCompilerPass())->process($container);
 
-        static::assertSame([], $container->getParameter('shopware.mcp.tool_groups'));
+        static::assertSame([], $container->getParameter('shopwell.mcp.tool_groups'));
 
         $warnings = array_values(array_filter(
             $container->getCompiler()->getLog(),
@@ -189,8 +189,8 @@ class McpToolAnalysisCompilerPassTest extends TestCase
     public function testSkipsWhenNoMcpServerBuilder(): void
     {
         $container = new ContainerBuilder();
-        $container->setParameter('shopware.mcp.tool_dependencies', []);
-        $container->setParameter('shopware.mcp.tool_privileges', []);
+        $container->setParameter('shopwell.mcp.tool_dependencies', []);
+        $container->setParameter('shopwell.mcp.tool_privileges', []);
 
         $def = new Definition(McpAnalysisTestCoreTool::class);
         $def->addTag('mcp.tool');
@@ -199,16 +199,16 @@ class McpToolAnalysisCompilerPassTest extends TestCase
         $pass = new McpToolAnalysisCompilerPass();
         $pass->process($container);
 
-        static::assertSame([], $container->getParameter('shopware.mcp.tool_dependencies'));
+        static::assertSame([], $container->getParameter('shopwell.mcp.tool_dependencies'));
     }
 
     private function createContainer(): ContainerBuilder
     {
         $container = new ContainerBuilder();
         $container->register('mcp.server.admin.builder');
-        $container->setParameter('shopware.mcp.tool_dependencies', []);
-        $container->setParameter('shopware.mcp.tool_privileges', []);
-        $container->setParameter('shopware.mcp.tool_groups', []);
+        $container->setParameter('shopwell.mcp.tool_dependencies', []);
+        $container->setParameter('shopwell.mcp.tool_privileges', []);
+        $container->setParameter('shopwell.mcp.tool_groups', []);
 
         return $container;
     }
@@ -217,7 +217,7 @@ class McpToolAnalysisCompilerPassTest extends TestCase
 /**
  * @internal
  */
-#[McpTool(name: 'shopware-analysis-core-tool', description: 'analysis test core tool')]
+#[McpTool(name: 'shopwell-analysis-core-tool', description: 'analysis test core tool')]
 class McpAnalysisTestCoreTool extends McpToolResponse
 {
     public function __invoke(): string
@@ -229,8 +229,8 @@ class McpAnalysisTestCoreTool extends McpToolResponse
 /**
  * @internal
  */
-#[McpTool(name: 'my-analysis-dep-tool', description: 'tool that depends on shopware-analysis-core-tool')]
-#[McpToolDependsOn('shopware-analysis-core-tool')]
+#[McpTool(name: 'my-analysis-dep-tool', description: 'tool that depends on shopwell-analysis-core-tool')]
+#[McpToolDependsOn('shopwell-analysis-core-tool')]
 class McpAnalysisTestDependentTool extends McpToolResponse
 {
     public function __invoke(): string
@@ -269,7 +269,7 @@ class McpAnalysisTestDynamicPrivilegeTool extends McpToolResponse
 /**
  * @internal
  */
-#[McpTool(name: 'shopware-analysis-explicit-group-tool', description: 'tool with explicit group')]
+#[McpTool(name: 'shopwell-analysis-explicit-group-tool', description: 'tool with explicit group')]
 #[McpToolGroup('catalogue')]
 class McpAnalysisTestExplicitGroupTool extends McpToolResponse
 {
@@ -284,7 +284,7 @@ class McpAnalysisTestExplicitGroupTool extends McpToolResponse
  */
 class McpAnalysisTestMethodLevelGroupTool extends McpToolResponse
 {
-    #[McpTool(name: 'shopware-analysis-method-level-group-tool', description: 'method-level group tool')]
+    #[McpTool(name: 'shopwell-analysis-method-level-group-tool', description: 'method-level group tool')]
     #[McpToolGroup('orders')]
     public function __invoke(): string
     {

@@ -22,7 +22,7 @@ class MailSender extends AbstractMailSender
     public const DISABLE_MAIL_DELIVERY = 'core.mailerSettings.disableDelivery';
 
     /**
-     * @deprecated tag:v6.8.0 - Use the configuration option `shopware.messenger.message_max_kib_size` instead.
+     * @deprecated tag:v6.8.0 - Use the configuration option `shopwell.messenger.message_max_kib_size` instead.
      *
      * Referenced from {@see MessageQueueSizeRestrictListener::MESSAGE_SIZE_LIMIT}
      * The maximum size of a message in the message queue is used to determine if a mail should be sent directly or via the message queue.

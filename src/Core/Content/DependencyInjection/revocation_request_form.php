@@ -27,7 +27,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(RevocationRequestFormValidationFactory::class),
             service(DataValidator::class),
             service('request_stack'),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
             service('event_dispatcher'),
             service(ClockInterface::class),
             service(CmsFormSlotConfigResolver::class),

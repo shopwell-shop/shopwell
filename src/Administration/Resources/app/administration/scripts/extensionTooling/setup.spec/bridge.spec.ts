@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  *
- * Automatic bridging: the self-ignoring .shopware/ bridge generated for every
+ * Automatic bridging: the self-ignoring .shopwell/ bridge generated for every
  * discovered extension (vendor included), the committable plugin configs
  * scaffolded beside it, alias merging into the bridge's paths, and the graceful
  * fallback when a bridge cannot be written. The multi-root grouping lives in
@@ -30,28 +30,28 @@ describe('scripts/extensionTooling/setup automatic bridging', () => {
 
     it('bridges every discovered extension automatically — vendor included', () => {
         const result = setupExtensionTooling({ projectRoot, administrationRoot });
-        const shimDir = path.join(projectRoot, 'custom/plugins/ZeroConfig/src/Resources/app/administration/.shopware');
+        const shimDir = path.join(projectRoot, 'custom/plugins/ZeroConfig/src/Resources/app/administration/.shopwell');
         const shimTsconfig = fs.readFileSync(path.join(shimDir, 'tsconfig.json'), 'utf8');
 
         expect(fs.readFileSync(path.join(shimDir, '.gitignore'), 'utf8')).toContain('*');
         expect(shimTsconfig).toContain('tsconfig.base.json');
         expect(shimTsconfig).toContain('admin-types.d.ts');
-        expect(fs.readFileSync(path.join(shimDir, 'eslint.mjs'), 'utf8')).toContain('shopwareAdminExtension');
+        expect(fs.readFileSync(path.join(shimDir, 'eslint.mjs'), 'utf8')).toContain('shopwellAdminExtension');
 
         // Multi-bundle suite with independent roots: one bridge per root.
         for (const bundle of ['BundleA', 'BundleB']) {
             expect(
                 fs.existsSync(
-                    path.join(projectRoot, `custom/plugins/Suite/src/${bundle}/Resources/app/administration/.shopware`),
+                    path.join(projectRoot, `custom/plugins/Suite/src/${bundle}/Resources/app/administration/.shopwell`),
                 ),
             ).toBe(true);
         }
 
         // Vendor extensions are bridged in place — no exceptions.
         expect(
-            fs.existsSync(path.join(projectRoot, 'vendor/acme/custom-admin/src/Resources/app/administration/.shopware')),
+            fs.existsSync(path.join(projectRoot, 'vendor/acme/custom-admin/src/Resources/app/administration/.shopwell')),
         ).toBe(true);
-        expect(result.writes.some((write) => write.file.includes('.shopware'))).toBe(true);
+        expect(result.writes.some((write) => write.file.includes('.shopwell'))).toBe(true);
     });
 
     it('scaffolds committable plugin configs that extend the bridge and are never overwritten', () => {
@@ -62,9 +62,9 @@ describe('scripts/extensionTooling/setup automatic bridging', () => {
         const pluginEslint = fs.readFileSync(path.join(adminFolder, 'eslint.config.mjs'), 'utf8');
 
         // Committable: extends/imports the bridge, carries no generated marker.
-        expect(pluginTsconfig).toContain('"extends": "./.shopware/tsconfig.json"');
+        expect(pluginTsconfig).toContain('"extends": "./.shopwell/tsconfig.json"');
         expect(pluginTsconfig).not.toContain(GENERATED_MARKER);
-        expect(pluginEslint).toContain("import shopware from './.shopware/eslint.mjs'");
+        expect(pluginEslint).toContain("import shopwell from './.shopwell/eslint.mjs'");
 
         // A developer edit survives a re-run, and the extension is discovered as bridged.
         fs.appendFileSync(path.join(adminFolder, 'eslint.config.mjs'), '// my custom rule\n');
@@ -151,8 +151,8 @@ describe('scripts/extensionTooling/setup automatic bridging', () => {
             `{ "extends": "${BRIDGE_TSCONFIG_EXTENDS}", "include": ["src/**/*.ts"] }`,
         ]);
         writeFile(path.join(adminFolder, 'eslint.config.mjs'), [
-            `import shopware from '${BRIDGE_ESLINT_SPECIFIER}';`,
-            'export default [...shopware];',
+            `import shopwell from '${BRIDGE_ESLINT_SPECIFIER}';`,
+            'export default [...shopwell];',
         ]);
 
         // The fixture's vendor extension ships genuinely non-composing configs
@@ -176,7 +176,7 @@ describe('scripts/extensionTooling/setup automatic bridging', () => {
         setupExtensionTooling({ projectRoot, administrationRoot });
 
         const shimTsconfig = fs.readFileSync(
-            path.join(projectRoot, 'custom/plugins/ZeroConfig/src/Resources/app/administration/.shopware/tsconfig.json'),
+            path.join(projectRoot, 'custom/plugins/ZeroConfig/src/Resources/app/administration/.shopwell/tsconfig.json'),
             'utf8',
         );
         const parsed = JSON.parse(shimTsconfig.split('\n').slice(1).join('\n')) as {
@@ -188,7 +188,7 @@ describe('scripts/extensionTooling/setup automatic bridging', () => {
     });
 
     it('generates a self-explaining README into the bridge and keeps it marker-owned', () => {
-        const shimDir = path.join(projectRoot, 'custom/plugins/ZeroConfig/src/Resources/app/administration/.shopware');
+        const shimDir = path.join(projectRoot, 'custom/plugins/ZeroConfig/src/Resources/app/administration/.shopwell');
         setupExtensionTooling({ projectRoot, administrationRoot });
 
         const readme = fs.readFileSync(path.join(shimDir, 'README.md'), 'utf8');

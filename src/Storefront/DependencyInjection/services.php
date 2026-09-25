@@ -182,7 +182,7 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->parameters()
-        ->set('shopware.twig.app_variable.allowed_server_params', [
+        ->set('shopwell.twig.app_variable.allowed_server_params', [
             'server_name',
             'request_uri',
             'app_url',
@@ -268,7 +268,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('theme.repository'),
             service('sales_channel.repository'),
         ])
-        ->tag('shopware.store.extension_removal_validator');
+        ->tag('shopwell.store.extension_removal_validator');
 
     $services->set(CachedDomainLoader::class)
         ->decorate(DomainLoader::class, null, -1000)
@@ -296,7 +296,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(RequestTransformer::class . '.inner'),
             service(SeoResolver::class),
-            param('shopware.routing.registered_api_prefixes'),
+            param('shopwell.routing.registered_api_prefixes'),
             service(DomainLoader::class),
         ]);
 
@@ -321,12 +321,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('kernel.event_subscriber');
 
     $services->set(StorefrontRouteScope::class)
-        ->tag('shopware.route_scope');
+        ->tag('shopwell.route_scope');
 
     $services->set(TemplateDataExtension::class)
         ->args([
             service('request_stack'),
-            param('shopware.staging.storefront.show_banner'),
+            param('shopwell.staging.storefront.show_banner'),
             service(Connection::class),
         ])
         ->tag('twig.extension');
@@ -337,7 +337,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ThemeConfigValueAccessor::class),
             service(ThemeScripts::class),
             param('kernel.environment'),
-            tagged_iterator('shopware.asset', 'asset'),
+            tagged_iterator('shopwell.asset', 'asset'),
         ]);
 
     $services->set(MailThemeConfigSubscriber::class)
@@ -742,7 +742,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     // @deprecated tag:v6.8.0 Will be removed
     $services->set(CookieProviderInterface::class, CookieProvider::class)
-        ->deprecate('shopware/storefront', '6.7.3.0', 'The %service_id% service will be removed in v6.8.0.0. Use the CookieGroupCollectEvent instead to introduce cookies.');
+        ->deprecate('shopwell/storefront', '6.7.3.0', 'The %service_id% service will be removed in v6.8.0.0. Use the CookieGroupCollectEvent instead to introduce cookies.');
 
     // @deprecated tag:v6.8.0 Will be removed
     $services->set(AppCookieProvider::class)
@@ -750,7 +750,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('.inner'),
         ])
-        ->deprecate('shopware/storefront', '6.7.3.0', 'The %service_id% service will be removed in v6.8.0.0 without replacement');
+        ->deprecate('shopwell/storefront', '6.7.3.0', 'The %service_id% service will be removed in v6.8.0.0 without replacement');
 
     $services->set(ResponseHeaderListener::class)
         ->tag('kernel.event_subscriber');
@@ -802,7 +802,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->decorate('twig.app_variable')
         ->args([
             service(TwigAppVariable::class . '.inner'),
-            param('shopware.twig.app_variable.allowed_server_params'),
+            param('shopwell.twig.app_variable.allowed_server_params'),
         ]);
 
     $services->set(DomainNotMappedListener::class)
@@ -825,7 +825,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SalesChannelDomainUtil::class),
             service(SalesChannelDomainProvider::class),
         ])
-        ->tag('shopware.system_check');
+        ->tag('shopwell.system_check');
 
     $services->set(ProductDetailReadinessCheck::class)
         ->args([
@@ -833,7 +833,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(SalesChannelDomainProvider::class),
         ])
-        ->tag('shopware.system_check');
+        ->tag('shopwell.system_check');
 
     $services->set(ProductListingReadinessCheck::class)
         ->args([
@@ -841,7 +841,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(SalesChannelDomainProvider::class),
         ])
-        ->tag('shopware.system_check');
+        ->tag('shopwell.system_check');
 
     $services->set(SalesChannelDomainProvider::class)
         ->args([
@@ -869,7 +869,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('kernel.event_subscriber');
 
     $services->set(RobotsRouteScopeWhitelist::class)
-        ->tag('shopware.route_scope_whitelist');
+        ->tag('shopwell.route_scope_whitelist');
 
     $services->set(TwigComponentRenderEventListener::class)
         ->args([
@@ -888,5 +888,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(StorybookRouteScopeAllowList::class)
-        ->tag('shopware.route_scope_whitelist');
+        ->tag('shopwell.route_scope_whitelist');
 };

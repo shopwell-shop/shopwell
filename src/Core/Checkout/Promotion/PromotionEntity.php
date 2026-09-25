@@ -534,7 +534,7 @@ class PromotionEntity extends Entity
         // a custom setgroup rule for all groups
         if ($this->isUseSetGroups() && $this->getSetgroups() !== null && $this->getSetgroups()->count() > 0) {
             // if we have groups, then all groups
-            // must match now to fulfill the new group definition in shopware promotions
+            // must match now to fulfill the new group definition in shopwell promotions
             $groupsRootRule = new AndRule();
 
             foreach ($this->getSetgroups() as $group) {

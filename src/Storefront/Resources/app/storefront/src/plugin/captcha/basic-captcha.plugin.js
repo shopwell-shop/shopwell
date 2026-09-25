@@ -43,8 +43,8 @@ export default class BasicCaptchaPlugin extends Plugin {
     createFakeInput() {
         this.fakeInput = document.createElement('input');
         this.fakeInput.type = 'text';
-        this.fakeInput.id = 'shopware_basic_captcha_check';
-        this.fakeInput.name = 'shopware_basic_captcha_check';
+        this.fakeInput.id = 'shopwell_basic_captcha_check';
+        this.fakeInput.name = 'shopwell_basic_captcha_check';
         this.fakeInput.required = true;
         this.fakeInput.style.display = 'none';
         this.fakeInput.tabIndex = -1;
@@ -107,7 +107,7 @@ export default class BasicCaptchaPlugin extends Plugin {
         const captchaValue = captchaInput.value;
         const data = JSON.stringify({
             formId: this.options.formId,
-            shopware_basic_captcha_confirm: captchaValue,
+            shopwell_basic_captcha_confirm: captchaValue,
         });
 
         const response = await fetch(this.options.preCheckRoute.path, {

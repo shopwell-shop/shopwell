@@ -48,7 +48,7 @@ class DatabaseMigratorTest extends TestCase
         $migrationLoader = $this->createMock(MigrationCollectionLoader::class);
         $migrationLoader->expects($this->once())
             ->method('collectAllForVersion')
-            ->with(Kernel::SHOPWARE_FALLBACK_VERSION)
+            ->with(Kernel::SHOPWELL_FALLBACK_VERSION)
             ->willReturn($this->migrationCollection);
 
         $migrationCollectorFactory = $this->createMock(MigrationCollectionFactory::class);
@@ -68,7 +68,7 @@ class DatabaseMigratorTest extends TestCase
         $this->databaseMigrator = new DatabaseMigrator(
             $this->setupAdapter,
             $migrationCollectorFactory,
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             $this->iniConfigReader,
             new NativeClock()
         );

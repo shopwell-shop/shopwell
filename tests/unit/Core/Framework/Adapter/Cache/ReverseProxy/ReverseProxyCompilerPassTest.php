@@ -57,7 +57,7 @@ class ReverseProxyCompilerPassTest extends TestCase
     public function testFastlyDisabled(): void
     {
         $container = self::getContainer();
-        $container->setParameter('shopware.http_cache.reverse_proxy.fastly.enabled', false);
+        $container->setParameter('shopwell.http_cache.reverse_proxy.fastly.enabled', false);
 
         $container->compile();
 
@@ -72,7 +72,7 @@ class ReverseProxyCompilerPassTest extends TestCase
     public function testReverseProxyDisabled(): void
     {
         $container = self::getContainer();
-        $container->setParameter('shopware.http_cache.reverse_proxy.enabled', false);
+        $container->setParameter('shopwell.http_cache.reverse_proxy.enabled', false);
 
         $container->compile();
 
@@ -85,8 +85,8 @@ class ReverseProxyCompilerPassTest extends TestCase
     {
         $container = new ContainerBuilder();
 
-        $container->setParameter('shopware.http_cache.reverse_proxy.enabled', true);
-        $container->setParameter('shopware.http_cache.reverse_proxy.fastly.enabled', true);
+        $container->setParameter('shopwell.http_cache.reverse_proxy.enabled', true);
+        $container->setParameter('shopwell.http_cache.reverse_proxy.fastly.enabled', true);
 
         $container
             ->register(ReverseProxyCache::class)

@@ -140,21 +140,21 @@ class RequestTransformer implements RequestTransformerInterface
         $currentRequestUri = $request->getRequestUri();
 
         /**
-         * - Remove "virtual" suffix of domain mapping shopware.de/de
-         * - To get only the host shopware.de as real request uri shopware.de/
-         * - Resolve remaining seo url and get the real path info shopware.de/outdoor => shopware.de/navigation/{id}
+         * - Remove "virtual" suffix of domain mapping shopwell.cn/de
+         * - To get only the host shopwell.cn as real request uri shopwell.cn/
+         * - Resolve remaining seo url and get the real path info shopwell.cn/outdoor => shopwell.cn/navigation/{id}
          *
          * Possible domains
          *
          * same host, different "virtual" suffix
-         * http://shopware.de/de
-         * http://shopware.de/en
-         * http://shopware.de/fr
+         * http://shopwell.cn/de
+         * http://shopwell.cn/en
+         * http://shopwell.cn/fr
          *
          * same host, different location
-         * http://shopware.fr
+         * http://shopwell.fr
          * http://shopwell.cn
-         * http://shopware.de
+         * http://shopwell.cn
          *
          * complete different host and location
          * http://color.com

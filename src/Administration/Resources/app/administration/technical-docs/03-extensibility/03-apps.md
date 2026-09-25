@@ -20,10 +20,10 @@ The Meteor Admin Extension SDK provides the communication bridge:
 
 ```javascript
 // Initialize SDK in your app (CDN version)
-// <script src="https://unpkg.com/@shopware-ag/meteor-admin-sdk/cdn"></script>
+// <script src="https://unpkg.com/@shopwell-ag/meteor-admin-sdk/cdn"></script>
 
 // Or import via NPM
-import { notification } from '@shopware-ag/meteor-admin-sdk';
+import { notification } from '@shopwell-ag/meteor-admin-sdk';
 
 // Basic notification example
 notification.dispatch({
@@ -39,7 +39,7 @@ notification.dispatch({
 Create complete new modules within the administration:
 
 ```javascript
-import { location, ui } from '@shopware-ag/meteor-admin-sdk';
+import { location, ui } from '@shopwell-ag/meteor-admin-sdk';
 
 // Check if we're in the main hidden location
 if (location.is(location.MAIN_HIDDEN)) {
@@ -74,7 +74,7 @@ if (location.is('my-app-main-module')) {
 Add custom menu items and navigation:
 
 ```javascript
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 
 // Add menu item
 ui.menu.addMenuItem({
@@ -90,7 +90,7 @@ ui.menu.addMenuItem({
 Add components to existing views:
 
 ```javascript
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 
 // Add a card component to product detail page
 ui.componentSection.add({
@@ -115,7 +115,7 @@ ui.tabs('sw-product-detail').addTabItem({
 Add items to the settings menu:
 
 ```javascript
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 
 ui.settingsItem.add({
     label: 'My App Settings',
@@ -130,7 +130,7 @@ ui.settingsItem.add({
 Create modal dialogs within the administration:
 
 ```javascript
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 
 ui.modal.open({
     title: 'Custom Configuration',
@@ -150,7 +150,7 @@ ui.modal.open({
 Access Shopwell's data using the repository pattern:
 
 ```javascript
-import { data } from '@shopware-ag/meteor-admin-sdk';
+import { data } from '@shopwell-ag/meteor-admin-sdk';
 
 // Get products with criteria
 const products = await data.get('product', {
@@ -173,7 +173,7 @@ console.log('Products:', products);
 Perform CRUD operations on entities:
 
 ```javascript
-import { data } from '@shopware-ag/meteor-admin-sdk';
+import { data } from '@shopwell-ag/meteor-admin-sdk';
 
 // Create new product
 const newProduct = await data.save('product', {
@@ -209,7 +209,7 @@ const product = await data.get('product', productId, {
 Create a service class for data management:
 
 ```javascript
-import { data } from '@shopware-ag/meteor-admin-sdk';
+import { data } from '@shopwell-ag/meteor-admin-sdk';
 
 class ProductService {
     async getProducts(criteria = {}) {
@@ -247,7 +247,7 @@ const products = await productService.getProducts({
 Listen to administration context events:
 
 ```javascript
-import { context } from '@shopware-ag/meteor-admin-sdk';
+import { context } from '@shopwell-ag/meteor-admin-sdk';
 
 // Subscribe to context changes
 context.subscribe('language-change', (newLanguage) => {
@@ -271,7 +271,7 @@ console.log('Current language:', currentContext.language);
 Send notifications to users:
 
 ```javascript
-import { notification, toast } from '@shopware-ag/meteor-admin-sdk';
+import { notification, toast } from '@shopwell-ag/meteor-admin-sdk';
 
 // Show notification
 notification.dispatch({
@@ -299,7 +299,7 @@ notification.dispatch({
 Handle navigation within the app:
 
 ```javascript
-import { location } from '@shopware-ag/meteor-admin-sdk';
+import { location } from '@shopwell-ag/meteor-admin-sdk';
 
 // Check current location
 if (location.is('sw-product-detail')) {
@@ -322,7 +322,7 @@ location.subscribe('locationUpdateFinished', (locationData) => {
 Add action buttons to existing pages:
 
 ```javascript
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 
 ui.actionButton.add({
     action: 'my-custom-action',
@@ -341,7 +341,7 @@ ui.actionButton.add({
 Subscribe to real-time data changes:
 
 ```javascript
-import { data } from '@shopware-ag/meteor-admin-sdk';
+import { data } from '@shopwell-ag/meteor-admin-sdk';
 
 // Subscribe to entity changes
 data.subscribe('product', (changes) => {
@@ -364,7 +364,7 @@ data.subscribe('product', (changes) => {
 Work with media files:
 
 ```javascript
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 
 // Open media modal
 ui.mediaModal.open({
@@ -381,15 +381,15 @@ ui.mediaModal.open({
 ### NPM Installation
 
 ```bash
-npm install @shopware-ag/meteor-admin-sdk
+npm install @shopwell-ag/meteor-admin-sdk
 ```
 
 ```javascript
 // Import specific functionality
-import { notification, data, ui } from '@shopware-ag/meteor-admin-sdk';
+import { notification, data, ui } from '@shopwell-ag/meteor-admin-sdk';
 
 // Or import everything
-import * as sw from '@shopware-ag/meteor-admin-sdk';
+import * as sw from '@shopwell-ag/meteor-admin-sdk';
 ```
 
 ### CDN Usage
@@ -402,7 +402,7 @@ import * as sw from '@shopware-ag/meteor-admin-sdk';
     <title>My Shopwell App</title>
 </head>
 <body>
-    <script src="https://unpkg.com/@shopware-ag/meteor-admin-sdk/cdn"></script>
+    <script src="https://unpkg.com/@shopwell-ag/meteor-admin-sdk/cdn"></script>
     <script>
         // SDK is available as global 'sw' object
         sw.notification.dispatch({
@@ -419,7 +419,7 @@ import * as sw from '@shopware-ag/meteor-admin-sdk';
 Apps operate within a controlled security model with limited permissions. All API calls are automatically authenticated and validated server-side.
 
 ```javascript
-import { context } from '@shopware-ag/meteor-admin-sdk';
+import { context } from '@shopwell-ag/meteor-admin-sdk';
 
 // Check if user has specific privileges
 const hasProductWriteAccess = await context.hasPrivilege('product:write');
@@ -435,7 +435,7 @@ if (hasProductWriteAccess) {
 ### 1. Error Handling
 
 ```javascript
-import { data, notification } from '@shopware-ag/meteor-admin-sdk';
+import { data, notification } from '@shopwell-ag/meteor-admin-sdk';
 
 try {
     const product = await data.get('product', productId);
@@ -453,7 +453,7 @@ try {
 ### 2. Location-based Initialization
 
 ```javascript
-import { location, ui } from '@shopware-ag/meteor-admin-sdk';
+import { location, ui } from '@shopwell-ag/meteor-admin-sdk';
 
 // Only initialize when in correct location
 if (location.is(location.MAIN_HIDDEN)) {
@@ -468,7 +468,7 @@ if (location.is(location.MAIN_HIDDEN)) {
 ### 3. Performance Optimization
 
 ```javascript
-import { data } from '@shopware-ag/meteor-admin-sdk';
+import { data } from '@shopwell-ag/meteor-admin-sdk';
 
 // Batch multiple requests
 const [products, categories, manufacturers] = await Promise.all([

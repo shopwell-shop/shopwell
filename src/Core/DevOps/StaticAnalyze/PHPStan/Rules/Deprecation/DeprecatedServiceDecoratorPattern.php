@@ -63,7 +63,7 @@ class DeprecatedServiceDecoratorPattern implements DeprecationPattern
                     $class->getName(),
                     $method->name->toString(),
                 ))
-                    ->identifier('shopware.deprecatedClass')
+                    ->identifier('shopwell.deprecatedClass')
                     ->build(),
             ];
         }
@@ -75,7 +75,7 @@ class DeprecatedServiceDecoratorPattern implements DeprecationPattern
                 $method->name->toString(),
                 $this->getFeatureFlag($deprecation),
             ))
-                ->identifier('shopware.deprecatedClass')
+                ->identifier('shopwell.deprecatedClass')
                 ->build(),
         ];
     }

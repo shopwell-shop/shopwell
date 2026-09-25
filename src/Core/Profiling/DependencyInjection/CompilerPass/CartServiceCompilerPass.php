@@ -20,8 +20,8 @@ class CartServiceCompilerPass implements CompilerPassInterface
         }
 
         $definition = $container->getDefinition(CartDataCollectorSubscriber::class);
-        $definition->setArgument(1, $this->processTaggedServices($container, 'shopware.cart.collector'));
-        $definition->setArgument(2, $this->processTaggedServices($container, 'shopware.cart.processor'));
+        $definition->setArgument(1, $this->processTaggedServices($container, 'shopwell.cart.collector'));
+        $definition->setArgument(2, $this->processTaggedServices($container, 'shopwell.cart.processor'));
     }
 
     /**

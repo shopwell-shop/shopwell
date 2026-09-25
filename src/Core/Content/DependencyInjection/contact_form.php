@@ -29,7 +29,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service('salutation.repository'),
             service(RequestStack::class),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
             service(CmsFormSlotConfigResolver::class),
         ]);
 };

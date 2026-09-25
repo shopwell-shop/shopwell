@@ -9,7 +9,7 @@ use Shopwell\Core\Framework\Log\Package;
  *
  * @codeCoverageIgnore
  *
- * @phpstan-ignore shopware.attributeNotFinal
+ * @phpstan-ignore shopwell.attributeNotFinal
  */
 #[Package('framework')]
 #[\Attribute(\Attribute::TARGET_PROPERTY)]

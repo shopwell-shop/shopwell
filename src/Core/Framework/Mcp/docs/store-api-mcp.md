@@ -22,7 +22,7 @@ Example MCP client configuration:
 ```json
 {
   "mcpServers": {
-    "shopware-store-api": {
+    "shopwell-store-api": {
       "url": "https://your-shop.example/store-api/_mcp",
       "headers": {
         "sw-access-key": "SWSC...",
@@ -39,9 +39,9 @@ Tag your service with one of the following to auto-register it in the Store API 
 
 | Tag | Type | Attribute |
 |-----|------|-----------|
-| `shopware.store_api_mcp.tool` | Tool | `#[McpTool(...)]` |
-| `shopware.store_api_mcp.prompt` | Prompt | `#[McpPrompt(...)]` |
-| `shopware.store_api_mcp.resource` | Resource | `#[McpResource(...)]` |
+| `shopwell.store_api_mcp.tool` | Tool | `#[McpTool(...)]` |
+| `shopwell.store_api_mcp.prompt` | Prompt | `#[McpPrompt(...)]` |
+| `shopwell.store_api_mcp.resource` | Resource | `#[McpResource(...)]` |
 
 These are **separate** from the Admin API tags (`mcp.tool`, `mcp.prompt`, `mcp.resource`).
 A capability registered for the Store API is not visible on the Admin API endpoint and vice versa.
@@ -110,7 +110,7 @@ future extension point.
 
 Every request is rate-limited via `McpRateLimiter` before the protocol runs. The Store
 API endpoint uses its own bucket (`mcp_store_api`, configured under
-`shopware.api.rate_limiter` in `shopware.yaml`), separate from the Admin API
+`shopwell.api.rate_limiter` in `shopwell.yaml`), separate from the Admin API
 (`mcp_admin_api`). The key is `salesChannelId + sw-context-token`, falling back to the
 client IP when no sales-channel context is present.
 
@@ -152,7 +152,7 @@ multi-worker or multi-server deployments, configure a `session` store per server
 
 | Name | Type | Description |
 |------|------|-------------|
-| `shopware-store-api-context` | Tool | Returns the current session metadata: sales channel ID, context token, language, currency, and customer authentication state |
+| `shopwell-store-api-context` | Tool | Returns the current session metadata: sales channel ID, context token, language, currency, and customer authentication state |
 
 ## Known Limitations
 

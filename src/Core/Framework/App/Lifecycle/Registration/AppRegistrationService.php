@@ -44,7 +44,7 @@ class AppRegistrationService
         private readonly EntityRepository $appRepository,
         private readonly string $shopUrl,
         private readonly ShopIdProvider $shopIdProvider,
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
         private readonly ClockInterface $clock,
         private readonly LoggerInterface $logger,
     ) {
@@ -117,8 +117,8 @@ class AppRegistrationService
         $this->saveUnconfirmedAppSecrets($app->getId(), $context, $secret);
 
         try {
-            // A re-registration confirm carries two signatures: shopware-shop-signature signed with the new
-            // secret (proves we received it) and shopware-shop-signature-previous signed with the current
+            // A re-registration confirm carries two signatures: shopwell-shop-signature signed with the new
+            // secret (proves we received it) and shopwell-shop-signature-previous signed with the current
             // secret (proves we are the same shop the app already knows).
             $this->confirmRegistration($context, $secret, $currentSecret, $confirmationPayload, $confirmationUrl);
         } catch (ClientException $e) {
@@ -241,16 +241,16 @@ class AppRegistrationService
         $signature = $this->signPayload($payload, $secret);
 
         $headers = [
-            'shopware-shop-signature' => $signature,
-            'sw-version' => $this->shopwareVersion,
+            'shopwell-shop-signature' => $signature,
+            'sw-version' => $this->shopwellVersion,
         ];
 
         // For re-registration, also send signature with current/old secret
-        // shopware-shop-signature (new) + shopware-shop-signature-previous (current).
+        // shopwell-shop-signature (new) + shopwell-shop-signature-previous (current).
         // This is to ensure that only the party who initiated the re-registration can confirm it.
         if ($currentSecret !== null) {
             $previousSignature = $this->signPayload($payload, $currentSecret);
-            $headers['shopware-shop-signature-previous'] = $previousSignature;
+            $headers['shopwell-shop-signature-previous'] = $previousSignature;
         }
 
         $this->httpClient->post($confirmationUrl, [

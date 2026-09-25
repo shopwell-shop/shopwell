@@ -70,7 +70,7 @@ class NoAddCacheTagEventRule implements Rule
                     CacheTagCollector::class,
                     $argsCode,
                 ))
-                ->identifier('shopware.noAddCacheTagEvent')
+                ->identifier('shopwell.noAddCacheTagEvent')
                 ->build(),
             ];
         }

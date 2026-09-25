@@ -37,27 +37,27 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(CmsPageDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CmsPageTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CmsSectionDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CmsBlockDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CmsSlotDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CmsSlotTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CmsSlotsDataResolver::class)
         ->public()
         ->args([
-            tagged_iterator('shopware.cms.data_resolver'),
+            tagged_iterator('shopwell.cms.data_resolver'),
             ['product' => service('sales_channel.product.repository')],
             service(DefinitionInstanceRegistry::class),
             service(ExtensionDispatcher::class),
@@ -67,24 +67,24 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(HtmlSanitizer::class),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(HtmlCmsElementResolver::class)
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(FormCmsElementResolver::class)
         ->args([
             service(SalutationRoute::class),
             service(AbstractSalutationsSorter::class),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(SlotConfigFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(SalesChannelCmsPageLoader::class)
         ->args([

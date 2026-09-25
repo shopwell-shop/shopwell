@@ -159,8 +159,8 @@ test('extractHeadings ignores headings inside fenced code blocks', () => {
         '### Before the block',
         '',
         '```yaml',
-        '# config/packages/shopware.yaml',
-        'shopware:',
+        '# config/packages/shopwell.yaml',
+        'shopwell:',
         '  foo: bar',
         '```',
         '',
@@ -188,11 +188,11 @@ test('consoleReport renders warnings with a linked commit and keeps the OK line'
     const report = consoleReport(
         { total: 2, confirmed: 1, missing: [], warnings: [{ heading: '### Feature A', sha: 'aaaa11112222', note: NOTE_DOCS_ONLY }] },
         FILE,
-        'https://github.com/shopware/shopware/commit',
+        'https://github.com/shopwell-shop/shopwell/commit',
     );
 
     assert.match(report, /WARN: 1 of 2 entries need manual verification:/);
-    assert.match(report, /\? ### Feature A \[aaaa1111 \(https:\/\/github\.com\/shopware\/shopware\/commit\/aaaa11112222\)]/);
+    assert.match(report, /\? ### Feature A \[aaaa1111 \(https:\/\/github\.com\/shopwell\/shopwell\/commit\/aaaa11112222\)]/);
     assert.match(report, /OK: 1 of 2 entries confirmed present\. 1 need manual verification/);
 });
 
@@ -216,11 +216,11 @@ test('markdownSummary shows the success line for a clean run', () => {
 test('markdownSummary renders the missing table with a linked commit and escaped pipes', () => {
     const markdown = markdownSummary(
         { total: 1, confirmed: 0, missing: [{ heading: '### Feature | A', sha: 'aaaa11112222' }], warnings: [] },
-        { versionPrefix: VERSION, branchRef: BRANCH, releaseInfoFile: FILE, commitUrlBase: 'https://github.com/shopware/shopware/commit' },
+        { versionPrefix: VERSION, branchRef: BRANCH, releaseInfoFile: FILE, commitUrlBase: 'https://github.com/shopwell-shop/shopwell/commit' },
     );
 
     assert.match(markdown, /### ❌ Missing from this release branch/);
-    assert.match(markdown, /\| Feature \\\| A \| \[`aaaa1111`]\(https:\/\/github\.com\/shopware\/shopware\/commit\/aaaa11112222\) \|/);
+    assert.match(markdown, /\| Feature \\\| A \| \[`aaaa1111`]\(https:\/\/github\.com\/shopwell\/shopwell\/commit\/aaaa11112222\) \|/);
 });
 
 test('markdownSummary escapes backslashes in a heading before the pipe', () => {
@@ -270,7 +270,7 @@ test('checkReleaseContent posts a success status and stays quiet on findings', a
     const toolkit = {
         github: { rest: { repos: { createCommitStatus: async (options) => void statuses.push(options) } } },
         core: { info: () => {}, summary: { addRaw: () => ({ write: async () => {} }) } },
-        context: { repo: { owner: 'shopware', repo: 'shopware' }, sha: 'headsha' },
+        context: { repo: { owner: 'shopwell', repo: 'shopwell' }, sha: 'headsha' },
     } as Toolkit;
 
     await withEnv({ VERSION_PREFIX: VERSION }, () => checkReleaseContent(toolkit, git));
@@ -295,7 +295,7 @@ test('checkReleaseContent posts a failure status when an entry is missing', asyn
     const toolkit = {
         github: { rest: { repos: { createCommitStatus: async (options) => void statuses.push(options) } } },
         core: { info: () => {}, summary: { addRaw: () => ({ write: async () => {} }) } },
-        context: { repo: { owner: 'shopware', repo: 'shopware' }, sha: 'headsha' },
+        context: { repo: { owner: 'shopwell', repo: 'shopwell' }, sha: 'headsha' },
     } as Toolkit;
 
     await withEnv({ VERSION_PREFIX: VERSION }, () => checkReleaseContent(toolkit, git));
@@ -310,7 +310,7 @@ test('checkReleaseContent throws when a required ref is not fetched', async () =
     const toolkit = {
         github: { rest: { repos: { createCommitStatus: async () => {} } } },
         core: { info: () => {}, summary: { addRaw: () => ({ write: async () => {} }) } },
-        context: { repo: { owner: 'shopware', repo: 'shopware' }, sha: 'headsha' },
+        context: { repo: { owner: 'shopwell', repo: 'shopwell' }, sha: 'headsha' },
     } as Toolkit;
 
     await withEnv({ VERSION_PREFIX: VERSION }, async () => {
@@ -323,7 +323,7 @@ test('checkReleaseContent throws when the release branch cannot be resolved', as
     const toolkit = {
         github: { rest: { repos: { createCommitStatus: async () => {} } } },
         core: { info: () => {}, summary: { addRaw: () => ({ write: async () => {} }) } },
-        context: { repo: { owner: 'shopware', repo: 'shopware' }, sha: 'headsha' },
+        context: { repo: { owner: 'shopwell', repo: 'shopwell' }, sha: 'headsha' },
     } as Toolkit;
 
     await withEnv({ VERSION_PREFIX: VERSION }, async () => {

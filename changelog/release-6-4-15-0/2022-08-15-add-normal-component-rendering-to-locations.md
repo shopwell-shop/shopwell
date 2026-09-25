@@ -2,7 +2,7 @@
 title: Add normal component rendering to locations
 issue: NEXT-22675
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com
+author_email: j.leifeld@shopwell.com
 author_github: Jannis Leifeld
 ---
 # Administration

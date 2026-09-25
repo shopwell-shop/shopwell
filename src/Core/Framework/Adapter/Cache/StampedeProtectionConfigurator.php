@@ -16,7 +16,7 @@ use Symfony\Component\Cache\LockRegistry;
  * It's a trade-off between performance and deadlock avoidance.
  * This is an opt-in fix for environments where Redis (the recommended solution) is not available.
  *
- * See https://github.com/shopware/shopware/issues/12823#issuecomment-3677936635
+ * See https://github.com/shopwell-shop/shopwell/issues/12823#issuecomment-3677936635
  *
  * @internal
  */

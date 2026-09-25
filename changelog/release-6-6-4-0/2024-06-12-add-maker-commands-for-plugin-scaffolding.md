@@ -6,8 +6,8 @@ author_email: raffaele.carelle@gmail.com
 author_github: raffaelecarelle
 ---
 # Core
-* Added generic `\Shopware\Core\Framework\Plugin\Command\MakerCommand` and `\Shopware\Core\Framework\DependencyInjection\CompilerPass\CreateGeneratorScaffoldingCommandPass` to dynamically register CLI commands to generate specific parts of the plugin scaffold.
-* Changed the phpstan type for `\Shopware\Core\Framework\Plugin\PluginEntity::$baseClass` from plain string to the more precise `class-string<Plugin>`
+* Added generic `\Shopwell\Core\Framework\Plugin\Command\MakerCommand` and `\Shopwell\Core\Framework\DependencyInjection\CompilerPass\CreateGeneratorScaffoldingCommandPass` to dynamically register CLI commands to generate specific parts of the plugin scaffold.
+* Changed the phpstan type for `\Shopwell\Core\Framework\Plugin\PluginEntity::$baseClass` from plain string to the more precise `class-string<Plugin>`
 ___
 # Upgrade Information
 ## Separate plugin generation scaffolding commands

@@ -36,7 +36,7 @@ class DisableRateLimiterCompilerPass implements CompilerPassInterface
             return;
         }
 
-        $rateLimiter = $container->getDefinition('shopware.rate_limiter');
+        $rateLimiter = $container->getDefinition('shopwell.rate_limiter');
 
         $methodCalls = $rateLimiter->getMethodCalls();
         foreach ($methodCalls as &$methodCall) {

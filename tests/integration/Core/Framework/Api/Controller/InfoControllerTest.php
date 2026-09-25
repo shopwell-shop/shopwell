@@ -256,7 +256,7 @@ class InfoControllerTest extends TestCase
         ];
 
         $expected = [
-            'version' => Kernel::SHOPWARE_FALLBACK_VERSION,
+            'version' => Kernel::SHOPWELL_FALLBACK_VERSION,
             'versionRevision' => str_repeat('0', 32),
             'adminWorker' => [
                 'enableAdminWorker' => true,

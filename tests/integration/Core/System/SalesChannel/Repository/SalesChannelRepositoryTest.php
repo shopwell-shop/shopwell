@@ -87,7 +87,7 @@ class SalesChannelRepositoryTest extends TestCase
             'http://example.org/image3.jpg',
         ];
         $typeName = 'test type';
-        $manufacturer = 'shopware';
+        $manufacturer = 'shopwell';
         $description = 'my description';
         $descriptionLong = 'an even longer description';
 

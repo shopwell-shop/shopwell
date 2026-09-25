@@ -11,7 +11,7 @@ ___
 # Upgrade Information
 
 ### Create own SeoUrl Twig Extension
-Create a regular Twig extension, instead of tagging it with name `twig.extension` use tag name `shopware.seo_url.twig.extension`
+Create a regular Twig extension, instead of tagging it with name `twig.extension` use tag name `shopwell.seo_url.twig.extension`
 
 Example Class:
 ```php
@@ -41,6 +41,6 @@ class ExampleTwigFilter extends AbstractExtension
 Example service.xml:
 ```xml
 <service id="SwagExample\Core\Content\Seo\Twig\ExampleTwigFilter">
-    <tag name="shopware.seo_url.twig.extension"/>
+    <tag name="shopwell.seo_url.twig.extension"/>
 </service>
 ```

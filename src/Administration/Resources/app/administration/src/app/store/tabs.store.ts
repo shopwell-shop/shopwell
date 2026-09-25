@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  */
-import type { uiTabsAddTabItem, uiTabsSetVisibility } from '@shopware-ag/meteor-admin-sdk/es/ui/tabs';
+import type { uiTabsAddTabItem, uiTabsSetVisibility } from '@shopwell-ag/meteor-admin-sdk/es/ui/tabs';
 
 /**
  * @private

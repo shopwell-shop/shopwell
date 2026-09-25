@@ -10,7 +10,7 @@ class HasUnserialize
         $second = \unserialize($serialized);
 
         /**
-         * @phpstan-ignore shopware.unserializeUsage
+         * @phpstan-ignore shopwell.unserializeUsage
          */
         $third = \unserialize($serialized);
 

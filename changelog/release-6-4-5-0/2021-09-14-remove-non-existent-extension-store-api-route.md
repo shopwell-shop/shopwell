@@ -2,12 +2,12 @@
 title: Remove non-existent Extension Store API route
 issue: NEXT-16986
 author: Frederik Schmitt
-author_email: f.schmitt@shopware.com 
+author_email: f.schmitt@shopwell.com 
 author_github: fschmtt
 ---
 # Core
-* Deprecated internal `Shopware\Core\Framework\Store\Services\StoreClient::getLicenses()`
-* Deprecated internal `Shopware\Core\Framework\Store\Api\StoreController::getLicenseList()`
+* Deprecated internal `Shopwell\Core\Framework\Store\Services\StoreClient::getLicenses()`
+* Deprecated internal `Shopwell\Core\Framework\Store\Api\StoreController::getLicenseList()`
 ___
 # API
 * Deprecated internal route `api.custom.store.licenses`

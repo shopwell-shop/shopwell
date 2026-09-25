@@ -7,8 +7,8 @@
         <label lang="de-DE">Swag Unit Test Versandart Persister</label>
         <description>Test for install a shipping methods</description>
         <description lang="de-DE">Test für die Installation einer Versandart</description>
-        <author>shopware AG</author>
-        <copyright>(c) by shopware AG</copyright>
+        <author>Shopwell</author>
+        <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>
         <license>MIT</license>
     </meta>

@@ -4,7 +4,7 @@ issue: NEXT-26705
 ---
 # Storefront
 * Changed dropdown lists from `<div>` to `<ul><li>` inside `views/layout/header/actions/currency-widget.html.twig` and `layout/header/actions/language-widget.html.twig`.
-* Deprecated custom CSS inside `scss/layout/_top-bar.scss`. Bootstrap variables inside `scss/skin/shopware/layout/_top-bar.scss` will be used instead to adjust the top-bar dropdown appearance.
+* Deprecated custom CSS inside `scss/layout/_top-bar.scss`. Bootstrap variables inside `scss/skin/shopwell/layout/_top-bar.scss` will be used instead to adjust the top-bar dropdown appearance.
 * Deprecated `label.top-bar-list-label` and `input.top-bar-list-radio` elements inside `views/layout/header/actions/currency-widget.html.twig` and `layout/header/actions/language-widget.html.twig`. `<button>` elements will be used instead as dropdown items.
 * Deprecated class `item-checked` inside `views/layout/header/actions/currency-widget.html.twig` and `views/layout/header/actions/language-widget.html.twig`. Bootstrap class `active` will be used instead.
 * Deprecated block `layout_header_actions_currency_widget_form_items_element_input` inside `views/layout/header/actions/currency-widget.html.twig`, will be removed. Use parent block `layout_header_actions_currency_widget_form_items_element_label` instead.

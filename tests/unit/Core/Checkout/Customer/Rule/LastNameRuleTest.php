@@ -91,7 +91,7 @@ class LastNameRuleTest extends TestCase
             static::createStub(SalesChannelContext::class)
         );
 
-        $this->rule->assign(['lastName' => 'shopware', 'operator' => Rule::OPERATOR_EQ]);
+        $this->rule->assign(['lastName' => 'shopwell', 'operator' => Rule::OPERATOR_EQ]);
         static::assertFalse($this->rule->match($scope));
     }
 
@@ -102,14 +102,14 @@ class LastNameRuleTest extends TestCase
             static::createStub(SalesChannelContext::class)
         );
 
-        $this->rule->assign(['lastName' => 'shopware', 'operator' => Rule::OPERATOR_EMPTY]);
+        $this->rule->assign(['lastName' => 'shopwell', 'operator' => Rule::OPERATOR_EMPTY]);
         static::assertTrue($this->rule->match($scope));
     }
 
     public function testInvalidLastName(): void
     {
         $customer = new CustomerEntity();
-        $customer->setLastName('shopware');
+        $customer->setLastName('shopwell');
 
         $context = static::createStub(SalesChannelContext::class);
         $context->method('getCustomer')->willReturn($customer);
@@ -129,7 +129,7 @@ class LastNameRuleTest extends TestCase
     public function testInvalidScopeIsFalse(): void
     {
         $invalidScope = static::createStub(RuleScope::class);
-        $this->rule->assign(['lastName' => 'shopware', 'operator' => Rule::OPERATOR_EQ]);
+        $this->rule->assign(['lastName' => 'shopwell', 'operator' => Rule::OPERATOR_EQ]);
         static::assertFalse($this->rule->match($invalidScope));
     }
 
@@ -139,13 +139,13 @@ class LastNameRuleTest extends TestCase
     public static function getMatchCustomerLastNameValues(): array
     {
         return [
-            'EQ - true' => [true, 'shopware', 'shopware', Rule::OPERATOR_EQ],
-            'EQ - false' => [false, 'shopware', 'shopwareAG', Rule::OPERATOR_EQ],
-            'EQ(CASE) - true' => [true, 'shopware', 'ShopWare', Rule::OPERATOR_EQ],
-            'NEQ - true' => [true, 'shopware', 'shopwareAG', Rule::OPERATOR_NEQ],
-            'NEQ - false' => [false, 'shopware', 'shopware', Rule::OPERATOR_NEQ],
-            'NEQ(CASE) - false' => [false, 'shopware', 'ShopWare', Rule::OPERATOR_NEQ],
-            'EMPTY - false' => [false, 'shopware', null, Rule::OPERATOR_EMPTY],
+            'EQ - true' => [true, 'shopwell', 'shopwell', Rule::OPERATOR_EQ],
+            'EQ - false' => [false, 'shopwell', 'shopwellAG', Rule::OPERATOR_EQ],
+            'EQ(CASE) - true' => [true, 'shopwell', 'Shopwell', Rule::OPERATOR_EQ],
+            'NEQ - true' => [true, 'shopwell', 'shopwellAG', Rule::OPERATOR_NEQ],
+            'NEQ - false' => [false, 'shopwell', 'shopwell', Rule::OPERATOR_NEQ],
+            'NEQ(CASE) - false' => [false, 'shopwell', 'Shopwell', Rule::OPERATOR_NEQ],
+            'EMPTY - false' => [false, 'shopwell', null, Rule::OPERATOR_EMPTY],
             'EMPTY - true' => [true, null, null, Rule::OPERATOR_EMPTY],
         ];
     }

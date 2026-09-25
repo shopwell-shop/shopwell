@@ -3,12 +3,12 @@ title: Make payments distinguishable in certain areas in the Administration
 issue: NEXT-15170
 ---
 # Core
-* Added new translated field `distinguishableName` in `\Shopware\Core\Checkout\Payment\PaymentMethodDefinition::defineFields()`
-* Added new field `distinguishableName` in `\Shopware\Core\Checkout\Payment\PaymentMethodTranslationDefinition::defineFields()`
-* Added new class `Shopware\Core\Checkout\Payment\DataAbstractionLayer\PaymentDistinguishableNameSubscriber`
+* Added new translated field `distinguishableName` in `\Shopwell\Core\Checkout\Payment\PaymentMethodDefinition::defineFields()`
+* Added new field `distinguishableName` in `\Shopwell\Core\Checkout\Payment\PaymentMethodTranslationDefinition::defineFields()`
+* Added new class `Shopwell\Core\Checkout\Payment\DataAbstractionLayer\PaymentDistinguishableNameSubscriber`
 * Fixed unused imports in `src/Core/Framework/Migration/Template/MigrationTemplateLegacy.txt`
-* Added migration `\Shopware\Core\Migration\V6_4\Migration1620733405DistinguishablePaymentMethodName`
-* Added migration `\Shopware\Core\Migration\V6_4\Migration1620733405UpdateRolePrivilegesForDistinguishablePaymentName`
+* Added migration `\Shopwell\Core\Migration\V6_4\Migration1620733405DistinguishablePaymentMethodName`
+* Added migration `\Shopwell\Core\Migration\V6_4\Migration1620733405UpdateRolePrivilegesForDistinguishablePaymentName`
 ___
 # API
 * Added new write-protected runtime field `distinguishableName` to `/api/search/payment-method`

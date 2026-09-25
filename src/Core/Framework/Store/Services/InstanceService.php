@@ -11,18 +11,18 @@ use Shopwell\Core\Framework\Log\Package;
 class InstanceService
 {
     public function __construct(
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
         private readonly ?string $instanceId
     ) {
     }
 
     public function getShopwellVersion(): string
     {
-        if (str_ends_with($this->shopwareVersion, '-dev')) {
+        if (str_ends_with($this->shopwellVersion, '-dev')) {
             return '___VERSION___';
         }
 
-        return $this->shopwareVersion;
+        return $this->shopwellVersion;
     }
 
     public function getInstanceId(): ?string

@@ -15,7 +15,7 @@ class DemodataCompilerPass implements CompilerPassInterface
     {
         $demodataCommand = $container->getDefinition(DemodataCommand::class);
 
-        foreach ($container->findTaggedServiceIds('shopware.demodata_generator') as $tags) {
+        foreach ($container->findTaggedServiceIds('shopwell.demodata_generator') as $tags) {
             foreach ($tags as $tag) {
                 $name = $tag['option-name'] ?? null;
                 if ($name === null) {

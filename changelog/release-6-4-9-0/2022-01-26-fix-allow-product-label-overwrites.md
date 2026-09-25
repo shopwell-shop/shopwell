@@ -6,4 +6,4 @@ author_email: evers.nils@gmail.com
 author_github: NilsEvers
 ---
 # Core
-* Changed condition in `\Shopware\Core\Content\Product\Cart\ProductCartProcessor::enrich` to allow label overwrites for products in cart
+* Changed condition in `\Shopwell\Core\Content\Product\Cart\ProductCartProcessor::enrich` to allow label overwrites for products in cart

@@ -101,8 +101,8 @@ export type ExtensionDefinition = {
  *   {
  *      name: 'SwagExtensionStore',
  *      technicalName: 'swag-extension-store',
- *      basePath: '/Users/max.muster/Sites/shopware/custom/plugins/SwagExtensionStore/src',
- *      path: '/Users/max.muster/Sites/shopware/custom/plugins/SwagExtensionStore/src/Resources/app/administration/src',
+ *      basePath: '/Users/max.muster/Sites/shopwell/custom/plugins/SwagExtensionStore/src',
+ *      path: '/Users/max.muster/Sites/shopwell/custom/plugins/SwagExtensionStore/src/Resources/app/administration/src',
  *      filePath: '/Users/max.muster/.../custom/plugins/SwagExtensionStore/src/Resources/app/administration/src/main.js',
  *   },
  *    ...

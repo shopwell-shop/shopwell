@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shopwell PHP Code"
+  short_description: "Apply Shopwell PHP architecture and BC rules."
+  default_prompt: "Implement this Shopwell PHP change."

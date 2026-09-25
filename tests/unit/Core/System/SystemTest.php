@@ -30,11 +30,11 @@ class SystemTest extends TestCase
     {
         $container = $this->buildContainer('test');
 
-        static::assertTrue($container->has('shopware.translation.mock_handler'), 'services_test.php');
+        static::assertTrue($container->has('shopwell.translation.mock_handler'), 'services_test.php');
 
         // the client must be wired to the mock handler instead of the
         // real client from snippet.php (see issue #18067)
-        $arguments = $container->getDefinition('shopware.translation.client')->getArguments();
+        $arguments = $container->getDefinition('shopwell.translation.client')->getArguments();
         static::assertArrayHasKey(0, $arguments);
         static::assertIsArray($arguments[0]);
         static::assertArrayHasKey('handler', $arguments[0]);
@@ -45,8 +45,8 @@ class SystemTest extends TestCase
     {
         $container = $this->buildContainer('prod');
 
-        static::assertFalse($container->has('shopware.translation.mock_handler'), 'services_test.php');
-        static::assertTrue($container->has('shopware.translation.client'), 'snippet.php');
+        static::assertFalse($container->has('shopwell.translation.mock_handler'), 'services_test.php');
+        static::assertTrue($container->has('shopwell.translation.client'), 'snippet.php');
         static::assertSame(
             [
                 [
@@ -54,7 +54,7 @@ class SystemTest extends TestCase
                     'connect_timeout' => 5,
                 ],
             ],
-            $container->getDefinition('shopware.translation.client')->getArguments()
+            $container->getDefinition('shopwell.translation.client')->getArguments()
         );
     }
 

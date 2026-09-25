@@ -2,7 +2,7 @@
 title: Installer supports presets based on the language selection
 issue: #10498
 author: Dominik Grothaus
-author_email: d.grothaus@shopware.com
+author_email: d.grothaus@shopwell.com
 author_github: @dgrothaus-sw
 ---
 # Core

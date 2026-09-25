@@ -2,7 +2,7 @@
 title:              Fix multi id select
 issue:              NEXT-14426
 author:             OliverSkroblin
-author_email:       o.skroblin@shopware.com
+author_email:       o.skroblin@shopwell.com
 author_github:      @OliverSkroblin
 ---
 # Administration

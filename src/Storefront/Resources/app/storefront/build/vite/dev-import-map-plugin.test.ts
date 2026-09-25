@@ -98,7 +98,7 @@ describe('devImportMapPlugin', () => {
         fs.mkdirSync(path.join(componentsRoot, 'Sw/Header'), { recursive: true });
         fs.mkdirSync(varRoot, { recursive: true });
 
-        fs.writeFileSync(path.join(viteRoot, 'src/shopware.ts'), 'export const test = true;');
+        fs.writeFileSync(path.join(viteRoot, 'src/shopwell.ts'), 'export const test = true;');
         fs.writeFileSync(path.join(componentsRoot, 'Sw/Header/Navbar.ts'), 'export default class Navbar {}');
         fs.writeFileSync(path.join(componentsRoot, 'Sw/Header/Navbar.css'), '.navbar { color: red; }');
         fs.writeFileSync(path.join(varRoot, 'plugins.json'), JSON.stringify({
@@ -126,7 +126,7 @@ describe('devImportMapPlugin', () => {
             themeId?: string;
         };
 
-        expect(devMap.imports['shopware']).toBe('http://localhost:5180/src/shopware.ts');
+        expect(devMap.imports['shopwell']).toBe('http://localhost:5180/src/shopwell.ts');
         expect(devMap.imports['Sw:Header:Navbar']).toContain('/@fs');
         expect(devMap.styles).toContain('http://localhost:5180/theme-scss/all.css');
         expect(devMap.styles).toContain('http://localhost:5180/__sw-comp-css/Sw/Header/Navbar.css');
@@ -145,7 +145,7 @@ describe('devImportMapPlugin', () => {
         fs.mkdirSync(namespacedCompRoot, { recursive: true });
         fs.mkdirSync(varRoot, { recursive: true });
 
-        fs.writeFileSync(path.join(viteRoot, 'src/shopware.ts'), 'export const test = true;');
+        fs.writeFileSync(path.join(viteRoot, 'src/shopwell.ts'), 'export const test = true;');
         fs.writeFileSync(path.join(namespacedCompRoot, 'Bar.css'), '.bar { color: blue; }');
         fs.writeFileSync(path.join(varRoot, 'plugins.json'), JSON.stringify({
             TestPlugin: {
@@ -211,7 +211,7 @@ describe('devImportMapPlugin', () => {
         fs.mkdirSync(namespacedCompRoot, { recursive: true });
         fs.mkdirSync(varRoot, { recursive: true });
 
-        fs.writeFileSync(path.join(viteRoot, 'src/shopware.ts'), 'export const test = true;');
+        fs.writeFileSync(path.join(viteRoot, 'src/shopwell.ts'), 'export const test = true;');
         fs.writeFileSync(path.join(varRoot, 'plugins.json'), JSON.stringify({
             TestPlugin: {
                 basePath: 'custom/plugins/TestPlugin',
@@ -262,7 +262,7 @@ describe('devImportMapPlugin', () => {
         fs.mkdirSync(path.join(componentsRoot, 'Sw/Header'), { recursive: true });
         fs.mkdirSync(varRoot, { recursive: true });
 
-        fs.writeFileSync(path.join(viteRoot, 'src/shopware.ts'), 'export const test = true;');
+        fs.writeFileSync(path.join(viteRoot, 'src/shopwell.ts'), 'export const test = true;');
         fs.writeFileSync(path.join(componentsRoot, 'Sw/Header/Navbar.css'), '.navbar { color: red; }');
         fs.writeFileSync(path.join(varRoot, 'plugins.json'), JSON.stringify({
             Storefront: {
@@ -288,7 +288,7 @@ describe('devImportMapPlugin', () => {
             styles: string[];
         };
 
-        expect(devMap.imports['shopware']).toBe('http://host.docker.internal:5183/src/shopware.ts');
+        expect(devMap.imports['shopwell']).toBe('http://host.docker.internal:5183/src/shopwell.ts');
         expect(devMap.styles).toContain('http://host.docker.internal:5183/theme-scss/all.css');
         expect(devMap.styles).toContain('http://host.docker.internal:5183/__sw-comp-css/Sw/Header/Navbar.css');
     });

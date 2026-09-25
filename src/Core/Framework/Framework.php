@@ -177,8 +177,8 @@ class Framework extends Bundle
             MeterProvider::bindMeter($this->container);
         }
 
-        CacheValueCompressor::$compress = $this->container->getParameter('shopware.cache.compress');
-        CacheValueCompressor::$compressMethod = $this->container->getParameter('shopware.cache.compression_method');
+        CacheValueCompressor::$compress = $this->container->getParameter('shopwell.cache.compress');
+        CacheValueCompressor::$compressMethod = $this->container->getParameter('shopwell.cache.compression_method');
         Feature::$emitDeprecations = $this->container->getParameter('kernel.debug');
 
         $stampedeProtectionConfigurator = $this->container->get(StampedeProtectionConfigurator::class);

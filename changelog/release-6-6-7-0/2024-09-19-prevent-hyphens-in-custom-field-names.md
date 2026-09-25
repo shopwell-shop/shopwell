@@ -2,7 +2,7 @@
 title: Prevent hyphens in custom field names
 issue: NEXT-37506
 author: Jozsef Damokos
-author_email: j.damokos@shopware.com
+author_email: j.damokos@shopwell.com
 author_github: jozsefdamokos
 ---
 # Core

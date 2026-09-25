@@ -2,7 +2,7 @@
 title: fix product media import with whitespace in url
 issue: 5868
 author: p.dinkhoff
-author_email: p.dinkhoff@shopware.com
+author_email: p.dinkhoff@shopwell.com
 author_github: @p.dinkhoff
 ---
 # Core

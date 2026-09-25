@@ -37,7 +37,7 @@ class UserProvisionerTest extends TestCase
                     static::assertFalse($data['admin']);
                     static::assertTrue($data['active']);
 
-                    return password_verify('shopware', (string) $data['password']);
+                    return password_verify('shopwell', (string) $data['password']);
                 })
             );
         $connection->expects($this->once())->method('fetchOne')->willReturn(json_encode(['_value' => 8], \JSON_THROW_ON_ERROR));
@@ -54,7 +54,7 @@ class UserProvisionerTest extends TestCase
         ];
 
         $provisioner = new UserProvisioner($connection, new NativeClock());
-        $provisioner->provision('admin', 'shopware', $user);
+        $provisioner->provision('admin', 'shopwell', $user);
     }
 
     public function testProvisionThrowsIfUserAlreadyExists(): void
@@ -76,7 +76,7 @@ class UserProvisionerTest extends TestCase
 
         $provisioner = new UserProvisioner($connection, new NativeClock());
         $this->expectExceptionObject(new \RuntimeException('User with username "admin" already exists.'));
-        $provisioner->provision('admin', 'shopware', $user);
+        $provisioner->provision('admin', 'shopwell', $user);
     }
 
     public function testProvisionThrowsIfPasswordTooShort(): void

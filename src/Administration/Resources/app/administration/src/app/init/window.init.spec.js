@@ -3,7 +3,7 @@
  */
 
 import initializeWindow, { _windowLocationHelpers } from 'src/app/init/window.init';
-import { send } from '@shopware-ag/meteor-admin-sdk/es/channel';
+import { send } from '@shopwell-ag/meteor-admin-sdk/es/channel';
 
 describe('src/app/init/window.init.ts', () => {
     beforeAll(() => {

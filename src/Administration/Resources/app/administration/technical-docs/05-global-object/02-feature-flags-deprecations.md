@@ -36,7 +36,7 @@ Feature flags are sourced from multiple locations:
 
 ### Initialization
 
-Feature flags are initialized early in the application bootstrap process in `src/core/shopware.ts`:
+Feature flags are initialized early in the application bootstrap process in `src/core/shopwell.ts`:
 
 ```typescript
 /** Initialize feature flags at the beginning */

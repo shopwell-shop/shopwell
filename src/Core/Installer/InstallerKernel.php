@@ -23,9 +23,9 @@ class InstallerKernel extends HttpKernel
 {
     use MicroKernelTrait;
 
-    private readonly string $shopwareVersion;
+    private readonly string $shopwellVersion;
 
-    private readonly ?string $shopwareVersionRevision;
+    private readonly ?string $shopwellVersionRevision;
 
     public function __construct(
         string $environment,
@@ -34,8 +34,8 @@ class InstallerKernel extends HttpKernel
         parent::__construct($environment, $debug);
 
         $version = VersionParser::parseShopwellVersion($this->resolveComposerVersion());
-        $this->shopwareVersion = $version['version'];
-        $this->shopwareVersionRevision = $version['revision'];
+        $this->shopwellVersion = $version['version'];
+        $this->shopwellVersionRevision = $version['revision'];
     }
 
     /**
@@ -89,8 +89,8 @@ class InstallerKernel extends HttpKernel
         return array_merge(
             $parameters,
             [
-                'kernel.shopware_version' => $this->shopwareVersion,
-                'kernel.shopware_version_revision' => $this->shopwareVersionRevision,
+                'kernel.shopwell_version' => $this->shopwellVersion,
+                'kernel.shopwell_version_revision' => $this->shopwellVersionRevision,
                 'kernel.secret' => 'noSecr3t',
             ]
         );
@@ -109,13 +109,13 @@ class InstallerKernel extends HttpKernel
 
     protected function resolveComposerVersion(): string
     {
-        if (InstalledVersions::isInstalled('shopware/platform')) {
-            return InstalledVersions::getVersion('shopware/platform')
-                . '@' . InstalledVersions::getReference('shopware/platform');
+        if (InstalledVersions::isInstalled('shopwell/platform')) {
+            return InstalledVersions::getVersion('shopwell/platform')
+                . '@' . InstalledVersions::getReference('shopwell/platform');
         }
 
-        return InstalledVersions::getVersion('shopware/core')
-            . '@' . InstalledVersions::getReference('shopware/core');
+        return InstalledVersions::getVersion('shopwell/core')
+            . '@' . InstalledVersions::getReference('shopwell/core');
     }
 
     /**

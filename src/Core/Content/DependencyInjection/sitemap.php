@@ -42,10 +42,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(SitemapExporter::class)
         ->args([
-            tagged_iterator('shopware.sitemap_url_provider'),
+            tagged_iterator('shopwell.sitemap_url_provider'),
             service('cache.system'),
-            param('shopware.sitemap.batchsize'),
-            service('shopware.filesystem.sitemap'),
+            param('shopwell.sitemap.batchsize'),
+            service('shopwell.filesystem.sitemap'),
             service(SitemapHandleFactoryInterface::class),
             service('event_dispatcher'),
             service(CartRuleLoader::class),
@@ -53,14 +53,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(SitemapLister::class)
         ->args([
-            service('shopware.filesystem.sitemap'),
-            service('shopware.asset.sitemap'),
+            service('shopwell.filesystem.sitemap'),
+            service('shopwell.asset.sitemap'),
             service(ClockInterface::class),
         ]);
 
     $services->set(ConfigHandler::class)
         ->args([
-            tagged_iterator('shopware.sitemap.config_handler'),
+            tagged_iterator('shopwell.sitemap.config_handler'),
         ]);
 
     $services->set(SitemapHandleFactoryInterface::class, SitemapHandleFactory::class)
@@ -80,12 +80,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(SitemapFileRoute::class)
         ->public()
         ->args([
-            service('shopware.filesystem.sitemap'),
+            service('shopwell.filesystem.sitemap'),
             service(ExtensionDispatcher::class),
         ]);
 
     $services->set(HomeUrlProvider::class)
-        ->tag('shopware.sitemap_url_provider');
+        ->tag('shopwell.sitemap_url_provider');
 
     $services->set(CategoryUrlProvider::class)
         ->args([
@@ -96,13 +96,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(EntityRouteResolver::class),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.sitemap_url_provider');
+        ->tag('shopwell.sitemap_url_provider');
 
     $services->set(CustomUrlProvider::class)
         ->args([
             service(ConfigHandler::class),
         ])
-        ->tag('shopware.sitemap_url_provider');
+        ->tag('shopwell.sitemap_url_provider');
 
     $services->set(ProductUrlProvider::class)
         ->args([
@@ -114,7 +114,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SystemConfigService::class),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.sitemap_url_provider');
+        ->tag('shopwell.sitemap_url_provider');
 
     $services->set(LandingPageUrlProvider::class)
         ->args([
@@ -123,13 +123,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(EntityRouteResolver::class),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.sitemap_url_provider');
+        ->tag('shopwell.sitemap_url_provider');
 
     $services->set(File::class)
         ->args([
-            param('shopware.sitemap'),
+            param('shopwell.sitemap'),
         ])
-        ->tag('shopware.sitemap.config_handler');
+        ->tag('shopwell.sitemap.config_handler');
 
     $services->set(SitemapSalesChannelLoader::class)
         ->args([
@@ -146,7 +146,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('console.command');
 
     $services->set(SitemapGenerateTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(SitemapGenerateTaskHandler::class)
         ->args([

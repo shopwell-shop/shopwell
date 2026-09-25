@@ -185,21 +185,21 @@ async function createWrapper(props = defaultProps, routeName = 'sw.order.detail.
         formats: ['pdf'],
     });
     getDocumentV2Mock = jest.fn().mockResolvedValue({
-        file: 'https://shopware.test/dummny.html',
+        file: 'https://shopwell.test/dummny.html',
         fileName: 'dummy.html',
     });
     getDocumentLegacyMock = jest.fn().mockResolvedValue({
-        data: 'https://shopware.test/dummny.pdf',
+        data: 'https://shopwell.test/dummny.pdf',
         headers: {
             'content-disposition': 'attachment; filename=dummy.pdf',
         },
     });
     getDocumentArchiveV2Mock = jest.fn().mockResolvedValue({
-        file: 'https://shopware.test/documents.zip',
+        file: 'https://shopwell.test/documents.zip',
         fileName: 'documents.zip',
     });
     getDocumentPreviewV2Mock = jest.fn().mockResolvedValue({
-        file: 'https://shopware.test/dummny.html',
+        file: 'https://shopwell.test/dummny.html',
         fileName: 'dummy.html',
     });
 

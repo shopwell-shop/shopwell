@@ -2,7 +2,7 @@
 title: Add advance selection to rule assignments
 issue: NEXT-20212
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com
+author_email: k.luetjann@shopwell.com
 author_github: King-of-Babylon
 ---
 # Administration

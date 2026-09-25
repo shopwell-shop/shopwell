@@ -1,7 +1,7 @@
 ---
 title: Removed wrapper around mt-datepicker components
 author: alastair-simon
-author_email: a.fraser@shopware.com
+author_email: a.fraser@shopwell.com
 author_github: @alastair-simon
 ---
 # Core

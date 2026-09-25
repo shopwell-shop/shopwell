@@ -169,7 +169,7 @@
                 "buttonPreviewLabel": "Generate preview",
                 "settings": "Product export",
                 "fileName": "Filename",
-                "placeholderFileName": "shopware.csv",
+                "placeholderFileName": "shopwell.csv",
                 "lastGenerationLabel": "Last generated at: ",
                 "notYetGenerated": "This export has not been generated yet.",
                 "encoding": "Encoding",

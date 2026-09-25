@@ -3,7 +3,7 @@
  */
 
 import { mount } from '@vue/test-utils';
-import { location } from '@shopware-ag/meteor-admin-sdk';
+import { location } from '@shopwell-ag/meteor-admin-sdk';
 import useTheme from 'src/app/composables/use-theme';
 
 let $routeMock = {

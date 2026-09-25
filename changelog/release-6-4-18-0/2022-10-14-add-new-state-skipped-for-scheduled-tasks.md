@@ -6,4 +6,4 @@ author_email: a.wink@kellerkinder.de
 author_github: @jinnoflife
 ---
 # Core
-* Added `\Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskDefinition::STATUS_SKIPPED`
+* Added `\Shopwell\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskDefinition::STATUS_SKIPPED`

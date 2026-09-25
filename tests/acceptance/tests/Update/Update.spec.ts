@@ -1,7 +1,7 @@
 import { test, expect } from '@fixtures/AcceptanceTest';
 
 test(
-    `Update an existing Shopwell ${process.env.SHOPWARE_UPDATE_FROM} instance.`,
+    `Update an existing Shopwell ${process.env.SHOPWELL_UPDATE_FROM} instance.`,
     { tag: '@Update' },
     async ({ page, AdminApiContext }) => {
         test.slow();
@@ -16,7 +16,7 @@ test(
             version: string;
         };
 
-        await page.goto('#/sw/settings/shopware/updates/wizard');
+        await page.goto('#/sw/settings/shopwell/updates/wizard');
 
         await page.getByRole('button', { name: 'Start update' }).click();
 

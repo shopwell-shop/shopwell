@@ -3,6 +3,6 @@ issue: NEXT-13685
 ---
 # Core
 * Removed support parameter `vatId`, use array `vatIds` instead for routes:
-    * `Shopware\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute:upsert`
-    * `Shopware\Core\Checkout\Customer\SalesChannel\RegisterRoute:register`
+    * `Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute:upsert`
+    * `Shopwell\Core\Checkout\Customer\SalesChannel\RegisterRoute:register`
 

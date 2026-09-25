@@ -166,7 +166,7 @@ class ValidateSnippetsCommandTest extends TestCase
             'storefront.' . $iso,
             $path,
             $iso,
-            'shopware AG',
+            'Shopwell',
             true,
             'Storefront'
         );

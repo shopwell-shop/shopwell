@@ -18,7 +18,7 @@ require_once __DIR__ . '/../../../.github/bin/lib/feature-flags.php';
 class FeatureFlagLanesTest extends TestCase
 {
     private const REGISTRY = <<<'YAML'
-        shopware:
+        shopwell:
           feature:
             flags:
               - name: v6.7.0.0
@@ -60,7 +60,7 @@ class FeatureFlagLanesTest extends TestCase
 
     public function testReadsEveryFlagWithItsScalarOptions(): void
     {
-        $flags = shopware_read_feature_flags($this->registry(self::REGISTRY));
+        $flags = shopwell_read_feature_flags($this->registry(self::REGISTRY));
 
         static::assertSame(['v6.7.0.0', 'v6.8.0.0', 'v6.9.0.0', 'JSON_LD_DATA', 'TELEMETRY_METRICS'], array_keys($flags));
         static::assertSame(['default' => 'false', 'major' => 'true', 'toggleable' => 'true'], $flags['JSON_LD_DATA']);
@@ -68,7 +68,7 @@ class FeatureFlagLanesTest extends TestCase
 
     public function testInFlightMajorsAreTheUnreleasedVersionedMajors(): void
     {
-        static::assertSame(['v6.8.0.0', 'v6.9.0.0'], shopware_in_flight_majors($this->registry(self::REGISTRY)));
+        static::assertSame(['v6.8.0.0', 'v6.9.0.0'], shopwell_in_flight_majors($this->registry(self::REGISTRY)));
     }
 
     public function testInFlightMajorsAreSortedByVersion(): void
@@ -79,38 +79,38 @@ class FeatureFlagLanesTest extends TestCase
             self::REGISTRY
         );
 
-        static::assertSame(['v6.9.0.0', 'v6.10.0.0'], shopware_in_flight_majors($this->registry($registry)));
+        static::assertSame(['v6.9.0.0', 'v6.10.0.0'], shopwell_in_flight_majors($this->registry($registry)));
     }
 
     public function testLanesFallBackToAllMajorsWhenEveryMajorHasShipped(): void
     {
         $registry = str_replace('default: false', 'default: true', self::REGISTRY);
 
-        static::assertSame([], shopware_in_flight_majors($this->registry($registry)));
-        static::assertSame(['major'], shopware_major_lanes($this->registry($registry)));
+        static::assertSame([], shopwell_in_flight_majors($this->registry($registry)));
+        static::assertSame(['major'], shopwell_major_lanes($this->registry($registry)));
     }
 
     public function testRejectsARegistryWithoutAnyFlag(): void
     {
         $this->expectException(\RuntimeException::class);
 
-        shopware_read_feature_flags($this->registry('shopware:'));
+        shopwell_read_feature_flags($this->registry('shopwell:'));
     }
 
     public function testRejectsAMissingRegistry(): void
     {
         $this->expectException(\RuntimeException::class);
 
-        shopware_read_feature_flags(\sys_get_temp_dir() . '/feature-' . \uniqid() . '.yaml');
+        shopwell_read_feature_flags(\sys_get_temp_dir() . '/feature-' . \uniqid() . '.yaml');
     }
 
     public function testDerivesLanesFromTheRegistryOfThisBranch(): void
     {
-        $lanes = shopware_major_lanes();
+        $lanes = shopwell_major_lanes();
 
         static::assertNotEmpty($lanes, 'Without a lane the major matrix would run no job at all.');
 
-        $flags = shopware_read_feature_flags();
+        $flags = shopwell_read_feature_flags();
         foreach ($lanes as $lane) {
             if ($lane === 'major') {
                 static::assertCount(1, $lanes, 'The all-majors fallback is only valid as the single lane.');

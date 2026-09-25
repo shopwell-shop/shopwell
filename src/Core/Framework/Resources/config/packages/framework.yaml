@@ -83,7 +83,7 @@ framework:
                     multiplier: 2
                     max_delay: 0
             webhook:
-                dsn: 'shopware-webhook://default'
+                dsn: 'shopwell-webhook://default'
                 retry_strategy:
                     max_retries: 0
         buses:

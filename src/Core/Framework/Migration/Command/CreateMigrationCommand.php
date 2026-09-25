@@ -27,7 +27,7 @@ class CreateMigrationCommand extends Command
     public function __construct(
         private readonly KernelPluginCollection $kernelPluginCollection,
         private readonly string $coreDir,
-        private readonly string $shopwareVersion
+        private readonly string $shopwellVersion
     ) {
         parent::__construct();
     }
@@ -85,7 +85,7 @@ class CreateMigrationCommand extends Command
         }
 
         // We create a core-migration in case no directory or plugin was given
-        [, $major] = explode('.', $this->shopwareVersion);
+        [, $major] = explode('.', $this->shopwellVersion);
         $directory = $this->coreDir . '/Migration/V6_' . $major;
         $namespace = 'Shopwell\\Core\\Migration\\V6_' . $major;
         $params = [

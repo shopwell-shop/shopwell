@@ -33,10 +33,10 @@ class StructuredObjectBusinessEvent implements FlowEventAware, BusinessEventEnco
             );
     }
 
-    public function getEncodeValues(string $shopwareVersion): array
+    public function getEncodeValues(string $shopwellVersion): array
     {
         return [
-            'inner' => $this->getInner()->getEncodeValues($shopwareVersion),
+            'inner' => $this->getInner()->getEncodeValues($shopwellVersion),
         ];
     }
 

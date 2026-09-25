@@ -152,7 +152,7 @@ abstract class AbstractAppPaymentHandlerTestCase extends TestCase
             ->add('id', $this->ids->get('customer'))
             ->add('email', Uuid::randomHex() . '@example.com')
             ->add('salesChannelId', TestDefaults::SALES_CHANNEL)
-            ->add('password', 'shopware')
+            ->add('password', 'shopwell')
             ->defaultShippingAddress('address')
             ->defaultBillingAddress('address', [
                 'id' => $addressId,
@@ -301,7 +301,7 @@ abstract class AbstractAppPaymentHandlerTestCase extends TestCase
         return new Response(
             200,
             [
-                'shopware-app-signature' => $hmac,
+                'shopwell-app-signature' => $hmac,
             ],
             $json
         );

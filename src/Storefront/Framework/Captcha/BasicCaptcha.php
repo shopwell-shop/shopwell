@@ -16,7 +16,7 @@ use Symfony\Component\Validator\ConstraintViolationList;
 class BasicCaptcha extends AbstractCaptcha
 {
     final public const CAPTCHA_NAME = 'basicCaptcha';
-    final public const CAPTCHA_REQUEST_PARAMETER = 'shopware_basic_captcha_confirm';
+    final public const CAPTCHA_REQUEST_PARAMETER = 'shopwell_basic_captcha_confirm';
     final public const BASIC_CAPTCHA_SESSION = 'basic_captcha_session';
     final public const INVALID_CAPTCHA_CODE = 'captcha.basic-captcha-invalid';
 

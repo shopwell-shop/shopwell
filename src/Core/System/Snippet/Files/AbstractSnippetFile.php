@@ -39,7 +39,7 @@ abstract class AbstractSnippetFile
      * Return the snippet author, which will be used when editing a file snippet in a snippet set
      *
      * Example:
-     * shopware
+     * shopwell
      * pluginName
      */
     abstract public function getAuthor(): string;

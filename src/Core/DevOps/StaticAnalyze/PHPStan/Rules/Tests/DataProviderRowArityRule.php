@@ -90,7 +90,7 @@ class DataProviderRowArityRule implements Rule
                             $testMethodName,
                             $maxParams,
                         ))
-                            ->identifier('shopware.dataProviderRowArity')
+                            ->identifier('shopwell.dataProviderRowArity')
                             ->line($row->getStartLine())
                             ->build();
                     }

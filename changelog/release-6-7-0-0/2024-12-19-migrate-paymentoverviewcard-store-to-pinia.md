@@ -12,14 +12,14 @@ ___
 # Upgrade Information
 ## "paymentOverviewCard" Vuex store moved to Pinia
 
-The `paymentOverviewCard` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopware.Store.get('paymentOverviewCard')`.
+The `paymentOverviewCard` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopwell.Store.get('paymentOverviewCard')`.
 
 ### Before:
 ```js
-Shopware.State.get('paymentOverviewCard');
+Shopwell.State.get('paymentOverviewCard');
 ```
 
 ### After:
 ```js
-Shopware.Store.get('paymentOverviewCard');
+Shopwell.Store.get('paymentOverviewCard');
 ```

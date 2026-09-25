@@ -5,7 +5,7 @@
  */
 
 import { mount } from '@vue/test-utils';
-import { MtTextEditorToolbarButton, MtModalClose, MtModal, MtModalRoot } from '@shopware-ag/meteor-component-library';
+import { MtTextEditorToolbarButton, MtModalClose, MtModal, MtModalRoot } from '@shopwell-ag/meteor-component-library';
 
 const responses = global.repositoryFactoryMock.responses;
 

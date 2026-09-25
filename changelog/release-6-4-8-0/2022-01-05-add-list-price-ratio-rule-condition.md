@@ -2,7 +2,7 @@
 title: Add price/list price percentage rule condition
 issue: NEXT-19182
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com 
+author_email: k.luetjann@shopwell.com 
 author_github: King-of-Babylon
 ---
 # Core

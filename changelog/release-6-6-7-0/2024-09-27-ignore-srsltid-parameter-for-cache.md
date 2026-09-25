@@ -6,4 +6,4 @@ author_email: info@campit.be
 author_github: wannevancamp
 ---
 # Core
-* Added `srsltid` parameter to ignored http cache parameters `shopware.http_cache.ignored_url_parameters`
+* Added `srsltid` parameter to ignored http cache parameters `shopwell.http_cache.ignored_url_parameters`

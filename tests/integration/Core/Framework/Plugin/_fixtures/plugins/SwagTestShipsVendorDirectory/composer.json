@@ -2,13 +2,13 @@
     "name": "swag/test-ships-vendor-directory",
     "description": "Test plugin",
     "version": "1.0.0",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "license": "MIT",
     "require": {
-        "shopware/core": "*"
+        "shopwell/core": "*"
     },
     "extra": {
-        "shopware-plugin-class": "SwagTestShipsVendorDirectory\\SwagTestShipsVendorDirectory",
+        "shopwell-plugin-class": "SwagTestShipsVendorDirectory\\SwagTestShipsVendorDirectory",
         "label": {
             "de-DE": "Deutscher Pluginname",
             "de-CH": "Schweizerdeutsch Pluginname",

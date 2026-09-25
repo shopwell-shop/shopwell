@@ -129,7 +129,7 @@ class ConsentReporterTest extends TestCase
     {
         $httpClient = new MockHttpClient([
             static function ($method, $url, $options): MockResponse {
-                self::assertPayloadContains('shopware_version', '6.5.0.0', $options['body']);
+                self::assertPayloadContains('shopwell_version', '6.5.0.0', $options['body']);
 
                 return new MockResponse('', ['http_code' => 204]);
             },

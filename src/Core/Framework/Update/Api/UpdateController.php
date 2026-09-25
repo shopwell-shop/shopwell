@@ -44,8 +44,8 @@ class UpdateController extends AbstractController
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly SystemConfigService $systemConfig,
         private readonly AbstractExtensionLifecycle $extensionLifecycleService,
-        private readonly string $shopwareVersion,
-        private readonly bool $shopwareUpdateEnabled = true,
+        private readonly string $shopwellVersion,
+        private readonly bool $shopwellUpdateEnabled = true,
         private readonly bool $updateModuleHidden = false,
         private readonly bool $clusterSetup = false,
     ) {
@@ -63,13 +63,13 @@ class UpdateController extends AbstractController
 
         $updates = $this->apiClient->checkForUpdates();
 
-        if (version_compare($this->shopwareVersion, $updates->version, '>=')) {
+        if (version_compare($this->shopwellVersion, $updates->version, '>=')) {
             return new JsonResponse();
         }
 
         return new JsonResponse([
             ...$updates->jsonSerialize(),
-            'autoUpdateEnabled' => $this->shopwareUpdateEnabled,
+            'autoUpdateEnabled' => $this->shopwellUpdateEnabled,
             'clusterSetup' => $this->clusterSetup,
         ]);
     }
@@ -142,7 +142,7 @@ class UpdateController extends AbstractController
         if ($offset === 0) {
             // plugins can subscribe to these events, check compatibility and throw exceptions to prevent the update
             $this->eventDispatcher->dispatch(
-                new UpdatePrePrepareEvent($context, $this->shopwareVersion, $update->version)
+                new UpdatePrePrepareEvent($context, $this->shopwellVersion, $update->version)
             );
         }
 
@@ -168,7 +168,7 @@ class UpdateController extends AbstractController
 
             // @internal plugins are deactivated
             $containerWithoutPlugins->get('event_dispatcher')->dispatch(
-                new UpdatePostPrepareEvent($context, $this->shopwareVersion, $update->version)
+                new UpdatePostPrepareEvent($context, $this->shopwellVersion, $update->version)
             );
         }
 
@@ -189,7 +189,7 @@ class UpdateController extends AbstractController
     {
         $this->ensureUpdateModuleVisible();
 
-        if (!$this->shopwareUpdateEnabled) {
+        if (!$this->shopwellUpdateEnabled) {
             throw UpdateException::autoUpdateDisabled();
         }
     }

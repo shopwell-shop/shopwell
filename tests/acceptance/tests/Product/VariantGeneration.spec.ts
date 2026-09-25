@@ -1,5 +1,5 @@
 import { test } from '@fixtures/AcceptanceTest';
-import { PropertyGroup } from '@shopware-ag/acceptance-test-suite';
+import { PropertyGroup } from '@shopwell-ag/acceptance-test-suite';
 
 test(
     'Shop administrator should be able to create product variants.',

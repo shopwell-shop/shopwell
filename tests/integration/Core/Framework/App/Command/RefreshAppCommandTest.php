@@ -50,7 +50,7 @@ class RefreshAppCommandTest extends TestCase
         // header
         static::assertMatchesRegularExpression('/.*App\s+Label\s+Version\s+Author\s+\n.*/', $display);
         // content
-        static::assertMatchesRegularExpression('/.*withoutPermissions\s+Swag App Test\s+1.0.0\s+shopware AG\s+\n.*/', $display);
+        static::assertMatchesRegularExpression('/.*withoutPermissions\s+Swag App Test\s+1.0.0\s+Shopwell\s+\n.*/', $display);
     }
 
     public function testRefreshWithForce(): void
@@ -65,7 +65,7 @@ class RefreshAppCommandTest extends TestCase
         // header
         static::assertMatchesRegularExpression('/.*App\s+Label\s+Version\s+Author\s+\n.*/', $display);
         // content
-        static::assertMatchesRegularExpression('/.*withPermissions\s+Swag App Test\s+1.0.0\s+shopware AG\s+\n.*/', $display);
+        static::assertMatchesRegularExpression('/.*withPermissions\s+Swag App Test\s+1.0.0\s+Shopwell\s+\n.*/', $display);
     }
 
     public function testRefreshCancel(): void
@@ -107,7 +107,7 @@ class RefreshAppCommandTest extends TestCase
         // header app list
         static::assertMatchesRegularExpression('/.*App\s+Label\s+Version\s+Author\s+\n.*/', $display);
         // content app list
-        static::assertMatchesRegularExpression('/.*withPermissions\s+Swag App Test\s+1.0.0\s+shopware AG\s+\n.*/', $display);
+        static::assertMatchesRegularExpression('/.*withPermissions\s+Swag App Test\s+1.0.0\s+Shopwell\s+\n.*/', $display);
     }
 
     public function testRefreshWithPermissionsOnInstallCancel(): void
@@ -152,7 +152,7 @@ class RefreshAppCommandTest extends TestCase
         // header app list
         static::assertMatchesRegularExpression('/.*App\s+Label\s+Version\s+Author\s+\n.*/', $display);
         // content app list
-        static::assertMatchesRegularExpression('/.*withAllowedHosts\s+Swag App Test\s+1.0.0\s+shopware AG\s+\n.*/', $display);
+        static::assertMatchesRegularExpression('/.*withAllowedHosts\s+Swag App Test\s+1.0.0\s+Shopwell\s+\n.*/', $display);
     }
 
     public function testRefreshWithAllowedHostsOnInstallCancel(): void
@@ -219,7 +219,7 @@ class RefreshAppCommandTest extends TestCase
         // header app list
         static::assertMatchesRegularExpression('/.*App\s+Label\s+Version\s+Author\s+\n.*/', $display);
         // content app list
-        static::assertMatchesRegularExpression('/.*withPermissions\s+Swag App Test\s+1.0.0\s+shopware AG\s+\n.*/', $display);
+        static::assertMatchesRegularExpression('/.*withPermissions\s+Swag App Test\s+1.0.0\s+Shopwell\s+\n.*/', $display);
     }
 
     public function testRefreshWithPermissionsOnUpdateCancel(): void
@@ -314,7 +314,7 @@ class RefreshAppCommandTest extends TestCase
         // header app list
         static::assertMatchesRegularExpression('/.*App\s+Label\s+Version\s+Author\s+\n.*/', $commandTester->getDisplay());
         // content app list
-        static::assertMatchesRegularExpression('/.*validationFailures\s+Swag App Test\s+1.0.0\s+shopware AG\s+\n.*/', $commandTester->getDisplay());
+        static::assertMatchesRegularExpression('/.*validationFailures\s+Swag App Test\s+1.0.0\s+Shopwell\s+\n.*/', $commandTester->getDisplay());
     }
 
     public function testRefreshWithLimitation(): void

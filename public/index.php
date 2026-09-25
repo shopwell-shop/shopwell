@@ -19,7 +19,7 @@ $_SERVER['APP_RUNTIME_OPTIONS']['prod_envs'] = ['prod'];
 return function (array $context) {
     $classLoader = require __DIR__ . '/../vendor/autoload.php';
 
-    $skipWebInstaller = EnvironmentHelper::getVariable('SHOPWARE_SKIP_WEBINSTALLER', false);
+    $skipWebInstaller = EnvironmentHelper::getVariable('SHOPWELL_SKIP_WEBINSTALLER', false);
 
     if (!$skipWebInstaller && !\is_file(dirname(__DIR__) . '/install.lock')) {
         $baseURL = str_replace(basename(__FILE__), '', $_SERVER['SCRIPT_NAME']);

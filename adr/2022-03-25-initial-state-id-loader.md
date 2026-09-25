@@ -4,7 +4,7 @@ date: 2022-03-25
 area: customer-order
 tags: [performance, state-machine, cache]
 ---
-During the performance optimizations, it was noticed that the determination of the initial state, for a state machine, is currently associated with a quite high database load, although only one ID must be determined. This has the consequence that during the checkout unnecessarily much load on the database is caused, in order to determine the initial state id, because this must be determined for the `order.state`, `order_delivery.state` as well as the `order_transaction.state` machine. Responsible for the load were the `\Shopware\Core\System\StateMachine\StateMachineRegistry::getInitialState` method, which is usually used as follows:
+During the performance optimizations, it was noticed that the determination of the initial state, for a state machine, is currently associated with a quite high database load, although only one ID must be determined. This has the consequence that during the checkout unnecessarily much load on the database is caused, in order to determine the initial state id, because this must be determined for the `order.state`, `order_delivery.state` as well as the `order_transaction.state` machine. Responsible for the load were the `\Shopwell\Core\System\StateMachine\StateMachineRegistry::getInitialState` method, which is usually used as follows:
 
 ```php
 $this->stateMachineRegistry->getInitialState(OrderStates::STATE_MACHINE, $context->getContext())->getId(),
@@ -37,7 +37,7 @@ Since this means unnecessary load for the database, we have `@deprecated` this m
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\System\StateMachine\Loader;
+namespace Shopwell\Core\System\StateMachine\Loader;
 
 class InitialStateIdLoader implements ResetInterface
 {

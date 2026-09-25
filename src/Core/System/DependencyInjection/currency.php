@@ -24,16 +24,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(CurrencyDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CurrencyCountryRoundingDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelCurrencyDefinition::class)
-        ->tag('shopware.sales_channel.entity.definition');
+        ->tag('shopwell.sales_channel.entity.definition');
 
     $services->set(CurrencyTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CurrencyLoadSubscriber::class)
         ->tag('kernel.event_subscriber');
@@ -42,10 +42,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('kernel.event_subscriber');
 
     $services->set(CurrencyExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(CurrencyRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(CurrencyFormatter::class)
         ->public()
@@ -65,5 +65,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.sync.fk_resolver');
+        ->tag('shopwell.sync.fk_resolver');
 };

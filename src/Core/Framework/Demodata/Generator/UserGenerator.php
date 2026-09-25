@@ -59,7 +59,7 @@ class UserGenerator implements DemodataGeneratorInterface
                 'lastName' => $lastName,
                 'username' => $context->getFaker()->format('userName'),
                 'email' => $id . $context->getFaker()->format('safeEmail'),
-                'password' => 'shopware',
+                'password' => 'shopwell',
                 'localeId' => $this->getLocaleId($context->getContext()),
                 'customFields' => [DemodataService::DEMODATA_CUSTOM_FIELDS_KEY => true],
             ];

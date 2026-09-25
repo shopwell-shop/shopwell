@@ -333,19 +333,19 @@ class InfoControllerTest extends TestCase
     private function createController(array $adminWorkerTransports = ['slow'], bool $hideUpdateModule = false): InfoController
     {
         $parameterBag = new ParameterBag([
-            'shopware.html_sanitizer.enabled' => true,
-            'shopware.filesystem.allowed_extensions' => [],
-            'shopware.filesystem.private_allowed_extensions' => ['pdf', 'epub'],
-            'shopware.admin_worker.transports' => $adminWorkerTransports,
-            'shopware.admin_worker.enable_notification_worker' => true,
-            'shopware.admin_worker.enable_queue_stats_worker' => true,
-            'shopware.admin_worker.enable_admin_worker' => true,
-            'kernel.shopware_version' => '6.6.9999999-dev',
-            'kernel.shopware_version_revision' => 'PHPUnit',
-            'shopware.media.enable_url_upload_feature' => true,
-            'shopware.staging.administration.show_banner' => false,
-            'shopware.deployment.runtime_extension_management' => true,
-            'shopware.auto_update.hide_module' => $hideUpdateModule,
+            'shopwell.html_sanitizer.enabled' => true,
+            'shopwell.filesystem.allowed_extensions' => [],
+            'shopwell.filesystem.private_allowed_extensions' => ['pdf', 'epub'],
+            'shopwell.admin_worker.transports' => $adminWorkerTransports,
+            'shopwell.admin_worker.enable_notification_worker' => true,
+            'shopwell.admin_worker.enable_queue_stats_worker' => true,
+            'shopwell.admin_worker.enable_admin_worker' => true,
+            'kernel.shopwell_version' => '6.6.9999999-dev',
+            'kernel.shopwell_version_revision' => 'PHPUnit',
+            'shopwell.media.enable_url_upload_feature' => true,
+            'shopwell.staging.administration.show_banner' => false,
+            'shopwell.deployment.runtime_extension_management' => true,
+            'shopwell.auto_update.hide_module' => $hideUpdateModule,
         ]);
 
         return new InfoController(

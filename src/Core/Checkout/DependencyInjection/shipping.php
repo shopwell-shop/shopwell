@@ -23,22 +23,22 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(ShippingMethodPriceExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(ShippingMethodDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelShippingMethodDefinition::class)
-        ->tag('shopware.sales_channel.entity.definition');
+        ->tag('shopwell.sales_channel.entity.definition');
 
     $services->set(ShippingMethodTagDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ShippingMethodPriceDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ShippingMethodTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ShippingMethodRoute::class)
         ->public()
@@ -59,5 +59,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.sync.fk_resolver');
+        ->tag('shopwell.sync.fk_resolver');
 };

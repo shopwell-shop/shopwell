@@ -196,7 +196,7 @@ class SeoUrlPersister
         // duplicate row. For an explicit overwrite, however, we must still proceed when
         // only the isModified flag differs, so that an admin "reset to template" can drop
         // the write-protection flag even when the manual value already equals the template
-        // output (shopware/shopware#4413). When the flag matches too, nothing changed -> skip.
+        // output (shopwell/shopwell#4413). When the flag matches too, nothing changed -> skip.
         return !$overwrite
             || ($seoUrl['isModified'] ?? false) === $existing['isModified'];
     }

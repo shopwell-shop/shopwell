@@ -40,7 +40,7 @@ class NoDelayStampRule implements Rule
 
         return [
             RuleErrorBuilder::message('Usage of DelayStamp is not allowed, as it is not compatible with all messenger transports.')
-                ->identifier('shopware.noDelayStamp')
+                ->identifier('shopwell.noDelayStamp')
                 ->build(),
         ];
     }

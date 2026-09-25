@@ -55,7 +55,7 @@ class McpServerBuilderCompilerPassTest extends TestCase
 
         foreach (['admin', 'store_api'] as $server) {
             static::assertSame(
-                [['%shopware.mcp.pagination_limit%']],
+                [['%shopwell.mcp.pagination_limit%']],
                 $this->calls($container, $server, 'setPaginationLimit'),
             );
         }

@@ -2,7 +2,7 @@
 title: Support TLS proxy for hot reloading
 issue: NEXT-37871
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: @BrocksiNet
 ---
 # Storefront
@@ -18,7 +18,7 @@ APP_ENV=dev
 HOST=0.0.0.0
 STOREFRONT_ASSETS_PORT=9999
 STOREFRONT_PROXY_PORT=9998
-APP_URL=https://shopware-ddev-new.ddev.site/
-PROXY_URL=https://shopware-ddev-new.ddev.site:9998/
+APP_URL=https://shopwell-ddev-new.ddev.site/
+PROXY_URL=https://shopwell-ddev-new.ddev.site:9998/
 STOREFRONT_SKIP_SSL_CERT=true
 ```

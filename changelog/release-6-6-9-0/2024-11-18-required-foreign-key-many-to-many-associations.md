@@ -2,11 +2,11 @@
 title: Required foreign key in mapping definition for many-to-many associations
 issue: NEXT-39659
 author: Michael Telgmann
-author_email: m.telgmann@shopware.com
+author_email: m.telgmann@shopwell.com
 author_github: @mitelg
 ---
 # Core
-* Changed `\Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\ManyToManyAssociationFieldSerializer` so it triggers a deprecation message if a mapping definition of a many-to-many association does not contain foreign key fields.
+* Changed `\Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\ManyToManyAssociationFieldSerializer` so it triggers a deprecation message if a mapping definition of a many-to-many association does not contain foreign key fields.
 ___
 # Upgrade Information
 ## Required foreign key in mapping definition for many-to-many associations

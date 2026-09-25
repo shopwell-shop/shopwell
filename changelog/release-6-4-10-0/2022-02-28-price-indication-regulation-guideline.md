@@ -2,18 +2,18 @@
 title: Price indication regulation Guideline
 issue: NEXT-19582
 author: Ramona Schwering
-author_email: r.schwering@shopware.com
+author_email: r.schwering@shopwell.com
 author_github: leichteckig
 ---
 # Core
-* Added new class `Shopware\Core\Checkout\Cart\Price\Struct\RegulationPrice`
-* Added property `regulationPrice` in `Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice`
-* Added property `regulationPrice` in `Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition`
-* Added property `regulationPrice` in `Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price`
-* Added method `Shopware\Core\Checkout\Cart\Price\GrossPriceCalculator::calculateRegulationPrice()`
-* Added method `Shopware\Core\Checkout\Cart\Price\NetPriceCalculator::calculateRegulationPrice()`
-* Added method `Shopware\Core\Content\Product\SalesChannel\Price\ProductPriceCalculator::getRegulationPrice()`
-* Changed `Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\PriceFieldSerializer` to decode the regulationPrice
+* Added new class `Shopwell\Core\Checkout\Cart\Price\Struct\RegulationPrice`
+* Added property `regulationPrice` in `Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice`
+* Added property `regulationPrice` in `Shopwell\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition`
+* Added property `regulationPrice` in `Shopwell\Core\Framework\DataAbstractionLayer\Pricing\Price`
+* Added method `Shopwell\Core\Checkout\Cart\Price\GrossPriceCalculator::calculateRegulationPrice()`
+* Added method `Shopwell\Core\Checkout\Cart\Price\NetPriceCalculator::calculateRegulationPrice()`
+* Added method `Shopwell\Core\Content\Product\SalesChannel\Price\ProductPriceCalculator::getRegulationPrice()`
+* Changed `Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\PriceFieldSerializer` to decode the regulationPrice
 ___
 # Administration
 * Added property `hideRegulationPrices` in `src/app/component/form/sw-list-price-field/index.js`

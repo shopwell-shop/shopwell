@@ -5,4 +5,4 @@ issue: NEXT-20340
 
 ---
 # Core
-* Changed `\Shopware\Core\Checkout\Customer\Subscriber\CustomerMetaFieldSubscriber::updateCustomer` to filter out customer without an id.
+* Changed `\Shopwell\Core\Checkout\Customer\Subscriber\CustomerMetaFieldSubscriber::updateCustomer` to filter out customer without an id.

@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 
-import type { uiSidebarAdd } from '@shopware-ag/meteor-admin-sdk/es/ui/sidebar';
+import type { uiSidebarAdd } from '@shopwell-ag/meteor-admin-sdk/es/ui/sidebar';
 import { reactive } from 'vue';
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations

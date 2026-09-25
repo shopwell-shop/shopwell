@@ -49,12 +49,12 @@ class DefaultMediaResolverTest extends TestCase
     public function testGetDefaultMediaEntityWithValidFileName(): void
     {
         $this->decorated->method('getDefaultCmsMediaEntity')->willReturn(new MediaEntity());
-        $media = $this->mediaResolver->getDefaultCmsMediaEntity('bundles/storefront/assets/default/cms/shopware.jpg');
+        $media = $this->mediaResolver->getDefaultCmsMediaEntity('bundles/storefront/assets/default/cms/shopwell.jpg');
 
         static::assertInstanceOf(MediaEntity::class, $media);
 
         // ensure url and translations are set correctly
-        static::assertStringContainsString('bundles/storefront/assets/default/cms/shopware.jpg', $media->getUrl());
+        static::assertStringContainsString('bundles/storefront/assets/default/cms/shopwell.jpg', $media->getUrl());
         static::assertSame('foobar', $media->getTranslated()['title']);
         static::assertSame('foobar', $media->getTranslated()['alt']);
     }

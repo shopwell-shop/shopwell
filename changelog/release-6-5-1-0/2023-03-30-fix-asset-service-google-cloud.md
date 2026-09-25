@@ -6,4 +6,4 @@ author_email: pascal.josephy@jkweb.ch
 author_github: pascaljosephy
 ---
 # Core
-*  Changed `Shopware\Core\Framework\Plugin\Util\AssetService`
+*  Changed `Shopwell\Core\Framework\Plugin\Util\AssetService`

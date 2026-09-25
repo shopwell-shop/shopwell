@@ -20,16 +20,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(UserDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(UserConfigDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(UserAccessKeyDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(UserRecoveryDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(UserRecoveryService::class)
         ->args([
@@ -46,7 +46,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service(UserRecoveryService::class),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
         ])
         ->call('setContainer', [
             service('service_container'),

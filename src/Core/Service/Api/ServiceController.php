@@ -226,14 +226,14 @@ class ServiceController
                 return;
             }
 
-            throw ApiException::missingPrivileges(['api_service_toggle']); // @phpstan-ignore shopware.domainException (Same exception as route ACL listener)
+            throw ApiException::missingPrivileges(['api_service_toggle']); // @phpstan-ignore shopwell.domainException (Same exception as route ACL listener)
         }
 
         if ($context->isAllowed('system.plugin_maintain')) {
             return;
         }
 
-        throw ApiException::missingPrivileges(['system.plugin_maintain']); // @phpstan-ignore shopware.domainException (Same exception as route ACL listener)
+        throw ApiException::missingPrivileges(['system.plugin_maintain']); // @phpstan-ignore shopwell.domainException (Same exception as route ACL listener)
     }
 
     private function extractIntegrationIdOrFail(Context $context): string

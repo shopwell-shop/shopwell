@@ -39,7 +39,7 @@ describe('src/core/consent/broadcast-changes', () => {
     });
 
     it('updates the store when a message is received', async () => {
-        const testChannel = new BroadcastChannel('shopware-consents');
+        const testChannel = new BroadcastChannel('shopwell-consents');
 
         const store = useConsentStore();
         store.consents = {

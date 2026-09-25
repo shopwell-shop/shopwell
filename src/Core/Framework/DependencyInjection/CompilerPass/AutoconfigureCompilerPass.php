@@ -51,56 +51,56 @@ class AutoconfigureCompilerPass implements CompilerPassInterface
     {
         $container
             ->registerAttributeForAutoconfiguration(Entity::class, static function (ChildDefinition $definition): void {
-                $definition->addTag('shopware.entity');
+                $definition->addTag('shopwell.entity');
             });
 
         $container
             ->registerForAutoconfiguration(EntityDefinition::class)
-            ->addTag('shopware.entity.definition');
+            ->addTag('shopwell.entity.definition');
 
         $container
             ->registerForAutoconfiguration(HookableEntityInterface::class)
-            ->addTag('shopware.entity.hookable');
+            ->addTag('shopwell.entity.hookable');
 
         $container
             ->registerForAutoconfiguration(SalesChannelDefinition::class)
-            ->addTag('shopware.sales_channel.entity.definition');
+            ->addTag('shopwell.sales_channel.entity.definition');
 
         $container
             ->registerForAutoconfiguration(AbstractRouteScope::class)
-            ->addTag('shopware.route_scope');
+            ->addTag('shopwell.route_scope');
 
         $container
             ->registerForAutoconfiguration(EntityExtension::class)
-            ->addTag('shopware.entity.extension');
+            ->addTag('shopwell.entity.extension');
 
         $container
             ->registerForAutoconfiguration(BulkEntityExtension::class)
-            ->addTag('shopware.bulk.entity.extension');
+            ->addTag('shopwell.bulk.entity.extension');
 
         $container
             ->registerForAutoconfiguration(CartProcessorInterface::class)
-            ->addTag('shopware.cart.processor');
+            ->addTag('shopwell.cart.processor');
 
         $container
             ->registerForAutoconfiguration(CartDataCollectorInterface::class)
-            ->addTag('shopware.cart.collector');
+            ->addTag('shopwell.cart.collector');
 
         $container
             ->registerForAutoconfiguration(ScheduledTask::class)
-            ->addTag('shopware.scheduled.task');
+            ->addTag('shopwell.scheduled.task');
 
         $container
             ->registerForAutoconfiguration(PeriodicMetricCollectorInterface::class)
-            ->addTag('shopware.telemetry.periodic_metric_collector');
+            ->addTag('shopwell.telemetry.periodic_metric_collector');
 
         $container
             ->registerForAutoconfiguration(CartValidatorInterface::class)
-            ->addTag('shopware.cart.validator');
+            ->addTag('shopwell.cart.validator');
 
         $container
             ->registerForAutoconfiguration(LineItemFactoryInterface::class)
-            ->addTag('shopware.cart.line_item.factory');
+            ->addTag('shopwell.cart.line_item.factory');
 
         $container
             ->registerForAutoconfiguration(LineItemGroupPackagerInterface::class)
@@ -112,15 +112,15 @@ class AutoconfigureCompilerPass implements CompilerPassInterface
 
         $container
             ->registerForAutoconfiguration(LegacyEncoderInterface::class)
-            ->addTag('shopware.legacy_encoder');
+            ->addTag('shopwell.legacy_encoder');
 
         $container
             ->registerForAutoconfiguration(EntityIndexer::class)
-            ->addTag('shopware.entity_indexer');
+            ->addTag('shopwell.entity_indexer');
 
         $container
             ->registerForAutoconfiguration(ExceptionHandlerInterface::class)
-            ->addTag('shopware.dal.exception_handler');
+            ->addTag('shopwell.dal.exception_handler');
 
         $container
             ->registerForAutoconfiguration(AbstractDocumentRenderer::class)
@@ -128,7 +128,7 @@ class AutoconfigureCompilerPass implements CompilerPassInterface
 
         $container
             ->registerForAutoconfiguration(AbstractPaymentHandler::class)
-            ->addTag('shopware.payment.method');
+            ->addTag('shopwell.payment.method');
 
         $container
             ->registerForAutoconfiguration(FilterSorterInterface::class)
@@ -140,19 +140,19 @@ class AutoconfigureCompilerPass implements CompilerPassInterface
 
         $container
             ->registerForAutoconfiguration(Rule::class)
-            ->addTag('shopware.rule.definition');
+            ->addTag('shopwell.rule.definition');
 
         $container
             ->registerForAutoconfiguration(AbstractTaxProvider::class)
-            ->addTag('shopware.tax.provider');
+            ->addTag('shopwell.tax.provider');
 
         $container
             ->registerForAutoconfiguration(CmsElementResolverInterface::class)
-            ->addTag('shopware.cms.data_resolver');
+            ->addTag('shopwell.cms.data_resolver');
 
         $container
             ->registerForAutoconfiguration(FieldSerializerInterface::class)
-            ->addTag('shopware.field_serializer');
+            ->addTag('shopwell.field_serializer');
 
         $container
             ->registerForAutoconfiguration(FlowStorer::class)
@@ -160,15 +160,15 @@ class AutoconfigureCompilerPass implements CompilerPassInterface
 
         $container
             ->registerForAutoconfiguration(AbstractUrlProvider::class)
-            ->addTag('shopware.sitemap_url_provider');
+            ->addTag('shopwell.sitemap_url_provider');
 
         $container
             ->registerForAutoconfiguration(AdapterFactoryInterface::class)
-            ->addTag('shopware.filesystem.factory');
+            ->addTag('shopwell.filesystem.factory');
 
         $container
             ->registerForAutoconfiguration(AbstractValueGenerator::class)
-            ->addTag('shopware.value_generator_pattern');
+            ->addTag('shopwell.value_generator_pattern');
 
         $container
             ->registerForAutoconfiguration(TaxRuleTypeFilterInterface::class)
@@ -176,25 +176,25 @@ class AutoconfigureCompilerPass implements CompilerPassInterface
 
         $container
             ->registerForAutoconfiguration(SeoUrlRouteInterface::class)
-            ->addTag('shopware.seo_url.route');
+            ->addTag('shopwell.seo_url.route');
 
         $container
             ->registerForAutoconfiguration(TemplateNamespaceHierarchyBuilderInterface::class)
-            ->addTag('shopware.twig.hierarchy_builder');
+            ->addTag('shopwell.twig.hierarchy_builder');
 
         $container
             ->registerForAutoconfiguration(AbstractListingProcessor::class)
-            ->addTag('shopware.listing.processor');
+            ->addTag('shopwell.listing.processor');
 
         $container
             ->registerForAutoconfiguration(AbstractListingFilterHandler::class)
-            ->addTag('shopware.listing.filter.handler');
+            ->addTag('shopwell.listing.filter.handler');
 
         $container
             ->registerForAutoconfiguration(CorsHeaderProviderInterface::class)
             ->addTag(CorsHeaderProviderInterface::SERVICE_TAG);
 
-        $container->registerAliasForArgument('shopware.filesystem.private', FilesystemOperator::class, 'privateFilesystem');
-        $container->registerAliasForArgument('shopware.filesystem.public', FilesystemOperator::class, 'publicFilesystem');
+        $container->registerAliasForArgument('shopwell.filesystem.private', FilesystemOperator::class, 'privateFilesystem');
+        $container->registerAliasForArgument('shopwell.filesystem.public', FilesystemOperator::class, 'publicFilesystem');
     }
 }

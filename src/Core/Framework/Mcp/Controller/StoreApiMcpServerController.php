@@ -82,7 +82,7 @@ class StoreApiMcpServerController
 
     /**
      * Emits a tools/listChanged for the current store-api session when a tool asked for it (e.g.
-     * shopware-toolset-enable). Runs after {@see Server::run()} has persisted the SDK session, so
+     * shopwell-toolset-enable). Runs after {@see Server::run()} has persisted the SDK session, so
      * the queued notification is not overwritten and the client drains it on its next poll.
      */
     private function flushPendingToolsListChanged(Request $request): void

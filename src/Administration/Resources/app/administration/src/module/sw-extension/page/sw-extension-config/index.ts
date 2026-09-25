@@ -25,7 +25,7 @@ export default Shopwell.Component.wrapComponentConfig({
         });
     },
 
-    inject: ['shopwareExtensionService'],
+    inject: ['shopwellExtensionService'],
 
     mixins: [Mixin.getByName('notification')],
 
@@ -50,7 +50,7 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         myExtensions(): Extension[] {
-            return Shopwell.Store.get('shopwareExtensions').myExtensions.data;
+            return Shopwell.Store.get('shopwellExtensions').myExtensions.data;
         },
 
         defaultThemeAsset(): string {
@@ -83,7 +83,7 @@ export default Shopwell.Component.wrapComponentConfig({
     methods: {
         async createdComponent(): Promise<void> {
             if (!this.myExtensions.length) {
-                await this.shopwareExtensionService.updateExtensionData();
+                await this.shopwellExtensionService.updateExtensionData();
             }
 
             this.refreshExtension();

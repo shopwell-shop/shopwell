@@ -2,7 +2,7 @@
 title: Fix sw-multi-tag-select
 issue: NEXT-23678
 author: Sebastian Seggewiss
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration

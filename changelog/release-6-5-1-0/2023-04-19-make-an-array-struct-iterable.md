@@ -8,5 +8,5 @@ author_github: dominikmank
 
 # Core
 
-* Added `\IteratorAggregate` and `\Countable` to the `Shopware\Core\Framework\Struct\ArrayStruct` to allow iteration through the values and counting the values
-* Added test cases for the `Shopware\Core\Framework\Struct\ArrayStruct`
+* Added `\IteratorAggregate` and `\Countable` to the `Shopwell\Core\Framework\Struct\ArrayStruct` to allow iteration through the values and counting the values
+* Added test cases for the `Shopwell\Core\Framework\Struct\ArrayStruct`

@@ -65,7 +65,7 @@ class ScheduledTaskTooLowIntervalRule implements Rule
                             $interval,
                             self::MIN_SCHEDULED_TASK_INTERVAL
                         ))
-                            ->identifier('shopware.scheduledTaskLowInterval')
+                            ->identifier('shopwell.scheduledTaskLowInterval')
                             ->build(),
                     ];
                 }

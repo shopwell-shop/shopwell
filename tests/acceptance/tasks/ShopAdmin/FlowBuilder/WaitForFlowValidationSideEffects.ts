@@ -1,5 +1,5 @@
-import { test as base } from '@shopware-ag/acceptance-test-suite';
-import type { FixtureTypes, Task } from '@shopware-ag/acceptance-test-suite';
+import { test as base } from '@shopwell-ag/acceptance-test-suite';
+import type { FixtureTypes, Task } from '@shopwell-ag/acceptance-test-suite';
 
 export const WaitForFlowValidationSideEffects = base.extend<{ WaitForFlowValidationSideEffects: Task }, FixtureTypes>({
     WaitForFlowValidationSideEffects: async ({ ShopAdmin, AdminApiContext }, use) => {

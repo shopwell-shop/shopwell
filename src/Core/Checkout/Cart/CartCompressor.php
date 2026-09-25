@@ -77,7 +77,7 @@ class CartCompressor
             throw CartException::deserializeFailed();
         }
 
-        /** @phpstan-ignore shopware.unserializeUsage */
+        /** @phpstan-ignore shopwell.unserializeUsage */
         return \unserialize($uncompressed);
     }
 

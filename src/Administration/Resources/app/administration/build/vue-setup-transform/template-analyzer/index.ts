@@ -13,7 +13,7 @@
 
 import { NodeTypes, parse as parseTemplate, type TemplateChildNode } from '@vue/compiler-dom';
 import type { OverrideSetupScriptAnalysis } from '../script-analyzer';
-import type { ShopwellSetupBlock } from '../utils/shopware-setup-block';
+import type { ShopwellSetupBlock } from '../utils/shopwell-setup-block';
 import {
     type ElementNode,
     collectTemplateReferences,

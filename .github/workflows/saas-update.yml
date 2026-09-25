@@ -10,8 +10,8 @@ jobs:
   create_saas_update_pr:
     name: Create SaaS Update PR
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.merged && github.repository == 'shopware/shopware' }}
+    if: ${{ github.event.pull_request.merged && github.repository == 'shopwell/shopwell' }}
     permissions:
       id-token: write
     steps:
-      - uses: shopware/github-actions/update-saas-refs@main
+      - uses: shopwell/github-actions/update-saas-refs@main

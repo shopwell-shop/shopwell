@@ -5,6 +5,6 @@ use Symfony\Component\HttpClient\MockHttpClient;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->services()
-        ->set('shopware.media.upload.http_client', MockHttpClient::class)
+        ->set('shopwell.media.upload.http_client', MockHttpClient::class)
         ->public();
 };

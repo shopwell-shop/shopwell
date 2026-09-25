@@ -30,7 +30,7 @@ class MediaUploadControllerTest extends TestCase
     use AdminFunctionalTestBehaviour;
     use MediaFixtures;
 
-    final public const TEST_IMAGE = __DIR__ . '/../fixtures/shopware-logo.png';
+    final public const TEST_IMAGE = __DIR__ . '/../fixtures/shopwell-logo.png';
     final public const SAFE_SVG = __DIR__ . '/fixtures/safe.svg';
     final public const UNSAFE_SVG = __DIR__ . '/fixtures/unsafe.svg';
 
@@ -68,12 +68,12 @@ class MediaUploadControllerTest extends TestCase
             mkdir($projectDir . '/public/media');
             $this->mediaDirCreated = true;
         }
-        \copy(self::TEST_IMAGE, static::getContainer()->getParameter('kernel.project_dir') . '/public/media/shopware-logo.png');
+        \copy(self::TEST_IMAGE, static::getContainer()->getParameter('kernel.project_dir') . '/public/media/shopwell-logo.png');
     }
 
     protected function tearDown(): void
     {
-        \unlink(static::getContainer()->getParameter('kernel.project_dir') . '/public/media/shopware-logo.png');
+        \unlink(static::getContainer()->getParameter('kernel.project_dir') . '/public/media/shopwell-logo.png');
 
         if ($this->mediaDirCreated) {
             rmdir(static::getContainer()->getParameter('kernel.project_dir') . '/public/media');
@@ -301,7 +301,7 @@ class MediaUploadControllerTest extends TestCase
         $listener->expects($this->once())->method('__invoke');
         $this->addEventListener($dispatcher, MediaUploadedEvent::class, $listener);
 
-        $baseUrl = EnvironmentHelper::getVariable('APP_URL') . '/media/shopware-logo.png';
+        $baseUrl = EnvironmentHelper::getVariable('APP_URL') . '/media/shopwell-logo.png';
 
         $url = \sprintf(
             '/api/_action/media/%s/upload',

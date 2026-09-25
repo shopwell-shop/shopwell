@@ -7,5 +7,5 @@ author_github: @amenk
 ---
 
 # Storefront
-* Added new parameter `reset` to `\Shopware\Storefront\Theme\Controller\ThemeController::updateTheme()` which resets the theme.
+* Added new parameter `reset` to `\Shopwell\Storefront\Theme\Controller\ThemeController::updateTheme()` which resets the theme.
 * Changed call in `sw-theme-manager-detail` to use the `reset` flag to run a reset and update in one step.

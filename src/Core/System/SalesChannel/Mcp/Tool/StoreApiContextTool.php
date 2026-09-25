@@ -15,7 +15,7 @@ use Shopwell\Core\Framework\Mcp\Tool\McpToolResponse;
  */
 #[Package('framework')]
 #[McpTool(
-    name: 'shopware-store-api-context',
+    name: 'shopwell-store-api-context',
     title: 'Store API Context',
     description: 'Read the current Store API sales-channel context for this MCP session, including sales channel, language, currency, context token, and whether a customer is authenticated.'
 )]

@@ -2,7 +2,7 @@
 persona: code-style
 display_name: Code Style
 description: >
-    Code-style Shopware reviewer: naming, idioms, file consistency, readable
+    Code-style Shopwell reviewer: naming, idioms, file consistency, readable
     structure. Ignore what formatters/linters already enforce.
 ---
 

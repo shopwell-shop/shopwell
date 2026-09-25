@@ -6,5 +6,5 @@ author_github: mitelg
 ---
 
 # Core
-* Added `Shopware\Core\Framework\HttpException::$couldNotFindMessage` template for creating exception messages for not found entities.
-* Deprecated `\Shopware\Core\Checkout\Payment\PaymentException::unknownPaymentMethod`. Use `unknownPaymentMethodById` or `unknownPaymentMethodByHandlerIdentifier` instead.
+* Added `Shopwell\Core\Framework\HttpException::$couldNotFindMessage` template for creating exception messages for not found entities.
+* Deprecated `\Shopwell\Core\Checkout\Payment\PaymentException::unknownPaymentMethod`. Use `unknownPaymentMethodById` or `unknownPaymentMethodByHandlerIdentifier` instead.

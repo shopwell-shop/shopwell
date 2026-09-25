@@ -2,7 +2,7 @@
 title: Changed HTML sanitizer for mail template footers and headers
 issue: NEXT-38485
 author: Malte Janz
-author_email: m.janz@shopware.com
+author_email: m.janz@shopwell.com
 author_github: @MalteJanz
 ---
 # Core

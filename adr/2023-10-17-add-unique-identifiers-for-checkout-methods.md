@@ -7,7 +7,7 @@ tags: [payment, shipping]
 
 ## Context
 In the current implementation, there exists a challenge for extension developers in uniquely identifying payment and shipping methods using identifiers.
-This issue is particularly significant for app servers, as it necessitates calls to the Shopware Admin API for the identification of payment and shipping methods based on their respective IDs.
+This issue is particularly significant for app servers, as it necessitates calls to the Shopwell Admin API for the identification of payment and shipping methods based on their respective IDs.
 
 ## Decision
 We will introduce a new property called `technicalName` to both the `payment_method` and `shipping_method` entities.
@@ -18,7 +18,7 @@ This ensures that merchants will update their payment and shipping methods accor
 An unique index will ensure uniqueness.
 Starting from version 6.7.0.0, this `technicalName` field will also become required within the database and the API.
 
-As part of the database migration process, the `technicalName` field will be automatically generated for the default payment and shipping methods provided by Shopware, as illustrated below:
+As part of the database migration process, the `technicalName` field will be automatically generated for the default payment and shipping methods provided by Shopwell, as illustrated below:
 
 | Type     | Name             | Technical Name          |
 |----------|------------------|-------------------------|

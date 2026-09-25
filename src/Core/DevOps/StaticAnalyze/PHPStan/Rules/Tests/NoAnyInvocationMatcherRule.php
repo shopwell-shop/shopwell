@@ -78,7 +78,7 @@ class NoAnyInvocationMatcherRule implements Rule
 
         return [
             RuleErrorBuilder::message(self::ERROR_REDUNDANT)
-                ->identifier('shopware.phpunitAnyMatcher')
+                ->identifier('shopwell.phpunitAnyMatcher')
                 ->build(),
         ];
     }

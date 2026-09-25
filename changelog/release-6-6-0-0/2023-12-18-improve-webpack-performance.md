@@ -5,4 +5,4 @@ issue: NEXT-32712
 
 # Administration
 
-* Added environment variable `SHOPWARE_ADMIN_SKIP_SOURCEMAP_GENERATION` to skip source map generation
+* Added environment variable `SHOPWELL_ADMIN_SKIP_SOURCEMAP_GENERATION` to skip source map generation

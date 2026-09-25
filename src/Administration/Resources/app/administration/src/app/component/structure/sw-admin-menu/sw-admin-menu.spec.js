@@ -32,7 +32,7 @@ describe('src/app/component/structure/sw-admin-menu', () => {
         Shopwell.Store.get('settingsItems').settingsGroups.shop = [];
         Shopwell.Store.get('settingsItems').settingsGroups.system = [];
 
-        Shopwell.Store.get('shopwareApps').apps = [];
+        Shopwell.Store.get('shopwellApps').apps = [];
 
         wrapper = await createWrapper();
         await flushPromises();
@@ -476,7 +476,7 @@ describe('src/app/component/structure/sw-admin-menu', () => {
         });
 
         it('renders apps under there parent navigation entry', async () => {
-            Shopwell.Store.get('shopwareApps').apps = testApps;
+            Shopwell.Store.get('shopwellApps').apps = testApps;
             await flushPromises();
 
             const topLevelEntries = wrapper.findAll('.navigation-list-item__level-1');
@@ -496,7 +496,7 @@ describe('src/app/component/structure/sw-admin-menu', () => {
         });
 
         it('renders app structure elements and their children', async () => {
-            Shopwell.Store.get('shopwareApps').apps = testApps;
+            Shopwell.Store.get('shopwellApps').apps = testApps;
             await flushPromises();
 
             const topLevelEntries = wrapper.findAll('.navigation-list-item__level-1');

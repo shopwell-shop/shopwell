@@ -2,7 +2,7 @@ import { getServicesWithShopwellAccountRequirement, serviceHasShopwellAccountReq
 
 describe('src/module/sw-settings-services/requirements', () => {
     it('detects services with the Shopwell Account requirement', () => {
-        expect(serviceHasShopwellAccountRequirement(['shopware_account'])).toBe(true);
+        expect(serviceHasShopwellAccountRequirement(['shopwell_account'])).toBe(true);
         expect(serviceHasShopwellAccountRequirement(['service_consent'])).toBe(false);
         expect(serviceHasShopwellAccountRequirement([])).toBe(false);
     });
@@ -13,7 +13,7 @@ describe('src/module/sw-settings-services/requirements', () => {
                 {
                     name: 'account-service',
                     label: 'Account Service',
-                    requirements: ['shopware_account'],
+                    requirements: ['shopwell_account'],
                 },
                 {
                     name: 'regular-service',

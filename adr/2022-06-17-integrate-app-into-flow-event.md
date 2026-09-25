@@ -47,8 +47,8 @@ Flow data storer saves the data from the event as the [StorableFlow](../adr/2022
     {
         "customerId": "d20e4d60e35e4afdb795c767eee08fec",
         "salesChannelId": "55cb094fd1794d489c63975a6b4b5b90",
-        "shopName": "Shopware's Shop",
-        "url": "https://shopware.com" 
+        "shopName": "Shopwell's Shop",
+        "url": "https://shopwell.com" 
     }
 ```
 

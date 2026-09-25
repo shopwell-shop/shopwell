@@ -6,11 +6,11 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "shopware AG",
+            "name": "Shopwell",
             "role": "Manufacturer"
         }
     ],
     "require": {
-        "shopware/platform": "6.4.*@dev"
+        "shopwell/platform": "6.4.*@dev"
     }
 }

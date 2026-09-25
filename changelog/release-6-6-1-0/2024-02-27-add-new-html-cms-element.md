@@ -5,7 +5,7 @@ author: Michael Telgmann
 author_github: mitelg
 ---
 # Core
-* Added `Shopware\Core\Content\Cms\DataResolver\Element\HtmlCmsElementResolver` to resolve the HTML CMS element
+* Added `Shopwell\Core\Content\Cms\DataResolver\Element\HtmlCmsElementResolver` to resolve the HTML CMS element
 ___
 # Administration
 * Added new block and element files for HTML CMS element

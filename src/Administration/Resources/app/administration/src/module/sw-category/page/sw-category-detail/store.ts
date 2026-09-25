@@ -1,5 +1,5 @@
-import type { Entity } from '@shopware-ag/meteor-admin-sdk/es/_internals/data/Entity';
-import type CriteriaType from '@shopware-ag/meteor-admin-sdk/es/data/Criteria';
+import type { Entity } from '@shopwell-ag/meteor-admin-sdk/es/_internals/data/Entity';
+import type CriteriaType from '@shopwell-ag/meteor-admin-sdk/es/data/Criteria';
 import type Repository from '../../../../core/data/repository.data';
 import type { ContextStore } from '../../../../app/store/context.store';
 

@@ -5,7 +5,7 @@ author: Michael Telgmann
 author_github: @mitelg
 ---
 # Core
-* Added new resolver `\Shopware\Core\Content\Category\Cms\CategoryNavigationCmsElementResolver` to enrich the `category-navigation` CMS element with navigation data.
+* Added new resolver `\Shopwell\Core\Content\Category\Cms\CategoryNavigationCmsElementResolver` to enrich the `category-navigation` CMS element with navigation data.
 
 ___
 # Storefront
@@ -14,12 +14,12 @@ ___
 * Added new template `src/Storefront/Resources/views/storefront/layout/header.html.twig` as new starting point for the header.
 * Added new template `src/Storefront/Resources/views/storefront/layout/footer.html.twig` as new starting point for the footer.
 * Added new template `src/Storefront/Resources/views/storefront/layout/navigation/active-styling.html.twig` to provide styling for the active navigation elements.
-* Deprecated the properties `header` and `footer` and their getter and setter Methods in `\Shopware\Storefront\Framework\Twig\ErrorTemplateStruct`.
-* Deprecated the loading of header, footer, payment methods and shipping methods in `\Shopware\Storefront\Page\GenericPageLoader`.
-* Deprecated the properties `header`, `footer`, `salesChannelShippingMethods` and `salesChannelPaymentMethods` and their getter and setter Methods in `\Shopware\Storefront\Page\Page`.
-* Deprecated the property `serviceMenu` and its getter and setter Methods in `\Shopware\Storefront\Pagelet\Header\HeaderPagelet`.
-* Deprecated the `navigationId` request parameter in `\Shopware\Storefront\Pagelet\Header\HeaderPageletLoader::load`.
-* Deprecated the `setNavigation` method in `\Shopware\Storefront\Pagelet\Menu\Offcanvas\MenuOffcanvasPagelet`.
+* Deprecated the properties `header` and `footer` and their getter and setter Methods in `\Shopwell\Storefront\Framework\Twig\ErrorTemplateStruct`.
+* Deprecated the loading of header, footer, payment methods and shipping methods in `\Shopwell\Storefront\Page\GenericPageLoader`.
+* Deprecated the properties `header`, `footer`, `salesChannelShippingMethods` and `salesChannelPaymentMethods` and their getter and setter Methods in `\Shopwell\Storefront\Page\Page`.
+* Deprecated the property `serviceMenu` and its getter and setter Methods in `\Shopwell\Storefront\Pagelet\Header\HeaderPagelet`.
+* Deprecated the `navigationId` request parameter in `\Shopwell\Storefront\Pagelet\Header\HeaderPageletLoader::load`.
+* Deprecated the `setNavigation` method in `\Shopwell\Storefront\Pagelet\Menu\Offcanvas\MenuOffcanvasPagelet`.
 * Deprecated option `tiggerEvent` in `OffcanvasMenuPlugin` JavaScript plugin. Use `triggerEvent` instead.
 * Deprecated the following blocks in `src/Storefront/Resources/views/storefront/base.html.twig`. They will move to `src/Storefront/Resources/views/storefront/layout/header.html.twig`.
   * `base_header`
@@ -49,15 +49,15 @@ Due to this change many things were deprecated and will be removed with the next
 See the following chapter for a detailed list of deprecations.
 
 ### Deprecations
-* The properties `header` and `footer` and their getter and setter Methods in `\Shopware\Storefront\Framework\Twig\ErrorTemplateStruct` are deprecated and will be removed with the next major version.
-* The loading of header, footer, payment methods and shipping methods in `\Shopware\Storefront\Page\GenericPageLoader` is deprecated and will be removed with the next major version.
-Extend `\Shopware\Storefront\Pagelet\Header\HeaderPageletLoader` or `\Shopware\Storefront\Pagelet\Footer\FooterPageletLoader` instead.
-* The properties `header`, `footer`, `salesChannelShippingMethods` and `salesChannelPaymentMethods` and their getter and setter Methods in `\Shopware\Storefront\Page\Page` are deprecated and will be removed with the next major version.
-Extend `\Shopware\Storefront\Pagelet\Header\HeaderPagelet` or `\Shopware\Storefront\Pagelet\Footer\FooterPagelet` instead.
-* The property `serviceMenu` and its getter and setter Methods in `\Shopware\Storefront\Pagelet\Header\HeaderPagelet` are deprecated and will be removed with the next major version.
-Extend it via the `\Shopware\Storefront\Pagelet\Footer\FooterPagelet` instead.
-* The `navigationId` request parameter in `\Shopware\Storefront\Pagelet\Header\HeaderPageletLoader::load` is deprecated and will be removed with the next major version as it is not needed anymore.
-* The `setNavigation` method in `\Shopware\Storefront\Pagelet\Menu\Offcanvas\MenuOffcanvasPagelet` is deprecated and will be removed with the next major version as it is unused.
+* The properties `header` and `footer` and their getter and setter Methods in `\Shopwell\Storefront\Framework\Twig\ErrorTemplateStruct` are deprecated and will be removed with the next major version.
+* The loading of header, footer, payment methods and shipping methods in `\Shopwell\Storefront\Page\GenericPageLoader` is deprecated and will be removed with the next major version.
+Extend `\Shopwell\Storefront\Pagelet\Header\HeaderPageletLoader` or `\Shopwell\Storefront\Pagelet\Footer\FooterPageletLoader` instead.
+* The properties `header`, `footer`, `salesChannelShippingMethods` and `salesChannelPaymentMethods` and their getter and setter Methods in `\Shopwell\Storefront\Page\Page` are deprecated and will be removed with the next major version.
+Extend `\Shopwell\Storefront\Pagelet\Header\HeaderPagelet` or `\Shopwell\Storefront\Pagelet\Footer\FooterPagelet` instead.
+* The property `serviceMenu` and its getter and setter Methods in `\Shopwell\Storefront\Pagelet\Header\HeaderPagelet` are deprecated and will be removed with the next major version.
+Extend it via the `\Shopwell\Storefront\Pagelet\Footer\FooterPagelet` instead.
+* The `navigationId` request parameter in `\Shopwell\Storefront\Pagelet\Header\HeaderPageletLoader::load` is deprecated and will be removed with the next major version as it is not needed anymore.
+* The `setNavigation` method in `\Shopwell\Storefront\Pagelet\Menu\Offcanvas\MenuOffcanvasPagelet` is deprecated and will be removed with the next major version as it is unused.
 * The option `tiggerEvent` in `OffcanvasMenuPlugin` JavaScript plugin is deprecated and will be removed with the next major version. Use `triggerEvent` instead.
 * The following blocks will be moved from `src/Storefront/Resources/views/storefront/base.html.twig` to `src/Storefront/Resources/views/storefront/layout/header.html.twig` in the next major version.
   * `base_header`
@@ -91,15 +91,15 @@ Make sure to adjust your template extensions to be compatible with the new struc
 The block names are still the same, so it just should be necessary to extend from the new templates.
 
 ### Removals
-* The properties `header` and `footer` and their getter and setter Methods in `\Shopware\Storefront\Framework\Twig\ErrorTemplateStruct` were removed.
-* The loading of header, footer, payment methods and shipping methods in `\Shopware\Storefront\Page\GenericPageLoader` is removed.
-  Extend `\Shopware\Storefront\Pagelet\Header\HeaderPageletLoader` or `\Shopware\Storefront\Pagelet\Footer\FooterPageletLoader` instead.
-* The properties `header`, `footer`, `salesChannelShippingMethods` and `salesChannelPaymentMethods` and their getter and setter Methods in `\Shopware\Storefront\Page\Page` were removed.
-  Extend `\Shopware\Storefront\Pagelet\Header\HeaderPagelet` or `\Shopware\Storefront\Pagelet\Footer\FooterPagelet` instead.
-* The property `serviceMenu` and its getter and setter Methods in `\Shopware\Storefront\Pagelet\Header\HeaderPagelet` were removed.
-  Extend it via the `\Shopware\Storefront\Pagelet\Footer\FooterPagelet` instead.
-* The `navigationId` request parameter in `\Shopware\Storefront\Pagelet\Header\HeaderPageletLoader::load` was removed.
-* The `setNavigation` method in `\Shopware\Storefront\Pagelet\Menu\Offcanvas\MenuOffcanvasPagelet` was removed.
+* The properties `header` and `footer` and their getter and setter Methods in `\Shopwell\Storefront\Framework\Twig\ErrorTemplateStruct` were removed.
+* The loading of header, footer, payment methods and shipping methods in `\Shopwell\Storefront\Page\GenericPageLoader` is removed.
+  Extend `\Shopwell\Storefront\Pagelet\Header\HeaderPageletLoader` or `\Shopwell\Storefront\Pagelet\Footer\FooterPageletLoader` instead.
+* The properties `header`, `footer`, `salesChannelShippingMethods` and `salesChannelPaymentMethods` and their getter and setter Methods in `\Shopwell\Storefront\Page\Page` were removed.
+  Extend `\Shopwell\Storefront\Pagelet\Header\HeaderPagelet` or `\Shopwell\Storefront\Pagelet\Footer\FooterPagelet` instead.
+* The property `serviceMenu` and its getter and setter Methods in `\Shopwell\Storefront\Pagelet\Header\HeaderPagelet` were removed.
+  Extend it via the `\Shopwell\Storefront\Pagelet\Footer\FooterPagelet` instead.
+* The `navigationId` request parameter in `\Shopwell\Storefront\Pagelet\Header\HeaderPageletLoader::load` was removed.
+* The `setNavigation` method in `\Shopwell\Storefront\Pagelet\Menu\Offcanvas\MenuOffcanvasPagelet` was removed.
 * The option `tiggerEvent` in `OffcanvasMenuPlugin` JavaScript plugin was removed, use `triggerEvent` instead.
 * The following blocks were moved from `src/Storefront/Resources/views/storefront/base.html.twig` to `src/Storefront/Resources/views/storefront/layout/header.html.twig`.
   * `base_header`

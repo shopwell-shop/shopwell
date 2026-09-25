@@ -22,7 +22,7 @@ trait QueueTestBehaviour
     public function clearQueue(): void
     {
         static::getContainer()->get(Connection::class)->executeStatement('DELETE FROM messenger_messages');
-        $bus = static::getContainer()->get('messenger.bus.test_shopware');
+        $bus = static::getContainer()->get('messenger.bus.test_shopwell');
         \assert($bus instanceof TraceableMessageBus);
         $bus->reset();
     }
@@ -41,7 +41,7 @@ trait QueueTestBehaviour
         $webhook = $locator->get('webhook');
         \assert($webhook instanceof ReceiverInterface);
 
-        $bus = static::getContainer()->get('messenger.bus.test_shopware');
+        $bus = static::getContainer()->get('messenger.bus.test_shopwell');
         \assert($bus instanceof MessageBusInterface);
 
         $worker = new Worker(['async' => $async, 'webhook' => $webhook], $bus, $eventDispatcher);
@@ -56,7 +56,7 @@ trait QueueTestBehaviour
      */
     protected function getDispatchedMessageCount(string $messageClass): int
     {
-        $bus = static::getContainer()->get('messenger.bus.test_shopware');
+        $bus = static::getContainer()->get('messenger.bus.test_shopwell');
         \assert($bus instanceof TraceableMessageBus);
 
         $count = 0;

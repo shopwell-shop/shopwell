@@ -15,7 +15,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class HoneypotCaptcha extends AbstractCaptcha
 {
     final public const CAPTCHA_NAME = 'honeypot';
-    final public const CAPTCHA_REQUEST_PARAMETER = 'shopware_surname_confirm';
+    final public const CAPTCHA_REQUEST_PARAMETER = 'shopwell_surname_confirm';
 
     /**
      * @deprecated tag:v6.8.0 - Will be removed, as the Symfony validator is not used anymore to validate the honeypot captcha

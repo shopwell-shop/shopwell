@@ -2,11 +2,11 @@
     "name": "a-vendor/store-dependent-plugin",
     "description": "Plugin install command test fixture",
     "version": "1.0.0",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "require": {
         "store.shopwell.cn/store-dependency-plugin": "*"
     },
     "extra": {
-        "shopware-plugin-class": "StoreDependentPlugin\\StoreDependentPlugin"
+        "shopwell-plugin-class": "StoreDependentPlugin\\StoreDependentPlugin"
     }
 }

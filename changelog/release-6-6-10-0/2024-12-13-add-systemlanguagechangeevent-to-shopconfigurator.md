@@ -2,7 +2,7 @@
 title: Add SystemLanguageChangeEvent to ShopConfigurator
 issue: NEXT-40044
 author: Benedikt Schulze Baek
-author_email: b.schulze-baek@shopware.com
+author_email: b.schulze-baek@shopwell.com
 author_github: @bschulzebaek
 ---
 # Core

@@ -5,7 +5,7 @@ issue: NEXT-39736
 
 # Core
 
-* Deprecated `\Shopware\Core\System\CustomEntity\Exception\CustomEntityNotFoundException` use `\Shopware\Core\System\CustomEntity\CustomEntityException::notFound` instead
+* Deprecated `\Shopwell\Core\System\CustomEntity\Exception\CustomEntityNotFoundException` use `\Shopwell\Core\System\CustomEntity\CustomEntityException::notFound` instead
 
 ___
 

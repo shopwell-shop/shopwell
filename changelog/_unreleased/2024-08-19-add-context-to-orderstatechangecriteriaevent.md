@@ -5,7 +5,7 @@ flag: V6_7_0_0
 author: wexoag
 ---
 # Core
-* Added `Context` to `OrderStateChangeCriteriaEvent` which now also implements `ShopwareEvent`
+* Added `Context` to `OrderStateChangeCriteriaEvent` which now also implements `ShopwellEvent`
 ___
 # Next Major Version Changes
 ## OrderStateChangeCriteriaEvent constructor changes

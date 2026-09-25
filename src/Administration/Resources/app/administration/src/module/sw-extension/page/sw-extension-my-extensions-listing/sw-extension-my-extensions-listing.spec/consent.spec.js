@@ -8,7 +8,7 @@ import {
     extensionStoreActionService,
     setMyExtensions,
     setupListingHooks,
-    shopwareService,
+    shopwellService,
 } from './sw-extension-my-extensions-listing.fixtures';
 
 describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () => {
@@ -52,15 +52,15 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
                 order: [{ entity: 'order', operation: 'read' }],
             });
             expect(wrapper.vm.bulkConsent.domains).toEqual(['a.example.com']);
-            expect(shopwareService.installExtension).not.toHaveBeenCalled();
+            expect(shopwellService.installExtension).not.toHaveBeenCalled();
             expect(reload).not.toHaveBeenCalled();
             expect(wrapper.vm.isBulkRunning).toBe(true);
 
             await wrapper.vm.onBulkConsentAccept();
 
-            expect(shopwareService.installExtension).toHaveBeenCalledWith('A', 'app');
-            expect(shopwareService.installExtension).toHaveBeenCalledWith('B', 'app');
-            expect(shopwareService.installAndActivateExtension).not.toHaveBeenCalled();
+            expect(shopwellService.installExtension).toHaveBeenCalledWith('A', 'app');
+            expect(shopwellService.installExtension).toHaveBeenCalledWith('B', 'app');
+            expect(shopwellService.installAndActivateExtension).not.toHaveBeenCalled();
             expect(wrapper.vm.cacheApiService.clear).toHaveBeenCalledTimes(1);
             expect(reload).toHaveBeenCalledTimes(1);
             expect(wrapper.vm.isBulkRunning).toBe(false);
@@ -105,10 +105,10 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             // Per item single card parity:
             // accepted permissions -> install only
             // none -> install and activate
-            expect(shopwareService.installExtension).toHaveBeenCalledWith('WithPerms', 'app');
-            expect(shopwareService.installExtension).toHaveBeenCalledTimes(1);
-            expect(shopwareService.installAndActivateExtension).toHaveBeenCalledWith('NoPerms', 'app');
-            expect(shopwareService.installAndActivateExtension).toHaveBeenCalledTimes(1);
+            expect(shopwellService.installExtension).toHaveBeenCalledWith('WithPerms', 'app');
+            expect(shopwellService.installExtension).toHaveBeenCalledTimes(1);
+            expect(shopwellService.installAndActivateExtension).toHaveBeenCalledWith('NoPerms', 'app');
+            expect(shopwellService.installAndActivateExtension).toHaveBeenCalledTimes(1);
         });
 
         it('should install AND activate directly without a modal when no selected extension requires consent', async () => {
@@ -124,8 +124,8 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             await wrapper.vm.runBulkAction('install');
 
             expect(wrapper.vm.showBulkConsentModal).toBe(false);
-            expect(shopwareService.installAndActivateExtension).toHaveBeenCalledWith('A', 'app');
-            expect(shopwareService.installExtension).not.toHaveBeenCalled();
+            expect(shopwellService.installAndActivateExtension).toHaveBeenCalledWith('A', 'app');
+            expect(shopwellService.installExtension).not.toHaveBeenCalled();
             expect(reload).toHaveBeenCalledTimes(1);
         });
 
@@ -150,7 +150,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             await wrapper.vm.runBulkAction('install');
 
             expect(wrapper.vm.showBulkConsentModal).toBe(false);
-            expect(shopwareService.installAndActivateExtension).toHaveBeenCalledWith('A', 'app');
+            expect(shopwellService.installAndActivateExtension).toHaveBeenCalledWith('A', 'app');
         });
 
         it('should install nothing, keep the selection and NOT reload when the consent modal is cancelled', async () => {
@@ -177,8 +177,8 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             await wrapper.vm.onBulkConsentCancel();
             await flushPromises();
 
-            expect(shopwareService.installExtension).not.toHaveBeenCalled();
-            expect(shopwareService.installAndActivateExtension).not.toHaveBeenCalled();
+            expect(shopwellService.installExtension).not.toHaveBeenCalled();
+            expect(shopwellService.installAndActivateExtension).not.toHaveBeenCalled();
             expect(wrapper.vm.showBulkConsentModal).toBe(false);
             expect(wrapper.vm.bulkConsent).toBeNull();
             expect(reload).not.toHaveBeenCalled();
@@ -217,7 +217,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             const reload = jest.spyOn(wrapper.vm, '_reloadPage').mockImplementation(() => {});
 
-            shopwareService.updateExtension.mockImplementation((name) => {
+            shopwellService.updateExtension.mockImplementation((name) => {
                 if (name === 'NeedsConsent') {
                     return Promise.reject(
                         consentError({
@@ -235,8 +235,8 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             await flushPromises();
 
             // First pass: both attempted with allowNewPermissions=false.
-            expect(shopwareService.updateExtension).toHaveBeenCalledWith('Clean', 'app', false);
-            expect(shopwareService.updateExtension).toHaveBeenCalledWith('NeedsConsent', 'app', false);
+            expect(shopwellService.updateExtension).toHaveBeenCalledWith('Clean', 'app', false);
+            expect(shopwellService.updateExtension).toHaveBeenCalledWith('NeedsConsent', 'app', false);
 
             // Consent modal opened for the delta item only.
             expect(wrapper.vm.showBulkConsentModal).toBe(true);
@@ -250,7 +250,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             await wrapper.vm.onBulkConsentAccept();
 
             // On accept the delta item is re-run with allowNewPermissions=true.
-            expect(shopwareService.updateExtension).toHaveBeenCalledWith('NeedsConsent', 'app', true);
+            expect(shopwellService.updateExtension).toHaveBeenCalledWith('NeedsConsent', 'app', true);
             expect(reload).toHaveBeenCalledTimes(1);
             expect(wrapper.vm.isBulkRunning).toBe(false);
         });
@@ -272,19 +272,19 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             await flushPromises();
 
             const reload = jest.spyOn(wrapper.vm, '_reloadPage').mockImplementation(() => {});
-            shopwareService.updateExtension.mockRejectedValue(consentError());
+            shopwellService.updateExtension.mockRejectedValue(consentError());
 
             wrapper.vm.onSelectChange({ name: 'NeedsConsent' }, true);
             await wrapper.vm.runBulkAction('update');
             await flushPromises();
 
             expect(wrapper.vm.showBulkConsentModal).toBe(true);
-            shopwareService.updateExtension.mockClear();
+            shopwellService.updateExtension.mockClear();
 
             await wrapper.vm.onBulkConsentCancel();
             await flushPromises();
 
-            expect(shopwareService.updateExtension).not.toHaveBeenCalledWith('NeedsConsent', 'app', true);
+            expect(shopwellService.updateExtension).not.toHaveBeenCalledWith('NeedsConsent', 'app', true);
             expect(reload).not.toHaveBeenCalled();
             expect(wrapper.vm.selectedNames).toEqual(['NeedsConsent']);
             expect(wrapper.vm.isBulkRunning).toBe(false);
@@ -317,7 +317,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             await flushPromises();
 
             const reload = jest.spyOn(wrapper.vm, '_reloadPage').mockImplementation(() => {});
-            shopwareService.updateExtension.mockImplementation((name) => {
+            shopwellService.updateExtension.mockImplementation((name) => {
                 if (name === 'NeedsConsent') {
                     return Promise.reject(consentError());
                 }
@@ -330,12 +330,12 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             await flushPromises();
 
             expect(wrapper.vm.showBulkConsentModal).toBe(true);
-            shopwareService.updateExtension.mockClear();
+            shopwellService.updateExtension.mockClear();
 
             await wrapper.vm.onBulkConsentCancel();
             await flushPromises();
 
-            expect(shopwareService.updateExtension).not.toHaveBeenCalledWith('NeedsConsent', 'app', true);
+            expect(shopwellService.updateExtension).not.toHaveBeenCalledWith('NeedsConsent', 'app', true);
             // The clean update already applied during preflight. Reload so the list reflects it.
             expect(reload).toHaveBeenCalledTimes(1);
             expect(wrapper.vm.isBulkRunning).toBe(false);
@@ -359,7 +359,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             const reload = jest.spyOn(wrapper.vm, '_reloadPage').mockImplementation(() => {});
             const showErrors = jest.spyOn(wrapper.vm, 'showExtensionErrors');
-            shopwareService.updateExtension.mockRejectedValue({
+            shopwellService.updateExtension.mockRejectedValue({
                 response: { data: { errors: [{ code: 'SOME_OTHER_ERROR' }] } },
             });
 

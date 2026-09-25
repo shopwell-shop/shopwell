@@ -6,8 +6,8 @@ author_email: marcink@codepro.space
 author_github: CodeproSpace
 ---
 # Core
-* Added product add to wishlist event file `\Shopware\Core\Checkout\Customer\Event\WishlistProductAddedEvent`
-* Added product remove from wishlist event file `\Shopware\Core\Checkout\Customer\Event\WishlistProductRemovedEvent`
-* Added dispatch event in wishlist add product route `\Shopware\Core\Checkout\Customer\SalesChannel\AddWishlistProductRoute`
-* Added dispatch event in wishlist remove product route `\Shopware\Core\Checkout\Customer\SalesChannel\RemoveWishlistProductRoute`
+* Added product add to wishlist event file `\Shopwell\Core\Checkout\Customer\Event\WishlistProductAddedEvent`
+* Added product remove from wishlist event file `\Shopwell\Core\Checkout\Customer\Event\WishlistProductRemovedEvent`
+* Added dispatch event in wishlist add product route `\Shopwell\Core\Checkout\Customer\SalesChannel\AddWishlistProductRoute`
+* Added dispatch event in wishlist remove product route `\Shopwell\Core\Checkout\Customer\SalesChannel\RemoveWishlistProductRoute`
 

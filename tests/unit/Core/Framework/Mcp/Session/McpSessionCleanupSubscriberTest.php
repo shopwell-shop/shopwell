@@ -63,8 +63,8 @@ class McpSessionCleanupSubscriberTest extends TestCase
     {
         // Both registries share the cache pool but use distinct keys, mirroring production wiring.
         $cache = new Psr16Cache(new ArrayAdapter());
-        $adminRegistry = new McpSessionRegistry($cache, 'shopware.mcp.active_session_ids');
-        $storeApiRegistry = new McpSessionRegistry($cache, 'shopware.mcp.store_api.active_session_ids');
+        $adminRegistry = new McpSessionRegistry($cache, 'shopwell.mcp.active_session_ids');
+        $storeApiRegistry = new McpSessionRegistry($cache, 'shopwell.mcp.store_api.active_session_ids');
         $adminRegistry->register('shared-session-id');
         $storeApiRegistry->register('shared-session-id');
 

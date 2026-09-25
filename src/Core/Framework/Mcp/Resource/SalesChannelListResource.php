@@ -15,8 +15,8 @@ use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
  */
 #[Package('framework')]
 #[McpResource(
-    uri: 'shopware://sales-channels',
-    name: 'shopware-sales-channels',
+    uri: 'shopwell://sales-channels',
+    name: 'shopwell-sales-channels',
     description: 'All sales channels with their IDs, names, types, and domains.'
 )]
 class SalesChannelListResource
@@ -62,7 +62,7 @@ class SalesChannelListResource
         }
 
         return [
-            'uri' => 'shopware://sales-channels',
+            'uri' => 'shopwell://sales-channels',
             'mimeType' => 'application/json',
             'text' => Json::encode($channels),
         ];

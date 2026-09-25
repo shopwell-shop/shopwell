@@ -3,7 +3,7 @@ title: Add email validation when creating or updating a customer information in 
 issue: NEXT-13348
 ---
 # API
-* Added new route `/api/_admin/check-customer-email-valid` into `Shopware\Administration\Controller\AdministrationController` to validate email before submit when create/edit customer in administration.
+* Added new route `/api/_admin/check-customer-email-valid` into `Shopwell\Administration\Controller\AdministrationController` to validate email before submit when create/edit customer in administration.
 ___
 # Administration
 * Added service `src/Administration/Resources/app/administration/src/core/service/api/customer-validation.api.service.js`

@@ -6,11 +6,11 @@ author_email: altayakkus1993@gmail.com
 author_github: @AltayAkkus
 ---
 # Core
-* Changed `Shopware\Core\System\Snippet\Filter\TermFilter` and `Shopware\Core\System\Snippet\Filter\NamespaceFilter` so they can handle large snippets.
-* Deprecated `Shopware\Core\System\Snippet\Exception\FilterNotFoundException`, which will be removed in v6.7.0.0. Use `Shopware\Core\System\Snippet\SnippetException::filterNotFound` instead.
-* Deprecated `Shopware\Core\System\Snippet\Exception\InvalidSnippetFileException`, which will be removed in v6.7.0.0. Use `Shopware\Core\System\Snippet\SnippetException::invalidSnippetFile` instead.
+* Changed `Shopwell\Core\System\Snippet\Filter\TermFilter` and `Shopwell\Core\System\Snippet\Filter\NamespaceFilter` so they can handle large snippets.
+* Deprecated `Shopwell\Core\System\Snippet\Exception\FilterNotFoundException`, which will be removed in v6.7.0.0. Use `Shopwell\Core\System\Snippet\SnippetException::filterNotFound` instead.
+* Deprecated `Shopwell\Core\System\Snippet\Exception\InvalidSnippetFileException`, which will be removed in v6.7.0.0. Use `Shopwell\Core\System\Snippet\SnippetException::invalidSnippetFile` instead.
 ___
 # Next Major Version Changes
 ## Removal of deprecated exceptions
-* Removed `Shopware\Core\System\Snippet\Exception\FilterNotFoundException`. Use `Shopware\Core\System\Snippet\SnippetException::filterNotFound` instead.
-* Removed `Shopware\Core\System\Snippet\Exception\InvalidSnippetFileException`. Use `Shopware\Core\System\Snippet\SnippetException::invalidSnippetFile` instead.
+* Removed `Shopwell\Core\System\Snippet\Exception\FilterNotFoundException`. Use `Shopwell\Core\System\Snippet\SnippetException::filterNotFound` instead.
+* Removed `Shopwell\Core\System\Snippet\Exception\InvalidSnippetFileException`. Use `Shopwell\Core\System\Snippet\SnippetException::invalidSnippetFile` instead.

@@ -77,7 +77,7 @@ class RuleAreasFlagNotAllowedRule implements Rule
             if ($class->getName() !== RuleDefinition::class && !$class->is(RuleDefinition::class)) {
                 return [
                     RuleErrorBuilder::message('RuleAreas flag may only be added within the scope of RuleDefinition')
-                        ->identifier('shopware.ruleAreaFlag')
+                        ->identifier('shopwell.ruleAreaFlag')
                         ->build(),
                 ];
             }
@@ -85,7 +85,7 @@ class RuleAreasFlagNotAllowedRule implements Rule
             if ($mockedClass && !$mockedClass->is(AssociationField::class)) {
                 return [
                     RuleErrorBuilder::message('RuleAreas flag may only be added on instances of AssociationField')
-                        ->identifier('shopware.ruleAreaFlag')
+                        ->identifier('shopwell.ruleAreaFlag')
                         ->build(),
                 ];
             }

@@ -98,7 +98,7 @@ class ThumbnailServiceTest extends TestCase
         $mediaThumbnailEntity = $this->createMediaThumbnailEntity();
         $mediaFolderEntity = $this->createMediaFolderEntity();
 
-        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopware-logo.png');
+        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopwell-logo.png');
         $filesystemPublic = $this->createMock(FilesystemOperator::class);
         $filesystemPublic->expects($this->once())->method('read')->willReturn($file);
 
@@ -116,7 +116,7 @@ class ThumbnailServiceTest extends TestCase
             ->method('fetchAllKeyValue')
             ->willReturnCallback(static function ($sql, $params) {
                 return [
-                    Uuid::fromBytesToHex($params['ids'][0]) => '/shopware-logo.png',
+                    Uuid::fromBytesToHex($params['ids'][0]) => '/shopwell-logo.png',
                 ];
             });
 
@@ -148,7 +148,7 @@ class ThumbnailServiceTest extends TestCase
         static::assertNotNull($mediaFolderEntity->getConfiguration(), 'Media folder configuration should not be null');
         $mediaFolderEntity->getConfiguration()->setKeepAspectRatio(true);
 
-        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopware-logo.png');
+        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopwell-logo.png');
         $filesystemPublic = $this->createMock(FilesystemOperator::class);
         $filesystemPublic->expects($this->once())->method('read')->willReturn($file);
 
@@ -166,7 +166,7 @@ class ThumbnailServiceTest extends TestCase
             ->method('fetchAllKeyValue')
             ->willReturnCallback(static function ($sql, $params) {
                 return [
-                    Uuid::fromBytesToHex($params['ids'][0]) => '/shopware-logo.png',
+                    Uuid::fromBytesToHex($params['ids'][0]) => '/shopwell-logo.png',
                 ];
             });
 
@@ -257,7 +257,7 @@ class ThumbnailServiceTest extends TestCase
         $mediaThumbnailEntity = $this->createMediaThumbnailEntity('abc');
         $mediaFolderEntity = $this->createMediaFolderEntity('def');
 
-        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopware-logo.png');
+        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopwell-logo.png');
         $filesystemPublic = $this->createMock(FilesystemOperator::class);
         $filesystemPublic->expects($this->once())->method('read')->willReturn($file);
 
@@ -269,7 +269,7 @@ class ThumbnailServiceTest extends TestCase
             ->method('fetchAllKeyValue')
             ->willReturnCallback(static function ($sql, $params) {
                 return [
-                    Uuid::fromBytesToHex($params['ids'][0]) => '/shopware-logo.png',
+                    Uuid::fromBytesToHex($params['ids'][0]) => '/shopwell-logo.png',
                 ];
             });
 
@@ -308,7 +308,7 @@ class ThumbnailServiceTest extends TestCase
         $mediaThumbnailEntity = $this->createMediaThumbnailEntity('abc');
         $mediaFolderEntity = $this->createMediaFolderEntity('abc');
 
-        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopware-logo.png');
+        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopwell-logo.png');
         $filesystemPublic = $this->createMock(FilesystemOperator::class);
         $filesystemPublic->expects($this->once())->method('read')->willReturn($file);
 
@@ -320,7 +320,7 @@ class ThumbnailServiceTest extends TestCase
             ->method('fetchAllKeyValue')
             ->willReturnCallback(static function ($sql, $params) {
                 return [
-                    Uuid::fromBytesToHex($params['ids'][0]) => '/shopware-logo.png',
+                    Uuid::fromBytesToHex($params['ids'][0]) => '/shopwell-logo.png',
                 ];
             });
 
@@ -523,7 +523,7 @@ class ThumbnailServiceTest extends TestCase
         $mediaThumbnailEntity = $this->createMediaThumbnailEntity();
         $mediaFolderEntity = $this->createMediaFolderEntity();
 
-        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopware-logo.png');
+        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopwell-logo.png');
         $filesystemPublic = static::createStub(FilesystemOperator::class);
         $filesystemPublic->method('read')->willReturn($file);
         $filesystemPublic->method('fileSize')->willReturn(100);
@@ -546,7 +546,7 @@ class ThumbnailServiceTest extends TestCase
         $connection->method('fetchAllKeyValue')
             ->willReturnCallback(static function ($sql, $params) {
                 return [
-                    Uuid::fromBytesToHex($params['ids'][0]) => '/shopware-logo.png',
+                    Uuid::fromBytesToHex($params['ids'][0]) => '/shopwell-logo.png',
                 ];
             });
 
@@ -574,7 +574,7 @@ class ThumbnailServiceTest extends TestCase
         $mediaThumbnailEntity = $this->createMediaThumbnailEntity();
         $mediaFolderEntity = $this->createMediaFolderEntity();
 
-        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopware-logo.png');
+        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopwell-logo.png');
         $deletedPaths = [];
 
         $filesystemPublic = static::createStub(FilesystemOperator::class);
@@ -632,7 +632,7 @@ class ThumbnailServiceTest extends TestCase
 
     public function testGenerateContinuesBatchWhenSingleMediaFails(): void
     {
-        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopware-logo.png');
+        $file = $this->filesystem->readFile(__DIR__ . '/fixtures/shopwell-logo.png');
 
         $writtenPaths = [];
         $deletedPaths = [];
@@ -732,7 +732,7 @@ class ThumbnailServiceTest extends TestCase
     #[DataProvider('exifOrientationProvider')]
     public function testGenerateRotatesImageForExifOrientation(int $orientation, float $angle): void
     {
-        $fixture = __DIR__ . \sprintf('/fixtures/shopware-logo-orientation-%d.jpg', $orientation);
+        $fixture = __DIR__ . \sprintf('/fixtures/shopwell-logo-orientation-%d.jpg', $orientation);
         $image = new \stdClass();
         $processor = $this->createMock(ThumbnailProcessorInterface::class);
         $processor->expects($this->once())->method('createImageFromString')->willReturn($image);
@@ -757,7 +757,7 @@ class ThumbnailServiceTest extends TestCase
             $this->createMediaFolderEntity()
         );
         $media->setPath($fixture);
-        $media->setFileName('shopware');
+        $media->setFileName('shopwell');
         $media->setFileExtension('jpg');
         $media->setMimeType('image/jpeg');
 
@@ -802,20 +802,20 @@ class ThumbnailServiceTest extends TestCase
         $mediaEntity->setId('media-id-1');
         $mediaEntity->setThumbnails(new MediaThumbnailCollection([$mediaThumbnailEntity]));
         $mediaEntity->setMediaFolder($mediaFolderEntity);
-        $mediaEntity->setFileName('shopware-logo');
+        $mediaEntity->setFileName('shopwell-logo');
         $mediaEntity->setFileExtension('png');
         $mediaEntity->setMimeType('image/png');
         $mediaEntity->setMetaData(['example' => 'metadata']);
         $mediaType = new ImageType();
         $mediaEntity->setMediaType($mediaType);
         $mediaEntity->setFileSize(100);
-        $mediaEntity->setPath(__DIR__ . '/fixtures/shopware-logo.png');
+        $mediaEntity->setPath(__DIR__ . '/fixtures/shopwell-logo.png');
         $mediaEntity->setPrivate(false);
         $mediaEntity->setTitle('Test Image');
         $mediaEntity->setMetaDataRaw('{"example": "metadata"}');
         $mediaEntity->setUploadedAt(new \DateTime());
         $mediaEntity->setAlt('Test Alt Text');
-        $mediaEntity->setUrl('/url/to/shopware-logo.png');
+        $mediaEntity->setUrl('/url/to/shopwell-logo.png');
 
         return $mediaEntity;
     }
@@ -846,7 +846,7 @@ class ThumbnailServiceTest extends TestCase
         $mediaThumbnailEntity->setWidth(100);
         $mediaThumbnailEntity->setHeight(100);
         $mediaThumbnailEntity->setMediaId('media-id-1');
-        $mediaThumbnailEntity->setPath(__DIR__ . '/fixtures/shopware-logo.png');
+        $mediaThumbnailEntity->setPath(__DIR__ . '/fixtures/shopwell-logo.png');
         $mediaThumbnailEntity->setMediaThumbnailSizeId($mediaThumbnailSizeId);
 
         return $mediaThumbnailEntity;

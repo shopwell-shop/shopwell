@@ -32,13 +32,13 @@ jobs:
       COMPOSER_ROOT_VERSION: 6.7.9999999-dev
 
     steps:
-      - name: Setup Shopware
-        uses: shopware/setup-shopware@main
+      - name: Setup Shopwell
+        uses: shopwell/setup-shopwell@main
         with:
           mysql-version: skip
           npm-version: 11.8.0
-          shopware-version: ${{ github.ref }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ github.ref }}
+          shopwell-repository: ${{ github.repository }}
           install-storefront: true
 
       - name: Cache ESLint and Stylelint
@@ -69,12 +69,12 @@ jobs:
       COMPOSER_ROOT_VERSION: 6.7.9999999-dev
 
     steps:
-      - name: Setup Shopware
-        uses: shopware/setup-shopware@main
+      - name: Setup Shopwell
+        uses: shopwell/setup-shopwell@main
         with:
           mysql-version: skip
-          shopware-version: ${{ github.ref }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ github.ref }}
+          shopwell-repository: ${{ github.repository }}
           install-admin: true
 
       - name: Cache ESLint
@@ -140,13 +140,13 @@ jobs:
       COMPOSER_ROOT_VERSION: 6.7.9999999-dev
 
     steps:
-      - name: Setup Shopware
-        uses: shopware/setup-shopware@main
+      - name: Setup Shopwell
+        uses: shopwell/setup-shopwell@main
         with:
           mysql-version: skip
           npm-version: 11.8.0
-          shopware-version: ${{ github.ref }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ github.ref }}
+          shopwell-repository: ${{ github.repository }}
           install-storefront: true
 
       - name: Run Jest Storefront
@@ -177,13 +177,13 @@ jobs:
       COMPOSER_ROOT_VERSION: 6.7.9999999-dev
 
     steps:
-      - name: Setup Shopware
-        uses: shopware/setup-shopware@main
+      - name: Setup Shopwell
+        uses: shopwell/setup-shopwell@main
         with:
           mysql-version: skip
           npm-version: 11.8.0
-          shopware-version: ${{ github.ref }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ github.ref }}
+          shopwell-repository: ${{ github.repository }}
           install-storefront: true
 
       - name: Run Vitest Storefront components with coverage
@@ -228,7 +228,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-storefront-
       - name: install packages
-        uses: shopware/github-actions/npm-ci-retry@main
+        uses: shopwell/github-actions/npm-ci-retry@main
         with:
           working-directory: src/Storefront/Resources/app/storefront
       - name: Check license

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shopwell PR Hygiene"
+  short_description: "Prepare Shopwell PR metadata and review follow-up commits."
+  default_prompt: "Prepare or update this Shopwell pull request."

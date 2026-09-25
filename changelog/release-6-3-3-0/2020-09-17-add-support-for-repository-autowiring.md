@@ -6,7 +6,7 @@ author_email:       hendrik@soebbing.de
 author_github:      @soebbing
 ---
 # Core
-* Changed `\Shopware\Core\Framework\DependencyInjection\CompilerPass\EntityCompilerPass` to also register an alias for arguments
+* Changed `\Shopwell\Core\Framework\DependencyInjection\CompilerPass\EntityCompilerPass` to also register an alias for arguments
 ___
 # Upgrade Information
 

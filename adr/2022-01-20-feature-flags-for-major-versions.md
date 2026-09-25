@@ -28,7 +28,7 @@ The feature flag can be used in PHP to make specific code parts only executable 
 ### Using flags in methods
 When there is no option via the container, you can use additional helper functions:
 ```php
-use Shopware\Core\Framework\Feature;
+use Shopwell\Core\Framework\Feature;
  
 class ApiController
 {
@@ -45,7 +45,7 @@ class ApiController
 
 And you can use it for conditions:
 ```php
-use Shopware\Core\Framework\Feature;
+use Shopwell\Core\Framework\Feature;
  
 class ApiController
 {
@@ -62,7 +62,7 @@ class ApiController
 
 And you can use it simply to throw exceptions:
 ```php
-use Shopware\Core\Framework\Feature;
+use Shopwell\Core\Framework\Feature;
  
 /**
  * @deprecated tag:v6.5.0 - Class is deprecated, use ... instead
@@ -79,7 +79,7 @@ class ApiController
 ### Using flags in tests
 You can flag a test by using the corresponding helper function. This can also be used in the `setUp()` method.
 ```php
-use Shopware\Core\Framework\Feature;
+use Shopwell\Core\Framework\Feature;
  
 class ProductTest
 {
@@ -124,7 +124,7 @@ When you want to toggle different parts of the template you can use the flag in 
 
 ### Using flags in config.xml
 
-When you want to toggle config input fields in config.xml like [basicInformation.xml](https://gitlab.shopware.com/shopware/6/product/platform/-/blob/trunk/src/Core/System/Resources/config/basicInformation.xml), you can add a `flag` element like this:
+When you want to toggle config input fields in config.xml like [basicInformation.xml](https://gitlab.shopwell.com/shopwell/6/product/platform/-/blob/trunk/src/Core/System/Resources/config/basicInformation.xml), you can add a `flag` element like this:
 
 ```xml
 <input-field type="bool" flag="v6.5.0.0">
@@ -163,4 +163,4 @@ Feature flags can also be used in plugins.
 ### Major feature flag
 As mentioned before, we use the major feature flags (`v6.5.0.0`, `v6.6.0.0`) to signal breaks within the code ahead of time. This is an incredible help in the preparation of the next major release, as otherwise all breaks would have to be made within a short period of time.
 
-This procedure can also be applied to plugins, which also use this flag and internally query it to either prepare the plugin for the next major or to support multiple Shopware major versions with one plugin version. Since each major feature flag remains after the corresponding release, they can be used as an alternative version switch to the php equivalent `version_compare`.
+This procedure can also be applied to plugins, which also use this flag and internally query it to either prepare the plugin for the next major or to support multiple Shopwell major versions with one plugin version. Since each major feature flag remains after the corresponding release, they can be used as an alternative version switch to the php equivalent `version_compare`.

@@ -133,14 +133,14 @@ class GenerateMediaTypesCommandTest extends TestCase
 
         $this->getPublicFilesystem()->writeStream(
             $filePath,
-            fopen(__DIR__ . '/../fixtures/shopware-logo.png', 'r')
+            fopen(__DIR__ . '/../fixtures/shopwell-logo.png', 'r')
         );
 
         $filePath = $mediaJpg->getPath();
 
         $this->getPublicFilesystem()->writeStream(
             $filePath,
-            fopen(__DIR__ . '/../fixtures/shopware.jpg', 'r')
+            fopen(__DIR__ . '/../fixtures/shopwell.jpg', 'r')
         );
 
         $filePath = $mediaPdf->getPath();

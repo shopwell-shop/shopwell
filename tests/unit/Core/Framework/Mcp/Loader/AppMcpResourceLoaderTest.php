@@ -212,9 +212,9 @@ class AppMcpResourceLoaderTest extends TestCase
     {
         $resourceRow = [
             'name' => 'entities',
-            'uri' => 'shopware://entities',
+            'uri' => 'shopwell://entities',
             'url' => 'https://app.example.com/mcp/resource/entities',
-            'app_name' => 'shopware',
+            'app_name' => 'shopwell',
             'app_secret' => 'secret',
             'label' => null,
             'description' => null,

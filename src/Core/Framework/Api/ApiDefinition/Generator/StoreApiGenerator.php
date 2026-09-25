@@ -177,7 +177,7 @@ class StoreApiGenerator implements ApiDefinitionGeneratorInterface
         $openApi->info->description = 'This endpoint reference contains an overview of all endpoints comprising the Shopwell Store API';
         $openApi->info->license = new License([
             'name' => 'MIT',
-            'url' => 'https://github.com/shopware/shopware/blob/trunk/LICENSE',
+            'url' => 'https://github.com/shopwell-shop/shopwell/blob/trunk/LICENSE',
         ]);
     }
 

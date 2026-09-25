@@ -43,20 +43,20 @@ class McpCapabilityCatalogTest extends TestCase
     public function testEnrichedToolsAttachesDependenciesAndCorePrivileges(): void
     {
         $registry = new Registry();
-        $this->registerTool($registry, 'shopware-entity-delete', 'Delete');
+        $this->registerTool($registry, 'shopwell-entity-delete', 'Delete');
 
         $catalog = new McpCapabilityCatalog(
             $registry,
             $this->stubPrivilegeProvider(),
-            ['shopware-entity-delete' => ['shopware-entity-search', 'shopware-entity-schema']],
-            ['shopware-entity-delete' => ['static' => [], 'entityParam' => 'entity', 'operations' => ['delete']]],
+            ['shopwell-entity-delete' => ['shopwell-entity-search', 'shopwell-entity-schema']],
+            ['shopwell-entity-delete' => ['static' => [], 'entityParam' => 'entity', 'operations' => ['delete']]],
         );
 
         $tools = $catalog->enrichedTools();
 
         static::assertCount(1, $tools);
         static::assertSame(
-            ['shopware-entity-search', 'shopware-entity-schema'],
+            ['shopwell-entity-search', 'shopwell-entity-schema'],
             $tools[0]['dependencies'],
         );
         static::assertSame(
@@ -68,14 +68,14 @@ class McpCapabilityCatalogTest extends TestCase
     public function testEnrichedToolsIncludesConfiguredGroup(): void
     {
         $registry = new Registry();
-        $this->registerTool($registry, 'shopware-entity-search', 'Search');
+        $this->registerTool($registry, 'shopwell-entity-search', 'Search');
 
         $catalog = new McpCapabilityCatalog(
             $registry,
             $this->stubPrivilegeProvider(),
             [],
             [],
-            ['shopware-entity-search' => 'catalogue'],
+            ['shopwell-entity-search' => 'catalogue'],
         );
 
         static::assertSame('catalogue', $catalog->enrichedTools()[0]['group']);
@@ -236,11 +236,11 @@ class McpCapabilityCatalogTest extends TestCase
     {
         $registry = new Registry();
         $registry->registerResource(
-            new ResourceDefinition('shopware://zzz', 'zzz-resource', null, 'Z Resource', null, null, null),
+            new ResourceDefinition('shopwell://zzz', 'zzz-resource', null, 'Z Resource', null, null, null),
             'Acme\\ZzzResource',
         );
         $registry->registerResource(
-            new ResourceDefinition('shopware://aaa', 'aaa-resource', null, 'A Resource', null, null, null),
+            new ResourceDefinition('shopwell://aaa', 'aaa-resource', null, 'A Resource', null, null, null),
             'Acme\\AaaResource',
         );
 
@@ -249,35 +249,35 @@ class McpCapabilityCatalogTest extends TestCase
         $resources = $catalog->enrichedResources();
 
         static::assertCount(2, $resources);
-        static::assertSame('shopware://aaa', $resources[0]['uri']);
-        static::assertSame('shopware://zzz', $resources[1]['uri']);
+        static::assertSame('shopwell://aaa', $resources[0]['uri']);
+        static::assertSame('shopwell://zzz', $resources[1]['uri']);
     }
 
     public function testEnrichedResourcesAppliesAllowlistFilter(): void
     {
         $registry = new Registry();
         $registry->registerResource(
-            new ResourceDefinition('shopware://aaa', 'aaa-resource', null, 'A', null, null, null),
+            new ResourceDefinition('shopwell://aaa', 'aaa-resource', null, 'A', null, null, null),
             'Acme\\AaaResource',
         );
         $registry->registerResource(
-            new ResourceDefinition('shopware://bbb', 'bbb-resource', null, 'B', null, null, null),
+            new ResourceDefinition('shopwell://bbb', 'bbb-resource', null, 'B', null, null, null),
             'Acme\\BbbResource',
         );
 
         $catalog = new McpCapabilityCatalog($registry, $this->stubPrivilegeProvider());
 
-        $resources = $catalog->enrichedResources(['shopware://aaa']);
+        $resources = $catalog->enrichedResources(['shopwell://aaa']);
 
         static::assertCount(1, $resources);
-        static::assertSame('shopware://aaa', $resources[0]['uri']);
+        static::assertSame('shopwell://aaa', $resources[0]['uri']);
     }
 
     public function testEnrichedResourcesWithEmptyAllowlistReturnsNothing(): void
     {
         $registry = new Registry();
         $registry->registerResource(
-            new ResourceDefinition('shopware://aaa', 'aaa-resource', null, 'A', null, null, null),
+            new ResourceDefinition('shopwell://aaa', 'aaa-resource', null, 'A', null, null, null),
             'Acme\\AaaResource',
         );
 

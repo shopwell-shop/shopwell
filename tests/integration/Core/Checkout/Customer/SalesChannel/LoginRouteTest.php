@@ -103,7 +103,7 @@ class LoginRouteTest extends TestCase
                 '/store-api/account/login',
                 [
                     'email' => $email,
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                 ]
             );
 
@@ -124,7 +124,7 @@ class LoginRouteTest extends TestCase
                 '/store-api/account/login',
                 [
                     'email' => $email,
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                 ],
             );
 
@@ -149,7 +149,7 @@ class LoginRouteTest extends TestCase
                 '/store-api/account/login',
                 [
                     'email' => $email,
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                 ]
             );
 
@@ -174,7 +174,7 @@ class LoginRouteTest extends TestCase
 
         $loginRoute = static::getContainer()->get(LoginRoute::class);
 
-        $requestDataBag = new RequestDataBag(['email' => $email, 'password' => 'shopware']);
+        $requestDataBag = new RequestDataBag(['email' => $email, 'password' => 'shopwell']);
 
         static::expectExceptionObject(CustomerException::badCredentials());
         $loginRoute->login($requestDataBag, $salesChannelContext);
@@ -191,7 +191,7 @@ class LoginRouteTest extends TestCase
 
         $loginRoute = static::getContainer()->get(LoginRoute::class);
 
-        $request = new RequestDataBag(['email' => $email, 'password' => 'shopware']);
+        $request = new RequestDataBag(['email' => $email, 'password' => 'shopwell']);
 
         $response = $loginRoute->login($request, $salesChannelContext);
 
@@ -252,7 +252,7 @@ class LoginRouteTest extends TestCase
 
         $loginRoute = static::getContainer()->get(LoginRoute::class);
 
-        $request = new RequestDataBag(['email' => $email, 'password' => 'shopware']);
+        $request = new RequestDataBag(['email' => $email, 'password' => 'shopwell']);
 
         $responseSalesChannel1 = $loginRoute->login($request, $salesChannelContext1);
 

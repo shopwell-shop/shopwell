@@ -64,7 +64,7 @@ class CustomerRouteTest extends TestCase
                 '/store-api/account/login',
                 [
                     'email' => $email,
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                 ]
             );
 

@@ -5,4 +5,4 @@ author: Björn Herzke
 author_github: @wrongspot  
 ---
 # Core
-*  Added new optional argument for profile name in `Shopware\Core\Content\ImportExport\Command\ImportEntityCommand`
+*  Added new optional argument for profile name in `Shopwell\Core\Content\ImportExport\Command\ImportEntityCommand`

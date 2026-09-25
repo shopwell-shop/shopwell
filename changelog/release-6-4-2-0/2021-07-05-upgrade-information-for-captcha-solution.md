@@ -22,7 +22,7 @@ issue: NEXT-8225
   Configure the correct site key and secret key for reCaptcha v3
   Configure `Google reCAPTCHA v3 threshold score`, default by 0.5
 ### How to adapt the captcha solution upgrade?
-* Add `Shopware\Storefront\Framework\Captcha\Annotation\Captcha` annotation to StorefrontController-Routes to apply captcha protection.
+* Add `Shopwell\Storefront\Framework\Captcha\Annotation\Captcha` annotation to StorefrontController-Routes to apply captcha protection.
 * Due to captcha forms will be displayed when activated, be aware that the captcha input might break your layout
 #### Before
 ```php

@@ -68,7 +68,7 @@ class StateMachineResourceTest extends TestCase
         $resource = new StateMachineResource($repository);
         $result = ($resource)();
 
-        static::assertSame('shopware://state-machines', $result['uri']);
+        static::assertSame('shopwell://state-machines', $result['uri']);
         static::assertSame('application/json', $result['mimeType']);
 
         $data = json_decode($result['text'], true, 512, \JSON_THROW_ON_ERROR);

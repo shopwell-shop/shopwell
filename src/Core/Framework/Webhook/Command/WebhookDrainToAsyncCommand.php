@@ -183,7 +183,7 @@ final readonly class WebhookDrainToAsyncCommand
     {
         $eventLogId = $row['webhook_event_log_id'];
 
-        /** @phpstan-ignore shopware.unserializeUsage */
+        /** @phpstan-ignore shopwell.unserializeUsage */
         $message = @unserialize($row['serialized_webhook_message'], ['allowed_classes' => [WebhookEventMessage::class]]);
 
         if (!$message instanceof WebhookEventMessage) {

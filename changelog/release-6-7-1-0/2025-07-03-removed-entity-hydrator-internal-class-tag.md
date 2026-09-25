@@ -5,4 +5,4 @@ author_email: Discord.Benjamin@web.de
 author_github: gecolay
 ---
 # Core
-* Removed the `internal` tag of the class `Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityHydrator`
+* Removed the `internal` tag of the class `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityHydrator`

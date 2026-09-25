@@ -6,5 +6,5 @@ author_email: k@componentk.com
 author_github: @augsteyer
 ---
 # Core
-* Added event `Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedCriteriaEvent`.
-* Changed method `Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute::order()` to fire `CheckoutOrderPlacedCriteriaEvent`.
+* Added event `Shopwell\Core\Checkout\Cart\Event\CheckoutOrderPlacedCriteriaEvent`.
+* Changed method `Shopwell\Core\Checkout\Cart\SalesChannel\CartOrderRoute::order()` to fire `CheckoutOrderPlacedCriteriaEvent`.

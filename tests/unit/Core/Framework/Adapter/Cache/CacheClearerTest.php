@@ -79,7 +79,7 @@ class CacheClearerTest extends TestCase
             ->willReturn($lock);
 
         // Create a nested directory structure to avoid scanning system temp directories
-        $testBase = sys_get_temp_dir() . '/shopware_test_' . uniqid();
+        $testBase = sys_get_temp_dir() . '/shopwell_test_' . uniqid();
         $this->cacheDir = $testBase . '/cache/test_cache_' . uniqid();
 
         // Create the cache directory for tests
@@ -106,8 +106,8 @@ class CacheClearerTest extends TestCase
     protected function tearDown(): void
     {
         // Clean up the entire test base directory (includes all nested test directories)
-        $testBase = \dirname($this->cacheDir, 2); // Go up two levels to shopware_test_* directory
-        if (is_dir($testBase) && str_starts_with(basename($testBase), 'shopware_test_')) {
+        $testBase = \dirname($this->cacheDir, 2); // Go up two levels to shopwell_test_* directory
+        if (is_dir($testBase) && str_starts_with(basename($testBase), 'shopwell_test_')) {
             $this->filesystem->remove($testBase);
         }
 

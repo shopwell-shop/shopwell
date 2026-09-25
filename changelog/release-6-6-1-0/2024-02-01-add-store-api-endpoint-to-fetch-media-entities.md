@@ -2,7 +2,7 @@
 title: Add store API endpoint to fetch media entities
 issue: NEXT-31903
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: BrocksiNet
 ---
 

@@ -81,7 +81,7 @@ class AppCheckoutGatewayTest extends TestCase
 
         $secret = \hash_hmac('sha256', $body, $app->getAppSecret());
 
-        $this->appendNewResponse(new Response(200, [RequestSigner::SHOPWARE_APP_SIGNATURE => $secret], $body));
+        $this->appendNewResponse(new Response(200, [RequestSigner::SHOPWELL_APP_SIGNATURE => $secret], $body));
         $this->browser->request('POST', '/store-api/checkout/gateway');
 
         static::assertSame(200, $this->browser->getResponse()->getStatusCode());
@@ -130,7 +130,7 @@ class AppCheckoutGatewayTest extends TestCase
 
         $secret = \hash_hmac('sha256', $body, $app->getAppSecret());
 
-        $this->appendNewResponse(new Response(200, [RequestSigner::SHOPWARE_APP_SIGNATURE => $secret], $body));
+        $this->appendNewResponse(new Response(200, [RequestSigner::SHOPWELL_APP_SIGNATURE => $secret], $body));
         $this->browser->request('POST', '/store-api/checkout/gateway');
 
         static::assertSame(400, $this->browser->getResponse()->getStatusCode());
@@ -179,7 +179,7 @@ class AppCheckoutGatewayTest extends TestCase
 
         $secret = \hash_hmac('sha256', $body, $app->getAppSecret());
 
-        $this->appendNewResponse(new Response(200, [RequestSigner::SHOPWARE_APP_SIGNATURE => $secret], $body));
+        $this->appendNewResponse(new Response(200, [RequestSigner::SHOPWELL_APP_SIGNATURE => $secret], $body));
         $this->browser->request('POST', '/store-api/checkout/gateway');
 
         static::assertSame(400, $this->browser->getResponse()->getStatusCode());

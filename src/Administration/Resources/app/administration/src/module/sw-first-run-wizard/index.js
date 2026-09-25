@@ -20,14 +20,14 @@ Shopwell.Component.register(
     () => import('./view/sw-first-run-wizard-paypal-credentials'),
 );
 Shopwell.Component.register('sw-first-run-wizard-plugins', () => import('./view/sw-first-run-wizard-plugins'));
-Shopwell.Component.register('sw-first-run-wizard-shopware-base', () => import('./view/sw-first-run-wizard-shopware-base'));
+Shopwell.Component.register('sw-first-run-wizard-shopwell-base', () => import('./view/sw-first-run-wizard-shopwell-base'));
 Shopwell.Component.register(
-    'sw-first-run-wizard-shopware-account',
-    () => import('./view/sw-first-run-wizard-shopware-account'),
+    'sw-first-run-wizard-shopwell-account',
+    () => import('./view/sw-first-run-wizard-shopwell-account'),
 );
 Shopwell.Component.register(
-    'sw-first-run-wizard-shopware-domain',
-    () => import('./view/sw-first-run-wizard-shopware-domain'),
+    'sw-first-run-wizard-shopwell-domain',
+    () => import('./view/sw-first-run-wizard-shopwell-domain'),
 );
 Shopwell.Component.register('sw-first-run-wizard-defaults', () => import('./view/sw-first-run-wizard-defaults'));
 Shopwell.Component.register('sw-first-run-wizard-store', () => import('./view/sw-first-run-wizard-store'));
@@ -140,19 +140,19 @@ Module.register('sw-first-run-wizard', {
                         privilege: 'admin',
                     },
                 },
-                shopware: {
-                    component: 'sw-first-run-wizard-shopware-base',
-                    path: 'shopware',
+                shopwell: {
+                    component: 'sw-first-run-wizard-shopwell-base',
+                    path: 'shopwell',
                     children: {
                         account: {
-                            component: 'sw-first-run-wizard-shopware-account',
+                            component: 'sw-first-run-wizard-shopwell-account',
                             path: 'account',
                             meta: {
                                 privilege: 'admin',
                             },
                         },
                         domain: {
-                            component: 'sw-first-run-wizard-shopware-domain',
+                            component: 'sw-first-run-wizard-shopwell-domain',
                             path: 'domain',
                             meta: {
                                 privilege: 'admin',

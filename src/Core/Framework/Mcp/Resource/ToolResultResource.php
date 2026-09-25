@@ -16,7 +16,7 @@ use Shopwell\Core\Framework\Mcp\ToolResultCacheStorage;
  */
 #[Package('framework')]
 #[McpResourceTemplate(
-    uriTemplate: 'shopware://tool-result/{id}',
+    uriTemplate: 'shopwell://tool-result/{id}',
     name: 'tool-result',
     description: 'Retrieves a large tool result stored by a previous tool call in this session. Fetch when a tool response contains a resourceUri pointing here.',
     mimeType: 'application/json',
@@ -44,7 +44,7 @@ class ToolResultResource
         }
 
         return [
-            'uri' => 'shopware://tool-result/' . $id,
+            'uri' => 'shopwell://tool-result/' . $id,
             'mimeType' => $result['mimeType'],
             'text' => $result['content'],
         ];

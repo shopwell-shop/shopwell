@@ -46,7 +46,7 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 return static function (ContainerConfigurator $containerConfigurator): void {
     $parameters = $containerConfigurator->parameters();
 
-    $parameters->set('shopware.installer.supportedLanguages', [
+    $parameters->set('shopwell.installer.supportedLanguages', [
         'cs' => ['id' => 'cs-CZ', 'label' => 'Čeština'],
         'da-DK' => ['id' => 'da-DK', 'label' => 'Dansk'],
         'de' => ['id' => 'de-DE', 'label' => 'Deutsch'],
@@ -62,7 +62,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         'sv-SE' => ['id' => 'sv-SE', 'label' => 'Svenska'],
     ]);
 
-    $parameters->set('shopware.installer.supportedCurrencies', [
+    $parameters->set('shopwell.installer.supportedCurrencies', [
         'EUR' => 'EUR',
         'USD' => 'USD',
         'GBP' => 'GBP',
@@ -74,7 +74,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         'CZK' => 'CZK',
     ]);
 
-    $parameters->set('shopware.installer.configurationPreselection', [
+    $parameters->set('shopwell.installer.configurationPreselection', [
         'cs' => ['currency' => 'CZK'],
         'da-DK' => ['currency' => 'DKK'],
         'de' => ['currency' => 'EUR'],
@@ -90,29 +90,29 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         'sv-SE' => ['currency' => 'SEK'],
     ]);
 
-    $parameters->set('shopware.installer.tosUrls', [
+    $parameters->set('shopwell.installer.tosUrls', [
         'de' => 'https://api.shopwell.cn/gtc/de_DE.html',
         'en' => 'https://api.shopwell.cn/gtc/en_GB.html',
     ]);
 
-    $parameters->set('env(SHOPWARE_ADMINISTRATION_PATH_NAME)', 'admin');
+    $parameters->set('env(SHOPWELL_ADMINISTRATION_PATH_NAME)', 'admin');
 
     $services = $containerConfigurator->services();
 
-    $services->set('shopware.asset.asset', FallbackUrlPackage::class)
+    $services->set('shopwell.asset.asset', FallbackUrlPackage::class)
         ->args([
             [
                 '',
             ],
-            service('shopware.asset.version_strategy'),
+            service('shopwell.asset.version_strategy'),
         ])
         ->tag('assets.package', ['package' => 'asset']);
 
-    $services->set('shopware.asset.version_strategy', EmptyVersionStrategy::class);
+    $services->set('shopwell.asset.version_strategy', EmptyVersionStrategy::class);
 
     $services->set(InstallerLocaleListener::class)
         ->args([
-            param('shopware.installer.supportedLanguages'),
+            param('shopwell.installer.supportedLanguages'),
         ])
         ->tag('kernel.event_subscriber');
 
@@ -129,23 +129,23 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Composer::class),
             service(PlatformRepository::class),
         ])
-        ->tag('shopware.installer.requirement');
+        ->tag('shopwell.installer.requirement');
 
     $services->set(FilesystemRequirementsValidator::class)
         ->args([
             param('kernel.project_dir'),
         ])
-        ->tag('shopware.installer.requirement');
+        ->tag('shopwell.installer.requirement');
 
     $services->set(ConfigurationRequirementsValidator::class)
         ->args([
             service(IniConfigReader::class),
         ])
-        ->tag('shopware.installer.requirement');
+        ->tag('shopwell.installer.requirement');
 
     $services->set(IniConfigReader::class);
 
-    $services->set('shopware.installer.guzzle', Client::class);
+    $services->set('shopwell.installer.guzzle', Client::class);
 
     $services->alias(AbstractTranslationConfigLoader::class, TranslationConfigLoader::class);
 
@@ -161,8 +161,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(LicenseFetcher::class)
         ->args([
-            service('shopware.installer.guzzle'),
-            param('shopware.installer.tosUrls'),
+            service('shopwell.installer.guzzle'),
+            param('shopwell.installer.tosUrls'),
         ]);
 
     $services->set(StartController::class)
@@ -174,7 +174,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(RequirementsController::class)
         ->public()
         ->args([
-            tagged_iterator('shopware.installer.requirement'),
+            tagged_iterator('shopwell.installer.requirement'),
             param('kernel.project_dir'),
         ])
         ->call('setContainer', [
@@ -221,8 +221,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AdminConfigurationService::class),
             service('translator'),
             service(TranslationConfig::class),
-            param('shopware.installer.supportedLanguages'),
-            param('shopware.installer.supportedCurrencies'),
+            param('shopwell.installer.supportedLanguages'),
+            param('shopwell.installer.supportedCurrencies'),
         ])
         ->call('setContainer', [
             service('service_container'),
@@ -235,7 +235,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Client::class),
             env('APP_URL')->string(),
             service(ClockInterface::class),
-            env('SHOPWARE_ADMINISTRATION_PATH_NAME')->string(),
+            env('SHOPWELL_ADMINISTRATION_PATH_NAME')->string(),
         ])
         ->call('setContainer', [
             service('service_container'),
@@ -251,7 +251,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(SetupDatabaseAdapter::class),
             service(MigrationCollectionFactory::class),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
             service(IniConfigReader::class),
             service(ClockInterface::class),
         ]);

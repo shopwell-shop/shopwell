@@ -6,7 +6,7 @@ use Shopwell\Core\Framework\Log\Package;
 
 /**
  * Used to invalidate the cached media urls from the reverse proxy
- * If you are using fastly as cdn, you should configure shopware.cdn.fastly.enabled to true
+ * If you are using fastly as cdn, you should configure shopwell.cdn.fastly.enabled to true
  */
 #[Package('discovery')]
 interface MediaReverseProxy

@@ -83,7 +83,7 @@ class FirstRunWizardControllerTest extends TestCase
 
         $this->frwController->frwLogin(
             new RequestDataBag([
-                'shopwareId' => 'shopware-id',
+                'shopwellId' => 'shopwell-id',
                 'password' => 'p4ssw0rd',
             ]),
             $context
@@ -174,7 +174,7 @@ class FirstRunWizardControllerTest extends TestCase
             body: json_encode([
                 [
                     'id' => 123456,
-                    'domain' => 'shopware.swag',
+                    'domain' => 'shopwell.swag',
                     'verified' => true,
                     'edition' => [
                         'name' => 'Community Edition',
@@ -186,14 +186,14 @@ class FirstRunWizardControllerTest extends TestCase
 
         $this->frwController->verifyDomain(
             new QueryDataBag([
-                'domain' => 'shopware.swag',
+                'domain' => 'shopwell.swag',
                 'testEnvironment' => true,
             ]),
             $context,
         );
 
         static::assertSame(
-            'shopware.swag',
+            'shopwell.swag',
             static::getContainer()->get(SystemConfigService::class)->getString(StoreRequestOptionsProvider::CONFIG_KEY_STORE_LICENSE_DOMAIN)
         );
     }

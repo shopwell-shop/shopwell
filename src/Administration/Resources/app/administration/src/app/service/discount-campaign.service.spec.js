@@ -13,7 +13,7 @@ describe('src/app/service/discount-campaign.service.ts', () => {
         jest.useRealTimers();
     });
 
-    const shopwareDiscountCampaignService = new ShopwellDiscountCampaignService();
+    const shopwellDiscountCampaignService = new ShopwellDiscountCampaignService();
 
     describe('isDiscountCampaignActive', () => {
         it('returns true if today is between startDate and endDate and no duration is set', async () => {
@@ -22,7 +22,7 @@ describe('src/app/service/discount-campaign.service.ts', () => {
                 endDate: '04-23-2022 00:00:00',
             };
 
-            expect(shopwareDiscountCampaignService.isDiscountCampaignActive(campaign)).toBe(true);
+            expect(shopwellDiscountCampaignService.isDiscountCampaignActive(campaign)).toBe(true);
         });
 
         it('returns true if today is between startDate and endDate and duration > 0 is set', async () => {
@@ -32,16 +32,16 @@ describe('src/app/service/discount-campaign.service.ts', () => {
                 discountAppliesForMonths: 10,
             };
 
-            expect(shopwareDiscountCampaignService.isDiscountCampaignActive(campaign)).toBe(true);
+            expect(shopwellDiscountCampaignService.isDiscountCampaignActive(campaign)).toBe(true);
         });
 
         it('returns false if discountCampaign is null', async () => {
-            expect(shopwareDiscountCampaignService.isDiscountCampaignActive(null)).toBe(false);
+            expect(shopwellDiscountCampaignService.isDiscountCampaignActive(null)).toBe(false);
         });
 
         it('returns false if discountCampaign has no startDate', async () => {
             expect(
-                shopwareDiscountCampaignService.isDiscountCampaignActive({
+                shopwellDiscountCampaignService.isDiscountCampaignActive({
                     startDate: null,
                 }),
             ).toBe(false);
@@ -54,7 +54,7 @@ describe('src/app/service/discount-campaign.service.ts', () => {
                 discountAppliesForMonths: 10,
             };
 
-            expect(shopwareDiscountCampaignService.isDiscountCampaignActive(campaign)).toBe(false);
+            expect(shopwellDiscountCampaignService.isDiscountCampaignActive(campaign)).toBe(false);
         });
 
         it('returns false if endDate is in the past', async () => {
@@ -64,7 +64,7 @@ describe('src/app/service/discount-campaign.service.ts', () => {
                 discountAppliesForMonths: 10,
             };
 
-            expect(shopwareDiscountCampaignService.isDiscountCampaignActive(campaign)).toBe(false);
+            expect(shopwellDiscountCampaignService.isDiscountCampaignActive(campaign)).toBe(false);
         });
 
         it('returns false if discountDuration is 0', async () => {
@@ -74,7 +74,7 @@ describe('src/app/service/discount-campaign.service.ts', () => {
                 discountAppliesForMonths: 0,
             };
 
-            expect(shopwareDiscountCampaignService.isDiscountCampaignActive(campaign)).toBe(false);
+            expect(shopwellDiscountCampaignService.isDiscountCampaignActive(campaign)).toBe(false);
         });
     });
 
@@ -113,11 +113,11 @@ describe('src/app/service/discount-campaign.service.ts', () => {
         ];
 
         it('returns true if startDate, endDate and discountAppliesForMonths are the same', async () => {
-            expect(shopwareDiscountCampaignService.isSamePeriod(originalCampaign, originalCampaign)).toBe(true);
+            expect(shopwellDiscountCampaignService.isSamePeriod(originalCampaign, originalCampaign)).toBe(true);
         });
 
         it.each(differences)('returns false if %s is different', (propName, differentCampaign) => {
-            expect(shopwareDiscountCampaignService.isSamePeriod(originalCampaign, differentCampaign)).toBe(false);
+            expect(shopwellDiscountCampaignService.isSamePeriod(originalCampaign, differentCampaign)).toBe(false);
         });
     });
 });

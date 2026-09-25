@@ -101,7 +101,7 @@ export default class SpatialArViewerPlugin extends Plugin {
         const arButtonText = this.el.querySelector('#ar-button-text') ;
         const autostartArModalButtonText = this.autostartArModalButton?.querySelector('#ar-btn-open-session-text') as HTMLSpanElement | null;
 
-        // launch the preloaded ARSystem from @shopware-ag/dive using async/await and try/catch
+        // launch the preloaded ARSystem from @shopwell-ag/dive using async/await and try/catch
         try {
             if (!this.arSystem) {
                 throw new Error('ARSystem not loaded');

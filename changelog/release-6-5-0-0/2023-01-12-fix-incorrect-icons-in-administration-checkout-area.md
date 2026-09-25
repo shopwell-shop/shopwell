@@ -2,7 +2,7 @@
 title: Fix incorrect icons in Administration checkout area
 issue: NEXT-24797
 author: Markus Velt
-author_email: m.velt@shopware.com
+author_email: m.velt@shopwell.com
 author_github: @raknison
 ---
 # Administration

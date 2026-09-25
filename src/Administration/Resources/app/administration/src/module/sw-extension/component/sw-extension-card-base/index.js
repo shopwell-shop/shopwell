@@ -20,7 +20,7 @@ export default {
 
     inheritAttrs: false,
 
-    inject: ['shopwareExtensionService', 'extensionStoreActionService', 'cacheApiService'],
+    inject: ['shopwellExtensionService', 'extensionStoreActionService', 'cacheApiService'],
 
     emits: ['update-list', 'select-change'],
 
@@ -287,7 +287,7 @@ export default {
 
     methods: {
         async createdComponent() {
-            this.openLink = await this.shopwareExtensionService.getOpenLink(this.extension);
+            this.openLink = await this.shopwellExtensionService.getOpenLink(this.extension);
         },
 
         emitUpdateList() {
@@ -323,7 +323,7 @@ export default {
             this.isLoading = true;
 
             try {
-                await this.shopwareExtensionService.uninstallExtension(this.extension.name, this.extension.type, removeData);
+                await this.shopwellExtensionService.uninstallExtension(this.extension.name, this.extension.type, removeData);
                 this.clearCacheAndReloadPage();
             } catch (e) {
                 this.showExtensionErrors(e);
@@ -341,7 +341,7 @@ export default {
                 }
 
                 if (this.extension.installedAt) {
-                    await this.shopwareExtensionService.updateExtension(
+                    await this.shopwellExtensionService.updateExtension(
                         this.extension.name,
                         this.extension.type,
                         allowNewPermissions,
@@ -432,7 +432,7 @@ export default {
                 this.showRemovalModal = false;
                 this.isLoading = true;
 
-                await this.shopwareExtensionService.removeExtension(this.extension.name, this.extension.type, removeData);
+                await this.shopwellExtensionService.removeExtension(this.extension.name, this.extension.type, removeData);
                 this.extension.active = false;
             } catch (e) {
                 this.showStoreError(e);

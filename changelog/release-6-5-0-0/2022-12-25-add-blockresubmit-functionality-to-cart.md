@@ -17,5 +17,5 @@ ___
 # Cart errors without blocking resubmitting - blockResubmit
 `blockResubmit` allows developers to create cart errors that do not block the user from trying to submit their cart again.
 This can be useful if the error can be automatically corrected (like `PaymentMethodChangedError`), or does not require user intervention but user approval (like `ProductOutOfStockError`).
-You can add it to your error by overriding the default `blockResubmit(): bool` method from `Shopware\Core\Checkout\Cart\Error\Error`, `true` blocks the resubmit button, `false` does not.
+You can add it to your error by overriding the default `blockResubmit(): bool` method from `Shopwell\Core\Checkout\Cart\Error\Error`, `true` blocks the resubmit button, `false` does not.
 If a cart has multiple errors, a single `blockResubmit = true` overrides all other errors, just like `blockOrder`.  

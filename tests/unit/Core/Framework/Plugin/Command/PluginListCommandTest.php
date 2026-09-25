@@ -85,7 +85,7 @@ class PluginListCommandTest extends TestCase
             'active' => false,
             'installedAt' => new \DateTimeImmutable('2024-07-05T00:00:00.000001Z'),
             'upgradeVersion' => '1.0.0',
-            'composerName' => 'shopware/test-plugin',
+            'composerName' => 'shopwell/test-plugin',
             'name' => 'Shopwell Test',
             'label' => 'I\'ve had issues in the past with ridiculously long labels from store plugins, so we just cap the label at max 40 characters.',
             'version' => '0.7.12',
@@ -96,7 +96,7 @@ class PluginListCommandTest extends TestCase
 
         $this->setupComposerPluginLoaderMock([
             [
-                'composerName' => 'shopware/test-plugin',
+                'composerName' => 'shopwell/test-plugin',
                 'name' => 'Shopwell Test',
                 'version' => '0.7.12',
             ],
@@ -117,7 +117,7 @@ class PluginListCommandTest extends TestCase
 
     public function testFilter(): void
     {
-        $filterValue = 'shopware-is-love';
+        $filterValue = 'shopwell-is-love';
 
         $criteria = static::callback(static function (Criteria $criteria) use ($filterValue): bool {
             $filters = $criteria->getFilters();

@@ -229,8 +229,8 @@ class ManifestFixture extends Manifest
         return Metadata::fromArray([
             'label' => ['en-GB' => $name],
             'name' => $name,
-            'author' => 'shopware AG',
-            'copyright' => '(c) by shopware AG',
+            'author' => 'Shopwell',
+            'copyright' => '(c) by Shopwell',
             'license' => 'MIT',
             'version' => '1.0.0',
         ]);

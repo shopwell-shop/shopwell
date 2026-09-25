@@ -1,9 +1,9 @@
 /**
  * @sw-package framework
  */
-import type { HandleMethod } from '@shopware-ag/meteor-admin-sdk/es/channel';
+import type { HandleMethod } from '@shopwell-ag/meteor-admin-sdk/es/channel';
 import useSession from 'src/app/composables/use-session';
-import { useShopwellServicesStore } from '../store/shopware-services.store';
+import { useShopwellServicesStore } from '../store/shopwell-services.store';
 
 let reloadFn: () => void = () => window.location.reload();
 
@@ -27,8 +27,8 @@ export function __setReloadFn(fn: () => void) {
  * @private
  */
 export async function grantPermissions() {
-    const shopwareServiceStore = useShopwellServicesStore();
-    let currentRevision = shopwareServiceStore.currentRevision?.revision;
+    const shopwellServiceStore = useShopwellServicesStore();
+    let currentRevision = shopwellServiceStore.currentRevision?.revision;
 
     if (!currentRevision) {
         const sessionStore = useSession();
@@ -36,15 +36,15 @@ export async function grantPermissions() {
             sessionStore.currentLocale.value ?? 'en-GB',
         );
 
-        shopwareServiceStore.revisions = revisionData;
-        currentRevision = shopwareServiceStore.currentRevision?.revision;
+        shopwellServiceStore.revisions = revisionData;
+        currentRevision = shopwellServiceStore.currentRevision?.revision;
     }
 
     if (!currentRevision) {
         throw new Error('No revision available');
     }
 
-    await Shopwell.Service('shopwareServicesService').acceptRevision(currentRevision);
+    await Shopwell.Service('shopwellServicesService').acceptRevision(currentRevision);
 
     _reloadPage();
 }
@@ -53,7 +53,7 @@ export async function grantPermissions() {
  * @private
  */
 export async function revokePermissions() {
-    await Shopwell.Service('shopwareServicesService').revokePermissions();
+    await Shopwell.Service('shopwellServicesService').revokePermissions();
 
     _reloadPage();
 }
@@ -90,20 +90,20 @@ export const grantPermissionsFromSdk: HandleMethod<'servicePermissionGrant'> = (
 export const isPermissionGrantedFromSdk: HandleMethod<'servicePermissionIsGranted'> = async (_message, { _event_ }) => {
     assertServiceOrigin(_event_.origin);
 
-    const shopwareServicesStore = useShopwellServicesStore();
+    const shopwellServicesStore = useShopwellServicesStore();
 
-    if (!shopwareServicesStore.config) {
-        shopwareServicesStore.config = await Shopwell.Service('shopwareServicesService').getServicesContext();
+    if (!shopwellServicesStore.config) {
+        shopwellServicesStore.config = await Shopwell.Service('shopwellServicesService').getServicesContext();
     }
 
-    if (shopwareServicesStore.config?.disabled) {
+    if (shopwellServicesStore.config?.disabled) {
         return true;
     }
 
-    if (!shopwareServicesStore.revisions) {
+    if (!shopwellServicesStore.revisions) {
         const locale = useSession().currentLocale.value ?? 'en-GB';
-        shopwareServicesStore.revisions = await Shopwell.Service('serviceRegistryClient').getCurrentRevision(locale);
+        shopwellServicesStore.revisions = await Shopwell.Service('serviceRegistryClient').getCurrentRevision(locale);
     }
 
-    return shopwareServicesStore.consentGiven;
+    return shopwellServicesStore.consentGiven;
 };

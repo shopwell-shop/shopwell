@@ -54,7 +54,7 @@ class NoUpdatesInExecuteQueryRule implements Rule
             if ($hasWriteCall) {
                 $errors[] = RuleErrorBuilder::message(
                     'Calling executeQuery() on a Doctrine QueryBuilder that performs update/insert/delete is forbidden. Use executeStatement() instead.'
-                )->identifier('shopware.noExecuteQuery')->build();
+                )->identifier('shopwell.noExecuteQuery')->build();
             }
 
             return $errors;
@@ -68,7 +68,7 @@ class NoUpdatesInExecuteQueryRule implements Rule
                 if (preg_match('/\b(UPDATE|DELETE|INSERT|REPLACE|DROP|TRUNCATE)\b/', $sql)) {
                     $errors[] = RuleErrorBuilder::message(
                         'executeQuery() with raw SQL containing write operations (UPDATE/DELETE/INSERT/...) is forbidden. Use executeStatement() instead.'
-                    )->identifier('shopware.noExecuteQuery')->build();
+                    )->identifier('shopwell.noExecuteQuery')->build();
                 }
             } elseif ($firstArg instanceof Node\Arg && $firstArg->value instanceof Node\Expr\Variable) {
                 $variableName = $firstArg->value->name;
@@ -84,7 +84,7 @@ class NoUpdatesInExecuteQueryRule implements Rule
                                     'Passing a variable ($%s) containing SQL with write operations to executeQuery() is forbidden. Use executeStatement() instead.',
                                     \is_string($variableName) ? $variableName : 'unknown'
                                 )
-                            )->identifier('shopware.noExecuteQueryVariable')->build();
+                            )->identifier('shopwell.noExecuteQueryVariable')->build();
                             break;
                         }
                     }

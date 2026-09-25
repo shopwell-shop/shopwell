@@ -5,6 +5,6 @@ use Symfony\Component\HttpClient\MockHttpClient;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->services()
-        ->set('shopware.usage_data.gateway.client', MockHttpClient::class)
+        ->set('shopwell.usage_data.gateway.client', MockHttpClient::class)
         ->public();
 };

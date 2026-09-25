@@ -2,8 +2,8 @@
 title: Fixed price field collection serialization
 issue: NEXT-39299
 author: Michel Bade
-author_email: m.bade@shopware.com
+author_email: m.bade@shopwell.com
 author_github: @cyl3x
 ---
 # Core
-* Changed `Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\PriceFieldSerializer` to serialize `Shopware\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection` correctly
+* Changed `Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\PriceFieldSerializer` to serialize `Shopwell\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection` correctly

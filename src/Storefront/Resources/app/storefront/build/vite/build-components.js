@@ -436,7 +436,7 @@ async function main() {
                 rolldownOptions: {
                     input: entries,
                     preserveEntrySignatures: 'exports-only',
-                    external: ['shopware'],
+                    external: ['shopwell'],
                     output: {
                         format: 'es',
                         entryFileNames: '[name]-[hash].js',

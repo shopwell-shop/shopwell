@@ -2,7 +2,7 @@
 title: Add user timezone to date filter
 issue: NEXT-16064
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com 
+author_email: j.leifeld@shopwell.com 
 author_github: Jannis Leifeld
 ---
 # Administration

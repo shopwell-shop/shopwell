@@ -31,68 +31,68 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service('service_container'),
         ])
-        ->tag('shopware.mail.data_provider', ['key' => 'order']);
+        ->tag('shopwell.mail.data_provider', ['key' => 'order']);
 
     $services->set(CustomerProvider::class)
         ->args([
             service('event_dispatcher'),
             service('service_container'),
         ])
-        ->tag('shopware.mail.data_provider', ['key' => 'customer']);
+        ->tag('shopwell.mail.data_provider', ['key' => 'customer']);
 
     $services->set(CustomerGroupProvider::class)
         ->args([
             service('event_dispatcher'),
             service('service_container'),
         ])
-        ->tag('shopware.mail.data_provider', ['key' => 'customer_group']);
+        ->tag('shopwell.mail.data_provider', ['key' => 'customer_group']);
 
     $services->set(ProductProvider::class)
         ->args([
             service('event_dispatcher'),
             service('service_container'),
         ])
-        ->tag('shopware.mail.data_provider', ['key' => 'product']);
+        ->tag('shopwell.mail.data_provider', ['key' => 'product']);
 
     $services->set(CustomerRecoveryProvider::class)
         ->args([
             service('event_dispatcher'),
             service('service_container'),
         ])
-        ->tag('shopware.mail.data_provider', ['key' => 'customer_recovery']);
+        ->tag('shopwell.mail.data_provider', ['key' => 'customer_recovery']);
 
     $services->set(NewsletterRecipientProvider::class)
         ->args([
             service('event_dispatcher'),
             service('service_container'),
         ])
-        ->tag('shopware.mail.data_provider', ['key' => 'newsletter_recipient']);
+        ->tag('shopwell.mail.data_provider', ['key' => 'newsletter_recipient']);
 
     $services->set(OrderTransactionProvider::class)
         ->args([
             service('event_dispatcher'),
             service('service_container'),
         ])
-        ->tag('shopware.mail.data_provider', ['key' => 'order_transaction']);
+        ->tag('shopwell.mail.data_provider', ['key' => 'order_transaction']);
 
     $services->set(SalesChannelProvider::class)
         ->args([
             service('event_dispatcher'),
             service('service_container'),
         ])
-        ->tag('shopware.mail.data_provider', ['key' => 'sales_channel']);
+        ->tag('shopwell.mail.data_provider', ['key' => 'sales_channel']);
 
     $services->set(StateMachineStateProvider::class)
         ->args([
             service('event_dispatcher'),
             service('service_container'),
         ])
-        ->tag('shopware.mail.data_provider', ['key' => 'state_machine_state']);
+        ->tag('shopwell.mail.data_provider', ['key' => 'state_machine_state']);
 
     $services->set(UserRecoveryProvider::class)
         ->args([
             service('event_dispatcher'),
             service('service_container'),
         ])
-        ->tag('shopware.mail.data_provider', ['key' => 'user_recovery']);
+        ->tag('shopwell.mail.data_provider', ['key' => 'user_recovery']);
 };

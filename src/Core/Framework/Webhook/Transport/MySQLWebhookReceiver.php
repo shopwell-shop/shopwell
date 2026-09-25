@@ -94,11 +94,11 @@ class MySQLWebhookReceiver implements ReceiverInterface, KeepaliveReceiverInterf
             if (++$this->consecutiveDeadlocks >= self::MAX_CONSECUTIVE_DEADLOCKS) {
                 $this->consecutiveDeadlocks = 0;
 
-                /** @phpstan-ignore shopware.domainException (Symfony Messenger's worker contract requires TransportException for transport-layer failures.) */
+                /** @phpstan-ignore shopwell.domainException (Symfony Messenger's worker contract requires TransportException for transport-layer failures.) */
                 throw new TransportException($e->getMessage(), 0, $e);
             }
         } catch (DBALException $e) {
-            /** @phpstan-ignore shopware.domainException (Symfony Messenger's worker contract requires TransportException for transport-layer failures.) */
+            /** @phpstan-ignore shopwell.domainException (Symfony Messenger's worker contract requires TransportException for transport-layer failures.) */
             throw new TransportException($e->getMessage(), 0, $e);
         }
     }
@@ -287,7 +287,7 @@ class MySQLWebhookReceiver implements ReceiverInterface, KeepaliveReceiverInterf
         // fetchDue always populates the blob; the nullable is only for markRunning's state-query return.
         \assert($entry->serializedWebhookMessage !== null);
         try {
-            /** @phpstan-ignore shopware.unserializeUsage */
+            /** @phpstan-ignore shopwell.unserializeUsage */
             $message = @unserialize($entry->serializedWebhookMessage, ['allowed_classes' => [WebhookEventMessage::class]]);
         } catch (\Error $e) {
             $this->logger->warning('Failed to unserialize webhook event message; dropping row', [

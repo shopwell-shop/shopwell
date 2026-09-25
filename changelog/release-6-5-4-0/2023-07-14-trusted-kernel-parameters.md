@@ -6,4 +6,4 @@ author_email: c.schiffler@cyberspectrum.de
 author_github: discordier
 ---
 # Core
-* Changed `\Shopware\Core\Kernel::boot()` to support for Symfonys trusted_* kernel parameters that were previously ignored.
+* Changed `\Shopwell\Core\Kernel::boot()` to support for Symfonys trusted_* kernel parameters that were previously ignored.

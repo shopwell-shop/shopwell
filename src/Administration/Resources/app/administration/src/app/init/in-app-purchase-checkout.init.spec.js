@@ -1,7 +1,7 @@
 /**
  * @sw-package checkout
  */
-import { purchase } from '@shopware-ag/meteor-admin-sdk/es/iap';
+import { purchase } from '@shopwell-ag/meteor-admin-sdk/es/iap';
 import initializeInAppPurchaseCheckout from './in-app-purchase-checkout.init';
 import 'src/app/store/in-app-purchase-checkout.store';
 

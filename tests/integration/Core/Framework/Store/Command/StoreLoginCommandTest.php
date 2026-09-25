@@ -31,7 +31,7 @@ class StoreLoginCommandTest extends TestCase
 
         $commandTester->setInputs(['', '', '']);
         $commandTester->execute([
-            '--shopwareId' => 'no-reply@shopware.de',
+            '--shopwellId' => 'no-reply@shopwell.cn',
             '--user' => 'missing_user',
         ]);
     }
@@ -42,7 +42,7 @@ class StoreLoginCommandTest extends TestCase
 
         $commandTester->setInputs(['non-empty-password']);
         $commandTester->execute([
-            '--shopwareId' => 'no-reply@shopware.de',
+            '--shopwellId' => 'no-reply@shopwell.cn',
             '--user' => 'missing_user',
         ]);
 

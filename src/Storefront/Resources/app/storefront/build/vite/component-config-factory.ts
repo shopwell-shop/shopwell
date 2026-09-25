@@ -139,7 +139,7 @@ export async function createComponentBuildConfig(options: ComponentBuildConfigOp
         plainCssShimPlugin(plainCssShims),
     ];
 
-    const allExternals = Array.from(new Set(['shopware', ...external]));
+    const allExternals = Array.from(new Set(['shopwell', ...external]));
 
     const bundleAssetDir = toAssetDirectory(namespace);
 

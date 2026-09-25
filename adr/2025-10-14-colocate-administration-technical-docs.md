@@ -7,7 +7,7 @@ tags: [administration, documentation, ai, agents, developer-experience]
 
 ## Context
 
-The Shopware Administration codebase contains AGENTS.md files throughout the source tree (`src/Administration/Resources/app/administration/src/**`) that serve as concise reference guides for AI assistants and developers. These files provide quick architectural guidance, critical rules, and key patterns.
+The Shopwell Administration codebase contains AGENTS.md files throughout the source tree (`src/Administration/Resources/app/administration/src/**`) that serve as concise reference guides for AI assistants and developers. These files provide quick architectural guidance, critical rules, and key patterns.
 
 However, comprehensive technical documentation traditionally lives in a separate documentation repository. This separation creates several challenges:
 
@@ -42,7 +42,7 @@ The technical documentation is organized in numbered sections (01-overview, 02-a
 ### Neutral
 
 - This is an experimental pattern initially applied only to the Administration component
-- If successful, this pattern may be adopted for other parts of Shopware 6 (Core, Storefront, etc.)
+- If successful, this pattern may be adopted for other parts of Shopwell 6 (Core, Storefront, etc.)
 - The effectiveness of this approach will be evaluated based on real-world usage
 
 ### Trade-offs

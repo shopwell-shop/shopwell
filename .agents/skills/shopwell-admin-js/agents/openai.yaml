@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shopwell Admin JS"
+  short_description: "Apply Shopwell Administration JS/TS/Vue rules."
+  default_prompt: "Implement this Shopwell Administration change."

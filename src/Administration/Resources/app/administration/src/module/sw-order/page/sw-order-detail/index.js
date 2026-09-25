@@ -257,7 +257,7 @@ export default {
 
         // Deselecting happens here and not in `beforeRouteLeave`, because leaving while editing
         // is confirmed through the leave page warning, which resumes the navigation on its own.
-        Shopwell.Store.get('shopwareApps').selectedIds = [];
+        Shopwell.Store.get('shopwellApps').selectedIds = [];
 
         this.beforeDestroyComponent();
     },
@@ -287,7 +287,7 @@ export default {
 
             window.addEventListener('pagehide', this.onPageHide);
 
-            Shopwell.Store.get('shopwareApps').selectedIds = this.orderId ? [this.orderId] : [];
+            Shopwell.Store.get('shopwellApps').selectedIds = this.orderId ? [this.orderId] : [];
 
             Shopwell.Store.get('swOrderDetail').setLoading(['order', true]);
             this.createNewVersionId().finally(() => {

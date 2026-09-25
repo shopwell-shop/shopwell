@@ -28,7 +28,7 @@ final readonly class ZugferdEmbeddedPdfRenderer extends AbstractDocumentRenderer
     private const CREATOR_PREFIX = 'Shopwell@';
 
     public function __construct(
-        private string $shopwareVersion,
+        private string $shopwellVersion,
     ) {
     }
 
@@ -62,7 +62,7 @@ final readonly class ZugferdEmbeddedPdfRenderer extends AbstractDocumentRenderer
 
         try {
             $content = (new ZugferdDocumentPdfMerger($xml, $pdf))
-                ->setAdditionalCreatorTool(self::CREATOR_PREFIX . $this->shopwareVersion)
+                ->setAdditionalCreatorTool(self::CREATOR_PREFIX . $this->shopwellVersion)
                 ->generateDocument()
                 ->downloadString();
         } catch (\Throwable $exception) {

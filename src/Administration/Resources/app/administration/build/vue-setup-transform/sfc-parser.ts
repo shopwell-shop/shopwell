@@ -16,7 +16,7 @@ import {
     normalizeShopwellSetupBlock,
     type ShopwellSetupBlock,
     type ShopwellSetupMode,
-} from './utils/shopware-setup-block';
+} from './utils/shopwell-setup-block';
 import { toScriptBlock } from './utils/sfc-script-block';
 import { ShopwellSetupTransformError } from './utils/transform-error';
 
@@ -68,7 +68,7 @@ function parseShopwellSetupSfc(source: string, filename = 'anonymous.vue'): Shop
     }
 
     const scriptSetupBlock = toScriptBlock(parsed.descriptor.scriptSetup, 'scriptSetup');
-    const shopwareSetupBlock = normalizeShopwellSetupBlock(scriptSetupBlock, filename);
+    const shopwellSetupBlock = normalizeShopwellSetupBlock(scriptSetupBlock, filename);
 
     const isCodemodModuleScript = parsed.descriptor.script
         ? Object.prototype.hasOwnProperty.call(parsed.descriptor.script.attrs, 'data-sfc-migration-module')
@@ -82,7 +82,7 @@ function parseShopwellSetupSfc(source: string, filename = 'anonymous.vue'): Shop
     }
 
     return {
-        ...shopwareSetupBlock,
+        ...shopwellSetupBlock,
         template: parsed.descriptor.template
             ? {
                   content: parsed.descriptor.template.content,

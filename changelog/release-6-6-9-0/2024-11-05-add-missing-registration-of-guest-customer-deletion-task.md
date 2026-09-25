@@ -5,4 +5,4 @@ author: Michael Telgmann
 author_github: @mitelg
 ---
 # Core
-* Added missing service registration for `\Shopware\Core\Checkout\Customer\DeleteUnusedGuestCustomerTask`, so it can be used properly now.
+* Added missing service registration for `\Shopwell\Core\Checkout\Customer\DeleteUnusedGuestCustomerTask`, so it can be used properly now.

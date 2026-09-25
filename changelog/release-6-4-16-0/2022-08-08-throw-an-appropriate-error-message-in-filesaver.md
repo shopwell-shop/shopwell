@@ -11,4 +11,4 @@ author_github: tinect
 * Added `Content\Media\Exception\ThumbnailNotSupportedException` for files not supporting thumbnail generation
 * Changed method `Content\Media\Thumbnail\ThumbnailService::generateThumbnails` to throw `ThumbnailNotSupportedException` instead of `FileTypeNotSupportedException`
 * Changed method `Content\Media\Thumbnail\ThumbnailService::updateThumbnails` to throw `ThumbnailNotSupportedException` instead of `FileTypeNotSupportedException`
-* Changed method `Shopware\Core\Content\Media\File\FileSaver::persistFileToMedia` to throw `FileExtensionNotSupportedException` instead of `FileTypeNotSupportedException`
+* Changed method `Shopwell\Core\Content\Media\File\FileSaver::persistFileToMedia` to throw `FileExtensionNotSupportedException` instead of `FileTypeNotSupportedException`

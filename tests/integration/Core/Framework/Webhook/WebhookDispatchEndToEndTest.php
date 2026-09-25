@@ -270,12 +270,12 @@ class WebhookDispatchEndToEndTest extends TestCase
         $body = (string) $request->getBody();
         static::assertSame(
             hash_hmac('sha256', $body, 'new-secret'),
-            $request->getHeaderLine('shopware-shop-signature'),
+            $request->getHeaderLine('shopwell-shop-signature'),
             'Webhook must be signed with the current app secret, not the one captured when it was queued'
         );
         static::assertNotSame(
             hash_hmac('sha256', $body, 'old-secret'),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
     }
 
@@ -909,12 +909,12 @@ class WebhookDispatchEndToEndTest extends TestCase
 
     private function getWebhookManager(bool $isAdminWorkerEnabled = false): WebhookManager
     {
-        $guzzle = static::getContainer()->get('shopware.webhook.guzzle');
+        $guzzle = static::getContainer()->get('shopwell.webhook.guzzle');
         $clock = static::getContainer()->get(ClockInterface::class);
         $webhookClient = new WebhookClient($guzzle, $clock);
 
         // Construct a fresh WebhookDeliveryService bound to the requested admin_worker flag
-        // — the container-wired service reads `%shopware.admin_worker.enable_admin_worker%`
+        // — the container-wired service reads `%shopwell.admin_worker.enable_admin_worker%`
         // (true in the test env), which would otherwise force sync dispatch under flag ON
         // regardless of what this helper's parameter promises.
         $deliveryService = new WebhookDeliveryService(
@@ -937,7 +937,7 @@ class WebhookDispatchEndToEndTest extends TestCase
             $webhookClient,
             static::getContainer()->get('messenger.default_bus'),
             $_SERVER['APP_URL'],
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             $isAdminWorkerEnabled,
             $deliveryService,
             static::getContainer()->get(WebhookOutboxStore::class),

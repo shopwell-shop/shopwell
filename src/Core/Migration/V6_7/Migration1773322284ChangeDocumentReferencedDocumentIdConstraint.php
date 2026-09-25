@@ -19,7 +19,7 @@ class Migration1773322284ChangeDocumentReferencedDocumentIdConstraint extends Mi
 
     public function update(Connection $connection): void
     {
-        /** @phpstan-ignore shopware.dropStatement (FK is directly added again so dropping the FK is no issue for blue green) */
+        /** @phpstan-ignore shopwell.dropStatement (FK is directly added again so dropping the FK is no issue for blue green) */
         $this->dropForeignKeyIfExists(
             $connection,
             'document',

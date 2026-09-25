@@ -7,11 +7,11 @@ tags: [admin, meteor admin sdk, component section]
 
 ## Context
 
-Recently, the need arose to deprecate the `Meteor Admin SDK` public API built into the Shopware Core.
+Recently, the need arose to deprecate the `Meteor Admin SDK` public API built into the Shopwell Core.
 We need to be able to deprecate the public API, which consists of `component sections` and `data sets`.
 
 ### Component sections
-The `sw-extension-component-section` component represents component sections in Shopware.
+The `sw-extension-component-section` component represents component sections in Shopwell.
 This component is added to templates, assigned a `position identifier,` and allows rendering components in place via the SDK.
 
 ```vue
@@ -27,7 +27,7 @@ Data sets can range from whole entities to a subset of such or scalar values. Th
 
 ```javascript
 createdComponent() {
-    Shopware.ExtensionAPI.publishData({
+    Shopwell.ExtensionAPI.publishData({
         id: 'sw-dashboard-detail__todayOrderData',
         path: 'todayOrderData',
         scope: this,
@@ -71,7 +71,7 @@ For `data sets`, we mimicked the same in the publishing options:
 ```javascript
 createdComponent() {
     /* @deprecated tag:v6.7.0 - Will be removed, use API instead */ 
-    Shopware.ExtensionAPI.publishData({
+    Shopwell.ExtensionAPI.publishData({
         id: 'sw-dashboard-detail__todayOrderData',
         path: 'todayOrderData',
         scope: this,

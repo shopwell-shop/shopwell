@@ -318,7 +318,7 @@ class PluginLifecycleServiceTest extends TestCase
             $this->container->get(CommandExecutor::class),
             $this->container->get(RequirementsValidator::class),
             $this->container->get('cache.messenger.restart_workers_signal'),
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             $this->systemConfigService,
             $this->container->get(CustomEntityPersister::class),
             $this->container->get(CustomEntitySchemaUpdater::class),
@@ -459,7 +459,7 @@ class PluginLifecycleServiceTest extends TestCase
 
         $this->expectExceptionObject(new RequirementStackException(
             'activate',
-            new VersionMismatchException('shopware/core', '<6.0', $installedVersionString)
+            new VersionMismatchException('shopwell/core', '<6.0', $installedVersionString)
         ));
         $this->pluginLifecycleService->activatePlugin($pluginEntity, $this->context);
     }
@@ -859,7 +859,7 @@ class PluginLifecycleServiceTest extends TestCase
             $this->container->get(CommandExecutor::class),
             $this->container->get(RequirementsValidator::class),
             $this->container->get('cache.messenger.restart_workers_signal'),
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             $this->systemConfigService,
             $this->container->get(CustomEntityPersister::class),
             $this->container->get(CustomEntitySchemaUpdater::class),

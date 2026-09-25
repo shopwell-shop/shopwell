@@ -44,7 +44,7 @@ window.DIVEARPlugin = {
     ARQuickLookUnknownError,
 };
 
-jest.mock('@shopware-ag/dive/ar', () => ({
+jest.mock('@shopwell-ag/dive/ar', () => ({
     ARSystem: jest.fn(),
     ARError,
     ARDesktopPlatformError,

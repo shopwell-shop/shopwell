@@ -1,7 +1,7 @@
 ---
 name: nightly-triage
 description: >
-  Triage a failing Shopware nightly / multi-job PHPUnit CI run (e.g. integration-major).
+  Triage a failing Shopwell nightly / multi-job PHPUnit CI run (e.g. integration-major).
   Extract every failing test from the run's job logs, resolve each to its owning domain
   via #[Package] markers, cluster failures by error signature into root causes, verify
   opaque clusters with a local Docker reproduction, then file one GitHub issue per
@@ -58,7 +58,7 @@ close duplicates) instead of filing a parallel set.
 job IDs and names. The job/shard names are the "job area" axis.
 
 **Step 2 — Extract failing tests per shard.** Download each failing job's
-`--log-failed`, extract `N) Shopware\Tests\...::method` entries, dedupe.
+`--log-failed`, extract `N) Shopwell\Tests\...::method` entries, dedupe.
 Exact commands and regexes: `references/PIPELINE.md`.
 
 **Step 3 — Resolve each test to a domain.** `#[Package]` marker on the test

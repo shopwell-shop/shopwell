@@ -13,7 +13,7 @@ describe('build/vite-plugins/asset-path-plugin', () => {
 
         // Identify plugin by name
         expect(plugin).toHaveProperty('name');
-        expect(plugin.name).toBe('shopware-vite-plugin-asset-path');
+        expect(plugin.name).toBe('shopwell-vite-plugin-asset-path');
 
         // Check if the plugin has a closeBundle method
         expect(plugin).toHaveProperty('renderChunk');

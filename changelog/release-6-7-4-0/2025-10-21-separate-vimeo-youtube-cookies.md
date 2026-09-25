@@ -1,8 +1,8 @@
 ---
 title: Separate Vimeo and YouTube cookie consent
-issue: https://github.com/shopware/shopware/issues/6409
+issue: https://github.com/shopwell-shop/shopwell/issues/6409
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: @BrocksiNet
 ---
 # Core

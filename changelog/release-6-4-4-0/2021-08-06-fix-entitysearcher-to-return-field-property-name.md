@@ -3,7 +3,7 @@ title: Fix EntitySearcher to return field property name
 issue: NEXT-16127
 ---
 # Core
-* Changed \Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntitySearcher::search to return IdsSearchResult with fields's property name instead of storage name
+* Changed \Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntitySearcher::search to return IdsSearchResult with fields's property name instead of storage name
 ___
 # Upgrade Information
 ## Change response format of searchIds when using with a mapping entity 

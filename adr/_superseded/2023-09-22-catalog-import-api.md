@@ -20,7 +20,7 @@ however:
 Resulting in increased effort to build and maintain middlewares.
 
 We want to provide an HTTP API and a PHP API for importing catalog related entities independent of the database schema.
-And reduce the amount of implementation details developers have to know about when integrating Shopware within existing
+And reduce the amount of implementation details developers have to know about when integrating Shopwell within existing
 systems e.g., ProductVisibility, ProductMedia Entities, Media creation, errors, etc.
 
 ## Decision
@@ -166,7 +166,7 @@ This endpoint is used to remove entity associations.
 
 `POST /api/import/{{import_id}}/commit`
 
-This endpoint is used to commit the records and begin the actual import into Shopware.
+This endpoint is used to commit the records and begin the actual import into Shopwell.
 
 As previously noted, records will be batched by workers according to their level, traversing from the highest level to the lowest. During this process, the generic record structure will be mapped to the expected DAL structure.
 

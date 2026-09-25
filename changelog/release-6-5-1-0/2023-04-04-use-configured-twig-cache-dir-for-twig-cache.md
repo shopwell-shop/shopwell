@@ -4,10 +4,10 @@ issue: NEXT-25869
 ---
 # Core
 * Changed the following services to use the configured `twig.cache` directory instead of the `kernel.cache_dir` directory to store the twig caches:
-  * `\Shopware\Core\Framework\Adapter\Twig\TemplateFinder`
-  * `\Shopware\Core\Content\Rule\DataAbstractionLayer\RulePayloadSubscriber`
-  * `\Shopware\Core\Framework\Adapter\Twig\StringTemplateRenderer`
-  * `\Shopware\Core\Framework\Script\Execution\ScriptLoader`
+  * `\Shopwell\Core\Framework\Adapter\Twig\TemplateFinder`
+  * `\Shopwell\Core\Content\Rule\DataAbstractionLayer\RulePayloadSubscriber`
+  * `\Shopwell\Core\Framework\Adapter\Twig\StringTemplateRenderer`
+  * `\Shopwell\Core\Framework\Script\Execution\ScriptLoader`
 ___
 # Upgrade Information
 ## Twig cache independent from kernel cache dir

@@ -1,6 +1,6 @@
-# **Documenting a Release in Shopware**
+# **Documenting a Release in Shopwell**
 
-This guide walks you through how to properly document changes in Shopware releases. The goal is to make sure all developer-facing updates and important upgrade changes are logged clearly, structured well, and easy to find.
+This guide walks you through how to properly document changes in Shopwell releases. The goal is to make sure all developer-facing updates and important upgrade changes are logged clearly, structured well, and easy to find.
 
 - Related doc: [Changelog and Release Info Process](../adr/2025-10-28-changelog-release-info-process.md)
 
@@ -39,7 +39,7 @@ Remember: The release notes should describe **why** we made a change and **why**
 
 ### What needs to go into UPGRADE.md?
 * Everything that might cause a break in projects, extensions, integrations etc.
-* Especially every break defined by our backwards compatibility promise needs to be documented: https://developer.shopware.com/docs/resources/guidelines/code/backward-compatibility.html#backward-compatibility
+* Especially every break defined by our backwards compatibility promise needs to be documented: https://developer.shopwell.com/docs/resources/guidelines/code/backward-compatibility.html#backward-compatibility
 
 ### When you do not need to (explicitly) document a change
 
@@ -101,7 +101,7 @@ Once documented, changes get published in multiple places:
 
 - **GitHub Releases:** Pulled directly from `RELEASE_INFO.md`.
 - **Developer Documentation:** Updated with key info from `RELEASE_INFO.md` and `UPGRADE.md`.
-- **Shopware Changelog (Website):** Shows the most important updates.
+- **Shopwell Changelog (Website):** Shows the most important updates.
 - **Merchant-Facing Announcements:** Handled separately by PMs & Marketing.
 
 ## Who Owns What?

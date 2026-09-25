@@ -39,7 +39,7 @@ class OAuthAuthorizeControllerTest extends TestCase
 {
     private const QUERY = [
         'response_type' => 'code',
-        'client_id' => 'shopware-cli',
+        'client_id' => 'shopwell-cli',
         'redirect_uri' => 'http://127.0.0.1:54321/callback',
         'state' => 'xyz',
         'code_challenge' => 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
@@ -170,7 +170,7 @@ class OAuthAuthorizeControllerTest extends TestCase
     {
         $this->rateLimiter->expects($this->never())->method('ensureAccepted');
         $authorizationRequest = new AuthorizationRequest();
-        $authorizationRequest->setClient(new ApiClient('shopware-cli', true, 'Shopwell CLI', false));
+        $authorizationRequest->setClient(new ApiClient('shopwell-cli', true, 'Shopwell CLI', false));
         $authorizationRequest->setRedirectUri('http://127.0.0.1:54321/callback');
         $authorizationRequest->setScopes([new WriteScope()]);
 
@@ -185,7 +185,7 @@ class OAuthAuthorizeControllerTest extends TestCase
         $response = $this->controller->info(Request::create('/api/oauth/authorize/info', 'GET', [...self::QUERY, 'ignored' => 'x']));
 
         static::assertSame([
-            'client' => ['id' => 'shopware-cli', 'name' => 'Shopwell CLI'],
+            'client' => ['id' => 'shopwell-cli', 'name' => 'Shopwell CLI'],
             'redirectUri' => 'http://127.0.0.1:54321/callback',
             'scopes' => ['write'],
         ], json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR));
@@ -302,7 +302,7 @@ class OAuthAuthorizeControllerTest extends TestCase
             $authorizationServer,
             new PsrHttpFactory($psr17Factory, $psr17Factory, $psr17Factory, $psr17Factory),
             $psr17Factory,
-            new PublicClientRegistry(['shopware-cli' => ['name' => 'Shopwell CLI', 'redirect_uris' => ['http://127.0.0.1/callback']]]),
+            new PublicClientRegistry(['shopwell-cli' => ['name' => 'Shopwell CLI', 'redirect_uris' => ['http://127.0.0.1/callback']]]),
             $rateLimiter,
             $router,
         );

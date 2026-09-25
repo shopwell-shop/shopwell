@@ -58,8 +58,8 @@ async function createWrapper(props) {
 describe('src/module/sw-extension/page/sw-extension-app-module-page/index.js', () => {
     beforeEach(() => {
         Shopwell.Store.get('session').currentLocale = 'en-GB';
-        Shopwell.Store.get('shopwareApps').apps = testApps;
-        Shopwell.Store.get('shopwareApps').appsLoaded = true;
+        Shopwell.Store.get('shopwellApps').apps = testApps;
+        Shopwell.Store.get('shopwellApps').appsLoaded = true;
     });
 
     it('sets the correct heading and source with a regular module', async () => {
@@ -70,7 +70,7 @@ describe('src/module/sw-extension/page/sw-extension-app-module-page/index.js', (
         await flushPromises();
 
         expect(wrapper.get('.smart-bar__header h2').text()).toBe('test App A english - Standard module');
-        expect(wrapper.get('iframe#app-content').attributes('src')).toBe('https://shopware.apps/module1?timestamp=signed');
+        expect(wrapper.get('iframe#app-content').attributes('src')).toBe('https://shopwell.apps/module1?timestamp=signed');
     });
 
     it('sets the correct heading and source with a main module', async () => {
@@ -79,7 +79,7 @@ describe('src/module/sw-extension/page/sw-extension-app-module-page/index.js', (
         });
 
         expect(wrapper.get('.smart-bar__header h2').text()).toBe('test App A english');
-        expect(wrapper.get('iframe#app-content').attributes('src')).toBe('https://shopware.apps/login?timestamp=signed');
+        expect(wrapper.get('iframe#app-content').attributes('src')).toBe('https://shopwell.apps/login?timestamp=signed');
     });
 
     it('shows no iframe and default heading if module is not found', async () => {
@@ -103,7 +103,7 @@ describe('src/module/sw-extension/page/sw-extension-app-module-page/index.js', (
     });
 
     it('shows a loader instead of the error page while apps are still loading', async () => {
-        Shopwell.Store.get('shopwareApps').appsLoaded = false;
+        Shopwell.Store.get('shopwellApps').appsLoaded = false;
 
         const wrapper = await createWrapper({
             appName: 'notInStore',
@@ -144,7 +144,7 @@ describe('src/module/sw-extension/page/sw-extension-app-module-page/index.js', (
         wrapper.get('sw-loader-stub');
 
         const event = new MessageEvent('message', {
-            origin: 'https://shopware.apps',
+            origin: 'https://shopwell.apps',
             data: 'sw-app-loaded',
         });
 

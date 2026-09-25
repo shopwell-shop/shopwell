@@ -1,5 +1,5 @@
 import { test, expect } from '@fixtures/AcceptanceTest';
-import { getCountryId, getSalutationId, setOrderStatus } from '@shopware-ag/acceptance-test-suite';
+import { getCountryId, getSalutationId, setOrderStatus } from '@shopwell-ag/acceptance-test-suite';
 
 test(
     'As an admin user, I want that certain actions get executed based on the flow, so that I can automate the processes.',

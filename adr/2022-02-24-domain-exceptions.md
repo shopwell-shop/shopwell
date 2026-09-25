@@ -7,7 +7,7 @@ tags: [architecture, exception, domain]
 
 ## Context
 
-Until now, we have implemented many different exception classes in Shopware to map different exception cases. 
+Until now, we have implemented many different exception classes in Shopwell to map different exception cases. 
 However, this pattern is very cumbersome for developers to maintain properly, which is why we often fall back on the old \RuntimeException. 
 Another disadvantage of this pattern is that the system is overwhelmed with exception classes and therefore the overview of possible exceptions suffers.
 
@@ -29,9 +29,9 @@ The __construct of the DomainException is set to `private`, so that only the fac
 ```php
 <?php
 
-namespace Shopware\Core\Content\Cms;
+namespace Shopwell\Core\Content\Cms;
 
-use Shopware\Core\Framework\HttpException;
+use Shopwell\Core\Framework\HttpException;
 use Symfony\Component\HttpFoundation\Response;
 
 class CmsException extends HttpException
@@ -56,12 +56,12 @@ However, the DomainExceptions are not (necessarily) made to be caught and handle
 ```php
 <?php
 
-use Shopware\Core\Framework\ShopwareHttpException;
+use Shopwell\Core\Framework\ShopwellHttpException;
 
 // src/Core/Content/Cms/ProductException.php
-namespace Shopware\Core\Content\Product {
+namespace Shopwell\Core\Content\Product {
 
-    class ProductException extends ShopwareHttpException
+    class ProductException extends ShopwellHttpException
     {
         public static function notFound(?\Throwable $e = null): void
         {
@@ -71,7 +71,7 @@ namespace Shopware\Core\Content\Product {
 }
 
 // src/Core/Content/Product/Exception/ProductNotFoundException.php
-namespace Shopware\Core\Content\Product\Exception {
+namespace Shopwell\Core\Content\Product\Exception {
     class ProductNotFoundException extends ProductException { }
 }
 

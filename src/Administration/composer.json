@@ -1,5 +1,5 @@
 {
-    "name": "shopware/administration",
+    "name": "shopwell/administration",
     "description": "Administration frontend for the Shopwell Core",
     "type": "library",
     "license": "MIT",
@@ -19,7 +19,7 @@
         }
     },
     "support": {
-        "issues": "https://github.com/shopware/shopware/issues",
+        "issues": "https://github.com/shopwell-shop/shopwell/issues",
         "forum": "https://forum.shopwell.cn",
         "wiki": "https://developer.shopwell.cn",
         "docs": "https://developer.shopwell.cn",
@@ -41,7 +41,7 @@
         "phpseclib/phpseclib": "^3.0",
         "psr/clock": "^1.0.0",
         "psr/http-message": "^1.1 || ^2.0",
-        "shopware/core": "*",
+        "shopwell/core": "*",
         "symfony/asset": "~7.4.0",
         "symfony/cache": "~7.4.12",
         "symfony/cache-contracts": "~3.6.0",

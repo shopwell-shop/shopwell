@@ -57,7 +57,7 @@ class GenerateThumbnailsCommandTest extends TestCase
         $this->mediaRepository = static::getContainer()->get('media.repository');
         $this->mediaFolderRepository = static::getContainer()->get('media_folder.repository');
         $this->context = Context::createDefaultContext();
-        $this->remoteThumbnailsEnable = static::getContainer()->getParameter('shopware.media.remote_thumbnails.enable');
+        $this->remoteThumbnailsEnable = static::getContainer()->getParameter('shopwell.media.remote_thumbnails.enable');
 
         $this->thumbnailCommand = static::getContainer()->get(GenerateThumbnailsCommand::class);
 
@@ -337,14 +337,14 @@ class GenerateThumbnailsCommandTest extends TestCase
 
         $this->getPublicFilesystem()->writeStream(
             $filePath,
-            fopen(__DIR__ . '/../fixtures/shopware-logo.png', 'r')
+            fopen(__DIR__ . '/../fixtures/shopwell-logo.png', 'r')
         );
 
         $filePath = $mediaJpg->getPath();
 
         $this->getPublicFilesystem()->writeStream(
             $filePath,
-            fopen(__DIR__ . '/../fixtures/shopware.jpg', 'r')
+            fopen(__DIR__ . '/../fixtures/shopwell.jpg', 'r')
         );
     }
 
@@ -370,7 +370,7 @@ class GenerateThumbnailsCommandTest extends TestCase
 
         $filePath = $mediaJpg->getPath();
 
-        $this->getPublicFilesystem()->writeStream($filePath, fopen(__DIR__ . '/../fixtures/shopware.jpg', 'r'));
+        $this->getPublicFilesystem()->writeStream($filePath, fopen(__DIR__ . '/../fixtures/shopwell.jpg', 'r'));
     }
 
     private function getNewMediaEntities(): MediaCollection

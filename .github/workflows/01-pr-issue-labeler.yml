@@ -45,9 +45,9 @@ jobs:
       - id: sts-major
         if: steps.detect-major.outputs.labels != ''
         continue-on-error: true
-        uses: shopware/octo-sts-action@main
+        uses: shopwell/octo-sts-action@main
         with:
-          scope: shopware
+          scope: shopwell
           identity: CreatePR
       - if: steps.detect-major.outputs.labels != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
@@ -75,7 +75,7 @@ jobs:
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
-            const { cleanupNeedsTriage } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopware-ag/gh-project-automation/dist/index.mjs')
+            const { cleanupNeedsTriage } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopwell-ag/gh-project-automation/dist/index.mjs')
             await cleanupNeedsTriage({github, core, context}, false)
 
   apply-team-label:
@@ -92,9 +92,9 @@ jobs:
       - id: sts
         if: ${{ !github.event.act }}
         continue-on-error: true
-        uses: shopware/octo-sts-action@main
+        uses: shopwell/octo-sts-action@main
         with:
-          scope: shopware
+          scope: shopwell
           identity: ReadCollaborators
       - uses: tspascoal/get-user-teams-membership@b2546c5affc730fd8e3d8483ae9ad3621938c2f9 # v4.0.2
         id: actorTeams
@@ -147,9 +147,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: sts
         continue-on-error: true
-        uses: shopware/octo-sts-action@main
+        uses: shopwell/octo-sts-action@main
         with:
-          scope: shopware
+          scope: shopwell
           identity: ManageProjects
       - shell: bash
         run: npm ci --prefix .github/bin/js/
@@ -157,7 +157,7 @@ jobs:
         with:
           github-token: ${{ steps.sts.outputs.token }}
           script: |
-            const { setStatusInProjects } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopware-ag/gh-project-automation/dist/index.mjs')
+            const { setStatusInProjects } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopwell-ag/gh-project-automation/dist/index.mjs')
             await setStatusInProjects({github, core, context}, { fromStatus: "Done", toStatus: "in progress" })
 
   mark-stale-issues:
@@ -178,7 +178,7 @@ jobs:
           DRY_RUN: true
         with:
           script: |
-            const { markStaleIssues } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopware-ag/gh-project-automation/dist/index.mjs')
+            const { markStaleIssues } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopwell-ag/gh-project-automation/dist/index.mjs')
             await markStaleIssues({github, core, context}, process.env.PROJECT_NUMBER, process.env.DRY_RUN)
 
   close-stale-issues:
@@ -199,7 +199,7 @@ jobs:
           DRY_RUN: true
         with:
           script: |
-            const { closeStaleIssues } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopware-ag/gh-project-automation/dist/index.mjs')
+            const { closeStaleIssues } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopwell-ag/gh-project-automation/dist/index.mjs')
             await closeStaleIssues({github, core, context}, process.env.DRY_RUN)
 
   priority-sync:
@@ -214,9 +214,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: sts
         continue-on-error: true
-        uses: shopware/octo-sts-action@main
+        uses: shopwell/octo-sts-action@main
         with:
-          scope: shopware
+          scope: shopwell
           identity: ManageProjects
       - shell: bash
         run: npm ci --prefix .github/bin/js/
@@ -224,7 +224,7 @@ jobs:
         with:
           github-token: ${{ steps.sts.outputs.token }}
           script: |
-            const { syncPriorities } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopware-ag/gh-project-automation/dist/index.mjs')
+            const { syncPriorities } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopwell-ag/gh-project-automation/dist/index.mjs')
             await syncPriorities({github, core, context})
 
   sync-test-plan-sub-issue:

@@ -2,13 +2,13 @@
 title: Update Administration npm dependencies
 issue: NEXT-20908
 author: Sebastian Seggewiss
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration
 * Changed `@babel/preset-typescript` from `7.15.0` to `7.16.7`
 * Changed `@babel/runtime` from `7.13.17` to `7.17.9`
-* Changed `@shopware-ag/webpack-plugin-injector` from `1.0.3` to `1.0.6`
+* Changed `@shopwell-ag/webpack-plugin-injector` from `1.0.3` to `1.0.6`
 * Changed `@types/uuid` from `3.4.7` to `8.3.4`
 * Changed `@typescript-eslint/eslint-plugin` from `5.1.0` to `5.22.0`
 * Changed `@typescript-eslint/parser` from `5.1.0` to `5.22.0`

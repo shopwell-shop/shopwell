@@ -1,4 +1,4 @@
-shopware.installer:
+shopwell.installer:
     header_title: Installasjon
     menuitem:
         start: Start
@@ -168,7 +168,7 @@ shopware.installer:
             Du har installeret Shopwell og vi glade for å ønske deg velkommen til vårt Community!
         </p>
         <p>
-            Din butikk er klar til bruk. Er du ny til Shopwell, så anbefaler vi at du tar en titt på denne guiden <a href=\"https://docs.shopwell.cn/en/shopware-6-en/getting-started\" target=\"_blank\">\"Kom godt i gang med Shopwell\"</a>. Når du logger inn i admin for første gang vil vår ”First Run Wizard” guide deg gjennom vår setup.
+            Din butikk er klar til bruk. Er du ny til Shopwell, så anbefaler vi at du tar en titt på denne guiden <a href=\"https://docs.shopwell.cn/en/shopwell-6-en/getting-started\" target=\"_blank\">\"Kom godt i gang med Shopwell\"</a>. Når du logger inn i admin for første gang vil vår ”First Run Wizard” guide deg gjennom vår setup.
         </p>
         <p>
             God fornøyelse med din nye online butikk!

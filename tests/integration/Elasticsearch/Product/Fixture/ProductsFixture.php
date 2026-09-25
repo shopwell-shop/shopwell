@@ -674,7 +674,7 @@ class ProductsFixture
                 )
                 ->build(),
             (new ProductBuilder($ids, 'sort.glumanda'))
-                ->tag('shopware')
+                ->tag('shopwell')
                 ->price(1)
                 ->visibility()
                 ->build(),

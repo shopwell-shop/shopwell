@@ -9,7 +9,7 @@ interactive skill and unattended workflow cannot drift.
 
 ## Context (gh aw mode)
 
-You operate inside the `shopware/shopware` monorepo with read/edit access to the
+You operate inside the `shopwell/shopwell` monorepo with read/edit access to the
 working tree and read access to GitHub through MCP tools. You do **not** have
 direct write credentials. All GitHub mutations must go through the safe-output
 tools exposed to you.

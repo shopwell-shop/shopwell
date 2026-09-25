@@ -59,12 +59,12 @@ class Migration1780044452BackfillServiceRequirementsTest extends TestCase
             'zip-url' => 'https://example.com/zip',
             'requirements' => ['services_enabled', 'service_consent'],
         ]);
-        $shopwareAccountOnly = $this->insertApp(selfManaged: true, sourceConfig: [
+        $shopwellAccountOnly = $this->insertApp(selfManaged: true, sourceConfig: [
             'version' => '1.0.0',
             'hash' => 'd453f',
             'revision' => '1.0.0-d453f',
             'zip-url' => 'https://example.com/zip',
-            'requirements' => ['shopware_account'],
+            'requirements' => ['shopwell_account'],
         ]);
         $notSelfManaged = $this->insertApp(selfManaged: false, sourceConfig: [
             'version' => '1.0.0',
@@ -81,13 +81,13 @@ class Migration1780044452BackfillServiceRequirementsTest extends TestCase
         $sourceConfigs = $this->fetchSourceConfigs([
             $serviceConsent,
             $alreadyBackfilled,
-            $shopwareAccountOnly,
+            $shopwellAccountOnly,
             $notSelfManaged,
         ]);
 
         static::assertSame(['service_consent', 'services_enabled'], $sourceConfigs[$serviceConsent]['requirements']);
         static::assertSame(['services_enabled', 'service_consent'], $sourceConfigs[$alreadyBackfilled]['requirements']);
-        static::assertSame(['shopware_account'], $sourceConfigs[$shopwareAccountOnly]['requirements']);
+        static::assertSame(['shopwell_account'], $sourceConfigs[$shopwellAccountOnly]['requirements']);
         static::assertSame(['service_consent'], $sourceConfigs[$notSelfManaged]['requirements']);
     }
 

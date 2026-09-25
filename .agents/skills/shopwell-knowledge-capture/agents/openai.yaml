@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shopwell Knowledge Capture"
+  short_description: "Route durable Shopwell knowledge to the right home."
+  default_prompt: "Save this Shopwell knowledge for later."

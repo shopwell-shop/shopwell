@@ -66,7 +66,7 @@ class AppMcpCapabilityExecutor
         ];
 
         if ($appSecret !== null) {
-            $headers[RequestSigner::SHOPWARE_SHOP_SIGNATURE] = (new RequestSigner())->signPayload($payload, $appSecret);
+            $headers[RequestSigner::SHOPWELL_SHOP_SIGNATURE] = (new RequestSigner())->signPayload($payload, $appSecret);
         }
 
         try {

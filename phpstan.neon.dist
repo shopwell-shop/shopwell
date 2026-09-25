@@ -121,7 +121,7 @@ parameters:
 
         - # Exception is thrown in trait
             message: '#Expected domain exception class Shopwell\\Core\\.*, got Shopwell\\Core\\Framework\\FrameworkException#'
-            identifier: shopware.domainException
+            identifier: shopwell.domainException
             paths:
                 - src/Core/Checkout/Cart/Error/Error.php
                 - src/Core/Content/ProductExport/Error/Error.php
@@ -191,13 +191,13 @@ parameters:
             paths:
                 - tests/**
 
-        - # XML config format will be migrated step by step, so we ignore errors for now, see https://github.com/shopware/shopware/issues/13072
+        - # XML config format will be migrated step by step, so we ignore errors for now, see https://github.com/shopwell-shop/shopwell/issues/13072
             message: '#deprecated class Symfony\\Component\\DependencyInjection\\Loader\\XmlFileLoader#'
 
         # Script service generator test fixtures intentionally omit @internal so the generator can read their docblocks,
         # and some fixtures have mismatched @return types for behaviours testing purpose
         -
-            identifier: shopware.internalClass
+            identifier: shopwell.internalClass
             path: tests/unit/Core/DevOps/Docs/Script/_fixtures/*
         -
             identifier: return.phpDocType
@@ -208,7 +208,7 @@ parameters:
 
         # Hook fixtures intentionally omit native property types to test the @var annotation fallback and the untyped property exception path
         -
-            identifier: shopware.propertyNativeType
+            identifier: shopwell.propertyNativeType
             path: tests/unit/Core/DevOps/Docs/Script/_fixtures/hooks/*
         -
             identifier: missingType.property

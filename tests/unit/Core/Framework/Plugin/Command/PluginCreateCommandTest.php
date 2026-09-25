@@ -231,7 +231,7 @@ class PluginCreateCommandTest extends TestCase
         ]);
 
         static::assertStringContainsString(
-            'Plugin directory shopware/custom/plugins/TestPlugin already exists',
+            'Plugin directory shopwell/custom/plugins/TestPlugin already exists',
             (string) preg_replace('/\s+/', ' ', trim($commandTester->getDisplay(true)))
         );
     }
@@ -245,7 +245,7 @@ class PluginCreateCommandTest extends TestCase
         $filesystem->method('exists')->willReturn($directoryExists);
 
         $command = new PluginCreateCommand(
-            'shopware',
+            'shopwell',
             static::createStub(ScaffoldingCollector::class),
             static::createStub(ScaffoldingWriter::class),
             $filesystem,

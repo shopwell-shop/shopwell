@@ -34,14 +34,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(MessageQueueSizeRestrictListener::class)
         ->args([
             service(MessageSizeCalculator::class),
-            param('shopware.messenger.enforce_message_size'),
-            param('shopware.messenger.message_max_kib_size'),
+            param('shopwell.messenger.enforce_message_size'),
+            param('shopwell.messenger.message_max_kib_size'),
         ])
         ->tag('kernel.event_listener', ['event' => SendMessageToTransportsEvent::class]);
 
     $services->set(MessageQueueStatsSubscriber::class)
         ->args([
-            service('shopware.increment.gateway.registry'),
+            service('shopwell.increment.gateway.registry'),
             service(StatsService::class),
         ])
         ->tag('kernel.event_subscriber');
@@ -58,14 +58,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(WorkerMessageTimingHelper::class),
         ])
         ->tag('kernel.event_subscriber')
-        ->tag('shopware.telemetry.subscriber');
+        ->tag('shopwell.telemetry.subscriber');
 
     $services->set(MessengerQueueDepthCollector::class)
         ->args([
             service('messenger.receiver_locator'),
             service('logger'),
         ])
-        ->tag('shopware.telemetry.periodic_metric_collector');
+        ->tag('shopwell.telemetry.periodic_metric_collector');
 
     // Controller
     $services->set(ConsumeMessagesController::class)
@@ -77,8 +77,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(EarlyReturnMessagesListener::class),
             service(MessageQueueStatsSubscriber::class),
             param('messenger.default_transport_name'),
-            param('shopware.admin_worker.memory_limit'),
-            param('shopware.admin_worker.poll_interval'),
+            param('shopwell.admin_worker.memory_limit'),
+            param('shopwell.admin_worker.poll_interval'),
             service('lock.factory'),
         ])
         ->call('setContainer', [
@@ -101,19 +101,19 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(RoutingOverwriteMiddleware::class)
         ->args([
-            param('shopware.messenger.routing_overwrite'),
+            param('shopwell.messenger.routing_overwrite'),
         ]);
 
     $services->set(MySQLStatsRepository::class)
         ->args([
             service(Connection::class),
-            param('shopware.messenger.stats.time_span'),
+            param('shopwell.messenger.stats.time_span'),
         ]);
 
     $services->set(StatsService::class)
         ->args([
             service(MySQLStatsRepository::class),
-            param('shopware.messenger.stats.enabled'),
+            param('shopwell.messenger.stats.enabled'),
             service(ClockInterface::class),
         ]);
 

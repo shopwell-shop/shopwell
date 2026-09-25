@@ -78,7 +78,7 @@ class NoAssertEqualsOnClosureRule implements Rule
             if ($closureType->isSuperTypeOf($argType)->yes()) {
                 return [
                     RuleErrorBuilder::message(self::ERROR_MESSAGE)
-                        ->identifier('shopware.assertEqualsOnClosure')
+                        ->identifier('shopwell.assertEqualsOnClosure')
                         ->build(),
                 ];
             }

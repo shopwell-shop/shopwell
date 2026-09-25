@@ -59,7 +59,7 @@ class PaymentMethodRepositoryTest extends TestCase
             $firstPaymentMethod->getAvailabilityRuleId()
         );
         static::assertSame(
-            'handler_shopware_testpaymenthandler',
+            'handler_shopwell_testpaymenthandler',
             $firstPaymentMethod->getFormattedHandlerIdentifier()
         );
         static::assertFalse($firstPaymentMethod->getAfterOrderEnabled());

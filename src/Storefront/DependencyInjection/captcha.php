@@ -21,7 +21,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(CaptchaRouteListener::class)
         ->args([
-            tagged_iterator('shopware.storefront.captcha'),
+            tagged_iterator('shopwell.storefront.captcha'),
             service(SystemConfigService::class),
             service('service_container'),
         ])
@@ -31,30 +31,30 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('validator'),
         ])
-        ->tag('shopware.storefront.captcha', ['priority' => 400]);
+        ->tag('shopwell.storefront.captcha', ['priority' => 400]);
 
     $services->set(BasicCaptcha::class)
         ->args([
             service('request_stack'),
             service(SystemConfigService::class),
         ])
-        ->tag('shopware.storefront.captcha', ['priority' => 300]);
+        ->tag('shopwell.storefront.captcha', ['priority' => 300]);
 
     $services->set(BasicCaptchaGenerator::class);
 
-    $services->set('shopware.captcha.client', Client::class);
+    $services->set('shopwell.captcha.client', Client::class);
 
     $services->set(GoogleReCaptchaV2::class)
         ->args([
-            service('shopware.captcha.client'),
+            service('shopwell.captcha.client'),
         ])
-        ->tag('shopware.storefront.captcha', ['priority' => 200]);
+        ->tag('shopwell.storefront.captcha', ['priority' => 200]);
 
     $services->set(GoogleReCaptchaV3::class)
         ->args([
-            service('shopware.captcha.client'),
+            service('shopwell.captcha.client'),
         ])
-        ->tag('shopware.storefront.captcha', ['priority' => 100]);
+        ->tag('shopwell.storefront.captcha', ['priority' => 100]);
 
     $services->set(CaptchaCookieCollectListener::class)
         ->args([

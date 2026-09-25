@@ -28,14 +28,14 @@ class DatabaseConnectionInformationTest extends TestCase
             'port' => 3306,
             'username' => 'root',
             'password' => 'root',
-            'databaseName' => 'shopware',
+            'databaseName' => 'shopwell',
         ]);
 
         static::assertSame('localhost', $info->getHostname());
         static::assertSame(3306, $info->getPort());
         static::assertSame('root', $info->getUsername());
         static::assertSame('root', $info->getPassword());
-        static::assertSame('shopware', $info->getDatabaseName());
+        static::assertSame('shopwell', $info->getDatabaseName());
         static::assertNull($info->getSslCaPath());
         static::assertNull($info->getSslCertPath());
         static::assertNull($info->getSslCertKeyPath());
@@ -54,7 +54,7 @@ class DatabaseConnectionInformationTest extends TestCase
             'driverOptions' => [
                 \PDO::ATTR_STRINGIFY_FETCHES => true,
             ],
-            'dbname' => 'shopware',
+            'dbname' => 'shopwell',
             'user' => 'root',
             'password' => 'root',
         ], $info->toDBALParameters());
@@ -80,7 +80,7 @@ class DatabaseConnectionInformationTest extends TestCase
             'port' => 3306,
             'username' => 'root',
             'password' => 'root',
-            'databaseName' => 'shopware',
+            'databaseName' => 'shopwell',
             'sslCaPath' => '/ca-path',
             'sslCertPath' => '/cert-path',
             'sslCertKeyPath' => '/cert-key-path',
@@ -91,7 +91,7 @@ class DatabaseConnectionInformationTest extends TestCase
         static::assertSame(3306, $info->getPort());
         static::assertSame('root', $info->getUsername());
         static::assertSame('root', $info->getPassword());
-        static::assertSame('shopware', $info->getDatabaseName());
+        static::assertSame('shopwell', $info->getDatabaseName());
         static::assertSame('/ca-path', $info->getSslCaPath());
         static::assertSame('/cert-path', $info->getSslCertPath());
         static::assertSame('/cert-key-path', $info->getSslCertKeyPath());
@@ -113,7 +113,7 @@ class DatabaseConnectionInformationTest extends TestCase
                 Mysql::ATTR_SSL_CERT => '/cert-path',
                 Mysql::ATTR_SSL_KEY => '/cert-key-path',
             ] + self::sslVerifyServerCertOption(),
-            'dbname' => 'shopware',
+            'dbname' => 'shopwell',
             'user' => 'root',
             'password' => 'root',
         ], $info->toDBALParameters());
@@ -127,7 +127,7 @@ class DatabaseConnectionInformationTest extends TestCase
             'port' => '3307',
             'username' => 'root',
             'password' => 'root',
-            'databaseName' => 'shopware',
+            'databaseName' => 'shopwell',
             'sslDontVerifyServerCert' => 'on',
         ]);
 
@@ -135,7 +135,7 @@ class DatabaseConnectionInformationTest extends TestCase
         static::assertSame(3307, $info->getPort());
         static::assertSame('root', $info->getUsername());
         static::assertSame('root', $info->getPassword());
-        static::assertSame('shopware', $info->getDatabaseName());
+        static::assertSame('shopwell', $info->getDatabaseName());
         static::assertNull($info->getSslCaPath());
         static::assertNull($info->getSslCertPath());
         static::assertNull($info->getSslCertKeyPath());
@@ -154,7 +154,7 @@ class DatabaseConnectionInformationTest extends TestCase
             'driverOptions' => [
                 \PDO::ATTR_STRINGIFY_FETCHES => true,
             ] + self::sslVerifyServerCertOption(),
-            'dbname' => 'shopware',
+            'dbname' => 'shopwell',
             'user' => 'root',
             'password' => 'root',
         ], $info->toDBALParameters());
@@ -180,14 +180,14 @@ class DatabaseConnectionInformationTest extends TestCase
             'port' => 3306,
             'username' => 'root',
             'password' => 'root',
-            'databaseName' => 'shopware',
+            'databaseName' => 'shopwell',
         ]);
 
         static::assertSame('', $info->getHostname());
         static::assertSame(3306, $info->getPort());
         static::assertSame('root', $info->getUsername());
         static::assertSame('root', $info->getPassword());
-        static::assertSame('shopware', $info->getDatabaseName());
+        static::assertSame('shopwell', $info->getDatabaseName());
 
         $this->expectExceptionObject(MaintenanceException::dbConnectionParameterMissing('hostname'));
         $info->validate();
@@ -209,10 +209,10 @@ class DatabaseConnectionInformationTest extends TestCase
                 'port' => 3306,
                 'username' => 'root',
                 'password' => 'root',
-                'databaseName' => 'shopware',
+                'databaseName' => 'shopwell',
             ]),
             false,
-            'mysql://root:root@localhost:3306/shopware',
+            'mysql://root:root@localhost:3306/shopwell',
         ];
 
         yield 'without database' => [
@@ -221,7 +221,7 @@ class DatabaseConnectionInformationTest extends TestCase
                 'port' => 3306,
                 'username' => 'root',
                 'password' => 'root',
-                'databaseName' => 'shopware',
+                'databaseName' => 'shopwell',
             ]),
             true,
             'mysql://root:root@localhost:3306',
@@ -232,20 +232,20 @@ class DatabaseConnectionInformationTest extends TestCase
                 'hostname' => 'localhost',
                 'port' => 3306,
                 'username' => 'root',
-                'databaseName' => 'shopware',
+                'databaseName' => 'shopwell',
             ]),
             false,
-            'mysql://root@localhost:3306/shopware',
+            'mysql://root@localhost:3306/shopwell',
         ];
 
         yield 'without password and user' => [
             (new DatabaseConnectionInformation())->assign([
                 'hostname' => 'localhost',
                 'port' => 3306,
-                'databaseName' => 'shopware',
+                'databaseName' => 'shopwell',
             ]),
             false,
-            'mysql://localhost:3306/shopware',
+            'mysql://localhost:3306/shopwell',
         ];
 
         yield 'special chars in password' => [
@@ -254,10 +254,10 @@ class DatabaseConnectionInformationTest extends TestCase
                 'port' => 3306,
                 'username' => 'root',
                 'password' => 'ultra?secure#',
-                'databaseName' => 'shopware',
+                'databaseName' => 'shopwell',
             ]),
             false,
-            'mysql://root:ultra%3Fsecure%23@mysql:3306/shopware',
+            'mysql://root:ultra%3Fsecure%23@mysql:3306/shopwell',
         ];
     }
 
@@ -278,20 +278,20 @@ class DatabaseConnectionInformationTest extends TestCase
     {
         yield 'only database' => [
             [
-                'DATABASE_URL' => 'mysql://root:root@localhost:3306/shopware',
+                'DATABASE_URL' => 'mysql://root:root@localhost:3306/shopwell',
             ],
             (new DatabaseConnectionInformation())->assign([
                 'hostname' => 'localhost',
                 'port' => 3306,
                 'username' => 'root',
                 'password' => 'root',
-                'databaseName' => 'shopware',
+                'databaseName' => 'shopwell',
             ]),
         ];
 
         yield 'advanced settings' => [
             [
-                'DATABASE_URL' => 'mysql://root:root@localhost:3306/shopware',
+                'DATABASE_URL' => 'mysql://root:root@localhost:3306/shopwell',
                 'DATABASE_SSL_CA' => '/ca-path',
                 'DATABASE_SSL_CERT' => '/cert-path',
                 'DATABASE_SSL_KEY' => '/cert-key-path',
@@ -302,7 +302,7 @@ class DatabaseConnectionInformationTest extends TestCase
                 'port' => 3306,
                 'username' => 'root',
                 'password' => 'root',
-                'databaseName' => 'shopware',
+                'databaseName' => 'shopwell',
                 'sslCaPath' => '/ca-path',
                 'sslCertPath' => '/cert-path',
                 'sslCertKeyPath' => '/cert-key-path',
@@ -312,48 +312,48 @@ class DatabaseConnectionInformationTest extends TestCase
 
         yield 'without password' => [
             [
-                'DATABASE_URL' => 'mysql://root@localhost:3306/shopware',
+                'DATABASE_URL' => 'mysql://root@localhost:3306/shopwell',
             ],
             (new DatabaseConnectionInformation())->assign([
                 'hostname' => 'localhost',
                 'port' => 3306,
                 'username' => 'root',
-                'databaseName' => 'shopware',
+                'databaseName' => 'shopwell',
             ]),
         ];
 
         yield 'without username and password' => [
             [
-                'DATABASE_URL' => 'mysql://localhost:3306/shopware',
+                'DATABASE_URL' => 'mysql://localhost:3306/shopwell',
             ],
             (new DatabaseConnectionInformation())->assign([
                 'hostname' => 'localhost',
                 'port' => 3306,
-                'databaseName' => 'shopware',
+                'databaseName' => 'shopwell',
             ]),
         ];
 
         yield 'without port' => [
             [
-                'DATABASE_URL' => 'mysql://localhost/shopware',
+                'DATABASE_URL' => 'mysql://localhost/shopwell',
             ],
             (new DatabaseConnectionInformation())->assign([
                 'hostname' => 'localhost',
                 'port' => 3306,
-                'databaseName' => 'shopware',
+                'databaseName' => 'shopwell',
             ]),
         ];
 
         yield 'special chars in password' => [
             [
-                'DATABASE_URL' => 'mysql://root:ultra%3Fsecure%23@mysql:3306/shopware',
+                'DATABASE_URL' => 'mysql://root:ultra%3Fsecure%23@mysql:3306/shopwell',
             ],
             (new DatabaseConnectionInformation())->assign([
                 'hostname' => 'mysql',
                 'port' => 3306,
                 'username' => 'root',
                 'password' => 'ultra?secure#',
-                'databaseName' => 'shopware',
+                'databaseName' => 'shopwell',
             ]),
         ];
     }

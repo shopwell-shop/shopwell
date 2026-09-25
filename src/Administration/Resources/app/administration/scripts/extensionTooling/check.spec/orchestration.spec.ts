@@ -70,10 +70,10 @@ describe('scripts/extensionTooling/check orchestration', () => {
             if (args.includes('--showConfig')) {
                 // The probe resolves composition from whether the config's
                 // extends chain reaches the bridge's admin-types surface; an
-                // auto-bridged config extends the generated .shopware/ tsconfig.
+                // auto-bridged config extends the generated .shopwell/ tsconfig.
                 // The dedicated spec program carries only the spec files.
                 const configPath = args[args.indexOf('--project') + 1];
-                const composes = fs.readFileSync(configPath, 'utf8').includes('.shopware/tsconfig.json');
+                const composes = fs.readFileSync(configPath, 'utf8').includes('.shopwell/tsconfig.json');
                 const files = configPath.includes('tsconfig.specs.json')
                     ? listSpecFiles(projectRoot, ['custom/plugins'])
                     : listTypeCheckableFiles(projectRoot, ['custom/plugins']);

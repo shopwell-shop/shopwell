@@ -49,7 +49,7 @@
 #   - ghcr.io/github/gh-aw-node@sha256:529d02eb970b1161aa25c593a9c3df57fdfad5a8add328cb3b6eccef66f3183b
 #   - ghcr.io/github/github-mcp-server:v1.4.0@sha256:2afb26356481d1a350e14544a6e160f7f7ec1561a1ea309b823665abf0309036
 
-name: "Shopware Issue Triage"
+name: "Shopwell Issue Triage"
 on:
   issue_comment:
     types:
@@ -76,7 +76,7 @@ concurrency:
   cancel-in-progress: false
   group: sw-triage-${{ github.event.issue.number || github.event.inputs.issue_number }}
 
-run-name: "Shopware Issue Triage #${{ github.event.issue.number || github.event.inputs.issue_number }}"
+run-name: "Shopwell Issue Triage #${{ github.event.issue.number || github.event.inputs.issue_number }}"
 
 jobs:
   activation:
@@ -132,7 +132,7 @@ jobs:
           parent-span-id: ${{ needs.pre_activation.outputs.setup-parent-span-id || needs.pre_activation.outputs.setup-span-id }}
           safe-output-artifact-client: ${{ env.GH_AW_MAX_DAILY_AI_CREDITS != '' }}
         env:
-          GH_AW_SETUP_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_SETUP_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/sw-triage.lock.yml@${{ github.ref }}
           GH_AW_INFO_VERSION: "2.1.185"
           GH_AW_INFO_AWF_VERSION: "v0.27.9"
@@ -146,7 +146,7 @@ jobs:
           GH_AW_INFO_VERSION: "2.1.185"
           GH_AW_INFO_AGENT_VERSION: "2.1.185"
           GH_AW_INFO_CLI_VERSION: "v0.81.2"
-          GH_AW_INFO_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_INFO_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_INFO_EXPERIMENTAL: "false"
           GH_AW_INFO_SUPPORTS_TOOLS_ALLOWLIST: "true"
           GH_AW_INFO_STAGED: "false"
@@ -192,7 +192,7 @@ jobs:
         if: ${{ env.GH_AW_MAX_DAILY_AI_CREDITS != '' }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          GH_AW_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_WORKFLOW_ID: "sw-triage"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_WORKFLOW_DISPATCH_AW_CONTEXT: ${{ github.event.inputs.aw_context || '' }}
@@ -285,7 +285,7 @@ jobs:
         if: github.event_name == 'issues' || github.event_name == 'issue_comment' || github.event_name == 'discussion' || github.event_name == 'discussion_comment'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          GH_AW_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_WORKFLOW_NAME: "Shopwell Issue Triage"
         with:
           script: |
             const { setupGlobals } = require('${{ runner.temp }}/gh-aw/actions/setup_globals.cjs');
@@ -516,7 +516,7 @@ jobs:
           trace-id: ${{ needs.activation.outputs.setup-trace-id }}
           parent-span-id: ${{ needs.activation.outputs.setup-parent-span-id || needs.activation.outputs.setup-span-id }}
         env:
-          GH_AW_SETUP_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_SETUP_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/sw-triage.lock.yml@${{ github.ref }}
           GH_AW_INFO_VERSION: "2.1.185"
           GH_AW_INFO_AWF_VERSION: "v0.27.9"
@@ -1179,7 +1179,7 @@ jobs:
           trace-id: ${{ needs.activation.outputs.setup-trace-id }}
           parent-span-id: ${{ needs.activation.outputs.setup-parent-span-id || needs.activation.outputs.setup-span-id }}
         env:
-          GH_AW_SETUP_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_SETUP_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/sw-triage.lock.yml@${{ github.ref }}
           GH_AW_INFO_VERSION: "2.1.185"
           GH_AW_INFO_AWF_VERSION: "v0.27.9"
@@ -1286,7 +1286,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_NOOP_MAX: "1"
-          GH_AW_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/.github/workflows/sw-triage.md"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
@@ -1307,7 +1307,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/.github/workflows/sw-triage.md"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_DETECTION_CONCLUSION: ${{ needs.detection.outputs.detection_conclusion }}
@@ -1325,7 +1325,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_MISSING_TOOL_CREATE_ISSUE: "true"
-          GH_AW_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/.github/workflows/sw-triage.md"
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -1340,7 +1340,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_REPORT_INCOMPLETE_CREATE_ISSUE: "true"
-          GH_AW_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/.github/workflows/sw-triage.md"
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -1355,7 +1355,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/.github/workflows/sw-triage.md"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
@@ -1400,7 +1400,7 @@ jobs:
           GH_AW_COMMENT_ID: ${{ needs.activation.outputs.comment_id }}
           GH_AW_COMMENT_REPO: ${{ needs.activation.outputs.comment_repo }}
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          GH_AW_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_SAFE_OUTPUTS_RESULT: ${{ needs.safe_outputs.result }}
           GH_AW_DETECTION_CONCLUSION: ${{ needs.detection.outputs.detection_conclusion }}
@@ -1438,7 +1438,7 @@ jobs:
           trace-id: ${{ needs.activation.outputs.setup-trace-id }}
           parent-span-id: ${{ needs.activation.outputs.setup-parent-span-id || needs.activation.outputs.setup-span-id }}
         env:
-          GH_AW_SETUP_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_SETUP_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/sw-triage.lock.yml@${{ github.ref }}
           GH_AW_INFO_VERSION: "2.1.185"
           GH_AW_INFO_AWF_VERSION: "v0.27.9"
@@ -1511,7 +1511,7 @@ jobs:
         if: always() && steps.detection_guard.outputs.run_detection == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          WORKFLOW_NAME: "Shopware Issue Triage"
+          WORKFLOW_NAME: "Shopwell Issue Triage"
           WORKFLOW_DESCRIPTION: "No description provided"
           HAS_PATCH: ${{ needs.agent.outputs.has_patch }}
           CUSTOM_PROMPT: "The triage output is a potential exfiltration channel. In ADDITION to the default\nchecks, set secret_leak=true if any field contains:\n  - a GitHub token (prefixes ghp_, gho_, ghu_, ghs_, ghr_, or github_pat_),\n  - an Anthropic API key (sk-ant-...) or OpenAI API key (sk-...),\n  - any long, high-entropy base64-like blob that could encode a credential or binary payload.\nA valid TriageOutput only ever contains dispositions, severities, labels, reasoning,\nevidence quotes, file paths, and issue/PR/commit references — never credentials,\ntokens, or binary blobs.\n"
@@ -1692,7 +1692,7 @@ jobs:
           destination: ${{ runner.temp }}/gh-aw/actions
           job-name: ${{ github.job }}
         env:
-          GH_AW_SETUP_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_SETUP_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/sw-triage.lock.yml@${{ github.ref }}
           GH_AW_INFO_VERSION: "2.1.185"
           GH_AW_INFO_AWF_VERSION: "v0.27.9"
@@ -1744,7 +1744,7 @@ jobs:
       GH_AW_RUNTIME_FEATURES: ${{ vars.GH_AW_RUNTIME_FEATURES }}
       GH_AW_THREAT_DETECTION_AIC: ${{ needs.detection.outputs.aic }}
       GH_AW_WORKFLOW_ID: "sw-triage"
-      GH_AW_WORKFLOW_NAME: "Shopware Issue Triage"
+      GH_AW_WORKFLOW_NAME: "Shopwell Issue Triage"
       GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/.github/workflows/sw-triage.md"
     outputs:
       code_push_failure_count: ${{ steps.process_safe_outputs.outputs.code_push_failure_count }}
@@ -1766,7 +1766,7 @@ jobs:
           parent-span-id: ${{ needs.activation.outputs.setup-parent-span-id || needs.activation.outputs.setup-span-id }}
           safe-output-artifact-client: 'true'
         env:
-          GH_AW_SETUP_WORKFLOW_NAME: "Shopware Issue Triage"
+          GH_AW_SETUP_WORKFLOW_NAME: "Shopwell Issue Triage"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/sw-triage.lock.yml@${{ github.ref }}
           GH_AW_INFO_VERSION: "2.1.185"
           GH_AW_INFO_AWF_VERSION: "v0.27.9"

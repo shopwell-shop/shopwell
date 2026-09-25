@@ -2,13 +2,13 @@
 title: Fix html and implement icon cache filter
 issue: NEXT-18411
 author: Stefan Sluiter
-author_email: s.sluiter@shopware.com
+author_email: s.sluiter@shopwell.com
 ---
 # Storefront
-* Added `Shopware\Storefront\Framework\Twig\Extension\IconCacheTwigFilter` to add every icon definition only once per page.
+* Added `Shopwell\Storefront\Framework\Twig\Extension\IconCacheTwigFilter` to add every icon definition only once per page.
 * Changed all icons in `Storefront/Resources/app/storefront/dist/assets/icon/*`. Removed `fill` attribute and added `defs`.
-* Added `Shopware\Storefront\Theme\Command\ThemePrepareIconsCommand` to prepare icons for storefront usage.
-* Changed `Shopware\Storefront\Controller\StorefrontController::renderStorefront` by enabling `IconCacheTwigFilter`.
+* Added `Shopwell\Storefront\Theme\Command\ThemePrepareIconsCommand` to prepare icons for storefront usage.
+* Changed `Shopwell\Storefront\Controller\StorefrontController::renderStorefront` by enabling `IconCacheTwigFilter`.
 * Added new dependency `meyfa/php-svg`.
 * Changed `Storefront/Resources/views/storefront/utilities/icon.html.twig` to add `sw_icon_cache` filter to icon implementation.
 * Changed `Storefront/Resources/views/storefront/layout/meta.html.twig` to only render `<link rel="apple-touch-icon">` when `sw-logo-share` is not empty.

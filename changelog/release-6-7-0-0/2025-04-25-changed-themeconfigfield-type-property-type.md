@@ -1,6 +1,6 @@
 ---
 title: Changed ThemeConfigField::$type property type
-issue: https://github.com/shopware/shopware/issues/8494
+issue: https://github.com/shopwell-shop/shopwell/issues/8494
 ---
 # Storefront
-* Changed `\Shopware\Storefront\Theme\ThemeConfigField::$type` type from `string` to `string|null`
+* Changed `\Shopwell\Storefront\Theme\ThemeConfigField::$type` type from `string` to `string|null`

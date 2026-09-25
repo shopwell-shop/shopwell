@@ -2,7 +2,7 @@
 title: Little changes on the customer group detail page
 issue: NEXT-25347
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com
+author_email: k.luetjann@shopwell.com
 author_github: @King-of-Babylon
 ---
 

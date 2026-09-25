@@ -1235,7 +1235,7 @@ class EntityAggregatorTest extends TestCase
             ], 'l dS M, Y'),
         ];
 
-        if (!EnvironmentHelper::getVariable('SHOPWARE_DBAL_TIMEZONE_SUPPORT_ENABLED', 0)) {
+        if (!EnvironmentHelper::getVariable('SHOPWELL_DBAL_TIMEZONE_SUPPORT_ENABLED', 0)) {
             return;
         }
 

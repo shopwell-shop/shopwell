@@ -235,7 +235,7 @@ class ThemeFileResolverTest extends TestCase
         );
 
         $actual = json_encode($resolvedFiles, \JSON_PRETTY_PRINT);
-        $expected = '/Resources\/app\/storefront\/src\/scss\/skin\/shopware\/_base.scss';
+        $expected = '/Resources\/app\/storefront\/src\/scss\/skin\/shopwell\/_base.scss';
 
         static::assertStringContainsString($expected, (string) $actual);
     }
@@ -282,7 +282,7 @@ class ThemeFileResolverTest extends TestCase
         );
 
         $actual = json_encode($resolvedFiles, \JSON_PRETTY_PRINT);
-        $notExpected = '/Resources\/app\/storefront\/src\/scss\/skin\/shopware\/_base.scss';
+        $notExpected = '/Resources\/app\/storefront\/src\/scss\/skin\/shopwell\/_base.scss';
 
         static::assertStringNotContainsString($notExpected, (string) $actual);
     }

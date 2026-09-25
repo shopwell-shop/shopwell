@@ -25,9 +25,9 @@ use Shopwell\Core\Framework\Mcp\Attribute\McpToolGroup;
  */
 #[Package('framework')]
 #[McpTool(
-    name: 'shopware-entity-schema',
+    name: 'shopwell-entity-schema',
     title: 'Entity Schema',
-    description: 'Get the field and association schema of a Shopwell entity definition: field names, types, and associations for building shopware-entity-search criteria. Returns {success, data: {fields: [...], associations: [...]}}. See shopware://entities resource for all available entity names.'
+    description: 'Get the field and association schema of a Shopwell entity definition: field names, types, and associations for building shopwell-entity-search criteria. Returns {success, data: {fields: [...], associations: [...]}}. See shopwell://entities resource for all available entity names.'
 )]
 #[McpToolGroup('entity')]
 class EntitySchemaTool extends McpToolResponse
@@ -43,7 +43,7 @@ class EntitySchemaTool extends McpToolResponse
     public function __invoke(string $entity): string
     {
         if (!$this->registry->has($entity)) {
-            return $this->error(\sprintf('Entity "%s" not found. Use the shopware://entities resource for available entity names.', $entity));
+            return $this->error(\sprintf('Entity "%s" not found. Use the shopwell://entities resource for available entity names.', $entity));
         }
 
         $definition = $this->registry->getByEntityName($entity);

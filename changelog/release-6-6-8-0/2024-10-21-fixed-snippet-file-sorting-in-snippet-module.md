@@ -2,7 +2,7 @@
 title: Fixed snippet file sorting in snippet module
 issue: NEXT-38519
 author: Marcel Brode
-author_email: m.brode@shopware.com
+author_email: m.brode@shopwell.com
 author_github: @Marcel Brode
 ---
 # Administration

@@ -19,7 +19,7 @@ class MockingSimpleObjectsNotAllowedRuleTest extends RuleTestCase
 {
     public function testRule(): void
     {
-        $this->analyse([__DIR__ . '/../data/MockingSimpleObjects/shopware-unit-test.php'], [
+        $this->analyse([__DIR__ . '/../data/MockingSimpleObjects/shopwell-unit-test.php'], [
             [
                 'Mocking of Shopwell\Core\Checkout\Order\OrderEntity is not allowed. The object is very basic and can be constructed',
                 16,

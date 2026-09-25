@@ -347,7 +347,7 @@ describe('src/app/mixin/listing.mixin.ts', () => {
 
         const routeWrapper = await createRouteWrapper();
 
-        Shopwell.Store.get('shopwareApps').selectedIds = ['order-id'];
+        Shopwell.Store.get('shopwellApps').selectedIds = ['order-id'];
         Shopwell.Store.get('swBulkEdit').selectedIds = ['order-id'];
 
         await router.push({
@@ -356,7 +356,7 @@ describe('src/app/mixin/listing.mixin.ts', () => {
 
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual([]);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual([]);
         expect(Shopwell.Store.get('swBulkEdit').selectedIds).toEqual([]);
 
         await routeWrapper.unmount();
@@ -368,7 +368,7 @@ describe('src/app/mixin/listing.mixin.ts', () => {
 
         const routeWrapper = await createRouteWrapper();
 
-        Shopwell.Store.get('shopwareApps').selectedIds = ['product-id'];
+        Shopwell.Store.get('shopwellApps').selectedIds = ['product-id'];
         Shopwell.Store.get('swBulkEdit').selectedIds = ['product-id'];
 
         await router.push({
@@ -377,7 +377,7 @@ describe('src/app/mixin/listing.mixin.ts', () => {
 
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual(['product-id']);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual(['product-id']);
         expect(Shopwell.Store.get('swBulkEdit').selectedIds).toEqual(['product-id']);
 
         await routeWrapper.unmount();

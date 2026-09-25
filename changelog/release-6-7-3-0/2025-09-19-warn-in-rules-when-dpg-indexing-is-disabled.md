@@ -2,7 +2,7 @@
 title: Warn in rules when DPG indexing is disabled
 issue: 12354
 author: Nikolas Evers
-author_email: n.evers@shopware.com
+author_email: n.evers@shopwell.com
 author_github: vintagesucks
 ---
 # Administration

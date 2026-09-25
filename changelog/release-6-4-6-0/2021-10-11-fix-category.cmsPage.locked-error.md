@@ -2,7 +2,7 @@
 title: Fix category.cmsPage.locked error
 issue: NEXT-17744
 author: Niklas Limberg
-author_email: n.limberg@shopware.com
+author_email: n.limberg@shopwell.com
 author: NiklasLimberg
 author_github: NiklasLimberg
 ---

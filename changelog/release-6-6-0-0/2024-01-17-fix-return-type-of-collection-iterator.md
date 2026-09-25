@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Changed return typehint of `Shopware\Core\Framework\Struct\Collection::getIterator` to return the correct elements of the collection
+* Changed return typehint of `Shopwell\Core\Framework\Struct\Collection::getIterator` to return the correct elements of the collection

@@ -98,7 +98,7 @@ class CmsPageDefaultChangeSubscriber implements EventSubscriberInterface
 
         if (!\is_string($newDefaultCmsPageId) && $newDefaultCmsPageId !== null) {
             if (!Feature::isActive('v6.8.0.0')) {
-                /** @phpstan-ignore shopware.domainException (Will be fixed with next major) */
+                /** @phpstan-ignore shopwell.domainException (Will be fixed with next major) */
                 throw new PageNotFoundException('invalid page');
             }
             throw CmsException::pageNotFound('invalid page');
@@ -107,7 +107,7 @@ class CmsPageDefaultChangeSubscriber implements EventSubscriberInterface
         // prevent changing the default to an invalid cms page id
         if (\is_string($newDefaultCmsPageId) && !$this->cmsPageExists($newDefaultCmsPageId)) {
             if (!Feature::isActive('v6.8.0.0')) {
-                /** @phpstan-ignore shopware.domainException (Will be fixed with next major) */
+                /** @phpstan-ignore shopwell.domainException (Will be fixed with next major) */
                 throw new PageNotFoundException($newDefaultCmsPageId);
             }
             throw CmsException::pageNotFound($newDefaultCmsPageId);

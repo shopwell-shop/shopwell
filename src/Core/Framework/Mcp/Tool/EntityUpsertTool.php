@@ -17,11 +17,11 @@ use Shopwell\Core\Framework\Mcp\Context\McpContextProvider;
  */
 #[Package('framework')]
 #[McpTool(
-    name: 'shopware-entity-upsert',
+    name: 'shopwell-entity-upsert',
     title: 'Entity Upsert',
-    description: 'Create or update Shopwell entity data. Always use dryRun=true (default) first to validate, then set dryRun=false to persist. If you don\'t already know the required fields, shopware-entity-schema will tell you. Returns validation result in dryRun mode, or the written entity data on commit.'
+    description: 'Create or update Shopwell entity data. Always use dryRun=true (default) first to validate, then set dryRun=false to persist. If you don\'t already know the required fields, shopwell-entity-schema will tell you. Returns validation result in dryRun mode, or the written entity data on commit.'
 )]
-#[McpToolDependsOn('shopware-entity-schema')]
+#[McpToolDependsOn('shopwell-entity-schema')]
 #[McpToolGroup('entity')]
 #[McpToolRequires(entityParam: 'entity', operations: ['create', 'update'])]
 class EntityUpsertTool extends McpToolResponse
@@ -37,9 +37,9 @@ class EntityUpsertTool extends McpToolResponse
     }
 
     public function __invoke(
-        #[Schema(description: 'Entity name to write, e.g. "product" or "category". See the shopware://entities resource for the full list.')]
+        #[Schema(description: 'Entity name to write, e.g. "product" or "category". See the shopwell://entities resource for the full list.')]
         string $entity,
-        #[Schema(description: 'The entity\'s fields as a JSON string: one OBJECT, or an ARRAY of objects to write several records in a single call. Include "id" on a record to UPDATE it, omit it to CREATE one — e.g. {"id":"...","name":"Summer Sale"} renames an existing category, and [{...},{...}] upserts both. shopware-entity-schema lists the field names and which are required.')]
+        #[Schema(description: 'The entity\'s fields as a JSON string: one OBJECT, or an ARRAY of objects to write several records in a single call. Include "id" on a record to UPDATE it, omit it to CREATE one — e.g. {"id":"...","name":"Summer Sale"} renames an existing category, and [{...},{...}] upserts both. shopwell-entity-schema lists the field names and which are required.')]
         string $payload,
         #[Schema(description: 'Validate without writing. Leave true first, then call again with false to persist.')]
         bool $dryRun = true,
@@ -47,7 +47,7 @@ class EntityUpsertTool extends McpToolResponse
         $context = $this->contextProvider->getContext();
 
         if (!$this->registry->has($entity)) {
-            return $this->error(\sprintf('Entity "%s" not found. Use the shopware://entities resource for available entity names.', $entity));
+            return $this->error(\sprintf('Entity "%s" not found. Use the shopwell://entities resource for available entity names.', $entity));
         }
 
         $data = $this->decodeJsonOrError($payload, 'payload');

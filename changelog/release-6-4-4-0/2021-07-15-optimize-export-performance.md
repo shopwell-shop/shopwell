@@ -2,7 +2,7 @@
 title: Optimize export performance
 issue: NEXT-10315
 author: OliverSkroblin
-author_email: o.skroblin@shopware.com 
+author_email: o.skroblin@shopwell.com 
 author_github: OliverSkroblin
 ---
 # Core
@@ -21,26 +21,26 @@ A new dependency has been added for the `EntityRepository` and the `SalesChannel
 If you have defined the repository class yourself in your services.xml, you have to adapt it until 6.5 as follows:
 
 ```before
-<service class="Shopware\Core\Framework\DataAbstractionLayer\EntityRepository" id="product.repository">
-    <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\VersionManager"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface"/>
-    <argument type="service" id="Shopware\Elasticsearch\Framework\DataAbstractionLayer\ElasticsearchEntityAggregator.inner"/>
+<service class="Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository" id="product.repository">
+    <argument type="service" id="Shopwell\Core\Content\Product\ProductDefinition"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\VersionManager"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface"/>
+    <argument type="service" id="Shopwell\Elasticsearch\Framework\DataAbstractionLayer\ElasticsearchEntityAggregator.inner"/>
     <argument type="service" id="event_dispatcher"/>
 </service>
 ```
 
-Now you have to inject the `Shopware\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory` service after the `event_dispatcher`
+Now you have to inject the `Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory` service after the `event_dispatcher`
 ```after
-<service class="Shopware\Core\Framework\DataAbstractionLayer\EntityRepository" id="product.repository">
-    <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\VersionManager"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface"/>
-    <argument type="service" id="Shopware\Elasticsearch\Framework\DataAbstractionLayer\ElasticsearchEntityAggregator.inner"/>
+<service class="Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository" id="product.repository">
+    <argument type="service" id="Shopwell\Core\Content\Product\ProductDefinition"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\VersionManager"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface"/>
+    <argument type="service" id="Shopwell\Elasticsearch\Framework\DataAbstractionLayer\ElasticsearchEntityAggregator.inner"/>
     <argument type="service" id="event_dispatcher"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory"/>
 </service>
 ```
 Up to 6.5, a compiler pass ensures that the event factory is injected via the `setEntityLoadedEventFactory` method.

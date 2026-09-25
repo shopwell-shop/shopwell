@@ -25,7 +25,7 @@ class Migration1650981517RemoveShopwellId extends MigrationStep
     public function updateDestructive(Connection $connection): void
     {
         $connection->executeStatement(
-            'DELETE FROM `system_config` WHERE `configuration_key` = "core.store.shopwareId"'
+            'DELETE FROM `system_config` WHERE `configuration_key` = "core.store.shopwellId"'
         );
     }
 }

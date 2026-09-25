@@ -4,7 +4,7 @@ issue: NEXT-12482
 ---
 # Core
 * Added new const operators `empty` in `Administration/Resource/app/administration/src/app/service/rule-condition.service.js`
-* Added new const `OPERATOR_EMPTY` in `Shopware\Core\Framework\Rule\Rule`
+* Added new const `OPERATOR_EMPTY` in `Shopwell\Core\Framework\Rule\Rule`
 ___
 # Administration
 * Changed component to hide value when select is empty in: 
@@ -27,21 +27,21 @@ ___
   `Administration/Resource/app/administration/src/app/component/rule/condition-type/sw-condition-line-item-dimension-length`
   `Administration/Resource/app/administration/src/app/component/rule/condition-type/sw-condition-line-item-dimension-weight`
 * Changed method `match` to support empty case and method `getConstraints` to change condition validate when create rule in : 
-  `Shopware\Core\Checkout\Customer\Rule\ShippingZipCodeRule`
-  `Shopware\Core\Checkout\Customer\Rule\DaysSinceLastOrderRule`
-  `Shopware\Core\Checkout\Customer\Rule\BillingCountryRule`
-  `Shopware\Core\Checkout\Customer\Rule\BillingStreetRule`
-  `Shopware\Core\Checkout\Customer\Rule\BillingZipCodeRule`
-  `Shopware\Core\Checkout\Customer\Rule\CustomerTagRule`
-  `Shopware\Core\Checkout\Customer\Rule\LastNameRule`
-  `Shopware\Core\Checkout\Customer\Rule\ShippingCountryRule`
-  `Shopware\Core\Checkout\Customer\Rule\ShippingStreetRule`
-  `Shopware\Core\Checkout\Cart\Rule\LineItemTagRule`
-  `Shopware\Core\Checkout\Cart\Rule\LineItemOfManufacturerRule`
-  `Shopware\Core\Checkout\Cart\Rule\LineItemPurchasePriceRule`
-  `Shopware\Core\Checkout\Cart\Rule\LineItemReleaseDateRule`
-  `Shopware\Core\Checkout\Cart\Rule\LineItemInCategoryRule`
-  `Shopware\Core\Checkout\Cart\Rule\LineItemDimensionWidthRule`
-  `Shopware\Core\Checkout\Cart\Rule\LineItemDimensionHeightRule`
-  `Shopware\Core\Checkout\Cart\Rule\LineItemDimensionLengthRule`
-  `Shopware\Core\Checkout\Cart\Rule\LineItemDimensionWeightRule`
+  `Shopwell\Core\Checkout\Customer\Rule\ShippingZipCodeRule`
+  `Shopwell\Core\Checkout\Customer\Rule\DaysSinceLastOrderRule`
+  `Shopwell\Core\Checkout\Customer\Rule\BillingCountryRule`
+  `Shopwell\Core\Checkout\Customer\Rule\BillingStreetRule`
+  `Shopwell\Core\Checkout\Customer\Rule\BillingZipCodeRule`
+  `Shopwell\Core\Checkout\Customer\Rule\CustomerTagRule`
+  `Shopwell\Core\Checkout\Customer\Rule\LastNameRule`
+  `Shopwell\Core\Checkout\Customer\Rule\ShippingCountryRule`
+  `Shopwell\Core\Checkout\Customer\Rule\ShippingStreetRule`
+  `Shopwell\Core\Checkout\Cart\Rule\LineItemTagRule`
+  `Shopwell\Core\Checkout\Cart\Rule\LineItemOfManufacturerRule`
+  `Shopwell\Core\Checkout\Cart\Rule\LineItemPurchasePriceRule`
+  `Shopwell\Core\Checkout\Cart\Rule\LineItemReleaseDateRule`
+  `Shopwell\Core\Checkout\Cart\Rule\LineItemInCategoryRule`
+  `Shopwell\Core\Checkout\Cart\Rule\LineItemDimensionWidthRule`
+  `Shopwell\Core\Checkout\Cart\Rule\LineItemDimensionHeightRule`
+  `Shopwell\Core\Checkout\Cart\Rule\LineItemDimensionLengthRule`
+  `Shopwell\Core\Checkout\Cart\Rule\LineItemDimensionWeightRule`

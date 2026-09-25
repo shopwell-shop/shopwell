@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
  */
 #[Entity('attribute_entity_agg', parent: 'attribute_entity', since: '6.6.3.0')]
 // Test that autoconfigure works with attribute entities, do not add the tag in service declaration in service_test.xml
-#[AutoconfigureTag('shopware.entity')]
+#[AutoconfigureTag('shopwell.entity')]
 class AttributeEntityAgg extends EntityStruct
 {
     #[PrimaryKey]

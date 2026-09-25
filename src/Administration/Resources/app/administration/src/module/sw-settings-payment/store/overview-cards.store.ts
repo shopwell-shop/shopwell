@@ -1,4 +1,4 @@
-import type { uiModulePaymentOverviewCard } from '@shopware-ag/meteor-admin-sdk/es/ui/module/payment/overview-card';
+import type { uiModulePaymentOverviewCard } from '@shopwell-ag/meteor-admin-sdk/es/ui/module/payment/overview-card';
 
 /**
  * @sw-package checkout

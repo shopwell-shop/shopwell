@@ -6,7 +6,7 @@ author_email: code@joshua-behrens.de
 author_github: @JoshuaBehrens
 ---
 # Core
-* Changed bundle loading order by the keys from `\Shopware\Core\Framework\Plugin::getAdditionalBundles` in `\Shopware\Core\Framework\Plugin\KernelPluginLoader\KernelPluginLoader::getBundles` to allow bundle loading prior the plugin itself
+* Changed bundle loading order by the keys from `\Shopwell\Core\Framework\Plugin::getAdditionalBundles` in `\Shopwell\Core\Framework\Plugin\KernelPluginLoader\KernelPluginLoader::getBundles` to allow bundle loading prior the plugin itself
 ___
 # Upgrade Information
 When you depend on a self-shipped bundle to already been loaded before your plugin, you can now use negative keys in `getAdditionalBundles` to express a different order. Use negative keys to load them before your plugin instance:

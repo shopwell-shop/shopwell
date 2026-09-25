@@ -3,8 +3,8 @@ title: Validate migration timestamps
 issue: NEXT-40051
 ---
 # Core
-* Added `\Shopware\Core\Framework\Migration\MigrationStep::getPlausibleCreationTimestamp()` to validate migration timestamps with 6.7, to ensure that the migration order is always deterministic.
-* Changed `\Shopware\Core\Framework\Plugin\PluginLifecycleService::uninstallPlugin()` to remove plugin migrations from migration table before calling `uninstall`, to allow recovering in case of errors by rerunning the migrations.
+* Added `\Shopwell\Core\Framework\Migration\MigrationStep::getPlausibleCreationTimestamp()` to validate migration timestamps with 6.7, to ensure that the migration order is always deterministic.
+* Changed `\Shopwell\Core\Framework\Plugin\PluginLifecycleService::uninstallPlugin()` to remove plugin migrations from migration table before calling `uninstall`, to allow recovering in case of errors by rerunning the migrations.
 ___
 # Next Major Version Changes
 ## Bulletproofing Plugin Migrations

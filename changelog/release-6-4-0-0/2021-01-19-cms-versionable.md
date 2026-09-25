@@ -2,19 +2,19 @@
 title: CMS entities version aware
 issue: NEXT-13273
 author: Jan Pietrzyk
-author_email: j.pietrzyk@shopware.com 
+author_email: j.pietrzyk@shopwell.com 
 author_github: @JanPietrzyk
 ---
 # Core
 * Add version fields to the primary key of all cms entities 
-    * `\Shopware\Core\Content\Cms\CmsPageDefinition`
-    * `\Shopware\Core\Content\Cms\Aggregate\CmsSlotDefinition`
-    * `\Shopware\Core\Content\Cms\Aggregate\BlockDefinition`
-    * `\Shopware\Core\Content\Cms\Aggregate\SectionDefinition`
+    * `\Shopwell\Core\Content\Cms\CmsPageDefinition`
+    * `\Shopwell\Core\Content\Cms\Aggregate\CmsSlotDefinition`
+    * `\Shopwell\Core\Content\Cms\Aggregate\BlockDefinition`
+    * `\Shopwell\Core\Content\Cms\Aggregate\SectionDefinition`
 * CMS version id as part of the foreign key constraint to cms pages
-    * `\Shopware\Core\Content\Product\ProductDefinition`
-    * `\Shopware\Core\Content\Category\CategoryDefinition`
-    * `\Shopware\Core\Content\LandingPage\LandingPageDefinition`
+    * `\Shopwell\Core\Content\Product\ProductDefinition`
+    * `\Shopwell\Core\Content\Category\CategoryDefinition`
+    * `\Shopwell\Core\Content\LandingPage\LandingPageDefinition`
 ___
 # Upgrade Information
 
@@ -28,13 +28,13 @@ Please use `bin/console dal:validate` to see if you have to adjust your plugins 
 
 #### Update
 
-If your plugin is already installed the shopware core migration will take care of adjusting the foreign key. A new column `{TABLE_NAME}_version_id` is created, and the constraint widened. You will just have to add a version reference field in your definitions.
+If your plugin is already installed the shopwell core migration will take care of adjusting the foreign key. A new column `{TABLE_NAME}_version_id` is created, and the constraint widened. You will just have to add a version reference field in your definitions.
 
 For a `cms_page` relation this would make these lines mandatory in your field definition like this:
 
 ```php
-use Shopware\Core\Content\Cms\CmsPageDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
+use Shopwell\Core\Content\Cms\CmsPageDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
 
 new ReferenceVersionField(CmsPageDefinition::class);
 ```

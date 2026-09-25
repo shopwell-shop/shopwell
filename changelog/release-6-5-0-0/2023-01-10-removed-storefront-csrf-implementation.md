@@ -78,13 +78,13 @@ issue: NEXT-24773
     * Removed option `addressEditorOptions.csrfToken` in `Resources/views/storefront/page/account/address.html.twig`
     * Removed option `addressEditorOptions.csrfToken` in `Resources/views/storefront/page/checkout/confirm/confirm-address.html.twig`
     * Removed option `guestWishlistPageOptions.pageletRouter.token` in `Resources/views/storefront/page/wishlist/index.html.twig`
-    * Removed `\Shopware\Storefront\Framework\Twig\Extension\CsrfFunctionExtension`
+    * Removed `\Shopwell\Storefront\Framework\Twig\Extension\CsrfFunctionExtension`
         * Removed twig function `sw_csrf`
 ___
 # Upgrade Information
 ## CSRF Removal in Favor of SameSite
 
-We removed the CSRF protection in favor of SameSite strategy which is already implemented in shopware6.
+We removed the CSRF protection in favor of SameSite strategy which is already implemented in shopwell6.
 
 If you changed or added forms with csrf protection, you have to remove all calls to the twig function `sw_csrf` and every input (hidden) field which holds the csrf token.
 You can no longer use the JavaScript properties `window.csrf` or `window.storeApiProxyToken`.

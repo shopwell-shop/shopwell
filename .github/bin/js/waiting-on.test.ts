@@ -84,7 +84,7 @@ test('changes requested but answered is ours again, though the decision still sa
         lastAuthorActivityAt: '2026-05-28T00:00:00Z',
     });
 
-    assert.equal(verdict.waitingOn, 'shopware');
+    assert.equal(verdict.waitingOn, 'shopwell');
     assert.equal(verdict.reason, 're-review-pending');
     assert.equal(verdict.since, '2026-05-28T00:00:00Z');
 });
@@ -106,14 +106,14 @@ test('an approved pull request that conflicts needs the author', () => {
 test('an approved pull request that merges cleanly is only waiting for us', () => {
     const verdict = classify({ reviewDecision: 'APPROVED', reviewCount: 2, approvals: 2, lastMaintainerActivityAt: '2026-08-01T00:00:00Z' });
 
-    assert.equal(verdict.waitingOn, 'shopware');
+    assert.equal(verdict.waitingOn, 'shopwell');
     assert.equal(verdict.reason, 'just-merge-it');
 });
 
 test('unresolved mergeability lands on us rather than on the contributor', () => {
     const verdict = classify({ reviewDecision: 'APPROVED', reviewCount: 2, approvals: 2, mergeable: 'UNKNOWN' });
 
-    assert.equal(verdict.waitingOn, 'shopware');
+    assert.equal(verdict.waitingOn, 'shopwell');
     assert.equal(verdict.reason, 'mergeability-unknown');
 });
 
@@ -128,7 +128,7 @@ test('one approval short of the required count is ours, not an unreviewed pull r
         lastAuthorActivityAt: '2025-05-12T00:00:00Z',
     });
 
-    assert.equal(verdict.waitingOn, 'shopware');
+    assert.equal(verdict.waitingOn, 'shopwell');
     assert.equal(verdict.reason, 'second-review-missing');
     assert.equal(verdict.since, '2025-05-12T00:00:00Z');
 });
@@ -141,7 +141,7 @@ test('a pull request nobody ever reviewed dates from when it was offered, not op
         lastAuthorActivityAt: '2026-07-31T00:00:00Z',
     });
 
-    assert.equal(verdict.waitingOn, 'shopware');
+    assert.equal(verdict.waitingOn, 'shopwell');
     assert.equal(verdict.reason, 'never-reviewed');
     assert.equal(verdict.since, '2026-08-02T00:00:00Z');
 });
@@ -164,21 +164,21 @@ test('the author writing last leaves it with us', () => {
         lastMaintainerActivityAt: '2026-07-01T00:00:00Z',
     });
 
-    assert.equal(verdict.waitingOn, 'shopware');
+    assert.equal(verdict.waitingOn, 'shopwell');
     assert.equal(verdict.reason, 'our-turn');
 });
 
 test('timestamps decide, so a same-day flip turns on the time of day', () => {
     const ours = classify({ reviewCount: 2, lastAuthorActivityAt: '2026-07-01T12:00:00Z', lastMaintainerActivityAt: '2026-07-01T09:00:00Z' });
 
-    assert.equal(ours.waitingOn, 'shopware');
+    assert.equal(ours.waitingOn, 'shopwell');
     assert.equal(ours.reason, 'our-turn');
 });
 
 test('an author who withdrew reads as the authors turn, which is the documented blind spot', () => {
     // This is #5420: the author gave up on 2025-02-04 and a maintainer answered
     // "we will take over it" three hours later. The rule reads the order of events, not
-    // the sentences, so it says `author` where a person says `shopware`. Such a pull
+    // the sentences, so it says `author` where a person says `shopwell`. Such a pull
     // request needs the label, not a cleverer rule.
     const verdict = classify({
         reviewCount: 2,
@@ -288,7 +288,7 @@ test('toTimelineEvents reads each shape GitHub returns', () => {
 const node = (overrides: Record<string, unknown> = {}) => ({
     number: 1,
     title: 'a pull request',
-    url: 'https://github.com/shopware/shopware/pull/1',
+    url: 'https://github.com/shopwell-shop/shopwell/pull/1',
     createdAt: '2026-08-01T00:00:00Z',
     isDraft: false,
     authorAssociation: 'CONTRIBUTOR',
@@ -310,23 +310,23 @@ test('buildRows drops bot-authored pull requests and sorts the oldest first', ()
             node({ number: 10, createdAt: '2026-09-01T00:00:00Z' }),
             node({ number: 11, author: { login: 'dependabot', __typename: 'Bot' } }),
             node({ number: 12, createdAt: '2026-01-01T00:00:00Z' }),
-            node({ number: 13, author: { login: 'shopware-octo-sts-app-2', __typename: 'User' } }),
+            node({ number: 13, author: { login: 'shopwell-octo-sts-app-2', __typename: 'User' } }),
         ],
         new Date('2026-09-10T00:00:00Z'),
     );
 
     assert.deepEqual(rows.map((row) => row.number), [12, 10]);
-    assert.equal(rows[0].label, WAITING_ON_LABEL.shopware);
+    assert.equal(rows[0].label, WAITING_ON_LABEL.shopwell);
     assert.equal(rows[0].days, 252);
 });
 
 test('an app pushing a commit is not the author working, whatever the field type says', () => {
-    // The live run turned up `dependabot[bot]`, `Copilot`, `cursoragent` and `shopwareBot`
+    // The live run turned up `dependabot[bot]`, `Copilot`, `cursoragent` and `shopwellBot`
     // among the logins counted as people; the suffix rule and the list cover them.
     assert.equal(isNonHumanLogin('dependabot[bot]'), true);
     assert.equal(isNonHumanLogin('Copilot'), true);
     assert.equal(isNonHumanLogin('cursoragent'), true);
-    assert.equal(isNonHumanLogin('shopwareBot'), true);
+    assert.equal(isNonHumanLogin('shopwellBot'), true);
     assert.equal(isNonHumanLogin('mitelg'), false);
 
     const activity = summarizeActivity([event({ kind: 'commit', at: '2026-08-01T00:00:00Z', actor: 'dependabot[bot]' })], [], 'someone');

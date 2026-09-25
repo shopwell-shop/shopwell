@@ -3,7 +3,7 @@
  */
 import { watch } from 'vue';
 /* Is covered by E2E tests */
-import { publish } from '@shopware-ag/meteor-admin-sdk/es/channel';
+import { publish } from '@shopwell-ag/meteor-admin-sdk/es/channel';
 import '../store/context.store';
 import useSession from '../composables/use-session';
 import useTheme from '../composables/use-theme';

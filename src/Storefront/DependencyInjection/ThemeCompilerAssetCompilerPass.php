@@ -9,7 +9,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * Wires the `shopware.asset`-tagged services into Storefront's ThemeCompiler as its `$packages` argument.
+ * Wires the `shopwell.asset`-tagged services into Storefront's ThemeCompiler as its `$packages` argument.
  *
  * Lives in Storefront (not Core) so Core stays unaware of ThemeCompiler. The pass is a no-op when ThemeCompiler is not registered.
  *
@@ -25,7 +25,7 @@ class ThemeCompilerAssetCompilerPass implements CompilerPassInterface
         }
 
         $assets = [];
-        foreach ($container->findTaggedServiceIds('shopware.asset') as $id => $config) {
+        foreach ($container->findTaggedServiceIds('shopwell.asset') as $id => $config) {
             $assets[$config[0]['asset']] = new Reference($id);
         }
 

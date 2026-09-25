@@ -125,14 +125,14 @@ class Router implements RouterInterface, RequestMatcherInterface, WarmableInterf
                 break;
 
             case self::RELATIVE_PATH:
-                // remove base path from generated url (/shopware/public or /)
+                // remove base path from generated url (/shopwell/public or /)
                 $generated = $this->removePrefix(
                     $this->decorated->generate($name, $parameters, self::RELATIVE_PATH),
                     $basePath
                 );
 
                 // url contains the base path and the base url
-                // base url /shopware/public/de
+                // base url /shopwell/public/de
                 $rewrite = ltrim($salesChannelBaseUrl, '/') . $generated;
 
                 break;

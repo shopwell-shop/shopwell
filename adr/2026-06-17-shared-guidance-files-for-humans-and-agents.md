@@ -7,7 +7,7 @@ tags: [documentation, agents, developer-experience, coding-guidelines, adr]
 
 ## Context
 
-Shopware has several consumers for repository guidance: human contributors, Codex, Claude, Gemini, and other agent tools.
+Shopwell has several consumers for repository guidance: human contributors, Codex, Claude, Gemini, and other agent tools.
 Keeping separate guidance for every audience causes duplication and drift, but routing every folder through mechanical agent files also creates noise and weakens confidence that referenced files are actually loaded.
 
 We need a documentation model that:
@@ -32,23 +32,23 @@ We need a documentation model that:
 
 ## Skill Location
 
-Shopware-specific skills live in this repository under `.agents/skills/`.
+Shopwell-specific skills live in this repository under `.agents/skills/`.
 They are branch-local guidance tied to `AGENTS.md`, `coding-guidelines/`, ADRs, PR conventions, and the platform code they describe. Keeping them here makes guidance changes reviewable with the related platform change and avoids a separate install or sync step for agents working from this checkout.
 
 Claude Code discovers project skills from `.claude/skills/`, so that path is a Git-tracked symlink to `../.agents/skills`. `.agents/skills` remains the source of truth; do not edit or duplicate skill files through the symlink as a separate copy.
 
-The accepted downside is that exact reuse across plugin or other repositories is harder. That trade-off is intentional: Shopware-specific skills should stay close to the branch-local platform guidance they depend on instead of becoming a second source of truth.
+The accepted downside is that exact reuse across plugin or other repositories is harder. That trade-off is intentional: Shopwell-specific skills should stay close to the branch-local platform guidance they depend on instead of becoming a second source of truth.
 
 ## Initial Skills
 
-- `shopware-knowledge-capture` for saving durable knowledge and routing it to AGENTS, coding guidelines, README, ADR, skills, or local notes.
+- `shopwell-knowledge-capture` for saving durable knowledge and routing it to AGENTS, coding guidelines, README, ADR, skills, or local notes.
   This skill codifies the placement rules from this ADR so agents can reuse the decision model when users ask to preserve knowledge for later.
-- `shopware-change-scope` for root-cause analysis, boyscouting, and cleanup scope.
-- `shopware-release-docs` for release notes, upgrade notes, and developer-facing changelog decisions.
-- `shopware-pr-hygiene` for PR templates, conventional titles, and review follow-up commits.
-- `shopware-php-code` for PHP architecture, API schema, migrations, deprecations, and BC-sensitive code.
-- `shopware-admin-js` for Administration JavaScript, TypeScript, Vue, ACL, and Jest work.
-- `shopware-phpunit-tests` for PHPUnit test structure, fixtures, feature flags, coverage, and data providers.
+- `shopwell-change-scope` for root-cause analysis, boyscouting, and cleanup scope.
+- `shopwell-release-docs` for release notes, upgrade notes, and developer-facing changelog decisions.
+- `shopwell-pr-hygiene` for PR templates, conventional titles, and review follow-up commits.
+- `shopwell-php-code` for PHP architecture, API schema, migrations, deprecations, and BC-sensitive code.
+- `shopwell-admin-js` for Administration JavaScript, TypeScript, Vue, ACL, and Jest work.
+- `shopwell-phpunit-tests` for PHPUnit test structure, fixtures, feature flags, coverage, and data providers.
 
 ## Consequences
 

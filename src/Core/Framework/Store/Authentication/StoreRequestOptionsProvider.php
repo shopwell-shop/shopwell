@@ -23,8 +23,8 @@ class StoreRequestOptionsProvider extends AbstractStoreRequestOptionsProvider
     final public const CONFIG_KEY_STORE_LICENSE_DOMAIN = 'core.store.licenseHost';
     final public const CONFIG_KEY_STORE_SHOP_SECRET = 'core.store.shopSecret';
 
-    final public const SHOPWARE_PLATFORM_TOKEN_HEADER = 'X-Shopwell-Platform-Token';
-    final public const SHOPWARE_SHOP_SECRET_HEADER = 'X-Shopwell-Shop-Secret';
+    final public const SHOPWELL_PLATFORM_TOKEN_HEADER = 'X-Shopwell-Platform-Token';
+    final public const SHOPWELL_SHOP_SECRET_HEADER = 'X-Shopwell-Shop-Secret';
 
     /**
      * @param EntityRepository<UserCollection> $userRepository
@@ -43,8 +43,8 @@ class StoreRequestOptionsProvider extends AbstractStoreRequestOptionsProvider
     public function getAuthenticationHeader(Context $context): array
     {
         return array_filter([
-            self::SHOPWARE_PLATFORM_TOKEN_HEADER => $this->getUserStoreToken($context),
-            self::SHOPWARE_SHOP_SECRET_HEADER => $this->systemConfigService->getString(self::CONFIG_KEY_STORE_SHOP_SECRET),
+            self::SHOPWELL_PLATFORM_TOKEN_HEADER => $this->getUserStoreToken($context),
+            self::SHOPWELL_SHOP_SECRET_HEADER => $this->systemConfigService->getString(self::CONFIG_KEY_STORE_SHOP_SECRET),
         ]);
     }
 
@@ -54,7 +54,7 @@ class StoreRequestOptionsProvider extends AbstractStoreRequestOptionsProvider
     public function getDefaultQueryParameters(Context $context): array
     {
         return [
-            'shopwareVersion' => $this->instanceService->getShopwellVersion(),
+            'shopwellVersion' => $this->instanceService->getShopwellVersion(),
             'language' => $this->localeProvider->getLocaleFromContext($context),
             'domain' => $this->getLicenseDomain(),
         ];

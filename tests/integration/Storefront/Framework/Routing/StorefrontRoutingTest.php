@@ -50,7 +50,7 @@ class StorefrontRoutingTest extends TestCase
         $this->requestTransformer = new RequestTransformer(
             new CoreRequestTransformer(),
             static::getContainer()->get(SeoResolver::class),
-            static::getContainer()->getParameter('shopware.routing.registered_api_prefixes'),
+            static::getContainer()->getParameter('shopwell.routing.registered_api_prefixes'),
             static::getContainer()->get(DomainLoader::class)
         );
 

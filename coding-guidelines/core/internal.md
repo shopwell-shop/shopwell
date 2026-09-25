@@ -2,7 +2,7 @@
 
 All classes and elements (methods, properties, constants) that are defined as protected or public are initially Public API for third party developers.
 
-The Shopware Public API must be kept compatible with each release. This means that the following must not change for third party developers in a minor release:
+The Shopwell Public API must be kept compatible with each release. This means that the following must not change for third party developers in a minor release:
 - The developer uses a service to use certain functions.
 - The developer decorates a service to extend its functionality.
 - The developer uses DTO to get or pass data.
@@ -14,7 +14,7 @@ However, if all classes and properties had to be considered public api by us, we
 Therefore, we mark the elements that we do not consider to be public API. To do this, we have the following tools at our disposal.
 
 ## Decoration pattern
-Classes that are intended for **service decoration** are provided with an abstract class. This class is then provided with a `getDecorated` function to pass unimplemented functions directly to the core classes. [Read more](https://github.com/shopware/shopware/blob/trunk/adr/2020-11-25-decoration-pattern.md)
+Classes that are intended for **service decoration** are provided with an abstract class. This class is then provided with a `getDecorated` function to pass unimplemented functions directly to the core classes. [Read more](https://github.com/shopwell-shop/shopwell/blob/trunk/adr/2020-11-25-decoration-pattern.md)
 
 ## Final classes
 `final` is about inheritance, not about whether a class is Public API. A class can be supported for use by third party developers and still forbid extension.

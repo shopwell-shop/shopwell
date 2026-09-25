@@ -119,27 +119,27 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(CustomerDefinition::class)
-        ->tag('shopware.entity.definition')
-        ->tag('shopware.entity.hookable');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.entity.hookable');
 
     $services->set(CustomerGroupTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CustomerAddressDefinition::class)
-        ->tag('shopware.entity.definition')
-        ->tag('shopware.entity.hookable');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.entity.hookable');
 
     $services->set(CustomerRecoveryDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CustomerGroupDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CustomerGroupRegistrationSalesChannelDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CustomerTagDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AccountService::class)
         ->args([
@@ -213,14 +213,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('validator.constraint_validator');
 
     $services->set(Md5::class)
-        ->tag('shopware.legacy_encoder');
+        ->tag('shopwell.legacy_encoder');
 
     $services->set(Sha256::class)
-        ->tag('shopware.legacy_encoder');
+        ->tag('shopwell.legacy_encoder');
 
     $services->set(LegacyPasswordVerifier::class)
         ->args([
-            tagged_iterator('shopware.legacy_encoder'),
+            tagged_iterator('shopwell.legacy_encoder'),
         ]);
 
     $services->set(AddressHashSubscriber::class)
@@ -308,7 +308,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DataValidator::class),
             service(SystemConfigService::class),
             service(RequestStack::class),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
         ]);
 
     $services->set(ResetPasswordRoute::class)
@@ -319,7 +319,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(DataValidator::class),
             service(RequestStack::class),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
             service(PasswordValidationFactory::class),
             service(ClockInterface::class),
         ]);
@@ -333,7 +333,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ClockInterface::class),
             service(SystemConfigService::class),
             service(RequestStack::class),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
         ]);
 
     $services->set(ChangeCustomerProfileRoute::class)
@@ -381,7 +381,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DataValidator::class),
             service(PasswordValidationFactory::class),
             service(RequestStack::class),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
         ]);
 
     $services->set(CustomerRoute::class)
@@ -470,7 +470,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(SalesChannelCustomerAddressDefinition::class)
-        ->tag('shopware.sales_channel.entity.definition');
+        ->tag('shopwell.sales_channel.entity.definition');
 
     $services->set(CustomerIndexer::class)
         ->args([
@@ -480,7 +480,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CustomerNewsletterSalesChannelsUpdater::class),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.entity_indexer', ['priority' => 100]);
+        ->tag('shopwell.entity_indexer', ['priority' => 100]);
 
     $services->set(ConvertGuestController::class)
         ->public()
@@ -502,10 +502,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(CustomerWishlistDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CustomerWishlistProductDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(LoadWishlistRoute::class)
         ->public()
@@ -536,7 +536,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(CustomerWishlistProductExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(MergeWishlistProductRoute::class)
         ->public()
@@ -583,7 +583,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ImitateCustomerTokenGenerator::class)
         ->args([
             env('APP_SECRET'),
-            service('shopware.jwt_config'),
+            service('shopwell.jwt_config'),
             service(DataValidator::class),
             service(ClockInterface::class),
         ]);
@@ -595,7 +595,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('console.command');
 
     $services->set(DeleteUnusedGuestCustomerTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(DeleteUnusedGuestCustomerHandler::class)
         ->args([
@@ -606,7 +606,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('messenger.message_handler');
 
     $services->set(CleanupCustomerRecoveryTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(CleanupCustomerRecoveryTaskHandler::class)
         ->args([

@@ -2,7 +2,7 @@
 title: Internal repositories
 issue: NEXT-21456
 author: Oliver Skroblin
-author_email: o.skroblin@shopware.com
+author_email: o.skroblin@shopwell.com
 ---
 # Core
 * Deprecated `MediaRepositoryDecorator`, the class will be removed with next major. If you typed hint this class, replace it with `EntityRepositoryInterface`
@@ -12,8 +12,8 @@ author_email: o.skroblin@shopware.com
 * Deprecated `MediaThumbnailRepositoryDecorator::delete` flat ids support. You have to map the ids now like other repositories
 * Deprecated `EntityRepositoryInterface`, the class will be removed with next major, type hint with `EntityRepository` instead
 * Deprecated `SalesChannelRepositoryInterface`, the class will be removed with next major, type hint with `SalesChannelRepository` instead
-* Added `\Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent::$cloned` property, to identify written events which are triggered over the clone function
-* Added `\Shopware\Core\Content\Media\DataAbstractionLayer\MediaDeletionSubscriber` to handle private media read protections and synchronize entity and filesystem deletions
+* Added `\Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent::$cloned` property, to identify written events which are triggered over the clone function
+* Added `\Shopwell\Core\Content\Media\DataAbstractionLayer\MediaDeletionSubscriber` to handle private media read protections and synchronize entity and filesystem deletions
 ___
 # Upgrade Information
 ## Removed repository decorators

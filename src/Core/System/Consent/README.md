@@ -110,5 +110,5 @@ The `revision` column stores the accepted revision only. Non-accepted states cle
 
 ## Adding a new consent
  1) Implement a `ConsentDefinition` class
- 2) Register it as a service and tag it with `shopware.consent.definition`.
- 3) If you need a new scope, implement `ConsentScope`, register it as a service, and tag it with `shopware.consent.scope`. Ensure it resolves both the identifier and actor from the `Context` or throws an appropriate `ConsentException`.
+ 2) Register it as a service and tag it with `shopwell.consent.definition`.
+ 3) If you need a new scope, implement `ConsentScope`, register it as a service, and tag it with `shopwell.consent.scope`. Ensure it resolves both the identifier and actor from the `Context` or throws an appropriate `ConsentException`.

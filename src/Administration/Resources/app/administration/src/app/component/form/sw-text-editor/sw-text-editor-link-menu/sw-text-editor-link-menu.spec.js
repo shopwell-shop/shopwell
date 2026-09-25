@@ -3,7 +3,7 @@
  */
 
 import { mount } from '@vue/test-utils';
-import { MtUrlField } from '@shopware-ag/meteor-component-library';
+import { MtUrlField } from '@shopwell-ag/meteor-component-library';
 import selectMtSelectOptionByText from 'test/_helper_/select-mt-select-by-text';
 
 const seoDomainPrefix = '124c71d524604ccbad6042edce3ac799';

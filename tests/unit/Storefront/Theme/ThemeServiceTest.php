@@ -527,7 +527,7 @@ class ThemeServiceTest extends TestCase
         $themeId = Uuid::randomHex();
         $storefrontConfig = new StorefrontPluginConfiguration('Storefront');
         $configurationCollection = new StorefrontPluginConfigurationCollection();
-        $importMap = ['imports' => ['shopware' => '/theme/shopware.js']];
+        $importMap = ['imports' => ['shopwell' => '/theme/shopwell.js']];
 
         $databaseConfigLoader = $this->createMock(DatabaseConfigLoader::class);
         $databaseConfigLoader

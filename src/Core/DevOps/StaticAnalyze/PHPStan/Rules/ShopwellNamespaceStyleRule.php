@@ -45,7 +45,7 @@ class ShopwellNamespaceStyleRule implements Rule
             return [
                 RuleErrorBuilder::message('Namespace must start with Shopwell')
                     ->line($namespaceNode->getStartLine())
-                    ->identifier('shopware.namespace')
+                    ->identifier('shopwell.namespace')
                     ->build(),
             ];
         }
@@ -58,7 +58,7 @@ class ShopwellNamespaceStyleRule implements Rule
             return [
                 RuleErrorBuilder::message('No global Command directories allowed, put your commands in the right domain directory')
                     ->line($namespaceNode->getStartLine())
-                    ->identifier('shopware.namespace')
+                    ->identifier('shopwell.namespace')
                     ->build(),
             ];
         }
@@ -67,7 +67,7 @@ class ShopwellNamespaceStyleRule implements Rule
             return [
                 RuleErrorBuilder::message('No global Exception directories allowed, put your exceptions in the right domain directory')
                     ->line($namespaceNode->getStartLine())
-                    ->identifier('shopware.namespace')
+                    ->identifier('shopwell.namespace')
                     ->build(),
             ];
         }

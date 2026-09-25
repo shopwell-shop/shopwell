@@ -1,6 +1,6 @@
 name: Acceptance test suite
 description: "Run the acceptance testsuite"
-author: "shopware AG"
+author: "Shopwell"
 branding:
   color: "blue"
   icon: "download"
@@ -76,7 +76,7 @@ inputs:
     description: "Playwright traces domain for report URLs"
   s3-bucket:
     required: false
-    default: "shopware-ci-playwright-traces"
+    default: "shopwell-ci-playwright-traces"
     description: "S3 bucket name"
   report-prefix:
     required: false
@@ -87,10 +87,10 @@ runs:
 
   using: "composite"
   steps:
-    - uses: shopware/octo-sts-action@main
+    - uses: shopwell/octo-sts-action@main
       id: create-pr-token
       with:
-        scope: shopware
+        scope: shopwell
         identity: CreatePR
       continue-on-error: true
 
@@ -109,18 +109,18 @@ runs:
         echo "REDIS_URL=redis://localhost:6379" >> $GITHUB_ENV
         echo "MAILER_DSN=smtp://localhost:1025" >> $GITHUB_ENV
         echo "MAILPIT_BASE_URL=http://localhost:8025" >> $GITHUB_ENV
-        echo "SHOPWARE_HTTP_CACHE_ENABLED=0" >> $GITHUB_ENV
-        echo "SHOPWARE_DISABLE_UPDATE_CHECK=true" >> $GITHUB_ENV
+        echo "SHOPWELL_HTTP_CACHE_ENABLED=0" >> $GITHUB_ENV
+        echo "SHOPWELL_DISABLE_UPDATE_CHECK=true" >> $GITHUB_ENV
         echo "BLUE_GREEN_DEPLOYMENT=1" >> $GITHUB_ENV
         echo "ENABLE_SERVICES=0" >> $GITHUB_ENV
 
-    - name: Setup Shopware
-      uses: shopware/setup-shopware@main
+    - name: Setup Shopwell
+      uses: shopwell/setup-shopwell@main
       with:
         mysql-version: "builtin"
         npm-version: 11.8.0
-        shopware-version: ${{ github.ref }}
-        shopware-repository: ${{ github.repository }}
+        shopwell-version: ${{ github.ref }}
+        shopwell-repository: ${{ github.repository }}
         install: ${{ inputs.install }}
         install-admin: true
         install-storefront: true
@@ -168,12 +168,12 @@ runs:
 
     - name: Install dependencies
       # Reuses the ~/.npm tarballs cached above (offline) and retries transient registry resets.
-      uses: shopware/github-actions/npm-ci-retry@main
+      uses: shopwell/github-actions/npm-ci-retry@main
       with:
         working-directory: ${{ inputs.directory }}
 
     - name: Install Playwright Browsers
-      uses: shopware/github-actions/npm-ci-retry@main
+      uses: shopwell/github-actions/npm-ci-retry@main
       with:
         working-directory: ${{ inputs.directory }}
         # A stalled apt mirror hangs without failing, so the retry loop never fires; time each attempt out so it can retry (normal runtime is ~2 minutes).
@@ -205,7 +205,7 @@ runs:
 
     - name: Check if this run should attempt AWS operations
       id: check-aws-allowed
-      if: ${{ github.repository_owner == 'shopware' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+      if: ${{ github.repository_owner == 'shopwell' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
       shell: bash
       run: |
         if [ -z "${{ inputs.playwright-role-arn }}" ]; then

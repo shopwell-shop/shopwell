@@ -11,8 +11,8 @@ configuration of the current theme without the inheritances.
 ___
 # Storefront
 * Added `configInheritance` property to `src/Storefront/Theme/StorefrontPluginConfiguration/StorefrontPluginConfiguration.php`
-* Changed `\Shopware\Storefront\Theme\ThemeLifecycleService::refreshTheme` to add the parentId to a new activated theme 
+* Changed `\Shopwell\Storefront\Theme\ThemeLifecycleService::refreshTheme` to add the parentId to a new activated theme 
 if the `configInheritance` configuration is set in the `theme.json`.
-* Changed `\Shopware\Storefront\Theme\ThemeService::getThemeConfiguration` by adding two new keys to the return array
+* Changed `\Shopwell\Storefront\Theme\ThemeService::getThemeConfiguration` by adding two new keys to the return array
   * `currentFields` holding only the values configured in the current theme. Not configured fields are set to null.
   * `baseThemeFields` holding only the values configured in parent themes. Not configured fields are set to null.

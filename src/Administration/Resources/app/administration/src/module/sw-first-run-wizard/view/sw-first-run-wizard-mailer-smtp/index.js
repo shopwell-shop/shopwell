@@ -32,7 +32,7 @@ export default {
     computed: {
         nextAction() {
             if (Shopwell.Store.get('context').app.config.settings.disableExtensionManagement) {
-                return 'sw.first.run.wizard.index.shopware.account';
+                return 'sw.first.run.wizard.index.shopwell.account';
             }
 
             return 'sw.first.run.wizard.index.paypal.info';

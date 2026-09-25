@@ -1,6 +1,6 @@
 ---
 title: New config to toggle salutation field on registration
-issue: https://github.com/shopware/shopware/issues/7480
+issue: https://github.com/shopwell-shop/shopwell/issues/7480
 author_github: @En0Ma1259
 ---
 # Core

@@ -3,8 +3,8 @@ title: Fix async webhook dispatching for app lifecycle events
 issue: NEXT-20885
 ---
 # Core
-* Changed `\Shopware\Core\Framework\Webhook\Handler\WebhookEventMessageHandler` to not fail if webhook entity for the received message was deleted in the meantime.
-* Changed `\Shopware\Core\Framework\Webhook\WebhookDispatcher` to always dispatch AppLifecycleEvents synchronously and to add unique `eventId` identifier to each webhook.
+* Changed `\Shopwell\Core\Framework\Webhook\Handler\WebhookEventMessageHandler` to not fail if webhook entity for the received message was deleted in the meantime.
+* Changed `\Shopwell\Core\Framework\Webhook\WebhookDispatcher` to always dispatch AppLifecycleEvents synchronously and to add unique `eventId` identifier to each webhook.
 ___
 # Upgrade Information
 ## Webhooks contain unique event identifier

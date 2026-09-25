@@ -3,7 +3,7 @@ title: Fix MessengerMiddlewareCompilerPass
 issue: #6911
 ---
 # Core
-* Changed `\Shopware\Core\Framework\DependencyInjection\CompilerPass\MessengerMiddlewareCompilerPass` to handle cases when middlewares are not defined yet
+* Changed `\Shopwell\Core\Framework\DependencyInjection\CompilerPass\MessengerMiddlewareCompilerPass` to handle cases when middlewares are not defined yet
 ___
 # Upgrade Information
 ## Fix `MessengerMiddlewareCompilerPass` middleware assertion

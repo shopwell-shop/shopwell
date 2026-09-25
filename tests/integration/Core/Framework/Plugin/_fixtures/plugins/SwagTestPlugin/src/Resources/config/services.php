@@ -18,7 +18,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('kernel.event_subscriber');
 
     $services->set(SwagTestTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(SwagTestTaskHandler::class)
         ->args([

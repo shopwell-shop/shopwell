@@ -7,7 +7,7 @@ import {
     routes,
     selectMtSelectOptionByText,
     setupListingHooks,
-    shopwareService,
+    shopwellService,
 } from './sw-extension-my-extensions-listing.fixtures';
 
 describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () => {
@@ -22,7 +22,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
     });
 
     it('should show the empty state with a store button when no extensions are installed', async () => {
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([]);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([]);
         const wrapper = await createWrapper();
 
         const emptyState = wrapper.find('.sw-extension-my-extensions-listing__empty-state');
@@ -37,7 +37,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
     });
 
     it('should show the empty state without a store button when the active filter matches no extensions', async () => {
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([
             {
                 name: 'Test',
                 installedAt: 'foo',
@@ -84,7 +84,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
         wrapper.vm.updateList();
 
-        expect(shopwareService.updateExtensionData).toHaveBeenCalled();
+        expect(shopwellService.updateExtensionData).toHaveBeenCalled();
     });
 
     it('extensionList default has a app', async () => {
@@ -112,7 +112,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
         await wrapper.vm.$router.push(routes[1]);
 
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([
             {
                 name: 'Test',
                 installedAt: 'some date',
@@ -163,7 +163,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             updatedAt: null,
         }));
 
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions(extensions);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions(extensions);
 
         await wrapper.vm.$nextTick();
 
@@ -184,7 +184,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
                 };
             });
 
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions(extensions);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions(extensions);
 
         await wrapper.vm.$nextTick();
 
@@ -223,7 +223,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
                 };
             });
 
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions(extensions);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions(extensions);
 
         await wrapper.vm.$nextTick();
 
@@ -275,7 +275,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
                 };
             });
 
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([...activeExtensions, ...inactiveExtensions]);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([...activeExtensions, ...inactiveExtensions]);
 
         await wrapper.vm.$nextTick();
 
@@ -303,7 +303,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             };
         });
 
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions(extensions);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions(extensions);
 
         await wrapper.vm.$nextTick();
 
@@ -336,7 +336,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             };
         });
 
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions(extensions);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions(extensions);
 
         await selectMtSelectOptionByText(
             wrapper,
@@ -369,7 +369,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             };
         });
 
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions(extensions);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions(extensions);
 
         await wrapper.vm.$nextTick();
 

@@ -2,7 +2,7 @@
 title: Add browser compatibility warning for unsupported media formats
 issue: 13044
 author: Dumea Alexandru
-author_email: a.dumea@shopware.com
+author_email: a.dumea@shopwell.com
 author_github: @Dumea Alexandru
 ---
 # Administration

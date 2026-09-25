@@ -17,8 +17,8 @@ class IncrementerGatewayCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        $services = $container->getParameter('shopware.increment');
-        $tag = 'shopware.increment.gateway';
+        $services = $container->getParameter('shopwell.increment');
+        $tag = 'shopwell.increment.gateway';
 
         foreach ($services as $pool => $service) {
             $type = $service['type'];
@@ -27,7 +27,7 @@ class IncrementerGatewayCompilerPass implements CompilerPassInterface
                 throw IncrementException::wrongGatewayType($pool);
             }
 
-            $active = \sprintf('shopware.increment.%s.gateway.%s', $pool, $type);
+            $active = \sprintf('shopwell.increment.%s.gateway.%s', $pool, $type);
             $config = [];
 
             // If service is not registered directly in the container, try to resolve them using fallback gateway
@@ -65,10 +65,10 @@ class IncrementerGatewayCompilerPass implements CompilerPassInterface
      */
     private function resolveTypeDefinition(ContainerBuilder $container, string $pool, string $type, array $config = []): string
     {
-        // shopware.increment.gateway.mysql is fallback gateway if custom gateway is not set
-        $fallback = \sprintf('shopware.increment.gateway.%s', $type);
+        // shopwell.increment.gateway.mysql is fallback gateway if custom gateway is not set
+        $fallback = \sprintf('shopwell.increment.gateway.%s', $type);
 
-        $gatewayServiceName = \sprintf('shopware.increment.%s.gateway.%s', $pool, $type);
+        $gatewayServiceName = \sprintf('shopwell.increment.%s.gateway.%s', $pool, $type);
 
         switch ($type) {
             case 'array':
@@ -91,7 +91,7 @@ class IncrementerGatewayCompilerPass implements CompilerPassInterface
                     return $gatewayServiceName;
                 }
 
-                $adapterServiceName = \sprintf('shopware.increment.%s.redis_adapter', $pool);
+                $adapterServiceName = \sprintf('shopwell.increment.%s.redis_adapter', $pool);
 
                 $container->setDefinition($adapterServiceName, $connectionDefinition);
 

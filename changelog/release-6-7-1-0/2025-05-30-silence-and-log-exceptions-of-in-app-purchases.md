@@ -1,7 +1,7 @@
 ---
 title: Silence and log exceptions of In-App purchases
 author: Michel Bade
-author_email: m.bade@shopware.com
+author_email: m.bade@shopwell.com
 author_github: @cyl3x
 ---
 # Core

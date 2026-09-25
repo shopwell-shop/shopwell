@@ -50,7 +50,7 @@ class UserRecoveryServiceTest extends TestCase
         Request::setTrustedHosts([]);
         $this->setEnvVars([
             'APP_URL' => 'https://shop.example.com',
-            'SHOPWARE_ADMINISTRATION_PATH_NAME' => null,
+            'SHOPWELL_ADMINISTRATION_PATH_NAME' => null,
         ]);
     }
 
@@ -354,7 +354,7 @@ class UserRecoveryServiceTest extends TestCase
     {
         $this->setEnvVars([
             'APP_URL' => 'https://shop.example.com/',
-            'SHOPWARE_ADMINISTRATION_PATH_NAME' => '/backoffice/',
+            'SHOPWELL_ADMINISTRATION_PATH_NAME' => '/backoffice/',
         ]);
 
         static::assertSame(

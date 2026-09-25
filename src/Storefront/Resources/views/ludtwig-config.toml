@@ -42,7 +42,7 @@ active-rules = [
     "twig-string-quotation",
     "html-string-quotation",
     "twig-hash-key-no-quotes",
-    "twig-prefer-shopware-extends",
+    "twig-prefer-shopwell-extends",
     "twig-block-duplicate",
     "twig-json-encode-escape-js",
     "html-duplicate-id",
@@ -50,7 +50,7 @@ active-rules = [
     "twig-valid-filter",
     "twig-valid-test",
     "twig-valid-function",
-# maybe activate in the future? these are okay because shopware extends the twig syntax
+# maybe activate in the future? these are okay because shopwell extends the twig syntax
 #    "twig-use-is-same-as",
 #    "twig-use-is-not-same-as",
 ]

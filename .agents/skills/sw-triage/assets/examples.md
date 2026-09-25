@@ -58,7 +58,7 @@ The interactive Markdown layout is fully specified by the template in SKILL.md "
   "reasoning": "Body says only 'shop is broken pls fix'. No version, area, actual/expected, or repro. Cannot describe defect. Domain + component labels are placeholders (rubric requires a component/* pair for framework); severity defaults low. No shell tools run.",
   "evidence_quotes": ["[issue] shop is broken pls fix"],
   "duplicate_of": null,
-  "missing_template_fields": ["shopware_version", "affected_area", "actual_behaviour", "expected_behaviour", "reproduction_steps"],
+  "missing_template_fields": ["shopwell_version", "affected_area", "actual_behaviour", "expected_behaviour", "reproduction_steps"],
   "affected_paths": [],
   "related_issues": [],
   "related_prs": [],
@@ -98,7 +98,7 @@ The interactive Markdown layout is fully specified by the template in SKILL.md "
   "severity": "low",
   "suggested_labels": ["domain/framework", "component/core"],
   "confidence": 0.82,
-  "reasoning": "Reporter: 'plugin XYZ doesn't work after install'. rg confirms plugin XYZ is third-party (not in src/). Behaviour matches the plugin's documented `shopware.yaml` config requirement. Not a core defect.",
+  "reasoning": "Reporter: 'plugin XYZ doesn't work after install'. rg confirms plugin XYZ is third-party (not in src/). Behaviour matches the plugin's documented `shopwell.yaml` config requirement. Not a core defect.",
   "evidence_quotes": [
     "[issue] plugin XYZ doesn't work after install",
     "[shell] rg --files src/ -g 'XYZ*' returned no matches"

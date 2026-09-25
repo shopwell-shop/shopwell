@@ -15,9 +15,9 @@ Therefore, we created a profiler integration, where we provide tools like Tidewa
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\Profiling;
+namespace Shopwell\Core\Profiling;
 
-use Shopware\Core\Profiling\Integration\ProfilerInterface;
+use Shopwell\Core\Profiling\Integration\ProfilerInterface;
 
 /**
  * @internal experimental atm
@@ -25,7 +25,7 @@ use Shopware\Core\Profiling\Integration\ProfilerInterface;
 class Profiler
 {
     /**
-     * Profilers will be activated over the shopware.yaml file
+     * Profilers will be activated over the shopwell.yaml file
      *
      * All enabled profilers will be added here
      *
@@ -53,7 +53,7 @@ class Profiler
     /**
      * @return mixed
      */
-    public static function trace(string $name, \Closure $closure, string $category = 'shopware', array $tags = [])
+    public static function trace(string $name, \Closure $closure, string $category = 'shopwell', array $tags = [])
     {
         $pointer = static function () use ($closure) {
             return $closure();
@@ -78,10 +78,10 @@ The corresponding calls of this profiler can be found everywhere in the applicat
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\Checkout\Cart;
+namespace Shopwell\Core\Checkout\Cart;
 
-use Shopware\Core\Profiling\Profiler;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Profiling\Profiler;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 
 class CartCalculator
 {
@@ -112,7 +112,7 @@ These spans are then displayed in the timeline of the corresponding profilers:
 
 Which profiler should be used in the system can be configured via `config/packages/*.yaml`:
 ```yaml
-shopware:
+shopwell:
     profiler:
         integrations: ['Symfony', 'Tideways', 'Datadog']
 ```

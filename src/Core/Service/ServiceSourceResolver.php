@@ -96,7 +96,7 @@ class ServiceSourceResolver implements Source
             }
         } catch (\Exception $e) {
             $this->io->remove($destination); // corrupted download, remove partially written data
-            throw AppException::cannotMountAppFilesystem( // @phpstan-ignore shopware.domainException
+            throw AppException::cannotMountAppFilesystem( // @phpstan-ignore shopwell.domainException
                 $serviceName,
                 ServiceException::cannotWriteAppToDestination($destination, $e)
             );
@@ -109,7 +109,7 @@ class ServiceSourceResolver implements Source
                 $serviceName,
             );
         } catch (PluginException|AppArchiveValidationFailure $e) {
-            throw AppException::cannotMountAppFilesystem($serviceName, $e); // @phpstan-ignore shopware.domainException
+            throw AppException::cannotMountAppFilesystem($serviceName, $e); // @phpstan-ignore shopwell.domainException
         } finally {
             $this->io->remove($localZipLocation);
         }

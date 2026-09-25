@@ -4,22 +4,22 @@ issue: NEXT-39353
 ---
 # Core
 * Changed composer dependency version of `doctrine/dbal` from `^3.9` to `^4.2`
-* Removed method `Shopware\Core\Migration\Test\NullConnection::executeUpdate`
-* Removed method `Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException::databasePlatformInvalid`
-* Changed `Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\LastIdQuery::__construct` and `Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\OffsetQuery::__construct` to accept `Shopware\Core\Framework\DataAbstractionLayer\Dbal\QueryBuilder` instead of `Doctrine\DBAL\Query\QueryBuilder`
-* Changed `Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IterableQuery::getQuery` to return `Shopware\Core\Framework\DataAbstractionLayer\Dbal\QueryBuilder` instead of `Doctrine\DBAL\Query\QueryBuilder`
-* Changed `Shopware\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery::execute` return type to int|string
-* Changed `Shopware\Core\Framework\DataAbstractionLayer\Dbal\ExceptionHandlerInterface::matchException` parameter and return type to `\Throwable` instead of `\Exception`. All relevant implementations have been updated.
-* Changed `Shopware\Core\Framework\DataAbstractionLayer\Search\Parser\ParseResult::addParameter` to accept `Doctrine\DBAL\ParameterType|\Doctrine|Dbal\ArrayParameterType` as `$type` and use `ParameterType::STRING` as default value
-* Changed `Shopware\Core\Framework\DataAbstractionLayer\Doctrine\MultiInsertQueryQueue` to accept `Doctrine\DBAL\ParameterType` as parameter type and to use prepared statements under the hood
-* Added `Shopware\Core\Framework\DataAbstractionLayer\Util\StatementHelper` to simplify binding multiple parameters to a statement
+* Removed method `Shopwell\Core\Migration\Test\NullConnection::executeUpdate`
+* Removed method `Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException::databasePlatformInvalid`
+* Changed `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\LastIdQuery::__construct` and `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\OffsetQuery::__construct` to accept `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\QueryBuilder` instead of `Doctrine\DBAL\Query\QueryBuilder`
+* Changed `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IterableQuery::getQuery` to return `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\QueryBuilder` instead of `Doctrine\DBAL\Query\QueryBuilder`
+* Changed `Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery::execute` return type to int|string
+* Changed `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\ExceptionHandlerInterface::matchException` parameter and return type to `\Throwable` instead of `\Exception`. All relevant implementations have been updated.
+* Changed `Shopwell\Core\Framework\DataAbstractionLayer\Search\Parser\ParseResult::addParameter` to accept `Doctrine\DBAL\ParameterType|\Doctrine|Dbal\ArrayParameterType` as `$type` and use `ParameterType::STRING` as default value
+* Changed `Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\MultiInsertQueryQueue` to accept `Doctrine\DBAL\ParameterType` as parameter type and to use prepared statements under the hood
+* Added `Shopwell\Core\Framework\DataAbstractionLayer\Util\StatementHelper` to simplify binding multiple parameters to a statement
 
 ___
 # Upgrade Information
 
 ## ExceptionHandlerInterface signature changes
 
-The parameter and return type of `Shopware\Core\Framework\DataAbstractionLayer\Dbal\ExceptionHandlerInterface::matchException` have been changed from `\Exception` to `\Throwable`. Return type can be kept as before, but the parameter type must be changed from
+The parameter and return type of `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\ExceptionHandlerInterface::matchException` have been changed from `\Exception` to `\Throwable`. Return type can be kept as before, but the parameter type must be changed from
 ```php
 class MyExceptionHandler implements ExceptionHandlerInterface
 {
@@ -43,25 +43,25 @@ As changes to the interface are breaking, all implementations of `ExceptionHandl
 <details>
  <summary>List of updated implementations</summary>
 
- * `Shopware\Core\System\Language\LanguageExceptionHandler`
- * `Shopware\Core\System\SalesChannel\SalesChannelExceptionHandler`
- * `Shopware\Core\Content\Product\DataAbstractionLayer\ProductExceptionHandler`
- * `Shopware\Core\Content\Product\SalesChannel\Sorting\ProductSortingExceptionHandler`
- * `Shopware\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingExceptionHandler`
- * `Shopware\Core\Content\Product\Aggregate\ProductSearchConfig\ProductSearchConfigExceptionHandler`
- * `Shopware\Core\Content\Product\Aggregate\ProductSearchConfigField\ProductSearchConfigFieldExceptionHandler`
- * `Shopware\Core\Content\ProductExport\DataAbstractionLayer\ProductExportExceptionHandler`
- * `Shopware\Core\Content\Category\DataAbstractionLayer\CategoryNonExistentExceptionHandler`
- * `Shopware\Core\Content\Newsletter\NewsletterExceptionHandler`
- * `Shopware\Core\Framework\DataAbstractionLayer\TechnicalNameExceptionHandler`
- * `Shopware\Core\Checkout\Customer\DataAbstractionLayer\CustomerWishlistProductExceptionHandler`
- * `Shopware\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethodPriceExceptionHandler`
- * `Shopware\Core\Checkout\Order\OrderExceptionHandler`
+ * `Shopwell\Core\System\Language\LanguageExceptionHandler`
+ * `Shopwell\Core\System\SalesChannel\SalesChannelExceptionHandler`
+ * `Shopwell\Core\Content\Product\DataAbstractionLayer\ProductExceptionHandler`
+ * `Shopwell\Core\Content\Product\SalesChannel\Sorting\ProductSortingExceptionHandler`
+ * `Shopwell\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingExceptionHandler`
+ * `Shopwell\Core\Content\Product\Aggregate\ProductSearchConfig\ProductSearchConfigExceptionHandler`
+ * `Shopwell\Core\Content\Product\Aggregate\ProductSearchConfigField\ProductSearchConfigFieldExceptionHandler`
+ * `Shopwell\Core\Content\ProductExport\DataAbstractionLayer\ProductExportExceptionHandler`
+ * `Shopwell\Core\Content\Category\DataAbstractionLayer\CategoryNonExistentExceptionHandler`
+ * `Shopwell\Core\Content\Newsletter\NewsletterExceptionHandler`
+ * `Shopwell\Core\Framework\DataAbstractionLayer\TechnicalNameExceptionHandler`
+ * `Shopwell\Core\Checkout\Customer\DataAbstractionLayer\CustomerWishlistProductExceptionHandler`
+ * `Shopwell\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethodPriceExceptionHandler`
+ * `Shopwell\Core\Checkout\Order\OrderExceptionHandler`
 </details>
 If you extended any of these implementations, you need to update your code as well.
 
 ## QueryBuilder changes
-As `Shopware\Core\Framework\DataAbstractionLayer\Dbal\QueryBuilder` extends `Doctrine\DBAL\Query\QueryBuilder`, changes to the parent class might affect your code.
+As `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\QueryBuilder` extends `Doctrine\DBAL\Query\QueryBuilder`, changes to the parent class might affect your code.
 You might check next sections for changes to the parent class:
 
  * [Removed methods and constants](https://github.com/doctrine/dbal/blob/4.2.x/UPGRADE.md#bc-break-removed-querybuilder-methods-and-contstants)
@@ -73,7 +73,7 @@ You might check next sections for changes to the parent class:
  * [Removed support for using null as a parameter type](https://github.com/doctrine/dbal/blob/4.2.x/UPGRADE.md#bc-break-removed-support-for-using-null-as-prepared-statement-parameter-type)
  * [Marked ::execute() method private](https://github.com/doctrine/dbal/blob/4.2.x/UPGRADE.md#bc-break-statementexecute-marked-private)
 
-To simplify binding multiple parameters to a statement, we added `Shopware\Core\Framework\DataAbstractionLayer\Util\StatementHelper`. You can use it like this:
+To simplify binding multiple parameters to a statement, we added `Shopwell\Core\Framework\DataAbstractionLayer\Util\StatementHelper`. You can use it like this:
 ```php
 
 $statement = $connection->prepare('SELECT * FROM product WHERE column1 = :param1 AND column2 = :param2');

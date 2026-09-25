@@ -39,7 +39,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(CustomEntityDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CustomEntityNameValidator::class);
 

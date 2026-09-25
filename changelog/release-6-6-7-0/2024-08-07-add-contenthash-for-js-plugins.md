@@ -2,7 +2,7 @@
 title: Add chunkhash for async JS built files
 issue: NEXT-37279
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: BrocksiNet
 ---
 # Storefront

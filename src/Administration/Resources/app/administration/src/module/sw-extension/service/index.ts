@@ -2,7 +2,7 @@ import type { SubContainer } from 'src/global.types';
 
 import type { App } from 'vue';
 import ExtensionStoreActionService from './extension-store-action.service';
-import ShopwellExtensionService from './shopware-extension.service';
+import ShopwellExtensionService from './shopwell-extension.service';
 import ExtensionErrorService from './extension-error.service';
 
 const { Application } = Shopwell;
@@ -13,7 +13,7 @@ const { Application } = Shopwell;
 declare global {
     interface ServiceContainer extends SubContainer<'service'> {
         extensionStoreActionService: ExtensionStoreActionService;
-        shopwareExtensionService: ShopwellExtensionService;
+        shopwellExtensionService: ShopwellExtensionService;
         extensionErrorService: ExtensionErrorService;
     }
 }
@@ -25,11 +25,11 @@ Application.addServiceProvider('extensionStoreActionService', () => {
     );
 });
 
-Application.addServiceProvider('shopwareExtensionService', () => {
+Application.addServiceProvider('shopwellExtensionService', () => {
     return new ShopwellExtensionService(
         Shopwell.Service('appModulesService'),
         Shopwell.Service('extensionStoreActionService'),
-        Shopwell.Service('shopwareDiscountCampaignService'),
+        Shopwell.Service('shopwellDiscountCampaignService'),
         Shopwell.Service('storeService'),
     );
 });

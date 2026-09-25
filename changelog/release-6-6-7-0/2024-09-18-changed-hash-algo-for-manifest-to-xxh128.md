@@ -8,4 +8,4 @@ author_github: tinect
 
 # Core
 
-* Changed hash algo for bundle manifest used for external storage in \Shopware\Core\Framework\Plugin\Util\AssetService from sha256 to xxh128
+* Changed hash algo for bundle manifest used for external storage in \Shopwell\Core\Framework\Plugin\Util\AssetService from sha256 to xxh128

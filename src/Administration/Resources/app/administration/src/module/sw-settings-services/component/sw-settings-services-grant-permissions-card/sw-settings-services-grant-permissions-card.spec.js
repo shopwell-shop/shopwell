@@ -1,17 +1,17 @@
 import { mount } from '@vue/test-utils';
 import SwSettingsServicesGrantPermissionsCard from './index';
-import { useShopwellServicesStore } from '../../store/shopware-services.store';
+import { useShopwellServicesStore } from '../../store/shopwell-services.store';
 import * as permissionsComposable from '../../composables/permissions';
 
 jest.mock('../../composables/permissions', () => {
-    const useShopwellServicesStore = require('../../store/shopware-services.store').useShopwellServicesStore;
+    const useShopwellServicesStore = require('../../store/shopwell-services.store').useShopwellServicesStore;
     const _reloadPageMock = jest.fn();
     return {
         async grantPermissions() {
             const store = useShopwellServicesStore();
             const revision = store.currentRevision?.revision;
             if (!revision) throw new Error('No revision available');
-            await Shopwell.Service('shopwareServicesService').acceptRevision(revision);
+            await Shopwell.Service('shopwellServicesService').acceptRevision(revision);
             _reloadPageMock();
         },
         revokePermissions: jest.fn(),
@@ -21,7 +21,7 @@ jest.mock('../../composables/permissions', () => {
 
 describe('src/module/sw-settings-services/component/sw-settings-services-permissions-card', () => {
     beforeAll(() => {
-        Shopwell.Service().register('shopwareServicesService', () => ({
+        Shopwell.Service().register('shopwellServicesService', () => ({
             acceptRevision: jest.fn(() => ({
                 disabled: false,
                 permissionsConsent: {
@@ -37,12 +37,12 @@ describe('src/module/sw-settings-services/component/sw-settings-services-permiss
     it('has a linkt to docs page', async () => {
         const permissionsCard = await mount(SwSettingsServicesGrantPermissionsCard, {
             props: {
-                docsLink: 'https://docs.shopwell.cn/en/shopware-6-en/shopware-services',
+                docsLink: 'https://docs.shopwell.cn/en/shopwell-6-en/shopwell-services',
             },
         });
 
         expect(permissionsCard.get('a').attributes('href')).toBe(
-            'https://docs.shopwell.cn/en/shopware-6-en/shopware-services',
+            'https://docs.shopwell.cn/en/shopwell-6-en/shopwell-services',
         );
     });
 
@@ -50,8 +50,8 @@ describe('src/module/sw-settings-services/component/sw-settings-services-permiss
         const notificationStore = Shopwell.Store.get('notification');
         const notificationSpy = jest.spyOn(notificationStore, 'createNotification');
 
-        const shopwareServicesStore = useShopwellServicesStore();
-        shopwareServicesStore.revisions = {
+        const shopwellServicesStore = useShopwellServicesStore();
+        shopwellServicesStore.revisions = {
             'latest-revision': '2025-06-25',
             'available-revisions': [
                 {
@@ -63,7 +63,7 @@ describe('src/module/sw-settings-services/component/sw-settings-services-permiss
 
         const permissionsCard = await mount(SwSettingsServicesGrantPermissionsCard, {
             props: {
-                docsLink: 'https://docs.shopwell.cn/en/shopware-6-en/shopware-services',
+                docsLink: 'https://docs.shopwell.cn/en/shopwell-6-en/shopwell-services',
             },
         });
 
@@ -71,7 +71,7 @@ describe('src/module/sw-settings-services/component/sw-settings-services-permiss
         await flushPromises();
 
         expect(notificationSpy).not.toHaveBeenCalled();
-        expect(Shopwell.Service('shopwareServicesService').acceptRevision).toHaveBeenCalledWith('2025-06-25');
+        expect(Shopwell.Service('shopwellServicesService').acceptRevision).toHaveBeenCalledWith('2025-06-25');
         expect(permissionsComposable._reloadPage).toHaveBeenCalled();
     });
 
@@ -79,12 +79,12 @@ describe('src/module/sw-settings-services/component/sw-settings-services-permiss
         const notificationStore = Shopwell.Store.get('notification');
         const notificationSpy = jest.spyOn(notificationStore, 'createNotification');
 
-        const shopwareServicesStore = useShopwellServicesStore();
-        shopwareServicesStore.revisions = null;
+        const shopwellServicesStore = useShopwellServicesStore();
+        shopwellServicesStore.revisions = null;
 
         const permissionsCard = await mount(SwSettingsServicesGrantPermissionsCard, {
             props: {
-                docsLink: 'https://docs.shopwell.cn/en/shopware-6-en/shopware-services',
+                docsLink: 'https://docs.shopwell.cn/en/shopwell-6-en/shopwell-services',
             },
         });
 

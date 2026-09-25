@@ -7,8 +7,8 @@
         <label lang="de-DE">Swag Integrationstest Dokument Garantie-App</label>
         <description>Fixture app registering the swag_warranty app-provided document type for integration tests</description>
         <description lang="de-DE">Fixture-App, die den App-Dokumententyp swag_warranty für Integrationstests registriert</description>
-        <author>shopware AG</author>
-        <copyright>(c) by shopware AG</copyright>
+        <author>Shopwell</author>
+        <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>
         <license>MIT</license>
     </meta>

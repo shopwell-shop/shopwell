@@ -33,7 +33,7 @@ class TranslationConfigLoaderTest extends TestCase
         $config = $this->translationConfigLoader->load();
 
         static::assertSame(
-            'https://raw.githubusercontent.com/shopware/translations/main/translations',
+            'https://raw.githubusercontent.com/shopwell/translations/main/translations',
             $config->repositoryUrl->__toString()
         );
 
@@ -227,7 +227,7 @@ class TranslationConfigLoaderTest extends TestCase
         $config = $loader->load();
 
         static::assertSame(
-            'https://raw.githubusercontent.com/shopware/translations/main/translations',
+            'https://raw.githubusercontent.com/shopwell/translations/main/translations',
             $config->repositoryUrl->__toString()
         );
         static::assertSame(['it-IT'], $config->excludedLocales);

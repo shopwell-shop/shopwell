@@ -18,7 +18,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * @internal
  */
 #[Package('framework')]
-#[AsCommand(name: 'system:check', description: 'Check the shopware application system health')]
+#[AsCommand(name: 'system:check', description: 'Check the shopwell application system health')]
 class SystemCheckCommand extends Command
 {
     private const OUTPUT_FORMATS = ['table', 'json'];

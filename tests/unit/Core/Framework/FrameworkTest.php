@@ -89,8 +89,8 @@ class FrameworkTest extends TestCase
         $container->set(DefinitionInstanceRegistry::class, static::createStub(DefinitionInstanceRegistry::class));
         $container->set(SalesChannelDefinitionInstanceRegistry::class, static::createStub(SalesChannelDefinitionInstanceRegistry::class));
         $container->setParameter('kernel.cache_dir', '/tmp');
-        $container->setParameter('shopware.cache.compress', $compress);
-        $container->setParameter('shopware.cache.compression_method', $compressMethod);
+        $container->setParameter('shopwell.cache.compress', $compress);
+        $container->setParameter('shopwell.cache.compression_method', $compressMethod);
         $container->setParameter('kernel.debug', $debug);
         $container->setParameter('kernel.environment', 'test');
         $container->compile();

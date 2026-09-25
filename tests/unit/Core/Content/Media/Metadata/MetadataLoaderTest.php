@@ -182,7 +182,7 @@ class MetadataLoaderTest extends TestCase
      */
     public static function realFileDataProvider(): iterable
     {
-        $filePath = __DIR__ . '/../fixtures/shopware.jpg';
+        $filePath = __DIR__ . '/../fixtures/shopwell.jpg';
         yield 'jpg' => [
             $filePath,
             [
@@ -204,7 +204,7 @@ class MetadataLoaderTest extends TestCase
             ],
         ];
 
-        $filePath = __DIR__ . '/../fixtures/shopware-logo.png';
+        $filePath = __DIR__ . '/../fixtures/shopwell-logo.png';
         yield 'png' => [
             $filePath,
             [

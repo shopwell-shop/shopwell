@@ -20,16 +20,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(TaxDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(TaxRuleDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(TaxRuleTypeDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(TaxRuleTypeTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(EntireCountryRuleTypeFilter::class)
         ->tag('tax.rule_type_filter');
@@ -47,5 +47,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.sync.fk_resolver');
+        ->tag('shopwell.sync.fk_resolver');
 };

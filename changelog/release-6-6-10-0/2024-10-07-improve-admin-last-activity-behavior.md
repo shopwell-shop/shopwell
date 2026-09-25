@@ -7,7 +7,7 @@ author_github: akf-bw
 ---
 # Administration
 * Added `refreshTokenTtl` parameter to the construct of `AdministrationController`
-* Changed `services.xml` to include the `%shopware.api.refresh_token_ttl%` parameter
+* Changed `services.xml` to include the `%shopwell.api.refresh_token_ttl%` parameter
 * Changed `app/state/context.store.ts` to include `refreshTokenTtl` in the api context
 * Changed `views/administration/index.html.twig` to include `refreshTokenTtl` in the api context
 * Added `getLastUserActivity` in `service/user-activity.service.ts` to get the last user activity date

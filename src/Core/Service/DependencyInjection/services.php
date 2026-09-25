@@ -92,13 +92,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(RegistryUrlProcessor::class)
         ->args([
             ServiceExtension::DEFAULT_REGISTRY_URL,
-            param('shopware.service_registry.trusted_domains'),
+            param('shopwell.service_registry.trusted_domains'),
         ])
         ->tag('container.env_var_processor');
 
     $services->set(Client::class)
         ->args([
-            param('shopware.service_registry.url'),
+            param('shopwell.service_registry.url'),
             env('APP_URL'),
             service('service_registry.http_client'),
         ])
@@ -139,7 +139,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(HttpClientInterface::class),
             service(Client::class),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
         ]);
 
     $services->set(AllServiceInstaller::class)
@@ -153,7 +153,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(InstallServicesTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(InstallServicesTaskHandler::class)
         ->args([
@@ -217,11 +217,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('kernel.event_subscriber');
 
     $services->set(ServiceHookableEventDescriber::class)
-        ->tag('shopware.hookable_event.describer');
+        ->tag('shopwell.hookable_event.describer');
 
     $services->set(ServiceWebhookPolicy::class)
         ->args([service(ActiveAppsLoader::class)])
-        ->tag('shopware.webhook.policy');
+        ->tag('shopwell.webhook.policy');
 
     $services->set(PermissionsService::class)
         ->args([
@@ -235,23 +235,23 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(PermissionsService::class),
         ])
-        ->tag('shopware.service.requirement');
+        ->tag('shopwell.service.requirement');
 
     $services->set(ServicesEnabledRequirement::class)
         ->args([
             service(SystemConfigService::class),
         ])
-        ->tag('shopware.service.requirement');
+        ->tag('shopwell.service.requirement');
 
     $services->set(ShopwellAccountRequirement::class)
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.service.requirement');
+        ->tag('shopwell.service.requirement');
 
     $services->set(RequirementsValidator::class)
         ->args([
-            tagged_iterator('shopware.service.requirement', null, 'getName'),
+            tagged_iterator('shopwell.service.requirement', null, 'getName'),
         ]);
 
     $services->set(LifecycleManager::class)

@@ -6,4 +6,4 @@ author_email: code@joshua-behrens.de
 author_github: @JoshuaBehrens
 ---
 # Core
-* Added criteria filter in `\Shopware\Core\Checkout\Cart\RuleLoader::load` to only load valid rules from the database 
+* Added criteria filter in `\Shopwell\Core\Checkout\Cart\RuleLoader::load` to only load valid rules from the database 

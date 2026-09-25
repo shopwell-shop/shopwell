@@ -18,7 +18,7 @@ function returns all privileges from the other module dynamically. You can
 use it directly in the privileges:
 
 ```js
-Shopware.Service('privileges')
+Shopwell.Service('privileges')
     .addPrivilegeMappingEntry({
         category: 'permissions',
         parent: null,
@@ -31,7 +31,7 @@ Shopware.Service('privileges')
             editor: {
                 privileges: [
                     'promotion:update',
-                    Shopware.Service('privileges').getPrivileges('rule.creator')
+                    Shopwell.Service('privileges').getPrivileges('rule.creator')
                 ],
                 dependencies: [
                     'promotion.viewer'

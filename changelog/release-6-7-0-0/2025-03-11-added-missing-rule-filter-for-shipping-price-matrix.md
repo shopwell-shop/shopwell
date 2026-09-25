@@ -1,6 +1,6 @@
 ---
 title: Added missing rule filter for shipping price matrix
-issue: https://github.com/shopware/shopware/issues/7228
+issue: https://github.com/shopwell-shop/shopwell/issues/7228
 author_github: @En0Ma1259
 ---
 # Administration

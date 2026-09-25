@@ -6,4 +6,4 @@ author_email: odovictoma@gmail.com
 author_github: odovictoma
 ---
 # Core
-* Added `OrderCriteriaEvent` to `Shopware\Core\Checkout\Order\SalesChannel\OrderRoute` to allow modification of the criteria before the orders are fetched
+* Added `OrderCriteriaEvent` to `Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute` to allow modification of the criteria before the orders are fetched

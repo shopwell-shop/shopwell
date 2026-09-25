@@ -17,14 +17,14 @@ import AssetPlugin from './build/vite-plugins/asset-plugin';
 import AssetPathPlugin from './build/vite-plugins/asset-path-plugin';
 import ImageDeprecationPlugin from './build/vite-plugins/image-deprecation';
 import AssetCssPostprocessPlugin from './build/vite-plugins/asset-css-postprocess-plugin';
-import ShopwellSetupPlugin from './build/vite-plugins/shopware-setup';
+import ShopwellSetupPlugin from './build/vite-plugins/shopwell-setup';
 
 console.log(colors.yellow('# Compiling Administration with Vite configuration'));
 
 process.env = { ...process.env, ...loadEnv('', process.cwd()) };
 process.env.PROJECT_ROOT = process.env.PROJECT_ROOT || path.join(__dirname, '/../../../../../');
 
-process.env.SERVICE_REGISTRY_URL = process.env.SERVICE_REGISTRY_URL ?? 'https://registry.services.shopware.io';
+process.env.SERVICE_REGISTRY_URL = process.env.SERVICE_REGISTRY_URL ?? 'https://registry.services.shopwell.cn';
 
 if (!process.env.APP_URL) {
     console.log(colors.yellowBright('APP_URL is not defined. Dev-Mode will not work.'));
@@ -50,7 +50,7 @@ export default defineConfig(({ command }) => {
     const isProd = command === 'build';
     const isDev = !isProd;
     const base = isProd ? '/bundles/administration/administration' : undefined;
-    const useSourceMap = (isDev && process.env.SHOPWARE_ADMIN_SKIP_SOURCEMAP_GENERATION !== '1') || (isProd && process.env.GENERATE_SOURCEMAPS === 'true');
+    const useSourceMap = (isDev && process.env.SHOPWELL_ADMIN_SKIP_SOURCEMAP_GENERATION !== '1') || (isProd && process.env.GENERATE_SOURCEMAPS === 'true');
     const openBrowserForWatch = process.env.DISABLE_DEVSERVER_OPEN !== '1' && !isInsideDockerContainer();
 
     if (isProd) {
@@ -140,7 +140,7 @@ export default defineConfig(({ command }) => {
                                 featureFlags: JSON.stringify(featureFlags),
                                 serviceRegistryUrl: process.env.SERVICE_REGISTRY_URL,
                                 analyticsGatewayUrl: process.env.PRODUCT_ANALYTICS_GATEWAY_URL,
-                                hideUpdateModule: ['1', 'true'].includes(process.env.SHOPWARE_AUTO_UPDATE_HIDE_MODULE ?? ''),
+                                hideUpdateModule: ['1', 'true'].includes(process.env.SHOPWELL_AUTO_UPDATE_HIDE_MODULE ?? ''),
                                 pageLoadingScreen,
                             },
                         },

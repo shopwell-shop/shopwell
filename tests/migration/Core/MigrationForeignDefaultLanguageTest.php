@@ -316,7 +316,7 @@ class MigrationForeignDefaultLanguageTest extends TestCase
         return static::getContainer()
             ->get(MigrationCollectionLoader::class)
             ->collectAllForVersion(
-                static::getContainer()->getParameter('kernel.shopware_version'),
+                static::getContainer()->getParameter('kernel.shopwell_version'),
                 MigrationCollectionLoader::VERSION_SELECTION_ALL
             );
     }

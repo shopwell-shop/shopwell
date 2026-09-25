@@ -6,4 +6,4 @@ author_email: github@jonasson.dev
 author_github: @pajonas
 ---
 # Core
-* Added normalizer method `\Shopware\Core\Framework\Validation\HappyPathValidator::normalizeValueIfRequired()` in `HappyPathValidator` to correctly quick-check against normalized values.
+* Added normalizer method `\Shopwell\Core\Framework\Validation\HappyPathValidator::normalizeValueIfRequired()` in `HappyPathValidator` to correctly quick-check against normalized values.

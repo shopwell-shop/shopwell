@@ -23,14 +23,14 @@ class WebhookTransportFactoryTest extends TestCase
     {
         $factory = $this->createFactory();
 
-        static::assertTrue($factory->supports('shopware-webhook://default', []));
+        static::assertTrue($factory->supports('shopwell-webhook://default', []));
     }
 
     public function testDoesNotSupportOtherDsn(): void
     {
         $factory = $this->createFactory();
 
-        static::assertFalse($factory->supports('shopware-webhook://custom', []));
+        static::assertFalse($factory->supports('shopwell-webhook://custom', []));
         static::assertFalse($factory->supports('doctrine://default', []));
         static::assertFalse($factory->supports('amqp://localhost', []));
         static::assertFalse($factory->supports('', []));
@@ -41,7 +41,7 @@ class WebhookTransportFactoryTest extends TestCase
         $factory = $this->createFactory();
 
         $transport = $factory->createTransport(
-            'shopware-webhook://default',
+            'shopwell-webhook://default',
             [],
             static::createStub(SerializerInterface::class)
         );
@@ -77,7 +77,7 @@ class WebhookTransportFactoryTest extends TestCase
         static::assertSame(0, $calls->async, 'Async transport must not be resolved at construction time.');
         static::assertSame(0, $calls->receiver, 'Receiver must not be resolved at construction time.');
 
-        $factory->createTransport('shopware-webhook://default', [], static::createStub(SerializerInterface::class));
+        $factory->createTransport('shopwell-webhook://default', [], static::createStub(SerializerInterface::class));
 
         static::assertSame(1, $calls->async, 'Async transport should be resolved exactly once when createTransport() is called.');
         static::assertSame(1, $calls->receiver, 'Receiver should be resolved exactly once when createTransport() is called.');

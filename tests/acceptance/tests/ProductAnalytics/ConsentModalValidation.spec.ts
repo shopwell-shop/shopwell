@@ -49,7 +49,7 @@ test.describe('Product Analytics - Consent Modal Validation', { tag: '@ProductAn
                 await page.route(`**/${CONSENTS_ENDPOINT}/revoke`, consentHandler);
             });
 
-            await test.step('Login to shopware administration', async () => {
+            await test.step('Login to shopwell administration', async () => {
                 await loginToAdministration(page, user, TestDataService.AdminApiClient);
             });
 
@@ -194,7 +194,7 @@ test.describe('Product Analytics - Consent Modal Validation', { tag: '@ProductAn
                 await page.route(`**/${CONSENTS_ENDPOINT}`, consentHandler);
             });
 
-            await test.step('Login to shopware administration', async () => {
+            await test.step('Login to shopwell administration', async () => {
                 await loginToAdministration(page, user, TestDataService.AdminApiClient);
             });
 
@@ -256,7 +256,7 @@ test.describe('Product Analytics - Consent Modal Validation', { tag: '@ProductAn
                 await TestDataService.assignAclRoleUser(onlyChangeUserProfilePermissions.id, user.id);
             });
 
-            await test.step('Login to shopware administration', async () => {
+            await test.step('Login to shopwell administration', async () => {
                 await loginToAdministration(page, user, TestDataService.AdminApiClient);
             });
 
@@ -310,7 +310,7 @@ test.describe('Product Analytics - Consent Modal Validation', { tag: '@ProductAn
                 await page.route(`**/${CONSENTS_ENDPOINT}/revoke`, consentHandler);
             });
 
-            await test.step('Login to shopware administration with first user', async () => {
+            await test.step('Login to shopwell administration with first user', async () => {
                 const user1: User = await TestDataService.createUser();
 
                 await loginToAdministration(page, user1, TestDataService.AdminApiClient);

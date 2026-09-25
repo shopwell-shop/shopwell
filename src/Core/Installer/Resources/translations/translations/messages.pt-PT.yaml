@@ -1,4 +1,4 @@
-shopware.installer:
+shopwell.installer:
     header_title: Instalação
     menuitem:
         start: Iniciar
@@ -162,7 +162,7 @@ shopware.installer:
         <p>
             temos muito gosto em te receber na nossa Community. Instalaste o Shopwell com sucesso.
         <p>
-            A tua loja já está pronta para funcionar. Caso ainda não tenhas muita experiência no Shopwell, recomendamos o guia <a href=\"https://docs.shopwell.cn/en/shopware-6-en/first-steps/welcome-to-shopware\" target=\"_blank\">\"Primeiros passos no Shopwell\"</a>. Quando iniciares sessão pela primeira vez como Administrador, o nosso First Run Wizard irá guiar-te para a configuração básica da tua loja.
+            A tua loja já está pronta para funcionar. Caso ainda não tenhas muita experiência no Shopwell, recomendamos o guia <a href=\"https://docs.shopwell.cn/en/shopwell-6-en/first-steps/welcome-to-shopwell\" target=\"_blank\">\"Primeiros passos no Shopwell\"</a>. Quando iniciares sessão pela primeira vez como Administrador, o nosso First Run Wizard irá guiar-te para a configuração básica da tua loja.
         </p>
         <p>
             Desejamos-te o maior sucesso com a tua nova loja online!

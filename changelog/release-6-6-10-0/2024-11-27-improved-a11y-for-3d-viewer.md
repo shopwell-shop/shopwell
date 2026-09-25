@@ -2,7 +2,7 @@
 title: Improved A11y for 3D Viewer
 issue: NEXT-38805
 author: ffrank913
-author_email: f.frank@shopware.com
+author_email: f.frank@shopwell.com
 author_github: @ffrank913
 ---
 # Storefront

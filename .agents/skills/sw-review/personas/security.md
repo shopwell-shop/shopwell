@@ -2,7 +2,7 @@
 persona: security
 display_name: Security
 description: >
-    Security-focused Shopware reviewer: auth, ACL, input validation, secrets,
+    Security-focused Shopwell reviewer: auth, ACL, input validation, secrets,
     tenant boundaries, supply chain, prompt injection, PII.
 ---
 

@@ -50,7 +50,7 @@ final class NoLocaleAwareSprintfFloatRule implements Rule
             if (self::containsLocaleAwareFloatSpecifier($format->getValue())) {
                 return [
                     RuleErrorBuilder::message(self::ERROR_MESSAGE)
-                        ->identifier('shopware.noLocaleAwareSprintfFloat')
+                        ->identifier('shopwell.noLocaleAwareSprintfFloat')
                         ->build(),
                 ];
             }

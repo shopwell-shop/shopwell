@@ -233,7 +233,7 @@ class EntityExtensionReadTest extends TestCase
                 'tax' => ['name' => 'test', 'taxRate' => 5],
                 'manufacturer' => [
                     'id' => Uuid::randomHex(),
-                    'name' => 'shopware AG',
+                    'name' => 'Shopwell',
                     'link' => 'https://shopwell.cn',
                 ],
                 'toOne' => [
@@ -268,7 +268,7 @@ class EntityExtensionReadTest extends TestCase
                 'tax' => ['name' => 'test', 'taxRate' => 5],
                 'manufacturer' => [
                     'id' => Uuid::randomHex(),
-                    'name' => 'shopware AG',
+                    'name' => 'Shopwell',
                     'link' => 'https://shopwell.cn',
                 ],
                 'oneToMany' => [
@@ -309,7 +309,7 @@ class EntityExtensionReadTest extends TestCase
                 'tax' => ['name' => 'test', 'taxRate' => 5],
                 'manufacturer' => [
                     'id' => Uuid::randomHex(),
-                    'name' => 'shopware AG',
+                    'name' => 'Shopwell',
                     'link' => 'https://shopwell.cn',
                 ],
             ],
@@ -327,7 +327,7 @@ class EntityExtensionReadTest extends TestCase
                 'tax' => ['name' => 'test', 'taxRate' => 5],
                 'manufacturer' => [
                     'id' => Uuid::randomHex(),
-                    'name' => 'shopware AG',
+                    'name' => 'Shopwell',
                     'link' => 'https://shopwell.cn',
                 ],
                 'linkedProductId' => $linkedProductId,

@@ -2,7 +2,7 @@
 title: Deprecated theme translations to use admin snippets
 issue: #8027
 author: Marcel Brode
-author_email: m.brode@shopware.com
+author_email: m.brode@shopwell.com
 author_github: @Marcel Brode
 ---
 # Storefront
@@ -16,9 +16,9 @@ ___
 
 ## Translation labels and helpTexts for Themes
 
-A constructed snippet key was introduced in Shopware 6.7 and will be required starting 6.8.
+A constructed snippet key was introduced in Shopwell 6.7 and will be required starting 6.8.
 This affects `label` and `helpText` properties in the `theme.json`, which are used in the theme manager.
-To provide translations for theme configuration, [creating administration snippets as usual](https://developer.shopware.com/resources/admin-extension-sdk/faq/#how-can-i-use-snippets-to-translate-my-app)
+To provide translations for theme configuration, [creating administration snippets as usual](https://developer.shopwell.com/resources/admin-extension-sdk/faq/#how-can-i-use-snippets-to-translate-my-app)
 will be mandatory.
 
 The snippet keys to be used are constructed as follows.

@@ -145,7 +145,7 @@ class Translator extends AbstractTranslator
         } else {
             /**
              * fallback locale and current locale has the same localization -> reset fallback
-             * or locale is symfony style locale, so we shouldn't add shopware fallbacks as it may lead to circular references
+             * or locale is symfony style locale, so we shouldn't add shopwell fallbacks as it may lead to circular references
              */
             $fallbackLocale = null;
         }
@@ -305,7 +305,7 @@ class Translator extends AbstractTranslator
     /**
      * Shopwell uses dashes in all locales.
      * If the catalogue does not contain any dashes, it means it is a symfony fallback catalogue,
-     * in that case we should not add the shopware fallback catalogue as it would result in circular references
+     * in that case we should not add the shopwell fallback catalogue as it would result in circular references
      */
     private function isShopwellLocaleCatalogue(MessageCatalogueInterface $catalog): bool
     {

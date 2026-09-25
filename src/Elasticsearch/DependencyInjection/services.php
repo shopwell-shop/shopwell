@@ -152,7 +152,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Client::class),
             service(ElasticsearchRegistry::class),
             service(CriteriaParser::class),
-            service('shopware.elasticsearch.logger'),
+            service('shopwell.elasticsearch.logger'),
             service(SystemConfigService::class),
         ]);
 
@@ -181,7 +181,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->factory([ClientFactory::class, 'createClient'])
         ->args([
             param('elasticsearch.hosts'),
-            service('shopware.elasticsearch.logger'),
+            service('shopwell.elasticsearch.logger'),
             param('kernel.debug'),
             param('elasticsearch.ssl'),
         ]);
@@ -192,7 +192,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->factory([ClientFactory::class, 'createClient'])
         ->args([
             param('elasticsearch.administration.hosts'),
-            service('shopware.elasticsearch.logger'),
+            service('shopwell.elasticsearch.logger'),
             param('kernel.debug'),
             param('elasticsearch.ssl'),
         ]);
@@ -261,7 +261,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Client::class),
             service(ElasticsearchOutdatedIndexDetector::class),
             service(Connection::class),
-            service('shopware.increment.gateway.registry'),
+            service('shopwell.increment.gateway.registry'),
         ])
         ->tag('console.command');
 
@@ -349,16 +349,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('messenger.message_handler');
 
     $services->set(CreateAliasTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(ElasticsearchRegistry::class)
         ->args([
-            tagged_iterator('shopware.es.definition'),
+            tagged_iterator('shopwell.es.definition'),
         ]);
 
     $services->set(ElasticsearchStagingHandler::class)
         ->args([
-            param('shopware.staging.elasticsearch.check_for_existence'),
+            param('shopwell.staging.elasticsearch.check_for_existence'),
             service(ElasticsearchHelper::class),
             service(ElasticsearchOutdatedIndexDetector::class),
         ]);
@@ -375,7 +375,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             param('kernel.environment'),
             service(LanguageLoader::class),
         ])
-        ->tag('shopware.es.definition');
+        ->tag('shopwell.es.definition');
 
     $services->set(StopwordTokenFilter::class)
         ->args([
@@ -394,7 +394,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->alias(
         'Shopwell\Elasticsearch\Product\SearchConfigLoader',
         SearchConfigLoader::class,
-    )->deprecate('shopware/elasticsearch', '6.7.2.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.8.0. Use Shopwell\Core\Framework\DataAbstractionLayer\Search\SearchConfigLoader instead.');
+    )->deprecate('shopwell/elasticsearch', '6.7.2.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.8.0. Use Shopwell\Core\Framework\DataAbstractionLayer\Search\SearchConfigLoader instead.');
 
     $services->set(AbstractFieldQueryBuilder::class, FieldQueryBuilder::class)
         ->args([
@@ -489,7 +489,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('admin.openSearch.client'),
             service(Connection::class),
-            service('shopware.increment.gateway.registry'),
+            service('shopwell.increment.gateway.registry'),
             service(AdminElasticsearchHelper::class),
         ])
         ->tag('console.command');
@@ -521,7 +521,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(IndexCreator::class),
             service(IteratorFactory::class),
             service(Client::class),
-            service('shopware.elasticsearch.logger'),
+            service('shopwell.elasticsearch.logger'),
             service('event_dispatcher'),
             param('elasticsearch.indexing_batch_size'),
             service(ClockInterface::class),
@@ -546,7 +546,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('data_collector', ['template' => '@Elasticsearch/Collector/elasticsearch.html.twig', 'id' => 'elasticsearch']);
 
-    $services->alias('shopware.elasticsearch.logger', 'monolog.logger.elasticsearch');
+    $services->alias('shopwell.elasticsearch.logger', 'monolog.logger.elasticsearch');
 
     // This is required to prevent the 'Environment variables %VAR is never used' error
     $services->set('_dummy_es_env_usage', \ArrayIterator::class)
@@ -554,12 +554,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             [
-                env('SHOPWARE_ES_ENABLED')->bool(),
-                env('SHOPWARE_ES_INDEXING_ENABLED')->bool(),
+                env('SHOPWELL_ES_ENABLED')->bool(),
+                env('SHOPWELL_ES_INDEXING_ENABLED')->bool(),
                 env('OPENSEARCH_URL')->string(),
-                env('SHOPWARE_ES_INDEX_PREFIX')->string(),
-                env('SHOPWARE_ES_THROW_EXCEPTION')->bool(),
-                env('SHOPWARE_ES_INDEXING_BATCH_SIZE')->int(),
+                env('SHOPWELL_ES_INDEX_PREFIX')->string(),
+                env('SHOPWELL_ES_THROW_EXCEPTION')->bool(),
+                env('SHOPWELL_ES_INDEXING_BATCH_SIZE')->int(),
             ],
         ]);
 
@@ -592,7 +592,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             param('elasticsearch.administration.index_prefix'),
             param('kernel.environment'),
             param('elasticsearch.administration.throw_exception'),
-            service('shopware.elasticsearch.logger'),
+            service('shopwell.elasticsearch.logger'),
         ]);
 
     $services->set(AdminSearchController::class)
@@ -619,13 +619,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(AdminSearchRegistry::class)
         ->args([
-            tagged_iterator('shopware.elastic.admin-searcher-index', 'key'),
+            tagged_iterator('shopwell.elastic.admin-searcher-index', 'key'),
             service(Connection::class),
             service('messenger.default_bus'),
             service('event_dispatcher'),
             service('admin.openSearch.client'),
             service(AdminElasticsearchHelper::class),
-            service('shopware.elasticsearch.logger'),
+            service('shopwell.elasticsearch.logger'),
             param('elasticsearch.administration.index.config'),
             param('elasticsearch.administration.index.mapping'),
             param('kernel.environment'),
@@ -642,7 +642,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ElasticsearchFieldBuilder::class),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'cms_page']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'cms_page']);
 
     $services->set(CustomerAdminSearchIndexer::class)
         ->args([
@@ -651,7 +651,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('customer.repository'),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'customer']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'customer']);
 
     $services->set(CustomerGroupAdminSearchIndexer::class)
         ->args([
@@ -660,7 +660,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('customer_group.repository'),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'customer_group']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'customer_group']);
 
     $services->set(LandingPageAdminSearchIndexer::class)
         ->args([
@@ -670,7 +670,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ElasticsearchFieldBuilder::class),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'landing_page']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'landing_page']);
 
     $services->set(ManufacturerAdminSearchIndexer::class)
         ->args([
@@ -680,7 +680,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ElasticsearchFieldBuilder::class),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'product_manufacturer']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'product_manufacturer']);
 
     $services->set(MediaAdminSearchIndexer::class)
         ->args([
@@ -690,7 +690,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ElasticsearchFieldBuilder::class),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'media']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'media']);
 
     $services->set(OrderAdminSearchIndexer::class)
         ->args([
@@ -699,7 +699,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('order.repository'),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'order']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'order']);
 
     $services->set(PaymentMethodAdminSearchIndexer::class)
         ->args([
@@ -708,7 +708,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('payment_method.repository'),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'payment_method']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'payment_method']);
 
     $services->set(ProductAdminSearchIndexer::class)
         ->args([
@@ -718,7 +718,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ElasticsearchFieldBuilder::class),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'product']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'product']);
 
     $services->set(PromotionAdminSearchIndexer::class)
         ->args([
@@ -728,7 +728,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ElasticsearchFieldBuilder::class),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'promotion']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'promotion']);
 
     $services->set(PropertyGroupAdminSearchIndexer::class)
         ->args([
@@ -738,7 +738,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ElasticsearchFieldBuilder::class),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'property_group']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'property_group']);
 
     $services->set(SalesChannelAdminSearchIndexer::class)
         ->args([
@@ -747,7 +747,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('sales_channel.repository'),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'sales_channel']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'sales_channel']);
 
     $services->set(ShippingMethodAdminSearchIndexer::class)
         ->args([
@@ -756,7 +756,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('shipping_method.repository'),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'shipping_method']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'shipping_method']);
 
     $services->set(CategoryAdminSearchIndexer::class)
         ->args([
@@ -766,7 +766,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ElasticsearchFieldBuilder::class),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'category']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'category']);
 
     $services->set(NewsletterRecipientAdminSearchIndexer::class)
         ->args([
@@ -775,7 +775,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('newsletter_recipient.repository'),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'newsletter_recipient']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'newsletter_recipient']);
 
     $services->set(ProductStreamAdminSearchIndexer::class)
         ->args([
@@ -784,7 +784,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('product_stream.repository'),
             param('elasticsearch.administration.indexing_batch_size'),
         ])
-        ->tag('shopware.elastic.admin-searcher-index', ['key' => 'product_stream']);
+        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'product_stream']);
 
     $services->set(ProductCriteriaParser::class)
         ->decorate(CriteriaParser::class)

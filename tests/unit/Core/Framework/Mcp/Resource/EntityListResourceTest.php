@@ -29,7 +29,7 @@ class EntityListResourceTest extends TestCase
         $resource = new EntityListResource($registry);
         $result = ($resource)();
 
-        static::assertSame('shopware://entities', $result['uri']);
+        static::assertSame('shopwell://entities', $result['uri']);
         static::assertSame('application/json', $result['mimeType']);
         static::assertArrayHasKey('text', $result);
 

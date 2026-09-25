@@ -2,7 +2,7 @@
 title: Fix rich snippet error in offcanvas nav
 issue: NEXT-14226
 author: Leon Weickert
-author_email: shopware@devert.net
+author_email: shopwell@devert.net
 author_github: @DevertNet
 ---
 # Storefront

@@ -2,7 +2,7 @@
 title: Add wrapper component for sw-checkbox-field
 issue: NEXT-34277
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com
+author_email: j.leifeld@shopwell.com
 author_github: Jannis Leifeld
 ---
 # Administration
@@ -63,14 +63,14 @@ Before:
 ```html
 <sw-checkbox-field>
     <template #label>
-        Hello Shopware
+        Hello Shopwell
     </template>
 </sw-checkbox-field>
 ```
 
 After:
 ```html
-<mt-checkbox label="Hello Shopware">
+<mt-checkbox label="Hello Shopwell">
 </mt-checkbox>
 ```
 
@@ -81,7 +81,7 @@ Before:
 ```html
 <sw-checkbox-field>
     <template v-slot:hint>
-        Hello Shopware
+        Hello Shopwell
     </template>
 </sw-checkbox-field>
 ```

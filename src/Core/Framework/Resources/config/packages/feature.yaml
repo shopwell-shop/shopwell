@@ -1,4 +1,4 @@
-shopware:
+shopwell:
   feature:
     flags:
       - name: v6.5.0.0

@@ -41,12 +41,12 @@ class SalesChannelEntityCompilerPass implements CompilerPassInterface
         $repositoryNameMap = [];
 
         $salesChannelDefinitions = $this->formatData(
-            $container->findTaggedServiceIds('shopware.sales_channel.entity.definition'),
+            $container->findTaggedServiceIds('shopwell.sales_channel.entity.definition'),
             $container
         );
 
         $baseDefinitions = $this->formatData(
-            $container->findTaggedServiceIds('shopware.entity.definition'),
+            $container->findTaggedServiceIds('shopwell.entity.definition'),
             $container
         );
 
@@ -231,7 +231,7 @@ class SalesChannelEntityCompilerPass implements CompilerPassInterface
             $salesChannelNameMap[$attrs['entityName']] = $definition;
         }
 
-        foreach ($container->findTaggedServiceIds('shopware.entity.extension') as $id => $tags) {
+        foreach ($container->findTaggedServiceIds('shopwell.entity.extension') as $id => $tags) {
             $definition = $container->getDefinition($id);
 
             /** @var class-string $className */
@@ -264,7 +264,7 @@ class SalesChannelEntityCompilerPass implements CompilerPassInterface
             }
         }
 
-        foreach ($container->findTaggedServiceIds('shopware.bulk.entity.extension') as $id => $tags) {
+        foreach ($container->findTaggedServiceIds('shopwell.bulk.entity.extension') as $id => $tags) {
             $definition = $container->getDefinition($id);
 
             /** @var class-string $className */

@@ -20,11 +20,11 @@ In order to implement this functionality, we needed a way to mark a product or c
   * `category.cmsPageId` will be set to null if the defined default is given,
   * this only applies to cms pages of type `product_list`
 * product
-  * `product.cmsPageId` will be set to null if the defined default `\Shopware\Core\Defaults::CMS_PRODUCT_DETAIL_PAGE` is given.
+  * `product.cmsPageId` will be set to null if the defined default `\Shopwell\Core\Defaults::CMS_PRODUCT_DETAIL_PAGE` is given.
 
 In order to set the default cms page, we simply provide the corresponding cms page id in the system config.
-* `\Shopware\Core\Content\Product\ProductDefinition::CONFIG_KEY_DEFAULT_CMS_PAGE_PRODUCT` for the default cms page for products
-* `\Shopware\Core\Content\Category\CategoryDefinition::CONFIG_KEY_DEFAULT_CMS_PAGE_CATEGORY` for the default cms page for categories of type `product_list`
+* `\Shopwell\Core\Content\Product\ProductDefinition::CONFIG_KEY_DEFAULT_CMS_PAGE_PRODUCT` for the default cms page for products
+* `\Shopwell\Core\Content\Category\CategoryDefinition::CONFIG_KEY_DEFAULT_CMS_PAGE_CATEGORY` for the default cms page for categories of type `product_list`
 
 This fallback is loaded at the `entity.loaded` event of the corresponding entity, where we check if the foreign key is set to NULL and inject the corresponding system config as default.
 

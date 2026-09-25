@@ -2,7 +2,7 @@
 
 {% block base_content %}
     <div class="card__title">
-        <h2>{{ "shopware.installer.configuration_header"|trans }}</h2>
+        <h2>{{ "shopwell.installer.configuration_header"|trans }}</h2>
     </div>
 
     <form id="shop-configuration" action="{{ url('installer.configuration') }}" method="post">
@@ -13,15 +13,15 @@
                 </div>
             {% endif %}
 
-            <p>{{ "shopware.installer.configuration_sconfig_text"|trans }}</p>
+            <p>{{ "shopwell.installer.configuration_sconfig_text"|trans }}</p>
 
             <!-- Shop data section -->
             <div class="section-header">
-                <h3 class="section-title">{{ "shopware.installer.configuration_admin_shop_headline"|trans }}</h3>
+                <h3 class="section-title">{{ "shopwell.installer.configuration_admin_shop_headline"|trans }}</h3>
             </div>
 
             <p>
-                <label for="config_shopName">{{ "shopware.installer.configuration_sconfig_name"|trans }}</label>
+                <label for="config_shopName">{{ "shopwell.installer.configuration_sconfig_name"|trans }}</label>
                 <input type="text"
                        value="{{ parameters.config_shopName ?? '' }}"
                        name="config_shopName"
@@ -32,10 +32,10 @@
 
             <p>
                 <label for="config_mail">
-                    {{ "shopware.installer.configuration_sconfig_mail"|trans }}
+                    {{ "shopwell.installer.configuration_sconfig_mail"|trans }}
                     <a class="help-badge"
                        href="#"
-                       data-tooltip="{{ "shopware.installer.configuration_email_help_text"|trans }}">
+                       data-tooltip="{{ "shopwell.installer.configuration_email_help_text"|trans }}">
                         <i class="icon-help"></i>
                     </a>
                 </label>
@@ -48,12 +48,12 @@
 
             <div class="form-group form-group--50">
                 <div class="input-group">
-                    <label for="config_shop_language">{{ "shopware.installer.configuration_sconfig_language"|trans }}</label>
+                    <label for="config_shop_language">{{ "shopwell.installer.configuration_sconfig_language"|trans }}</label>
                     <div class="select-wrapper">
                         <select name="config_shop_language" id="config_shop_language" onchange="syncDefaultLanguage()">
                             {% for language in languageIsos %}
                                 <option value="{{ language.id }}" {% if parameters.config_shop_language == language.id %}selected{% endif %}>
-                                    {{ ("shopware.installer.select_language_" ~ language.id) |trans }}
+                                    {{ ("shopwell.installer.select_language_" ~ language.id) |trans }}
                                 </option>
                             {% endfor %}
                         </select>
@@ -61,25 +61,25 @@
                 </div>
 
                 <div class="input-group">
-                    <label for="config_shop_currency">{{ "shopware.installer.configuration_sconfig_currency"|trans }}</label>
+                    <label for="config_shop_currency">{{ "shopwell.installer.configuration_sconfig_currency"|trans }}</label>
                     <div class="select-wrapper">
                         <select name="config_shop_currency"
                                 id="config_shop_currency"
                                 onchange="toggleDefaultCurrency()">
                             {% for iso in currencyIsos %}
                                 <option value="{{ iso }}" {% if parameters.config_shop_currency ?? '' == iso %}selected{% endif %}>
-                                    {{ ("shopware.installer.configuration_admin_currency_" ~ (iso|lower)) |trans }}
+                                    {{ ("shopwell.installer.configuration_admin_currency_" ~ (iso|lower)) |trans }}
                                 </option>
                             {% endfor %}
                         </select>
                     </div>
                     <span class="help-block" style="display: none">
-                        {{ "shopware.installer.configuration_sconfig_currency_info"|trans }}
+                        {{ "shopwell.installer.configuration_sconfig_currency_info"|trans }}
                     </span>
                 </div>
 
                 <div class="input-group">
-                    <label for="config_shop_country">{{ "shopware.installer.configuration_sconfig_country"|trans }}</label>
+                    <label for="config_shop_country">{{ "shopwell.installer.configuration_sconfig_country"|trans }}</label>
                     <div class="select-wrapper">
                         <select name="config_shop_country" id="config_shop_country">
                             {% for country in countryIsos %}
@@ -94,17 +94,17 @@
 
             <div class="alert alert-warning">
                 <span class="icon-warning"></span>
-                {{ "shopware.installer.configuration_defaults_warning"|trans }}
+                {{ "shopwell.installer.configuration_defaults_warning"|trans }}
             </div>
 
             <!-- Languages section -->
             <div class="section-header">
-                <h3 class="section-title">{{ "shopware.installer.configuration_admin_language_headline"|trans }}</h3>
+                <h3 class="section-title">{{ "shopwell.installer.configuration_admin_language_headline"|trans }}</h3>
             </div>
 
             <div class="languages-block">
                 <p class="available-languages__text">
-                    {{ "shopware.installer.configuration_admin_language_text"|trans }}
+                    {{ "shopwell.installer.configuration_admin_language_text"|trans }}
                 </p>
 
                 <!-- Search row -->
@@ -113,14 +113,14 @@
                         <div class="search-input-wrapper">
                             <input id="language-search"
                                    class="form-control languages-search__control"
-                                   placeholder="{{ "shopware.installer.configuration_admin_language_search_placeholder"|trans }}">
+                                   placeholder="{{ "shopwell.installer.configuration_admin_language_search_placeholder"|trans }}">
                             <i class="icon-search search-icon"></i>
                         </div>
                     </div>
 
                     <div class="languages-actions">
-                        <a href="#" onclick="selectAllLanguages(event)">{{ "shopware.installer.configuration_admin_language_select_all"|trans }}</a>
-                        <a href="#" onclick="clearAllLanguages(event)">{{ "shopware.installer.configuration_admin_language_clear_all"|trans }}</a>
+                        <a href="#" onclick="selectAllLanguages(event)">{{ "shopwell.installer.configuration_admin_language_select_all"|trans }}</a>
+                        <a href="#" onclick="clearAllLanguages(event)">{{ "shopwell.installer.configuration_admin_language_clear_all"|trans }}</a>
                     </div>
                 </div>
 
@@ -147,9 +147,9 @@
 
             <!-- Currencies section -->
             <div class="section-header">
-                <h3 class="section-title">{{ "shopware.installer.configuration_admin_currency_headline"|trans }}</h3>
+                <h3 class="section-title">{{ "shopwell.installer.configuration_admin_currency_headline"|trans }}</h3>
             </div>
-            <p class="available-currencies__text">{{ "shopware.installer.configuration_admin_currency_text"|trans }}</p>
+            <p class="available-currencies__text">{{ "shopwell.installer.configuration_admin_currency_text"|trans }}</p>
 
             <div class="available-currencies__container">
                 {% for iso in currencyIsos %}
@@ -161,18 +161,18 @@
                                value="{{ iso }}"
                                onclick="event.target.classList.add('toggled')"
                         />
-                        <label for="{{ iso|lower }}">{{ ("shopware.installer.configuration_admin_currency_" ~ (iso|lower)) |trans }}</label>
+                        <label for="{{ iso|lower }}">{{ ("shopwell.installer.configuration_admin_currency_" ~ (iso|lower)) |trans }}</label>
                     </div>
                 {% endfor %}
             </div>
 
             <!-- Admin user data section -->
             <div class="section-header">
-                <h3 class="section-title">{{ "shopware.installer.configuration_admin_user_headline"|trans|default('Admin user data') }}</h3>
+                <h3 class="section-title">{{ "shopwell.installer.configuration_admin_user_headline"|trans|default('Admin user data') }}</h3>
             </div>
 
             <p>
-                <label for="config_admin_email">{{ "shopware.installer.configuration_admin_mail"|trans }}</label>
+                <label for="config_admin_email">{{ "shopwell.installer.configuration_admin_mail"|trans }}</label>
                 <input type="email"
                        value="{{ parameters.config_admin_email ?? '' }}"
                        name="config_admin_email"
@@ -182,7 +182,7 @@
 
             <div class="form-group form-group--50">
                 <p>
-                    <label for="config_admin_firstName">{{ "shopware.installer.configuration_admin_firstName"|trans }}</label>
+                    <label for="config_admin_firstName">{{ "shopwell.installer.configuration_admin_firstName"|trans }}</label>
                     <input type="text"
                            value="{{ parameters.config_admin_firstName ?? '' }}"
                            name="config_admin_firstName"
@@ -191,7 +191,7 @@
                 </p>
 
                 <p>
-                    <label for="config_admin_lastName">{{ "shopware.installer.configuration_admin_lastName"|trans }}</label>
+                    <label for="config_admin_lastName">{{ "shopwell.installer.configuration_admin_lastName"|trans }}</label>
                     <input type="text"
                            value="{{ parameters.config_admin_lastName ?? '' }}"
                            name="config_admin_lastName"
@@ -202,7 +202,7 @@
 
             <div class="form-group form-group--50">
                 <p>
-                    <label for="config_admin_username">{{ "shopware.installer.configuration_admin_username"|trans }}</label>
+                    <label for="config_admin_username">{{ "shopwell.installer.configuration_admin_username"|trans }}</label>
                     <input type="text"
                            value="{{ parameters.config_admin_username ?? '' }}"
                            name="config_admin_username"
@@ -211,7 +211,7 @@
                 </p>
 
                 <p>
-                    <label for="config_admin_password">{{ "shopware.installer.configuration_admin_password"|trans }}</label>
+                    <label for="config_admin_password">{{ "shopwell.installer.configuration_admin_password"|trans }}</label>
                     <input type="password"
                            value="{{ parameters.config_admin_password ?? '' }}"
                            name="config_admin_password"
@@ -223,11 +223,11 @@
 
 
         <div class="card__footer flex-container">
-            <a href="{{ url('installer.database-import') }}" class="btn btn-default flex-item">{{ "shopware.installer.back"|trans }}</a>
+            <a href="{{ url('installer.database-import') }}" class="btn btn-default flex-item">{{ "shopwell.installer.back"|trans }}</a>
             <button type="submit"
                     class="btn btn-primary flex-item flex-right"
                     onclick="document.getElementById('shop-configuration').classList.add('is--submitted'); setLastActivity();">
-            {{ "shopware.installer.forward"|trans }}
+            {{ "shopwell.installer.forward"|trans }}
             </button>
         </div>
     </form>

@@ -2,7 +2,7 @@
 title: Hot reload improvements for fonts, svg and ddev
 issue: NEXT-39321
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: @BrocksiNet
 ---
 # Storefront

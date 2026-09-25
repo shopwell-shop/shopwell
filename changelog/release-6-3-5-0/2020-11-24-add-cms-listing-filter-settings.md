@@ -2,7 +2,7 @@
 title: add cms listing filter settings
 issue: NEXT-11355
 author: Markus Velt
-author_email: m.velt@shopware.com 
+author_email: m.velt@shopwell.com 
 author_github: @raknison
 ---
 # Administration

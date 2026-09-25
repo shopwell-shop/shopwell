@@ -4,10 +4,10 @@ issue: NEXT-24747
 ---
 # Core
 * Added a new migration `Migration1672743034AddDefaultAdminUserPasswordMinLength` to add default config value `core.userPermission.passwordMinLength` for default user's password min length
-* Changed `\Shopware\Core\Framework\DataAbstractionLayer\Field\PasswordField` to added a new argument in constructor to allow indicating which entity that PasswordField belongs to
-* Changed method `\Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\PasswordFieldSerializer::getConstraints` to validate length of password from system config if PasswordField is `admin` or `customer` password
-* Changed `\Shopware\Core\System\User\UserDefinition` to inject `admin` as a new parameter of `PasswordField`
-* Changed `\Shopware\Core\Checkout\Customer\CustomerDefinition` to inject `customer` as a new parameter of `PasswordField`
+* Changed `\Shopwell\Core\Framework\DataAbstractionLayer\Field\PasswordField` to added a new argument in constructor to allow indicating which entity that PasswordField belongs to
+* Changed method `\Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\PasswordFieldSerializer::getConstraints` to validate length of password from system config if PasswordField is `admin` or `customer` password
+* Changed `\Shopwell\Core\System\User\UserDefinition` to inject `admin` as a new parameter of `PasswordField`
+* Changed `\Shopwell\Core\Checkout\Customer\CustomerDefinition` to inject `customer` as a new parameter of `PasswordField`
 * ___
 # Administration
 * Changed `src/module/sw-users-permissions/page/sw-users-permissions-user-detail/index.js` and its template to show password validation error when editing a user

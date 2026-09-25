@@ -2,7 +2,7 @@
 title: Add flag to ignore certain fields in openapi Schema
 issue: NEXT-39781
 author: Patryk Tomczyk
-author_email: p.tomczyk@shopware.com
+author_email: p.tomczyk@shopwell.com
 author_github: @patzick
 ---
 # API

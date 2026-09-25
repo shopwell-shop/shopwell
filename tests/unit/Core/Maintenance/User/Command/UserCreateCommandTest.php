@@ -20,7 +20,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(UserCreateCommand::class)]
 class UserCreateCommandTest extends TestCase
 {
-    private const TEST_USERNAME = 'shopware';
+    private const TEST_USERNAME = 'shopwell';
 
     public function testEmptyPasswordOption(): void
     {
@@ -31,7 +31,7 @@ class UserCreateCommandTest extends TestCase
         ]);
         $output = $commandTester->getDisplay();
         static::assertStringContainsString('[WARNING] You didn\'t pass a password so a random one was generated.', $output);
-        static::assertStringContainsString('[OK] User "shopware" successfully created. The newly generated password is:', $output);
+        static::assertStringContainsString('[OK] User "shopwell" successfully created. The newly generated password is:', $output);
     }
 
     public function testPasswordMinLength(): void

@@ -6,4 +6,4 @@ author_email: bjoern.herzke@brandung.de
 author_github: wrongspot  
 ---
 # Core
-* Added `Shopware\Core\Content\Product\Events\ProductCrossSellingCriteriaLoadEvent`, which allows to manipulate criteria object on crossSellings loads.
+* Added `Shopwell\Core\Content\Product\Events\ProductCrossSellingCriteriaLoadEvent`, which allows to manipulate criteria object on crossSellings loads.

@@ -2,7 +2,7 @@
 title: Fix review admin module if customer deleted
 issue: NEXT-6896
 author: OliverSkroblin
-author_email: o.skroblin@shopware.com 
+author_email: o.skroblin@shopwell.com 
 author_github: OliverSkroblin
 ---
 # Administration

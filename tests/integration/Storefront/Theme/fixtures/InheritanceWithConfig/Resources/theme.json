@@ -1,6 +1,6 @@
 {
   "name": "InheritanceWithConfig",
-  "author": "shopware AG",
+  "author": "Shopwell",
   "views": [
     "@Storefront",
     "@InheritanceWithConfig",

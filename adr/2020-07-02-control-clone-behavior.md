@@ -9,7 +9,7 @@ tags: [repository, entity, clone, flag, association]
 The developer should be able to define, if an association has to be considered or skipped during the cloning of an entity.
 
 ## Decision
-The current clone behavior is controlled by the `Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete` flag.
+The current clone behavior is controlled by the `Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete` flag.
 All associations which are marked with this flag are considered in the clone process.
 We will add an optional parameter to the flag constructor to disable this behavior.
 
@@ -28,4 +28,4 @@ An example looks like the following:
 ```
 
 ## Consequences
-After 6.3 released, the developer can control this behavior by setting `\Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete::$cloneRelevant` to false
+After 6.3 released, the developer can control this behavior by setting `\Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete::$cloneRelevant` to false

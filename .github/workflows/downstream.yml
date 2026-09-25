@@ -42,17 +42,17 @@ jobs:
     steps:
       - id: sts
         continue-on-error: true
-        uses: shopware/octo-sts-action@main
+        uses: shopwell/octo-sts-action@main
         with:
-          scope: shopware
-          identity: ShopwareDownstream
+          scope: shopwell
+          identity: ShopwellDownstream
       - name: Rufus
-        uses: shopware/github-actions/downstream@main
+        uses: shopwell/github-actions/downstream@main
         if: steps.sts.outputs.token
         env:
           NEW_LOGIC: 1
         with:
-          repo: shopware/rufus
+          repo: shopwell/rufus
           workflow: .github/workflows/downstream.yml
           ref: .auto
           timeout: 30m
@@ -73,17 +73,17 @@ jobs:
     steps:
       - id: sts
         continue-on-error: true
-        uses: shopware/octo-sts-action@main
+        uses: shopwell/octo-sts-action@main
         with:
-          scope: shopware
-          identity: ShopwareDownstream
+          scope: shopwell
+          identity: ShopwellDownstream
       - name: Commercial
-        uses: shopware/github-actions/downstream@main
+        uses: shopwell/github-actions/downstream@main
         if: steps.sts.outputs.token
         env:
           NEW_LOGIC: 1
         with:
-          repo: shopware/SwagCommercial
+          repo: shopwell/SwagCommercial
           workflow: Downstream
           ref: .auto
           timeout: 60m
@@ -106,10 +106,10 @@ jobs:
     steps:
       - id: sts
         continue-on-error: true
-        uses: shopware/octo-sts-action@main
+        uses: shopwell/octo-sts-action@main
         with:
-          scope: shopware
-          identity: ShopwareDownstream
+          scope: shopwell
+          identity: ShopwellDownstream
 
       - name: Check downstream mergeability
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
@@ -127,8 +127,8 @@ jobs:
             }
 
             const repos = [
-              { owner: 'shopware', repo: 'rufus' },
-              { owner: 'shopware', repo: 'SwagCommercial' }
+              { owner: 'shopwell', repo: 'rufus' },
+              { owner: 'shopwell', repo: 'SwagCommercial' }
             ];
 
             const failures = [];

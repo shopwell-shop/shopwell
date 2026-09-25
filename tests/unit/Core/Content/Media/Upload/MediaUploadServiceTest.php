@@ -663,7 +663,7 @@ class MediaUploadServiceTest extends TestCase
         $httpClient = static::createStub(HttpClientInterface::class);
         $httpClient->method('request')->willReturn($response);
 
-        // Both flags come from `shopware.media.enable_url_validation`, so a permissive service always
+        // Both flags come from `shopwell.media.enable_url_validation`, so a permissive service always
         // travels with a resolver that permits private ranges.
         $permissiveResolver = new TrustedUrlResolver(
             static fn (string $host): array => ['10.0.0.1'],

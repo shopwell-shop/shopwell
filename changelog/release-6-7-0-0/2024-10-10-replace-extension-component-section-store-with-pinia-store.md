@@ -2,7 +2,7 @@
 title: Replace extension-component-section store with Pinia store
 issue: NEXT-38622
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com
+author_email: j.leifeld@shopwell.com
 author_github: @Jannis Leifeld
 ---
 # Administration

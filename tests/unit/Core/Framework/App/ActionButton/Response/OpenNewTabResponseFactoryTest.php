@@ -69,7 +69,7 @@ class OpenNewTabResponseFactoryTest extends TestCase
         $signer->expects($this->once())
             ->method('signUri')
             ->with('http://redirect.url', $this->action->getApp(), $context)
-            ->willReturn(new Uri('http://redirect.url?shopware-shop-signature=signature'));
+            ->willReturn(new Uri('http://redirect.url?shopwell-shop-signature=signature'));
         $factory = new OpenNewTabResponseFactory($signer);
 
         $response = $factory->create($this->action, [

@@ -2,7 +2,7 @@
 title: Add listing for sales channels
 issue: NEXT-14201
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com 
+author_email: j.leifeld@shopwell.com 
 author_github: Jannis Leifeld
 ---
 # Administration

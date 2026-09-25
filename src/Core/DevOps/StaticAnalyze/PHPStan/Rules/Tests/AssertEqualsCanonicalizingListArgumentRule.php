@@ -70,7 +70,7 @@ class AssertEqualsCanonicalizingListArgumentRule implements Rule
             }
 
             $errors[] = RuleErrorBuilder::message(\sprintf(self::ERROR_MESSAGE, $position + 1))
-                ->identifier('shopware.assertEqualsCanonicalizingListArgument')
+                ->identifier('shopwell.assertEqualsCanonicalizingListArgument')
                 ->build();
         }
 

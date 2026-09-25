@@ -2,7 +2,7 @@
 title: fix broken snippets in rule builder conditions
 issue: #8412
 author: p.dinkhoff
-author_email: p.dinkhoff@shopware.com
+author_email: p.dinkhoff@shopwell.com
 ---
 # Administration
 

@@ -118,7 +118,7 @@ class TestPackageMatchRule implements Rule
                 $testPackage,
                 \implode(', ', $covered),
             ))
-                ->identifier('shopware.coversPackageMismatch')
+                ->identifier('shopwell.coversPackageMismatch')
                 ->build(),
         ];
     }
@@ -152,7 +152,7 @@ class TestPackageMatchRule implements Rule
                 \substr($directory, \strlen($this->projectDir . '/src/')),
                 \implode(', ', $packages),
             ))
-                ->identifier('shopware.mirroredPackageMismatch')
+                ->identifier('shopwell.mirroredPackageMismatch')
                 ->build(),
         ];
     }

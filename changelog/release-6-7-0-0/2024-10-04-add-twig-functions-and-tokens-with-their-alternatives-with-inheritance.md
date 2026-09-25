@@ -6,14 +6,14 @@ author_email: code@joshua-behrens.de
 author_github: @JoshuaBehrens
 ---
 # Core
-* Added service `\Shopware\Core\Framework\Adapter\Twig\Extension\TwigFeaturesWithInheritanceExtension` to add the following Twig functions/tokens with inheritance:
-  * new Twig function `sw_block` with expression `\Shopware\Core\Framework\Adapter\Twig\Node\SwBlockReferenceExpression`
+* Added service `\Shopwell\Core\Framework\Adapter\Twig\Extension\TwigFeaturesWithInheritanceExtension` to add the following Twig functions/tokens with inheritance:
+  * new Twig function `sw_block` with expression `\Shopwell\Core\Framework\Adapter\Twig\Node\SwBlockReferenceExpression`
   * new Twig function `sw_source` but with inheritance
   * new Twig function `sw_include` but with inheritance as alternative to `sw_include` token
-  * new Twig token `sw_use` with `\Shopware\Core\Framework\Adapter\Twig\TokenParser\UseTokenParser`
-  * new Twig token `sw_embed` with `\Shopware\Core\Framework\Adapter\Twig\TokenParser\EmbedTokenParser`
-  * new Twig token `sw_from` with `\Shopware\Core\Framework\Adapter\Twig\TokenParser\FromTokenParser`
-  * new Twig token `sw_import` with `\Shopware\Core\Framework\Adapter\Twig\TokenParser\ImportTokenParser`
+  * new Twig token `sw_use` with `\Shopwell\Core\Framework\Adapter\Twig\TokenParser\UseTokenParser`
+  * new Twig token `sw_embed` with `\Shopwell\Core\Framework\Adapter\Twig\TokenParser\EmbedTokenParser`
+  * new Twig token `sw_from` with `\Shopwell\Core\Framework\Adapter\Twig\TokenParser\FromTokenParser`
+  * new Twig token `sw_import` with `\Shopwell\Core\Framework\Adapter\Twig\TokenParser\ImportTokenParser`
 ___
 # Storefront
 * Added Twig function `sw_block`, that must be used, when the template reference is used and inheritance is expected

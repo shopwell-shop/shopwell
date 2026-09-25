@@ -1,12 +1,12 @@
 # Shopwell Phpstan extension
 
-Shopwell specific extension for phpstan. This extension provides additional rules and improves type detection for phpstan in shopware projects.
+Shopwell specific extension for phpstan. This extension provides additional rules and improves type detection for phpstan in shopwell projects.
 
 ## Installation
 
 Require the extension via composer:
 ```bash
-composer require --dev shopware/phpstan-extension
+composer require --dev shopwell/phpstan-extension
 ```
 
 ## Configuration
@@ -21,43 +21,43 @@ Add the following lines to your `phpstan.neon` config file:
 
 ```neon
 includes:
-    - vendor/shopware/phpstan-extension/extension.neon
-    - vendor/shopware/phpstan-extension/rules.neon
+    - vendor/shopwell/phpstan-extension/extension.neon
+    - vendor/shopwell/phpstan-extension/rules.neon
 ```
 
 ## What's included in this extension?
 
 ### Type system extension
 
-The `extension.neon` file contains the phpstan configuration for shopware specific [type extensions](https://phpstan.org/developing-extensions/type-specifying-extensions).
+The `extension.neon` file contains the phpstan configuration for shopwell specific [type extensions](https://phpstan.org/developing-extensions/type-specifying-extensions).
 
 If you only want to use the type extensions without the additional rules, you can also include this file in your `phpstan.neon` config file manually:
 
 ```neon 
 includes:
-    - vendor/shopware/phpstan-extension/extension.neon
+    - vendor/shopwell/phpstan-extension/extension.neon
 ```
 
 ### Rules
 
-The `rules.neon` file contains the phpstan configuration for shopware specific [rules](https://phpstan.org/developing-extensions/rules).
-Those rules are opinionated and encoded best practices for shopware projects and plugins. 
+The `rules.neon` file contains the phpstan configuration for shopwell specific [rules](https://phpstan.org/developing-extensions/rules).
+Those rules are opinionated and encoded best practices for shopwell projects and plugins. 
 
 If you only want to use the rules without the type extensions, you can also include this file in your `phpstan.neon` config file manually:
 
 ```neon
 includes:
-    - vendor/shopware/phpstan-extension/rules.neon
+    - vendor/shopwell/phpstan-extension/rules.neon
 ```
 
 ### Core specific rules
 
-The `core-rules.neon` file contains the phpstan configuration for shopware specific [rules](https://phpstan.org/developing-extensions/rules) intendend for shopware core (& plugin) development.
-As this is not suited for generic shopware projects, this file is not included by default (when installed over the phpstan/extension-installer). If you want to use those rules, you can include this file in your `phpstan.neon` config file manually:
+The `core-rules.neon` file contains the phpstan configuration for shopwell specific [rules](https://phpstan.org/developing-extensions/rules) intendend for shopwell core (& plugin) development.
+As this is not suited for generic shopwell projects, this file is not included by default (when installed over the phpstan/extension-installer). If you want to use those rules, you can include this file in your `phpstan.neon` config file manually:
 
 ```neon
 includes:
-    - vendor/shopware/phpstan-extension/core-rules.neon
+    - vendor/shopwell/phpstan-extension/core-rules.neon
 ```
 
 ## Customization

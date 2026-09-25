@@ -27,12 +27,12 @@ class ShopwellRefreshTokenGrantType extends RefreshTokenGrant
     private ?string $refreshTokenFamilyId = null;
 
     public function __construct(
-        private readonly RefreshTokenRepository $shopwareRefreshTokenRepository,
+        private readonly RefreshTokenRepository $shopwellRefreshTokenRepository,
         private readonly UserService $userService,
         private readonly ExternalTokenService $tokenService,
         private readonly ClockInterface $clock,
     ) {
-        parent::__construct($shopwareRefreshTokenRepository);
+        parent::__construct($shopwellRefreshTokenRepository);
     }
 
     public function respondToAccessTokenRequest(
@@ -43,7 +43,7 @@ class ShopwellRefreshTokenGrantType extends RefreshTokenGrant
         $this->refreshTokenFamilyId = null;
         $client = $this->validateClient($request);
         $oldRefreshToken = $this->validateOldRefreshToken($request, $client->getIdentifier());
-        $this->refreshTokenFamilyId = $this->shopwareRefreshTokenRepository->getRefreshTokenFamilyId($oldRefreshToken['refresh_token_id']);
+        $this->refreshTokenFamilyId = $this->shopwellRefreshTokenRepository->getRefreshTokenFamilyId($oldRefreshToken['refresh_token_id']);
         if ($this->refreshTokenFamilyId === null) {
             throw OAuthServerException::invalidRefreshToken('Token has been revoked');
         }

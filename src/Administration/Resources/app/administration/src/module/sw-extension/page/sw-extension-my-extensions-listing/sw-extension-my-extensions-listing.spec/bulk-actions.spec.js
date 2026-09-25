@@ -8,7 +8,7 @@ import {
     extensionStoreActionService,
     setMyExtensions,
     setupListingHooks,
-    shopwareService,
+    shopwellService,
 } from './sw-extension-my-extensions-listing.fixtures';
 
 describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () => {
@@ -22,8 +22,8 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             const result = await wrapper.vm.runExtensionAction('install', { name: 'Foo', type: 'app', source: 'store' });
 
             expect(extensionStoreActionService.downloadExtension).toHaveBeenCalledWith('Foo');
-            expect(shopwareService.installAndActivateExtension).toHaveBeenCalledWith('Foo', 'app');
-            expect(shopwareService.installExtension).not.toHaveBeenCalled();
+            expect(shopwellService.installAndActivateExtension).toHaveBeenCalledWith('Foo', 'app');
+            expect(shopwellService.installExtension).not.toHaveBeenCalled();
             expect(result.status).toBe('success');
         });
 
@@ -39,8 +39,8 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             });
 
             expect(extensionStoreActionService.downloadExtension).toHaveBeenCalledWith('Foo');
-            expect(shopwareService.installExtension).toHaveBeenCalledWith('Foo', 'app');
-            expect(shopwareService.installAndActivateExtension).not.toHaveBeenCalled();
+            expect(shopwellService.installExtension).toHaveBeenCalledWith('Foo', 'app');
+            expect(shopwellService.installAndActivateExtension).not.toHaveBeenCalled();
             expect(result.status).toBe('success');
         });
 
@@ -50,7 +50,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             await wrapper.vm.runExtensionAction('install', { name: 'Foo', type: 'app', source: 'local' });
 
             expect(extensionStoreActionService.downloadExtension).not.toHaveBeenCalled();
-            expect(shopwareService.installAndActivateExtension).toHaveBeenCalledWith('Foo', 'app');
+            expect(shopwellService.installAndActivateExtension).toHaveBeenCalledWith('Foo', 'app');
         });
 
         it('should activate via the service', async () => {
@@ -58,7 +58,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             await wrapper.vm.runExtensionAction('activate', { name: 'Foo', type: 'app' });
 
-            expect(shopwareService.activateExtension).toHaveBeenCalledWith('Foo', 'app');
+            expect(shopwellService.activateExtension).toHaveBeenCalledWith('Foo', 'app');
         });
 
         it('should deactivate via the service', async () => {
@@ -66,13 +66,13 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             await wrapper.vm.runExtensionAction('deactivate', { name: 'Foo', type: 'app' });
 
-            expect(shopwareService.deactivateExtension).toHaveBeenCalledWith('Foo', 'app');
+            expect(shopwellService.deactivateExtension).toHaveBeenCalledWith('Foo', 'app');
         });
 
         it('should report a failed result and surface the error on a non-consent failure', async () => {
             const wrapper = await createWrapper();
             const showErrors = jest.spyOn(wrapper.vm, 'showExtensionErrors');
-            shopwareService.installAndActivateExtension.mockRejectedValue({
+            shopwellService.installAndActivateExtension.mockRejectedValue({
                 response: { data: { errors: [{ code: 'SOME_ERROR' }] } },
             });
 
@@ -85,7 +85,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
         it('should report requiresConsent with the deltas on an update consent error', async () => {
             const wrapper = await createWrapper();
             const deltas = { permissions: { order: [{ entity: 'order', operation: 'read' }] }, domains: ['x.example.com'] };
-            shopwareService.updateExtension.mockRejectedValue(consentError(deltas));
+            shopwellService.updateExtension.mockRejectedValue(consentError(deltas));
 
             const result = await wrapper.vm.runExtensionAction('update', { name: 'Foo', type: 'app', installedAt: 'x' });
 
@@ -99,7 +99,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             const result = await wrapper.vm.runExtensionAction('foo', { name: 'Foo', type: 'app' });
 
             expect(result.status).toBe('success');
-            expect(shopwareService.installExtension).not.toHaveBeenCalled();
+            expect(shopwellService.installExtension).not.toHaveBeenCalled();
         });
     });
 
@@ -112,7 +112,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             wrapper.vm.onSelectChange({ name: 'A' }, true);
             await wrapper.vm.runBulkAction('install');
 
-            expect(shopwareService.installExtension).not.toHaveBeenCalled();
+            expect(shopwellService.installExtension).not.toHaveBeenCalled();
             expect(wrapper.vm.cacheApiService.clear).not.toHaveBeenCalled();
             expect(reload).not.toHaveBeenCalled();
             expect(wrapper.vm.isBulkRunning).toBe(false);
@@ -127,7 +127,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             wrapper.vm.isBulkRunning = true;
             await wrapper.vm.runBulkAction('install');
 
-            expect(shopwareService.installExtension).not.toHaveBeenCalled();
+            expect(shopwellService.installExtension).not.toHaveBeenCalled();
             expect(wrapper.vm.cacheApiService.clear).not.toHaveBeenCalled();
             expect(reload).not.toHaveBeenCalled();
             expect(wrapper.vm.isBulkRunning).toBe(true);
@@ -165,9 +165,9 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             // Only the applicable (not installed) A and B install. C is already installed.
             // Both are permissionless, so they install and activate like a single card install.
-            expect(shopwareService.installAndActivateExtension).toHaveBeenCalledWith('A', 'app');
-            expect(shopwareService.installAndActivateExtension).toHaveBeenCalledWith('B', 'app');
-            expect(shopwareService.installAndActivateExtension).toHaveBeenCalledTimes(2);
+            expect(shopwellService.installAndActivateExtension).toHaveBeenCalledWith('A', 'app');
+            expect(shopwellService.installAndActivateExtension).toHaveBeenCalledWith('B', 'app');
+            expect(shopwellService.installAndActivateExtension).toHaveBeenCalledTimes(2);
 
             expect(wrapper.vm.selectedNames).toEqual([]);
             expect(wrapper.vm.cacheApiService.clear).toHaveBeenCalledTimes(1);
@@ -189,8 +189,8 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             wrapper.vm.onSelectChange({ name: 'B' }, true);
             await wrapper.vm.runBulkAction('activate');
 
-            expect(shopwareService.activateExtension).toHaveBeenCalledWith('A', 'app');
-            expect(shopwareService.activateExtension).toHaveBeenCalledWith('B', 'app');
+            expect(shopwellService.activateExtension).toHaveBeenCalledWith('A', 'app');
+            expect(shopwellService.activateExtension).toHaveBeenCalledWith('B', 'app');
         });
 
         it('should deactivate only deactivatable selected extensions via the service', async () => {
@@ -207,8 +207,8 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             wrapper.vm.onSelectChange({ name: 'B' }, true);
             await wrapper.vm.runBulkAction('deactivate');
 
-            expect(shopwareService.deactivateExtension).toHaveBeenCalledWith('A', 'app');
-            expect(shopwareService.deactivateExtension).toHaveBeenCalledTimes(1);
+            expect(shopwellService.deactivateExtension).toHaveBeenCalledWith('A', 'app');
+            expect(shopwellService.deactivateExtension).toHaveBeenCalledTimes(1);
             expect(wrapper.vm.showBulkDeactivationModal).toBe(false);
         });
 
@@ -222,7 +222,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             const reload = jest.spyOn(wrapper.vm, '_reloadPage').mockImplementation(() => {});
             const showErrors = jest.spyOn(wrapper.vm, 'showExtensionErrors');
-            shopwareService.installAndActivateExtension.mockImplementation((name) => {
+            shopwellService.installAndActivateExtension.mockImplementation((name) => {
                 if (name === 'A') {
                     return Promise.reject({ response: { data: { errors: [{ code: 'BOOM' }] } } });
                 }
@@ -235,7 +235,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             // A failed but B still installed. The error was surfaced and the batch finalized once.
             expect(showErrors).toHaveBeenCalled();
-            expect(shopwareService.installAndActivateExtension).toHaveBeenCalledWith('B', 'app');
+            expect(shopwellService.installAndActivateExtension).toHaveBeenCalledWith('B', 'app');
             expect(reload).toHaveBeenCalledTimes(1);
             expect(wrapper.vm.isBulkRunning).toBe(false);
         });
@@ -250,7 +250,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             const reload = jest.spyOn(wrapper.vm, '_reloadPage').mockImplementation(() => {});
             const showErrors = jest.spyOn(wrapper.vm, 'showExtensionErrors');
-            shopwareService.installAndActivateExtension.mockRejectedValue({
+            shopwellService.installAndActivateExtension.mockRejectedValue({
                 response: { data: { errors: [{ code: 'BOOM' }] } },
             });
 
@@ -271,7 +271,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             await flushPromises();
 
             jest.spyOn(wrapper.vm, '_reloadPage').mockImplementation(() => {});
-            shopwareService.installAndActivateExtension.mockImplementation(
+            shopwellService.installAndActivateExtension.mockImplementation(
                 () =>
                     new Promise((resolve) => {
                         resolveInstall = resolve;

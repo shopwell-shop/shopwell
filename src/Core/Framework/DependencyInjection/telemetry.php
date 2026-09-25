@@ -31,7 +31,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(MetricLabelProcessor::class),
             service('logger'),
             env('APP_ENV'),
-            param('shopware.telemetry.metrics.enabled'),
+            param('shopwell.telemetry.metrics.enabled'),
         ]);
 
     $services->set(Telemetry::class)
@@ -42,32 +42,32 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(MetricLabelProcessor::class)
         ->args([
-            param('shopware.telemetry.metrics.replace_unknown_label_values_with'),
+            param('shopwell.telemetry.metrics.replace_unknown_label_values_with'),
             service('logger'),
             env('APP_ENV'),
         ]);
 
     $services->set(MetricConfigProvider::class)
         ->args([
-            param('shopware.telemetry.metrics.definitions'),
+            param('shopwell.telemetry.metrics.definitions'),
         ]);
 
     $services->set(TransportConfigProvider::class)
         ->args([
             service(MetricConfigProvider::class),
-            param('shopware.telemetry.metrics.namespace'),
+            param('shopwell.telemetry.metrics.namespace'),
         ]);
 
     $services->set(TransportCollection::class)
         ->lazy()
         ->factory([TransportCollection::class, 'create'])
         ->args([
-            tagged_iterator('shopware.metric_transport_factory'),
+            tagged_iterator('shopwell.metric_transport_factory'),
             service(TransportConfigProvider::class),
         ]);
 
     $services->set(CollectPeriodicMetricsTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(TelemetryFlushListener::class)
         ->args([
@@ -76,14 +76,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ClockInterface::class),
         ])
         ->tag('kernel.event_subscriber')
-        ->tag('shopware.telemetry.subscriber');
+        ->tag('shopwell.telemetry.subscriber');
 
     $services->set(CollectPeriodicMetricsTaskHandler::class)
         ->args([
             service('scheduled_task.repository'),
             service('logger'),
             service(Meter::class),
-            tagged_iterator('shopware.telemetry.periodic_metric_collector'),
+            tagged_iterator('shopwell.telemetry.periodic_metric_collector'),
         ])
         ->tag('messenger.message_handler');
 };

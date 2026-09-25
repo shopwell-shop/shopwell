@@ -47,7 +47,7 @@ class McpToolResponseRule implements Rule
 
         return [
             RuleErrorBuilder::message('MCP tools with #[McpTool] attribute must extend McpToolResponse.')
-                ->identifier('shopware.mcpToolMissingResponseClass')
+                ->identifier('shopwell.mcpToolMissingResponseClass')
                 ->build(),
         ];
     }

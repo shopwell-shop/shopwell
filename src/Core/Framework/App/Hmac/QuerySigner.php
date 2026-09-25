@@ -23,7 +23,7 @@ class QuerySigner
 {
     public function __construct(
         private readonly string $shopUrl,
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
         private readonly LocaleProvider $localeProvider,
         private readonly ShopIdProvider $shopIdProvider,
         private readonly InAppPurchase $inAppPurchase,
@@ -42,17 +42,17 @@ class QuerySigner
             'shop-id' => $this->shopIdProvider->getShopId()->id,
             'shop-url' => $this->shopUrl,
             'timestamp' => (string) $this->clock->now()->getTimestamp(),
-            'sw-version' => $this->shopwareVersion,
+            'sw-version' => $this->shopwellVersion,
             'app-version' => $app->getVersion(),
             'in-app-purchases' => \urlencode($this->inAppPurchase->getJWTByExtension($app->getName()) ?? ''),
-            AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE => $context->getLanguageId(),
-            AuthMiddleware::SHOPWARE_USER_LANGUAGE => $this->localeProvider->getLocaleFromContext($context),
+            AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE => $context->getLanguageId(),
+            AuthMiddleware::SHOPWELL_USER_LANGUAGE => $this->localeProvider->getLocaleFromContext($context),
             'sw-user-id' => $context->getSource() instanceof AdminApiSource ? ($context->getSource()->getUserId() ?? '') : '',
         ]);
 
         return Uri::withQueryValue(
             $unsignedUri,
-            'shopware-shop-signature',
+            'shopwell-shop-signature',
             (new RequestSigner())->signPayload($unsignedUri->getQuery(), $secret)
         );
     }

@@ -5,58 +5,58 @@ author: Michael Telgmann
 author_github: @mitelg
 ---
 # Core
-* Deprecated properties of `\Shopware\Core\Content\Media\Aggregate\MediaThumbnailSize\MediaThumbnailSizeEntity`. They will be typed natively in v6.7.0.0.
-* Deprecated properties of `\Shopware\Core\Framework\DataAbstractionLayer\Entity`. They will be typed natively in v6.7.0.0.
-* Deprecated properties of `\Shopware\Core\Framework\DataAbstractionLayer\Field\FkField`. They will be typed natively in v6.7.0.0.
-* Deprecated properties of `\Shopware\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField`. They will be typed natively in v6.7.0.0.
-* Deprecated exception `\Shopware\Core\Framework\Api\Exception\UnsupportedEncoderInputException`. It will be removed in v6.7.0.0. Use `\Shopware\Core\Framework\Api\ApiException::unsupportedEncoderInput` instead.
-* Deprecated exception `\Shopware\Core\Framework\DataAbstractionLayer\Exception\CanNotFindParentStorageFieldException`. It will be removed in v6.7.0.0. Use `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException::cannotFindParentStorageField` instead.
-* Deprecated exception `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`. It will be removed in v6.7.0.0. Use `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException::internalFieldAccessNotAllowed` instead.
-* Deprecated exception `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InvalidParentAssociationException`. It will be removed in v6.7.0.0. Use `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException::invalidParentAssociation` instead.
-* Deprecated exception `\Shopware\Core\Framework\DataAbstractionLayer\Exception\ParentFieldNotFoundException`. It will be removed in v6.7.0.0. Use `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException::parentFieldNotFound` instead.
-* Deprecated exception `\Shopware\Core\Framework\DataAbstractionLayer\Exception\PrimaryKeyNotProvidedException`. It will be removed in v6.7.0.0. Use `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException::primaryKeyNotProvided` instead.
-* Deprecated method `\Shopware\Core\Framework\DataAbstractionLayer\Entity::__get`. It will throw a `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` instead of a `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException` in v6.7.0.0.
-* Deprecated method `\Shopware\Core\Framework\DataAbstractionLayer\Entity::get`. It will throw a `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` instead of a `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException` in v6.7.0.0.
-* Deprecated method `\Shopware\Core\Framework\DataAbstractionLayer\Entity::checkIfPropertyAccessIsAllowed`. It will throw a `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` instead of a `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException` in v6.7.0.0.
-* Deprecated method `\Shopware\Core\Framework\DataAbstractionLayer\Entity::get`. It will throw a `\Shopware\Core\Framework\DataAbstractionLayer\Exception\PropertyNotFoundException` instead of a `\InvalidArgumentException` in v6.7.0.0.
+* Deprecated properties of `\Shopwell\Core\Content\Media\Aggregate\MediaThumbnailSize\MediaThumbnailSizeEntity`. They will be typed natively in v6.7.0.0.
+* Deprecated properties of `\Shopwell\Core\Framework\DataAbstractionLayer\Entity`. They will be typed natively in v6.7.0.0.
+* Deprecated properties of `\Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField`. They will be typed natively in v6.7.0.0.
+* Deprecated properties of `\Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField`. They will be typed natively in v6.7.0.0.
+* Deprecated exception `\Shopwell\Core\Framework\Api\Exception\UnsupportedEncoderInputException`. It will be removed in v6.7.0.0. Use `\Shopwell\Core\Framework\Api\ApiException::unsupportedEncoderInput` instead.
+* Deprecated exception `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\CanNotFindParentStorageFieldException`. It will be removed in v6.7.0.0. Use `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException::cannotFindParentStorageField` instead.
+* Deprecated exception `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`. It will be removed in v6.7.0.0. Use `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException::internalFieldAccessNotAllowed` instead.
+* Deprecated exception `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InvalidParentAssociationException`. It will be removed in v6.7.0.0. Use `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException::invalidParentAssociation` instead.
+* Deprecated exception `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\ParentFieldNotFoundException`. It will be removed in v6.7.0.0. Use `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException::parentFieldNotFound` instead.
+* Deprecated exception `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\PrimaryKeyNotProvidedException`. It will be removed in v6.7.0.0. Use `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException::primaryKeyNotProvided` instead.
+* Deprecated method `\Shopwell\Core\Framework\DataAbstractionLayer\Entity::__get`. It will throw a `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` instead of a `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException` in v6.7.0.0.
+* Deprecated method `\Shopwell\Core\Framework\DataAbstractionLayer\Entity::get`. It will throw a `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` instead of a `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException` in v6.7.0.0.
+* Deprecated method `\Shopwell\Core\Framework\DataAbstractionLayer\Entity::checkIfPropertyAccessIsAllowed`. It will throw a `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` instead of a `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException` in v6.7.0.0.
+* Deprecated method `\Shopwell\Core\Framework\DataAbstractionLayer\Entity::get`. It will throw a `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\PropertyNotFoundException` instead of a `\InvalidArgumentException` in v6.7.0.0.
 ___
 # Upgrade Information
 ## Native typehints of properties
 The properties of the following classes will be typed natively in v6.7.0.0.
 If you have extended from those classes and overwritten the properties, you can already set the correct type.
-* `\Shopware\Core\Content\Media\Aggregate\MediaThumbnailSize\MediaThumbnailSizeEntity`
-* `\Shopware\Core\Framework\DataAbstractionLayer\Entity`
-* `\Shopware\Core\Framework\DataAbstractionLayer\Field\FkField`
-* `\Shopware\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField`
+* `\Shopwell\Core\Content\Media\Aggregate\MediaThumbnailSize\MediaThumbnailSizeEntity`
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Entity`
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField`
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField`
 ## Deprecated exceptions
 The following exceptions were deprecated and will be removed in v6.7.0.0.
 You can already catch the replacement exceptions additionally to the deprecated ones.
-* `\Shopware\Core\Framework\Api\Exception\UnsupportedEncoderInputException`. Also catch `\Shopware\Core\Framework\Api\ApiException`.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Exception\CanNotFindParentStorageFieldException`. Also catch `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException`.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`. Also catch `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException`.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InvalidParentAssociationException`. Also catch `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException`.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Exception\ParentFieldNotFoundException`. Also catch `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException`.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Exception\PrimaryKeyNotProvidedException`. Also catch `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException`.
+* `\Shopwell\Core\Framework\Api\Exception\UnsupportedEncoderInputException`. Also catch `\Shopwell\Core\Framework\Api\ApiException`.
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\CanNotFindParentStorageFieldException`. Also catch `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException`.
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`. Also catch `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException`.
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InvalidParentAssociationException`. Also catch `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException`.
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\ParentFieldNotFoundException`. Also catch `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException`.
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\PrimaryKeyNotProvidedException`. Also catch `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException`.
 ## Deprecated methods
-The following methods of the `\Shopware\Core\Framework\DataAbstractionLayer\Entity` class were deprecated and will throw different exceptions in v6.7.0.0.
+The following methods of the `\Shopwell\Core\Framework\DataAbstractionLayer\Entity` class were deprecated and will throw different exceptions in v6.7.0.0.
 You can already catch the replacement exceptions additionally to the deprecated ones.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Entity::__get`. Also catch `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` in addition to `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Entity::get`. Also catch `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` in addition to `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Entity::checkIfPropertyAccessIsAllowed`. Also catch `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` in addition to `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Entity::get`. Also catch `\Shopware\Core\Framework\DataAbstractionLayer\Exception\PropertyNotFoundException` in addition to `\InvalidArgumentException`.
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Entity::__get`. Also catch `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` in addition to `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`.
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Entity::get`. Also catch `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` in addition to `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`.
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Entity::checkIfPropertyAccessIsAllowed`. Also catch `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` in addition to `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`.
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Entity::get`. Also catch `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\PropertyNotFoundException` in addition to `\InvalidArgumentException`.
 ___
 # Next Major Version Changes
 ## Removal of deprecated exceptions
 The following exceptions were removed:
-* `\Shopware\Core\Framework\Api\Exception\UnsupportedEncoderInputException`
-* `\Shopware\Core\Framework\DataAbstractionLayer\Exception\CanNotFindParentStorageFieldException`
-* `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`
-* `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InvalidParentAssociationException`
-* `\Shopware\Core\Framework\DataAbstractionLayer\Exception\ParentFieldNotFoundException`
-* `\Shopware\Core\Framework\DataAbstractionLayer\Exception\PrimaryKeyNotProvidedException`
+* `\Shopwell\Core\Framework\Api\Exception\UnsupportedEncoderInputException`
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\CanNotFindParentStorageFieldException`
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InvalidParentAssociationException`
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\ParentFieldNotFoundException`
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\PrimaryKeyNotProvidedException`
 ## Entity class throws different exceptions
-The following methods of the `\Shopware\Core\Framework\DataAbstractionLayer\Entity` class are now throwing different exceptions:
-* `\Shopware\Core\Framework\DataAbstractionLayer\Entity::__get` now throws a `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` instead of a `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Entity::get` now throws a `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` instead of a `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Entity::checkIfPropertyAccessIsAllowed` now throws a `\Shopware\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` instead of a `\Shopware\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Entity::get` now throws a `\Shopware\Core\Framework\DataAbstractionLayer\Exception\PropertyNotFoundException` instead of a `\InvalidArgumentException`.
+The following methods of the `\Shopwell\Core\Framework\DataAbstractionLayer\Entity` class are now throwing different exceptions:
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Entity::__get` now throws a `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` instead of a `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`.
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Entity::get` now throws a `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` instead of a `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`.
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Entity::checkIfPropertyAccessIsAllowed` now throws a `\Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException` instead of a `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\InternalFieldAccessNotAllowedException`.
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Entity::get` now throws a `\Shopwell\Core\Framework\DataAbstractionLayer\Exception\PropertyNotFoundException` instead of a `\InvalidArgumentException`.

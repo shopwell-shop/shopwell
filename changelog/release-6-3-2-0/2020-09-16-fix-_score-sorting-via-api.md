@@ -6,5 +6,5 @@ author_email:       hannes.wernery@viison.com
 author_github:      @hanneswernery
 ---
 # Core
-* Changed `Shopware\Core\Framework\DataAbstractionLayer\Dbal\CriteriaQueryHelper` to add the sorting by _score only if a _score is actually added to the DBAL query
+* Changed `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\CriteriaQueryHelper` to add the sorting by _score only if a _score is actually added to the DBAL query
 

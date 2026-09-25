@@ -7,7 +7,7 @@
 /* eslint-disable jest/no-conditional-expect */
 import { mount } from '@vue/test-utils';
 import uuid from 'test/_helper_/uuid';
-import { MtTextField } from '@shopware-ag/meteor-component-library';
+import { MtTextField } from '@shopwell-ag/meteor-component-library';
 
 function createEntityCollection(entities = []) {
     return new Shopwell.Data.EntityCollection('collection', 'collection', {}, null, entities);

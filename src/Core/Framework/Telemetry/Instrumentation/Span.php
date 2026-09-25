@@ -17,7 +17,7 @@ final readonly class Span
      */
     public function __construct(
         public string $name,
-        public string $category = 'shopware',
+        public string $category = 'shopwell',
         public array $tags = [],
     ) {
     }

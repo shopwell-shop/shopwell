@@ -15,11 +15,11 @@ use Shopwell\Core\System\SystemConfig\SystemConfigService;
  */
 #[Package('framework')]
 #[McpTool(
-    name: 'shopware-system-config-write',
+    name: 'shopwell-system-config-write',
     title: 'System Config Write',
     description: 'Modify or overwrite a Shopwell system configuration value — use this whenever the user wants to change, set, or update a config key. Provide the full dotted key (e.g. \'core.basicInformation.shopName\') and the new value. dryRun=true (default) shows a before/after diff without saving; set dryRun=false to persist. Optionally scope to a sales channel.'
 )]
-#[McpToolDependsOn('shopware-system-config-read')]
+#[McpToolDependsOn('shopwell-system-config-read')]
 #[McpToolGroup('system-config')]
 #[McpToolRequires('system_config:update')]
 class SystemConfigWriteTool extends McpToolResponse

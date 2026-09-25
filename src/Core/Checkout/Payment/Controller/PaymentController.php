@@ -54,7 +54,7 @@ class PaymentController extends AbstractController
      * An API route scope would normally imply an authentication, which external callers could not provide.
      * Only a storefront route scope could also not be used, as it also needs to work on headless environments.
      *
-     * @phpstan-ignore shopware.routeScope
+     * @phpstan-ignore shopwell.routeScope
      */
     #[Route(
         path: '/payment/finalize-transaction',
@@ -68,7 +68,7 @@ class PaymentController extends AbstractController
         if (!\is_string($paymentToken)) {
             // @deprecated tag:v6.8.0 - remove this if block
             if (!Feature::isActive('v6.8.0.0')) {
-                throw RoutingException::missingRequestParameter('_sw_payment_token'); // @phpstan-ignore-line shopware.domainException
+                throw RoutingException::missingRequestParameter('_sw_payment_token'); // @phpstan-ignore-line shopwell.domainException
             }
             throw PaymentException::missingRequestParameter('_sw_payment_token');
         }

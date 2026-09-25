@@ -3,14 +3,14 @@ title: Change migration system to allow grouping migrations by version
 issue: NEXT-12349
 ---
 # Core
-* Added `MigrationSource`s `\Shopware\Core\Framework\Migration\MigrationSource.core.V6_3` and `\Shopware\Core\Framework\Migration\MigrationSource.core.V6_4`
+* Added `MigrationSource`s `\Shopwell\Core\Framework\Migration\MigrationSource.core.V6_3` and `\Shopwell\Core\Framework\Migration\MigrationSource.core.V6_4`
 * Change directory of core migrations from `src/Core/Migration` into `src/Core/Migration/V6_3`. Replaced them with migrations that extend from those in V6_3 to be backwards compatible.
-* Changed `\Shopware\Core\Framework\Migration\MigrationSource.core` to be empty. The directories are now included in `\Shopware\Core\Framework\Migration\MigrationSource.core.V6_3`.
-* Changed `\Shopware\Core\Framework\Migration\MigrationSource` to allowing nesting `\Shopware\Core\Framework\Migration\MigrationSource`
-* Added method `\Shopware\Core\Framework\Migration\MigrationCollectionLoader::collectAllForVersion`, which will return a collection with all "safe" (matching the mode) `MigrationSource`s including `core`.
+* Changed `\Shopwell\Core\Framework\Migration\MigrationSource.core` to be empty. The directories are now included in `\Shopwell\Core\Framework\Migration\MigrationSource.core.V6_3`.
+* Changed `\Shopwell\Core\Framework\Migration\MigrationSource` to allowing nesting `\Shopwell\Core\Framework\Migration\MigrationSource`
+* Added method `\Shopwell\Core\Framework\Migration\MigrationCollectionLoader::collectAllForVersion`, which will return a collection with all "safe" (matching the mode) `MigrationSource`s including `core`.
 * Added parameter `--version-selection-mode` to `database:migrate-destructive`. Possible values are "safe", "blue-green" and "all". Default is "safe".
-* Changed `database:migrate` to use `\Shopware\Core\Framework\Migration\MigrationCollectionLoader::collectAllForVersion` with mode "all".
-* Changed `database:migrate-destructive` to use `\Shopware\Core\Framework\Migration\MigrationCollectionLoader::collectAllForVersion` with mode defined in parameter `--version-selection-mode`
+* Changed `database:migrate` to use `\Shopwell\Core\Framework\Migration\MigrationCollectionLoader::collectAllForVersion` with mode "all".
+* Changed `database:migrate-destructive` to use `\Shopwell\Core\Framework\Migration\MigrationCollectionLoader::collectAllForVersion` with mode defined in parameter `--version-selection-mode`
 ___
 # Storefront
 * Moved migrations from src/Storefront/Migration into src/Storefront/Migration/V6_3
@@ -53,8 +53,8 @@ There are three possible values for the mode:
    This means with the update to 6.4.1.0 from 6.4.0.0 all destructive changes in 6.3 or lower are executed.
 3. `--version-selection-mode=all`: Execute all destructive changes up to the current major.
 
-To allow this selection, we've moved all migrations from `\Shopware\Core\Framework\Migration\MigrationSource.core` 
-into `\Shopware\Core\Framework\Migration\MigrationSource.core.V6_3`. `core` is now empty by default. You can still extend it. 
+To allow this selection, we've moved all migrations from `\Shopwell\Core\Framework\Migration\MigrationSource.core` 
+into `\Shopwell\Core\Framework\Migration\MigrationSource.core.V6_3`. `core` is now empty by default. You can still extend it. 
 The execution order is now like this:
 1. `core.V6_3`
 2. `core.V6_4`
@@ -65,7 +65,7 @@ This means all new migrations need to be created in the matching major folder. C
 it will be `src/Core/Migration/V6_4` soon. To keep the backwards compatibility, Migrations still need to be defined in `src/Core/Migration`. 
 To accomplish that, just create it in the versioned folder and create a class in the old folder that simply extends the other class without changing anything.  
 
-The method `\Shopware\Core\Framework\Migration\MigrationCollectionLoader::collectAllForVersion` will return a collection with all "safe" `MigrationSource`s including `core`.
+The method `\Shopwell\Core\Framework\Migration\MigrationCollectionLoader::collectAllForVersion` will return a collection with all "safe" `MigrationSource`s including `core`.
 
 **bin/console database:migrate --all core**
 

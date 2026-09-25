@@ -84,7 +84,7 @@ class ScriptLifecycleHandler extends AbstractLifecycleHandler
         $criteria->setTitle('app-scripts::refresh');
         $criteria->addFilter(new EqualsFilter('active', true));
 
-        // We don't automatically update service scripts, as that would do a request to the service on every request to shopware
+        // We don't automatically update service scripts, as that would do a request to the service on every request to shopwell
         $criteria->addFilter(new EqualsFilter('selfManaged', false));
 
         $appIds = $this->appRepository->searchIds($criteria, $context)->getIds();

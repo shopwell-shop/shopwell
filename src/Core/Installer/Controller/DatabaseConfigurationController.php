@@ -71,13 +71,13 @@ class DatabaseConfigurationController extends InstallerController
 
                 return $this->renderInstaller('@Installer/installer/database-configuration.html.twig', [
                     'connectionInfo' => $connectionInfo,
-                    'error' => $this->translator->trans('shopware.installer.database-configuration_non_empty_database'),
+                    'error' => $this->translator->trans('shopwell.installer.database-configuration_non_empty_database'),
                 ]);
             }
         } catch (DatabaseSetupException) {
             return $this->renderInstaller('@Installer/installer/database-configuration.html.twig', [
                 'connectionInfo' => $connectionInfo,
-                'error' => $this->translator->trans('shopware.installer.database-configuration_invalid_requirements'),
+                'error' => $this->translator->trans('shopwell.installer.database-configuration_invalid_requirements'),
             ]);
         } catch (\Throwable $e) {
             return $this->renderInstaller('@Installer/installer/database-configuration.html.twig', [
@@ -99,9 +99,9 @@ class DatabaseConfigurationController extends InstallerController
         } catch (\Throwable $e) {
             return new JsonResponse([
                 'error' => match (true) {
-                    $e instanceof DatabaseSetupException => $this->translator->trans('shopware.installer.database-configuration_invalid_requirements'),
-                    preg_match('/SQLSTATE\[HY000] \[1045]/', $e->getMessage()) === 1 => $this->translator->trans('shopware.installer.database-configuration_access_denied'),
-                    preg_match('/SQLSTATE\[HY000] \[2002]/', $e->getMessage()) === 1 => $this->translator->trans('shopware.installer.database-configuration_host_not_found'),
+                    $e instanceof DatabaseSetupException => $this->translator->trans('shopwell.installer.database-configuration_invalid_requirements'),
+                    preg_match('/SQLSTATE\[HY000] \[1045]/', $e->getMessage()) === 1 => $this->translator->trans('shopwell.installer.database-configuration_access_denied'),
+                    preg_match('/SQLSTATE\[HY000] \[2002]/', $e->getMessage()) === 1 => $this->translator->trans('shopwell.installer.database-configuration_host_not_found'),
                     default => $e->getMessage(),
                 },
             ], Response::HTTP_BAD_REQUEST);

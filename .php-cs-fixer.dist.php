@@ -51,7 +51,7 @@ return (new Config())
         'general_phpdoc_annotation_remove' => ['annotations' => ['copyright', 'category']],
         'linebreak_after_opening_tag' => false,
         'method_argument_space' => ['on_multiline' => 'ensure_fully_multiline'],
-        'modern_serialization_methods' => false, // TODO: enable again with https://github.com/shopware/shopware/issues/15465
+        'modern_serialization_methods' => false, // TODO: enable again with https://github.com/shopwell-shop/shopwell/issues/15465
         'native_function_invocation' => [
             'scope' => 'namespaced',
             'strict' => false,
@@ -95,7 +95,7 @@ return (new Config())
         ],
     ])
     ->setUsingCache(true)
-    ->setCacheFile(Path::join($_SERVER['SHOPWARE_TOOL_CACHE_ECS'] ?? 'var/cache/cs_fixer', 'cs_fixer.cache'))
+    ->setCacheFile(Path::join($_SERVER['SHOPWELL_TOOL_CACHE_ECS'] ?? 'var/cache/cs_fixer', 'cs_fixer.cache'))
     ->setFinder(
         (new Finder())
             ->in([__DIR__ . '/src', __DIR__ . '/tests'])

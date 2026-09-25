@@ -58,7 +58,7 @@ class ActionTest extends TestCase
 
         yield 'invalid input field type' => [
             'fixture' => 'flow-action-invalid-input-field-type.xml',
-            'message' => '[ERROR 1840] Element \'input-field\', attribute \'type\': [facet \'enumeration\'] The value \'shopware\' is not an element of the set {\'text\', \'textarea\', \'text-editor\', \'url\', \'password\', \'int\', \'float\', \'bool\', \'checkbox\', \'datetime\', \'date\', \'time\', \'colorpicker\', \'single-select\', \'multi-select\'}.',
+            'message' => '[ERROR 1840] Element \'input-field\', attribute \'type\': [facet \'enumeration\'] The value \'shopwell\' is not an element of the set {\'text\', \'textarea\', \'text-editor\', \'url\', \'password\', \'int\', \'float\', \'bool\', \'checkbox\', \'datetime\', \'date\', \'time\', \'colorpicker\', \'single-select\', \'multi-select\'}.',
         ];
     }
 }

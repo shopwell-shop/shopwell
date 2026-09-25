@@ -77,7 +77,7 @@
         "app": "Apps",
         "theme": "Themes",
         "recommendation": "Recommendations",
-        "shopwareAccount": "Shopwell Account"
+        "shopwellAccount": "Shopwell Account"
       },
       "fileUpload": {
         "buttonFileUpload": "Upload extension",

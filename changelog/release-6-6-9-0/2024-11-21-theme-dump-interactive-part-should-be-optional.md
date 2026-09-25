@@ -2,7 +2,7 @@
 title: theme:dump interactive part should be optional
 issue: NEXT-39724
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: @BrocksiNet
 ---
 # Storefront

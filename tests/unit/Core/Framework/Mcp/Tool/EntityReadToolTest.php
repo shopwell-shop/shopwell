@@ -228,7 +228,7 @@ class EntityReadToolTest extends TestCase
 
         static::assertFalse($data['success']);
         static::assertStringContainsString('unknown_entity', $data['error']);
-        static::assertStringContainsString('shopware://entities', $data['error']);
+        static::assertStringContainsString('shopwell://entities', $data['error']);
     }
 
     #[TestDox('A malformed "includes" that makes the builder throw the base DataAbstractionLayerException is answered with its detail')]

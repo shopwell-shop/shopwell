@@ -6,7 +6,7 @@
         "schemas": {
             "Criteria": {
                 "type": "object",
-                "description": "Search parameters. For more information, see our documentation on [Search Queries](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#structure)",
+                "description": "Search parameters. For more information, see our documentation on [Search Queries](https://shopwell.stoplight.io/docs/store-api/docs/concepts/search-queries.md#structure)",
                 "properties": {
                     "page": {
                         "description": "Search result page",
@@ -22,7 +22,7 @@
                     },
                     "filter": {
                         "type": "array",
-                        "description": "List of filters to restrict the search result. For more information, see [Search Queries > Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#filter)",
+                        "description": "List of filters to restrict the search result. For more information, see [Search Queries > Filter](https://shopwell.stoplight.io/docs/store-api/docs/concepts/search-queries.md#filter)",
                         "items": {
                             "anyOf": [
                                 {
@@ -56,7 +56,7 @@
                     },
                     "post-filter": {
                         "type": "array",
-                        "description": "Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter)",
+                        "description": "Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopwell.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter)",
                         "items": {
                             "anyOf": [
                                 {
@@ -116,7 +116,7 @@
             },
             "NoneFieldsCriteria": {
                 "type": "object",
-                "description": "Search parameters. For more information, see our documentation on [Search Queries](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#structure)",
+                "description": "Search parameters. For more information, see our documentation on [Search Queries](https://shopwell.stoplight.io/docs/store-api/docs/concepts/search-queries.md#structure)",
                 "properties": {
                     "page": {
                         "description": "Search result page",
@@ -132,7 +132,7 @@
                     },
                     "filter": {
                         "type": "array",
-                        "description": "List of filters to restrict the search result. For more information, see [Search Queries > Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#filter)",
+                        "description": "List of filters to restrict the search result. For more information, see [Search Queries > Filter](https://shopwell.stoplight.io/docs/store-api/docs/concepts/search-queries.md#filter)",
                         "items": {
                             "anyOf": [
                                 {
@@ -166,7 +166,7 @@
                     },
                     "post-filter": {
                         "type": "array",
-                        "description": "Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter)",
+                        "description": "Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopwell.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter)",
                         "items": {
                             "anyOf": [
                                 {

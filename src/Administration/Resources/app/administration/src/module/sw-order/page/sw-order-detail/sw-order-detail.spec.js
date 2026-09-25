@@ -127,14 +127,14 @@ describe('src/module/sw-order/page/sw-order-detail', () => {
             window.removeEventListener('pagehide', wrapper.vm.onPageHide);
         }
 
-        Shopwell.Store.get('shopwareApps').selectedIds = [];
+        Shopwell.Store.get('shopwellApps').selectedIds = [];
     });
 
     it('should select the displayed order for app action buttons', async () => {
         wrapper = await createWrapper();
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual([wrapper.vm.orderId]);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual([wrapper.vm.orderId]);
     });
 
     it('should deselect the order for app action buttons when leaving the detail page while editing', async () => {
@@ -149,11 +149,11 @@ describe('src/module/sw-order/page/sw-order-detail', () => {
         // The leave page warning takes over, so the navigation is not continued yet
         expect(next).not.toHaveBeenCalled();
         expect(wrapper.vm.isDisplayingLeavePageWarning).toBe(true);
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual([wrapper.vm.orderId]);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual([wrapper.vm.orderId]);
 
         wrapper.unmount();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual([]);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual([]);
     });
 
     it('should remove version id with a keepalive request when pagehide is triggered', async () => {

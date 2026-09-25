@@ -6,5 +6,5 @@ author_github: @mitelg
 
 # Core
 
-* Added `\Shopware\Core\Framework\Util\IOStreamHelper` to centralize IO stream handling.
-* Changed error output of `\Shopware\Core\Framework\App\ActiveAppsLoader::loadApps` in CI environment to show a less urgent error message.
+* Added `\Shopwell\Core\Framework\Util\IOStreamHelper` to centralize IO stream handling.
+* Changed error output of `\Shopwell\Core\Framework\App\ActiveAppsLoader::loadApps` in CI environment to show a less urgent error message.

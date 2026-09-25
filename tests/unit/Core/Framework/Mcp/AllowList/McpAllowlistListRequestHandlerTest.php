@@ -77,19 +77,19 @@ class McpAllowlistListRequestHandlerTest extends TestCase
     public function testToolsListUsesAdvertisedToolsWhenToolAllowlistAllowsAllTools(): void
     {
         $registry = new Registry();
-        foreach (['shopware-tool-search', 'tool-a', 'tool-b', 'tool-c'] as $toolName) {
+        foreach (['shopwell-tool-search', 'tool-a', 'tool-b', 'tool-c'] as $toolName) {
             $registry->registerTool($this->tool($toolName), static fn (): string => '');
         }
 
         $handler = $this->createHandler(
             $registry,
             new McpAllowlist(tools: null, resources: [], prompts: []),
-            advertisedTools: ['shopware-tool-search', 'tool-a', 'tool-c'],
+            advertisedTools: ['shopwell-tool-search', 'tool-a', 'tool-c'],
         );
 
         $firstResult = $this->handleToolsList($handler, null);
 
-        static::assertSame(['shopware-tool-search', 'tool-a'], array_map(static fn (Tool $tool): string => $tool->name, $firstResult->tools));
+        static::assertSame(['shopwell-tool-search', 'tool-a'], array_map(static fn (Tool $tool): string => $tool->name, $firstResult->tools));
         static::assertSame(base64_encode('2'), $firstResult->nextCursor);
 
         $secondResult = $this->handleToolsList($handler, $firstResult->nextCursor);
@@ -101,7 +101,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
     public function testToolsListAlwaysAdvertisesToolSearch(): void
     {
         $registry = new Registry();
-        foreach (['shopware-tool-search', 'tool-a'] as $toolName) {
+        foreach (['shopwell-tool-search', 'tool-a'] as $toolName) {
             $registry->registerTool($this->tool($toolName), static fn (): string => '');
         }
 
@@ -113,31 +113,31 @@ class McpAllowlistListRequestHandlerTest extends TestCase
 
         $result = $this->handleToolsList($handler, null);
 
-        static::assertSame(['shopware-tool-search', 'tool-a'], array_map(static fn (Tool $tool): string => $tool->name, $result->tools));
+        static::assertSame(['shopwell-tool-search', 'tool-a'], array_map(static fn (Tool $tool): string => $tool->name, $result->tools));
     }
 
     public function testToolsListWithEmptyToolAllowlistOnlyAdvertisesToolSearch(): void
     {
         $registry = new Registry();
-        foreach (['shopware-tool-search', 'tool-a'] as $toolName) {
+        foreach (['shopwell-tool-search', 'tool-a'] as $toolName) {
             $registry->registerTool($this->tool($toolName), static fn (): string => '');
         }
 
         $handler = $this->createHandler(
             $registry,
             new McpAllowlist(tools: [], resources: [], prompts: []),
-            advertisedTools: ['shopware-tool-search', 'tool-a'],
+            advertisedTools: ['shopwell-tool-search', 'tool-a'],
         );
 
         $result = $this->handleToolsList($handler, null);
 
-        static::assertSame(['shopware-tool-search'], array_map(static fn (Tool $tool): string => $tool->name, $result->tools));
+        static::assertSame(['shopwell-tool-search'], array_map(static fn (Tool $tool): string => $tool->name, $result->tools));
     }
 
     public function testToolsListWithEmptyToolAllowlistStillAdvertisesDiscoveryMetaTools(): void
     {
         $registry = new Registry();
-        foreach (['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL] as $toolName) {
+        foreach (['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL] as $toolName) {
             $registry->registerTool($this->tool($toolName), static fn (): string => '');
         }
 
@@ -146,13 +146,13 @@ class McpAllowlistListRequestHandlerTest extends TestCase
         $handler = $this->createHandler(
             $registry,
             new McpAllowlist(tools: [], resources: [], prompts: []),
-            advertisedTools: ['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
+            advertisedTools: ['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
         );
 
         $firstResult = $this->handleToolsList($handler, null);
 
         static::assertSame(
-            ['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL],
+            ['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL],
             array_map(static fn (Tool $tool): string => $tool->name, $firstResult->tools),
         );
         static::assertSame(base64_encode('2'), $firstResult->nextCursor);
@@ -169,7 +169,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
     public function testToolsListAdvertisesDiscoveryMetaToolsEvenWhenRestrictedAllowlistOmitsThem(): void
     {
         $registry = new Registry();
-        foreach (['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL] as $toolName) {
+        foreach (['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL] as $toolName) {
             $registry->registerTool($this->tool($toolName), static fn (): string => '');
         }
 
@@ -177,8 +177,8 @@ class McpAllowlistListRequestHandlerTest extends TestCase
         // discovery meta-tools) must still receive the full discovery interface.
         $handler = $this->createHandler(
             $registry,
-            new McpAllowlist(tools: ['shopware-entity-search'], resources: [], prompts: []),
-            advertisedTools: ['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
+            new McpAllowlist(tools: ['shopwell-entity-search'], resources: [], prompts: []),
+            advertisedTools: ['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
         );
 
         $firstResult = $this->handleToolsList($handler, null);
@@ -190,7 +190,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
         );
 
         static::assertSame(
-            ['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
+            ['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
             $names,
         );
     }
@@ -198,7 +198,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
     public function testToolsListIncludesEnabledSessionToolsetToolsBeforePagination(): void
     {
         $registry = new Registry();
-        foreach (['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL, 'shopware-entity-search', 'shopware-system-config-read'] as $toolName) {
+        foreach (['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL, 'shopwell-entity-search', 'shopwell-system-config-read'] as $toolName) {
             $registry->registerTool($this->tool($toolName), static fn (): string => '');
         }
 
@@ -207,7 +207,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
             ->method('advertisedToolsForNames')
             ->with(['entity'])
             ->willReturn([
-                'shopware-entity-search',
+                'shopwell-entity-search',
             ]);
 
         $toolsetSessionStorage = $this->createMock(McpToolsetSessionStorage::class);
@@ -222,11 +222,11 @@ class McpAllowlistListRequestHandlerTest extends TestCase
         $handler = $this->createHandler(
             $registry,
             new McpAllowlist(
-                tools: ['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL, 'shopware-entity-search', 'shopware-system-config-read'],
+                tools: ['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL, 'shopwell-entity-search', 'shopwell-system-config-read'],
                 resources: [],
                 prompts: [],
             ),
-            advertisedTools: ['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
+            advertisedTools: ['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
             toolsetRegistry: $toolsetRegistry,
             toolsetSessionStorage: $toolsetSessionStorage,
             requestStack: $requestStack,
@@ -234,12 +234,12 @@ class McpAllowlistListRequestHandlerTest extends TestCase
 
         $firstResult = $this->handleToolsList($handler, null);
 
-        static::assertSame(['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL], array_map(static fn (Tool $tool): string => $tool->name, $firstResult->tools));
+        static::assertSame(['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL], array_map(static fn (Tool $tool): string => $tool->name, $firstResult->tools));
         static::assertSame(base64_encode('2'), $firstResult->nextCursor);
 
         $secondResult = $this->handleToolsList($handler, $firstResult->nextCursor);
 
-        static::assertSame([McpToolsetRegistry::ENABLE_TOOLSET_TOOL, 'shopware-entity-search'], array_map(static fn (Tool $tool): string => $tool->name, $secondResult->tools));
+        static::assertSame([McpToolsetRegistry::ENABLE_TOOLSET_TOOL, 'shopwell-entity-search'], array_map(static fn (Tool $tool): string => $tool->name, $secondResult->tools));
         static::assertNull($secondResult->nextCursor);
     }
 
@@ -247,23 +247,23 @@ class McpAllowlistListRequestHandlerTest extends TestCase
     {
         $names = $this->allToolNames($this->connectUrlHandler('/api/_mcp?toolsets=entity'));
 
-        static::assertContains('shopware-entity-search', $names);
-        static::assertNotContains('shopware-order-state', $names);
+        static::assertContains('shopwell-entity-search', $names);
+        static::assertNotContains('shopwell-order-state', $names);
     }
 
     public function testConnectUrlToolsetsAllAdvertisesEveryToolset(): void
     {
         $names = $this->allToolNames($this->connectUrlHandler('/api/_mcp?toolsets=all'));
 
-        static::assertContains('shopware-entity-search', $names);
-        static::assertContains('shopware-order-state', $names);
+        static::assertContains('shopwell-entity-search', $names);
+        static::assertContains('shopwell-order-state', $names);
     }
 
     public function testConnectUrlToolsetsStayBoundedByTheAllowlist(): void
     {
         $handler = $this->connectUrlHandler('/api/_mcp?toolsets=all', allowlistTools: $this->metaTools());
 
-        static::assertNotContains('shopware-entity-search', $this->allToolNames($handler));
+        static::assertNotContains('shopwell-entity-search', $this->allToolNames($handler));
     }
 
     public function testConnectUrlToolsetsAreUnionedWithSessionEnabledOnes(): void
@@ -279,14 +279,14 @@ class McpAllowlistListRequestHandlerTest extends TestCase
 
         $names = $this->allToolNames($handler);
 
-        static::assertContains('shopware-entity-search', $names);
-        static::assertContains('shopware-order-state', $names);
+        static::assertContains('shopwell-entity-search', $names);
+        static::assertContains('shopwell-order-state', $names);
     }
 
     public function testToolsListKeepsAllowlistAsBoundaryForEnabledToolsetTools(): void
     {
         $registry = new Registry();
-        foreach (['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL, 'shopware-order-state'] as $toolName) {
+        foreach (['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL, 'shopwell-order-state'] as $toolName) {
             $registry->registerTool($this->tool($toolName), static fn (): string => '');
         }
 
@@ -294,7 +294,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
         $toolsetRegistry->expects($this->once())
             ->method('advertisedToolsForNames')
             ->with(['order'])
-            ->willReturn(['shopware-order-state']);
+            ->willReturn(['shopwell-order-state']);
 
         $toolsetSessionStorage = $this->createMock(McpToolsetSessionStorage::class);
         $toolsetSessionStorage->expects($this->once())
@@ -308,11 +308,11 @@ class McpAllowlistListRequestHandlerTest extends TestCase
         $handler = $this->createHandler(
             $registry,
             new McpAllowlist(
-                tools: ['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
+                tools: ['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
                 resources: [],
                 prompts: [],
             ),
-            advertisedTools: ['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
+            advertisedTools: ['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
             toolsetRegistry: $toolsetRegistry,
             toolsetSessionStorage: $toolsetSessionStorage,
             requestStack: $requestStack,
@@ -320,14 +320,14 @@ class McpAllowlistListRequestHandlerTest extends TestCase
 
         $result = $this->handleToolsList($handler, null);
 
-        static::assertSame(['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL], array_map(static fn (Tool $tool): string => $tool->name, $result->tools));
+        static::assertSame(['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL], array_map(static fn (Tool $tool): string => $tool->name, $result->tools));
         static::assertSame(base64_encode('2'), $result->nextCursor);
     }
 
     public function testToolsListUsesOnlyAdvertisedToolsWhenRequestHasNoSessionHeader(): void
     {
         $registry = new Registry();
-        foreach (['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL, 'shopware-entity-search'] as $toolName) {
+        foreach (['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL, 'shopwell-entity-search'] as $toolName) {
             $registry->registerTool($this->tool($toolName), static fn (): string => '');
         }
 
@@ -343,7 +343,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
         $handler = $this->createHandler(
             $registry,
             new McpAllowlist(tools: null, resources: [], prompts: []),
-            advertisedTools: ['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
+            advertisedTools: ['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL],
             toolsetRegistry: $toolsetRegistry,
             toolsetSessionStorage: $toolsetSessionStorage,
             requestStack: new RequestStack(),
@@ -351,7 +351,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
 
         $firstResult = $this->handleToolsList($handler, null);
 
-        static::assertSame(['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL], array_map(static fn (Tool $tool): string => $tool->name, $firstResult->tools));
+        static::assertSame(['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL], array_map(static fn (Tool $tool): string => $tool->name, $firstResult->tools));
         static::assertSame(base64_encode('2'), $firstResult->nextCursor);
 
         $secondResult = $this->handleToolsList($handler, $firstResult->nextCursor);
@@ -388,14 +388,14 @@ class McpAllowlistListRequestHandlerTest extends TestCase
 
         $handler = $this->createHandler($registry, new McpAllowlist(
             tools: null,
-            resources: ['shopware://resource-b', 'shopware://resource-d', 'shopware://resource-e'],
+            resources: ['shopwell://resource-b', 'shopwell://resource-d', 'shopwell://resource-e'],
             prompts: null,
         ));
 
         $firstResult = $this->handleResourcesList($handler, null);
 
         static::assertSame(
-            ['shopware://resource-b', 'shopware://resource-d'],
+            ['shopwell://resource-b', 'shopwell://resource-d'],
             array_map(static fn (ResourceDefinition $resource): string => $resource->uri, $firstResult->resources),
         );
         static::assertSame(base64_encode('2'), $firstResult->nextCursor);
@@ -403,7 +403,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
         $secondResult = $this->handleResourcesList($handler, $firstResult->nextCursor);
 
         static::assertSame(
-            ['shopware://resource-e'],
+            ['shopwell://resource-e'],
             array_map(static fn (ResourceDefinition $resource): string => $resource->uri, $secondResult->resources),
         );
         static::assertNull($secondResult->nextCursor);
@@ -421,7 +421,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
         $firstResult = $this->handleResourcesList($handler, null);
 
         static::assertSame(
-            ['shopware://resource-a', 'shopware://resource-b'],
+            ['shopwell://resource-a', 'shopwell://resource-b'],
             array_map(static fn (ResourceDefinition $resource): string => $resource->uri, $firstResult->resources),
         );
         static::assertSame(base64_encode('2'), $firstResult->nextCursor);
@@ -429,7 +429,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
         $secondResult = $this->handleResourcesList($handler, $firstResult->nextCursor);
 
         static::assertSame(
-            ['shopware://resource-c'],
+            ['shopwell://resource-c'],
             array_map(static fn (ResourceDefinition $resource): string => $resource->uri, $secondResult->resources),
         );
         static::assertNull($secondResult->nextCursor);
@@ -447,7 +447,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
 
         $result = $this->handleResourcesList($handler, null);
 
-        static::assertSame(['shopware://resource-a'], array_map(static fn (ResourceDefinition $resource): string => $resource->uri, $result->resources));
+        static::assertSame(['shopwell://resource-a'], array_map(static fn (ResourceDefinition $resource): string => $resource->uri, $result->resources));
     }
 
     public function testPromptsListFiltersAllowlistBeforePaginationAndReturnsCursorRemainder(): void
@@ -557,7 +557,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
      */
     private function metaTools(): array
     {
-        return ['shopware-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL];
+        return ['shopwell-tool-search', McpToolsetRegistry::LIST_TOOLSETS_TOOL, McpToolsetRegistry::ENABLE_TOOLSET_TOOL];
     }
 
     /**
@@ -570,7 +570,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
         ?McpToolsetSessionStorage $toolsetSessionStorage = null,
     ): McpAllowlistListRequestHandler {
         $registry = new Registry();
-        foreach ([...$this->metaTools(), 'shopware-entity-search', 'shopware-order-state'] as $toolName) {
+        foreach ([...$this->metaTools(), 'shopwell-entity-search', 'shopwell-order-state'] as $toolName) {
             $registry->registerTool($this->tool($toolName), static fn (): string => '');
         }
 
@@ -582,11 +582,11 @@ class McpAllowlistListRequestHandlerTest extends TestCase
             $registry,
             $privilegeProvider,
             toolGroups: [
-                'shopware-tool-search' => McpToolsetRegistry::DISCOVERY_GROUP,
+                'shopwell-tool-search' => McpToolsetRegistry::DISCOVERY_GROUP,
                 McpToolsetRegistry::LIST_TOOLSETS_TOOL => McpToolsetRegistry::DISCOVERY_GROUP,
                 McpToolsetRegistry::ENABLE_TOOLSET_TOOL => McpToolsetRegistry::DISCOVERY_GROUP,
-                'shopware-entity-search' => 'entity',
-                'shopware-order-state' => 'order',
+                'shopwell-entity-search' => 'entity',
+                'shopwell-order-state' => 'order',
             ],
         ));
 
@@ -613,7 +613,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
     private function createHandler(
         RegistryInterface $registry,
         McpAllowlist $allowlist,
-        array $advertisedTools = ['shopware-tool-search', 'tool-a', 'tool-b', 'tool-c', 'tool-d', 'tool-e'],
+        array $advertisedTools = ['shopwell-tool-search', 'tool-a', 'tool-b', 'tool-c', 'tool-d', 'tool-e'],
         ?McpToolsetRegistry $toolsetRegistry = null,
         ?McpToolsetSessionStorage $toolsetSessionStorage = null,
         ?RequestStack $requestStack = null,
@@ -671,7 +671,7 @@ class McpAllowlistListRequestHandlerTest extends TestCase
     private function resource(string $name): ResourceDefinition
     {
         return new ResourceDefinition(
-            uri: 'shopware://' . $name,
+            uri: 'shopwell://' . $name,
             name: $name,
         );
     }

@@ -18,20 +18,20 @@ let lastProductSearchCriteria = null;
 
 function mockContext() {
     return {
-        apiPath: 'http://shopware.local/api',
-        apiResourcePath: 'http://shopware.local/api/v2',
-        assetsPath: 'http://shopware.local/bundles/',
+        apiPath: 'http://shopwell.local/api',
+        apiResourcePath: 'http://shopwell.local/api/v2',
+        assetsPath: 'http://shopwell.local/bundles/',
         basePath: '',
-        host: 'shopware.local',
+        host: 'shopwell.local',
         inheritance: false,
-        installationPath: 'http://shopware.local',
+        installationPath: 'http://shopwell.local',
         languageId: '2fbb5fe2e29a4d70aa5854ce7ce3e20b',
         liveVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
         pathInfo: '/admin',
         port: 80,
         scheme: 'http',
-        schemeAndHttpHost: 'http://shopware.local',
-        uri: 'http://shopware.local/admin',
+        schemeAndHttpHost: 'http://shopwell.local',
+        uri: 'http://shopwell.local/admin',
     };
 }
 

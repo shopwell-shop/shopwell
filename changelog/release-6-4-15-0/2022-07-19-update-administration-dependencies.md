@@ -2,7 +2,7 @@
 title: Update administration dependencies
 issue: NEXT-22201
 author: Sebastian Seggewiss
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration
@@ -30,4 +30,4 @@ author_github: @seggewiss
 * Changed `date-fns-tz` version from `1.3.4` to `1.3.6`
 * Changed `bottlejs` version from `1.7.2` to `2.0.1`
 * Changed `apexcharts` version from `3.35.0` to `3.35.3`
-* Changed `@shopware-ag/meteor-icon-kit` version from `4.0.0` to `4.2.0`
+* Changed `@shopwell-ag/meteor-icon-kit` version from `4.0.0` to `4.2.0`

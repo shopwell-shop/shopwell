@@ -265,11 +265,11 @@ async function createWrapper(versionId = '0fa91ce3e96a4bc2be4bd9ce752c3425') {
     );
 }
 
-const shopwareStoreGetter = Shopwell.Store.get;
+const shopwellStoreGetter = Shopwell.Store.get;
 
 describe('module/sw-cms/page/sw-cms-detail', () => {
     beforeEach(async () => {
-        Shopwell.Store.get = shopwareStoreGetter;
+        Shopwell.Store.get = shopwellStoreGetter;
         Shopwell.Store.get('cmsPage').$reset();
 
         jest.spyOn(global.console, 'warn').mockImplementation(() => {});
@@ -280,18 +280,18 @@ describe('module/sw-cms/page/sw-cms-detail', () => {
     });
 
     afterEach(() => {
-        Shopwell.Store.get('shopwareApps').selectedIds = [];
+        Shopwell.Store.get('shopwellApps').selectedIds = [];
     });
 
     it('should select the displayed layout for app action buttons', async () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual(['1a']);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual(['1a']);
 
         wrapper.vm.$options.beforeRouteLeave.call(wrapper.vm);
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual([]);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual([]);
     });
 
     it('should select the new layout for app action buttons when navigating to another layout', async () => {
@@ -302,7 +302,7 @@ describe('module/sw-cms/page/sw-cms-detail', () => {
         await flushPromises();
 
         expect(wrapper.vm.pageId).toBe('2b');
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual(['2b']);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual(['2b']);
     });
 
     it('should disable all fields when ACL rights are missing', async () => {
@@ -840,7 +840,7 @@ describe('module/sw-cms/page/sw-cms-detail', () => {
                 case 'swProductDetail':
                     return mockProductStore;
                 default:
-                    return shopwareStoreGetter(storeName);
+                    return shopwellStoreGetter(storeName);
             }
         });
 
@@ -902,7 +902,7 @@ describe('module/sw-cms/page/sw-cms-detail', () => {
             if (storeName === 'swProductDetail') {
                 throw new Error('Store not registered');
             }
-            return shopwareStoreGetter(storeName);
+            return shopwellStoreGetter(storeName);
         });
 
         expect(() => wrapper.vm.resetRelatedStores()).not.toThrow();

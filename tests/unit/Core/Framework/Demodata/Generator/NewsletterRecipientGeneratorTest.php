@@ -109,7 +109,7 @@ class NewsletterRecipientGeneratorTest extends TestCase
             static::assertSame('Jane', $upsert['firstName']);
             static::assertSame('Doe', $upsert['lastName']);
             static::assertSame($salesChannelId, $upsert['salesChannelId']);
-            static::assertTrue($upsert['customFields']['shopwareDemoData']);
+            static::assertTrue($upsert['customFields']['shopwellDemoData']);
         }
     }
 }

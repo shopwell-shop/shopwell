@@ -119,7 +119,7 @@ describe('module/sw-customer/page/sw-customer-create', () => {
                 id: '1',
                 email: 'user@domain.com',
                 accountType: 'business',
-                password: 'shopware',
+                password: 'shopwell',
             },
             address: {
                 company: '',
@@ -149,7 +149,7 @@ describe('module/sw-customer/page/sw-customer-create', () => {
                 id: '1',
                 email: 'user@domain.com',
                 accountType: 'business',
-                password: 'shopware',
+                password: 'shopwell',
                 salesChannelId: 'a7921464677a4ef591683d144beecd24',
             },
             address: {
@@ -183,7 +183,7 @@ describe('module/sw-customer/page/sw-customer-create', () => {
                 id: '1',
                 email: 'user@domain.com',
                 accountType: 'business',
-                password: 'shopware',
+                password: 'shopwell',
                 salesChannelId: 'a7921464677a4ef591683d144beecd24',
             },
             address: {

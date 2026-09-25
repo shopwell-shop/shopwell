@@ -13,8 +13,8 @@ use Shopwell\Core\Framework\Util\Json;
  */
 #[Package('framework')]
 #[McpResource(
-    uri: 'shopware://business-events',
-    name: 'shopware-business-events',
+    uri: 'shopwell://business-events',
+    name: 'shopwell-business-events',
     description: 'All registered Shopwell business events that can trigger flows and event actions.'
 )]
 class BusinessEventsResource
@@ -46,7 +46,7 @@ class BusinessEventsResource
         }
 
         return [
-            'uri' => 'shopware://business-events',
+            'uri' => 'shopwell://business-events',
             'mimeType' => 'application/json',
             'text' => Json::encode($events),
         ];

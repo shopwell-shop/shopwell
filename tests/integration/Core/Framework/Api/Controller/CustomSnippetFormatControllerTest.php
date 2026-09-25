@@ -243,12 +243,12 @@ class CustomSnippetFormatControllerTest extends TestCase
                     'address' => [
                         'firstName' => 'Vin',
                         'lastName' => 'Le',
-                        'company' => 'shopware AG',
+                        'company' => 'Shopwell',
                         'department' => '',
                     ],
                 ],
             ],
-            'expectedHtml' => 'shopware AG<br/>Vin Le',
+            'expectedHtml' => 'Shopwell<br/>Vin Le',
         ];
 
         yield 'render ignore empty line' => [

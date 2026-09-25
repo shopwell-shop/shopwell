@@ -106,7 +106,7 @@ class StoreSessionExpiredMiddlewareTest extends TestCase
             $requestStack
         );
 
-        $request = new Psr7Request('GET', '/', [StoreRequestOptionsProvider::SHOPWARE_PLATFORM_TOKEN_HEADER => 'some-invalid-token']);
+        $request = new Psr7Request('GET', '/', [StoreRequestOptionsProvider::SHOPWELL_PLATFORM_TOKEN_HEADER => 'some-invalid-token']);
 
         $this->expectExceptionObject(new StoreSessionExpiredException());
         $handler = fn (RequestInterface $req, array $options) => new FulfilledPromise($response);

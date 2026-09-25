@@ -1,6 +1,6 @@
 # MCP Server Internal Docs
 
-Canonical user-facing MCP documentation now lives in [`shopware/docs` PR #2264](https://github.com/shopware/docs/pull/2264):
+Canonical user-facing MCP documentation now lives in [`shopwell/docs` PR #2264](https://github.com/shopwell-shop/docs/pull/2264):
 
 - overview, concepts, getting started, configuration, tools reference
 - best practices, examples, troubleshooting
@@ -17,4 +17,4 @@ This directory now keeps only internal material that is not part of the public d
 | [Product Epic Backlog](product-epic-backlog.md) | Planning and scope decomposition for MCP workstreams |
 | [Per-user MCP allowlist](gaps-user-allowlist.md) | Implementation details: all auth modes, per-user allowlist on user entity, Copilot intersection, Admin UI |
 
-If a topic is already covered in `shopware/docs`, do not reintroduce it here unless it is repo-internal planning or audit material.
+If a topic is already covered in `shopwell/docs`, do not reintroduce it here unless it is repo-internal planning or audit material.

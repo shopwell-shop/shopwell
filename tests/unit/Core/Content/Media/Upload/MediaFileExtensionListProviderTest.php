@@ -80,12 +80,12 @@ class MediaFileExtensionListProviderTest extends TestCase
 
     public function testUnknownExtensionsRemainAllowedWithoutMimeTypes(): void
     {
-        $provider = new MediaFileExtensionListProvider(new EventDispatcher(), [], ['unknown-shopware-extension']);
+        $provider = new MediaFileExtensionListProvider(new EventDispatcher(), [], ['unknown-shopwell-extension']);
         $context = Context::createDefaultContext();
 
-        static::assertSame(['unknown-shopware-extension'], $provider->getAllowedExtensions(true, $context));
+        static::assertSame(['unknown-shopwell-extension'], $provider->getAllowedExtensions(true, $context));
         static::assertSame(
-            ['unknown-shopware-extension' => []],
+            ['unknown-shopwell-extension' => []],
             $provider->getMimeTypesByExtension(true, $context)
         );
     }

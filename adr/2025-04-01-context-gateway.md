@@ -263,7 +263,7 @@ Example response from app-server:
 ]
 ```
 
-Shopware will apply validation rules to ensure consistency and prevent conflicting command execution.
+Shopwell will apply validation rules to ensure consistency and prevent conflicting command execution.
 
 - The response must not contain more than **one `register-customer` or `login-customer` command**.
 - All other command types must appear **at most once** in the response.
@@ -345,7 +345,7 @@ class ChangeCurrencyCommandHandler extends AbstractContextGatewayCommandHandler
 
 Command handlers will be registered in the `ContextGatewayCommandRegistry` using a registry pattern.
 
-All implementations of `AbstractContextGatewayCommandHandler` must be tagged with the `shopware.context.gateway.command` service tag.
+All implementations of `AbstractContextGatewayCommandHandler` must be tagged with the `shopwell.context.gateway.command` service tag.
 This ensures they are automatically discovered and made available to the app system for command execution.
 
 #### Event

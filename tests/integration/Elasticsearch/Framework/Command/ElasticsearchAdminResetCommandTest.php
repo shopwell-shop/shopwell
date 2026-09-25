@@ -58,7 +58,7 @@ class ElasticsearchAdminResetCommandTest extends TestCase
         static::assertStringContainsString('Admin Elasticsearch indices deleted and queue cleared', $message);
 
         $client = $this->getDiContainer()->get(Client::class);
-        $client->indices()->get(['index' => EnvironmentHelper::getVariable('SHOPWARE_ADMIN_ES_INDEX_PREFIX') . '*']);
+        $client->indices()->get(['index' => EnvironmentHelper::getVariable('SHOPWELL_ADMIN_ES_INDEX_PREFIX') . '*']);
 
         $tasks = $this->connection->fetchAllAssociative('SELECT `index` FROM admin_elasticsearch_index_task');
 

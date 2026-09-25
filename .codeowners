@@ -10,50 +10,50 @@
 # Note: patterns are relative to the directory of this file, so recursive matches need `**`.
 
 # discovery
-? src/Administration/Resources/app/administration/src/module/sw-category/** @shopware/product-cc-discovery
-? src/Administration/Resources/app/administration/src/module/sw-cms/** @shopware/product-cc-discovery
-? src/Administration/Resources/app/administration/src/module/sw-landing-page/** @shopware/product-cc-discovery
-? src/Administration/Resources/app/administration/src/module/sw-media/** @shopware/product-cc-discovery
-? src/Administration/Resources/app/administration/src/module/sw-sales-channel/** @shopware/product-cc-discovery
-? src/Administration/Resources/app/administration/src/module/sw-settings-country/** @shopware/product-cc-discovery
-? src/Administration/Resources/app/administration/src/module/sw-settings-customer-group/** @shopware/product-cc-discovery
-? src/Administration/Resources/app/administration/src/module/sw-settings-delivery-times/** @shopware/product-cc-discovery
-? src/Administration/Resources/app/administration/src/module/sw-settings-language/** @shopware/product-cc-discovery
-? src/Administration/Resources/app/administration/src/module/sw-settings-sitemap/** @shopware/product-cc-discovery
-? src/Administration/Resources/app/administration/src/module/sw-settings-snippet/** @shopware/product-cc-discovery
-? src/Administration/Resources/app/administration/src/app/component/media/** @shopware/product-cc-discovery
-? src/Storefront/Resources/views/storefront/element/cms-element-** @shopware/product-cc-discovery
+? src/Administration/Resources/app/administration/src/module/sw-category/** @shopwell/product-cc-discovery
+? src/Administration/Resources/app/administration/src/module/sw-cms/** @shopwell/product-cc-discovery
+? src/Administration/Resources/app/administration/src/module/sw-landing-page/** @shopwell/product-cc-discovery
+? src/Administration/Resources/app/administration/src/module/sw-media/** @shopwell/product-cc-discovery
+? src/Administration/Resources/app/administration/src/module/sw-sales-channel/** @shopwell/product-cc-discovery
+? src/Administration/Resources/app/administration/src/module/sw-settings-country/** @shopwell/product-cc-discovery
+? src/Administration/Resources/app/administration/src/module/sw-settings-customer-group/** @shopwell/product-cc-discovery
+? src/Administration/Resources/app/administration/src/module/sw-settings-delivery-times/** @shopwell/product-cc-discovery
+? src/Administration/Resources/app/administration/src/module/sw-settings-language/** @shopwell/product-cc-discovery
+? src/Administration/Resources/app/administration/src/module/sw-settings-sitemap/** @shopwell/product-cc-discovery
+? src/Administration/Resources/app/administration/src/module/sw-settings-snippet/** @shopwell/product-cc-discovery
+? src/Administration/Resources/app/administration/src/app/component/media/** @shopwell/product-cc-discovery
+? src/Storefront/Resources/views/storefront/element/cms-element-** @shopwell/product-cc-discovery
 
 # after-sales
-? src/Core/Framework/Resources/views/documents/** @shopware/product-cc-after-sales
-? src/Core/Checkout/Document/** @shopware/product-cc-after-sales
-? src/Core/Checkout/DocumentV2/** @shopware/product-cc-after-sales
-? src/Core/Content/Flow/** @shopware/product-cc-after-sales
-? src/Core/Content/MailTemplate/** @shopware/product-cc-after-sales
-? src/Core/Content/Mail/** @shopware/product-cc-after-sales
-? src/Core/Content/Newsletter/** @shopware/product-cc-after-sales
-? src/Core/Content/ImportExport/** @shopware/product-cc-after-sales
-? src/Core/Content/RevocationRequest/** @shopware/product-cc-after-sales
-? src/Core/Content/Shared/MailFlow/** @shopware/product-cc-after-sales
-? src/Core/Content/Product/SalesChannel/Review/** @shopware/product-cc-after-sales
-? src/Core/Framework/Rule/** @shopware/product-cc-after-sales
-? src/Administration/Resources/app/administration/src/module/sw-flow/** @shopware/product-cc-after-sales
-? src/Administration/Resources/app/administration/src/app/component/rule/** @shopware/product-cc-after-sales
-? src/Administration/Resources/app/administration/src/module/sw-mail-template/** @shopware/product-cc-after-sales
-? src/Administration/Resources/app/administration/src/module/sw-newsletter-recipient/** @shopware/product-cc-after-sales
-? src/Administration/Resources/app/administration/src/module/sw-settings-document/** @shopware/product-cc-after-sales
-? src/Administration/Resources/app/administration/src/module/sw-settings-mailer/** @shopware/product-cc-after-sales
-? src/Administration/Resources/app/administration/src/module/sw-settings-newsletter/** @shopware/product-cc-after-sales
-? src/Administration/Resources/app/administration/src/module/sw-review/** @shopware/product-cc-after-sales
-? src/Administration/Resources/app/administration/src/module/sw-dashboard/** @shopware/product-cc-after-sales
-? src/Administration/Resources/app/administration/src/module/sw-import-export/** @shopware/product-cc-after-sales
-? src/Administration/Resources/app/administration/src/module/sw-settings-rule/** @shopware/product-cc-after-sales
-? src/Administration/Resources/app/administration/src/module/sw-first-run-wizard/** @shopware/product-cc-after-sales
-tests/integration/Core/Checkout/Document/Renderer/_snapshots/** @shopware/product-cc-after-sales
-tests/integration/Core/Checkout/DocumentV2/Renderer/_snapshots/** @shopware/product-cc-after-sales
+? src/Core/Framework/Resources/views/documents/** @shopwell/product-cc-after-sales
+? src/Core/Checkout/Document/** @shopwell/product-cc-after-sales
+? src/Core/Checkout/DocumentV2/** @shopwell/product-cc-after-sales
+? src/Core/Content/Flow/** @shopwell/product-cc-after-sales
+? src/Core/Content/MailTemplate/** @shopwell/product-cc-after-sales
+? src/Core/Content/Mail/** @shopwell/product-cc-after-sales
+? src/Core/Content/Newsletter/** @shopwell/product-cc-after-sales
+? src/Core/Content/ImportExport/** @shopwell/product-cc-after-sales
+? src/Core/Content/RevocationRequest/** @shopwell/product-cc-after-sales
+? src/Core/Content/Shared/MailFlow/** @shopwell/product-cc-after-sales
+? src/Core/Content/Product/SalesChannel/Review/** @shopwell/product-cc-after-sales
+? src/Core/Framework/Rule/** @shopwell/product-cc-after-sales
+? src/Administration/Resources/app/administration/src/module/sw-flow/** @shopwell/product-cc-after-sales
+? src/Administration/Resources/app/administration/src/app/component/rule/** @shopwell/product-cc-after-sales
+? src/Administration/Resources/app/administration/src/module/sw-mail-template/** @shopwell/product-cc-after-sales
+? src/Administration/Resources/app/administration/src/module/sw-newsletter-recipient/** @shopwell/product-cc-after-sales
+? src/Administration/Resources/app/administration/src/module/sw-settings-document/** @shopwell/product-cc-after-sales
+? src/Administration/Resources/app/administration/src/module/sw-settings-mailer/** @shopwell/product-cc-after-sales
+? src/Administration/Resources/app/administration/src/module/sw-settings-newsletter/** @shopwell/product-cc-after-sales
+? src/Administration/Resources/app/administration/src/module/sw-review/** @shopwell/product-cc-after-sales
+? src/Administration/Resources/app/administration/src/module/sw-dashboard/** @shopwell/product-cc-after-sales
+? src/Administration/Resources/app/administration/src/module/sw-import-export/** @shopwell/product-cc-after-sales
+? src/Administration/Resources/app/administration/src/module/sw-settings-rule/** @shopwell/product-cc-after-sales
+? src/Administration/Resources/app/administration/src/module/sw-first-run-wizard/** @shopwell/product-cc-after-sales
+tests/integration/Core/Checkout/Document/Renderer/_snapshots/** @shopwell/product-cc-after-sales
+tests/integration/Core/Checkout/DocumentV2/Renderer/_snapshots/** @shopwell/product-cc-after-sales
 
 # product-operations
-.github/** @shopware/product-operations
+.github/** @shopwell/product-operations
 
 # ctrl-alt-elite
-src/Core/System/UsageData/usage-data-allow-list.json @shopware/st-ctrl-alt-elite
+src/Core/System/UsageData/usage-data-allow-list.json @shopwell/st-ctrl-alt-elite

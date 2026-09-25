@@ -5,7 +5,7 @@
       "textHeadline": "Mailer",
       "helpText": "Für weitere Informationen schaue bitte in die {documentation}",
       "docsLabel": "Dokumentation",
-      "docsLink": "https://docs.shopwell.cn/de/shopware-6-de/einstellungen/mailer"
+      "docsLink": "https://docs.shopwell.cn/de/shopwell-6-de/einstellungen/mailer"
     },
     "mailer-configuration": {
       "card-title": "Mailer-Konfiguration",

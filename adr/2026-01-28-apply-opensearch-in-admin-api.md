@@ -16,7 +16,7 @@ We therefore need an approach that allows administration modules/Admin API searc
 
 ## Decision
 
-- Introduce `Shopware\Elasticsearch\Admin\AdminElasticsearchEntitySearcher` to decorate the DAL `EntitySearcherInterface`. Whenever the `AdminSearchRegistry` signals that an entity supports OpenSearch and the request context opts in, the decorator forwards the criteria to OpenSearch instead of querying MySQL. Unsupported entities continue to use the previous MySQL behaviour automatically.
+- Introduce `Shopwell\Elasticsearch\Admin\AdminElasticsearchEntitySearcher` to decorate the DAL `EntitySearcherInterface`. Whenever the `AdminSearchRegistry` signals that an entity supports OpenSearch and the request context opts in, the decorator forwards the criteria to OpenSearch instead of querying MySQL. Unsupported entities continue to use the previous MySQL behaviour automatically.
   
 ### Currently supported entities
 
@@ -83,7 +83,7 @@ They are selected because they represent the most commonly searched/filter entit
 In practice, any Admin API search without explicit ID or term filters whose filters or sorts exist in the indexer's supported field list automatically hits OpenSearch (e.g. product listings filtering by `active`, `manufacturerId`, or `stock`), while every other query falls back to the decorated MySQL searcher.
 
 - Keep the functionality behind the explicit feature flag `ENABLE_OPENSEARCH_FOR_ADMIN_API`. Only when the feature flag is active and admin OpenSearch itself is configured/enabled do we forward DAL searches to OpenSearch. This lets us roll out the change gradually, collect feedback, and still unblock projects that need the old behaviour.
-- Extend the admin indexes with the fields that are actually used for searching or filtering via standard Shopware criteria. To keep index size and performance in check we only add the commonly used admin fields and store them as keyword fields. Projects that require additional fields must extend the mapping and indexing on their own.
+- Extend the admin indexes with the fields that are actually used for searching or filtering via standard Shopwell criteria. To keep index size and performance in check we only add the commonly used admin fields and store them as keyword fields. Projects that require additional fields must extend the mapping and indexing on their own.
 
 For example, `src/Elasticsearch/Admin/Indexer/ProductAdminSearchIndexer.php` defines the following mapping overrides:
 
@@ -130,7 +130,7 @@ The same indexer exposes the corresponding fetch logic that selects the fields f
   }
 ```
 
-External extensions that require more fields should decorate the concrete indexer service (e.g. `Shopware\\Elasticsearch\\Admin\\Indexer\\ProductAdminSearchIndexer`) and append their own mapping/fetch logic:
+External extensions that require more fields should decorate the concrete indexer service (e.g. `Shopwell\\Elasticsearch\\Admin\\Indexer\\ProductAdminSearchIndexer`) and append their own mapping/fetch logic:
 
 ```php
   class CustomProductAdminSearchIndexer extends AbstractAdminIndexer
@@ -158,25 +158,25 @@ External extensions that require more fields should decorate the concrete indexe
   }
 ```
 
-The decorator is then registered via Symfony service decoration so that it wraps the core indexer without modifying Shopware code.
+The decorator is then registered via Symfony service decoration so that it wraps the core indexer without modifying Shopwell code.
 
 ```xml
-<service id="Foo\Your\Custom\ProductAdminSearchIndexerDecorator" decorates="Shopware\Elasticsearch\Admin\Indexer\ProductAdminSearchIndexer" on-invalid="null">
+<service id="Foo\Your\Custom\ProductAdminSearchIndexerDecorator" decorates="Shopwell\Elasticsearch\Admin\Indexer\ProductAdminSearchIndexer" on-invalid="null">
   <argument type="service" id=".inner"/>
 </service>
 ```
 
 **It's important to define the decorator with `on-invalid="ignore"` in case the Elasticsearch bundle is not registered in the project.**
 
-For a custom entity that you want to add to the list of supported entities, it's important to register the service with tag `shopware.elastic.admin-searcher-index` like following
+For a custom entity that you want to add to the list of supported entities, it's important to register the service with tag `shopwell.elastic.admin-searcher-index` like following
 
 ```xml
-<tag name="shopware.elastic.admin-searcher-index" key="<your_entity_name>"/>
+<tag name="shopwell.elastic.admin-searcher-index" key="<your_entity_name>"/>
 ```
 
 ### Troubleshooting
 
-- The search result from `\Shopware\Elasticsearch\Admin\AdminElasticsearchEntitySearcher::search` is tagged with the state `loaded-by-opensearch`. When the Admin API returns JSON, this state is exposed inside the response `meta.states`, e.g.
+- The search result from `\Shopwell\Elasticsearch\Admin\AdminElasticsearchEntitySearcher::search` is tagged with the state `loaded-by-opensearch`. When the Admin API returns JSON, this state is exposed inside the response `meta.states`, e.g.
 
   ```json
   {

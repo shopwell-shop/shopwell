@@ -466,14 +466,14 @@ class WebhookManagerTest extends TestCase
         static::assertSame('foo.bar', $request->getUri()->getHost());
 
         $headers = $request->getHeaders();
-        static::assertArrayHasKey(RequestSigner::SHOPWARE_SHOP_SIGNATURE, $headers);
+        static::assertArrayHasKey(RequestSigner::SHOPWELL_SHOP_SIGNATURE, $headers);
         static::assertArrayHasKey('X-Shopwell-Event-Id', $headers);
         static::assertArrayHasKey('X-Shopwell-Sequence', $headers);
         static::assertArrayHasKey('X-Shopwell-Attempt', $headers);
         static::assertSame(['1'], $headers['X-Shopwell-Sequence']);
         static::assertSame(['0'], $headers['X-Shopwell-Attempt']);
         unset(
-            $headers[RequestSigner::SHOPWARE_SHOP_SIGNATURE],
+            $headers[RequestSigner::SHOPWELL_SHOP_SIGNATURE],
             $headers['Content-Length'],
             $headers['User-Agent'],
             $headers['X-Shopwell-Event-Id'],
@@ -614,7 +614,7 @@ class WebhookManagerTest extends TestCase
     private function buildWebhookRequest(
         array $payload,
         string $url,
-        string $shopwareVersion,
+        string $shopwellVersion,
         int $connectionTimeout,
         int $requestTimeout,
         ?string $secret = null,
@@ -625,10 +625,10 @@ class WebhookManagerTest extends TestCase
         $payload['timestamp'] = time();
         $jsonPayload = json_encode($payload, \JSON_THROW_ON_ERROR);
 
-        $headers = ['Content-Type' => 'application/json', 'sw-version' => $shopwareVersion, ...$webhookHeaders];
+        $headers = ['Content-Type' => 'application/json', 'sw-version' => $shopwellVersion, ...$webhookHeaders];
         if ($languageId !== null && $userLocale !== null) {
-            $headers[AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE] = $languageId;
-            $headers[AuthMiddleware::SHOPWARE_USER_LANGUAGE] = $userLocale;
+            $headers[AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE] = $languageId;
+            $headers[AuthMiddleware::SHOPWELL_USER_LANGUAGE] = $userLocale;
         }
 
         $options = ['connect_timeout' => $connectionTimeout, 'timeout' => $requestTimeout];

@@ -54,7 +54,7 @@ try {
     hostName = undefined;
 }
 
-const useExtensionTwigWatch = process.env.SHOPWARE_STOREFRONT_SKIP_EXTENSION_TWIG_WATCH !== '1';
+const useExtensionTwigWatch = process.env.SHOPWELL_STOREFRONT_SKIP_EXTENSION_TWIG_WATCH !== '1';
 let watchFilePaths = isHotMode ? [`${themeFiles.basePath}/**/*.twig`] : [];
 
 const pluginEntries = (() => {
@@ -235,7 +235,7 @@ const coreConfig = {
             })(),
         ],
     },
-    name: 'shopware-6-storefront',
+    name: 'shopwell-6-storefront',
     optimization: {
         moduleIds: 'deterministic',
         chunkIds: false, // chunk name is set by FilenameToChunkNamePlugin
@@ -315,7 +315,7 @@ const coreConfig = {
         modules: [
             // statically add the storefront node_modules folder, so sw plugins can resolve it
             path.resolve(__dirname, 'node_modules'),
-            path.resolve(__dirname, 'node_modules/@shopware-ag/dive/node_modules'),
+            path.resolve(__dirname, 'node_modules/@shopwell-ag/dive/node_modules'),
         ],
         alias: {
             src: path.resolve(__dirname, 'src'),
@@ -552,4 +552,4 @@ const mergedCoreConfig = merge([
 // Use multi-compiler
 module.exports = [mergedCoreConfig, ...pluginConfigs];
 // Default is infinity @see https://github.com/webpack/webpack/blob/c109f97b1bf5eceb2e0e498d399f46321f40b07f/lib/MultiCompiler.js#L83
-module.exports.parallelism = process.env.SHOPWARE_BUILD_PARALLELISM ? parseInt(process.env.SHOPWARE_BUILD_PARALLELISM, 10) : Infinity;
+module.exports.parallelism = process.env.SHOPWELL_BUILD_PARALLELISM ? parseInt(process.env.SHOPWELL_BUILD_PARALLELISM, 10) : Infinity;

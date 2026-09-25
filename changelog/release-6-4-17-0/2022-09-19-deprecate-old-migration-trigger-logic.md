@@ -4,10 +4,10 @@ issue: NEXT-23226
 ---
 # Core
 * Deprecated the old database migration trigger logic
-  * Deprecated method `\Shopware\Core\Framework\Migration\MigrationStep::addForwardTrigger()`, use `createTrigger` instead.
-  * Deprecated method `\Shopware\Core\Framework\Migration\MigrationStep::addBackwardTrigger()`, use `createTrigger` instead.
-  * Deprecated method `\Shopware\Core\Framework\Migration\MigrationStep::addTrigger()`, use `createTrigger` instead.
-  * Deprecated const `\Shopware\Core\Framework\Migration\MigrationStep::MIGRATION_VARIABLE_FORMAT`.
+  * Deprecated method `\Shopwell\Core\Framework\Migration\MigrationStep::addForwardTrigger()`, use `createTrigger` instead.
+  * Deprecated method `\Shopwell\Core\Framework\Migration\MigrationStep::addBackwardTrigger()`, use `createTrigger` instead.
+  * Deprecated method `\Shopwell\Core\Framework\Migration\MigrationStep::addTrigger()`, use `createTrigger` instead.
+  * Deprecated const `\Shopwell\Core\Framework\Migration\MigrationStep::MIGRATION_VARIABLE_FORMAT`.
 ___
 # Next Major Version Changes
 ## Remove old database migration trigger logic

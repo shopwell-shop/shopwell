@@ -6,11 +6,11 @@ import 'src/module/sw-integration/component/sw-integration-mcp-allowlist';
 
 const defaultCapabilities = {
     tools: [
-        { name: 'shopware-entity-search', description: 'Search entities', dependencies: [], requiredPrivileges: [] },
-        { name: 'shopware-entity-read', description: 'Read entity', dependencies: [], requiredPrivileges: [] },
+        { name: 'shopwell-entity-search', description: 'Search entities', dependencies: [], requiredPrivileges: [] },
+        { name: 'shopwell-entity-read', description: 'Read entity', dependencies: [], requiredPrivileges: [] },
     ],
-    resources: [{ uri: 'shopware://entities', name: 'Entities', description: 'All entities', mimeType: 'application/json' }],
-    prompts: [{ name: 'shopware-context', description: 'Context prompt' }],
+    resources: [{ uri: 'shopwell://entities', name: 'Entities', description: 'All entities', mimeType: 'application/json' }],
+    prompts: [{ name: 'shopwell-context', description: 'Context prompt' }],
 };
 
 const mcpToolService = {
@@ -117,11 +117,11 @@ describe('sw-integration-mcp-allowlist', () => {
             [
                 {
                     tools: [
-                        'shopware-entity-search',
-                        'shopware-entity-read',
+                        'shopwell-entity-search',
+                        'shopwell-entity-read',
                     ],
-                    resources: ['shopware://entities'],
-                    prompts: ['shopware-context'],
+                    resources: ['shopwell://entities'],
+                    prompts: ['shopwell-context'],
                 },
             ],
         ]);
@@ -152,11 +152,11 @@ describe('sw-integration-mcp-allowlist', () => {
         const wrapper = await createWrapper({
             allowlist: {
                 tools: [
-                    'shopware-entity-search',
-                    'shopware-entity-read',
+                    'shopwell-entity-search',
+                    'shopwell-entity-read',
                 ],
-                resources: ['shopware://entities'],
-                prompts: ['shopware-context'],
+                resources: ['shopwell://entities'],
+                prompts: ['shopwell-context'],
             },
         });
         await flushPromises();
@@ -188,10 +188,10 @@ describe('sw-integration-mcp-allowlist', () => {
 
     it('resolves a null per-type entry to an empty selection when there is no bypass', async () => {
         const wrapper = await createWrapper({
-            allowlist: { tools: ['shopware-entity-search'], resources: null, prompts: null },
+            allowlist: { tools: ['shopwell-entity-search'], resources: null, prompts: null },
         });
 
-        expect(wrapper.vm.toolsAllowlist).toStrictEqual(['shopware-entity-search']);
+        expect(wrapper.vm.toolsAllowlist).toStrictEqual(['shopwell-entity-search']);
         expect(wrapper.vm.resourcesAllowlist).toStrictEqual([]);
         expect(wrapper.vm.promptsAllowlist).toStrictEqual([]);
     });
@@ -206,8 +206,8 @@ describe('sw-integration-mcp-allowlist', () => {
             [
                 {
                     tools: [
-                        'shopware-entity-search',
-                        'shopware-entity-read',
+                        'shopwell-entity-search',
+                        'shopwell-entity-read',
                     ],
                     resources: [],
                     prompts: [],
@@ -218,10 +218,10 @@ describe('sw-integration-mcp-allowlist', () => {
 
     it('toolsAllowlist returns tools sub-array when allowlist is set', async () => {
         const wrapper = await createWrapper({
-            allowlist: { tools: ['shopware-entity-search'], resources: null, prompts: null },
+            allowlist: { tools: ['shopwell-entity-search'], resources: null, prompts: null },
         });
 
-        expect(wrapper.vm.toolsAllowlist).toStrictEqual(['shopware-entity-search']);
+        expect(wrapper.vm.toolsAllowlist).toStrictEqual(['shopwell-entity-search']);
     });
 
     it('groups tools by backend group when present', async () => {
@@ -229,7 +229,7 @@ describe('sw-integration-mcp-allowlist', () => {
             ...defaultCapabilities,
             tools: [
                 {
-                    name: 'shopware-entity-search',
+                    name: 'shopwell-entity-search',
                     group: 'catalogue',
                     description: 'Search entities',
                     dependencies: [],
@@ -254,24 +254,24 @@ describe('sw-integration-mcp-allowlist', () => {
 
     it('resourcesAllowlist returns resources sub-array when allowlist is set', async () => {
         const wrapper = await createWrapper({
-            allowlist: { tools: null, resources: ['shopware://entities'], prompts: null },
+            allowlist: { tools: null, resources: ['shopwell://entities'], prompts: null },
         });
 
-        expect(wrapper.vm.resourcesAllowlist).toStrictEqual(['shopware://entities']);
+        expect(wrapper.vm.resourcesAllowlist).toStrictEqual(['shopwell://entities']);
     });
 
     it('promptsAllowlist returns prompts sub-array when allowlist is set', async () => {
         const wrapper = await createWrapper({
-            allowlist: { tools: null, resources: null, prompts: ['shopware-context'] },
+            allowlist: { tools: null, resources: null, prompts: ['shopwell-context'] },
         });
 
-        expect(wrapper.vm.promptsAllowlist).toStrictEqual(['shopware-context']);
+        expect(wrapper.vm.promptsAllowlist).toStrictEqual(['shopwell-context']);
     });
 
     it('staleEntries includes stale tool names', async () => {
         const wrapper = await createWrapper({
             allowlist: {
-                tools: ['old-tool', 'shopware-entity-search'],
+                tools: ['old-tool', 'shopwell-entity-search'],
                 resources: null,
                 prompts: null,
             },
@@ -280,22 +280,22 @@ describe('sw-integration-mcp-allowlist', () => {
         await wrapper.vm.$nextTick();
 
         expect(wrapper.vm.staleToolNames).toContain('old-tool');
-        expect(wrapper.vm.staleToolNames).not.toContain('shopware-entity-search');
+        expect(wrapper.vm.staleToolNames).not.toContain('shopwell-entity-search');
     });
 
     it('staleEntries includes stale resource uris', async () => {
         const wrapper = await createWrapper({
             allowlist: {
                 tools: null,
-                resources: ['shopware://old', 'shopware://entities'],
+                resources: ['shopwell://old', 'shopwell://entities'],
                 prompts: null,
             },
         });
 
         await wrapper.vm.$nextTick();
 
-        expect(wrapper.vm.staleResourceUris).toContain('shopware://old');
-        expect(wrapper.vm.staleResourceUris).not.toContain('shopware://entities');
+        expect(wrapper.vm.staleResourceUris).toContain('shopwell://old');
+        expect(wrapper.vm.staleResourceUris).not.toContain('shopwell://entities');
     });
 
     it('staleEntries includes stale prompt names', async () => {
@@ -303,36 +303,36 @@ describe('sw-integration-mcp-allowlist', () => {
             allowlist: {
                 tools: null,
                 resources: null,
-                prompts: ['old-prompt', 'shopware-context'],
+                prompts: ['old-prompt', 'shopwell-context'],
             },
         });
 
         await wrapper.vm.$nextTick();
 
         expect(wrapper.vm.stalePromptNames).toContain('old-prompt');
-        expect(wrapper.vm.stalePromptNames).not.toContain('shopware-context');
+        expect(wrapper.vm.stalePromptNames).not.toContain('shopwell-context');
     });
 
     it('emitUpdated merges patch into current allowlist', async () => {
         const wrapper = await createWrapper({
-            allowlist: { tools: ['shopware-entity-search'], resources: null, prompts: null },
+            allowlist: { tools: ['shopwell-entity-search'], resources: null, prompts: null },
         });
 
-        wrapper.vm.emitUpdated({ resources: ['shopware://entities'] });
+        wrapper.vm.emitUpdated({ resources: ['shopwell://entities'] });
 
         expect(wrapper.emitted('update:allowlist')).toStrictEqual([
-            [{ tools: ['shopware-entity-search'], resources: ['shopware://entities'], prompts: null }],
+            [{ tools: ['shopwell-entity-search'], resources: ['shopwell://entities'], prompts: null }],
         ]);
     });
 
     it('does not count a duplicated entry as covering another capability', async () => {
         // The save endpoints accept duplicates. Counting entries rather than distinct capabilities
-        // would show the per-type "All" switch as on while shopware-entity-read is still denied.
+        // would show the per-type "All" switch as on while shopwell-entity-read is still denied.
         const wrapper = await createWrapper({
             allowlist: {
                 tools: [
-                    'shopware-entity-search',
-                    'shopware-entity-search',
+                    'shopwell-entity-search',
+                    'shopwell-entity-search',
                 ],
                 resources: [],
                 prompts: [],
@@ -347,20 +347,20 @@ describe('sw-integration-mcp-allowlist', () => {
     it('emitUpdated uses null defaults when a bypassing principal has no allowlist', async () => {
         const wrapper = await createWrapper({ allowlist: null, unrestrictedWhenUnset: true });
 
-        wrapper.vm.emitUpdated({ tools: ['shopware-entity-search'] });
+        wrapper.vm.emitUpdated({ tools: ['shopwell-entity-search'] });
 
         expect(wrapper.emitted('update:allowlist')).toStrictEqual([
-            [{ tools: ['shopware-entity-search'], resources: null, prompts: null }],
+            [{ tools: ['shopwell-entity-search'], resources: null, prompts: null }],
         ]);
     });
 
     it('emitUpdated uses empty defaults when there is no bypass', async () => {
         const wrapper = await createWrapper({ allowlist: null });
 
-        wrapper.vm.emitUpdated({ tools: ['shopware-entity-search'] });
+        wrapper.vm.emitUpdated({ tools: ['shopwell-entity-search'] });
 
         expect(wrapper.emitted('update:allowlist')).toStrictEqual([
-            [{ tools: ['shopware-entity-search'], resources: [], prompts: [] }],
+            [{ tools: ['shopwell-entity-search'], resources: [], prompts: [] }],
         ]);
     });
 
@@ -425,7 +425,7 @@ describe('sw-integration-mcp-allowlist', () => {
 
     it('missingCapabilitySuggestions returns empty when resources are unrestricted', async () => {
         const wrapper = await createWrapper({
-            allowlist: { tools: ['shopware-entity-search'], resources: null, prompts: null },
+            allowlist: { tools: ['shopwell-entity-search'], resources: null, prompts: null },
         });
         await wrapper.vm.$nextTick();
 
@@ -434,7 +434,7 @@ describe('sw-integration-mcp-allowlist', () => {
 
     it('missingCapabilitySuggestions suggests missing resource from same prefix', async () => {
         const wrapper = await createWrapper({
-            allowlist: { tools: ['shopware-entity-search'], resources: [], prompts: null },
+            allowlist: { tools: ['shopwell-entity-search'], resources: [], prompts: null },
         });
         await wrapper.vm.$nextTick();
 
@@ -447,24 +447,24 @@ describe('sw-integration-mcp-allowlist', () => {
         mcpToolService.getCapabilities.mockResolvedValue({
             ...defaultCapabilities,
             resources: [
-                { uri: 'shopware://entities', name: 'Entities', description: '', mimeType: 'application/json' },
-                { uri: 'shopware://languages', name: 'Languages', description: '', mimeType: 'application/json' },
+                { uri: 'shopwell://entities', name: 'Entities', description: '', mimeType: 'application/json' },
+                { uri: 'shopwell://languages', name: 'Languages', description: '', mimeType: 'application/json' },
             ],
         });
 
         const wrapper = await createWrapper({
-            allowlist: { tools: ['shopware-entity-search'], resources: ['shopware://languages'], prompts: null },
+            allowlist: { tools: ['shopwell-entity-search'], resources: ['shopwell://languages'], prompts: null },
         });
         await wrapper.vm.$nextTick();
 
         const names = wrapper.vm.missingCapabilitySuggestions.map((s) => s.name);
-        expect(names).toContain('shopware://entities');
-        expect(names).not.toContain('shopware://languages');
+        expect(names).toContain('shopwell://entities');
+        expect(names).not.toContain('shopwell://languages');
     });
 
     it('missingCapabilitySuggestions suggests missing prompt from same prefix', async () => {
         const wrapper = await createWrapper({
-            allowlist: { tools: ['shopware-entity-search'], resources: null, prompts: [] },
+            allowlist: { tools: ['shopwell-entity-search'], resources: null, prompts: [] },
         });
         await wrapper.vm.$nextTick();
 
@@ -476,19 +476,19 @@ describe('sw-integration-mcp-allowlist', () => {
         mcpToolService.getCapabilities.mockResolvedValue({
             ...defaultCapabilities,
             prompts: [
-                { name: 'shopware-context', description: 'Context prompt' },
-                { name: 'shopware-debug', description: 'Debug prompt' },
+                { name: 'shopwell-context', description: 'Context prompt' },
+                { name: 'shopwell-debug', description: 'Debug prompt' },
             ],
         });
 
         const wrapper = await createWrapper({
-            allowlist: { tools: ['shopware-entity-search'], resources: null, prompts: ['shopware-debug'] },
+            allowlist: { tools: ['shopwell-entity-search'], resources: null, prompts: ['shopwell-debug'] },
         });
         await wrapper.vm.$nextTick();
 
         const names = wrapper.vm.missingCapabilitySuggestions.map((s) => s.name);
-        expect(names).toContain('shopware-context');
-        expect(names).not.toContain('shopware-debug');
+        expect(names).toContain('shopwell-context');
+        expect(names).not.toContain('shopwell-debug');
     });
 
     describe('no capabilities registered', () => {

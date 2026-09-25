@@ -39,12 +39,12 @@ class KernelFactory
         ?KernelPluginLoader $pluginLoader = null,
         ?Connection $connection = null
     ): HttpKernelInterface {
-        if (InstalledVersions::isInstalled('shopware/platform')) {
-            $shopwareVersion = InstalledVersions::getVersion('shopware/platform')
-                . '@' . InstalledVersions::getReference('shopware/platform');
+        if (InstalledVersions::isInstalled('shopwell/platform')) {
+            $shopwellVersion = InstalledVersions::getVersion('shopwell/platform')
+                . '@' . InstalledVersions::getReference('shopwell/platform');
         } else {
-            $shopwareVersion = InstalledVersions::getVersion('shopware/core')
-                . '@' . InstalledVersions::getReference('shopware/core');
+            $shopwellVersion = InstalledVersions::getVersion('shopwell/core')
+                . '@' . InstalledVersions::getReference('shopwell/core');
         }
 
         $middlewares = [];
@@ -55,7 +55,7 @@ class KernelFactory
 
         // Counts SQL statements per request for the `http.server.request.queries.count` metric. The
         // middleware must wrap the driver at connection creation. The container is not built here yet,
-        // so the `shopware.telemetry.metrics.enabled` config flag is not accessible. For this reason
+        // so the `shopwell.telemetry.metrics.enabled` config flag is not accessible. For this reason
         // we cannot gate on it.
         $middlewares[] = new QueryCountMiddleware();
 
@@ -63,14 +63,14 @@ class KernelFactory
 
         $pluginLoader ??= new DbalKernelPluginLoader($classLoader, null, $connection);
 
-        $cacheId = (string) EnvironmentHelper::getVariable('SHOPWARE_CACHE_ID', '');
+        $cacheId = (string) EnvironmentHelper::getVariable('SHOPWELL_CACHE_ID', '');
 
         $kernel = new static::$kernelClass(
             $environment,
             $debug,
             $pluginLoader,
             $cacheId,
-            $shopwareVersion,
+            $shopwellVersion,
             $connection,
             self::getProjectDir()
         );

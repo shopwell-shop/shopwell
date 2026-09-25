@@ -1,12 +1,12 @@
 /**
  * @sw-package framework
  */
-import { send } from '@shopware-ag/meteor-admin-sdk/es/channel';
+import { send } from '@shopwell-ag/meteor-admin-sdk/es/channel';
 import useExtensionsStore from 'src/app/store/extensions.store';
 import useConsentStore from 'src/core/consent/consent.store';
 import { handleConsentRequest, handleConsentStatus, sendConsentRequestResponse } from 'src/core/consent/sdk-handler';
 
-jest.mock('@shopware-ag/meteor-admin-sdk/es/channel', () => ({
+jest.mock('@shopwell-ag/meteor-admin-sdk/es/channel', () => ({
     send: jest.fn(() => Promise.resolve()),
 }));
 

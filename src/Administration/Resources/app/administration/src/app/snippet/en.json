@@ -8,8 +8,8 @@
       "INVALID_MEDIA_URL": "Please enter a valid URL to upload a file.",
       "CONTENT__MISSING_RULE_TYPE_EXCEPTION": "You must choose a type for this rule.",
       "CONTENT__INVALID_CATEGORY_TYPE_AS_ENTRY_POINT": "The type cannot be assigned while category is an entry point.",
-      "SHOPWARE_INVALID_IP": "Please enter a valid IP address.",
-      "SHOPWARE_INVALID_IP_CIDR": "Please enter a valid IP address or a valid IP-address with CIDR mask.",
+      "SHOPWELL_INVALID_IP": "Please enter a valid IP address.",
+      "SHOPWELL_INVALID_IP_CIDR": "Please enter a valid IP address or a valid IP-address with CIDR mask.",
       "INVALID_URL": "Please enter a valid url.",
       "INVALID_MAIL": "Please enter a valid email address.",
       "FRAMEWORK__RATE_LIMIT_EXCEEDED": "Too many requests. Please wait {seconds} seconds before trying again.",
@@ -164,7 +164,7 @@
         "updatesAvailableTitle": "Update(s) available",
         "updatesAvailableMessage": "Download the latest versions of your extensions now."
       },
-      "shopware-updates-listener": {
+      "shopwell-updates-listener": {
         "updatesAvailableTitle": "A new Shopwell version {version} is available",
         "updatesAvailableMessage": "Start the auto-updater to begin the update",
         "updateNow": "Open update"
@@ -1234,7 +1234,7 @@
       "documentation": {
         "headline": "Do you need help?",
         "linkText": "See documentation",
-        "linkUrl": "https://docs.shopwell.cn/en/shopware-6-en"
+        "linkUrl": "https://docs.shopwell.cn/en/shopwell-6-en"
       },
       "support": {
         "headline": "We’re here for you!",
@@ -1407,7 +1407,7 @@
   "sw-license-violation": {
     "title": "Extension warning",
     "reload": "Reload",
-    "alertText": "We have detected a license violation for at least one of your extensions in this installation. To fix the license violation and avoid legal consequences, book a subscription or buy/rent the extension (according to inflicted violation type). You do not use the extension anymore? Then delete it via the \"Delete extension permanently\" button or via My Extensions. If none of these measures are taken, shopware AG reserves the right to charge penalty fees for any license violation.",
+    "alertText": "We have detected a license violation for at least one of your extensions in this installation. To fix the license violation and avoid legal consequences, book a subscription or buy/rent the extension (according to inflicted violation type). You do not use the extension anymore? Then delete it via the \"Delete extension permanently\" button or via My Extensions. If none of these measures are taken, Shopwell reserves the right to charge penalty fees for any license violation.",
     "deletePlugin": "Delete extension permanently",
     "messageDeleteConfirm": "Do you want to delete the extension \"{pluginName}\" completely?",
     "checkboxMessage": "I have taken notice of this message and eventually accruing consequences.",
@@ -1669,7 +1669,7 @@
         "explanation": "Extensions are not able to establish a connection to your shop, due to a wrong configuration in your system.",
         "textDetails": "Technical details: Wrong APP_URL configuration.",
         "labelLearnMoreButton": "Learn more",
-        "linkToDocsArticle": "https://docs.shopwell.cn/en/shopware-6-en/tutorials-and-faq/notes-to-the-APP-URL"
+        "linkToDocsArticle": "https://docs.shopwell.cn/en/shopwell-6-en/tutorials-and-faq/notes-to-the-APP-URL"
       }
     }
   },

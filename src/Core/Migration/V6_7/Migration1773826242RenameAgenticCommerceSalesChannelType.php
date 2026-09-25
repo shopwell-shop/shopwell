@@ -31,7 +31,7 @@ class Migration1773826242RenameAgenticCommerceSalesChannelType extends Migration
              WHERE `sales_channel_type_id` = :salesChannelTypeId',
             [
                 'name' => 'Agentic Commerce',
-                'manufacturer' => 'shopware AG',
+                'manufacturer' => 'Shopwell',
                 'description' => 'Sales channel for agentic commerce platforms',
                 'salesChannelTypeId' => $salesChannelTypeId,
             ],
@@ -50,7 +50,7 @@ class Migration1773826242RenameAgenticCommerceSalesChannelType extends Migration
                AND loc.code = :localeCode',
             [
                 'name' => 'Agentic Commerce',
-                'manufacturer' => 'shopware AG',
+                'manufacturer' => 'Shopwell',
                 'description' => 'Verkaufskanal für Agentic-Commerce-Plattformen',
                 'salesChannelTypeId' => $salesChannelTypeId,
                 'localeCode' => 'de-DE',

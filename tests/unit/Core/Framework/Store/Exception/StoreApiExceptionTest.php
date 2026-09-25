@@ -102,12 +102,12 @@ class StoreApiExceptionTest extends TestCase
             new \GuzzleHttp\Psr7\Response(
                 Response::HTTP_BAD_REQUEST,
                 [],
-                json_encode(['documentationLink' => 'https://shopware.docs'], \JSON_THROW_ON_ERROR)
+                json_encode(['documentationLink' => 'https://shopwell.docs'], \JSON_THROW_ON_ERROR)
             )
         );
 
         foreach ((new StoreApiException($clientException))->getErrors() as $error) {
-            static::assertSame('https://shopware.docs', $error['meta']['documentationLink']);
+            static::assertSame('https://shopwell.docs', $error['meta']['documentationLink']);
         }
     }
 
@@ -122,7 +122,7 @@ class StoreApiExceptionTest extends TestCase
                 json_encode([
                     'title' => 'title',
                     'description' => 'description',
-                    'documentationLink' => 'https://shopware.docs',
+                    'documentationLink' => 'https://shopwell.docs',
                 ], \JSON_THROW_ON_ERROR),
             )
         );
@@ -134,7 +134,7 @@ class StoreApiExceptionTest extends TestCase
             static::assertSame((string) Response::HTTP_INTERNAL_SERVER_ERROR, $error['status']);
             static::assertSame('title', $error['title']);
             static::assertSame('description', $error['detail']);
-            static::assertSame('https://shopware.docs', $error['meta']['documentationLink']);
+            static::assertSame('https://shopwell.docs', $error['meta']['documentationLink']);
             static::assertIsString($error['trace'] ?? null);
         }
     }

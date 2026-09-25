@@ -2,7 +2,7 @@
 title: Added 3D Viewer light intensity in Media config
 issue: NEXT-36869
 author: ffrank913
-author_email: f.frank@shopware.com
+author_email: f.frank@shopwell.com
 author_github: ffrank913
 ---
 # Administration

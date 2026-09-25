@@ -155,7 +155,7 @@ describe('module/sw-customer/page/sw-customer-detail', () => {
 
     afterEach(() => {
         Shopwell.Store.get('error').resetApiErrors();
-        Shopwell.Store.get('shopwareApps').selectedIds = [];
+        Shopwell.Store.get('shopwellApps').selectedIds = [];
         jest.restoreAllMocks();
     });
 
@@ -388,7 +388,7 @@ describe('module/sw-customer/page/sw-customer-detail', () => {
     it('should select the displayed customer for app action buttons', async () => {
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual(['customerId']);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual(['customerId']);
     });
 
     it('should select the new customer for app action buttons when navigating to another customer', async () => {
@@ -397,16 +397,16 @@ describe('module/sw-customer/page/sw-customer-detail', () => {
         await wrapper.setProps({ customerId: 'otherCustomerId' });
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual(['otherCustomerId']);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual(['otherCustomerId']);
     });
 
     it('should deselect the customer for app action buttons when leaving the detail page', async () => {
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual(['customerId']);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual(['customerId']);
 
         wrapper.vm.$options.beforeRouteLeave.call(wrapper.vm);
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual([]);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual([]);
     });
 });

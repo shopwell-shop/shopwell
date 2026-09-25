@@ -53,7 +53,7 @@ class StoreSessionExpiredMiddleware implements MiddlewareInterface
                     return $response;
                 }
 
-                if ($token = $request->getHeaderLine(StoreRequestOptionsProvider::SHOPWARE_PLATFORM_TOKEN_HEADER)) {
+                if ($token = $request->getHeaderLine(StoreRequestOptionsProvider::SHOPWELL_PLATFORM_TOKEN_HEADER)) {
                     $this->logoutUserByToken($token);
                 } else {
                     $this->logoutUserByContext();

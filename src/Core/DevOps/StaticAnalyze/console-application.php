@@ -7,7 +7,7 @@ use Shopwell\Core\Framework\Adapter\Kernel\KernelFactory;
 use Shopwell\Core\Framework\Plugin\KernelPluginLoader\StaticKernelPluginLoader;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 
-trigger_deprecation('shopware/core', '', \sprintf('The "%s" file is deprecated and will be removed in v6.8.0.0 as the feature is no longer used in PHPStan', __FILE__));
+trigger_deprecation('shopwell/core', '', \sprintf('The "%s" file is deprecated and will be removed in v6.8.0.0 as the feature is no longer used in PHPStan', __FILE__));
 
 $classLoader = require __DIR__ . '/phpstan-bootstrap.php';
 

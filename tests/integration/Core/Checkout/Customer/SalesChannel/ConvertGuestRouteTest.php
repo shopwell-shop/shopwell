@@ -82,7 +82,7 @@ class ConvertGuestRouteTest extends TestCase
     public function testConvertGuestFailsForRegisteredCustomer(): void
     {
         // Register as regular customer
-        $this->register(false, 'registered@example.com', 'shopware');
+        $this->register(false, 'registered@example.com', 'shopwell');
 
         // Try to convert registered customer (should fail)
         $this->browser

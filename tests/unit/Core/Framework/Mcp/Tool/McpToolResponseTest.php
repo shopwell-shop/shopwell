@@ -86,7 +86,7 @@ class McpToolResponseTest extends TestCase
 
         static::assertTrue($data['success']);
         static::assertNull($data['data']);
-        static::assertSame('shopware://tool-result/cached-uuid-123', $data['_meta']['resourceUri']);
+        static::assertSame('shopwell://tool-result/cached-uuid-123', $data['_meta']['resourceUri']);
         static::assertGreaterThan(100_000, $data['_meta']['responseSize']);
         static::assertArrayHasKey('note', $data['_meta']);
     }
@@ -101,7 +101,7 @@ class McpToolResponseTest extends TestCase
         $request->attributes->set(McpServerController::ATTRIBUTE_JSONRPC_BODY, [
             'method' => 'tools/call',
             'params' => [
-                'name' => 'shopware-entity-search',
+                'name' => 'shopwell-entity-search',
                 'arguments' => ['entity' => 'product'],
             ],
         ]);
@@ -115,7 +115,7 @@ class McpToolResponseTest extends TestCase
         $json = $tool->callSuccess(['items' => array_fill(0, 5_000, str_repeat('x', 30))]);
         $data = json_decode($json, true, 512, \JSON_THROW_ON_ERROR);
 
-        static::assertSame('shopware-entity-search', $data['_meta']['query']['tool']);
+        static::assertSame('shopwell-entity-search', $data['_meta']['query']['tool']);
         static::assertSame(['entity' => 'product'], $data['_meta']['query']['arguments']);
     }
 
@@ -182,7 +182,7 @@ class McpToolResponseTest extends TestCase
     public static function bodyWithoutAToolCallProvider(): iterable
     {
         yield 'no JSON-RPC body on the request at all' => [null];
-        yield 'a method other than tools/call' => [['method' => 'resources/read', 'params' => ['uri' => 'shopware://something']]];
+        yield 'a method other than tools/call' => [['method' => 'resources/read', 'params' => ['uri' => 'shopwell://something']]];
         yield 'a tools/call without a tool name' => [['method' => 'tools/call', 'params' => ['arguments' => ['entity' => 'product']]]];
     }
 

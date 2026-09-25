@@ -3,10 +3,10 @@ title: Display product description and reviews element and block on Storefront
 issue: NEXT-11745
 ---
 # Core
-* Added `Shopware\Core\Content\Product\Cms\ProductDescriptionReviewsCmsElementResolver` to resolve `product-description-reviews` cms element.
-* Added `Shopware\Core\Content\Cms\SalesChannel\Struct\ProductDescriptionReviewsStruct.php` to handle data for `product-description-reviews` cms element.
-* Added `Shopware\Core\Content\Product\SalesChannel\Review\RatingMatrix.php` to calculate review matrix
-* Added `Shopware\Core\Content\Product\SalesChannel\Review\MatrixElement.php`
+* Added `Shopwell\Core\Content\Product\Cms\ProductDescriptionReviewsCmsElementResolver` to resolve `product-description-reviews` cms element.
+* Added `Shopwell\Core\Content\Cms\SalesChannel\Struct\ProductDescriptionReviewsStruct.php` to handle data for `product-description-reviews` cms element.
+* Added `Shopwell\Core\Content\Product\SalesChannel\Review\RatingMatrix.php` to calculate review matrix
+* Added `Shopwell\Core\Content\Product\SalesChannel\Review\MatrixElement.php`
 ___
 # Storefront
 * Added `src/Storefront/Resources/views/storefront/component/product/description.html.twig` to display product description.

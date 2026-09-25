@@ -27,8 +27,8 @@ class ServiceDefinitionTest extends TestCase
         $excludes = [
             '_dummy_es_env_usage',
             'kernel.bundles',
-            'shopware.cache.invalidator.storage.redis', // causes redis connect
-            'shopware.cache.invalidator.storage.redis_adapter',  // causes redis connect
+            'shopwell.cache.invalidator.storage.redis', // causes redis connect
+            'shopwell.cache.invalidator.storage.redis_adapter',  // causes redis connect
         ];
 
         $classLoader = require __DIR__ . '/../../../../vendor/autoload.php';

@@ -34,9 +34,9 @@ class RequestSignerTest extends TestCase
 
         $request = $post->signRequest($request, $this->authSecret);
 
-        static::assertTrue($request->hasHeader(RequestSigner::SHOPWARE_SHOP_SIGNATURE));
+        static::assertTrue($request->hasHeader(RequestSigner::SHOPWELL_SHOP_SIGNATURE));
 
-        static::assertSame($hashExpected, $request->getHeader(RequestSigner::SHOPWARE_SHOP_SIGNATURE)[0]);
+        static::assertSame($hashExpected, $request->getHeader(RequestSigner::SHOPWELL_SHOP_SIGNATURE)[0]);
     }
 
     public function testSignHeaderWithoutAddedMethodGet(): void
@@ -47,7 +47,7 @@ class RequestSignerTest extends TestCase
 
         $request = $post->signRequest($request, $this->authSecret);
 
-        static::assertFalse($request->hasHeader(RequestSigner::SHOPWARE_SHOP_SIGNATURE));
+        static::assertFalse($request->hasHeader(RequestSigner::SHOPWELL_SHOP_SIGNATURE));
     }
 
     public function testSignHeaderWithoutAddedNoBody(): void
@@ -58,7 +58,7 @@ class RequestSignerTest extends TestCase
 
         $request = $post->signRequest($request, $this->authSecret);
 
-        static::assertFalse($request->hasHeader(RequestSigner::SHOPWARE_SHOP_SIGNATURE));
+        static::assertFalse($request->hasHeader(RequestSigner::SHOPWELL_SHOP_SIGNATURE));
     }
 
     public function testIsResponseAuthenticRequired(): void
@@ -69,7 +69,7 @@ class RequestSignerTest extends TestCase
         $signature = $post->signPayload($body, $this->authSecret);
 
         $responseHeaders = [
-            RequestSigner::SHOPWARE_APP_SIGNATURE => $signature,
+            RequestSigner::SHOPWELL_APP_SIGNATURE => $signature,
         ];
 
         $response = new Response(200, $responseHeaders, $body);
@@ -93,7 +93,7 @@ class RequestSignerTest extends TestCase
         $signature = $post->signPayload('No-Body', $this->authSecret);
 
         $responseHeaders = [
-            RequestSigner::SHOPWARE_APP_SIGNATURE => $signature,
+            RequestSigner::SHOPWELL_APP_SIGNATURE => $signature,
         ];
 
         $response = new Response(200, $responseHeaders);

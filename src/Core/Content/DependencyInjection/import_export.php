@@ -79,17 +79,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(ImportExportProfileDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ImportExportLogDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ImportExportFileDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     // @deprecated tag:v6.8.0 Will be removed
     $services->set(ImportExportProfileTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SystemDefaultValidator::class)
         ->args([
@@ -132,7 +132,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(FileService::class)
         ->args([
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
             service('import_export_file.repository'),
         ]);
 
@@ -161,12 +161,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(DownloadService::class)
         ->args([
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
             service('import_export_file.repository'),
             service('logger'),
-            param('shopware.filesystem.private_local_download_strategy'),
+            param('shopwell.filesystem.private_local_download_strategy'),
             service(RateLimiter::class),
-            param('shopware.filesystem.private_local_path_prefix'),
+            param('shopwell.filesystem.private_local_path_prefix'),
             service(ClockInterface::class),
         ]);
 
@@ -178,40 +178,40 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(SerializerRegistry::class)
         ->args([
-            tagged_iterator('shopware.import_export.entity_serializer'),
-            tagged_iterator('shopware.import_export.field_serializer'),
+            tagged_iterator('shopwell.import_export.entity_serializer'),
+            tagged_iterator('shopwell.import_export.field_serializer'),
         ]);
 
     $services->set(EntitySerializer::class)
-        ->tag('shopware.import_export.entity_serializer', ['priority' => -999]);
+        ->tag('shopwell.import_export.entity_serializer', ['priority' => -999]);
 
     $services->set(FieldSerializer::class)
-        ->tag('shopware.import_export.field_serializer', ['priority' => -999]);
+        ->tag('shopwell.import_export.field_serializer', ['priority' => -999]);
 
     $services->set(ToOneSerializer::class)
         ->args([
             service(PrimaryKeyResolver::class),
         ])
-        ->tag('shopware.import_export.field_serializer', ['priority' => -500]);
+        ->tag('shopwell.import_export.field_serializer', ['priority' => -500]);
 
     $services->set(TranslationsSerializer::class)
         ->args([
             service('language.repository'),
         ])
-        ->tag('shopware.import_export.field_serializer', ['priority' => -500]);
+        ->tag('shopwell.import_export.field_serializer', ['priority' => -500]);
 
     $services->set(PriceSerializer::class)
         ->args([
             service('currency.repository'),
         ])
-        ->tag('shopware.import_export.field_serializer', ['priority' => -500]);
+        ->tag('shopwell.import_export.field_serializer', ['priority' => -500]);
 
     $services->set(CustomFieldsSerializer::class)
         ->args([
             service(DalCustomFieldsSerializer::class),
             service(CustomFieldService::class),
         ])
-        ->tag('shopware.import_export.field_serializer', ['priority' => -500]);
+        ->tag('shopwell.import_export.field_serializer', ['priority' => -500]);
 
     $services->set(MediaSerializer::class)
         ->args([
@@ -220,7 +220,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('media_folder.repository'),
             service('media.repository'),
         ])
-        ->tag('shopware.import_export.entity_serializer', ['priority' => -400])
+        ->tag('shopwell.import_export.entity_serializer', ['priority' => -400])
         ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(MediaSerializerSubscriber::class)
@@ -233,21 +233,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('salutation.repository'),
         ])
-        ->tag('shopware.import_export.entity_serializer', ['priority' => -400])
+        ->tag('shopwell.import_export.entity_serializer', ['priority' => -400])
         ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(CountrySerializer::class)
         ->args([
             service('country.repository'),
         ])
-        ->tag('shopware.import_export.entity_serializer', ['priority' => -400])
+        ->tag('shopwell.import_export.entity_serializer', ['priority' => -400])
         ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(LanguageSerializer::class)
         ->args([
             service('language.repository'),
         ])
-        ->tag('shopware.import_export.entity_serializer', ['priority' => -400])
+        ->tag('shopwell.import_export.entity_serializer', ['priority' => -400])
         ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(CustomerSerializer::class)
@@ -255,7 +255,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('customer_group.repository'),
             service('sales_channel.repository'),
         ])
-        ->tag('shopware.import_export.entity_serializer', ['priority' => -400])
+        ->tag('shopwell.import_export.entity_serializer', ['priority' => -400])
         ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(PromotionIndividualCodeSerializer::class)
@@ -263,7 +263,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('promotion_individual_code.repository'),
             service('promotion.repository'),
         ])
-        ->tag('shopware.import_export.entity_serializer', ['priority' => -400])
+        ->tag('shopwell.import_export.entity_serializer', ['priority' => -400])
         ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(ProductSerializer::class)
@@ -273,25 +273,25 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('product_media.repository'),
             service('product_configurator_setting.repository'),
         ])
-        ->tag('shopware.import_export.entity_serializer', ['priority' => -400]);
+        ->tag('shopwell.import_export.entity_serializer', ['priority' => -400]);
 
     $services->set(ProductCrossSellingSerializer::class)
         ->args([
             service('product_cross_selling_assigned_products.repository'),
         ])
-        ->tag('shopware.import_export.entity_serializer', ['priority' => -400]);
+        ->tag('shopwell.import_export.entity_serializer', ['priority' => -400]);
 
     $services->set(OrderSerializer::class)
-        ->tag('shopware.import_export.entity_serializer', ['priority' => -400]);
+        ->tag('shopwell.import_export.entity_serializer', ['priority' => -400]);
 
     $services->set(CsvReaderFactory::class)
-        ->tag('shopware.import_export.reader_factory');
+        ->tag('shopwell.import_export.reader_factory');
 
     $services->set(CsvFileWriterFactory::class)
         ->args([
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
         ])
-        ->tag('shopware.import_export.writer_factory');
+        ->tag('shopwell.import_export.writer_factory');
 
     $services->set(PipeFactory::class)
         ->args([
@@ -299,20 +299,20 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SerializerRegistry::class),
             service(PrimaryKeyResolver::class),
         ])
-        ->tag('shopware.import_export.pipe_factory');
+        ->tag('shopwell.import_export.pipe_factory');
 
     $services->set(ImportExportFactory::class)
         ->public()
         ->args([
             service(ImportExportService::class),
             service(DefinitionInstanceRegistry::class),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
             service('event_dispatcher'),
             service(Connection::class),
             service(FileService::class),
-            tagged_iterator('shopware.import_export.reader_factory'),
-            tagged_iterator('shopware.import_export.writer_factory'),
-            tagged_iterator('shopware.import_export.pipe_factory'),
+            tagged_iterator('shopwell.import_export.reader_factory'),
+            tagged_iterator('shopwell.import_export.writer_factory'),
+            tagged_iterator('shopwell.import_export.pipe_factory'),
         ]);
 
     $services->set(ImportExportHandler::class)
@@ -340,7 +340,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     // Message handler
     $services->set(DeleteFileHandler::class)
         ->args([
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
         ])
         ->tag('messenger.message_handler');
 
@@ -381,13 +381,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('import_export_profile.repository'),
             service(ImportExportFactory::class),
             service(Connection::class),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
             service(ClockInterface::class),
         ])
         ->tag('console.command');
 
     $services->set(CleanupImportExportFileTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(CleanupImportExportFileTaskHandler::class)
         ->args([

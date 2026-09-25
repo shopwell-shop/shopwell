@@ -4,7 +4,7 @@ This directory contains build-time tooling for the Storefront frontend.
 
 The current component pipeline is Vite-based and covers:
 
-- building the shared `shopware` runtime module
+- building the shared `shopwell` runtime module
 - building Twig component JS/TS and styles (`.scss` or `.css`)
 - powering the Storefront Vite dev server
 
@@ -62,8 +62,8 @@ When the dev server stops, Shopwell falls back to production assets/import map.
 - `../vite.components.config.mts`
   - main Vite config used by `composer storefront:dev-server`
   - builds component entries and wires all dev/build plugins
-- `../vite.shopware.config.mts`
-  - builds `src/shopware.ts` into `Resources/public/storefront/shopware/shopware.js`
+- `../vite.shopwell.config.mts`
+  - builds `src/shopwell.ts` into `Resources/public/storefront/shopwell/shopwell.js`
 
 ### Component build orchestration
 

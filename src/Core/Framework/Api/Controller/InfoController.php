@@ -67,7 +67,7 @@ class InfoController extends AbstractController
     #[Route(
         path: '/api/_info/openapi3.json',
         name: 'api.info.openapi3',
-        defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'],
+        defaults: ['auth_required' => '%shopwell.api.api_browser.auth_required_str%'],
         methods: ['GET']
     )]
     public function info(Request $request): JsonResponse
@@ -123,7 +123,7 @@ class InfoController extends AbstractController
     #[Route(
         path: '/api/_info/open-api-schema.json',
         name: 'api.info.open-api-schema',
-        defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'],
+        defaults: ['auth_required' => '%shopwell.api.api_browser.auth_required_str%'],
         methods: ['GET']
     )]
     public function openApiSchema(): JsonResponse
@@ -152,7 +152,7 @@ class InfoController extends AbstractController
     #[Route(
         path: '/api/_info/stoplightio.html',
         name: 'api.info.stoplightio',
-        defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'],
+        defaults: ['auth_required' => '%shopwell.api.api_browser.auth_required_str%'],
         methods: ['GET']
     )]
     public function stoplightIoInfoHtml(Request $request): Response
@@ -168,7 +168,7 @@ class InfoController extends AbstractController
             ]
         );
 
-        $cspTemplate = trim($this->params->get('shopware.security.csp_templates')['administration'] ?? '');
+        $cspTemplate = trim($this->params->get('shopwell.security.csp_templates')['administration'] ?? '');
         if ($cspTemplate !== '') {
             $csp = str_replace(['%nonce%', "\n", "\r"], [$nonce, ' ', ' '], $cspTemplate);
             $response->headers->set('Content-Security-Policy', $csp);
@@ -181,13 +181,13 @@ class InfoController extends AbstractController
     public function config(Context $context, Request $request): JsonResponse
     {
         $adminWorker = [
-            'enableAdminWorker' => $this->params->get('shopware.admin_worker.enable_admin_worker'),
-            'enableNotificationWorker' => $this->params->get('shopware.admin_worker.enable_notification_worker'),
+            'enableAdminWorker' => $this->params->get('shopwell.admin_worker.enable_admin_worker'),
+            'enableNotificationWorker' => $this->params->get('shopwell.admin_worker.enable_notification_worker'),
             'transports' => $this->getAdminWorkerTransports(),
         ];
 
         if (!Feature::isActive('v6.8.0.0')) {
-            $adminWorker['enableQueueStatsWorker'] = $this->params->get('shopware.admin_worker.enable_queue_stats_worker');
+            $adminWorker['enableQueueStatsWorker'] = $this->params->get('shopwell.admin_worker.enable_queue_stats_worker');
         }
 
         // Resolve the private extension whitelist ONCE: getMimeTypesByExtension() internally
@@ -200,11 +200,11 @@ class InfoController extends AbstractController
             'version' => $this->getShopwellVersion(),
             'shopId' => $this->getShopId(),
             'appUrl' => (string) EnvironmentHelper::getVariable('APP_URL'),
-            'versionRevision' => $this->params->get('kernel.shopware_version_revision'),
+            'versionRevision' => $this->params->get('kernel.shopwell_version_revision'),
             'adminWorker' => $adminWorker,
             'bundles' => [],
             'settings' => [
-                'enableUrlFeature' => $this->params->get('shopware.media.enable_url_upload_feature'),
+                'enableUrlFeature' => $this->params->get('shopwell.media.enable_url_upload_feature'),
                 'presignedUploadSupported' => $this->presignedMediaUploadService !== null
                     && $this->presignedMediaUploadService->isAvailable(),
                 'appUrlReachable' => $this->appUrlVerifier->isAppUrlReachable($request),
@@ -212,10 +212,10 @@ class InfoController extends AbstractController
                 'firstMigrationDate' => $this->migrationInfo->getFirstMigrationDate(),
                 'private_allowed_extensions' => array_keys($privateMimeTypesByExtension),
                 'private_allowed_mime_types_by_extension' => $privateMimeTypesByExtension,
-                'enableHtmlSanitizer' => $this->params->get('shopware.html_sanitizer.enabled'),
-                'enableStagingMode' => $this->params->get('shopware.staging.administration.show_banner') && $this->systemConfigService->getBool(SetupStagingEvent::CONFIG_FLAG),
-                'disableExtensionManagement' => !$this->params->get('shopware.deployment.runtime_extension_management'),
-                'hideUpdateModule' => (bool) $this->params->get('shopware.auto_update.hide_module'),
+                'enableHtmlSanitizer' => $this->params->get('shopwell.html_sanitizer.enabled'),
+                'enableStagingMode' => $this->params->get('shopwell.staging.administration.show_banner') && $this->systemConfigService->getBool(SetupStagingEvent::CONFIG_FLAG),
+                'disableExtensionManagement' => !$this->params->get('shopwell.deployment.runtime_extension_management'),
+                'hideUpdateModule' => (bool) $this->params->get('shopwell.auto_update.hide_module'),
                 'minSearchTermLength' => $this->systemConfigService->getInt('core.search.minSearchTermLength') ?: 2,
             ],
             'inAppPurchases' => $this->inAppPurchase->all(),
@@ -226,8 +226,8 @@ class InfoController extends AbstractController
         return new JsonResponse($config);
     }
 
-    #[Route(path: '/api/_info/version', name: 'api.info.shopware.version', methods: ['GET'])]
-    #[Route(path: '/api/v1/_info/version', name: 'api.info.shopware.version_old_version', methods: ['GET'])]
+    #[Route(path: '/api/_info/version', name: 'api.info.shopwell.version', methods: ['GET'])]
+    #[Route(path: '/api/v1/_info/version', name: 'api.info.shopwell.version_old_version', methods: ['GET'])]
     public function infoShopwellVersion(): JsonResponse
     {
         return new JsonResponse([
@@ -244,7 +244,7 @@ class InfoController extends AbstractController
     #[Route(
         path: '/api/_info/routes',
         name: 'api.info.routes',
-        defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'],
+        defaults: ['auth_required' => '%shopwell.api.api_browser.auth_required_str%'],
         methods: ['GET']
     )]
     public function getRoutes(): JsonResponse
@@ -262,7 +262,7 @@ class InfoController extends AbstractController
      */
     private function getAdminWorkerTransports(): array
     {
-        $transports = $this->params->get('shopware.admin_worker.transports');
+        $transports = $this->params->get('shopwell.admin_worker.transports');
         if (!\is_array($transports)) {
             return [];
         }
@@ -279,12 +279,12 @@ class InfoController extends AbstractController
 
     private function getShopwellVersion(): string
     {
-        $shopwareVersion = $this->params->get('kernel.shopware_version');
-        if ($shopwareVersion === Kernel::SHOPWARE_FALLBACK_VERSION) {
-            $shopwareVersion = str_replace('.9999999-dev', '.9999999.9999999-dev', $shopwareVersion);
+        $shopwellVersion = $this->params->get('kernel.shopwell_version');
+        if ($shopwellVersion === Kernel::SHOPWELL_FALLBACK_VERSION) {
+            $shopwellVersion = str_replace('.9999999-dev', '.9999999.9999999-dev', $shopwellVersion);
         }
 
-        return $shopwareVersion;
+        return $shopwellVersion;
     }
 
     private function getShopId(): string

@@ -29,7 +29,7 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->parameters()
-        ->set('shopware.messenger.enforce_message_size', true);
+        ->set('shopwell.messenger.enforce_message_size', true);
 
     $services = $containerConfigurator->services();
 
@@ -47,44 +47,44 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('controller.service_arguments');
 
     $services->set(CalculatedPriceFieldTestDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     // Payment
     $services->set(TestConstantTaxRateProvider::class)
-        ->tag('shopware.tax.provider');
+        ->tag('shopwell.tax.provider');
 
     $services->set(TestEmptyTaxProvider::class)
-        ->tag('shopware.tax.provider');
+        ->tag('shopwell.tax.provider');
 
     $services->set(TestGenericExceptionTaxProvider::class)
-        ->tag('shopware.tax.provider');
+        ->tag('shopwell.tax.provider');
 
     // Route
     $services->set(TestNavigationSeoUrlRoute::class)
         ->args([
             service(CategoryDefinition::class),
         ])
-        ->tag('shopware.seo_url.route');
+        ->tag('shopwell.seo_url.route');
 
     $services->set(TestProductSeoUrlRoute::class)
         ->args([
             service(ProductDefinition::class),
         ])
-        ->tag('shopware.seo_url.route');
+        ->tag('shopwell.seo_url.route');
 
     $services->set(AttributeEntity::class)
-        ->tag('shopware.entity');
+        ->tag('shopwell.entity');
 
     $services->set(AttributeEntityAgg::class);
 
     $services->set(AttributeEntityWithHydrator::class)
-        ->tag('shopware.entity');
+        ->tag('shopwell.entity');
 
     $services->set(AttributeEntityWithInheritance::class)
-        ->tag('shopware.entity');
+        ->tag('shopwell.entity');
 
     $services->set(AttributeEntityWithSearchRanking::class)
-        ->tag('shopware.entity');
+        ->tag('shopwell.entity');
 
     $services->set(DummyHydrator::class)
         ->public()
@@ -99,7 +99,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(TraceableTransportFactory::class)
-        ->tag('shopware.metric_transport_factory');
+        ->tag('shopwell.metric_transport_factory');
 
     $services->set(TransportCollection::class)
         ->lazy()

@@ -103,7 +103,7 @@ function bridgeReadmeContent(context: GeneratorContext): string {
 }
 
 /**
- * Writes the git-ignored bridge files into `<bridgeParent>/.shopware/`. The
+ * Writes the git-ignored bridge files into `<bridgeParent>/.shopwell/`. The
  * bridge is the machine-specific hop into the installed Administration; its
  * eslint half derives its own parent directory at runtime, so one bridge serves
  * whichever config — per-root or a shared package root — sits beside it.
@@ -190,17 +190,17 @@ function writeBridge(
                 `// ${GENERATED_MARKER} — machine-specific path into the installed Administration.`,
                 "import path from 'node:path';",
                 "import { fileURLToPath } from 'node:url';",
-                `import { shopwareAdminExtension } from ${JSON.stringify(asRelativeSpecifier(shimEslintPath, factoryPath))};`,
+                `import { shopwellAdminExtension } from ${JSON.stringify(asRelativeSpecifier(shimEslintPath, factoryPath))};`,
                 '',
                 'const adminFolder = path.dirname(path.dirname(fileURLToPath(import.meta.url)));',
                 '',
                 `export * from ${JSON.stringify(asRelativeSpecifier(shimEslintPath, factoryPath))};`,
                 '',
-                'export function shopwareAdminExtensionConfig(options = {}) {',
-                '    return shopwareAdminExtension({ tsconfigRootDir: adminFolder, ...options });',
+                'export function shopwellAdminExtensionConfig(options = {}) {',
+                '    return shopwellAdminExtension({ tsconfigRootDir: adminFolder, ...options });',
                 '}',
                 '',
-                'export default shopwareAdminExtensionConfig();',
+                'export default shopwellAdminExtensionConfig();',
                 '',
             ].join('\n'),
             context.dryRun,

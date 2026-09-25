@@ -21,8 +21,8 @@ const jsonResponse = (body: unknown, ok = true, status = 200) => ({
 describe('codecovCommitUrl', () => {
     it('builds the v2 commit-detail path for the github service', () => {
         assert.equal(
-            codecovCommitUrl('shopware', 'shopware', 'abc123'),
-            'https://api.codecov.io/api/v2/github/shopware/repos/shopware/commits/abc123/',
+            codecovCommitUrl('shopwell', 'shopwell', 'abc123'),
+            'https://api.codecov.io/api/v2/github/shopwell/repos/shopwell/commits/abc123/',
         );
     });
 });
@@ -35,7 +35,7 @@ describe('fetchCodecovCommit', () => {
             return jsonResponse(commit);
         });
 
-        const result = await fetchCodecovCommit('shopware', 'shopware', 'abc123', 'secret', fetchImpl as unknown as typeof fetch);
+        const result = await fetchCodecovCommit('shopwell', 'shopwell', 'abc123', 'secret', fetchImpl as unknown as typeof fetch);
 
         assert.deepEqual(result, commit);
     });
@@ -44,7 +44,7 @@ describe('fetchCodecovCommit', () => {
         const fetchImpl = mock.fn(async () => jsonResponse({}, false, 404));
 
         await assert.rejects(
-            fetchCodecovCommit('shopware', 'shopware', 'abc123', 'secret', fetchImpl as unknown as typeof fetch),
+            fetchCodecovCommit('shopwell', 'shopwell', 'abc123', 'secret', fetchImpl as unknown as typeof fetch),
             /Codecov API returned 404/,
         );
     });
@@ -98,7 +98,7 @@ describe('buildGetDxPayload', () => {
     it('maps Codecov totals onto the getDX custom_data shape', () => {
         const payload = buildGetDxPayload(
             'abc123',
-            'shopware',
+            'shopwell',
             'trunk',
             { coverage: 78.42345, lines: 15816, hits: 12400 },
             '2026-09-18T12:07:45Z',
@@ -109,7 +109,7 @@ describe('buildGetDxPayload', () => {
             key: 'code_coverage',
             timestamp: '2026-09-18T12:07:45Z',
             value: {
-                repo: 'shopware',
+                repo: 'shopwell',
                 branch: 'trunk',
                 coverage_pct: 78.42,
                 lines_covered: 12400,
@@ -120,14 +120,14 @@ describe('buildGetDxPayload', () => {
 
     it('rejects a "complete" commit with no totals', () => {
         assert.throws(
-            () => buildGetDxPayload('abc123', 'shopware', 'trunk', null, '2026-09-18T12:07:45Z'),
+            () => buildGetDxPayload('abc123', 'shopwell', 'trunk', null, '2026-09-18T12:07:45Z'),
             /has no totals/,
         );
     });
 });
 
 describe('pushCoverageToGetDx', () => {
-    const payload = buildGetDxPayload('abc123', 'shopware', 'trunk', { coverage: 78.4, lines: 100, hits: 78 }, '2026-09-18T12:07:45Z');
+    const payload = buildGetDxPayload('abc123', 'shopwell', 'trunk', { coverage: 78.4, lines: 100, hits: 78 }, '2026-09-18T12:07:45Z');
 
     it('POSTs the payload with a bearer token', async () => {
         const fetchImpl = mock.fn(async (url: string, init?: RequestInit) => {

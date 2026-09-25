@@ -2,16 +2,16 @@
 title: Add consent banner for usage data collection
 issue: NEXT-29277
 author: Lukas Boecker
-author_email: l.boecker@shopware.com
+author_email: l.boecker@shopwell.com
 author_github: lbocker
 ---
 # Core
-* Added a `missingUserInContextSource` exception to `Shopware\Core\System\UsageData\UsageDataException`
-* Added static method `::invalidContextSource` to `Shopware\Core\System\UsageData\UsageDataException`
-* Changed constant value `SYSTEM_CONFIG_KEY_SHARE_DATA` in `Shopware\Core\System\UsageData\Approval\ApprovalDetector`
-* Added constant `USER_CONFIG_KEY_HIDE_CONSENT_BANNER` to `Shopware\Core\System\UsageData\Approval\ApprovalDetector`
-* Removed method `::needsApprovalRequest()` in `Shopware\Core\System\UsageData\Approval\ApprovalDetector`
-* Added method `::hasUserHiddenConsentBanner()` to `Shopware\Core\System\UsageData\Approval\ApprovalDetector`
+* Added a `missingUserInContextSource` exception to `Shopwell\Core\System\UsageData\UsageDataException`
+* Added static method `::invalidContextSource` to `Shopwell\Core\System\UsageData\UsageDataException`
+* Changed constant value `SYSTEM_CONFIG_KEY_SHARE_DATA` in `Shopwell\Core\System\UsageData\Approval\ApprovalDetector`
+* Added constant `USER_CONFIG_KEY_HIDE_CONSENT_BANNER` to `Shopwell\Core\System\UsageData\Approval\ApprovalDetector`
+* Removed method `::needsApprovalRequest()` in `Shopwell\Core\System\UsageData\Approval\ApprovalDetector`
+* Added method `::hasUserHiddenConsentBanner()` to `Shopwell\Core\System\UsageData\Approval\ApprovalDetector`
 ___
 # API
 * Added route `GET /api/usage-data/consent` (`api.usage_data.get_consent`)

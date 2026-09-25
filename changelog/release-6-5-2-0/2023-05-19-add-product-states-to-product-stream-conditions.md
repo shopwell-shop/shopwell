@@ -2,7 +2,7 @@
 title: Add product states to product streams
 issue: NEXT-25347
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com
+author_email: k.luetjann@shopwell.com
 author_github: @King-of-Babylon
 ---
 

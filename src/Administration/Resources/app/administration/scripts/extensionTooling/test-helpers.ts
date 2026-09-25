@@ -35,7 +35,7 @@ export function createSkeletonAdmin(projectRoot: string): string {
     const administrationRoot = path.join(
         projectRoot,
         'vendor',
-        'shopware',
+        'shopwell',
         'administration',
         'Resources',
         'app',
@@ -112,7 +112,7 @@ export function createVendorAdmin(projectRoot: string, options: { entitySchema: 
     const administrationRoot = path.join(
         projectRoot,
         'vendor',
-        'shopware',
+        'shopwell',
         'administration',
         'Resources',
         'app',

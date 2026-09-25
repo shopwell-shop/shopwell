@@ -12,7 +12,7 @@ import { DEFAULT_TOOLING_COMMANDS, resolveToolingCommands } from '../shared';
 import { serializeBaseline } from '../baseline';
 import { checkReport, extension, owned, project, run, setupReport, setupResult } from './helpers';
 
-const FLEX_ADMIN_ROOT = '/shop/vendor/shopware/administration/Resources/app/administration';
+const FLEX_ADMIN_ROOT = '/shop/vendor/shopwell/administration/Resources/app/administration';
 const MONOREPO_ADMIN_ROOT = '/shop/src/Administration/Resources/app/administration';
 const flexCommands = resolveToolingCommands('/shop', FLEX_ADMIN_ROOT);
 

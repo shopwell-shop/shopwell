@@ -2,7 +2,7 @@
 title: Improved language settings UI
 issue: #11414
 author: Lukas Rump
-author_email: l.rump@shopware.com
+author_email: l.rump@shopwell.com
 author_github: @lukasrump
 ---
 # Administration

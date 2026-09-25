@@ -2,7 +2,7 @@
 title: Change administration node version
 issue: NEXT-31592
 author: Sebastian Seggewiß
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration

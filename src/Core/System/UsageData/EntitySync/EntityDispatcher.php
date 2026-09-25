@@ -61,7 +61,7 @@ class EntityDispatcher
             'operation' => $operation,
             'run_date' => $runDate->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             'shop_id' => $shopId,
-            'shopware_version' => $this->instanceService->getShopwellVersion(),
+            'shopwell_version' => $this->instanceService->getShopwellVersion(),
         ], \JSON_THROW_ON_ERROR);
 
         $payload = gzencode($payload);

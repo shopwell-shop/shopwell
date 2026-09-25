@@ -23,7 +23,7 @@ class MediaFolderRepositoryTest extends TestCase
     use IntegrationTestBehaviour;
     use QueueTestBehaviour;
 
-    private const FIXTURE_FILE = __DIR__ . '/../fixtures/shopware-logo.png';
+    private const FIXTURE_FILE = __DIR__ . '/../fixtures/shopwell-logo.png';
 
     /**
      * @var EntityRepository<MediaCollection>

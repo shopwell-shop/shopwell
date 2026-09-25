@@ -23,10 +23,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(LanguageDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelLanguageDefinition::class)
-        ->tag('shopware.sales_channel.entity.definition');
+        ->tag('shopwell.sales_channel.entity.definition');
 
     $services->set(LanguageValidator::class)
         ->args([
@@ -59,7 +59,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('kernel.event_subscriber');
 
     $services->set(LanguageExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(LanguageRoute::class)
         ->public()
@@ -69,5 +69,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(LanguageRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 };

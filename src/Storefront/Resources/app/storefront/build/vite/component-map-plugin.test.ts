@@ -140,7 +140,7 @@ describe('componentMapPlugin', () => {
 
     it('assigns distinct specifiers to each dynamic-import subpath of a split package', async () => {
         // Dynamic imports always force a per-target facade chunk, which is
-        // exactly how the real storefront loads `@shopware-ag/dive/*`.
+        // exactly how the real storefront loads `@shopwell-ag/dive/*`.
         // Each facade gets its own subpath-aware specifier.
         const root = path.join(fixtureRoot, 'split-pkg-dynamic');
         const result = await build(root, {

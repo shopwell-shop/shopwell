@@ -13,7 +13,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 /**
  * Emits the order placed metrics (order count, line item count) once per placed order.
  *
- * Tagged `shopware.telemetry.subscriber`, so `TelemetrySubscriberCompilerPass` removes the service
+ * Tagged `shopwell.telemetry.subscriber`, so `TelemetrySubscriberCompilerPass` removes the service
  * entirely when telemetry is disabled.
  *
  * @internal

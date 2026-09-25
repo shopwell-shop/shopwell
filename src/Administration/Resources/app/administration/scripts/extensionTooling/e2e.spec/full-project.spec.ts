@@ -67,15 +67,15 @@ describe('scripts/extensionTooling e2e', () => {
         ]);
         writeFile(path.join(shimAdminFolder, 'tsconfig.json'), [
             '{',
-            '    "extends": "./.shopware/tsconfig.json",',
+            '    "extends": "./.shopwell/tsconfig.json",',
             '    "include": ["src/**/*.ts", "src/**/*.vue"]',
             '}',
         ]);
         writeFile(path.join(shimAdminFolder, 'eslint.config.mjs'), [
-            "import shopware from './.shopware/eslint.mjs';",
+            "import shopwell from './.shopwell/eslint.mjs';",
             '',
             'export default [',
-            '    ...shopware,',
+            '    ...shopwell,',
             "    { files: ['**/*.ts'], rules: { 'no-console': 'error' } },",
             '];',
         ]);
@@ -145,7 +145,7 @@ describe('scripts/extensionTooling e2e', () => {
             },
             {
                 technicalName: 'administration',
-                basePath: 'vendor/shopware/administration',
+                basePath: 'vendor/shopwell/administration',
                 administrationPath: 'Resources/app/administration/src',
             },
         ]);
@@ -169,7 +169,7 @@ describe('scripts/extensionTooling e2e', () => {
         ]);
         expect(byName.ZeroConfig.vendor).toBe(false);
         // A zero-config plugin is auto-bridged: setup scaffolds a composing
-        // tsconfig/eslint that compose the generated .shopware/ bridge.
+        // tsconfig/eslint that compose the generated .shopwell/ bridge.
         expect(byName.ZeroConfig.targets[0].tsconfig?.composes).toBe(true);
         expect(byName.ZeroConfig.targets[0].eslintConfig?.composes).toBe(true);
         expect(byName.ShimConfig.targets[0].tsconfig?.composes).toBe(true);
@@ -179,7 +179,7 @@ describe('scripts/extensionTooling e2e', () => {
 
         expect(
             fs.existsSync(
-                path.join(projectRoot, 'custom/plugins/ShimConfig/src/Resources/app/administration/.shopware/tsconfig.json'),
+                path.join(projectRoot, 'custom/plugins/ShimConfig/src/Resources/app/administration/.shopwell/tsconfig.json'),
             ),
         ).toBe(true);
 

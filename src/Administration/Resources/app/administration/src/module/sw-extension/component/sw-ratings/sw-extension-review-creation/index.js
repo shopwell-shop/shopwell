@@ -52,7 +52,7 @@ export default {
         },
 
         installedVersion() {
-            const installedExtension = Shopwell.Store.get('shopwareExtensions').myExtensions.data.find(
+            const installedExtension = Shopwell.Store.get('shopwellExtensions').myExtensions.data.find(
                 (extension) => extension.name === this.extension.name,
             );
 

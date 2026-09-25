@@ -38,7 +38,7 @@ describe('scripts/extensionTooling/report color rendering', () => {
                         {
                             changed: true,
                             writes: [
-                                { file: 'custom/plugins/Mono/.shopware/tsconfig.json', state: 'created' },
+                                { file: 'custom/plugins/Mono/.shopwell/tsconfig.json', state: 'created' },
                                 { file: 'custom/plugins/Mono/tsconfig.json', state: 'created' },
                             ],
                         },

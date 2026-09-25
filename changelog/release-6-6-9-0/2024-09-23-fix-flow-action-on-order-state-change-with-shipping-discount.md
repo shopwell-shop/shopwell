@@ -5,4 +5,4 @@ author: Marina Egner
 author_github: @magraina
 ---
 # Core
-* Changed `Shopware\Core\Content\Flow\Dispatching\ActionSetOrderStateAction` to evaluate the primary order delivery via sorting and filtering
+* Changed `Shopwell\Core\Content\Flow\Dispatching\ActionSetOrderStateAction` to evaluate the primary order delivery via sorting and filtering

@@ -11,7 +11,7 @@
   ],
   "license": "MIT",
   "scripts": {
-    "build:shopware": "vite build --config vite.shopware.config.mts",
+    "build:shopwell": "vite build --config vite.shopwell.config.mts",
     "build:components": "node build/vite/build-components.js",
     "dev:server": "vite --config vite.components.config.mts",
     "development": "NODE_ENV=development webpack --config webpack.config.js",
@@ -23,7 +23,7 @@
     "lint:js:fix": "eslint --no-error-on-unmatched-pattern --fix --report-unused-disable-directives ./src ./build && (cd ../.. && eslint --no-error-on-unmatched-pattern --fix --config ./app/storefront/eslint.config.js --report-unused-disable-directives views/components)",
     "lint:scss": "stylelint --config stylelint.config.js ./src/scss --cache",
     "lint:scss-fix": "npm run lint:scss -- --fix",
-    "production": "NODE_ENV=production webpack --config webpack.config.js && npm run build:shopware && npm run build:components",
+    "production": "NODE_ENV=production webpack --config webpack.config.js && npm run build:shopwell && npm run build:components",
     "unit": "jest --config jest.config.js --ci",
     "unit-watch": "jest --config jest.config.js --watch",
     "unit:components": "vitest run --config vitest.config.mts",
@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@popperjs/core": "2.11.8",
-    "@shopware-ag/dive": "2.3.4",
+    "@shopwell-ag/dive": "2.3.4",
     "@swc/core": "1.10.14",
     "autoprefixer": "10.4.13",
     "bootstrap": "5.3.8",

@@ -36,7 +36,7 @@ class StoreHandshakeTest extends TestCase
             ->method('signPayloadWithAppSecret')
             ->willReturn('1234');
 
-        $handshake = new StoreHandshake($shopUrl, $appEndpoint, '', $shopId, $storeClientMock, Kernel::SHOPWARE_FALLBACK_VERSION, new NativeClock());
+        $handshake = new StoreHandshake($shopUrl, $appEndpoint, '', $shopId, $storeClientMock, Kernel::SHOPWELL_FALLBACK_VERSION, new NativeClock());
 
         $request = $handshake->assembleRequest();
         static::assertStringStartsWith($appEndpoint, (string) $request->getUri());
@@ -54,10 +54,10 @@ class StoreHandshakeTest extends TestCase
         static::assertIsString($queryParams['timestamp']);
         static::assertNotEmpty($queryParams['timestamp']);
 
-        static::assertTrue($request->hasHeader('shopware-app-signature'));
+        static::assertTrue($request->hasHeader('shopwell-app-signature'));
         static::assertSame(
             '1234',
-            $request->getHeaderLine('shopware-app-signature')
+            $request->getHeaderLine('shopwell-app-signature')
         );
 
         static::assertNotEmpty($request->getHeaderLine('sw-version'));
@@ -76,7 +76,7 @@ class StoreHandshakeTest extends TestCase
             ->with($shopId . $shopUrl . $appName, $appName)
             ->willReturn('1234');
 
-        $handshake = new StoreHandshake($shopUrl, $appEndpoint, $appName, $shopId, $storeClientMock, Kernel::SHOPWARE_FALLBACK_VERSION, new NativeClock());
+        $handshake = new StoreHandshake($shopUrl, $appEndpoint, $appName, $shopId, $storeClientMock, Kernel::SHOPWELL_FALLBACK_VERSION, new NativeClock());
 
         static::assertSame('1234', $handshake->fetchAppProof());
     }
@@ -101,7 +101,7 @@ class StoreHandshakeTest extends TestCase
             'TestApp',
             'my-shop-id',
             $storeClient,
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             new NativeClock(),
         );
 

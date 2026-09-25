@@ -51,7 +51,7 @@ const customerGroupRepository = {
                     domains: [
                         {
                             languageId: '1234',
-                            url: 'http://shopware.test',
+                            url: 'http://shopwell.test',
                         },
                     ],
                 },

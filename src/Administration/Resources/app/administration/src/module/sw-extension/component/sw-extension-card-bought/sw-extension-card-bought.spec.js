@@ -4,7 +4,7 @@ import { mount } from '@vue/test-utils';
 import { setActivePinia, createPinia } from 'pinia';
 
 import ExtensionErrorService from 'src/module/sw-extension/service/extension-error.service';
-import ShopwellExtensionService from 'src/module/sw-extension/service/shopware-extension.service';
+import ShopwellExtensionService from 'src/module/sw-extension/service/shopwell-extension.service';
 import ExtensionStoreActionService from 'src/module/sw-extension/service/extension-store-action.service';
 import 'src/module/sw-extension/mixin/sw-extension-error.mixin';
 
@@ -82,11 +82,11 @@ Shopwell.Application.addServiceProvider('extensionStoreActionService', () => {
     return extensionStoreActionService;
 });
 
-Shopwell.Application.addServiceProvider('shopwareExtensionService', () => {
+Shopwell.Application.addServiceProvider('shopwellExtensionService', () => {
     return new ShopwellExtensionService(
         Shopwell.Service('appModulesService'),
         Shopwell.Service('extensionStoreActionService'),
-        Shopwell.Service('shopwareDiscountCampaignService'),
+        Shopwell.Service('shopwellDiscountCampaignService'),
     );
 });
 
@@ -151,7 +151,7 @@ async function createWrapper(extension) {
             },
             provide: {
                 extensionStoreActionService: Shopwell.Service('extensionStoreActionService'),
-                shopwareExtensionService: Shopwell.Service('shopwareExtensionService'),
+                shopwellExtensionService: Shopwell.Service('shopwellExtensionService'),
                 extensionErrorService: Shopwell.Service('extensionErrorService'),
                 cacheApiService: {},
                 shortcutService: {
@@ -536,7 +536,7 @@ describe('src/module/sw-extension/component/sw-extension-card-bought', () => {
                                 code: 'FRAMEWORK__STORE_ERROR',
                                 detail: 'The download of the extension is not allowed, please purchase a corresponding license or contact the customer service',
                                 meta: {
-                                    documentationLink: 'https://docs.shopwell.cn/en/shopware-6-en',
+                                    documentationLink: 'https://docs.shopwell.cn/en/shopwell-6-en',
                                 },
                                 status: '500',
                                 title: 'Download not allowed',
@@ -580,7 +580,7 @@ describe('src/module/sw-extension/component/sw-extension-card-bought', () => {
                 'The download of the extension is not allowed, please purchase a corresponding license or contact the customer service',
             details: null,
             parameters: {
-                documentationLink: 'https://docs.shopwell.cn/en/shopware-6-en',
+                documentationLink: 'https://docs.shopwell.cn/en/shopwell-6-en',
             },
         });
 
@@ -589,7 +589,7 @@ describe('src/module/sw-extension/component/sw-extension-card-bought', () => {
             'The download of the extension is not allowed, please purchase a corresponding license or contact the customer service',
         );
         expect(wrapper.find('.sw-extension-card-bought__installation-failed-modal p > a').text()).toBe(
-            'https://docs.shopwell.cn/en/shopware-6-en',
+            'https://docs.shopwell.cn/en/shopwell-6-en',
         );
     });
 

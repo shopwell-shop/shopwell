@@ -29,7 +29,7 @@ class ContextGatewayCommandRegistry
      * @param iterable<AbstractContextGatewayCommandHandler> $handlers
      */
     public function __construct(
-        #[AutowireIterator('shopware.context.gateway.command')]
+        #[AutowireIterator('shopwell.context.gateway.command')]
         iterable $handlers,
     ) {
         foreach ($handlers as $handler) {

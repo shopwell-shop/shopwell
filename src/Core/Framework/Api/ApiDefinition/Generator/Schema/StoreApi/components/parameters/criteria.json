@@ -28,7 +28,7 @@
             "criteriaFilter": {
                 "name": "filter[]",
                 "in": "query",
-                "description": "List of filters to restrict the search result. For more information, see [Search Queries > Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#filter)",
+                "description": "List of filters to restrict the search result. For more information, see [Search Queries > Filter](https://shopwell.stoplight.io/docs/store-api/docs/concepts/search-queries.md#filter)",
                 "schema": {
                     "type": "array",
                     "items": {
@@ -81,7 +81,7 @@
             "criteriaPostFilter": {
                 "name": "post-filter[]",
                 "in": "query",
-                "description": "Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter)",
+                "description": "Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopwell.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter)",
                 "schema": {
                     "type": "array",
                     "items": {

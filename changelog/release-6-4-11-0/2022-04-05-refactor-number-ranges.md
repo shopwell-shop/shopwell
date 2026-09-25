@@ -3,18 +3,18 @@ title: Refactor number ranges to be faster
 issue: NEXT-20673
 ---
 # Core
-* Added abstract class `\Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage`.
-* Deprecated interface `\Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementStorageInterface` use `AbstractIncrementStorage` instead.
-* Deprecated service-id `Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementStorageInterface`, use `Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementSqlStorage` instead.
-* Added abstract class `\Shopware\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator`.
-* Deprecated interface `\Shopware\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternInterface` use `AbstractValueGenerator` instead.
-* Added method `\Shopware\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternRegistry::generatePattern()`.
-* Deprecated method `\Shopware\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternRegistry::getPatternResolver()`, please use `generatePattern()` directly.
-* Deprecated all protected methods of `\Shopware\Core\System\NumberRange\ValueGenerator\NumberRangeValueGenerator`, those will be internal, please only use the public methods.
-* Added `\Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementRedisStorage` to be able to generate number range increments using redis.
-* Added config option `shopware.number_range.increment_storage` to specify which storage engine should be used to store the increment states.
-* Added config option `shopware.number_range.redis_url` to specify the redis connection that should be used for the number ranges.
-* Added `\Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementStorageRegistry` to get the configured increment store, and migrate data between stores.
+* Added abstract class `\Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage`.
+* Deprecated interface `\Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementStorageInterface` use `AbstractIncrementStorage` instead.
+* Deprecated service-id `Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementStorageInterface`, use `Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementSqlStorage` instead.
+* Added abstract class `\Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator`.
+* Deprecated interface `\Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternInterface` use `AbstractValueGenerator` instead.
+* Added method `\Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternRegistry::generatePattern()`.
+* Deprecated method `\Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternRegistry::getPatternResolver()`, please use `generatePattern()` directly.
+* Deprecated all protected methods of `\Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGenerator`, those will be internal, please only use the public methods.
+* Added `\Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementRedisStorage` to be able to generate number range increments using redis.
+* Added config option `shopwell.number_range.increment_storage` to specify which storage engine should be used to store the increment states.
+* Added config option `shopwell.number_range.redis_url` to specify the redis connection that should be used for the number ranges.
+* Added `\Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementStorageRegistry` to get the configured increment store, and migrate data between stores.
 * Added `number-range:migrate` console command to migrate data between storage engines per CLI.
 ___
 # Administration
@@ -24,9 +24,9 @@ ___
 # Upgrade Information
 ## Redis store for number range increments
 You can now generate the number range increments using redis instead of the Database.
-In your `shopware.yaml` specify that you want to use the redis storage and the url that should be used to connect to the redis server to activate this feature:
+In your `shopwell.yaml` specify that you want to use the redis storage and the url that should be used to connect to the redis server to activate this feature:
 ```yaml
-shopware:
+shopwell:
   number_range:
     increment_storage: "Redis"
     redis_url: "redis://redis-host:port/dbIndex"
@@ -45,18 +45,18 @@ ___
 We refactored the number range handling, to be faster and allow different storages to be used.
 ### Removal of `IncrementStorageInterface`
 
-We removed the `Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementStorageInterface`.
-If you have implemented a custom increment storage please use the abstract class `Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage`.
+We removed the `Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementStorageInterface`.
+If you have implemented a custom increment storage please use the abstract class `Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage`.
 Before:
 ```php
 class CustomIncrementStorage implements IncrementStorageInterface
 {
-    public function pullState(\Shopware\Core\System\NumberRange\NumberRangeEntity $configuration): string
+    public function pullState(\Shopwell\Core\System\NumberRange\NumberRangeEntity $configuration): string
     {
         return $this->increment($configuration->getId(), $configuration->getPattern());
     }
     
-    public function getNext(\Shopware\Core\System\NumberRange\NumberRangeEntity $configuration): string
+    public function getNext(\Shopwell\Core\System\NumberRange\NumberRangeEntity $configuration): string
     {
         return $this->get($configuration->getId(), $configuration->getPattern());
     }
@@ -84,8 +84,8 @@ class CustomIncrementStorage extends AbstractIncrementStorage
 ```
 ### Removal of `ValueGeneratorPatternInterface`
 
-We removed the `Shopware\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternInterface`.
-If you have implemented a custom value pattern please use the abstract class `Shopware\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator`.
+We removed the `Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternInterface`.
+If you have implemented a custom value pattern please use the abstract class `Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator`.
 
 ```php
 class CustomPattern implements ValueGeneratorPatternInterface
@@ -121,7 +121,7 @@ class CustomIncrementStorage extends AbstractValueGenerator
     }
 }
 ```
-### Removal of `\Shopware\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternRegistry::getPatternResolver()`
+### Removal of `\Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternRegistry::getPatternResolver()`
 
 We removed the `ValueGeneratorPatternRegistry::getPatternResolver()` method, please call the `generatePattern()` method now directly.
 Before:

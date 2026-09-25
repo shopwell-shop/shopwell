@@ -282,7 +282,7 @@ class WebhookClientTest extends TestCase
         $request3 = $history[2]['request'];
         static::assertInstanceOf(RequestInterface::class, $request3);
         static::assertSame('https://example.com/hook3', (string) $request3->getUri());
-        static::assertFalse($request3->hasHeader(RequestSigner::SHOPWARE_SHOP_SIGNATURE));
+        static::assertFalse($request3->hasHeader(RequestSigner::SHOPWELL_SHOP_SIGNATURE));
     }
 
     public function testSendBatchReturnsFailureResults(): void
@@ -492,8 +492,8 @@ class WebhookClientTest extends TestCase
         $allHeaders = array_merge([
             'Content-Type' => 'application/json',
             'sw-version' => '6.7.0',
-            AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE => 'en-GB',
-            AuthMiddleware::SHOPWARE_USER_LANGUAGE => 'en-GB',
+            AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE => 'en-GB',
+            AuthMiddleware::SHOPWELL_USER_LANGUAGE => 'en-GB',
         ], $headers);
 
         $request = new Request('POST', $url, $allHeaders, $payload);
@@ -514,7 +514,7 @@ class WebhookClientTest extends TestCase
 
     private function assertRequestIsSigned(RequestInterface $request): void
     {
-        static::assertTrue($request->hasHeader(RequestSigner::SHOPWARE_SHOP_SIGNATURE));
+        static::assertTrue($request->hasHeader(RequestSigner::SHOPWELL_SHOP_SIGNATURE));
 
         $body = $request->getBody();
         $payload = $body->getContents();
@@ -522,6 +522,6 @@ class WebhookClientTest extends TestCase
 
         $expectedSignature = hash_hmac('sha256', $payload, 'test-secret');
 
-        static::assertSame($expectedSignature, $request->getHeaderLine(RequestSigner::SHOPWARE_SHOP_SIGNATURE));
+        static::assertSame($expectedSignature, $request->getHeaderLine(RequestSigner::SHOPWELL_SHOP_SIGNATURE));
     }
 }

@@ -73,7 +73,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
         ]);
 
-    $services->set('shopware.webhook.guzzle', Client::class)
+    $services->set('shopwell.webhook.guzzle', Client::class)
         ->lazy()
         ->args([
             [
@@ -84,43 +84,43 @@ return static function (ContainerConfigurator $containerConfigurator): void {
                     ->factory([HandlerStack::class, 'create'])
                     ->call('after', [
                         'allow_redirects',
-                        service('shopware.webhook.guzzle.security_middleware'),
+                        service('shopwell.webhook.guzzle.security_middleware'),
                         'app_system_http_security',
                     ])
                     ->call('push', [
-                        service('shopware.app_system.guzzle.middleware'),
+                        service('shopwell.app_system.guzzle.middleware'),
                     ]),
             ],
         ]);
 
     $services->set(WebhookClient::class)
         ->args([
-            service('shopware.webhook.guzzle'),
+            service('shopwell.webhook.guzzle'),
             service(SymfonyClockInterface::class),
         ]);
 
-    $services->set('shopware.webhook.trusted_url_resolver', TrustedUrlResolver::class)
+    $services->set('shopwell.webhook.trusted_url_resolver', TrustedUrlResolver::class)
         ->args([
             null,
             true,
-            param('shopware.app_system.allowed_private_ip_addresses'),
+            param('shopwell.app_system.allowed_private_ip_addresses'),
         ]);
 
-    $services->set('shopware.webhook.guzzle.security_middleware', AppSystemHttpMiddleware::class)
+    $services->set('shopwell.webhook.guzzle.security_middleware', AppSystemHttpMiddleware::class)
         ->args([
-            service('shopware.webhook.trusted_url_resolver'),
-            param('shopware.app_system.allow_unencrypted_traffic'),
+            service('shopwell.webhook.trusted_url_resolver'),
+            param('shopwell.app_system.allow_unencrypted_traffic'),
             true,
-            param('shopware.app_system.allowed_private_ip_addresses'),
-            param('shopware.app_system.enable_url_validation'),
+            param('shopwell.app_system.allowed_private_ip_addresses'),
+            param('shopwell.app_system.enable_url_validation'),
         ]);
 
     $services->set(WebhookTargetValidator::class)
         ->args([
-            param('shopware.app_system.allow_unencrypted_traffic'),
-            param('shopware.app_system.allowed_private_ip_addresses'),
-            service('shopware.webhook.trusted_url_resolver'),
-            param('shopware.app_system.enable_url_validation'),
+            param('shopwell.app_system.allow_unencrypted_traffic'),
+            param('shopwell.app_system.allowed_private_ip_addresses'),
+            service('shopwell.webhook.trusted_url_resolver'),
+            param('shopwell.app_system.enable_url_validation'),
         ]);
 
     $services->set(WebhookUrlWriteValidator::class)
@@ -186,8 +186,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(WebhookClient::class),
             service(MessageBusInterface::class),
             env('APP_URL'),
-            param('kernel.shopware_version'),
-            param('shopware.admin_worker.enable_admin_worker'),
+            param('kernel.shopwell_version'),
+            param('shopwell.admin_worker.enable_admin_worker'),
             service(WebhookDeliveryService::class),
             service(WebhookOutboxStore::class),
             service(PolicyRegistry::class),
@@ -202,13 +202,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(PolicyRegistry::class)
         ->args([
-            tagged_iterator('shopware.webhook.policy'),
+            tagged_iterator('shopwell.webhook.policy'),
             service('logger'),
         ]);
 
     $services->set(NotHookablePolicy::class)
         ->args([service(BusinessEventRegistry::class)])
-        ->tag('shopware.webhook.policy');
+        ->tag('shopwell.webhook.policy');
 
     $services->set(HookableEventFactory::class)
         ->lazy()
@@ -230,21 +230,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(WebhookDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(WebhookEventLogDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(HookableEventCollector::class)
         ->args([
             service(BusinessEventCollector::class),
             service(DefinitionInstanceRegistry::class),
-            tagged_iterator('shopware.entity.hookable'),
-            tagged_iterator('shopware.hookable_event.describer'),
+            tagged_iterator('shopwell.entity.hookable'),
+            tagged_iterator('shopwell.hookable_event.describer'),
         ]);
 
     $services->set(CoreHookableEventDescriber::class)
-        ->tag('shopware.hookable_event.describer');
+        ->tag('shopwell.hookable_event.describer');
 
     $services->set(WebhookSigningSecretResolver::class)
         ->args([
@@ -262,8 +262,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(MessageBusInterface::class),
             service(WebhookHealthService::class),
             service('logger'),
-            param('shopware.admin_worker.enable_admin_worker'),
-            param('shopware.webhook.failure_strategy'),
+            param('shopwell.admin_worker.enable_admin_worker'),
+            param('shopwell.webhook.failure_strategy'),
         ]);
 
     $services->set(WebhookEventMessageHandler::class)
@@ -280,7 +280,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(Connection::class),
             service(WebhookOutboxStore::class),
-            param('shopware.webhook.failure_strategy'),
+            param('shopwell.webhook.failure_strategy'),
         ])
         ->tag('kernel.event_subscriber');
 
@@ -294,7 +294,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(CleanupWebhookEventLogTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(CleanupWebhookEventLogTaskHandler::class)
         ->args([

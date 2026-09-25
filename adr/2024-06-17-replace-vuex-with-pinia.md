@@ -14,12 +14,12 @@ Pinia is the new documented standard with Vue 3; therefore, we will switch to Pi
 
 ## Consequences
 ### Removal of Vuex
-Below you will find an overview of what will be removed on which Shopware Version.
+Below you will find an overview of what will be removed on which Shopwell Version.
 
 #### 6.7
-For Shopware 6.7 we want to transition all our modules but still leave the possibility for you to use Vuex for your own states.
+For Shopwell 6.7 we want to transition all our modules but still leave the possibility for you to use Vuex for your own states.
 
-- All `Shopware.State` functions will cause warnings to appear in the DevTools. For example `Shopware.State.registerModule is deprecated. Use Shopware.Store.register instead!`
+- All `Shopwell.State` functions will cause warnings to appear in the DevTools. For example `Shopwell.State.registerModule is deprecated. Use Shopwell.Store.register instead!`
 - All Vuex state definitions will be transitioned to Pinia:
     - src/module/sw-bulk-edit/state/sw-bulk-edit.state.js
     - src/module/sw-product/page/sw-product-detail/state.js
@@ -37,7 +37,7 @@ For Shopware 6.7 we want to transition all our modules but still leave the possi
     - src/app/state/context.store.ts
     - src/app/state/error.store.js
     - src/app/state/settings-item.store.js
-    - src/app/state/shopware-apps.store.ts
+    - src/app/state/shopwell-apps.store.ts
     - src/app/state/extension-entry-routes.js
     - src/app/state/marketing.store.js
     - src/app/state/extension-component-sections.store.ts
@@ -58,9 +58,9 @@ For Shopware 6.7 we want to transition all our modules but still leave the possi
     - src/module/sw-promotion-v2/page/sw-promotion-v2-detail/state.js
 
 #### 6.8
-With Shopware 6.8 we will entirely remove everything Vuex related including the dependency.
+With Shopwell 6.8 we will entirely remove everything Vuex related including the dependency.
 
-- `Shopware.State` - Will be removed. Use `Shopware.Store` instead.
+- `Shopwell.State` - Will be removed. Use `Shopwell.Store` instead.
 - `src/app/init-pre/state.init.ts` - Will be removed. Use `src/app/init-pre/store.init.ts` instead.
 - `src/core/factory/state.factory.ts` - Will be removed without replacement.
 - Interface `VuexRootState` will be removed from `global.types.ty`. Use `PiniaRootState` instead.
@@ -68,8 +68,8 @@ With Shopware 6.8 we will entirely remove everything Vuex related including the 
 
 
 ## Transition to Pinia
-Pinia calls its state-holding entities `stores`. Therefore, we decided to hold everything Pinia-related under `Shopware.Store`.
-The `Shopware.Store` implementation follows the Singleton pattern. The private constructor controls the creation of the Pinia root state.
+Pinia calls its state-holding entities `stores`. Therefore, we decided to hold everything Pinia-related under `Shopwell.Store`.
+The `Shopwell.Store` implementation follows the Singleton pattern. The private constructor controls the creation of the Pinia root state.
 This root state must be injected into Vue before the first store can be registered. The `init-pre/store.init.ts` takes care of this.
 
 ### Best practices
@@ -79,7 +79,7 @@ This root state must be injected into Vue before the first store can be register
 
 You can always orientate on the `cms-page.state.ts`. It contains all best practices. 
 
-For now, we have decided to limit the public API of `Shopware.Store` to the following:
+For now, we have decided to limit the public API of `Shopwell.Store` to the following:
 
 ```typescript
 /**
@@ -103,24 +103,24 @@ public register(options: DefineStoreOptions): void;
 public unregister(id: keyof PiniaRootState): void;
 ```
 
-The rest of the previous Vuex (`Shopware.State`) public API is implemented into Pinia itself.
+The rest of the previous Vuex (`Shopwell.State`) public API is implemented into Pinia itself.
 
 ```typescript
 // Setup
-const piniaStore = Shopware.Store.get('...');
+const piniaStore = Shopwell.Store.get('...');
 
 // From Vuex subscribe
-Shopware.State.subscribe(...);
+Shopwell.State.subscribe(...);
 // To Pinia $subscribe
 store.$subscribe(...);
 
 // From Vuex commit
-Shopware.State.commit(...);
+Shopwell.State.commit(...);
 // To Pinia action call
 store.someAction(...);
 
 // From Vuex dispatch
-Shopware.State.dispatch(...);
+Shopwell.State.dispatch(...);
 // To Pinia action call
 store.someAsyncAction(...);
 ```
@@ -134,12 +134,12 @@ How to transition a Vuex module into a Pinia store:
 2. `state` needs to be an arrow function returning an object: `state: () => ({})`.
 3. `actions` no longer need to use the `state` argument. They can access everything with correct type support via `this`.
 4. Point 3 also applies to `getters`.
-5. Use `Shopware.Store.register` instead of `Shopware.State.registerModule`.
+5. Use `Shopwell.Store.register` instead of `Shopwell.State.registerModule`.
 
 Let's look at a simple Vuex module and how to transition it:
 ```typescript
 // Old Vuex implementation
-Shopware.State.registerModule('example', {
+Shopwell.State.registerModule('example', {
     state: {
         id: '',
     },
@@ -166,8 +166,8 @@ Shopware.State.registerModule('example', {
 });
 
 // New Pinia implementation
-// Notice that the mutation setId was removed! You can directly modify a Pinia store state after retrieving it with Shopware.Store.get.
-Shopware.Store.register({
+// Notice that the mutation setId was removed! You can directly modify a Pinia store state after retrieving it with Shopwell.Store.get.
+Shopwell.Store.register({
     id: 'example',
     state: () => ({
         id: '',

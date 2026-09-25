@@ -7,4 +7,4 @@ author_github: @kiplingi
 ---
 
 # Storefront
-* Changed `\Shopware\Storefront\Controller\CartLineItemController` with the possibility to add a product payload to the line item.
+* Changed `\Shopwell\Storefront\Controller\CartLineItemController` with the possibility to add a product payload to the line item.

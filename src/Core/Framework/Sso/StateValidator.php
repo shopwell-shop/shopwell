@@ -32,7 +32,7 @@ class StateValidator
 
         $request->getSession()->remove(self::SESSION_KEY);
 
-        $request->request->set('grant_type', 'shopware_grant');
+        $request->request->set('grant_type', 'shopwell_grant');
         $request->request->set('code', $request->query->get('code'));
     }
 

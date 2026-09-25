@@ -21,7 +21,7 @@ The deprecation notices can be thrown conditionally, e.g., when a new parameter 
 If it is already used in the new way, there is no need to trigger the deprecation.
 
 This has the benefit that 3rd party developers get deprecation notices during runtime with a concrete deprecation message and the stacktrace where the deprecation was triggered.
-This is useful, e.g., to run the test suite of a plugin against a new shopware version to get a list of all deprecations.
+This is useful, e.g., to run the test suite of a plugin against a new shopwell version to get a list of all deprecations.
 
 Additionally, we can use this to provide better feedback to 3rd party developers, e.g., if App Scripts use a deprecated method/class or if some private apps in the cloud rely on deprecated functionality.
 

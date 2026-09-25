@@ -2,11 +2,11 @@ includes:
     - tagged-service-contracts.php
 
 parameters:
-    shopwareTaggedServiceContractAdditionalTagContracts: []
+    shopwellTaggedServiceContractAdditionalTagContracts: []
 
 parametersSchema:
-    shopwareTaggedServiceContractTagContracts: arrayOf(anyOf(string(), listOf(string())), string())
-    shopwareTaggedServiceContractAdditionalTagContracts: arrayOf(anyOf(string(), listOf(string())), string())
+    shopwellTaggedServiceContractTagContracts: arrayOf(anyOf(string(), listOf(string())), string())
+    shopwellTaggedServiceContractAdditionalTagContracts: arrayOf(anyOf(string(), listOf(string())), string())
 
 rules:
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\FuturePropertyCompatibilityRule
@@ -78,8 +78,8 @@ services:
     -
         class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\TaggedServiceContractRule
         arguments:
-            tagContracts: %shopwareTaggedServiceContractTagContracts%
-            additionalTagContracts: %shopwareTaggedServiceContractAdditionalTagContracts%
+            tagContracts: %shopwellTaggedServiceContractTagContracts%
+            additionalTagContracts: %shopwellTaggedServiceContractAdditionalTagContracts%
             containerXmlPath: %symfony.containerXmlPath%
         tags:
             - phpstan.rules.rule

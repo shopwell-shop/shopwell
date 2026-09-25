@@ -152,7 +152,7 @@ abstract class Bundle extends SymfonyBundle
         $container->register(MigrationSource::class . '_' . $this->getName(), MigrationSource::class)
             ->addArgument($this->getName())
             ->addArgument([$migrationPath => $this->getMigrationNamespace()])
-            ->addTag('shopware.migration_source');
+            ->addTag('shopwell.migration_source');
     }
 
     protected function buildDefaultConfig(ContainerBuilder $container): void
@@ -190,7 +190,7 @@ abstract class Bundle extends SymfonyBundle
     private function registerFilesystem(ContainerBuilder $container, string $key): void
     {
         $containerPrefix = $this->getContainerPrefix();
-        $parameterKey = \sprintf('shopware.filesystem.%s', $key);
+        $parameterKey = \sprintf('shopwell.filesystem.%s', $key);
         $serviceId = \sprintf('%s.filesystem.%s', $containerPrefix, $key);
 
         $filesystem = new Definition(

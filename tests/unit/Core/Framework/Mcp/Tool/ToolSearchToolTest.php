@@ -28,7 +28,7 @@ class ToolSearchToolTest extends TestCase
         $data = json_decode($tool('read entity'), true, 512, \JSON_THROW_ON_ERROR);
 
         static::assertTrue($data['success']);
-        static::assertSame('shopware-entity-read', $data['data'][0]['tool']['name']);
+        static::assertSame('shopwell-entity-read', $data['data'][0]['tool']['name']);
         static::assertSame(2, $data['_meta']['totalCandidates']);
     }
 
@@ -53,14 +53,14 @@ class ToolSearchToolTest extends TestCase
         $data = json_decode($tool('read entity'), true, 512, \JSON_THROW_ON_ERROR);
 
         static::assertArrayHasKey('usage', $data['_meta']);
-        static::assertStringContainsString('shopware-toolset-enable', $data['_meta']['usage']);
+        static::assertStringContainsString('shopwell-toolset-enable', $data['_meta']['usage']);
     }
 
     public function testSearchIsScopedToAllowlist(): void
     {
         $allowlistProvider = static::createStub(McpAllowlistProvider::class);
         $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(
-            tools: ['shopware-entity-search'],
+            tools: ['shopwell-entity-search'],
             resources: null,
             prompts: null,
         ));
@@ -70,21 +70,21 @@ class ToolSearchToolTest extends TestCase
         $data = json_decode($tool('entity'), true, 512, \JSON_THROW_ON_ERROR);
         $names = array_column(array_column($data['data'], 'tool'), 'name');
 
-        static::assertSame(['shopware-entity-search'], $names);
+        static::assertSame(['shopwell-entity-search'], $names);
         static::assertSame(1, $data['_meta']['totalCandidates']);
     }
 
     public function testSearchToolDoesNotReturnItself(): void
     {
         $registry = $this->registry();
-        $registry->registerTool(self::tool('shopware-tool-search', 'Search tools'), 'Acme\\ToolSearch');
+        $registry->registerTool(self::tool('shopwell-tool-search', 'Search tools'), 'Acme\\ToolSearch');
 
         $tool = new ToolSearchTool($registry, new ToolSearch());
 
         $data = json_decode($tool('tool search'), true, 512, \JSON_THROW_ON_ERROR);
         $names = array_column(array_column($data['data'], 'tool'), 'name');
 
-        static::assertNotContains('shopware-tool-search', $names);
+        static::assertNotContains('shopwell-tool-search', $names);
     }
 
     public function testReturnsErrorWhenRegistryIsUnavailable(): void
@@ -101,7 +101,7 @@ class ToolSearchToolTest extends TestCase
     {
         $registry = new Registry();
         for ($i = 1; $i <= 25; ++$i) {
-            $registry->registerTool(self::tool('shopware-entity-' . $i, 'Entity helper'), 'Acme\\Tool' . $i);
+            $registry->registerTool(self::tool('shopwell-entity-' . $i, 'Entity helper'), 'Acme\\Tool' . $i);
         }
 
         $tool = new ToolSearchTool($registry, new ToolSearch());
@@ -125,8 +125,8 @@ class ToolSearchToolTest extends TestCase
     private function registry(): Registry
     {
         $registry = new Registry();
-        $registry->registerTool(self::tool('shopware-entity-search', 'Search entities'), 'Acme\\SearchTool');
-        $registry->registerTool(self::tool('shopware-entity-read', 'Read one entity by ID'), 'Acme\\ReadTool');
+        $registry->registerTool(self::tool('shopwell-entity-search', 'Search entities'), 'Acme\\SearchTool');
+        $registry->registerTool(self::tool('shopwell-entity-read', 'Read one entity by ID'), 'Acme\\ReadTool');
 
         return $registry;
     }

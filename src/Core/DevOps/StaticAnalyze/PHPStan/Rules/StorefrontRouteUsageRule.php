@@ -24,7 +24,7 @@ class StorefrontRouteUsageRule implements Rule
     /**
      * @var list<string>
      *
-     * @phpstan-ignore shopware.storefrontRouteUsage, shopware.storefrontRouteUsage (As the PHPStan rule checks itself, this needs to be ignored)
+     * @phpstan-ignore shopwell.storefrontRouteUsage, shopwell.storefrontRouteUsage (As the PHPStan rule checks itself, this needs to be ignored)
      */
     private const NOT_ALLOWED_STOREFRONT_ROUTE_PREFIXES = ['frontend.', 'widgets.'];
 
@@ -76,7 +76,7 @@ class StorefrontRouteUsageRule implements Rule
                 return [
                     RuleErrorBuilder::message($message)
                         ->line($node->getStartLine())
-                        ->identifier('shopware.storefrontRouteUsage')
+                        ->identifier('shopwell.storefrontRouteUsage')
                         ->tip(\sprintf('Routes starting with "%s" are provided by the Storefront package, which is not always installed.', $notAllowedStorefrontRoutesPrefix))
                         ->build(),
                 ];

@@ -360,22 +360,22 @@ describe('OffCanvas tests', () => {
 
         jest.useFakeTimers();
 
-        // Open the shopware OffCanvas via OffCanvasSingleton
+        // Open the shopwell OffCanvas via OffCanvasSingleton
         OffCanvas.open('Interesting content');
         jest.runAllTimers();
 
-        // Ensue shopware OffCanvas was opened
+        // Ensue shopwell OffCanvas was opened
         expect(OffCanvas.exists()).toBe(true);
         expect(document.querySelector('.js-offcanvas-singleton').classList.contains('show')).toBe(true);
 
         // Ensure hard-coded Bootstrap offcanvas is also present in the DOM. It must not be removed by "_removeExistingOffCanvas".
         expect(document.getElementById('offcanvasExample')).toBeTruthy();
 
-        // Close the shopware OffCanvas
+        // Close the shopwell OffCanvas
         OffCanvas.close();
         jest.runAllTimers();
 
-        // Ensure shopware OffCanvas is no longer existing in the DOM
+        // Ensure shopwell OffCanvas is no longer existing in the DOM
         expect(document.querySelector('.js-offcanvas-singleton')).toBeFalsy();
         expect(OffCanvas.exists()).toBe(false);
 

@@ -204,7 +204,7 @@ export default function createLicenseViolationsService(storeService) {
     }
 
     async function forceDeletePlugin(extension) {
-        const shopwareExtensionService = Shopwell.Service('shopwareExtensionService');
+        const shopwellExtensionService = Shopwell.Service('shopwellExtensionService');
         const cacheService = Shopwell.Service('cacheApiService');
 
         try {
@@ -212,15 +212,15 @@ export default function createLicenseViolationsService(storeService) {
             const isInstalled = extension.installedAt !== null;
 
             if (isActive) {
-                await shopwareExtensionService.deactivateExtension(extension.name, extension.type);
+                await shopwellExtensionService.deactivateExtension(extension.name, extension.type);
                 await cacheService.clear();
             }
 
             if (isInstalled) {
-                await shopwareExtensionService.uninstallExtension(extension.name, extension.type);
+                await shopwellExtensionService.uninstallExtension(extension.name, extension.type);
             }
 
-            await shopwareExtensionService.removeExtension(extension.name, extension.type);
+            await shopwellExtensionService.removeExtension(extension.name, extension.type);
 
             return true;
         } catch (error) {

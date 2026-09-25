@@ -130,7 +130,7 @@ test.describe('Customer Registration Form', () => {
                 firstName: 'Jeff',
                 lastName: 'Goldblum',
                 email: `${IdProvider.getIdPair().uuid}@test.com`,
-                password: 'shopware',
+                password: 'shopwell',
                 street: addressData.street,
                 city: addressData.city,
                 country: addressData.country,
@@ -176,7 +176,7 @@ test.describe('Customer Registration Form', () => {
                 firstName: 'Jeff',
                 // lastName is missing intentionally
                 email: `${IdProvider.getIdPair().uuid}@test.com`,
-                password: 'shopware',
+                password: 'shopwell',
                 street: addressData.street,
                 city: addressData.city,
                 country: addressData.country,

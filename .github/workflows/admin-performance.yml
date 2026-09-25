@@ -27,7 +27,7 @@ jobs:
     name: "Lighthouse CI"
     needs:
       - markdown-only-changes
-    if: ${{ github.repository == 'shopware/shopware' && needs.markdown-only-changes.outputs.docs_only != 'true' }}
+    if: ${{ github.repository == 'shopwell/shopwell' && needs.markdown-only-changes.outputs.docs_only != 'true' }}
     runs-on: ubuntu-24.04
     env:
       APP_ENV: prod
@@ -50,20 +50,20 @@ jobs:
             echo "REDIS_URL=redis://localhost:6379"
             echo "MAILER_DSN=smtp://localhost:1025"
             echo "MAILPIT_BASE_URL=http://localhost:8025"
-            echo "SHOPWARE_HTTP_CACHE_ENABLED=0"
-            echo "SHOPWARE_DISABLE_UPDATE_CHECK=true"
+            echo "SHOPWELL_HTTP_CACHE_ENABLED=0"
+            echo "SHOPWELL_DISABLE_UPDATE_CHECK=true"
             echo "BLUE_GREEN_DEPLOYMENT=1"
             echo "ENABLE_SERVICES=0"
           } >> "$GITHUB_ENV"
 
-      - name: Setup Shopware
-        uses: shopware/setup-shopware@main
+      - name: Setup Shopwell
+        uses: shopwell/setup-shopwell@main
         with:
           install: true
           install-admin: true
           env: prod
-          shopware-version: ${{ github.ref }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ github.ref }}
+          shopwell-repository: ${{ github.repository }}
 
       - name: Stop already running Symfony server
         run: symfony server:stop || true
@@ -118,5 +118,5 @@ jobs:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
         with:
-          allowed-skips: ${{ (github.repository != 'shopware/shopware' || needs.markdown-only-changes.outputs.docs_only == 'true') && 'lighthouse' || '' }}
+          allowed-skips: ${{ (github.repository != 'shopwell/shopwell' || needs.markdown-only-changes.outputs.docs_only == 'true') && 'lighthouse' || '' }}
           jobs: ${{ toJSON(needs) }}

@@ -212,7 +212,7 @@ class NoNativeTimeFunctionRule implements Rule
     {
         return [
             RuleErrorBuilder::message(self::ERROR_MESSAGE)
-                ->identifier('shopware.noNativeTimeRead')
+                ->identifier('shopwell.noNativeTimeRead')
                 ->build(),
         ];
     }

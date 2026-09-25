@@ -81,7 +81,7 @@ trait AdminElasticsearchTestBehaviour
 
         $client = $c->get(Client::class);
 
-        $indices = $client->indices()->get(['index' => EnvironmentHelper::getVariable('SHOPWARE_ADMIN_ES_INDEX_PREFIX') . '*']);
+        $indices = $client->indices()->get(['index' => EnvironmentHelper::getVariable('SHOPWELL_ADMIN_ES_INDEX_PREFIX') . '*']);
 
         foreach ($indices as $index) {
             $client->indices()->delete(['index' => $index['settings']['index']['provided_name']]);

@@ -2,7 +2,7 @@
 title: Reset opcache in install and update index.php
 issue: NEXT-12090
 author: OliverSkroblin
-author_email: o.skroblin@shopware.com 
+author_email: o.skroblin@shopwell.com 
 author_github: OliverSkroblin
 ---
 # Core

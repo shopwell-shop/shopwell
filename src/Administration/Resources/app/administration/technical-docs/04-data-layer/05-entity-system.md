@@ -10,7 +10,7 @@ Entities in Shopwell 6 are imported from the Meteor Admin SDK and enhanced with 
 
 ```typescript
 // Located in: core/data/entity.data.ts
-import Entity, { assignSetterMethod } from '@shopware-ag/meteor-admin-sdk/es/_internals/data/Entity';
+import Entity, { assignSetterMethod } from '@shopwell-ag/meteor-admin-sdk/es/_internals/data/Entity';
 
 assignSetterMethod((draft, property, value) => {
     // Integration with Vue.js reactivity system
@@ -168,7 +168,7 @@ EntityCollection provides array-like functionality with additional entity-specif
 
 ```typescript
 // Located in: core/data/entity-collection.data.ts
-import EntityCollection from '@shopware-ag/meteor-admin-sdk/es/_internals/data/EntityCollection';
+import EntityCollection from '@shopwell-ag/meteor-admin-sdk/es/_internals/data/EntityCollection';
 
 const products = await productRepository.search(criteria, context);
 console.log(products instanceof EntityCollection); // true

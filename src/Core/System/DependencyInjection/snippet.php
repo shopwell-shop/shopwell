@@ -55,10 +55,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(SnippetSetDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SnippetDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SnippetValidatorInterface::class, SnippetValidator::class)
         ->args([
@@ -76,7 +76,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(StorefrontSnippetStorage::class)
         ->args([
-            service('shopware.filesystem.translation'),
+            service('shopwell.filesystem.translation'),
             service(SourceResolver::class),
             service('logger'),
             param('kernel.cache_dir') . '/app-snippets',
@@ -88,7 +88,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CacheInvalidator::class),
             service(Connection::class),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -1400]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -1400]);
 
     $services->set(SnippetFixer::class)
         ->args([
@@ -145,7 +145,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('console.command');
 
-    $services->set('shopware.translation.client', Client::class)
+    $services->set('shopwell.translation.client', Client::class)
         ->args([
             [
                 'timeout' => 30,
@@ -156,7 +156,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(TranslationConfigLoader::class)
         ->args([
             service('filesystem'),
-            param('shopware.translation'),
+            param('shopwell.translation'),
         ]);
 
     $services->alias(AbstractTranslationConfigLoader::class, TranslationConfigLoader::class);
@@ -168,11 +168,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(TranslationLoader::class)
         ->args([
-            service('shopware.filesystem.translation'),
+            service('shopwell.filesystem.translation'),
             service('language.repository'),
             service('locale.repository'),
             service('snippet_set.repository'),
-            service('shopware.translation.client'),
+            service('shopwell.translation.client'),
             service(TranslationConfig::class),
             service('event_dispatcher'),
         ]);
@@ -182,8 +182,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(TranslationMetadataStore::class)
         ->args([
             service(TranslationConfig::class),
-            service('shopware.translation.client'),
-            service('shopware.filesystem.translation'),
+            service('shopwell.translation.client'),
+            service('shopwell.filesystem.translation'),
             service('cache.object'),
         ]);
 
@@ -195,14 +195,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(TranslationRemover::class)
         ->args([
-            service('shopware.filesystem.translation'),
+            service('shopwell.filesystem.translation'),
             service(TranslationLoader::class),
             service(TranslationMetadataStore::class),
             service('event_dispatcher'),
         ]);
 
     $services->set(UpdateTranslationsTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(UpdateTranslationsTaskHandler::class)
         ->args([
@@ -215,13 +215,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(TranslationFilesystemFactory::class)
         ->args([
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
             service(FilesystemFactory::class),
             param('kernel.project_dir'),
-            param('shopware.translation.use_local_filesystem'),
+            param('shopwell.translation.use_local_filesystem'),
         ]);
 
-    $services->set('shopware.filesystem.translation', FilesystemOperator::class)
+    $services->set('shopwell.filesystem.translation', FilesystemOperator::class)
         ->factory([service(TranslationFilesystemFactory::class), 'create']);
 
     $services->set(SalesChannelSnippetLoader::class)

@@ -2,11 +2,11 @@
 title: Deprecate refactored StoreApiService methods
 issue: NEXT-16321
 author: Frederik Schmitt
-author_email: f.schmitt@shopware.com
+author_email: f.schmitt@shopwell.com
 author_github: fschmtt
 ---
 # Core
-* Deprecated method `Shopware\Core\Framework\Store\Api\StoreController::downloadPlugin()`
+* Deprecated method `Shopwell\Core\Framework\Store\Api\StoreController::downloadPlugin()`
 ___
 # API
 * Deprecated route `api.custom.store.download` in favor of `api.extension.download`

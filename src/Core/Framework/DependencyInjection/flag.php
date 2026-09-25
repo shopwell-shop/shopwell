@@ -17,7 +17,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(AbstractKeyValueStorage::class),
             service('event_dispatcher'),
-            param('shopware.feature.flags'),
-            param('shopware.feature_toggle.enable'),
+            param('shopwell.feature.flags'),
+            param('shopwell.feature_toggle.enable'),
         ]);
 };

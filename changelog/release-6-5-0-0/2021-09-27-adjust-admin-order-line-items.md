@@ -2,7 +2,7 @@
 title: Adjust Admin Order Line Items
 issue: NEXT-16674
 author: Max Stegmeyer
-author_email: m.stegmeyer@shopware.com
+author_email: m.stegmeyer@shopwell.com
 ---
 # Administration
 * Changed visualization of `sw-order-line-items-grid`

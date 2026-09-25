@@ -38,7 +38,7 @@ class SitemapFileRouteTest extends TestCase
 
     public function testSitemapFiles(): void
     {
-        $fileSystem = static::getContainer()->get('shopware.filesystem.sitemap');
+        $fileSystem = static::getContainer()->get('shopwell.filesystem.sitemap');
         static::assertInstanceOf(FilesystemOperator::class, $fileSystem);
 
         $sitemapLister = static::getContainer()->get(SitemapLister::class);

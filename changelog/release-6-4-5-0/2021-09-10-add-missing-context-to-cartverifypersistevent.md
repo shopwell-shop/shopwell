@@ -4,5 +4,5 @@ issue: NEXT-17170
 author_github: @Dominik28111
 ---
 # Core
-* Added SalesChannelConext to `Shopware\Core\Checkout\Cart\Event\CartVerifyPersistEvent::__construct()`.
-* Added method `Shopware\Core\Checkout\Cart\Event\CartVerifyPersistEvent::setShouldPersist()`.
+* Added SalesChannelConext to `Shopwell\Core\Checkout\Cart\Event\CartVerifyPersistEvent::__construct()`.
+* Added method `Shopwell\Core\Checkout\Cart\Event\CartVerifyPersistEvent::setShouldPersist()`.

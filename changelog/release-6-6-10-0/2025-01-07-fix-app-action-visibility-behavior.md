@@ -2,7 +2,7 @@
 title: Fix app-action visibility behavior
 issue: NEXT-40053
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com
+author_email: j.leifeld@shopwell.com
 author_github: @Jannis Leifeld
 ---
 # Administration

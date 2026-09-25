@@ -1,7 +1,7 @@
 ---
 title: Implement save media modal
 author: Quynh Nguyen
-author_email: q.nguyen@shopware.com
+author_email: q.nguyen@shopwell.com
 author_github: @quynhnguyen68
 ---
 # Administration

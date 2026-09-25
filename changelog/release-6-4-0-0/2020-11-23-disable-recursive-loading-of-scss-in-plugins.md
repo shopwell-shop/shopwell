@@ -2,20 +2,20 @@
 title: Disable recursive loading of SCSS in plugins
 issue: NEXT-7365
 author: Tobias Berge
-author_email: t.berge@shopware.com 
+author_email: t.berge@shopwell.com 
 author_github: @tobiasberge
 ---
 # Core
-* Removed parameter `$rootPath` from private method `getStyleFiles` in `Shopware\Core\Framework\Plugin\BundleConfigGenerator`
-* Removed `Symfony\Component\Finder\Finder` usage in `Shopware\Core\Framework\Plugin\BundleConfigGenerator`
+* Removed parameter `$rootPath` from private method `getStyleFiles` in `Shopwell\Core\Framework\Plugin\BundleConfigGenerator`
+* Removed `Symfony\Component\Finder\Finder` usage in `Shopwell\Core\Framework\Plugin\BundleConfigGenerator`
 ___
 # Storefront
-* Added new private method `getScssEntryFileInDir` in `Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfiguration` which is used to collect the SCSS entry
+* Added new private method `getScssEntryFileInDir` in `Shopwell\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfiguration` which is used to collect the SCSS entry
 ___
 # Upgrade Information
 ## Changed the loading of storefront SCSS files in plugins
 
-Previously all Storefront relevant SCSS files (`*.scss`) of a plugin have automatically been loaded and compiled by shopware when placed inside the directory `src/Resources/app/storefront/src/scss`.
+Previously all Storefront relevant SCSS files (`*.scss`) of a plugin have automatically been loaded and compiled by shopwell when placed inside the directory `src/Resources/app/storefront/src/scss`.
 Because all SCSS files have been loaded automatically it could have let to inconsistent results when dealing with custom SCSS variables in separate files for example.
 
 This behaviour has been changed and now only a single entry file will be used by plugins which is the `YourPlugin/src/Resources/app/storefront/src/scss/base.scss`.

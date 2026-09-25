@@ -8,7 +8,7 @@ const path = require('path');
 const { globSync } = require('glob');
 
 // Available Shopwell versions
-const shopwareVersions = [
+const shopwellVersions = [
     '6.6',
     '6.7',
 ];
@@ -29,7 +29,7 @@ const optionDefinitions = [
     },
     {
         description: 'Shopwell root. Default ../../../../../',
-        name: 'shopware-root',
+        name: 'shopwell-root',
         alias: 'r',
         type: String,
     },
@@ -54,8 +54,8 @@ const optionDefinitions = [
     },
     {
         // eslint-disable-next-line max-len
-        description: `Define the Shopwell version for loading the correct codemods. Available: ${shopwareVersions.join(', ')}`,
-        name: 'shopware-version',
+        description: `Define the Shopwell version for loading the correct codemods. Available: ${shopwellVersions.join(', ')}`,
+        name: 'shopwell-version',
         alias: 'v',
         type: String,
     },
@@ -65,16 +65,16 @@ const optionDefinitions = [
 const sections = [
     {
         header: 'Shopwell Admin code mods',
-        content: 'Run shopware code mods in your plugin!',
+        content: 'Run shopwell code mods in your plugin!',
     },
     {
         header: 'Synopsis',
         content: [
-            '{bold Run as npm script inside <shopwareRoot>/src/Administration/Resources/app/administration}:',
+            '{bold Run as npm script inside <shopwellRoot>/src/Administration/Resources/app/administration}:',
             '$ npm run code-mods -- [{bold --fix}] {bold --plugin-name} {underline SwagExamplePlugin}',
             '$ npm run code-mods -- {bold --help}',
             '',
-            '{bold Run as composer script inside <shopwareRoot>}:',
+            '{bold Run as composer script inside <shopwellRoot>}:',
             '$ composer run admin:code-mods -- [{bold --fix}] {bold --plugin-name} {underline SwagExamplePlugin}',
             '$ composer run admin:code-mods -- {bold --help}',
         ],
@@ -95,8 +95,8 @@ const sections = [
         process.exit();
     }
 
-    const shopwareVersion = options['shopware-version'];
-    if (shopwareVersion && !shopwareVersions.includes(shopwareVersion)) {
+    const shopwellVersion = options['shopwell-version'];
+    if (shopwellVersion && !shopwellVersions.includes(shopwellVersion)) {
         console.error(colors.red('Invalid Shopwell version. Available: 6.6, 6.7'));
         process.exit(1);
     }
@@ -108,8 +108,8 @@ const sections = [
     }
 
     let customPluginsPath = path.resolve('../../../../../custom/plugins');
-    if (options['shopware-root']) {
-        let optionsRoot = options['shopware-root'];
+    if (options['shopwell-root']) {
+        let optionsRoot = options['shopwell-root'];
 
         // remove trailing slash
         optionsRoot = optionsRoot.replace(/\/$/, '');
@@ -163,7 +163,7 @@ const sections = [
 
         const fix = options.fix;
         try {
-            await lintFiles([workingDir], fix, shopwareVersion);
+            await lintFiles([workingDir], fix, shopwellVersion);
 
             // only copy back changes if fix is requested
             if (fix) {
@@ -211,8 +211,8 @@ function createESLintInstance(overrideConfig, fix) {
 }
 
 // Lint the specified files and return the results
-async function lintAndFix(eslint, filePaths, shopwareVersion) {
-    const results = await eslint.lintFiles(filePaths, shopwareVersion);
+async function lintAndFix(eslint, filePaths, shopwellVersion) {
+    const results = await eslint.lintFiles(filePaths, shopwellVersion);
 
     // Apply automatic fixes and output fixed code
     await ESLint.outputFixes(results);
@@ -236,7 +236,7 @@ async function outputLintingResults(results, eslint) {
  * Plugin files live outside the normal `src/**` scopes, so this adapter layers plugin-specific Twig,
  * JavaScript, and TypeScript overrides on top of the shared flat config.
  */
-async function lintFiles(filePaths, fix, shopwareVersion) {
+async function lintFiles(filePaths, fix, shopwellVersion) {
     const twigVuePlugin = require('eslint-plugin-twig-vue');
     const vueParser = require('vue-eslint-parser');
 
@@ -258,7 +258,7 @@ async function lintFiles(filePaths, fix, shopwareVersion) {
             processor: twigVuePlugin.processors['twig-vue'],
             rules: {
                 ...(() => {
-                    if (isVersionNewerOrSame(shopwareVersion, '6.7')) {
+                    if (isVersionNewerOrSame(shopwellVersion, '6.7')) {
                         return {
                             'sw-deprecation-rules/no-deprecated-components': ['error', {
                                 fix: true,
@@ -453,7 +453,7 @@ async function lintFiles(filePaths, fix, shopwareVersion) {
     ];
 
     const eslint = createESLintInstance(overrideConfig, fix);
-    const results = await lintAndFix(eslint, filePaths, shopwareVersion);
+    const results = await lintAndFix(eslint, filePaths, shopwellVersion);
     return outputLintingResults(results, eslint);
 }
 

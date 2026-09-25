@@ -12,17 +12,17 @@ class FeatureFlagCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        $featureFlags = $container->getParameter('shopware.feature.flags');
+        $featureFlags = $container->getParameter('shopwell.feature.flags');
         if (!\is_array($featureFlags)) {
-            throw new \RuntimeException('Container parameter "shopware.feature.flags" needs to be an array');
+            throw new \RuntimeException('Container parameter "shopwell.feature.flags" needs to be an array');
         }
 
         Feature::registerFeatures($featureFlags);
 
-        foreach ($container->findTaggedServiceIds('shopware.feature') as $serviceId => $tags) {
+        foreach ($container->findTaggedServiceIds('shopwell.feature') as $serviceId => $tags) {
             foreach ($tags as $tag) {
                 if (!isset($tag['flag'])) {
-                    throw new \RuntimeException('"flag" is a required field for "shopware.feature" tags');
+                    throw new \RuntimeException('"flag" is a required field for "shopwell.feature" tags');
                 }
 
                 if (Feature::isActive($tag['flag'])) {

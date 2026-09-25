@@ -29,7 +29,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('controller.service_arguments');
 
     $services->set(ProfilerWhitelist::class)
-        ->tag('shopware.route_scope_whitelist');
+        ->tag('shopwell.route_scope_whitelist');
 
     $services->set(ConnectionProfiler::class)
         ->args([

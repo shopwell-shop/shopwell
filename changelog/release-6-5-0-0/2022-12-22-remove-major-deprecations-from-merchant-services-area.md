@@ -2,7 +2,7 @@
 title: Remove major deprecations from merchant services area
 issue: NEXT-24646
 author: Frederik Schmitt
-author_email: f.schmitt@shopware.com
+author_email: f.schmitt@shopwell.com
 author_github: fschmtt
 ---
 # Administration
@@ -20,15 +20,15 @@ author_github: fschmtt
 * Changed component `src/module/sw-extension/component/sw-extension-privacy-policy-extensions-modal/index.js` to be private
 * Changed mixin `src/module/sw-extension/mixin/sw-extension-error.mixin.js` to be private
 * Removed deprecations from `src/module/sw-extension/page/sw-extension-my-extensions-account/index.ts`
-  * Removed computed property `shopwareId`
-  * Removed method `loginShopwareUser`
+  * Removed computed property `shopwellId`
+  * Removed method `loginShopwellUser`
 * Changed component `src/module/sw-extension/page/sw-extension-my-extensions-recommendation/index.js` to be private
 * Changed service `src/module/sw-extension/service/extension-error-handler.service.ts` to be private
 * Changed service `src/module/sw-extension/service/extension-error.service.js` to be private
 * Removed deprecations from `src/module/sw-extension/service/extension-store-action.service.ts`
   * Removed method `basicHeaders`
-* Changed service `src/module/sw-extension/service/shopware-extension.service.ts` to be private
-* Removed deprecations from `src/module/sw-extension/service/shopware-extension.service.ts`
+* Changed service `src/module/sw-extension/service/shopwell-extension.service.ts` to be private
+* Removed deprecations from `src/module/sw-extension/service/shopwell-extension.service.ts`
   * Constructor parameter `storeApiService` is now mandatory
   * Removed method `canBeOpened`
   * Changed previously public method `updateModules` to be private
@@ -39,12 +39,12 @@ author_github: fschmtt
   * Removed method `_orderByType`
 * Changed store `src/module/sw-extension/store/extensions.store.ts` to be private
 * Removed deprecations from `src/module/sw-extension/store/extensions.store.ts`
-  * Removed property `shopwareId`
+  * Removed property `shopwellId`
   * Removed property `loginStatus`
   * Removed property `licensedExtensions`
   * Removed mutator `loadLicensedExtensions`
   * Removed mutator `licensedExtensions`
-  * Removed mutator `storeShopwareId`
+  * Removed mutator `storeShopwellId`
   * Removed mutator `setLoginStatus`
   * Removed mutator `commitPlugins`
 * Changed `src/module/sw-extension/store/index.ts` to be private

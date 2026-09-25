@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shopwell Release Docs"
+  short_description: "Decide and write Shopwell release and upgrade notes."
+  default_prompt: "Check whether this Shopwell change needs release or upgrade documentation."

@@ -47,7 +47,7 @@ class MessageQueueStatsSubscriber implements EventSubscriberInterface
     /**
      * @deprecated tag:v6.8.0 - Method will be removed. The increment-based message queue statistics are deprecated.
      *
-     * @phpstan-ignore shopware.deprecatedMethod (not triggering deprecation to avoid polluting logs)
+     * @phpstan-ignore shopwell.deprecatedMethod (not triggering deprecation to avoid polluting logs)
      */
     public function onMessageFailed(WorkerMessageFailedEvent $event): void
     {
@@ -67,7 +67,7 @@ class MessageQueueStatsSubscriber implements EventSubscriberInterface
     /**
      * @deprecated tag:v6.8.0 - Method will be removed. The increment-based message queue statistics are deprecated.
      *
-     * @phpstan-ignore shopware.deprecatedMethod (not triggering deprecation to avoid polluting logs)
+     * @phpstan-ignore shopwell.deprecatedMethod (not triggering deprecation to avoid polluting logs)
      */
     public function onMessageSent(SendMessageToTransportsEvent $event): void
     {

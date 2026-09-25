@@ -49,7 +49,7 @@ class CurrencyListResourceTest extends TestCase
         $resource = new CurrencyListResource($repository);
         $result = ($resource)();
 
-        static::assertSame('shopware://currencies', $result['uri']);
+        static::assertSame('shopwell://currencies', $result['uri']);
         static::assertSame('application/json', $result['mimeType']);
 
         $data = json_decode($result['text'], true, 512, \JSON_THROW_ON_ERROR);

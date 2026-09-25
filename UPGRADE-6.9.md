@@ -8,10 +8,10 @@ The legacy document generation implementation was removed together with the `DOC
 
 The complete list of removed classes, entities, and Administration components is in `UPGRADE-6.7.md` ("Document generation v1 marked for replacement", section 6.7.15.0). In addition:
 
-- The `document.renderer` and `document_type.renderer` service tags were removed. Register document types, data providers, and renderers via the `shopware.document_v2.type`, `shopware.document_v2.provider`, and `shopware.document_v2.renderer` tags instead, or use the app manifest `<documents>` block. See the [extension points guide](https://developer.shopware.com/docs/concepts/commerce/checkout-concept/document/extension-points.html).
+- The `document.renderer` and `document_type.renderer` service tags were removed. Register document types, data providers, and renderers via the `shopwell.document_v2.type`, `shopwell.document_v2.provider`, and `shopwell.document_v2.renderer` tags instead, or use the app manifest `<documents>` block. See the [extension points guide](https://developer.shopwell.com/docs/concepts/commerce/checkout-concept/document/extension-points.html).
 - The `document_type` and `document_type_translation` entities were removed including their DAL definitions and associations. Document types are code-registered strings. Read the type from `document.typeName` instead of the `documentType` association. Persisted references were backfilled into the `type_name` columns, and the `document_type_id` columns became nullable.
 
-Shared classes that survived the removal were relocated into the `Shopware\Core\Checkout\DocumentV2` namespace, keeping their class names (see the "Relocated classes" list in `UPGRADE-6.7.md`). Update your imports accordingly.
+Shared classes that survived the removal were relocated into the `Shopwell\Core\Checkout\DocumentV2` namespace, keeping their class names (see the "Relocated classes" list in `UPGRADE-6.7.md`). Update your imports accordingly.
 
 Twig template overrides were not affected: v2 renders the same `@Framework/documents/*.html.twig` templates.
 
@@ -36,13 +36,13 @@ Every v1 extension point has a v2 counterpart:
 Register a type class and a data provider as tagged services, and ship a Twig template named after the technical name. Templates are resolved by convention. A database row is no longer needed:
 
 ```php
-readonly class WarrantyDocumentType extends AbstractDocumentType // tag: shopware.document_v2.type
+readonly class WarrantyDocumentType extends AbstractDocumentType // tag: shopwell.document_v2.type
 {
     public function getTechnicalName(): string { return 'swag_warranty'; }
     public function getSupportedFormats(): array { return ['html', 'pdf']; }
 }
 
-readonly class WarrantyDataProvider extends AbstractDocumentDataProvider // tag: shopware.document_v2.provider
+readonly class WarrantyDataProvider extends AbstractDocumentDataProvider // tag: shopwell.document_v2.provider
 {
     public function getKey(): string { return 'swag_warranty'; }
     public function supports(string $documentType): bool { return $documentType === 'swag_warranty'; }
@@ -78,7 +78,7 @@ The public properties of the returned DTO are available in the document template
 
 ### I rendered a custom output format
 
-Implement `Shopware\Core\Checkout\DocumentV2\Renderer\AbstractDocumentRenderer` and register it with the `shopware.document_v2.renderer` tag. One renderer produces exactly one format and receives the shared, provider-prepared `RenderInput`.
+Implement `Shopwell\Core\Checkout\DocumentV2\Renderer\AbstractDocumentRenderer` and register it with the `shopwell.document_v2.renderer` tag. One renderer produces exactly one format and receives the shared, provider-prepared `RenderInput`.
 
 # Administration
 

@@ -25,7 +25,7 @@ class UpdateTranslationsTaskTest extends TestCase
     public function testTaskDoesNotRunWhenDisabled(): void
     {
         static::assertFalse(UpdateTranslationsTask::shouldRun(new ParameterBag([
-            'shopware.translation.scheduled_task.enabled' => false,
+            'shopwell.translation.scheduled_task.enabled' => false,
         ])));
     }
 }

@@ -4,7 +4,7 @@
 import useSession from 'src/app/composables/use-session';
 import template from './sw-settings-services-grant-permissions-modal.html.twig';
 import './sw-settings-services-grant-permissions-modal.scss';
-import { useShopwellServicesStore } from '../../store/shopware-services.store';
+import { useShopwellServicesStore } from '../../store/shopwell-services.store';
 import extractErrorMessage from '../../composables/extract-error';
 import { grantPermissions } from '../../composables/permissions';
 

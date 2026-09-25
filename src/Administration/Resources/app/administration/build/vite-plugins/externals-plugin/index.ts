@@ -13,7 +13,7 @@ import path from 'path';
  */
 export default function viteExternalsPlugin(): Plugin {
     return {
-        name: 'shopware-vite-plugin-vue-globals',
+        name: 'shopwell-vite-plugin-vue-globals',
 
         // Add a vue alias to the config pointing to a temp file
         async config(config) {
@@ -30,7 +30,7 @@ export default function viteExternalsPlugin(): Plugin {
             }
 
             // Create cache directory
-            const cachePath = path.join(process.cwd(), 'node_modules', '.shopware-vite-plugin-vue-globals');
+            const cachePath = path.join(process.cwd(), 'node_modules', '.shopwell-vite-plugin-vue-globals');
             await ensureDir(cachePath);
             await emptyDirSync(cachePath);
 

@@ -42,7 +42,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class McpServerController
 {
     public const ATTRIBUTE_JSONRPC_BODY = 'mcp._jsonrpc_body';
-    private const TOOL_SEARCH = 'shopware-tool-search';
+    private const TOOL_SEARCH = 'shopwell-tool-search';
 
     /**
      * Server-owned discovery meta-tools. A tools/call for one of these is never rejected by the
@@ -124,7 +124,7 @@ class McpServerController
 
     /**
      * Emits a tools/listChanged for the current session when a tool asked for it (e.g.
-     * shopware-toolset-enable). This runs after {@see Server::run()} has persisted the SDK's
+     * shopwell-toolset-enable). This runs after {@see Server::run()} has persisted the SDK's
      * in-memory session, so the queued notification survives instead of being overwritten by the
      * SDK's own session save; the client drains it on its next poll.
      */

@@ -205,7 +205,7 @@ export default {
     },
 
     beforeRouteLeave() {
-        Shopwell.Store.get('shopwareApps').selectedIds = [];
+        Shopwell.Store.get('shopwellApps').selectedIds = [];
     },
 
     created() {
@@ -261,7 +261,7 @@ export default {
         },
 
         async createdComponent() {
-            Shopwell.Store.get('shopwareApps').selectedIds = this.customerId ? [this.customerId] : [];
+            Shopwell.Store.get('shopwellApps').selectedIds = this.customerId ? [this.customerId] : [];
 
             await this.loadCustomer();
         },

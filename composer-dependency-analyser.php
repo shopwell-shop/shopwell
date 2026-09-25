@@ -39,7 +39,7 @@ return $config
     ->ignoreErrorsOnPaths([
         __DIR__ . '/src/Core/Framework/Demodata/',
         __DIR__ . '/src/Core/Content/Cms/Command/CreatePageCommand.php',
-    ], [ErrorType::SHADOW_DEPENDENCY]) // faker lib via `shopware/dev-tools`
+    ], [ErrorType::SHADOW_DEPENDENCY]) // faker lib via `shopwell/dev-tools`
     ->ignoreErrorsOnPackageAndPaths('symfony/var-dumper', [
         __DIR__ . '/src/Core/Framework/Script/Debugging/ScriptTraces.php',
         __DIR__ . '/src/Core/Profiling/',
@@ -56,7 +56,7 @@ return $config
     ->ignoreErrorsOnPackage('setasign/tfpdf', [ErrorType::UNUSED_DEPENDENCY])
 
     /** Has no classes, only used to avoid incompatible dependencies */
-    ->ignoreErrorsOnPackage('shopware/conflicts', [ErrorType::UNUSED_DEPENDENCY])
+    ->ignoreErrorsOnPackage('shopwell/conflicts', [ErrorType::UNUSED_DEPENDENCY])
 
     /** Used by 3rd party libraries */
     ->ignoreErrorsOnExtensions(['ext-pdo_mysql', 'ext-sodium', 'ext-xml'], [ErrorType::UNUSED_DEPENDENCY])

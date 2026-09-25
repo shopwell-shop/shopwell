@@ -26,7 +26,7 @@ class UnstructuredObjectBusinessEvent implements FlowEventAware, BusinessEventEn
             ->add('nested', new ObjectType());
     }
 
-    public function getEncodeValues(string $shopwareVersion): array
+    public function getEncodeValues(string $shopwellVersion): array
     {
         return [
             'nested' => $this->getNested(),

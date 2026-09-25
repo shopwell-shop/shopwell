@@ -5,4 +5,4 @@ author: Alexander Menk
 author_github: amenk
 ---
 # Core
-* Changed `Shopware\Core\Checkout\Test\Customer\Rule\OrderFixture::getOrderData()` to contain `itemRounding` and `totalRounding` 
+* Changed `Shopwell\Core\Checkout\Test\Customer\Rule\OrderFixture::getOrderData()` to contain `itemRounding` and `totalRounding` 

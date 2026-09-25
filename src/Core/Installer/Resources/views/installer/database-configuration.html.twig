@@ -2,7 +2,7 @@
 
 {% block base_content %}
     <div class="card__title">
-        <h2>{{ "shopware.installer.database-configuration_header"|trans }}</h2>
+        <h2>{{ "shopwell.installer.database-configuration_header"|trans }}</h2>
     </div>
 
     <form
@@ -17,21 +17,21 @@
                 </div>
             {% endif %}
 
-            <p>{{ "shopware.installer.database-configuration_info"|trans }}</p>
+            <p>{{ "shopwell.installer.database-configuration_info"|trans }}</p>
 
             <p>
-                <label for="hostname">{{ "shopware.installer.database-configuration_field_host"|trans }}</label>
+                <label for="hostname">{{ "shopwell.installer.database-configuration_field_host"|trans }}</label>
                 <input type="text" value="{{ connectionInfo.hostname|default('localhost') }}" name="hostname" id="hostname" required="required" />
             </p>
 
             <div class="form-group form-group--50">
                 <p>
-                    <label for="username">{{ "shopware.installer.database-configuration_field_user"|trans }}</label>
+                    <label for="username">{{ "shopwell.installer.database-configuration_field_user"|trans }}</label>
                     <input type="text" value="{{ connectionInfo.username ?? '' }}" name="username" id="username" required="required" />
                 </p>
 
                 <p>
-                    <label for="password">{{ "shopware.installer.database-configuration_field_password"|trans }}</label>
+                    <label for="password">{{ "shopwell.installer.database-configuration_field_password"|trans }}</label>
                     <input type="password" value="{{ connectionInfo.password ?? '' }}" name="password" id="password" />
                 </p>
             </div>
@@ -46,29 +46,29 @@
                             onchange="this.parentElement.click();"
                             {% if connectionInfo.hasAdvancedSetting %}checked{% endif %}/>
                         <label for="advanced" class="toggle">
-                            {{ "shopware.installer.database-configuration_advanced_settings"|trans }}
+                            {{ "shopwell.installer.database-configuration_advanced_settings"|trans }}
                         </label>
                     </div>
                 </summary>
 
                 <div id="advanced-settings">
                     <p>
-                        <label for="port">{{ "shopware.installer.database-configuration_field_port"|trans }}</label>
+                        <label for="port">{{ "shopwell.installer.database-configuration_field_port"|trans }}</label>
                         <input type="text" value="{{ connectionInfo.port }}" name="port" id="port" required="required" />
                     </p>
 
                     <p>
-                        <label for="sslCaPath">{{ "shopware.installer.database-configuration_field_ssl_ca_path"|trans }}</label>
+                        <label for="sslCaPath">{{ "shopwell.installer.database-configuration_field_ssl_ca_path"|trans }}</label>
                         <input type="text" value="{{ connectionInfo.sslCaPath ?? ''}}" name="sslCaPath" id="sslCaPath" />
                     </p>
 
                     <p>
-                        <label for="sslCertPath">{{ "shopware.installer.database-configuration_field_ssl_cert_path"|trans }}</label>
+                        <label for="sslCertPath">{{ "shopwell.installer.database-configuration_field_ssl_cert_path"|trans }}</label>
                         <input type="text" value="{{ connectionInfo.sslCertPath ?? ''}}" name="sslCertPath" id="sslCertPath" />
                     </p>
 
                     <p>
-                        <label for="sslCertKeyPath">{{ "shopware.installer.database-configuration_field_ssl_cert_key_path"|trans }}</label>
+                        <label for="sslCertKeyPath">{{ "shopwell.installer.database-configuration_field_ssl_cert_key_path"|trans }}</label>
                         <input type="text" value="{{ connectionInfo.sslCertKeyPath ?? '' }}" name="sslCertKeyPath" id="sslCertKeyPath" />
                     </p>
 
@@ -78,13 +78,13 @@
                                id="sslDontVerifyServerCert"
                                name="sslDontVerifyServerCert"
                                {{ connectionInfo.sslDontVerifyServerCert ? 'checked' : ''}}/>
-                        <label for="sslDontVerifyServerCert">{{ "shopware.installer.database-configuration_field_ssl_dont_verify_cert"|trans }}</label>
+                        <label for="sslDontVerifyServerCert">{{ "shopwell.installer.database-configuration_field_ssl_dont_verify_cert"|trans }}</label>
                     </div>
                 </div>
             </details>
 
             <p>
-                <label for="databaseName">{{ "shopware.installer.database-configuration_field_database"|trans }}</label>
+                <label for="databaseName">{{ "shopwell.installer.database-configuration_field_database"|trans }}</label>
                 <input
                     type="text"
                     value="{{ connectionInfo.databaseName }}"
@@ -93,11 +93,11 @@
                     required="required"
                     onfocus="fetchDatabaseInformation();"
                 />
-                <button id="databaseRefresh" type="button" class="database-refresh is--hidden" href="#" onclick="refreshDatabases();" >{{ "shopware.installer.database-configuration_refresh_databases"|trans }}</button>
+                <button id="databaseRefresh" type="button" class="database-refresh is--hidden" href="#" onclick="refreshDatabases();" >{{ "shopwell.installer.database-configuration_refresh_databases"|trans }}</button>
             </p>
             <div id="non-empty-db-warning" class="alert alert-warning is--hidden">
                 <span class="icon-warning"></span>
-                {{ "shopware.installer.database-configuration_non_empty_database"|trans }}
+                {{ "shopwell.installer.database-configuration_non_empty_database"|trans }}
             </div>
             <div id="db-error" class="alert alert-error is--hidden">
                 <span class="icon-warning"></span>
@@ -116,7 +116,7 @@
                                 document.getElementById('databaseName_new').value = '';
                             }
                         "/>
-                    <label for="database_create_schema_new">{{ "shopware.installer.database-configuration_field_new_database"|trans }}</label>
+                    <label for="database_create_schema_new">{{ "shopwell.installer.database-configuration_field_new_database"|trans }}</label>
                 </div>
 
                 <input type="text" name="databaseName" id="databaseName_new" value="{{ connectionInfo.databaseName }}" disabled/>
@@ -125,11 +125,11 @@
         </div>
 
         <div class="card__footer flex-container">
-            <a href="{{ url('installer.license') }}" class="btn btn-default flex-item">{{ "shopware.installer.back"|trans }}</a>
+            <a href="{{ url('installer.license') }}" class="btn btn-default flex-item">{{ "shopwell.installer.back"|trans }}</a>
             <button type="submit"
                     class="btn btn-primary flex-item flex-right"
                     onclick="document.getElementById('database-configuration').classList.add('is--submitted')">
-                {{ "shopware.installer.start_installation"|trans }}
+                {{ "shopwell.installer.start_installation"|trans }}
             </button>
         </div>
     </form>
@@ -194,7 +194,7 @@
             const data = await response.json();
 
             if (!response.ok) {
-                dbError.querySelector('.error-text').innerText = data.error ?? {{ "shopware.installer.db_fetch_error"|trans }};
+                dbError.querySelector('.error-text').innerText = data.error ?? {{ "shopwell.installer.db_fetch_error"|trans }};
                 dbError.classList.remove('is--hidden');
 
                 throw new Error('Failed to fetch databases');

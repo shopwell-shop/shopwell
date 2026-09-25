@@ -51,7 +51,7 @@ readonly class SalesChannelDomainUrls implements Fingerprint
      */
     private function generateHash(array $urls): string
     {
-        // @phpstan-ignore-next-line shopware.hasher
+        // @phpstan-ignore-next-line shopwell.hasher
         return \hash('md5', implode('', $urls));
     }
 }

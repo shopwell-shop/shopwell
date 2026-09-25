@@ -48,7 +48,7 @@ class InstanceServiceTest extends TestCase
     public function testItReturnsShopwellVersionStringIfVersionIsDeveloperVersion(): void
     {
         $instanceService = new InstanceService(
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             null
         );
 

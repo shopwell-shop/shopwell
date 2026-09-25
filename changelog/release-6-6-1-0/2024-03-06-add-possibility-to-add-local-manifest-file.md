@@ -3,7 +3,7 @@ title: Add possibility to add local manifest file
 issue: NEXT-34166
 ---
 # Core
-* Changed `\Shopware\Core\Framework\App\Lifecycle\AppLoader::load` to allow loading a local manifest file. This is useful for development and testing purposes.
+* Changed `\Shopwell\Core\Framework\App\Lifecycle\AppLoader::load` to allow loading a local manifest file. This is useful for development and testing purposes.
 ___
 # Upgrade Information
 ## Local app manifest

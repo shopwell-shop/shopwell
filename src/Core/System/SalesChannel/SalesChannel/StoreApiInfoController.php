@@ -36,7 +36,7 @@ class StoreApiInfoController
     #[Route(
         path: '/store-api/_info/openapi3.json',
         name: 'store-api.info.openapi3',
-        defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'],
+        defaults: ['auth_required' => '%shopwell.api.api_browser.auth_required_str%'],
         methods: ['GET']
     )]
     public function info(Request $request): JsonResponse
@@ -56,7 +56,7 @@ class StoreApiInfoController
     #[Route(
         path: '/store-api/_info/open-api-schema.json',
         name: 'store-api.info.open-api-schema',
-        defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'],
+        defaults: ['auth_required' => '%shopwell.api.api_browser.auth_required_str%'],
         methods: ['GET']
     )]
     public function openApiSchema(): JsonResponse
@@ -69,7 +69,7 @@ class StoreApiInfoController
     #[Route(
         path: '/store-api/_info/stoplightio.html',
         name: 'store-api.info.stoplightio',
-        defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'],
+        defaults: ['auth_required' => '%shopwell.api.api_browser.auth_required_str%'],
         methods: ['GET']
     )]
     public function stoplightIoInfoHtml(Request $request): Response
@@ -99,7 +99,7 @@ class StoreApiInfoController
     #[Route(
         path: '/store-api/_info/routes',
         name: 'store-api.info.routes',
-        defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'],
+        defaults: ['auth_required' => '%shopwell.api.api_browser.auth_required_str%'],
         methods: ['GET']
     )]
     public function getRoutes(): JsonResponse

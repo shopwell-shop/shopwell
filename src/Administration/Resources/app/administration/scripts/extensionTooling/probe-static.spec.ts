@@ -29,7 +29,7 @@ describe('scripts/extensionTooling/probe-static', () => {
             writeFile(path.join(projectRoot, 'admin/tsconfig.json'), [
                 '{',
                 '    // JSONC comments must parse',
-                '    "extends": "./.shopware/tsconfig.json",',
+                '    "extends": "./.shopwell/tsconfig.json",',
                 '    "include": ["src/**/*"]',
                 '}',
             ]);
@@ -60,7 +60,7 @@ describe('scripts/extensionTooling/probe-static', () => {
         it('explains the files-override trap and points path declarers at tsconfig.aliases.json', () => {
             writeFile(path.join(projectRoot, 'admin/tsconfig.json'), [
                 '{',
-                '    "extends": "./.shopware/tsconfig.json",',
+                '    "extends": "./.shopwell/tsconfig.json",',
                 '    "files": ["x.d.ts"],',
                 '    "compilerOptions": { "paths": { "MyPlugin/*": ["src/*"] } }',
                 '}',
@@ -77,10 +77,10 @@ describe('scripts/extensionTooling/probe-static', () => {
         });
 
         it('rejects a config that inherits the bridge "files" without declaring an own "include"', () => {
-            writeFile(path.join(projectRoot, 'admin/.shopware/tsconfig.json'), [
+            writeFile(path.join(projectRoot, 'admin/.shopwell/tsconfig.json'), [
                 '{ "files": ["../../extension-tooling/admin-types.d.ts"] }',
             ]);
-            writeFile(path.join(projectRoot, 'admin/tsconfig.json'), ['{ "extends": "./.shopware/tsconfig.json" }']);
+            writeFile(path.join(projectRoot, 'admin/tsconfig.json'), ['{ "extends": "./.shopwell/tsconfig.json" }']);
 
             const verdict = verdictFor('admin/tsconfig.json');
 
@@ -90,9 +90,9 @@ describe('scripts/extensionTooling/probe-static', () => {
         });
 
         it('accepts an "include" inherited from the plugin\'s own base config', () => {
-            writeFile(path.join(projectRoot, 'admin/.shopware/tsconfig.json'), ['{ "files": ["x.d.ts"] }']);
+            writeFile(path.join(projectRoot, 'admin/.shopwell/tsconfig.json'), ['{ "files": ["x.d.ts"] }']);
             writeFile(path.join(projectRoot, 'admin/base.json'), [
-                '{ "extends": "./.shopware/tsconfig.json", "include": ["src/**/*"] }',
+                '{ "extends": "./.shopwell/tsconfig.json", "include": ["src/**/*"] }',
             ]);
             writeFile(path.join(projectRoot, 'admin/tsconfig.json'), ['{ "extends": "./base.json" }']);
 
@@ -123,8 +123,8 @@ describe('scripts/extensionTooling/probe-static', () => {
     describe('eslintConfigVerdict', () => {
         it('accepts bridge and factory imports, rejects an unrelated config', () => {
             const cases = {
-                'bridge.mjs': ["import shopware from './.shopware/eslint.mjs';"],
-                'factory.mjs': ["import { shopwareAdminExtension } from '../extension-tooling/eslint.mjs';"],
+                'bridge.mjs': ["import shopwell from './.shopwell/eslint.mjs';"],
+                'factory.mjs': ["import { shopwellAdminExtension } from '../extension-tooling/eslint.mjs';"],
                 'own.mjs': ['export default [];'],
             };
 

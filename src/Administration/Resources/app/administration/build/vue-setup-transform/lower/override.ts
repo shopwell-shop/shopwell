@@ -18,7 +18,7 @@ import { fromSource, generated, type SourceChunk } from '../source-edits/chunks'
 import type { SourceEdit } from '../source-edits/apply-source-edits';
 import type { OverrideSetupScriptAnalysis } from '../script-analyzer';
 import type { OverrideSlotScope, TemplateAnalysis } from '../template-analyzer';
-import type { ShopwellSetupBlock } from '../utils/shopware-setup-block';
+import type { ShopwellSetupBlock } from '../utils/shopwell-setup-block';
 import { escapeSingleQuoted } from './shared';
 import { OVERRIDE_NAMESPACE_BINDING } from '../script-analyzer/macros';
 import { transformRanges } from '../source-edits/transform-ranges';

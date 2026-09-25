@@ -2,7 +2,7 @@
 title: Fix import and export of list price
 issue: NEXT-8419
 author: Krispin Lütjann
-author_email: k.luetjan@shopware.com 
+author_email: k.luetjan@shopwell.com 
 author_github: King-of-Babylon
 ---
 # Administration

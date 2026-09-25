@@ -2,7 +2,7 @@
 title: refactor & convert flowBuilderService to typescript
 issue: NEXT-37264
 author: Lars Kemper
-author_email: l.kemper@shopware.com
+author_email: l.kemper@shopwell.com
 author_github: @LarsKemper
 ---
 # Administration

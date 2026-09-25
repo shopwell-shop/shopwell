@@ -6,4 +6,4 @@ author_email: rico@run-as-root.sh
 author_github: @riconeitzel
 ---
 # Core
-* Changed `Shopware\Core\Framework\Api\OAuth\ScopeRepository::getScopeEntityByIdentifier()` to support a null return value.
+* Changed `Shopwell\Core\Framework\Api\OAuth\ScopeRepository::getScopeEntityByIdentifier()` to support a null return value.

@@ -1,5 +1,5 @@
 ---
-title: Improve shopware profiler repository tracer
+title: Improve shopwell profiler repository tracer
 issue: NEXT-00000
 author: Benjamin Wittwer
 author_email: dev@a-k-f.de

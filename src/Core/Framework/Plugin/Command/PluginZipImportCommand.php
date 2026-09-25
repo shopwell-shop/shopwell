@@ -41,7 +41,7 @@ class PluginZipImportCommand extends Command
      */
     protected function configure(): void
     {
-        $this->addArgument('zip-file', InputArgument::REQUIRED, 'Zip file that contains a shopware platform plugin.')
+        $this->addArgument('zip-file', InputArgument::REQUIRED, 'Zip file that contains a shopwell platform plugin.')
             ->addOption('no-refresh', null, InputOption::VALUE_OPTIONAL, 'Do not refresh plugin list.')
             ->addOption('delete', null, InputOption::VALUE_OPTIONAL, 'Delete the zip file after importing successfully.');
     }

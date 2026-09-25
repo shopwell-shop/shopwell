@@ -51,7 +51,7 @@ class InAppPurchaseTest extends TestCase
                 new StaticSystemConfigService(),
                 new JWTDecoder(),
                 new KeyFetcher(
-                    static::getContainer()->get('shopware.store_client'),
+                    static::getContainer()->get('shopwell.store_client'),
                     static::getContainer()->get(StoreRequestOptionsProvider::class),
                     new StaticSystemConfigService(),
                     static::getContainer()->get('logger')
@@ -100,7 +100,7 @@ class InAppPurchaseTest extends TestCase
                 $this->staticSystemConfigService,
                 new JWTDecoder(),
                 new KeyFetcher(
-                    static::getContainer()->get('shopware.store_client'),
+                    static::getContainer()->get('shopwell.store_client'),
                     static::getContainer()->get(StoreRequestOptionsProvider::class),
                     $this->staticSystemConfigService,
                     static::getContainer()->get('logger')

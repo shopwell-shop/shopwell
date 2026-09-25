@@ -35,7 +35,7 @@ class MakeCoverageTestCommandTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->projectDir = sys_get_temp_dir() . '/' . uniqid('shopware-sync-composer-version-test', true);
+        $this->projectDir = sys_get_temp_dir() . '/' . uniqid('shopwell-sync-composer-version-test', true);
         $this->filesystem = new Filesystem();
 
         $this->filesystem->mirror(__DIR__ . '/_fixtures/make-coverage/project', $this->projectDir);

@@ -8,7 +8,7 @@ tags: [services-settings, flow]
 ## Context
 In the past merchants had to deal with issues where their custom-built flow did not
 behave how they intended it to do. An concrete example: We've had a merchant that contacted
-us (shopware) that their shop did not sent out mails. Debugging the flow turned out to
+us (shopwell) that their shop did not sent out mails. Debugging the flow turned out to
 be harder than we thought and honestly harder than it should be. The flow builder should
 empower users to build reliable flows and not spend their precious time trying to
 figure out what went wrong.

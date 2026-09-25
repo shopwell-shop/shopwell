@@ -5,4 +5,4 @@ author: Fabian Boensch
 author_github: @En0Ma1259
 ---
 # Storefront
-* Changed `Shopware\Storefront\Theme\Message\DeleteThemeFilesHandler` dir to delete for old theme files to correct path
+* Changed `Shopwell\Storefront\Theme\Message\DeleteThemeFilesHandler` dir to delete for old theme files to correct path

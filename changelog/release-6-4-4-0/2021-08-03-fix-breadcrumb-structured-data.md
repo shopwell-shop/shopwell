@@ -6,4 +6,4 @@ author_email: pascal.josephy@jkweb.ch
 author_github: pascaljosephy
 ---
 # Storefront
-* Fixed structured data in `Shopware\Storefront\Resources\views\storefront\layout\breadcrumb.html.twig`
+* Fixed structured data in `Shopwell\Storefront\Resources\views\storefront\layout\breadcrumb.html.twig`

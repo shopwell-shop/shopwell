@@ -16,7 +16,7 @@ ___
 # Upgrade Information
 ## Native types for PHP class properties
 A "deprecation" message was added to every PHP class property without a native type.
-The native types will be added with Shopware 6.7.0.0.
+The native types will be added with Shopwell 6.7.0.0.
 If you extend classes with such properties, you will also need to add the type accordingly during the major update. 
 ___
 # Next Major Version Changes

@@ -6,4 +6,4 @@ author_github: OliverSkroblin
 ---
 
 # Core
-* Changed `\Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader::_load` method to pass through extensions from the initial `IdSearchResult` to returned `EntitySearchResult`.
+* Changed `\Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingLoader::_load` method to pass through extensions from the initial `IdSearchResult` to returned `EntitySearchResult`.

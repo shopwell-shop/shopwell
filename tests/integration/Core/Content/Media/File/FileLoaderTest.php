@@ -25,7 +25,7 @@ final class FileLoaderTest extends TestCase
     use IntegrationTestBehaviour;
     use MediaFixtures;
 
-    public const TEST_IMAGE = __DIR__ . '/../fixtures/shopware-logo.png';
+    public const TEST_IMAGE = __DIR__ . '/../fixtures/shopwell-logo.png';
 
     private FileLoader $fileLoader;
 

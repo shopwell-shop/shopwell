@@ -2,7 +2,7 @@
 title: Use correct Domain for Sitemap locations in SitemapIndex
 issue: NEXT-37521
 author: Jozsef Damokos
-author_email: j.damokos@shopware.com
+author_email: j.damokos@shopwell.com
 author_github: @jozsefdamokos
 ---
 # Core

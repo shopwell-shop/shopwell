@@ -18,7 +18,7 @@ permissions: {}
 jobs:
   report:
     name: Report who is waiting for whom
-    if: github.repository == 'shopware/shopware'
+    if: github.repository == 'shopwell/shopwell'
     runs-on: ubuntu-24.04
     permissions:
       contents: read

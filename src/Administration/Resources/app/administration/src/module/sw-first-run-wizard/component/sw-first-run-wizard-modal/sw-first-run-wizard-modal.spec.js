@@ -494,8 +494,8 @@ describe('module/sw-first-run-wizard/component/sw-first-run-wizard-modal', () =>
             'paypal.info',
             'paypal.credentials',
             'plugins',
-            'shopware.account',
-            'shopware.domain',
+            'shopwell.account',
+            'shopwell.domain',
             'store',
             'finish',
         ];

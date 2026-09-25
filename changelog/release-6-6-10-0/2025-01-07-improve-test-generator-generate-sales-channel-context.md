@@ -5,8 +5,8 @@ author_email: benjamin.wittwer@a-k-f.de
 author_github: akf-bw
 ---
 # Core
-* Changed `Shopware\Core\Test\Generator` by adding the `generateSalesChannelContext` function, which allows the generation of a complete dynamic sales channel context object
-* Changed `Shopware\Core\Test\TestDefaults` by adding several TestDefault constants
+* Changed `Shopwell\Core\Test\Generator` by adding the `generateSalesChannelContext` function, which allows the generation of a complete dynamic sales channel context object
+* Changed `Shopwell\Core\Test\TestDefaults` by adding several TestDefault constants
 ___
 # Next Major Version Changes
 ## Removal of Generator::createSalesChannelContext()

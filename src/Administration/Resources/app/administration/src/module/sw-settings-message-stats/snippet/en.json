@@ -19,7 +19,7 @@
             "count": "Amount",
             "seconds": "s",
             "statsDisabledTitle": "Message queue statistics are disabled",
-            "statsDisabledContent": "To enable message queue statistics, set the key \"shopware.messenger.stats.enabled\" to true in your shopware.yaml configuration file and restart workers."
+            "statsDisabledContent": "To enable message queue statistics, set the key \"shopwell.messenger.stats.enabled\" to true in your shopwell.yaml configuration file and restart workers."
         }
     }
 }

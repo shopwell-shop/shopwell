@@ -3,9 +3,9 @@ title: Don't override languageId of SalesChannel in SalesChannelContext
 issue: NEXT-17276
 ---
 # Core
-* Changed `\Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory::create()` to not override the languageId of the SalesChannel-Entity in the constructed SalesChannelContext.
-* Added `\Shopware\Core\System\SalesChannel\SalesChannelContext::getLanguageId()`, which returns the LanguageId of the underlying Core-Context.
-* Changed `\Shopware\Core\System\SalesChannel\SalesChannelContext::$context` to be protected instead of private, so the context is included after serialization.
+* Changed `\Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory::create()` to not override the languageId of the SalesChannel-Entity in the constructed SalesChannelContext.
+* Added `\Shopwell\Core\System\SalesChannel\SalesChannelContext::getLanguageId()`, which returns the LanguageId of the underlying Core-Context.
+* Changed `\Shopwell\Core\System\SalesChannel\SalesChannelContext::$context` to be protected instead of private, so the context is included after serialization.
 ___
 # Upgrade Information
 

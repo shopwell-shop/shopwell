@@ -88,7 +88,7 @@ describe('extension tooling shared type surface (e2e)', () => {
 
                 expect(update.exitCode).toBe(1);
                 expect(update.warnings.join('\n')).toContain('type-surface diagnostic');
-                expect(fs.existsSync(path.join(projectRoot, 'custom/plugins/Plug/.shopware-admin-baseline.json'))).toBe(
+                expect(fs.existsSync(path.join(projectRoot, 'custom/plugins/Plug/.shopwell-admin-baseline.json'))).toBe(
                     false,
                 );
             } finally {

@@ -83,7 +83,7 @@ const marketingStore = Shopwell.Store.register({
     getters: {
         getActiveCampaign(): null | Campaign {
             if (
-                Shopwell.Service('shopwareDiscountCampaignService')?.isDiscountCampaignActive(
+                Shopwell.Service('shopwellDiscountCampaignService')?.isDiscountCampaignActive(
                     this.campaign as DiscountCampaign,
                 )
             ) {

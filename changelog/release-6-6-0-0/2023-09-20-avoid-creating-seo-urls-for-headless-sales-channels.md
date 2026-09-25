@@ -7,7 +7,7 @@ author_email: andreas.allacher@massiveart.com
 author_github: @AndreasA
 ---
 # Core
-* Changed method `createUrls` of `Shopware\Core\Checkout\Customer\Subscriber\CustomerGroupSubscriber` to only retrieve sales channels that are not of the `SALES_CHANNEL_TYPE_API` type for SEO URL generation.
-* Changed method `update` of `Shopware\Core\Content\Seo\SeoUrlUpdater` to only retrieve sales channels that are not of the `SALES_CHANNEL_TYPE_API` type for SEO URL generation.
-* Changed method `updateCanonicalUrl` of `Shopware\Core\Content\Seo\Api\SeoActionController` to silently ignore sales channels that are of the `SALES_CHANNEL_TYPE_API` type for SEO URL update.
-* Changed method `createCustomSeoUrls` of `Shopware\Core\Content\Seo\Api\SeoActionController` to silently ignore sales channels that are of the `SALES_CHANNEL_TYPE_API` type for SEO URL update.
+* Changed method `createUrls` of `Shopwell\Core\Checkout\Customer\Subscriber\CustomerGroupSubscriber` to only retrieve sales channels that are not of the `SALES_CHANNEL_TYPE_API` type for SEO URL generation.
+* Changed method `update` of `Shopwell\Core\Content\Seo\SeoUrlUpdater` to only retrieve sales channels that are not of the `SALES_CHANNEL_TYPE_API` type for SEO URL generation.
+* Changed method `updateCanonicalUrl` of `Shopwell\Core\Content\Seo\Api\SeoActionController` to silently ignore sales channels that are of the `SALES_CHANNEL_TYPE_API` type for SEO URL update.
+* Changed method `createCustomSeoUrls` of `Shopwell\Core\Content\Seo\Api\SeoActionController` to silently ignore sales channels that are of the `SALES_CHANNEL_TYPE_API` type for SEO URL update.

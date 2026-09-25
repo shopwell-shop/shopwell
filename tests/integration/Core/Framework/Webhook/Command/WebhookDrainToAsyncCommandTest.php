@@ -291,7 +291,7 @@ class WebhookDrainToAsyncCommandTest extends TestCase
 
     private function buildWebhookManager(): WebhookManager
     {
-        $guzzle = static::getContainer()->get('shopware.webhook.guzzle');
+        $guzzle = static::getContainer()->get('shopwell.webhook.guzzle');
         $clock = static::getContainer()->get(ClockInterface::class);
         $webhookClient = new WebhookClient($guzzle, $clock);
 
@@ -315,7 +315,7 @@ class WebhookDrainToAsyncCommandTest extends TestCase
             $webhookClient,
             static::getContainer()->get('messenger.default_bus'),
             $_SERVER['APP_URL'],
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             false,
             $deliveryService,
             static::getContainer()->get(WebhookOutboxStore::class),

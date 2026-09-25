@@ -32,7 +32,7 @@ class ElasticsearchFieldBuilder
     /**
      * N-gram analyzer for the `.ngram` subfield. Substring matching for prefix
      * and partial-token queries. Min/max grams configured via
-     * `SHOPWARE_ES_NGRAM_MIN_GRAM` / `SHOPWARE_ES_NGRAM_MAX_GRAM`.
+     * `SHOPWELL_ES_NGRAM_MIN_GRAM` / `SHOPWELL_ES_NGRAM_MAX_GRAM`.
      */
     public const ANALYZER_NGRAM = 'sw_ngram_analyzer';
 

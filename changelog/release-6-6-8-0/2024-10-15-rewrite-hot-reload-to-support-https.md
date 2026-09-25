@@ -2,7 +2,7 @@
 title: Rewrite Hot Reload to support HTTPS
 issue: NEXT-37871
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: @BrocksiNet
 ---
 # Storefront

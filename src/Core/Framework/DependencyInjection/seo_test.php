@@ -9,5 +9,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(LastLetterBigTwigFilter::class)
-        ->tag('shopware.seo_url.twig.extension');
+        ->tag('shopwell.seo_url.twig.extension');
 };

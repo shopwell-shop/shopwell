@@ -212,7 +212,7 @@ class ThemeCompilerImportMapTest extends TestCase
 
         static::assertIsArray($result);
         static::assertArrayHasKey('imports', $result);
-        static::assertSame('/bundles/storefront/storefront/shopware/shopware.js', $result['imports']['shopware']);
+        static::assertSame('/bundles/storefront/storefront/shopwell/shopwell.js', $result['imports']['shopwell']);
         static::assertArrayHasKey('Core:Button', $result['imports']);
         static::assertArrayNotHasKey('InactiveApp:Card', $result['imports']);
     }
@@ -309,8 +309,8 @@ class ThemeCompilerImportMapTest extends TestCase
 
         static::assertIsArray($result);
         static::assertSame(
-            '/bundles/storefront/storefront/shopware/shopware.js',
-            $result['imports']['shopware']
+            '/bundles/storefront/storefront/shopwell/shopwell.js',
+            $result['imports']['shopwell']
         );
         static::assertSame(
             '/bundles/storefront/storefront/components/vendor/core-HASH.js',
@@ -345,7 +345,7 @@ class ThemeCompilerImportMapTest extends TestCase
         static::assertSame(
             [
                 'imports' => [
-                    'shopware' => '/bundles/storefront/storefront/shopware/shopware.js',
+                    'shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js',
                 ],
             ],
             $result
@@ -361,7 +361,7 @@ class ThemeCompilerImportMapTest extends TestCase
         static::assertSame(
             [
                 'imports' => [
-                    'shopware' => '/bundles/storefront/storefront/shopware/shopware.js',
+                    'shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js',
                 ],
             ],
             $compiler->buildComponentImportMap()
@@ -377,7 +377,7 @@ class ThemeCompilerImportMapTest extends TestCase
         static::assertSame(
             [
                 'imports' => [
-                    'shopware' => '/bundles/storefront/storefront/shopware/shopware.js',
+                    'shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js',
                 ],
             ],
             $this->compiler->buildComponentImportMap()
@@ -393,7 +393,7 @@ class ThemeCompilerImportMapTest extends TestCase
         static::assertSame(
             [
                 'imports' => [
-                    'shopware' => '/bundles/storefront/storefront/shopware/shopware.js',
+                    'shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js',
                 ],
             ],
             $this->compiler->buildComponentImportMap()
@@ -440,8 +440,8 @@ class ThemeCompilerImportMapTest extends TestCase
 
         $result = $this->assertImportMap($compiler->buildComponentImportMap($collection));
         static::assertSame(
-            '/bundles/storefront/storefront/shopware/shopware.js',
-            $result['imports']['shopware']
+            '/bundles/storefront/storefront/shopwell/shopwell.js',
+            $result['imports']['shopwell']
         );
     }
 

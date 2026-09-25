@@ -2,26 +2,26 @@
 title: Message queue v2
 issue: NEXT-21456
 author: Oliver Skroblin
-author_email: o.skroblin@shopware.com
+author_email: o.skroblin@shopwell.com
 author_github: OliverSkroblin
 ---
 # Core
-* Removed `\Shopware\Core\Framework\MessageQueue\Handler\AbstractMessageHandler`, use `MessageHandlerInterface` instead. The `handle` method of the affected classes must therefore be replaced with the `__invoke` method. Affected classes:
-  * `\Shopware\Core\Framework\Adapter\Cache\CacheClearer`
-  * `\Shopware\Storefront\Framework\Cache\CacheWarmer\CacheWarmer`
-  * `\Shopware\Core\Content\ImportExport\Message\DeleteFileHandler`
-  * `\Shopware\Core\Content\Media\Message\DeleteFileHandler`
-  * `\Shopware\Elasticsearch\Framework\Indexing\ElasticsearchIndexer`
-  * `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry`
-  * `\Shopware\Core\Content\Media\Message\GenerateThumbnailsHandler`
-  * `\Shopware\Core\Content\ImportExport\Message\ImportExportHandler`
-  * `\Shopware\Core\Content\ProductExport\ScheduledTask\ProductExportPartialGenerationHandler`
-  * `\Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler`
-  * `\Shopware\Core\Framework\Webhook\Handler\WebhookEventMessageHandler`
-* Changed complete structure of `Shopware\Core\Framework\MessageQueue` domain:
+* Removed `\Shopwell\Core\Framework\MessageQueue\Handler\AbstractMessageHandler`, use `MessageHandlerInterface` instead. The `handle` method of the affected classes must therefore be replaced with the `__invoke` method. Affected classes:
+  * `\Shopwell\Core\Framework\Adapter\Cache\CacheClearer`
+  * `\Shopwell\Storefront\Framework\Cache\CacheWarmer\CacheWarmer`
+  * `\Shopwell\Core\Content\ImportExport\Message\DeleteFileHandler`
+  * `\Shopwell\Core\Content\Media\Message\DeleteFileHandler`
+  * `\Shopwell\Elasticsearch\Framework\Indexing\ElasticsearchIndexer`
+  * `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry`
+  * `\Shopwell\Core\Content\Media\Message\GenerateThumbnailsHandler`
+  * `\Shopwell\Core\Content\ImportExport\Message\ImportExportHandler`
+  * `\Shopwell\Core\Content\ProductExport\ScheduledTask\ProductExportPartialGenerationHandler`
+  * `\Shopwell\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler`
+  * `\Shopwell\Core\Framework\Webhook\Handler\WebhookEventMessageHandler`
+* Changed complete structure of `Shopwell\Core\Framework\MessageQueue` domain:
   * Removed subdirectories `DeadMessage`, `Enqueue`, `Handle`, `Middleware`, `ScheduledTask\MessageQueue`
   * Changed different namespace within the domain to due the fact that there were only one class left inside a domain
-* Added `\Shopware\Core\Framework\MessageQueue\AsyncMessageInterface` which identifies messages which are async by default.
+* Added `\Shopwell\Core\Framework\MessageQueue\AsyncMessageInterface` which identifies messages which are async by default.
 * Removed `message_queue_stats` entity
 * Removed `src/Core/Framework/Resources/config/packages/enqueue.yaml` configuration
 * Changed message queue configuration inside `src/Core/Framework/Resources/config/packages/framework.yaml`

@@ -30,7 +30,7 @@ The Shopwell 6 Administration data layer provides a robust abstraction over the 
 - **Purpose**: Express complex queries in a fluent, type-safe manner
 - **Features**: Filtering, sorting, associations, pagination, aggregations
 - **Integration**: Seamlessly translates to backend DAL search parameters
-- **Source**: Imported from `@shopware-ag/meteor-admin-sdk`
+- **Source**: Imported from `@shopwell-ag/meteor-admin-sdk`
 
 ### 4. API Services
 - **Purpose**: Handle specialized endpoints beyond generic entity CRUD operations

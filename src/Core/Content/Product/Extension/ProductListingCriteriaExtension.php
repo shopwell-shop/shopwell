@@ -18,7 +18,7 @@ final class ProductListingCriteriaExtension extends Extension
     public const NAME = 'product.listing.criteria';
 
     /**
-     * @internal shopware owns the __constructor, but the properties are public API
+     * @internal shopwell owns the __constructor, but the properties are public API
      */
     public function __construct(
         /**

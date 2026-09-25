@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ShopwellService from 'src/module/sw-extension/service/shopware-extension.service';
+import ShopwellService from 'src/module/sw-extension/service/shopwell-extension.service';
 
 async function createWrapper() {
     return mount(
@@ -29,7 +29,7 @@ async function createWrapper() {
                             return {};
                         },
                     },
-                    shopwareExtensionService: new ShopwellService({}, {}, {}, {}),
+                    shopwellExtensionService: new ShopwellService({}, {}, {}, {}),
                     cacheApiService: {
                         clear() {
                             return Promise.resolve();
@@ -115,13 +115,13 @@ describe('src/module/sw-extension/component/sw-self-maintained-extension-card', 
             },
         });
 
-        wrapper.vm.shopwareExtensionService.activateExtension = jest.fn(() => Promise.resolve());
+        wrapper.vm.shopwellExtensionService.activateExtension = jest.fn(() => Promise.resolve());
 
         wrapper.vm.clearCacheAndReloadPage = jest.fn(() => Promise.resolve());
 
         await wrapper.vm.activateExtension();
 
-        expect(wrapper.vm.shopwareExtensionService.activateExtension).toHaveBeenCalled();
+        expect(wrapper.vm.shopwellExtensionService.activateExtension).toHaveBeenCalled();
         expect(wrapper.vm.clearCacheAndReloadPage).toHaveBeenCalled();
         expect(wrapper.vm.extension.active).toBe(true);
         expect(wrapper.vm.isLoading).toBe(false);
@@ -130,13 +130,13 @@ describe('src/module/sw-extension/component/sw-self-maintained-extension-card', 
     it('deactivateExtension should install and reload the page', async () => {
         const wrapper = await createWrapper();
 
-        wrapper.vm.shopwareExtensionService.deactivateExtension = jest.fn(() => Promise.resolve());
+        wrapper.vm.shopwellExtensionService.deactivateExtension = jest.fn(() => Promise.resolve());
 
         wrapper.vm.clearCacheAndReloadPage = jest.fn(() => Promise.resolve());
 
         await wrapper.vm.deactivateExtension();
 
-        expect(wrapper.vm.shopwareExtensionService.deactivateExtension).toHaveBeenCalled();
+        expect(wrapper.vm.shopwellExtensionService.deactivateExtension).toHaveBeenCalled();
         expect(wrapper.vm.isLoading).toBe(false);
     });
 

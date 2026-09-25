@@ -23,7 +23,7 @@ class ScheduledTaskGenerator implements ScaffoldingGenerator
     private string $servicesPhpEntry = <<<'EOL'
 
     $services->set(\{{ namespace }}\ScheduledTask\ExampleTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
 EOL;
 

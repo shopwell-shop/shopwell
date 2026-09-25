@@ -2,7 +2,7 @@
 title: Make Rule classes internal
 issue: NEXT-40440
 author: Jozsef Damokos
-author_email: j.damokos@shopware.com
+author_email: j.damokos@shopwell.com
 author_github: @jozsefdamokos
 ---
 # Core

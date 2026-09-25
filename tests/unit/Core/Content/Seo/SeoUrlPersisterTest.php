@@ -75,7 +75,7 @@ class SeoUrlPersisterTest extends TestCase
     }
 
     /**
-     * Regression for shopware/shopware#4413. An existing canonical SEO URL is only replaced when the
+     * Regression for shopwell/shopwell#4413. An existing canonical SEO URL is only replaced when the
      * update is a real change:
      *
      * 1. automatic template regeneration ({@see SeoUrlPersister::updateSeoUrls()}) must never replace a

@@ -31,7 +31,7 @@ class RequirementsValidator
 {
     private Composer $pluginComposer;
 
-    private Composer $shopwareProjectComposer;
+    private Composer $shopwellProjectComposer;
 
     /**
      * @internal
@@ -56,7 +56,7 @@ class RequirementsValidator
             return;
         }
 
-        $this->shopwareProjectComposer = $this->getComposer($this->projectDir);
+        $this->shopwellProjectComposer = $this->getComposer($this->projectDir);
         $exceptionStack = new RequirementExceptionStack();
 
         $pluginDependencies = $this->getPluginDependencies($plugin);
@@ -130,7 +130,7 @@ class RequirementsValidator
         return $this->checkComposerDependencies(
             $pluginDependencies,
             $exceptionStack,
-            $this->shopwareProjectComposer
+            $this->shopwellProjectComposer
         );
     }
 
@@ -257,7 +257,7 @@ class RequirementsValidator
      */
     private function getComposerPackagesFromPlugins(): array
     {
-        $packages = $this->shopwareProjectComposer->getRepositoryManager()->getLocalRepository()->getPackages();
+        $packages = $this->shopwellProjectComposer->getRepositoryManager()->getLocalRepository()->getPackages();
         $pluginPackages = array_filter($packages, static fn (PackageInterface $package) => $package->getType() === PluginFinder::COMPOSER_TYPE);
 
         $pluginPackagesWithNameAsKey = [];

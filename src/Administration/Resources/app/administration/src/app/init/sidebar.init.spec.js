@@ -1,4 +1,4 @@
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 import initializeSidebar from './sidebar.init';
 
 describe('src/app/init/sidebar.init', () => {

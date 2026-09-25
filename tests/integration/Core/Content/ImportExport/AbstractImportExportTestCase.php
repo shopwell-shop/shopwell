@@ -63,7 +63,7 @@ abstract class AbstractImportExportTestCase extends TestCase
     use SalesChannelApiTestBehaviour;
     use SessionTestBehaviour;
 
-    final public const TEST_IMAGE = __DIR__ . '/fixtures/shopware-logo.png';
+    final public const TEST_IMAGE = __DIR__ . '/fixtures/shopwell-logo.png';
 
     /**
      * @var EntityRepository<ProductCollection>
@@ -130,7 +130,7 @@ abstract class AbstractImportExportTestCase extends TestCase
         $importExport = new ImportExport(
             $importExportService,
             $logEntity,
-            static::getContainer()->get('shopware.filesystem.private'),
+            static::getContainer()->get('shopwell.filesystem.private'),
             $this->listener,
             static::getContainer()->get(Connection::class),
             $mockRepository,
@@ -540,7 +540,7 @@ abstract class AbstractImportExportTestCase extends TestCase
         $logEntity = $this->getLogEntity($invalidLogId);
         $config = Config::fromLog($logEntity);
         $reader = new CsvReader();
-        $filesystem = static::getContainer()->get('shopware.filesystem.private');
+        $filesystem = static::getContainer()->get('shopwell.filesystem.private');
 
         $file = $logEntity->getFile();
         static::assertNotNull($file);

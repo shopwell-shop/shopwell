@@ -9,7 +9,7 @@ ___
 # Next Major Version Changes
 ## Storefront
 ### Deprecated DomAccess Helper
-We deprecated DomAccess Helper, because it does not add much value compared to native browser APIs and to reduce Shopware specific code complexity. You simply replace its usage with the corresponding native methods. Here are some RegEx to help you:
+We deprecated DomAccess Helper, because it does not add much value compared to native browser APIs and to reduce Shopwell specific code complexity. You simply replace its usage with the corresponding native methods. Here are some RegEx to help you:
 
 #### hasAttribute()  
 **RegEx**: `DomAccess\.hasAttribute\(\s*([^,]+)\s*,\s*([^,)]+)(?:,\s*[^)]+)?\)`  

@@ -5,5 +5,5 @@ author: Michael Telgmann
 author_github: mitelg
 ---
 # Storefront
-* Added new event `Shopware\Storefront\Page\Wishlist\WishListPageProductCriteriaEvent`
-* Added new event `Shopware\Storefront\Pagelet\Wishlist\GuestWishListPageletProductCriteriaEvent`
+* Added new event `Shopwell\Storefront\Page\Wishlist\WishListPageProductCriteriaEvent`
+* Added new event `Shopwell\Storefront\Pagelet\Wishlist\GuestWishListPageletProductCriteriaEvent`

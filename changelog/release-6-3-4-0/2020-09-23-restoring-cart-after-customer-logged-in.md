@@ -6,11 +6,11 @@ issue: NEXT-10527
 *  Added `sales_channel_id` nullable column in `sales_channel_api_context` table.
 *  Added `customer_id` nullable column in `sales_channel_api_context` table.
 *  Added unique constraint to a pair (`sales_channel_id` and `customer_id`) in `sales_channel_api_context` table.
-*  Added new `Shopware\Core\Checkout\Cart\Event\CartMergedEvent` is fired after the guest's cart is merged with the customer's cart.
-*  Added new `Shopware\Core\System\SalesChannel\Event\SalesChannelContextRestoredEvent` is fired after a sales channel context is restored.
-*  Added new `Shopware\Core\System\SalesChannel\Context\SalesChannelContextRestorer` class that handles restoring a customer's sales channel context and cart after logging in.
-*  Added two new parameters `sales_channel_id` and `customer_id` in `Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister::save()` method that allow save a customer's context.
-*  Added two new parameters `sales_channel_id` and `customer_id` in `Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister::load()` method that allow load a customer's context using a customer_id.
+*  Added new `Shopwell\Core\Checkout\Cart\Event\CartMergedEvent` is fired after the guest's cart is merged with the customer's cart.
+*  Added new `Shopwell\Core\System\SalesChannel\Event\SalesChannelContextRestoredEvent` is fired after a sales channel context is restored.
+*  Added new `Shopwell\Core\System\SalesChannel\Context\SalesChannelContextRestorer` class that handles restoring a customer's sales channel context and cart after logging in.
+*  Added two new parameters `sales_channel_id` and `customer_id` in `Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister::save()` method that allow save a customer's context.
+*  Added two new parameters `sales_channel_id` and `customer_id` in `Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister::load()` method that allow load a customer's context using a customer_id.
 *  Changed `Core/Checkout/Customer/SalesChannel/LogoutRoute::logout()` method that returns `ContextTokenResponse` instead of `NoContentResponse`.
 *  Changed `Core/Checkout/Customer/SalesChannel/LogoutRoute::logout()` method that allows a `reqplace-token` request parameter that allow to replace context's token after logging out.
 *  Changed `Core/Checkout/Customer/SalesChannel/ChangePasswordRoute::change()` method that return `ContextTokenResponse` instead of `SuccessResponse`.

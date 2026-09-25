@@ -2,7 +2,7 @@
 title: Spatial AR viewer checks
 issue: NEXT-00000
 author: ffrank913
-author_email: f.frank@shopware.com
+author_email: f.frank@shopwell.com
 author_github: @ffrank913
 ---
 # Storefront

@@ -64,18 +64,18 @@ class CustomAppStorerTest extends TestCase
         $customerId = Uuid::randomHex();
 
         $data = [
-            FlowMailVariables::SHOP_NAME => 'shopware',
-            FlowMailVariables::RESET_URL => 'http://shopware.test',
+            FlowMailVariables::SHOP_NAME => 'shopwell',
+            FlowMailVariables::RESET_URL => 'http://shopwell.test',
             CustomerAware::CUSTOMER_ID => $customerId,
         ];
 
         $expected = [
             CustomerAware::CUSTOMER_ID => $customerId,
-            FlowMailVariables::SHOP_NAME => 'shopware',
-            FlowMailVariables::RESET_URL => 'http://shopware.test',
+            FlowMailVariables::SHOP_NAME => 'shopwell',
+            FlowMailVariables::RESET_URL => 'http://shopwell.test',
             ScalarValuesAware::STORE_VALUES => [
-                FlowMailVariables::SHOP_NAME => 'shopware',
-                FlowMailVariables::RESET_URL => 'http://shopware.test',
+                FlowMailVariables::SHOP_NAME => 'shopwell',
+                FlowMailVariables::RESET_URL => 'http://shopwell.test',
                 CustomerAware::CUSTOMER_ID => $customerId,
             ],
         ];

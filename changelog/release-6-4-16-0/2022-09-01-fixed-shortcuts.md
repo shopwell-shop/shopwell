@@ -2,7 +2,7 @@
 title: Fixed shortcuts in admin
 issue: NEXT-21057
 author: Dennis Höllmann
-author_email: d.hoellmann@shopware.com
+author_email: d.hoellmann@shopwell.com
 author_github: @d-hoellmann
 ___
 # Administration

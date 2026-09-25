@@ -3,4 +3,4 @@ title: Fix the advanced price don't apply to admin order and the product price i
 issue: NEXT-10886
 ---
 # Core
-* Moved add `customPrice` extension into IF statement that checking if `priceDefinition` is declared and is different than NULL in `Shopware\Core\Checkout\Cart\LineItemFactoryHandler\ProductLineItemFactory`.
+* Moved add `customPrice` extension into IF statement that checking if `priceDefinition` is declared and is different than NULL in `Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\ProductLineItemFactory`.

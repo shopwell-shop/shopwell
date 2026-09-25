@@ -641,7 +641,7 @@ function tracingInterceptor(client) {
             const currentRoute = Shopwell?.Application?.view?.router?.currentRoute?.value?.name;
 
             if (currentRoute) {
-                config.headers['shopware-admin-active-route'] = currentRoute;
+                config.headers['shopwell-admin-active-route'] = currentRoute;
             }
 
             return config;

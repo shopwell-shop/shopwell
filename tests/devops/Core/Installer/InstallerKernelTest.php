@@ -27,15 +27,15 @@ class InstallerKernelTest extends TestCase
         $this->setEnvVars(['COMPOSER_HOME' => null]);
     }
 
-    #[TestDox('boot configures container with shopware version and bundles')]
+    #[TestDox('boot configures container with shopwell version and bundles')]
     public function testItCorrectlyConfiguresTheContainer(): void
     {
         $kernel = new InstallerKernel('test', false);
         $kernel->boot();
-        static::assertTrue($kernel->getContainer()->hasParameter('kernel.shopware_version'));
+        static::assertTrue($kernel->getContainer()->hasParameter('kernel.shopwell_version'));
 
         // the default revision changes per commit, if it is set we expect that it is correct
-        static::assertTrue($kernel->getContainer()->hasParameter('kernel.shopware_version_revision'));
+        static::assertTrue($kernel->getContainer()->hasParameter('kernel.shopwell_version_revision'));
 
         static::assertSame(
             [

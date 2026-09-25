@@ -24,11 +24,11 @@ use Shopwell\Core\Framework\ShopwellHttpException;
  */
 #[Package('framework')]
 #[McpTool(
-    name: 'shopware-entity-aggregate',
+    name: 'shopwell-entity-aggregate',
     title: 'Entity Aggregate',
-    description: 'The correct tool for count, sum, average, and other aggregate questions. Use this — not shopware-entity-search — for any \'how many\', \'total value\', or \'average\' query. Note: entity-search\'s _meta.total is pagination metadata, not a reporting count. Supports: count, avg, sum, min, max, terms, date-histogram. Returns only aggregation results, no entity rows. Pass aggregation definitions as Admin API criteria JSON.'
+    description: 'The correct tool for count, sum, average, and other aggregate questions. Use this — not shopwell-entity-search — for any \'how many\', \'total value\', or \'average\' query. Note: entity-search\'s _meta.total is pagination metadata, not a reporting count. Supports: count, avg, sum, min, max, terms, date-histogram. Returns only aggregation results, no entity rows. Pass aggregation definitions as Admin API criteria JSON.'
 )]
-#[McpToolDependsOn('shopware-entity-schema')]
+#[McpToolDependsOn('shopwell-entity-schema')]
 #[McpToolGroup('entity')]
 #[McpToolRequires(entityParam: 'entity', operations: ['read'])]
 class EntityAggregateTool extends McpToolResponse
@@ -45,7 +45,7 @@ class EntityAggregateTool extends McpToolResponse
     }
 
     public function __invoke(
-        #[Schema(description: 'Entity name to aggregate over, e.g. "order" or "product". See the shopware://entities resource for the full list.')]
+        #[Schema(description: 'Entity name to aggregate over, e.g. "order" or "product". See the shopwell://entities resource for the full list.')]
         string $entity,
         #[Schema(description: 'A JSON ARRAY of Admin API aggregation definitions, as a string. Each element needs "name" and "type"; every type except "filter" also needs "field" — e.g. [{"name":"order_count","type":"count","field":"id"}] to count orders, or [{"name":"revenue","type":"sum","field":"amountTotal"}] to total them. A "filter" element takes no "field": it wraps another aggregation, so it needs "filter" (an array of filter definitions) and "aggregation" (the nested definition to apply inside it). A bare object rather than an array is the most common mistake and is rejected.')]
         string $aggregations,
@@ -55,7 +55,7 @@ class EntityAggregateTool extends McpToolResponse
         $context = $this->contextProvider->getContext();
 
         if (!$this->registry->has($entity)) {
-            return $this->error(\sprintf('Entity "%s" not found. Use the shopware://entities resource for available entity names.', $entity));
+            return $this->error(\sprintf('Entity "%s" not found. Use the shopwell://entities resource for available entity names.', $entity));
         }
 
         if ($error = $this->requirePrivilege($context, $entity . ':read')) {

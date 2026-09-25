@@ -24,7 +24,7 @@ type RecommendedPlugin = {
 export default Shopwell.Component.wrapComponentConfig({
     template,
 
-    inject: ['cacheApiService', 'extensionHelperService', 'shopwareExtensionService'],
+    inject: ['cacheApiService', 'extensionHelperService', 'shopwellExtensionService'],
 
     mixins: [Shopwell.Mixin.getByName('sw-extension-error')],
 
@@ -79,7 +79,7 @@ export default Shopwell.Component.wrapComponentConfig({
                     this.cacheApiService.clear();
                 }
 
-                await this.shopwareExtensionService.updateExtensionData();
+                await this.shopwellExtensionService.updateExtensionData();
 
                 this.$emit('on-plugin-installed', this.plugin.name);
             }

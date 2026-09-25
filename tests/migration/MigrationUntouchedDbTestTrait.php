@@ -12,7 +12,7 @@ use Shopwell\Core\Framework\Log\Package;
 #[Package('framework')]
 trait MigrationUntouchedDbTestTrait
 {
-    private string $databaseName = 'shopware';
+    private string $databaseName = 'shopwell';
 
     #[Before]
     public function setMigrationDb(): void

@@ -6,4 +6,4 @@ author_email: a.fernandez@scripting-base.de
 author_github: andreasfernandez
 ---
 # Core
-* Changed `Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour` to throw an exception if the request in `assignSalesChannelContext()` is erroneous
+* Changed `Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour` to throw an exception if the request in `assignSalesChannelContext()` is erroneous

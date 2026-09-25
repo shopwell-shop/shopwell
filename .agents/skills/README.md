@@ -1,4 +1,4 @@
-# Shopware AI Skills
+# Shopwell AI Skills
 
 Portable AI capabilities packaged in the [Anthropic Agent Skills](https://agentskills.io) format. `.agents/skills` is the canonical location; `.claude/skills` is a symlink for Claude Code. Skills normally match their `description` against the task (best-effort, model-decided — not guaranteed); skills with unattended CI twins require explicit invocation. Mandatory steps live in `AGENTS.md` so they apply even when no skill triggers.
 
@@ -6,17 +6,17 @@ Portable AI capabilities packaged in the [Anthropic Agent Skills](https://agents
 
 | Skill | Invocation examples | What it does |
 |---|---|---|
-| [`sw-bugfixer`](sw-bugfixer/SKILL.md) | Explicit: `/sw-bugfixer …` (Claude) or `$sw-bugfixer …` (Codex) | Diagnoses a Shopware issue or Bugfixer PR feedback, applies a focused fix when appropriate, validates narrowly, and reports the change or no-op decision. |
-| [`sw-triage`](sw-triage/SKILL.md) | Explicit: `/sw-triage …` (Claude) or `$sw-triage …` (Codex) | Triages a Shopware 6 GitHub bug issue — identifies the affected code area, checks for related fixes or duplicates, and emits a Markdown summary (disposition, severity, suggested labels, confidence, evidence). |
-| [`sw-review`](sw-review/SKILL.md) | Explicit: `/sw-review …` (Claude) or `$sw-review …` (Codex) | Reviews a Shopware 6 PR or local diff through calibrated persona lenses, dedupes findings, and emits Markdown or schema-valid JSON depending on invocation mode. |
+| [`sw-bugfixer`](sw-bugfixer/SKILL.md) | Explicit: `/sw-bugfixer …` (Claude) or `$sw-bugfixer …` (Codex) | Diagnoses a Shopwell issue or Bugfixer PR feedback, applies a focused fix when appropriate, validates narrowly, and reports the change or no-op decision. |
+| [`sw-triage`](sw-triage/SKILL.md) | Explicit: `/sw-triage …` (Claude) or `$sw-triage …` (Codex) | Triages a Shopwell 6 GitHub bug issue — identifies the affected code area, checks for related fixes or duplicates, and emits a Markdown summary (disposition, severity, suggested labels, confidence, evidence). |
+| [`sw-review`](sw-review/SKILL.md) | Explicit: `/sw-review …` (Claude) or `$sw-review …` (Codex) | Reviews a Shopwell 6 PR or local diff through calibrated persona lenses, dedupes findings, and emits Markdown or schema-valid JSON depending on invocation mode. |
 | [`nightly-triage`](nightly-triage/SKILL.md) | "triage this nightly run", "identify all failing tests from <Actions run link>", "group the integration-major failures into issues" | Sweeps a failing multi-job PHPUnit CI run — extracts failing tests per shard, clusters them into root causes (with local Docker verification), and files per-domain issues plus a parent tracking issue, routing collateral failures to the root-cause owner. |
-| [`shopware-knowledge-capture`](shopware-knowledge-capture/SKILL.md) | "save this for later", "preserve this knowledge", "where should this information live" | Routes durable Shopware knowledge to the right home without duplicating rules or adding mechanical stubs. |
-| [`shopware-change-scope`](shopware-change-scope/SKILL.md) | "fix this bug", "apply review feedback", "should we clean this up too" | Keeps bug fixes and cleanups scoped to the root cause while catching safe nearby consistency work. |
-| [`shopware-release-docs`](shopware-release-docs/SKILL.md) | "does this need release notes", "add upgrade docs", "public API changed" | Decides whether a change needs developer-facing release info, upgrade notes, or API schema docs. |
-| [`shopware-pr-hygiene`](shopware-pr-hygiene/SKILL.md) | "create a PR", "update the PR", "address review feedback" | Applies Shopware PR template, title, and follow-up commit conventions. |
-| [`shopware-php-code`](shopware-php-code/SKILL.md) | "edit PHP code", "add migration", "add API route", "deprecate this" | Applies Shopware PHP architecture, public surface, migration, API schema, and deprecation rules. |
-| [`shopware-admin-js`](shopware-admin-js/SKILL.md) | "edit Administration", "Admin UI", "Vue component", "Jest spec" | Applies Shopware Administration JS/TS/Vue architecture, ACL, Jest, and linting conventions. |
-| [`shopware-phpunit-tests`](shopware-phpunit-tests/SKILL.md) | "write PHPUnit tests", "add data provider", "feature flag test" | Applies Shopware PHPUnit structure, fixtures, feature-flag, DBAL, coverage, and data-provider rules. |
+| [`shopwell-knowledge-capture`](shopwell-knowledge-capture/SKILL.md) | "save this for later", "preserve this knowledge", "where should this information live" | Routes durable Shopwell knowledge to the right home without duplicating rules or adding mechanical stubs. |
+| [`shopwell-change-scope`](shopwell-change-scope/SKILL.md) | "fix this bug", "apply review feedback", "should we clean this up too" | Keeps bug fixes and cleanups scoped to the root cause while catching safe nearby consistency work. |
+| [`shopwell-release-docs`](shopwell-release-docs/SKILL.md) | "does this need release notes", "add upgrade docs", "public API changed" | Decides whether a change needs developer-facing release info, upgrade notes, or API schema docs. |
+| [`shopwell-pr-hygiene`](shopwell-pr-hygiene/SKILL.md) | "create a PR", "update the PR", "address review feedback" | Applies Shopwell PR template, title, and follow-up commit conventions. |
+| [`shopwell-php-code`](shopwell-php-code/SKILL.md) | "edit PHP code", "add migration", "add API route", "deprecate this" | Applies Shopwell PHP architecture, public surface, migration, API schema, and deprecation rules. |
+| [`shopwell-admin-js`](shopwell-admin-js/SKILL.md) | "edit Administration", "Admin UI", "Vue component", "Jest spec" | Applies Shopwell Administration JS/TS/Vue architecture, ACL, Jest, and linting conventions. |
+| [`shopwell-phpunit-tests`](shopwell-phpunit-tests/SKILL.md) | "write PHPUnit tests", "add data provider", "feature flag test" | Applies Shopwell PHPUnit structure, fixtures, feature-flag, DBAL, coverage, and data-provider rules. |
 
 ## How auto-loading works
 

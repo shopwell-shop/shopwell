@@ -649,7 +649,7 @@ class ProductStreamUpdaterTest extends TestCase
 
     private function handleDispatchedMappingMessages(string ...$expectedStreamIds): void
     {
-        $bus = static::getContainer()->get('messenger.bus.test_shopware');
+        $bus = static::getContainer()->get('messenger.bus.test_shopwell');
         static::assertInstanceOf(TraceableMessageBus::class, $bus);
 
         $handled = [];

@@ -23,12 +23,12 @@ trait FilesystemBehaviour
 
     public function getPublicFilesystem(): Filesystem
     {
-        return $this->getFilesystem('shopware.filesystem.public');
+        return $this->getFilesystem('shopwell.filesystem.public');
     }
 
     public function getPrivateFilesystem(): Filesystem
     {
-        return $this->getFilesystem('shopware.filesystem.private');
+        return $this->getFilesystem('shopwell.filesystem.private');
     }
 
     #[After]

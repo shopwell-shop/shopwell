@@ -80,7 +80,7 @@ jobs:
         image: ${{ matrix.db }}
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-          MYSQL_DATABASE: shopware
+          MYSQL_DATABASE: shopwell
         ports:
           - "3306:3306"
         options: --health-cmd="mysqladmin ping || mariadb-admin ping"
@@ -91,7 +91,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Setup and install Shopware
+      - name: Setup and install Shopwell
         uses: ./.github/actions/phpunit-prepare
         with:
           php-version: ${{ matrix.php }}
@@ -130,11 +130,11 @@ jobs:
       FEATURE_ALL: ${{ matrix.major }}
 
     steps:
-      - name: Setup Shopware
-        uses: shopware/setup-shopware@main
+      - name: Setup Shopwell
+        uses: shopwell/setup-shopwell@main
         with:
-          shopware-version: ${{ github.ref }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ github.ref }}
+          shopwell-repository: ${{ github.repository }}
 
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0

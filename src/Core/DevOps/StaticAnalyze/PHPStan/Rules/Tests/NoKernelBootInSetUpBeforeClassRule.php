@@ -70,7 +70,7 @@ class NoKernelBootInSetUpBeforeClassRule implements Rule
 
         return [
             RuleErrorBuilder::message(self::ERROR_STATIC_BOOT)
-                ->identifier('shopware.kernelBootInStaticLifecycleHook')
+                ->identifier('shopwell.kernelBootInStaticLifecycleHook')
                 ->build(),
         ];
     }

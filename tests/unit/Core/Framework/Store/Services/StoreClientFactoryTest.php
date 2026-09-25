@@ -24,7 +24,7 @@ class StoreClientFactoryTest extends TestCase
 {
     public function testCreatesClientWithoutMiddlewares(): void
     {
-        $factory = new StoreClientFactory(new StaticSystemConfigService(['core.store.apiUri' => 'http://shopware.swag']));
+        $factory = new StoreClientFactory(new StaticSystemConfigService(['core.store.apiUri' => 'http://shopwell.swag']));
         $client = $factory->create();
 
         static::assertInstanceOf(Client::class, $client);
@@ -40,7 +40,7 @@ class StoreClientFactoryTest extends TestCase
             new RetryFailedStoreRequestMiddleware(),
         ];
 
-        $factory = new StoreClientFactory(new StaticSystemConfigService(['core.store.apiUri' => 'http://shopware.swag']));
+        $factory = new StoreClientFactory(new StaticSystemConfigService(['core.store.apiUri' => 'http://shopwell.swag']));
         $client = $factory->create($middlewares);
 
         static::assertInstanceOf(Client::class, $client);
@@ -53,7 +53,7 @@ class StoreClientFactoryTest extends TestCase
         $config = $configProperty->getValue($client);
 
         static::assertIsArray($config);
-        static::assertSame('http://shopware.swag', (string) $config['base_uri']);
+        static::assertSame('http://shopwell.swag', (string) $config['base_uri']);
         static::assertSame('application/json', $config['headers']['Content-Type'] ?? null);
         static::assertSame('application/vnd.api+json,application/json', $config['headers']['Accept'] ?? null);
         static::assertInstanceOf(HandlerStack::class, $config['handler']);

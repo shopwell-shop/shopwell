@@ -19,15 +19,15 @@ permissions:
 
 jobs:
   phpstan:
-    if: github.repository == 'shopware/shopware'
+    if: github.repository == 'shopwell/shopwell'
     runs-on: ubuntu-24.04
     name: "PHPStan cache warm"
     steps:
-      - name: Setup Shopware
-        uses: shopware/setup-shopware@main
+      - name: Setup Shopwell
+        uses: shopwell/setup-shopwell@main
         with:
-          shopware-version: ${{ github.ref }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ github.ref }}
+          shopwell-repository: ${{ github.repository }}
           keep-composer-tools: "true"
 
       - name: Install Danger # keep the analysed paths identical to the php.yml PHPStan job, or its cache restore is useless
@@ -55,15 +55,15 @@ jobs:
           key: "phpstan-result-cache-${{ github.run_id }}"
 
   rector:
-    if: github.repository == 'shopware/shopware'
+    if: github.repository == 'shopwell/shopwell'
     runs-on: ubuntu-24.04
     name: "Rector cache warm"
     steps:
-      - name: Setup Shopware
-        uses: shopware/setup-shopware@main
+      - name: Setup Shopwell
+        uses: shopwell/setup-shopwell@main
         with:
-          shopware-version: ${{ github.ref }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ github.ref }}
+          shopwell-repository: ${{ github.repository }}
           keep-composer-tools: "true"
 
       - name: "Restore result cache"

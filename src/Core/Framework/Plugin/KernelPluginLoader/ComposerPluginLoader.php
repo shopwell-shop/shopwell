@@ -40,10 +40,10 @@ class ComposerPluginLoader extends KernelPluginLoader
 
             $composerJson = \json_decode($composerJsonContent, true, 512, \JSON_THROW_ON_ERROR);
             \assert(\is_array($composerJson));
-            $pluginClass = $composerJson['extra']['shopware-plugin-class'] ?? '';
+            $pluginClass = $composerJson['extra']['shopwell-plugin-class'] ?? '';
 
             if ($pluginClass === '' || !\class_exists($pluginClass)) {
-                IOStreamHelper::writeError(\sprintf('Skipped package %s due invalid "shopware-plugin-class" config', $composerPackage->name));
+                IOStreamHelper::writeError(\sprintf('Skipped package %s due invalid "shopwell-plugin-class" config', $composerPackage->name));
 
                 continue;
             }

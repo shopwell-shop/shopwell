@@ -6,4 +6,4 @@ author_email: m.kalle@xsarus.nl
 author_github: michielkalle
 ---
 # Core
-* Added `remote_addr` to `shopware.twig.app_variable.allowed_server_params`
+* Added `remote_addr` to `shopwell.twig.app_variable.allowed_server_params`

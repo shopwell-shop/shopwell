@@ -2,13 +2,13 @@
 title: Sanitize HTML contents of fields and CMS text elements
 issue: NEXT-15172
 author: d.neustadt
-author_email: d.neustadt@shopware.com 
+author_email: d.neustadt@shopwell.com 
 author_github: dneustadt
 ---
 # Core
 * Changed dependency of `ezyang/htmlpurifier` from `Storefront` to `Core`
 * Added `HtmlSanitizer` service to framework utils
-* Changed former `htmlPurifier` config from `Storefront` to `Core` as `shopware.html_sanitizer`
+* Changed former `htmlPurifier` config from `Storefront` to `Core` as `shopwell.html_sanitizer`
 * Added `$sanitize` constructor parameter to `AllowHtml` field flag to specify whether html content should be sanitized as per `HtmlSanitizer`
 * Changed hanlding of text CMS element contents in `TextCmsElementResolver` to sanitize HTML
 ___

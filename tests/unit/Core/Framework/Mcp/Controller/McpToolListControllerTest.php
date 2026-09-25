@@ -34,52 +34,52 @@ class McpToolListControllerTest extends TestCase
 
     public function testListReturnsToolNameAndDescription(): void
     {
-        $page = new Page([self::makeTool('shopware-entity-search', 'Search entities')], null);
+        $page = new Page([self::makeTool('shopwell-entity-search', 'Search entities')], null);
         $controller = $this->makeController($page);
 
         $data = json_decode((string) $controller->list()->getContent(), true);
 
         static::assertCount(1, $data);
-        static::assertSame('shopware-entity-search', $data[0]['name']);
+        static::assertSame('shopwell-entity-search', $data[0]['name']);
         static::assertSame('Search entities', $data[0]['description']);
-        static::assertSame('shopware', $data[0]['group']);
+        static::assertSame('shopwell', $data[0]['group']);
     }
 
     public function testListSortsToolsAlphabetically(): void
     {
         $page = new Page([
-            self::makeTool('shopware-entity-upsert'),
-            self::makeTool('shopware-entity-search'),
-            self::makeTool('shopware-entity-delete'),
+            self::makeTool('shopwell-entity-upsert'),
+            self::makeTool('shopwell-entity-search'),
+            self::makeTool('shopwell-entity-delete'),
         ], null);
 
         $controller = $this->makeController($page);
         $data = json_decode((string) $controller->list()->getContent(), true);
 
         static::assertSame(
-            ['shopware-entity-delete', 'shopware-entity-search', 'shopware-entity-upsert'],
+            ['shopwell-entity-delete', 'shopwell-entity-search', 'shopwell-entity-upsert'],
             array_column($data, 'name'),
         );
     }
 
     public function testListIncludesDependenciesFromConfig(): void
     {
-        $page = new Page([self::makeTool('shopware-entity-delete')], null);
+        $page = new Page([self::makeTool('shopwell-entity-delete')], null);
         $controller = $this->makeController($page, [
-            'shopware-entity-delete' => ['shopware-entity-search', 'shopware-entity-schema'],
+            'shopwell-entity-delete' => ['shopwell-entity-search', 'shopwell-entity-schema'],
         ]);
 
         $data = json_decode((string) $controller->list()->getContent(), true);
 
         static::assertSame(
-            ['shopware-entity-search', 'shopware-entity-schema'],
+            ['shopwell-entity-search', 'shopwell-entity-schema'],
             $data[0]['dependencies'],
         );
     }
 
     public function testListDefaultsToEmptyDependenciesWhenToolNotConfigured(): void
     {
-        $page = new Page([self::makeTool('shopware-entity-schema')], null);
+        $page = new Page([self::makeTool('shopwell-entity-schema')], null);
         $controller = $this->makeController($page);
 
         $data = json_decode((string) $controller->list()->getContent(), true);
@@ -89,9 +89,9 @@ class McpToolListControllerTest extends TestCase
 
     public function testListIncludesPrivilegesFromCompileTimeConfig(): void
     {
-        $page = new Page([self::makeTool('shopware-entity-delete')], null);
+        $page = new Page([self::makeTool('shopwell-entity-delete')], null);
         $privileges = ['static' => ['product:read'], 'entityParam' => null, 'operations' => ['update']];
-        $controller = $this->makeController($page, [], ['shopware-entity-delete' => $privileges]);
+        $controller = $this->makeController($page, [], ['shopwell-entity-delete' => $privileges]);
 
         $data = json_decode((string) $controller->list()->getContent(), true);
 
@@ -119,12 +119,12 @@ class McpToolListControllerTest extends TestCase
 
     public function testCapabilitiesReturnsAllCapabilityTypes(): void
     {
-        $toolsPage = new Page([self::makeTool('shopware-entity-search', 'Search')], null);
+        $toolsPage = new Page([self::makeTool('shopwell-entity-search', 'Search')], null);
         $resourcesPage = new Page([
-            new ResourceDefinition('shopware://entities', 'entities', null, 'All entities', null, null, null),
+            new ResourceDefinition('shopwell://entities', 'entities', null, 'All entities', null, null, null),
         ], null);
         $promptsPage = new Page([
-            new Prompt('shopware-context', null, 'Context prompt', []),
+            new Prompt('shopwell-context', null, 'Context prompt', []),
         ], null);
 
         $controller = $this->makeController($toolsPage, [], [], null, $resourcesPage, $promptsPage);
@@ -136,16 +136,16 @@ class McpToolListControllerTest extends TestCase
         static::assertArrayHasKey('tools', $data);
         static::assertArrayHasKey('resources', $data);
         static::assertArrayHasKey('prompts', $data);
-        static::assertSame('shopware-entity-search', $data['tools'][0]['name']);
-        static::assertSame('shopware://entities', $data['resources'][0]['uri']);
-        static::assertSame('shopware-context', $data['prompts'][0]['name']);
+        static::assertSame('shopwell-entity-search', $data['tools'][0]['name']);
+        static::assertSame('shopwell://entities', $data['resources'][0]['uri']);
+        static::assertSame('shopwell-context', $data['prompts'][0]['name']);
     }
 
     public function testListIncludesTitleWhenSet(): void
     {
         $page = new Page([
             new Tool(
-                name: 'shopware-entity-search',
+                name: 'shopwell-entity-search',
                 title: 'Entity Search',
                 inputSchema: ['type' => 'object', 'properties' => [], 'required' => null],
                 description: 'Search entities',
@@ -161,7 +161,7 @@ class McpToolListControllerTest extends TestCase
 
     public function testListHandlesNullDescription(): void
     {
-        $page = new Page([self::makeTool('shopware-entity-schema', null)], null);
+        $page = new Page([self::makeTool('shopwell-entity-schema', null)], null);
         $controller = $this->makeController($page);
 
         $data = json_decode((string) $controller->list()->getContent(), true);

@@ -26,7 +26,7 @@ class IsCompanyCustomerRuleTest extends TestCase
     public function testThatCustomerWithCompanyMatchesCorrectly(): void
     {
         $customer = new CustomerEntity();
-        $customer->setCompany('shopware AG');
+        $customer->setCompany('Shopwell');
 
         $this->matchRuleWithCustomer(new IsCompanyRule(true), $customer, true);
         $this->matchRuleWithCustomer(new IsCompanyRule(false), $customer, false);

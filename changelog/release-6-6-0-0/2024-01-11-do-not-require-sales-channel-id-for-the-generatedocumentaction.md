@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Changed `Shopware\Core\Content\Flow\Dispatching\Action\GenerateDocumentAction` to not require a sales channel id
+* Changed `Shopwell\Core\Content\Flow\Dispatching\Action\GenerateDocumentAction` to not require a sales channel id

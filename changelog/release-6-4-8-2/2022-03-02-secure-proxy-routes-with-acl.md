@@ -2,11 +2,11 @@
 title: Secure proxy route to switch customer with ACL
 issue: NEXT-20305
 author: Frederik Schmitt
-author_email: f.schmitt@shopware.com
+author_email: f.schmitt@shopwell.com
 author_github: fschmtt
 ---
 # Core
-* Added migration `Shopware\Core\Migration\V6_4\Migration1646397836UpdateRolePrivilegesOfOrderCreator` for updating existing ACL roles
+* Added migration `Shopwell\Core\Migration\V6_4\Migration1646397836UpdateRolePrivilegesOfOrderCreator` for updating existing ACL roles
   ___
 # API
 * Changed route `api.proxy.switch-customer` to require the newly added privilege `api_proxy_switch-customer`

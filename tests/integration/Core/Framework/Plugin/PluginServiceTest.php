@@ -116,7 +116,7 @@ class PluginServiceTest extends TestCase
         static::assertContainsOnlyInstancesOf(PluginComposerJsonInvalidException::class, $composerJsonException);
 
         $errorFound = false;
-        $errorString = 'Plugin composer.json has invalid "type" (must be "shopware-platform-plugin"), or invalid "extra/shopware-plugin-class" value, or missing extra.label property';
+        $errorString = 'Plugin composer.json has invalid "type" (must be "shopwell-platform-plugin"), or invalid "extra/shopwell-plugin-class" value, or missing extra.label property';
 
         foreach ($composerJsonException as $exception) {
             $parameters = $exception->getParameters();
@@ -275,8 +275,8 @@ class PluginServiceTest extends TestCase
         static::assertNull($plugin->getInstalledAt());
         static::assertNull($plugin->getUpgradedAt());
         static::assertSame($this->getValidIconAsBase64(), $plugin->getIcon());
-        static::assertSame('shopware AG', $plugin->getAuthor());
-        static::assertSame('(c) by shopware AG', $plugin->getCopyright());
+        static::assertSame('Shopwell', $plugin->getAuthor());
+        static::assertSame('(c) by Shopwell', $plugin->getCopyright());
         static::assertSame('MIT', $plugin->getLicense());
     }
 

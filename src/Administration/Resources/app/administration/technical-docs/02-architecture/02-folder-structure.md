@@ -68,7 +68,7 @@ The `core/` directory contains framework utilities, low-level services, and foun
 ### Key Files:
 
 - **`application.ts`** - Main application class
-- **`shopware.ts`** - Core Shopwell instance and API
+- **`shopwell.ts`** - Core Shopwell instance and API
 - **`extension-api.ts`** - Extension/plugin API interface
 - **`feature.ts`** - Feature flag management
 

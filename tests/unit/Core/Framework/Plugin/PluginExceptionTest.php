@@ -83,12 +83,12 @@ class PluginExceptionTest extends TestCase
 
     public function testCannotCreateTemporaryDirectory(): void
     {
-        $exception = PluginException::cannotCreateTemporaryDirectory('/tmp/shopware', 'plugin');
+        $exception = PluginException::cannotCreateTemporaryDirectory('/tmp/shopwell', 'plugin');
 
         static::assertSame(PluginException::CANNOT_CREATE_TEMPORARY_DIRECTORY, $exception->getErrorCode());
         static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getStatusCode());
-        static::assertSame('Could not create temporary directory in "/tmp/shopware" with prefix "plugin"', $exception->getMessage());
-        static::assertSame(['targetDirectory' => '/tmp/shopware', 'prefix' => 'plugin'], $exception->getParameters());
+        static::assertSame('Could not create temporary directory in "/tmp/shopwell" with prefix "plugin"', $exception->getMessage());
+        static::assertSame(['targetDirectory' => '/tmp/shopwell', 'prefix' => 'plugin'], $exception->getParameters());
     }
 
     public function testProjectDirNotInContainer(): void
@@ -129,7 +129,7 @@ class PluginExceptionTest extends TestCase
     {
         $exception = PluginException::cannotDeleteShopwellMigrations();
 
-        static::assertSame(PluginException::CANNOT_DELETE_SHOPWARE_MIGRATIONS, $exception->getErrorCode());
+        static::assertSame(PluginException::CANNOT_DELETE_SHOPWELL_MIGRATIONS, $exception->getErrorCode());
         static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getStatusCode());
         static::assertSame('Deleting Shopwell migrations is not allowed', $exception->getMessage());
         static::assertSame([], $exception->getParameters());
@@ -234,12 +234,12 @@ class PluginExceptionTest extends TestCase
 
     public function testCouldNotDetectComposerVersion(): void
     {
-        $exception = PluginException::couldNotDetectComposerVersion(['foo/bar' => '/var/www/shopware/custom/plugins/fooBar/vendor/composer/../../']);
+        $exception = PluginException::couldNotDetectComposerVersion(['foo/bar' => '/var/www/shopwell/custom/plugins/fooBar/vendor/composer/../../']);
 
         static::assertSame(PluginException::COULD_NOT_DETECT_COMPOSER_VERSION, $exception->getErrorCode());
         static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getStatusCode());
-        static::assertSame("Could not detect the installed composer version. Checked paths: \nfoo/bar: /var/www/shopware/custom/plugins/fooBar/vendor/composer/../../\n", $exception->getMessage());
-        static::assertSame(['checkedPaths' => "\nfoo/bar: /var/www/shopware/custom/plugins/fooBar/vendor/composer/../../\n"], $exception->getParameters());
+        static::assertSame("Could not detect the installed composer version. Checked paths: \nfoo/bar: /var/www/shopwell/custom/plugins/fooBar/vendor/composer/../../\n", $exception->getMessage());
+        static::assertSame(['checkedPaths' => "\nfoo/bar: /var/www/shopwell/custom/plugins/fooBar/vendor/composer/../../\n"], $exception->getParameters());
     }
 
     public function testPluginComposerRequire(): void

@@ -80,7 +80,7 @@ export default {
         },
 
         params() {
-            return Shopwell.Store.get('shopwareApps').selectedIds;
+            return Shopwell.Store.get('shopwellApps').selectedIds;
         },
 
         extensionSdkButtons() {

@@ -195,7 +195,7 @@ describe('build/vue-setup-transform script setup constraints', () => {
             </script>
         `;
 
-        expect(() => transformShopwellSetupSfc(source, 'reserved-shopware.vue')).toThrow(
+        expect(() => transformShopwellSetupSfc(source, 'reserved-shopwell.vue')).toThrow(
             '"Shopwell" is reserved by the Shopwell setup transform',
         );
     });

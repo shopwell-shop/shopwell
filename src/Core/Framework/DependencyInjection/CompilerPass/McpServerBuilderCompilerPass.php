@@ -81,7 +81,7 @@ class McpServerBuilderCompilerPass implements CompilerPassInterface
 
                     break;
                 case 'setPaginationLimit':
-                    $arguments = ['%shopware.mcp.pagination_limit%'];
+                    $arguments = ['%shopwell.mcp.pagination_limit%'];
 
                     break;
             }

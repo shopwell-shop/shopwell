@@ -87,7 +87,7 @@ abstract class McpToolResponse
 
             if ($sessionId !== '' && $request !== null) {
                 $uuid = $this->toolResultCache->store($sessionId, $json);
-                $resourceUri = 'shopware://tool-result/' . $uuid;
+                $resourceUri = 'shopwell://tool-result/' . $uuid;
 
                 $this->mcpLogger?->debug('MCP tool response stored as resource (oversized)', [
                     'tool' => static::class,

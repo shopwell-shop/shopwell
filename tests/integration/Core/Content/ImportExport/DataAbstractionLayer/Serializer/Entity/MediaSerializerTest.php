@@ -56,11 +56,11 @@ class MediaSerializerTest extends TestCase
         $eventDispatcher->addSubscriber(new MediaSerializerSubscriber($mediaSerializer));
 
         $mediaId = Uuid::randomHex();
-        $expectedDestination = 'shopware-logo';
+        $expectedDestination = 'shopwell-logo';
         $record = [
             'id' => $mediaId,
             'title' => 'Logo',
-            'url' => 'http://172.16.11.80/shopware-logo.png',
+            'url' => 'http://172.16.11.80/shopwell-logo.png',
             'mediaFolderId' => Uuid::randomHex(),
         ];
 
@@ -111,7 +111,7 @@ class MediaSerializerTest extends TestCase
         $mediaId = Uuid::randomHex();
         $record = [
             'id' => $mediaId,
-            'url' => 'http://172.16.11.80/shopware-logo.png',
+            'url' => 'http://172.16.11.80/shopwell-logo.png',
         ];
 
         $mediaEntity = new MediaEntity();
@@ -170,10 +170,10 @@ class MediaSerializerTest extends TestCase
         $eventDispatcher->addSubscriber(new MediaSerializerSubscriber($mediaSerializer));
 
         $mediaId = Uuid::randomHex();
-        $expectedDestination = 'shopware logo';
+        $expectedDestination = 'shopwell logo';
         $record = [
             'id' => $mediaId,
-            'url' => 'http://172.16.11.80/shopware logo.png',
+            'url' => 'http://172.16.11.80/shopwell logo.png',
         ];
 
         $expectedMediaFile = new MediaFile(
@@ -220,9 +220,9 @@ class MediaSerializerTest extends TestCase
         $eventDispatcher = new EventDispatcher();
         $eventDispatcher->addSubscriber(new MediaSerializerSubscriber($mediaSerializer));
 
-        $expectedDestination = 'shopware-logo';
+        $expectedDestination = 'shopwell-logo';
         $record = [
-            'url' => 'http://172.16.11.80/shopware-logo.png',
+            'url' => 'http://172.16.11.80/shopwell-logo.png',
         ];
 
         $expectedMediaFile = new MediaFile(

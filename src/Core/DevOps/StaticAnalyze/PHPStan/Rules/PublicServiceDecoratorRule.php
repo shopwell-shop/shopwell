@@ -78,7 +78,7 @@ class PublicServiceDecoratorRule implements Rule
                         $decorates
                     )
                 )
-                ->identifier('shopware.publicServiceDecorator')
+                ->identifier('shopwell.publicServiceDecorator')
                 ->build(),
             ];
         }
@@ -99,7 +99,7 @@ class PublicServiceDecoratorRule implements Rule
                     $decorated->getId()
                 )
             )
-            ->identifier('shopware.publicServiceDecorator')
+            ->identifier('shopwell.publicServiceDecorator')
             ->build(),
         ];
     }

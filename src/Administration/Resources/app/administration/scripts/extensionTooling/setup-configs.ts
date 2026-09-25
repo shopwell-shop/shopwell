@@ -175,9 +175,9 @@ export function createRootEslintConfig(context: GeneratorContext, projects: Exte
     const factorySpecifier = asRelativeSpecifier(rootEslintPath, factoryPath);
     const content = [
         `// ${GENERATED_MARKER}`,
-        `import { shopwareAdminExtension } from ${JSON.stringify(factorySpecifier)};`,
+        `import { shopwellAdminExtension } from ${JSON.stringify(factorySpecifier)};`,
         '',
-        'export default shopwareAdminExtension({',
+        'export default shopwellAdminExtension({',
         '    tsconfigRootDir: import.meta.dirname,',
         '    extensionRoots: [',
         ...extensionRoots.map((extensionRoot) => `        ${JSON.stringify(extensionRoot)},`),
@@ -192,9 +192,9 @@ export function createRootEslintConfig(context: GeneratorContext, projects: Exte
             [
                 `${relativePosix(context.projectRoot, rootEslintPath)} exists and is not managed by this tool. ` +
                     'To integrate, compose the shared factory:',
-                `    import { shopwareAdminExtension } from ${JSON.stringify(factorySpecifier)};`,
+                `    import { shopwellAdminExtension } from ${JSON.stringify(factorySpecifier)};`,
                 '    export default [',
-                '        ...shopwareAdminExtension({ tsconfigRootDir: import.meta.dirname, extensionRoots: [/* … */] }),',
+                '        ...shopwellAdminExtension({ tsconfigRootDir: import.meta.dirname, extensionRoots: [/* … */] }),',
                 '        // your own config',
                 '    ];',
             ].join('\n'),
@@ -333,10 +333,10 @@ export function scaffoldExtensionConfigs(
     const eslintContent = [
         `// ${configKind} for ${name}. Composes the generated Shopwell bridge in ${SHIM_DIR_NAME}/`,
         `// (git-ignored). ${eslintLifecycleNote}`,
-        `import shopware from '${BRIDGE_ESLINT_SPECIFIER}';`,
+        `import shopwell from '${BRIDGE_ESLINT_SPECIFIER}';`,
         '',
         'export default [',
-        '    ...shopware,',
+        '    ...shopwell,',
         '    // Add your own rules here.',
         '];',
         '',

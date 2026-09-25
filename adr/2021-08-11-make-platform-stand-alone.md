@@ -1,16 +1,16 @@
 ---
-title: Make shopware/platform stand-alone for development and testing
+title: Make shopwell/platform stand-alone for development and testing
 date: 2021-08-11
 area: product-operations
-tags: [shopware, platform, development, testing]
+tags: [shopwell, platform, development, testing]
 ---
 
 ## Context
 
 The platform requires some additional config, a console and web entrypoint and additional development tooling for development, tests and
-running the application. In practice this is provided by one of the templates: `shopware/development` or `shopware/production`. 
+running the application. In practice this is provided by one of the templates: `shopwell/development` or `shopwell/production`. 
 This creates a cyclic dependency, which brings some problems:
-- `shopware/development` and `shopware/platform` need to be updated in lockstep, which makes updating them individually sometimes impossible 
+- `shopwell/development` and `shopwell/platform` need to be updated in lockstep, which makes updating them individually sometimes impossible 
 - some IDEs have trouble with multi-repository projects
 - updating development tooling breaks everything
 - auto-detection of git revision and diff is broken because the development template is the root
@@ -18,10 +18,10 @@ This creates a cyclic dependency, which brings some problems:
 
 ## Decision
 
-- use shopware/platform directly in the pipeline
+- use shopwell/platform directly in the pipeline
 - allow development without a template by moving the development tooling into platform
-- only advertise this as `shopware/platform` development setup. Projects should still start with `shopware/production` as a template
-- `shopware/development` should continue to work
+- only advertise this as `shopwell/platform` development setup. Projects should still start with `shopwell/production` as a template
+- `shopwell/development` should continue to work
 - allow testing by adding entrypoints for cli and web
 - add scripts to composer to ease common tasks
   * these scripts should be kept small and simple
@@ -41,5 +41,5 @@ This creates a cyclic dependency, which brings some problems:
 - simplified CI, which also makes errors easier to reproduce locally
 - simplified local setup  
 - no custom scripts that are not available in all setups
-- projects may try to use shopware/platform directly
-- yet another shopware setup to choose from
+- projects may try to use shopwell/platform directly
+- yet another shopwell setup to choose from

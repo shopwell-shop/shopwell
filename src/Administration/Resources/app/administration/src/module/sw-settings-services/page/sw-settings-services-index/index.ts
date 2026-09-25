@@ -1,9 +1,9 @@
 import { mapState } from 'pinia';
 import useSession from 'src/app/composables/use-session';
-import { useShopwellServicesStore } from '../../store/shopware-services.store';
+import { useShopwellServicesStore } from '../../store/shopwell-services.store';
 import template from './sw-settings-services-index.html.twig';
 import './sw-settings-services-index.scss';
-import type { ServiceDescription } from '../../service/shopware-services.service';
+import type { ServiceDescription } from '../../service/shopwell-services.service';
 import extractError from '../../composables/extract-error';
 import {
     getServicesWithShopwellAccountRequirement,
@@ -63,20 +63,20 @@ export default Shopwell.Component.wrapComponentConfig({
     },
 
     created() {
-        const shopwareServicesService = Shopwell.Service('shopwareServicesService');
+        const shopwellServicesService = Shopwell.Service('shopwellServicesService');
         const serviceRegistryClient = Shopwell.Service('serviceRegistryClient');
-        const shopwareServicesStore = useShopwellServicesStore();
+        const shopwellServicesStore = useShopwellServicesStore();
         const sessionStore = useSession();
 
         Promise.all([
             this.reloadServices(),
-            shopwareServicesService.getServicesContext().then((servicesConsent) => {
-                shopwareServicesStore.config = servicesConsent;
+            shopwellServicesService.getServicesContext().then((servicesConsent) => {
+                shopwellServicesStore.config = servicesConsent;
             }),
             serviceRegistryClient
                 .getCurrentRevision(sessionStore.currentLocale.value ?? 'en-GB')
                 .then((serviceRevisions) => {
-                    shopwareServicesStore.revisions = serviceRevisions;
+                    shopwellServicesStore.revisions = serviceRevisions;
                 }),
         ])
             .then(() => {
@@ -96,10 +96,10 @@ export default Shopwell.Component.wrapComponentConfig({
     methods: {
         async activateServices() {
             try {
-                const shopwareServicesService = Shopwell.Service('shopwareServicesService');
-                const shopwareServicesStore = useShopwellServicesStore();
+                const shopwellServicesService = Shopwell.Service('shopwellServicesService');
+                const shopwellServicesStore = useShopwellServicesStore();
 
-                shopwareServicesStore.config = await shopwareServicesService.enableAllServices();
+                shopwellServicesStore.config = await shopwellServicesService.enableAllServices();
 
                 Shopwell.Store.get('notification').createNotification({
                     title: this.$t('sw-settings-services.index.services-enabled'),
@@ -118,9 +118,9 @@ export default Shopwell.Component.wrapComponentConfig({
 
         async reloadServices() {
             try {
-                const shopwareServicesService = Shopwell.Service('shopwareServicesService');
+                const shopwellServicesService = Shopwell.Service('shopwellServicesService');
 
-                this.services = await shopwareServicesService.getInstalledServices();
+                this.services = await shopwellServicesService.getInstalledServices();
             } catch (exception) {
                 this.loadingError = extractError(exception);
 

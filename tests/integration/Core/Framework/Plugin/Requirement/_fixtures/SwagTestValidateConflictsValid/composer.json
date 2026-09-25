@@ -2,20 +2,20 @@
     "name": "swag/test-validate-conflicts-valid",
     "description": "Test conflict handling",
     "version": "v1.0.0",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "license": "MIT",
     "authors": [
         {
-            "name": "shopware AG",
+            "name": "Shopwell",
             "role": "Manufacturer"
         }
     ],
     "conflict": {
-        "shopware/storefront": "< 6.1.0"
+        "shopwell/storefront": "< 6.1.0"
     },
     "extra": {
-        "shopware-plugin-class": "SwagTestValidateConflictsValid\\SwagTestValidateConflictsValid",
-        "copyright": "(c) by shopware AG",
+        "shopwell-plugin-class": "SwagTestValidateConflictsValid\\SwagTestValidateConflictsValid",
+        "copyright": "(c) by Shopwell",
         "label": {
             "de-DE": "Test für Konflikte-Handling",
             "en-GB": "Test for conflict handling"

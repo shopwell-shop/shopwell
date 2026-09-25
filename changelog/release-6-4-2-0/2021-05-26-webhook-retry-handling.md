@@ -8,4 +8,4 @@ issue: NEXT-14683
 * Added `src/Core/Framework/Webhook/EventLog/WebhookEventLogCollection` class
 * Added `src/Core/Framework/Webhook/EventLog/WebhookEventLogCollection` class
 * Added `src/Core/Framework/Webhook/EventLog/WebhookEventLogDefinition` class
-* Changed method `handle` in `Shopware\Core\Framework\Webhook\Handler\WebhookEventMessageHandler` to handle the webhook message fail
+* Changed method `handle` in `Shopwell\Core\Framework\Webhook\Handler\WebhookEventMessageHandler` to handle the webhook message fail

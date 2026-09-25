@@ -2,7 +2,7 @@
 title: Add default value for augmented-reality media
 issue: NEXT-34642
 author: Simon Vorgers
-author_email: s.vorgers@shopware.com
+author_email: s.vorgers@shopwell.com
 author_github: SimonVorgers
 ---
 # Core

@@ -27,10 +27,10 @@ This interface will be invoked during the checkout process to determine a respon
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\Checkout\Gateway;
+namespace Shopwell\Core\Checkout\Gateway;
 
-use Shopware\Core\Checkout\Gateway\Command\Struct\CheckoutGatewayPayloadStruct;
-use Shopware\Core\Framework\Log\Package;
+use Shopwell\Core\Checkout\Gateway\Command\Struct\CheckoutGatewayPayloadStruct;
+use Shopwell\Core\Framework\Log\Package;
 
 #[Package('checkout')]
 interface CheckoutGatewayInterface
@@ -68,7 +68,7 @@ We propose the use of a handler pattern, to facilitate the execution of these co
 Commands will be executed in the order provided in the response.
 
 ### App-System
-For the initial release, Shopware will support a single implementation of the `CheckoutGatewayInterface`, provided by the app-system.
+For the initial release, Shopwell will support a single implementation of the `CheckoutGatewayInterface`, provided by the app-system.
 The `AppCheckoutGateway` will sequentially call active apps, but only if the app has a defined `checkout-gateway-url` in its manifest.xml file.
 
 #### App Manifest

@@ -2,7 +2,7 @@
 title: Prevent errors on email preview and show error message on test mail function
 issue: NEXT-21832
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com
+author_email: k.luetjann@shopwell.com
 author_github: King-of-Babylon
 ---
 

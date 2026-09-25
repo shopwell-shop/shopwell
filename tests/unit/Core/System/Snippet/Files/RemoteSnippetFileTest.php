@@ -20,7 +20,7 @@ class RemoteSnippetFileTest extends TestCase
             'storefront.en-GB',
             '/appPath/subDirectory/storefront.en-GB.json',
             'en-GB',
-            'shopware',
+            'shopwell',
             true,
             'storefront'
         );
@@ -28,7 +28,7 @@ class RemoteSnippetFileTest extends TestCase
         static::assertSame('storefront.en-GB', $file->getName());
         static::assertSame('/appPath/subDirectory/storefront.en-GB.json', $file->getPath());
         static::assertSame('en-GB', $file->getIso());
-        static::assertSame('shopware', $file->getAuthor());
+        static::assertSame('shopwell', $file->getAuthor());
         static::assertTrue($file->isBase());
         static::assertSame('storefront', $file->getTechnicalName());
     }

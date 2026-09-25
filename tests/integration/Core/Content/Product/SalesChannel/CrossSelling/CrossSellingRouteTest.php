@@ -149,7 +149,7 @@ class CrossSellingRouteTest extends TestCase
 
     public function testLoadWithPartialDataLoadingEnabled(): void
     {
-        // Regression test for https://github.com/shopware/shopware/issues/18587.
+        // Regression test for https://github.com/shopwell-shop/shopwell/issues/18587.
         static::getContainer()->get(SystemConfigService::class)
             ->set('core.listing.partialDataLoading', true);
 

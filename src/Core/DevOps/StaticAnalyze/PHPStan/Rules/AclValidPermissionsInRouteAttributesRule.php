@@ -127,13 +127,13 @@ class AclValidPermissionsInRouteAttributesRule implements Rule
                             if (!$this->permissionsHelper->aclKeyValid($permission)) {
                                 $errors[] = RuleErrorBuilder::message(\sprintf(AclValidPermissionsHelper::INVALID_KEY_ERROR_MESSAGE, $permission))
                                     ->line($permissionNode->getStartLine() ?: 0)
-                                    ->identifier('shopware.aclKey')
+                                    ->identifier('shopwell.aclKey')
                                     ->build();
                             }
                         } catch (\RuntimeException) {
                             $errors[] = RuleErrorBuilder::message(\sprintf(AclValidPermissionsHelper::MISSING_SCHEMA_ERROR_MESSAGE, $permission))
                                 ->line($permissionNode->getStartLine() ?: 0)
-                                ->identifier('shopware.aclKey.missingSchema')
+                                ->identifier('shopwell.aclKey.missingSchema')
                                 ->build();
                         }
                     }

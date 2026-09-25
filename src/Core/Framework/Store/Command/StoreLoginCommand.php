@@ -46,7 +46,7 @@ class StoreLoginCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('shopwareId', 'i', InputOption::VALUE_REQUIRED, 'Shopwell ID')
+            ->addOption('shopwellId', 'i', InputOption::VALUE_REQUIRED, 'Shopwell ID')
             ->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Password')
             ->addOption('user', 'u', InputOption::VALUE_REQUIRED, 'User')
             ->addOption('host', 'g', InputOption::VALUE_OPTIONAL, 'License host')
@@ -64,7 +64,7 @@ class StoreLoginCommand extends Command
             $this->configService->set('core.store.licenseHost', $host, null, false);
         }
 
-        $shopwareId = $input->getOption('shopwareId');
+        $shopwellId = $input->getOption('shopwellId');
         $password = $input->getOption('password');
         $user = $input->getOption('user');
 
@@ -90,14 +90,14 @@ class StoreLoginCommand extends Command
 
         $userContext = new Context(new AdminApiSource($userId));
 
-        if ($shopwareId === null || $password === null) {
+        if ($shopwellId === null || $password === null) {
             $io->error('Shopwell ID and password are required.');
 
             return self::FAILURE;
         }
 
         try {
-            $this->storeClient->loginWithShopwellId($shopwareId, $password, $userContext);
+            $this->storeClient->loginWithShopwellId($shopwellId, $password, $userContext);
         } catch (ClientException $exception) {
             $io->error(\sprintf('Store login failed: %s', $exception->getMessage()));
 

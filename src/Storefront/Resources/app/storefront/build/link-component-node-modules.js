@@ -8,7 +8,7 @@
  *    `Resources/app/storefront/node_modules/`.
  *  - Node's standard upward-scan module resolution never visits a sibling
  *    directory, so IDEs and `tsc` cannot resolve bare specifiers like
- *    `@shopware-ag/dive/quickview` from a component file.
+ *    `@shopwell-ag/dive/quickview` from a component file.
  *  - The Vite build already bridges this via
  *    `extensionNodeModulesPlugin` / `scopedSubpathExportsPlugin`; this
  *    symlink gives the same bridge to tooling that has no Vite plugin

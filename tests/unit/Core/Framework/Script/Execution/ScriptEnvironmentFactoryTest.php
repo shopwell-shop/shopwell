@@ -33,9 +33,9 @@ class ScriptEnvironmentFactoryTest extends TestCase
 
         // globals
         $globals = $env->getGlobals();
-        static::assertArrayHasKey('shopware', $globals);
-        static::assertInstanceOf(ArrayStruct::class, $globals['shopware']);
-        static::assertSame('6.7.0', $globals['shopware']->get('version'));
+        static::assertArrayHasKey('shopwell', $globals);
+        static::assertInstanceOf(ArrayStruct::class, $globals['shopwell']);
+        static::assertSame('6.7.0', $globals['shopwell']->get('version'));
 
         // extension added
         static::assertSame($syntaxExtension, $env->getExtension(PhpSyntaxExtension::class));

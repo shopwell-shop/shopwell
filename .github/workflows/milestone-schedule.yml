@@ -11,7 +11,7 @@ permissions:
 jobs:
   schedule:
     name: Schedule milestone
-    if: github.repository == 'shopware/shopware'
+    if: github.repository == 'shopwell/shopwell'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -25,7 +25,7 @@ jobs:
       # pointing at it can never name different versions.
       - name: Get versions
         id: versions
-        uses: shopware/github-actions/versions@main
+        uses: shopwell/github-actions/versions@main
         with:
           github-token: ${{ github.token }}
 
@@ -41,5 +41,5 @@ jobs:
           DRY_RUN: ${{ vars.SCHEDULE_MILESTONE_DRY_RUN || 'true' }}
         with:
           script: |
-            const { scheduleReleaseMilestone } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopware-ag/gh-project-automation/dist/index.mjs')
+            const { scheduleReleaseMilestone } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopwell-ag/gh-project-automation/dist/index.mjs')
             await scheduleReleaseMilestone({ github, core, context, fetch }, { version: process.env.VERSION.replace(/^v/, '') })

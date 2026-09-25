@@ -47,7 +47,7 @@ final readonly class SendMailHandler
             throw $e;
         }
 
-        /** @phpstan-ignore shopware.unserializeUsage */
+        /** @phpstan-ignore shopwell.unserializeUsage */
         $mail = \unserialize($mailData);
 
         if (!is_a($mail, Email::class)) {

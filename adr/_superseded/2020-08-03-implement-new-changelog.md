@@ -39,13 +39,13 @@ Next to the changelog information it is important to add the necessary meta info
 
 *  `title` (Required): Add a meaningful title. It can match the file name.  
  
-*  `issue` (Required): Add the corresponding Jira issue key. Can be the key of a single ticket or the key of an epic. For external contributions this is added by a shopware employee, when there is no corresponding issue in Jira yet.
+*  `issue` (Required): Add the corresponding Jira issue key. Can be the key of a single ticket or the key of an epic. For external contributions this is added by a shopwell employee, when there is no corresponding issue in Jira yet.
 
 *  `flag`: When you are developing a new feature, which is still behind a feature flag, you can add the flag in your changelog file during the development. Changelog files with an active flag will not be considered during a release. If you also do refactoring during the development of the feature which is not hidden behind a flag, create an additional changelog file for the changes of the refactoring.  
 
-*  `author`(Required): This field is optional for shopware employees, but required for all external developers. It can be used to identify the author of code changes, or to display the name in a changelog.  
+*  `author`(Required): This field is optional for shopwell employees, but required for all external developers. It can be used to identify the author of code changes, or to display the name in a changelog.  
 
-*  `author_email`(Required): This field is optional for shopware employees, but required for all external developers.  
+*  `author_email`(Required): This field is optional for shopwell employees, but required for all external developers.  
 
 *  `author_github` (Optional): This is also mainly intended for external developers to get some reputation for the GitHub profile.  
 
@@ -110,7 +110,7 @@ Of course not every change is worth a changelog file, but in most cases you will
 *  **External Code Changes**: You are an external developer? Write a changelog!
 
 ### Generating custom changelog
-If you just want to get the changes of a specific version or even just a special part of Shopware, you can use a console command to generate the corresponding changelog.
+If you just want to get the changes of a specific version or even just a special part of Shopwell, you can use a console command to generate the corresponding changelog.
 
 `bin/console changelog:change [<version>] [options]`
 

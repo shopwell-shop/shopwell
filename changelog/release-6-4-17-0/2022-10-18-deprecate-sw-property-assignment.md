@@ -2,7 +2,7 @@
 title: Deprecate sw-property-assignment
 issue: NEXT-23529
 author: Sebastian Seggewiss
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration

@@ -150,7 +150,7 @@ export default {
                 return;
             }
 
-            if (!this.license || this.license.variant !== this.shopwareExtensionService.EXTENSION_VARIANT_TYPES.RENT) {
+            if (!this.license || this.license.variant !== this.shopwellExtensionService.EXTENSION_VARIANT_TYPES.RENT) {
                 await this.deactivateExtension();
                 return;
             }
@@ -167,7 +167,7 @@ export default {
             try {
                 this.isLoading = true;
 
-                await this.shopwareExtensionService.activateExtension(this.extension.name, this.extension.type);
+                await this.shopwellExtensionService.activateExtension(this.extension.name, this.extension.type);
                 this.extension.active = true;
                 this.clearCacheAndReloadPage();
             } catch (e) {
@@ -182,7 +182,7 @@ export default {
             try {
                 this.isLoading = true;
 
-                await this.shopwareExtensionService.deactivateExtension(this.extension.name, this.extension.type);
+                await this.shopwellExtensionService.deactivateExtension(this.extension.name, this.extension.type);
                 this.extension.active = false;
                 this.clearCacheAndReloadPage();
             } catch (e) {
@@ -210,7 +210,7 @@ export default {
                     await this.extensionStoreActionService.downloadExtension(this.extension.name);
                 }
 
-                await this.shopwareExtensionService.installExtension(this.extension.name, this.extension.type);
+                await this.shopwellExtensionService.installExtension(this.extension.name, this.extension.type);
                 await this.clearCacheAndReloadPage();
             } catch (e) {
                 this.showExtensionErrors(e);
@@ -238,8 +238,8 @@ export default {
                     await this.extensionStoreActionService.downloadExtension(this.extension.name);
                 }
 
-                await this.shopwareExtensionService.installExtension(this.extension.name, this.extension.type);
-                await this.shopwareExtensionService.activateExtension(this.extension.name, this.extension.type);
+                await this.shopwellExtensionService.installExtension(this.extension.name, this.extension.type);
+                await this.shopwellExtensionService.activateExtension(this.extension.name, this.extension.type);
                 await this.clearCacheAndReloadPage();
             } catch (e) {
                 this.showExtensionErrors(e);
@@ -265,12 +265,12 @@ export default {
                 this.isLoading = true;
 
                 // Do not try to cancel the license if the extension was already canceled
-                // by e.g. the shopware account and the extension already has an expiration date
+                // by e.g. the shopwell account and the extension already has an expiration date
                 if (!this.extension.storeLicense.expirationDate) {
-                    await this.shopwareExtensionService.cancelLicense(this.extension.storeLicense.id);
+                    await this.shopwellExtensionService.cancelLicense(this.extension.storeLicense.id);
                 }
 
-                await this.shopwareExtensionService.removeExtension(this.extension.name, this.extension.type);
+                await this.shopwellExtensionService.removeExtension(this.extension.name, this.extension.type);
 
                 this.$nextTick(() => {
                     this.emitUpdateList();

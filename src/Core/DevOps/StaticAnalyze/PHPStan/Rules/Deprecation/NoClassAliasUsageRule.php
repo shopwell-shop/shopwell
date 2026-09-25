@@ -40,7 +40,7 @@ class NoClassAliasUsageRule implements Rule
                 $className,
                 $canonicalClassName
             ))
-                ->identifier('shopware.classAliasUsage')
+                ->identifier('shopwell.classAliasUsage')
                 ->line($node->getStartLine())
                 ->build(),
         ];

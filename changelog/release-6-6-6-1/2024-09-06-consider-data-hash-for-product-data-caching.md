@@ -5,5 +5,5 @@ issue: NEXT-37673
 
 # Core
 
-* Changed `\Shopware\Core\Checkout\Cart\CartRuleLoader` to save the cart if data hash is changed
-* Changed `\Shopware\Core\Content\Product\Cart\ProductCartProcessor` to calculate the data hash consistently for the product data
+* Changed `\Shopwell\Core\Checkout\Cart\CartRuleLoader` to save the cart if data hash is changed
+* Changed `\Shopwell\Core\Content\Product\Cart\ProductCartProcessor` to calculate the data hash consistently for the product data

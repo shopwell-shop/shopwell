@@ -70,7 +70,7 @@ class NameConstantEntityDefinition implements Rule
         if (!$entityNameConstant || !$entityNameConstant->isPublic()) {
             return [
                 RuleErrorBuilder::message('EntityDefinitions must declare a public constant named "ENTITY_NAME" which contains the entity name on storage level (e.g. "product").')
-                    ->identifier('shopware.missingEntityNameConstant')
+                    ->identifier('shopwell.missingEntityNameConstant')
                     ->build(),
             ];
         }

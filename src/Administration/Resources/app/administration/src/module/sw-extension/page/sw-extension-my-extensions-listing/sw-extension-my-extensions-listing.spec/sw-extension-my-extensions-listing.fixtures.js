@@ -4,7 +4,7 @@
 
 import { mount, config } from '@vue/test-utils';
 import { createRouter, createWebHashHistory } from 'vue-router';
-import ShopwellService from 'src/module/sw-extension/service/shopware-extension.service';
+import ShopwellService from 'src/module/sw-extension/service/shopwell-extension.service';
 import 'src/module/sw-extension/mixin/sw-extension-error.mixin';
 export { default as selectMtSelectOptionByText } from '../../../../../../test/_helper_/select-mt-select-by-text';
 
@@ -23,14 +23,14 @@ export const routes = [
     },
 ];
 
-export const shopwareService = new ShopwellService({}, {}, {}, {});
-shopwareService.updateExtensionData = jest.fn();
-shopwareService.installExtension = jest.fn(() => Promise.resolve());
-shopwareService.installAndActivateExtension = jest.fn(() => Promise.resolve());
-shopwareService.activateExtension = jest.fn(() => Promise.resolve());
-shopwareService.deactivateExtension = jest.fn(() => Promise.resolve());
-shopwareService.uninstallExtension = jest.fn(() => Promise.resolve());
-shopwareService.updateExtension = jest.fn(() => Promise.resolve());
+export const shopwellService = new ShopwellService({}, {}, {}, {});
+shopwellService.updateExtensionData = jest.fn();
+shopwellService.installExtension = jest.fn(() => Promise.resolve());
+shopwellService.installAndActivateExtension = jest.fn(() => Promise.resolve());
+shopwellService.activateExtension = jest.fn(() => Promise.resolve());
+shopwellService.deactivateExtension = jest.fn(() => Promise.resolve());
+shopwellService.uninstallExtension = jest.fn(() => Promise.resolve());
+shopwellService.updateExtension = jest.fn(() => Promise.resolve());
 
 export const extensionStoreActionService = {
     downloadExtension: jest.fn(() => Promise.resolve()),
@@ -60,7 +60,7 @@ export function consentError(deltas = { permissions: {}, domains: [] }) {
 }
 
 export function setMyExtensions(extensions) {
-    Shopwell.Store.get('shopwareExtensions').setMyExtensions(extensions);
+    Shopwell.Store.get('shopwellExtensions').setMyExtensions(extensions);
 }
 
 export function makeCardStub({ emits = [] } = {}) {
@@ -150,7 +150,7 @@ export async function createWrapper({ aclCan = () => true, cardStub, query = {} 
                             return {};
                         },
                     },
-                    shopwareExtensionService: shopwareService,
+                    shopwellExtensionService: shopwellService,
                     extensionStoreActionService,
                     cacheApiService: {
                         clear: jest.fn(() => Promise.resolve()),
@@ -170,7 +170,7 @@ export async function createWrapper({ aclCan = () => true, cardStub, query = {} 
  */
 export function setupListingHooks() {
     beforeAll(() => {
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([{ name: 'Test', installedAt: null }]);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([{ name: 'Test', installedAt: null }]);
 
         if (Shopwell.Store.get('context')) {
             Shopwell.Store.unregister('context');
@@ -204,19 +204,19 @@ export function setupListingHooks() {
         Shopwell.Store.get('context').app.config.settings.disableExtensionManagement = false;
         Shopwell.Store.get('context').app.config.settings.appUrlReachable = true;
 
-        shopwareService.updateExtensionData.mockClear();
-        shopwareService.installExtension.mockClear();
-        shopwareService.installExtension.mockResolvedValue(undefined);
-        shopwareService.installAndActivateExtension.mockClear();
-        shopwareService.installAndActivateExtension.mockResolvedValue(undefined);
-        shopwareService.activateExtension.mockClear();
-        shopwareService.activateExtension.mockResolvedValue(undefined);
-        shopwareService.deactivateExtension.mockClear();
-        shopwareService.deactivateExtension.mockResolvedValue(undefined);
-        shopwareService.uninstallExtension.mockClear();
-        shopwareService.uninstallExtension.mockResolvedValue(undefined);
-        shopwareService.updateExtension.mockClear();
-        shopwareService.updateExtension.mockResolvedValue(undefined);
+        shopwellService.updateExtensionData.mockClear();
+        shopwellService.installExtension.mockClear();
+        shopwellService.installExtension.mockResolvedValue(undefined);
+        shopwellService.installAndActivateExtension.mockClear();
+        shopwellService.installAndActivateExtension.mockResolvedValue(undefined);
+        shopwellService.activateExtension.mockClear();
+        shopwellService.activateExtension.mockResolvedValue(undefined);
+        shopwellService.deactivateExtension.mockClear();
+        shopwellService.deactivateExtension.mockResolvedValue(undefined);
+        shopwellService.uninstallExtension.mockClear();
+        shopwellService.uninstallExtension.mockResolvedValue(undefined);
+        shopwellService.updateExtension.mockClear();
+        shopwellService.updateExtension.mockResolvedValue(undefined);
         extensionStoreActionService.downloadExtension.mockClear();
         extensionStoreActionService.downloadExtension.mockResolvedValue(undefined);
     });

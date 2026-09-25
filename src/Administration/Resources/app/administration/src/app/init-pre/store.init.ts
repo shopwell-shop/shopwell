@@ -12,7 +12,7 @@ import 'src/app/store/marketing.store';
 import 'src/app/store/sdk-location.store';
 import 'src/app/store/rule-conditions-config.store';
 import 'src/app/store/settings-item.store';
-import 'src/app/store/shopware-apps.store';
+import 'src/app/store/shopwell-apps.store';
 import 'src/app/store/system.store';
 import 'src/app/store/modals.store';
 import 'src/app/store/sidebar.store';

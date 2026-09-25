@@ -4,7 +4,7 @@
       "mainMenuItemGeneral": "Storefront",
       "textHeadline": "Storefront",
       "description": "Settings for the storefront",
-      "helpText": "For more information look at <a target=\"_blank\" href='https://docs.shopwell.cn/en/shopware-6-de'>documentation</a>"
+      "helpText": "For more information look at <a target=\"_blank\" href='https://docs.shopwell.cn/en/shopwell-6-de'>documentation</a>"
     },
     "configuration": {
       "cardTitle": "Storefront configuration",
@@ -20,6 +20,6 @@
         "description": "Activate pre-rendering with eagerness mode \"moderate\" for the Storefront. This can influence your analytics data."
       }
     },
-    "helpText": "For more information please check out the <a target=\"_blank\", href=\"https://docs.shopwell.cn/en/shopware-6-en\">documentation.</a>"
+    "helpText": "For more information please check out the <a target=\"_blank\", href=\"https://docs.shopwell.cn/en/shopwell-6-en\">documentation.</a>"
   }
 }

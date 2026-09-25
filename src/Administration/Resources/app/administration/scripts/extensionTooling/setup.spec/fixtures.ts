@@ -83,7 +83,7 @@ export function writeDefaultFixtures(projectRoot: string): string {
         },
         {
             technicalName: 'administration',
-            basePath: 'vendor/shopware/administration',
+            basePath: 'vendor/shopwell/administration',
             administrationPath: 'Resources/app/administration/src',
         },
         { technicalName: 'MissingOnDisk', basePath: 'custom/plugins/MissingOnDisk', administrationPath: 'src' },

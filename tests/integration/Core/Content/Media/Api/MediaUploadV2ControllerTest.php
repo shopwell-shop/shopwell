@@ -31,7 +31,7 @@ class MediaUploadV2ControllerTest extends TestCase
 {
     use AdminFunctionalTestBehaviour;
 
-    private const TEST_IMAGE = __DIR__ . '/../fixtures/shopware-logo.png';
+    private const TEST_IMAGE = __DIR__ . '/../fixtures/shopwell-logo.png';
 
     private const TEST_IMAGE_NAME = 'media-upload-v2-acl-test.png';
 
@@ -61,7 +61,7 @@ class MediaUploadV2ControllerTest extends TestCase
         $this->mediaThumbnailSizeRepository = static::getContainer()->get('media_thumbnail_size.repository');
 
         /** @var MockHttpClient $httpClient */
-        $httpClient = static::getContainer()->get('shopware.media.upload.http_client');
+        $httpClient = static::getContainer()->get('shopwell.media.upload.http_client');
         $httpClient->setResponseFactory(
             static fn () => new MockResponse(
                 '',

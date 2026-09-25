@@ -28,6 +28,6 @@ class CreateAliasTaskTest extends TestCase
 
     public function testGetTaskName(): void
     {
-        static::assertSame('shopware.elasticsearch.create.alias', CreateAliasTask::getTaskName());
+        static::assertSame('shopwell.elasticsearch.create.alias', CreateAliasTask::getTaskName());
     }
 }

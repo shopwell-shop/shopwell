@@ -19,7 +19,7 @@ class Migration1753799632FixStateMachineHistoryIntegrationConstraint extends Mig
 
     public function update(Connection $connection): void
     {
-        /** @phpstan-ignore shopware.dropStatement (FK is directly added again so dropping the FK is no issue for blue green) */
+        /** @phpstan-ignore shopwell.dropStatement (FK is directly added again so dropping the FK is no issue for blue green) */
         $this->dropForeignKeyIfExists($connection, 'state_machine_history', 'fk.state_machine_history.integration_id');
 
         $connection->executeStatement('

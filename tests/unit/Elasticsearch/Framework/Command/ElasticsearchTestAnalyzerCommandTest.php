@@ -29,7 +29,7 @@ class ElasticsearchTestAnalyzerCommandTest extends TestCase
             ->willReturnCallback(function (array $params): array {
                 $this->assertSame('Shopwell Test', $params['body']['text']);
 
-                return ['tokens' => [['token' => 'shopware'], ['token' => 'test']]];
+                return ['tokens' => [['token' => 'shopwell'], ['token' => 'test']]];
             });
 
         $client = static::createStub(Client::class);
@@ -42,6 +42,6 @@ class ElasticsearchTestAnalyzerCommandTest extends TestCase
         $display = $commandTester->getDisplay();
         static::assertStringContainsString('Default analyzers', $display);
         static::assertStringContainsString('standard', $display);
-        static::assertStringContainsString('shopware test', $display);
+        static::assertStringContainsString('shopwell test', $display);
     }
 }

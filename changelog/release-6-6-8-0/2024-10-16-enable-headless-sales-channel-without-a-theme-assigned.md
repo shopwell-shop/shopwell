@@ -2,7 +2,7 @@
 title: Enable headless sales channel without a theme assigned
 issue: NEXT-37903
 author: Alexandru Dumea
-author_email: a.dumea@shopware.com
+author_email: a.dumea@shopwell.com
 author_github: @Alexandru Dumea
 ---
 # Administration

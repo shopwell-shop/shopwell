@@ -14,7 +14,7 @@ class HasUnserializeInTestClass extends TestCase
     public function testSomethingSneaky(string $serialized): mixed
     {
         /**
-         * @phpstan-ignore shopware.unserializeUsage
+         * @phpstan-ignore shopwell.unserializeUsage
          */
         return \unserialize($serialized);
     }

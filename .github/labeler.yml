@@ -36,5 +36,5 @@ labels:
       body: "Extension:Copilot"
     - label: "extension/Agentic-Commerce"
       body: "Extension:Agentic-Commerce"
-    - label: "service/shopware-payments"
-      body: "Extension:Shopware-Payments"
+    - label: "service/shopwell-payments"
+      body: "Extension:Shopwell-Payments"

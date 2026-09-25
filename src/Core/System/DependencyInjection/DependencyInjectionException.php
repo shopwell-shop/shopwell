@@ -31,7 +31,7 @@ class DependencyInjectionException extends HttpException
         return new self(
             500,
             self::NUMBER_RANGE_REDIS_NOT_CONFIGURED,
-            'Parameter "shopware.number_range.config.connection" is required for redis storage'
+            'Parameter "shopwell.number_range.config.connection" is required for redis storage'
         );
     }
 

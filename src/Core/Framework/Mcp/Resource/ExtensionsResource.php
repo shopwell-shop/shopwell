@@ -18,8 +18,8 @@ use Symfony\Component\HttpKernel\KernelInterface;
  */
 #[Package('framework')]
 #[McpResource(
-    uri: 'shopware://extensions',
-    name: 'shopware-extensions',
+    uri: 'shopwell://extensions',
+    name: 'shopwell-extensions',
     description: 'Optional MCP capability plugins. Read this when a requested tool is not available to find the right extension and its install command.'
 )]
 class ExtensionsResource
@@ -59,7 +59,7 @@ class ExtensionsResource
         }
 
         return [
-            'uri' => 'shopware://extensions',
+            'uri' => 'shopwell://extensions',
             'mimeType' => 'application/json',
             'text' => json_encode($result, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT),
         ];
@@ -82,7 +82,7 @@ class ExtensionsResource
                 'tool_prefix' => 'merchant-',
                 'description' => 'Merchant workflow tools: order management, customer lookup, product creation, revenue and bestseller reports, storefront search, and cart/checkout.',
                 'install_command' => 'bin/console plugin:install --activate SwagMcpMerchantAssistant',
-                'documentation_url' => 'https://github.com/shopware/SwagMcpMerchantAssistant',
+                'documentation_url' => 'https://github.com/shopwell-shop/SwagMcpMerchantAssistant',
             ],
         ];
     }

@@ -2,7 +2,7 @@
 title: Shop ID change suggestion modal
 issue: #6749
 author: Frederik Schmitt
-author_email: f.schmitt@shopware.com
+author_email: f.schmitt@shopwell.com
 author_github: @fschmtt
 ---
 # Core

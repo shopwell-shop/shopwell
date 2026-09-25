@@ -2,7 +2,7 @@
  * @sw-package framework
  *
  * Per-extension findings baseline (PHPStan-style). A committed
- * `.shopware-admin-baseline.json` at the plugin root records the findings that
+ * `.shopwell-admin-baseline.json` at the plugin root records the findings that
  * existed when the plugin adopted the tooling, so the check can report them
  * separately and fail only on *new* findings. Matching keys drop line and
  * column (file + code|rule + message) so a recorded finding survives unrelated
@@ -15,7 +15,7 @@ import path from 'path';
 import { DEFAULT_TOOLING_COMMANDS, GENERATED_MARKER, toPosix, writeManagedFile } from './shared';
 import type { ToolingCommands, WriteResult } from './shared';
 
-export const BASELINE_FILE_NAME = '.shopware-admin-baseline.json';
+export const BASELINE_FILE_NAME = '.shopwell-admin-baseline.json';
 
 export interface TypeScriptFinding {
     /** Path as the tool printed it (project-root-relative). */

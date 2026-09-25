@@ -27,14 +27,14 @@ class CollectPeriodicMetricsTaskTest extends TestCase
 
     public function testShouldRunWhenEnabled(): void
     {
-        $bag = new ParameterBag(['shopware.telemetry.metrics.enabled' => true]);
+        $bag = new ParameterBag(['shopwell.telemetry.metrics.enabled' => true]);
 
         static::assertTrue(CollectPeriodicMetricsTask::shouldRun($bag));
     }
 
     public function testShouldNotRunWhenDisabled(): void
     {
-        $bag = new ParameterBag(['shopware.telemetry.metrics.enabled' => false]);
+        $bag = new ParameterBag(['shopwell.telemetry.metrics.enabled' => false]);
 
         static::assertFalse(CollectPeriodicMetricsTask::shouldRun($bag));
     }

@@ -11,7 +11,7 @@ use Shopwell\Core\Framework\Log\Package;
  * Tokenizer used by the Elasticsearch search path.
  *
  * Unlike {@see Tokenizer}, this implementation does
- * not strip non-alphanumeric characters or honour `shopware.search.preserved_chars`. Separator handling
+ * not strip non-alphanumeric characters or honour `shopwell.search.preserved_chars`. Separator handling
  * (commas, slashes, hyphens, periods, letter↔digit boundaries) is the responsibility of the
  * Elasticsearch analyzer chain — `word_delimiter_graph`, `sw_whitespace_analyzer` and friends — so
  * preserving the term verbatim and letting the analyzer split it produces strictly better matches

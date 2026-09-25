@@ -13,7 +13,7 @@ class AssetRegistrationCompilerPass implements CompilerPassInterface
     public function process(ContainerBuilder $container): void
     {
         $assets = [];
-        foreach ($container->findTaggedServiceIds('shopware.asset') as $id => $config) {
+        foreach ($container->findTaggedServiceIds('shopwell.asset') as $id => $config) {
             $container->getDefinition($id)->addTag('assets.package', ['package' => $config[0]['asset']]);
             $assets[$config[0]['asset']] = new Reference($id);
         }

@@ -32,7 +32,7 @@ class MigrationCommand extends Command
     public function __construct(
         protected readonly MigrationCollectionLoader $loader,
         private readonly TagAwareAdapterInterface $cache,
-        protected readonly string $shopwareVersion
+        protected readonly string $shopwellVersion
     ) {
         parent::__construct();
     }
@@ -91,7 +91,7 @@ class MigrationCommand extends Command
 
         if ($total > 0) {
             $this->cache->clear();
-            $this->io->writeln('cleared the shopware cache');
+            $this->io->writeln('cleared the shopwell cache');
         }
 
         return self::SUCCESS;
@@ -100,7 +100,7 @@ class MigrationCommand extends Command
     protected function collectMigrations(InputInterface $input, string $identifier): MigrationCollection
     {
         if ($identifier === 'core') {
-            return $this->loader->collectAllForVersion($this->shopwareVersion);
+            return $this->loader->collectAllForVersion($this->shopwellVersion);
         }
 
         return $this->loader->collect($identifier);

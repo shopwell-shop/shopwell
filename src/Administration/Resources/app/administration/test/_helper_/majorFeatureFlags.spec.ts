@@ -5,7 +5,7 @@
 import getMajorFeatureFlags from './majorFeatureFlags';
 
 const config = {
-    shopware: {
+    shopwell: {
         feature: {
             flags: [
                 { name: 'v6.8.0.0', major: true },

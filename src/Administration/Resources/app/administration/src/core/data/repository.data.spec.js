@@ -16,21 +16,21 @@ const DEFAULT_CURRENCY = 'b7d2554b0ce847cd82f3ac9bd1c0dfca';
 
 function mockContext() {
     return {
-        apiPath: 'http://shopware.local/api',
-        apiResourcePath: 'http://shopware.local/api/v2',
-        assetsPath: 'http://shopware.local/bundles/',
+        apiPath: 'http://shopwell.local/api',
+        apiResourcePath: 'http://shopwell.local/api/v2',
+        assetsPath: 'http://shopwell.local/bundles/',
         basePath: '',
-        host: 'shopware.local',
+        host: 'shopwell.local',
         inheritance: false,
-        installationPath: 'http://shopware.local',
+        installationPath: 'http://shopwell.local',
         languageId: '2fbb5fe2e29a4d70aa5854ce7ce3e20b',
         currencyId: '7924299acc9641bfb8237a06e5aa0fa4',
         liveVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
         pathInfo: '/admin',
         port: 80,
         scheme: 'http',
-        schemeAndHttpHost: 'http://shopware.local',
-        uri: 'http://shopware.local/admin',
+        schemeAndHttpHost: 'http://shopwell.local',
+        uri: 'http://shopwell.local/admin',
         authToken: {
             access: 'BwP_OL47uNW6k8iQzChh6SxE31XaleO_l4unyLNmFco',
         },
@@ -155,11 +155,11 @@ describe('repository.data.ts', () => {
     it('should delete a version with a keepalive request', async () => {
         global.fetch = jest.fn(() => Promise.resolve());
         const repository = repositoryFactory.create('order');
-        repository.httpClient.defaults.baseURL = 'http://shopware.local/api';
+        repository.httpClient.defaults.baseURL = 'http://shopwell.local/api';
 
         await repository.deleteVersionWithKeepalive('order-id', 'version-id', mockContext());
 
-        expect(global.fetch).toHaveBeenCalledWith('http://shopware.local/api/_action/version/version-id/order/order-id', {
+        expect(global.fetch).toHaveBeenCalledWith('http://shopwell.local/api/_action/version/version-id/order/order-id', {
             method: 'POST',
             headers: {
                 Accept: 'application/vnd.api+json',

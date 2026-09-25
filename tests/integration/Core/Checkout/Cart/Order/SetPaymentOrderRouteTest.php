@@ -70,7 +70,7 @@ class SetPaymentOrderRouteTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->request->set('paymentMethodId', $this->getValidPaymentMethodId());
         $request->request->set('orderId', $orderId);
         $request->setSession($this->getSession());
@@ -109,7 +109,7 @@ class SetPaymentOrderRouteTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->request->set('paymentMethodId', $validPaymentId);
         $request->request->set('orderId', $orderId);
         $request->setSession($this->getSession());
@@ -160,7 +160,7 @@ class SetPaymentOrderRouteTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->request->set('paymentMethodId', $validPaymentId);
         $request->request->set('orderId', $orderId);
         $request->setSession($this->getSession());

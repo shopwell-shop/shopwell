@@ -2,7 +2,7 @@
 title: Add nested line items to email templates
 issue: NEXT-14315
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com 
+author_email: k.luetjann@shopwell.com 
 author_github: King-of-Babylon
 ---
 # Core

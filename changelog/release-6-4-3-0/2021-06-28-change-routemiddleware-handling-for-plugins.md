@@ -2,7 +2,7 @@
 title: Change routeMiddleware handling for plugins
 issue: NEXT-15358
 author: Raoul Kramer
-author_email: r.kramer@shopware.com 
+author_email: r.kramer@shopwell.com 
 author_github: @djpogo
 ---
 # Administration

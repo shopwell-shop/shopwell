@@ -271,14 +271,14 @@ export default {
     beforeRouteLeave(to, from, next) {
         if (this.forceDiscardChanges) {
             this.forceDiscardChanges = false;
-            Shopwell.Store.get('shopwareApps').selectedIds = [];
+            Shopwell.Store.get('shopwellApps').selectedIds = [];
             next();
 
             return;
         }
 
         if (!this.category) {
-            Shopwell.Store.get('shopwareApps').selectedIds = [];
+            Shopwell.Store.get('shopwellApps').selectedIds = [];
             next();
 
             return;
@@ -290,7 +290,7 @@ export default {
          */
         const { changes, deletionQueue } = this.changesetGenerator.generate(this.category);
         if (changes === null) {
-            Shopwell.Store.get('shopwareApps').selectedIds = [];
+            Shopwell.Store.get('shopwellApps').selectedIds = [];
             next();
 
             return;
@@ -311,14 +311,14 @@ export default {
             changes.cmsPageId === null &&
             !hasDeletions
         ) {
-            Shopwell.Store.get('shopwareApps').selectedIds = [];
+            Shopwell.Store.get('shopwellApps').selectedIds = [];
             next();
 
             return;
         }
 
         if (changedKeys.length === 0 && !hasDeletions) {
-            Shopwell.Store.get('shopwareApps').selectedIds = [];
+            Shopwell.Store.get('shopwellApps').selectedIds = [];
             next();
 
             return;
@@ -458,7 +458,7 @@ export default {
 
             try {
                 if (this.landingPageId === null) {
-                    Shopwell.Store.get('shopwareApps').selectedIds = [];
+                    Shopwell.Store.get('shopwellApps').selectedIds = [];
 
                     Shopwell.Store.get('swCategoryDetail').landingPage = null;
                     this.cmsPageState.resetCmsPageState();
@@ -466,7 +466,7 @@ export default {
                     return;
                 }
 
-                Shopwell.Store.get('shopwareApps').selectedIds = [this.landingPageId];
+                Shopwell.Store.get('shopwellApps').selectedIds = [this.landingPageId];
                 await Shopwell.Store.get('swCategoryDetail').loadActiveLandingPage({
                     repository: this.landingPageRepository,
                     apiContext: Shopwell.Context.api,
@@ -491,7 +491,7 @@ export default {
             this.isLoading = true;
 
             if (this.categoryId === null) {
-                Shopwell.Store.get('shopwareApps').selectedIds = [];
+                Shopwell.Store.get('shopwellApps').selectedIds = [];
 
                 Shopwell.Store.get('swCategoryDetail').category = null;
                 this.cmsPageState.resetCmsPageState();
@@ -499,7 +499,7 @@ export default {
                 return;
             }
 
-            Shopwell.Store.get('shopwareApps').selectedIds = [this.categoryId];
+            Shopwell.Store.get('shopwellApps').selectedIds = [this.categoryId];
             Shopwell.Store.get('swCategoryDetail')
                 .loadActiveCategory({
                     repository: this.categoryRepository,
@@ -738,7 +738,7 @@ export default {
         },
 
         addLandingPageSalesChannelError() {
-            const shopwareError = new Shopwell.Classes.ShopwellError({
+            const shopwellError = new Shopwell.Classes.ShopwellError({
                 code: 'landing_page_sales_channel_blank',
                 detail: 'This value should not be blank.',
                 status: '400',
@@ -746,7 +746,7 @@ export default {
 
             Shopwell.Store.get('error').addApiError({
                 expression: `landing_page.${this.landingPage.id}.salesChannels`,
-                error: shopwareError,
+                error: shopwellError,
             });
 
             this.createNotificationError({

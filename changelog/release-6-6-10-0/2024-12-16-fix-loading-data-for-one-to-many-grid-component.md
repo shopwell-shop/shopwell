@@ -2,7 +2,7 @@
 title: Fix loading data for one to many grid component
 issue: NEXT-00000
 author: Le Nguyen
-author_email: l.nguyen@shopware.com
+author_email: l.nguyen@shopwell.com
 author_github: @nguyenquocdaile
 ---
 # Administration

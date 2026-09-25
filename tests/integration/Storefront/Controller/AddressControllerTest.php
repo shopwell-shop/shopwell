@@ -82,7 +82,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
         static::getContainer()->get('request_stack')->push($request);
 
@@ -167,7 +167,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
 
         static::getContainer()->get('request_stack')->push($request);
@@ -233,7 +233,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
 
         static::getContainer()->get('request_stack')->push($request);
@@ -274,7 +274,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
 
         static::getContainer()->get('request_stack')->push($request);
@@ -313,7 +313,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
 
         static::getContainer()->get('request_stack')->push($request);
@@ -341,7 +341,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
 
         static::getContainer()->get('request_stack')->push($request);
@@ -366,7 +366,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
 
         static::getContainer()->get('request_stack')->push($request);
@@ -399,7 +399,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
 
         static::getContainer()->get('request_stack')->push($request);
@@ -442,7 +442,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
 
         static::getContainer()->get('request_stack')->push($request);
@@ -484,7 +484,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
 
         static::getContainer()->get('request_stack')->push($request);
@@ -516,7 +516,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
 
         static::getContainer()->get('request_stack')->push($request);
@@ -551,7 +551,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
 
         static::getContainer()->get('request_stack')->push($request);
@@ -660,7 +660,7 @@ class AddressControllerTest extends TestCase
 
         $request = new Request();
         $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
         $request->setSession($this->getSession());
 
         static::getContainer()->get('request_stack')->push($request);

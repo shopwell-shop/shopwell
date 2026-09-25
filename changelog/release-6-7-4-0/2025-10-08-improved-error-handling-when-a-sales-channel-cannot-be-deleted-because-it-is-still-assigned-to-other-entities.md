@@ -2,7 +2,7 @@
 title: Improved error handling when a sales channel cannot be deleted because it is still assigned to other entities
 issue: #12892
 author: Martin Krzykawski
-author_email: m.krzykawki@shopware.com
+author_email: m.krzykawki@shopwell.com
 author_github: @MartinKrzykawski
 ---
 # Administration

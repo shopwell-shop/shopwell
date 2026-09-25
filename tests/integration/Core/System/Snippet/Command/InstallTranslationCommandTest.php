@@ -96,7 +96,7 @@ class InstallTranslationCommandTest extends TestCase
         $this->provisionedLanguageName = $provisioned->name;
         $this->unprovisionedLocale = $unprovisioned->locale;
 
-        $client = static::getContainer()->get('shopware.translation.client');
+        $client = static::getContainer()->get('shopwell.translation.client');
         static::assertInstanceOf(ClientInterface::class, $client);
 
         $this->translationLoader = new TranslationLoader(

@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Removed duplicate service registration of `Shopware\Core\Content\Media\Message\GenerateThumbnailsHandler` from `src/Core/Framework/DependencyInjection/services.xml`
+* Removed duplicate service registration of `Shopwell\Core\Content\Media\Message\GenerateThumbnailsHandler` from `src/Core/Framework/DependencyInjection/services.xml`

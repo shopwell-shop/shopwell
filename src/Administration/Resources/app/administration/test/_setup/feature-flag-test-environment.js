@@ -21,8 +21,8 @@
 
 const { TestEnvironment } = require('jest-environment-jsdom');
 
-const pendingFeatureFlagsSymbol = Symbol.for('shopware.pendingActiveFeatureFlags');
-const defaultActiveFeatureFlagsSymbol = Symbol.for('shopware.defaultActiveFeatureFlags');
+const pendingFeatureFlagsSymbol = Symbol.for('shopwell.pendingActiveFeatureFlags');
+const defaultActiveFeatureFlagsSymbol = Symbol.for('shopwell.defaultActiveFeatureFlags');
 
 class FeatureFlagTestEnvironment extends TestEnvironment {
     activeFeatureFlagsByTest = new WeakMap();

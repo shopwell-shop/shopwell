@@ -29,7 +29,7 @@ class NoUnserializeUsageRule implements Rule
 {
     final public const FUNCTION_NAME = 'unserialize';
 
-    final public const RULE_IDENTIFIER = 'shopware.unserializeUsage';
+    final public const RULE_IDENTIFIER = 'shopwell.unserializeUsage';
 
     final public const ERROR_MESSAGE = 'Usage of unserialize() function in class "%s" is disallowed because it may introduce security vulnerabilities.';
 

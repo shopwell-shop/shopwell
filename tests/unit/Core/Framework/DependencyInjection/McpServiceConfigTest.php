@@ -101,7 +101,7 @@ class McpServiceConfigTest extends TestCase
 
     public function testStoreApiToolServiceIsTagged(): void
     {
-        static::assertTrue($this->container->getDefinition(StoreApiContextTool::class)->hasTag('shopware.store_api_mcp.tool'));
+        static::assertTrue($this->container->getDefinition(StoreApiContextTool::class)->hasTag('shopwell.store_api_mcp.tool'));
     }
 
     /**

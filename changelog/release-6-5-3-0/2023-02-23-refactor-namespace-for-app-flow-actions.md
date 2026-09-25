@@ -3,11 +3,11 @@ title: Refactor namespace for app flow actions
 issue: NEXT-25362
 ---
 # Core
-* Changed namespace from `Shopware\Core\Framework\App\FlowAction` to `Shopware\Core\Framework\App\Flow\Action` for classes bellow:
+* Changed namespace from `Shopwell\Core\Framework\App\FlowAction` to `Shopwell\Core\Framework\App\Flow\Action` for classes bellow:
   * FlowAction.php
   * AppFlowActionProvider.php
   * AppFlowActionLoadedSubscriber.php
-* Changed namespace from `Shopware\Core\Framework\App\FlowAction\Xml` to `Shopware\Core\Framework\App\Flow\Action\Xml` for classes bellow:
+* Changed namespace from `Shopwell\Core\Framework\App\FlowAction\Xml` to `Shopwell\Core\Framework\App\Flow\Action\Xml` for classes bellow:
   * Action.php
   * Actions.php
   * Config.php
@@ -16,13 +16,13 @@ issue: NEXT-25362
   * Metadata.php
   * Parameter.php
   * Parameters.php
-* Deprecated class `Shopware\Core\Framework\App\FlowAction\AppFlowActionProvider` use `Shopware\Core\Framework\App\Flow\FlowAction\AppFlowActionProvider` instead.
-* Deprecated `Shopware\Core\Framework\App\FlowAction\Schema\flow-action-1.0.xsd` use `Shopware\Core\Framework\App\Flow\Schema\flow-1.0.xsd` instead.
+* Deprecated class `Shopwell\Core\Framework\App\FlowAction\AppFlowActionProvider` use `Shopwell\Core\Framework\App\Flow\FlowAction\AppFlowActionProvider` instead.
+* Deprecated `Shopwell\Core\Framework\App\FlowAction\Schema\flow-action-1.0.xsd` use `Shopwell\Core\Framework\App\Flow\Schema\flow-1.0.xsd` instead.
 ___
 # Upgrade Information
 ## The app custom trigger and the app action can be defined in one xml file.
 Since v6.5.2.0, we can define the flow custom trigger and the flow app action in one XML file.
-To do that, we add the `Shopware\Core\Framework\App\Flow\Schema\flow-1.0.xsd` to support defining both of them.
+To do that, we add the `Shopwell\Core\Framework\App\Flow\Schema\flow-1.0.xsd` to support defining both of them.
 
 * ***Example***
 ```xml
@@ -38,7 +38,7 @@ To do that, we add the `Shopware\Core\Framework\App\Flow\Schema\flow-1.0.xsd` to
 ___
 # Next Major Version Changes
 ## Removal of `flow-action-1.0.xsd`
-We removed `Shopware\Core\Framework\App\FlowAction\Schema\flow-action-1.0.xsd`, use `Shopware\Core\Framework\App\Flow\Schema\flow-1.0.xsd` instead.
-## Removal of `Shopware\Core\Framework\App\FlowAction` and `Shopware\Core\Framework\App\FlowAction\Xml`
-We moved all class from namespaces `Shopware\Core\Framework\App\FlowAction` to `Shopware\Core\Framework\App\Flow\Action` and `Shopware\Core\Framework\App\FlowAction\Xml` to `Shopware\Core\Framework\App\Flow\Action\Xml`.
+We removed `Shopwell\Core\Framework\App\FlowAction\Schema\flow-action-1.0.xsd`, use `Shopwell\Core\Framework\App\Flow\Schema\flow-1.0.xsd` instead.
+## Removal of `Shopwell\Core\Framework\App\FlowAction` and `Shopwell\Core\Framework\App\FlowAction\Xml`
+We moved all class from namespaces `Shopwell\Core\Framework\App\FlowAction` to `Shopwell\Core\Framework\App\Flow\Action` and `Shopwell\Core\Framework\App\FlowAction\Xml` to `Shopwell\Core\Framework\App\Flow\Action\Xml`.
 Please use new namespaces.

@@ -6,4 +6,4 @@ author_email: alexanderschneider85@gmail.com
 author_github: GM-Alex
 ---
 # Core
-* Changed `Shopware\Storefront\Framework\Csrf\CsrfPlaceholderHandler` to handle multiple usages of the same CSRF placeholder in one template correctly
+* Changed `Shopwell\Storefront\Framework\Csrf\CsrfPlaceholderHandler` to handle multiple usages of the same CSRF placeholder in one template correctly

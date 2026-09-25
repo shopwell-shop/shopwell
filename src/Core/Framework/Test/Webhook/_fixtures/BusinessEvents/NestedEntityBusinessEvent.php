@@ -26,7 +26,7 @@ class NestedEntityBusinessEvent implements FlowEventAware, BusinessEventEncoderT
                 ->add('tax', new EntityType(TaxDefinition::class)));
     }
 
-    public function getEncodeValues(string $shopwareVersion): array
+    public function getEncodeValues(string $shopwellVersion): array
     {
         return [
             'object' => [

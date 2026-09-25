@@ -10,7 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use Shopwell\Core\System\Snippet\Struct\TranslationConfig;
 
 /**
- * Controls the mocked translation HTTP client (`shopware.translation.client`) in integration tests,
+ * Controls the mocked translation HTTP client (`shopwell.translation.client`) in integration tests,
  * so no real requests are made to the translations repository.
  *
  * @internal
@@ -29,7 +29,7 @@ trait TranslationClientBehaviour
 
     public function getTranslationRequestHandler(): MockHandler
     {
-        $handler = static::getContainer()->get('shopware.translation.mock_handler');
+        $handler = static::getContainer()->get('shopwell.translation.mock_handler');
         static::assertInstanceOf(MockHandler::class, $handler);
 
         return $handler;

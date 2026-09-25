@@ -18,7 +18,7 @@ use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
 use Shopwell\Core\Test\PHPUnit\CompletionGuard\CompletionGuard;
 
 /**
- * Regression test for the category indexing deadlock of shopware/shopware#6540 (NEXT-22174).
+ * Regression test for the category indexing deadlock of shopwell/shopwell#6540 (NEXT-22174).
  *
  * A concurrent `POST /api/_action/sync` category write runs two indexing updaters that both deadlocked
  * under load, for different reasons and on different statements. This test drives each real updater from

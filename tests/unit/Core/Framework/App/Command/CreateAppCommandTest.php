@@ -52,7 +52,7 @@ class CreateAppCommandTest extends TestCase
             <<<EOL
             <?xml version="1.0" encoding="UTF-8"?>
             <manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                      xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
+                      xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
                 <meta>
                     <name>TestApp</name>
                     <label>My Example App</label>
@@ -86,7 +86,7 @@ class CreateAppCommandTest extends TestCase
             <<<EOL
             <?xml version="1.0" encoding="UTF-8"?>
             <manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                      xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
+                      xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
                 <meta>
                     <name>TestApp</name>
                     <label>My Example App</label>
@@ -148,7 +148,7 @@ class CreateAppCommandTest extends TestCase
             <<<EOL
             <?xml version="1.0" encoding="UTF-8"?>
             <manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                      xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
+                      xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
                 <meta>
                     <name>TestApp</name>
                     <label>My Example App</label>
@@ -189,7 +189,7 @@ class CreateAppCommandTest extends TestCase
             <<<EOL
             <?xml version="1.0" encoding="UTF-8"?>
             <manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                      xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
+                      xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
                 <meta>
                     <name>TestApp</name>
                     <label>My Example App</label>

@@ -20,14 +20,14 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(MigrationCommand::class)]
 class MigrationCommandTest extends TestCase
 {
-    private const SHOPWARE_VERSION = '6.5.2.0';
+    private const SHOPWELL_VERSION = '6.5.2.0';
 
     public function testRequiresTimestampCapOrAllOption(): void
     {
         $command = new MigrationCommand(
             static::createStub(MigrationCollectionLoader::class),
             static::createStub(TagAwareAdapterInterface::class),
-            self::SHOPWARE_VERSION,
+            self::SHOPWELL_VERSION,
         );
 
         $this->expectExceptionObject(MigrationException::invalidArgument('missing timestamp cap or --all option'));
@@ -40,7 +40,7 @@ class MigrationCommandTest extends TestCase
         $command = new MigrationCommand(
             static::createStub(MigrationCollectionLoader::class),
             static::createStub(TagAwareAdapterInterface::class),
-            self::SHOPWARE_VERSION,
+            self::SHOPWELL_VERSION,
         );
 
         $this->expectExceptionObject(MigrationException::invalidArgument('Running migrations for multiple identifiers without --all option or with --limit option is not supported.'));
@@ -63,7 +63,7 @@ class MigrationCommandTest extends TestCase
         $loader->expects($this->once())
             ->method('collectAllForVersion')
             ->willReturnCallback(static function (string $version) use ($collection): MigrationCollection {
-                static::assertSame(self::SHOPWARE_VERSION, $version);
+                static::assertSame(self::SHOPWELL_VERSION, $version);
 
                 return $collection;
             });
@@ -71,7 +71,7 @@ class MigrationCommandTest extends TestCase
         $cache = $this->createMock(TagAwareAdapterInterface::class);
         $cache->expects($this->once())->method('clear')->willReturn(true);
 
-        $command = new MigrationCommand($loader, $cache, self::SHOPWARE_VERSION);
+        $command = new MigrationCommand($loader, $cache, self::SHOPWELL_VERSION);
         $tester = new CommandTester($command);
 
         $tester->execute(['--all' => true]);
@@ -102,7 +102,7 @@ class MigrationCommandTest extends TestCase
         $cache = $this->createMock(TagAwareAdapterInterface::class);
         $cache->expects($this->never())->method('clear');
 
-        $command = new MigrationCommand($loader, $cache, self::SHOPWARE_VERSION);
+        $command = new MigrationCommand($loader, $cache, self::SHOPWELL_VERSION);
         $tester = new CommandTester($command);
 
         $tester->execute(['identifier' => ['MyPlugin'], '--all' => true]);
@@ -119,7 +119,7 @@ class MigrationCommandTest extends TestCase
         $cache = $this->createMock(TagAwareAdapterInterface::class);
         $cache->expects($this->never())->method('clear');
 
-        $command = new MigrationCommand($loader, $cache, self::SHOPWARE_VERSION);
+        $command = new MigrationCommand($loader, $cache, self::SHOPWELL_VERSION);
         $tester = new CommandTester($command);
 
         $tester->execute(['identifier' => ['MyPlugin'], '--all' => true]);
@@ -146,7 +146,7 @@ class MigrationCommandTest extends TestCase
         $command = new MigrationCommand(
             $loader,
             static::createStub(TagAwareAdapterInterface::class),
-            self::SHOPWARE_VERSION,
+            self::SHOPWELL_VERSION,
         );
 
         $this->expectException(MigrationException::class);

@@ -3,7 +3,7 @@ title: Skip the calculation and rendering of the checkout info widget if the car
 issue: NEXT-20691
 ---
 # Storefront
-* Changed `\Shopware\Storefront\Controller\CheckoutController::info()` to return an empty response with HTTP status code `204 - No Content` if cart is empty, beginning with `v6.5.0.0`.
+* Changed `\Shopwell\Storefront\Controller\CheckoutController::info()` to return an empty response with HTTP status code `204 - No Content` if cart is empty, beginning with `v6.5.0.0`.
 * Changed `cart-widget.plugin.js` to handle status code `204` correctly.
 ___
 # Next Major Version Changes

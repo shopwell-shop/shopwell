@@ -35,7 +35,7 @@ class RedisConnectionsCompilerPassTest extends TestCase
 
     public function testProcessCreatesConnections(): void
     {
-        $this->containerBuilder->setParameter('shopware.redis.connections', [
+        $this->containerBuilder->setParameter('shopwell.redis.connections', [
             'db1' => ['dsn' => 'redis://localhost:6379/1'],
             'db2' => ['dsn' => 'redis://localhost:6379/2'],
         ]);
@@ -43,11 +43,11 @@ class RedisConnectionsCompilerPassTest extends TestCase
         $compilerPass = new RedisConnectionsCompilerPass();
         $compilerPass->process($this->containerBuilder);
 
-        static::assertTrue($this->containerBuilder->hasDefinition('shopware.redis.connection.db1'));
-        static::assertTrue($this->containerBuilder->hasDefinition('shopware.redis.connection.db2'));
-        static::assertFalse($this->containerBuilder->hasDefinition('shopware.redis.connection.default'));
+        static::assertTrue($this->containerBuilder->hasDefinition('shopwell.redis.connection.db1'));
+        static::assertTrue($this->containerBuilder->hasDefinition('shopwell.redis.connection.db2'));
+        static::assertFalse($this->containerBuilder->hasDefinition('shopwell.redis.connection.default'));
 
-        $db1Definition = $this->containerBuilder->getDefinition('shopware.redis.connection.db1');
+        $db1Definition = $this->containerBuilder->getDefinition('shopwell.redis.connection.db1');
         static::assertSame('Redis', $db1Definition->getClass());
         static::assertFalse($db1Definition->isLazy());
 
@@ -61,7 +61,7 @@ class RedisConnectionsCompilerPassTest extends TestCase
         static::assertSame('redis://localhost:6379/1', $db1Definition->getArgument(0));
         static::assertFalse($db1Definition->isPublic());
 
-        $db2Definition = $this->containerBuilder->getDefinition('shopware.redis.connection.db2');
+        $db2Definition = $this->containerBuilder->getDefinition('shopwell.redis.connection.db2');
         static::assertSame('redis://localhost:6379/2', $db2Definition->getArgument(0));
     }
 
@@ -86,14 +86,14 @@ class RedisConnectionsCompilerPassTest extends TestCase
 
     public function testPrepareConnectionsIgnoresNonArrayConnections(): void
     {
-        $this->containerBuilder->setParameter('shopware.redis.connections', 'invalid');
+        $this->containerBuilder->setParameter('shopwell.redis.connections', 'invalid');
 
         static::assertSame([], (new RedisConnectionsCompilerPass())->prepareConnections($this->containerBuilder));
     }
 
     public function testPrepareConnectionsThrowsForNonStringDsn(): void
     {
-        $this->containerBuilder->setParameter('shopware.redis.connections', [
+        $this->containerBuilder->setParameter('shopwell.redis.connections', [
             'db' => ['dsn' => 123],
         ]);
 

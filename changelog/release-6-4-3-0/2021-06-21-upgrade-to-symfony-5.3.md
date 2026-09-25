@@ -17,7 +17,7 @@ Below is an example how to add a method call for the service using the XML defin
 ### Before
 
 ```xml
-<service id="Shopware\Storefront\Controller\AccountPaymentController">
+<service id="Shopwell\Storefront\Controller\AccountPaymentController">
     <call method="setContainer">
         <argument type="service" id="service_container"/>
     </call>
@@ -27,7 +27,7 @@ Below is an example how to add a method call for the service using the XML defin
 ### After
 
 ```xml
-<service id="Shopware\Storefront\Controller\AccountPaymentController">
+<service id="Shopwell\Storefront\Controller\AccountPaymentController">
     <call method="setContainer">
         <argument type="service" id="service_container"/>
     </call>

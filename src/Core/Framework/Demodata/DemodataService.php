@@ -20,7 +20,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[Package('framework')]
 class DemodataService
 {
-    public const DEMODATA_CUSTOM_FIELDS_KEY = 'shopwareDemoData';
+    public const DEMODATA_CUSTOM_FIELDS_KEY = 'shopwellDemoData';
 
     /**
      * @internal

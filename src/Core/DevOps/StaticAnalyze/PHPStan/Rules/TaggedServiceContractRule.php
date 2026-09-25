@@ -118,7 +118,7 @@ class TaggedServiceContractRule implements Rule
                 $class->getName(),
                 $this->formatContracts($contract)
             ))
-                ->identifier('shopware.taggedServiceContract')
+                ->identifier('shopwell.taggedServiceContract')
                 ->build();
         }
 
@@ -155,7 +155,7 @@ class TaggedServiceContractRule implements Rule
                     $parameter->getName(),
                     $this->formatContracts($contract)
                 ))
-                    ->identifier('shopware.taggedServiceContract')
+                    ->identifier('shopwell.taggedServiceContract')
                     ->build(),
             ];
         }
@@ -172,7 +172,7 @@ class TaggedServiceContractRule implements Rule
                 $collectionType,
                 $collectionType
             ))
-                ->identifier('shopware.taggedServiceContract')
+                ->identifier('shopwell.taggedServiceContract')
                 ->build();
         }
 

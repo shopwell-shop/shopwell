@@ -34,7 +34,7 @@ class MeterTest extends TestCase
     {
         parent::setUp();
         $meter = static::getContainer()->get(Meter::class);
-        $definitions = static::getContainer()->getParameter('shopware.telemetry.metrics.definitions');
+        $definitions = static::getContainer()->getParameter('shopwell.telemetry.metrics.definitions');
         $transportsCollection = static::getContainer()->get(TransportCollection::class);
         assertInstanceOf(TransportCollection::class, $transportsCollection);
         $traceableTransport = current(iterator_to_array($transportsCollection->getIterator()));

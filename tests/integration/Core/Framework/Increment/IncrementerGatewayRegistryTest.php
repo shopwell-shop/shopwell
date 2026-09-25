@@ -20,7 +20,7 @@ class IncrementerGatewayRegistryTest extends TestCase
 
     public function testGetUserActivityPool(): void
     {
-        $registry = static::getContainer()->get('shopware.increment.gateway.registry');
+        $registry = static::getContainer()->get('shopwell.increment.gateway.registry');
 
         static::assertInstanceOf(AbstractIncrementer::class, $registry->get(IncrementGatewayRegistry::USER_ACTIVITY_POOL));
     }
@@ -32,7 +32,7 @@ class IncrementerGatewayRegistryTest extends TestCase
     {
         Feature::skipTestIfActive('v6.8.0.0', $this);
 
-        $registry = static::getContainer()->get('shopware.increment.gateway.registry');
+        $registry = static::getContainer()->get('shopwell.increment.gateway.registry');
 
         static::assertInstanceOf(AbstractIncrementer::class, $registry->get(IncrementGatewayRegistry::MESSAGE_QUEUE_POOL));
     }
@@ -41,7 +41,7 @@ class IncrementerGatewayRegistryTest extends TestCase
     {
         $this->expectExceptionObject(new IncrementGatewayNotFoundException('custom_pool'));
 
-        $registry = static::getContainer()->get('shopware.increment.gateway.registry');
+        $registry = static::getContainer()->get('shopwell.increment.gateway.registry');
         $registry->get('custom_pool');
     }
 }

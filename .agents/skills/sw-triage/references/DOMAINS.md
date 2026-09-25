@@ -1,12 +1,12 @@
 # Domain Label Catalogue
 
-Suggested labels MUST come from this list — every entry below exists as a real label on `shopware/shopware`. **Use 1–2 labels.** When picking, prefer the primary surface area where the user observes the bug.
+Suggested labels MUST come from this list — every entry below exists as a real label on `shopwell/shopwell`. **Use 1–2 labels.** When picking, prefer the primary surface area where the user observes the bug.
 
 > **Maintainer note:** the CI validator `.github/bin/js/validate-sw-triage-output.ts` hardcodes this label set (`VALID_LABELS` / `COMPONENT_LABELS`), and `.github/bin/js/report-phpunit-nightly-failures.ts` hardcodes the package-key → label mapping (`PACKAGE_LABELS`). When you add or remove a label or package key here, mirror the change there or valid triages will fail validation.
 
 ## Primary signal: read the package marker on the affected file
 
-Shopware annotates code ownership directly in the source. **This is the WG-Tech-Architecture-curated source of truth — trust it over any path heuristic and over outdated Confluence text.**
+Shopwell annotates code ownership directly in the source. **This is the WG-Tech-Architecture-curated source of truth — trust it over any path heuristic and over outdated Confluence text.**
 
 - **PHP** (`src/**/*.php`): class-level attribute `#[Package('<team-key>')]`. PHPStan enforces presence — see `coding-guidelines/core/`.
 - **JS / TS** (`src/Administration/**/*.{js,ts}`): JSDoc comment `@sw-package <team-key>`. Present on most module files; grep the file or its `index.{js,ts}`.
@@ -139,12 +139,12 @@ For other domain labels (`domain/inventory`, `domain/checkout`, `domain/discover
 
 ## Labels with no code-side `#[Package(...)]` equivalent
 
-These labels exist on `shopware/shopware` but have no `#[Package(...)]` counterpart in this repo. Apply them based on issue topic / context, not on file paths.
+These labels exist on `shopwell/shopwell` but have no `#[Package(...)]` counterpart in this repo. Apply them based on issue topic / context, not on file paths.
 
 | Label | Apply when |
 |---|---|
 | `domain/b2b` | Issue is about B2B Suite (employee management, order approvals, quote management, quick orders, shopping lists, organization units, Digital Sales Rooms, Sales Agent). The code lives in `src/Commercial/B2B/` (a separate package not always present in this repo). Trigger on keywords: B2B, employee, quote, approval, organisation/organization unit, shopping list, quick order. |
-| `domain/dx-tools` | Issue is about developer tooling: `shopware-cli` (separate repo), root-level `.github/` scripts, CI workflows, AI triage / AI tooling. Touched paths: `.github/`, `bin/`, dev composer/npm scripts. |
+| `domain/dx-tools` | Issue is about developer tooling: `shopwell-cli` (separate repo), root-level `.github/` scripts, CI workflows, AI triage / AI tooling. Touched paths: `.github/`, `bin/`, dev composer/npm scripts. |
 | `domain/quality-ops` | Issue is about the acceptance test suite (Playwright), `tests/acceptance/`, or QA tooling/processes. |
 | `domain/service-enablement` | Issue is about the bridge to external services (cross-org cross-cutting work). No clean code mapping inside this repo — Webhook/App-System/Integration are all `domain/framework` here. Apply rarely, only when the issue is explicitly about service integration plumbing that's not framework-level. |
 | `domain/ux` | Issue is about the design system / Meteor Component Library / shared admin look-and-feel. The Meteor library lives in a separate repo. |

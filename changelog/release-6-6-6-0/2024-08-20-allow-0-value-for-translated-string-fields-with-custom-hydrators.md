@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Changed hydration of translated fields in `Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityHydrator::translate` to check if the value is strictly equal to null and not just empty, to allow the value "0" for translated fields
+* Changed hydration of translated fields in `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityHydrator::translate` to check if the value is strictly equal to null and not just empty, to allow the value "0" for translated fields

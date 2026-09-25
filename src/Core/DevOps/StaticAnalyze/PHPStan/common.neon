@@ -48,7 +48,7 @@ parameters:
         no_mixed_caller: true
         null_over_false: true
 
-    shopware:
+    shopwell:
         allowedNonDomainExceptions:
             - Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException
             - Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException
@@ -75,12 +75,12 @@ parameters:
             - 'Shopwell\Tests\DevOps\'
 
 services:
-    -   factory: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Configuration(%shopware%)
+    -   factory: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Configuration(%shopwell%)
     -   class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\AclValidPermissionsHelper
 
 parametersSchema:
-    ?shopwareTaggedServiceContractAdditionalTagContracts: arrayOf(string(), string())
-    shopware: structure([
+    ?shopwellTaggedServiceContractAdditionalTagContracts: arrayOf(string(), string())
+    shopwell: structure([
         allowedNonDomainExceptions: list(string),
         allowedStorefrontRouteNamespaces: list(string),
         allowedUnitTestClassNamespaces: list(string),

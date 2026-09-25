@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 #[CoversClass(ScriptExecutionFailedException::class)]
 class ScriptExecutionFailedExceptionTest extends TestCase
 {
-    #[TestDox('adopts status and error code from a shopware root exception')]
+    #[TestDox('adopts status and error code from a shopwell root exception')]
     public function testAdoptsRootExceptionData(): void
     {
         $root = CartException::cartLocked('token');
@@ -29,7 +29,7 @@ class ScriptExecutionFailedExceptionTest extends TestCase
         static::assertSame($root->getErrorCode(), $exception->getErrorCode());
     }
 
-    #[TestDox('falls back to 500 and its own error code without a shopware root exception')]
+    #[TestDox('falls back to 500 and its own error code without a shopwell root exception')]
     public function testFallsBackWithoutRoot(): void
     {
         $exception = new ScriptExecutionFailedException('cart', 'my-script.twig', new \RuntimeException('plain'));

@@ -12,7 +12,7 @@ class ReverseProxyCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        if (!$container->getParameter('shopware.http_cache.reverse_proxy.enabled')) {
+        if (!$container->getParameter('shopwell.http_cache.reverse_proxy.enabled')) {
             $container->removeDefinition(ReverseProxyCache::class);
             $container->removeDefinition(AbstractReverseProxyGateway::class);
             $container->removeDefinition(FastlyReverseProxyGateway::class);
@@ -26,7 +26,7 @@ class ReverseProxyCompilerPass implements CompilerPassInterface
         $container->setAlias(CacheStore::class, ReverseProxyCache::class);
         $container->getAlias(CacheStore::class)->setPublic(true);
 
-        if ($container->getParameter('shopware.http_cache.reverse_proxy.fastly.enabled')) {
+        if ($container->getParameter('shopwell.http_cache.reverse_proxy.fastly.enabled')) {
             $container->setAlias(AbstractReverseProxyGateway::class, FastlyReverseProxyGateway::class);
         }
     }

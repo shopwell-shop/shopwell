@@ -2,7 +2,7 @@
 title: use file extension and mime type for validating uploads
 issue: NEXT-28781
 author: Lars Kemper
-author_email: l.kemper@shopware.com
+author_email: l.kemper@shopwell.com
 author_github: @LarsKemper
 ---
 # Administration

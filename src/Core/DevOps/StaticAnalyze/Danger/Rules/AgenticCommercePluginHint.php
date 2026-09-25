@@ -52,7 +52,7 @@ class AgenticCommercePluginHint
         $context->warning(
             'This Pull Request touches the <strong>Agentic Commerce Sales Channel</strong> feature.<br/>'
             . 'If you added or changed functionality here, please consider porting the change to the compatibility plugin'
-            . ' SwagAgenticCommerce (https://github.com/shopware/SwagAgenticCommerce) so it is also available to merchants on older Shopwell versions.<br/><br/>'
+            . ' SwagAgenticCommerce (https://github.com/shopwell-shop/SwagAgenticCommerce) so it is also available to merchants on older Shopwell versions.<br/><br/>'
             . 'Affected files:<br/>'
             . implode('<br/>', array_keys($matched))
         );

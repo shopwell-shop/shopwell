@@ -18,7 +18,7 @@ use Shopwell\Core\System\User\Aggregate\UserConfig\UserConfigCollection;
 #[Package('fundamentals@after-sales')]
 class FrwRequestOptionsProvider extends AbstractStoreRequestOptionsProvider
 {
-    private const SHOPWARE_TOKEN_HEADER = 'X-Shopwell-Token';
+    private const SHOPWELL_TOKEN_HEADER = 'X-Shopwell-Token';
 
     /**
      * @param EntityRepository<UserConfigCollection> $userConfigRepository
@@ -31,7 +31,7 @@ class FrwRequestOptionsProvider extends AbstractStoreRequestOptionsProvider
 
     public function getAuthenticationHeader(Context $context): array
     {
-        return array_filter([self::SHOPWARE_TOKEN_HEADER => $this->getFrwUserToken($context)]);
+        return array_filter([self::SHOPWELL_TOKEN_HEADER => $this->getFrwUserToken($context)]);
     }
 
     public function getDefaultQueryParameters(Context $context): array

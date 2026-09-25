@@ -81,7 +81,7 @@ class SetPaymentOrderRouteTest extends TestCase
             '/store-api/account/login',
             [
                 'email' => $email,
-                'password' => 'shopware',
+                'password' => 'shopwell',
             ]
         );
         $response = $this->browser->getResponse();

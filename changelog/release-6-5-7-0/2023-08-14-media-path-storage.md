@@ -2,7 +2,7 @@
 title: Media path storage
 issue: NEXT-25584
 author: Oliver Skroblin
-author_email: o.skroblin@shopware.com
+author_email: o.skroblin@shopwell.com
 ---
 # Core
 * Added new media path system where the path is generated externally or when the media file is uploaded. With this change we did the following deprecations and additions:
@@ -12,8 +12,8 @@ author_email: o.skroblin@shopware.com
 * Added `AbstractMediaLocationBuilder`, which acts as a factory class, to build the location structs (`MediaLocationStruct` and `ThumbnailLocationStruct`) for the path generation
 * Added `MediaLocationEvent` and `ThumbnailLocationEvent`, which are dispatched when the location structs are build and processed to for the path generation
 * Added `UpdatePath` command, which allows to loop all media and thumbnails, generate their path and store it in the database
-* Added `\Shopware\Core\Framework\Struct\StateAwareTrait::state`, which allows to scope state changes
-* Added new `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\PostUpdateIndexer` class, which allows to run indexer after the update process but exclude them from whole indexing processes.
+* Added `\Shopwell\Core\Framework\Struct\StateAwareTrait::state`, which allows to scope state changes
+* Added new `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\PostUpdateIndexer` class, which allows to run indexer after the update process but exclude them from whole indexing processes.
 * Added new `media_path` feature flag which allows to pre-activate the media path refactoring
 ___
 # Upgrade Information
@@ -26,7 +26,7 @@ You can now simply adding a context state temporarily for an internal process wi
 
 namespace Examples;
 
-use Shopware\Core\Framework\Context;
+use Shopwell\Core\Framework\Context;
 
 class Before
 {
@@ -69,7 +69,7 @@ Due to this change, the usage of the `UrlGeneratorInterface` changed. The genera
 
 namespace Examples;
 
-use Shopware\Core\Content\Media\Core\Application\AbstractMediaUrlGenerator;use Shopware\Core\Content\Media\Core\Params\UrlParams;use Shopware\Core\Content\Media\MediaCollection;use Shopware\Core\Content\Media\MediaEntity;use Shopware\Core\Content\Media\Pathname\UrlGeneratorInterface;
+use Shopwell\Core\Content\Media\Core\Application\AbstractMediaUrlGenerator;use Shopwell\Core\Content\Media\Core\Params\UrlParams;use Shopwell\Core\Content\Media\MediaCollection;use Shopwell\Core\Content\Media\MediaEntity;use Shopwell\Core\Content\Media\Pathname\UrlGeneratorInterface;
 
 class BeforeChange
 {
@@ -154,7 +154,7 @@ class ForwardCompatible
 ### Path strategies
 Beside the url generator change, we also had to change the media path strategy. The strategies are no longer working with a `MediaEntity`. They are now working with a `MediaFile` object. This object is a simple struct, which contains the path and the updated at timestamp. The path is the same as the one stored in the database. The updated at timestamp is the timestamp, when the path was generated. This is important for the cache invalidation. The `MediaFile` object is also used for the thumbnail generation. The thumbnail generation is now also working with a `MediaLocation` object instead.
 
-As foundation, we use `\Shopware\Core\Content\Media\Core\Application\AbstractMediaPathStrategy` as base class and dependency injection service id:
+As foundation, we use `\Shopwell\Core\Content\Media\Core\Application\AbstractMediaPathStrategy` as base class and dependency injection service id:
 
 ```php
 <?php
@@ -215,7 +215,7 @@ These structs are simple structs, which contains the necessary information to ge
 
 namespace Examples;
 
-use Shopware\Core\Content\Media\Core\Application\AbstractMediaPathStrategy;use Shopware\Core\Content\Media\Core\Application\MediaLocationBuilder;
+use Shopwell\Core\Content\Media\Core\Application\AbstractMediaPathStrategy;use Shopwell\Core\Content\Media\Core\Application\MediaLocationBuilder;
 
 class Consumer
 {
@@ -244,7 +244,7 @@ ___
 
 namespace Examples;
 
-use Shopware\Core\Content\Media\Core\Application\AbstractMediaUrlGenerator;use Shopware\Core\Content\Media\Core\Params\UrlParams;use Shopware\Core\Content\Media\MediaCollection;use Shopware\Core\Content\Media\MediaEntity;use Shopware\Core\Content\Media\Pathname\UrlGeneratorInterface;
+use Shopwell\Core\Content\Media\Core\Application\AbstractMediaUrlGenerator;use Shopwell\Core\Content\Media\Core\Params\UrlParams;use Shopwell\Core\Content\Media\MediaCollection;use Shopwell\Core\Content\Media\MediaEntity;use Shopwell\Core\Content\Media\Pathname\UrlGeneratorInterface;
 
 class BeforeChange
 {

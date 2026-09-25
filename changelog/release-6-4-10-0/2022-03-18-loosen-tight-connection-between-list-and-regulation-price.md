@@ -2,7 +2,7 @@
 title: Loosen tight connection between list and regulation price
 issue: NEXT-19804
 author: Ramona Schwering
-author_email: r.schwering@shopware.com
+author_email: r.schwering@shopwell.com
 author_github: leichteckig
 ---
 # Storefront

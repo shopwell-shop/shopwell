@@ -7,7 +7,7 @@ UPGRADE FROM 6.3.x.x to 6.4
 The whitelist can be extended using a yaml configuration:
 
 ```yaml
-shopware:
+shopwell:
     twig:
         allowed_php_functions: [ "is_bool" ]
 ```
@@ -15,28 +15,28 @@ shopware:
 # 6.4.18.0
 ## Define country address formatting structure
 From the next major v6.5.0.0, address of a country are no longer fixed, but you can modify it by drag-drop address elements in admin Settings > Countries > detail page > Address tab
-The address elements are stored as a structured json in `country_translation.address_format`, the default structure can be found in `\Shopware\Core\System\Country\CountryDefinition::DEFAULT_ADDRESS_FORMAT`
+The address elements are stored as a structured json in `country_translation.address_format`, the default structure can be found in `\Shopwell\Core\System\Country\CountryDefinition::DEFAULT_ADDRESS_FORMAT`
 ## Extension can add custom element to use in address formatting structure
 * Plugins can define their own custom snippets by placed twig files in `<pluginRoot>/src/Resources/views/snippets`, you can refer to the default Core address snippets in `src/Core/Framework/Resources/views/snippets/address`
 * Use the respective mutations instead
 ## Deprecated manifest-1.0.xsd
 
-With the upcoming major release we are going to release a new XML-schema for Shopware Apps. In the new schema we remove two deprecations from the existing schema.
+With the upcoming major release we are going to release a new XML-schema for Shopwell Apps. In the new schema we remove two deprecations from the existing schema.
 
 1. attribute `parent` for element `module` will be required.
 
-   Please make sure that every of your admin modules has this attribute set like described in [our documentation](https://developer.shopware.com/docs/guides/plugins/apps/administration/add-custom-modules)
+   Please make sure that every of your admin modules has this attribute set like described in [our documentation](https://developer.shopwell.com/docs/guides/plugins/apps/administration/add-custom-modules)
 2. attribute `openNewTab` for element `action-button` will be removed.
 
-    Make sure to remove the attribute `openNewTab` from your `action-button` elements in your `manifest.xml` and use ActionButtonResponses as described in our [documentation](https://developer.shopware.com/docs/guides/plugins/apps/administration/add-custom-action-button) instead.
+    Make sure to remove the attribute `openNewTab` from your `action-button` elements in your `manifest.xml` and use ActionButtonResponses as described in our [documentation](https://developer.shopwell.com/docs/guides/plugins/apps/administration/add-custom-action-button) instead.
 3. Deprecation of `manifest-1.0.xsd`
 
-    Update the `xsi:noNamespaceSchemaLocation` attribute of your `manifest` root element. to `https://raw.githubusercontent.com/shopware/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd`
+    Update the `xsi:noNamespaceSchemaLocation` attribute of your `manifest` root element. to `https://raw.githubusercontent.com/shopwell/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd`
 ### MessageQueue Deprecations
 
 For v6.5.0.0 we will remove our wrapper around the symfony messenger component and remove the enqueue integration as well. Therefore, we deprecated several classes for the retry and encryption handling, without replacement, as we  will use the symfony standards for that.
 
-Additionally, we deprecated the `Shopware\Core\Framework\MessageQueue\Handler\AbstractMessageHandler`, you should directly implement the `\Symfony\Component\Messenger\Handler\MessageSubscriberInterface` instead.
+Additionally, we deprecated the `Shopwell\Core\Framework\MessageQueue\Handler\AbstractMessageHandler`, you should directly implement the `\Symfony\Component\Messenger\Handler\MessageSubscriberInterface` instead.
 
 Before:
 ```php
@@ -73,10 +73,10 @@ class MyMessageHandler implements MessageSubscriberInterface
 # 6.4.17.0
 * Themes' snippets are now only applied to Storefront sales channels when they or their child themes are assigned to that sales channel
 ## Disabling caching of store-api-routes
-The Cache for Store-API-Routes can now be disabled by implementing the `Shopware\Core\Framework\Adapter\Cache\StoreApiRouteCacheKeyEvent` and calling `disableCache()` method on the event.
+The Cache for Store-API-Routes can now be disabled by implementing the `Shopwell\Core\Framework\Adapter\Cache\StoreApiRouteCacheKeyEvent` and calling `disableCache()` method on the event.
 ## Limit remote URL file upload max file size
 By default, there is no limit on how large a file is allowed to be when using the URL upload feature. The new parameter
-`shopware.media.url_upload_max_size` can be used to limit the maximum file size. The values can be written in bytes or 
+`shopwell.media.url_upload_max_size` can be used to limit the maximum file size. The values can be written in bytes or 
 in a human-readable format like: 1mb, 512kb, 2gb. The default is 0 (unlimited).
 
 # 6.4.16.0
@@ -118,10 +118,10 @@ Demodata generators now accepts the following new attributes:
 * `option-description`: Description for the command line option, not required.
 
 ```xml
-<service id="Shopware\Core\Framework\Demodata\Generator\PropertyGroupGenerator">
+<service id="Shopwell\Core\Framework\Demodata\Generator\PropertyGroupGenerator">
     <argument type="service" id="property_group.repository" />
     
-    <tag name="shopware.demodata_generator" option-name="properties" option-default="10" option-description="Property group count (option count rand(30-300))"/>
+    <tag name="shopwell.demodata_generator" option-name="properties" option-default="10" option-description="Property group count (option count rand(30-300))"/>
 </service>
 ```
 ## Dump env vars
@@ -179,12 +179,12 @@ POST /api/_action/order/document/download
 
 ## Deprecation of DocumentPageLoader
 
-* The `\Shopware\Storefront\Page\Account\Document\DocumentPageLoader` and its page, page loaded event was deprecated and will be removed in v6.5.0.0 due to unused, please use the newly added `\Shopware\Core\Checkout\Document\SalesChannel\DocumentRoute` instead to download generated document. 
+* The `\Shopwell\Storefront\Page\Account\Document\DocumentPageLoader` and its page, page loaded event was deprecated and will be removed in v6.5.0.0 due to unused, please use the newly added `\Shopwell\Core\Checkout\Document\SalesChannel\DocumentRoute` instead to download generated document. 
 
 ## Deprecation of Document generators, introduce Document renderer services
 
-* All the document generators in `Shopware\Core\Checkout\Document\DocumentGenerator` (tagged as `document.generator`) will be deprecated and will be removed in v6.5.0.0, please adjust your changes if you're touching these services, you might want to decorate `Shopware\Core\Checkout\Document\Renderer\*` (tagged as `document.renderer`) instead
-* If you need to manipulate the fetched orders in renderer services, you can listen to according events which extends from `Shopware\Core\Checkout\Document\Event\DocumentOrderEvent`
+* All the document generators in `Shopwell\Core\Checkout\Document\DocumentGenerator` (tagged as `document.generator`) will be deprecated and will be removed in v6.5.0.0, please adjust your changes if you're touching these services, you might want to decorate `Shopwell\Core\Checkout\Document\Renderer\*` (tagged as `document.renderer`) instead
+* If you need to manipulate the fetched orders in renderer services, you can listen to according events which extends from `Shopwell\Core\Checkout\Document\Event\DocumentOrderEvent`
 ## Replacing old icons
 ## Update `requestStateData` method in `form-country-state-select.plugin.js`
 The method `requestStateData` will require the third parameter `stateRequired` to be set from the calling instance.
@@ -373,7 +373,7 @@ In addition to requiring CRUD-permission on entity basis, apps can now also requ
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd">
+          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd">
     <meta>
     ...
     </meta>
@@ -407,7 +407,7 @@ Apps can now add custom field sets to the following additional entities:
 * tax
 ## Only configured custom fields will be indexed in Elasticsearch
 
-With Shopware 6.5 only configured customFields in the YAML file will be indexed, to reduce issues with type errors.
+With Shopwell 6.5 only configured customFields in the YAML file will be indexed, to reduce issues with type errors.
 The config can be created in the `config/packages/elasticsearch.yml` with the following config
 
 ```yaml
@@ -417,13 +417,13 @@ elasticsearch:
       some_date_field: datetime
 ```
 
-See [\Shopware\Core\System\CustomField\CustomFieldTypes](https://github.com/shopware/platform/blob/0ca57ddee85e9ab00d1a15a44ddc8ff16c3bc37b/src/Core/System/CustomField/CustomFieldTypes.php#L7-L19) for the complete list of possible options
+See [\Shopwell\Core\System\CustomField\CustomFieldTypes](https://github.com/shopwell-shop/platform/blob/0ca57ddee85e9ab00d1a15a44ddc8ff16c3bc37b/src/Core/System/CustomField/CustomFieldTypes.php#L7-L19) for the complete list of possible options
 
 # 6.4.11.0
 ## Introduce BeforeDeleteEvent
 The event is dispatched before delete commands are executed, so you can add success callbacks into the event when the delete command is successfully executed. Or you add error callbacks to the event when the execution meets some errors.
 
-**Reference: Shopware\Core\Framework\DataAbstractionLayer\Event\BeforeDeleteEvent**
+**Reference: Shopwell\Core\Framework\DataAbstractionLayer\Event\BeforeDeleteEvent**
 
 **Examples:**
 
@@ -599,8 +599,8 @@ Optional you can also set the following options:
 /bin/console theme:prepare-icons /app/platform/src/Storefront/Resources/app/storefront/dist/assets/icon/default/ default -c true -r evenodd -f #12ef21
 ```
 ## Better profiling integration
-Shopware now supports better profiling for multiple integrations.
-To activate profiling and a specific integration, add the corresponding integration name to the `shopware.profiler.integrations` parameter in your shopware.yaml file.
+Shopwell now supports better profiling for multiple integrations.
+To activate profiling and a specific integration, add the corresponding integration name to the `shopwell.profiler.integrations` parameter in your shopwell.yaml file.
 ## Translation overwrite priority specified for write payloads
 
 We specified the following rules for overwrites of translation values in write-payloads inside the DAL.
@@ -712,9 +712,9 @@ This identifier is unique for each original event, it will not change if the sam
 because your app maybe did not return a successful HTTP-status on the first try.
 ## Redis store for number range increments
 You can now generate the number range increments using redis instead of the Database.
-In your `shopware.yaml` specify that you want to use the redis storage and the url that should be used to connect to the redis server to activate this feature:
+In your `shopwell.yaml` specify that you want to use the redis storage and the url that should be used to connect to the redis server to activate this feature:
 ```yaml
-shopware:
+shopwell:
   number_range:
     increment_storage: "Redis"
     redis_url: "redis://redis-host:port/dbIndex"
@@ -732,7 +732,7 @@ In addition to requiring CRUD-permission on entity basis, apps can now also requ
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd">
+          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd">
     <meta>
     ...
     </meta>
@@ -747,7 +747,7 @@ In addition to requiring CRUD-permission on entity basis, apps can now also requ
 # 6.4.9.0
 ## Bootstrap v5 preview
 
-We want to update the Storefront to Bootstrap v5 in the next major release of Shopware.
+We want to update the Storefront to Bootstrap v5 in the next major release of Shopwell.
 Because Bootstrap v5 introduces breaking changes when updating from Bootstrap v4, we have implemented the update behind a feature flag.
 This gives you the possibility to test Bootstrap v5 with your apps or themes before the next major release. The current Bootstrap v4 implementation is still the default.
 With the next major release Bootstrap v5 will be the default.
@@ -775,7 +775,7 @@ You can find a full migration guide on the official Bootstrap website: [Migratin
 
 ## How to consider Bootstrap v5
 
-Because of the breaking changes inside Bootstrap v5 you will find several places with backward-compatibility code in the Shopware platform.
+Because of the breaking changes inside Bootstrap v5 you will find several places with backward-compatibility code in the Shopwell platform.
 This code is being used to already provide the Bootstrap v5 implementation while keeping the Bootstrap v4 implementation for backward-compatibility.
 Depending, if you are an app/theme developer or a platform contributor you need to adapt the backward-compatibility for your use case.
 
@@ -905,12 +905,12 @@ The following list contains issues that we are aware of. We want to address this
 * **Styling**<br>
   There might be smaller styling issues here and there. Mostly spacing or slightly wrong colors.
 * **Bootstrap v5 OffCanvas**<br>
-  Bootstrap v5 ships its own OffCanvas component. Shopware is still using its custom OffCanvas at the moment.
-  It is planned to migrate the Shopware OffCanvas to the Bootstrap OffCanvas.
+  Bootstrap v5 ships its own OffCanvas component. Shopwell is still using its custom OffCanvas at the moment.
+  It is planned to migrate the Shopwell OffCanvas to the Bootstrap OffCanvas.
 * **Modifying SCSS $theme-colors**<br>
   Currently it is not possible to add or remove custom colors to $theme-colors like it is described in the [Bootstrap documentation](https://getbootstrap.com/docs/5.1/customize/sass/#add-to-map).
 ## Allow generating multiple document types at backend
-* Changed `Shopware\Core\Content\Flow\Dispatching\Action\GenerateDocumentAction` to be able to create single document and multiple documents
+* Changed `Shopwell\Core\Content\Flow\Dispatching\Action\GenerateDocumentAction` to be able to create single document and multiple documents
 
 ## Allow selecting multiple document types at generating document action in the flow builder.
 * We are able to select multiple document types in a generated document action in the flow builder.
@@ -1413,20 +1413,20 @@ deleteContext: {
 },
 ```
 ## AppScripts Feature
-Apps can now include scripts to run synchronous business logic inside the shopware stack.
-Visit the [official documentation](https://developer.shopware.com/docs/guides/plugins/apps) for more information on that feature.
+Apps can now include scripts to run synchronous business logic inside the shopwell stack.
+Visit the [official documentation](https://developer.shopwell.com/docs/guides/plugins/apps) for more information on that feature.
 App manufacturers who add action buttons which provide feedback to the Administration are now able to access the following meta-information:
 
 | Query parameter | Example value | Description |
 |---|---|---|
 | shop-id | KvhpuoEVXWmtjkQa | The ID of the shop where the action button was triggered. |
-| shop-url | https://shopware.com | The URL of the shop where the action button was triggered. |
-| sw-version | 6.4.7.0 | The installed Shopware version of the shop where the action button was triggered. |
+| shop-url | https://shopwell.com | The URL of the shop where the action button was triggered. |
+| sw-version | 6.4.7.0 | The installed Shopwell version of the shop where the action button was triggered. |
 | sw-context-language | 2fbb5fe2e29a4d70aa5854ce7ce3e20b | The language (UUID) of the context (`Context::getLanguageId()`). |
 | sw-user-language | en-GB | The language (ISO code) of the user who triggered the action button. |
-| shopware-shop-signature | `hash_hmac('sha256', $query, $shopSecret)` | The hash of the query, signed with the shop's secret. |
+| shopwell-shop-signature | `hash_hmac('sha256', $query, $shopSecret)` | The hash of the query, signed with the shop's secret. |
 
-You **must** make sure to verify the authenticity of the incoming request by checking the `shopware-shop-signature`!
+You **must** make sure to verify the authenticity of the incoming request by checking the `shopwell-shop-signature`!
 ## New `--json` option for plugin list command
 It is now possible to retrieve the plugin information in JSON format to easier parse it,
 e.g. in deployment or other CI processes.
@@ -1441,7 +1441,7 @@ IPv6 URLs as file uploads are only valid in *[]* notation. See examples below:
 The current UPGRADE.md will from now on only contain extended information on non breaking additions. All breaking changes will be explained in the `UPGRADE.md` for the next major version release. At the time of writing this will be the `UPGRADE-6.5.md`.
 
 # 6.4.7.0
-Added a new constructor argument `iterable $updateBy = []` in `Shopware\Core\Content\ImportExport\Struct\Config` which will become required starting from `v6.5.0`.
+Added a new constructor argument `iterable $updateBy = []` in `Shopwell\Core\Content\ImportExport\Struct\Config` which will become required starting from `v6.5.0`.
 
 The new parameter is used to pass a mapping from an entity to a single field of the corresponding definition. This mapping is then used to resolve the primary key of a data set. This provides an alternative to using IDs for updating existing data sets.
 
@@ -1490,14 +1490,14 @@ Therefore, the "left namespace" is described by numbers intervals of 0 to 999, c
 If you want to use the default `mysql` or `redis` or `array` adapter, you can ignore this tutorial and just use `type: 'mysql' // or redis, array` in the config file
 
 It is quite easy to implement a new pool or a new adapter for the `increment` gateway.
-Simply provide a service with the prefix `shopware.increment.<your_pool>.gateway.` and the `type` as suffix.
-This then gives the full service id, as with the `array` type: `shopware.increment.your_pool.gateway.array`.
+Simply provide a service with the prefix `shopwell.increment.<your_pool>.gateway.` and the `type` as suffix.
+This then gives the full service id, as with the `array` type: `shopwell.increment.your_pool.gateway.array`.
 
 Enclosed is the implementation for the array adapter, which should clarify the concept. The content of the adapter has been removed for clarity:
 ```ArrayIncrementer.php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\Framework\Increment;
+namespace Shopwell\Core\Framework\Increment;
 
 class ArrayIncrementer extends AbstractIncrementer
 {
@@ -1518,20 +1518,20 @@ class ArrayIncrementer extends AbstractIncrementer
 ```
 
 ```services.xml
-<service id="shopware.increment.your_pool.gateway.array" 
-         class="Shopware\Core\Framework\Increment\ArrayIncrementer"/>
+<service id="shopwell.increment.your_pool.gateway.array" 
+         class="Shopwell\Core\Framework\Increment\ArrayIncrementer"/>
 ```
 
-```shopware.yaml
-shopware:
+```shopwell.yaml
+shopwell:
     increment:
         your_pool:
             type: 'array'
 ```
 
-If the custom adapter requires additional configs, they can simply be added dynamically under `shopware.increment.your_pool.config`.
-```shopware.yaml
-shopware:
+If the custom adapter requires additional configs, they can simply be added dynamically under `shopwell.increment.your_pool.config`.
+```shopwell.yaml
+shopwell:
     increment:
         your_pool:
             type: 's3'
@@ -1554,12 +1554,12 @@ With 6.4.6.0 we have implemented a rate limit by default to reduce the risk of b
 
 ### Rate Limiter configuration
 
-The confiuration for the rate limit can be found in the `shopware.yaml` under the map `shopware.api.rate_limiter`.
-More information about the configuration can be found at the [developer documentation](https://developer.shopware.com/docs/guides/hosting/infrastructure/rate-limiter).
+The confiuration for the rate limit can be found in the `shopwell.yaml` under the map `shopwell.api.rate_limiter`.
+More information about the configuration can be found at the [developer documentation](https://developer.shopwell.com/docs/guides/hosting/infrastructure/rate-limiter).
 Below you can find an example configuration.
 
 ```yaml
-shopware:
+shopwell:
   api:
     rate_limiter:
       example_route:
@@ -1575,17 +1575,17 @@ shopware:
             interval: '60 seconds'
 ```
 
-If you plan to create your own rate limits, head over to our [developer documentation](https://developer.shopware.com/docs/guides/plugins/plugins/framework/rate-limiter/add-rate-limiter-to-api-route).
+If you plan to create your own rate limits, head over to our [developer documentation](https://developer.shopwell.com/docs/guides/plugins/plugins/framework/rate-limiter/add-rate-limiter-to-api-route).
 ## Update `/api/_info/events.json` API
-* Added `aware` property to `BusinessEventDefinition` class at `Shopware\Core\Framework\Event`.
-* Deprecated `mailAware`, `logAware` and `salesChannelAware` properties in `BusinessEventDefinition` class at `Shopware\Core\Framework\Event`.
+* Added `aware` property to `BusinessEventDefinition` class at `Shopwell\Core\Framework\Event`.
+* Deprecated `mailAware`, `logAware` and `salesChannelAware` properties in `BusinessEventDefinition` class at `Shopwell\Core\Framework\Event`.
 ### Response of API
 * Before:
 ```json
 [
     {
         "name": "checkout.customer.before.login",
-        "class": "Shopware\\Core\\Checkout\\Customer\\Event\\CustomerBeforeLoginEvent",
+        "class": "Shopwell\\Core\\Checkout\\Customer\\Event\\CustomerBeforeLoginEvent",
         "mailAware": false,
         "logAware": false,
         "data": {
@@ -1603,14 +1603,14 @@ If you plan to create your own rate limits, head over to our [developer document
 [
     {
         "name": "checkout.customer.before.login",
-        "class": "Shopware\\Core\\Checkout\\Customer\\Event\\CustomerBeforeLoginEvent",
+        "class": "Shopwell\\Core\\Checkout\\Customer\\Event\\CustomerBeforeLoginEvent",
         "data": {
             "email": {
                 "type": "string"
             }
         },
         "aware": [
-            "Shopware\\Core\\Framework\\Event\\SalesChannelAware"
+            "Shopwell\\Core\\Framework\\Event\\SalesChannelAware"
         ],
         "extensions": []
     }
@@ -1624,7 +1624,7 @@ To load enable that bundle, you should add the following line to your `/config/b
 ```php
 return [
    ...
-   Shopware\Core\Maintenance\Maintenance::class => ['all' => true],
+   Shopwell\Core\Maintenance\Maintenance::class => ['all' => true],
 ];
 ```
 In that refactoring we moved some CLI commands into that new bundle and deprecated the old command classes. The new commands are marked as internal, as you should not rely on the PHP interface of those commands, only on the CLI API.
@@ -1632,14 +1632,14 @@ In that refactoring we moved some CLI commands into that new bundle and deprecat
 Additionally we've moved the `UserProvisioner` service from the `Core/System/User` namespace, to the `Core/Maintenance/User` namespace, make sure you use the service from the new location.
 Before:
 ```php
-use Shopware\Core\System\User\Service\UserProvisioner;
+use Shopwell\Core\System\User\Service\UserProvisioner;
 ```
 After:
 ```php
-use Shopware\Core\Maintenance\User\Service\UserProvisioner;
+use Shopwell\Core\Maintenance\User\Service\UserProvisioner;
 ```
 ### Create own SeoUrl Twig Extension
-Create a regular Twig extension, instead of tagging it with name `twig.extension` use tag name `shopware.seo_url.twig.extension`
+Create a regular Twig extension, instead of tagging it with name `twig.extension` use tag name `shopwell.seo_url.twig.extension`
 
 Example Class:
 ```php
@@ -1669,11 +1669,11 @@ class ExampleTwigFilter extends AbstractExtension
 Example service.xml:
 ```xml
 <service id="SwagExample\Core\Content\Seo\Twig\ExampleTwigFilter">
-    <tag name="shopware.seo_url.twig.extension"/>
+    <tag name="shopwell.seo_url.twig.extension"/>
 </service>
 ```
 ## Context`s properties will be natively typed
-The properties of `\Shopware\Core\Framework\Context` will be natively typed in the future. 
+The properties of `\Shopwell\Core\Framework\Context` will be natively typed in the future. 
 If you extend the `Context` make sure your implementations adheres to the type constraints for the protected properties.
 When you depend on a self-shipped bundle to already been loaded before your plugin, you can now use negative keys in `getAdditionalBundles` to express a different order. Use negative keys to load them before your plugin instance:
 
@@ -1726,22 +1726,22 @@ class. With it the whole transaction can be retried in case of a deadlock.
   ```
 ## Deprecation of AdminOrderCartService
 
-The `\Shopware\Administration\Service\AdminOrderCartService` was deprecated and will be removed in v6.5.0.0, please use the newly added `\Shopware\Core\Checkout\Cart\ApiOrderCartService` instead. 
+The `\Shopwell\Administration\Service\AdminOrderCartService` was deprecated and will be removed in v6.5.0.0, please use the newly added `\Shopwell\Core\Checkout\Cart\ApiOrderCartService` instead. 
 
-## Deprecation of Shopware\Storefront\Page\Address\Listing\AddressListingCriteriaEvent
+## Deprecation of Shopwell\Storefront\Page\Address\Listing\AddressListingCriteriaEvent
 
-The `\Shopware\Storefront\Page\Address\Listing\AddressListingCriteriaEvent` was deprecated and will be removed in v6.5.0.0, if you subscribed to the event please use the newly added `\Shopware\Core\Checkout\Customer\Event\AddressListingCriteriaEvent` instead.
+The `\Shopwell\Storefront\Page\Address\Listing\AddressListingCriteriaEvent` was deprecated and will be removed in v6.5.0.0, if you subscribed to the event please use the newly added `\Shopwell\Core\Checkout\Customer\Event\AddressListingCriteriaEvent` instead.
 
-## Deprecation of Shopware\Storefront\Event\ProductExportContentTypeEvent
+## Deprecation of Shopwell\Storefront\Event\ProductExportContentTypeEvent
 
-The `\Shopware\Storefront\Event\ProductExportContentTypeEvent` was deprecated and will be removed in v6.5.0.0, if you subscribed to the event please use the newly added `\Shopware\Core\Content\ProductExport\Event\ProductExportContentTypeEvent` instead.
+The `\Shopwell\Storefront\Event\ProductExportContentTypeEvent` was deprecated and will be removed in v6.5.0.0, if you subscribed to the event please use the newly added `\Shopwell\Core\Content\ProductExport\Event\ProductExportContentTypeEvent` instead.
 
-## Deprecation of Shopware\Core\Framework\Adapter\Asset\ThemeAssetPackage
+## Deprecation of Shopwell\Core\Framework\Adapter\Asset\ThemeAssetPackage
 
-The `\Shopware\Core\Framework\Adapter\Asset\ThemeAssetPackage` was deprecated and will be removed in v6.5.0.0, please use the newly added `\Shopware\Storefront\Theme\ThemeAssetPackage` instead.
+The `\Shopwell\Core\Framework\Adapter\Asset\ThemeAssetPackage` was deprecated and will be removed in v6.5.0.0, please use the newly added `\Shopwell\Storefront\Theme\ThemeAssetPackage` instead.
 ## RegisterController::register
 
-Registering a customer with `\Shopware\Storefront\Controller\RegisterController::register` now requires the request parameter `createCustomerAccount` to create a customer account.
+Registering a customer with `\Shopwell\Storefront\Controller\RegisterController::register` now requires the request parameter `createCustomerAccount` to create a customer account.
 If you dont specify this parameter a guest account will be created.
 ## Deprecating reading entities with the storage name of the primary key fields
 
@@ -1775,7 +1775,7 @@ Take this in account if your subscriber depends on the inheriting template curre
 
 To be able to decorate the Symfony asset versioning easier, you can now decorate the service in the DI container instead of overwriting the service where it will be constructed.
 
-Shopware offers by default many assets like `theme`, all those assets have an own version strategy service in the di like `shopware.asset.theme.version_strategy`
+Shopwell offers by default many assets like `theme`, all those assets have an own version strategy service in the di like `shopwell.asset.theme.version_strategy`
 
 This can be decorated in the DI and the new class needs to implement the `\Symfony\Component\Asset\VersionStrategy\VersionStrategyInterface` interface.
 Here is an example to build the version strategy with the content instead of timestamps
@@ -1866,7 +1866,7 @@ new Criteria([
 ## Added support for building administration without database
 
 In some setups it's common that the application is built with two steps in a `build` and `deploy` phase. The `build` process doesn't have any database connection.
-Currently, Shopware needs to build the administration a database connection, to discover which plugins are active. To avoid that behaviour we have added a new `ComposerPluginLoader` which loads all information from the installed composer plugins.
+Currently, Shopwell needs to build the administration a database connection, to discover which plugins are active. To avoid that behaviour we have added a new `ComposerPluginLoader` which loads all information from the installed composer plugins.
 
 To use the `ComposerPluginLoader` you have to create a file like `bin/ci` and setup the cli application with loader. There is an example:
 
@@ -1875,9 +1875,9 @@ To use the `ComposerPluginLoader` you have to create a file like `bin/ci` and se
 <?php declare(strict_types=1);
 
 use Composer\InstalledVersions;
-use Shopware\Core\Framework\Plugin\KernelPluginLoader\ComposerPluginLoader;
-use Shopware\Production\HttpKernel;
-use Shopware\Production\Kernel;
+use Shopwell\Core\Framework\Plugin\KernelPluginLoader\ComposerPluginLoader;
+use Shopwell\Production\HttpKernel;
+use Shopwell\Production\Kernel;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Dotenv\Dotenv;
@@ -1925,26 +1925,26 @@ A new dependency has been added for the `EntityRepository` and the `SalesChannel
 If you have defined the repository class yourself in your services.xml, you have to adapt it until 6.5 as follows:
 
 ```before
-<service class="Shopware\Core\Framework\DataAbstractionLayer\EntityRepository" id="product.repository">
-    <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\VersionManager"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface"/>
-    <argument type="service" id="Shopware\Elasticsearch\Framework\DataAbstractionLayer\ElasticsearchEntityAggregator.inner"/>
+<service class="Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository" id="product.repository">
+    <argument type="service" id="Shopwell\Core\Content\Product\ProductDefinition"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\VersionManager"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface"/>
+    <argument type="service" id="Shopwell\Elasticsearch\Framework\DataAbstractionLayer\ElasticsearchEntityAggregator.inner"/>
     <argument type="service" id="event_dispatcher"/>
 </service>
 ```
 
-Now you have to inject the `Shopware\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory` service after the `event_dispatcher`
+Now you have to inject the `Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory` service after the `event_dispatcher`
 ```after
-<service class="Shopware\Core\Framework\DataAbstractionLayer\EntityRepository" id="product.repository">
-    <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\VersionManager"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface"/>
-    <argument type="service" id="Shopware\Elasticsearch\Framework\DataAbstractionLayer\ElasticsearchEntityAggregator.inner"/>
+<service class="Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository" id="product.repository">
+    <argument type="service" id="Shopwell\Core\Content\Product\ProductDefinition"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\VersionManager"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface"/>
+    <argument type="service" id="Shopwell\Elasticsearch\Framework\DataAbstractionLayer\ElasticsearchEntityAggregator.inner"/>
     <argument type="service" id="event_dispatcher"/>
-    <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory"/>
+    <argument type="service" id="Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory"/>
 </service>
 ```
 Up to 6.5, a compiler pass ensures that the event factory is injected via the `setEntityLoadedEventFactory` method.
@@ -1956,8 +1956,8 @@ To enable this, create a new file `config/packages/storefront.yml` with the foll
 ```yaml
 storefront:
     theme:
-        config_loader_id: Shopware\Storefront\Theme\ConfigLoader\StaticFileConfigLoader
-        available_theme_provider: Shopware\Storefront\Theme\ConfigLoader\StaticFileAvailableThemeProvider
+        config_loader_id: Shopwell\Storefront\Theme\ConfigLoader\StaticFileConfigLoader
+        available_theme_provider: Shopwell\Storefront\Theme\ConfigLoader\StaticFileAvailableThemeProvider
 ```
 
 With this configuration `theme:compile` will force that the configuration will be loaded from the private filesystem. Per default the private file system writes into the `files` folder. It is highly recommended saving into an external storage like s3, to have it accessible also from the CI.
@@ -2004,7 +2004,7 @@ Example response of a searchIds request with `product_category` repository:
 # 6.4.3.0
 
 ## Change tax-free get and set in CountryEntity
-Deprecated `taxFree` and `companyTaxFree` in `Shopware/Core/System/Country/CountryEntity`, use `customerTax` and `companyTax` instead.
+Deprecated `taxFree` and `companyTaxFree` in `Shopwell/Core/System/Country/CountryEntity`, use `customerTax` and `companyTax` instead.
 
 ## If you are writing the fields directly, the tax-free of the country will be used:
 ### Before
@@ -2068,7 +2068,7 @@ $country->setCompanyTax(new TaxFreeConfig($isTaxFree, $currencyId, $amount));
 ```
 
 ## Update EntityIndexer implementation
-Two new methods have been added to the abstract `Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer`.
+Two new methods have been added to the abstract `Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer`.
 * `getTotal` - Shall return the number of records to be processed by the indexer on a Full index.
 * `getDecorated` - Shall return the decorated service (see decoration pattern adr).
 
@@ -2107,7 +2107,7 @@ Below is an example how to add a method call for the service using the XML defin
 ### Before
 
 ```xml
-<service id="Shopware\Storefront\Controller\AccountPaymentController">
+<service id="Shopwell\Storefront\Controller\AccountPaymentController">
     <call method="setContainer">
         <argument type="service" id="service_container"/>
     </call>
@@ -2117,7 +2117,7 @@ Below is an example how to add a method call for the service using the XML defin
 ### After
 
 ```xml
-<service id="Shopware\Storefront\Controller\AccountPaymentController">
+<service id="Shopwell\Storefront\Controller\AccountPaymentController">
     <call method="setContainer">
         <argument type="service" id="service_container"/>
     </call>
@@ -2164,7 +2164,7 @@ Array
 
 ## Deprecated of case-insensitive annotation parsing
 
-With Shopware 6.5.0.0 the annotation parsing will be case-sensitive.
+With Shopwell 6.5.0.0 the annotation parsing will be case-sensitive.
 Make sure to check that all your annotation properties fit their respective name case.
 E.g.: In case of the `Route` annotation you can have a look into the name case of the constructor parameters of the `\Symfony\Component\Routing\Annotation\Route` class.
 
@@ -2198,7 +2198,7 @@ After:
   Configure the correct site key and secret key for reCaptcha v3
   Configure `Google reCAPTCHA v3 threshold score`, default by 0.5
 ### How to adapt the captcha solution upgrade?
-* Add `Shopware\Storefront\Framework\Captcha\Annotation\Captcha` annotation to StorefrontController-Routes to apply captcha protection.
+* Add `Shopwell\Storefront\Framework\Captcha\Annotation\Captcha` annotation to StorefrontController-Routes to apply captcha protection.
 * Due to captcha forms will be displayed when activated, be aware that the captcha input might break your layout
 #### Before
 ```php
@@ -2237,7 +2237,7 @@ routing rule has matched and no sender was found.
 
 There are certain use cases where a GET parameter has a new value for every request, generating a new entry in the HTTP cache every time. An example would be the Google Adwords ClickId parameter `gclid` which contains a new id for every click that was generated by Google Adwords. This leads to a bad performance for the visitor since existing caches aren't being used. This allows the caching system to be more efficient.
 
-Storefront configuration provides a list of known parameters that fall in this category. You can overwrite or extend this list in your [bundle configuration](https://developer.shopware.com/docs/v/v6.4.0/guides/hosting/infrastructure/filesystem#configuration).   
+Storefront configuration provides a list of known parameters that fall in this category. You can overwrite or extend this list in your [bundle configuration](https://developer.shopwell.com/docs/v/v6.4.0/guides/hosting/infrastructure/filesystem#configuration).   
 ```
 storefront:
     http_cache:
@@ -2326,10 +2326,10 @@ For a complete list of breaking changes please refer to the [bc changelog](/chan
 ---
 
 ## Minimum PHP version increased to 7.4
-The minimum required PHP version for Shopware 6.4.0.0 is now PHP 7.4.
+The minimum required PHP version for Shopwell 6.4.0.0 is now PHP 7.4.
 Please make sure, that your system has at least this PHP version activated.
 
-We've also added support for PHP 8.0. While Shopware is de-facto ready for PHP 8.0,
+We've also added support for PHP 8.0. While Shopwell is de-facto ready for PHP 8.0,
 some dependencies do not support PHP 8.0 in their `composer.json` in theory.
 Until these dependencies add official PHP 8.0 support in their `composer.json`, 
 we decided to set the `config.platform.php` of the development root composer.json to `7.4.0`.
@@ -2338,13 +2338,13 @@ This is to prevent composer failing to update dependencies, because of PHP versi
 ---
 
 ## Sodium is now a requirement
-The PHP extension `sodium` is now a requirement for Shopware 6.4.0.0.
+The PHP extension `sodium` is now a requirement for Shopwell 6.4.0.0.
 
 ---
 
 ## Composer 2
-With Shopware 6.4 we are now requiring the `composer-runtime-api` with version 2.0.
-These means that Shopware is now only installable with Composer 2.
+With Shopwell 6.4 we are now requiring the `composer-runtime-api` with version 2.0.
+These means that Shopwell is now only installable with Composer 2.
 Installation with Composer 1 is no longer possible and supported.
 
 ---
@@ -2355,7 +2355,7 @@ Symfony was upgraded to 5.2.x. It is now locked to the minor 5.2 version.
 ---
 
 ## API versioning change
-Corresponding to the semantic versioning strategy of Shopware, we changed the API versioning to match the major versions of Shopware. 
+Corresponding to the semantic versioning strategy of Shopwell, we changed the API versioning to match the major versions of Shopwell. 
 As the API stays backward compatible for the life cycle of the whole major version, there is no need for a separate versioning. 
 Therefore we also removed the unnecessary version from the URL pattern.
 
@@ -2365,36 +2365,36 @@ Therefore we also removed the unnecessary version from the URL pattern.
 ```
 
 ### Upgrade flow for external API services
-With Shopware **6.3.5.0** we already made the new URL pattern available as an additional alias. 
+With Shopwell **6.3.5.0** we already made the new URL pattern available as an additional alias. 
 This enables you to test your application with the new URL pattern within the 6.3 major cycle, before updating to the 6.4 version.
 
-### Detecting the current used Shopware / API
-Of course, it is still important for an external service to know, which version of Shopware is used. 
+### Detecting the current used Shopwell / API
+Of course, it is still important for an external service to know, which version of Shopwell is used. 
 Therefore we added a new information endpoint, which provides this information. 
-The new endpoint is also available with Shopware **6.3.5.0**, so you can switch to this pattern in the 6.3 major cycle.
+The new endpoint is also available with Shopwell **6.3.5.0**, so you can switch to this pattern in the 6.3 major cycle.
 
 ```http request
 GET /api/_info/version
 ```
 
 ### API expectations
-To have the version within the URL pattern offered the advantage of telling Shopware which version requirement you expect with the request. 
+To have the version within the URL pattern offered the advantage of telling Shopwell which version requirement you expect with the request. 
 To still fulfill this need, we extended the possibilities even further. 
 You can send additional expectations via headers within your request, which is not only limited to the version.
 
 ```http request
 GET /api/test
-sw-expect-packages: shopware/core:~6.4,swag/paypal:*
+sw-expect-packages: shopwell/core:~6.4,swag/paypal:*
 ```
 
-This example expects that the Shopware version is at least 6.4, and the PayPal extension is installed in any version. 
+This example expects that the Shopwell version is at least 6.4, and the PayPal extension is installed in any version. 
 If the conditions are not met, the backend will respond with a 417 HTTP error.
 
 ### Since flag on entities / fields
 During the life cycle of a major version, there still might be non-breaking changes to the API. 
 To make this information available, every new field will have a `since` flag, which indicates, when the new field was added to the API. 
 All new fields will be included in the response. 
-You can still remove unwanted fields from the response by using the `includes` property to [reduce the output](https://shopware.gitbook.io/docs/guides/integrations-api/general-concepts/search-criteria#includes-apialias).
+You can still remove unwanted fields from the response by using the `includes` property to [reduce the output](https://shopwell.gitbook.io/docs/guides/integrations-api/general-concepts/search-criteria#includes-apialias).
 
 The information is shown in the Swagger documentation, in the description of the route in the schema if the request / response.
 
@@ -2453,12 +2453,12 @@ See [NEXT-13371 - Added api aware flag](/changelog/release-6-3-5-1/2021-01-25-ad
 The `league/oauth2-server` and `lcobucci/jwt` dependencies were upgraded to their next respective major versions.
 This comes with a break in our current oauth2 core implementation.
 
-See [the commit on GitHub](https://github.com/shopware/platform/commit/656c82d5232c87b75e1d6b42bd6493d674807791) for details.
+See [the commit on GitHub](https://github.com/shopwell-shop/platform/commit/656c82d5232c87b75e1d6b42bd6493d674807791) for details.
 
 ---
 
 ## Changed the loading of storefront SCSS files in extensions
-Previously all Storefront relevant SCSS files (`*.scss`) of an extension have automatically been loaded and compiled by shopware when placed inside the directory `src/Resources/app/storefront/src/scss`.
+Previously all Storefront relevant SCSS files (`*.scss`) of an extension have automatically been loaded and compiled by shopwell when placed inside the directory `src/Resources/app/storefront/src/scss`.
 Because all SCSS files have been loaded automatically it could have let to inconsistent results when dealing with custom SCSS variables in separate files for example.
 
 This behaviour has been changed and now only a single entry file will be used by extensions which is the `YourPlugin/src/Resources/app/storefront/src/scss/base.scss` or `YourApp/Resources/app/storefront/src/scss/base.scss`.
@@ -2512,7 +2512,7 @@ Refer to the [Symfony Documentation](https://symfony.com/doc/current/mailer.html
 ## context.salesChannel.countries removed
 Previously, the sales channel object in the context contained all countries assigned to the sales channel. This data has now been removed. 
 The access via `$context->getSalesChannel()->getCountries()` therefore no longer returns the previous result.
-To load the countries of a sales channel, the class `\Shopware\Core\System\Country\SalesChannel\CountryRoute` should be used.
+To load the countries of a sales channel, the class `\Shopwell\Core\System\Country\SalesChannel\CountryRoute` should be used.
 
 ---
 
@@ -2543,8 +2543,8 @@ There are three possible values for the mode:
    This means with the update to 6.4.1.0 from 6.4.0.0 all destructive changes in 6.3 or lower are executed.
 3. `--version-selection-mode=all`: Execute all destructive changes up to the current major.
 
-To allow this selection, we've moved all migrations from `\Shopware\Core\Framework\Migration\MigrationSource.core` 
-into `\Shopware\Core\Framework\Migration\MigrationSource.core.V6_3`. `core` is now empty by default. You can still extend it. 
+To allow this selection, we've moved all migrations from `\Shopwell\Core\Framework\Migration\MigrationSource.core` 
+into `\Shopwell\Core\Framework\Migration\MigrationSource.core.V6_3`. `core` is now empty by default. You can still extend it. 
 The execution order is now like this:
 1. `core.V6_3`
 2. `core.V6_4`
@@ -2555,7 +2555,7 @@ This means all new migrations need to be created in the matching major folder. C
 it will be `src/Core/Migration/V6_4` soon. To keep the backwards compatibility, Migrations still need to be defined in `src/Core/Migration`. 
 To accomplish that, just create it in the versioned folder and create a class in the old folder that simply extends the other class without changing anything.  
 
-The method `\Shopware\Core\Framework\Migration\MigrationCollectionLoader::collectAllForVersion` will return a collection with all "safe" `MigrationSource`s including `core`.
+The method `\Shopwell\Core\Framework\Migration\MigrationCollectionLoader::collectAllForVersion` will return a collection with all "safe" `MigrationSource`s including `core`.
 
 **bin/console database:migrate --all core**
 
@@ -2597,15 +2597,15 @@ Please use `bin/console dal:validate` to see if you have to adjust your plugins 
 
 ### Update
 
-If your plugin is already installed the shopware core migration will take care of adjusting the foreign key.
+If your plugin is already installed the shopwell core migration will take care of adjusting the foreign key.
 A new column `{TABLE_NAME}_version_id` is created, and the constraint widened. 
 You will just have to add a version reference field in your definitions.
 
 For a `cms_page` relation this would make these lines mandatory in your field definition like this:
 
 ```php
-use Shopware\Core\Content\Cms\CmsPageDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
+use Shopwell\Core\Content\Cms\CmsPageDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
 
 new ReferenceVersionField(CmsPageDefinition::class);
 ```
@@ -2650,7 +2650,7 @@ Here is an simple decoration to add a new random field named `myNewField` to the
 For adding more information from the Database you should execute a single query with all document ids (`array_column($documents, 'id'')`) and map the values
 
 ```xml
-<service id="MyDecorator" decorates="Shopware\Elasticsearch\Product\ElasticsearchProductDefinition">
+<service id="MyDecorator" decorates="Shopwell\Elasticsearch\Product\ElasticsearchProductDefinition">
     <argument type="service" id="MyDecorator.inner"/>
     <argument type="service" id="\Doctrine\DBAL\Connection"/>
 </service>
@@ -2659,12 +2659,12 @@ For adding more information from the Database you should execute a single query 
 ```php
 <?php
 
-use Shopware\Core\Defaults;
-use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
-use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Elasticsearch\Framework\AbstractElasticsearchDefinition;
-use Shopware\Elasticsearch\Framework\Indexing\EntityMapper;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Elasticsearch\Framework\AbstractElasticsearchDefinition;
+use Shopwell\Elasticsearch\Framework\Indexing\EntityMapper;
 use Doctrine\DBAL\Connection;
 
 class MyDecorator extends AbstractElasticsearchDefinition
@@ -2743,10 +2743,10 @@ SQL;
 When searching products make sure you add elasticsearch aware to your criteria to use Elasticsearch in background.
 
 ```php
-$criteria = new \Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria();
-$context = \Shopware\Core\Framework\Context::createDefaultContext();
+$criteria = new \Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria();
+$context = \Shopwell\Core\Framework\Context::createDefaultContext();
 // Enables elasticsearch for this search
-$context->addState(\Shopware\Core\Framework\Context::STATE_ELASTICSEARCH_AWARE);
+$context->addState(\Shopwell\Core\Framework\Context::STATE_ELASTICSEARCH_AWARE);
 
 $repository->search($criteria, $context);
 ```
@@ -2762,21 +2762,21 @@ Check your rules, if they still take effect as intended.
 
 ## TreeUpdater scaling
 
-We've replaced `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater::update` with `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater::batchUpdate`,
+We've replaced `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater::update` with `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater::batchUpdate`,
 because `update` scaled badly with the tree depth. The new method takes an array instead of a single id.
 
 ---
 
 ## EntityWriteGatewayInterface
 
-We've added the new method `prefetchExistences` to the interface `\Shopware\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterface`.
+We've added the new method `prefetchExistences` to the interface `\Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterface`.
 The method is optional, and a valid implementation is to not prefetch anything. The method was added to allow fetching the existence of more than one primary key at once.
 
 ---
 
 ## FieldSerializerInterface::normalize
 
-We've added the new method `normalize` to the interface `\Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\FieldSerializerInterface`.
+We've added the new method `normalize` to the interface `\Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\FieldSerializerInterface`.
 A valid implementation is to just return `$data`. The `AbstractFieldSerializer` does that already.
 The method should normalize the `$data` if it makes sense. For example, the core serializers do the following in the normalize step:
 - generate missing ids (`IdField`)
@@ -2788,7 +2788,7 @@ The method should normalize the `$data` if it makes sense. For example, the core
 
 ## Events
 
-All events that are dispatched in a sales channel context now implement `ShopwareSalesChannelEvent`. The return type `getContext` may have changed from `SalesChannelContext`
+All events that are dispatched in a sales channel context now implement `ShopwellSalesChannelEvent`. The return type `getContext` may have changed from `SalesChannelContext`
 to `Context`. To get the sales channel context, use `getSalesChannelContext`.
 
 ---
@@ -2807,7 +2807,7 @@ Create an own many-to-many association to achieve this functionality
 
 ## DAL cache removed
 The DAL cache was removed. 
-Therefore, calling `Shopware\Core\Framework\Context::disableCache` has no more effect.
+Therefore, calling `Shopwell\Core\Framework\Context::disableCache` has no more effect.
 
 ---
 
@@ -2877,7 +2877,7 @@ $color-light-gray
 $color-link-water
 $color-pumpkin-spice
 $color-purple
-$color-shopware-blue
+$color-shopwell-blue
 $color-steam-cloud
 
 $color-gradient-dark-gray-start
@@ -2897,8 +2897,8 @@ Removed `node-sass` package because it is deprecated. Added the `sass` package a
 ---
 
 ## Twig system config /theme access
-The `shopware.config` variable was removed. To access a system config value inside twig, use `config('my_config_key')`.
-The `shopware.theme` variable was removed. To access the theme config value inside twig, use `theme_config('my_config_key')`.
+The `shopwell.config` variable was removed. To access a system config value inside twig, use `config('my_config_key')`.
+The `shopwell.theme` variable was removed. To access the theme config value inside twig, use `theme_config('my_config_key')`.
 
 ---
 
@@ -2909,7 +2909,7 @@ Just use the method `addToEntityAllowList` or `addToGeneralAllowList` from the p
 
 Example:
 ```js
-Shopware.Service('productStreamConditionService').addToEntityAllowList('product', 'yourProperty');
+Shopwell.Service('productStreamConditionService').addToEntityAllowList('product', 'yourProperty');
 ```
 
 ## Added rawTotal as required param to CartPriceField

@@ -85,7 +85,7 @@ Example:
 
 feature.yaml
 ```yaml
-shopware:
+shopwell:
   feature:
     flags:
       - name: WISHLIST

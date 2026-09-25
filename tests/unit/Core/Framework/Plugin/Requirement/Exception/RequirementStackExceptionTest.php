@@ -22,7 +22,7 @@ class RequirementStackExceptionTest extends TestCase
     {
         $exception = new RequirementStackException(
             'install',
-            new MissingRequirementException('shopware/core', '~6.7'),
+            new MissingRequirementException('shopwell/core', '~6.7'),
             new MissingRequirementException('swag/paypal', '*'),
         );
 
@@ -30,7 +30,7 @@ class RequirementStackExceptionTest extends TestCase
         static::assertSame(Response::HTTP_FAILED_DEPENDENCY, $exception->getStatusCode());
         static::assertCount(2, $exception->getRequirements());
         static::assertStringContainsString('Could not install plugin, got 2 failure(s).', $exception->getMessage());
-        static::assertStringContainsString('Required plugin/package "shopware/core ~6.7" is missing', $exception->getMessage());
+        static::assertStringContainsString('Required plugin/package "shopwell/core ~6.7" is missing', $exception->getMessage());
         static::assertStringContainsString('Required plugin/package "swag/paypal *" is missing', $exception->getMessage());
     }
 
@@ -39,13 +39,13 @@ class RequirementStackExceptionTest extends TestCase
     {
         $exception = new RequirementStackException(
             'update',
-            new MissingRequirementException('shopware/core', '~6.7'),
+            new MissingRequirementException('shopwell/core', '~6.7'),
         );
 
         $errors = iterator_to_array($exception->getErrors(), false);
 
         static::assertCount(1, $errors);
         static::assertSame('FRAMEWORK__PLUGIN_REQUIREMENT_MISSING', $errors[0]['code']);
-        static::assertStringContainsString('shopware/core ~6.7', (string) $errors[0]['detail']);
+        static::assertStringContainsString('shopwell/core ~6.7', (string) $errors[0]['detail']);
     }
 }

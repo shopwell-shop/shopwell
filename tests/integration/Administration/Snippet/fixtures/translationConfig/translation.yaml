@@ -1,5 +1,5 @@
 repository-url: 'http://localhost:8000'
-metadata-url: https://raw.githubusercontent.com/shopware/translations/main/crowdin-metadata.json
+metadata-url: https://raw.githubusercontent.com/shopwell/translations/main/crowdin-metadata.json
 
 locales:
     - en-GB

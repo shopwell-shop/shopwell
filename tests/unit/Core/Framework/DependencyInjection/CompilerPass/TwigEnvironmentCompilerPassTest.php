@@ -33,7 +33,7 @@ class TwigEnvironmentCompilerPassTest extends TestCase
         );
 
         static::assertSame(
-            '/tmp/shopware-cache/twig',
+            '/tmp/shopwell-cache/twig',
             $container->getParameter('twig.cache')
         );
     }
@@ -53,7 +53,7 @@ class TwigEnvironmentCompilerPassTest extends TestCase
     private function createContainer(array $twigOptions): ContainerBuilder
     {
         $container = new ContainerBuilder();
-        $container->setParameter('kernel.cache_dir', '/tmp/shopware-cache');
+        $container->setParameter('kernel.cache_dir', '/tmp/shopwell-cache');
         $container->setDefinition('twig', new Definition(Environment::class, [null, $twigOptions]));
 
         return $container;

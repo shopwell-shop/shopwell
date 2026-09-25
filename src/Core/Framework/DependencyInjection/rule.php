@@ -26,48 +26,48 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(RuleConditionRegistry::class)
         ->args([
-            tagged_iterator('shopware.rule.definition'),
+            tagged_iterator('shopwell.rule.definition'),
         ]);
 
     $services->set(RuleIdMatcher::class);
 
     $services->set(AndRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(NotRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(OrRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(XorRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(MatchAllLineItemsRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(ScriptRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(DateRangeRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(SimpleRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(SalesChannelRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(TimeRangeRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(WeekdayRule::class)
-        ->tag('shopware.rule.definition');
+        ->tag('shopwell.rule.definition');
 
     $services->set(RuleConfigController::class)
         ->public()
         ->args([
-            tagged_iterator('shopware.rule.definition'),
+            tagged_iterator('shopwell.rule.definition'),
         ])
         ->call('setContainer', [
             service('service_container'),

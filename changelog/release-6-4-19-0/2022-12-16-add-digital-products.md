@@ -2,42 +2,42 @@
 title: Add digital products
 issue: NEXT-20706
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com
+author_email: k.luetjann@shopwell.com
 author_github: King-of-Babylon
 ---
 
 # Core
-* Added functions `getStates` and `setStates` to `Shopware\Core\Checkout\Cart\LineItem\LineItem`
-* Added function `hasLineItemWithState` to `Shopware\Core\Checkout\Cart\LineItem\LineItemCollection`
+* Added functions `getStates` and `setStates` to `Shopwell\Core\Checkout\Cart\LineItem\LineItem`
+* Added function `hasLineItemWithState` to `Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection`
 * Added new classes:
-  * `Shopware\Core\Checkout\Cart\Order\LineItemDownloadLoader`
-  * `Shopware\Core\Checkout\Cart\Rule\LineItemProductStatesRule`
-  * `Shopware\Core\Checkout\Customer\SalesChannel\AbstractDownloadRoute`
-  * `Shopware\Core\Checkout\Customer\SalesChannel\DownloadRoute`
-  * `Shopware\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadCollection`
-  * `Shopware\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadDefinition`
-  * `Shopware\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadEntity`
-  * `Shopware\Core\Content\Flow\Dispatching\Action\GrantDownloadAccessAction`
-  * `Shopware\Core\Content\Media\File\DownloadResponseGenerator`
-  * `Shopware\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadCollection`
-  * `Shopware\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadDefinition`
-  * `Shopware\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadEntity`
-  * `Shopware\Core\Content\Product\Cleanup\CleanupUnusedDownloadMediaTask`
-  * `Shopware\Core\Content\Product\Cleanup\CleanupUnusedDownloadMediaTaskHandler`
-  * `Shopware\Core\Content\Product\DataAbstractionLayer\StatesUpdater`
-  * `Shopware\Core\Content\Product\DataAbstractionLayer\UpdatedStates`
-  * `Shopware\Core\Content\Product\Events\ProductStatesBeforeChangeEvent`
-  * `Shopware\Core\Content\Product\Events\ProductStatesChangedEvent`
-  * `Shopware\Core\Content\Product\State`
-* Added functions `filterGoodsFlat` and `hasLineItemWithState` to `Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection`
-* Added new fields `states` and `downloads` to `Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemDefinition`
-* Added new properties `states` and `downloads` to `Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity` with getters and setters
-* Added new fields `productDownloads` and `downloads` to `Shopware\Core\Content\Media\MediaDefinition`
-* Added new properties `productDownloads` and `orderLineItemDownloads` to `Shopware\Core\Content\Media\MediaEntity` with getters and setters
-* Added new fields `states` and `downloads` to `Shopware\Core\Content\Product\ProductDefinition`
-* Added new properties `states` and `downloads` to `Shopware\Core\Content\Product\ProductEntity` with getters and setters
-* Added new configuration option `private_allowed_extensions` to `Framework/Resources/config/packages/shopware.yaml`
-* Added new function `choice` to `Shopware\Core\Framework\Rule\RuleConstraints`
+  * `Shopwell\Core\Checkout\Cart\Order\LineItemDownloadLoader`
+  * `Shopwell\Core\Checkout\Cart\Rule\LineItemProductStatesRule`
+  * `Shopwell\Core\Checkout\Customer\SalesChannel\AbstractDownloadRoute`
+  * `Shopwell\Core\Checkout\Customer\SalesChannel\DownloadRoute`
+  * `Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadCollection`
+  * `Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadDefinition`
+  * `Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadEntity`
+  * `Shopwell\Core\Content\Flow\Dispatching\Action\GrantDownloadAccessAction`
+  * `Shopwell\Core\Content\Media\File\DownloadResponseGenerator`
+  * `Shopwell\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadCollection`
+  * `Shopwell\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadDefinition`
+  * `Shopwell\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadEntity`
+  * `Shopwell\Core\Content\Product\Cleanup\CleanupUnusedDownloadMediaTask`
+  * `Shopwell\Core\Content\Product\Cleanup\CleanupUnusedDownloadMediaTaskHandler`
+  * `Shopwell\Core\Content\Product\DataAbstractionLayer\StatesUpdater`
+  * `Shopwell\Core\Content\Product\DataAbstractionLayer\UpdatedStates`
+  * `Shopwell\Core\Content\Product\Events\ProductStatesBeforeChangeEvent`
+  * `Shopwell\Core\Content\Product\Events\ProductStatesChangedEvent`
+  * `Shopwell\Core\Content\Product\State`
+* Added functions `filterGoodsFlat` and `hasLineItemWithState` to `Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection`
+* Added new fields `states` and `downloads` to `Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemDefinition`
+* Added new properties `states` and `downloads` to `Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity` with getters and setters
+* Added new fields `productDownloads` and `downloads` to `Shopwell\Core\Content\Media\MediaDefinition`
+* Added new properties `productDownloads` and `orderLineItemDownloads` to `Shopwell\Core\Content\Media\MediaEntity` with getters and setters
+* Added new fields `states` and `downloads` to `Shopwell\Core\Content\Product\ProductDefinition`
+* Added new properties `states` and `downloads` to `Shopwell\Core\Content\Product\ProductEntity` with getters and setters
+* Added new configuration option `private_allowed_extensions` to `Framework/Resources/config/packages/shopwell.yaml`
+* Added new function `choice` to `Shopwell\Core\Framework\Rule\RuleConstraints`
 * Added new mail template type `downloads_delivery`
 * Added new column `states` to `product` table
 * Added new table `product_download`
@@ -47,7 +47,7 @@ author_github: King-of-Babylon
 * Added new flow `Deliver ordered product downloads`
 * Added new column `states` to `order_line_item` table
 * Added new table `order_line_item_download`
-* Added new property `states` to the mapping in `Shopware\Elasticsearch\Product\ElasticsearchProductDefinition`
+* Added new property `states` to the mapping in `Shopwell\Elasticsearch\Product\ElasticsearchProductDefinition`
 ___
 # Administration
 * Changed `sw-media-compact-upload-v2` component to support multiselect and upload to private filesystem
@@ -143,7 +143,7 @@ ___
 ___
 # Storefront
 * Changed storefront to handle with digital products
-* Added new controller `Shopware\Storefront\Controller\DownloadController`
+* Added new controller `Shopwell\Storefront\Controller\DownloadController`
 * Added new templates:
     * `src/Storefront/Resources/views/storefront/component/line-item/element/download-item.html.twig`
     * `src/Storefront/Resources/views/storefront/component/line-item/element/downloads.html.twig`

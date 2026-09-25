@@ -3,7 +3,7 @@ title: Remove global controllerName and controllerAction variables from template
 issue: 7422
 jira_issue: NEXT-39807
 author: Martin Bens
-author_email: m.bens@shopware.com
+author_email: m.bens@shopwell.com
 author_github: @spigandromeda
 ---
 # Storefront
@@ -22,7 +22,7 @@ Replace `controllerName` and `controllerAction` with `activeRoute`:
 ___
 # Next Major Version Changes
 ## Removal of deprecated controller variables
-The following will be removed in Shopware 6.8.0:
+The following will be removed in Shopwell 6.8.0:
 * Twig variables `controllerName` and `controllerAction`
 * CSS classes `is-ctl-*` and `is-act-*`
 * JavaScript window properties `window.controllerName` and `window.actionName`

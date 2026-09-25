@@ -22,7 +22,7 @@ ___
 We updated the default values for the left and right margin of blocks within the Shopping Experience module. Previously, the setting within the "Layout" tab of each block was set to `20px` which led to an additional outer margin of the content that made the inner content of the page to be not aligned with the rest of the page layout. The top and bottom margin default values will stay at `20px` so blocks have a white space between each other. You can always change these settings in the "Layout" tab of your block settings. Existing pages are not affected. But, if you add new blocks to any new or existing page the new default settings will be used.
 
 ### Block margins of default templates
-The locked default templates for listing pages in Shopware were also updated, so that the standard blocks don't have that margin. If you duplicated the standard templates to do your own customization, your pages won't be affected.
+The locked default templates for listing pages in Shopwell were also updated, so that the standard blocks don't have that margin. If you duplicated the standard templates to do your own customization, your pages won't be affected.
 
 ### Bootstrap grid in sidebar sections
 We also tweaked the template of CMS sections with a sidebar to make it compliant with the Bootstrap grid system and to properly handle the margin settings. You can control the space between the sidebar and the content by simply setting the gutter variable on `.cms-section-sidebar > .row`. The current gap is `60px` wide.

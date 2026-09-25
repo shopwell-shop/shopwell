@@ -13,7 +13,7 @@ use Shopwell\Core\Framework\Webhook\Webhook;
  * A policy is only consulted for the events it handles. Several policies can handle the same
  * event; a refusal from any one of them blocks it.
  *
- * Implementations are discovered through the `shopware.webhook.policy` tag.
+ * Implementations are discovered through the `shopwell.webhook.policy` tag.
  *
  * @internal only for use by the app-system
  */

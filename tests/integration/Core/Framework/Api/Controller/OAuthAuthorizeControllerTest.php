@@ -21,7 +21,7 @@ class OAuthAuthorizeControllerTest extends TestCase
 {
     use AdminFunctionalTestBehaviour;
 
-    private const CLIENT_ID = 'shopware-cli';
+    private const CLIENT_ID = 'shopwell-cli';
     private const REDIRECT_URI = 'http://127.0.0.1:54321/callback';
 
     private string $codeVerifier;
@@ -85,7 +85,7 @@ class OAuthAuthorizeControllerTest extends TestCase
         static::assertArrayHasKey('access_token', $tokens, json_encode($tokens, \JSON_THROW_ON_ERROR));
         static::assertArrayHasKey('refresh_token', $tokens);
 
-        $accessToken = static::getContainer()->get('shopware.jwt_config')->parser()->parse($tokens['access_token']);
+        $accessToken = static::getContainer()->get('shopwell.jwt_config')->parser()->parse($tokens['access_token']);
         static::assertInstanceOf(UnencryptedToken::class, $accessToken);
         static::assertSame($approvingUserId, $accessToken->claims()->get('sub'));
         static::assertTrue($accessToken->isPermittedFor(self::CLIENT_ID));
@@ -158,7 +158,7 @@ class OAuthAuthorizeControllerTest extends TestCase
         static::assertIsString($callback['code']);
 
         $tokens = $this->exchangeCode($callback['code'], $this->codeVerifier);
-        $accessToken = static::getContainer()->get('shopware.jwt_config')->parser()->parse($tokens['access_token']);
+        $accessToken = static::getContainer()->get('shopwell.jwt_config')->parser()->parse($tokens['access_token']);
         static::assertInstanceOf(UnencryptedToken::class, $accessToken);
         static::assertSame($user->getUserId(), $accessToken->claims()->get('sub'));
         static::assertSame(['write'], array_values($accessToken->claims()->get('scopes')));
@@ -291,7 +291,7 @@ class OAuthAuthorizeControllerTest extends TestCase
             'grant_type' => 'password',
             'client_id' => self::CLIENT_ID,
             'username' => 'admin',
-            'password' => 'shopware',
+            'password' => 'shopwell',
         ]);
 
         static::assertArrayNotHasKey('access_token', $response);
@@ -359,7 +359,7 @@ class OAuthAuthorizeControllerTest extends TestCase
     {
         $bearer = substr((string) $browser->getServerParameter('HTTP_Authorization'), \strlen('Bearer '));
         static::assertNotSame('', $bearer);
-        $token = static::getContainer()->get('shopware.jwt_config')->parser()->parse($bearer);
+        $token = static::getContainer()->get('shopwell.jwt_config')->parser()->parse($bearer);
         static::assertInstanceOf(UnencryptedToken::class, $token);
 
         return (string) $token->claims()->get('sub');

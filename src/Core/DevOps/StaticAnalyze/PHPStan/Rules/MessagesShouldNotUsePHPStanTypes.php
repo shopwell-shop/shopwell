@@ -74,14 +74,14 @@ class MessagesShouldNotUsePHPStanTypes implements Rule
 
             if ($tag->name === '@phpstan-type') {
                 $errors[] = RuleErrorBuilder::message('Messages should not use @phpstan-type annotations')
-                    ->identifier('shopware.messagePHPStanAnnotation')
+                    ->identifier('shopwell.messagePHPStanAnnotation')
                     ->line($classDocComment->getStartLine() + $line + 1)
                     ->build();
             }
 
             if ($tag->name === '@phpstan-import-type') {
                 $errors[] = RuleErrorBuilder::message('Messages should not use @phpstan-import-type annotations')
-                    ->identifier('shopware.messagePHPStanAnnotation')
+                    ->identifier('shopwell.messagePHPStanAnnotation')
                     ->line($classDocComment->getStartLine() + $line + 1)
                     ->build();
             }

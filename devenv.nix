@@ -94,14 +94,14 @@ in {
   services.mysql = {
     enable = true;
     package = pkgs.mysql84;
-    initialDatabases = lib.mkDefault [{ name = "shopware"; }];
+    initialDatabases = lib.mkDefault [{ name = "shopwell"; }];
     ensureUsers = lib.mkDefault [
       {
-        name = "shopware";
-        password = "shopware";
+        name = "shopwell";
+        password = "shopwell";
         ensurePermissions = {
-          "shopware.*" = "ALL PRIVILEGES";
-          "shopware_test.*" = "ALL PRIVILEGES";
+          "shopwell.*" = "ALL PRIVILEGES";
+          "shopwell_test.*" = "ALL PRIVILEGES";
         };
       }
     ];
@@ -130,7 +130,7 @@ in {
 
   env.APP_URL = lib.mkDefault "http://localhost:8000";
   env.APP_SECRET = lib.mkDefault "def00000bb5acb32b54ff8ee130270586eec0e878f7337dc7a837acc31d3ff00f93a56b595448b4b29664847dd51991b3314ff65aeeeb761a133b0ec0e070433bff08e48";
-  env.DATABASE_URL = lib.mkDefault "mysql://root@localhost:3306/shopware";
+  env.DATABASE_URL = lib.mkDefault "mysql://root@localhost:3306/shopwell";
   env.MAILER_DSN = lib.mkDefault "smtp://localhost:1025";
 
   # Elasticsearch
@@ -141,5 +141,5 @@ in {
   env.INSTALL_URL = lib.mkDefault "http://localhost:8050";
 
   # Service Registry
-  env.SERVICE_REGISTRY_URL = lib.mkDefault "https://registry.staging-services.shopware.io";
+  env.SERVICE_REGISTRY_URL = lib.mkDefault "https://registry.staging-services.shopwell.cn";
 }

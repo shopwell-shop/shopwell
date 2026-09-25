@@ -69,7 +69,7 @@ class AssetPackageServiceTest extends TestCase
 
         return AssetPackageService::create(
             [
-                'TestBundle' => '/var/www/html/vendor/shopware/core/TestBundle',
+                'TestBundle' => '/var/www/html/vendor/shopwell/core/TestBundle',
                 'TestPlugin' => '/var/www/html/custom/plugins/TestPlugin',
             ],
             new FallbackUrlPackage('', $emptyVersionStrategy, $requestStack),

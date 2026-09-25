@@ -19,7 +19,7 @@ To decide whether a route depends on a token or not the following questions shou
 
 
 ## Consequences
-From now on, every sales-channel-api and store-api route need to be checked for above question and set the `ContextTokenRequired` annotation (`Shopware\Core\Framework\Routing\Annotation\ContextTokenRequired`). 
+From now on, every sales-channel-api and store-api route need to be checked for above question and set the `ContextTokenRequired` annotation (`Shopwell\Core\Framework\Routing\Annotation\ContextTokenRequired`). 
 
 ## Counter decisions
 Another decision could be to just leave the routes open. There is currently no security issue associated with context-less calls.

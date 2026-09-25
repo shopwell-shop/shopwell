@@ -14,8 +14,8 @@ To enable this, create a new file `config/packages/storefront.yml` with the foll
 ```yaml
 storefront:
     theme:
-        config_loader_id: Shopware\Storefront\Theme\ConfigLoader\StaticFileConfigLoader
-        available_theme_provider: Shopware\Storefront\Theme\ConfigLoader\StaticFileAvailableThemeProvider
+        config_loader_id: Shopwell\Storefront\Theme\ConfigLoader\StaticFileConfigLoader
+        available_theme_provider: Shopwell\Storefront\Theme\ConfigLoader\StaticFileAvailableThemeProvider
 ```
 
 With this configuration `theme:compile` will force that the configuration will be loaded from the private filesystem. Per default the private file system writes into the `files` folder. It is highly recommended saving into an external storage like s3, to have it accessible also from the CI.

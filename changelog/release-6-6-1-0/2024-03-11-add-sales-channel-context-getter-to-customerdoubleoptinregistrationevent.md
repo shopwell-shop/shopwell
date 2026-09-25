@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Added method `Shopware\Core\Checkout\Customer\Event\CustomerDoubleOptInRegistrationEvent::getSalesChannelContext` to access the sales channel context
+* Added method `Shopwell\Core\Checkout\Customer\Event\CustomerDoubleOptInRegistrationEvent::getSalesChannelContext` to access the sales channel context

@@ -14,19 +14,19 @@ issue: NEXT-25264
   * `sw-order-new-customer-modal` component.
 ___
 # Core
-* Changed `Shopware\Core\Checkout\Customer\SalesChannel\ChangeCustomerProfileRoute::change` to set default to `salutationId`
-* Changed `Shopware\Core\Checkout\Customer\SalesChannel\RegisterRoute::register` to set default to `salutationId`
-* Changed `Shopware\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute::upsert` to set default to `salutationId`
-* Changed `Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressDefinition` to remove flag required with salutationId.
-* Added `Shopware\Core\System\Salutation\SalutationSorter` to sort salutations
+* Changed `Shopwell\Core\Checkout\Customer\SalesChannel\ChangeCustomerProfileRoute::change` to set default to `salutationId`
+* Changed `Shopwell\Core\Checkout\Customer\SalesChannel\RegisterRoute::register` to set default to `salutationId`
+* Changed `Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute::upsert` to set default to `salutationId`
+* Changed `Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressDefinition` to remove flag required with salutationId.
+* Added `Shopwell\Core\System\Salutation\SalutationSorter` to sort salutations
 * Added subscribers to set salutation with default not specified
-  * `Shopware\Core\Checkout\Order\Subscriber\OrderSalutationSubscriber`
-  * `Shopware\Core\Checkout\Customer\Subscriber\CustomerSalutationSubscriber`
-  * `Shopware\Core\Content\Newsletter\Subscriber\NewsletterRecipientSalutationSubscriber`
+  * `Shopwell\Core\Checkout\Order\Subscriber\OrderSalutationSubscriber`
+  * `Shopwell\Core\Checkout\Customer\Subscriber\CustomerSalutationSubscriber`
+  * `Shopwell\Core\Content\Newsletter\Subscriber\NewsletterRecipientSalutationSubscriber`
 ___
 # Storefront
-* Changed function `register` in `Shopware\Storefront\Controller\RegisterController` to remove `definition` `salutationId`.
-* Changed `Shopware\Storefront\Page\Account\Login\AccountLoginPageLoader::load` to sort salutations by `salutation_key` not specified.
-* Changed `Shopware\Storefront\Page\Account\Profile\AccountProfilePageLoader::load` to sort salutations by `salutation_key` not specified.
-* Changed `Shopware\Storefront\Page\Address\Detail\AddressDetailPageLoader::load` to sort salutations by `salutation_key` not specified.
+* Changed function `register` in `Shopwell\Storefront\Controller\RegisterController` to remove `definition` `salutationId`.
+* Changed `Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoader::load` to sort salutations by `salutation_key` not specified.
+* Changed `Shopwell\Storefront\Page\Account\Profile\AccountProfilePageLoader::load` to sort salutations by `salutation_key` not specified.
+* Changed `Shopwell\Storefront\Page\Address\Detail\AddressDetailPageLoader::load` to sort salutations by `salutation_key` not specified.
 * Changed `storefront/component/address/address-personal.html.twig` to remove attribute `required` with `salutationId`.

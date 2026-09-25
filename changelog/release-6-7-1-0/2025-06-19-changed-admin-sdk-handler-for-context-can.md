@@ -1,8 +1,8 @@
 ---
 title: Changed Admin-SDK handler for context.can
-issue: https://github.com/shopware/service-enablement/issues/17
+issue: https://github.com/shopwell-shop/service-enablement/issues/17
 author: Sebastian Franze
-author_email: s.franze@shopware.com
+author_email: s.franze@shopwell.com
 ---
 # Administration
 * Changed Admin-SDK handler `AdminSDK.Context.getAppInformation`  

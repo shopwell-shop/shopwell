@@ -23,12 +23,12 @@ class McpAllowlistProviderTest extends TestCase
     public function testReturnsListedToolsWhenAllowlistIsSet(): void
     {
         $connection = static::createStub(Connection::class);
-        $connection->method('fetchOne')->willReturn('{"tools":["shopware-entity-search","shopware-entity-schema"],"resources":null,"prompts":null}');
+        $connection->method('fetchOne')->willReturn('{"tools":["shopwell-entity-search","shopwell-entity-schema"],"resources":null,"prompts":null}');
 
         $provider = new McpAllowlistProvider($connection, $this->requestStackWithKey());
 
         $result = $provider->forCurrentRequest();
-        static::assertSame(['shopware-entity-search', 'shopware-entity-schema'], $result->tools);
+        static::assertSame(['shopwell-entity-search', 'shopwell-entity-schema'], $result->tools);
         static::assertSame([], $result->resources);
         static::assertSame([], $result->prompts);
     }
@@ -49,8 +49,8 @@ class McpAllowlistProviderTest extends TestCase
     {
         $json = json_encode([
             'tools' => null,
-            'resources' => ['shopware://entities'],
-            'prompts' => ['shopware-context'],
+            'resources' => ['shopwell://entities'],
+            'prompts' => ['shopwell-context'],
         ], \JSON_THROW_ON_ERROR);
 
         $connection = static::createStub(Connection::class);
@@ -60,49 +60,49 @@ class McpAllowlistProviderTest extends TestCase
 
         $result = $provider->forCurrentRequest();
         static::assertSame([], $result->tools);
-        static::assertSame(['shopware://entities'], $result->resources);
-        static::assertSame(['shopware-context'], $result->prompts);
+        static::assertSame(['shopwell://entities'], $result->resources);
+        static::assertSame(['shopwell-context'], $result->prompts);
     }
 
     public function testExpandsDirectDependenciesIntoToolAllowlist(): void
     {
         $connection = static::createStub(Connection::class);
-        $connection->method('fetchOne')->willReturn('{"tools":["shopware-entity-search"],"resources":null,"prompts":null}');
+        $connection->method('fetchOne')->willReturn('{"tools":["shopwell-entity-search"],"resources":null,"prompts":null}');
 
         $provider = new McpAllowlistProvider($connection, $this->requestStackWithKey(), [
-            'shopware-entity-search' => ['shopware-entity-schema'],
+            'shopwell-entity-search' => ['shopwell-entity-schema'],
         ]);
 
         $result = $provider->forCurrentRequest();
         static::assertNotNull($result->tools);
-        static::assertContains('shopware-entity-search', $result->tools);
-        static::assertContains('shopware-entity-schema', $result->tools);
+        static::assertContains('shopwell-entity-search', $result->tools);
+        static::assertContains('shopwell-entity-schema', $result->tools);
     }
 
     public function testExpandsTransitiveDependencies(): void
     {
         $connection = static::createStub(Connection::class);
-        $connection->method('fetchOne')->willReturn('{"tools":["shopware-entity-delete"],"resources":null,"prompts":null}');
+        $connection->method('fetchOne')->willReturn('{"tools":["shopwell-entity-delete"],"resources":null,"prompts":null}');
 
         $provider = new McpAllowlistProvider($connection, $this->requestStackWithKey(), [
-            'shopware-entity-delete' => ['shopware-entity-search'],
-            'shopware-entity-search' => ['shopware-entity-schema'],
+            'shopwell-entity-delete' => ['shopwell-entity-search'],
+            'shopwell-entity-search' => ['shopwell-entity-schema'],
         ]);
 
         $result = $provider->forCurrentRequest();
         static::assertNotNull($result->tools);
-        static::assertContains('shopware-entity-delete', $result->tools);
-        static::assertContains('shopware-entity-search', $result->tools);
-        static::assertContains('shopware-entity-schema', $result->tools);
+        static::assertContains('shopwell-entity-delete', $result->tools);
+        static::assertContains('shopwell-entity-search', $result->tools);
+        static::assertContains('shopwell-entity-schema', $result->tools);
     }
 
     public function testDoesNotDuplicateToolsAlreadyInAllowlist(): void
     {
         $connection = static::createStub(Connection::class);
-        $connection->method('fetchOne')->willReturn('{"tools":["shopware-entity-search","shopware-entity-schema"],"resources":null,"prompts":null}');
+        $connection->method('fetchOne')->willReturn('{"tools":["shopwell-entity-search","shopwell-entity-schema"],"resources":null,"prompts":null}');
 
         $provider = new McpAllowlistProvider($connection, $this->requestStackWithKey(), [
-            'shopware-entity-search' => ['shopware-entity-schema'],
+            'shopwell-entity-search' => ['shopwell-entity-schema'],
         ]);
 
         $result = $provider->forCurrentRequest();
@@ -125,27 +125,27 @@ class McpAllowlistProviderTest extends TestCase
     public function testForAccessKeyReturnsAllowlistForValidKey(): void
     {
         $connection = static::createStub(Connection::class);
-        $connection->method('fetchOne')->willReturn('{"tools":["shopware-entity-search","shopware-entity-schema"],"resources":null,"prompts":null}');
+        $connection->method('fetchOne')->willReturn('{"tools":["shopwell-entity-search","shopwell-entity-schema"],"resources":null,"prompts":null}');
 
         $provider = new McpAllowlistProvider($connection, new RequestStack());
 
         $result = $provider->forAccessKey('SWIA-test');
-        static::assertSame(['shopware-entity-search', 'shopware-entity-schema'], $result->tools);
+        static::assertSame(['shopwell-entity-search', 'shopwell-entity-schema'], $result->tools);
     }
 
     public function testForAccessKeyExpandsDependencies(): void
     {
         $connection = static::createStub(Connection::class);
-        $connection->method('fetchOne')->willReturn('{"tools":["shopware-entity-delete"],"resources":null,"prompts":null}');
+        $connection->method('fetchOne')->willReturn('{"tools":["shopwell-entity-delete"],"resources":null,"prompts":null}');
 
         $provider = new McpAllowlistProvider($connection, new RequestStack(), [
-            'shopware-entity-delete' => ['shopware-entity-search'],
+            'shopwell-entity-delete' => ['shopwell-entity-search'],
         ]);
 
         $result = $provider->forAccessKey('SWIA-test');
         static::assertNotNull($result->tools);
-        static::assertContains('shopware-entity-delete', $result->tools);
-        static::assertContains('shopware-entity-search', $result->tools);
+        static::assertContains('shopwell-entity-delete', $result->tools);
+        static::assertContains('shopwell-entity-search', $result->tools);
     }
 
     public function testPerTypeValueOfTheWrongShapeIsBlockedRatherThanUnrestricted(): void

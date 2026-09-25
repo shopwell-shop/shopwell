@@ -46,7 +46,7 @@ class StoreClientTest extends TestCase
         $this->cache = static::getContainer()->get('cache.object');
         $this->storeClient = static::getContainer()->get(StoreClient::class);
 
-        $this->setLicenseDomain('shopware-test');
+        $this->setLicenseDomain('shopwell-test');
 
         $this->storeContext = $this->createAdminStoreContext();
     }
@@ -55,7 +55,7 @@ class StoreClientTest extends TestCase
     {
         $this->expectExceptionObject(StoreException::invalidContextSource(AdminApiSource::class, SystemSource::class));
 
-        $this->storeClient->loginWithShopwellId('shopwareId', 'password', Context::createDefaultContext());
+        $this->storeClient->loginWithShopwellId('shopwellId', 'password', Context::createDefaultContext());
     }
 
     public function testSignPayloadWithAppSecret(): void
@@ -70,9 +70,9 @@ class StoreClientTest extends TestCase
         static::assertSame('/swplatform/generatesignature', $lastRequest->getUri()->getPath());
 
         static::assertSame([
-            'shopwareVersion' => $this->getShopwellVersion(),
+            'shopwellVersion' => $this->getShopwellVersion(),
             'language' => 'en-GB',
-            'domain' => 'shopware-test',
+            'domain' => 'shopwell-test',
         ], Query::parse($lastRequest->getUri()->getQuery()));
 
         static::assertEquals([
@@ -90,24 +90,24 @@ class StoreClientTest extends TestCase
             new Response(200, [], $responseBody)
         );
 
-        $this->storeClient->loginWithShopwellId('shopwareId', 'password', $this->storeContext);
+        $this->storeClient->loginWithShopwellId('shopwellId', 'password', $this->storeContext);
 
         $lastRequest = $this->getStoreRequestHandler()->getLastRequest();
         static::assertInstanceOf(RequestInterface::class, $lastRequest);
 
         static::assertSame([
-            'shopwareVersion' => $this->getShopwellVersion(),
+            'shopwellVersion' => $this->getShopwellVersion(),
             'language' => 'en-GB',
-            'domain' => 'shopware-test',
+            'domain' => 'shopwell-test',
         ], Query::parse($lastRequest->getUri()->getQuery()));
 
         $contextSource = $this->storeContext->getSource();
         static::assertInstanceOf(AdminApiSource::class, $contextSource);
 
         static::assertSame([
-            'shopwareId' => 'shopwareId',
+            'shopwellId' => 'shopwellId',
             'password' => 'password',
-            'shopwareUserId' => $contextSource->getUserId(),
+            'shopwellUserId' => $contextSource->getUserId(),
         ], \json_decode($lastRequest->getBody()->getContents(), true, flags: \JSON_THROW_ON_ERROR));
 
         // token from login.json
@@ -226,7 +226,7 @@ class StoreClientTest extends TestCase
     public function testMissingConnectionBecauseYouAreInGermanCellularInternet(): void
     {
         $this->getStoreRequestHandler()->append(new ConnectException(
-            'cURL error 7: Failed to connect to api.shopwell.cn port 443 after 4102 ms: Network is unreachable (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.shopwell.cn/swplatform/pluginupdates?shopwareVersion=6.4.12.0&language=de-DE&domain=',
+            'cURL error 7: Failed to connect to api.shopwell.cn port 443 after 4102 ms: Network is unreachable (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.shopwell.cn/swplatform/pluginupdates?shopwellVersion=6.4.12.0&language=de-DE&domain=',
             static::createStub(RequestInterface::class)
         ));
 

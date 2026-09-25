@@ -27,7 +27,7 @@ class ZugferdEmbeddedRenderer extends AbstractDocumentRenderer
         protected AbstractDocumentRenderer $invoiceRenderer,
         protected AbstractDocumentRenderer $electronicRenderer,
         protected ZugferdEmbeddedService $zugferdEmbeddedService,
-        protected string $shopwareVersion,
+        protected string $shopwellVersion,
     ) {
     }
 
@@ -51,7 +51,7 @@ class ZugferdEmbeddedRenderer extends AbstractDocumentRenderer
             $rendererConfig,
             $invoice,
             $this->electronicRenderer,
-            $this->shopwareVersion
+            $this->shopwellVersion
         );
     }
 }

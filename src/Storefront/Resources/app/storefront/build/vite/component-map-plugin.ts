@@ -9,7 +9,7 @@ import type { Plugin } from 'vite';
  *
  * 1. Rewrites relative imports in *entry* chunks that point at a facade chunk
  *    for a bare specifier back to that specifier
- *    (e.g. `'../../vendor/quickview-abc123.js'` → `'@shopware-ag/dive/quickview'`)
+ *    (e.g. `'../../vendor/quickview-abc123.js'` → `'@shopwell-ag/dive/quickview'`)
  *    so the browser can resolve them via the import map at runtime.
  *
  * 2. Emits `.vite/build-meta.json` with both:
@@ -18,7 +18,7 @@ import type { Plugin } from 'vite';
  *
  *    {
  *      "manifest": { ... },
- *      "vendorMap": { "@shopware-ag/dive/quickview": "vendor/quickview-abc123.js" }
+ *      "vendorMap": { "@shopwell-ag/dive/quickview": "vendor/quickview-abc123.js" }
  *    }
  *
  * Design notes
@@ -28,7 +28,7 @@ import type { Plugin } from 'vite';
  * and the facades Rolldown emits for dynamic `import()`s) are left alone for
  * two reasons:
  *
- *   - A package may be split across many chunks (e.g. `@shopware-ag/dive` →
+ *   - A package may be split across many chunks (e.g. `@shopwell-ag/dive` →
  *     PerspectiveCamera-*.js, parse-error-*.js, quickview-*.js, …). Each chunk
  *     has its own, chunk-local mangled exports. Collapsing an intra-package
  *     import to a bare specifier would lose the subpath distinction and route
@@ -43,7 +43,7 @@ import type { Plugin } from 'vite';
  * must be preserved for the runtime import map.
  *
  * The specifier assigned to a chunk is the *same bare specifier the user wrote*
- * (`'@shopware-ag/dive'`, `'@shopware-ag/dive/quickview'`, `'three'`, …), not
+ * (`'@shopwell-ag/dive'`, `'@shopwell-ag/dive/quickview'`, `'three'`, …), not
  * just the package name. We capture this during resolution by observing every
  * `resolveId` call and recording `source → resolved.id`.
  *
@@ -85,7 +85,7 @@ export function componentMapPlugin(): Plugin {
          * We ignore:
          *   - Relative / absolute paths (they are not bare specifiers).
          *   - Virtual modules (`\0…`) emitted by other plugins.
-         *   - `shopware`, which is kept external and resolved via the
+         *   - `shopwell`, which is kept external and resolved via the
          *     runtime import map by ThemeCompiler directly.
          */
         async resolveId(source, importer) {
@@ -94,7 +94,7 @@ export function componentMapPlugin(): Plugin {
                 || source.startsWith('.')
                 || source.startsWith('\0')
                 || path.isAbsolute(source)
-                || source === 'shopware'
+                || source === 'shopwell'
             ) {
                 return null;
             }

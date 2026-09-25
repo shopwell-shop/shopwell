@@ -3,7 +3,7 @@ title: Add wishlist buttons and icon with counter in the header when wishlist is
 issue: NEXT-11308
 ---
 # Storefront
-*  Added `Shopware\Storefront\Controller\WishlistController`.
+*  Added `Shopwell\Storefront\Controller\WishlistController`.
 *  Added a new svg icon `heart-fill` in `src/Storefront/Resources/app/storefront/dist/assets/icon/default/heart-fill.svg`.
 *  Added new wishlist header's widget template in `src/Storefront/Resources/views/storefront/layout/header/actions/wishlist-widget.html.twig` to show wishlist icon in the header.
 *  Added a new block `layout_header_actions_wishlist` in `src/Storefront/Resources/views/storefront/layout/header/header.html.twig` to show wishlist widget.

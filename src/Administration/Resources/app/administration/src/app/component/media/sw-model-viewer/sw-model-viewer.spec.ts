@@ -1,15 +1,15 @@
 /**
  * @sw-package discovery
  */
-import type { QuickViewSettings } from '@shopware-ag/dive/quickview';
+import type { QuickViewSettings } from '@shopwell-ag/dive/quickview';
 import { mount } from '@vue/test-utils';
 
-// Mock QuickView from @shopware-ag/dive/quickview
+// Mock QuickView from @shopwell-ag/dive/quickview
 const mockQuickViewDispose = jest.fn();
 const mockQuickView = jest.fn().mockResolvedValue({
     dispose: mockQuickViewDispose,
 });
-jest.mock('@shopware-ag/dive/quickview', () => ({
+jest.mock('@shopwell-ag/dive/quickview', () => ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     QuickView: (...args: QuickViewSettings[]) => mockQuickView(...args),
 }));

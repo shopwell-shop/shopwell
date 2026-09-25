@@ -6,4 +6,4 @@ author_email: j.steinkamp@basecom.de
 author_github: jonthn4
 ---
 # Core
-* add public method inside `\Shopware\Core\Checkout\Cart\Delivery\DeliveryBuilder` to build delivery based on specific given shipping method
+* add public method inside `\Shopwell\Core\Checkout\Cart\Delivery\DeliveryBuilder` to build delivery based on specific given shipping method

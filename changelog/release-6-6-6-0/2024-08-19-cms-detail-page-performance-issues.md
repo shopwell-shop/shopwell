@@ -2,7 +2,7 @@
 title: Improving admin performance for layouts with many elements 
 issue: NEXT-37759
 author: Benedikt Schulze Baek
-author_email: b.schulze-baek@shopware.com
+author_email: b.schulze-baek@shopwell.com
 author_github: bschulzebaek
 ---
 # Administration

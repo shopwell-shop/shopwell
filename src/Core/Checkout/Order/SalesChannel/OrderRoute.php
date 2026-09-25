@@ -95,7 +95,7 @@ class OrderRoute extends AbstractOrderRoute
         } elseif ($deepLinkFilter === null) {
             // @deprecated tag:v6.8.0 - remove this if block
             if (!Feature::isActive('v6.8.0.0')) {
-                throw CartException::customerNotLoggedIn(); // @phpstan-ignore shopware.domainException
+                throw CartException::customerNotLoggedIn(); // @phpstan-ignore shopwell.domainException
             }
             throw OrderException::customerNotLoggedIn();
         }
@@ -248,13 +248,13 @@ class OrderRoute extends AbstractOrderRoute
 
         $orderCustomer = $order->getOrderCustomer();
         if ($orderCustomer === null) {
-            throw CartException::customerNotLoggedIn(); // @phpstan-ignore shopware.domainException
+            throw CartException::customerNotLoggedIn(); // @phpstan-ignore shopwell.domainException
         }
 
         $guest = $orderCustomer->getCustomer() !== null && $orderCustomer->getCustomer()->getGuest();
         // Throw exception when customer is not guest
         if (!$guest) {
-            throw CartException::customerNotLoggedIn(); // @phpstan-ignore shopware.domainException
+            throw CartException::customerNotLoggedIn(); // @phpstan-ignore shopwell.domainException
         }
 
         // Verify email and zip code with this order

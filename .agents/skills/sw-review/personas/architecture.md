@@ -2,7 +2,7 @@
 persona: architecture
 display_name: Architecture
 description: >
-    Architecture-focused Shopware reviewer: patterns, layering, DI, DAL design,
+    Architecture-focused Shopwell reviewer: patterns, layering, DI, DAL design,
     public API stability, migrations, tests, hot-path performance.
 ---
 

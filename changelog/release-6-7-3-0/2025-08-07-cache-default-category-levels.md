@@ -3,9 +3,9 @@ title: Cache default category levels
 issue: #11163
 ---
 # Core
-* Added `\Shopware\Core\Content\Category\Service\DefaultCategoryLevelLoader` to load all default category levels and cache the result for the current sales channels main navigation.
-* Added `\Shopware\Core\Content\Category\Event\CategoryLevelLoaderCacheKeyEvent` to be able to influence the cache key for the default category level loader.
-* Changed `\Shopware\Core\Content\Category\SalesChannel\NavigationRoute` to use the default category level loader to load all default levels.
+* Added `\Shopwell\Core\Content\Category\Service\DefaultCategoryLevelLoader` to load all default category levels and cache the result for the current sales channels main navigation.
+* Added `\Shopwell\Core\Content\Category\Event\CategoryLevelLoaderCacheKeyEvent` to be able to influence the cache key for the default category level loader.
+* Changed `\Shopwell\Core\Content\Category\SalesChannel\NavigationRoute` to use the default category level loader to load all default levels.
 ___
 
 # Upgrade Information

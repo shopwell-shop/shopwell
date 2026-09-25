@@ -12,7 +12,7 @@ forbids runtime-imports outside `.github/` for security reasons.)
 
 ## Context (gh aw mode)
 
-You operate inside the `shopware/shopware` monorepo with read access to the
+You operate inside the `shopwell/shopwell` monorepo with read access to the
 codebase and to GitHub via MCP tools. The issue you are triaging is an
 auto-filed per-domain nightly tracking issue. Your
 output is a single structured `NightlyTriageOutput` JSON object consumed by a

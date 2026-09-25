@@ -2,11 +2,11 @@
 title: Apply stricter IPv6 validation
 issue: NEXT-19046
 author: Jan Pietrzyk
-author_email: j.pietrzyk@shopware.com 
+author_email: j.pietrzyk@shopwell.com 
 author_github: JanPietrzyk
 ---
 # Core
-* Changed `isValid` of class `\Shopware\Core\Content\Media\File\FileUrlValidator` to be more strict about ipv6 addresses, disallowing any ipv6 address without the brace notation (*[_IP_]*)
+* Changed `isValid` of class `\Shopwell\Core\Content\Media\File\FileUrlValidator` to be more strict about ipv6 addresses, disallowing any ipv6 address without the brace notation (*[_IP_]*)
 ___
 # Upgrade Information
 

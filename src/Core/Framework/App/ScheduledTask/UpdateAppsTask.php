@@ -26,6 +26,6 @@ class UpdateAppsTask extends ScheduledTask
 
     public static function shouldRun(ParameterBagInterface $bag): bool
     {
-        return $bag->get('shopware.deployment.runtime_extension_management');
+        return $bag->get('shopwell.deployment.runtime_extension_management');
     }
 }

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shopwell Change Scope"
+  short_description: "Scope Shopwell fixes and cleanups from root cause."
+  default_prompt: "Scope this Shopwell change and identify the root-cause fix."

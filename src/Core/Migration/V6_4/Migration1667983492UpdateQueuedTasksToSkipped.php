@@ -28,7 +28,7 @@ class Migration1667983492UpdateQueuedTasksToSkipped extends MigrationStep
             [
                 'skippedStatus' => ScheduledTaskDefinition::STATUS_SKIPPED,
                 'queuedStatus' => ScheduledTaskDefinition::STATUS_QUEUED,
-                'skippedTasks' => ['shopware.invalidate_cache', 'shopware.elasticsearch.create.alias'],
+                'skippedTasks' => ['shopwell.invalidate_cache', 'shopwell.elasticsearch.create.alias'],
                 'nextExecutionTime' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             ],
             [

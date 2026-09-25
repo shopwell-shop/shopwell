@@ -3,8 +3,8 @@ title: Improve error suggestions
 issue: NEXT-26715
 ---
 # Storefront
-* Changed method `\Shopware\Core\Checkout\Customer\Validation\AddressValidationFactory::buildCommonValidation` by adding a custom snippet key for storefront validation hints.
-* Changed method `\Shopware\Core\Checkout\Customer\Validation\CustomerValidationFactory::addConstraints` by adding a custom snippet key for storefront validation hints.
+* Changed method `\Shopwell\Core\Checkout\Customer\Validation\AddressValidationFactory::buildCommonValidation` by adding a custom snippet key for storefront validation hints.
+* Changed method `\Shopwell\Core\Checkout\Customer\Validation\CustomerValidationFactory::addConstraints` by adding a custom snippet key for storefront validation hints.
 * Changed `Storefront/Resources/views/storefront/utilities/form-violation.html.twig` template to show advanced validation suggestions if set.
 * Added snippets:
   * `VIOLATION::INVALID_EMAIL_FORMAT_ERROR`

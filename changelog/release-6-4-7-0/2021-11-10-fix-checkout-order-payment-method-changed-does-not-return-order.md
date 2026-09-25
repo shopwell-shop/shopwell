@@ -4,5 +4,5 @@ issue: NEXT-18316
 ---
 # Core
 * Changed `OrderPaymentMethodChangedEvent` to implement `OrderAware`
-* Added `Shopware\Core\Checkout\Order\Event\OrderPaymentMethodChangedCriteriaEvent`
-* Changed `\Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute::loadOrder` method to dispatch `OrderPaymentMethodChangedCriteriaEvent` before fetching data
+* Added `Shopwell\Core\Checkout\Order\Event\OrderPaymentMethodChangedCriteriaEvent`
+* Changed `\Shopwell\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute::loadOrder` method to dispatch `OrderPaymentMethodChangedCriteriaEvent` before fetching data

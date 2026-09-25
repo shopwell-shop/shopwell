@@ -43,7 +43,7 @@ class AddedFilterTest extends TestCase
                     ],
                     '1.bas' => [
                         'value' => '1_bas',
-                        'author' => 'shopware',
+                        'author' => 'shopwell',
                         'origin' => '',
                         'resetTo' => '',
                         'translationKey' => '',
@@ -67,7 +67,7 @@ class AddedFilterTest extends TestCase
                     ],
                     '2.baz' => [
                         'value' => '2_baz',
-                        'author' => 'shopware',
+                        'author' => 'shopwell',
                         'origin' => '',
                         'resetTo' => '',
                         'translationKey' => '',

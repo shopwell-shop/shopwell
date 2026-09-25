@@ -7,4 +7,4 @@ author_github: @stefanpoensgen
 ---
 
 # Core
-* Add `Shopware\Core\System\SalesChannel\Event\SalesChannelContextRestorerOrderCriteriaEvent.php`
+* Add `Shopwell\Core\System\SalesChannel\Event\SalesChannelContextRestorerOrderCriteriaEvent.php`

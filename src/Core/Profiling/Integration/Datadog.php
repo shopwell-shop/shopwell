@@ -25,8 +25,8 @@ class Datadog implements ProfilerInterface
             return;
         }
 
-        if ($category !== 'shopware') {
-            $category = 'shopware.' . $category;
+        if ($category !== 'shopwell') {
+            $category = 'shopwell.' . $category;
         }
 
         /** @see Tag::SERVICE_NAME */

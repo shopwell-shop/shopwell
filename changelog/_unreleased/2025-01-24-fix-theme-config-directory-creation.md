@@ -2,7 +2,7 @@
 title: Fix theme config directory creation for storefront watcher
 issue: 13051
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: @BrocksiNet
 ---
 # Storefront

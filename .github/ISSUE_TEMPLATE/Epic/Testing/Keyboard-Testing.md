@@ -67,7 +67,7 @@ The overarching requirements regardless of feature design or individual elements
 For components that are not listed in the **Browser-defined interactions**, you can check against the following libraries:
 
 [Bootstrap](https://getbootstrap.com/docs/5.3/components/accordion/) for Storefront
-[Meteor](https://meteor.shopware.com/?path=/docs/components-form-mt-action-menu--docs) for Admin
+[Meteor](https://meteor.shopwell.com/?path=/docs/components-form-mt-action-menu--docs) for Admin
 
 The following scenarios may become relevant depending on which components you are testing within your feature:
 

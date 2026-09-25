@@ -34,7 +34,7 @@ class ScriptReferenceGeneratorTest extends TestCase
                     <<<MSG
 The app scripts reference documentation is not up to date.
 Please regenerate the documentation by running `bin/console docs:generate-scripts-reference`.
-Also ensure that the copied files in the publicly accessible gitbook @ `https://github.com/shopware/docs` are also updated!'
+Also ensure that the copied files in the publicly accessible gitbook @ `https://github.com/shopwell-shop/docs` are also updated!'
 MSG
                 );
             }

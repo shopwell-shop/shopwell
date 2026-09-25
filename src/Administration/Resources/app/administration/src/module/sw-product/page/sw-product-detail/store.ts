@@ -2,7 +2,7 @@
  * @sw-package inventory
  */
 
-import type EntityCollection from '@shopware-ag/meteor-admin-sdk/es/_internals/data/EntityCollection';
+import type EntityCollection from '@shopwell-ag/meteor-admin-sdk/es/_internals/data/EntityCollection';
 import type { ContextStore } from '../../../../app/store/context.store';
 
 type LoadingProperties =

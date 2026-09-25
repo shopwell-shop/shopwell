@@ -3,4 +3,4 @@ title: Add reading of env vars from the $_ENV super global as a fallback to $_SE
 issue: NEXT-15499
 ---
 # Core
-* Added `\Shopware\Core\DevOps\Environment\EnvironmentHelper` to handle reading from env variables and used it where necessary
+* Added `\Shopwell\Core\DevOps\Environment\EnvironmentHelper` to handle reading from env variables and used it where necessary

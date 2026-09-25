@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { MtModal, MtModalClose, MtModalAction, MtModalTrigger, MtModalRoot } from '@shopware-ag/meteor-component-library';
+import { MtModal, MtModalClose, MtModalAction, MtModalTrigger, MtModalRoot } from '@shopwell-ag/meteor-component-library';
 import SwSettingsServicesDeactivateModal from './index';
 
 const createWrapper = async (props = {}) => {
@@ -53,7 +53,7 @@ const createContentWrapper = async (props = {}) => {
 
 describe('src/module/sw-settings-services/component/sw-settings-services-deactivate-modal', () => {
     beforeAll(() => {
-        Shopwell.Service().register('shopwareServicesService', () => ({
+        Shopwell.Service().register('shopwellServicesService', () => ({
             disableAllServices: jest.fn(),
         }));
     });
@@ -84,7 +84,7 @@ describe('src/module/sw-settings-services/component/sw-settings-services-deactiv
         const notificationStore = Shopwell.Store.get('notification');
         const notificationSpy = jest.spyOn(notificationStore, 'createNotification');
 
-        Shopwell.Service('shopwareServicesService').disableAllServices.mockImplementationOnce(() => ({
+        Shopwell.Service('shopwellServicesService').disableAllServices.mockImplementationOnce(() => ({
             disabled: true,
         }));
 
@@ -137,7 +137,7 @@ describe('src/module/sw-settings-services/component/sw-settings-services-deactiv
         const notificationStore = Shopwell.Store.get('notification');
         const notificationSpy = jest.spyOn(notificationStore, 'createNotification');
 
-        Shopwell.Service('shopwareServicesService').disableAllServices.mockImplementationOnce(() => {
+        Shopwell.Service('shopwellServicesService').disableAllServices.mockImplementationOnce(() => {
             throw new Error('Deactivation failed');
         });
 

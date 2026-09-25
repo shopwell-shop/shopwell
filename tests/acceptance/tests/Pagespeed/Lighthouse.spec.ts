@@ -1,7 +1,7 @@
 import { test } from '@fixtures/AcceptanceTest';
 
 test.skip(
-    process.env.GITHUB_REPOSITORY === 'shopware/shopware-private',
+    process.env.GITHUB_REPOSITORY === 'shopwell/shopwell-private',
     'Lighthouse tests require the performance characteristics of the public repository runners.',
 );
 

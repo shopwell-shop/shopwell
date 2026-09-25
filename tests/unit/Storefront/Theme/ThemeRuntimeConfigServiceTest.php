@@ -345,7 +345,7 @@ class ThemeRuntimeConfigServiceTest extends TestCase
 
         $importMap = [
             'imports' => [
-                'shopware' => '/bundles/storefront/storefront/shopware/shopware.js',
+                'shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js',
                 'Sw:Button' => 'js/components/Sw/Button.js',
             ],
         ];

@@ -25,7 +25,7 @@ class FactoryTest extends TestCase
 
         $composer = Factory::createComposer(__DIR__ . '/../_fixtures/core');
 
-        static::assertSame('shopware/platform', $composer->getPackage()->getName());
+        static::assertSame('shopwell/platform', $composer->getPackage()->getName());
         static::assertContains($composer->getPackage()->getVersion(), ['6.6.9999999-dev', '6.7.9999999.9999999-dev', 'dev-trunk']);
     }
 
@@ -34,7 +34,7 @@ class FactoryTest extends TestCase
         $this->setEnvVars(['COMPOSER_ROOT_VERSION' => '6.4.9999999-dev']);
         $composer = Factory::createComposer(__DIR__ . '/../_fixtures/core');
 
-        static::assertSame('shopware/platform', $composer->getPackage()->getName());
+        static::assertSame('shopwell/platform', $composer->getPackage()->getName());
         static::assertSame('6.4.9999999.9999999-dev', $composer->getPackage()->getVersion());
     }
 }

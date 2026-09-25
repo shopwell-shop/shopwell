@@ -5,4 +5,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Storefront
-* Deprecated `Shopware\Storefront\Pagelet\Header\HeaderPagelet::{getActiveLanguage,getActiveCurrency}` as they should be accessed through the context
+* Deprecated `Shopwell\Storefront\Pagelet\Header\HeaderPagelet::{getActiveLanguage,getActiveCurrency}` as they should be accessed through the context

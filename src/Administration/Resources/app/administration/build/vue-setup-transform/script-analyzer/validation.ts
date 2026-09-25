@@ -11,10 +11,10 @@
 
 import type { File as BabelFile, Node as BabelNode } from '@babel/types';
 import { ShopwellSetupTransformError } from '../utils/transform-error';
-import type { ShopwellSetupMode } from '../utils/shopware-setup-block';
+import type { ShopwellSetupMode } from '../utils/shopwell-setup-block';
 import { absoluteRange, walk } from './utils';
 import { isFunctionLikeNode } from '../utils/ast-traversal';
-import { RESERVED_OVERRIDE_STATE_NAME, SHOPWARE_SETUP_INTERNAL_PREFIX, type ShopwellSetupMacroName } from './macros';
+import { RESERVED_OVERRIDE_STATE_NAME, SHOPWELL_SETUP_INTERNAL_PREFIX, type ShopwellSetupMacroName } from './macros';
 import { RESERVED_HELPER_NAMES, VUE_BUILTIN_MACRO_NAMES, getWrongModeWalkChecks } from './macro-registry';
 
 /**
@@ -130,9 +130,9 @@ function assertReservedMacroNames(bindings: NamedBinding[], scriptOffset: number
             );
         }
 
-        if (binding.name.startsWith(SHOPWARE_SETUP_INTERNAL_PREFIX)) {
+        if (binding.name.startsWith(SHOPWELL_SETUP_INTERNAL_PREFIX)) {
             throw new ShopwellSetupTransformError(
-                `"${binding.name}" uses the reserved "${SHOPWARE_SETUP_INTERNAL_PREFIX}" prefix of the Shopwell setup transform and must not be declared or imported.`,
+                `"${binding.name}" uses the reserved "${SHOPWELL_SETUP_INTERNAL_PREFIX}" prefix of the Shopwell setup transform and must not be declared or imported.`,
                 absoluteRange(binding.node, scriptOffset),
             );
         }

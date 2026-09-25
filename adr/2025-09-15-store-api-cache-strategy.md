@@ -10,8 +10,8 @@ tags: [caching, store-api, performance, core]
 Store API performance is critical for all headless installations. Currently, Store API responses are not
 cached by default, which leads to unnecessary server load and reduced performance for end users.
 
-At the same time, Storefront (classical Shopware frontend based on twig templates, mentioned here and further in
-this doc only for context and strategy alignment) already has a caching mechanism in place and Shopware provides
+At the same time, Storefront (classical Shopwell frontend based on twig templates, mentioned here and further in
+this doc only for context and strategy alignment) already has a caching mechanism in place and Shopwell provides
 a reference configuration for reverse proxies like Varnish, that supports Storefront caching.
 
 The goal is to introduce a caching strategy for Store API, while reusing existing approaches and keeping required changes
@@ -47,7 +47,7 @@ Important details:
      cache hit ratio across clients.
    - Introduce phaseout plan for separate criteria parameters (e.g. `filter`, `grouping`, `fields`, `page`, `limit`, etc).
 3. Use cache headers (not cookies) to differentiate contexts on Store API
-   - Use `sw-currency-id` and `sw-language-id` to differentiate currency and language. Shopware must update currency and
+   - Use `sw-currency-id` and `sw-language-id` to differentiate currency and language. Shopwell must update currency and
      language ids in the context of the current request based on these headers.
    - Use `sw-context-hash` to differentiate other context aspects (e.g. logged in customer, active rules, etc). Use the
      same algorithm as for storefront context hash cookie.
@@ -99,7 +99,7 @@ Important details:
 
 3. Two-step flow: POST returns a request hash; GET retrieves cached data by hash:
    - More complex implementation for clients (changed workflow).
-   - More complex implementation for Shopware (need to store request hashes and map them to actual requests).
+   - More complex implementation for Shopwell (need to store request hashes and map them to actual requests).
    - Additional round-trip for the requests.
    - Transparent request - easier to debug and log.
     Rejected in favor of simplicity of implementation, limited number of requests and minimal changes on clients side.

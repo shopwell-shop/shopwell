@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Changed DateTime format of the Elasticsearch query in the `Shopware\Elasticsearch\Framework\DataAbstractionLayer\CriteriaParser` to ignore milliseconds and fix them to `000`
+* Changed DateTime format of the Elasticsearch query in the `Shopwell\Elasticsearch\Framework\DataAbstractionLayer\CriteriaParser` to ignore milliseconds and fix them to `000`

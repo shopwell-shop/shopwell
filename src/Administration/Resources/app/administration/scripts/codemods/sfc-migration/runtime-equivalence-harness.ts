@@ -152,7 +152,7 @@ function evaluateModule(source: string): Record<string, unknown> {
     });
     const execute = new Script(`(function(require, module, exports, Shopwell) {\n${transformed.code}\n})`).runInContext(
         context,
-    ) as (requireModule: (id: string) => unknown, module: unknown, exports: unknown, shopware: unknown) => void;
+    ) as (requireModule: (id: string) => unknown, module: unknown, exports: unknown, shopwell: unknown) => void;
 
     execute(requireModule, moduleRecord, moduleRecord.exports, runtimeShopwell);
 

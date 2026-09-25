@@ -7,5 +7,5 @@ author_github: @ottscho
 
 ---
 # Core
-* Changed `\Shopware\Core\Content\Cms\DataResolver\Element\AbstractCmsElementResolver::resolveEntityValue()` to handle with custom fields
+* Changed `\Shopwell\Core\Content\Cms\DataResolver\Element\AbstractCmsElementResolver::resolveEntityValue()` to handle with custom fields
 ___

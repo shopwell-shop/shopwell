@@ -3,7 +3,7 @@
  */
 import initCms from 'src/app/init/cms.init';
 import 'src/module/sw-cms/service/cms.service';
-import * as cms from '@shopware-ag/meteor-admin-sdk/es/ui/cms';
+import * as cms from '@shopwell-ag/meteor-admin-sdk/es/ui/cms';
 
 describe('src/app/init/cms.init.ts', () => {
     beforeEach(() => {

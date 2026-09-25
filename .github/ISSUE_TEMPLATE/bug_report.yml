@@ -7,10 +7,10 @@ body:
           value: |
               Thanks for taking the time to fill out this bug report!
     - type: input
-      id: shopware-version
+      id: shopwell-version
       attributes:
-          label: Shopware Version
-          description: Please specify your Shopware version (e.g. 6.4.20.0). If you're using Shopware Cloud, simply type "cloud".
+          label: Shopwell Version
+          description: Please specify your Shopwell version (e.g. 6.4.20.0). If you're using Shopwell Cloud, simply type "cloud".
       validations:
           required: true
     - type: dropdown
@@ -37,7 +37,7 @@ body:
               - Extension:Image-Editor
               - Extension:Copilot
               - Extension:AgenticCommerce
-              - Extension:Shopware-Payments
+              - Extension:Shopwell-Payments
       validations:
           required: true
     - type: textarea

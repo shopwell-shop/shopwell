@@ -27,7 +27,7 @@ class UnusedMediaPurgerTest extends TestCase
     use MediaFixtures;
     use QueueTestBehaviour;
 
-    private const FIXTURE_FILE = __DIR__ . '/fixtures/shopware-logo.png';
+    private const FIXTURE_FILE = __DIR__ . '/fixtures/shopwell-logo.png';
 
     private UnusedMediaPurger $unusedMediaPurger;
 

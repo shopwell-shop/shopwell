@@ -6,4 +6,4 @@ author_email: andreas.allacher@massiveart.com
 author_github: @AndreasA
 ---
 # Core
-* Changed `Shopware\Core\System\SalesChannel\SalesChannel\ContextRoute` service to be public.
+* Changed `Shopwell\Core\System\SalesChannel\SalesChannel\ContextRoute` service to be public.

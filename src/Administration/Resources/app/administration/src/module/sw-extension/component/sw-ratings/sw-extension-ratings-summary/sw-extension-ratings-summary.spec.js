@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { MtProgressBar } from '@shopware-ag/meteor-component-library';
+import { MtProgressBar } from '@shopwell-ag/meteor-component-library';
 
 /**
  * @sw-package checkout

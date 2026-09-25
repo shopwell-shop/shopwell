@@ -89,7 +89,7 @@ class AppRegistrationServiceTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/../_fixtures/manifest.xml');
 
         $handshake = new StoreHandshake(
-            'https://shopware.swag',
+            'https://shopwell.swag',
             'http://app.server/register',
             'test',
             'shop-id',
@@ -121,7 +121,7 @@ class AppRegistrationServiceTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/../_fixtures/manifest.xml');
 
         $handshake = new PrivateHandshake(
-            'https://shopware.swag',
+            'https://shopwell.swag',
             's3cr3t',
             'https://app.server/register',
             'test',
@@ -160,7 +160,7 @@ class AppRegistrationServiceTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/../_fixtures/manifest.xml');
 
         $handshake = new PrivateHandshake(
-            'https://shopware.swag',
+            'https://shopwell.swag',
             's3cr3t',
             'https://app.server/register',
             'test',
@@ -195,7 +195,7 @@ class AppRegistrationServiceTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/../_fixtures/manifest.xml');
 
         $handshake = new PrivateHandshake(
-            'https://shopware.swag',
+            'https://shopwell.swag',
             's3cr3t',
             'https://app.server/register',
             'test',
@@ -237,7 +237,7 @@ class AppRegistrationServiceTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/../_fixtures/manifest.xml');
 
         $handshake = new PrivateHandshake(
-            'https://shopware.swag',
+            'https://shopwell.swag',
             's3cr3t',
             'https://app.server/register',
             'test',
@@ -311,7 +311,7 @@ class AppRegistrationServiceTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/../_fixtures/manifest.xml');
 
         $handshake = new PrivateHandshake(
-            'https://shopware.swag',
+            'https://shopwell.swag',
             's3cr3t',
             'https://app.server/register',
             'test',
@@ -341,7 +341,7 @@ class AppRegistrationServiceTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/../_fixtures/manifest.xml');
 
         $handshake = new PrivateHandshake(
-            'https://shopware.swag',
+            'https://shopwell.swag',
             's3cr3t',
             'https://app.server/register',
             'test',
@@ -375,7 +375,7 @@ class AppRegistrationServiceTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/../_fixtures/manifest.xml');
 
         $handshake = new PrivateHandshake(
-            'https://shopware.swag',
+            'https://shopwell.swag',
             's3cr3t',
             'https://app.server/register',
             'test',
@@ -415,7 +415,7 @@ class AppRegistrationServiceTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/../_fixtures/manifest.xml');
 
         $handshake = new PrivateHandshake(
-            'https://shopware.swag',
+            'https://shopwell.swag',
             's3cr3t',
             'https://app.server/register',
             'test',
@@ -455,7 +455,7 @@ class AppRegistrationServiceTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/../_fixtures/manifest.xml');
 
         $handshake = new PrivateHandshake(
-            'https://shopware.swag',
+            'https://shopwell.swag',
             's3cr3t',
             'https://app.server/register',
             'test',
@@ -503,7 +503,7 @@ class AppRegistrationServiceTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/../_fixtures/manifest.xml');
 
         $handshake = new PrivateHandshake(
-            'https://shopware.swag',
+            'https://shopwell.swag',
             's3cr3t',
             'https://app.server/register',
             'test',
@@ -563,7 +563,7 @@ class AppRegistrationServiceTest extends TestCase
         $this->testApp->setUnconfirmedAppSecrets(['old-1', 'old-2', 'old-3', 'old-4', 'old-5']);
 
         $handshake = new PrivateHandshake(
-            'https://shopware.swag',
+            'https://shopwell.swag',
             's3cr3t',
             'https://app.server/register',
             'test',
@@ -637,7 +637,7 @@ class AppRegistrationServiceTest extends TestCase
             $this->handshakeFactoryMock,
             new Client(['handler' => $this->mockHandler]),
             $appRepository,
-            'https://shopware.swag',
+            'https://shopwell.swag',
             $shopIdProvider,
             '6.5.2.0',
             new NativeClock(),

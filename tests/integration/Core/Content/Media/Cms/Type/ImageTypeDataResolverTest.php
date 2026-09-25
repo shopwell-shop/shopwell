@@ -307,10 +307,10 @@ class ImageTypeDataResolverTest extends TestCase
         $resolverContext = new ResolverContext(static::createStub(SalesChannelContext::class), new Request());
         $result = new ElementDataCollection();
 
-        $this->publicFilesystem->write('/bundles/core/assets/default/cms/shopware.jpg', '');
+        $this->publicFilesystem->write('/bundles/core/assets/default/cms/shopwell.jpg', '');
 
         $fieldConfig = new FieldConfigCollection();
-        $fieldConfig->add(new FieldConfig('media', FieldConfig::SOURCE_DEFAULT, 'bundles/core/assets/default/cms/shopware.jpg'));
+        $fieldConfig->add(new FieldConfig('media', FieldConfig::SOURCE_DEFAULT, 'bundles/core/assets/default/cms/shopwell.jpg'));
 
         $slot = new CmsSlotEntity();
         $slot->setFieldConfig($fieldConfig);
@@ -321,7 +321,7 @@ class ImageTypeDataResolverTest extends TestCase
         static::assertInstanceOf(ImageStruct::class, $imageStruct);
         $media = $imageStruct->getMedia();
         static::assertInstanceOf(MediaEntity::class, $media);
-        static::assertSame('shopware', $media->getFileName());
+        static::assertSame('shopwell', $media->getFileName());
         static::assertSame('image/jpeg', $media->getMimeType());
         static::assertSame('jpg', $media->getFileExtension());
     }

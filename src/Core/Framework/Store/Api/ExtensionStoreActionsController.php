@@ -69,7 +69,7 @@ class ExtensionStoreActionsController extends AbstractController
         if (!$file) {
             if (!Feature::isActive('v6.8.0.0')) {
                 // @deprecated tag:v6.8.0 - remove this if block
-                throw RoutingException::missingRequestParameter('file'); // @phpstan-ignore shopware.domainException
+                throw RoutingException::missingRequestParameter('file'); // @phpstan-ignore shopwell.domainException
             }
 
             throw StoreException::missingRequestParameter('file');

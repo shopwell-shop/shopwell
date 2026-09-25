@@ -5,4 +5,4 @@ author: Jochen Manz
 author_github: @jochenmanz
 ---
 # Core
-* Added `\Shopware\Core\Content\Product\Events\ProductGatewayCriteriaEvent`, to allow plugins changes to the loaded product associations during the cart product loading process. 
+* Added `\Shopwell\Core\Content\Product\Events\ProductGatewayCriteriaEvent`, to allow plugins changes to the loaded product associations during the cart product loading process. 

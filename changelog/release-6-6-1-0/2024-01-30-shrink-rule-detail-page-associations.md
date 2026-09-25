@@ -2,7 +2,7 @@
 title: Shrink rule detail page associations
 issue: NEXT-32248
 author: Lars Kemper
-author_email: l.kemper@shopware.com
+author_email: l.kemper@shopwell.com
 author_github: @LarsKemper
 ---
 # Administration

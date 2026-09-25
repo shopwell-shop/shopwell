@@ -79,7 +79,7 @@ export default Shopwell.Component.wrapComponentConfig({
                             'sw-version',
                             'sw-context-language',
                             'sw-user-language',
-                            'shopware-shop-signature',
+                            'shopwell-shop-signature',
                         ].includes(key);
                     }),
                 );

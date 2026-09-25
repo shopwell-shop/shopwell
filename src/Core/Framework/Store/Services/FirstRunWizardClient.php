@@ -37,7 +37,7 @@ class FirstRunWizardClient
     /**
      * @return array{firstRunWizardUserToken: array{token: string, expirationDate: string}}
      */
-    public function frwLogin(string $shopwareId, string $password, Context $context): array
+    public function frwLogin(string $shopwellId, string $password, Context $context): array
     {
         if (!$context->getSource() instanceof AdminApiSource
             || $context->getSource()->getUserId() === null) {
@@ -49,7 +49,7 @@ class FirstRunWizardClient
             '/swplatform/firstrunwizard/login',
             [
                 'json' => [
-                    'shopwareId' => $shopwareId,
+                    'shopwellId' => $shopwellId,
                     'password' => $password,
                 ],
                 'query' => $this->optionsProvider->getDefaultQueryParameters($context),
@@ -76,7 +76,7 @@ class FirstRunWizardClient
                 'query' => $this->optionsProvider->getDefaultQueryParameters($context),
                 'headers' => $this->optionsProvider->getAuthenticationHeader($context),
                 'json' => [
-                    'shopwareUserId' => $context->getSource()->getUserId(),
+                    'shopwellUserId' => $context->getSource()->getUserId(),
                 ],
             ]
         );
@@ -173,7 +173,7 @@ class FirstRunWizardClient
             [
                 'json' => [
                     'domain' => $domain,
-                    'shopwareVersion' => $this->instanceService->getShopwellVersion(),
+                    'shopwellVersion' => $this->instanceService->getShopwellVersion(),
                     'testEnvironment' => $testEnvironment,
                 ],
                 'headers' => $this->optionsProvider->getAuthenticationHeader($context),

@@ -6,12 +6,12 @@ author_email: 25648755+M-arcus@users.noreply.github.com
 author_github: @M-arcus
 ---
 # Core
-* Deprecated `\Shopware\Core\Framework\DataAbstractionLayer\Command\CreateSchemaCommand` and `\Shopware\Core\Framework\DataAbstractionLayer\SchemaGenerator`, use `\Shopware\Core\Framework\DataAbstractionLayer\Command\CreateMigrationCommand` and `\Shopware\Core\Framework\DataAbstractionLayer\MigrationQueryGenerator` instead
+* Deprecated `\Shopwell\Core\Framework\DataAbstractionLayer\Command\CreateSchemaCommand` and `\Shopwell\Core\Framework\DataAbstractionLayer\SchemaGenerator`, use `\Shopwell\Core\Framework\DataAbstractionLayer\Command\CreateMigrationCommand` and `\Shopwell\Core\Framework\DataAbstractionLayer\MigrationQueryGenerator` instead
 ___
 # Next Major Version Changes
 
-## \Shopware\Core\Framework\DataAbstractionLayer\Command\CreateSchemaCommand:
-`\Shopware\Core\Framework\DataAbstractionLayer\Command\CreateSchemaCommand` will be removed. You can use `\Shopware\Core\Framework\DataAbstractionLayer\Command\CreateMigrationCommand` instead.
+## \Shopwell\Core\Framework\DataAbstractionLayer\Command\CreateSchemaCommand:
+`\Shopwell\Core\Framework\DataAbstractionLayer\Command\CreateSchemaCommand` will be removed. You can use `\Shopwell\Core\Framework\DataAbstractionLayer\Command\CreateMigrationCommand` instead.
 
-## \Shopware\Core\Framework\DataAbstractionLayer\SchemaGenerator:
-`\Shopware\Core\Framework\DataAbstractionLayer\SchemaGenerator` will be removed. You can use `\Shopware\Core\Framework\DataAbstractionLayer\MigrationQueryGenerator` instead.
+## \Shopwell\Core\Framework\DataAbstractionLayer\SchemaGenerator:
+`\Shopwell\Core\Framework\DataAbstractionLayer\SchemaGenerator` will be removed. You can use `\Shopwell\Core\Framework\DataAbstractionLayer\MigrationQueryGenerator` instead.

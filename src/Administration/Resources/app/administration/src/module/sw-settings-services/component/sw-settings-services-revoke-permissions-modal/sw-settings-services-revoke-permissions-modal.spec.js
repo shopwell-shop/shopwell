@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { MtModal, MtModalClose, MtModalAction, MtModalTrigger, MtModalRoot } from '@shopware-ag/meteor-component-library';
+import { MtModal, MtModalClose, MtModalAction, MtModalTrigger, MtModalRoot } from '@shopwell-ag/meteor-component-library';
 import SwSettingsServicesRevokePermissionsModal from './index';
 import * as permissionsComposable from '../../composables/permissions';
 
@@ -8,7 +8,7 @@ jest.mock('../../composables/permissions', () => {
     return {
         grantPermissions: jest.fn(),
         async revokePermissions() {
-            await Shopwell.Service('shopwareServicesService').revokePermissions();
+            await Shopwell.Service('shopwellServicesService').revokePermissions();
             _reloadPageMock();
         },
         _reloadPage: _reloadPageMock,
@@ -63,7 +63,7 @@ const createContentWrapper = async (props = {}) => {
 
 describe('src/module/sw-settings-services/component/sw-settings-services-revoke-permissions-modal', () => {
     beforeAll(() => {
-        Shopwell.Service().register('shopwareServicesService', () => ({
+        Shopwell.Service().register('shopwellServicesService', () => ({
             revokePermissions: jest.fn(),
         }));
     });
@@ -94,7 +94,7 @@ describe('src/module/sw-settings-services/component/sw-settings-services-revoke-
         const notificationStore = Shopwell.Store.get('notification');
         const notificationSpy = jest.spyOn(notificationStore, 'createNotification');
 
-        Shopwell.Service('shopwareServicesService').revokePermissions.mockImplementationOnce(() => ({
+        Shopwell.Service('shopwellServicesService').revokePermissions.mockImplementationOnce(() => ({
             permissionConsent: null,
             enabled: true,
         }));
@@ -107,7 +107,7 @@ describe('src/module/sw-settings-services/component/sw-settings-services-revoke-
         await flushPromises();
 
         expect(notificationSpy).not.toHaveBeenCalled();
-        expect(Shopwell.Service('shopwareServicesService').revokePermissions).toHaveBeenCalled();
+        expect(Shopwell.Service('shopwellServicesService').revokePermissions).toHaveBeenCalled();
         expect(permissionsComposable._reloadPage).toHaveBeenCalled();
     });
 
@@ -150,7 +150,7 @@ describe('src/module/sw-settings-services/component/sw-settings-services-revoke-
         const notificationStore = Shopwell.Store.get('notification');
         const notificationSpy = jest.spyOn(notificationStore, 'createNotification');
 
-        Shopwell.Service('shopwareServicesService').revokePermissions.mockImplementationOnce(() => {
+        Shopwell.Service('shopwellServicesService').revokePermissions.mockImplementationOnce(() => {
             throw new Error('Revoke Permissions failed');
         });
 

@@ -36,7 +36,7 @@ In the following application layers you should work with plain SQL because of th
 * In the entity indexers
     * The entity indexers are located behind the entity repository layer, so it only makes sense that they do not work with the repositories but with the database connection directly.
     * the entity indexers must be able to re-index all data after a versions update. To avoid as much hydration and event overhead as possible, they should work directly with the connection.
-    * The entity indexers are not an extension point of shopware. The queries that are executed there are only used for internal processing of data and should never be rewritten.
+    * The entity indexers are not an extension point of shopwell. The queries that are executed there are only used for internal processing of data and should never be rewritten.
 
 * In Core Components
     * Core components like the theme compiler, request transformer, etc. are not places where a third party developer should be able to load additional data. The data loaded here is for pure processing only and should never be rewritten.

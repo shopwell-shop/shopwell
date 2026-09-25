@@ -31,7 +31,7 @@ class ExpectationSubscriberTest extends TestCase
         $this->expectationSubscriber = new ExpectationSubscriber('6.3.0.0', []);
         InstalledVersions::reload([
             'root' => [
-                'name' => 'shopware/production',
+                'name' => 'shopwell/production',
                 'pretty_version' => '6.3.0.0',
                 'version' => '6.3.0.0',
                 'reference' => 'foo',
@@ -41,7 +41,7 @@ class ExpectationSubscriberTest extends TestCase
                 'dev' => false,
             ],
             'versions' => [
-                'shopware/core' => [
+                'shopwell/core' => [
                     'version' => '6.3.0.0',
                     'dev_requirement' => false,
                 ],
@@ -52,7 +52,7 @@ class ExpectationSubscriberTest extends TestCase
     public function testExpectFailsOutdatedShopwellVersion(): void
     {
         $request = $this->makeRequest();
-        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopware/core:~6.4');
+        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopwell/core:~6.4');
 
         $event = new ControllerEvent(
             static::createStub(Kernel::class),
@@ -70,7 +70,7 @@ class ExpectationSubscriberTest extends TestCase
     public function testExpectMatchesShopwellVersion(): void
     {
         $request = $this->makeRequest();
-        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopware/core:~6.3.0.0');
+        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopwell/core:~6.3.0.0');
 
         $event = new ControllerEvent(
             static::createStub(Kernel::class),
@@ -85,7 +85,7 @@ class ExpectationSubscriberTest extends TestCase
     public function testExpectMatchesShopwellVersionButNotPlugin(): void
     {
         $request = $this->makeRequest();
-        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopware/core:~6.3.0.0,swag/paypal:*');
+        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopwell/core:~6.3.0.0,swag/paypal:*');
 
         $event = new ControllerEvent(
             static::createStub(Kernel::class),
@@ -105,7 +105,7 @@ class ExpectationSubscriberTest extends TestCase
         $this->expectationSubscriber = new ExpectationSubscriber('6.3.0.0', [['composerName' => 'swag/paypal', 'active' => true, 'version' => '1.0.0']]);
 
         $request = $this->makeRequest();
-        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopware/core:~6.3.0.0,swag/paypal:*');
+        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopwell/core:~6.3.0.0,swag/paypal:*');
 
         $event = new ControllerEvent(
             static::createStub(Kernel::class),
@@ -122,7 +122,7 @@ class ExpectationSubscriberTest extends TestCase
         $this->expectationSubscriber = new ExpectationSubscriber('6.3.0.0', [['composerName' => 'swag/paypal', 'active' => false, 'version' => '1.0.0']]);
 
         $request = $this->makeRequest();
-        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopware/core:~6.3.0.0,swag/paypal:*');
+        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopwell/core:~6.3.0.0,swag/paypal:*');
 
         $event = new ControllerEvent(
             static::createStub(Kernel::class),
@@ -140,7 +140,7 @@ class ExpectationSubscriberTest extends TestCase
     {
         $request = $this->makeRequest();
         $request->attributes->set('auth_required', false);
-        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopware/core:~6.4');
+        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopwell/core:~6.4');
 
         $event = new ControllerEvent(
             static::createStub(Kernel::class),
@@ -206,13 +206,13 @@ class ExpectationSubscriberTest extends TestCase
     }
 
     /**
-     * Routes bound to `%shopware.api.api_browser.auth_required_str%` receive the flag as "0"/"1".
+     * Routes bound to `%shopwell.api.api_browser.auth_required_str%` receive the flag as "0"/"1".
      */
     public function testExpectationsAreRejectedWhenAuthenticationIsDisabledAsString(): void
     {
         $request = $this->makeRequest();
         $request->attributes->set('auth_required', '0');
-        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopware/core:~6.4');
+        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopwell/core:~6.4');
 
         $event = new ControllerEvent(
             static::createStub(Kernel::class),
@@ -230,7 +230,7 @@ class ExpectationSubscriberTest extends TestCase
     {
         $request = $this->makeRequest();
         $request->attributes->set('auth_required', '1');
-        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopware/core:~6.4');
+        $request->headers->set(PlatformRequest::HEADER_EXPECT_PACKAGES, 'shopwell/core:~6.4');
 
         $event = new ControllerEvent(
             static::createStub(Kernel::class),

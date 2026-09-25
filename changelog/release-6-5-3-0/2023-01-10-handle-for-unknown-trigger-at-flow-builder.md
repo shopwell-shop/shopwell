@@ -3,7 +3,7 @@ title: Handle for unknown trigger at flow builder.
 issue: NEXT-24807
 ---
 # Core
-* Added parameter `$flowEventPersister` to method `Shopware\Core\Framework\App\AppStateService::__construct`.
+* Added parameter `$flowEventPersister` to method `Shopwell\Core\Framework\App\AppStateService::__construct`.
 ___
 # Administration
 * Changed in component `sw-flow-sequence-action`.
@@ -36,4 +36,4 @@ ___
   * Added method `isValidTrigger` return `true` if trigger is exits from `triggerEvents` state otherwise return `false`.
 * Added boolean props `isUnknownTrigger` default is false at `sw-flow-sequence`.
 * Added boolean props `isUnknownTrigger` default is false at `sw-flow-detail-general`.
-* Added `private readonly FlowEventPersister $flowEventPersister` to `\Shopware\Core\Framework\App\AppStateService::__construct()`
+* Added `private readonly FlowEventPersister $flowEventPersister` to `\Shopwell\Core\Framework\App\AppStateService::__construct()`

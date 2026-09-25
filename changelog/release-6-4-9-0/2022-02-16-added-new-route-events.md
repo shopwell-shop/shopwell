@@ -2,7 +2,7 @@
 title: Added new route events
 issue: NEXT-20151
 author: Oliver Skroblin
-author_email: o.skroblin@shopware.com
+author_email: o.skroblin@shopwell.com
 author_github: OliverSkroblin
 ---
 # Core

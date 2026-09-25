@@ -4,4 +4,4 @@
 // build a matrix leg per major (integration-major.yml). See lib/feature-flags.php.
 require_once __DIR__ . '/lib/feature-flags.php';
 
-echo \json_encode(shopware_major_lanes(), \JSON_THROW_ON_ERROR);
+echo \json_encode(shopwell_major_lanes(), \JSON_THROW_ON_ERROR);

@@ -52,7 +52,7 @@ class NoSuperGlobalsInsideCompilerPassRule implements Rule
 
         return [
             RuleErrorBuilder::message('Do not use super globals inside compiler passes.')
-                ->identifier('shopware.notSuperGlobalCompilerPass')
+                ->identifier('shopwell.notSuperGlobalCompilerPass')
                 ->build(),
         ];
     }

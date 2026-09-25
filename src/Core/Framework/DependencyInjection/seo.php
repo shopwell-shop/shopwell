@@ -65,26 +65,26 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(SeoUrlDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelSeoUrlDefinition::class)
-        ->tag('shopware.sales_channel.entity.definition');
+        ->tag('shopwell.sales_channel.entity.definition');
 
     $services->set(SeoUrlTemplateDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(MainCategoryDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelMainCategoryDefinition::class)
-        ->tag('shopware.sales_channel.entity.definition');
+        ->tag('shopwell.sales_channel.entity.definition');
 
     $services->set(SeoUrlGenerator::class)
         ->args([
             service(DefinitionInstanceRegistry::class),
             service('router.default'),
             service('request_stack'),
-            service('shopware.seo_url.twig'),
+            service('shopwell.seo_url.twig'),
             service(TwigVariableParserFactory::class),
             service('logger'),
         ]);
@@ -100,33 +100,33 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(SeoUrlRouteRegistry::class)
         ->lazy()
         ->args([
-            tagged_iterator('shopware.seo_url.route'),
+            tagged_iterator('shopwell.seo_url.route'),
         ]);
 
     $services->set(ProductStoreApiUrlRoute::class)
         ->args([
             service(ProductDefinition::class),
         ])
-        ->tag('shopware.entity.seo_url.route');
+        ->tag('shopwell.entity.seo_url.route');
 
     $services->set(CategoryStoreApiUrlRoute::class)
         ->args([
             service(CategoryDefinition::class),
         ])
-        ->tag('shopware.entity.seo_url.route');
+        ->tag('shopwell.entity.seo_url.route');
 
     $services->set(LandingPageStoreApiUrlRoute::class)
         ->args([
             service(LandingPageDefinition::class),
         ])
-        ->tag('shopware.entity.seo_url.route');
+        ->tag('shopwell.entity.seo_url.route');
 
     $services->set(EntityRouteResolver::class)
         ->args([
             service(SeoUrlRouteRegistry::class),
             service(SeoUrlPlaceholderHandlerInterface::class),
             service('router'),
-            tagged_iterator('shopware.entity.seo_url.route'),
+            tagged_iterator('shopwell.entity.seo_url.route'),
         ]);
 
     $services->set(EmptyPathInfoResolver::class)
@@ -252,7 +252,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SeoUrlPersister::class),
             service(Connection::class),
             service('sales_channel.repository'),
-            tagged_iterator('shopware.entity.seo_url.route'),
+            tagged_iterator('shopwell.entity.seo_url.route'),
         ]);
 
     $services->set(StoreApiSeoUrlUpdateListener::class)
@@ -275,7 +275,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DefinitionInstanceRegistry::class),
             service(SeoUrlRouteRegistry::class),
             service('messenger.default_bus'),
-            tagged_iterator('shopware.entity.seo_url.route'),
+            tagged_iterator('shopwell.entity.seo_url.route'),
         ])
         ->tag('messenger.message_handler');
 
@@ -289,11 +289,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(SeoUrlTwigFactory::class);
 
-    $services->set('shopware.seo_url.twig', Environment::class)
+    $services->set('shopwell.seo_url.twig', Environment::class)
         ->factory([service(SeoUrlTwigFactory::class), 'createTwigEnvironment'])
         ->args([
             service('slugify'),
-            tagged_iterator('shopware.seo_url.twig.extension'),
+            tagged_iterator('shopwell.seo_url.twig.extension'),
             param('kernel.cache_dir'),
         ]);
 };

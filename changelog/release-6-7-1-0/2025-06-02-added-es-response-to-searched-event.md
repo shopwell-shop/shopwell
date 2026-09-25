@@ -6,4 +6,4 @@ author_github: OliverSkroblin
 ---
 
 # Core
-* Added `response` from Elasticsearch client to `\Shopware\Elasticsearch\Framework\DataAbstractionLayer\Event\ElasticsearchEntitySearcherSearchedEvent`
+* Added `response` from Elasticsearch client to `\Shopwell\Elasticsearch\Framework\DataAbstractionLayer\Event\ElasticsearchEntitySearcherSearchedEvent`

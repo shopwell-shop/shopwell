@@ -21,7 +21,7 @@ use Twig\Cache\FilesystemCache;
 #[Package('framework')]
 class ScriptLoader implements EventSubscriberInterface, ResetInterface
 {
-    final public const CACHE_KEY = 'shopware-executable-app-scripts';
+    final public const CACHE_KEY = 'shopwell-executable-app-scripts';
 
     private readonly string $cacheDir;
 

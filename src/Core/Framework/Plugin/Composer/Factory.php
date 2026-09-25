@@ -25,9 +25,9 @@ class Factory
 
         $previousRootVersion = EnvironmentHelper::hasVariable('COMPOSER_ROOT_VERSION') ? EnvironmentHelper::getVariable('COMPOSER_ROOT_VERSION') : null;
 
-        // This is a workaround to make sure that the shopware platform package has the correct version
-        if (($json['name'] ?? '') === 'shopware/platform' && !isset($json['version']) && !EnvironmentHelper::hasVariable('COMPOSER_ROOT_VERSION')) {
-            $_SERVER['COMPOSER_ROOT_VERSION'] = Kernel::SHOPWARE_FALLBACK_VERSION;
+        // This is a workaround to make sure that the shopwell platform package has the correct version
+        if (($json['name'] ?? '') === 'shopwell/platform' && !isset($json['version']) && !EnvironmentHelper::hasVariable('COMPOSER_ROOT_VERSION')) {
+            $_SERVER['COMPOSER_ROOT_VERSION'] = Kernel::SHOPWELL_FALLBACK_VERSION;
         }
 
         $composer = (new ComposerFactory())->createComposer(

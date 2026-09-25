@@ -1,7 +1,7 @@
 ---
 title: Add Design Tokens to sw-switch
 author: Nils Haberkamp
-author_email: n.haberkamp@shopware.com
+author_email: n.haberkamp@shopwell.com
 author_github: @Haberkamp
 ---
 # Administration

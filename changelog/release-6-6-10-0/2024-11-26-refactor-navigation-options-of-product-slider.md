@@ -2,7 +2,7 @@
 title: Refactor navigation options of product slider
 issue: NEXT-39635
 author: Marcel Brode
-author_email: m.brode@shopware.com
+author_email: m.brode@shopwell.com
 author_github: @Marcel Brode
 ---
 # Administration

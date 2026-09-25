@@ -8,7 +8,7 @@ The Criteria class is imported from the Meteor Admin SDK and serves as the prima
 
 ```typescript
 // Located in: core/data/criteria.data.ts
-import Criteria from '@shopware-ag/meteor-admin-sdk/es/data/Criteria';
+import Criteria from '@shopwell-ag/meteor-admin-sdk/es/data/Criteria';
 ```
 
 ## Basic Usage

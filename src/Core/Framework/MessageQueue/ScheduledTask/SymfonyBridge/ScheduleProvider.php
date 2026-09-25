@@ -51,7 +51,7 @@ class ScheduleProvider implements ScheduleProviderInterface
             $schedules[] = RecurringMessage::every($interval, $task);
         }
 
-        $lock = $this->lockFactory->createLock('scheduled-task-shopware');
+        $lock = $this->lockFactory->createLock('scheduled-task-shopwell');
 
         return (new Schedule())
             ->with(...$schedules)

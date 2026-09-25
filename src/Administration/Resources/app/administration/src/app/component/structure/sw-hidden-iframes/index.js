@@ -1,4 +1,4 @@
-import { MAIN_HIDDEN } from '@shopware-ag/meteor-admin-sdk/es/location';
+import { MAIN_HIDDEN } from '@shopwell-ag/meteor-admin-sdk/es/location';
 import template from './sw-hidden-iframes.html.twig';
 
 /**

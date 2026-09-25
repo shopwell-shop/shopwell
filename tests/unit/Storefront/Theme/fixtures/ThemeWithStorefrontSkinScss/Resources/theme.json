@@ -1,6 +1,6 @@
 {
   "name": "SkinTheme",
-  "author": "shopware AG",
+  "author": "Shopwell",
   "views": [
     "@MockStorefront",
     "@Plugins",

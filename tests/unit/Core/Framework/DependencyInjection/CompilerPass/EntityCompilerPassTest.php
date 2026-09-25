@@ -27,9 +27,9 @@ class EntityCompilerPassTest extends TestCase
         $container = new ContainerBuilder();
 
         $container->register(CustomerAddressDefinition::class, CustomerAddressDefinition::class)
-            ->addTag('shopware.entity.definition');
+            ->addTag('shopwell.entity.definition');
         $container->register(CustomerDefinition::class, CustomerDefinition::class)
-            ->addTag('shopware.entity.definition');
+            ->addTag('shopwell.entity.definition');
 
         $container->register(DefinitionInstanceRegistry::class, DefinitionInstanceRegistry::class)
             ->addArgument(new Reference('service_container'))
@@ -55,7 +55,7 @@ class EntityCompilerPassTest extends TestCase
 
         $container
             ->register(ProductDefinition::class, ProductDefinition::class)
-            ->addTag('shopware.entity.definition')
+            ->addTag('shopwell.entity.definition')
         ;
 
         $container
@@ -85,7 +85,7 @@ class EntityCompilerPassTest extends TestCase
         $container = new ContainerBuilder();
         $container
             ->register('test_attribute_entity.definition', AttributeEntityDefinition::class)
-            ->addTag('shopware.entity.definition')
+            ->addTag('shopwell.entity.definition')
         ;
         $container
             ->register(DefinitionInstanceRegistry::class, DefinitionInstanceRegistry::class)

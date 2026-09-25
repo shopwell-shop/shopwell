@@ -26,7 +26,7 @@ class StoreApiToolsetsListToolTest extends TestCase
                 'name' => 'store-api',
                 'title' => 'Store API tools',
                 'description' => 'Store API',
-                'tools' => ['shopware-store-api-context'],
+                'tools' => ['shopwell-store-api-context'],
             ],
         ]);
 

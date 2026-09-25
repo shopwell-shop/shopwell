@@ -28,7 +28,7 @@ $entityRepository
 ```
 
 ## Solution
-We created a `\Shopware\Tests\Unit\Common\Stubs\DataAbstractionLayer\StaticEntityRepository` which allows the developer to easily fake repository search results.  
+We created a `\Shopwell\Tests\Unit\Common\Stubs\DataAbstractionLayer\StaticEntityRepository` which allows the developer to easily fake repository search results.  
 
 ### How to use
 ```php

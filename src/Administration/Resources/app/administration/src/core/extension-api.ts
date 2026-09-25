@@ -4,10 +4,10 @@
  * @module core/extension-api
  */
 
-import type { MessageDataType, HandleMethod, BaseMessageOptions } from '@shopware-ag/meteor-admin-sdk/es/channel';
-import { handle as sdkHandle } from '@shopware-ag/meteor-admin-sdk/es/channel';
-import type { ShopwellMessageTypes } from '@shopware-ag/meteor-admin-sdk/es/message-types';
-import MissingPrivilegesError from '@shopware-ag/meteor-admin-sdk/es/_internals/privileges/missing-privileges-error';
+import type { MessageDataType, HandleMethod, BaseMessageOptions } from '@shopwell-ag/meteor-admin-sdk/es/channel';
+import { handle as sdkHandle } from '@shopwell-ag/meteor-admin-sdk/es/channel';
+import type { ShopwellMessageTypes } from '@shopwell-ag/meteor-admin-sdk/es/message-types';
+import MissingPrivilegesError from '@shopwell-ag/meteor-admin-sdk/es/_internals/privileges/missing-privileges-error';
 import { publishData, getPublishedDataSets } from './service/extension-api-data.service';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

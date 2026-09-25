@@ -239,7 +239,7 @@ class AdminExtensionApiControllerTest extends TestCase
         static::assertStringContainsString('sw-version=', $data['uri']);
         static::assertStringContainsString('sw-context-language=', $data['uri']);
         static::assertStringContainsString('sw-user-language=', $data['uri']);
-        static::assertStringContainsString('shopware-shop-signature=', $data['uri']);
+        static::assertStringContainsString('shopwell-shop-signature=', $data['uri']);
     }
 
     /**

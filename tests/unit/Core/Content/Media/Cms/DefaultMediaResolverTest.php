@@ -52,7 +52,7 @@ class DefaultMediaResolverTest extends TestCase
         $this->filesystem->method('mimeType')
             ->willReturn('');
 
-        $result = $this->mediaResolver->getDefaultCmsMediaEntity('bundles/storefront/assets/default/cms/shopware.jpg');
+        $result = $this->mediaResolver->getDefaultCmsMediaEntity('bundles/storefront/assets/default/cms/shopwell.jpg');
 
         static::assertNull($result);
     }
@@ -67,10 +67,10 @@ class DefaultMediaResolverTest extends TestCase
 
         $this->filesystem->method('mimeType')
             ->willReturnCallback(static function ($filePath) {
-                return $filePath === 'bundles/storefront/assets/default/cms/shopware' ? 'image/jpeg' : null;
+                return $filePath === 'bundles/storefront/assets/default/cms/shopwell' ? 'image/jpeg' : null;
             });
 
-        $result = $this->mediaResolver->getDefaultCmsMediaEntity('bundles/storefront/assets/default/cms/shopware');
+        $result = $this->mediaResolver->getDefaultCmsMediaEntity('bundles/storefront/assets/default/cms/shopwell');
 
         static::assertNull($result);
     }
@@ -83,10 +83,10 @@ class DefaultMediaResolverTest extends TestCase
         $this->filesystem->method('mimeType')
             ->willReturn('image/jpeg');
 
-        $result = $this->mediaResolver->getDefaultCmsMediaEntity('bundles/storefront/assets/default/cms/shopware.jpg');
+        $result = $this->mediaResolver->getDefaultCmsMediaEntity('bundles/storefront/assets/default/cms/shopwell.jpg');
 
         static::assertInstanceOf(MediaEntity::class, $result);
-        static::assertSame('shopware', $result->getFileName());
+        static::assertSame('shopwell', $result->getFileName());
         static::assertSame('image/jpeg', $result->getMimeType());
         static::assertSame('jpg', $result->getFileExtension());
     }

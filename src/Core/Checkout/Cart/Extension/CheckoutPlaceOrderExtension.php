@@ -23,7 +23,7 @@ final class CheckoutPlaceOrderExtension extends Extension implements ShopwellSal
     public const NAME = 'checkout.place-order';
 
     /**
-     * @internal shopware owns the __constructor, but the properties are public API
+     * @internal shopwell owns the __constructor, but the properties are public API
      */
     public function __construct(
         /**

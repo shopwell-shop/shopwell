@@ -190,7 +190,7 @@ class StoreRequestOptionsProviderTest extends TestCase
         $systemConfigService->expects($this->once())
             ->method('getString')
             ->with('core.store.licenseHost')
-            ->willReturn('domain.shopware.store');
+            ->willReturn('domain.shopwell.store');
 
         $provider = new StoreRequestOptionsProvider(
             $this->configureUserRepositorySearchMock(new UserCollection(), $this->never()),
@@ -202,10 +202,10 @@ class StoreRequestOptionsProviderTest extends TestCase
         $queries = $provider->getDefaultQueryParameters(Context::createDefaultContext());
 
         static::assertArrayHasKey('domain', $queries);
-        static::assertSame('domain.shopware.store', $queries['domain']);
+        static::assertSame('domain.shopwell.store', $queries['domain']);
 
-        static::assertArrayHasKey('shopwareVersion', $queries);
-        static::assertSame('sw-version', $queries['shopwareVersion']);
+        static::assertArrayHasKey('shopwellVersion', $queries);
+        static::assertSame('sw-version', $queries['shopwellVersion']);
     }
 
     public function testGetDefaultQueryParametersDelegatesToLocaleProvider(): void

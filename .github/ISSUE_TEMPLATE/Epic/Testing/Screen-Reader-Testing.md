@@ -83,7 +83,7 @@ To trigger a voice over command, press `Control`+`Option`.
 
 By default, semantic HTML elements will reliably work when implemented correctly.
 
-For more complex cases, you can cross reference our component libraries ([Bootstrap](https://getbootstrap.com/docs/5.3/components/accordion/) | [Meteor](https://meteor.shopware.com/?path=/docs/components-form-mt-action-menu--docs)) with the [patterns and examples](https://www.w3.org/WAI/ARIA/apg/patterns/) from the ARIA Authoring Practices Guide (with the caveat that the [WCAG](https://www.w3.org/WAI/WCAG22/quickref/?currentsidebar=%23col_overview) and [APG](https://www.w3.org/WAI/ARIA/apg/) are the final authorities). Additionally, [MagentaA11y](https://www.magentaa11y.com/#/web-criteria/component/overview) has a good overview for individual components on what should be read and when.
+For more complex cases, you can cross reference our component libraries ([Bootstrap](https://getbootstrap.com/docs/5.3/components/accordion/) | [Meteor](https://meteor.shopwell.com/?path=/docs/components-form-mt-action-menu--docs)) with the [patterns and examples](https://www.w3.org/WAI/ARIA/apg/patterns/) from the ARIA Authoring Practices Guide (with the caveat that the [WCAG](https://www.w3.org/WAI/WCAG22/quickref/?currentsidebar=%23col_overview) and [APG](https://www.w3.org/WAI/ARIA/apg/) are the final authorities). Additionally, [MagentaA11y](https://www.magentaa11y.com/#/web-criteria/component/overview) has a good overview for individual components on what should be read and when.
 <br>
 
 ## How to Test

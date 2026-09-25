@@ -540,7 +540,7 @@ class CartException extends HttpException
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::CART_MIGRATION_MISSING_REDIS_CONNECTION,
-            'Redis connection is missing. Please check if "%shopware.cart.storage.config.dsn%" container parameter is correctly configured'
+            'Redis connection is missing. Please check if "%shopwell.cart.storage.config.dsn%" container parameter is correctly configured'
         );
     }
 

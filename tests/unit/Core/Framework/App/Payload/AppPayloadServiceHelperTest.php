@@ -251,8 +251,8 @@ class AppPayloadServiceHelperTest extends TestCase
         static::assertSame('application/json', $result->headers['Content-Type']);
         static::assertSame('6.7.0', $result->headers['sw-version']);
         static::assertSame('header-val', $result->headers['X-Custom']);
-        static::assertSame('lang-id-123', $result->headers[AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE]);
-        static::assertSame('en-GB', $result->headers[AuthMiddleware::SHOPWARE_USER_LANGUAGE]);
+        static::assertSame('lang-id-123', $result->headers[AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE]);
+        static::assertSame('en-GB', $result->headers[AuthMiddleware::SHOPWELL_USER_LANGUAGE]);
 
         // PSR-7 request
         static::assertSame('POST', $result->request->getMethod());
@@ -293,8 +293,8 @@ class AppPayloadServiceHelperTest extends TestCase
             20,
         );
 
-        static::assertArrayNotHasKey(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE, $result->headers);
-        static::assertArrayNotHasKey(AuthMiddleware::SHOPWARE_USER_LANGUAGE, $result->headers);
+        static::assertArrayNotHasKey(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE, $result->headers);
+        static::assertArrayNotHasKey(AuthMiddleware::SHOPWELL_USER_LANGUAGE, $result->headers);
     }
 
     private function createHelper(MockClock $clock): AppPayloadServiceHelper

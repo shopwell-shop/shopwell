@@ -34,13 +34,13 @@ class MessageQueueStatsSubscriberTest extends TestCase
     {
         /** @var AbstractIncrementer $pool */
         $pool = static::getContainer()
-            ->get('shopware.increment.gateway.registry')
+            ->get('shopwell.increment.gateway.registry')
             ->get(IncrementGatewayRegistry::MESSAGE_QUEUE_POOL);
 
         $pool->reset('message_queue_stats');
 
         /** @var MessageBusInterface $bus */
-        $bus = static::getContainer()->get('messenger.bus.test_shopware');
+        $bus = static::getContainer()->get('messenger.bus.test_shopwell');
 
         $bus->dispatch(new FooMessage());
         $bus->dispatch(new BarMessage());

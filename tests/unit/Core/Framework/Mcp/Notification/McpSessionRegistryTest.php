@@ -43,7 +43,7 @@ class McpSessionRegistryTest extends TestCase
     public function testAllIgnoresMalformedCachedSessionIds(): void
     {
         $cache = new Psr16Cache(new ArrayAdapter());
-        $cache->set('shopware.mcp.active_session_ids', ['session-a', '', 42, 'session-b']);
+        $cache->set('shopwell.mcp.active_session_ids', ['session-a', '', 42, 'session-b']);
 
         $registry = new McpSessionRegistry($cache);
 
@@ -53,7 +53,7 @@ class McpSessionRegistryTest extends TestCase
     public function testAllReturnsEmptyListWhenCacheValueIsNotAnArray(): void
     {
         $cache = new Psr16Cache(new ArrayAdapter());
-        $cache->set('shopware.mcp.active_session_ids', 'broken');
+        $cache->set('shopwell.mcp.active_session_ids', 'broken');
 
         $registry = new McpSessionRegistry($cache);
 
@@ -65,8 +65,8 @@ class McpSessionRegistryTest extends TestCase
         // Both registries share one cache pool, mirroring the Admin and Store API endpoints wiring.
         $cache = new Psr16Cache(new ArrayAdapter());
 
-        $admin = new McpSessionRegistry($cache, 'shopware.mcp.active_session_ids');
-        $storeApi = new McpSessionRegistry($cache, 'shopware.mcp.store_api.active_session_ids');
+        $admin = new McpSessionRegistry($cache, 'shopwell.mcp.active_session_ids');
+        $storeApi = new McpSessionRegistry($cache, 'shopwell.mcp.store_api.active_session_ids');
 
         $admin->register('admin-session');
         $storeApi->register('store-api-session');
@@ -90,12 +90,12 @@ class McpSessionRegistryTest extends TestCase
         $lockFactory = $this->createMock(LockFactory::class);
         $lockFactory->expects($this->exactly(2))
             ->method('createLock')
-            ->with('mcp.session_registry.shopware.mcp.active_session_ids')
+            ->with('mcp.session_registry.shopwell.mcp.active_session_ids')
             ->willReturn($lock);
 
         $registry = new McpSessionRegistry(
             new Psr16Cache(new ArrayAdapter()),
-            'shopware.mcp.active_session_ids',
+            'shopwell.mcp.active_session_ids',
             $lockFactory,
         );
 
@@ -112,6 +112,6 @@ class McpSessionRegistryTest extends TestCase
         $registry = new McpSessionRegistry($cache);
         $registry->register('session-a');
 
-        static::assertSame(['session-a'], $cache->get('shopware.mcp.active_session_ids'));
+        static::assertSame(['session-a'], $cache->get('shopwell.mcp.active_session_ids'));
     }
 }

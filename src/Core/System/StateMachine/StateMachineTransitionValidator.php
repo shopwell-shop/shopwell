@@ -30,7 +30,7 @@ class StateMachineTransitionValidator implements EventSubscriberInterface
     }
 
     /**
-     * @phpstan-ignore shopware.deprecatedClass (framework-invoked, must not trigger a deprecation)
+     * @phpstan-ignore shopwell.deprecatedClass (framework-invoked, must not trigger a deprecation)
      */
     public static function getSubscribedEvents(): array
     {

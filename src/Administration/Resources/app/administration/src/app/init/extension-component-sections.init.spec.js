@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 import initializeExtensionComponentSections from 'src/app/init/extension-component-sections.init';
-import { send } from '@shopware-ag/meteor-admin-sdk/es/channel';
+import { send } from '@shopwell-ag/meteor-admin-sdk/es/channel';
 
 describe('src/app/init/extension-component-sections.init.ts', () => {
     beforeAll(() => {

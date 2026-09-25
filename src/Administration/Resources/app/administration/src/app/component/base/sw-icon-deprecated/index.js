@@ -6,20 +6,20 @@ import template from './sw-icon-deprecated.html.twig';
 import './sw-icon-deprecated.scss';
 
 // Prefetch specific icons to avoid loading them asynchronously to improve performance
-import '@shopware-ag/meteor-icon-kit/icons/regular/tachometer.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/products.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/shopping-bag.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/users.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/content.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/megaphone.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/plug.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/cog.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/bell.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/question-circle.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/search-s.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/chevron-down-xs.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/chevron-up-xs.svg';
-import '@shopware-ag/meteor-icon-kit/icons/regular/chevron-circle-left.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/tachometer.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/products.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/shopping-bag.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/users.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/content.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/megaphone.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/plug.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/cog.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/bell.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/question-circle.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/search-s.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/chevron-down-xs.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/chevron-up-xs.svg';
+import '@shopwell-ag/meteor-icon-kit/icons/regular/chevron-circle-left.svg';
 
 /**
  * @sw-package framework
@@ -140,13 +140,13 @@ export default {
          * This throws an exception if the import is not found. Catch this in an override to add custom icons;
          * or override and do custom logic based on the `variant`, `iconName` or `iconFullName`.
          *
-         * Loosely based on an idea from https://shopwarecommunity.slack.com/archives/C04P3QBG8S2/p1683098652206189
+         * Loosely based on an idea from https://shopwellcommunity.slack.com/archives/C04P3QBG8S2/p1683098652206189
          *
          * @return Promise for possible override fallback logic
          */
         loadIconSvgData(variant, iconName, iconFullName) {
             return import(
-                `./../../../../../node_modules/@shopware-ag/meteor-icon-kit/icons/${variant}/${iconName}.svg?raw`
+                `./../../../../../node_modules/@shopwell-ag/meteor-icon-kit/icons/${variant}/${iconName}.svg?raw`
             ).then((iconSvgData) => {
                 if (iconSvgData.default) {
                     this.iconSvgData = iconSvgData.default;

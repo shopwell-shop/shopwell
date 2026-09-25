@@ -312,7 +312,7 @@ describe('module/sw-flow/service/flow-builder.service.js', () => {
                 float: 5,
                 int: 1000,
                 multiSelect: ['2', '3', '5'],
-                password: 'shopware',
+                password: 'shopwell',
                 singleSelect: '3',
                 textEditor: 'editor',
                 textarea: 'area',

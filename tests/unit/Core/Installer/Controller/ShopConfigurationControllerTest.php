@@ -144,9 +144,9 @@ class ShopConfigurationControllerTest extends TestCase
                 array_merge($this->getDefaultViewParams(), [
                     'error' => null,
                     'countryIsos' => [
-                        ['iso3' => 'DEU', 'default' => $expectedCountryIsoDefault === 'DEU', 'translated' => 'shopware.installer.select_country_deu'],
-                        ['iso3' => 'GBR', 'default' => $expectedCountryIsoDefault === 'GBR', 'translated' => 'shopware.installer.select_country_gbr'],
-                        ['iso3' => 'USA', 'default' => $expectedCountryIsoDefault === 'USA', 'translated' => 'shopware.installer.select_country_usa'],
+                        ['iso3' => 'DEU', 'default' => $expectedCountryIsoDefault === 'DEU', 'translated' => 'shopwell.installer.select_country_deu'],
+                        ['iso3' => 'GBR', 'default' => $expectedCountryIsoDefault === 'GBR', 'translated' => 'shopwell.installer.select_country_gbr'],
+                        ['iso3' => 'USA', 'default' => $expectedCountryIsoDefault === 'USA', 'translated' => 'shopwell.installer.select_country_usa'],
                     ],
                     'currencyIsos' => ['EUR', 'USD', 'GBP'],
                     'languageIsos' => [
@@ -211,7 +211,7 @@ class ShopConfigurationControllerTest extends TestCase
         $request->request->set('config_admin_username', 'admin');
         $request->request->set('config_admin_firstName', 'first');
         $request->request->set('config_admin_lastName', 'last');
-        $request->request->set('config_admin_password', 'shopware');
+        $request->request->set('config_admin_password', 'shopwell');
 
         $request->request->set('config_shop_language', 'de-DE');
         $request->request->set('config_shop_currency', 'EUR');
@@ -250,7 +250,7 @@ class ShopConfigurationControllerTest extends TestCase
             'username' => 'admin',
             'firstName' => 'first',
             'lastName' => 'last',
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'localeId' => $localeId,
         ];
         $this->adminConfigService->expects($this->once())->method('createAdmin')->with($expectedAdmin, $this->connection);
@@ -312,9 +312,9 @@ class ShopConfigurationControllerTest extends TestCase
                 array_merge($this->getDefaultViewParams(), [
                     'error' => 'Test Exception',
                     'countryIsos' => [
-                        ['iso3' => 'DEU', 'default' => true, 'translated' => 'shopware.installer.select_country_deu'],
-                        ['iso3' => 'GBR', 'default' => false, 'translated' => 'shopware.installer.select_country_gbr'],
-                        ['iso3' => 'USA', 'default' => false, 'translated' => 'shopware.installer.select_country_usa'],
+                        ['iso3' => 'DEU', 'default' => true, 'translated' => 'shopwell.installer.select_country_deu'],
+                        ['iso3' => 'GBR', 'default' => false, 'translated' => 'shopwell.installer.select_country_gbr'],
+                        ['iso3' => 'USA', 'default' => false, 'translated' => 'shopwell.installer.select_country_usa'],
                     ],
                     'currencyIsos' => ['EUR', 'USD', 'GBP'],
                     'languageIsos' => [
@@ -421,9 +421,9 @@ class ShopConfigurationControllerTest extends TestCase
     private function getLanguageTranslations(): array
     {
         return [
-            'shopware.installer.select_language_de-DE' => 'Deutsch',
-            'shopware.installer.select_language_en-GB' => 'English',
-            'shopware.installer.select_language_en-US' => 'English (US)',
+            'shopwell.installer.select_language_de-DE' => 'Deutsch',
+            'shopwell.installer.select_language_en-GB' => 'English',
+            'shopwell.installer.select_language_en-US' => 'English (US)',
         ];
     }
 
@@ -433,11 +433,11 @@ class ShopConfigurationControllerTest extends TestCase
     private function getCountryTranslations(): array
     {
         return [
-            'shopware.installer.select_country_gbr' => 'Great Britain',
-            'shopware.installer.select_country_bgr' => 'Bulgaria',
-            'shopware.installer.select_country_est' => 'Estonia',
-            'shopware.installer.select_country_hrv' => 'Croatia',
-            'shopware.installer.select_country_deu' => 'Germany',
+            'shopwell.installer.select_country_gbr' => 'Great Britain',
+            'shopwell.installer.select_country_bgr' => 'Bulgaria',
+            'shopwell.installer.select_country_est' => 'Estonia',
+            'shopwell.installer.select_country_hrv' => 'Croatia',
+            'shopwell.installer.select_country_deu' => 'Germany',
         ];
     }
 }

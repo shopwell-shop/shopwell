@@ -91,7 +91,7 @@ class OpenApiSchemaBuilder
             'version' => $version,
             'license' => [
                 'name' => 'MIT',
-                'url' => 'https://github.com/shopware/shopware/blob/trunk/LICENSE',
+                'url' => 'https://github.com/shopwell-shop/shopwell/blob/trunk/LICENSE',
             ],
             'description' => <<<'EOF'
 This endpoint reference contains an overview of all endpoints comprising the Shopwell Admin API.

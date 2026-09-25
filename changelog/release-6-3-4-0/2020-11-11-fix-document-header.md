@@ -2,7 +2,7 @@
 title: fix document header
 issue: NEXT-12027
 author: OliverSkroblin
-author_email: o.skroblin@shopware.com 
+author_email: o.skroblin@shopwell.com 
 author_github: OliverSkroblin
 ---
 # Core

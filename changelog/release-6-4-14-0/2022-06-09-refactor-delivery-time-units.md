@@ -8,5 +8,5 @@ author_github: @silviokennecke
 * Changed `sw-settings-delivery-time-detail` component to support unit `hour`
 ___
 # Core
-* Changed `\Shopware\Core\System\DeliveryTime\DeliveryTimeEntity` to add missing unit constants
-* Changed `\Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryDate::createFromDeliveryTime` to use constants instead of hardcoded values
+* Changed `\Shopwell\Core\System\DeliveryTime\DeliveryTimeEntity` to add missing unit constants
+* Changed `\Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryDate::createFromDeliveryTime` to use constants instead of hardcoded values

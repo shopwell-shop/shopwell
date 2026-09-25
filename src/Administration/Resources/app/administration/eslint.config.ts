@@ -31,7 +31,7 @@ import twigVue from 'eslint-plugin-twig-vue';
 // extensions. pluginVue/swDeprecationRules must be the factory's own objects:
 // ESLint refuses to redefine a plugin key with a different object reference,
 // and the factory blocks register these plugins for overlapping files.
-import shopwareAdminExtension, { pluginVue, swCoreRules, swDeprecationRules } from './extension-tooling/eslint.mjs';
+import shopwellAdminExtension, { pluginVue, swCoreRules, swDeprecationRules } from './extension-tooling/eslint.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -125,7 +125,7 @@ const baseRules = {
     ],
     'sw-core-rules/require-package-annotation': ['error'],
     'sw-core-rules/no-tc-translation': 'error',
-    'sw-core-rules/valid-shopware-setup': 'error',
+    'sw-core-rules/valid-shopwell-setup': 'error',
     // Must be an error: this is the only check on a directory-derived component name, and `npm run lint`
     // has no `--max-warnings`, so at warning level `Bad_Dir/index.vue` would pass CI.
     'sw-core-rules/native-setup-filename': 'error',
@@ -150,7 +150,7 @@ const baseRules = {
     'listeners/matching-remove-event-listener': 'error',
     'listeners/no-inline-function-event-listener': 'error',
 
-    // From @shopware-ag/eslint-config-base (airbnb-base overrides)
+    // From @shopwell-ag/eslint-config-base (airbnb-base overrides)
     'no-multiple-empty-lines': [
         'error',
         { max: 2, maxEOF: 1 },
@@ -237,7 +237,7 @@ export default [
     // usage through sw-deprecation-rules instead of
     // @typescript-eslint/no-deprecated, type-checks its spec files, and runs
     // its own stricter twig pipeline below instead of the lenient legacy one.
-    ...shopwareAdminExtension({
+    ...shopwellAdminExtension({
         tsconfigRootDir: __dirname,
         legacyTwig: false,
         srcImportBoundary: false,

@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  */
-import { send } from '@shopware-ag/meteor-admin-sdk/es/channel';
+import { send } from '@shopwell-ag/meteor-admin-sdk/es/channel';
 import api from './extension-api';
 
 describe('src/core/extension-api.ts', () => {

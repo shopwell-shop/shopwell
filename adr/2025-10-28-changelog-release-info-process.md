@@ -8,7 +8,7 @@ authors: [Álvaro Thomas, Jonas Elfering]
 
 ## Context
 
-Historically, Shopware used a changelog file workflow based on per-change markdown files under `/changelog/_unreleased` with an automated build step that aggregated them into `CHANGELOG.md` and `UPGRADE.md`.
+Historically, Shopwell used a changelog file workflow based on per-change markdown files under `/changelog/_unreleased` with an automated build step that aggregated them into `CHANGELOG.md` and `UPGRADE.md`.
 While technically useful, this caused friction: duplication, missing high-level developer-facing context, and the release notes living in a separate repository.
 The team now prefers a curated, in-repo workflow for developer-facing release notes.
 

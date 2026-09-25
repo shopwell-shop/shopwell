@@ -32,7 +32,7 @@ module.exports = async (browser, context) => {
 
     // Fill in the login credentials (default Shopwell admin credentials)
     await page.type('input#sw-field--username', 'admin');
-    await page.type('input#sw-field--password', 'shopware');
+    await page.type('input#sw-field--password', 'shopwell');
 
     // Click the login button
     await page.click('button[type="submit"]');

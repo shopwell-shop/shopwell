@@ -12,20 +12,20 @@ ___
 # Upgrade Information
 ## "modals" Vuex store moved to Pinia
 
-The `modals` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopware.Store.get('modals')`.
+The `modals` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopwell.Store.get('modals')`.
 
 ### Before:
 ```js
-Shopware.State.get('modals');
+Shopwell.State.get('modals');
 
-Shopware.State.commit('modals/openModal', modalEntry);
-Shopware.State.commit('modals/closeModal', locationId);
+Shopwell.State.commit('modals/openModal', modalEntry);
+Shopwell.State.commit('modals/closeModal', locationId);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('modals');
+Shopwell.Store.get('modals');
 
-Shopware.Store.get('modals').openModal(modalEntry);
-Shopware.Store.get('modals').closeModal(locationId);
+Shopwell.Store.get('modals').openModal(modalEntry);
+Shopwell.Store.get('modals').closeModal(locationId);
 ```

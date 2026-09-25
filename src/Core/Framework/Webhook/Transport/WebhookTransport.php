@@ -41,7 +41,7 @@ class WebhookTransport implements TransportInterface, KeepaliveReceiverInterface
         try {
             $this->webhookOutboxStore->recordOutboxEntry(OutboxInsert::fromMessage($message));
         } catch (DBALException $e) {
-            /** @phpstan-ignore shopware.domainException (Symfony Messenger's worker contract requires TransportException for transport-layer failures.) */
+            /** @phpstan-ignore shopwell.domainException (Symfony Messenger's worker contract requires TransportException for transport-layer failures.) */
             throw new TransportException($e->getMessage(), 0, $e);
         }
 

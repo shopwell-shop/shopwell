@@ -54,7 +54,7 @@ class ThemeCompilerAssetCompilerPassTest extends TestCase
         $container->setDefinition('assets.packages', $assetService);
 
         $assetDefinition = new Definition(Package::class);
-        $assetDefinition->addTag('shopware.asset', ['asset' => 'asset']);
+        $assetDefinition->addTag('shopwell.asset', ['asset' => 'asset']);
         $assetDefinition->setPublic(true);
         $container->setDefinition('my.asset.service', $assetDefinition);
 

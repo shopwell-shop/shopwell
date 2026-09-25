@@ -6,11 +6,11 @@ MCP tools that depend on Storefront-specific services (e.g., `ThemeService`) mus
 
 Core MCP tools live in `src/Core/Framework/Mcp/Tool/` and only depend on Core services. Tools here depend on Storefront services and are registered with the `mcp.tool` tag in `src/Storefront/DependencyInjection/mcp.php`.
 
-`McpToolDiscoveryCompilerPass` in Core also picks up tools tagged `shopware.mcp.tool` from any bundle or plugin, so those are integrated the same way.
+`McpToolDiscoveryCompilerPass` in Core also picks up tools tagged `shopwell.mcp.tool` from any bundle or plugin, so those are integrated the same way.
 
 ## Tools
 
-- `ThemeConfigTool` (`shopware-theme-config`) -- read and update theme configuration (colors, logos, fonts) for a sales channel. Uses `ThemeService` for config retrieval and updates with theme recompilation.
+- `ThemeConfigTool` (`shopwell-theme-config`) -- read and update theme configuration (colors, logos, fonts) for a sales channel. Uses `ThemeService` for config retrieval and updates with theme recompilation.
 
 The `salesChannelId` parameter accepts either a UUID or the sales channel name. Agents usually know the name, not the ID, so requiring a UUID made the tool fail on the most natural input. Both are matched in a single query (`sales_channel.id` OR `sales_channel_translation.name`, the latter case-insensitive via the column collation), so neither form shadows the other.
 

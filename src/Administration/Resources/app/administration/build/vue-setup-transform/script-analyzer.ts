@@ -12,7 +12,7 @@
  */
 
 import type { File as BabelFile, ImportDeclaration, Statement } from '@babel/types';
-import type { ShopwellSetupMode } from './utils/shopware-setup-block';
+import type { ShopwellSetupMode } from './utils/shopwell-setup-block';
 import { ShopwellSetupTransformError } from './utils/transform-error';
 import { extractStaticObjectMarker } from './script-analyzer/macros';
 import {

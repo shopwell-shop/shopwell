@@ -15,8 +15,8 @@ use Shopwell\Core\System\Currency\CurrencyCollection;
  */
 #[Package('framework')]
 #[McpResource(
-    uri: 'shopware://currencies',
-    name: 'shopware-currencies',
+    uri: 'shopwell://currencies',
+    name: 'shopwell-currencies',
     description: 'All configured currencies with ISO codes, symbols, and conversion factors.'
 )]
 class CurrencyListResource
@@ -50,7 +50,7 @@ class CurrencyListResource
         }
 
         return [
-            'uri' => 'shopware://currencies',
+            'uri' => 'shopwell://currencies',
             'mimeType' => 'application/json',
             'text' => Json::encode($currencies),
         ];

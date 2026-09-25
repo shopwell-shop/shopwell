@@ -3,7 +3,7 @@ title: Improve SCSS color validation
 issue: #12947
 ---
 # Storefront
-* Changed `Shopware\Storefront\Theme\Validator\SCSSValidator` to allow more options for `rgb()` and `hsl()` color functions.
+* Changed `Shopwell\Storefront\Theme\Validator\SCSSValidator` to allow more options for `rgb()` and `hsl()` color functions.
     * RGB and RGBA with hex colors and SCSS variables:*
         * `rgb($primary / 0.5)`
         * `rgb(#fff / 0.5)`

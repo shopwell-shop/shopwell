@@ -5,17 +5,17 @@ issue: NEXT-33691
 
 # Core
 
-* Added new parameter `shopware.api.jwt_key.use_app_secret` to use the `APP_SECRET` as HMAC for the JWT tokens.
+* Added new parameter `shopwell.api.jwt_key.use_app_secret` to use the `APP_SECRET` as HMAC for the JWT tokens.
 
 ___
 
 # Upgrade Information
 ## HMAC JWT keys
 
-Usage of normal RSA JWT keys is deprecated. And will be removed with Shopware 6.7.0.0. Please use the new HMAC JWT keys instead using configuration:
+Usage of normal RSA JWT keys is deprecated. And will be removed with Shopwell 6.7.0.0. Please use the new HMAC JWT keys instead using configuration:
 
 ```yaml
-shopware:
+shopwell:
     api:
         jwt_key:
               use_app_secret: true

@@ -2,13 +2,13 @@
 title: Entity Type Custom Field
 issue: NEXT-12269
 author: Lennart Tinkloh
-author_email: l.tinkloh@shopware.com 
+author_email: l.tinkloh@shopwell.com 
 author_github: lernhart
 ---
 # Core
-* Added class `Shopware\Core\Framework\App\Manifest\Xml\CustomFieldTypes\SingleEntitySelectField` to allow custom field generation via an app's manifest.xml.
-* Added class `Shopware\Core\Framework\App\Manifest\Xml\CustomFieldTypes\MultiEntitySelectField` to allow custom field generation via an app's manifest.xml.
-* Added constant `Shopware\Core\System\CustomField\CustomFieldTypes::ENTITY`
+* Added class `Shopwell\Core\Framework\App\Manifest\Xml\CustomFieldTypes\SingleEntitySelectField` to allow custom field generation via an app's manifest.xml.
+* Added class `Shopwell\Core\Framework\App\Manifest\Xml\CustomFieldTypes\MultiEntitySelectField` to allow custom field generation via an app's manifest.xml.
+* Added constant `Shopwell\Core\System\CustomField\CustomFieldTypes::ENTITY`
 * Changed content of `src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd` to restrict manifest's content to work with the new custom field types.
 ___
 # Administration

@@ -16,7 +16,7 @@ class ServiceClientFactory
     public function __construct(
         private readonly HttpClientInterface $client,
         private readonly ServiceRegistryClient $serviceRegistryClient,
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
     ) {
     }
 
@@ -26,7 +26,7 @@ class ServiceClientFactory
             $this->client->withOptions([
                 'base_uri' => $entry->host,
             ]),
-            $this->shopwareVersion,
+            $this->shopwellVersion,
             $entry,
         );
     }

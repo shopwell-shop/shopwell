@@ -22,7 +22,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 /**
  * @internal
  *
- * @see https://github.com/shopware/shopware/issues/20225
+ * @see https://github.com/shopwell-shop/shopwell/issues/20225
  */
 #[Package('checkout')]
 #[Group('store-api')]
@@ -164,7 +164,7 @@ class LoginWithInvalidDefaultAddressTest extends TestCase
     {
         $this->browser->request('POST', '/store-api/account/login', [
             'email' => $this->email,
-            'password' => 'shopware',
+            'password' => 'shopwell',
         ]);
 
         $token = $this->browser->getResponse()->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
@@ -253,7 +253,7 @@ class LoginWithInvalidDefaultAddressTest extends TestCase
             'defaultShippingAddress' => ['id' => $this->ids->create('shipping-address')] + $address,
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => $this->email,
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'firstName' => 'Max',
             'lastName' => 'Mustermann',
             'salutationId' => $this->getValidSalutationId(),

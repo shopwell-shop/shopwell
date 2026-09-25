@@ -30,7 +30,7 @@ tags: [image, lazy-loading, storefront]
 
 * Even though this would technically work, there are a few pitfalls that need to be considered. 
 * For example, it is not recommended to add lazy loading to images which are very likely inside the initial viewport when loading the page aka "above-the-fold". Further reading: https://web.dev/browser-level-lazy-loading-for-cmss/#avoid-lazy-loading-above-the-fold-elements
-* For a system like shopware, where the content is almost entirely dynamic, it is not easy to determine where a generic image component will be rendered. It could have any position on any CMS page.
+* For a system like shopwell, where the content is almost entirely dynamic, it is not easy to determine where a generic image component will be rendered. It could have any position on any CMS page.
 * Even "guesses" like "only add lazy loading after the 8th product in a listing" can be invalid as soon as a monitor is in portrait mode or the viewport changes to mobile.
 * Therefore, we live with the small drawback that, e.g., all product boxes have lazy loading. Some of them will appear "above-the-fold". However, we still have the benefit of loading images later when scrolling down a page or scrolling in product sliders. 
 * Implementing a JavaScript solution for this would contradict the usage of native lazy loading.

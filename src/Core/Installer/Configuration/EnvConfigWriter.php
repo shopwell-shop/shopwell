@@ -34,32 +34,32 @@ LOCK_DSN=flock
 # MAILER_DSN=null://null
 ###< symfony/mailer ###
 
-###> shopware/core ###
+###> shopwell/core ###
 APP_ENV=prod
 APP_URL=http://127.0.0.1:8000
 APP_SECRET=SECRET_PLACEHOLDER
 INSTANCE_ID=INSTANCEID_PLACEHOLDER
 BLUE_GREEN_DEPLOYMENT=0
-DATABASE_URL=mysql://root:root@localhost/shopware
-###< shopware/core ###
+DATABASE_URL=mysql://root:root@localhost/shopwell
+###< shopwell/core ###
 
-###> shopware/elasticsearch ###
+###> shopwell/elasticsearch ###
 OPENSEARCH_URL=http://localhost:9200
-SHOPWARE_ES_ENABLED=0
-SHOPWARE_ES_INDEXING_ENABLED=0
-SHOPWARE_ES_INDEX_PREFIX=sw
-SHOPWARE_ES_THROW_EXCEPTION=1
+SHOPWELL_ES_ENABLED=0
+SHOPWELL_ES_INDEXING_ENABLED=0
+SHOPWELL_ES_INDEX_PREFIX=sw
+SHOPWELL_ES_THROW_EXCEPTION=1
 ADMIN_OPENSEARCH_URL=http://localhost:9200
-SHOPWARE_ADMIN_ES_INDEX_PREFIX=sw-admin
-SHOPWARE_ADMIN_ES_ENABLED=0
-SHOPWARE_ADMIN_ES_REFRESH_INDICES=0
-###< shopware/elasticsearch ###
+SHOPWELL_ADMIN_ES_INDEX_PREFIX=sw-admin
+SHOPWELL_ADMIN_ES_ENABLED=0
+SHOPWELL_ADMIN_ES_REFRESH_INDICES=0
+###< shopwell/elasticsearch ###
 
-###> shopware/storefront ###
+###> shopwell/storefront ###
 PROXY_URL=http://localhost
-SHOPWARE_HTTP_CACHE_ENABLED=1
-SHOPWARE_HTTP_DEFAULT_TTL=7200
-###< shopware/storefront ###
+SHOPWELL_HTTP_CACHE_ENABLED=1
+SHOPWELL_HTTP_DEFAULT_TTL=7200
+###< shopwell/storefront ###
 EOT;
 
     public function __construct(

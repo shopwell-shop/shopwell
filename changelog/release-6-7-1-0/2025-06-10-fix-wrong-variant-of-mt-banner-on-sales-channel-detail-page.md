@@ -2,7 +2,7 @@
 title: Fix wrong variant of mt-banner-on-sales-channel-detail-page
 issue: #10244
 author: Tam Dao
-author_email: t.dao@shopware.com
+author_email: t.dao@shopwell.com
 author_github: @daothithientamm
 ---
 # Administration

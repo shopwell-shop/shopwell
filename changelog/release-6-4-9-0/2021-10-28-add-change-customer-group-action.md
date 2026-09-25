@@ -3,7 +3,7 @@ title: Add change customer group action
 issue: NEXT-17975
 ---
 # Core
-* Added `Shopware/Core/Content/Flow/Dispatching/Action/ChangeCustomerGroupAction` class to handle change customer group flow action.
+* Added `Shopwell/Core/Content/Flow/Dispatching/Action/ChangeCustomerGroupAction` class to handle change customer group flow action.
 ___
 # Administration
 * Added component `sw-flow-change-customer-group-modal` to show a modal that allows changing customer group for customer.

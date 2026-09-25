@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  */
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 import initMainModules from 'src/app/init/main-module.init';
 
 describe('src/app/init/main-module.init.ts', () => {

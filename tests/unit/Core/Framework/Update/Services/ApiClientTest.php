@@ -125,7 +125,7 @@ class ApiClientTest extends TestCase
 
         $client->downloadRecoveryTool();
 
-        static::assertFileExists(__DIR__ . '/public/shopware-installer.phar.php');
+        static::assertFileExists(__DIR__ . '/public/shopwell-installer.phar.php');
 
         $fs->remove(__DIR__ . '/public');
 

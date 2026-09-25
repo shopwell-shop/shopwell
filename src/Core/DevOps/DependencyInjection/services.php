@@ -39,14 +39,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(BusinessEventCollector::class),
             service(HookableEventCollector::class),
             service(PolicyRegistry::class),
-            tagged_iterator('shopware.hookable_event.describer'),
+            tagged_iterator('shopwell.hookable_event.describer'),
             service('twig'),
         ])
         ->tag('console.command');
 
     $services->set(ScriptReferenceGeneratorCommand::class)
         ->args([
-            tagged_iterator('shopware.scripts_reference.generator'),
+            tagged_iterator('shopwell.scripts_reference.generator'),
         ])
         ->tag('console.command');
 
@@ -63,14 +63,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('twig'),
             service(ServiceReferenceGenerator::class),
         ])
-        ->tag('shopware.scripts_reference.generator');
+        ->tag('shopwell.scripts_reference.generator');
 
     $services->set(ServiceReferenceGenerator::class)
         ->args([
             service('twig'),
             param('kernel.project_dir'),
         ])
-        ->tag('shopware.scripts_reference.generator');
+        ->tag('shopwell.scripts_reference.generator');
 
     $services->set(OpenApiValidationCommand::class)
         ->args([

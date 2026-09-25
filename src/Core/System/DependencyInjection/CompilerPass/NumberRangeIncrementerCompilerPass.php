@@ -12,13 +12,13 @@ class NumberRangeIncrementerCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        if ($container->getParameter('shopware.number_range.config.connection') !== null) {
+        if ($container->getParameter('shopwell.number_range.config.connection') !== null) {
             return;
         }
 
         // we remove service from container when required configurations are missing
         // we always keep mysql storage so MigrateIncrementStorageCommand works
-        $container->removeDefinition('shopware.number_range.redis');
+        $container->removeDefinition('shopwell.number_range.redis');
         $container->removeDefinition(IncrementRedisStorage::class);
     }
 }

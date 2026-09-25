@@ -391,7 +391,7 @@ class RequestTransformerTest extends TestCase
         ];
 
         yield 'virtual path before index.php' => [
-            // see https://github.com/shopware/shopware/issues/6666
+            // see https://github.com/shopwell-shop/shopwell/issues/6666
             'requestUrl' => 'http://shopwell.cn/de/index.php/navigation/abc',
             'serverVars' => [
                 'SCRIPT_FILENAME' => '/var/www/html/public/index.php',
@@ -406,7 +406,7 @@ class RequestTransformerTest extends TestCase
         ];
 
         yield 'virtual path before index.php in subdirectory' => [
-            // see https://github.com/shopware/shopware/issues/6666
+            // see https://github.com/shopwell-shop/shopwell/issues/6666
             'requestUrl' => 'http://shopwell.cn/public/de/index.php/navigation/abc',
             'serverVars' => [
                 'SCRIPT_FILENAME' => '/var/www/html/public/index.php',

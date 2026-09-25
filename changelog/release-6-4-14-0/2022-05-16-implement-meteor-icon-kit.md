@@ -2,11 +2,11 @@
 title: Implement meteor-icon-kit
 issue: NEXT-17235
 author: Sebastian Seggewiss
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration
-* Added `@shopware-ag/meteor-icon-kit` in version `^2.0.0`
+* Added `@shopwell-ag/meteor-icon-kit` in version `^2.0.0`
 * Deprecated all existing icon names
 * Deprecated all default spaces around existing icons
 ___

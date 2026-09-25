@@ -144,7 +144,7 @@ class OrderServiceTest extends TestCase
         static::assertNotNull($delivery);
         $orderDeliveryId = $delivery->getId();
 
-        $domain = 'http://shopware.' . Uuid::randomHex();
+        $domain = 'http://shopwell.' . Uuid::randomHex();
         $this->setDomainForSalesChannel($domain, Defaults::LANGUAGE_SYSTEM);
 
         $dispatcher = static::getContainer()->get('event_dispatcher');
@@ -198,7 +198,7 @@ class OrderServiceTest extends TestCase
         static::assertNotNull($delivery = $deliveries->first());
         $orderDeliveryId = $delivery->getId();
 
-        $domain = 'http://shopware.' . Uuid::randomHex();
+        $domain = 'http://shopwell.' . Uuid::randomHex();
         $this->setDomainForSalesChannel($domain, Defaults::LANGUAGE_SYSTEM);
 
         $dispatcher = static::getContainer()->get('event_dispatcher');
@@ -265,7 +265,7 @@ class OrderServiceTest extends TestCase
         static::assertNotNull($delivery = $deliveries->first());
         $orderDeliveryId = $delivery->getId();
 
-        $domain = 'http://shopware.' . Uuid::randomHex();
+        $domain = 'http://shopwell.' . Uuid::randomHex();
         $this->setDomainForSalesChannel($domain, $this->getDeDeLanguageId());
 
         $dispatcher = static::getContainer()->get('event_dispatcher');
@@ -356,7 +356,7 @@ class OrderServiceTest extends TestCase
         static::assertNotNull($transaction = $transactions->first());
         $orderTransactionId = $transaction->getId();
 
-        $domain = 'http://shopware.' . Uuid::randomHex();
+        $domain = 'http://shopwell.' . Uuid::randomHex();
         $this->setDomainForSalesChannel($domain, Defaults::LANGUAGE_SYSTEM);
 
         $dispatcher = static::getContainer()->get('event_dispatcher');
@@ -409,7 +409,7 @@ class OrderServiceTest extends TestCase
         static::assertNotNull($transaction = $transactions->first());
         $orderTransactionId = $transaction->getId();
 
-        $domain = 'http://shopware.' . Uuid::randomHex();
+        $domain = 'http://shopwell.' . Uuid::randomHex();
         $this->setDomainForSalesChannel($domain, Defaults::LANGUAGE_SYSTEM);
 
         $dispatcher = static::getContainer()->get('event_dispatcher');
@@ -503,7 +503,7 @@ class OrderServiceTest extends TestCase
         $data = new RequestDataBag(['tos' => true]);
         $this->fillCart($this->salesChannelContext->getToken());
 
-        $domain = 'http://shopware.' . Uuid::randomHex();
+        $domain = 'http://shopwell.' . Uuid::randomHex();
         $this->setDomainForSalesChannel($domain, Defaults::LANGUAGE_SYSTEM);
 
         $dispatcher = static::getContainer()->get('event_dispatcher');
@@ -550,7 +550,7 @@ class OrderServiceTest extends TestCase
 
         $orderId = $this->performOrder();
 
-        $domain = 'http://shopware.' . Uuid::randomHex();
+        $domain = 'http://shopwell.' . Uuid::randomHex();
         $this->setDomainForSalesChannel($domain, Defaults::LANGUAGE_SYSTEM);
 
         $dispatcher = static::getContainer()->get('event_dispatcher');
@@ -592,7 +592,7 @@ class OrderServiceTest extends TestCase
         $data = new RequestDataBag(['tos' => true]);
         $this->fillCart($this->salesChannelContext->getToken());
 
-        $firstDomain = 'http://shopware.first-domain';
+        $firstDomain = 'http://shopwell.first-domain';
         $this->setDomainForSalesChannel($firstDomain, Defaults::LANGUAGE_SYSTEM);
 
         $languageRepository = static::getContainer()->get('language.repository');
@@ -609,7 +609,7 @@ class OrderServiceTest extends TestCase
 
         $languageId = $languageRepository->searchIds($criteria, $this->salesChannelContext->getContext())->firstId();
         static::assertNotNull($languageId);
-        $secondDomain = 'http://shopware.second-domain';
+        $secondDomain = 'http://shopwell.second-domain';
         $this->setDomainForSalesChannel($secondDomain, $languageId);
 
         $dispatcher = static::getContainer()->get('event_dispatcher');
@@ -643,7 +643,7 @@ class OrderServiceTest extends TestCase
         $data = new RequestDataBag(['tos' => true]);
         $this->fillCart($this->salesChannelContext->getToken());
 
-        $domain = 'http://shopware.test/virtual-domain';
+        $domain = 'http://shopwell.test/virtual-domain';
         $this->setDomainForSalesChannel($domain, Defaults::LANGUAGE_SYSTEM);
 
         $dispatcher = static::getContainer()->get('event_dispatcher');
@@ -734,7 +734,7 @@ class OrderServiceTest extends TestCase
             'price' => [
                 ['currencyId' => Defaults::CURRENCY, 'gross' => 19.99, 'net' => 10, 'linked' => false],
             ],
-            'manufacturer' => ['id' => $productId, 'name' => 'shopware AG'],
+            'manufacturer' => ['id' => $productId, 'name' => 'Shopwell'],
             'tax' => ['id' => $this->getValidTaxId(), 'name' => 'testTaxRate', 'taxRate' => 15],
             'categories' => [
                 ['id' => $productId, 'name' => 'Test category'],

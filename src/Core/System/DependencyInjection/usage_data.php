@@ -42,7 +42,7 @@ return static function (ContainerConfigurator $container): void {
             new Reference(Connection::class),
             new Reference('clock'),
             new Reference(ConsentService::class),
-            '%shopware.usage_data.collection_enabled%',
+            '%shopwell.usage_data.collection_enabled%',
         ])
         ->tag('kernel.event_subscriber');
 
@@ -76,19 +76,19 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(EntityDispatcher::class)
         ->args([
-            new Reference('shopware.usage_data.gateway.client'),
+            new Reference('shopwell.usage_data.gateway.client'),
             new Reference(InstanceService::class),
             new Reference(SystemConfigService::class),
             new Reference('clock'),
             '%kernel.environment%',
-            '%shopware.usage_data.gateway.dispatch_enabled%',
+            '%shopwell.usage_data.gateway.dispatch_enabled%',
         ]);
 
     $services->set(IterateEntitiesQueryBuilder::class)
         ->args([
             new Reference(EntityDefinitionService::class),
             new Reference(Connection::class),
-            '%shopware.usage_data.gateway.batch_size%',
+            '%shopwell.usage_data.gateway.batch_size%',
             new Reference('logger'),
         ]);
 
@@ -102,7 +102,7 @@ return static function (ContainerConfigurator $container): void {
             new Reference(ShopIdProvider::class),
             new Reference(SystemConfigService::class),
             new Reference(ConsentService::class),
-            '%shopware.usage_data.collection_enabled%',
+            '%shopwell.usage_data.collection_enabled%',
         ]);
 
     $services->set(ManyToManyAssociationService::class)
@@ -112,13 +112,13 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(EntityDefinitionService::class)
         ->args([
-            new TaggedIteratorArgument('shopware.entity.definition'),
+            new TaggedIteratorArgument('shopwell.entity.definition'),
             new Reference(UsageDataAllowListService::class),
         ]);
 
     $services->set(ConsentReporter::class)
         ->args([
-            new Reference('shopware.usage_data.gateway.client'),
+            new Reference('shopwell.usage_data.gateway.client'),
             new Reference(ShopIdProvider::class),
             new Reference(SystemConfigService::class),
             new Reference(InstanceService::class),
@@ -141,12 +141,12 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(GatewayClient::class)
         ->args([
-            new Reference('shopware.usage_data.gateway.client'),
+            new Reference('shopwell.usage_data.gateway.client'),
             new Reference(ShopIdProvider::class),
         ]);
 
     $services->set(CollectEntityDataTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(CollectEntityDataTaskHandler::class)
         ->args([
@@ -156,11 +156,11 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->tag('messenger.message_handler');
 
-    $services->set('shopware.usage_data.gateway.client', HttpClientInterface::class)
+    $services->set('shopwell.usage_data.gateway.client', HttpClientInterface::class)
         ->factory([HttpClient::class, 'create'])
         ->args([
             [
-                'base_uri' => '%shopware.usage_data.gateway.base_uri%',
+                'base_uri' => '%shopwell.usage_data.gateway.base_uri%',
             ],
         ]);
 

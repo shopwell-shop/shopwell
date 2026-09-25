@@ -34,7 +34,7 @@ class AutoconfigureCompilerPassTest extends TestCase
         $container->compile(true);
 
         static::assertTrue($container->hasDefinition('product'));
-        static::assertTrue($container->getDefinition('product')->hasTag('shopware.entity.definition'));
+        static::assertTrue($container->getDefinition('product')->hasTag('shopwell.entity.definition'));
     }
 
     public function testHookableEntityAutoConfigure(): void
@@ -47,7 +47,7 @@ class AutoconfigureCompilerPassTest extends TestCase
         $container->compile(true);
 
         static::assertTrue($container->hasDefinition('hookable_entity'));
-        static::assertTrue($container->getDefinition('hookable_entity')->hasTag('shopware.entity.hookable'));
+        static::assertTrue($container->getDefinition('hookable_entity')->hasTag('shopwell.entity.hookable'));
     }
 
     public function testAliasing(): void
@@ -60,8 +60,8 @@ class AutoconfigureCompilerPassTest extends TestCase
         $definition->setAutoconfigured(true);
         $definition->setAutowired(true);
 
-        $container->setDefinition('shopware.filesystem.private', (new Definition(FilesystemOperator::class))->setPublic(true));
-        $container->setDefinition('shopware.filesystem.public', (new Definition(FilesystemOperator::class))->setPublic(true));
+        $container->setDefinition('shopwell.filesystem.private', (new Definition(FilesystemOperator::class))->setPublic(true));
+        $container->setDefinition('shopwell.filesystem.public', (new Definition(FilesystemOperator::class))->setPublic(true));
 
         $container->setDefinition('service', $definition);
 
@@ -71,11 +71,11 @@ class AutoconfigureCompilerPassTest extends TestCase
 
         $arg1 = $definition->getArgument(0);
         static::assertInstanceOf(Reference::class, $arg1);
-        static::assertSame('shopware.filesystem.private', (string) $arg1);
+        static::assertSame('shopwell.filesystem.private', (string) $arg1);
 
         $arg2 = $definition->getArgument(1);
         static::assertInstanceOf(Reference::class, $arg2);
-        static::assertSame('shopware.filesystem.public', (string) $arg2);
+        static::assertSame('shopwell.filesystem.public', (string) $arg2);
     }
 
     public function testCorsHeaderProviderAutoConfigure(): void
@@ -104,7 +104,7 @@ class AutoconfigureCompilerPassTest extends TestCase
 
         $container->compile();
 
-        static::assertArrayHasKey('shopware.entity', $container->getDefinition(ExampleEntity::class)->getTags());
+        static::assertArrayHasKey('shopwell.entity', $container->getDefinition(ExampleEntity::class)->getTags());
     }
 }
 

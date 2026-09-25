@@ -13,7 +13,7 @@ mechanism as public API: `mcp.yaml` `scan_dirs`, the DI tags, and `McpToolDiscov
 
 The `scan_dirs` half of that mechanism no longer exists. `symfony/mcp-bundle` 0.12 replaced the MCP
 SDK's file-based discovery with compile-time container registration, and 0.13 added support for
-several MCP servers per application, each declaring which capabilities it exposes. Shopware runs two
+several MCP servers per application, each declaring which capabilities it exposes. Shopwell runs two
 servers — `/api/_mcp` and `/store-api/_mcp` — so the upgrade forced a decision about how a capability
 reaches the right one.
 
@@ -32,9 +32,9 @@ Every MCP capability is a container service carrying an MCP attribute (`#[McpToo
 derives the input schema, and registers them on a server builder. No directory is scanned, so the
 `discovery.scan_dirs` option is gone and a capability's location on disk no longer matters.
 
-The Shopware-owned tags stay exactly as they were: plugins and third-party bundles use
-`shopware.mcp.tool` / `.prompt` / `.resource`, Store API capabilities use
-`shopware.store_api_mcp.*`, and `McpToolDiscoveryCompilerPass` re-tags them. This ADR changes
+The Shopwell-owned tags stay exactly as they were: plugins and third-party bundles use
+`shopwell.mcp.tool` / `.prompt` / `.resource`, Store API capabilities use
+`shopwell.store_api_mcp.*`, and `McpToolDiscoveryCompilerPass` re-tags them. This ADR changes
 nothing for extension authors.
 
 ### Server assignment
@@ -42,8 +42,8 @@ nothing for extension authors.
 Each server lists the capabilities it exposes in `packages/mcp.php` under
 `mcp.servers.<name>.registry`, as namespace prefixes:
 
-- `admin` — `Shopware\Core\Framework\Mcp\`, plus `Shopware\Storefront\Mcp\` when that bundle is installed
-- `store_api` — `Shopware\Core\System\SalesChannel\Mcp\`
+- `admin` — `Shopwell\Core\Framework\Mcp\`, plus `Shopwell\Storefront\Mcp\` when that bundle is installed
+- `store_api` — `Shopwell\Core\System\SalesChannel\Mcp\`
 
 Prefixes cannot express plugin or third-party bundle capabilities, whose namespace is arbitrary, and
 the `*` wildcard is not usable because it would also claim the other server's capabilities. Those are
@@ -55,9 +55,9 @@ they were registered before.
 A capability assigned to no server is silently not registered. `bin/console debug:mcp --native`
 reports those, so the failure mode is diagnosable.
 
-Store API tools carry `mcp.tool` in addition to `shopware.store_api_mcp.tool`, because the bundle
+Store API tools carry `mcp.tool` in addition to `shopwell.store_api_mcp.tool`, because the bundle
 only collects the SDK tags. The Store API namespace prefix keeps them off the Admin API server, and
-`shopware.store_api_mcp.tool` remains the scope marker the analysis passes read.
+`shopwell.store_api_mcp.tool` remains the scope marker the analysis passes read.
 
 ### What stays out of the bundle's hands
 
@@ -65,14 +65,14 @@ Three things the `servers` configuration cannot express are applied by
 `McpServerBuilderCompilerPass`:
 
 - **Protocol handlers are scoped per server.** The bundle wires `addRequestHandlers()` from one
-  global tag for every server, but Shopware's handlers are bound to one registry — both
+  global tag for every server, but Shopwell's handlers are bound to one registry — both
   `McpAllowlistListRequestHandler` instances answer a `ListToolsRequest`, so a shared tag would let
   the Admin API handler answer on the Store API endpoint. The tags are `mcp.admin.request_handler`
   and `mcp.store_api.request_handler`.
 - **Capability loaders stay on the Admin API server.** App capabilities have always been an Admin
   API concern; the bundle's global `addLoaders()` would newly advertise every app tool on
   `/store-api/_mcp`.
-- **Both servers page with `shopware.mcp.pagination_limit`,** so the number the allowlist request
+- **Both servers page with `shopwell.mcp.pagination_limit`,** so the number the allowlist request
   handlers slice with cannot drift from the one the SDK advertises.
 
 ## Consequences
@@ -85,7 +85,7 @@ Three things the `servers` configuration cannot express are applied by
 - Moving a core capability to a namespace outside the configured prefixes now requires updating
   `packages/mcp.php`. Adding a namespace there is cheap; a prefix that matches nothing is a fatal
   container error in the bundle, so it cannot rot unnoticed.
-- Shopware depends on the bundle's `mcp.servers.elements` parameter, which is bundle-internal. It is
+- Shopwell depends on the bundle's `mcp.servers.elements` parameter, which is bundle-internal. It is
   the mechanism the bundle itself uses to hand per-server lists to its compiler pass, and there is no
   public alternative for arbitrary-namespace capabilities. The coupling is a known cost of keeping
   plugin extensibility, and it is covered by unit tests on the assignment.

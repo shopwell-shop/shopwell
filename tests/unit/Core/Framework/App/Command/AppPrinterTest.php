@@ -39,7 +39,7 @@ class AppPrinterTest extends TestCase
     public function testPrintsInstalledApps(): void
     {
         $app = AppFixture::createAppEntity('TestApp');
-        $app->setAuthor('shopware AG');
+        $app->setAuthor('Shopwell');
 
         $printer = new AppPrinter($this->createAppRepository([$app]));
 
@@ -49,7 +49,7 @@ class AppPrinterTest extends TestCase
         static::assertStringContainsString('Installed apps', $display);
         static::assertStringContainsString('TestApp', $display);
         static::assertStringContainsString('1.0.0', $display);
-        static::assertStringContainsString('shopware AG', $display);
+        static::assertStringContainsString('Shopwell', $display);
     }
 
     #[TestDox('Nothing is printed when no apps are installed')]

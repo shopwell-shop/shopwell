@@ -34,7 +34,7 @@ class AssetInstallCommandTest extends TestCase
     public function testHtaccessCopy(): void
     {
         $fs = new Filesystem();
-        $tmpDir = sys_get_temp_dir() . '/' . uniqid('shopware', true);
+        $tmpDir = sys_get_temp_dir() . '/' . uniqid('shopwell', true);
         $fs->mkdir($tmpDir . '/public');
         $fs->dumpFile($tmpDir . '/public/.htaccess.dist', 'FOO');
 
@@ -106,7 +106,7 @@ class AssetInstallCommandTest extends TestCase
                 [
                     'name' => 'test',
                     'path' => $relativeFixturePath,
-                    'author' => 'shopware AG',
+                    'author' => 'Shopwell',
                 ],
             ]);
 

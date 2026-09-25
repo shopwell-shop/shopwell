@@ -77,7 +77,7 @@ class AdministrationControllerTest extends TestCase
 
     private ParameterBagInterface&Stub $parameterBag;
 
-    private string $shopwareCoreDir;
+    private string $shopwellCoreDir;
 
     private string $serviceRegistryUrl;
 
@@ -102,8 +102,8 @@ class AdministrationControllerTest extends TestCase
         $this->fileSystemOperator = static::createStub(PrefixFilesystem::class);
         $this->htmlSanitizer = static::createStub(HtmlSanitizer::class);
         $this->parameterBag = static::createStub(ParameterBagInterface::class);
-        $this->shopwareCoreDir = __DIR__ . '/../../../../src/Core/';
-        $this->serviceRegistryUrl = 'https://registry.services.shopware.io';
+        $this->shopwellCoreDir = __DIR__ . '/../../../../src/Core/';
+        $this->serviceRegistryUrl = 'https://registry.services.shopwell.cn';
         $this->languageRepository = static::createStub(EntityRepository::class);
         $this->refreshTokenTtl = 'P1W';
         $this->analyticsGatewayUrl = 'https://analytics-gateway.test.com';
@@ -738,7 +738,7 @@ class AdministrationControllerTest extends TestCase
             new KnownIpsCollector(),
             $connection ?? $this->connection,
             $eventDispatcher ?? $this->eventDispatcher,
-            $this->shopwareCoreDir,
+            $this->shopwellCoreDir,
             $customerRepository,
             $currencyRepository ?? $this->currencyRepository,
             $htmlSanitizer ?? $this->htmlSanitizer,
@@ -812,6 +812,6 @@ class AdministrationControllerTest extends TestCase
             return [];
         }
 
-        return require $this->shopwareCoreDir . '/Migration/Fixtures/stopwords/' . $language . '.php';
+        return require $this->shopwellCoreDir . '/Migration/Fixtures/stopwords/' . $language . '.php';
     }
 }

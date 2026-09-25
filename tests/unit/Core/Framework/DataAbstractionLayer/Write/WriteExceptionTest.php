@@ -49,7 +49,7 @@ class WriteExceptionTest extends TestCase
         $exception->tryToThrow();
     }
 
-    #[TestDox('getErrors flattens inner shopware exceptions and generic throwables')]
+    #[TestDox('getErrors flattens inner shopwell exceptions and generic throwables')]
     public function testGetErrorsFlattensInnerExceptions(): void
     {
         $exception = new WriteException();

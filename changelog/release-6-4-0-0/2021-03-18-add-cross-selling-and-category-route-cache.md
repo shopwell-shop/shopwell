@@ -2,7 +2,7 @@
 title: Add cross selling and category route cache
 issue: NEXT-14084
 author: OliverSkroblin
-author_email: o.skroblin@shopware.com 
+author_email: o.skroblin@shopwell.com 
 author_github: OliverSkroblin
 ---
 # Core

@@ -26,21 +26,21 @@ whole administration to be migrated and for the global removal of the compatibil
 
 To activate the new mode, the `DISABLE_VUE_COMPAT` feature flag must be enabled. Then, it is possible to disable the
 compatibility mode on a per-component level by setting the `compatConfig` option in the component to our custom configuration.
-This custom configuration is exposed in `Shopware.compatConfig` and has all compatibility features disabled if the 
+This custom configuration is exposed in `Shopwell.compatConfig` and has all compatibility features disabled if the 
 feature flag is activated.
 
 ### Example
 
 ```javascript
-Shopware.Component.register('your-component', {
-    compatConfig: Shopware.compatConfig,
+Shopwell.Component.register('your-component', {
+    compatConfig: Shopwell.compatConfig,
 })
 ```
 
 #### Notice:
 We have a tool which reads all components and creates a list of all components which are still using the
 compatibility mode. This list is used to track the progress of the migration. This tool checks for the following
-syntax `compatConfig: Shopware.compatConfig,` inside the component definition. Any other syntax, e.g. `compatConfig: false,`
+syntax `compatConfig: Shopwell.compatConfig,` inside the component definition. Any other syntax, e.g. `compatConfig: false,`
 will not be recognized by the tool and will not be tracked.
 
 ## Consequences

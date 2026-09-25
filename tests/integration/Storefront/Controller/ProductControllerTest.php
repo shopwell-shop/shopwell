@@ -831,7 +831,7 @@ class ProductControllerTest extends TestCase
             $_SERVER['APP_URL'] . '/account/login',
             $this->tokenize('frontend.account.login', [
                 'username' => $customer->getEmail(),
-                'password' => 'shopware',
+                'password' => 'shopwell',
             ])
         );
         $response = $browser->getResponse();

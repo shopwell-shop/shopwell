@@ -45,11 +45,11 @@ abstract class InstallerController extends AbstractController
 
         if (empty($parameters['supportedLanguages'])) {
             /** @var SupportedLanguages $supportedLanguages */
-            $supportedLanguages = $container->getParameter('shopware.installer.supportedLanguages');
+            $supportedLanguages = $container->getParameter('shopwell.installer.supportedLanguages');
             ksort($supportedLanguages);
             $parameters['supportedLanguages'] = $supportedLanguages;
         }
-        $parameters['shopware']['version'] = $container->getParameter('kernel.shopware_version');
+        $parameters['shopwell']['version'] = $container->getParameter('kernel.shopwell_version');
 
         return $this->render($view, $parameters);
     }

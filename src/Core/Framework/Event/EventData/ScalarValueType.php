@@ -28,7 +28,7 @@ class ScalarValueType implements EventDataType
         if (!\in_array($type, self::VALID_TYPES, true)) {
             $message = \sprintf('Invalid type "%s" provided, valid ones are: %s', $type, implode(', ', self::VALID_TYPES));
             if (!Feature::isActive('v6.8.0.0')) {
-                throw new \InvalidArgumentException($message); /** @phpstan-ignore shopware.domainException (Will be fixed with next major) */
+                throw new \InvalidArgumentException($message); /** @phpstan-ignore shopwell.domainException (Will be fixed with next major) */
             }
             throw FrameworkException::invalidArgumentException($message);
         }

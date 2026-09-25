@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 import initializeSidebar from 'src/app/init/sidebar.init';
 
 describe('src/app/component/structure/sw-sidebar-renderer', () => {

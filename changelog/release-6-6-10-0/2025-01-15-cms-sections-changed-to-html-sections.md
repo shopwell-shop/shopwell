@@ -2,7 +2,7 @@
 title: CMS sections changed to HTML sections
 issue: NEXT-39490
 author: Marcel Brode
-author_email: m.brode@shopware.com
+author_email: m.brode@shopwell.com
 author_github: @Marcel Brode
 ---
 # Storefront

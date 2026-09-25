@@ -15,16 +15,16 @@ use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
  *
  * Calls the live MCP HTTP endpoint (/api/_mcp) using the JSON-RPC protocol
  * and asserts that every expected default tool, prompt, and resource name is present
- * in the server's response. Additional tools are discovered through shopware-tool-search.
+ * in the server's response. Additional tools are discovered through shopwell-tool-search.
  *
  * This validates the full registration stack:
  *   Core tools:   #[McpTool] attribute → mcp.tool DI tag → server assigned by the namespace
  *                 prefixes in packages/mcp.php
- *   Plugin tools: services.xml shopware.mcp.tool tag → McpToolDiscoveryCompilerPass → mcp.tool tag
+ *   Plugin tools: services.xml shopwell.mcp.tool tag → McpToolDiscoveryCompilerPass → mcp.tool tag
  *                 → assigned to the Admin API server via mcp.servers.elements
  *
  * Unit tests that only load mcp.php do not catch a capability that ends up assigned to no server
- * (the failure mode that replaced the old scan_dirs gap, which once made shopware-theme-config
+ * (the failure mode that replaced the old scan_dirs gap, which once made shopwell-theme-config
  * silently disappear). This test does.
  *
  * @internal
@@ -99,9 +99,9 @@ class McpCapabilityDiscoveryTest extends TestCase
         $instructions = $response['result']['instructions'] ?? '';
         static::assertIsString($instructions);
         static::assertStringContainsString(
-            'shopware-tool-search',
+            'shopwell-tool-search',
             $instructions,
-            'Server instructions must point clients at shopware-tool-search when no advertised tool matches the requested action.',
+            'Server instructions must point clients at shopwell-tool-search when no advertised tool matches the requested action.',
         );
     }
 
@@ -157,17 +157,17 @@ class McpCapabilityDiscoveryTest extends TestCase
         $tools = array_column($response['result']['tools'] ?? [], 'name');
 
         // The discovery interface is always advertised...
-        static::assertContains('shopware-tool-search', $tools);
-        static::assertContains('shopware-toolset-enable', $tools);
-        static::assertContains('shopware-toolsets-list', $tools);
+        static::assertContains('shopwell-tool-search', $tools);
+        static::assertContains('shopwell-toolset-enable', $tools);
+        static::assertContains('shopwell-toolsets-list', $tools);
 
         // ...but no domain tool is, until its toolset is enabled.
-        static::assertNotContains('shopware-entity-schema', $tools);
-        static::assertNotContains('shopware-entity-search', $tools);
-        static::assertNotContains('shopware-entity-read', $tools);
-        static::assertNotContains('shopware-entity-delete', $tools);
-        static::assertNotContains('shopware-system-config-read', $tools);
-        static::assertNotContains('shopware-order-state', $tools);
+        static::assertNotContains('shopwell-entity-schema', $tools);
+        static::assertNotContains('shopwell-entity-search', $tools);
+        static::assertNotContains('shopwell-entity-read', $tools);
+        static::assertNotContains('shopwell-entity-delete', $tools);
+        static::assertNotContains('shopwell-system-config-read', $tools);
+        static::assertNotContains('shopwell-order-state', $tools);
     }
 
     public function testEnablingToolsetDeliversToolsListChangedNotification(): void
@@ -212,7 +212,7 @@ class McpCapabilityDiscoveryTest extends TestCase
             json_encode([
                 'jsonrpc' => '2.0',
                 'method' => 'tools/call',
-                'params' => ['name' => 'shopware-toolset-enable', 'arguments' => ['toolset' => $toolsetName]],
+                'params' => ['name' => 'shopwell-toolset-enable', 'arguments' => ['toolset' => $toolsetName]],
                 'id' => 2,
             ], \JSON_THROW_ON_ERROR),
         );
@@ -262,11 +262,11 @@ class McpCapabilityDiscoveryTest extends TestCase
      */
     public static function expectedTools(): iterable
     {
-        yield 'shopware-toolsets-list' => ['shopware-toolsets-list'];
-        yield 'shopware-toolset-enable' => ['shopware-toolset-enable'];
-        yield 'shopware-entity-schema' => ['shopware-entity-schema'];
-        yield 'shopware-entity-search' => ['shopware-entity-search'];
-        yield 'shopware-tool-search' => ['shopware-tool-search'];
+        yield 'shopwell-toolsets-list' => ['shopwell-toolsets-list'];
+        yield 'shopwell-toolset-enable' => ['shopwell-toolset-enable'];
+        yield 'shopwell-entity-schema' => ['shopwell-entity-schema'];
+        yield 'shopwell-entity-search' => ['shopwell-entity-search'];
+        yield 'shopwell-tool-search' => ['shopwell-tool-search'];
     }
 
     /**
@@ -274,7 +274,7 @@ class McpCapabilityDiscoveryTest extends TestCase
      */
     public static function expectedPrompts(): iterable
     {
-        yield 'shopware-context' => ['shopware-context'];
+        yield 'shopwell-context' => ['shopwell-context'];
     }
 
     /**
@@ -282,14 +282,14 @@ class McpCapabilityDiscoveryTest extends TestCase
      */
     public static function expectedResources(): iterable
     {
-        yield 'shopware-entity-list' => ['shopware-entity-list'];
-        yield 'shopware-sales-channels' => ['shopware-sales-channels'];
-        yield 'shopware-currencies' => ['shopware-currencies'];
-        yield 'shopware-languages' => ['shopware-languages'];
-        yield 'shopware-state-machines' => ['shopware-state-machines'];
-        yield 'shopware-business-events' => ['shopware-business-events'];
-        yield 'shopware-flow-actions' => ['shopware-flow-actions'];
-        yield 'shopware-extensions' => ['shopware-extensions'];
+        yield 'shopwell-entity-list' => ['shopwell-entity-list'];
+        yield 'shopwell-sales-channels' => ['shopwell-sales-channels'];
+        yield 'shopwell-currencies' => ['shopwell-currencies'];
+        yield 'shopwell-languages' => ['shopwell-languages'];
+        yield 'shopwell-state-machines' => ['shopwell-state-machines'];
+        yield 'shopwell-business-events' => ['shopwell-business-events'];
+        yield 'shopwell-flow-actions' => ['shopwell-flow-actions'];
+        yield 'shopwell-extensions' => ['shopwell-extensions'];
     }
 
     /**

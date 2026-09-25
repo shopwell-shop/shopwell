@@ -6,4 +6,4 @@ author_email: behrens@heptacom.de
 author_github: @JoshuaBehrens
 ---
 # Storefront
-* Extracted code responsible for loading the order details page from `\Shopware\Storefront\Controller\AccountOrderController` into  `\Shopware\Storefront\Page\Account\Order\AccountOrderDetailPageLoader`
+* Extracted code responsible for loading the order details page from `\Shopwell\Storefront\Controller\AccountOrderController` into  `\Shopwell\Storefront\Page\Account\Order\AccountOrderDetailPageLoader`

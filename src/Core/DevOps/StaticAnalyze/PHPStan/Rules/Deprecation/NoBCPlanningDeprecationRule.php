@@ -82,7 +82,7 @@ class NoBCPlanningDeprecationRule implements Rule
                 $reason,
                 $replacement
             ))
-                ->identifier('shopware.bcPlanningDeprecation')
+                ->identifier('shopwell.bcPlanningDeprecation')
                 ->line($line)
                 ->build();
         }

@@ -100,7 +100,7 @@ class KernelLifecycleManager
      */
     public static function createKernel(?string $kernelClass = null, bool $reuseConnection = true, string $cacheId = 'h8f3f0ee9c61829627676afd6294bb029', ?string $projectDir = null): Kernel
     {
-        $_SERVER['SHOPWARE_CACHE_ID'] = $cacheId;
+        $_SERVER['SHOPWELL_CACHE_ID'] = $cacheId;
 
         if ($kernelClass === null) {
             if (static::$class === null) {

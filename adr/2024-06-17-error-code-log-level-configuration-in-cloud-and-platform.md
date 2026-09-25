@@ -21,7 +21,7 @@ We have to decide for each error code whether it makes sense for on-premise cust
 * Never decrease critical errors in platform
 
 Errors that shall be configured in cloud:
-* all the unexpected stuff that should not happen and a dev should look at this, even though the fix is not in Shopware itself but probably in some calling code/configuration
+* all the unexpected stuff that should not happen and a dev should look at this, even though the fix is not in Shopwell itself but probably in some calling code/configuration
 * like API misuses
 * or misconfigurations on the customer side
 

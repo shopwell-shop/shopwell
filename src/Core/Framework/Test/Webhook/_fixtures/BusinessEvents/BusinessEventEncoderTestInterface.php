@@ -10,5 +10,5 @@ interface BusinessEventEncoderTestInterface
     /**
      * @return array<string, mixed>
      */
-    public function getEncodeValues(string $shopwareVersion): array;
+    public function getEncodeValues(string $shopwellVersion): array;
 }

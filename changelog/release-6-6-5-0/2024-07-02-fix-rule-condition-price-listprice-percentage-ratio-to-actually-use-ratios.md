@@ -2,7 +2,7 @@
 title: Fix rule condition price listprice percentage ratio to actually use ratios
 issue: NEXT-36837
 author: p.dinkhoff
-author_email: p.dinkhoff@shopware.com
+author_email: p.dinkhoff@shopwell.com
 author_github: p.dinkhoff
 ---
 # Core

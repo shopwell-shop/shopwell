@@ -19,13 +19,13 @@ When the `ACESSIBILITY_TWEAKS` flag is active, the product card will no longer c
 <div class="card product-box box-standard">
     <div class="card-body">
         <div class="product-image-wrapper">
--            <a href="https://shopware.local/Example-Product/SW-01931a101dcc725aa3affc0ff408ee31">
-                <img src="https://shopware.local/media/a3/22/75/1731309077/Example-Product_%283%29.webp?ts=1731309077" alt="Example-Product">
+-            <a href="https://shopwell.local/Example-Product/SW-01931a101dcc725aa3affc0ff408ee31">
+                <img src="https://shopwell.local/media/a3/22/75/1731309077/Example-Product_%283%29.webp?ts=1731309077" alt="Example-Product">
 -            </a>
         </div>
 
         <div class="product-info">
-            <a href="https://shopware.local/Example-Product/SW-01931a101dcc725aa3affc0ff408ee31"
+            <a href="https://shopwell.local/Example-Product/SW-01931a101dcc725aa3affc0ff408ee31"
 +               class="product-name stretched-link"> {# <------ stretched-link is used instead #}
                 Example-Product
             </a>
@@ -43,13 +43,13 @@ The anchor link around the product image `a.product-image-link` is removed and r
 <div class="card product-box box-standard">
     <div class="card-body">
         <div class="product-image-wrapper">
--            <a href="https://shopware.local/Example-Product/SW-01931a101dcc725aa3affc0ff408ee31">
-                <img src="https://shopware.local/media/a3/22/75/1731309077/Example-Product_%283%29.webp?ts=1731309077" alt="Example-Product">
+-            <a href="https://shopwell.local/Example-Product/SW-01931a101dcc725aa3affc0ff408ee31">
+                <img src="https://shopwell.local/media/a3/22/75/1731309077/Example-Product_%283%29.webp?ts=1731309077" alt="Example-Product">
 -            </a>
         </div>
 
         <div class="product-info">
-            <a href="https://shopware.local/Example-Product/SW-01931a101dcc725aa3affc0ff408ee31"
+            <a href="https://shopwell.local/Example-Product/SW-01931a101dcc725aa3affc0ff408ee31"
 +               class="product-name stretched-link"> {# <------ stretched-link is used instead #}
                 Example-Product
             </a>

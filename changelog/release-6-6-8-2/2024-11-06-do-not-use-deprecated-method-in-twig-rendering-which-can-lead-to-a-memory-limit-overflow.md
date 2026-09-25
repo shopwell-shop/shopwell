@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Storefront
-* Changed `Shopware\Storefront\Theme\ThemeConfigValueAccessor::get` to not use the deprecated method `Shopware\Storefront\Theme\ThemeConfigValueAccessor::buildName` as the trace in Twig rendering can become quite large which can easily lead to a memory limit overflow in `Symfony\Component\ErrorHandler\ErrorHandler::cleanTrace`, as the stack traces in Twig rendering can become quite large
+* Changed `Shopwell\Storefront\Theme\ThemeConfigValueAccessor::get` to not use the deprecated method `Shopwell\Storefront\Theme\ThemeConfigValueAccessor::buildName` as the trace in Twig rendering can become quite large which can easily lead to a memory limit overflow in `Symfony\Component\ErrorHandler\ErrorHandler::cleanTrace`, as the stack traces in Twig rendering can become quite large

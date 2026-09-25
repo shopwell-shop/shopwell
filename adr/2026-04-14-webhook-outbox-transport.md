@@ -37,19 +37,19 @@ flowchart LR
 | **Error counting is shared** | `RetryWebhookMessageFailedSubscriber` increments `error_count` only after Messenger retries are exhausted, and propagates increments and resets to all "related" webhooks (same `event_name + url + only_live_version`) via `RelatedWebhooks::updateRelated()`. At threshold (10), the webhook is disabled. | A single intermittently failing endpoint can disable webhooks for unrelated apps sharing the same event+URL. A success on one webhook also resets the counter for others. |
 | **No recovery** | `disable_on_threshold` is a kill switch, not a circuit breaker. Once disabled, a webhook requires manual re-enablement. | Operators must intervene to restore delivery after transient outages. |
 
-A core motivation is **delivery consistency across deployment topologies**. Shopware runs on MySQL-only stacks, managed SQS, RabbitMQ, and various hosting environments. Each transport has different retry semantics. The webhook contract with app developers should be the same regardless of which Messenger transport the shop has configured.
+A core motivation is **delivery consistency across deployment topologies**. Shopwell runs on MySQL-only stacks, managed SQS, RabbitMQ, and various hosting environments. Each transport has different retry semantics. The webhook contract with app developers should be the same regardless of which Messenger transport the shop has configured.
 
 The existing infrastructure provides a foundation we can build on, not replace:
 
 - **`webhook_event_log`** already persists events before async dispatch with a `delivery_status` field (queued → running → success/failed). It already operates as an application-level outbox, just without retry ownership.
 - **`WebhookEventMessage`** carries the full delivery payload (URL, secret, headers, event data). Self-contained.
-- **`RetryWebhookMessageFailedSubscriber`** proves the pattern of Shopware-owned failure handling layered on top of Messenger.
+- **`RetryWebhookMessageFailedSubscriber`** proves the pattern of Shopwell-owned failure handling layered on top of Messenger.
 
-The work tracked under [shopware/shopware#16560](https://github.com/shopware/shopware/issues/16560) and merged via [#16692](https://github.com/shopware/shopware/pull/16692) is the Phase 1 implementation of this ADR.
+The work tracked under [shopwell/shopwell#16560](https://github.com/shopwell-shop/shopwell/issues/16560) and merged via [#16692](https://github.com/shopwell-shop/shopwell/pull/16692) is the Phase 1 implementation of this ADR.
 
 ## Decision
 
-We implement webhook delivery as a dedicated Symfony Messenger transport (`shopware-webhook://`) backed by a MySQL application-level outbox with **best-effort FIFO** delivery per app. Phase 1 — the subject of this ADR — ships the transport foundation. Phase 2 and Phase 3 extend it with endpoint health and consumer tooling and are summarised at the end as roadmap.
+We implement webhook delivery as a dedicated Symfony Messenger transport (`shopwell-webhook://`) backed by a MySQL application-level outbox with **best-effort FIFO** delivery per app. Phase 1 — the subject of this ADR — ships the transport foundation. Phase 2 and Phase 3 extend it with endpoint health and consumer tooling and are summarised at the end as roadmap.
 
 ### Phase 1 — what ships
 
@@ -81,15 +81,15 @@ flowchart TD
 
 The shipped behaviour:
 
-- **Dedicated transport.** `WebhookEventMessage` routes to `shopware-webhook://default`; Messenger's transport-level retry is disabled — the outbox owns the lifecycle.
+- **Dedicated transport.** `WebhookEventMessage` routes to `shopwell-webhook://default`; Messenger's transport-level retry is disabled — the outbox owns the lifecycle.
 - **Outbox-first for both paths.** Sync (admin worker / app lifecycle) and async both persist the full outbox tuple before any HTTP call and converge on the same `handleResult` → `markSuccess` / `markPendingRetry` / `markFailed` transitions.
 - **FIFO per app via stream leasing.** Workers claim a partition lease (`SKIP LOCKED` on `webhook_stream`), deliver in `webhook_delivery.id` order, rotate. HTTP runs outside the lock.
-- **Shopware-owned retry.** Failures move to `PENDING_RETRY` with `next_retry_at`. Fixed schedule **5s → 30s → 5min → 30min → 4h**.
+- **Shopwell-owned retry.** Failures move to `PENDING_RETRY` with `next_retry_at`. Fixed schedule **5s → 30s → 5min → 30min → 4h**.
 - **Crash-safe consumption.** Stale `RUNNING` rows are reset by the next partition claim. Workers can die mid-delivery without losing messages.
-- **Consumer contract headers.** Rework envelopes carry `X-Shopware-Event-Id`, `X-Shopware-Sequence`, `X-Shopware-Attempt`.
+- **Consumer contract headers.** Rework envelopes carry `X-Shopwell-Event-Id`, `X-Shopwell-Sequence`, `X-Shopwell-Attempt`.
 - **Feature-flagged rollout.** Behind `WEBHOOKS_REWORK` (default off). Flag-off forwards to `async`, byte-identical to trunk; flag-on consumes from the outbox.
 - **No runtime compatibility bridge.** Operators flipping the flag on must add `webhook` to their consume command (`messenger:consume webhook async ...`). A `ConsoleEvents::COMMAND` subscriber was prototyped to prepend `webhook` automatically but is not viable: `Command::run()` re-binds the input after the event fires, discarding the mutation.
-- **Rollback drain command.** `bin/console webhook:drain-to-async` recovers non-terminal `webhook_delivery` rows that were left behind when the operator flips `WEBHOOKS_REWORK` off. It rewrites those rows back to `queued` in place (preserving `webhook_event_log.sequence`) and re-publishes them on the `async` Messenger transport, where the flag-off `WebhookEventMessageHandler` path delivers them. Refuses to run while the flag is active; safe alongside live traffic; at-least-once on re-run (consumer dedupes via `X-Shopware-Event-Id`).
+- **Rollback drain command.** `bin/console webhook:drain-to-async` recovers non-terminal `webhook_delivery` rows that were left behind when the operator flips `WEBHOOKS_REWORK` off. It rewrites those rows back to `queued` in place (preserving `webhook_event_log.sequence`) and re-publishes them on the `async` Messenger transport, where the flag-off `WebhookEventMessageHandler` path delivers them. Refuses to run while the flag is active; safe alongside live traffic; at-least-once on re-run (consumer dedupes via `X-Shopwell-Event-Id`).
 
 The legacy `disable_on_threshold` behaviour is **retained as a stopgap** for Phase 1. The four-state health model that replaces it lands in Phase 2.
 
@@ -154,7 +154,7 @@ flowchart LR
     style M3 fill:#69c,stroke:#333,color:#fff
 ```
 
-A single transient failure does **not** stall the partition. The failed message moves to `PENDING_RETRY` and the loop continues. Retries are picked up later when due — they may arrive after newer messages, breaking strict order. Consumers reconcile via `X-Shopware-Sequence`.
+A single transient failure does **not** stall the partition. The failed message moves to `PENDING_RETRY` and the loop continues. Retries are picked up later when due — they may arrive after newer messages, breaking strict order. Consumers reconcile via `X-Shopwell-Sequence`.
 
 Leases are heartbeated during long HTTP calls and released on graceful shutdown. If a worker dies mid-delivery the row stays `RUNNING` until the next claim runs crash recovery, which moves it back to `PENDING_RETRY`.
 
@@ -187,9 +187,9 @@ Every webhook delivery carries metadata that lets app developers handle at-least
 
 | Header | Purpose | Example |
 |:---|:---|:---|
-| `X-Shopware-Event-Id` | Deduplication. Stable across retries. **Sole** idempotency key. | `018f3a2b-…` |
-| `X-Shopware-Sequence` | Monotonic counter for last-write-wins reordering of retries. | `48291` |
-| `X-Shopware-Attempt` | 0-indexed attempt counter. Distinguishes first delivery from retries. **Not** part of the dedupe key. | `0`, `1`, `2` |
+| `X-Shopwell-Event-Id` | Deduplication. Stable across retries. **Sole** idempotency key. | `018f3a2b-…` |
+| `X-Shopwell-Sequence` | Monotonic counter for last-write-wins reordering of retries. | `48291` |
+| `X-Shopwell-Attempt` | 0-indexed attempt counter. Distinguishes first delivery from retries. **Not** part of the dedupe key. | `0`, `1`, `2` |
 
 ### Schema
 
@@ -292,7 +292,7 @@ The cross-cutting architectural trade-offs:
 |:---|:---|:---|:---|
 | **Strict FIFO** | Guaranteed | Head-of-line blocking | One failing event blocks all subsequent events in the partition. |
 | **No ordering** | None | Maximum throughput | Workers race for any message — identical to the default Doctrine transport. No per-app isolation. |
-| **Best-effort FIFO (this ADR)** | Insertion order on the happy path; retries break order | Always progresses | Throughput scales with partition count; consumers must reorder via `X-Shopware-Sequence`. |
+| **Best-effort FIFO (this ADR)** | Insertion order on the happy path; retries break order | Always progresses | Throughput scales with partition count; consumers must reorder via `X-Shopwell-Sequence`. |
 
 ### Application-level outbox vs true transactional outbox
 
@@ -301,7 +301,7 @@ A true transactional outbox writes the outbox entry inside the same DB transacti
 The distinction:
 
 - **True transactional outbox** — DAL owns the outbox; one commit covers business state + outbox entry. Tightest coupling, no event loss on crash.
-- **Application-level outbox (chosen)** — webhook layer owns the outbox; decoupled from DAL via the event dispatcher. Fits Shopware's dispatch-after-commit model and the extension architecture. The accepted trade-off is that a process crash strictly between the business commit and the outbox write would lose the event.
+- **Application-level outbox (chosen)** — webhook layer owns the outbox; decoupled from DAL via the event dispatcher. Fits Shopwell's dispatch-after-commit model and the extension architecture. The accepted trade-off is that a process crash strictly between the business commit and the outbox write would lose the event.
 
 ### Dedicated MySQL transport vs reusing existing infrastructure
 
@@ -316,17 +316,17 @@ The distinction:
 
 Webhook consumers should be designed for:
 
-- **At-least-once delivery.** The same event may be delivered multiple times (retries, crash recovery, future probing). Deduplicate by `X-Shopware-Event-Id` only — it is unique per event and stable across retries.
-- **Best-effort ordering.** Within a partition (one per app by default), first-attempt delivery is in insertion order. If A fails and retries, B and C still deliver. When A's retry arrives it may be after B and C — use `X-Shopware-Sequence` for last-write-wins reordering.
+- **At-least-once delivery.** The same event may be delivered multiple times (retries, crash recovery, future probing). Deduplicate by `X-Shopwell-Event-Id` only — it is unique per event and stable across retries.
+- **Best-effort ordering.** Within a partition (one per app by default), first-attempt delivery is in insertion order. If A fails and retries, B and C still deliver. When A's retry arrives it may be after B and C — use `X-Shopwell-Sequence` for last-write-wins reordering.
 - **Sequence gaps.** Sequence numbers are global across all webhooks, not per-webhook. Gaps from interleaving are normal and not a sign of loss.
-- **Retry attempts.** `X-Shopware-Attempt` is 0-indexed and changes on each delivery attempt. It is not stable across retries and must not be part of a dedupe key.
+- **Retry attempts.** `X-Shopwell-Attempt` is 0-indexed and changes on each delivery attempt. It is not stable across retries and must not be part of a dedupe key.
 
 ## Consequences
 
 ### Positive
 
 - **Webhooks no longer share the platform queue.** A dedicated transport isolates webhook delivery from imports, mail, and indexing — no worker contention, no head-of-line blocking from unrelated jobs.
-- **Retry behaviour is owned by Shopware, not the queue backend.** The outbox drives retry timing (5s → 4h) so the contract for app developers is identical on MySQL, Redis, AMQP, or SQS deployments instead of varying with whichever Messenger transport the shop has configured.
+- **Retry behaviour is owned by Shopwell, not the queue backend.** The outbox drives retry timing (5s → 4h) so the contract for app developers is identical on MySQL, Redis, AMQP, or SQS deployments instead of varying with whichever Messenger transport the shop has configured.
 - **Worker-path deliveries are auditable.** Two-stage persistence (`webhook_event_log` + `webhook_delivery`) lands before any HTTP attempt, with HTTP happening outside the database lock.
 - **Stream-leased FIFO** removes the worker race condition for first attempts within an app.
 - **One worker orchestrator.** The worker path goes through a single `WebhookDeliveryService::deliver()` (request build, send, result handling).

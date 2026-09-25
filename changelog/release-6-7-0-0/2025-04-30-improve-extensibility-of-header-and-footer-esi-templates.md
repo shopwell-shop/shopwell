@@ -1,6 +1,6 @@
 ---
 title: Improve extensibility ESI templates
-issue: https://github.com/shopware/shopware/issues/8136
+issue: https://github.com/shopwell-shop/shopwell/issues/8136
 author: Michael Telgmann
 author_github: @mitelg
 ---
@@ -28,7 +28,7 @@ This could be used to customize the header/footer templates.
 {% endblock %}
 ```
 
-- Within a plugin, you can also use the `Shopware\Storefront\Event\StorefrontRenderEvent`
+- Within a plugin, you can also use the `Shopwell\Storefront\Event\StorefrontRenderEvent`
 ```php
 class StorefrontSubscriber
 {

@@ -10,7 +10,7 @@ import {
     createNewAdminPageContext,
     loginToAdministration,
     User,
-} from '@shopware-ag/acceptance-test-suite';
+} from '@shopwell-ag/acceptance-test-suite';
 import { satisfies } from 'compare-versions';
 
 const TRACKING_EVENT_ENDPOINT = 'event';
@@ -41,7 +41,7 @@ test(
             await page.route(`**/${CONSENTS_ENDPOINT}`, consentHandler);
         });
 
-        await test.step('Login to shopware administration.', async () => {
+        await test.step('Login to shopwell administration.', async () => {
             const user: User = await TestDataService.createUser();
 
             await loginToAdministration(page, user, TestDataService.AdminApiClient);

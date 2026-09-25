@@ -153,7 +153,7 @@ class SendMailActionTest extends TestCase
         $transportDecorator = new MailerTransportDecorator(
             static::createStub(TransportInterface::class),
             static::getContainer()->get(MailAttachmentsBuilder::class),
-            static::getContainer()->get('shopware.filesystem.public'),
+            static::getContainer()->get('shopwell.filesystem.public'),
             static::getContainer()->get('document.repository')
         );
         $mailService = new TestEmailService(static::getContainer()->get(MailFactory::class), $transportDecorator);
@@ -302,8 +302,8 @@ class SendMailActionTest extends TestCase
             'recipient' => [
                 'type' => 'admin',
                 'data' => [
-                    'test@test.com' => 'shopware',
-                    'test.x@test.com' => 'shopware',
+                    'test@test.com' => 'shopwell',
+                    'test.x@test.com' => 'shopwell',
                 ],
             ],
         ];
@@ -639,8 +639,8 @@ class SendMailActionTest extends TestCase
             'recipient' => [
                 'type' => 'admin',
                 'data' => [
-                    'test@test.com' => 'shopware',
-                    'test.x@test.com' => 'shopware',
+                    'test@test.com' => 'shopwell',
+                    'test.x@test.com' => 'shopwell',
                 ],
             ],
         ]);
@@ -725,7 +725,7 @@ class SendMailActionTest extends TestCase
         $transportDecorator = new MailerTransportDecorator(
             static::createStub(TransportInterface::class),
             static::getContainer()->get(MailAttachmentsBuilder::class),
-            static::getContainer()->get('shopware.filesystem.public'),
+            static::getContainer()->get('shopwell.filesystem.public'),
             $this->documentRepository
         );
 
@@ -800,7 +800,7 @@ class SendMailActionTest extends TestCase
         $transportDecorator = new MailerTransportDecorator(
             static::createStub(TransportInterface::class),
             static::getContainer()->get(MailAttachmentsBuilder::class),
-            static::getContainer()->get('shopware.filesystem.public'),
+            static::getContainer()->get('shopwell.filesystem.public'),
             $this->documentRepository
         );
 
@@ -860,7 +860,7 @@ class SendMailActionTest extends TestCase
         $mailTemplateId = $this->retrieveMailTemplateId();
 
         $mediaId = Uuid::randomHex();
-        $mediaPath = __DIR__ . '/../ImportExport/fixtures/shopware-logo.png';
+        $mediaPath = __DIR__ . '/../ImportExport/fixtures/shopwell-logo.png';
 
         $tempFile = \tempnam(\sys_get_temp_dir(), '');
         static::assertIsString($tempFile);
@@ -902,7 +902,7 @@ class SendMailActionTest extends TestCase
         $transportDecorator = new MailerTransportDecorator(
             static::createStub(TransportInterface::class),
             static::getContainer()->get(MailAttachmentsBuilder::class),
-            static::getContainer()->get('shopware.filesystem.public'),
+            static::getContainer()->get('shopwell.filesystem.public'),
             $this->documentRepository
         );
 
@@ -960,7 +960,7 @@ class SendMailActionTest extends TestCase
             'lastName' => 'Mustermann',
             'customerNumber' => '1337',
             'email' => Uuid::randomHex() . '@example.com',
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultBillingAddressId' => $addressId,

@@ -2,7 +2,7 @@
 title: Added DIVE as a 3D Viewer for Storefront
 issue: #8903
 author: Felix Frank
-author_email: f.frank@shopware.com
+author_email: f.frank@shopwell.com
 author_github: @Felix Frank
 ---
 # Storefront

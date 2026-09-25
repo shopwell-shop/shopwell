@@ -5,4 +5,4 @@ author_email: Discord.Benjamin@web.de
 author_github: gecolay
 ---
 # Core
-* Added `skipConfigurator` & `skipCmsPage` query parameter checks to `Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute`
+* Added `skipConfigurator` & `skipCmsPage` query parameter checks to `Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute`

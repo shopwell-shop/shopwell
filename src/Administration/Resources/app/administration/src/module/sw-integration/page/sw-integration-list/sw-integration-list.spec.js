@@ -285,12 +285,12 @@ describe('module/sw-integration/page/sw-integration-list', () => {
         wrapper.vm.$.appContext.provides.integrationService.saveMcpAllowlist = saveMock;
 
         wrapper.vm.mcpIntegration = integration;
-        wrapper.vm.pendingMcpAllowlist = ['shopware-entity-read'];
+        wrapper.vm.pendingMcpAllowlist = ['shopwell-entity-read'];
 
         await wrapper.vm.onSaveMcpAllowlist();
         await flushPromises();
 
-        expect(saveMock).toHaveBeenCalledWith(integration.id, ['shopware-entity-read']);
+        expect(saveMock).toHaveBeenCalledWith(integration.id, ['shopwell-entity-read']);
     });
 
     it('should gate Edit MCP Tools on integration_mcp.editor not integration.editor', async () => {

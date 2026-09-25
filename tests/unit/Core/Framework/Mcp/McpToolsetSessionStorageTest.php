@@ -23,11 +23,11 @@ class McpToolsetSessionStorageTest extends TestCase
             ->method('executeStatement')
             ->with(
                 static::stringContains('INSERT IGNORE INTO `mcp_toolset_session`'),
-                static::callback(static fn (array $params): bool => $params['sessionId'] === 'session-a' && $params['toolsetName'] === 'shopware-entity' && \is_string($params['createdAt'])),
+                static::callback(static fn (array $params): bool => $params['sessionId'] === 'session-a' && $params['toolsetName'] === 'shopwell-entity' && \is_string($params['createdAt'])),
             );
 
         $storage = new McpToolsetSessionStorage($connection, new NativeClock());
-        $storage->enable('session-a', 'shopware-entity');
+        $storage->enable('session-a', 'shopwell-entity');
     }
 
     public function testEnabledToolsetsReturnsSortedNamesForSession(): void
@@ -39,11 +39,11 @@ class McpToolsetSessionStorageTest extends TestCase
                 static::stringContains('WHERE `session_id` = :sessionId'),
                 ['sessionId' => 'session-a'],
             )
-            ->willReturn(['shopware-entity', 'shopware-media']);
+            ->willReturn(['shopwell-entity', 'shopwell-media']);
 
         $storage = new McpToolsetSessionStorage($connection, new NativeClock());
 
-        static::assertSame(['shopware-entity', 'shopware-media'], $storage->enabledToolsets('session-a'));
+        static::assertSame(['shopwell-entity', 'shopwell-media'], $storage->enabledToolsets('session-a'));
     }
 
     public function testDeleteForSessionRemovesOnlyThatSession(): void

@@ -435,7 +435,7 @@ class CartServiceTest extends TestCase
         $addressId = Uuid::randomHex();
 
         $mail = 'test@shopwell.cn';
-        $password = 'shopware';
+        $password = 'shopwell';
 
         $this->createCustomer($addressId, $mail, $password, $context->getContext());
 
@@ -451,7 +451,7 @@ class CartServiceTest extends TestCase
 
         $cart = $cartService->add($cart, $lineItem, $context);
 
-        $this->setDomainForSalesChannel('http://shopware.local', Defaults::LANGUAGE_SYSTEM, $context->getContext());
+        $this->setDomainForSalesChannel('http://shopwell.local', Defaults::LANGUAGE_SYSTEM, $context->getContext());
 
         $systemConfigService = static::getContainer()->get(SystemConfigService::class);
 

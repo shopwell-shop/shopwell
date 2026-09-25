@@ -6,7 +6,7 @@
             "get": {
                 "tags": ["Authorization & Authentication"],
                 "summary": "Start an authorization code flow",
-                "description": "Authorization endpoint of the OAuth 2.0 authorization code grant with PKCE for registered public clients (for example `shopware-cli`). Open this URL in the user's browser. The user is forwarded to the Administration, asked to log in if necessary, and shown a consent page. After the decision the browser is redirected to the `redirect_uri` with either `code` and `state` or `error` and `state`. Exchange the code at `/oauth/token` with `grant_type=authorization_code` and the PKCE `code_verifier`. An unregistered redirect URI returns HTTP 400 with error code `FRAMEWORK__OAUTH_INVALID_REDIRECT_URI` and a readable `detail` message, without redirecting.",
+                "description": "Authorization endpoint of the OAuth 2.0 authorization code grant with PKCE for registered public clients (for example `shopwell-cli`). Open this URL in the user's browser. The user is forwarded to the Administration, asked to log in if necessary, and shown a consent page. After the decision the browser is redirected to the `redirect_uri` with either `code` and `state` or `error` and `state`. Exchange the code at `/oauth/token` with `grant_type=authorization_code` and the PKCE `code_verifier`. An unregistered redirect URI returns HTTP 400 with error code `FRAMEWORK__OAUTH_INVALID_REDIRECT_URI` and a readable `detail` message, without redirecting.",
                 "operationId": "authorize",
                 "security": [],
                 "parameters": [
@@ -19,7 +19,7 @@
                     {
                         "name": "client_id",
                         "in": "query",
-                        "description": "Identifier of a public OAuth client registered under `shopware.api.oauth_clients`.",
+                        "description": "Identifier of a public OAuth client registered under `shopwell.api.oauth_clients`.",
                         "required": true,
                         "schema": { "type": "string" }
                     },

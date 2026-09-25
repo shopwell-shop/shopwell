@@ -12,7 +12,7 @@ ___
 
 ## Only configured custom fields will be indexed in Elasticsearch
 
-With Shopware 6.5 only configured customFields in the YAML file will be indexed, to reduce issues with type errors.
+With Shopwell 6.5 only configured customFields in the YAML file will be indexed, to reduce issues with type errors.
 The config can be created in the `config/packages/elasticsearch.yml` with the following config
 
 ```yaml
@@ -22,4 +22,4 @@ elasticsearch:
       some_date_field: datetime
 ```
 
-See [\Shopware\Core\System\CustomField\CustomFieldTypes](https://github.com/shopware/platform/blob/0ca57ddee85e9ab00d1a15a44ddc8ff16c3bc37b/src/Core/System/CustomField/CustomFieldTypes.php#L7-L19) for the complete list of possible options
+See [\Shopwell\Core\System\CustomField\CustomFieldTypes](https://github.com/shopwell-shop/platform/blob/0ca57ddee85e9ab00d1a15a44ddc8ff16c3bc37b/src/Core/System/CustomField/CustomFieldTypes.php#L7-L19) for the complete list of possible options

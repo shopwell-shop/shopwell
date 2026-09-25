@@ -6,4 +6,4 @@ author_email: catalin.titov@gmail.com
 author_github: Catalin-Ionut
 ___
 # Core
-* Added `json` as optional input argument to `Shopware\Core\System\SystemConfig\Command\ConfigSet`
+* Added `json` as optional input argument to `Shopwell\Core\System\SystemConfig\Command\ConfigSet`

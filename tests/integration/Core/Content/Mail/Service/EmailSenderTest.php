@@ -42,9 +42,9 @@ class EmailSenderTest extends TestCase
         $container->set('mailer.transports', $transport);
         $mailFactory = $container->get(MailFactory::class);
         static::assertInstanceOf(MailFactory::class, $mailFactory);
-        $filesystem = $container->get('shopware.filesystem.private');
+        $filesystem = $container->get('shopwell.filesystem.private');
         static::assertInstanceOf(FilesystemOperator::class, $filesystem);
-        $maxMessageSizeKiB = $container->getParameter('shopware.messenger.message_max_kib_size');
+        $maxMessageSizeKiB = $container->getParameter('shopwell.messenger.message_max_kib_size');
         static::assertIsInt($maxMessageSizeKiB);
 
         $subject = 'mail create test';

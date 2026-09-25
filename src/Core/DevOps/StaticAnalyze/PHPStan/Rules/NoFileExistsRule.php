@@ -41,7 +41,7 @@ class NoFileExistsRule implements Rule
 
         return [
             RuleErrorBuilder::message(\sprintf('Avoid using file_exists. %s', self::FILE_EXISTS_INFORMATION))
-                ->identifier('shopware.fileExists')
+                ->identifier('shopwell.fileExists')
                 ->build(),
         ];
     }

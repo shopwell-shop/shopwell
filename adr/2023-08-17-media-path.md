@@ -6,7 +6,7 @@ tags: [media, url, strategy]
 ---
 
 ## Context
-In the current media system it is possible to configure different `Shopware\Core\Content\Media\Pathname\PathnameStrategy\PathnameStrategyInterface`.
+In the current media system it is possible to configure different `Shopwell\Core\Content\Media\Pathname\PathnameStrategy\PathnameStrategyInterface`.
 
 These strategies are used to store files, which are uploaded for media entity, under a certain path.
 
@@ -51,7 +51,7 @@ interface PathnameStrategyInterface
 ## Issues
 
 * `PathnameStrategyInterface` as well as `UrlGeneratorInterface` have a dependency on the DAL and always need a fully loaded entity to generate the URL. This is a big overhead when you consider what data is (currently) needed for the URL generation in the end.
-* The media upload "must" always be done via the shopware application, so that the folder structure stored in the file system and generated in the URL match. So it is only conditionally (or not at all) possible to upload all media directly to a S3 CDN without uploading the files via the shopware stack.
+* The media upload "must" always be done via the shopwell application, so that the folder structure stored in the file system and generated in the URL match. So it is only conditionally (or not at all) possible to upload all media directly to a S3 CDN without uploading the files via the shopwell stack.
 * In theory, the strategy must never be reconfigured after a file has been uploaded. If the file is uploaded to `/foo/test.jpg` and then the strategy is changed to one that would place the same file under `/bar/test.jpg`, the new strategy will take effect when the URL is generated, but the file will never be moved in the filesystem.
 * The current strategies use a so called "cache busting" system, where the "uploaded-at" value is included in the file path. However, this does not work if the URL has been statically included in the CMS. Here, replacing the media file always leads to a new file path and the image can no longer be reached under the old file path.
 
@@ -94,7 +94,7 @@ For the Backwards compatibility we will take the following measures:
 
 namespace Examples;
 
-use Shopware\Core\Content\Media\Core\Application\AbstractMediaUrlGenerator;use Shopware\Core\Content\Media\Core\Params\UrlParams;use Shopware\Core\Content\Media\MediaCollection;use Shopware\Core\Content\Media\MediaEntity;use Shopware\Core\Content\Media\Pathname\UrlGeneratorInterface;
+use Shopwell\Core\Content\Media\Core\Application\AbstractMediaUrlGenerator;use Shopwell\Core\Content\Media\Core\Params\UrlParams;use Shopwell\Core\Content\Media\MediaCollection;use Shopwell\Core\Content\Media\MediaEntity;use Shopwell\Core\Content\Media\Pathname\UrlGeneratorInterface;
 
 class BeforeChange
 {

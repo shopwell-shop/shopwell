@@ -5,4 +5,4 @@ author_email: Discord.Benjamin@web.de
 author_github: gecolay
 ---
 # Core
-* Changed `accessDeniedForXmlHttpRequest` in `Shopware\Core\Framework\Routing\RoutingException` to show more information about the request
+* Changed `accessDeniedForXmlHttpRequest` in `Shopwell\Core\Framework\Routing\RoutingException` to show more information about the request

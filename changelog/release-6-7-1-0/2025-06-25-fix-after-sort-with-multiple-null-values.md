@@ -7,4 +7,4 @@ author_github: @Philip Standt
 ---
 
 # Core
-* Changed `Shopware\Core\Framework\DataAbstractionLayer\Util\AfterSort` to correctly sort collections with multiple null `afterId` values
+* Changed `Shopwell\Core\Framework\DataAbstractionLayer\Util\AfterSort` to correctly sort collections with multiple null `afterId` values

@@ -5,4 +5,4 @@ author_email: benjamin.wittwer@a-k-f.de
 author_github: akf-bw
 ---
 # Core
-* Changed `Shopware\Core\Framework\Log\Package` to fix the `b2b` type
+* Changed `Shopwell\Core\Framework\Log\Package` to fix the `b2b` type

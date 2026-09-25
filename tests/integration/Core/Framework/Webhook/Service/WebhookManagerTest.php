@@ -198,12 +198,12 @@ class WebhookManagerTest extends TestCase
 
         static::assertSame(
             hash_hmac('sha256', $body, 's3cr3t'),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
 
         static::assertNotEmpty($request->getHeaderLine('sw-version'));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
     }
 
     public function testDispatchesMailSentWithoutTheContents(): void
@@ -304,7 +304,7 @@ class WebhookManagerTest extends TestCase
             ],
         ], $payload);
 
-        static::assertFalse($request->hasHeader('shopware-shop-signature'));
+        static::assertFalse($request->hasHeader('shopwell-shop-signature'));
     }
 
     public function testDispatchedWebhooksDontWrapEventMultipleTimes(): void
@@ -445,7 +445,7 @@ class WebhookManagerTest extends TestCase
             static::assertContains($field, $actualUpdatedFields);
         }
 
-        static::assertFalse($request->hasHeader('shopware-shop-signature'));
+        static::assertFalse($request->hasHeader('shopwell-shop-signature'));
     }
 
     public function testNoRegisteredWebhook(): void
@@ -531,12 +531,12 @@ class WebhookManagerTest extends TestCase
 
         static::assertSame(
             hash_hmac('sha256', $body, 's3cr3t'),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
 
         static::assertNotEmpty($request->getHeaderLine('sw-version'));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
     }
 
     public function testItDoesDispatchAppLifecycleEventForInactiveApp(): void
@@ -584,7 +584,7 @@ class WebhookManagerTest extends TestCase
 
         static::assertSame(
             hash_hmac('sha256', $body, 's3cr3t'),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
     }
 
@@ -736,12 +736,12 @@ class WebhookManagerTest extends TestCase
 
         static::assertSame(
             hash_hmac('sha256', $body, 's3cr3t'),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
 
         static::assertNotEmpty($request->getHeaderLine('sw-version'));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
     }
 
     public function testDispatchesEntityWrittenEventIfAppHasPermission(): void
@@ -807,7 +807,7 @@ class WebhookManagerTest extends TestCase
 
         static::assertSame(
             hash_hmac('sha256', $body, 's3cr3t'),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
     }
 
@@ -857,12 +857,12 @@ class WebhookManagerTest extends TestCase
 
         static::assertSame(
             hash_hmac('sha256', $body, 's3cr3t'),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
 
         static::assertNotEmpty($request->getHeaderLine('sw-version'));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
     }
 
     public function testItDoesDispatchWebhookMessageQueueWithAppActive(): void
@@ -913,19 +913,19 @@ class WebhookManagerTest extends TestCase
 
         $webhookEventId = Uuid::randomHex();
 
-        $shopwareVersion = Kernel::SHOPWARE_FALLBACK_VERSION;
+        $shopwellVersion = Kernel::SHOPWELL_FALLBACK_VERSION;
 
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->once())
             ->method('dispatch')
-            ->with(static::callback(static function (WebhookEventMessage $message) use ($payload, $appId, $webhookId, $shopwareVersion) {
+            ->with(static::callback(static function (WebhookEventMessage $message) use ($payload, $appId, $webhookId, $shopwellVersion) {
                 $actualPayload = $message->getPayload();
                 static::assertArrayHasKey('eventId', $actualPayload['source']);
                 unset($actualPayload['source']['eventId'], $actualPayload['source']['sequence']);
                 static::assertSame($payload, $actualPayload);
                 static::assertSame($appId, $message->getAppId());
                 static::assertSame($webhookId, $message->getWebhookId());
-                static::assertSame($shopwareVersion, $message->getShopwellVersion());
+                static::assertSame($shopwellVersion, $message->getShopwellVersion());
                 static::assertSame('s3cr3t', $message->getSecret());
                 static::assertSame(Defaults::LANGUAGE_SYSTEM, $message->getLanguageId());
                 static::assertSame('en-GB', $message->getUserLocale());
@@ -969,17 +969,17 @@ class WebhookManagerTest extends TestCase
         ];
 
         $webhookEventId = Uuid::randomHex();
-        $shopwareVersion = Kernel::SHOPWARE_FALLBACK_VERSION;
+        $shopwellVersion = Kernel::SHOPWELL_FALLBACK_VERSION;
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->once())
             ->method('dispatch')
-            ->with(static::callback(static function (WebhookEventMessage $message) use ($payload, $webhookId, $shopwareVersion) {
+            ->with(static::callback(static function (WebhookEventMessage $message) use ($payload, $webhookId, $shopwellVersion) {
                 $actualPayload = $message->getPayload();
                 static::assertArrayHasKey('eventId', $actualPayload['source']);
                 unset($actualPayload['source']['eventId'], $actualPayload['source']['sequence']);
                 static::assertSame($payload, $actualPayload);
                 static::assertSame($webhookId, $message->getWebhookId());
-                static::assertSame($shopwareVersion, $message->getShopwellVersion());
+                static::assertSame($shopwellVersion, $message->getShopwellVersion());
                 static::assertNull($message->getAppId());
                 static::assertNull($message->getSecret());
                 static::assertSame(Defaults::LANGUAGE_SYSTEM, $message->getLanguageId());
@@ -1620,7 +1620,7 @@ class WebhookManagerTest extends TestCase
             'defaultBillingAddressId' => $addressId,
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => 'test@gmail.com',
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'firstName' => 'Max',
             'lastName' => 'Mustermann',
             'salutationId' => $this->getValidSalutationId(),
@@ -1640,7 +1640,7 @@ class WebhookManagerTest extends TestCase
         ?MessageBusInterface $bus = null,
     ): WebhookManager {
         $bus ??= $this->bus;
-        $guzzle = $client ?? static::getContainer()->get('shopware.webhook.guzzle');
+        $guzzle = $client ?? static::getContainer()->get('shopwell.webhook.guzzle');
 
         return new WebhookManager(
             static::getContainer()->get(WebhookLoader::class),
@@ -1650,7 +1650,7 @@ class WebhookManagerTest extends TestCase
             new WebhookClient($guzzle, static::getContainer()->get(ClockInterface::class)),
             $bus,
             $this->shopUrl,
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             $adminWorkerEnabled,
             static::getContainer()->get(WebhookDeliveryService::class),
             static::getContainer()->get(WebhookOutboxStore::class),

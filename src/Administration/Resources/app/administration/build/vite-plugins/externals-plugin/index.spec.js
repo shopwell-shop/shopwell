@@ -16,7 +16,7 @@ describe('build/vite-plugins/externals-plugin', () => {
 
         // Identify plugin by name
         expect(plugin).toHaveProperty('name');
-        expect(plugin.name).toBe('shopware-vite-plugin-vue-globals');
+        expect(plugin.name).toBe('shopwell-vite-plugin-vue-globals');
 
         // Check if the plugin has a transform method
         expect(plugin).toHaveProperty('config');
@@ -33,7 +33,7 @@ describe('build/vite-plugins/externals-plugin', () => {
 
         const vueAlias = aliasResult[0];
         expect(vueAlias.find).toStrictEqual(/^vue$/);
-        expect(vueAlias.replacement.endsWith('node_modules/.shopware-vite-plugin-vue-globals/vue.js')).toBe(true);
+        expect(vueAlias.replacement.endsWith('node_modules/.shopwell-vite-plugin-vue-globals/vue.js')).toBe(true);
     });
 
     it('should add vue alias for config with own alias', async () => {
@@ -60,6 +60,6 @@ describe('build/vite-plugins/externals-plugin', () => {
 
         const vue = aliasResult[1];
         expect(vue.find).toStrictEqual(/^vue$/);
-        expect(vue.replacement.endsWith('node_modules/.shopware-vite-plugin-vue-globals/vue.js')).toBe(true);
+        expect(vue.replacement.endsWith('node_modules/.shopwell-vite-plugin-vue-globals/vue.js')).toBe(true);
     });
 });

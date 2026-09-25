@@ -2,20 +2,20 @@
     "name": "swag/test-no-extra-label-property",
     "description": "Test description",
     "version": "v1.0.1",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "license": "MIT",
     "authors": [
         {
-            "name": "shopware AG",
+            "name": "Shopwell",
             "role": "Manufacturer"
         }
     ],
     "require": {
-        "shopware/core": ">=6.0"
+        "shopwell/core": ">=6.0"
     },
     "extra": {
-        "shopware-plugin-class": "SwagTestNoExtraLabelProperty\\SwagTestNoExtraLabelProperty",
-        "copyright": "(c) by shopware AG",
+        "shopwell-plugin-class": "SwagTestNoExtraLabelProperty\\SwagTestNoExtraLabelProperty",
+        "copyright": "(c) by Shopwell",
         "description": {
             "de-DE": "Deutsche Beschreibung",
             "en-GB": "English description"

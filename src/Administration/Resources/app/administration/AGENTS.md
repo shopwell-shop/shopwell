@@ -2,7 +2,7 @@
 
 > **Full Documentation**: See `technical-docs/` for comprehensive guides
 > **Specific Areas**: See AGENTS.md in `src/core/`, `src/app/`, `src/module/`, `test/`
-> **Skill**: For Admin JS/TS/Vue/Jest work, follow `shopware-admin-js` (`.agents/skills/shopware-admin-js/SKILL.md`) — it carries the mandatory coding + test rules.
+> **Skill**: For Admin JS/TS/Vue/Jest work, follow `shopwell-admin-js` (`.agents/skills/shopwell-admin-js/SKILL.md`) — it carries the mandatory coding + test rules.
 
 ## File Structure
 ```
@@ -10,7 +10,7 @@ technical-docs/     # Full technical documentation
 src/
 ├── core/               # Vue indepedent code, Framework, repositories, services (AGENTS.md)
 |   ├── application.ts  # Application bootstrap (AGENTS.md)
-|   └── shopware.ts     # Global Shopwell object in window (AGENTS.md)
+|   └── shopwell.ts     # Global Shopwell object in window (AGENTS.md)
 ├── app/                # Vue specific code, UI, components, stores (AGENTS.md)
 │   ├── init/           # Boot sequence (AGENTS.md)
 │   ├── component/      # Global components (AGENTS.md)
@@ -38,10 +38,10 @@ Jest                # Testing framework
 - **Component Factory and Runtime Vue Components**: The application uses a component factory that allows dynamic extensibility. This factory creates real Vue components at runtime, which is why the project does not use Single File Components (SFCs). Instead, components are registered dynamically, enabling plugins and extensions to modify or extend existing components seamlessly.
   - **Reference**: See `src/Administration/Resources/app/administration/technical-docs/03-extensibility/` for details on the component factory and extensibility.
 
-- **Special Boot Sequence**: The boot process is tailored to the Shopwell ecosystem. It includes steps such as `initState`, `registerConfig`, and `initializeFeatureFlags`. The sequence dynamically imports core modules like `core/shopware.ts` and `app/main.ts`, initializes the dependency injection container, and sets up services and plugins. The Twig shell is used to inject runtime configurations before the Vue.js application is bootstrapped.
+- **Special Boot Sequence**: The boot process is tailored to the Shopwell ecosystem. It includes steps such as `initState`, `registerConfig`, and `initializeFeatureFlags`. The sequence dynamically imports core modules like `core/shopwell.ts` and `app/main.ts`, initializes the dependency injection container, and sets up services and plugins. The Twig shell is used to inject runtime configurations before the Vue.js application is bootstrapped.
   - **Reference**: See `src/Administration/Resources/app/administration/technical-docs/02-architecture/01-boot-process.md` for a detailed overview of the boot sequence.
 
-- **Global Shopwell Object**: A global `Shopwell` object is created during the boot process. This object acts as the central point for accessing services, factories, and the dependency injection container. It is initialized in `core/shopware.ts` and is available throughout the application.
+- **Global Shopwell Object**: A global `Shopwell` object is created during the boot process. This object acts as the central point for accessing services, factories, and the dependency injection container. It is initialized in `core/shopwell.ts` and is available throughout the application.
   - **Reference**: See `src/Administration/Resources/app/administration/technical-docs/02-architecture/03-module-system.md` for more information on the global Shopwell object.
 
 ## Coding guidelines

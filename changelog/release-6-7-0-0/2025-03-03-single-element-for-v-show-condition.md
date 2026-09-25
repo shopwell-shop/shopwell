@@ -1,6 +1,6 @@
 ---
 title: Single element for v-show condition
-issue: https://shopware.atlassian.net/browse/NEXT-40802
+issue: https://shopwell.atlassian.net/browse/NEXT-40802
 author_github: @En0Ma1259
 ---
 # Administration

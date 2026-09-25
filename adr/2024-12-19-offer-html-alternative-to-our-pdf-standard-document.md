@@ -7,7 +7,7 @@ tags: [a11y, pdf, html]
 
 ## Context
 
-To comply with Web Content Accessibility Guidelines (WCAG), we aim to make Shopware 6's document solution accessible (A11y-compliant). This ensures that our solution remains usable while meeting legal requirements and making documents accessible to customers with disabilities. 
+To comply with Web Content Accessibility Guidelines (WCAG), we aim to make Shopwell 6's document solution accessible (A11y-compliant). This ensures that our solution remains usable while meeting legal requirements and making documents accessible to customers with disabilities. 
 
 Currently, our PDF generation library, DomPDF, does not meet accessibility standards, posing a significant challenge.
 
@@ -28,7 +28,7 @@ Providing HTML documents aligns with these trends and ensures we are using best 
 We will integrate HTML A11y document support in the following areas:
 
 1. **Document Type Support**:
-    - Support includes all document types Shopware provides by default, `invoice`, `delivery note`, `credit note`, and `cancellation invoice`. Extensions must adapt themselves.
+    - Support includes all document types Shopwell provides by default, `invoice`, `delivery note`, `credit note`, and `cancellation invoice`. Extensions must adapt themselves.
 2. **Administration**:
     - **Order Detail Page**: Option to download HTML alongside PDF for each document type.
     - **Document Settings**: Toggle to generate HTML documents.
@@ -112,7 +112,7 @@ We will integrate HTML A11y document support in the following areas:
     ```
 
 2. **Service Registration**:
-    - We need to use the service tag `document_type.renderer` for the `Shopware\Core\Checkout\Document\Service\DocumentFileRendererRegistry` to recognize this service. This is essential for the proper registration and functioning of the `HtmlRenderer`.
+    - We need to use the service tag `document_type.renderer` for the `Shopwell\Core\Checkout\Document\Service\DocumentFileRendererRegistry` to recognize this service. This is essential for the proper registration and functioning of the `HtmlRenderer`.
 
     ```xml
     <service id="...\HtmlRenderer">
@@ -161,7 +161,7 @@ We will integrate HTML A11y document support in the following areas:
 
 ## Consequences
 
-With this implementation, Shopware 6 will support HTML A11y documents alongside PDFs for standard document types. This change will have the following consequences:
+With this implementation, Shopwell 6 will support HTML A11y documents alongside PDFs for standard document types. This change will have the following consequences:
 
 - **Renderer Updates**: Document renderers need changes to handle HTML output, using the `AbstractDocumentTypeRenderer` [here](#core).
 - **Email Integration**: For templates that have been customized, new content must be migrated as detailed in [here](#email-migration).

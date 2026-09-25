@@ -7,16 +7,16 @@ author_github: BrocksiNet, mitelg
 
 # Core
 
-* Added `\Shopware\Core\Content\Cookie\SalesChannel\CookieRoute` as a new service to retrieve all registered cookie groups and their entries. This experimental Store API endpoint is already used by the Twig storefront (backward compatibility will be maintained), but future changes may be introduced for custom/composable frontends.
-* Added `\Shopware\Core\Content\Cookie\Event\CookieGroupCollectEvent` as new extension point to provide additional cookie groups and/or cookie entries.
+* Added `\Shopwell\Core\Content\Cookie\SalesChannel\CookieRoute` as a new service to retrieve all registered cookie groups and their entries. This experimental Store API endpoint is already used by the Twig storefront (backward compatibility will be maintained), but future changes may be introduced for custom/composable frontends.
+* Added `\Shopwell\Core\Content\Cookie\Event\CookieGroupCollectEvent` as new extension point to provide additional cookie groups and/or cookie entries.
 
 ___
 
 # Storefront
 
-* Deprecated `\Shopware\Storefront\Framework\Cookie\CookieProviderInterface`. Use `\Shopware\Core\Content\Cookie\Event\CookieGroupCollectEvent` instead.
-* Deprecated `\Shopware\Storefront\Framework\Cookie\CookieProvider`
-* Deprecated `\Shopware\Storefront\Framework\Cookie\AppCookieProvider`
+* Deprecated `\Shopwell\Storefront\Framework\Cookie\CookieProviderInterface`. Use `\Shopwell\Core\Content\Cookie\Event\CookieGroupCollectEvent` instead.
+* Deprecated `\Shopwell\Storefront\Framework\Cookie\CookieProvider`
+* Deprecated `\Shopwell\Storefront\Framework\Cookie\AppCookieProvider`
 * Deprecated usage of `snippet_name` on cookies in Twig templates. Use `name` instead.
 * Deprecated usage of `snippet_description` on cookies in Twig templates. Use `description` instead.
 
@@ -34,12 +34,12 @@ ___
 
 The providing of cookies has been refactored.
 With this the new route `/store-api/cookie-groups` has been added to retrieve all registered cookie groups and their cookie entries.
-This route is provided by the new `\Shopware\Core\Content\Cookie\SalesChannel\CookieRoute` service.
+This route is provided by the new `\Shopwell\Core\Content\Cookie\SalesChannel\CookieRoute` service.
 
-The `\Shopware\Storefront\Framework\Cookie\CookieProviderInterface` has been deprecated and so all its implementations.
+The `\Shopwell\Storefront\Framework\Cookie\CookieProviderInterface` has been deprecated and so all its implementations.
 They will be removed in the next major version.
 
-To register new cookie groups and cookie entries, the new `\Shopware\Core\Content\Cookie\Event\CookieGroupCollectEvent` should be used instead.
+To register new cookie groups and cookie entries, the new `\Shopwell\Core\Content\Cookie\Event\CookieGroupCollectEvent` should be used instead.
 The way apps are registering cookies has not changed.
 
 Additionally, the `snippet_name` and `snippet_description` properties on cookies in Twig templates have been deprecated.
@@ -74,9 +74,9 @@ class CustomCookieProvider implements CookieProviderInterface
 
 Adding new cookies now:
 ```php
-use Shopware\Core\Content\Cookie\Event\CookieGroupCollectEvent;
-use Shopware\Core\Content\Cookie\Struct\CookieEntry;
-use Shopware\Core\Content\Cookie\Struct\CookieGroup;
+use Shopwell\Core\Content\Cookie\Event\CookieGroupCollectEvent;
+use Shopwell\Core\Content\Cookie\Struct\CookieEntry;
+use Shopwell\Core\Content\Cookie\Struct\CookieGroup;
 
 class AppCookieCollectListener
 {
@@ -99,7 +99,7 @@ ___
 
 ## Refactor of providing cookies
 
-The `\Shopware\Storefront\Framework\Cookie\CookieProviderInterface` and all its implementations were removed.
-Use the `\Shopware\Core\Content\Cookie\Event\CookieGroupCollectEvent` instead to register new cookie groups and cookie entries.
+The `\Shopwell\Storefront\Framework\Cookie\CookieProviderInterface` and all its implementations were removed.
+Use the `\Shopwell\Core\Content\Cookie\Event\CookieGroupCollectEvent` instead to register new cookie groups and cookie entries.
 The `snippet_name` and `snippet_description` properties on cookies in Twig templates have been removed.
 Use `name` and `description` instead.

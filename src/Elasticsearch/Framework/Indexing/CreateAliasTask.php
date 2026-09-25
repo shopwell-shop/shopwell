@@ -11,7 +11,7 @@ class CreateAliasTask extends ScheduledTask
 {
     public static function getTaskName(): string
     {
-        return 'shopware.elasticsearch.create.alias';
+        return 'shopwell.elasticsearch.create.alias';
     }
 
     public static function getDefaultInterval(): int

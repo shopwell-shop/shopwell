@@ -26,7 +26,7 @@ class MissingReleaseInfo
         }
 
         if ($files->matches($this->releaseInfoFile)->count() === 0) {
-            $context->warning('The Pull Request doesn\'t contain any release info, if your changes are relevant for external developers please add an entry to the release info file, including the consequences of the change and how it affects external developers. For detailed infos please refer to the [release documentation guide](https://github.com/shopware/shopware/blob/trunk/delivery-process/documenting-a-release.md).');
+            $context->warning('The Pull Request doesn\'t contain any release info, if your changes are relevant for external developers please add an entry to the release info file, including the consequences of the change and how it affects external developers. For detailed infos please refer to the [release documentation guide](https://github.com/shopwell-shop/shopwell/blob/trunk/delivery-process/documenting-a-release.md).');
         }
     }
 

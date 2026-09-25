@@ -73,7 +73,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $parameters->set('env(INSTANCE_ID)', '');
     $parameters->set('instance_id', env('INSTANCE_ID'));
     $parameters->set('in_app_purchases.active_purchases', '/swplatform/inappfeatures/purchases');
-    $parameters->set('shopware.store_endpoints', [
+    $parameters->set('shopwell.store_endpoints', [
         'my_extensions' => '/swplatform/licenseenvironment',
         'my_plugin_updates' => '/swplatform/pluginupdates',
         'environment_information' => '/swplatform/environmentinformation',
@@ -115,8 +115,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(StoreService::class),
             service(SystemConfigService::class),
-            service('shopware.filesystem.public'),
-            param('shopware.store.frw'),
+            service('shopwell.filesystem.public'),
+            param('shopwell.store.frw'),
             service('event_dispatcher'),
             service(FirstRunWizardClient::class),
             service('user_config.repository'),
@@ -125,12 +125,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(StoreClient::class)
         ->args([
-            param('shopware.store_endpoints'),
+            param('shopwell.store_endpoints'),
             service(StoreService::class),
             service(SystemConfigService::class),
             service(StoreRequestOptionsProvider::class),
             service(ExtensionLoader::class),
-            service('shopware.store_client'),
+            service('shopwell.store_client'),
             service(InstanceService::class),
             service('request_stack'),
             service('cache.object'),
@@ -139,7 +139,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(FirstRunWizardClient::class)
         ->args([
-            service('shopware.frw_client'),
+            service('shopwell.frw_client'),
             service(FrwRequestOptionsProvider::class),
             service(InstanceService::class),
         ]);
@@ -153,7 +153,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(InstanceService::class)
         ->args([
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
             param('instance_id'),
         ]);
 
@@ -238,7 +238,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AppLoader::class),
             service(AppLifecycle::class),
             service(AppStorage::class),
-            tagged_iterator('shopware.store.extension_removal_validator'),
+            tagged_iterator('shopwell.store.extension_removal_validator'),
             service(AppConfirmationDeltaProvider::class),
         ]);
 
@@ -279,7 +279,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(PluginService::class),
             service(PluginManagementService::class),
             service(Filesystem::class),
-            param('shopware.deployment.runtime_extension_management'),
+            param('shopwell.deployment.runtime_extension_management'),
         ])
         ->call('setContainer', [
             service('service_container'),
@@ -290,23 +290,23 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SystemConfigService::class),
         ]);
 
-    $services->set('shopware.store_client', Client::class)
+    $services->set('shopwell.store_client', Client::class)
         ->lazy()
         ->public()
         ->factory([service(StoreClientFactory::class), 'create'])
         ->args([
-            tagged_iterator('shopware.store_client.middleware'),
+            tagged_iterator('shopwell.store_client.middleware'),
         ]);
 
-    $services->set('shopware.frw_client', Client::class)
+    $services->set('shopwell.frw_client', Client::class)
         ->lazy()
         ->public()
         ->factory([service(StoreClientFactory::class), 'create'])
         ->args([
-            tagged_iterator('shopware.frw_client.middleware'),
+            tagged_iterator('shopwell.frw_client.middleware'),
         ]);
 
-    $services->set('shopware.store_download_client', Client::class);
+    $services->set('shopwell.store_download_client', Client::class);
 
     $services->set(LicenseHostChangedSubscriber::class)
         ->args([
@@ -321,7 +321,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service('request_stack'),
         ])
-        ->tag('shopware.store_client.middleware');
+        ->tag('shopwell.store_client.middleware');
 
     $services->set(ShopSecretInvalidMiddleware::class)
         ->public()
@@ -329,15 +329,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(SystemConfigService::class),
         ])
-        ->tag('shopware.store_client.middleware');
+        ->tag('shopwell.store_client.middleware');
 
     $services->set(RetryFailedStoreRequestMiddleware::class)
         ->public()
-        ->tag('shopware.store_client.middleware');
+        ->tag('shopwell.store_client.middleware');
 
     $services->set(TrackingEventClient::class)
         ->args([
-            service('shopware.store_client'),
+            service('shopwell.store_client'),
             service(InstanceService::class),
         ]);
 
@@ -367,7 +367,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(InAppPurchaseUpdater::class)
         ->public()
         ->args([
-            service('shopware.store_client'),
+            service('shopwell.store_client'),
             service(SystemConfigService::class),
             param('in_app_purchases.active_purchases'),
             service(StoreRequestOptionsProvider::class),
@@ -387,12 +387,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('messenger.message_handler');
 
     $services->set(InAppPurchaseUpdateTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(InAppPurchasesPayloadService::class)
         ->args([
             service(AppPayloadServiceHelper::class),
-            service('shopware.app_system.guzzle'),
+            service('shopwell.app_system.guzzle'),
         ]);
 
     $services->set(InAppPurchasesGateway::class)
@@ -403,7 +403,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(KeyFetcher::class)
         ->args([
-            service('shopware.store_client'),
+            service('shopwell.store_client'),
             service(StoreRequestOptionsProvider::class),
             service(SystemConfigService::class),
             service('logger'),

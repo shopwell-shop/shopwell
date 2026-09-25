@@ -14,7 +14,7 @@ use Symfony\Contracts\Cache\CacheInterface;
 #[Package('fundamentals@discovery')]
 class CachedLanguageLoader implements LanguageLoaderInterface, EventSubscriberInterface
 {
-    private const CACHE_KEY = 'shopware.languages';
+    private const CACHE_KEY = 'shopwell.languages';
 
     /**
      * @internal

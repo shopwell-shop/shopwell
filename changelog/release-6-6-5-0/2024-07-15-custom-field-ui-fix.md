@@ -2,7 +2,7 @@
 title: custom field ui fix
 issue: NEXT-34331
 author: Lars Kemper
-author_email: l.kemper@shopware.com
+author_email: l.kemper@shopwell.com
 author_github: @LarsKemper
 ---
 # Administration

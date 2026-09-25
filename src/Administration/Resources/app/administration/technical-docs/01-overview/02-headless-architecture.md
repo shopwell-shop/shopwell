@@ -19,10 +19,10 @@ The Shopwell 6 Administration is a purely client-rendered single-page applicatio
 
 ## High-Level Boot & Render Sequence
 
-The actual sequence (simplified) derived from `index.ts`, `core/shopware.ts`, `app/main.ts`, and `core/application.ts`:
+The actual sequence (simplified) derived from `index.ts`, `core/shopwell.ts`, `app/main.ts`, and `core/application.ts`:
 
-1. Browser requests `/admin` → Twig shell responds with minimal HTML + injected `apiContext` & `appContext` (incl. bundles metadata). If a global `_features_` object is present it is consumed immediately in `core/shopware.ts` for an early `Feature.init` before the formal `Application.start()` sequence.
-2. `index.ts` loads global styles, dynamically imports `core/shopware` (creates Bottle DI container, factories, global `Shopwell` object, early feature init if `_features_` present).
+1. Browser requests `/admin` → Twig shell responds with minimal HTML + injected `apiContext` & `appContext` (incl. bundles metadata). If a global `_features_` object is present it is consumed immediately in `core/shopwell.ts` for an early `Feature.init` before the formal `Application.start()` sequence.
+2. `index.ts` loads global styles, dynamically imports `core/shopwell` (creates Bottle DI container, factories, global `Shopwell` object, early feature init if `_features_` present).
 3. `index.ts` then dynamically imports `app/main.ts` which:
    * Registers pre-initializers (`init-pre`: `apiServices`, `state`, `store`).
    * Registers main initializers (`init`: router, http client, repository factory, locale, base components, directives, filters, core module routes, context, shortcuts, etc.).
@@ -53,7 +53,7 @@ sequenceDiagram
     participant B as Browser
     participant T as Twig Shell (/admin)
     participant I as index.ts
-    participant SW as core/shopware (Shopwell.Application)
+    participant SW as core/shopwell (Shopwell.Application)
     participant M as app/main.ts
     participant A as Application.start()
     participant L as loginService
@@ -63,7 +63,7 @@ sequenceDiagram
     B->>T: GET /admin
     T-->>B: HTML + apiContext/appContext + _features_
     B->>I: Execute index.ts
-    I->>SW: dynamic import core/shopware (create DI, factories, early Feature.init)
+    I->>SW: dynamic import core/shopwell (create DI, factories, early Feature.init)
     I->>M: dynamic import app/main (register initializers, services, view adapter)
     I->>A: call startApplication() -> Application.start()
     A->>A: initState + registerConfig + initializeFeatureFlags

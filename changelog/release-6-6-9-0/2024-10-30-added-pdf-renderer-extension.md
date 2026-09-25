@@ -7,4 +7,4 @@ author_github: OliverSkroblin
 ---
 
 # Core
-* Added `PdfRendererExtension` event inside the `\Shopware\Core\Checkout\Document\Service\PdfRenderer` class.
+* Added `PdfRendererExtension` event inside the `\Shopwell\Core\Checkout\Document\Service\PdfRenderer` class.

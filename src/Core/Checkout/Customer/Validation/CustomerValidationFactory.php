@@ -18,7 +18,7 @@ class CustomerValidationFactory implements DataValidationFactoryInterface
      */
     public function __construct(
         /**
-         * @todo seems to be the usecase for the shopware api - import or so. maybe rename to CustomerImportValidationService
+         * @todo seems to be the usecase for the shopwell api - import or so. maybe rename to CustomerImportValidationService
          */
         private readonly DataValidationFactoryInterface $profileValidation
     ) {

@@ -1,7 +1,7 @@
 ---
 title: Added dark mode support to select components
 author: Nils Haberkamp
-author_email: n.haberkamp@shopware.com
+author_email: n.haberkamp@shopwell.com
 author_github: @Haberkamp
 ---
 # Administration

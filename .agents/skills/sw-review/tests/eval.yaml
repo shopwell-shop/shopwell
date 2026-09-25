@@ -11,7 +11,7 @@ defaults:
 
 _anchors:
     - &skill_runner |
-        You are testing the Shopware PR-review skill.
+        You are testing the Shopwell PR-review skill.
 
         1. Read input.json. Its `persona` field (single slug) means worker mode;
            `personas` (array) or neither key means orchestrator mode. The skill

@@ -39,16 +39,16 @@ describe('src/module/sw-extension/page/sw-extension-config.spec', () => {
                     'sw-ai-copilot-badge': true,
                 },
                 provide: {
-                    shopwareExtensionService: {
+                    shopwellExtensionService: {
                         updateExtensionData: jest.fn(),
                     },
                     systemConfigApiService: {
                         getValues: () => {
                             return Promise.resolve({
                                 'core.store.apiUri': 'https://api.shopwell.cn',
-                                'core.store.licenseHost': 'sw6.test.shopware.in',
+                                'core.store.licenseHost': 'sw6.test.shopwell.in',
                                 'core.store.shopSecret': 'very.s3cret',
-                                'core.store.shopwareId': 'max@muster.com',
+                                'core.store.shopwellId': 'max@muster.com',
                             });
                         },
                     },
@@ -85,14 +85,14 @@ describe('src/module/sw-extension/page/sw-extension-config.spec', () => {
     it('should reload extensions on createdComponent', async () => {
         const wrapper = await createWrapper();
 
-        expect(wrapper.vm.shopwareExtensionService.updateExtensionData).toHaveBeenCalledTimes(1);
+        expect(wrapper.vm.shopwellExtensionService.updateExtensionData).toHaveBeenCalledTimes(1);
     });
 
     it('should not reload extensions on createdComponent if extensions are loaded', async () => {
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([{ name: 'test-extension' }]);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([{ name: 'test-extension' }]);
         const wrapper = await createWrapper();
 
-        expect(wrapper.vm.shopwareExtensionService.updateExtensionData).toHaveBeenCalledTimes(0);
+        expect(wrapper.vm.shopwellExtensionService.updateExtensionData).toHaveBeenCalledTimes(0);
     });
 
     it('Save click success', async () => {
@@ -144,7 +144,7 @@ describe('src/module/sw-extension/page/sw-extension-config.spec', () => {
         wrapper.vm.extension = {
             icon: 'icon.png',
             label: 'My extension label',
-            producerName: 'shopware AG',
+            producerName: 'Shopwell',
         };
 
         await wrapper.vm.$nextTick();
@@ -156,14 +156,14 @@ describe('src/module/sw-extension/page/sw-extension-config.spec', () => {
         expect(title.text()).toBe('My extension label');
 
         const meta = wrapper.get('.sw-meteor-page__smart-bar-meta');
-        expect(meta.text()).toBe('sw-extension-store.component.sw-extension-config.labelBy shopware AG');
+        expect(meta.text()).toBe('sw-extension-store.component.sw-extension-config.labelBy Shopwell');
     });
 
     it('shows header for extension details with producer website', async () => {
         const wrapper = await createWrapper();
 
         wrapper.vm.extension = {
-            producerName: 'shopware AG',
+            producerName: 'Shopwell',
             producerWebsite: 'https://www.shopwell.cn/',
         };
 
@@ -173,7 +173,7 @@ describe('src/module/sw-extension/page/sw-extension-config.spec', () => {
 
         const metaLink = wrapper.get('.sw-extension-config__producer-link');
         expect(metaLink.attributes().href).toBe('https://www.shopwell.cn/');
-        expect(metaLink.text()).toBe('shopware AG');
+        expect(metaLink.text()).toBe('Shopwell');
     });
 
     it('saves from route when router navigates to sw-extension-config page', async () => {

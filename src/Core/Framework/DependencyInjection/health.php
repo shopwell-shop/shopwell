@@ -20,6 +20,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(SystemChecker::class)
         ->args([
-            tagged_iterator('shopware.system_check'),
+            tagged_iterator('shopwell.system_check'),
         ]);
 };

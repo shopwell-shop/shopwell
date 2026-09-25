@@ -28,9 +28,9 @@ class AuthMiddleware
 
     final public const APP_REQUEST_CONTEXT = 'app_request_context';
 
-    final public const SHOPWARE_CONTEXT_LANGUAGE = 'sw-context-language';
+    final public const SHOPWELL_CONTEXT_LANGUAGE = 'sw-context-language';
 
-    final public const SHOPWARE_USER_LANGUAGE = 'sw-user-language';
+    final public const SHOPWELL_USER_LANGUAGE = 'sw-user-language';
 
     /**
      * Redirect policy for every app-system HTTP client. Without `strict`, Guzzle downgrades the
@@ -44,7 +44,7 @@ class AuthMiddleware
      * @internal
      */
     public function __construct(
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
         private readonly AppLocaleProvider $localeProvider
     ) {
     }
@@ -62,14 +62,14 @@ class AuthMiddleware
             }
 
             if (!\is_array($options[self::APP_REQUEST_TYPE])) {
-                /** @phpstan-ignore shopware.domainException (guzzle maintained exception) */
+                /** @phpstan-ignore shopwell.domainException (guzzle maintained exception) */
                 throw new InvalidArgumentException('request_type must be array');
             }
 
             $optionsRequestType = $options[self::APP_REQUEST_TYPE];
 
             if (!isset($optionsRequestType[self::APP_SECRET])) {
-                /** @phpstan-ignore shopware.domainException (guzzle maintained exception) */
+                /** @phpstan-ignore shopwell.domainException (guzzle maintained exception) */
                 throw new InvalidArgumentException('app_secret is required');
             }
 
@@ -88,7 +88,7 @@ class AuthMiddleware
             $successCallback = static function (ResponseInterface $response) use ($secret, $signature, $request) {
                 if ($response->getStatusCode() !== 401) {
                     if (!$signature->isResponseAuthentic($response, $secret)) {
-                        /** @phpstan-ignore shopware.domainException (guzzle maintained exception) */
+                        /** @phpstan-ignore shopwell.domainException (guzzle maintained exception) */
                         throw new ServerException(
                             'Could not verify the authenticity of the response',
                             $request,
@@ -114,7 +114,7 @@ class AuthMiddleware
         if (isset($options[self::APP_REQUEST_CONTEXT])) {
             $context = $options[self::APP_REQUEST_CONTEXT];
             if (!$context instanceof Context) {
-                /** @phpstan-ignore shopware.domainException (guzzle maintained exception) */
+                /** @phpstan-ignore shopwell.domainException (guzzle maintained exception) */
                 throw new InvalidArgumentException('app_request_context must be instance of Context');
             }
             $request = $this->getLanguageHeaderRequest($request, $context);
@@ -124,13 +124,13 @@ class AuthMiddleware
             return clone $request;
         }
 
-        return $request->withAddedHeader('sw-version', $this->shopwareVersion);
+        return $request->withAddedHeader('sw-version', $this->shopwellVersion);
     }
 
     private function getLanguageHeaderRequest(RequestInterface $request, Context $context): RequestInterface
     {
-        $request = $request->withAddedHeader(self::SHOPWARE_CONTEXT_LANGUAGE, $context->getLanguageId());
+        $request = $request->withAddedHeader(self::SHOPWELL_CONTEXT_LANGUAGE, $context->getLanguageId());
 
-        return $request->withAddedHeader(self::SHOPWARE_USER_LANGUAGE, $this->localeProvider->getLocaleFromContext($context));
+        return $request->withAddedHeader(self::SHOPWELL_USER_LANGUAGE, $this->localeProvider->getLocaleFromContext($context));
     }
 }

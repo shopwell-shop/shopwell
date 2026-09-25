@@ -108,7 +108,7 @@ class AddColumnRule implements Rule
             if ($hasAddColumnWithConstraint === 1) {
                 return [
                     RuleErrorBuilder::message('Combining ADD COLUMN with ADD CONSTRAINT CHECK in the same ALTER TABLE statement requires ALGORITHM=COPY and causes a full table rebuild. Split into separate statements: use MigrationStep::addColumn() for the column, then ADD CONSTRAINT separately.')
-                        ->identifier('shopware.tableCopyOperation')
+                        ->identifier('shopwell.tableCopyOperation')
                         ->build(),
                 ];
             }
@@ -135,7 +135,7 @@ class AddColumnRule implements Rule
         if (preg_match($pattern, $arg->value)) {
             return [
                 RuleErrorBuilder::message('Do not use `ALTER TABLE ... ADD COLUMN` in migration. Use MigrationStep::addColumn() instead, which uses ALGORITHM=INSTANT to prevent slow table copies.')
-                    ->identifier('shopware.addColumn')
+                    ->identifier('shopwell.addColumn')
                     ->build(),
             ];
         }

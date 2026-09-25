@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Changed `Shopware\Core\Checkout\Promotion\Cart\Discount\ScopePackager\CartScopeDiscountPackager` to improve performance, by not creating unnecessary clones of objects
+* Changed `Shopwell\Core\Checkout\Promotion\Cart\Discount\ScopePackager\CartScopeDiscountPackager` to improve performance, by not creating unnecessary clones of objects

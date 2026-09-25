@@ -1,4 +1,4 @@
-shopware.installer:
+shopwell.installer:
     header_title: Instalace
     menuitem:
         start: Spustit
@@ -160,7 +160,7 @@ shopware.installer:
         <p>
             těší nás, že vás můžeme uvítat v naší komunitě. Úspěšně jste instalovali software Shopwell.
         <p>
-            Váš obchod je nyní připraven k využívání. Jestliže jste v Shopwell ještě nováčci, doporučujeme vám průvodce <a href=\"https://docs.shopwell.cn/en/shopware-6-en/first-steps/welcome-to-shopware\" target=\"_blank\">\"První kroky v Shopwell\"</a>. Jakmile se poprvé přihlásíte ke správě obchodu, náš průvodce prvním přihlášením vás provede základním nastavením vašeho obchodu.
+            Váš obchod je nyní připraven k využívání. Jestliže jste v Shopwell ještě nováčci, doporučujeme vám průvodce <a href=\"https://docs.shopwell.cn/en/shopwell-6-en/first-steps/welcome-to-shopwell\" target=\"_blank\">\"První kroky v Shopwell\"</a>. Jakmile se poprvé přihlásíte ke správě obchodu, náš průvodce prvním přihlášením vás provede základním nastavením vašeho obchodu.
         </p>
         <p>
             Přejeme hodně zábavy a úspěchů s vaším novým online obchodem!

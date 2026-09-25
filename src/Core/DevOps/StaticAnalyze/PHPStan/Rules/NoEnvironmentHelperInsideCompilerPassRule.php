@@ -62,7 +62,7 @@ class NoEnvironmentHelperInsideCompilerPassRule implements Rule
 
         return [
             RuleErrorBuilder::message('Do not use EnvironmentHelper inside compiler passes.')
-                ->identifier('shopware.envHelperCompilerPass')
+                ->identifier('shopwell.envHelperCompilerPass')
                 ->build(),
         ];
     }

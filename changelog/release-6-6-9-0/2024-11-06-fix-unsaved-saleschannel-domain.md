@@ -2,7 +2,7 @@
 title: Fix unsaved saleschannel domain
 issue: NEXT-39242
 author: Alexandru Dumea
-author_email: a.dumea@shopware.com
+author_email: a.dumea@shopwell.com
 author_github: @Alexandru Dumea
 ---
 # Administration

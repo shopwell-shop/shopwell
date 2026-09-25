@@ -16,7 +16,7 @@ ___
 The whitelist can be extended using a yaml configuration:
 
 ```yaml
-shopware:
+shopwell:
     twig:
         allowed_php_functions: [ "is_bool" ]
 ```

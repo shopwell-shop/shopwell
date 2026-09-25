@@ -2,7 +2,7 @@
 title: Removed language dropdown from Settings > Basic Information
 issue: NEXT-37559
 author: Jozsef Damokos
-author_email: j.damokos@shopware.com
+author_email: j.damokos@shopwell.com
 author_github: @jozsefdamokos
 ---
 # Administration

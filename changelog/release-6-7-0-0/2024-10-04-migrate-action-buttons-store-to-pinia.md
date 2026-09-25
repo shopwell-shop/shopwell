@@ -12,14 +12,14 @@ ___
 # Upgrade Information
 ## "actionButtons" Vuex store moved to Pinia
 
-The `actionButtons` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopware.Store.get('actionButtons')`.
+The `actionButtons` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopwell.Store.get('actionButtons')`.
 
 ### Before:
 ```js
-Shopware.State.get('actionButtons');
+Shopwell.State.get('actionButtons');
 ```
 
 ### After:
 ```js
-Shopware.Store.get('actionButtons');
+Shopwell.Store.get('actionButtons');
 ```

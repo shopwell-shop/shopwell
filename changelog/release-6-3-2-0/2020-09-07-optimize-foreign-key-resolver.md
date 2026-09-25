@@ -2,17 +2,17 @@
 title:              Optimize foreign key resolver
 issue:              NEXT-10547
 author:             Oliver Skroblin
-author_email:       o.skroblin@shopware.com
+author_email:       o.skroblin@shopwell.com
 author_github:      @OliverSkroblin
 ---
 # Core
-* Changed result of `\Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityForeignKeyResolver`.   
+* Changed result of `\Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityForeignKeyResolver`.   
 * Changed the foreign keys to be determined per association using a separate query. The entity foreign key resolver has previously executed a single query to determine the foreign keys of the associations. This leads to very slow queries for large amounts of data, which block the database.
-* Deprecated `\Shopware\Core\Framework\DataAbstractionLayer\Dbal\CriteriaQueryHelper::addIdCondition` use `se \Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper::addIdCondition` instead
+* Deprecated `\Shopwell\Core\Framework\DataAbstractionLayer\Dbal\CriteriaQueryHelper::addIdCondition` use `se \Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper::addIdCondition` instead
 ___
 # Upgrade Information
 ## Entity Foreign Key Resolver
-There are currently systems that have performance problems with the `\Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityForeignKeyResolver`.
+There are currently systems that have performance problems with the `\Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityForeignKeyResolver`.
 We have now created a solution for this, but we have to change the format of the return value of the different functions as follow:
 
 ### getAffectedDeleteRestrictions & getAffectedDeletes
@@ -65,7 +65,7 @@ We have now created a solution for this, but we have to change the format of the
     [
         'pk' => '43c6baad756140d8aabbbca533a8284f'
         restrictions => [
-            'Shopware\Core\Content\Product\ProductDefinition' => [
+            'Shopwell\Core\Content\Product\ProductDefinition' => [
                 '1ffd7ea958c643558256927aae8efb07' => ['category_id'],
                 '1ffd7ea958c643558256927aae8efb07' => ['category_id', 'main_category_id']
             ]

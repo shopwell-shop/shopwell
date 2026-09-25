@@ -94,12 +94,12 @@ export default defineConfig(async () => {
                 extensionModuleResolverPlugin(projectRoot),
             ],
             resolve: {
-                // In tests, resolve the 'shopware' bare specifier to the manual mock so
+                // In tests, resolve the 'shopwell' bare specifier to the manual mock so
                 // both import-style and window-global-style components work without any
-                // real shopware.js on disk.  The mock also assigns to globalThis so
+                // real shopwell.js on disk.  The mock also assigns to globalThis so
                 // legacy components that do `({ Shopwell } = window)` still work.
                 alias: {
-                    shopware: path.resolve(configDir, '__mocks__/shopware.ts'),
+                    shopwell: path.resolve(configDir, '__mocks__/shopwell.ts'),
                 },
             },
             server: {

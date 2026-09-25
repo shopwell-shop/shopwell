@@ -28,7 +28,7 @@ class TrackingEventClient
             return null;
         }
 
-        $additionalData['shopwareVersion'] = $this->instanceService->getShopwellVersion();
+        $additionalData['shopwellVersion'] = $this->instanceService->getShopwellVersion();
         $payload = [
             'additionalData' => $additionalData,
             'instanceId' => $this->instanceService->getInstanceId(),

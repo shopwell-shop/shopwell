@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { MtSwitch } from '@shopware-ag/meteor-component-library';
+import { MtSwitch } from '@shopwell-ag/meteor-component-library';
 import useConsentStore from 'src/core/consent/consent.store';
 import SwSettingsUsageDataProfileConsent from './index';
 import SwSettingsUsageDataUserDataConsentCard from '../sw-settings-usage-data-consent-modal/subcomponents/sw-settings-usage-data-user-data-consent-card';

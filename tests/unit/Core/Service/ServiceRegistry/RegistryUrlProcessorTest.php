@@ -15,18 +15,18 @@ use Shopwell\Core\Service\ServiceRegistry\RegistryUrlProcessor;
 #[CoversClass(RegistryUrlProcessor::class)]
 class RegistryUrlProcessorTest extends TestCase
 {
-    private const DEFAULT_URL = 'https://registry.services.shopware.io';
+    private const DEFAULT_URL = 'https://registry.services.shopwell.cn';
 
     #[DataProvider('trustedUrlProvider')]
     public function testUrlOnATrustedDomainIsUsed(string $url): void
     {
-        static::assertSame($url, $this->process($url, ['shopware.io']));
+        static::assertSame($url, $this->process($url, ['shopwell.cn']));
     }
 
     #[DataProvider('untrustedUrlProvider')]
     public function testUrlOutsideOfTheTrustedDomainsFallsBackToTheDefaultUrl(string $url): void
     {
-        static::assertSame(self::DEFAULT_URL, $this->process($url, ['shopware.io']));
+        static::assertSame(self::DEFAULT_URL, $this->process($url, ['shopwell.cn']));
     }
 
     #[DataProvider('untrustedUrlProvider')]
@@ -48,12 +48,12 @@ class RegistryUrlProcessorTest extends TestCase
      */
     public static function trustedUrlProvider(): iterable
     {
-        yield 'production registry' => ['https://registry.services.shopware.io'];
-        yield 'staging registry' => ['https://registry.staging-services.shopware.io'];
-        yield 'registry with a path' => ['https://registry.services.shopware.io/api'];
-        yield 'trusted domain itself' => ['https://shopware.io'];
-        yield 'uppercase host' => ['https://REGISTRY.SERVICES.SHOPWARE.IO'];
-        yield 'host with a trailing dot' => ['https://registry.services.shopware.io.'];
+        yield 'production registry' => ['https://registry.services.shopwell.cn'];
+        yield 'staging registry' => ['https://registry.staging-services.shopwell.cn'];
+        yield 'registry with a path' => ['https://registry.services.shopwell.cn/api'];
+        yield 'trusted domain itself' => ['https://shopwell.cn'];
+        yield 'uppercase host' => ['https://REGISTRY.SERVICES.SHOPWELL.IO'];
+        yield 'host with a trailing dot' => ['https://registry.services.shopwell.cn.'];
     }
 
     /**
@@ -62,12 +62,12 @@ class RegistryUrlProcessorTest extends TestCase
     public static function untrustedUrlProvider(): iterable
     {
         yield 'foreign host' => ['https://registry.example.com'];
-        yield 'host ending in the trusted domain' => ['https://notshopware.io'];
-        yield 'trusted domain as a subdomain of a foreign host' => ['https://registry.services.shopware.io.example.com'];
-        yield 'trusted domain in the user info' => ['https://registry.services.shopware.io@example.com'];
-        yield 'trusted domain in the path' => ['https://example.com/registry.services.shopware.io'];
+        yield 'host ending in the trusted domain' => ['https://notshopwell.cn'];
+        yield 'trusted domain as a subdomain of a foreign host' => ['https://registry.services.shopwell.cn.example.com'];
+        yield 'trusted domain in the user info' => ['https://registry.services.shopwell.cn@example.com'];
+        yield 'trusted domain in the path' => ['https://example.com/registry.services.shopwell.cn'];
         yield 'local registry' => ['http://host.docker.internal:8123'];
-        yield 'host without a scheme' => ['registry.services.shopware.io'];
+        yield 'host without a scheme' => ['registry.services.shopwell.cn'];
         yield 'empty value' => [''];
     }
 

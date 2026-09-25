@@ -19,7 +19,7 @@ use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
  *
  * Kept separate from message stats collector so the per-task duration is not lost in overall queue noise.
  *
- * Tagged `shopware.telemetry.subscriber`, so `TelemetrySubscriberCompilerPass` removes the service
+ * Tagged `shopwell.telemetry.subscriber`, so `TelemetrySubscriberCompilerPass` removes the service
  * when telemetry is disabled.
  *
  * @internal

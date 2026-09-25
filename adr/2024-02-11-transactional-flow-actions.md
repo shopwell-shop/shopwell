@@ -9,12 +9,12 @@ tags: [flow, flow-action]
 1. If flow actions want to interact with the database in a transactional manner, they need to handle it themselves by starting and committing transactions.
 
 2. When there is a problem committing the transaction, the error will be caught and ignored by the flow dispatcher. A vague error message will be logged, but the flows will continue to execute.
-This is problematic if a transaction was already started before the flow is executed. If the connection is configured without save points (which is the default with Shopware), when a nested commit fails (eg during a flow action) the connection will be marked as rollback only.
+This is problematic if a transaction was already started before the flow is executed. If the connection is configured without save points (which is the default with Shopwell), when a nested commit fails (eg during a flow action) the connection will be marked as rollback only.
 When the outer transaction attempts to commit, eg the calling code, it will be unaware of the previous inner commit failure and thus will also fail.
 
 ## Decision
 
-We introduce a new marker interface `\Shopware\Core\Content\Flow\Dispatching\TransactionalAction` which flow actions can implement.
+We introduce a new marker interface `\Shopwell\Core\Content\Flow\Dispatching\TransactionalAction` which flow actions can implement.
 
 The flow executor will wrap any action in a database transaction which implements the interface.
 
@@ -51,7 +51,7 @@ class SetOrderStateAction extends FlowAction implements DelayableAction, Transac
 }
 ```
 
-You can also force the flow executor to rollback the transaction by throwing an instance of `\Shopware\Core\Content\Flow\Dispatching\TransactionFailedException`. You can use the static `because` method to create the exception from another one. Eg:
+You can also force the flow executor to rollback the transaction by throwing an instance of `\Shopwell\Core\Content\Flow\Dispatching\TransactionFailedException`. You can use the static `because` method to create the exception from another one. Eg:
 
 ```php
 
@@ -80,7 +80,7 @@ So that the calling code knows something went wrong and is able to handle it cor
 
 ## Consequences
 
-When developers want to create flows which run inside of a database transaction, they should now implement the interface `\Shopware\Core\Content\Flow\Dispatching\TransactionalAction`, nothing else is required.
+When developers want to create flows which run inside of a database transaction, they should now implement the interface `\Shopwell\Core\Content\Flow\Dispatching\TransactionalAction`, nothing else is required.
 
 When an transaction commit fails and it is inside a nested transaction, the exception will be rethrown, which means that any other scheduled actions will not be executed.
     

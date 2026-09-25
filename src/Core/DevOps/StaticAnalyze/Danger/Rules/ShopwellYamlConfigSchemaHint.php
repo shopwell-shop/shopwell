@@ -6,7 +6,7 @@ use Danger\Context;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * The `config-schema.json` describes the `shopware.yaml` structure and should follow its changes.
+ * The `config-schema.json` describes the `shopwell.yaml` structure and should follow its changes.
  *
  * @internal
  */
@@ -17,11 +17,11 @@ class ShopwellYamlConfigSchemaHint
     {
         $files = $context->platform->pullRequest->getFiles();
 
-        $shopwareYamlTouched = $files->matches('*/shopware.yaml')->count() > 0;
+        $shopwellYamlTouched = $files->matches('*/shopwell.yaml')->count() > 0;
         $configSchemaTouched = $files->matches('config-schema.json')->count() > 0;
 
-        if ($shopwareYamlTouched && !$configSchemaTouched) {
-            $context->warning('You updated the shopware.yaml, please consider to update the config-schema.json');
+        if ($shopwellYamlTouched && !$configSchemaTouched) {
+            $context->warning('You updated the shopwell.yaml, please consider to update the config-schema.json');
         }
     }
 }

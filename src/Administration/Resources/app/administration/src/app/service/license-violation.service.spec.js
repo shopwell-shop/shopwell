@@ -15,7 +15,7 @@ const cacheApiServiceMock = {
  * @sw-package framework
  */
 describe('app/service/license-violation.service.js', () => {
-    Shopwell.Service().register('shopwareExtensionService', () => extensionApiServiceMock);
+    Shopwell.Service().register('shopwellExtensionService', () => extensionApiServiceMock);
     Shopwell.Service().register('cacheApiService', () => cacheApiServiceMock);
     const licenseViolationService = LicenseViolationService(Application.getContainer('service').storeService);
 

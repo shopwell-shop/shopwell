@@ -92,7 +92,7 @@ jobs:
           currents-record-key: ${{ secrets.CURRENTS_RECORD_KEY }}
           playwright-role-arn: ${{ secrets.PLAYWRIGHT_TRACES_UPLOAD_ROLE_ARN }}
           playwright-traces-domain: ${{ vars.PLAYWRIGHT_TRACES_DOMAIN }}
-          s3-bucket: shopware-ci-playwright-traces
+          s3-bucket: shopwell-ci-playwright-traces
           report-prefix: playwright-reports
 
   acceptance-status-check:
@@ -131,7 +131,7 @@ jobs:
         run: npm install -g npm@11.8.0
 
       - name: Install dependencies
-        uses: shopware/github-actions/npm-ci-retry@main
+        uses: shopwell/github-actions/npm-ci-retry@main
         with:
           working-directory: tests/acceptance
 
@@ -190,7 +190,7 @@ jobs:
     steps:
       - name: Generate versions
         id: versions
-        uses: shopware/github-actions/versions@main
+        uses: shopwell/github-actions/versions@main
         with:
           github-token: ${{ github.token }}
 
@@ -212,30 +212,30 @@ jobs:
           - version: ${{ needs.tested-update-versions.outputs.latest-version }}
             type: latest
     env:
-      SHOPWARE_HTTP_CACHE_ENABLED: 0
+      SHOPWELL_HTTP_CACHE_ENABLED: 0
       BLUE_GREEN_DEPLOYMENT: 1
-      SHOPWARE_DISABLE_UPDATE_CHECK: "0"
-      SHOPWARE_UPDATE_FROM: ${{ matrix.update.version }}
+      SHOPWELL_DISABLE_UPDATE_CHECK: "0"
+      SHOPWELL_UPDATE_FROM: ${{ matrix.update.version }}
       SW_RECOVERY_NEXT_VERSION: "6.7.9999999.9999999"
       SW_RECOVERY_NEXT_BRANCH: "6.7.9999999.9999999"
-      SW_RECOVERY_REPOSITORY: '{"type": "path", "url": "${{ github.workspace }}/new-shopware/src/*", "options": { "symlink": true } }'
-      S3_BUCKET: "shopware-ci-playwright-traces"
+      SW_RECOVERY_REPOSITORY: '{"type": "path", "url": "${{ github.workspace }}/new-shopwell/src/*", "options": { "symlink": true } }'
+      S3_BUCKET: "shopwell-ci-playwright-traces"
       REPORT_PREFIX: "playwright-reports"
       DO_NOT_TRACK: 1
     steps:
-      - name: Create shopware dirs
-        run: mkdir -p old-shopware new-shopware
-      - name: Setup new Shopware
-        uses: shopware/setup-shopware@main
+      - name: Create shopwell dirs
+        run: mkdir -p old-shopwell new-shopwell
+      - name: Setup new Shopwell
+        uses: shopwell/setup-shopwell@main
         env:
           COMPOSER_ROOT_VERSION: 6.7.9999999-dev
         with:
           npm-version: 11.8.0
-          shopware-version: ${{ github.ref }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ github.ref }}
+          shopwell-repository: ${{ github.repository }}
           install-admin: true
           env: dev
-          path: new-shopware
+          path: new-shopwell
 
       - name: Cache Storefront npm packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -243,20 +243,20 @@ jobs:
           # ~/.npm is npm's tarball cache; `npm ci` wipes node_modules but reuses this
           # offline (see prefer-offline below), which keeps the install off the network.
           path: |
-            new-shopware/src/Storefront/Resources/app/storefront/node_modules
+            new-shopwell/src/Storefront/Resources/app/storefront/node_modules
             ~/.npm
-          key: ${{ runner.os }}-storefront-${{ hashFiles('new-shopware/src/Storefront/Resources/app/storefront/package-lock.json') }}
+          key: ${{ runner.os }}-storefront-${{ hashFiles('new-shopwell/src/Storefront/Resources/app/storefront/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-storefront-
 
       - name: Install storefront dependencies
-        uses: shopware/github-actions/npm-ci-retry@main
+        uses: shopwell/github-actions/npm-ci-retry@main
         with:
-          working-directory: new-shopware
+          working-directory: new-shopwell
           command: composer run npm:storefront ci
 
-      - name: Build new shopware
-        working-directory: new-shopware
+      - name: Build new shopwell
+        working-directory: new-shopwell
         run: |
           composer run npm:storefront run production
           (cd src/Storefront/Resources/app/storefront && node copy-to-vendor.js)
@@ -269,34 +269,34 @@ jobs:
       - name: Checkout template
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: shopware/production
-          path: old-shopware
+          repository: shopwell/production
+          path: old-shopwell
 
       - name: Configure project root
         run: |
-          echo "PROJECT_ROOT=${{ github.workspace }}/old-shopware" >> "$GITHUB_ENV"
+          echo "PROJECT_ROOT=${{ github.workspace }}/old-shopwell" >> "$GITHUB_ENV"
 
-      - name: Require shopware
-        working-directory: old-shopware
+      - name: Require shopwell
+        working-directory: old-shopwell
         run: |
           # Note: We expect to see vulnerabilities in the older versions we're using here.
           jq '.config.audit = { "block-insecure": false }' composer.json > composer.json.new
           mv composer.json.new composer.json
 
-          composer require shopware/core:${{ matrix.update.version }}
+          composer require shopwell/core:${{ matrix.update.version }}
 
       - name: Install
-        working-directory: old-shopware
+        working-directory: old-shopwell
         run: |
-          sed -i -e "s/shopware.store.frw: '1'/shopware.store.frw: '0'"/ config/services.yaml
+          sed -i -e "s/shopwell.store.frw: '1'/shopwell.store.frw: '0'"/ config/services.yaml
           bin/console system:install --basic-setup --drop-database --create-database
 
       - name: Download latest WebInstaller
         run: |
-          curl -L https://github.com/shopware/web-installer/releases/latest/download/shopware-installer.phar.php -o old-shopware/public/shopware-installer.phar.php
+          curl -L https://github.com/shopwell-shop/web-installer/releases/latest/download/shopwell-installer.phar.php -o old-shopwell/public/shopwell-installer.phar.php
 
       - name: Start web server
-        working-directory: old-shopware
+        working-directory: old-shopwell
         run: symfony server:start -d
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -307,34 +307,34 @@ jobs:
 
       # ~/.npm is cached earlier in this job, so prefer-offline reuses tarballs.
       - name: Install dependencies
-        uses: shopware/github-actions/npm-ci-retry@main
+        uses: shopwell/github-actions/npm-ci-retry@main
         with:
-          working-directory: new-shopware/tests/acceptance
+          working-directory: new-shopwell/tests/acceptance
 
       - name: Install Playwright Browsers
-        uses: shopware/github-actions/npm-ci-retry@main
+        uses: shopwell/github-actions/npm-ci-retry@main
         with:
-          working-directory: new-shopware/tests/acceptance
+          working-directory: new-shopwell/tests/acceptance
           command: sudo apt-get update --allow-releaseinfo-change && npx playwright install --with-deps chromium
       - name: Run update tests with reporting
         if: ${{ inputs.currents && 'true' || '' }}
-        working-directory: new-shopware/tests/acceptance
+        working-directory: new-shopwell/tests/acceptance
         run: npx pwc --project-id ${{ secrets.CURRENTS_PROJECT_ID }} --key ${{ secrets.CURRENTS_RECORD_KEY }} -- --project=Update --trace=on
       - name: Run update tests
         if: ${{ !inputs.currents && 'true' || '' }}
-        working-directory: new-shopware/tests/acceptance
+        working-directory: new-shopwell/tests/acceptance
         run: npx playwright test --project=Update --trace=on
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: playwright-report-update-${{ matrix.update.type }}-${{ matrix.update.version }}
-          path: new-shopware/tests/acceptance/test-results/
+          path: new-shopwell/tests/acceptance/test-results/
           retention-days: 3
 
       - name: Check if this run should attempt AWS operations
         id: check-aws-allowed
-        if: ${{ github.repository_owner == 'shopware' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        if: ${{ github.repository_owner == 'shopwell' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         shell: bash
         run: |
           if [ -z "${{ secrets.PLAYWRIGHT_TRACES_UPLOAD_ROLE_ARN }}" ]; then
@@ -353,7 +353,7 @@ jobs:
           role-to-assume: ${{ secrets.PLAYWRIGHT_TRACES_UPLOAD_ROLE_ARN }}
 
       - name: Upload Playwright HTML report to S3
-        working-directory: new-shopware/tests/acceptance
+        working-directory: new-shopwell/tests/acceptance
         if: ${{ steps.check-aws-allowed.outputs.has_role_arn == 'true' }}
         shell: bash
         run: |

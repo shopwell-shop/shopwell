@@ -86,7 +86,7 @@ foreach (explode("\n", $commitsRaw) as $commit) {
             }
         }
         $author = trim(findAuthor($prNumberAuthorCheck) ?? '');
-        $commitsByType[$typeMatch[1]][] = "* $title by @$author [#$prNumber](https://github.com/shopware/shopware/pull/$prNumber)";
+        $commitsByType[$typeMatch[1]][] = "* $title by @$author [#$prNumber](https://github.com/shopwell-shop/shopwell/pull/$prNumber)";
     }
 }
 $outputContent .= "## What's Changed\n";
@@ -97,9 +97,9 @@ $outputContent .= implode("\n", array_merge(
     $commitsByType['revert'],
 )) . "\n";
 
-$outputContent .= "\n**Full Changelog**: https://github.com/shopware/shopware/compare/$latestTag...v$version\n\n";
+$outputContent .= "\n**Full Changelog**: https://github.com/shopwell-shop/shopwell/compare/$latestTag...v$version\n\n";
 $outputContent .= "## Get in touch\n";
-$outputContent .= 'Discuss about decisions, bugs you might stumble upon, etc in our [community discord](https://chat.shopware.com). See you there ;)';
+$outputContent .= 'Discuss about decisions, bugs you might stumble upon, etc in our [community discord](https://chat.shopwell.com). See you there ;)';
 
 if (!$outputFile) {
     echo $outputContent;
@@ -152,7 +152,7 @@ function gatherReleaseInfo(string $version, string $releaseInfoFile): ?string
 function findAuthor(string $prNumber): ?string
 {
     $author = shell_exec(sprintf(
-        'gh pr view https://github.com/shopware/shopware/pull/%s --json author --jq \'.author.login\'',
+        'gh pr view https://github.com/shopwell-shop/shopwell/pull/%s --json author --jq \'.author.login\'',
         escapeshellarg($prNumber)
     ));
 
@@ -166,7 +166,7 @@ function findAuthor(string $prNumber): ?string
 function resolveBackport(string $prNumber): ?string
 {
     $body = shell_exec(sprintf(
-        'gh pr view https://github.com/shopware/shopware/pull/%s --json body --jq \'.body\'',
+        'gh pr view https://github.com/shopwell-shop/shopwell/pull/%s --json body --jq \'.body\'',
         escapeshellarg($prNumber)
     ));
 
@@ -175,7 +175,7 @@ function resolveBackport(string $prNumber): ?string
     }
 
     // Resolve PR number from **Backport:**
-    if (preg_match('/^\*\*Backport:\*\* https:\/\/github\.com\/shopware\/shopware\/pull\/(\d+)$/m', trim($body), $m)) {
+    if (preg_match('/^\*\*Backport:\*\* https:\/\/github\.com\/shopwell\/shopwell\/pull\/(\d+)$/m', trim($body), $m)) {
         return $m[1];
     }
 

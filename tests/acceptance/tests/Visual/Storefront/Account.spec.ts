@@ -21,7 +21,7 @@ test(
             lastName: 'Goldblum',
             customerNumber: '12345',
             email: 'johngoldblum@example.com',
-            password: 'shopware',
+            password: 'shopwell',
             createdAt: '2025-09-04T06:36:38.101+00:00',
             defaultShippingAddress: {
                 firstName: 'John',

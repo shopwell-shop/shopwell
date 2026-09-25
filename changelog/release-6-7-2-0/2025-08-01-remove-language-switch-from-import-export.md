@@ -2,17 +2,17 @@
 title: Remove language switch from import/export
 issue: 11568
 author: Lars Kemper
-author_email: l.kemper@shopware.com
+author_email: l.kemper@shopwell.com
 author_github: @larskemper
 ---
 ## Core
-- Deprecated the `$label` property and the `getLabel()`, `setLabel()`, `getTranslations()`, `setTranslations()` methods in `Shopware\Core\Content\ImportExport\ImportExportProfileEntity`.
+- Deprecated the `$label` property and the `getLabel()`, `setLabel()`, `getTranslations()`, `setTranslations()` methods in `Shopwell\Core\Content\ImportExport\ImportExportProfileEntity`.
 - Deprecated:
-    - `Shopware\Core\Content\ImportExport\ImportExportProfileTranslationCollection`
-    - `Shopware\Core\Content\ImportExport\ImportExportProfileTranslationDefinition`
-    - `Shopware\Core\Content\ImportExport\ImportExportProfileTranslationEntity`
-- Changed `createLog()` and `getConfig()` in `Shopware\Core\Content\ImportExport\Service\ImportExportService` to use `$technicalName` instead of `$label` as filename.
-- Changed `generateFilename()` in `Shopware\Core\Content\ImportExport\Service\FileService` to use `$technicalName` instead of `$label` as profile name.
+    - `Shopwell\Core\Content\ImportExport\ImportExportProfileTranslationCollection`
+    - `Shopwell\Core\Content\ImportExport\ImportExportProfileTranslationDefinition`
+    - `Shopwell\Core\Content\ImportExport\ImportExportProfileTranslationEntity`
+- Changed `createLog()` and `getConfig()` in `Shopwell\Core\Content\ImportExport\Service\ImportExportService` to use `$technicalName` instead of `$label` as filename.
+- Changed `generateFilename()` in `Shopwell\Core\Content\ImportExport\Service\FileService` to use `$technicalName` instead of `$label` as profile name.
 ___
 ## Administration
 - Deprecated `sw_import_export_edit_profile_general_container_name` block in `src/module/sw-import-export/component/sw-import-export-edit-profile-general/sw-import-export-edit-profile-general.html.twig`

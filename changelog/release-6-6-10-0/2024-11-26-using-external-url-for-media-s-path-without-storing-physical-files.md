@@ -3,8 +3,8 @@ title: Using external URL for media's path without storing physical files
 issue: NEXT-39388
 ---
 # Core
-* Removed `WriteProtected` flag of `fileName` and `mimeType` fields in `\Shopware\Core\Content\Media\MediaDefinition` class
-* Changed `generate` method in `\Shopware\Core\Content\Media\Infrastructure\Path\MediaUrlGenerator` class to load media from external URL by assigning the `path` field to `url` instead of generating a `url`.
+* Removed `WriteProtected` flag of `fileName` and `mimeType` fields in `\Shopwell\Core\Content\Media\MediaDefinition` class
+* Changed `generate` method in `\Shopwell\Core\Content\Media\Infrastructure\Path\MediaUrlGenerator` class to load media from external URL by assigning the `path` field to `url` instead of generating a `url`.
 ___
 # Upgrade Information
 ## Using external URL for media's path

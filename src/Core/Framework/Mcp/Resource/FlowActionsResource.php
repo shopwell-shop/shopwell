@@ -13,8 +13,8 @@ use Shopwell\Core\Framework\Util\Json;
  */
 #[Package('framework')]
 #[McpResource(
-    uri: 'shopware://flow-actions',
-    name: 'shopware-flow-actions',
+    uri: 'shopwell://flow-actions',
+    name: 'shopwell-flow-actions',
     description: 'All registered Shopwell flow actions (core and app-provided) available in Flow Builder automations.'
 )]
 class FlowActionsResource
@@ -48,7 +48,7 @@ class FlowActionsResource
         usort($actions, fn (array $a, array $b) => $a['name'] <=> $b['name']);
 
         return [
-            'uri' => 'shopware://flow-actions',
+            'uri' => 'shopwell://flow-actions',
             'mimeType' => 'application/json',
             'text' => Json::encode($actions),
         ];

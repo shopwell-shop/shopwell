@@ -3,19 +3,19 @@ title: Handling tax-free dependent values
 issue: NEXT-14599
 ---
 # Core
-* Deprecated `taxFree` from `Shopware/Core/System/Country/CountryEntity`, use `$customerTax->getEnabled()` instead.
-* Deprecated `companyTaxFree` from `Shopware/Core/System/Country/CountryEntity`, use `$companyTax->getEnabled()` instead.
-* Added two new properties `customerTax`, `companyTax` to `Shopware/Core/System/Country/CountryEntity`.
-* Added two new fields `customerTax`, `companyTax` to `Shopware/Core/System/Country/CountryDefinition`.
+* Deprecated `taxFree` from `Shopwell/Core/System/Country/CountryEntity`, use `$customerTax->getEnabled()` instead.
+* Deprecated `companyTaxFree` from `Shopwell/Core/System/Country/CountryEntity`, use `$companyTax->getEnabled()` instead.
+* Added two new properties `customerTax`, `companyTax` to `Shopwell/Core/System/Country/CountryEntity`.
+* Added two new fields `customerTax`, `companyTax` to `Shopwell/Core/System/Country/CountryDefinition`.
 * Added two new columns `customer_tax` and `company_tax` to `country` table.
-* Added `TaxFreeConfigField` to `Shopware/Core/Framework/DataAbstractionLayer/Field` which stores `customer_tax` and `company_tax` in `country`.
-* Added `TaxFreeConfig` to `Shopware/Core/Framework/DataAbstractionLayer` which will be decoded by the corresponding `TaxFreeConfigField`.
-* Added `TaxFreeConfigFieldSerializer` to `Shopware/Core/Framework/DataAbstractionLayer/FieldSerializer`.
+* Added `TaxFreeConfigField` to `Shopwell/Core/Framework/DataAbstractionLayer/Field` which stores `customer_tax` and `company_tax` in `country`.
+* Added `TaxFreeConfig` to `Shopwell/Core/Framework/DataAbstractionLayer` which will be decoded by the corresponding `TaxFreeConfigField`.
+* Added `TaxFreeConfigFieldSerializer` to `Shopwell/Core/Framework/DataAbstractionLayer/FieldSerializer`.
 ___
 # Upgrade Information
 
 ## Change tax-free get and set in CountryEntity
-Deprecated `taxFree` and `companyTaxFree` in `Shopware/Core/System/Country/CountryEntity`, use `customerTax` and `companyTax` instead.
+Deprecated `taxFree` and `companyTaxFree` in `Shopwell/Core/System/Country/CountryEntity`, use `customerTax` and `companyTax` instead.
 
 ## If you are writing the fields directly, the tax-free of the country will be used:
 ### Before

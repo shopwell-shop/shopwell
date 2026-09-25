@@ -36,9 +36,9 @@ export default Shopwell.Component.wrapComponentConfig({
             this.isLoading = true;
 
             try {
-                const shopwareServicesService = Shopwell.Service('shopwareServicesService');
+                const shopwellServicesService = Shopwell.Service('shopwellServicesService');
 
-                await shopwareServicesService.disableAllServices();
+                await shopwellServicesService.disableAllServices();
 
                 this._reloadPage();
             } catch (exceptionResponse) {

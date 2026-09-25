@@ -3,7 +3,7 @@
  */
 
 /* @private */
-import type Criteria from '@shopware-ag/meteor-admin-sdk/es/data/Criteria';
+import type Criteria from '@shopwell-ag/meteor-admin-sdk/es/data/Criteria';
 import { defineComponent } from 'vue';
 import type { LocationQuery, RouteLocationNamedRaw } from 'vue-router';
 
@@ -122,7 +122,7 @@ export default Shopwell.Mixin.register(
                 return;
             }
 
-            Shopwell.Store.get('shopwareApps').selectedIds = [];
+            Shopwell.Store.get('shopwellApps').selectedIds = [];
             Shopwell.Store.get('swBulkEdit').selectedIds = [];
         },
 
@@ -156,7 +156,7 @@ export default Shopwell.Mixin.register(
             },
 
             selection() {
-                Shopwell.Store.get('shopwareApps').selectedIds = Object.keys(this.selection);
+                Shopwell.Store.get('shopwellApps').selectedIds = Object.keys(this.selection);
                 Shopwell.Store.get('swBulkEdit').selectedIds = Object.keys(this.selection);
             },
 

@@ -7,12 +7,12 @@
 import type { default as Bottle, Decorator } from 'bottlejs';
 import type { NavigationGuardNext, RouteLocationNormalized, RouteLocationNormalizedLoaded, Router } from 'vue-router';
 // Import explicitly global types from meteor-admin-sdk
-import '@shopware-ag/meteor-admin-sdk';
+import '@shopwell-ag/meteor-admin-sdk';
 import type FeatureService from 'src/app/service/feature.service';
 import type CacheService from 'src/app/service/cache.service';
 import type { LoginService } from 'src/core/service/login.service';
 import type { HttpClient } from 'src/core/factory/http-client.types';
-import type { ShopwellClass } from 'src/core/shopware';
+import type { ShopwellClass } from 'src/core/shopwell';
 import type RepositoryFactory from 'src/core/data/repository-factory.data';
 import type ExtensionSdkService from 'src/core/service/api/extension-sdk.service';
 import type CartStoreService from 'src/core/service/api/cart-store-api.api.service';
@@ -121,7 +121,7 @@ import type { MarketingStore } from './app/store/marketing.store';
 import type { SdkLocation } from './app/store/sdk-location.store';
 import type { RuleConditionsConfig } from './app/store/rule-conditions-config.store';
 import type { SettingsItems } from './app/store/settings-item.store';
-import type { ShopwellApps } from './app/store/shopware-apps.store';
+import type { ShopwellApps } from './app/store/shopwell-apps.store';
 import type { System } from './app/store/system.store';
 import type { ModalsStore } from './app/store/modals.store';
 import type { MediaModalStore } from './app/store/media-modal.store';
@@ -294,7 +294,7 @@ declare global {
         searchPreferencesService: $TSFixMe;
         searchRankingService: $TSFixMe;
         searchTypeService: $TSFixMe;
-        shopwareDiscountCampaignService: ShopwellDiscountCampaignService;
+        shopwellDiscountCampaignService: ShopwellDiscountCampaignService;
         snackbarService: SnackbarService;
         shortcutService: $TSFixMe;
         snippetService: SnippetApiService;
@@ -426,7 +426,7 @@ declare global {
         sdkLocation: SdkLocation;
         ruleConditionsConfig: RuleConditionsConfig;
         settingsItems: SettingsItems;
-        shopwareApps: ShopwellApps;
+        shopwellApps: ShopwellApps;
         system: System;
         modals: ModalsStore;
         sidebar: SidebarStore;
@@ -436,7 +436,7 @@ declare global {
         session: SessionStore;
         swCategoryDetail: SwCategoryDetailStore;
         swSeoUrl: SwSeoUrlStore;
-        shopwareExtensions: ShopwellExtensionsStore;
+        shopwellExtensions: ShopwellExtensionsStore;
         swOrderDetail: SwOrderDetailStore;
         swOrder: SwOrderStore;
         swShippingDetailStore: SwShippingDetailStore;
@@ -618,7 +618,7 @@ declare module '@vue/runtime-core' {
 
 declare module 'axios' {
     interface AxiosRequestConfig {
-        // adds the shopware API version to the RequestConfig
+        // adds the shopwell API version to the RequestConfig
         version?: number;
         // Opt-in flag to use axios v1 instead of v0 for this request
         useAxiosV1?: boolean;
@@ -627,7 +627,7 @@ declare module 'axios' {
 
 declare module 'axios-v1' {
     interface AxiosRequestConfig {
-        // adds the shopware API version to the RequestConfig
+        // adds the shopwell API version to the RequestConfig
         version?: number;
         // Opt-in flag to use axios v1 instead of v0 for this request
         useAxiosV1?: boolean;

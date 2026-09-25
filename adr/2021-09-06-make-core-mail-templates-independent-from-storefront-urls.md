@@ -7,7 +7,7 @@ tags: [mail, storefront, headless]
 
 ## Context
 Some mail templates of the core component (Newsletter, Registration, Password Recovery, Order Status mails) depend on storefront Urls to be included in the mails.
-Those Urls are not available when shopware is used in "headless" mode, without the storefront bundle being installed.
+Those Urls are not available when shopwell is used in "headless" mode, without the storefront bundle being installed.
 
 For some mails (Newsletter subscription, Double Opt-In, Password recovery), the Url was made configurable over the system config and over the settings inside the administration.  
 The default values for those Urls are the ones that the storefront bundle would use.

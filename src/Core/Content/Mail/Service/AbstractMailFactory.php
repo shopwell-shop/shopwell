@@ -37,11 +37,11 @@ use Symfony\Component\Mime\Part\DataPart;
 abstract class AbstractMailFactory
 {
     /**
-     * @param MailNameCombination $sender e.g. ['shopware@example.com' => 'Shopwell AG']
-     * @param MailNameCombination $recipients e.g. ['shopware@example.com' => 'Shopwell AG', 'symfony@example.com' => 'Symfony']
+     * @param MailNameCombination $sender e.g. ['shopwell@example.com' => 'Shopwell AG']
+     * @param MailNameCombination $recipients e.g. ['shopwell@example.com' => 'Shopwell AG', 'symfony@example.com' => 'Symfony']
      * @param Contents $contents e.g. ['text/plain' => 'Foo', 'text/html' => '<h1>Bar</h1>']
      * @param list<string> $attachments
-     * @param MailData $additionalData e.g. ['recipientsCc' => ['shopware@example.com' => 'shopware', 'recipientsBcc' => 'shopware@example.com', 'replyTo' => 'reply@example.com', 'returnPath' => 'bounce@example.com']
+     * @param MailData $additionalData e.g. ['recipientsCc' => ['shopwell@example.com' => 'shopwell', 'recipientsBcc' => 'shopwell@example.com', 'replyTo' => 'reply@example.com', 'returnPath' => 'bounce@example.com']
      * @param BinAttachments $binAttachments
      */
     abstract public function create(

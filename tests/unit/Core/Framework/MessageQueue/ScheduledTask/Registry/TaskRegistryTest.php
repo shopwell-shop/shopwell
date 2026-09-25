@@ -45,8 +45,8 @@ class TaskRegistryTest extends TestCase
 
         $tasks = [new TestScheduledTask(), new SitemapGenerateTask(), new CleanupCartTask()];
         $parameterBag = new ParameterBag([
-            'shopware.test.active' => true,
-            'shopware.sitemap.scheduled_task.enabled' => false,
+            'shopwell.test.active' => true,
+            'shopwell.sitemap.scheduled_task.enabled' => false,
         ]);
 
         $registeredTask = new ScheduledTaskEntity();
@@ -126,8 +126,8 @@ class TaskRegistryTest extends TestCase
 
         // passing these parameters so these task shouldRun return false
         $parameterBag = new ParameterBag([
-            'shopware.test.active' => false,
-            'shopware.sitemap.scheduled_task.enabled' => false,
+            'shopwell.test.active' => false,
+            'shopwell.sitemap.scheduled_task.enabled' => false,
         ]);
 
         $registry = new TaskRegistry($tasks, $this->scheduleTaskRepository, $parameterBag, new NativeClock());
@@ -188,8 +188,8 @@ class TaskRegistryTest extends TestCase
 
         // passing these parameters so these task shouldRun return true
         $parameterBag = new ParameterBag([
-            'shopware.test.active' => true,
-            'shopware.sitemap.scheduled_task.enabled' => true,
+            'shopwell.test.active' => true,
+            'shopwell.sitemap.scheduled_task.enabled' => true,
         ]);
 
         $registry = new TaskRegistry($tasks, $this->scheduleTaskRepository, $parameterBag, new NativeClock());

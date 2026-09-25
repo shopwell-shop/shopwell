@@ -6,7 +6,7 @@ author_email: bjoern.herzke@brandung.de
 author_github: wrongspot
 ---
 # Core 
-* Added `Shopware\Core\Framework\Adapter\Twig\TwigVariableParserFactory`
-* Changed `Shopware\Core\Content\Seo\SeoUrlGenerator::__construct` removed `TwigVariableParser` and use `TwigVariableParserFactory` instead
-* Changed `Shopware\Core\Content\ProductExport\Service\ProductExportGenerator::__construct` removed `TwigVariableParser` and use `TwigVariableParserFactory` instead
-* Deprecated direct usage of `Shopware\Core\Framework\Adapter\Twig\TwigVariableParser`-service use `Shopware\Core\Framework\Adapter\Twig\TwigVariableParserFactory` instead
+* Added `Shopwell\Core\Framework\Adapter\Twig\TwigVariableParserFactory`
+* Changed `Shopwell\Core\Content\Seo\SeoUrlGenerator::__construct` removed `TwigVariableParser` and use `TwigVariableParserFactory` instead
+* Changed `Shopwell\Core\Content\ProductExport\Service\ProductExportGenerator::__construct` removed `TwigVariableParser` and use `TwigVariableParserFactory` instead
+* Deprecated direct usage of `Shopwell\Core\Framework\Adapter\Twig\TwigVariableParser`-service use `Shopwell\Core\Framework\Adapter\Twig\TwigVariableParserFactory` instead

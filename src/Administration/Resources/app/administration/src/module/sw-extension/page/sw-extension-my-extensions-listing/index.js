@@ -9,7 +9,7 @@ export default {
     template,
 
     inject: [
-        'shopwareExtensionService',
+        'shopwellExtensionService',
         'extensionStoreActionService',
         'cacheApiService',
         'acl',
@@ -43,13 +43,13 @@ export default {
                 return false;
             }
 
-            const state = Shopwell.Store.get('shopwareExtensions');
+            const state = Shopwell.Store.get('shopwellExtensions');
 
             return state.myExtensions.loading;
         },
 
         myExtensions() {
-            return Shopwell.Store.get('shopwareExtensions').myExtensions.data;
+            return Shopwell.Store.get('shopwellExtensions').myExtensions.data;
         },
 
         extensionList() {
@@ -280,7 +280,7 @@ export default {
         },
 
         updateList() {
-            this.shopwareExtensionService.updateExtensionData();
+            this.shopwellExtensionService.updateExtensionData();
         },
 
         openStore() {
@@ -424,7 +424,7 @@ export default {
         },
 
         isRentedExtension(extension) {
-            return extension.storeLicense?.variant === this.shopwareExtensionService.EXTENSION_VARIANT_TYPES.RENT;
+            return extension.storeLicense?.variant === this.shopwellExtensionService.EXTENSION_VARIANT_TYPES.RENT;
         },
 
         actionApplies(action, extension) {
@@ -514,23 +514,23 @@ export default {
                         }
                         // Mirror the single card: an extension without permissions is installed AND activated
                         if (Object.keys(extension.permissions || {}).length > 0) {
-                            await this.shopwareExtensionService.installExtension(extension.name, extension.type);
+                            await this.shopwellExtensionService.installExtension(extension.name, extension.type);
                         } else {
-                            await this.shopwareExtensionService.installAndActivateExtension(extension.name, extension.type);
+                            await this.shopwellExtensionService.installAndActivateExtension(extension.name, extension.type);
                         }
                         break;
                     case 'activate':
-                        await this.shopwareExtensionService.activateExtension(extension.name, extension.type);
+                        await this.shopwellExtensionService.activateExtension(extension.name, extension.type);
                         break;
                     case 'deactivate':
-                        await this.shopwareExtensionService.deactivateExtension(extension.name, extension.type);
+                        await this.shopwellExtensionService.deactivateExtension(extension.name, extension.type);
                         break;
                     case 'update':
                         if (extension.updateSource === 'store') {
                             await this.extensionStoreActionService.downloadExtension(extension.name);
                         }
                         if (extension.installedAt) {
-                            await this.shopwareExtensionService.updateExtension(
+                            await this.shopwellExtensionService.updateExtension(
                                 extension.name,
                                 extension.type,
                                 options.allowNewPermissions ?? false,
@@ -538,7 +538,7 @@ export default {
                         }
                         break;
                     case 'uninstall':
-                        await this.shopwareExtensionService.uninstallExtension(
+                        await this.shopwellExtensionService.uninstallExtension(
                             extension.name,
                             extension.type,
                             options.removeData ?? false,

@@ -2,7 +2,7 @@
 title: Fix empty states in modules
 issue: NEXT-16010
 author: Raoul Kramer
-author_email: r.kramer@shopware.com 
+author_email: r.kramer@shopwell.com 
 author_github: @djpogo
 ---
 # Administration

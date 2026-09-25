@@ -3,9 +3,9 @@ title: Add new rule to query strike price in dynamic product group
 issue: NEXT-15177
 ---
 # Core
-*  Added array `percentage` to `Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price` class.
-*  Changed `encode` and `decode` function in `Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\PriceFieldSerializer` class to save `percentage` value to price json. 
-*  Changed `buildAccessor` function in `Shopware\Core\Framework\DataAbstractionLayer\Dbal\FieldAccessorBuilder\PriceFieldAccessorBuilder` class to query `percentage` of `price` in Product.
+*  Added array `percentage` to `Shopwell\Core\Framework\DataAbstractionLayer\Pricing\Price` class.
+*  Changed `encode` and `decode` function in `Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\PriceFieldSerializer` class to save `percentage` value to price json. 
+*  Changed `buildAccessor` function in `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\FieldAccessorBuilder\PriceFieldAccessorBuilder` class to query `percentage` of `price` in Product.
 ___
 # Administration
 *  Added const `allowedJsonAccessors` in `product-stream-condition.service.js` to define allowed json accessors can use in product stream.

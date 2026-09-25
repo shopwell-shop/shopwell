@@ -135,14 +135,14 @@ Services are somehow special because they are always initiated in the container.
 _If someone initiate a service directly with `new ServiceController()` we don't provide compatibility_. 
 
 ###### Declare a new Service
-When a new service is implemented, the tag `shopware.feature` with the minor-flag has to be added in the dependencyInjection.xml.
+When a new service is implemented, the tag `shopwell.feature` with the minor-flag has to be added in the dependencyInjection.xml.
 The new service should be usable as soon as the development is finished to allow plugin developers to implement new services early.
 If it is not intended to allow the use beforehand, you can also use the major flag to make the service unavailable until the next major.
 service.xml
 ```xml
-        <service id="Shopware\Core\Content\MyTest\Service\MyNewTestClass" public="true">
-            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
-            <tag name="shopware.feature" flag="FEATURE_NEXT_11111"/>
+        <service id="Shopwell\Core\Content\MyTest\Service\MyNewTestClass" public="true">
+            <argument type="service" id="Shopwell\Core\System\SystemConfig\SystemConfigService"/>
+            <tag name="shopwell.feature" flag="FEATURE_NEXT_11111"/>
         </service>
 ```
 
@@ -152,17 +152,17 @@ If the old service is not used anywhere right now, you can deprecate it with the
 On feature release, the service will be deprecated with the symfony tag:
 ```xml
         <!-- feature-deprecated flag:FEATURE_NEXT_22222 deprecate service on feature release -->
-        <service id="Shopware\Core\Content\MyTest\Service\MyTestClass" public="true">
-            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
-            <deprecated>tag:v6.4.0: The "%alias_id%" service is deprecated and will be removed in 6.4.0. Use "%Shopware\Core\Content\MyTest\Service\MyTestClass%" instead<deprecated/>
+        <service id="Shopwell\Core\Content\MyTest\Service\MyTestClass" public="true">
+            <argument type="service" id="Shopwell\Core\System\SystemConfig\SystemConfigService"/>
+            <deprecated>tag:v6.4.0: The "%alias_id%" service is deprecated and will be removed in 6.4.0. Use "%Shopwell\Core\Content\MyTest\Service\MyTestClass%" instead<deprecated/>
         </service>
 ```
 If it is still used, but marked as major-deprecated, you can use the tag-type "deprecated" with the major flag.
 This will cause an error if this service is still used while the major flag is active.
 ```xml
         <!-- feature-deprecated flag:FEATURE_NEXT_22222 deprecate service on feature release -->
-        <service id="Shopware\Core\Content\MyTest\Service\MyTestClass" public="true">
-            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+        <service id="Shopwell\Core\Content\MyTest\Service\MyTestClass" public="true">
+            <argument type="service" id="Shopwell\Core\System\SystemConfig\SystemConfigService"/>
             <tag name="deprecated" flag="FEATURE_NEXT_22222" version="tag:v6.4.0"/>
         </service>
 ```
@@ -967,12 +967,12 @@ class MyTestClass
 service.xml
 ```xml
         <!-- major-deprecated flag:FEATURE_NEXT_22222 deprecate service on feature release -->
-        <service id="Shopware\Core\Content\MyTest\Service\MyTestClass" public="true">
-            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+        <service id="Shopwell\Core\Content\MyTest\Service\MyTestClass" public="true">
+            <argument type="service" id="Shopwell\Core\System\SystemConfig\SystemConfigService"/>
             <!-- major-deprecated tag:v6.4.0 (flag:FEATURE_NEXT_22222) remove argument 'Something' on feature release -->
-            <argument type="service" id="Shopware\Core\System\SystemConfig\Something" on-invalid="null" />
+            <argument type="service" id="Shopwell\Core\System\SystemConfig\Something" on-invalid="null" />
             <!-- @internal tag:v6.4.0 (flag:FEATURE_NEXT_22222) remove on-invalid=null on feature release -->
-            <argument type="service" id="Shopware\Core\System\SystemConfig\Somewhat" on-invalid="null" />
+            <argument type="service" id="Shopwell\Core\System\SystemConfig\Somewhat" on-invalid="null" />
         </service>
 ```
 
@@ -1160,6 +1160,6 @@ Glossary:
 [^5]: **non breaking code**: Code which is implemented with the change but will not break any previous behaviour.
 [^6]: **major-flag**: A feature flag, which hides breaking code, that can only be released with the next major version.
 [^7]: **minor-flag**: A feature flag, which will be used while developing, to secure unfinished code changes. This flag will be removed as soon as the feature or change is completed and approved.
-[^8]: **code-basis**: The whole code of shopware platform, development and production.
+[^8]: **code-basis**: The whole code of shopwell platform, development and production.
 [^9]: **feature flags**: A feature flag is a toggle, which switches code behaviour. Basically, there are two kinds of feature flags: minor-flags and major-flags. The flag is build from an  epic- or issue key. If a major-flag is needed because of deprecations in a minor feature, a special ticket should be created for the task to remove the deprecations on major release. ("NEXT-22222 - Remove feature flag for better order view")
 [^10]: **soft-break**: A soft-break is a break, which doesn't cause any errors, but leads to changes and/or inconsistencies in the business logic. E.g. it would be a soft-break if the calculation of prices gets a rounding that was not there before. This will lead to changing prices.

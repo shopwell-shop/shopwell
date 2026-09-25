@@ -37,8 +37,8 @@ class TokenizerTest extends TestCase
                 [],
             ],
             'text with space' => [
-                'shopware AG',
-                ['shopware', 'ag'],
+                'Shopwell',
+                ['shopwell', 'ag'],
             ],
             'text with spaces' => [
                 'test a thing',

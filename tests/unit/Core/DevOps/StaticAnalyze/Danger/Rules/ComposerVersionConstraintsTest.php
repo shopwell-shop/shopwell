@@ -53,7 +53,7 @@ class ComposerVersionConstraintsTest extends TestCase
         yield 'phpstan with exact pin passes' => ['phpstan/phpstan', '2.1.30', null];
         yield 'phpstan with caret fails' => ['phpstan/phpstan', '^2.1', 'pinned to a specific version'];
         yield 'cs-fixer with tilde fails' => ['friendsofphp/php-cs-fixer', '~3.1.0', 'pinned to a specific version'];
-        yield 'shopware/conflicts star constraint passes' => ['shopware/conflicts', '*', null];
+        yield 'shopwell/conflicts star constraint passes' => ['shopwell/conflicts', '*', null];
         yield 'php extension star constraint passes' => ['ext-json', '*', null];
         yield 'polyfills are exempt from the policy' => ['symfony/polyfill-php84', '1.0.0', null];
     }

@@ -21,7 +21,7 @@ use Symfony\Component\HttpFoundation\Request;
 #[Package('framework')]
 class NoUnsafeRequestHasSessionRule implements Rule
 {
-    private const MESSAGE = 'Call Request::hasSession(true) instead of Request::hasSession(). Request::hasSession() itself does not initialize the lazy session, but it returns true for a lazy session factory. A later Request::getSession() initializes the session and can take the PHP session lock. Passive/read-only code, generic listeners, tracking, logging, background/admin-worker paths should use hasSession(true). Deliberate session-owning code may use Request::hasSession() only with a targeted @phpstan-ignore shopware.unsafeRequestHasSession comment that explains why initialization is intentional.';
+    private const MESSAGE = 'Call Request::hasSession(true) instead of Request::hasSession(). Request::hasSession() itself does not initialize the lazy session, but it returns true for a lazy session factory. A later Request::getSession() initializes the session and can take the PHP session lock. Passive/read-only code, generic listeners, tracking, logging, background/admin-worker paths should use hasSession(true). Deliberate session-owning code may use Request::hasSession() only with a targeted @phpstan-ignore shopwell.unsafeRequestHasSession comment that explains why initialization is intentional.';
 
     public function getNodeType(): string
     {
@@ -50,7 +50,7 @@ class NoUnsafeRequestHasSessionRule implements Rule
 
         return [
             RuleErrorBuilder::message(self::MESSAGE)
-                ->identifier('shopware.unsafeRequestHasSession')
+                ->identifier('shopwell.unsafeRequestHasSession')
                 ->build(),
         ];
     }

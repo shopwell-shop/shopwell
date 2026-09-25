@@ -15,50 +15,50 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
-    $services->set('shopware.store.mock_handler', MockHandler::class)
+    $services->set('shopwell.store.mock_handler', MockHandler::class)
         ->public();
 
-    $services->set('shopware.store_client', Client::class)
+    $services->set('shopwell.store_client', Client::class)
         ->public()
         ->args([
             [
                 'handler' => inline_service(HandlerStack::class)
                     ->factory([HandlerStack::class, 'create'])
                     ->args([
-                        service('shopware.store.mock_handler'),
+                        service('shopwell.store.mock_handler'),
                     ]),
             ],
         ]);
 
-    $services->set('shopware.frw.mock_handler', MockHandler::class)
+    $services->set('shopwell.frw.mock_handler', MockHandler::class)
         ->public();
 
-    $services->set('shopware.frw_client', Client::class)
+    $services->set('shopwell.frw_client', Client::class)
         ->public()
         ->args([
             [
                 'handler' => inline_service(HandlerStack::class)
                     ->factory([HandlerStack::class, 'create'])
                     ->args([
-                        service('shopware.frw.mock_handler'),
+                        service('shopwell.frw.mock_handler'),
                     ]),
             ],
         ]);
 
-    $services->set('shopware.store_download_client', Client::class)
+    $services->set('shopwell.store_download_client', Client::class)
         ->args([
             [
                 'handler' => inline_service(HandlerStack::class)
                     ->factory([HandlerStack::class, 'create'])
                     ->args([
-                        service('shopware.store.mock_handler'),
+                        service('shopwell.store.mock_handler'),
                     ]),
             ],
         ]);
 
     $services->set(InstanceService::class)
         ->args([
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             'this-is-a-unique-id',
         ]);
 };

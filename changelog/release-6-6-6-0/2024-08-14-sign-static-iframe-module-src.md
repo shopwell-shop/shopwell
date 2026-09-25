@@ -2,7 +2,7 @@
 title: Sign static iframe module src
 issue: NEXT-37567
 author: Sebastian Seggewiss
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration

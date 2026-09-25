@@ -16,7 +16,7 @@ class ServiceClient
 {
     public function __construct(
         public readonly HttpClientInterface $client,
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
         private readonly ServiceEntry $entry
     ) {
     }
@@ -28,7 +28,7 @@ class ServiceClient
                 'Accept' => 'application/json',
             ],
             'query' => [
-                'shopwareVersion' => $this->shopwareVersion,
+                'shopwellVersion' => $this->shopwellVersion,
             ],
         ]);
 

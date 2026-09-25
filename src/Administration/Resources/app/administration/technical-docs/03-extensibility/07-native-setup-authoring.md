@@ -168,6 +168,6 @@ All parser-sensitive behaviour lives in `build/vue-setup-transform`, with smalle
 
 ## Editor integration
 
-Every transform rejection above surfaces in your editor, not only at build time. The `valid-shopware-setup` ESLint rule (`eslint-rules/core-rules`) runs the *same* shared transform against the file and reports its errors on the offending line — so a reserved binding name, a renamed marker key, or a wrong-mode macro is flagged as you type. There is one validator; the build enforces it and this rule mirrors it into the editor.
+Every transform rejection above surfaces in your editor, not only at build time. The `valid-shopwell-setup` ESLint rule (`eslint-rules/core-rules`) runs the *same* shared transform against the file and reports its errors on the offending line — so a reserved binding name, a renamed marker key, or a wrong-mode macro is flagged as you type. There is one validator; the build enforces it and this rule mirrors it into the editor.
 
 The prop/binding name collision is the one detection that is **not** a transform rejection: it is caught by the standard `vue/no-dupe-keys` ESLint rule instead, which resolves prop names across every form — including a named type (`defineProps<Props>()`) the transform cannot see through. So it too is flagged in the editor and in `composer eslint:admin`, just via a different rule.

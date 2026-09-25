@@ -8,7 +8,7 @@ import {
     routes,
     setMyExtensions,
     setupListingHooks,
-    shopwareService,
+    shopwellService,
 } from './sw-extension-my-extensions-listing.fixtures';
 
 describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () => {
@@ -120,7 +120,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             bar.vm.$emit('run-action', 'install');
             await flushPromises();
 
-            expect(shopwareService.installAndActivateExtension).toHaveBeenCalledWith('A', 'app');
+            expect(shopwellService.installAndActivateExtension).toHaveBeenCalledWith('A', 'app');
         });
 
         it('should render the deactivation modal with the rented extensions and wire its events to the handlers', async () => {
@@ -165,7 +165,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             modal.vm.$emit('modal-close');
             await flushPromises();
 
-            expect(shopwareService.deactivateExtension).not.toHaveBeenCalled();
+            expect(shopwellService.deactivateExtension).not.toHaveBeenCalled();
             expect(wrapper.vm.isBulkRunning).toBe(false);
 
             await wrapper.vm.runBulkAction('deactivate');
@@ -174,8 +174,8 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
             wrapper.findComponent('.sw-extension-bulk-deactivation-modal').vm.$emit('confirm');
             await flushPromises();
 
-            expect(shopwareService.deactivateExtension).toHaveBeenCalledWith('Rented', 'app');
-            expect(shopwareService.deactivateExtension).toHaveBeenCalledWith('Free', 'app');
+            expect(shopwellService.deactivateExtension).toHaveBeenCalledWith('Rented', 'app');
+            expect(shopwellService.deactivateExtension).toHaveBeenCalledWith('Free', 'app');
             expect(reload).toHaveBeenCalledTimes(1);
         });
     });
@@ -187,14 +187,14 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-listing', () =
 
             wrapper.vm.onSelectChange({ name: 'A' }, true);
             wrapper.vm.filterByActiveState = true;
-            shopwareService.updateExtensionData.mockClear();
+            shopwellService.updateExtensionData.mockClear();
 
             await wrapper.vm.$router.push(routes[1]);
             await wrapper.vm.$nextTick();
 
             expect(wrapper.vm.selectedNames).toEqual([]);
             expect(wrapper.vm.filterByActiveState).toBe(false);
-            expect(shopwareService.updateExtensionData).toHaveBeenCalled();
+            expect(shopwellService.updateExtensionData).toHaveBeenCalled();
         });
 
         it('should clear selection when the search term query changes', async () => {

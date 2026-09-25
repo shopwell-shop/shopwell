@@ -1,6 +1,6 @@
 {
   "name": "BootstrapOnlyTheme",
-  "author": "shopware AG",
+  "author": "Shopwell",
   "views": [
     "@MockStorefront",
     "@Plugins",

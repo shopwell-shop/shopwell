@@ -6,4 +6,4 @@ issue: NEXT-15106
 * Added new table `sales_channel_rule`.
 * Added new migration `Migration1625583596CreateActionEventFlowMigrateTable`.
 * Added new migration `Migration1625583619MoveDataFromEventActionToFlow` to migrate data from Business events to Flow builder.
-* Added `SequenceTreeBuilder` class at `Shopware\Core\Content\Flow\SequenceTree`.
+* Added `SequenceTreeBuilder` class at `Shopwell\Core\Content\Flow\SequenceTree`.

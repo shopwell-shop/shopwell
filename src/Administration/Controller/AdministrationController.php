@@ -87,7 +87,7 @@ class AdministrationController extends AbstractController
         private readonly KnownIpsCollectorInterface $knownIpsCollector,
         private readonly Connection $connection,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly string $shopwareCoreDir,
+        private readonly string $shopwellCoreDir,
         private readonly EntityRepository $customerRepository,
         private readonly EntityRepository $currencyRepository,
         private readonly HtmlSanitizer $htmlSanitizer,
@@ -108,16 +108,16 @@ class AdministrationController extends AbstractController
         $this->esStorefrontEnabled = $params->has('elasticsearch.enabled')
             ? $params->get('elasticsearch.enabled')
             : false;
-        $this->productStreamIndexingEnabled = $params->has('shopware.product_stream.indexing')
-            ? $params->get('shopware.product_stream.indexing')
+        $this->productStreamIndexingEnabled = $params->has('shopwell.product_stream.indexing')
+            ? $params->get('shopwell.product_stream.indexing')
             : true;
-        $this->hideUpdateModule = $params->has('shopware.auto_update.hide_module')
-            ? (bool) $params->get('shopware.auto_update.hide_module')
+        $this->hideUpdateModule = $params->has('shopwell.auto_update.hide_module')
+            ? (bool) $params->get('shopwell.auto_update.hide_module')
             : false;
     }
 
     #[Route(
-        path: '/%shopware_administration.path_name%',
+        path: '/%shopwell_administration.path_name%',
         name: 'administration.index',
         defaults: ['auth_required' => false],
         methods: [Request::METHOD_GET]
@@ -230,7 +230,7 @@ class AdministrationController extends AbstractController
     }
 
     #[Route(
-        path: '/%shopware_administration.path_name%/{pluginName}/index.html',
+        path: '/%shopwell_administration.path_name%/{pluginName}/index.html',
         name: 'administration.plugin.index',
         defaults: ['auth_required' => false],
         methods: [Request::METHOD_GET]
@@ -282,11 +282,11 @@ class AdministrationController extends AbstractController
 
         switch ($context->getLanguageId()) {
             case $deLanguageId:
-                $defaultExcludedTerm = require $this->shopwareCoreDir . '/Migration/Fixtures/stopwords/de.php';
+                $defaultExcludedTerm = require $this->shopwellCoreDir . '/Migration/Fixtures/stopwords/de.php';
 
                 break;
             case $enLanguageId:
-                $defaultExcludedTerm = require $this->shopwareCoreDir . '/Migration/Fixtures/stopwords/en.php';
+                $defaultExcludedTerm = require $this->shopwellCoreDir . '/Migration/Fixtures/stopwords/en.php';
 
                 break;
             default:

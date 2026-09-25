@@ -93,7 +93,7 @@ class RuleConditionHasRuleConfigRule implements Rule
             if ($this->isAllowed($scope) && $this->isValid($scope)) {
                 return [
                     RuleErrorBuilder::message('This class is implementing the getConfig function and has a own admin component. Remove getConfig or the component.')
-                        ->identifier('shopware.ruleConfig')
+                        ->identifier('shopwell.ruleConfig')
                         ->build(),
                 ];
             }
@@ -103,7 +103,7 @@ class RuleConditionHasRuleConfigRule implements Rule
 
         return [
             RuleErrorBuilder::message('This class has to implement getConfig or implement a new admin component.')
-                ->identifier('shopware.ruleConfig')
+                ->identifier('shopwell.ruleConfig')
                 ->build(),
         ];
     }

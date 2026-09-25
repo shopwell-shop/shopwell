@@ -3,7 +3,7 @@ title: Deprecate database management API endpoints
 issue: NEXT-23226
 ---
 # Core
-* Deprecated `\Shopware\Core\Framework\Migration\Api\MigrationController` the controller and all it's routes will be removed in v6.5.0.0.
+* Deprecated `\Shopwell\Core\Framework\Migration\Api\MigrationController` the controller and all it's routes will be removed in v6.5.0.0.
 ___
 # API
 * Deprecated `/api/_action/database` API-endpoint. The endpoint will be removed in v6.5.0.0. Database migrations should be only executed over the CLI.

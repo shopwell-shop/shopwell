@@ -7,5 +7,5 @@ author_github: JasperP98
 ---
 
 # Storefront
-* Added missing transactions association when using the `\Shopware\Storefront\Controller\AccountOrderController::updateOrder` method. The `\Shopware\Core\Checkout\Order\SalesChannel\OrderService::isPaymentChangeableByTransactionState` method will always return true since the transactions are not loaded on the order.
+* Added missing transactions association when using the `\Shopwell\Storefront\Controller\AccountOrderController::updateOrder` method. The `\Shopwell\Core\Checkout\Order\SalesChannel\OrderService::isPaymentChangeableByTransactionState` method will always return true since the transactions are not loaded on the order.
 

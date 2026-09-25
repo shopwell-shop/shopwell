@@ -21,7 +21,7 @@ use Symfony\Component\Validator\ConstraintViolationInterface;
 #[Package('framework')]
 class NoConstraintViolationGetMessageRule implements Rule
 {
-    private const SHOPWARE_STOREFRONT_CONTROLLER = 'Shopwell\\Storefront\\Controller';
+    private const SHOPWELL_STOREFRONT_CONTROLLER = 'Shopwell\\Storefront\\Controller';
     private const MESSAGE = 'Do not use ConstraintViolationInterface::getMessage(). Use getCode() and translate it through the Shopwell translator.';
 
     public function getNodeType(): string
@@ -41,7 +41,7 @@ class NoConstraintViolationGetMessageRule implements Rule
 
         $classReflection = $scope->getClassReflection();
 
-        if ($classReflection === null || !str_contains($classReflection->getName(), self::SHOPWARE_STOREFRONT_CONTROLLER)) {
+        if ($classReflection === null || !str_contains($classReflection->getName(), self::SHOPWELL_STOREFRONT_CONTROLLER)) {
             return [];
         }
 
@@ -53,7 +53,7 @@ class NoConstraintViolationGetMessageRule implements Rule
 
         return [
             RuleErrorBuilder::message(self::MESSAGE)
-                ->identifier('shopware.constraintViolationGetMessage')
+                ->identifier('shopwell.constraintViolationGetMessage')
                 ->build(),
         ];
     }

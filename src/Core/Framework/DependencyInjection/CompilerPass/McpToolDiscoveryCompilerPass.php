@@ -38,7 +38,7 @@ class McpToolDiscoveryCompilerPass implements CompilerPassInterface
 
     public function process(ContainerBuilder $container): void
     {
-        foreach (['shopware.mcp.', 'shopware.store_api_mcp.'] as $paramPrefix) {
+        foreach (['shopwell.mcp.', 'shopwell.store_api_mcp.'] as $paramPrefix) {
             $container->setParameter($paramPrefix . 'tool_dependencies', []);
             $container->setParameter($paramPrefix . 'tool_privileges', []);
             $container->setParameter($paramPrefix . 'advertised_tools', []);
@@ -53,16 +53,16 @@ class McpToolDiscoveryCompilerPass implements CompilerPassInterface
         // too. Store API capabilities are remapped as well: their own tag stays on as the scope
         // marker the analysis passes and assignElementsToServers() read.
         $tagMapping = [
-            'shopware.mcp.tool' => 'mcp.tool',
-            'shopware.mcp.prompt' => 'mcp.prompt',
-            'shopware.mcp.resource' => 'mcp.resource',
-            'shopware.store_api_mcp.tool' => 'mcp.tool',
-            'shopware.store_api_mcp.prompt' => 'mcp.prompt',
-            'shopware.store_api_mcp.resource' => 'mcp.resource',
+            'shopwell.mcp.tool' => 'mcp.tool',
+            'shopwell.mcp.prompt' => 'mcp.prompt',
+            'shopwell.mcp.resource' => 'mcp.resource',
+            'shopwell.store_api_mcp.tool' => 'mcp.tool',
+            'shopwell.store_api_mcp.prompt' => 'mcp.prompt',
+            'shopwell.store_api_mcp.resource' => 'mcp.resource',
         ];
 
-        foreach ($tagMapping as $shopwareTag => $mcpTag) {
-            foreach ($container->findTaggedServiceIds($shopwareTag) as $serviceId => $tags) {
+        foreach ($tagMapping as $shopwellTag => $mcpTag) {
+            foreach ($container->findTaggedServiceIds($shopwellTag) as $serviceId => $tags) {
                 $definition = $container->getDefinition($serviceId);
 
                 if (!$definition->hasTag($mcpTag)) {
@@ -81,12 +81,12 @@ class McpToolDiscoveryCompilerPass implements CompilerPassInterface
         $this->pruneUnmatchedPatterns($container);
 
         // Per scope: names are unique within a scope's own registry, and the two scopes deliberately
-        // share names — both endpoints expose their own shopware-tool-search, shopware-toolsets-list
-        // and shopware-toolset-enable. Checking them in one pool would report those as duplicates.
+        // share names — both endpoints expose their own shopwell-tool-search, shopwell-toolsets-list
+        // and shopwell-toolset-enable. Checking them in one pool would report those as duplicates.
         // The ids are re-read because the allowlist may have removed services.
-        $storeApiToolIds = array_keys($container->findTaggedServiceIds('shopware.store_api_mcp.tool'));
+        $storeApiToolIds = array_keys($container->findTaggedServiceIds('shopwell.store_api_mcp.tool'));
 
-        foreach ([[$this->adminToolIds($container), 'shopware.mcp.advertised_tools'], [$storeApiToolIds, 'shopware.store_api_mcp.advertised_tools']] as [$serviceIds, $advertisedParam]) {
+        foreach ([[$this->adminToolIds($container), 'shopwell.mcp.advertised_tools'], [$storeApiToolIds, 'shopwell.store_api_mcp.advertised_tools']] as [$serviceIds, $advertisedParam]) {
             $this->detectToolNameConflicts($container, $serviceIds);
             $this->buildAdvertisedTools($container, $serviceIds, $advertisedParam);
         }
@@ -123,9 +123,9 @@ class McpToolDiscoveryCompilerPass implements CompilerPassInterface
                 'resource_templates' => 'mcp.resource_template',
             ],
             'store_api' => [
-                'tools' => 'shopware.store_api_mcp.tool',
-                'prompts' => 'shopware.store_api_mcp.prompt',
-                'resources' => 'shopware.store_api_mcp.resource',
+                'tools' => 'shopwell.store_api_mcp.tool',
+                'prompts' => 'shopwell.store_api_mcp.prompt',
+                'resources' => 'shopwell.store_api_mcp.resource',
             ],
         ];
 
@@ -168,7 +168,7 @@ class McpToolDiscoveryCompilerPass implements CompilerPassInterface
      *
      * packages/mcp.php claims a namespace prefix per server, and a prefix can be emptied out after
      * it was configured: `Shopwell\Storefront\Mcp\` holds exactly one tool, so an allowlist
-     * without `shopware-theme-config` leaves the prefix matching nothing. Hiding a tool must not
+     * without `shopwell-theme-config` leaves the prefix matching nothing. Hiding a tool must not
      * break the container, so the orphaned pattern goes with it.
      *
      * Mirrors ElementMatcher: an element is tested against every server, the first matching pattern
@@ -271,7 +271,7 @@ class McpToolDiscoveryCompilerPass implements CompilerPassInterface
      */
     private function adminToolIds(ContainerBuilder $container): array
     {
-        $storeApiTools = $container->findTaggedServiceIds('shopware.store_api_mcp.tool');
+        $storeApiTools = $container->findTaggedServiceIds('shopwell.store_api_mcp.tool');
 
         return array_values(array_filter(
             array_keys($container->findTaggedServiceIds('mcp.tool')),
@@ -288,7 +288,7 @@ class McpToolDiscoveryCompilerPass implements CompilerPassInterface
     {
         $ids = [];
 
-        foreach (['shopware.store_api_mcp.tool', 'shopware.store_api_mcp.prompt', 'shopware.store_api_mcp.resource'] as $tag) {
+        foreach (['shopwell.store_api_mcp.tool', 'shopwell.store_api_mcp.prompt', 'shopwell.store_api_mcp.resource'] as $tag) {
             foreach (array_keys($container->findTaggedServiceIds($tag)) as $serviceId) {
                 $ids[$serviceId] = true;
             }
@@ -298,7 +298,7 @@ class McpToolDiscoveryCompilerPass implements CompilerPassInterface
     }
 
     /**
-     * When shopware.mcp.allowed_tools is non-empty, remove any tool services
+     * When shopwell.mcp.allowed_tools is non-empty, remove any tool services
      * whose name is not in the allowlist.
      */
     /**
@@ -306,12 +306,12 @@ class McpToolDiscoveryCompilerPass implements CompilerPassInterface
      */
     private function enforceToolAllowlist(ContainerBuilder $container, array $serviceIds): void
     {
-        if (!$container->hasParameter('shopware.mcp.allowed_tools')) {
+        if (!$container->hasParameter('shopwell.mcp.allowed_tools')) {
             return;
         }
 
         /** @var list<string> $allowedTools */
-        $allowedTools = $container->getParameter('shopware.mcp.allowed_tools');
+        $allowedTools = $container->getParameter('shopwell.mcp.allowed_tools');
 
         if ($allowedTools === []) {
             return;

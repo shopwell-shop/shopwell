@@ -32,7 +32,7 @@ class AppScriptConditionConstraintsSubscriber implements EventSubscriberInterfac
                 continue;
             }
 
-            /** @phpstan-ignore shopware.unserializeUsage */
+            /** @phpstan-ignore shopwell.unserializeUsage */
             $entity->setConstraints(\unserialize($constraints));
         }
     }

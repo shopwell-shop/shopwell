@@ -6,4 +6,4 @@ author_email: manuel.josef89@gmail.com
 author_github: @mjosef89  
 ---
 # Core
-* Changed method `importDatabase()` in `Shopware\Recovery\Install\Command\InstallCommand` to reactivate foreign key checks after database import.
+* Changed method `importDatabase()` in `Shopwell\Recovery\Install\Command\InstallCommand` to reactivate foreign key checks after database import.

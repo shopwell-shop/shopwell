@@ -23,7 +23,7 @@ class ShopSettingsRouteTest extends TestCase
         $systemConfigService = new StaticSystemConfigService([
             TestDefaults::SALES_CHANNEL => [
                 'core.basicInformation.shopName' => 'Demostore',
-                'core.basicInformation.metaAuthor' => 'shopware AG',
+                'core.basicInformation.metaAuthor' => 'Shopwell',
                 'core.basicInformation.metaRobots' => 'index,follow',
                 'core.basicInformation.familyFriendly' => true,
                 'core.basicInformation.firstNameFieldRequired' => true,
@@ -90,7 +90,7 @@ class ShopSettingsRouteTest extends TestCase
 
         $general = $settings->general;
         static::assertSame('Demostore', $general->shopName);
-        static::assertSame('shopware AG', $general->metaAuthor);
+        static::assertSame('Shopwell', $general->metaAuthor);
         static::assertSame('index,follow', $general->metaRobots);
         static::assertTrue($general->familyFriendly);
         static::assertTrue($general->showRevocationButton);

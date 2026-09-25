@@ -69,7 +69,7 @@ class TemplateDataExtension extends AbstractExtension implements GlobalsInterfac
         );
 
         return [
-            'shopware' => [
+            'shopwell' => [
                 'dateFormat' => \DATE_ATOM,
                 'navigation' => $navigationInfo,
                 'minSearchLength' => $this->minSearchLength($context),

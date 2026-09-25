@@ -70,7 +70,7 @@ class QuerySignerTest extends TestCase
         static::assertArrayHasKey('timestamp', $signedQuery);
 
         static::assertArrayHasKey('sw-version', $signedQuery);
-        static::assertSame(static::getContainer()->getParameter('kernel.shopware_version'), $signedQuery['sw-version']);
+        static::assertSame(static::getContainer()->getParameter('kernel.shopwell_version'), $signedQuery['sw-version']);
 
         static::assertArrayHasKey('sw-context-language', $signedQuery);
         static::assertSame($context->getLanguageId(), $signedQuery['sw-context-language']);
@@ -86,12 +86,12 @@ class QuerySignerTest extends TestCase
 
         static::assertNotNull($this->app->getAppSecret());
 
-        static::assertArrayHasKey('shopware-shop-signature', $signedQuery);
+        static::assertArrayHasKey('shopwell-shop-signature', $signedQuery);
         $appSecret = $this->app->getAppSecret();
         static::assertIsString($appSecret);
         static::assertSame(
-            \hash_hmac('sha256', Uri::withoutQueryValue($signedUri, 'shopware-shop-signature')->getQuery(), $appSecret),
-            $signedQuery['shopware-shop-signature']
+            \hash_hmac('sha256', Uri::withoutQueryValue($signedUri, 'shopwell-shop-signature')->getQuery(), $appSecret),
+            $signedQuery['shopwell-shop-signature']
         );
     }
 }

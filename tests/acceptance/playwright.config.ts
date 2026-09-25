@@ -18,12 +18,12 @@ if (missingEnvVars.length > 0) {
     process.exit(1);
 }
 
-process.env['SHOPWARE_ADMIN_USERNAME'] = process.env['SHOPWARE_ADMIN_USERNAME'] || 'admin';
-process.env['SHOPWARE_ADMIN_PASSWORD'] = process.env['SHOPWARE_ADMIN_PASSWORD'] || 'shopware';
+process.env['SHOPWELL_ADMIN_USERNAME'] = process.env['SHOPWELL_ADMIN_USERNAME'] || 'admin';
+process.env['SHOPWELL_ADMIN_PASSWORD'] = process.env['SHOPWELL_ADMIN_PASSWORD'] || 'shopwell';
 
 const ignoreHTTPSErrors =
-    process.env.SHOPWARE_PLAYWRIGHT_IGNORE_HTTPS_ERRORS === 'true' ||
-    process.env.SHOPWARE_PLAYWRIGHT_IGNORE_HTTPS_ERRORS === '1';
+    process.env.SHOPWELL_PLAYWRIGHT_IGNORE_HTTPS_ERRORS === 'true' ||
+    process.env.SHOPWELL_PLAYWRIGHT_IGNORE_HTTPS_ERRORS === '1';
 
 if (process.env.DATABASE_URL) {
     const matches = process.env.DATABASE_URL.match(/mysql:\/\/([^:@]+)(:([^:@]+))?@([^/]+)\/([^?]+)/);

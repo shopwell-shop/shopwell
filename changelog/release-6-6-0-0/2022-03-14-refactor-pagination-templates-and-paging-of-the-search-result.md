@@ -6,10 +6,10 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Changed return type of `Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult::getPage` from `?int` to `int` as the page is always computed
+* Changed return type of `Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult::getPage` from `?int` to `int` as the page is always computed
 ___
 # Storefront
-* Deprecated `Shopware\Storefront\Framework\Page\StorefrontSearchResult` for Shopware v6.7.0
+* Deprecated `Shopwell\Storefront\Framework\Page\StorefrontSearchResult` for Shopwell v6.7.0
 * Changed template `@Storefront/storefront/component/pagination.html.twig` to use the already computed values of the `EntitySearchResult` and remove the variable `totalEntities` for the next major version v6.7.0, use `totalPages` instead, if you want to specify a custom current page you can now pass the variable `currentPage`
 * Changed template `@Storefront/storefront/component/product/listing.html.twig` to use the already computed value for `currentPage` of the `searchResult` and adapt to changes for the pagination for the next major version v6.7.0
 * Changed `@Storefront/storefront/component/review/review.html.twig` and use variable for the `reviewsPerPage` instead of a magic number and adapt to changes for the pagination for the next major version v6.7.0
@@ -19,7 +19,7 @@ ___
 # Next major version changes
 ## Core
 ### Removal of `StorefrontSearchResult`
-The class `Shopware\Storefront\Framework\Page\StorefrontSearchResult` will be removed without replacement, since all functionality should be contained in the parent class `Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult`. The sorting was not in active use in Shopware, so if that is needed it should be added as extension to the `EntitySearchResult`.
+The class `Shopwell\Storefront\Framework\Page\StorefrontSearchResult` will be removed without replacement, since all functionality should be contained in the parent class `Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult`. The sorting was not in active use in Shopwell, so if that is needed it should be added as extension to the `EntitySearchResult`.
 ## HTML/Twig:
 ### Removal of the `total` variable from `pagination.html.twig`
 * The template `@Storefront/storefront/component/pagination.html.twig` with a custom number of entries cannot be used with the `total` variable, instead pass `totalPages`. Additionally it is now possible to pass the variable `currentPage` to the pagination template. Furthermore the `criteria` variable cannot be used inside the `pagination.html.twig` template.

@@ -3,7 +3,7 @@ title: Should be able to extend criteria before loading entity inside flow store
 issue: NEXT-26882
 ---
 # Core
-* Added new event `BeforeLoadStorableFlowDataEvent` at `Shopware\Core\Content\Flow\Events`, which is fired before loading an entity inside some flow storers
+* Added new event `BeforeLoadStorableFlowDataEvent` at `Shopwell\Core\Content\Flow\Events`, which is fired before loading an entity inside some flow storers
 * Changed function `restore` to dispatch `BeforeLoadStorableFlowDataEvent` in the following files
     * `src/Core/Content/Flow/Dispatching/Storer/CustomerGroupStorer.php`
     * `src/Core/Content/Flow/Dispatching/Storer/CustomerRecoveryStorer.php`
@@ -18,7 +18,7 @@ ___
 ## Introduce BeforeLoadStorableFlowDataEvent
 The event is dispatched before the flow storer restores the data, so you can customize the criteria before passing it to the entity repository
 
-**Reference: Shopware\Core\Content\Flow\Events\BeforeLoadStorableFlowDataEvent**
+**Reference: Shopwell\Core\Content\Flow\Events\BeforeLoadStorableFlowDataEvent**
 
 **Examples:**
 

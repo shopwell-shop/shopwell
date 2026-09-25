@@ -7,4 +7,4 @@ author_github: @aragon999
 ---
 # Storefront
 * Changed `padaliyajay/php-autoprefixer` to version 1.3 in order to use upstream CSS minification
-* Removed `Shopware\Storefront\Theme\Autoprefixer`
+* Removed `Shopwell\Storefront\Theme\Autoprefixer`

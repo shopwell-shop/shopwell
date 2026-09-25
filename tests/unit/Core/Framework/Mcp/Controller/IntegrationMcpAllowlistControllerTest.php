@@ -32,8 +32,8 @@ class IntegrationMcpAllowlistControllerTest extends TestCase
         $integration->setId($integrationId);
 
         $allowlist = [
-            'tools' => ['shopware-entity-read', 'shopware-entity-search'],
-            'resources' => ['shopware://entities'],
+            'tools' => ['shopwell-entity-read', 'shopwell-entity-search'],
+            'resources' => ['shopwell://entities'],
             'prompts' => null,
         ];
 
@@ -224,7 +224,7 @@ class IntegrationMcpAllowlistControllerTest extends TestCase
         $controller = new IntegrationMcpAllowlistController($repository);
         // A JSON object here would be stored but read back as an empty selection, so reject it
         // instead of silently persisting something that grants nothing.
-        $request = $this->makeRequest(['allowlist' => ['tools' => ['x' => 'shopware-entity-delete']]]);
+        $request = $this->makeRequest(['allowlist' => ['tools' => ['x' => 'shopwell-entity-delete']]]);
 
         $response = $controller->save($integrationId, $request, Context::createDefaultContext());
 

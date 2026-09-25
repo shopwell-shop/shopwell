@@ -35,7 +35,7 @@ class EnvironmentRequirementsValidatorTest extends TestCase
     {
         $systemEnvironment = new PlatformRepository([], $composerOverrides);
 
-        $corePackage = new RootPackage($coreComposerName ?? 'shopware/platform', '1.0.0', '1.0.0');
+        $corePackage = new RootPackage($coreComposerName ?? 'shopwell/platform', '1.0.0', '1.0.0');
         $corePackage->setRequires($requires);
 
         $repoManagerMock = static::createStub(RepositoryManager::class);
@@ -69,19 +69,19 @@ class EnvironmentRequirementsValidatorTest extends TestCase
         $versionParser = new VersionParser();
 
         yield 'platform repo with satisfied requirement' => [
-            'shopware/platform',
+            'shopwell/platform',
             [
                 'php' => '7.4.3',
             ],
             [
                 'someRequirement' => new Link(
-                    'shopware/platform',
+                    'shopwell/platform',
                     'someRequirement',
                     $versionParser->parseConstraints('>=1.3.0'),
                     Link::TYPE_REQUIRE
                 ),
                 'php' => new Link(
-                    'shopware/platform',
+                    'shopwell/platform',
                     'php',
                     $versionParser->parseConstraints('>=7.4.3'),
                     Link::TYPE_REQUIRE
@@ -98,19 +98,19 @@ class EnvironmentRequirementsValidatorTest extends TestCase
         ];
 
         yield 'platform repo with not satisfied requirement' => [
-            'shopware/platform',
+            'shopwell/platform',
             [
                 'php' => '7.4.2',
             ],
             [
                 'someRequirement' => new Link(
-                    'shopware/platform',
+                    'shopwell/platform',
                     'someRequirement',
                     $versionParser->parseConstraints('>=1.3.0'),
                     Link::TYPE_REQUIRE
                 ),
                 'php' => new Link(
-                    'shopware/platform',
+                    'shopwell/platform',
                     'php',
                     $versionParser->parseConstraints('>=7.4.3'),
                     Link::TYPE_REQUIRE
@@ -127,19 +127,19 @@ class EnvironmentRequirementsValidatorTest extends TestCase
         ];
 
         yield 'platform repo with missing requirement' => [
-            'shopware/platform',
+            'shopwell/platform',
             [
                 'composer-runtime-api' => false,
             ],
             [
                 'someRequirement' => new Link(
-                    'shopware/platform',
+                    'shopwell/platform',
                     'someRequirement',
                     $versionParser->parseConstraints('>=1.3.0'),
                     Link::TYPE_REQUIRE
                 ),
                 'composer-runtime-api' => new Link(
-                    'shopware/platform',
+                    'shopwell/platform',
                     'composer-runtime-api',
                     $versionParser->parseConstraints('^2.0'),
                     Link::TYPE_REQUIRE
@@ -156,19 +156,19 @@ class EnvironmentRequirementsValidatorTest extends TestCase
         ];
 
         yield 'core repo with satisfied requirement' => [
-            'shopware/core',
+            'shopwell/core',
             [
                 'php' => '7.4.3',
             ],
             [
                 'someRequirement' => new Link(
-                    'shopware/core',
+                    'shopwell/core',
                     'someRequirement',
                     $versionParser->parseConstraints('>=1.3.0'),
                     Link::TYPE_REQUIRE
                 ),
                 'php' => new Link(
-                    'shopware/core',
+                    'shopwell/core',
                     'php',
                     $versionParser->parseConstraints('>=7.4.3'),
                     Link::TYPE_REQUIRE
@@ -191,13 +191,13 @@ class EnvironmentRequirementsValidatorTest extends TestCase
             ],
             [
                 'someRequirement' => new Link(
-                    'shopware/platform',
+                    'shopwell/platform',
                     'someRequirement',
                     $versionParser->parseConstraints('>=1.3.0'),
                     Link::TYPE_REQUIRE
                 ),
                 'php' => new Link(
-                    'shopware/platform',
+                    'shopwell/platform',
                     'php',
                     $versionParser->parseConstraints('>=7.4.3'),
                     Link::TYPE_REQUIRE

@@ -4,7 +4,7 @@ issue: NEXT-21731
 ---
 # API
 * Added new API `POST: /api/_admin/es-search` at `src/Elasticsearch/Admin/AdminSearchController.php` to search by ES
-* Changed method `index` in `Shopware\Administration\Controller\AdministrationController` to set enable admin ES
+* Changed method `index` in `Shopwell\Administration\Controller\AdministrationController` to set enable admin ES
 ___
 # Core
 * Added class `src/Elasticsearch/Admin/AdminElasticsearchHelper.php`

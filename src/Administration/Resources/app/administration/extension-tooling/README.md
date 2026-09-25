@@ -13,7 +13,7 @@ below).
 | --- | --- |
 | `tsconfig.base.json` | Strict TypeScript preset for extension code (ESNext, Bundler resolution, `noEmit`). Resolves `vue`, `@vue/*`, and `src/*` into the installed Administration. |
 | `admin-types.d.ts` | The one type surface: imports the live `global.types.ts`, the generated `entity-schema-definition.d.ts`, and `html-shim.d.ts`. Injected into every extension program via `files`. |
-| `eslint.mjs` | Parameterized flat-config factory `shopwareAdminExtension(options)`. All plugins resolve from the Administration's `node_modules`. |
+| `eslint.mjs` | Parameterized flat-config factory `shopwellAdminExtension(options)`. All plugins resolve from the Administration's `node_modules`. |
 | `legacy-twig.mjs` | Lint preset for legacy `.html.twig` component templates (Twig-Vue processor). |
 | `host-modules.json` | Declares the bare modules the Administration host provides to extensions at runtime. v1: `vue` only — the Vite externals plugin replaces exactly the bare `vue` import. If a module is added there, it must be added here and to `tsconfig.base.json` `paths` in the same change. |
 
@@ -21,12 +21,12 @@ below).
 
 You normally do not reference this folder manually.
 
-**In a Composer/Flex-installed shop** (the [official installation guide](https://developer.shopwell.cn/docs/guides/installation/) layout, where the Administration lives under `vendor/shopware/administration`), drive the toolchain through `bin/console`:
+**In a Composer/Flex-installed shop** (the [official installation guide](https://developer.shopwell.cn/docs/guides/installation/) layout, where the Administration lives under `vendor/shopwell/administration`), drive the toolchain through `bin/console`:
 
 ```bash
 # One-time: install the Administration's Node dependencies (they are not part
 # of the Composer package). Re-run only after a Shopwell update.
-( cd vendor/shopware/administration/Resources/app/administration && npm ci )
+( cd vendor/shopwell/administration/Resources/app/administration && npm ci )
 
 bin/console administration:setup-extension-tooling              # generate configs for all installed extensions
 bin/console administration:check-extensions -- --only=MyPlugin  # type-check + lint your plugin
@@ -85,19 +85,19 @@ and vendor-installed alike, no separate command. There is no bridge-less mode:
 linting and type-checking against the Administration only work through the
 generated configs.
 
-- A git-ignored, self-explaining `.shopware/` bridge lands beside each extension's
+- A git-ignored, self-explaining `.shopwell/` bridge lands beside each extension's
   Administration folder, holding the machine-specific paths and composing the
   preset.
 - An extension without configs gets two small ones scaffolded beside the bridge:
 
   ```jsonc
   // tsconfig.json
-  { "extends": "./.shopware/tsconfig.json", "include": ["src/**/*.ts", "src/**/*.vue"] }
+  { "extends": "./.shopwell/tsconfig.json", "include": ["src/**/*.ts", "src/**/*.vue"] }
   ```
   ```js
   // eslint.config.mjs
-  import shopware from './.shopware/eslint.mjs';
-  export default [ ...shopware, /* your own rules */ ];
+  import shopwell from './.shopwell/eslint.mjs';
+  export default [ ...shopwell, /* your own rules */ ];
   ```
 
   Under `custom/plugins/` commit them and edit them freely — add your own options
@@ -118,7 +118,7 @@ generated configs.
 Native-setup authoring works out of the box — no extra config to copy. The
 generated ESLint config declares the compile-time macro globals (`swDefinePublic`,
 `swDefineOverride`, `useSwPreviousState`, `useSwProps`, `useSwContext`) and turns on
-the two native-setup guards (`sw-core-rules/valid-shopware-setup`,
+the two native-setup guards (`sw-core-rules/valid-shopwell-setup`,
 `sw-core-rules/native-setup-filename`), and the type surface (`admin-types.d.ts`)
 carries the macro declarations so they type-check. Both flow through the same
 package resolution as the rest of the preset, so a dependency bump can never leave
@@ -145,7 +145,7 @@ file's own directory. The same mechanism covers type-only imports of host packag
 Spec files (`**/*.spec.{ts,tsx,js}`) are type-checked by a **dedicated program** with jest
 types, separate from the runtime program. The runtime config still excludes specs — its
 preset sets `types: []` so the runtime globals stay runtime-only — and the check runs a
-second `vue-tsc` pass over a generated spec tsconfig (`.shopware/tsconfig.specs.json`) that
+second `vue-tsc` pass over a generated spec tsconfig (`.shopwell/tsconfig.specs.json`) that
 composes the runtime bridge, injects `spec-types.d.ts` (jest `describe`/`it`/`expect`, …),
 and includes only the specs. Spec findings appear on their own `TS (specs)` line.
 
@@ -193,7 +193,7 @@ separately and fails only on **new** findings (PHPStan-style):
 composer admin:check-extensions -- --only=MyPlugin --update-baseline
 ```
 
-This writes a committed `.shopware-admin-baseline.json` at the plugin root (custom/plugins
+This writes a committed `.shopwell-admin-baseline.json` at the plugin root (custom/plugins
 only). Paths inside are stored relative to the plugin root, so the baseline travels with the
 plugin. **Commit it.** Later checks show `N new · M baselined`, and a fully baselined plugin
 reads green. Matching ignores line and column (file + code/rule + message), so a finding
@@ -205,7 +205,7 @@ A baselined finding is hidden, not gone. The passed line names its count and the
 brings it back — `(12 baselined — show with -- --verbose)`; on a failing run the report lists
 `new — must fix to pass` and `baselined — suppressed` as two separate groups, so the raw tool
 output below them never has to be read to tell which is which. To un-hide everything
-permanently, delete the plugin's `.shopware-admin-baseline.json`.
+permanently, delete the plugin's `.shopwell-admin-baseline.json`.
 
 Only a writable `custom/plugins` extension can hold a baseline; the command says so instead of
 recording nothing:
@@ -233,15 +233,15 @@ re-running setup restores them.
 | --- | --- | --- | --- |
 | `var/admin-extension-tooling/manifest.json` | disposable host state | no | Rewritten every run; git-ignored in a shop. |
 | Project-root `tsconfig.json` / `eslint.config.mjs` / `.vscode/` / `.zed/` | disposable host projections | no | The shop-wide IDE/CLI view; the tsconfig covers whatever no extension config governs. Marker-owned and git-ignored (the platform monorepo commits its own, so setup stands down there). |
-| `<plugin>/…/.shopware/` (`tsconfig.json`, `eslint.mjs`, `.gitignore`, `README.md`) | git-ignored bridge | **no** | Machine-specific paths into the installed Administration; self-ignoring (`*`) and self-explaining. One per directory that owns a config. |
+| `<plugin>/…/.shopwell/` (`tsconfig.json`, `eslint.mjs`, `.gitignore`, `README.md`) | git-ignored bridge | **no** | Machine-specific paths into the installed Administration; self-ignoring (`*`) and self-explaining. One per directory that owns a config. |
 | `<plugin>/…/tsconfig.json` + `eslint.config.mjs` (scaffolded when absent) | plugin config | **yes** under `custom/plugins/` | Small files that extend/compose the bridge. Edit freely; keep the `extends`/import. |
 | `<plugin>/tsconfig.aliases.json` | plugin config | **yes** | Your path aliases; merged into the bridge. |
-| `<plugin>/.shopware-admin-baseline.json` | committable plugin data | **yes** | Findings baseline; travels with the plugin. |
+| `<plugin>/.shopwell-admin-baseline.json` | committable plugin data | **yes** | Findings baseline; travels with the plugin. |
 
 Every run labels the files it lists by that lifecycle — `[commit this]`,
 `[local — restored by re-running setup]`, `[project-root projection — git-ignored]`,
 `[disposable — regenerated by setup]`, and one summary line counting the
-`git-ignored .shopware/ bridge file(s)`. Above the list, a `project-root projection`
+`git-ignored .shopwell/ bridge file(s)`. Above the list, a `project-root projection`
 line names the generated root `tsconfig.json` / `eslint.config.mjs` and the source
 roots each one covers, so they are stated even on a re-run that changes nothing.
 With `--check` (or the `:check` alias) you see that whole split before anything is
@@ -252,8 +252,8 @@ written.
 | Symptom | Cause → fix |
 | --- | --- |
 | A plugin is missing from the extension list | Discovery reads `var/plugins.json`, which neither `plugin:install` nor `cache:clear` refresh. Run `bin/console bundle:dump`. A freshly created plugin must be installed and active before `bundle:dump` lists it: `bin/console plugin:refresh && bin/console plugin:install --activate <Name>`. |
-| `⊘ skipped — own tsconfig does not reach the Shopwell type surface` | The printed `why:` names the exact cause: an own `"files"` array replaces the bridge's type-surface injection (remove it), or the `extends` chain never reaches the preset (add `"extends": "./.shopware/tsconfig.json"`). Re-run setup if the `.shopware/` bridge is missing. |
-| `⊘ skipped — own config does not compose the Shopwell factory` | Compose the bridge: `import shopware from './.shopware/eslint.mjs'; export default [ ...shopware ];` |
+| `⊘ skipped — own tsconfig does not reach the Shopwell type surface` | The printed `why:` names the exact cause: an own `"files"` array replaces the bridge's type-surface injection (remove it), or the `extends` chain never reaches the preset (add `"extends": "./.shopwell/tsconfig.json"`). Re-run setup if the `.shopwell/` bridge is missing. |
+| `⊘ skipped — own config does not compose the Shopwell factory` | Compose the bridge: `import shopwell from './.shopwell/eslint.mjs'; export default [ ...shopwell ];` |
 | `⊘ blocked (entity schema missing)` | Run `composer admin:generate-entity-schema-types`; TypeScript checks refuse to run against the empty-schema stub. |
 | `Duplicate identifier` errors after bridging | Your plugin's own `global.types.ts` re-declares parts of the preset surface — prune the duplicates. |
 | `Cannot find module 'axios'` (or another host package) | The preset drops the old `"*" → node_modules` fallback. Map the package in `tsconfig.aliases.json` (see above). |

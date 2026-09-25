@@ -6,4 +6,4 @@ author_email: stefan.wild@sewisoft.de
 author_github: @wildi1
 ---
 # Storefront
-* Changed `\Shopware\Storefront\Controller\SearchController.php` to redirect direct to the detail page if there is only one result
+* Changed `\Shopwell\Storefront\Controller\SearchController.php` to redirect direct to the detail page if there is only one result

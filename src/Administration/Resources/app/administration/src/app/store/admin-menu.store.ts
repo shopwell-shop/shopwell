@@ -101,10 +101,10 @@ const adminMenuStore = Shopwell.Store.register({
         appModuleNavigation() {
             const menuService = Shopwell.Service('menuService') as MenuService;
             // eslint-disable-next-line no-warning-comments
-            // TODO: Change this when `shopwareApps` store is converted to Pinia
-            const shopwareAppsState = Shopwell.Store.get('shopwareApps') as { apps: AppModuleDefinition[] };
+            // TODO: Change this when `shopwellApps` store is converted to Pinia
+            const shopwellAppsState = Shopwell.Store.get('shopwellApps') as { apps: AppModuleDefinition[] };
 
-            return menuService?.getNavigationFromApps(shopwareAppsState.apps);
+            return menuService?.getNavigationFromApps(shopwellAppsState.apps);
         },
     },
 });

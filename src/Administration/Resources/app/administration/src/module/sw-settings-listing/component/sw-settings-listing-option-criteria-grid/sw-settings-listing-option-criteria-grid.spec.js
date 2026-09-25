@@ -227,7 +227,7 @@ describe('src/module/sw-settings-listing/component/sw-settings-listing-option-cr
     });
 
     it('should add an always-false id filter when no product custom-field-set relations exist', async () => {
-        // see https://github.com/shopware/shopware/issues/15732
+        // see https://github.com/shopwell-shop/shopwell/issues/15732
         // empty customFieldSetIDs must not produce equalsAny with an empty value (400)
         // and must not drop the scope filter entirely (would return unrelated custom fields)
         expect(wrapper.vm.customFieldSetIDs).toEqual([]);

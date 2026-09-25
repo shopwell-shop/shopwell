@@ -21,7 +21,7 @@ class SeoUrlTwigFactoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->environment = static::getContainer()->get('shopware.seo_url.twig');
+        $this->environment = static::getContainer()->get('shopwell.seo_url.twig');
     }
 
     public function testLoadAdditionalExtension(): void

@@ -26,7 +26,7 @@ describe('build/vite-plugins/image-deprecation', () => {
 
         // Identify plugin by name
         expect(plugin).toHaveProperty('name');
-        expect(plugin.name).toBe('shopware-vite-plugin-image-deprecation');
+        expect(plugin.name).toBe('shopwell-vite-plugin-image-deprecation');
 
         // check for `enforce` property
         expect(plugin).toHaveProperty('enforce');

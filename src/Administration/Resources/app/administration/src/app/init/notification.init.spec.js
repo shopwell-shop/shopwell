@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 import initializeNotifications from 'src/app/init/notification.init';
-import { notification } from '@shopware-ag/meteor-admin-sdk';
+import { notification } from '@shopwell-ag/meteor-admin-sdk';
 
 describe('src/app/init/notification.init.ts', () => {
     beforeAll(() => {

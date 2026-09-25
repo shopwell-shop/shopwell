@@ -7,9 +7,9 @@ tags: [webhook, security, ssrf, guzzle, validation]
 
 ## Context
 
-Webhook delivery sends HTTP requests from the Shopware server to URLs configured by administrators or apps. The delivery result is persisted in `webhook_event_log`, including the response status and response content. This makes webhook targets security-sensitive: if an attacker can configure an internal URL, the webhook worker becomes a server-side request forgery read primitive.
+Webhook delivery sends HTTP requests from the Shopwell server to URLs configured by administrators or apps. The delivery result is persisted in `webhook_event_log`, including the response status and response content. This makes webhook targets security-sensitive: if an attacker can configure an internal URL, the webhook worker becomes a server-side request forgery read primitive.
 
-The existing webhook delivery path uses `shopware.webhook.guzzle` through `WebhookClient`. A webhook target is currently accepted as a plain string. Without target validation, direct metadata, loopback, private, link-local, or reserved destinations can be requested from the webhook worker's network.
+The existing webhook delivery path uses `shopwell.webhook.guzzle` through `WebhookClient`. A webhook target is currently accepted as a plain string. Without target validation, direct metadata, loopback, private, link-local, or reserved destinations can be requested from the webhook worker's network.
 
 Guzzle follows redirects by default. Validating only the initially configured URL is therefore insufficient because a public URL can redirect to a private, loopback, link-local, metadata, or otherwise reserved target.
 
@@ -23,12 +23,12 @@ The validation model is:
 
 - Validate `webhook.url` when it is written through the DAL so invalid targets fail early. This is an operator feedback mechanism, not the security boundary.
 - Validate the URL again immediately before delivery so old rows and changed DNS records are checked at the actual network boundary. Delivery-time validation is mandatory and decides whether a request may be sent.
-- Enforce HTTPS-only targets by default. Operators may explicitly allow unencrypted webhook traffic through `shopware.yaml`, with the default set to disallow HTTP.
+- Enforce HTTPS-only targets by default. Operators may explicitly allow unencrypted webhook traffic through `shopwell.yaml`, with the default set to disallow HTTP.
 - Require a syntactically valid URL with an existing host.
-- Reject direct IP-literal hosts by default. Operators may explicitly allow required internal IP literals through the private IP allow-list in `shopware.yaml`.
+- Reject direct IP-literal hosts by default. Operators may explicitly allow required internal IP literals through the private IP allow-list in `shopwell.yaml`.
 - Use a shared IP validation helper for webhook and media upload-by-URL host validation so IPv4, IPv6, mapped-address, private-range, reserved-range, and DNS resolution behavior stays consistent.
 - Resolve both A and AAAA records for the host. Every resolved address must be public unless it matches the configured internal IP allow-list. If any record resolves to a private, loopback, link-local, reserved, or otherwise non-public IP range that is not allow-listed, the target is invalid.
-- Provide an operator-controlled `shopware.yaml` configuration for webhook network policy. The exact configuration names are decided during implementation, but the defaults must disallow unencrypted traffic and internal network targets.
+- Provide an operator-controlled `shopwell.yaml` configuration for webhook network policy. The exact configuration names are decided during implementation, but the defaults must disallow unencrypted traffic and internal network targets.
 - Disable Guzzle's implicit redirect handling for webhook requests instead of relying on defaults.
 - Validate each redirect target before the redirected request is sent. The redirect handling must preserve the DNS result used during validation for the actual redirected request as well.
 - Restrict redirect protocols to the same scheme policy as the initial target. If unencrypted webhook traffic is disabled, redirects are HTTPS-only as well.
@@ -36,7 +36,7 @@ The validation model is:
 - Keep a bounded redirect limit.
 - If the active Guzzle handler supports cURL options, pin each validated host and port to the resolved public IP used during validation with `CURLOPT_RESOLVE` for the corresponding request. This reduces DNS rebinding risk between validation and connection. The request must keep TLS peer and host verification enabled.
 
-Webhook delivery sets `allow_redirects` to `false` and follows redirects in an explicit loop. This lets Shopware validate and pin every redirect target before the next request is sent.
+Webhook delivery sets `allow_redirects` to `false` and follows redirects in an explicit loop. This lets Shopwell validate and pin every redirect target before the next request is sent.
 
 When cURL options are available, the delivery request options include a resolve pin for the exact hostname and effective port:
 
@@ -60,7 +60,7 @@ This is the simplest SSRF hardening measure and removes redirect-based bypasses 
 
 ### Follow redirects manually
 
-Shopware could disable Guzzle redirects, inspect `Location` headers, validate the resolved URI, and issue the next request itself. This gives full control over each hop, but duplicates redirect semantics already implemented by Guzzle and increases implementation complexity around relative locations, status-specific method handling, limits, and response propagation.
+Shopwell could disable Guzzle redirects, inspect `Location` headers, validate the resolved URI, and issue the next request itself. This gives full control over each hop, but duplicates redirect semantics already implemented by Guzzle and increases implementation complexity around relative locations, status-specific method handling, limits, and response propagation.
 
 ### Trust post-request redirect history
 
@@ -95,4 +95,4 @@ Direct IP webhooks could be allowed if the IP itself passes range validation. Th
 
 ### Operational impact
 
-Webhook operators should configure final public HTTPS endpoints with DNS hostnames where possible. Redirects remain supported, but every hop must satisfy the same target requirements as the original webhook URL. HTTP endpoints and internal network targets are available only through explicit `shopware.yaml` configuration and remain disabled by default.
+Webhook operators should configure final public HTTPS endpoints with DNS hostnames where possible. Redirects remain supported, but every hop must satisfy the same target requirements as the original webhook URL. HTTP endpoints and internal network targets are available only through explicit `shopwell.yaml` configuration and remain disabled by default.

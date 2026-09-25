@@ -88,7 +88,7 @@ final class SeoUrlTemplateIndexingHandler
     /**
      * Mirrors the route resolution of {@see SeoUrlUpdater::update()}: storefront routes
      * live in the {@see SeoUrlRouteRegistry}, while headless store-api routes are only
-     * registered as `shopware.entity.seo_url.route` although their templates are equally
+     * registered as `shopwell.entity.seo_url.route` although their templates are equally
      * editable. Skipping the latter would silently drop the reindex for them.
      */
     private function isKnownRoute(string $routeName): bool

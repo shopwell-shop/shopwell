@@ -3,7 +3,7 @@ title: Add pagination to the user list
 issue: NEXT-15362 
 ---
 # Core
-* Added `\Shopware\Core\Framework\Demodata\Generator\UserGenerator` which generates user accounts
+* Added `\Shopwell\Core\Framework\Demodata\Generator\UserGenerator` which generates user accounts
 * Added parameter `users` to the `framework:demodata` command to also create user accounts
 ___
 # Administration

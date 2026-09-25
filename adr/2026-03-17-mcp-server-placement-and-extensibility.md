@@ -7,7 +7,7 @@ tags: [framework, mcp, ai, extensibility, plugin, app]
 
 ## Context
 
-Shopware now contains an experimental MCP server foundation that exposes a native `/api/_mcp` endpoint and integrates with Shopware authentication, ACL, rate limiting, feature flags, and capability discovery.
+Shopwell now contains an experimental MCP server foundation that exposes a native `/api/_mcp` endpoint and integrates with Shopwell authentication, ACL, rate limiting, feature flags, and capability discovery.
 
 The current implementation already supports three different capability sources:
 
@@ -49,7 +49,7 @@ Some capabilities depend on bundle-specific services. `ThemeConfigTool` already 
 
 The MCP subsystem must remain extendable. Plugins, bundles, and apps need to be able to contribute custom tools, prompts, and resources. The current implementation already supports all three sources through different registration paths:
 
-- plugins use the `shopware.mcp.tool` DI tag, remapped by `McpToolDiscoveryCompilerPass`
+- plugins use the `shopwell.mcp.tool` DI tag, remapped by `McpToolDiscoveryCompilerPass`
 - non-core bundles use the `mcp.tool` tag directly
 - apps declare capabilities in `Resources/mcp.xml`, loaded at runtime by `AppMcpToolLoader`/`AppMcpPromptLoader`/`AppMcpResourceLoader`
 
@@ -90,7 +90,7 @@ Core owns the MCP platform foundation:
 - `McpToolDiscoveryCompilerPass`, `McpToolAnalysisCompilerPass`, and `McpServerBuilderCompilerPass` for tag mapping, conflict detection, dependency validation, privilege extraction, and builder registration
 - `allowed_tools` operational allowlist to restrict which tools are exposed per installation
 - generic reference resources
-- the `shopware-context` system prompt
+- the `shopwell-context` system prompt
 - a small set of generic and stable tool primitives
 
 Core may also own a limited set of low-level, broadly useful tools as long as they behave like platform primitives and not like assistant-specific workflows.
@@ -116,7 +116,7 @@ External services are appropriate when:
 - the main use case spans multiple systems such as ERP, PIM, CRM, or BI
 - runtime isolation is more important than deep in-process integration
 - the workflow is long-running or operationally heavy
-- the capability should scale or deploy independently from Shopware
+- the capability should scale or deploy independently from Shopwell
 
 ## Tool placement guidance for the current PoC
 
@@ -124,11 +124,11 @@ External services are appropriate when:
 
 The following capabilities are good candidates for core because they are generic primitives or reference capabilities:
 
-- `shopware-entity-schema`
-- `shopware-entity-search`
-- `shopware-entity-read`
-- `shopware-entity-aggregate`
-- `shopware-context` prompt
+- `shopwell-entity-schema`
+- `shopwell-entity-search`
+- `shopwell-entity-read`
+- `shopwell-entity-aggregate`
+- `shopwell-context` prompt
 - static resources: entities, sales channels, currencies, languages, state machines, business events, flow actions
 
 These are low-level building blocks that are broad, composable, and align with a platform role. All of them currently live in `src/Core/Framework/Mcp/` and should stay there.
@@ -137,33 +137,33 @@ These are low-level building blocks that are broad, composable, and align with a
 
 These capabilities are still primitive in nature, but they are write-capable and therefore have higher support and security impact:
 
-- `shopware-entity-upsert`
-- `shopware-entity-delete`
-- `shopware-order-state`
-- `shopware-system-config-read`
-- `shopware-system-config-write`
+- `shopwell-entity-upsert`
+- `shopwell-entity-delete`
+- `shopwell-order-state`
+- `shopwell-system-config-read`
+- `shopwell-system-config-write`
 
-If Shopware wants a conservative core MCP surface, some of these can start in a plugin and be promoted later.
+If Shopwell wants a conservative core MCP surface, some of these can start in a plugin and be promoted later.
 
 ### Move to a plugin or bundle
 
 The following capabilities are the clearest plugin or bundle candidates because they are opinionated, workflow-oriented, and likely to evolve through feedback:
 
-- `shopware-order-summary` (currently in Core)
-- `shopware-customer-lookup` (currently in Core)
-- `shopware-product-create` (currently in Core)
-- `shopware-revenue-report` (currently in Core)
-- `shopware-bestseller-report` (currently in Core)
-- `shopware-storefront-search` (currently in Core)
-- `shopware-cart-manage` (currently in Core)
-- `shopware-cart-checkout` (currently in Core)
-- `shopware-checkout-methods` (currently in Core)
-- `shopware-theme-config` (already in Storefront bundle)
-- `shopware-media-upload` (currently in Core)
+- `shopwell-order-summary` (currently in Core)
+- `shopwell-customer-lookup` (currently in Core)
+- `shopwell-product-create` (currently in Core)
+- `shopwell-revenue-report` (currently in Core)
+- `shopwell-bestseller-report` (currently in Core)
+- `shopwell-storefront-search` (currently in Core)
+- `shopwell-cart-manage` (currently in Core)
+- `shopwell-cart-checkout` (currently in Core)
+- `shopwell-checkout-methods` (currently in Core)
+- `shopwell-theme-config` (already in Storefront bundle)
+- `shopwell-media-upload` (currently in Core)
 
-`shopware-theme-config` is already correctly placed in `src/Storefront/Mcp/Tool/` because it depends on Storefront-specific services. The remaining tools all live in `src/Core/Framework/Mcp/Tool/` today and need to be moved if this decision is adopted.
+`shopwell-theme-config` is already correctly placed in `src/Storefront/Mcp/Tool/` because it depends on Storefront-specific services. The remaining tools all live in `src/Core/Framework/Mcp/Tool/` today and need to be moved if this decision is adopted.
 
-Note that several tools with "storefront" or "cart" in their name (`shopware-storefront-search`, `shopware-cart-manage`, `shopware-cart-checkout`, `shopware-checkout-methods`) use Core SalesChannel services, not Storefront bundle services. The move is about classification as assistant workflows, not about fixing dependency direction violations.
+Note that several tools with "storefront" or "cart" in their name (`shopwell-storefront-search`, `shopwell-cart-manage`, `shopwell-cart-checkout`, `shopwell-checkout-methods`) use Core SalesChannel services, not Storefront bundle services. The move is about classification as assistant workflows, not about fixing dependency direction violations.
 
 ## Extensibility
 
@@ -171,11 +171,11 @@ Extensibility is a hard requirement. The core MCP foundation must act as a capab
 
 ### Plugin and bundle extensibility
 
-Plugins and bundles register custom tools, prompts, and resources through DI and use normal Shopware services. This is the preferred model for domain-specific capabilities, project-specific workflows, vertical features, and capabilities depending on optional bundles.
+Plugins and bundles register custom tools, prompts, and resources through DI and use normal Shopwell services. This is the preferred model for domain-specific capabilities, project-specific workflows, vertical features, and capabilities depending on optional bundles.
 
 The current implementation already supports this:
 
-- plugins tag services with `shopware.mcp.tool` (remapped by `McpToolDiscoveryCompilerPass`)
+- plugins tag services with `shopwell.mcp.tool` (remapped by `McpToolDiscoveryCompilerPass`)
 - non-core bundles tag services with `mcp.tool` directly
 - `mcp.yaml` `scan_dirs` includes `custom/plugins` and `custom/static-plugins` for attribute discovery
 
@@ -185,7 +185,7 @@ Apps declare capabilities in `Resources/mcp.xml` and receive HMAC-signed HTTP ca
 
 ### What core must provide for this to work
 
-- naming rules (`shopware-*` for core, `{plugin}-*` for plugins, `{app}-*` for apps)
+- naming rules (`shopwell-*` for core, `{plugin}-*` for plugins, `{app}-*` for apps)
 - `McpToolDiscoveryCompilerPass` for tag mapping, conflict detection, and allowlist enforcement
 - `allowed_tools` for operational restriction per installation
 - stable registration and discovery contracts
@@ -195,7 +195,7 @@ Apps declare capabilities in `Resources/mcp.xml` and receive HMAC-signed HTTP ca
 
 | Question | Core | Plugin or bundle | External service |
 |---|---|---|---|
-| Needed for every Shopware MCP installation? | Best fit | Maybe | Rarely |
+| Needed for every Shopwell MCP installation? | Best fit | Maybe | Rarely |
 | Deep access to internal services and DAL needed? | Best fit | Best fit | Weak fit |
 | Fast iteration expected? | Weak fit | Good fit | Best fit |
 | Strong isolation needed? | Weak fit | Medium | Best fit |
@@ -228,7 +228,7 @@ The built-in assistant tools should not automatically be treated as equally stab
 ```php
 // mcp.yaml -- SDK discovery configuration
 mcp:
-  app: 'Shopware'
+  app: 'Shopwell'
   version: '1.0.0'
   client_transports:
     http: true
@@ -242,7 +242,7 @@ mcp:
       - custom/static-plugins
 
 // McpToolDiscoveryCompilerPass -- tag mapping and conflict detection
-foreach tagged('shopware.mcp.tool') as $service:
+foreach tagged('shopwell.mcp.tool') as $service:
     $service->addTag('mcp.tool')
     if $name in $registeredNames:
         throw DuplicateToolNameException
@@ -262,16 +262,16 @@ class SyncOrdersTool {
     }
 }
 
-// Plugin services.xml -- uses shopware.mcp.tool tag (remapped by McpToolDiscoveryCompilerPass)
+// Plugin services.xml -- uses shopwell.mcp.tool tag (remapped by McpToolDiscoveryCompilerPass)
 <service id="Swag\Erp\Mcp\Tool\SyncOrdersTool">
-    <tag name="shopware.mcp.tool"/>
-    <tag name="shopware.feature" flag="MCP_SERVER"/>
+    <tag name="shopwell.mcp.tool"/>
+    <tag name="shopwell.feature" flag="MCP_SERVER"/>
 </service>
 
 // Non-core bundle (e.g. Storefront) -- uses mcp.tool tag directly
-<service id="Shopware\Storefront\Mcp\Tool\ThemeConfigTool">
+<service id="Shopwell\Storefront\Mcp\Tool\ThemeConfigTool">
     <tag name="mcp.tool"/>
-    <tag name="shopware.feature" flag="MCP_SERVER"/>
+    <tag name="shopwell.feature" flag="MCP_SERVER"/>
 </service>
 ```
 
@@ -292,7 +292,7 @@ class SyncOrdersTool {
 
 ```text
 // Runtime: AppMcpToolExecutor
-client calls shopware-mcp-endpoint -> capability registry resolves app tool
+client calls shopwell-mcp-endpoint -> capability registry resolves app tool
     -> HMAC-signed HTTP POST to app URL
     -> app returns JSON response
     -> MCP server returns result to client
@@ -315,36 +315,36 @@ The following tools currently live in `src/Core/Framework/Mcp/Tool/` but should 
 
 | Tool class | MCP name | Category |
 |---|---|---|
-| `OrderSummaryTool` | `shopware-order-summary` | Workflow |
-| `CustomerLookupTool` | `shopware-customer-lookup` | Workflow |
-| `ProductCreateTool` | `shopware-product-create` | Workflow |
-| `RevenueReportTool` | `shopware-revenue-report` | Reporting |
-| `BestsellerReportTool` | `shopware-bestseller-report` | Reporting |
-| `StorefrontSearchTool` | `shopware-storefront-search` | Storefront |
-| `CartManageTool` | `shopware-cart-manage` | Storefront |
-| `CartCheckoutTool` | `shopware-cart-checkout` | Storefront |
-| `CheckoutMethodsTool` | `shopware-checkout-methods` | Storefront |
-| `MediaUploadTool` | `shopware-media-upload` | Media |
+| `OrderSummaryTool` | `shopwell-order-summary` | Workflow |
+| `CustomerLookupTool` | `shopwell-customer-lookup` | Workflow |
+| `ProductCreateTool` | `shopwell-product-create` | Workflow |
+| `RevenueReportTool` | `shopwell-revenue-report` | Reporting |
+| `BestsellerReportTool` | `shopwell-bestseller-report` | Reporting |
+| `StorefrontSearchTool` | `shopwell-storefront-search` | Storefront |
+| `CartManageTool` | `shopwell-cart-manage` | Storefront |
+| `CartCheckoutTool` | `shopwell-cart-checkout` | Storefront |
+| `CheckoutMethodsTool` | `shopwell-checkout-methods` | Storefront |
+| `MediaUploadTool` | `shopwell-media-upload` | Media |
 
 ### What stays in core (9 tools + 1 prompt + 7 resources)
 
 | Tool class | MCP name |
 |---|---|
-| `EntitySchemaTool` | `shopware-entity-schema` |
-| `EntitySearchTool` | `shopware-entity-search` |
-| `EntityReadTool` | `shopware-entity-read` |
-| `EntityAggregateTool` | `shopware-entity-aggregate` |
-| `EntityUpsertTool` | `shopware-entity-upsert` |
-| `EntityDeleteTool` | `shopware-entity-delete` |
-| `OrderStateTool` | `shopware-order-state` |
-| `SystemConfigReadTool` | `shopware-system-config-read` |
-| `SystemConfigWriteTool` | `shopware-system-config-write` |
+| `EntitySchemaTool` | `shopwell-entity-schema` |
+| `EntitySearchTool` | `shopwell-entity-search` |
+| `EntityReadTool` | `shopwell-entity-read` |
+| `EntityAggregateTool` | `shopwell-entity-aggregate` |
+| `EntityUpsertTool` | `shopwell-entity-upsert` |
+| `EntityDeleteTool` | `shopwell-entity-delete` |
+| `OrderStateTool` | `shopwell-order-state` |
+| `SystemConfigReadTool` | `shopwell-system-config-read` |
+| `SystemConfigWriteTool` | `shopwell-system-config-write` |
 
-Plus `ShopwareContextPrompt` and all seven resources (entities, sales channels, currencies, languages, state machines, business events, flow actions).
+Plus `ShopwellContextPrompt` and all seven resources (entities, sales channels, currencies, languages, state machines, business events, flow actions).
 
 ### Already correctly placed
 
-`ThemeConfigTool` (`shopware-theme-config`) already lives in `src/Storefront/Mcp/Tool/` with its DI registration in `src/Storefront/DependencyInjection/mcp.xml`.
+`ThemeConfigTool` (`shopwell-theme-config`) already lives in `src/Storefront/Mcp/Tool/` with its DI registration in `src/Storefront/DependencyInjection/mcp.xml`.
 
 ### Per-tool migration steps
 
@@ -352,7 +352,7 @@ For each tool being removed from core:
 
 1. move `src/Core/Framework/Mcp/Tool/{ToolClass}.php` to the target plugin or bundle
 2. remove its `$services->set(...)` block from `src/Core/Framework/DependencyInjection/mcp.php`
-3. register it in the target plugin or bundle's DI config (using `shopware.mcp.tool` tag for plugins, `mcp.tool` for bundles)
+3. register it in the target plugin or bundle's DI config (using `shopwell.mcp.tool` tag for plugins, `mcp.tool` for bundles)
 4. move the unit test from `tests/unit/Core/Framework/Mcp/Tool/`
 5. move the tool name from `expectedTools()` in `McpCapabilityDiscoveryTest` (or remove if the plugin is not loaded in integration tests)
 6. remove any helper enums or types only used by that tool (e.g. `CartAction`, `CheckoutMethodType`, `RevenueGroupBy`)
@@ -362,7 +362,7 @@ For each tool being removed from core:
 ### Positive consequences
 
 - core remains small, stable, and supportable
-- Shopware keeps a native MCP platform instead of outsourcing the whole feature
+- Shopwell keeps a native MCP platform instead of outsourcing the whole feature
 - plugins and bundles can iterate faster than core
 - apps remain a valid extension mechanism
 - mature tools can be promoted from plugin to core later
@@ -382,6 +382,6 @@ The current PoC contains two different kinds of capabilities:
 - platform primitives
 - assistant workflows
 
-Treating both kinds as if they belong in core would overcommit the platform too early. Treating both kinds as if they belong outside core would throw away the value of Shopware-native auth, ACL, runtime integration, and discovery.
+Treating both kinds as if they belong in core would overcommit the platform too early. Treating both kinds as if they belong outside core would throw away the value of Shopwell-native auth, ACL, runtime integration, and discovery.
 
 The hybrid model preserves the strengths of the existing implementation and avoids prematurely turning the full PoC into a long-term core maintenance contract.

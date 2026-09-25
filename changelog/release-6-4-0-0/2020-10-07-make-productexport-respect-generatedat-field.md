@@ -6,5 +6,5 @@ author_email: hendrik@soebbing.de
 author_github: @soebbing
 ---
 # Core
-* Changed `\Shopware\Core\Content\ProductExport\ScheduledTask\ProductExportGenerateTaskHandler` to respect the product exports
+* Changed `\Shopwell\Core\Content\ProductExport\ScheduledTask\ProductExportGenerateTaskHandler` to respect the product exports
 defined `generatedAt` and `interval` fields

@@ -5,4 +5,4 @@ issue: NEXT-21019
 
 # Administration
 
-* Changed `\Shopware\Administration\Administration` to decouple from fixed bundle load order
+* Changed `\Shopwell\Administration\Administration` to decouple from fixed bundle load order

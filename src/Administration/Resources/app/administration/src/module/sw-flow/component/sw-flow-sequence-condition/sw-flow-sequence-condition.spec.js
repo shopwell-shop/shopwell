@@ -49,7 +49,7 @@ function getSequencesCollection(collection = []) {
     );
 }
 
-Shopwell.Service().register('shopwareDiscountCampaignService', () => {
+Shopwell.Service().register('shopwellDiscountCampaignService', () => {
     return { isDiscountCampaignActive: jest.fn(() => false) };
 });
 

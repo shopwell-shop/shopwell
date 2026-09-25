@@ -3,9 +3,9 @@ title: Integrate google recaptcha client side
 issue: NEXT-14110
 ---
 # Storefront
-* Changed cookie consent's entry from `groupRequiredGoogleReCaptcha` to `groupRequiredCaptcha` in `\Shopware\Storefront\Framework\Cookie\CookieProvider` 
-* Changed `\Shopware\Core\Framework\Api\Controller\CaptchaController` to filter `groupRequiredReCaptcha` when Google ReCaptcha V2 and V3 is not active
-* Added new captcha class in `\Shopware\Storefront\Framework\Captcha\GoogleReCaptchaV2` to handle Google reCaptcha V2
+* Changed cookie consent's entry from `groupRequiredGoogleReCaptcha` to `groupRequiredCaptcha` in `\Shopwell\Storefront\Framework\Cookie\CookieProvider` 
+* Changed `\Shopwell\Core\Framework\Api\Controller\CaptchaController` to filter `groupRequiredReCaptcha` when Google ReCaptcha V2 and V3 is not active
+* Added new captcha class in `\Shopwell\Storefront\Framework\Captcha\GoogleReCaptchaV2` to handle Google reCaptcha V2
 * Added new storefront GoogleReCaptchaBase plugin in `src/Storefront/Resources/app/storefront/src/plugin/captcha/google-re-captcha/google-re-captcha-base.plugin.js`
 * Added new storefront GoogleReCaptchaV2 plugin in `src/Storefront/Resources/app/storefront/src/plugin/captcha/google-re-captcha/google-re-captcha-v2.plugin.js`
 * Added new storefront GoogleReCaptchaV3 plugin in `src/Storefront/Resources/app/storefront/src/plugin/captcha/google-re-captcha/google-re-captcha-v3.plugin.js`

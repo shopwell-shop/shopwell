@@ -14,7 +14,7 @@ ___
 
 To be able to decorate the Symfony asset versioning easier, you can now decorate the service in the DI container instead of overwriting the service where it will be constructed.
 
-Shopware offers by default many assets like `theme`, all those assets have an own version strategy service in the di like `shopware.asset.theme.version_strategy`
+Shopwell offers by default many assets like `theme`, all those assets have an own version strategy service in the di like `shopwell.asset.theme.version_strategy`
 
 This can be decorated in the DI and the new class needs to implement the `\Symfony\Component\Asset\VersionStrategy\VersionStrategyInterface` interface.
 Here is an example to build the version strategy with the content instead of timestamps

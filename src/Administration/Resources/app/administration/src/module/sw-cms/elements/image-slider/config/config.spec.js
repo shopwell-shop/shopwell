@@ -3,7 +3,7 @@
  */
 import { mount } from '@vue/test-utils';
 import { setupCmsEnvironment } from 'src/module/sw-cms/test-utils';
-import { MtSwitch, MtUrlField } from '@shopware-ag/meteor-component-library';
+import { MtSwitch, MtUrlField } from '@shopwell-ag/meteor-component-library';
 import selectMtSelectOptionByText from '../../../../../../test/_helper_/select-mt-select-by-text';
 
 async function createWrapper(activeTab = 'content', sliderItems = []) {

@@ -19,13 +19,13 @@ rules:
       - sw-review.lock.yml
       - sw-triage.lock.yml
 
-  # Third-party actions must be pinned to a commit hash. `shopware/*` actions are
+  # Third-party actions must be pinned to a commit hash. `shopwell/*` actions are
   # first-party and may track a mutable ref such as `@main`; namespaces not listed
   # here fall back to zizmor's default hash-pin policy.
   unpinned-uses:
     config:
       policies:
-        shopware/*: ref-pin
+        shopwell/*: ref-pin
 
   # --- not adopted yet -------------------------------------------------------
   adhoc-packages:

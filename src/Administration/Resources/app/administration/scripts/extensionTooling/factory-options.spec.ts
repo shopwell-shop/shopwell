@@ -34,7 +34,7 @@ const variants = {
     umbrella: { internalApiSeverity: 'warn' },
 };
 
-const { shopwareAdminExtension } = await import(${JSON.stringify(factoryUrl)});
+const { shopwellAdminExtension } = await import(${JSON.stringify(factoryUrl)});
 const summarize = (config) =>
     config.map((block) => ({
         name: block.name,
@@ -48,7 +48,7 @@ const summarize = (config) =>
 const result = Object.fromEntries(
     Object.entries(variants).map(([key, options]) => [
         key,
-        summarize(shopwareAdminExtension({ tsconfigRootDir: '/tmp', ...options })),
+        summarize(shopwellAdminExtension({ tsconfigRootDir: '/tmp', ...options })),
     ]),
 );
 
@@ -74,28 +74,28 @@ describe('extension-tooling eslint factory host options', () => {
     it('reproduces the extension behavior exactly with the extension-facing options alone', () => {
         const blocks = variants.defaults;
 
-        expect(blocks.map((block) => block.name)).toContain('shopware/admin-extension/spec-files');
-        expect(ruleSeverity(blocks, 'shopware/admin-extension/runtime-contract', 'plugin-rules/no-src-imports')).toBe(
+        expect(blocks.map((block) => block.name)).toContain('shopwell/admin-extension/spec-files');
+        expect(ruleSeverity(blocks, 'shopwell/admin-extension/runtime-contract', 'plugin-rules/no-src-imports')).toBe(
             'error',
         );
-        expect(ruleSeverity(blocks, 'shopware/admin-extension/runtime-contract', 'no-restricted-imports')).toBe('error');
-        expect(ruleSeverity(blocks, 'shopware/admin-extension/api-boundary', '@typescript-eslint/no-deprecated')).toBe(
+        expect(ruleSeverity(blocks, 'shopwell/admin-extension/runtime-contract', 'no-restricted-imports')).toBe('error');
+        expect(ruleSeverity(blocks, 'shopwell/admin-extension/api-boundary', '@typescript-eslint/no-deprecated')).toBe(
             'error',
         );
         expect(
             ruleSeverity(
                 blocks,
-                'shopware/admin-extension/template-deprecations',
+                'shopwell/admin-extension/template-deprecations',
                 'sw-deprecation-rules/no-deprecated-components',
             ),
         ).toBe('error');
     });
 
     it('bakes native-setup support into every extension config by default', () => {
-        const nativeSetup = variants.defaults.find((block) => block.name === 'shopware/admin-extension/native-setup');
+        const nativeSetup = variants.defaults.find((block) => block.name === 'shopwell/admin-extension/native-setup');
 
         expect(nativeSetup).toBeDefined();
-        expect(nativeSetup?.rules?.['sw-core-rules/valid-shopware-setup']).toBe('error');
+        expect(nativeSetup?.rules?.['sw-core-rules/valid-shopwell-setup']).toBe('error');
         expect(nativeSetup?.rules?.['sw-core-rules/native-setup-filename']).toBe('error');
         expect(nativeSetup?.globals).toEqual(
             expect.arrayContaining([
@@ -122,19 +122,19 @@ describe('extension-tooling eslint factory host options', () => {
             '@typescript-eslint/no-unsafe-member-access',
             '@typescript-eslint/no-unsafe-return',
         ]) {
-            expect(ruleSeverity(blocks, 'shopware/admin-extension/vue-component-type-unsafety', rule)).toBe('off');
+            expect(ruleSeverity(blocks, 'shopwell/admin-extension/vue-component-type-unsafety', rule)).toBe('off');
         }
 
         // Every other type-aware rule stays on: the resolvable ones keep working
         // on .vue (no-floating-promises via the type-aware block, no-deprecated
         // via the api-boundary block). No block disables the whole set on `.vue`.
         expect(
-            ruleSeverity(blocks, 'shopware/admin-extension/vue-typescript', '@typescript-eslint/no-floating-promises'),
+            ruleSeverity(blocks, 'shopwell/admin-extension/vue-typescript', '@typescript-eslint/no-floating-promises'),
         ).toBe('error');
-        expect(ruleSeverity(blocks, 'shopware/admin-extension/api-boundary', '@typescript-eslint/no-deprecated')).toBe(
+        expect(ruleSeverity(blocks, 'shopwell/admin-extension/api-boundary', '@typescript-eslint/no-deprecated')).toBe(
             'error',
         );
-        expect(blocks.map((block) => block.name)).not.toContain('shopware/admin-extension/vue-untyped');
+        expect(blocks.map((block) => block.name)).not.toContain('shopwell/admin-extension/vue-untyped');
     });
 
     it('keeps no-unused-vars on for .vue (the v10 parser links interpolation usage)', () => {
@@ -145,17 +145,17 @@ describe('extension-tooling eslint factory host options', () => {
         // no-unused-vars: the only one (vue-component-type-unsafety) touches just
         // the no-unsafe family, leaving no-unused-vars from the type-aware block
         // in force.
-        expect(blocks.map((block) => block.name)).not.toContain('shopware/admin-extension/vue-template-usage');
+        expect(blocks.map((block) => block.name)).not.toContain('shopwell/admin-extension/vue-template-usage');
         expect(
-            ruleSeverity(blocks, 'shopware/admin-extension/vue-typescript', '@typescript-eslint/no-unused-vars'),
+            ruleSeverity(blocks, 'shopwell/admin-extension/vue-typescript', '@typescript-eslint/no-unused-vars'),
         ).not.toBe('off');
         expect(
-            ruleSeverity(blocks, 'shopware/admin-extension/vue-component-type-unsafety', 'no-unused-vars'),
+            ruleSeverity(blocks, 'shopwell/admin-extension/vue-component-type-unsafety', 'no-unused-vars'),
         ).toBeUndefined();
         expect(
             ruleSeverity(
                 blocks,
-                'shopware/admin-extension/vue-component-type-unsafety',
+                'shopwell/admin-extension/vue-component-type-unsafety',
                 '@typescript-eslint/no-unused-vars',
             ),
         ).toBeUndefined();
@@ -164,7 +164,7 @@ describe('extension-tooling eslint factory host options', () => {
     it("omits the spec-files block entirely for specFiles: 'typed'", () => {
         const names = variants.typedSpecs.map((block) => block.name);
 
-        expect(names).not.toContain('shopware/admin-extension/spec-files');
+        expect(names).not.toContain('shopwell/admin-extension/spec-files');
         // Everything else stays: the block count shrinks by exactly one.
         expect(variants.typedSpecs).toHaveLength(variants.defaults.length - 1);
     });
@@ -174,10 +174,10 @@ describe('extension-tooling eslint factory host options', () => {
 
         // The block itself survives (it also carries globals and the plugin
         // registration) — only the rule severities flip.
-        expect(blocks.map((block) => block.name)).toContain('shopware/admin-extension/runtime-contract');
-        expect(ruleSeverity(blocks, 'shopware/admin-extension/runtime-contract', 'plugin-rules/no-src-imports')).toBe('off');
-        expect(ruleSeverity(blocks, 'shopware/admin-extension/runtime-contract', 'no-restricted-imports')).toBe('off');
-        expect(ruleSeverity(blocks, 'shopware/admin-extension/api-boundary', '@typescript-eslint/no-deprecated')).toBe(
+        expect(blocks.map((block) => block.name)).toContain('shopwell/admin-extension/runtime-contract');
+        expect(ruleSeverity(blocks, 'shopwell/admin-extension/runtime-contract', 'plugin-rules/no-src-imports')).toBe('off');
+        expect(ruleSeverity(blocks, 'shopwell/admin-extension/runtime-contract', 'no-restricted-imports')).toBe('off');
+        expect(ruleSeverity(blocks, 'shopwell/admin-extension/api-boundary', '@typescript-eslint/no-deprecated')).toBe(
             'error',
         );
     });
@@ -185,13 +185,13 @@ describe('extension-tooling eslint factory host options', () => {
     it('lets the deprecation severities diverge from the umbrella knob', () => {
         const blocks = variants.splitSeverities;
 
-        expect(ruleSeverity(blocks, 'shopware/admin-extension/api-boundary', '@typescript-eslint/no-deprecated')).toBe(
+        expect(ruleSeverity(blocks, 'shopwell/admin-extension/api-boundary', '@typescript-eslint/no-deprecated')).toBe(
             'off',
         );
         expect(
             ruleSeverity(
                 blocks,
-                'shopware/admin-extension/template-deprecations',
+                'shopwell/admin-extension/template-deprecations',
                 'sw-deprecation-rules/no-deprecated-component-usage',
             ),
         ).toBe('error');
@@ -200,13 +200,13 @@ describe('extension-tooling eslint factory host options', () => {
     it('keeps the umbrella knob driving both deprecation surfaces by default', () => {
         const blocks = variants.umbrella;
 
-        expect(ruleSeverity(blocks, 'shopware/admin-extension/api-boundary', '@typescript-eslint/no-deprecated')).toBe(
+        expect(ruleSeverity(blocks, 'shopwell/admin-extension/api-boundary', '@typescript-eslint/no-deprecated')).toBe(
             'warn',
         );
         expect(
             ruleSeverity(
                 blocks,
-                'shopware/admin-extension/template-deprecations',
+                'shopwell/admin-extension/template-deprecations',
                 'sw-deprecation-rules/no-deprecated-components',
             ),
         ).toBe('warn');

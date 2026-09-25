@@ -5,7 +5,7 @@
  */
 import { flushPromises, mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
-import { MtTextField } from '@shopware-ag/meteor-component-library';
+import { MtTextField } from '@shopwell-ag/meteor-component-library';
 
 const packagingItemClassName = [
     '.sw-product-packaging-form__purchase-unit-field',

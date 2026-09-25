@@ -2,7 +2,7 @@
 title:              GDPR compliant video elements
 issue:              NEXT-10196
 author:             Stephan Pohl
-author_email:       s.pohl@shopware.com
+author_email:       s.pohl@shopwell.com
 author_github:      @klarstil
 ---
 # Administration

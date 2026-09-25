@@ -3,7 +3,7 @@ title: Reactivate plugin if the deactivation fails
 issue: NEXT-22798
 ---
 # Core
-* Added a new event `Shopware\Core\Framework\Plugin\Event\PluginPostDeactivationFailedEvent.php` to be fired if the deactivation of the plugin fails after the `PluginPreDeactivateEvent` was handled.
+* Added a new event `Shopwell\Core\Framework\Plugin\Event\PluginPostDeactivationFailedEvent.php` to be fired if the deactivation of the plugin fails after the `PluginPreDeactivateEvent` was handled.
 
 ___
 # Storefront

@@ -1,5 +1,5 @@
 ---
-# gh aw SOURCE for Shopware nightly failure triage (read-only).
+# gh aw SOURCE for Shopwell nightly failure triage (read-only).
 # Compile with `gh aw compile` → produces sw-nightly.lock.yml (committed, never hand-edited).
 #
 # Deep-triage pass over the auto-filed nightly PHPUnit tracking issues
@@ -39,7 +39,7 @@ if: >-
     github.event.label.name == 'qi/sw-nightly'
   )
 
-run-name: "Shopware Nightly Triage #${{ github.event.issue.number || github.event.inputs.issue_number }}"
+run-name: "Shopwell Nightly Triage #${{ github.event.issue.number || github.event.inputs.issue_number }}"
 
 concurrency:                 # explicit — workflow_dispatch default group cancels parallel runs (gh-aw #19467)
   group: sw-nightly-${{ github.event.issue.number || github.event.inputs.issue_number }}
@@ -115,7 +115,7 @@ post-steps:
       if-no-files-found: error
 ---
 
-# Shopware Nightly Failure Triage
+# Shopwell Nightly Failure Triage
 
 {{#runtime-import .github/aw/sw-nightly-policy.md}}
 

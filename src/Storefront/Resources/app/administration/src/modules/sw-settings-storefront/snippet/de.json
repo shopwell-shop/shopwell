@@ -4,7 +4,7 @@
       "mainMenuItemGeneral": "Storefront",
       "textHeadline": "Storefront",
       "description": "Einstellungen für die Storefront",
-      "helpText": "Für weitere Informationen schaue bitte in die <a target=\"_blank\" href=\"https://docs.shopwell.cn/de/shopware-6-de\">Dokumentation</a>"
+      "helpText": "Für weitere Informationen schaue bitte in die <a target=\"_blank\" href=\"https://docs.shopwell.cn/de/shopwell-6-de\">Dokumentation</a>"
     },
     "configuration": {
       "cardTitle": "Storefront-Konfiguration",
@@ -20,6 +20,6 @@
         "description": "Aktivieren Sie pre-rendering im Modus „moderat“ für die Storefront. Achtung, dies kann Ihre Analysedaten beeinflussen."
       }
     },
-    "helpText": "Für weitere Informationen schaue bitte in die <a target=\"_blank\" href=\"https://docs.shopwell.cn/de/shopware-6-de\">Dokumentation</a>"
+    "helpText": "Für weitere Informationen schaue bitte in die <a target=\"_blank\" href=\"https://docs.shopwell.cn/de/shopwell-6-de\">Dokumentation</a>"
   }
 }

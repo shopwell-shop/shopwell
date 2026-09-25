@@ -32,7 +32,7 @@ class ClientRepositoryTest extends TestCase
         parent::setUp();
         $this->connection = $this->createMock(Connection::class);
         $publicClients = new PublicClientRegistry([
-            'shopware-cli' => ['name' => 'Shopwell CLI', 'redirect_uris' => ['http://127.0.0.1/callback']],
+            'shopwell-cli' => ['name' => 'Shopwell CLI', 'redirect_uris' => ['http://127.0.0.1/callback']],
         ]);
         $this->clientRepository = new ClientRepository($this->connection, new NativeClock(), $publicClients);
     }
@@ -41,10 +41,10 @@ class ClientRepositoryTest extends TestCase
     {
         $this->connection->expects($this->never())->method('fetchAssociative');
 
-        $client = $this->clientRepository->getClientEntity('shopware-cli');
+        $client = $this->clientRepository->getClientEntity('shopwell-cli');
 
         static::assertInstanceOf(ApiClient::class, $client);
-        static::assertSame('shopware-cli', $client->getIdentifier());
+        static::assertSame('shopwell-cli', $client->getIdentifier());
         static::assertSame('Shopwell CLI', $client->getName());
         static::assertFalse($client->isConfidential());
         static::assertSame(['http://127.0.0.1/callback'], $client->getRedirectUri());
@@ -58,8 +58,8 @@ class ClientRepositoryTest extends TestCase
     {
         $this->connection->expects($this->never())->method('fetchAssociative');
 
-        static::assertTrue($this->clientRepository->validateClient('shopware-cli', null, 'authorization_code'));
-        static::assertTrue($this->clientRepository->validateClient('shopware-cli', null, 'refresh_token'));
+        static::assertTrue($this->clientRepository->validateClient('shopwell-cli', null, 'authorization_code'));
+        static::assertTrue($this->clientRepository->validateClient('shopwell-cli', null, 'refresh_token'));
     }
 
     public function testValidateClientRejectsPublicClientForOtherGrantTypes(): void
@@ -67,7 +67,7 @@ class ClientRepositoryTest extends TestCase
         $this->connection->expects($this->never())->method('fetchAssociative');
 
         $this->expectExceptionObject(OAuthServerException::unsupportedGrantType());
-        $this->clientRepository->validateClient('shopware-cli', null, 'password');
+        $this->clientRepository->validateClient('shopwell-cli', null, 'password');
     }
 
     public function testValidateClientWithInvalidGrantTypeThrowException(): void
@@ -83,7 +83,7 @@ class ClientRepositoryTest extends TestCase
     public function testValidateClient(string $grantType, string $clientIdentifier, string $clientSecret, bool $expectedResult): void
     {
         $this->connection->method('fetchAssociative')->willReturnCallback(static function () use ($clientIdentifier, $clientSecret) {
-            if ($clientIdentifier === 'SWUAADMIN' && $clientSecret === 'shopware') {
+            if ($clientIdentifier === 'SWUAADMIN' && $clientSecret === 'shopwell') {
                 return [
                     'id' => '123',
                     'secret_access_key' => password_hash($clientSecret, \PASSWORD_BCRYPT),
@@ -188,10 +188,10 @@ class ClientRepositoryTest extends TestCase
      */
     public static function validateClientDataProvider(): iterable
     {
-        yield 'password grant type' => ['password', 'administration', 'shopware', true];
-        yield 'refresh_token grant type' => ['refresh_token', 'administration', 'shopware', true];
-        yield 'client_credentials grant type with incorrect clientIdentifier' => ['client_credentials', 'SWUAJOHNDOE', 'shopware', false];
-        yield 'client_credentials grant type with correct clientIdentifier' => ['client_credentials', 'SWUAADMIN', 'shopware', true];
+        yield 'password grant type' => ['password', 'administration', 'shopwell', true];
+        yield 'refresh_token grant type' => ['refresh_token', 'administration', 'shopwell', true];
+        yield 'client_credentials grant type with incorrect clientIdentifier' => ['client_credentials', 'SWUAJOHNDOE', 'shopwell', false];
+        yield 'client_credentials grant type with correct clientIdentifier' => ['client_credentials', 'SWUAADMIN', 'shopwell', true];
     }
 
     /**

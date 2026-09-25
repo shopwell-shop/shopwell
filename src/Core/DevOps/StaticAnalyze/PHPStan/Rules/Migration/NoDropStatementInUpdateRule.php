@@ -154,11 +154,11 @@ class NoDropStatementInUpdateRule implements Rule
         if (\in_array($name->name, self::$disallowedMethodCalls, true)) {
             $message = \sprintf('Usage of method "%s" is disallowed in the "update" method of a migration to avoid blue green compatibility breaks.', $name->name);
             if ($name->name === 'dropForeignKeyIfExists') {
-                $message .= ' Dropping FKs is OK if immediately re-added, or if not breaking old app version validation. Use @phpstan-ignore shopware.dropStatement if intentional.';
+                $message .= ' Dropping FKs is OK if immediately re-added, or if not breaking old app version validation. Use @phpstan-ignore shopwell.dropStatement if intentional.';
             }
 
             $errors[] = RuleErrorBuilder::message($message)
-                ->identifier('shopware.dropStatement')
+                ->identifier('shopwell.dropStatement')
                 ->line($statement->getStartLine())
                 ->build();
 
@@ -194,7 +194,7 @@ class NoDropStatementInUpdateRule implements Rule
 
         if (preg_match(self::DROP_TABLE_REGEX_PATTERN, $sqlStatementToCheck) === 1) {
             $errors[] = RuleErrorBuilder::message('Usage of "DROP TABLE" statements is disallowed in the "update" method of a migration to avoid blue green compatibility breaks.')
-                ->identifier('shopware.dropStatement')
+                ->identifier('shopwell.dropStatement')
                 ->line($statement->getStartLine())
                 ->build();
 
@@ -203,7 +203,7 @@ class NoDropStatementInUpdateRule implements Rule
 
         if (preg_match(self::DROP_COLUMN_REGEX_PATTERN, $sqlStatementToCheck) === 1) {
             $errors[] = RuleErrorBuilder::message('Usage of "DROP COLUMN" statements is disallowed in the "update" method of a migration to avoid blue green compatibility breaks.')
-                ->identifier('shopware.dropStatement')
+                ->identifier('shopwell.dropStatement')
                 ->line($statement->getStartLine())
                 ->build();
 
@@ -211,8 +211,8 @@ class NoDropStatementInUpdateRule implements Rule
         }
 
         if (preg_match(self::DROP_FOREIGN_KEY_REGEX_PATTERN, $sqlStatementToCheck) === 1) {
-            $errors[] = RuleErrorBuilder::message('Usage of "DROP FOREIGN KEY" statements is disallowed in the "update" method of a migration to avoid blue green compatibility breaks. Dropping FKs is OK if immediately re-added, or if not breaking old app version validation. Use @phpstan-ignore shopware.dropStatement if intentional.')
-                ->identifier('shopware.dropStatement')
+            $errors[] = RuleErrorBuilder::message('Usage of "DROP FOREIGN KEY" statements is disallowed in the "update" method of a migration to avoid blue green compatibility breaks. Dropping FKs is OK if immediately re-added, or if not breaking old app version validation. Use @phpstan-ignore shopwell.dropStatement if intentional.')
+                ->identifier('shopwell.dropStatement')
                 ->line($statement->getStartLine())
                 ->build();
 
@@ -221,7 +221,7 @@ class NoDropStatementInUpdateRule implements Rule
 
         if (preg_match(self::DROP_REGEX_PATTERN, $sqlStatementToCheck) === 1) {
             $errors[] = RuleErrorBuilder::message('Usage of "DROP" statements is disallowed in the "update" method of a migration to avoid blue green compatibility breaks.')
-                ->identifier('shopware.dropStatement')
+                ->identifier('shopwell.dropStatement')
                 ->line($statement->getStartLine())
                 ->build();
         }

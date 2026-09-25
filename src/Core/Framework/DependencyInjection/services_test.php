@@ -74,63 +74,63 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(OrderTransactionStateHandler::class),
         ])
-        ->tag('shopware.payment.method');
+        ->tag('shopwell.payment.method');
 
     $services->set(MemoryAdapterFactory::class)
-        ->tag('shopware.filesystem.factory');
+        ->tag('shopwell.filesystem.factory');
 
     $services->set(NamedDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(NamedOptionalGroupDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(RootDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'root']);
+        ->tag('shopwell.entity.definition', ['entity' => 'root']);
 
     $services->set(SubDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'root_sub']);
+        ->tag('shopwell.entity.definition', ['entity' => 'root_sub']);
 
     $services->set(SubCascadeDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'root_sub_cascade']);
+        ->tag('shopwell.entity.definition', ['entity' => 'root_sub_cascade']);
 
     $services->set(SubManyDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'root_sub_many']);
+        ->tag('shopwell.entity.definition', ['entity' => 'root_sub_many']);
 
     $services->set(TestDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => '_test_lock']);
+        ->tag('shopwell.entity.definition', ['entity' => '_test_lock']);
 
     $services->set(TestTranslationDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => '_test_lock_translation']);
+        ->tag('shopwell.entity.definition', ['entity' => '_test_lock_translation']);
 
     $services->set(CustomFieldTestDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'attribute_test']);
+        ->tag('shopwell.entity.definition', ['entity' => 'attribute_test']);
 
     $services->set(CustomFieldTestTranslationDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'attribute_test_translation']);
+        ->tag('shopwell.entity.definition', ['entity' => 'attribute_test_translation']);
 
     $services->set(WriteProtectedDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => '_test_nullable']);
+        ->tag('shopwell.entity.definition', ['entity' => '_test_nullable']);
 
     $services->set(WriteProtectedRelationDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => '_test_relation']);
+        ->tag('shopwell.entity.definition', ['entity' => '_test_relation']);
 
     $services->set(WriteProtectedReferenceDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => '_test_nullable_reference']);
+        ->tag('shopwell.entity.definition', ['entity' => '_test_nullable_reference']);
 
     $services->set(ExtendedProductDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'extended_product']);
+        ->tag('shopwell.entity.definition', ['entity' => 'extended_product']);
 
     $services->set(DateTimeDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'date_time_test']);
+        ->tag('shopwell.entity.definition', ['entity' => 'date_time_test']);
 
     $services->alias('messenger.test_receiver_locator', 'messenger.receiver_locator')
         ->public();
 
-    $services->set('messenger.bus.test_shopware', TraceableMessageBus::class)
+    $services->set('messenger.bus.test_shopwell', TraceableMessageBus::class)
         ->decorate('messenger.default_bus')
         ->args([
-            service('messenger.bus.test_shopware.inner'),
+            service('messenger.bus.test_shopwell.inner'),
         ]);
 
     $services->set('mailer.mailer', Mailer::class)
@@ -183,7 +183,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             param('kernel.cache_dir'),
         ]);
 
-    $services->set('shopware.app_system.guzzle', Client::class)
+    $services->set('shopwell.app_system.guzzle', Client::class)
         ->args([
             [
                 'allow_redirects' => AuthMiddleware::ALLOW_REDIRECTS,
@@ -194,11 +194,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
                     ])
                     ->call('after', [
                         'allow_redirects',
-                        service('shopware.app_system.guzzle.security_middleware'),
+                        service('shopwell.app_system.guzzle.security_middleware'),
                         'app_system_http_security',
                     ])
                     ->call('push', [
-                        service('shopware.app_system.guzzle.middleware'),
+                        service('shopwell.app_system.guzzle.middleware'),
                     ])
                     ->call('push', [
                         service('test.guzzle.history.middleware'),
@@ -206,21 +206,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             ],
         ]);
 
-    $services->set('shopware.app_system.trusted_url_resolver', TrustedUrlResolver::class)
+    $services->set('shopwell.app_system.trusted_url_resolver', TrustedUrlResolver::class)
         ->factory([StaticTrustedUrlResolverFactory::class, 'create'])
         ->args([
-            param('shopware.app_system.allowed_private_ip_addresses'),
+            param('shopwell.app_system.allowed_private_ip_addresses'),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
 
-    $services->set('shopware.webhook.trusted_url_resolver', TrustedUrlResolver::class)
+    $services->set('shopwell.webhook.trusted_url_resolver', TrustedUrlResolver::class)
         ->factory([StaticTrustedUrlResolverFactory::class, 'create'])
         ->args([
-            param('shopware.app_system.allowed_private_ip_addresses'),
+            param('shopwell.app_system.allowed_private_ip_addresses'),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
 
-    $services->set('shopware.webhook.guzzle', Client::class)
+    $services->set('shopwell.webhook.guzzle', Client::class)
         ->args([
             [
                 'allow_redirects' => AuthMiddleware::ALLOW_REDIRECTS,
@@ -231,11 +231,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
                     ])
                     ->call('after', [
                         'allow_redirects',
-                        service('shopware.webhook.guzzle.security_middleware'),
+                        service('shopwell.webhook.guzzle.security_middleware'),
                         'app_system_http_security',
                     ])
                     ->call('push', [
-                        service('shopware.app_system.guzzle.middleware'),
+                        service('shopwell.app_system.guzzle.middleware'),
                     ])
                     ->call('push', [
                         service('test.guzzle.history.middleware'),
@@ -246,9 +246,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set('Shopwell\Core\Framework\Webhook\Validation\WebhookTargetValidator', WebhookTargetValidator::class)
         ->factory([StaticWebhookTargetValidatorFactory::class, 'create'])
         ->args([
-            param('shopware.app_system.allow_unencrypted_traffic'),
-            param('shopware.app_system.allowed_private_ip_addresses'),
-            param('shopware.app_system.enable_url_validation'),
+            param('shopwell.app_system.allow_unencrypted_traffic'),
+            param('shopwell.app_system.allowed_private_ip_addresses'),
+            param('shopwell.app_system.enable_url_validation'),
         ]);
 
     $services->set(TestAppServer::class)

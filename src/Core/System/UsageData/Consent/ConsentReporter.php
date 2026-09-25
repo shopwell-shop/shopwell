@@ -62,7 +62,7 @@ class ConsentReporter implements EventSubscriberInterface
             'consent_state' => $consentState,
             'license_host' => $this->systemConfigService->getString(StoreService::CONFIG_KEY_STORE_LICENSE_DOMAIN),
             'shop_id' => $this->shopIdProvider->getShopId(),
-            'shopware_version' => $this->instanceService->getShopwellVersion(),
+            'shopwell_version' => $this->instanceService->getShopwellVersion(),
         ];
 
         try {

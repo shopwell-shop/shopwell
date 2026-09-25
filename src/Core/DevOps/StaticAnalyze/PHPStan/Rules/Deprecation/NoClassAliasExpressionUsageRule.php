@@ -59,7 +59,7 @@ class NoClassAliasExpressionUsageRule implements Rule
                 $className,
                 $canonicalClassName
             ))
-                ->identifier('shopware.classAliasUsage')
+                ->identifier('shopwell.classAliasUsage')
                 ->line($name->getStartLine())
                 ->build(),
         ];

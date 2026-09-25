@@ -1,7 +1,7 @@
 ---
 title: Fix inconsistency between login & register page for guest customers
 author: Max Stegmeyer
-author_email: m.stegmeyer@shopware.com
+author_email: m.stegmeyer@shopwell.com
 author_github: @mstegmeyer
 ---
 # Storefront

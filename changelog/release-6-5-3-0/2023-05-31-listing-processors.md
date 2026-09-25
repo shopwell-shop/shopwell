@@ -2,13 +2,13 @@
 title: Listing processors
 issue: NEXT-27431
 author: Oliver Skroblin
-author_email: o.skroblin@shopware.com
+author_email: o.skroblin@shopwell.com
 ---
 
 # Core
-* Added `\Shopware\Core\Content\Product\SalesChannel\Listing\Processor\AbstractListingProcessor` which allows to hook into the request-listing handling 
-* Added `\Shopware\Core\Content\Product\SalesChannel\Listing\Filter\AbstractFilterHandler` which allows to generate filters for the listing 
-* Deprecated `\Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingFeaturesSubscriber`, which is now replaced by `\Shopware\Core\Content\Product\SalesChannel\Listing\Processor\CompositeProcessor`
+* Added `\Shopwell\Core\Content\Product\SalesChannel\Listing\Processor\AbstractListingProcessor` which allows to hook into the request-listing handling 
+* Added `\Shopwell\Core\Content\Product\SalesChannel\Listing\Filter\AbstractFilterHandler` which allows to generate filters for the listing 
+* Deprecated `\Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingFeaturesSubscriber`, which is now replaced by `\Shopwell\Core\Content\Product\SalesChannel\Listing\Processor\CompositeProcessor`
 
 ___
 # Upgrade Information
@@ -58,4 +58,4 @@ class MyClass
 
 ___
 # Next Major Version Changes
-* Removed `\Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingFeaturesSubscriber`, use `CompositeProcessor` instead
+* Removed `\Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingFeaturesSubscriber`, use `CompositeProcessor` instead

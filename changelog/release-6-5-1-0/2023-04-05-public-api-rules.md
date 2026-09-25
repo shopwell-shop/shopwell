@@ -2,7 +2,7 @@
 title: Public api rules
 issue: NEXT-25424
 author: Oliver Skroblin
-author_email: o.skroblin@shopware.com
+author_email: o.skroblin@shopwell.com
 ---
 # Core
 * Changed class hierarchy of flow events, to not extend the basic `FlowEventAware`. You should implement the interface by yourself now. Following interfaces are affected and will no longer extend the `FlowEventAware` interface with v6.6:
@@ -77,7 +77,7 @@ This is necessary to ensure that your event class is compatible with the new flo
 
 namespace App\Event;
 
-use Shopware\Core\Framework\Log\LogAware;
+use Shopwell\Core\Framework\Log\LogAware;
 
 class MyEvent implements LogAware
 {
@@ -92,7 +92,7 @@ class MyEvent implements LogAware
 
 namespace App\Event;
 
-use Shopware\Core\Framework\Event\FlowEventAware;
+use Shopwell\Core\Framework\Event\FlowEventAware;
 
 class MyEvent implements FlowEventAware, LogAware
 {

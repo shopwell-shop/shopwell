@@ -60,7 +60,7 @@ class StoreClient
     ) {
     }
 
-    public function loginWithShopwellId(string $shopwareId, string $password, Context $context): void
+    public function loginWithShopwellId(string $shopwellId, string $password, Context $context): void
     {
         if (!$context->getSource() instanceof AdminApiSource) {
             throw StoreException::invalidContextSource(AdminApiSource::class, $context->getSource()::class);
@@ -74,9 +74,9 @@ class StoreClient
             [
                 'query' => $this->getQueries($context),
                 'json' => [
-                    'shopwareId' => $shopwareId,
+                    'shopwellId' => $shopwellId,
                     'password' => $password,
-                    'shopwareUserId' => $userId,
+                    'shopwellUserId' => $userId,
                 ],
             ]
         );
@@ -295,7 +295,7 @@ class StoreClient
             [
                 'query' => [
                     'language' => 'en_GB',
-                    'shopwareVersion' => $this->getShopwellVersion(),
+                    'shopwellVersion' => $this->getShopwellVersion(),
                 ],
             ]
         );

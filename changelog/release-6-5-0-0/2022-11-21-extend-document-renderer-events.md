@@ -6,4 +6,4 @@ author_email: felix@felixbrucker.com
 author_github: felixbrucker
 ---
 # Core
-* Added the corresponding `Shopware\Core\Checkout\Document\Struct\DocumentGenerateOperation`s for the orders in the `Shopware\Core\Checkout\Document\Event\DocumentOrderEvent`.
+* Added the corresponding `Shopwell\Core\Checkout\Document\Struct\DocumentGenerateOperation`s for the orders in the `Shopwell\Core\Checkout\Document\Event\DocumentOrderEvent`.

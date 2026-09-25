@@ -109,7 +109,7 @@ class ElasticsearchFieldMapperTest extends TestCase
 
         /**
          * Specifically check, that this case does not happen anymore:
-         * https://github.com/shopware/shopware/issues/4459 (comments)
+         * https://github.com/shopwell-shop/shopwell/issues/4459 (comments)
          **/
         static::assertNotSame($formatted[$deLanguageId]['cf_bar'], \INF);
         static::assertNotSame($formatted[$enLanguageId]['cf_bar'], \INF);

@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 
-const defaultActiveFeatureFlagsSymbol = Symbol.for('shopware.defaultActiveFeatureFlags');
+const defaultActiveFeatureFlagsSymbol = Symbol.for('shopwell.defaultActiveFeatureFlags');
 const majorFeatureFlags = ['V6_8_0_0'];
 
 /**

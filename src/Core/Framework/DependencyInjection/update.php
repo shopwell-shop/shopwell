@@ -30,10 +30,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(SystemConfigService::class),
             service(ExtensionLifecycleService::class),
-            param('kernel.shopware_version'),
-            param('shopware.auto_update.enabled'),
-            param('shopware.auto_update.hide_module'),
-            param('shopware.deployment.cluster_setup'),
+            param('kernel.shopwell_version'),
+            param('shopwell.auto_update.enabled'),
+            param('shopwell.auto_update.hide_module'),
+            param('shopwell.deployment.cluster_setup'),
         ])
         ->call('setContainer', [
             service('service_container'),
@@ -42,7 +42,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ApiClient::class)
         ->args([
             service('http_client'),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
             param('kernel.project_dir'),
             service(ClockInterface::class),
         ]);

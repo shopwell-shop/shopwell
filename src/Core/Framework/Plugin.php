@@ -96,8 +96,8 @@ abstract class Plugin extends Bundle
 
     public function removeMigrations(): void
     {
-        // namespace should not start with `shopware`
-        if (str_starts_with(mb_strtolower($this->getMigrationNamespace()), 'shopware') && !str_starts_with(mb_strtolower($this->getMigrationNamespace()), 'shopware\commercial')) {
+        // namespace should not start with `shopwell`
+        if (str_starts_with(mb_strtolower($this->getMigrationNamespace()), 'shopwell') && !str_starts_with(mb_strtolower($this->getMigrationNamespace()), 'shopwell\commercial')) {
             throw PluginException::cannotDeleteShopwellMigrations();
         }
 

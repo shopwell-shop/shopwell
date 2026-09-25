@@ -13,14 +13,14 @@ ___
 
 ## "session" Vuex store moved to Pinia
 
-The `session` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopware.Store.get('session')`.
+The `session` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopwell.Store.get('session')`.
 
 ### Before:
 ```js
-Shopware.State.get('session');
+Shopwell.State.get('session');
 ```
 
 ### After:
 ```js
-Shopware.Store.get('session');
+Shopwell.Store.get('session');
 ```

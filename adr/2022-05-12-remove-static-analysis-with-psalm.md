@@ -11,7 +11,7 @@ This slows down our pipeline and may lead to weird effects where `phpstan` and `
 
 ## Decision
 There is not much need anymore to run both tools, as they pretty much converged to a common feature set.
-This was different when we started with shopware 6 where both tools had some different features, but most of the differences are gone by now.
+This was different when we started with shopwell 6 where both tools had some different features, but most of the differences are gone by now.
 Therefore, we won't run both tools anymore in the CI.
 
 We decided to stick with `phpstan` and remove `psalm` because:

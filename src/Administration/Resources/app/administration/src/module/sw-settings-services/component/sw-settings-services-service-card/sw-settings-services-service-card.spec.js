@@ -8,7 +8,7 @@ import {
     MtPopover,
     MtPopoverItem,
     MtButton,
-} from '@shopware-ag/meteor-component-library';
+} from '@shopwell-ag/meteor-component-library';
 import SwSettingsServicesServiceCard from './index';
 import SwColorBadge from '../../../../app/component/utils/sw-color-badge';
 
@@ -32,7 +32,7 @@ const createService = (overrides = {}) => ({
 
 describe('src/module/sw-settings-services/component/sw-settings-services-service-card.ts', () => {
     beforeAll(() => {
-        Shopwell.Service().register('shopwareServicesService', () => ({
+        Shopwell.Service().register('shopwellServicesService', () => ({
             activateService: jest.fn(),
             deactivateService: jest.fn(),
             getCategorizedPermissions: jest.fn(),
@@ -118,7 +118,7 @@ describe('src/module/sw-settings-services/component/sw-settings-services-service
     });
 
     it('opens the deactivation modal and deactivates a service', async () => {
-        Shopwell.Service('shopwareServicesService').deactivateService.mockImplementationOnce(() => {
+        Shopwell.Service('shopwellServicesService').deactivateService.mockImplementationOnce(() => {
             return Promise.resolve();
         });
 
@@ -177,7 +177,7 @@ describe('src/module/sw-settings-services/component/sw-settings-services-service
 
         await deactivateButton.trigger('click');
 
-        expect(Shopwell.Service('shopwareServicesService').deactivateService).toHaveBeenCalledWith('service-name');
+        expect(Shopwell.Service('shopwellServicesService').deactivateService).toHaveBeenCalledWith('service-name');
         expect(card.vm._reloadPage).toHaveBeenCalled();
     });
 
@@ -185,7 +185,7 @@ describe('src/module/sw-settings-services/component/sw-settings-services-service
         const card = mount(SwSettingsServicesServiceCard, {
             props: {
                 service: createService({
-                    requirements: ['shopware_account'],
+                    requirements: ['shopwell_account'],
                     state_change_permitted: false,
                 }),
             },
@@ -271,7 +271,7 @@ describe('src/module/sw-settings-services/component/sw-settings-services-service
     });
 
     it('activates a service', async () => {
-        Shopwell.Service('shopwareServicesService').activateService.mockImplementationOnce(() => {
+        Shopwell.Service('shopwellServicesService').activateService.mockImplementationOnce(() => {
             return Promise.resolve();
         });
 
@@ -325,12 +325,12 @@ describe('src/module/sw-settings-services/component/sw-settings-services-service
             setTimeout(resolve, 32);
         });
 
-        expect(Shopwell.Service('shopwareServicesService').activateService).toHaveBeenCalledWith('service-name');
+        expect(Shopwell.Service('shopwellServicesService').activateService).toHaveBeenCalledWith('service-name');
         expect(card.vm._reloadPage).toHaveBeenCalled();
     });
 
     it('shows permissions modal for a service', async () => {
-        Shopwell.Service('shopwareServicesService').getCategorizedPermissions.mockImplementationOnce(async () => ({
+        Shopwell.Service('shopwellServicesService').getCategorizedPermissions.mockImplementationOnce(async () => ({
             permissions: {
                 order: [
                     {

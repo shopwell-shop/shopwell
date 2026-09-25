@@ -2,7 +2,7 @@
 title: Add new data id to set off-canvas aria-labelledby
 issue: NEXT-40818
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: @BrocksiNet
 ---
 # Storefront

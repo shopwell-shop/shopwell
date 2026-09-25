@@ -3,7 +3,7 @@ title: Fixed EntitySearcher for PrimaryKeys other than `id`
 issue: NEXT-17105
 ---
 # Core
-* Changed `\Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper` to fix problem when entities have primary keys, where the storage name and the property name differs.
+* Changed `\Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper` to fix problem when entities have primary keys, where the storage name and the property name differs.
 * Deprecated reading entities with the storage name of the primary key, use the property name instead. 
 ___
 # Upgrade Information

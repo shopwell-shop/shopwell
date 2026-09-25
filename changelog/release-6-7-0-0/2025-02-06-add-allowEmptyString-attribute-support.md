@@ -5,4 +5,4 @@ author_email: raffaele.carelle@gmail.com
 author_github: @raffaelecarelle
 ---
 # Storefront
-* Added `Shopware\Core\Framework\DataAbstractionLayer\Attribute\AllowEmptyString` to manage respectively flag on Entity
+* Added `Shopwell\Core\Framework\DataAbstractionLayer\Attribute\AllowEmptyString` to manage respectively flag on Entity

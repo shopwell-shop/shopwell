@@ -2,7 +2,7 @@
 title: Support conditions evaluating orders and added tag condition
 issue: NEXT-20720
 author: d.neustadt
-author_email: d.neustadt@shopware.com
+author_email: d.neustadt@shopwell.com
 author_github: dneustadt
 ---
 # Core

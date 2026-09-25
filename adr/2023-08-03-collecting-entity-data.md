@@ -6,14 +6,14 @@ tags: ['entity', 'usage-data', 'ai', 'machine-learning']
 ---
 
 ## Context
-*shopware AG* aims to provide data-driven features to its merchants.
+*Shopwell* aims to provide data-driven features to its merchants.
 The foundation for these features are data that our merchants provide to us with their consent.
-A subset and primary pillar of these data lies within the entities, stored within each and every Shopware shop.
-This ADR addresses main concepts of extracting the information out of the shops and transferring it to *shopware AG*.
+A subset and primary pillar of these data lies within the entities, stored within each and every Shopwell shop.
+This ADR addresses main concepts of extracting the information out of the shops and transferring it to *Shopwell*.
 
 ## Decision
 ### No data sharing without consent
-Merchants must explicitly agree and consent to share their data with *shopware AG*.
+Merchants must explicitly agree and consent to share their data with *Shopwell*.
 As long as there is no consent, no data will be collected or transferred.
 The consent to data sharing can be revoked at any time by the merchants.
 
@@ -25,20 +25,20 @@ Data stored in all types of entities might contain sensitive information includi
 This kind of data is excluded.
 
 ### Personally identifiable information (PII)
-Data that would enable *shopware AG* to identify a person is modified in such a way that it is no longer possible to draw conclusions about the person.
+Data that would enable *Shopwell* to identify a person is modified in such a way that it is no longer possible to draw conclusions about the person.
 A so-called *personal unique identifier (PUID)* is generated to identify users across multiple sources (e.g. entity data, on-site tracking) with the goal of analyzing their behavior which is used for generating insights and making predictions.
 Again, it is not possible to find out **who** the person is, just that it is the **same** person.
 
 ### Transitioning to data pulling
 The processes described in this ADR can be viewed as an approach of *data pushing*.
-Data is fetched from the database and prepared on the merchant's servers and infrastructure before it is sent to *shopware AG*.
+Data is fetched from the database and prepared on the merchant's servers and infrastructure before it is sent to *Shopwell*.
 
 To be more flexible and to reduce the load on our merchant's infrastructure, we plan to transition to a *data pulling* approach.
-With this approach we are planning to use Shopware's Admin API to fetch the data, rather than fetching it from the database directly.
+With this approach we are planning to use Shopwell's Admin API to fetch the data, rather than fetching it from the database directly.
 
 ### Providing data-driven features via the app system
 The features built upon the data that is collected, will be rolled out as an extension based on the app system.
-This way, we make feature releases independent of the Shopware 6 release cycle and can provide new features faster.
+This way, we make feature releases independent of the Shopwell 6 release cycle and can provide new features faster.
 
 ### Including entities and fields
 By default, entities are not considered for data collection.

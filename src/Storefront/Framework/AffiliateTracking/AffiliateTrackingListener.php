@@ -59,7 +59,7 @@ class AffiliateTrackingListener implements EventSubscriberInterface
 
         $request->attributes->set(PlatformRequest::ATTRIBUTE_NO_STORE, true);
 
-        /** @phpstan-ignore shopware.unsafeRequestHasSession (using $skipIfUninitialized = false as session will be started intentionally later; this can take the PHP session lock and is limited to affiliate tracking storing codes in the storefront session.) */
+        /** @phpstan-ignore shopwell.unsafeRequestHasSession (using $skipIfUninitialized = false as session will be started intentionally later; this can take the PHP session lock and is limited to affiliate tracking storing codes in the storefront session.) */
         if (!$request->hasSession()) {
             return;
         }

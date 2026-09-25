@@ -1,5 +1,5 @@
 import { test as base } from '@playwright/test';
-import { FixtureTypes, expandAdminMenu } from '@shopware-ag/acceptance-test-suite';
+import { FixtureTypes, expandAdminMenu } from '@shopwell-ag/acceptance-test-suite';
 
 export const test = base.extend<FixtureTypes>({
     AdminPage: async ({ AdminPage }, use, testInfo) => {

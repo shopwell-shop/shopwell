@@ -77,7 +77,7 @@ class LogoutRouteTest extends TestCase
                 '/store-api/account/login',
                 [
                     'email' => $email,
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                 ]
             );
 
@@ -122,7 +122,7 @@ class LogoutRouteTest extends TestCase
                 '/store-api/account/login',
                 [
                     'email' => $email,
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                 ]
             );
 
@@ -165,7 +165,7 @@ class LogoutRouteTest extends TestCase
                 '/store-api/account/login',
                 [
                     'email' => $email,
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                 ]
             );
 
@@ -203,7 +203,7 @@ class LogoutRouteTest extends TestCase
             []
         );
 
-        $request = new RequestDataBag(['email' => $email, 'password' => 'shopware']);
+        $request = new RequestDataBag(['email' => $email, 'password' => 'shopwell']);
         $loginResponse = static::getContainer()->get(LoginRoute::class)->login($request, $salesChannelContext);
 
         $customerId = $this->createCustomer();
@@ -239,7 +239,7 @@ class LogoutRouteTest extends TestCase
             ->get(SalesChannelContextFactory::class)
             ->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL, []);
 
-        $request = new RequestDataBag(['email' => $email, 'password' => 'shopware']);
+        $request = new RequestDataBag(['email' => $email, 'password' => 'shopwell']);
         $login = static::getContainer()
             ->get(LoginRoute::class)
             ->login($request, $context);

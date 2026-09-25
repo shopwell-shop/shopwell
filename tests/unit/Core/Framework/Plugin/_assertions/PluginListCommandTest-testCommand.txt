@@ -6,7 +6,7 @@ Plugin               Label                                      Composer name   
 -------------------- ------------------------------------------ ---------------------- --------- ----------------- --------------------- ----------- -------- ------------- ----------------------
 Plugin List Plugin   plp                                        plugin/list            2.5.3     3.0.1             Fabian Blechschmidt   Yes         Yes      Yes           No
 Shopwell Next        swn                                                               5.5.3     6.0.0             Shopwell AG           Yes         No       Yes           No
-Shopwell Test        I've had issues in the past with ridi...   shopware/test-plugin   0.7.12    1.0.0             Shopwell AG           Yes         No       Yes           Yes
+Shopwell Test        I've had issues in the past with ridi...   shopwell/test-plugin   0.7.12    1.0.0             Shopwell AG           Yes         No       Yes           Yes
 Somevendor Payment                                                                     1.0.7                                             No          No                     Yes
 -------------------- ------------------------------------------ ---------------------- --------- ----------------- --------------------- ----------- -------- ------------- ----------------------
 

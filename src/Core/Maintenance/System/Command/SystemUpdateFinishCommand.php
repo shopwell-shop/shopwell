@@ -35,7 +35,7 @@ class SystemUpdateFinishCommand extends Command
     public function __construct(
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly SystemConfigService $systemConfigService,
-        private readonly string $shopwareVersion
+        private readonly string $shopwellVersion
     ) {
         parent::__construct();
     }
@@ -88,13 +88,13 @@ class SystemUpdateFinishCommand extends Command
             $context->addState(PluginLifecycleService::STATE_SKIP_ASSET_BUILDING);
         }
 
-        $this->eventDispatcher->dispatch(new UpdatePreFinishEvent($context, $oldVersion, $this->shopwareVersion));
+        $this->eventDispatcher->dispatch(new UpdatePreFinishEvent($context, $oldVersion, $this->shopwellVersion));
 
         if (!$input->getOption('skip-migrations')) {
             $this->runMigrations($io, $input);
         }
 
-        $updateEvent = new UpdatePostFinishEvent($context, $oldVersion, $this->shopwareVersion);
+        $updateEvent = new UpdatePostFinishEvent($context, $oldVersion, $this->shopwellVersion);
         $this->eventDispatcher->dispatch($updateEvent);
 
         $io->writeln($updateEvent->getPostUpdateMessage());

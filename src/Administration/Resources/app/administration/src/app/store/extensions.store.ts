@@ -2,8 +2,8 @@
  * @sw-package framework
  * @private
  */
-import { setExtensions } from '@shopware-ag/meteor-admin-sdk/es/channel';
-import type { privileges } from '@shopware-ag/meteor-admin-sdk/es/_internals/privileges';
+import { setExtensions } from '@shopwell-ag/meteor-admin-sdk/es/channel';
+import type { privileges } from '@shopwell-ag/meteor-admin-sdk/es/_internals/privileges';
 
 /**
  * @private

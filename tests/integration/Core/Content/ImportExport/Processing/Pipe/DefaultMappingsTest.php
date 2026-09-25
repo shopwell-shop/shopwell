@@ -38,7 +38,7 @@ class DefaultMappingsTest extends TestCase
         $media = [
             'id' => Uuid::randomHex(),
             'mediaFolderId' => Uuid::randomHex(),
-            'url' => 'https://shopware.test/foo/bar/media.png',
+            'url' => 'https://shopwell.test/foo/bar/media.png',
             'private' => false,
             'mediaType' => 'image/png',
             'translations' => [
@@ -109,7 +109,7 @@ class DefaultMappingsTest extends TestCase
                 'media' => [
                     'id' => Uuid::randomHex(),
                     'mediaFolderId' => Uuid::randomHex(),
-                    'url' => 'https://shopware.test/foo/bar/media.png',
+                    'url' => 'https://shopwell.test/foo/bar/media.png',
                     'private' => false,
                     'mediaType' => 'image/png',
                     'translations' => [
@@ -221,7 +221,7 @@ class DefaultMappingsTest extends TestCase
             'media' => [
                 'id' => Uuid::randomHex(),
                 'mediaFolderId' => Uuid::randomHex(),
-                'url' => 'https://shopware.test/foo/bar/media.png',
+                'url' => 'https://shopwell.test/foo/bar/media.png',
                 'private' => false,
                 'mediaType' => 'image/png',
                 'translations' => [
@@ -364,7 +364,7 @@ class DefaultMappingsTest extends TestCase
             'position' => 1,
             'media' => [
                 'id' => Uuid::randomHex(),
-                'url' => 'https://shopware.test/foo/bar.png',
+                'url' => 'https://shopwell.test/foo/bar.png',
                 'mediaFolderId' => Uuid::randomHex(),
                 'mediaType' => 'image/png',
                 'translations' => [

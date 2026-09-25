@@ -38,7 +38,7 @@ class UpdateTranslationsTaskHandlerTest extends TestCase
     #[After]
     public function cleanupTranslationFilesystem(): void
     {
-        $filesystem = static::getContainer()->get('shopware.filesystem.private');
+        $filesystem = static::getContainer()->get('shopwell.filesystem.private');
         static::assertInstanceOf(Filesystem::class, $filesystem);
 
         if ($filesystem->directoryExists(AbstractTranslationLoader::TRANSLATION_DIR)) {

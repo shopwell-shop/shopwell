@@ -1,10 +1,10 @@
 import { markRaw } from 'vue';
 import type Repository from 'src/core/data/repository.data';
 import type MediaService from 'src/core/service/api/media.api.service';
-import { type DIVEModel, DIVEMath } from '@shopware-ag/dive';
-import { QuickView } from '@shopware-ag/dive/quickview';
-import { Toolbox } from '@shopware-ag/dive/toolbox';
-import { AssetExporter } from '@shopware-ag/dive/assetexporter';
+import { type DIVEModel, DIVEMath } from '@shopwell-ag/dive';
+import { QuickView } from '@shopwell-ag/dive/quickview';
+import { Toolbox } from '@shopwell-ag/dive/toolbox';
+import { AssetExporter } from '@shopwell-ag/dive/assetexporter';
 import { Euler, type Vector3 } from 'three';
 import template from './sw-model-editor.html.twig';
 import './sw-model-editor.scss';

@@ -116,7 +116,7 @@ class McpJsonRpcResponse implements \JsonSerializable
     }
 
     /**
-     * Sets result._meta.shopware.user/integration from the given IDs.
+     * Sets result._meta.shopwell.user/integration from the given IDs.
      * Returns true when metadata was added, false when both IDs are null.
      */
     public function addShopwellMeta(?string $userId, ?string $integrationId): bool
@@ -129,19 +129,19 @@ class McpJsonRpcResponse implements \JsonSerializable
             return false;
         }
 
-        $shopware = [];
+        $shopwell = [];
         if ($userId !== null) {
-            $shopware['user'] = ['id' => $userId];
+            $shopwell['user'] = ['id' => $userId];
         }
         if ($integrationId !== null) {
-            $shopware['integration'] = ['id' => $integrationId];
+            $shopwell['integration'] = ['id' => $integrationId];
         }
 
         $this->result = new InitializeResult(
             $this->result->capabilities,
             $this->result->serverInfo,
             $this->result->instructions,
-            array_merge($this->result->meta ?? [], ['shopware' => $shopware]),
+            array_merge($this->result->meta ?? [], ['shopwell' => $shopwell]),
             $this->result->protocolVersion,
         );
 

@@ -3,9 +3,9 @@ title: Add trigger flows switch in bulk edit
 issue: NEXT-17908
 ---
 # Core
-* Added a new public constant `HEADER_SKIP_TRIGGER_FLOW = 'sw-skip-trigger-flow'` in `Shopware\Core\PlatformRequest`.
-* Added new state `SKIP_TRIGGER_FLOW` in `Shopware\Core\Framework\Context`.
-* Changed `Shopware\Core\Framework\Routing\ApiRequestContextResolver` to add `SKIP_TRIGGER_FLOW` state to the context from the request headers.
+* Added a new public constant `HEADER_SKIP_TRIGGER_FLOW = 'sw-skip-trigger-flow'` in `Shopwell\Core\PlatformRequest`.
+* Added new state `SKIP_TRIGGER_FLOW` in `Shopwell\Core\Framework\Context`.
+* Changed `Shopwell\Core\Framework\Routing\ApiRequestContextResolver` to add `SKIP_TRIGGER_FLOW` state to the context from the request headers.
 ___
 # Administration
 * Added `bulkEditData` prop in `sw-bulk-edit-save-modal` and `sw-bulk-edit-save-modal-confirm` components.

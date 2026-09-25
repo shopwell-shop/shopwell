@@ -22,7 +22,7 @@ const projectRoot = process.env.PROJECT_ROOT
  * vendor/  — exposes Bootstrap SCSS so component files can write e.g.
  *            `@use 'bootstrap/scss/variables' as *` to access $font-size-lg etc.
  * src/scss/ — exposes Shopwell skin abstracts so component files can write
- *             `@use 'skin/shopware/abstract/variables/bootstrap' as *` etc.
+ *             `@use 'skin/shopwell/abstract/variables/bootstrap' as *` etc.
  *
  * Theme-specific SCSS variables ($sw-color-brand-primary etc.) are intentionally
  * NOT injected here.  Components must use CSS custom properties (var(--sw-*))
@@ -73,8 +73,8 @@ export default defineConfig(async ({ command }): Promise<UserConfig> => {
                 // them — they are consumed at runtime via dynamic import() by the Shopwell
                 // component registry.
                 preserveEntrySignatures: 'exports-only',
-                // 'shopware' is a singleton resolved via import map at runtime — never bundle it.
-                external: ['shopware'],
+                // 'shopwell' is a singleton resolved via import map at runtime — never bundle it.
+                external: ['shopwell'],
                 output: {
                     format: 'es',
                     // Preserve directory structure with a content hash for cache busting.
@@ -115,11 +115,11 @@ export default defineConfig(async ({ command }): Promise<UserConfig> => {
                 assets: path.resolve(import.meta.dirname, 'assets'),
                 scss:   path.resolve(import.meta.dirname, 'src/scss'),
                 vendor: path.resolve(import.meta.dirname, 'vendor'),
-                // In dev server mode resolve 'shopware' to the actual source file
+                // In dev server mode resolve 'shopwell' to the actual source file
                 // so Vite can transform /@fs/ component files that import from it.
-                // In production builds 'shopware' stays external (resolved via
+                // In production builds 'shopwell' stays external (resolved via
                 // the runtime import map).
-                ...(isServe ? { shopware: path.resolve(import.meta.dirname, 'src/shopware.ts') } : {}),
+                ...(isServe ? { shopwell: path.resolve(import.meta.dirname, 'src/shopwell.ts') } : {}),
             },
         },
         server: {

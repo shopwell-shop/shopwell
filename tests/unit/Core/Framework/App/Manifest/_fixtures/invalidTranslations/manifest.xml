@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
+          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
     <meta>
         <name>invalidTranslations</name>
         <label>Swag App Test</label>
         <description>Test for App System</description>
         <description lang="de-DE">Test für das App System</description>
-        <author>shopware AG</author>
-        <copyright>(c) by shopware AG</copyright>
+        <author>Shopwell</author>
+        <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>
         <license>MIT</license>
         <privacyPolicyExtensions>
-            Following personal information will be processed on shopware AG's servers:
+            Following personal information will be processed on Shopwell's servers:
 
             - Name
             - Billing address
             - Order value
         </privacyPolicyExtensions>
         <privacyPolicyExtensions lang="fr-FR">
-            Les données d'utilisateur suivantes sont traitées sur les serveurs de shopware AG :
+            Les données d'utilisateur suivantes sont traitées sur les serveurs de Shopwell :
 
             - Nom
             - Adresse de facturation

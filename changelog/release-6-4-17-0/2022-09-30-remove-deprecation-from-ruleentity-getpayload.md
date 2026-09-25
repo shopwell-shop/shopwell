@@ -5,4 +5,4 @@ author: tinect
 author_github: tinect
 ---
 # Core
-* Removed deprecation of `Shopware\Core\Content\Rule\RuleEntity::getPayload`
+* Removed deprecation of `Shopwell\Core\Content\Rule\RuleEntity::getPayload`

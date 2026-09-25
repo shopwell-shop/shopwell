@@ -28,8 +28,8 @@ class ThemeConfigToolTest extends TestCase
     public function testDeclaresExplicitThemeGroup(): void
     {
         // Without an explicit #[McpToolGroup] the group is derived from the tool-name
-        // prefix (McpToolAnalysisCompilerPass), which for "shopware-theme-config" would
-        // produce the accidental "shopware" toolset. Guard the intended "theme" group.
+        // prefix (McpToolAnalysisCompilerPass), which for "shopwell-theme-config" would
+        // produce the accidental "shopwell" toolset. Guard the intended "theme" group.
         $group = McpToolAttributeReader::resolveInfo(ThemeConfigTool::class, McpToolGroup::class, ['group']);
 
         static::assertNotNull($group);

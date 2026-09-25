@@ -12,7 +12,7 @@ class RouteScopeCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        $routeScopeDefinitions = $container->findTaggedServiceIds('shopware.route_scope');
+        $routeScopeDefinitions = $container->findTaggedServiceIds('shopwell.route_scope');
 
         $apiPrefixes = [];
         foreach (array_keys($routeScopeDefinitions) as $definition) {
@@ -25,6 +25,6 @@ class RouteScopeCompilerPass implements CompilerPassInterface
             $apiPrefixes = array_merge($apiPrefixes, $routeScope->getRoutePrefixes());
         }
 
-        $container->setParameter('shopware.routing.registered_api_prefixes', $apiPrefixes);
+        $container->setParameter('shopwell.routing.registered_api_prefixes', $apiPrefixes);
     }
 }

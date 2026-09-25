@@ -2,16 +2,16 @@
 title: add-special-fields-for-entity-mapping-in-import-module
 issue: next-16043
 author: Malte Janz
-author_email: m.janz@shopware.com 
+author_email: m.janz@shopwell.com 
 author_github: Malte Janz
 ---
 # Core
 * Added the functionality to set user specified default values during an import if the csv field is not set or empty
 * Added the functionality to check for user specified required csv fields and log the errors
-* Added a new event `Shopware\Core\Content\ImportExport\Event\ImportExportBeforeImportRowEvent` which is fired for each raw CSV row during an import and can modify the row
-* Added a new `Shopware\Core\Content\ImportExport\Exception\RequiredByUserException`
-* Added `isRequiredByUser()`, `isUseDefaultValue()` and `getDefaultValue()` methods to `Shopware\Core\Content\ImportExport\Processing\Mapping\Mapping`
-* Deprecated the `getMappedDefault()` and `getDefault()` methods inside `Shopware\Core\Content\ImportExport\Processing\Mapping\Mapping`.
+* Added a new event `Shopwell\Core\Content\ImportExport\Event\ImportExportBeforeImportRowEvent` which is fired for each raw CSV row during an import and can modify the row
+* Added a new `Shopwell\Core\Content\ImportExport\Exception\RequiredByUserException`
+* Added `isRequiredByUser()`, `isUseDefaultValue()` and `getDefaultValue()` methods to `Shopwell\Core\Content\ImportExport\Processing\Mapping\Mapping`
+* Deprecated the `getMappedDefault()` and `getDefault()` methods inside `Shopwell\Core\Content\ImportExport\Processing\Mapping\Mapping`.
   If you want to use the user specified default value use the new method `getDefaultValue()` instead.
 
 ___

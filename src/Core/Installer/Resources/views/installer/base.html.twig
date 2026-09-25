@@ -5,28 +5,28 @@
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <title>{{ "shopware.installer.header_title"|trans }} | Shopwell 6</title>
+        <title>{{ "shopwell.installer.header_title"|trans }} | Shopwell 6</title>
 
         <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('bundles/installer/assets/images/favicon/favicon-16x16.png', 'asset') }}">
         <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('bundles/installer/assets/images/favicon/favicon-32x32.png', 'asset') }}">
         <meta name="msapplication-TileColor" content="#189eff">
         <meta name="theme-color" content="#189eff">
 
-        <link rel="stylesheet" type="text/css" href="{{ asset('bundles/installer/assets/styles/reset.css', 'asset') }}?v={{ shopware.version }}" media="all"/>
-        <link rel="stylesheet" type="text/css" href="{{ asset('bundles/installer/assets/styles/fonts.css', 'asset') }}?v={{ shopware.version }}" media="all"/>
-        <link rel="stylesheet" type="text/css" href="{{ asset('bundles/installer/assets/styles/icons.css', 'asset') }}?v={{ shopware.version }}" media="all"/>
-        <link rel="stylesheet" type="text/css" href="{{ asset('bundles/installer/assets/styles/style.css', 'asset') }}?v={{ shopware.version }}" media="all"/>
+        <link rel="stylesheet" type="text/css" href="{{ asset('bundles/installer/assets/styles/reset.css', 'asset') }}?v={{ shopwell.version }}" media="all"/>
+        <link rel="stylesheet" type="text/css" href="{{ asset('bundles/installer/assets/styles/fonts.css', 'asset') }}?v={{ shopwell.version }}" media="all"/>
+        <link rel="stylesheet" type="text/css" href="{{ asset('bundles/installer/assets/styles/icons.css', 'asset') }}?v={{ shopwell.version }}" media="all"/>
+        <link rel="stylesheet" type="text/css" href="{{ asset('bundles/installer/assets/styles/style.css', 'asset') }}?v={{ shopwell.version }}" media="all"/>
     </head>
     <body>
         <header class="header-main">
             <div class="header-main__branding">
                 <img class="header-main__logo" src="{{ asset('bundles/installer/assets/images/sw-logo-blue.svg', 'asset') }}" width="148" alt="Shopwell">
                 <div class="header-main__title">
-                    {{ "shopware.installer.header_title"|trans }}
+                    {{ "shopwell.installer.header_title"|trans }}
                 </div>
 
                 <div class="version--notice">
-                    {{ "shopware.installer.version_text"|trans }} {{ shopware.version }}
+                    {{ "shopwell.installer.version_text"|trans }} {{ shopwell.version }}
                 </div>
             </div>
 
@@ -34,7 +34,7 @@
                 <div class="header-main__language-selection">
                     <form action="{{ app.request.uri }}" method="get">
                         <label for="language">
-                            {{ "shopware.installer.language-selection_select_language"|trans }}
+                            {{ "shopwell.installer.language-selection_select_language"|trans }}
                         </label>
                         <div class="select-wrapper language">
                             <img class="language-flag"
@@ -69,7 +69,7 @@
                     <ul class="navigation--list">
                         {% for entry in menu %}
                             <li class="navigation--entry {% if entry.active %}is--active{% endif %} {% if entry.isCompleted %}is--complete{% endif %}">
-                                <span class="navigation--link">{{ ("shopware.installer.menuitem." ~ entry.label)|trans }}</span>
+                                <span class="navigation--link">{{ ("shopwell.installer.menuitem." ~ entry.label)|trans }}</span>
                             </li>
                         {% endfor %}
                     </ul>
@@ -86,7 +86,7 @@
                 {% set tooltipContent %}{% include '@Installer/installer/_help_tooltip.html.twig' %}{% endset %}
                 <i class="icon-help"></i>
                 <a class="help-badge" href="#" data-tooltip="{{ tooltipContent|e('html_attr') }}">
-                    {{ 'shopware.installer.help.title'|trans }}
+                    {{ 'shopwell.installer.help.title'|trans }}
                 </a>
             </div>
         </div>

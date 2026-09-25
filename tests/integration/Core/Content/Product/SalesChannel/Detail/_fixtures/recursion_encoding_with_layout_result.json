@@ -637,7 +637,7 @@
                         },
                         "totalReviewCount": 1,
                         "pointSum": 3,
-                        "apiAlias": "shopware_core_content_product_sales_channel_review_rating_matrix"
+                        "apiAlias": "shopwell_core_content_product_sales_channel_review_rating_matrix"
                       },
                       "customerReview": null,
                       "entity": "product_review",

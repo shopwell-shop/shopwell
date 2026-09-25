@@ -24,7 +24,7 @@ class ApiClient
      */
     public function __construct(
         private readonly HttpClientInterface $client,
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
         private readonly string $projectDir,
         private readonly ClockInterface $clock
     ) {
@@ -70,9 +70,9 @@ class ApiClient
             return;
         }
 
-        $content = $this->client->request('GET', 'https://github.com/shopware/web-installer/releases/latest/download/shopware-installer.phar.php')->getContent();
+        $content = $this->client->request('GET', 'https://github.com/shopwell-shop/web-installer/releases/latest/download/shopwell-installer.phar.php')->getContent();
 
-        file_put_contents($this->projectDir . '/public/shopware-installer.phar.php', $content);
+        file_put_contents($this->projectDir . '/public/shopwell-installer.phar.php', $content);
     }
 
     private function determineLatestShopwellVersion(): string
@@ -101,15 +101,15 @@ class ApiClient
             $mappedVersions[$major] = $version;
         }
 
-        $currentMajor = substr($this->shopwareVersion, 0, 3);
+        $currentMajor = substr($this->shopwellVersion, 0, 3);
         if (!isset($mappedVersions[$currentMajor])) {
-            return strtolower($this->shopwareVersion);
+            return strtolower($this->shopwellVersion);
         }
 
         $latestVersion = $mappedVersions[$currentMajor];
 
-        $first = (int) substr($this->shopwareVersion, 0, 1);
-        $second = (int) substr($this->shopwareVersion, 2, 1);
+        $first = (int) substr($this->shopwellVersion, 0, 1);
+        $second = (int) substr($this->shopwellVersion, 2, 1);
         ++$second;
 
         if (isset($mappedVersions[$first . '.' . $second])) {

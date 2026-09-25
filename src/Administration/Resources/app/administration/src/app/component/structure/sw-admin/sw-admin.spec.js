@@ -4,8 +4,8 @@
 import 'src/app/component/structure/sw-admin';
 import { mount } from '@vue/test-utils';
 import { BroadcastChannel } from 'worker_threads';
-import { toast } from '@shopware-ag/meteor-admin-sdk';
-import MtSnackbar from '@shopware-ag/meteor-component-library/dist/esm/MtSnackbar';
+import { toast } from '@shopwell-ag/meteor-admin-sdk';
+import MtSnackbar from '@shopwell-ag/meteor-component-library/dist/esm/MtSnackbar';
 import SnackbarService from 'src/app/service/snackbar.service';
 
 async function createWrapper(isLoggedIn, forwardLogout = () => {}, route = 'sw.wofoo.index', stubs = {}) {

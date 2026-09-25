@@ -82,7 +82,7 @@ jobs:
         image: ${{ matrix.db }}
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-          MYSQL_DATABASE: shopware
+          MYSQL_DATABASE: shopwell
         ports:
           - "3306:3306"
         options: --health-cmd="mysqladmin ping || mariadb-admin ping"
@@ -93,7 +93,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Setup and install Shopware
+      - name: Setup and install Shopwell
         uses: ./.github/actions/phpunit-prepare
         with:
           php-version: ${{ matrix.php }}
@@ -167,7 +167,7 @@ jobs:
     name: Analyze
     needs:
       - markdown-only-changes
-    if: ${{ github.repository == 'shopware/shopware' && needs.markdown-only-changes.outputs.docs_only != 'true' }}
+    if: ${{ github.repository == 'shopwell/shopwell' && needs.markdown-only-changes.outputs.docs_only != 'true' }}
     runs-on: ubuntu-24.04
 
     strategy:
@@ -223,22 +223,22 @@ jobs:
 
     steps:
       - name: Setup previous major version
-        uses: shopware/setup-shopware@main
+        uses: shopwell/setup-shopwell@main
         with:
           install: "false"
-          shopware-version: ${{ github.ref }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ github.ref }}
+          shopwell-repository: ${{ github.repository }}
 
       - name: Start Webserver
         run: symfony server:start -d
 
-      - name: Install Shopware in previous major version on test DB
+      - name: Install Shopwell in previous major version on test DB
         if: inputs.profile == 'nightly'
         run: composer init:testdb
 
       - name: Run next major migrations on test DB
         if: inputs.profile == 'nightly'
-        run: DATABASE_URL="mysql://root@127.0.0.1:3306/shopware_test" bin/console database:migrate --all core.V6_8
+        run: DATABASE_URL="mysql://root@127.0.0.1:3306/shopwell_test" bin/console database:migrate --all core.V6_8
 
       - name: Run integration tests
         if: inputs.profile == 'nightly'
@@ -254,7 +254,7 @@ jobs:
           if-no-files-found: ignore
           overwrite: true
 
-      - name: Install Shopware in previous major version
+      - name: Install Shopwell in previous major version
         if: inputs.profile != 'nightly'
         run: bin/console system:install --basic-setup --create-database --skip-assets-install
 
@@ -295,16 +295,16 @@ jobs:
 
     steps:
       - name: Setup previous major version
-        uses: shopware/setup-shopware@main
+        uses: shopwell/setup-shopwell@main
         with:
           install: "false"
-          shopware-version: ${{ env.PREVIOUS_MAJOR_VERSION_BRANCH }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ env.PREVIOUS_MAJOR_VERSION_BRANCH }}
+          shopwell-repository: ${{ github.repository }}
 
       - name: Start Webserver
         run: symfony server:start -d
 
-      - name: Install Shopware in previous major version on test DB
+      - name: Install Shopwell in previous major version on test DB
         run: composer init:testdb
 
       - name: Checkout current major version
@@ -315,7 +315,7 @@ jobs:
       - name: Update to current major version
         env:
           COMPOSER_ROOT_VERSION: "6.7.9999999-dev"
-          DATABASE_URL: "mysql://root@127.0.0.1:3306/shopware_test"
+          DATABASE_URL: "mysql://root@127.0.0.1:3306/shopwell_test"
         run: |
           rm -rf vendor-bin
           rm -rf vendor
@@ -336,7 +336,7 @@ jobs:
       - name: Refresh theme in previous major version
         if: inputs.profile == 'nightly'
         env:
-          DATABASE_URL: "mysql://root@127.0.0.1:3306/shopware_test"
+          DATABASE_URL: "mysql://root@127.0.0.1:3306/shopwell_test"
         run: bin/console theme:refresh
 
       - name: Run integration tests in previous major version
@@ -356,7 +356,7 @@ jobs:
       - name: Run blue-green check
         if: inputs.profile != 'nightly'
         env:
-          DATABASE_URL: "mysql://root@127.0.0.1:3306/shopware_test"
+          DATABASE_URL: "mysql://root@127.0.0.1:3306/shopwell_test"
         run: php .github/bin/blue-green-check.php
 
   update-66-67:
@@ -386,16 +386,16 @@ jobs:
 
     steps:
       - name: Setup previous major version
-        uses: shopware/setup-shopware@main
+        uses: shopwell/setup-shopwell@main
         with:
           install: "false"
-          shopware-version: ${{ env.PREVIOUS_MAJOR_VERSION_BRANCH }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ env.PREVIOUS_MAJOR_VERSION_BRANCH }}
+          shopwell-repository: ${{ github.repository }}
 
       - name: Start Webserver
         run: symfony server:start -d
 
-      - name: Install Shopware in previous major version on test DB
+      - name: Install Shopwell in previous major version on test DB
         run: composer init:testdb
 
       - name: Checkout current major version
@@ -406,7 +406,7 @@ jobs:
       - name: Update to current major version
         env:
           COMPOSER_ROOT_VERSION: "6.7.9999999-dev"
-          DATABASE_URL: "mysql://root@127.0.0.1:3306/shopware_test"
+          DATABASE_URL: "mysql://root@127.0.0.1:3306/shopwell_test"
         run: |
           rm -rf vendor-bin
           rm -rf vendor
@@ -415,14 +415,14 @@ jobs:
 
       - name: Refresh theme
         env:
-          DATABASE_URL: "mysql://root@127.0.0.1:3306/shopware_test"
+          DATABASE_URL: "mysql://root@127.0.0.1:3306/shopwell_test"
         run: bin/console theme:refresh
 
       # Drain indexers queued by 6.6→6.7 migrations before integration tests run,
       # otherwise stale indexes cause flakes.
       - name: Refresh DAL index
         env:
-          DATABASE_URL: "mysql://root@127.0.0.1:3306/shopware_test"
+          DATABASE_URL: "mysql://root@127.0.0.1:3306/shopwell_test"
         run: bin/console dal:refresh:index
 
       - name: Run integration tests
@@ -458,5 +458,5 @@ jobs:
         with:
           # allowed-failures: docs, linters
           # allow markdown-only PRs to skip the expensive jobs, and allow jobs which do not run on a PR or outside the public repository to skip
-          allowed-skips: ${{ needs.markdown-only-changes.outputs.docs_only == 'true' && 'phpunit, win-checkout, code-ql, php-security, blue-green-66-67, blue-green-67-68' || github.repository != 'shopware/shopware' && github.event_name == 'pull_request' && 'win-checkout, code-ql' || github.repository != 'shopware/shopware' && 'code-ql' || github.event_name == 'pull_request' && 'win-checkout' || '' }}
+          allowed-skips: ${{ needs.markdown-only-changes.outputs.docs_only == 'true' && 'phpunit, win-checkout, code-ql, php-security, blue-green-66-67, blue-green-67-68' || github.repository != 'shopwell/shopwell' && github.event_name == 'pull_request' && 'win-checkout, code-ql' || github.repository != 'shopwell/shopwell' && 'code-ql' || github.event_name == 'pull_request' && 'win-checkout' || '' }}
           jobs: ${{ toJSON(needs) }}

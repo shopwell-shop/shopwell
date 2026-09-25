@@ -156,7 +156,7 @@ class OrderRecalculationController extends AbstractController
         if ($label !== null && !\is_string($label)) {
             // @deprecated tag:v6.8.0 - remove this if block
             if (!Feature::isActive('v6.8.0.0')) {
-                throw RoutingException::invalidRequestParameter('label'); // @phpstan-ignore shopware.domainException
+                throw RoutingException::invalidRequestParameter('label'); // @phpstan-ignore shopwell.domainException
             }
             throw CartException::invalidRequestParameter('label');
         }
@@ -164,7 +164,7 @@ class OrderRecalculationController extends AbstractController
         if ($description !== null && !\is_string($description)) {
             // @deprecated tag:v6.8.0 - remove this if block
             if (!Feature::isActive('v6.8.0.0')) {
-                throw RoutingException::invalidRequestParameter('description'); // @phpstan-ignore shopware.domainException
+                throw RoutingException::invalidRequestParameter('description'); // @phpstan-ignore shopwell.domainException
             }
             throw CartException::invalidRequestParameter('description');
         }

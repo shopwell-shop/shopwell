@@ -9,13 +9,13 @@ issue: NEXT-19222
 * Changed dependency version of `symfony/routing` from version `~5.3.0` to version `~5.4.0`
 ___
 # Core
-* Added class `Shopware\Core\DevOps\System\Command\SyncComposerVersionCommand`
-* Added new parameter `$router` to method `Shopware\Core\Framework\Api\Controller\AclController::__construct`
-* Added return type `int` for method `Shopware\Core\Framework\Changelog\Command\ChangelogChangeCommand::execute`
-* Added return type `int` for method `Shopware\Core\Framework\Changelog\Command\ChangelogCheckCommand::execute`
-* Added return type `int` for method `Shopware\Core\Framework\Changelog\Command\ChangelogCreateCommand::execute`
-* Added return type `bool` for method `Shopware\Core\Framework\Routing\Annotation\Since::allowArray`
-* Added return type `ReturnNode` for method `Shopware\Core\Framework\Adapter\Twig\TokenParser\ReturnNodeTokenParser::parse`
+* Added class `Shopwell\Core\DevOps\System\Command\SyncComposerVersionCommand`
+* Added new parameter `$router` to method `Shopwell\Core\Framework\Api\Controller\AclController::__construct`
+* Added return type `int` for method `Shopwell\Core\Framework\Changelog\Command\ChangelogChangeCommand::execute`
+* Added return type `int` for method `Shopwell\Core\Framework\Changelog\Command\ChangelogCheckCommand::execute`
+* Added return type `int` for method `Shopwell\Core\Framework\Changelog\Command\ChangelogCreateCommand::execute`
+* Added return type `bool` for method `Shopwell\Core\Framework\Routing\Annotation\Since::allowArray`
+* Added return type `ReturnNode` for method `Shopwell\Core\Framework\Adapter\Twig\TokenParser\ReturnNodeTokenParser::parse`
 * Changed dependency version of `symfony/routing` from version `~5.3.11` to version `~5.4.0`
 * Changed dependency version of `symfony/monolog-bridge` from version `~5.3.7` to version `~5.4.0`
 * Changed dependency version of `symfony/options-resolver` from version `~5.3.7` to version `~5.4.0`
@@ -95,5 +95,5 @@ ___
 * Changed dependency version of `symfony/cache` from version `~5.3.0` to version `~5.4.0`
 * Changed dependency version of `phpunit/phpunit` from version `~9.5.2` to version `~9.5.6`
 * Changed dependency version of `symfony/validator` from version `~5.3.0` to version `~5.4.0`
-* Changed `Shopware\Storefront\Framework\Csrf\CsrfPlaceholderHandler` to use session factory to create a session when request doesn't have set one
+* Changed `Shopwell\Storefront\Framework\Csrf\CsrfPlaceholderHandler` to use session factory to create a session when request doesn't have set one
 ___

@@ -1,5 +1,5 @@
 import { test } from '@fixtures/AcceptanceTest';
-import { getFlowId, compareFlowTemplateWithFlow } from '@shopware-ag/acceptance-test-suite';
+import { getFlowId, compareFlowTemplateWithFlow } from '@shopwell-ag/acceptance-test-suite';
 
 test(
     'As an admin, I want to create new flows from templates, so that I can easily create new ones based on the default flows.',

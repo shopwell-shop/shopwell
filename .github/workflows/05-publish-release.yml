@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    if: github.repository == 'shopware/shopware'
+    if: github.repository == 'shopwell/shopwell'
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -39,16 +39,16 @@ jobs:
           role-to-assume: ${{ secrets.CHANGELOG_UPDATE_ROLE_ARN }}
 
       - name: AWS Deploy
-        run: aws s3 sync generated s3://releases.s3.shopware.com/changelog
+        run: aws s3 sync generated s3://releases.s3.shopwell.com/changelog
 
       - name: Invalidate CloudFront
         run: aws cloudfront create-invalidation --distribution-id ECVXLYHJ64DVV --paths "/changelog/*"
 
-      - uses: shopware/octo-sts-action@main
+      - uses: shopwell/octo-sts-action@main
         if: github.event.action == 'published'
         id: sts-store-api-reference
         with:
-          scope: shopware/store-api-reference
+          scope: shopwell/store-api-reference
           identity: release
 
       - name: Trigger Store API schema build
@@ -60,14 +60,14 @@ jobs:
           -H "Accept: application/vnd.github.everest-preview+json" \
           -H "Authorization: Bearer ${{ steps.sts-store-api-reference.outputs.token }}" \
           -H "Content-Type: application/json" \
-          https://api.github.com/repos/shopware/store-api-reference/actions/workflows/manual_versioning.yml/dispatches \
-          -d '{"ref": "latest", "inputs": {"shopware_version": "${{ github.event.release.tag_name }}"}}'
+          https://api.github.com/repos/shopwell/store-api-reference/actions/workflows/manual_versioning.yml/dispatches \
+          -d '{"ref": "latest", "inputs": {"shopwell_version": "${{ github.event.release.tag_name }}"}}'
 
-      - uses: shopware/octo-sts-action@main
+      - uses: shopwell/octo-sts-action@main
         if: github.event.action == 'published'
         id: sts-admin-api-reference
         with:
-          scope: shopware/admin-api-reference
+          scope: shopwell/admin-api-reference
           identity: release
 
       - name: Trigger Admin API schema build
@@ -79,17 +79,17 @@ jobs:
           -H "Accept: application/vnd.github.everest-preview+json" \
           -H "Authorization: Bearer ${{ steps.sts-admin-api-reference.outputs.token }}" \
           -H "Content-Type: application/json" \
-          https://api.github.com/repos/shopware/admin-api-reference/actions/workflows/manual_versioning.yml/dispatches \
-          -d '{"ref": "latest", "inputs": {"shopware_version": "${{ github.event.release.tag_name }}"}}'
+          https://api.github.com/repos/shopwell/admin-api-reference/actions/workflows/manual_versioning.yml/dispatches \
+          -d '{"ref": "latest", "inputs": {"shopwell_version": "${{ github.event.release.tag_name }}"}}'
 
-      - uses: shopware/octo-sts-action@main
+      - uses: shopwell/octo-sts-action@main
         if: github.event.action == 'published'
         id: sts-production
         with:
-          scope: shopware/template
+          scope: shopwell/template
           identity: release
 
-      - name: Trigger shopware/template build
+      - name: Trigger shopwell/template build
         if: github.event.action == 'published'
         continue-on-error: true
         run: |
@@ -98,11 +98,11 @@ jobs:
           -H "Accept: application/vnd.github.everest-preview+json" \
           -H "Authorization: Bearer ${{ steps.sts-production.outputs.token }}" \
           -H "Content-Type: application/json" \
-          https://api.github.com/repos/shopware/template/actions/workflows/update.yml/dispatches \
+          https://api.github.com/repos/shopwell/template/actions/workflows/update.yml/dispatches \
           -d '{"ref": "trunk"}'
 
   publish-sbp-release:
-    if: github.repository == 'shopware/shopware'
+    if: github.repository == 'shopwell/shopwell'
     strategy:
       matrix:
         sbp-environment: [staging, production]
@@ -122,11 +122,11 @@ jobs:
           bash .github/bin/sbp_release.bash publish "${{ github.ref_name }}"
 
   post-slack-release-message:
-    if: github.ref_type == 'tag' && github.repository == 'shopware/shopware' && github.event.action == 'published'
+    if: github.ref_type == 'tag' && github.repository == 'shopwell/shopwell' && github.event.action == 'published'
     needs: publish-sbp-release
     runs-on: ubuntu-24.04
     steps:
       - name: Post slack message
         run: |
-          SLACK_PAYLOAD=$(jq --null-input --arg version "${{ github.ref_name }}" '{"version": $version, "github_url": "https://github.com/shopware/shopware/releases/tag/\($version)"}');
+          SLACK_PAYLOAD=$(jq --null-input --arg version "${{ github.ref_name }}" '{"version": $version, "github_url": "https://github.com/shopwell-shop/shopwell/releases/tag/\($version)"}');
           curl --silent --request POST --url "${{ secrets.SLACK_RELEASE_WORKFLOW_URL }}" --header "Content-Type: application/json" --data "${SLACK_PAYLOAD}"

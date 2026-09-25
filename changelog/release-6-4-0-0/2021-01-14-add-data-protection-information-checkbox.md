@@ -7,7 +7,7 @@ author_github: runelaenen
 ---
 # Core
 * Added `core.loginRegistration.requireDataProtectionCheckbox` configuration option, defaults to false.
-* Added `acceptedDataProtection` parameter to `Shopware\Core\Checkout\Customer\SalesChannel\RegisterRoute`
+* Added `acceptedDataProtection` parameter to `Shopwell\Core\Checkout\Customer\SalesChannel\RegisterRoute`
 * Added `acceptedDataProtection` validation rule if `core.loginRegistration.requireDataProtectionCheckbox` configuration is enabled
 ___
 # Storefront

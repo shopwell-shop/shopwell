@@ -138,7 +138,7 @@ const config: Config = {
 
     setupFilesAfterEnv: [
         resolve(join(__dirname, '/test/_setup/setup-feature-flags.js')),
-        resolve(join(__dirname, '/test/_setup/setup-shopware.js')),
+        resolve(join(__dirname, '/test/_setup/setup-shopwell.js')),
         'jest-expect-message',
         resolve(join(__dirname, '/test/_setup/prepare_environment.js')),
         resolve(join(__dirname, '/test/_setup/jest-extensions.ts')),
@@ -158,7 +158,7 @@ const config: Config = {
                         ],
                     ],
                     plugins: [
-                        'shopware-vite-meta-glob',
+                        'shopwell-vite-meta-glob',
                     ],
                 },
             ],
@@ -173,11 +173,11 @@ const config: Config = {
         ],
         '^.+(\\.twig|\\.html)$': '<rootDir>/test/transformer/twigToVueTransformer.js',
         '.*\\.(svg)$': '<rootDir>/test/transformer/svgStringifyTransformer.js',
-        '^.+\\.vue$': '<rootDir>/test/transformer/shopwareSetupVueTransformer.js',
+        '^.+\\.vue$': '<rootDir>/test/transformer/shopwellSetupVueTransformer.js',
     },
 
     transformIgnorePatterns: [
-        '/node_modules/(?!(@shopware-ag/meteor-component-library|@shopware-ag/meteor-icon-kit|uuidv7|other)/)',
+        '/node_modules/(?!(@shopwell-ag/meteor-component-library|@shopwell-ag/meteor-icon-kit|uuidv7|other)/)',
     ],
 
     moduleNameMapper: {
@@ -185,12 +185,12 @@ const config: Config = {
         '^src(.*)$': '<rootDir>/src$1',
         '^lodash-es/debounce$': '<rootDir>/test/_mocks_/lodash-es-debounce.js',
         '^test(.*)$': '<rootDir>/test$1',
-        '^@shopware-ag/admin-extension-sdk/es/(.*)': '<rootDir>/node_modules/@shopware-ag/admin-extension-sdk/umd/$1',
-        '^@shopware-ag/meteor-admin-sdk/es/(.*)': '<rootDir>/node_modules/@shopware-ag/meteor-admin-sdk/umd/$1',
-        '^@shopware-ag/meteor-component-library$':
-            '<rootDir>/node_modules/@shopware-ag/meteor-component-library/dist/common/index.js',
-        '^@shopware-ag/meteor-component-library/dist/esm/(.*)$':
-            '<rootDir>/node_modules/@shopware-ag/meteor-component-library/dist/common/$1',
+        '^@shopwell-ag/admin-extension-sdk/es/(.*)': '<rootDir>/node_modules/@shopwell-ag/admin-extension-sdk/umd/$1',
+        '^@shopwell-ag/meteor-admin-sdk/es/(.*)': '<rootDir>/node_modules/@shopwell-ag/meteor-admin-sdk/umd/$1',
+        '^@shopwell-ag/meteor-component-library$':
+            '<rootDir>/node_modules/@shopwell-ag/meteor-component-library/dist/common/index.js',
+        '^@shopwell-ag/meteor-component-library/dist/esm/(.*)$':
+            '<rootDir>/node_modules/@shopwell-ag/meteor-component-library/dist/common/$1',
         '^@vue/test-utils$': '<rootDir>/node_modules/@vue/test-utils',
         '^lodash-es$': 'lodash',
         '^lodash-es/(.*)$': 'lodash/$1',

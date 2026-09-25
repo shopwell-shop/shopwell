@@ -6,4 +6,4 @@ author_email: mynameisbogdan@protonmail.com
 author_github: mynameisbogdan
 ---
 # Core
-* Changed `Shopware\Core\Framework\Feature\Command\FeatureDumpCommand` to use Kernel::getProjectDir() instead of using a relative path to Kernel::getCacheDir()
+* Changed `Shopwell\Core\Framework\Feature\Command\FeatureDumpCommand` to use Kernel::getProjectDir() instead of using a relative path to Kernel::getCacheDir()

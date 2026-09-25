@@ -2,7 +2,7 @@
 persona: ux
 display_name: UX
 description: >
-    UX-focused Shopware reviewer: admin Vue, storefront Twig, accessibility,
+    UX-focused Shopwell reviewer: admin Vue, storefront Twig, accessibility,
     copy, i18n, Meteor components, design-token discipline.
 ---
 

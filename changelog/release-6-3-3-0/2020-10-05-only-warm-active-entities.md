@@ -6,4 +6,4 @@ author_github: @soebbing
 issue: NEXT-11465
 ---
 # Storefront
-* Changed `Shopware\Storefront\Framework\Cache\CacheWarmer\Navigation\NavigationRouteWarmer` and `Shopware\Storefront\Framework\Cache\CacheWarmer\Product\ProductRouteWarmer` to only warmup active entities
+* Changed `Shopwell\Storefront\Framework\Cache\CacheWarmer\Navigation\NavigationRouteWarmer` and `Shopwell\Storefront\Framework\Cache\CacheWarmer\Product\ProductRouteWarmer` to only warmup active entities

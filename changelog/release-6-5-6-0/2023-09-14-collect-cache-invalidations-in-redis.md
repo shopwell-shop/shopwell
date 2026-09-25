@@ -5,8 +5,8 @@ issue: NEXT-30262
 
 # Core
 
-* Added `\Shopware\Core\Framework\Adapter\Cache\InvalidatorStorage\RedisInvalidatorStorage` to collect invalidations in Redis in a atomic operation.
-* Deprecated `\Shopware\Core\Framework\Adapter\Cache\InvalidatorStorage\CacheInvalidatorStorage` and will be removed in 6.6
+* Added `\Shopwell\Core\Framework\Adapter\Cache\InvalidatorStorage\RedisInvalidatorStorage` to collect invalidations in Redis in a atomic operation.
+* Deprecated `\Shopwell\Core\Framework\Adapter\Cache\InvalidatorStorage\CacheInvalidatorStorage` and will be removed in 6.6
 
 ___
 # Upgrade Information
@@ -17,7 +17,7 @@ We deprecated the default delayed cache invalidation storage, as it is not ideal
 Make sure you switch until 6.6 to the new RedisInvalidatorStorage.
 
 ```yaml
-shopware:
+shopwell:
     cache:
         invalidation:
             delay_options:
@@ -25,7 +25,7 @@ shopware:
                 dsn: 'redis://localhost'
 ```
 
-Since 6.6.10.0 we also have a MySQL implementation available: `\Shopware\Core\Framework\Adapter\Cache\InvalidatorStorage\MySQLInvalidatorStorage`. Use it via `mysql`
+Since 6.6.10.0 we also have a MySQL implementation available: `\Shopwell\Core\Framework\Adapter\Cache\InvalidatorStorage\MySQLInvalidatorStorage`. Use it via `mysql`
 
 ___
 
@@ -38,7 +38,7 @@ As this is not ideal for multi-server usage, we deprecated it in 6.5 and removed
 Delaying of cache invalidations now requires a Redis instance to be configured.
 
 ```yaml
-shopware:
+shopwell:
     cache:
         invalidation:
             delay_options:
@@ -46,4 +46,4 @@ shopware:
                 dsn: 'redis://localhost'
 ```
 
-Since 6.6.10.0 we also have a MySQL implementation available: `\Shopware\Core\Framework\Adapter\Cache\InvalidatorStorage\MySQLInvalidatorStorage`. Use it via `mysql`
+Since 6.6.10.0 we also have a MySQL implementation available: `\Shopwell\Core\Framework\Adapter\Cache\InvalidatorStorage\MySQLInvalidatorStorage`. Use it via `mysql`

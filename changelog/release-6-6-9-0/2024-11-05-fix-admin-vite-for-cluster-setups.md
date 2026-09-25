@@ -2,7 +2,7 @@
 title: Fix Admin Vite for cluster setups
 issue: NEXT-35977
 author: Sebastian Seggewiss
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration

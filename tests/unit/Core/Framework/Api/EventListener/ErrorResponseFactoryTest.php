@@ -244,9 +244,9 @@ class ErrorResponseFactoryTest extends TestCase
     {
         $errorResponseFactory = new ErrorResponseFactory();
 
-        $shopwareHttpException = new SimpleShopwellHttpException(['paramOne' => 1, 'paramTwo' => 2]);
-        $errorFromWrite = $errorResponseFactory->getResponseFromException((new WriteException())->add($shopwareHttpException));
-        $errorRaw = $errorResponseFactory->getResponseFromException($shopwareHttpException);
+        $shopwellHttpException = new SimpleShopwellHttpException(['paramOne' => 1, 'paramTwo' => 2]);
+        $errorFromWrite = $errorResponseFactory->getResponseFromException((new WriteException())->add($shopwellHttpException));
+        $errorRaw = $errorResponseFactory->getResponseFromException($shopwellHttpException);
 
         static::assertSame($errorFromWrite->getContent(), $errorRaw->getContent());
     }

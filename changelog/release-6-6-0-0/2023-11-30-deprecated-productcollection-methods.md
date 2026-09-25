@@ -5,7 +5,7 @@ author: Michael Telgmann
 author_github: mitelg
 ---
 # Core
-* Deprecated following methods of the `Shopware\Core\Content\Product\ProductCollection` as they were unused. They will be removed without replacement.
+* Deprecated following methods of the `Shopwell\Core\Content\Product\ProductCollection` as they were unused. They will be removed without replacement.
   * `getParentIds`
   * `filterByParentId`
   * `getTaxIds`

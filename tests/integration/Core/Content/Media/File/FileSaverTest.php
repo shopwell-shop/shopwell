@@ -41,7 +41,7 @@ class FileSaverTest extends TestCase
     use IntegrationTestBehaviour;
     use MediaFixtures;
 
-    final public const TEST_IMAGE = __DIR__ . '/../fixtures/shopware-logo.png';
+    final public const TEST_IMAGE = __DIR__ . '/../fixtures/shopwell-logo.png';
     final public const TEST_SCRIPT_FILE = __DIR__ . '/../fixtures/test.php';
     private const SAFE_SVG = <<<'SVG'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -758,8 +758,8 @@ SVG;
 
         $fileSaverWithFailingRepository = new FileSaver(
             $repositoryMock,
-            static::getContainer()->get('shopware.filesystem.public'),
-            static::getContainer()->get('shopware.filesystem.private'),
+            static::getContainer()->get('shopwell.filesystem.public'),
+            static::getContainer()->get('shopwell.filesystem.private'),
             static::getContainer()->get(FileContentValidationStrategy::class),
             static::getContainer()->get(MetadataLoader::class),
             static::getContainer()->get(TypeDetector::class),

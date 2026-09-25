@@ -12,11 +12,11 @@ ___
 # Next Major Version Changes
 
 * Changed the following classes to be internal:
-  - `\Shopware\Core\Framework\Webhook\Hookable\HookableBusinessEvent`
-  - `\Shopware\Core\Framework\Webhook\Hookable\HookableEntityWrittenEvent`
-  - `\Shopware\Core\Framework\Webhook\Hookable\HookableEventFactory`
-  - `\Shopware\Core\Framework\Webhook\Hookable\WriteResultMerger`
-  - `\Shopware\Core\Framework\Webhook\Message\WebhookEventMessage`
-  - `\Shopware\Core\Framework\Webhook\ScheduledTask\CleanupWebhookEventLogTask`
-  - `\Shopware\Core\Framework\Webhook\BusinessEventEncoder`
-  - `\Shopware\Core\Framework\Webhook\WebhookDispatcher`
+  - `\Shopwell\Core\Framework\Webhook\Hookable\HookableBusinessEvent`
+  - `\Shopwell\Core\Framework\Webhook\Hookable\HookableEntityWrittenEvent`
+  - `\Shopwell\Core\Framework\Webhook\Hookable\HookableEventFactory`
+  - `\Shopwell\Core\Framework\Webhook\Hookable\WriteResultMerger`
+  - `\Shopwell\Core\Framework\Webhook\Message\WebhookEventMessage`
+  - `\Shopwell\Core\Framework\Webhook\ScheduledTask\CleanupWebhookEventLogTask`
+  - `\Shopwell\Core\Framework\Webhook\BusinessEventEncoder`
+  - `\Shopwell\Core\Framework\Webhook\WebhookDispatcher`

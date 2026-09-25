@@ -19,11 +19,11 @@ class TelemetrySubscriberCompilerPassTest extends TestCase
     public function testTelemetrySubscribersAreRemovedWhenDisabled(): void
     {
         $container = new ContainerBuilder();
-        $container->setParameter('shopware.telemetry.metrics.enabled', false);
+        $container->setParameter('shopwell.telemetry.metrics.enabled', false);
 
         $definition = new Definition(\stdClass::class);
         $definition->addTag('kernel.event_subscriber');
-        $definition->addTag('shopware.telemetry.subscriber');
+        $definition->addTag('shopwell.telemetry.subscriber');
         $container->setDefinition('test.telemetry.subscriber', $definition);
 
         $regularDef = new Definition(\stdClass::class);
@@ -41,10 +41,10 @@ class TelemetrySubscriberCompilerPassTest extends TestCase
     public function testPeriodicMetricCollectorsAreRemovedWhenDisabled(): void
     {
         $container = new ContainerBuilder();
-        $container->setParameter('shopware.telemetry.metrics.enabled', false);
+        $container->setParameter('shopwell.telemetry.metrics.enabled', false);
 
         $collectorDef = new Definition(\stdClass::class);
-        $collectorDef->addTag('shopware.telemetry.periodic_metric_collector');
+        $collectorDef->addTag('shopwell.telemetry.periodic_metric_collector');
         $container->setDefinition('test.telemetry.collector', $collectorDef);
 
         $unrelatedDef = new Definition(\stdClass::class);
@@ -60,15 +60,15 @@ class TelemetrySubscriberCompilerPassTest extends TestCase
     public function testSubscribersAndCollectorsAreKeptWhenEnabled(): void
     {
         $container = new ContainerBuilder();
-        $container->setParameter('shopware.telemetry.metrics.enabled', true);
+        $container->setParameter('shopwell.telemetry.metrics.enabled', true);
 
         $definition = new Definition(\stdClass::class);
         $definition->addTag('kernel.event_subscriber');
-        $definition->addTag('shopware.telemetry.subscriber');
+        $definition->addTag('shopwell.telemetry.subscriber');
         $container->setDefinition('test.telemetry.subscriber', $definition);
 
         $collectorDef = new Definition(\stdClass::class);
-        $collectorDef->addTag('shopware.telemetry.periodic_metric_collector');
+        $collectorDef->addTag('shopwell.telemetry.periodic_metric_collector');
         $container->setDefinition('test.telemetry.collector', $collectorDef);
 
         $pass = new TelemetrySubscriberCompilerPass();
@@ -77,6 +77,6 @@ class TelemetrySubscriberCompilerPassTest extends TestCase
         static::assertTrue($container->hasDefinition('test.telemetry.subscriber'));
         static::assertTrue($container->getDefinition('test.telemetry.subscriber')->hasTag('kernel.event_subscriber'));
         static::assertTrue($container->hasDefinition('test.telemetry.collector'));
-        static::assertTrue($container->getDefinition('test.telemetry.collector')->hasTag('shopware.telemetry.periodic_metric_collector'));
+        static::assertTrue($container->getDefinition('test.telemetry.collector')->hasTag('shopwell.telemetry.periodic_metric_collector'));
     }
 }

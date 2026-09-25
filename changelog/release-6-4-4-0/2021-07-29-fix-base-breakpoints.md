@@ -2,7 +2,7 @@
 title: Fix base breakpoints
 issue: NEXT-16031
 author: Tobias Berge
-author_email: t.berge@shopware.com 
+author_email: t.berge@shopwell.com 
 author_github: @tobiasberge
 ---
 # Storefront

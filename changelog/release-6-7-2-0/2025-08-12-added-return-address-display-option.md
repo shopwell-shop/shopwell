@@ -2,7 +2,7 @@
 title: Added document return address display option
 issue: 11534
 author: Simon Fiebranz
-author_email: s.fiebranz@shopware.com
+author_email: s.fiebranz@shopwell.com
 author_github: @CR0YD
 ---
 # Administration

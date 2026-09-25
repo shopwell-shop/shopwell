@@ -52,7 +52,7 @@ class LanguageListResourceTest extends TestCase
         $resource = new LanguageListResource($repository);
         $result = ($resource)();
 
-        static::assertSame('shopware://languages', $result['uri']);
+        static::assertSame('shopwell://languages', $result['uri']);
         static::assertSame('application/json', $result['mimeType']);
 
         $data = json_decode($result['text'], true, 512, \JSON_THROW_ON_ERROR);

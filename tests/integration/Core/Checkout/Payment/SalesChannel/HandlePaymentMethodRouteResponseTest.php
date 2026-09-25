@@ -168,7 +168,7 @@ class HandlePaymentMethodRouteResponseTest extends TestCase
             '/store-api/account/login',
             [
                 'email' => $email,
-                'password' => 'shopware',
+                'password' => 'shopwell',
             ]
         );
         $contextToken = $this->browser->getResponse()->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN) ?? '';

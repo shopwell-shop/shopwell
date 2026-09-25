@@ -1,0 +1,78 @@
+{% block sw_first_run_wizard_shopwell_account %}
+<div class="sw-first-run-wizard-shopwell-account">
+    <sw-container columns="1fr 1fr">
+        <img
+            class="sw-first-run-wizard-shopwell-account__illustration"
+            :src="assetFilter('/administration/administration/static/img/first-run-wizard/shopwell-account.svg')"
+            alt=""
+        >
+
+        <div>
+            <div
+                v-if="accountError"
+                class="sw-first-run-wizard-shopwell-account__error"
+            >
+                <mt-banner
+                    :title="$t('global.default.error')"
+                    variant="critical"
+                >
+                    {{ $t('sw-first-run-wizard.error.messageLoginDataInvalid') }}
+                </mt-banner>
+            </div>
+
+            <h5 class="headline">
+                {{ $t('sw-first-run-wizard.shopwellAccount.headline') }}
+            </h5>
+
+            <p
+                class="message"
+                v-html="$t('sw-first-run-wizard.shopwellAccount.message')"
+            ></p>
+
+            <p class="create-account">
+                <span>{{ $t('sw-first-run-wizard.shopwellAccount.registerAccountText') }}</span>
+
+                <mt-link
+                    class="external-link"
+                    :to="$t('sw-first-run-wizard.shopwellAccount.registerAccountUrl')"
+                    variant="primary"
+                    type="external"
+                    target="_blank"
+                >
+                    {{ $t('sw-first-run-wizard.shopwellAccount.registerAccountHere') }}
+                </mt-link>
+            </p>
+
+            <div class="input-field-mail">
+                <mt-text-field
+                    v-model="shopwellId"
+                    name="shopwellId"
+                    validation="required"
+                    :label="$t('sw-first-run-wizard.shopwellAccount.emailAddressLabel')"
+                    :placeholder="$t('sw-first-run-wizard.shopwellAccount.emailAddressPlaceholder')"
+                />
+            </div>
+
+            <div class="input-field-password">
+                <mt-password-field
+                    v-model="password"
+                    :label="$t('sw-first-run-wizard.shopwellAccount.passwordLabel')"
+                    :placeholder="$t('sw-first-run-wizard.shopwellAccount.passwordPlaceholder')"
+                />
+            </div>
+
+            <p class="forgot-password">
+                <mt-link
+                    class="external-link"
+                    :to="$t('sw-first-run-wizard.shopwellAccount.forgotPasswordUrl')"
+                    variant="primary"
+                    type="external"
+                    target="_blank"
+                >
+                    {{ $t('sw-first-run-wizard.shopwellAccount.forgotPasswordText') }}
+                </mt-link>
+            </p>
+        </div>
+    </sw-container>
+</div>
+{% endblock %}

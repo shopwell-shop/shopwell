@@ -38,7 +38,7 @@ class CreateMigrationCommand extends Command
         private readonly Filesystem $filesystem,
         private readonly MigrationFileRenderer $migrationFileRenderer,
         private readonly string $coreDir,
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
         private readonly ClockInterface $clock
     ) {
         parent::__construct();
@@ -116,7 +116,7 @@ class CreateMigrationCommand extends Command
             return $namespace;
         }
 
-        [$_, $major] = explode('.', $this->shopwareVersion);
+        [$_, $major] = explode('.', $this->shopwellVersion);
 
         return 'V6_' . $major;
     }

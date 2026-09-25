@@ -106,7 +106,7 @@
                     } only %}
                 {% else %}
                     {% sw_include '@Storefront/storefront/layout/structured-data/json-ld-breadcrumb.html.twig' with {
-                        categoryId: shopware.navigation.id
+                        categoryId: shopwell.navigation.id
                     } only %}
                 {% endif %}
             {% endif %}
@@ -182,11 +182,11 @@
             {% endif %}
         {% endblock %}
 
-        {% block layout_head_javascript_shopware_runtime %}
-            {# Load the shopware runtime module as an ES module before the storefront scripts.#}
-            {% set shopwareModuleUrl = importmapData.imports['shopware'] ?? null %}
-            {% if shopwareModuleUrl %}
-                <script type="module" src="{{ shopwareModuleUrl }}"></script>
+        {% block layout_head_javascript_shopwell_runtime %}
+            {# Load the shopwell runtime module as an ES module before the storefront scripts.#}
+            {% set shopwellModuleUrl = importmapData.imports['shopwell'] ?? null %}
+            {% if shopwellModuleUrl %}
+                <script type="module" src="{{ shopwellModuleUrl }}"></script>
             {% endif %}
         {% endblock %}
 
@@ -219,8 +219,8 @@
             <script>
                 {# Navigation variables are set here instead of in navbar.html.twig because the navbar #}
                 {# is ESI-cached and shared across pages, while this template is rendered per request. #}
-                window.activeNavigationId = '{{ shopware.navigation.id }}';
-                window.activeNavigationPathIdList = JSON.parse('{{ (shopware.navigation.pathIdList ?? [])|json_encode|escape('js') }}');
+                window.activeNavigationId = '{{ shopwell.navigation.id }}';
+                window.activeNavigationPathIdList = JSON.parse('{{ (shopwell.navigation.pathIdList ?? [])|json_encode|escape('js') }}');
                 window.activeRoute = '{{ activeRoute }}';
                 window.activeRouteParameters = '{{ (app.request.attributes.get('_route_params') ?? {})|json_encode|escape('js') }}';
                 window.router = {

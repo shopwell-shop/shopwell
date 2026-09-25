@@ -17,7 +17,7 @@ class InvalidateCacheTaskTest extends TestCase
 {
     public function testGetTaskName(): void
     {
-        static::assertSame('shopware.invalidate_cache', InvalidateCacheTask::getTaskName());
+        static::assertSame('shopwell.invalidate_cache', InvalidateCacheTask::getTaskName());
     }
 
     public function testShouldRun(): void

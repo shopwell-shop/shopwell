@@ -100,15 +100,15 @@ return static function (ContainerConfigurator $container): void {
     // the limit became a per-server builder value. Keep one Shopwell-owned parameter as the single
     // source of truth — McpServerBuilderCompilerPass applies it to every server builder, and the
     // allowlist request handlers page with the same number.
-    $container->parameters()->set('shopware.mcp.pagination_limit', 50);
+    $container->parameters()->set('shopwell.mcp.pagination_limit', 50);
 
-    $services->set('shopware.mcp.session_registry_cache', Psr16Cache::class)
+    $services->set('shopwell.mcp.session_registry_cache', Psr16Cache::class)
         ->args([service('cache.system')]);
 
     $services->set(McpSessionRegistry::class)
         ->args([
-            service('shopware.mcp.session_registry_cache'),
-            'shopware.mcp.active_session_ids',
+            service('shopwell.mcp.session_registry_cache'),
+            'shopwell.mcp.active_session_ids',
             service('lock.factory'),
         ]);
 
@@ -142,15 +142,15 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service(Connection::class),
             service('request_stack'),
-            param('shopware.mcp.tool_dependencies'),
+            param('shopwell.mcp.tool_dependencies'),
         ]);
 
     $services->set(McpAllowlistListRequestHandler::class)
         ->args([
             service('mcp.server.admin.registry'),
             service(McpAllowlistProvider::class),
-            param('shopware.mcp.pagination_limit'),
-            param('shopware.mcp.advertised_tools'),
+            param('shopwell.mcp.pagination_limit'),
+            param('shopwell.mcp.advertised_tools'),
             service(McpToolsetRegistry::class)->nullOnInvalid(),
             service(McpToolsetSessionStorage::class)->nullOnInvalid(),
             service('request_stack'),
@@ -217,7 +217,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set('mcp.store_api.session_registry', McpSessionRegistry::class)
         ->args([
             service('mcp.store_api.session_registry_cache'),
-            'shopware.mcp.store_api.active_session_ids',
+            'shopwell.mcp.store_api.active_session_ids',
             service('lock.factory'),
         ]);
 
@@ -233,9 +233,9 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service('mcp.server.store_api.registry')->nullOnInvalid(),
             service(AppMcpPrivilegeProvider::class),
-            param('shopware.store_api_mcp.tool_dependencies'),
-            param('shopware.store_api_mcp.tool_privileges'),
-            param('shopware.store_api_mcp.tool_groups'),
+            param('shopwell.store_api_mcp.tool_dependencies'),
+            param('shopwell.store_api_mcp.tool_privileges'),
+            param('shopwell.store_api_mcp.tool_groups'),
         ]);
 
     $services->set('mcp.store_api.toolset_registry', McpToolsetRegistry::class)
@@ -245,8 +245,8 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service('mcp.server.store_api.registry'),
             null,
-            param('shopware.mcp.pagination_limit'),
-            param('shopware.store_api_mcp.advertised_tools'),
+            param('shopwell.mcp.pagination_limit'),
+            param('shopwell.store_api_mcp.advertised_tools'),
             service('mcp.store_api.toolset_registry'),
             service(McpToolsetSessionStorage::class),
             service('request_stack'),
@@ -276,9 +276,9 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service('mcp.server.admin.registry')->nullOnInvalid(),
             service(AppMcpPrivilegeProvider::class),
-            param('shopware.mcp.tool_dependencies'),
-            param('shopware.mcp.tool_privileges'),
-            param('shopware.mcp.tool_groups'),
+            param('shopwell.mcp.tool_dependencies'),
+            param('shopwell.mcp.tool_privileges'),
+            param('shopwell.mcp.tool_groups'),
         ]);
 
     $services->set(McpToolsetRegistry::class)
@@ -327,7 +327,7 @@ return static function (ContainerConfigurator $container): void {
         ->args([service(Connection::class), service(ClockInterface::class)]);
 
     $services->set(McpToolsetSessionCleanupTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(McpToolsetSessionCleanupTaskHandler::class)
         ->args([
@@ -443,7 +443,7 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(StoreApiContextTool::class)
         ->args([service(StoreApiMcpContextProvider::class)])
-        ->tag('shopware.store_api_mcp.tool');
+        ->tag('shopwell.store_api_mcp.tool');
 
     $services->set(StoreApiToolSearchTool::class)
         ->args([
@@ -451,7 +451,7 @@ return static function (ContainerConfigurator $container): void {
             service(ToolSearch::class),
             null,
         ])
-        ->tag('shopware.store_api_mcp.tool');
+        ->tag('shopwell.store_api_mcp.tool');
 
     $services->set(StoreApiToolsetsListTool::class)
         ->args([
@@ -459,7 +459,7 @@ return static function (ContainerConfigurator $container): void {
             service(McpToolsetSessionStorage::class),
             service('request_stack'),
         ])
-        ->tag('shopware.store_api_mcp.tool');
+        ->tag('shopwell.store_api_mcp.tool');
 
     $services->set(StoreApiToolsetEnableTool::class)
         ->args([
@@ -467,7 +467,7 @@ return static function (ContainerConfigurator $container): void {
             service(McpToolsetSessionStorage::class),
             service('request_stack'),
         ])
-        ->tag('shopware.store_api_mcp.tool');
+        ->tag('shopwell.store_api_mcp.tool');
 
     $services->set(McpRequestedToolsetResolver::class)
         ->args([service('request_stack')]);
@@ -541,10 +541,10 @@ return static function (ContainerConfigurator $container): void {
     // App MCP Tool pipeline
     $services->set(AppMcpCapabilityExecutor::class)
         ->args([
-            service('shopware.app_system.guzzle'),
+            service('shopwell.app_system.guzzle'),
             env('APP_URL'),
             service(ShopIdProvider::class),
-            param('shopware.mcp.app_tool_timeout'),
+            param('shopwell.mcp.app_tool_timeout'),
             service('logger'),
             service('kernel'),
             service('request_stack'),
@@ -557,7 +557,7 @@ return static function (ContainerConfigurator $container): void {
             service(Connection::class),
             service(AppMcpCapabilityExecutor::class),
             service('logger'),
-            param('shopware.mcp.allowed_tools'),
+            param('shopwell.mcp.allowed_tools'),
         ])
         ->tag('mcp.loader');
 
@@ -596,24 +596,24 @@ return static function (ContainerConfigurator $container): void {
             service(AppMcpCapabilityDetector::class),
             service(McpListChangedNotifier::class),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -1300]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -1300]);
 
     // DAL definitions
     $services->set(AppMcpToolDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppMcpToolTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppMcpPromptDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppMcpPromptTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppMcpResourceDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppMcpResourceTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 };

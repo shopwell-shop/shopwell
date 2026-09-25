@@ -1,7 +1,7 @@
 ---
 title: Deprecate sw-dashboard-statistics
 issue: NEXT-36326
-author_email: f.schmitt@shopware.com
+author_email: f.schmitt@shopwell.com
 author_github: fschmtt
 ---
 # Administration
@@ -21,7 +21,7 @@ Use `sw-dashboard__before-content` and `sw-dashboard__after-content` instead.
 
 Before:
 ```js
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 
 ui.componentSection.add({
     positionId: 'sw-chart-card__before',
@@ -31,7 +31,7 @@ ui.componentSection.add({
 
 After:
 ```js
-import { ui } from '@shopware-ag/meteor-admin-sdk';
+import { ui } from '@shopwell-ag/meteor-admin-sdk';
 
 ui.componentSection.add({
     positionId: 'sw-dashboard__before-content',

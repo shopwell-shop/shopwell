@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import type Criteria from '@shopware-ag/meteor-admin-sdk/es/data/Criteria';
+import type Criteria from '@shopwell-ag/meteor-admin-sdk/es/data/Criteria';
 
 const { Application } = Shopwell;
 

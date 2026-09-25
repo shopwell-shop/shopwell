@@ -29,10 +29,10 @@ class McpAllowlistFilterTest extends TestCase
      */
     public static function toolCallDeniedProvider(): iterable
     {
-        yield 'tool in allowlist is not denied' => ['shopware-entity-search', ['shopware-entity-search', 'shopware-entity-read'], false];
-        yield 'tool not in allowlist is denied' => ['shopware-entity-delete', ['shopware-entity-search'], true];
+        yield 'tool in allowlist is not denied' => ['shopwell-entity-search', ['shopwell-entity-search', 'shopwell-entity-read'], false];
+        yield 'tool not in allowlist is denied' => ['shopwell-entity-delete', ['shopwell-entity-search'], true];
         yield 'empty allowlist denies everything' => ['any-tool', [], true];
-        yield 'exact name match required' => ['shopware-entity', ['shopware-entity-search'], true];
+        yield 'exact name match required' => ['shopwell-entity', ['shopwell-entity-search'], true];
     }
 
     /**
@@ -51,11 +51,11 @@ class McpAllowlistFilterTest extends TestCase
      */
     public static function resourceReadDeniedProvider(): iterable
     {
-        yield 'resource in allowlist is not denied' => ['shopware://entities', ['shopware://entities', 'shopware://currencies'], false];
-        yield 'resource not in allowlist is denied' => ['shopware://state-machines', ['shopware://entities'], true];
-        yield 'empty allowlist denies everything' => ['shopware://entities', [], true];
-        yield 'tool-result URI is never denied even with empty allowlist' => ['shopware://tool-result/abc123', [], false];
-        yield 'tool-result URI is never denied when not in allowlist' => ['shopware://tool-result/xyz', ['shopware://entities'], false];
+        yield 'resource in allowlist is not denied' => ['shopwell://entities', ['shopwell://entities', 'shopwell://currencies'], false];
+        yield 'resource not in allowlist is denied' => ['shopwell://state-machines', ['shopwell://entities'], true];
+        yield 'empty allowlist denies everything' => ['shopwell://entities', [], true];
+        yield 'tool-result URI is never denied even with empty allowlist' => ['shopwell://tool-result/abc123', [], false];
+        yield 'tool-result URI is never denied when not in allowlist' => ['shopwell://tool-result/xyz', ['shopwell://entities'], false];
     }
 
     /**
@@ -74,9 +74,9 @@ class McpAllowlistFilterTest extends TestCase
      */
     public static function promptGetDeniedProvider(): iterable
     {
-        yield 'prompt in allowlist is not denied' => ['shopware-context', ['shopware-context'], false];
-        yield 'prompt not in allowlist is denied' => ['other-prompt', ['shopware-context'], true];
-        yield 'empty allowlist denies everything' => ['shopware-context', [], true];
+        yield 'prompt in allowlist is not denied' => ['shopwell-context', ['shopwell-context'], false];
+        yield 'prompt not in allowlist is denied' => ['other-prompt', ['shopwell-context'], true];
+        yield 'empty allowlist denies everything' => ['shopwell-context', [], true];
     }
 
     /**

@@ -37,7 +37,7 @@ describe('build/vite-plugins/override-component-register', () => {
 
         // Identify plugin by name
         expect(plugin).toHaveProperty('name');
-        expect(plugin.name).toBe('shopware-vite-plugin-override-component');
+        expect(plugin.name).toBe('shopwell-vite-plugin-override-component');
 
         // Check if the plugin has all methods
         expect(plugin).toHaveProperty('configResolved');

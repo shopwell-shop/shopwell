@@ -2,7 +2,7 @@
 title: Change component name
 issue: NEXT-20068
 author: Holger-Thomas Kassner
-author_email: h.kassner@shopware.com
+author_email: h.kassner@shopwell.com
 author_github: Holger-Thomas Kassner
 ---
 # Administration

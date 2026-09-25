@@ -6,5 +6,5 @@ author_email: code@joshua-behrens.de
 author_github: @JoshuaBehrens
 ---
 # Core
-* Changed `\Shopware\Core\Framework\Validation\DataBag\DataBag::set` and `\Shopware\Core\Framework\Validation\DataBag\DataBag::add` to convert arrays to `\Shopware\Core\Framework\Validation\DataBag\DataBag` like the constructor
-* Added `\Shopware\Core\Framework\Validation\DataBag\DataBag::__clone` to deep clone
+* Changed `\Shopwell\Core\Framework\Validation\DataBag\DataBag::set` and `\Shopwell\Core\Framework\Validation\DataBag\DataBag::add` to convert arrays to `\Shopwell\Core\Framework\Validation\DataBag\DataBag` like the constructor
+* Added `\Shopwell\Core\Framework\Validation\DataBag\DataBag::__clone` to deep clone

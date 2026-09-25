@@ -6,4 +6,4 @@ author_github: @mitelg
 
 # Core
 
-* Changed `\Shopware\Core\Framework\Plugin\ExtensionExtractor` to correctly check ZIP files for path traversals.
+* Changed `\Shopwell\Core\Framework\Plugin\ExtensionExtractor` to correctly check ZIP files for path traversals.

@@ -16,7 +16,7 @@ Also it is recommended that the system is safe to not breaking things when a fla
 * A feature flag will be added to the system by adding it to the file 
   ```/Core/Framework/Resources/config/packages/feature.yaml```
 ```yaml
-shopware:
+shopwell:
     ....
     feature:
         flags:

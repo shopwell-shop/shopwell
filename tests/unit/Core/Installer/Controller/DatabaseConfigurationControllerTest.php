@@ -76,15 +76,15 @@ class DatabaseConfigurationControllerTest extends TestCase
         $this->router->expects($this->never())->method('generate');
 
         $this->setEnvVars([
-            'DATABASE_URL' => 'mysql://shopware:secret@db.example:3307/shopware_prefill',
+            'DATABASE_URL' => 'mysql://shopwell:secret@db.example:3307/shopwell_prefill',
         ]);
 
         $expectedConnectionInfo = (new DatabaseConnectionInformation())->assign([
             'hostname' => 'db.example',
             'port' => 3307,
-            'username' => 'shopware',
+            'username' => 'shopwell',
             'password' => null,
-            'databaseName' => 'shopware_prefill',
+            'databaseName' => 'shopwell_prefill',
         ]);
 
         $this->twig->expects($this->once())->method('render')
@@ -194,7 +194,7 @@ class DatabaseConfigurationControllerTest extends TestCase
 
         $this->translator->expects($this->once())
             ->method('trans')
-            ->with('shopware.installer.database-configuration_non_empty_database')
+            ->with('shopwell.installer.database-configuration_non_empty_database')
             ->willReturn('translated error');
 
         $connection = static::createStub(Connection::class);
@@ -318,7 +318,7 @@ class DatabaseConfigurationControllerTest extends TestCase
 
         $this->translator->expects($this->once())
             ->method('trans')
-            ->with('shopware.installer.database-configuration_invalid_requirements')
+            ->with('shopwell.installer.database-configuration_invalid_requirements')
             ->willReturn('translated error');
 
         $this->connectionFactory->expects($this->once())
@@ -376,7 +376,7 @@ class DatabaseConfigurationControllerTest extends TestCase
 
         $this->translator->expects($this->once())
             ->method('trans')
-            ->with('shopware.installer.database-configuration_invalid_requirements')
+            ->with('shopwell.installer.database-configuration_invalid_requirements')
             ->willReturn('translated error');
 
         $this->setupDatabaseAdapter->expects($this->never())->method('getExistingDatabases');

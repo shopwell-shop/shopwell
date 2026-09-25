@@ -10,7 +10,7 @@ const validCluster = () => ({
   owner_label: 'domain/inventory',
   known_cluster: true,
   flaky_or_environmental: false,
-  tests: ['Shopware\\Tests\\Integration\\Core\\Content\\Product\\ProductEntityTest::testWrite'],
+  tests: ['Shopwell\\Tests\\Integration\\Core\\Content\\Product\\ProductEntityTest::testWrite'],
   evidence_quotes: ['[logs] [/0/type] This value should not be blank.'],
   related_issues: [17973],
   related_prs: [],

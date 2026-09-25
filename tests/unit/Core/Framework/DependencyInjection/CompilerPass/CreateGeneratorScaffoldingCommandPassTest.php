@@ -29,7 +29,7 @@ class CreateGeneratorScaffoldingCommandPassTest extends TestCase
         $builder->setDefinition(
             DemoScaffoldingGenerator::class,
             (new Definition(DemoScaffoldingGenerator::class))
-                ->addTag('shopware.scaffold.generator')
+                ->addTag('shopwell.scaffold.generator')
         );
 
         $pass = new CreateGeneratorScaffoldingCommandPass();
@@ -44,7 +44,7 @@ class CreateGeneratorScaffoldingCommandPassTest extends TestCase
         $builder->setDefinition(
             DemoScaffoldingGenerator::class,
             (new Definition(DemoScaffoldingGenerator::class))
-                ->addTag('shopware.scaffold.generator')
+                ->addTag('shopwell.scaffold.generator')
                 ->setDeprecated('test', '1.0.0', '"%service_id%')
         );
 
@@ -60,13 +60,13 @@ class CreateGeneratorScaffoldingCommandPassTest extends TestCase
         $builder->setDefinition(
             ProductDefinition::class,
             (new Definition(ProductDefinition::class))
-                ->addTag('shopware.scaffold.generator')
+                ->addTag('shopwell.scaffold.generator')
         );
 
         $pass = new CreateGeneratorScaffoldingCommandPass();
 
         static::expectExceptionObject(
-            DependencyInjectionException::taggedServiceHasWrongType(ProductDefinition::class, 'shopware.scaffold.generator', ScaffoldingGenerator::class)
+            DependencyInjectionException::taggedServiceHasWrongType(ProductDefinition::class, 'shopwell.scaffold.generator', ScaffoldingGenerator::class)
         );
         $pass->process($builder);
     }

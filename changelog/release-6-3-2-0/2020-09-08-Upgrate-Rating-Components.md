@@ -2,11 +2,11 @@
 title: Upgrade rating components
 issue: NEXT-10063
 author: Marcel Brode
-author_email: m.brode@shopware.com
+author_email: m.brode@shopwell.com
 author_github:
 ---
 # Core
-* Changed `Shopware\Core\Content\Product\SalesChannel\Review\ProductReviewRoute.php` to aknowledge reviews active state again  
+* Changed `Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewRoute.php` to aknowledge reviews active state again  
 ___
 # Administration
 * Changed `sw-review` module
@@ -24,6 +24,6 @@ ___
 ___
 # Storefront
 * Added float value handling for ProductReview handling of product detail page
-* Deprecated in `\Shopware\Storefront\Page\Product\Review\RatingMatrix.php`:
+* Deprecated in `\Shopwell\Storefront\Page\Product\Review\RatingMatrix.php`:
     * `getTotalPoints()` use `getPointSum()` instead
     * `$totalPoints` use `$pointSum` instead

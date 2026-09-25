@@ -100,7 +100,7 @@ class NoDependsWithDataProviderRule implements Rule
                 $classReflection->getName(),
                 (string) $stmt->name,
             ))
-                ->identifier('shopware.noDependsWithDataProvider')
+                ->identifier('shopwell.noDependsWithDataProvider')
                 ->line($dataProviderLine)
                 ->build();
         }

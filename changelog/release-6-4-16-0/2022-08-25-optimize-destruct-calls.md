@@ -2,7 +2,7 @@
 title: Optimize destruct calls
 issue: NEXT-23008
 author: Oliver Skroblin
-author_email: o.skroblin@shopware.com
+author_email: o.skroblin@shopwell.com
 author_github: OliverSkroblin
 ---
 # Storefront

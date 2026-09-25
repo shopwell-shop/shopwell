@@ -55,7 +55,7 @@ class AuthCodeRepositoryTest extends TestCase
         );
         static::assertIsArray($stored);
         static::assertSame($authCode->getUserIdentifier(), $stored['user_id']);
-        static::assertSame('shopware-cli', $stored['client_id']);
+        static::assertSame('shopwell-cli', $stored['client_id']);
 
         $this->repository->revokeAuthCode($authCode->getIdentifier());
         static::assertTrue($this->repository->isAuthCodeRevoked($authCode->getIdentifier()));
@@ -80,7 +80,7 @@ class AuthCodeRepositoryTest extends TestCase
     {
         $authCode = new AuthCode();
         $authCode->setIdentifier('code-' . Uuid::randomHex());
-        $authCode->setClient(new ApiClient('shopware-cli', true, confidential: false));
+        $authCode->setClient(new ApiClient('shopwell-cli', true, confidential: false));
         $authCode->setExpiryDateTime($this->clock->now()->modify('+5 minutes'));
 
         $this->repository->persistNewAuthCode($authCode);
@@ -113,7 +113,7 @@ class AuthCodeRepositoryTest extends TestCase
         $authCode = new AuthCode();
         $authCode->setIdentifier($identifier);
         $authCode->setUserIdentifier($userId);
-        $authCode->setClient(new ApiClient('shopware-cli', true, confidential: false));
+        $authCode->setClient(new ApiClient('shopwell-cli', true, confidential: false));
         $authCode->setExpiryDateTime($this->clock->now()->modify($expiresIn));
 
         return $authCode;

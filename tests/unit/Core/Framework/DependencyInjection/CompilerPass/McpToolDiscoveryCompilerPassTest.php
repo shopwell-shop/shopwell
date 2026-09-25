@@ -28,7 +28,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
         $container = $this->createContainer();
 
         $def = new Definition(McpDiscoveryTestNamespacedTool::class);
-        $def->addTag('shopware.mcp.tool');
+        $def->addTag('shopwell.mcp.tool');
         $container->setDefinition(McpDiscoveryTestNamespacedTool::class, $def);
 
         $pass = new McpToolDiscoveryCompilerPass();
@@ -61,7 +61,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
         $container = $this->createContainer();
 
         $def = new Definition(McpDiscoveryTestNamespacedTool::class);
-        $def->addTag('shopware.mcp.tool');
+        $def->addTag('shopwell.mcp.tool');
         $container->setDefinition(McpDiscoveryTestNamespacedTool::class, $def);
 
         $pass = new McpToolDiscoveryCompilerPass();
@@ -73,7 +73,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
     public function testAllowlistRemovesNonAllowedTools(): void
     {
         $container = $this->createContainer();
-        $container->setParameter('shopware.mcp.allowed_tools', ['shopware-discovery-core-tool']);
+        $container->setParameter('shopwell.mcp.allowed_tools', ['shopwell-discovery-core-tool']);
 
         $allowed = new Definition(McpDiscoveryTestCoreTool::class);
         $allowed->addTag('mcp.tool');
@@ -93,7 +93,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
     public function testEmptyAllowlistKeepsAllTools(): void
     {
         $container = $this->createContainer();
-        $container->setParameter('shopware.mcp.allowed_tools', []);
+        $container->setParameter('shopwell.mcp.allowed_tools', []);
 
         $def = new Definition(McpDiscoveryTestCoreTool::class);
         $def->addTag('mcp.tool');
@@ -127,7 +127,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
     public function testAllowlistRemovesToolWithoutMcpAttribute(): void
     {
         $container = $this->createContainer();
-        $container->setParameter('shopware.mcp.allowed_tools', ['shopware-discovery-core-tool']);
+        $container->setParameter('shopwell.mcp.allowed_tools', ['shopwell-discovery-core-tool']);
 
         $def = new Definition(McpDiscoveryTestNoAttribute::class);
         $def->addTag('mcp.tool');
@@ -179,8 +179,8 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
         $pass = new McpToolDiscoveryCompilerPass();
         $pass->process($container);
 
-        static::assertTrue($container->hasParameter('shopware.mcp.tool_dependencies'));
-        static::assertSame([], $container->getParameter('shopware.mcp.tool_dependencies'));
+        static::assertTrue($container->hasParameter('shopwell.mcp.tool_dependencies'));
+        static::assertSame([], $container->getParameter('shopwell.mcp.tool_dependencies'));
     }
 
     public function testToolPrivilegesParameterIsAlwaysInitialized(): void
@@ -190,8 +190,8 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
         $pass = new McpToolDiscoveryCompilerPass();
         $pass->process($container);
 
-        static::assertTrue($container->hasParameter('shopware.mcp.tool_privileges'));
-        static::assertSame([], $container->getParameter('shopware.mcp.tool_privileges'));
+        static::assertTrue($container->hasParameter('shopwell.mcp.tool_privileges'));
+        static::assertSame([], $container->getParameter('shopwell.mcp.tool_privileges'));
     }
 
     public function testAdvertisedToolsParameterIsAlwaysInitialized(): void
@@ -201,8 +201,8 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
         $pass = new McpToolDiscoveryCompilerPass();
         $pass->process($container);
 
-        static::assertTrue($container->hasParameter('shopware.mcp.advertised_tools'));
-        static::assertSame([], $container->getParameter('shopware.mcp.advertised_tools'));
+        static::assertTrue($container->hasParameter('shopwell.mcp.advertised_tools'));
+        static::assertSame([], $container->getParameter('shopwell.mcp.advertised_tools'));
     }
 
     public function testDiscoveryGroupToolsAreAddedToAdvertisedToolsParameter(): void
@@ -225,8 +225,8 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
         $pass->process($container);
 
         static::assertSame(
-            ['shopware-discovery-visible-tool', 'shopware-discovery-method-visible-tool'],
-            $container->getParameter('shopware.mcp.advertised_tools'),
+            ['shopwell-discovery-visible-tool', 'shopwell-discovery-method-visible-tool'],
+            $container->getParameter('shopwell.mcp.advertised_tools'),
         );
     }
 
@@ -235,7 +235,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
         $container = $this->createContainer();
         $container->setParameter('mcp.servers.elements', $this->emptyElements());
         $container->register(McpDiscoveryTestNamespacedTool::class, McpDiscoveryTestNamespacedTool::class)
-            ->addTag('shopware.mcp.tool');
+            ->addTag('shopwell.mcp.tool');
 
         (new McpToolDiscoveryCompilerPass())->process($container);
 
@@ -255,7 +255,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
         $container->setParameter('mcp.servers.elements', $this->emptyElements());
         $container->register(McpDiscoveryTestStoreApiTool::class, McpDiscoveryTestStoreApiTool::class)
             ->addTag('mcp.tool')
-            ->addTag('shopware.store_api_mcp.tool');
+            ->addTag('shopwell.store_api_mcp.tool');
 
         (new McpToolDiscoveryCompilerPass())->process($container);
 
@@ -294,7 +294,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
         $elements['admin']['tools'] = $patterns;
         $container->setParameter('mcp.servers.elements', $elements);
         $container->register(McpDiscoveryTestNamespacedTool::class, McpDiscoveryTestNamespacedTool::class)
-            ->addTag('shopware.mcp.tool');
+            ->addTag('shopwell.mcp.tool');
 
         (new McpToolDiscoveryCompilerPass())->process($container);
 
@@ -312,7 +312,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
         $container = $this->createContainer();
         $container->setParameter('mcp.servers.elements', 'not-an-array');
         $container->register(McpDiscoveryTestNamespacedTool::class, McpDiscoveryTestNamespacedTool::class)
-            ->addTag('shopware.mcp.tool');
+            ->addTag('shopwell.mcp.tool');
 
         (new McpToolDiscoveryCompilerPass())->process($container);
 
@@ -331,9 +331,9 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
         $container->setParameter('mcp.servers.elements', $elements);
         $container->register(McpDiscoveryTestStoreApiTool::class, McpDiscoveryTestStoreApiTool::class)
             ->addTag('mcp.tool')
-            ->addTag('shopware.store_api_mcp.tool');
+            ->addTag('shopwell.store_api_mcp.tool');
         $container->register(McpDiscoveryTestNamespacedTool::class, McpDiscoveryTestNamespacedTool::class)
-            ->addTag('shopware.mcp.tool');
+            ->addTag('shopwell.mcp.tool');
 
         (new McpToolDiscoveryCompilerPass())->process($container);
 
@@ -352,7 +352,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
             ->addTag('mcp.tool');
         $container->register(McpDiscoveryTestSameNameStoreApiTool::class, McpDiscoveryTestSameNameStoreApiTool::class)
             ->addTag('mcp.tool')
-            ->addTag('shopware.store_api_mcp.tool');
+            ->addTag('shopwell.store_api_mcp.tool');
 
         (new McpToolDiscoveryCompilerPass())->process($container);
 
@@ -365,8 +365,8 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
      */
     public static function storeApiCapabilityProvider(): iterable
     {
-        yield 'prompt' => ['shopware.store_api_mcp.prompt', 'mcp.prompt', 'prompts'];
-        yield 'resource' => ['shopware.store_api_mcp.resource', 'mcp.resource', 'resources'];
+        yield 'prompt' => ['shopwell.store_api_mcp.prompt', 'mcp.prompt', 'prompts'];
+        yield 'resource' => ['shopwell.store_api_mcp.resource', 'mcp.resource', 'resources'];
     }
 
     /**
@@ -376,17 +376,17 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
      * so the container build breaks rather than the capability quietly disappearing.
      */
     #[DataProvider('storeApiCapabilityProvider')]
-    public function testStoreApiPromptsAndResourcesAreRemappedAndScopedToTheirServer(string $shopwareTag, string $sdkTag, string $kind): void
+    public function testStoreApiPromptsAndResourcesAreRemappedAndScopedToTheirServer(string $shopwellTag, string $sdkTag, string $kind): void
     {
         $container = $this->createContainer();
         $container->setParameter('mcp.servers.elements', $this->emptyElements());
-        $container->register('store_api.capability', McpDiscoveryTestStoreApiTool::class)->addTag($shopwareTag);
+        $container->register('store_api.capability', McpDiscoveryTestStoreApiTool::class)->addTag($shopwellTag);
 
         (new McpToolDiscoveryCompilerPass())->process($container);
 
         static::assertTrue(
             $container->getDefinition('store_api.capability')->hasTag($sdkTag),
-            \sprintf('"%s" must be remapped to "%s" or the bundle never collects it.', $shopwareTag, $sdkTag),
+            \sprintf('"%s" must be remapped to "%s" or the bundle never collects it.', $shopwellTag, $sdkTag),
         );
 
         $elements = $container->getParameter('mcp.servers.elements');
@@ -400,15 +400,15 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
      */
     public static function allowlistProvider(): iterable
     {
-        yield 'an allowlist that keeps the theme tool' => [['shopware-discovery-core-tool', 'shopware-theme-config']];
-        yield 'an allowlist that drops the theme tool' => [['shopware-discovery-core-tool']];
+        yield 'an allowlist that keeps the theme tool' => [['shopwell-discovery-core-tool', 'shopwell-theme-config']];
+        yield 'an allowlist that drops the theme tool' => [['shopwell-discovery-core-tool']];
         yield 'an allowlist that drops every tool' => [['a-tool-no-service-provides']];
     }
 
     /**
      * packages/mcp.php claims `Shopwell\Storefront\Mcp\` for the Admin API server, and that
      * namespace holds exactly one tool. The bundle's McpPass treats a configured pattern matching no
-     * remaining service as a fatal typo, so an allowlist that removes shopware-theme-config must not
+     * remaining service as a fatal typo, so an allowlist that removes shopwell-theme-config must not
      * leave the prefix behind: the container would refuse to build — taking down every request and
      * console command — instead of just hiding the tool.
      *
@@ -419,7 +419,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
     public function testTheAllowlistNeverLeavesAConfiguredPatternWithoutAMatch(array $allowedTools): void
     {
         $container = $this->createContainer();
-        $container->setParameter('shopware.mcp.allowed_tools', $allowedTools);
+        $container->setParameter('shopwell.mcp.allowed_tools', $allowedTools);
 
         // The Admin API registry is one list in packages/mcp.php; the bundle copies it into every kind.
         $elements = $this->emptyElements();
@@ -442,7 +442,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
     public function testAPatternThatStillMatchesIsKept(): void
     {
         $container = $this->createContainer();
-        $container->setParameter('shopware.mcp.allowed_tools', ['shopware-discovery-core-tool']);
+        $container->setParameter('shopwell.mcp.allowed_tools', ['shopwell-discovery-core-tool']);
 
         $elements = $this->emptyElements();
         $elements['admin']['tools'] = ['Shopwell\\Core\\Framework\\Mcp\\', 'Shopwell\\Storefront\\Mcp\\', '*'];
@@ -608,7 +608,7 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
 /**
  * @internal
  */
-#[McpTool(name: 'shopware-discovery-store-api-tool', description: 'test store api tool')]
+#[McpTool(name: 'shopwell-discovery-store-api-tool', description: 'test store api tool')]
 class McpDiscoveryTestStoreApiTool extends McpToolResponse
 {
     public function __invoke(): string
@@ -620,7 +620,7 @@ class McpDiscoveryTestStoreApiTool extends McpToolResponse
 /**
  * @internal
  */
-#[McpTool(name: 'shopware-discovery-core-tool', description: 'same name as the admin tool')]
+#[McpTool(name: 'shopwell-discovery-core-tool', description: 'same name as the admin tool')]
 class McpDiscoveryTestSameNameStoreApiTool extends McpToolResponse
 {
     public function __invoke(): string
@@ -632,7 +632,7 @@ class McpDiscoveryTestSameNameStoreApiTool extends McpToolResponse
 /**
  * @internal
  */
-#[McpTool(name: 'shopware-discovery-core-tool', description: 'test core tool')]
+#[McpTool(name: 'shopwell-discovery-core-tool', description: 'test core tool')]
 class McpDiscoveryTestCoreTool extends McpToolResponse
 {
     public function __invoke(): string
@@ -656,7 +656,7 @@ class McpDiscoveryTestNamespacedTool extends McpToolResponse
 /**
  * @internal
  */
-#[McpTool(name: 'shopware-discovery-visible-tool', description: 'test visible tool')]
+#[McpTool(name: 'shopwell-discovery-visible-tool', description: 'test visible tool')]
 #[McpToolGroup('discovery')]
 class McpDiscoveryTestDiscoveryGroupTool extends McpToolResponse
 {
@@ -671,7 +671,7 @@ class McpDiscoveryTestDiscoveryGroupTool extends McpToolResponse
  */
 class McpDiscoveryTestMethodLevelDiscoveryGroupTool extends McpToolResponse
 {
-    #[McpTool(name: 'shopware-discovery-method-visible-tool', description: 'test method visible tool')]
+    #[McpTool(name: 'shopwell-discovery-method-visible-tool', description: 'test method visible tool')]
     #[McpToolGroup('discovery')]
     public function __invoke(): string
     {
@@ -693,7 +693,7 @@ class McpDiscoveryTestNoAttribute
 /**
  * @internal
  */
-#[McpTool(name: 'shopware-theme-config', description: 'stands in for the Storefront theme config tool')]
+#[McpTool(name: 'shopwell-theme-config', description: 'stands in for the Storefront theme config tool')]
 class McpDiscoveryTestThemeConfigTool extends McpToolResponse
 {
     public function __invoke(): string

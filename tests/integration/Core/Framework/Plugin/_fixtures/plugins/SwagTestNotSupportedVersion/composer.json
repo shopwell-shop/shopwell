@@ -2,20 +2,20 @@
     "name": "swag/test-unsupported-version",
     "description": "Test description",
     "version": "v1.0.0",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "license": "MIT",
     "authors": [
         {
-            "name": "shopware AG",
+            "name": "Shopwell",
             "role": "Manufacturer"
         }
     ],
     "require": {
-        "shopware/core": "<6.0"
+        "shopwell/core": "<6.0"
     },
     "extra": {
-        "shopware-plugin-class": "SwagTestNotSupportedVersion\\SwagTestNotSupportedVersion",
-        "copyright": "(c) by shopware AG",
+        "shopwell-plugin-class": "SwagTestNotSupportedVersion\\SwagTestNotSupportedVersion",
+        "copyright": "(c) by Shopwell",
         "label": {
             "de-DE": "Deutscher Pluginname",
             "de-CH": "Schweizerdeutsch Pluginname",

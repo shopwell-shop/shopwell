@@ -12,16 +12,16 @@ ___
 # Upgrade Information
 ## "adminHelpCenter" Vuex store moved to Pinia
 
-The `adminHelpCenter` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopware.Store.get('adminHelpCenter')`.
+The `adminHelpCenter` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopwell.Store.get('adminHelpCenter')`.
 
 ### Before:
 ```js
-Shopware.State.get('adminHelpCenter');
+Shopwell.State.get('adminHelpCenter');
 ```
 
 ### After:
 ```js
-Shopware.Store.get('adminHelpCenter');
+Shopwell.Store.get('adminHelpCenter');
 ```
 
 ## Removed `setShowHelpSidebar` mutation
@@ -30,12 +30,12 @@ The `setShowHelpSidebar` mutation has been removed from the `adminHelpCenter` st
 
 ### Before:
 ```js
-Shopware.State.get('adminHelpCenter').setShowHelpSidebar(true);
+Shopwell.State.get('adminHelpCenter').setShowHelpSidebar(true);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('adminHelpCenter').showHelpSidebar = true;
+Shopwell.Store.get('adminHelpCenter').showHelpSidebar = true;
 ```
 
 ## Removed `setShowShortcutModal` mutation
@@ -44,10 +44,10 @@ The `setShowShortcutModal` mutation has been removed from the `adminHelpCenter` 
 
 ### Before:
 ```js
-Shopware.State.get('adminHelpCenter').setShowShortcutModal(true);
+Shopwell.State.get('adminHelpCenter').setShowShortcutModal(true);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('adminHelpCenter').showShortcutModal = true;
+Shopwell.Store.get('adminHelpCenter').showShortcutModal = true;
 ```

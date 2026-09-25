@@ -36,12 +36,12 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(ConsentDefinitionRegistry::class)
         ->args([
-            new TaggedIteratorArgument('shopware.consent.definition'),
+            new TaggedIteratorArgument('shopwell.consent.definition'),
         ]);
 
     $services->set(ConsentService::class)
         ->args([
-            new TaggedIteratorArgument('shopware.consent.scope'),
+            new TaggedIteratorArgument('shopwell.consent.scope'),
             new Reference(ConsentDefinitionRegistry::class),
             new Reference(ConsentRepository::class),
             new Reference('event_dispatcher'),
@@ -49,16 +49,16 @@ return static function (ContainerConfigurator $container): void {
         ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(ConsentScope\System::class)
-        ->tag('shopware.consent.scope');
+        ->tag('shopwell.consent.scope');
 
     $services->set(ConsentScope\AdminUser::class)
-        ->tag('shopware.consent.scope');
+        ->tag('shopwell.consent.scope');
 
     $services->set(Definition\BackendData::class)
-        ->tag('shopware.consent.definition');
+        ->tag('shopwell.consent.definition');
 
     $services->set(Definition\ProductAnalytics::class)
-        ->tag('shopware.consent.definition');
+        ->tag('shopwell.consent.definition');
 
     $services->set(ConsentLogInterface::class)
         ->class(DatabaseLog::class)
@@ -83,5 +83,5 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             new Reference(ConsentDefinitionRegistry::class),
         ])
-        ->tag('shopware.hookable_event.describer');
+        ->tag('shopwell.hookable_event.describer');
 };

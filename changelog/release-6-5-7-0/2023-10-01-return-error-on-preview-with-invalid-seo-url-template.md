@@ -6,7 +6,7 @@ author_email: code@joshua-behrens.de
 author_github: @JoshuaBehrens
 ---
 # Core
-* Added class `\Shopware\Core\Content\Seo\ConfiguredSeoUrlRoute` to allow passing `\Shopware\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteInterface` with an altered configuration 
+* Added class `\Shopwell\Core\Content\Seo\ConfiguredSeoUrlRoute` to allow passing `\Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteInterface` with an altered configuration 
 ___
 # API
 * Changed `/api/_action/seo-url-template/preview` to also return `FRAMEWORK__INVALID_SEO_TEMPLATE` 

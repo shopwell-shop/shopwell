@@ -120,25 +120,25 @@ class ViteFileAccessorDecoratorTest extends TestCase
      */
     public static function getDataProvider(): iterable
     {
-        yield 'provider false default administration https shopware com bundles administration' => [
+        yield 'provider false default administration https shopwell com bundles administration' => [
             false,
             '_default',
             'administration',
             'https:://shopwell.cn/bundles/administration/administration/assets/app.js',
         ];
-        yield 'provider true default administration https shopware com bundles administration' => [
+        yield 'provider true default administration https shopwell com bundles administration' => [
             true,
             '_default',
             'administration',
             'https:://shopwell.cn/bundles/administration/administration/assets/app.js',
         ];
-        yield 'provider false test bundle test bundle https shopware com bundles test' => [
+        yield 'provider false test bundle test bundle https shopwell com bundles test' => [
             false,
             'TestBundle',
             'test-bundle',
             'https:://shopwell.cn/bundles/test/administration/assets/app.js',
         ];
-        yield 'provider true test bundle test bundle https shopware com bundles test' => [
+        yield 'provider true test bundle test bundle https shopwell com bundles test' => [
             true,
             'TestBundle',
             'test-bundle',

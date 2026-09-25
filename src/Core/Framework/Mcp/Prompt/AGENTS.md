@@ -19,4 +19,4 @@ When you add a new core tool, also consider whether the `Tool disambiguation` an
 ## Adding a prompt
 1. Create a class with `#[McpPrompt(name: '...', description: '...')]` on the class
 2. Return an array of messages with `role` and `content` keys from `__invoke`
-3. Register in `mcp.php` with `mcp.prompt` and `shopware.feature` tags
+3. Register in `mcp.php` with `mcp.prompt` and `shopwell.feature` tags

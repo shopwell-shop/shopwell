@@ -67,7 +67,7 @@ class HandshakeFactoryTest extends TestCase
             $shopUrl,
             static::getContainer()->get(ShopIdProvider::class),
             static::getContainer()->get(StoreClient::class),
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             new NativeClock()
         );
 
@@ -97,7 +97,7 @@ class HandshakeFactoryTest extends TestCase
             $shopUrl,
             static::getContainer()->get(ShopIdProvider::class),
             static::getContainer()->get(StoreClient::class),
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             new NativeClock()
         );
 
@@ -124,7 +124,7 @@ class HandshakeFactoryTest extends TestCase
             $shopUrl,
             static::getContainer()->get(ShopIdProvider::class),
             static::getContainer()->get(StoreClient::class),
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             new NativeClock()
         );
 

@@ -6,6 +6,6 @@ author_email: code@joshua-behrens.de
 author_github: @JoshuaBehrens
 ---
 # Core
-* Changed return type of `\Shopware\Core\Checkout\Order::getLanguage()` to also allow null
-* Changed parameter type of `\Shopware\Core\Checkout\Order::setLanguage()` to also allow null
-* Changed PHPdoc type of `\Shopware\Core\Checkout\Order::$language` to also allow null
+* Changed return type of `\Shopwell\Core\Checkout\Order::getLanguage()` to also allow null
+* Changed parameter type of `\Shopwell\Core\Checkout\Order::setLanguage()` to also allow null
+* Changed PHPdoc type of `\Shopwell\Core\Checkout\Order::$language` to also allow null

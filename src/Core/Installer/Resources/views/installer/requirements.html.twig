@@ -2,7 +2,7 @@
 
 {% block base_content %}
     <div class="card__title">
-        <h2>{{ "shopware.installer.requirements_header"|trans }}</h2>
+        <h2>{{ "shopwell.installer.requirements_header"|trans }}</h2>
     </div>
 
     <div class="card__body scrollable">
@@ -11,16 +11,16 @@
                 <div class="alert-hero-icon">
                     <i class="icon-warning"></i>
                 </div>
-                <h3 class="alert-hero-title">{{ "shopware.installer.requirements_error_title"|trans }}</h3>
-                <div class="alert-hero-text">{{ "shopware.installer.requirements_error"|trans }}</div>
+                <h3 class="alert-hero-title">{{ "shopwell.installer.requirements_error_title"|trans }}</h3>
+                <div class="alert-hero-text">{{ "shopwell.installer.requirements_error"|trans }}</div>
             </div>
         {% else %}
             <div class="alert-hero success">
                 <div class="alert-hero-icon">
                     <i class="icon-checkmark"></i>
                 </div>
-                <h3 class="alert-hero-title">{{ "shopware.installer.requirements_success_title"|trans }}</h3>
-                <div class="alert-hero-text">{{ "shopware.installer.requirements_success"|trans }}</div>
+                <h3 class="alert-hero-title">{{ "shopwell.installer.requirements_success_title"|trans }}</h3>
+                <div class="alert-hero-text">{{ "shopwell.installer.requirements_success"|trans }}</div>
             </div>
         {% endif %}
 
@@ -28,21 +28,21 @@
             <summary>
                 <h4 id="requirement-group-path"
                     class="requirement-group {% if not requirementChecks.hasPathError %}success{% else %}error{% endif %}">
-                    <span class="requirement-group-title">{{ "shopware.installer.requirements_header_files"|trans }} <span class="status-indicator"></span></span>
+                    <span class="requirement-group-title">{{ "shopwell.installer.requirements_header_files"|trans }} <span class="status-indicator"></span></span>
                     <i class="icon-chevron-down"></i>
                 </h4>
             </summary>
 
             <div>
                 <p class="requirement-info-text">
-                    {{ "shopware.installer.requirements_files_info"|trans }}
+                    {{ "shopwell.installer.requirements_files_info"|trans }}
                 </p>
 
                 <table>
                     <tbody>
                         <tr>
-                            <th>{{ "shopware.installer.requirements_table_files_col_check"|trans }}</th>
-                            <th>{{ "shopware.installer.requirements_table_files_col_status"|trans }}</th>
+                            <th>{{ "shopwell.installer.requirements_table_files_col_check"|trans }}</th>
+                            <th>{{ "shopwell.installer.requirements_table_files_col_status"|trans }}</th>
                         </tr>
                         {% for pathCheck in requirementChecks.getPathChecks %}
                             <tr>
@@ -50,9 +50,9 @@
                                 <td>
                                     <span class="status-indicator {% if pathCheck.status == 'success' %}success{% else %}error{% endif %}"></span>
                                     {% if pathCheck.status == 'success' %}
-                                        {{ "shopware.installer.requirements_status_ready"|trans }}
+                                        {{ "shopwell.installer.requirements_status_ready"|trans }}
                                     {% else %}
-                                        {{ "shopware.installer.requirements_status_error"|trans }}
+                                        {{ "shopwell.installer.requirements_status_error"|trans }}
                                     {% endif %}
                                 </td>
                             </tr>
@@ -66,23 +66,23 @@
             <summary>
                 <h4 id="requirement-group-system"
                     class="requirement-group {% if not requirementChecks.hasSystemError %}success{% else %}error{% endif %}">
-                    <span class="requirement-group-title">{{ "shopware.installer.requirements_header_system"|trans }} <span class="status-indicator"></span></span>
+                    <span class="requirement-group-title">{{ "shopwell.installer.requirements_header_system"|trans }} <span class="status-indicator"></span></span>
                     <i class="icon-chevron-down"></i>
                 </h4>
             </summary>
 
             <div>
                 <p class="requirement-info-text">
-                    {{ "shopware.installer.requirements_php_info"|trans }}
+                    {{ "shopwell.installer.requirements_php_info"|trans }}
                 </p>
 
                 <table>
                     <thead>
                     <tr>
-                        <th>{{ "shopware.installer.requirements_system_col_check"|trans }}</th>
-                        <th>{{ "shopware.installer.requirements_system_col_status"|trans }}</th>
-                        <th>{{ "shopware.installer.requirements_system_col_required"|trans }}</th>
-                        <th>{{ "shopware.installer.requirements_system_col_found"|trans }}</th>
+                        <th>{{ "shopwell.installer.requirements_system_col_check"|trans }}</th>
+                        <th>{{ "shopwell.installer.requirements_system_col_status"|trans }}</th>
+                        <th>{{ "shopwell.installer.requirements_system_col_required"|trans }}</th>
+                        <th>{{ "shopwell.installer.requirements_system_col_found"|trans }}</th>
                     </tr>
                     </thead>
 
@@ -91,11 +91,11 @@
                         <td>{{ systemCheck.name }}</td>
                         <td><span class="status-indicator {{ systemCheck.status }}"></span>
                             {% if systemCheck.status == 'success' %}
-                                {{ "shopware.installer.requirements_status_ready"|trans }}
+                                {{ "shopwell.installer.requirements_status_ready"|trans }}
                             {% elseif systemCheck.status == 'error' %}
-                                {{ "shopware.installer.requirements_status_error"|trans }}
+                                {{ "shopwell.installer.requirements_status_error"|trans }}
                             {% else %}
-                                {{ "shopware.installer.requirements_status_warning"|trans }}
+                                {{ "shopwell.installer.requirements_status_warning"|trans }}
                             {% endif %}
                         </td>
                         <td>{{ systemCheck.requiredValue }}</td>
@@ -111,10 +111,10 @@
     <div class="card__footer">
         <form action="{{ url('installer.requirements') }}" method="post" class="flex-container">
             {% if noWayBack is not true %}
-                <a href="{{ url('installer.start') }}" class="btn btn-default flex-item">{{ "shopware.installer.back"|trans }}</a>
+                <a href="{{ url('installer.start') }}" class="btn btn-default flex-item">{{ "shopwell.installer.back"|trans }}</a>
             {% endif %}
             <button type="submit" class="btn btn-primary flex-item flex-right" {% if requirementChecks.hasError %}disabled="disabled"{% endif %}>
-                {{ "shopware.installer.forward"|trans }}
+                {{ "shopwell.installer.forward"|trans }}
             </button>
         </form>
     </div>

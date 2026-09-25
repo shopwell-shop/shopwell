@@ -30,11 +30,11 @@ class RedisConnectionsCompilerPass implements CompilerPassInterface
      */
     public function prepareConnections(ContainerBuilder $container): array
     {
-        if (!$container->hasParameter('shopware.redis.connections')) {
+        if (!$container->hasParameter('shopwell.redis.connections')) {
             return [];
         }
 
-        $connections = $container->getParameter('shopware.redis.connections');
+        $connections = $container->getParameter('shopwell.redis.connections');
         if (!\is_array($connections)) {
             return [];
         }
@@ -47,7 +47,7 @@ class RedisConnectionsCompilerPass implements CompilerPassInterface
                 throw AdapterException::invalidRedisConnectionDsn($name);
             }
 
-            $serviceId = 'shopware.redis.connection.' . $name;
+            $serviceId = 'shopwell.redis.connection.' . $name;
             $definition = $this->createRedisDefinition($dsn);
             $container->setDefinition($serviceId, $definition);
             $connectionServices[$serviceId] = new Reference($serviceId);

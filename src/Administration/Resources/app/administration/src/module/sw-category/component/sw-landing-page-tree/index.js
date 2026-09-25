@@ -3,7 +3,7 @@ import './sw-landing-page-tree.scss';
 
 const { Criteria } = Shopwell.Data;
 
-// shopware.api.max_limit caps every Admin API request, rejecting anything higher instead of clamping.
+// shopwell.api.max_limit caps every Admin API request, rejecting anything higher instead of clamping.
 // It is configurable but defaults to 500, which the Administration hardcodes everywhere; stay consistent
 // with that until the value is exposed to the client.
 const PAGE_SIZE = 500;

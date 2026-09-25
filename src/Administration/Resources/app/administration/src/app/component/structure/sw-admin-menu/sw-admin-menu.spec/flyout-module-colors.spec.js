@@ -48,7 +48,7 @@ describe('src/app/component/structure/sw-admin-menu: flyout module colors', () =
         Shopwell.Store.get('session').setCurrentUser(null);
         Shopwell.Store.get('settingsItems').settingsGroups.shop = [];
         Shopwell.Store.get('settingsItems').settingsGroups.system = [];
-        Shopwell.Store.get('shopwareApps').apps = [];
+        Shopwell.Store.get('shopwellApps').apps = [];
 
         getHoveredEntry().color = moduleColor;
     });

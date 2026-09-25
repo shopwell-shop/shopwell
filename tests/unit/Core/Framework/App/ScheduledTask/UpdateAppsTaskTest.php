@@ -24,10 +24,10 @@ class UpdateAppsTaskTest extends TestCase
         static::assertTrue($task::shouldRescheduleOnFailure());
 
         $c = new ContainerBuilder();
-        $c->setParameter('shopware.deployment.runtime_extension_management', true);
+        $c->setParameter('shopwell.deployment.runtime_extension_management', true);
         static::assertTrue($task::shouldRun($c->getParameterBag()));
 
-        $c->setParameter('shopware.deployment.runtime_extension_management', false);
+        $c->setParameter('shopwell.deployment.runtime_extension_management', false);
         static::assertFalse($task::shouldRun($c->getParameterBag()));
     }
 }

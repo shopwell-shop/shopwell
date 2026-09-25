@@ -14,7 +14,7 @@ ___
 All the sw- wrapper components will be removed in the next major version. The Meteor Components will be used directly instead of the sw- wrapper components.
 
 ## Use `deprecated` prop
-This prop is used to use deprecated components to keep the same API and not breaking previous code. This way the same code is compatible with Shopware 6.6 and Shopware 6.7 as this new `deprecated` prop will be ignored in 6.6. This prop will be removed in the next major version together with the sw- wrapper components.
+This prop is used to use deprecated components to keep the same API and not breaking previous code. This way the same code is compatible with Shopwell 6.6 and Shopwell 6.7 as this new `deprecated` prop will be ignored in 6.6. This prop will be removed in the next major version together with the sw- wrapper components.
 
 ```html
 <!-- Uses mt-button in 6.7 and sw-button-deprecated in 6.6 -->

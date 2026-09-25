@@ -12,20 +12,20 @@ ___
 # Upgrade Information
 ## "notification" Vuex store moved to Pinia
 
-The notification store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopware.Store.get('notification')`.
+The notification store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopwell.Store.get('notification')`.
 
 ### Before:
 ```js
-Shopware.State.get('notification');
+Shopwell.State.get('notification');
 
-Shopware.State.commit('notification/createNotification', notification);
+Shopwell.State.commit('notification/createNotification', notification);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('notification');
+Shopwell.Store.get('notification');
 
-Shopware.Store.get('notification').createNotification(notification);
+Shopwell.Store.get('notification').createNotification(notification);
 ```
 
 ## Removed `getNotificationsObject` getter from `notification` store
@@ -34,12 +34,12 @@ The `getNotificationsObject` getter has been removed from the `notification` sto
 
 ### Before:
 ```js
-Shopware.State.getters['notification/getNotificationsObject']
+Shopwell.State.getters['notification/getNotificationsObject']
 ```
 
 ### After:
 ```js
-Shopware.Store.get('notification').notifications
+Shopwell.Store.get('notification').notifications
 ```
 
 ## Removed `getGrowlNotificationsObject` getter from `notification` store
@@ -48,10 +48,10 @@ The `getGrowlNotificationsObject` getter has been removed from the `notification
 
 ### Before:
 ```js
-Shopware.State.getters['notification/getGrowlNotificationsObject']
+Shopwell.State.getters['notification/getGrowlNotificationsObject']
 ```
 
 ### After:
 ```js
-Shopware.Store.get('notification').growlNotifications
+Shopwell.Store.get('notification').growlNotifications
 ```

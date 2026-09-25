@@ -32,7 +32,7 @@ import LicenseViolationsService from 'src/app/service/license-violations.service
 import ShortcutService from 'src/app/service/shortcut.service';
 import LocaleToLanguageService from 'src/app/service/locale-to-language.service';
 import addPluginUpdatesListener from 'src/core/service/plugin-updates-listener.service';
-import addShopwellUpdatesListener from 'src/core/service/shopware-updates-listener.service';
+import addShopwellUpdatesListener from 'src/core/service/shopwell-updates-listener.service';
 import addCustomerGroupRegistrationListener from 'src/core/service/customer-group-registration-listener.service';
 import LocaleHelperService from 'src/app/service/locale-helper.service';
 import FilterService from 'src/app/service/filter.service';
@@ -57,8 +57,8 @@ import Feature from 'src/core/feature';
 import 'src/app/decorator';
 
 /** Import Meteor Component Library styles */
-import '@shopware-ag/meteor-component-library/styles.css';
-import '@shopware-ag/meteor-component-library/font.css';
+import '@shopwell-ag/meteor-component-library/styles.css';
+import '@shopwell-ag/meteor-component-library/font.css';
 import './assets/scss/all.scss';
 
 import ChangesetGenerator from '../core/data/changeset-generator.data';
@@ -221,7 +221,7 @@ Application.addServiceProvider('feature', () => {
         const appCmsBlocksService = container.appCmsBlocks;
         return new AppCmsService(appCmsBlocksService, adapter);
     })
-    .addServiceProvider('shopwareDiscountCampaignService', () => {
+    .addServiceProvider('shopwellDiscountCampaignService', () => {
         return new ShopwellDiscountCampaignService();
     })
     .addServiceProvider('searchRankingService', () => {

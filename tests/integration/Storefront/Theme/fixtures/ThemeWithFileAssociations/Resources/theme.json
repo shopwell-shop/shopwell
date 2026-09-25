@@ -1,7 +1,7 @@
 {
   "name": "theme-with-file-associations",
-  "author": "shopware AG",
-  "previewMedia": "app/shopware_logo_preview.svg",
+  "author": "Shopwell",
+  "previewMedia": "app/shopwell_logo_preview.svg",
   "tabs": {
     "mainTab": {
       "label": {
@@ -26,17 +26,17 @@
     },
 
     "fields": {
-      "shopwareLogo": {
+      "shopwellLogo": {
         "label": {
           "en-GB": "Shopwell Logo",
           "de-DE": "Shopwell Logo"
         },
         "helpText": {
-          "en-GB": "this is the shopware logo",
-          "de-DE": "this is the shopware Logo"
+          "en-GB": "this is the shopwell logo",
+          "de-DE": "this is the shopwell Logo"
         },
         "type": "media",
-        "value": "app/storefront/src/assets/image/shopware_logo.svg",
+        "value": "app/storefront/src/assets/image/shopwell_logo.svg",
         "editable": true,
         "tab": "tabGeneralLayout",
         "block": "blockLayout",

@@ -77,7 +77,7 @@ describe('src/module/sw-category/component/sw-landing-page-tree', () => {
 
         Shopwell.Store.get('swCategoryDetail').$reset();
 
-        // this is normally set by the shopware runtime
+        // this is normally set by the shopwell runtime
         // but needed for this unit tests because the component relies on this value.
         oldSystemLanguageId = Shopwell.Context.api.systemLanguageId;
         Shopwell.Context.api.systemLanguageId = '1a2b3c';

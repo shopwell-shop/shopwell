@@ -25,8 +25,8 @@ export interface ToolGuidance {
 const BRIDGE_TSCONFIG_LINE = `"extends": "${BRIDGE_TSCONFIG_EXTENDS}"`;
 const BRIDGE_INCLUDE_LINE = '"include": ["src/**/*.ts", "src/**/*.vue"]';
 const BRIDGE_ESLINT_LINES = [
-    `import shopware from '${BRIDGE_ESLINT_SPECIFIER}';`,
-    'export default [ ...shopware /* , your rules */ ];',
+    `import shopwell from '${BRIDGE_ESLINT_SPECIFIER}';`,
+    'export default [ ...shopwell /* , your rules */ ];',
 ];
 
 /**

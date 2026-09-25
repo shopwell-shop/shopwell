@@ -1,5 +1,5 @@
 import { test, expect } from '@fixtures/AcceptanceTest';
-import { replaceElements } from '@shopware-ag/acceptance-test-suite';
+import { replaceElements } from '@shopwell-ag/acceptance-test-suite';
 
 test(
     'Creates a screenshot of the Storefront Homepage.',

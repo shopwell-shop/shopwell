@@ -19,7 +19,7 @@ class Migration1786447612FixSalesChannelAnalyticsConstraint extends MigrationSte
 
     public function update(Connection $connection): void
     {
-        /** @phpstan-ignore shopware.dropStatement (FK is directly added again so dropping the FK is no issue for blue green) */
+        /** @phpstan-ignore shopwell.dropStatement (FK is directly added again so dropping the FK is no issue for blue green) */
         $this->dropForeignKeyIfExists($connection, 'sales_channel', 'fk.sales_channel.analytics_id');
 
         $connection->executeStatement('

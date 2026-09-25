@@ -20,7 +20,7 @@ const RESERVED_OVERRIDE_STATE_NAME = '__swOverride';
 
 // Every binding the transform generates is prefixed with this, so reserving it lets generated names
 // stay deterministic and collision-free without renaming user code.
-const SHOPWARE_SETUP_INTERNAL_PREFIX = '__swSetup';
+const SHOPWELL_SETUP_INTERNAL_PREFIX = '__swSetup';
 
 // Module-root binding holding an override file's unique `Symbol()`, used as the computed key its
 // override-local state is filed under. One per override module, so the name can be fixed - the Symbol
@@ -127,7 +127,7 @@ export {
     type ShopwellSetupMacroName,
     OVERRIDE_NAMESPACE_BINDING,
     RESERVED_OVERRIDE_STATE_NAME,
-    SHOPWARE_SETUP_INTERNAL_PREFIX,
+    SHOPWELL_SETUP_INTERNAL_PREFIX,
     extractStaticObjectMarker,
     isWithDefaultsCall,
 };

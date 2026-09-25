@@ -45,15 +45,15 @@
  *   2. carries `lifecycle/DoNotClose`                     -> nobody    (parked-by-label)
  *   3. review decision CHANGES_REQUESTED
  *        no author activity since that review             -> author    (changes-requested)
- *        author has answered it                           -> shopware  (re-review-pending)
+ *        author has answered it                           -> shopwell  (re-review-pending)
  *   4. review decision APPROVED
  *        head conflicts with the base branch              -> author    (needs-rebase)
- *        mergeability not computed yet                    -> shopware  (mergeability-unknown)
- *        otherwise                                        -> shopware  (just-merge-it)
- *   5. at least one approval, decision still open         -> shopware  (second-review-missing)
- *   6. no review at all, ever                             -> shopware  (never-reviewed)
+ *        mergeability not computed yet                    -> shopwell  (mergeability-unknown)
+ *        otherwise                                        -> shopwell  (just-merge-it)
+ *   5. at least one approval, decision still open         -> shopwell  (second-review-missing)
+ *   6. no review at all, ever                             -> shopwell  (never-reviewed)
  *   7. a maintainer acted after the author last did       -> author    (author-turn)
- *   8. otherwise                                          -> shopware  (our-turn)
+ *   8. otherwise                                          -> shopwell  (our-turn)
  *
  * Step 3 is the one that carries the rule. `reviewDecision` alone gets it backwards in
  * both directions: on #11516 a maintainer requested changes on 26 May and the author
@@ -68,7 +68,7 @@
  * have been sitting in, and it is invisible in the GitHub UI's own filters.
  *
  * Unknowns resolve towards us, never towards the contributor: a pull request we cannot
- * classify lands in `shopware` so the worst case is that we look at it again.
+ * classify lands in `shopwell` so the worst case is that we look at it again.
  *
  * ## Age
  *
@@ -93,7 +93,7 @@
  * CONTRIBUTOR, which is fine for a report and not good enough to route a reminder on.
  */
 
-export type WaitingOn = 'author' | 'shopware' | 'nobody';
+export type WaitingOn = 'author' | 'shopwell' | 'nobody';
 
 export type WaitingOnReason =
     | 'parked-by-us'
@@ -112,7 +112,7 @@ export type WaitingOnReason =
 /** What stage 3 would set. Defined here so the report shows the label it would apply; nothing writes it yet. */
 export const WAITING_ON_LABEL: Record<WaitingOn, string> = {
     author: 'waiting-on/author',
-    shopware: 'waiting-on/shopware',
+    shopwell: 'waiting-on/shopwell',
     nobody: 'waiting-on/nobody',
 };
 
@@ -135,9 +135,9 @@ export const NON_HUMAN_LOGINS = [
     'explore-openapi',
     'github-actions',
     'octo-sts',
-    'shopwareBot',
-    'shopware-octo-sts-app',
-    'shopware-octo-sts-app-2',
+    'shopwellBot',
+    'shopwell-octo-sts-app',
+    'shopwell-octo-sts-app-2',
 ];
 
 export type ReviewDecision = 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED';
@@ -212,7 +212,7 @@ export function classifyPullRequest(facts: PullRequestFacts): WaitingOnVerdict {
 
         if (blockedAt && lastAuthorActivityAt && lastAuthorActivityAt > blockedAt) {
             return {
-                waitingOn: 'shopware',
+                waitingOn: 'shopwell',
                 reason: 're-review-pending',
                 message: 'the author answered the requested changes and nobody has looked again',
                 since: lastAuthorActivityAt,
@@ -239,7 +239,7 @@ export function classifyPullRequest(facts: PullRequestFacts): WaitingOnVerdict {
 
         if (facts.mergeable === 'UNKNOWN') {
             return {
-                waitingOn: 'shopware',
+                waitingOn: 'shopwell',
                 reason: 'mergeability-unknown',
                 message: 'is approved, and GitHub has not computed whether it still merges',
                 since: lastMaintainerActivityAt ?? createdAt,
@@ -247,7 +247,7 @@ export function classifyPullRequest(facts: PullRequestFacts): WaitingOnVerdict {
         }
 
         return {
-            waitingOn: 'shopware',
+            waitingOn: 'shopwell',
             reason: 'just-merge-it',
             message: 'is approved and merges cleanly',
             since: lastMaintainerActivityAt ?? createdAt,
@@ -256,7 +256,7 @@ export function classifyPullRequest(facts: PullRequestFacts): WaitingOnVerdict {
 
     if (facts.approvals >= 1) {
         return {
-            waitingOn: 'shopware',
+            waitingOn: 'shopwell',
             reason: 'second-review-missing',
             message: `has ${facts.approvals} approval(s) and is short of the required review count`,
             since: lastMaintainerActivityAt ?? createdAt,
@@ -265,7 +265,7 @@ export function classifyPullRequest(facts: PullRequestFacts): WaitingOnVerdict {
 
     if (facts.reviewCount === 0) {
         return {
-            waitingOn: 'shopware',
+            waitingOn: 'shopwell',
             reason: 'never-reviewed',
             message: 'has not been reviewed once',
             since: facts.readyForReviewAt ?? createdAt,
@@ -282,7 +282,7 @@ export function classifyPullRequest(facts: PullRequestFacts): WaitingOnVerdict {
     }
 
     return {
-        waitingOn: 'shopware',
+        waitingOn: 'shopwell',
         reason: 'our-turn',
         message: 'the author wrote last',
         since: lastAuthorActivityAt ?? createdAt,
@@ -607,7 +607,7 @@ export function buildRows(nodes: PullRequestNode[], now: Date): Row[] {
         .sort((left, right) => right.days - left.days);
 }
 
-const BUCKET_ORDER: WaitingOn[] = ['shopware', 'author', 'nobody'];
+const BUCKET_ORDER: WaitingOn[] = ['shopwell', 'author', 'nobody'];
 
 export function renderReport(rows: Row[]): string {
     const lines: string[] = ['## Who is waiting for whom', ''];

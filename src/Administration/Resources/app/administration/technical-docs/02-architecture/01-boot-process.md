@@ -10,7 +10,7 @@ sequenceDiagram
     participant Browser
     participant TwigShell as Twig Shell (/admin)
     participant IndexTS as index.ts
-    participant CoreShopwell as core/shopware.ts
+    participant CoreShopwell as core/shopwell.ts
     participant AppMain as app/main.ts
     participant Application as Application.start()
     participant LoginService as loginService
@@ -23,7 +23,7 @@ sequenceDiagram
     Note right of TwigShell: Injects apiContext, appContext, features, CSP nonce
     
     Browser->>IndexTS: Execute index.ts (entry point)
-    IndexTS->>CoreShopwell: Dynamic import core/shopware
+    IndexTS->>CoreShopwell: Dynamic import core/shopwell
     Note right of CoreShopwell: Creates DI container, factories, global Shopwell object
     CoreShopwell-->>IndexTS: Shopwell instance ready
     
@@ -107,7 +107,7 @@ The main entry point is `src/Administration/Resources/app/administration/src/ind
 import './app/assets/scss/all.scss';
 
 // Dynamic import of core Shopwell instance
-void import('src/core/shopware').then(async ({ ShopwellInstance }) => {
+void import('src/core/shopwell').then(async ({ ShopwellInstance }) => {
     // Set global Shopwell instance
     window.Shopwell = ShopwellInstance;
 
@@ -128,7 +128,7 @@ void import('src/core/shopware').then(async ({ ShopwellInstance }) => {
 
 ### Dependency Injection Container Setup
 
-The `src/core/shopware.ts` file creates the foundation:
+The `src/core/shopwell.ts` file creates the foundation:
 
 1. **Early Feature Flag Initialization**: If `window._features_` exists, feature flags are initialized immediately
 2. **Bottle.js DI Container**: Creates the main dependency injection container with strict mode disabled

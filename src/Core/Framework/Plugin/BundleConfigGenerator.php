@@ -55,7 +55,7 @@ class BundleConfigGenerator implements BundleConfigGeneratorInterface
 
         $bundles = [];
         foreach ($kernelBundles as $bundle) {
-            // only include shopware bundles
+            // only include shopwell bundles
             if (!$bundle instanceof Bundle) {
                 continue;
             }

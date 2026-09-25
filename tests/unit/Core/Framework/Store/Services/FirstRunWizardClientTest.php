@@ -45,7 +45,7 @@ class FirstRunWizardClientTest extends TestCase
                 '/swplatform/firstrunwizard/login',
                 [
                     'json' => [
-                        'shopwareId' => 'j.doe@shopwell.cn',
+                        'shopwellId' => 'j.doe@shopwell.cn',
                         'password' => 'p4ssw0rd',
                     ],
                     'query' => [],
@@ -75,7 +75,7 @@ class FirstRunWizardClientTest extends TestCase
         );
 
         $this->expectException(\RuntimeException::class);
-        $frwClient->frwLogin('shopwareId', 'password', $context);
+        $frwClient->frwLogin('shopwellId', 'password', $context);
     }
 
     public function testFrwLoginFailsIfAdminApiSourceHasNoUserId(): void
@@ -95,7 +95,7 @@ class FirstRunWizardClientTest extends TestCase
         );
 
         $this->expectException(\RuntimeException::class);
-        $frwClient->frwLogin('shopwareId', 'password', $context);
+        $frwClient->frwLogin('shopwellId', 'password', $context);
     }
 
     public function testUpgradeAccessTokenFailsIfUserIsNotLoggedIn(): void
@@ -133,7 +133,7 @@ class FirstRunWizardClientTest extends TestCase
                 '/swplatform/login/upgrade',
                 [
                     'json' => [
-                        'shopwareUserId' => $this->context->getSource()->getUserId(),
+                        'shopwellUserId' => $this->context->getSource()->getUserId(),
                     ],
                     'query' => [],
                     'headers' => [],
@@ -187,7 +187,7 @@ class FirstRunWizardClientTest extends TestCase
             'name' => 'SwagLanguagePack',
             'priority' => 1,
             'producer' => [
-                'name' => 'shopware AG',
+                'name' => 'Shopwell',
             ],
         ];
 
@@ -268,7 +268,7 @@ class FirstRunWizardClientTest extends TestCase
         $licenseDomains = [
             [
                 'id' => 123456,
-                'domain' => 'shopware.swag',
+                'domain' => 'shopwell.swag',
             ],
         ];
 
@@ -299,8 +299,8 @@ class FirstRunWizardClientTest extends TestCase
                 [
                     'headers' => [],
                     'json' => [
-                        'domain' => 'shopware.swag',
-                        'shopwareVersion' => '',
+                        'domain' => 'shopwell.swag',
+                        'shopwellVersion' => '',
                         'testEnvironment' => true,
                     ],
                 ],
@@ -308,7 +308,7 @@ class FirstRunWizardClientTest extends TestCase
             []
         );
 
-        $frwClient->checkVerificationSecret('shopware.swag', $this->context, true);
+        $frwClient->checkVerificationSecret('shopwell.swag', $this->context, true);
     }
 
     public function testFetchVerificationInfo(): void
@@ -327,7 +327,7 @@ class FirstRunWizardClientTest extends TestCase
                 [
                     'headers' => [],
                     'json' => [
-                        'domain' => 'shopware.swag',
+                        'domain' => 'shopwell.swag',
                     ],
                     'query' => [],
                 ],
@@ -337,7 +337,7 @@ class FirstRunWizardClientTest extends TestCase
 
         static::assertSame(
             $verificationInfo,
-            $frwClient->fetchVerificationInfo('shopware.swag', $this->context)
+            $frwClient->fetchVerificationInfo('shopwell.swag', $this->context)
         );
     }
 

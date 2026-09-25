@@ -4,4 +4,4 @@ issue: NEXT-33726
 ---
 
 # Core
-* Added a new option `default` for [custom entities](https://developer.shopware.com/docs/guides/plugins/apps/custom-data/custom-entities.html) field definitions
+* Added a new option `default` for [custom entities](https://developer.shopwell.com/docs/guides/plugins/apps/custom-data/custom-entities.html) field definitions

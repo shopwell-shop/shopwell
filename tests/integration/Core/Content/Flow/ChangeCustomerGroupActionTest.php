@@ -109,7 +109,7 @@ class ChangeCustomerGroupActionTest extends TestCase
             ],
         ]], Context::createDefaultContext());
 
-        $this->login($email, 'shopware');
+        $this->login($email, 'shopwell');
 
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('name', 'Test group'));

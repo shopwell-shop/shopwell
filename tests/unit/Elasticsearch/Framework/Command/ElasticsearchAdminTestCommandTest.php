@@ -27,7 +27,7 @@ class ElasticsearchAdminTestCommandTest extends TestCase
             ->expects($this->once())
             ->method('search')
             ->willReturnCallback(function (string $term, array $entities): array {
-                $this->assertSame('shopware', $term);
+                $this->assertSame('shopwell', $term);
                 $this->assertContains(ProductDefinition::ENTITY_NAME, $entities);
 
                 return [
@@ -42,7 +42,7 @@ class ElasticsearchAdminTestCommandTest extends TestCase
 
         $commandTester = new CommandTester(new ElasticsearchAdminTestCommand($searcher));
 
-        static::assertSame(Command::SUCCESS, $commandTester->execute(['term' => 'shopware']));
+        static::assertSame(Command::SUCCESS, $commandTester->execute(['term' => 'shopwell']));
 
         $display = $commandTester->getDisplay();
         static::assertStringContainsString('sw-admin-product', $display);

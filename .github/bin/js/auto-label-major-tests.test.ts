@@ -36,7 +36,7 @@ index 0000000..1111111 100644
 @@ -1,1 +1,1 @@
 ${hunk}`;
 
-const REGISTRY = `shopware:
+const REGISTRY = `shopwell:
     feature:
         flags:
             - name: v6.8.0.0
@@ -80,7 +80,7 @@ test('registry file edits match regardless of line content', () => {
 test('major markers in Administration source or tests enable the major-js arm', () => {
     const sourceDiff = diffFor(
         'src/Administration/Resources/app/administration/src/app/component/example/index.ts',
-        "+        return Shopware.Feature.isActive('v6.8.0.0');",
+        "+        return Shopwell.Feature.isActive('v6.8.0.0');",
     );
     const testDiff = diffFor(
         'src/Administration/Resources/app/administration/test/_setup/example.spec.ts',
@@ -170,11 +170,11 @@ test('accepted imprecision: a changelog release heading matches the version rege
 
 const baseContext = (overrides: Partial<TestContext> = {}): TestContext => ({
     eventName: 'pull_request',
-    repo: { owner: 'shopware', repo: 'shopware' },
+    repo: { owner: 'shopwell', repo: 'shopwell' },
     payload: {
         action: 'opened',
         pull_request: {
-            head: { repo: { full_name: 'shopware/shopware' } },
+            head: { repo: { full_name: 'shopwell/shopwell' } },
             labels: [],
         },
     },
@@ -197,7 +197,7 @@ test('shouldDetect rejects other PR actions', async () => {
 
 test('shouldDetect rejects fork heads', async () => {
     const context = baseContext();
-    context.payload.pull_request.head.repo.full_name = 'fork/shopware';
+    context.payload.pull_request.head.repo.full_name = 'fork/shopwell';
     assert.equal(shouldDetect(context), false);
 });
 

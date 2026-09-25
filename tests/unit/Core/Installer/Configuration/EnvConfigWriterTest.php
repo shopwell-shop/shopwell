@@ -37,7 +37,7 @@ class EnvConfigWriterTest extends TestCase
             'port' => 3306,
             'username' => 'root',
             'password' => 'root',
-            'databaseName' => 'shopware',
+            'databaseName' => 'shopwell',
         ]);
 
         $writer->writeConfig($info, [
@@ -81,7 +81,7 @@ class EnvConfigWriterTest extends TestCase
             'port' => 3306,
             'username' => 'root',
             'password' => 'root',
-            'databaseName' => 'shopware',
+            'databaseName' => 'shopwell',
             'sslCaPath' => '/foo.ca.crt',
             'sslCertPath' => '/foo.crt',
             'sslCertKeyPath' => '/foo.key',

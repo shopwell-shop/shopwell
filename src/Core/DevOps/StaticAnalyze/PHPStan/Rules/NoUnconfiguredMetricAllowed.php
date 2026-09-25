@@ -42,7 +42,7 @@ class NoUnconfiguredMetricAllowed implements Rule
 
     public function __construct(ParameterMap $parameterMap)
     {
-        $paramValues = $parameterMap->getParameter('shopware.telemetry.metrics.definitions')?->getValue() ?? [];
+        $paramValues = $parameterMap->getParameter('shopwell.telemetry.metrics.definitions')?->getValue() ?? [];
         $this->definitions = array_fill_keys(array_keys((array) $paramValues), true);
     }
 
@@ -93,7 +93,7 @@ class NoUnconfiguredMetricAllowed implements Rule
         if (!\array_key_exists($metricName, $this->definitions)) {
             return [
                 RuleErrorBuilder::message(\sprintf('Metric "%s" is not configured', $metricName))
-                    ->identifier('shopware.metricConfiguration')
+                    ->identifier('shopwell.metricConfiguration')
                     ->build(),
             ];
         }

@@ -28,7 +28,7 @@ trait StoreClientBehaviour
     public function getStoreRequestHandler(): MockHandler
     {
         /** @var MockHandler $handler */
-        $handler = static::getContainer()->get('shopware.store.mock_handler');
+        $handler = static::getContainer()->get('shopwell.store.mock_handler');
 
         return $handler;
     }
@@ -36,7 +36,7 @@ trait StoreClientBehaviour
     public function getFrwRequestHandler(): MockHandler
     {
         /** @var MockHandler $handler */
-        $handler = static::getContainer()->get('shopware.frw.mock_handler');
+        $handler = static::getContainer()->get('shopwell.frw.mock_handler');
 
         return $handler;
     }

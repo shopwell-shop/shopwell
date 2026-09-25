@@ -27,7 +27,7 @@ class GuestAuthenticator
 
         // Do not trim the zipcode here. Existing guest orders may contain leading or trailing
         // whitespace in the stored billing zipcode and must remain accessible with that value.
-        // See ticket: https://github.com/shopware/shopware/issues/16005
+        // See ticket: https://github.com/shopwell-shop/shopwell/issues/16005
         $billingAddress = $order->getBillingAddress();
         if ($billingAddress === null
             || mb_strtolower($email) !== mb_strtolower($order->getOrderCustomer()?->getEmail() ?: '')

@@ -31,16 +31,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(NewsletterRecipientDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelNewsletterRecipientDefinition::class)
-        ->tag('shopware.sales_channel.entity.definition');
+        ->tag('shopwell.sales_channel.entity.definition');
 
     $services->set(NewsletterRecipientTagDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(NewsletterRecipientTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(NewsletterRecipientTaskHandler::class)
         ->args([
@@ -52,7 +52,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('messenger.message_handler');
 
     $services->set(NewsletterExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(NewsletterSubscribeRoute::class)
         ->public()
@@ -61,7 +61,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DataValidator::class),
             service('event_dispatcher'),
             service(SystemConfigService::class),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
             service(RequestStack::class),
             service(StoreApiCustomFieldMapper::class),
             service('customer.repository'),
@@ -93,7 +93,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CustomerNewsletterSalesChannelsUpdater::class),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.entity_indexer');
+        ->tag('shopwell.entity_indexer');
 
     $services->set(CustomerNewsletterSalesChannelsUpdater::class)
         ->args([

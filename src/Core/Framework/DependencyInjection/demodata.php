@@ -70,7 +70,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(DemodataService::class)
         ->args([
-            tagged_iterator('shopware.demodata_generator'),
+            tagged_iterator('shopwell.demodata_generator'),
             param('kernel.project_dir'),
             service(DefinitionInstanceRegistry::class),
             service(ClockInterface::class),
@@ -88,7 +88,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(RuleDefinition::class),
             service(ClockInterface::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'rules', 'option-default' => 25, 'option_name' => 'rules', 'option_default' => 25]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'rules', 'option-default' => 25, 'option_name' => 'rules', 'option_default' => 25]);
 
     $services->set(CustomerGenerator::class)
         ->args([
@@ -98,13 +98,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(NumberRangeValueGeneratorInterface::class),
             service(CustomerDefinition::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'customers', 'option-default' => 60, 'option_name' => 'customers', 'option_default' => 60]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'customers', 'option-default' => 60, 'option_name' => 'customers', 'option_default' => 60]);
 
     $services->set(PropertyGroupGenerator::class)
         ->args([
             service('property_group.repository'),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'properties', 'option-default' => 10, 'option-description' => 'Property group count (option count rand(30-300))', 'option_name' => 'properties', 'option_default' => 10, 'option_description' => 'Property group count (option count rand(30-300))']);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'properties', 'option-default' => 10, 'option-description' => 'Property group count (option count rand(30-300))', 'option_name' => 'properties', 'option_default' => 10, 'option_description' => 'Property group count (option count rand(30-300))']);
 
     $services->set(CategoryGenerator::class)
         ->args([
@@ -112,21 +112,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('cms_page.repository'),
             service(Connection::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'categories', 'option-default' => 10, 'option_name' => 'categories', 'option_default' => 10]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'categories', 'option-default' => 10, 'option_name' => 'categories', 'option_default' => 10]);
 
     $services->set(ProductManufacturerGenerator::class)
         ->args([
             service(EntityWriter::class),
             service(ProductManufacturerDefinition::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'manufacturers', 'option-default' => 60, 'option_name' => 'manufacturers', 'option_default' => 60]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'manufacturers', 'option-default' => 60, 'option_name' => 'manufacturers', 'option_default' => 60]);
 
     $services->set(TagGenerator::class)
         ->args([
             service(EntityWriter::class),
             service(TagDefinition::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'tags', 'option-default' => 50, 'option_name' => 'tags', 'option_default' => 50]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'tags', 'option-default' => 50, 'option_name' => 'tags', 'option_default' => 50]);
 
     $services->set(ProductReviewGenerator::class)
         ->args([
@@ -135,7 +135,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(ProductReviewCountService::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'reviews', 'option-default' => 20, 'option_name' => 'reviews', 'option_default' => 20]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'reviews', 'option-default' => 20, 'option_name' => 'reviews', 'option_default' => 20]);
 
     $services->set(ProductGenerator::class)
         ->args([
@@ -144,14 +144,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(InheritanceUpdater::class),
             service(StatesUpdater::class)->nullOnInvalid(),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'products', 'option-default' => 1000, 'option_name' => 'products', 'option_default' => 1000]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'products', 'option-default' => 1000, 'option_name' => 'products', 'option_default' => 1000]);
 
     $services->set(PromotionGenerator::class)
         ->args([
             service(Connection::class),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'promotions', 'option-default' => 50, 'option_name' => 'promotions', 'option_default' => 50]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'promotions', 'option-default' => 50, 'option_name' => 'promotions', 'option_default' => 50]);
 
     $services->set(FlowGenerator::class)
         ->args([
@@ -160,7 +160,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(BusinessEventCollector::class),
             service(FlowActionCollector::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'flows', 'option-default' => 0, 'option_name' => 'flows', 'option_default' => 0]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'flows', 'option-default' => 0, 'option_name' => 'flows', 'option_default' => 0]);
 
     $services->set(MediaGenerator::class)
         ->args([
@@ -172,14 +172,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(MediaDefinition::class),
             service(Connection::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'media', 'option-default' => 300, 'option_name' => 'media', 'option_default' => 300]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'media', 'option-default' => 300, 'option_name' => 'media', 'option_default' => 300]);
 
     $services->set(ProductStreamGenerator::class)
         ->args([
             service(EntityWriter::class),
             service(ProductStreamDefinition::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'product-streams', 'option-default' => 10, 'option_name' => 'product-streams', 'option_default' => 10]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'product-streams', 'option-default' => 10, 'option_name' => 'product-streams', 'option_default' => 10]);
 
     $services->set(OrderGenerator::class)
         ->args([
@@ -191,7 +191,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(OrderDefinition::class),
             service(CartCalculator::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'orders', 'option-default' => 60, 'option_name' => 'orders', 'option_default' => 60]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'orders', 'option-default' => 60, 'option_name' => 'orders', 'option_default' => 60]);
 
     $services->set(CustomFieldGenerator::class)
         ->args([
@@ -199,7 +199,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'attribute-sets', 'option-default' => 4, 'option-description' => 'CustomField set count', 'option_name' => 'attribute-sets', 'option_default' => 4, 'option_description' => 'CustomField set count']);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'attribute-sets', 'option-default' => 4, 'option-description' => 'CustomField set count', 'option_name' => 'attribute-sets', 'option_default' => 4, 'option_description' => 'CustomField set count']);
 
     $services->set(MailTemplateGenerator::class)
         ->args([
@@ -207,20 +207,20 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('mail_template_type.repository'),
             service(MailTemplateDefinition::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'mail-template', 'option-default' => 10, 'option_name' => 'mail-template', 'option_default' => 10]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'mail-template', 'option-default' => 10, 'option_name' => 'mail-template', 'option_default' => 10]);
 
     $services->set(MailHeaderFooterGenerator::class)
         ->args([
             service(EntityWriter::class),
             service(MailHeaderFooterDefinition::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'mail-header-footer', 'option-default' => 3, 'option-description' => 'Mail header/footer count', 'option_name' => 'mail-header-footer', 'option_default' => 3, 'option_description' => 'Mail header/footer count']);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'mail-header-footer', 'option-default' => 3, 'option-description' => 'Mail header/footer count', 'option_name' => 'mail-header-footer', 'option_default' => 3, 'option_description' => 'Mail header/footer count']);
 
     $services->set(SalesChannelDomainGenerator::class)
         ->args([
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'sales-channel-domain', 'option-default' => 1, 'option_name' => 'sales-channel-domain', 'option_default' => 1]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'sales-channel-domain', 'option-default' => 1, 'option_name' => 'sales-channel-domain', 'option_default' => 1]);
 
     $services->set(UserGenerator::class)
         ->args([
@@ -228,7 +228,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(UserDefinition::class),
             service('language.repository'),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'users', 'option-default' => 0, 'option_name' => 'users', 'option_default' => 0]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'users', 'option-default' => 0, 'option_name' => 'users', 'option_default' => 0]);
 
     $services->set(NewsletterRecipientGenerator::class)
         ->args([
@@ -236,5 +236,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(NewsletterRecipientDefinition::class),
             service(Connection::class),
         ])
-        ->tag('shopware.demodata_generator', ['option-name' => 'newsletter-recipients', 'option-default' => 20, 'option_name' => 'newsletter-recipients', 'option_default' => 20]);
+        ->tag('shopwell.demodata_generator', ['option-name' => 'newsletter-recipients', 'option-default' => 20, 'option_name' => 'newsletter-recipients', 'option_default' => 20]);
 };

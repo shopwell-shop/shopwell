@@ -24,7 +24,7 @@ class MessageStorerTest extends TestCase
         $storedData = [[]];
         $data = [
             'subject' => 'Hi',
-            'senderName' => 'shopware',
+            'senderName' => 'shopwell',
             'contentPlain' => 'test',
         ];
 
@@ -49,7 +49,7 @@ class MessageStorerTest extends TestCase
         $storedData = [['message' => '[]']];
         $data = [
             'subject' => 'Hi',
-            'senderName' => 'shopware',
+            'senderName' => 'shopwell',
             'contentPlain' => 'test',
         ];
 

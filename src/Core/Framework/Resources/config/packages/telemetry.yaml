@@ -1,7 +1,7 @@
-shopware:
+shopwell:
     telemetry:
         metrics:
-            namespace: 'io.opentelemetry.contrib.php.shopware'
+            namespace: 'io.opentelemetry.contrib.php.shopwell'
 
             definitions:
                 plugin.install.count:

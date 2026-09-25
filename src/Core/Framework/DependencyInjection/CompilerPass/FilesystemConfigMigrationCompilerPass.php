@@ -14,14 +14,14 @@ class FilesystemConfigMigrationCompilerPass implements CompilerPassInterface
     public function process(ContainerBuilder $container): void
     {
         foreach (self::MIGRATED_FS as $fs) {
-            $key = \sprintf('shopware.filesystem.%s', $fs);
+            $key = \sprintf('shopwell.filesystem.%s', $fs);
             $urlKey = $key . '.url';
             $typeKey = $key . '.type';
             $configKey = $key . '.config';
             $visibilityKey = $key . '.visibility';
 
             if (!$container->hasParameter($visibilityKey)) {
-                $container->setParameter($visibilityKey, '%shopware.filesystem.public.visibility%');
+                $container->setParameter($visibilityKey, '%shopwell.filesystem.public.visibility%');
             }
 
             if ($container->hasParameter($typeKey)) {
@@ -30,17 +30,17 @@ class FilesystemConfigMigrationCompilerPass implements CompilerPassInterface
 
             // 6.1 always refers to the main shop url on theme, asset and sitemap.
             $container->setParameter($urlKey, '');
-            $container->setParameter($key, '%shopware.filesystem.public%');
-            $container->setParameter($typeKey, '%shopware.filesystem.public.type%');
-            $container->setParameter($configKey, '%shopware.filesystem.public.config%');
+            $container->setParameter($key, '%shopwell.filesystem.public%');
+            $container->setParameter($typeKey, '%shopwell.filesystem.public.type%');
+            $container->setParameter($configKey, '%shopwell.filesystem.public.config%');
         }
 
-        if (!$container->hasParameter('shopware.filesystem.public.url')) {
-            $container->setParameter('shopware.filesystem.public.url', '%shopware.cdn.url%');
+        if (!$container->hasParameter('shopwell.filesystem.public.url')) {
+            $container->setParameter('shopwell.filesystem.public.url', '%shopwell.cdn.url%');
         }
 
-        if (!$container->hasParameter('shopware.filesystem.public.visibility')) {
-            $container->setParameter('shopware.filesystem.public.visibility', 'public');
+        if (!$container->hasParameter('shopwell.filesystem.public.visibility')) {
+            $container->setParameter('shopwell.filesystem.public.visibility', 'public');
         }
     }
 }

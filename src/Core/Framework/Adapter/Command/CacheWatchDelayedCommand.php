@@ -88,14 +88,14 @@ class CacheWatchDelayedCommand extends Command implements SignalableCommandInter
             return self::FAILURE;
         }
 
-        if (!$this->container->has('shopware.cache.invalidator.storage.redis_adapter')) {
+        if (!$this->container->has('shopwell.cache.invalidator.storage.redis_adapter')) {
             $output->writeln('Redis cache invalidation is not configured.');
 
             return self::FAILURE;
         }
 
         /** @var RedisTypeHint $adapter */
-        $adapter = $this->container->get('shopware.cache.invalidator.storage.redis_adapter');
+        $adapter = $this->container->get('shopwell.cache.invalidator.storage.redis_adapter');
 
         if (method_exists($adapter, 'sMembers') === false) {
             $output->writeln('Redis adapter does not support sMembers method.');

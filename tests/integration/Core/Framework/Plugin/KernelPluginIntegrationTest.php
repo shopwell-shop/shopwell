@@ -387,7 +387,7 @@ class KernelPluginIntegrationTest extends TestCase
             static::createStub(CommandExecutor::class),
             static::createStub(RequirementsValidator::class),
             new ArrayAdapter(),
-            $container->getParameter('kernel.shopware_version'),
+            $container->getParameter('kernel.shopwell_version'),
             static::createStub(SystemConfigService::class),
             static::createStub(CustomEntityPersister::class),
             static::createStub(CustomEntitySchemaUpdater::class),

@@ -69,14 +69,14 @@ The following example demonstrates how an event-based extension can be implement
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\Content\Product\Extension;
+namespace Shopwell\Core\Content\Product\Extension;
 
-use Shopware\Core\Content\Product\ProductCollection;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
-use Shopware\Core\Framework\Extensions\Extension;
-use Shopware\Core\Framework\Log\Package;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Extensions\Extension;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 
 /**
  * @extends Extension<EntitySearchResult<ProductCollection>>
@@ -87,7 +87,7 @@ final class ResolveListingExtension extends Extension
     public const NAME = 'listing-loader.resolve';
 
     /**
-     * @internal shopware owns the __constructor, but the properties are public API
+     * @internal shopwell owns the __constructor, but the properties are public API
      */
     public function __construct(
         /**
@@ -111,13 +111,13 @@ In this example, the `ResolveListingExtension` class represents an event-based e
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Tests\Examples;
+namespace Shopwell\Tests\Examples;
 
 use GuzzleHttp\ClientInterface;
-use Shopware\Core\Content\Product\Extension\ResolveListingExtension;
-use Shopware\Core\Content\Product\ProductCollection;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Content\Product\Extension\ResolveListingExtension;
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 readonly class ResolveListingExample implements EventSubscriberInterface

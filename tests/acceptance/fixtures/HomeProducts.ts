@@ -1,5 +1,5 @@
 import { test as base } from '@playwright/test';
-import { Product, FixtureTypes } from '@shopware-ag/acceptance-test-suite';
+import { Product, FixtureTypes } from '@shopwell-ag/acceptance-test-suite';
 
 export interface HomeProducts {
     HomeProduct: Product;

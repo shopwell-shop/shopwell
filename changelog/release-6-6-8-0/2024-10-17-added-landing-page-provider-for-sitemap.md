@@ -2,7 +2,7 @@
 title: Added landing page provider for sitemap
 issue: NEXT-21888
 author: Jozsef Damokos
-author_email: j.damokos@shopware.com
+author_email: j.damokos@shopwell.com
 author_github: @jozsefdamokos
 ---
 # Core

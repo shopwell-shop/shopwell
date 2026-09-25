@@ -2,7 +2,7 @@
 title: Total in cancellation invoices should be negative
 issue: NEXT-34808
 author: p.dinkhoff
-author_email: p.dinkhoff@shopware.com
+author_email: p.dinkhoff@shopwell.com
 author_github: p.dinkhoff
 ---
 # Core

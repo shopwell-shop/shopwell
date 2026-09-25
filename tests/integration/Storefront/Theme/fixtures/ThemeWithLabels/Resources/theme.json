@@ -1,6 +1,6 @@
 {
   "name": "SwagTheme",
-  "author": "shopware AG",
+  "author": "Shopwell",
   "views": [
      "@Storefront",
      "@Plugins",

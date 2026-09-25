@@ -15,8 +15,8 @@ use Shopwell\Core\System\Language\LanguageCollection;
  */
 #[Package('framework')]
 #[McpResource(
-    uri: 'shopware://languages',
-    name: 'shopware-languages',
+    uri: 'shopwell://languages',
+    name: 'shopwell-languages',
     description: 'All configured languages with locale codes.'
 )]
 class LanguageListResource
@@ -51,7 +51,7 @@ class LanguageListResource
         }
 
         return [
-            'uri' => 'shopware://languages',
+            'uri' => 'shopwell://languages',
             'mimeType' => 'application/json',
             'text' => Json::encode($languages),
         ];

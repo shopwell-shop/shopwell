@@ -59,7 +59,7 @@ class NoAssertsOnObjectsRule implements Rule
 
         foreach (self::FORBIDDEN_OBJECTS as $object => $message) {
             if ((new ObjectType($object))->isSuperTypeOf($type)->yes()) {
-                return [RuleErrorBuilder::message($message)->identifier('shopware.assertObjects')->build()];
+                return [RuleErrorBuilder::message($message)->identifier('shopwell.assertObjects')->build()];
             }
         }
 

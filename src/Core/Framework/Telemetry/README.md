@@ -1,5 +1,5 @@
 # Telemetry
-This component contains the code for the collection of telemetry in shopware applications.
+This component contains the code for the collection of telemetry in shopwell applications.
 
 Folder structure:
 - `Metrics` - contains the abstractions for the metrics collection and reporting.
@@ -27,7 +27,7 @@ For more details see the [OpenTelemetry Metrics API specification](https://opent
 
 ### Configuration
 
-All metrics must be pre-configured under the `shopware.telemetry.metrics.definitions` key before they can be emitted. The framework ships default definitions in `src/Core/Framework/Resources/config/packages/telemetry.yaml`. Plugins, apps, and projects add their own definitions in a separate `config/packages/*.yaml` file — Symfony's configuration system deep-merges all files, so existing definitions are preserved.
+All metrics must be pre-configured under the `shopwell.telemetry.metrics.definitions` key before they can be emitted. The framework ships default definitions in `src/Core/Framework/Resources/config/packages/telemetry.yaml`. Plugins, apps, and projects add their own definitions in a separate `config/packages/*.yaml` file — Symfony's configuration system deep-merges all files, so existing definitions are preserved.
 
 The `Meter` validates each metric against this merged configuration at emit time. In `dev`/`test` environments, an unconfigured metric throws a `MissingMetricConfigurationException`. In production the exception is logged at error level and the metric is dropped (not emitted to transports).
 
@@ -36,7 +36,7 @@ A PHPStan rule (`NoUnconfiguredMetricAllowed`) additionally enforces at static a
 Example of adding metric definitions in a project or plugin:
 
 ```yaml
-shopware:
+shopwell:
     telemetry:
         metrics:
             namespace: '{example-metrics-namespace}'
@@ -123,7 +123,7 @@ class MyTransport implements MetricTransportInterface
 }
 ```
 
-Once that is created, you need to register the transport factory as a service in your application and use the `shopware.metric_transport_factory` tag.
+Once that is created, you need to register the transport factory as a service in your application and use the `shopwell.metric_transport_factory` tag.
 
 ```php
 <?php declare(strict_types=1);
@@ -134,11 +134,11 @@ use YourPackage\NameSpace\MyTransportFactory;
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->services()
         ->set(MyTransportFactory::class)
-        ->tag('shopware.metric_transport_factory');
+        ->tag('shopwell.metric_transport_factory');
 };
 ```
 
-Real-world example of a transport can be found in the [shopware/opentelemetry](https://github.com/shopware/opentelemetry/) package.
+Real-world example of a transport can be found in the [shopwell/opentelemetry](https://github.com/shopwell-shop/opentelemetry/) package.
 
 ### Usage
 

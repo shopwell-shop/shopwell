@@ -3,7 +3,7 @@
 title: Add technicalName of Payment Method to allow list
 issue: NEXT-00000
 author: Sebastian Hölscher
-author_email: s.hoelscher@shopware.com
+author_email: s.hoelscher@shopwell.com
 author_github: hoelshare
 ---
 # Core

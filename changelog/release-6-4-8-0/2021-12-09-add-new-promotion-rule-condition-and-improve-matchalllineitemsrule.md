@@ -2,7 +2,7 @@
 title: Add new promotion rule condition and improve MatchAllLineItemsRule
 issue: NEXT-18987
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com 
+author_email: k.luetjann@shopwell.com 
 author_github: King-of-Babylon
 ---
 # Core

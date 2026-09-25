@@ -51,7 +51,7 @@ import {
     MtToast,
     MtTextEditor,
     MtTooltip,
-} from '@shopware-ag/meteor-component-library';
+} from '@shopwell-ag/meteor-component-library';
 import { createI18n } from 'vue-i18n';
 import aclService from './_mocks_/acl.service.mock';
 import feature from './_mocks_/feature.service.mock';
@@ -70,7 +70,7 @@ import findByLabel from '../_helper_/find-by-label';
 import findByPlaceholder from '../_helper_/find-by-placeholder';
 import CacheService from '../../src/app/service/cache.service';
 
-const defaultActiveFeatureFlagsSymbol = Symbol.for('shopware.defaultActiveFeatureFlags');
+const defaultActiveFeatureFlagsSymbol = Symbol.for('shopwell.defaultActiveFeatureFlags');
 global[defaultActiveFeatureFlagsSymbol] = [...global.activeFeatureFlags];
 
 // initialize the Stores
@@ -92,7 +92,7 @@ import '../../src/app/store/marketing.store';
 import '../../src/app/store/sdk-location.store';
 import '../../src/app/store/rule-conditions-config.store';
 import '../../src/app/store/settings-item.store';
-import '../../src/app/store/shopware-apps.store';
+import '../../src/app/store/shopwell-apps.store';
 import '../../src/app/store/system.store';
 import '../../src/app/store/modals.store';
 import '../../src/app/store/menu-item.store';

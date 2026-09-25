@@ -31,7 +31,7 @@ final class HtmlRendererExtension extends Extension
     public const NAME = 'html-renderer';
 
     /**
-     * @internal shopware owns the __constructor, but the properties are public API
+     * @internal shopwell owns the __constructor, but the properties are public API
      */
     public function __construct(public readonly RenderedDocument $document)
     {

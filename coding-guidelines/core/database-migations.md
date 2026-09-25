@@ -1,8 +1,8 @@
 ## Introduction
-Changing the database structure of Shopware is an important and sensitive topic, because it can effect the installation of customers and their data in many ways.
+Changing the database structure of Shopwell is an important and sensitive topic, because it can effect the installation of customers and their data in many ways.
 Therefore, it is important for every developer to understand the core principles of database migrations, also in the case of backward compatibility.
 
-Migrations in Shopware are grouped by major versions.
+Migrations in Shopwell are grouped by major versions.
 This allows for a sane execution of destructive migrations on customer systems.
 Database changes in minor or patch releases should always be non-destructive.
 See [backward compatibility](#backward-compatibility) for more information.
@@ -33,7 +33,7 @@ The migration consists of two separated steps: `update` and `updateDestructive`.
 
 ## Backward compatibility
 
-As every other change, also your database changes should always be [backward compatible](https://developer.shopware.com/docs/resources/guidelines/code/backward-compatibility.html) for minor and patch releases and support blue-green deployment.
+As every other change, also your database changes should always be [backward compatible](https://developer.shopwell.com/docs/resources/guidelines/code/backward-compatibility.html) for minor and patch releases and support blue-green deployment.
 A common technique is the [expand and contract](https://www.tim-wellhausen.de/papers/ExpandAndContract/ExpandAndContract.html) pattern, which will help you to implement your changes in a backward compatible way.
 
 * **Expand**: Instead of renaming an existing column, create a new column with the updated name. (non-destructive)
@@ -99,9 +99,9 @@ A migration should check whether structures have already been created to avoid c
 
 You can easily achieve this by adding the `IF [NOT] EXISTS` condition to commands like `CREATE TABLE` or `DROP TABLE`.
 There are also helper methods available to check for the existence of a table or column. E.g.:
-- `\Shopware\Core\Framework\Migration\MigrationStep::dropTableIfExists`
-- `\Shopware\Core\Framework\Migration\MigrationStep::dropColumnIfExists`
-- `\Shopware\Core\Framework\Migration\AddColumnTrait::columnExists`
+- `\Shopwell\Core\Framework\Migration\MigrationStep::dropTableIfExists`
+- `\Shopwell\Core\Framework\Migration\MigrationStep::dropColumnIfExists`
+- `\Shopwell\Core\Framework\Migration\AddColumnTrait::columnExists`
 
 > **NOTE:** Commands like `ALTER TABLE` however do not have a conditional `IF EXISTS` check. You **must** query the table for its columns manually.
 
@@ -146,7 +146,7 @@ Use the `ImportTranslationsTrait` to your advantage:
 // src/Core/Migration/V6_3/Migration1595422169AddProductSorting.php
 
 ...
-use Shopware\Core\Migration\Traits\ImportTranslationsTrait;
+use Shopwell\Core\Migration\Traits\ImportTranslationsTrait;
 ...
 
 public function createDefaultSortingsWithTranslations(Connection $connection): void

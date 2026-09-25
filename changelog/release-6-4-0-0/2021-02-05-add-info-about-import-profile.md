@@ -5,5 +5,5 @@ author: Björn Herzke
 author_github: @wrongspot
 ---
 # Core
-* Changed `Shopware\Core\Content\ImportExport\Struct\Config` to provide profile Information about currently running Profile name
+* Changed `Shopwell\Core\Content\ImportExport\Struct\Config` to provide profile Information about currently running Profile name
 

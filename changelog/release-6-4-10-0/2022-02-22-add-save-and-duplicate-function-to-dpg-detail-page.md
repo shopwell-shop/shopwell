@@ -2,7 +2,7 @@
 title: Add "save and duplicate" function to DPG detail page
 issue: NEXT-19696
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com
+author_email: k.luetjann@shopwell.com
 author_github: King-of-Babylon
 ---
 # Administration

@@ -296,8 +296,8 @@ class ExtensionLifecycleServiceTest extends TestCase
     {
         $this->installApp(__DIR__ . '/../_fixtures/TestAppTheme');
 
-        $oldName = static::getContainer()->getParameter('shopware.app_dir') . '/TestAppTheme';
-        $newName = static::getContainer()->getParameter('shopware.app_dir') . '/some-random-folder-name';
+        $oldName = static::getContainer()->getParameter('shopwell.app_dir') . '/TestAppTheme';
+        $newName = static::getContainer()->getParameter('shopwell.app_dir') . '/some-random-folder-name';
 
         rename($oldName, $newName);
 

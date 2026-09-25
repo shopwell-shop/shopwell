@@ -2,7 +2,7 @@
 title: Add priorities to promotions
 issue: NEXT-16646
 author: Sebastian Seggewiss
-author_email: s.seggewiss@shopware.com 
+author_email: s.seggewiss@shopwell.com 
 author_github: seggewiss
 ---
 # Core
@@ -12,4 +12,4 @@ ___
 * Added a `sw-number-field` to `sw-promotion-v2-detail-base` to edit the priority of the promotion
 ___
 # Storefront
-* Changed `\Shopware\Core\Checkout\Promotion\Gateway\PromotionGateway` to load promotions sorted by there priority
+* Changed `\Shopwell\Core\Checkout\Promotion\Gateway\PromotionGateway` to load promotions sorted by there priority

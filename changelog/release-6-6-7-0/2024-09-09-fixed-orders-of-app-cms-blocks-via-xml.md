@@ -2,7 +2,7 @@
 title: Fixed orders of app-cms blocks via xml
 issue: NEXT-37767
 author: Marcel Brode
-author_email: m.brode@shopware.com
+author_email: m.brode@shopwell.com
 author_github: @Marcel Brode
 ---
 # Core

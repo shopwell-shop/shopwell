@@ -176,7 +176,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(SystemChecker::class),
             service(SymfonyBearerTokenValidator::class),
-            param('shopware.api.static_token.health_check'),
+            param('shopwell.api.static_token.health_check'),
         ]);
 
     $services->set(IndexingController::class)
@@ -253,14 +253,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(OpenApiDefinitionSchemaBuilder::class)
         ->args([
-            tagged_iterator('shopware.api.enum_provider'),
+            tagged_iterator('shopwell.api.enum_provider'),
         ]);
 
     $services->set(OpenApiPathBuilder::class);
 
     $services->set(OpenApiSchemaBuilder::class)
         ->args([
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
         ]);
 
     $services->set(OpenApiRouteDefaultsFilter::class)
@@ -322,7 +322,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DefinitionService::class),
             service('parameter_bag'),
             service(BusinessEventCollector::class),
-            service('shopware.increment.gateway.registry'),
+            service('shopwell.increment.gateway.registry'),
             service(MigrationInfo::class),
             service(AppUrlVerifier::class),
             service(FlowActionCollector::class),
@@ -340,9 +340,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(AuthController::class)
         ->public()
         ->args([
-            service('shopware.api.authorization_server'),
+            service('shopwell.api.authorization_server'),
             service(PsrHttpFactory::class),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
             service(Connection::class),
         ])
         ->call('setContainer', [service('service_container')]);
@@ -350,11 +350,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(OAuthAuthorizeController::class)
         ->public()
         ->args([
-            service('shopware.api.authorization_server'),
+            service('shopwell.api.authorization_server'),
             service(PsrHttpFactory::class),
             service(Psr17Factory::class),
             service(PublicClientRegistry::class),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
             service('router'),
         ])
         ->call('setContainer', [service('service_container')]);
@@ -376,7 +376,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(PublicClientRegistry::class)
         ->args([
-            param('shopware.api.oauth_clients'),
+            param('shopwell.api.oauth_clients'),
         ]);
 
     $services->set(ClientRepository::class)
@@ -394,7 +394,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ScopeRepository::class)
         ->args([
-            tagged_iterator('shopware.oauth.scope'),
+            tagged_iterator('shopwell.oauth.scope'),
             service(Connection::class),
         ]);
 
@@ -405,23 +405,23 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(WriteScope::class)
-        ->tag('shopware.oauth.scope');
+        ->tag('shopwell.oauth.scope');
 
     $services->set(AdminScope::class)
-        ->tag('shopware.oauth.scope');
+        ->tag('shopwell.oauth.scope');
 
     $services->set(UserVerifiedScope::class)
-        ->tag('shopware.oauth.scope');
+        ->tag('shopwell.oauth.scope');
 
-    $services->set('shopware.jwt_config', JWTConfiguration::class)
+    $services->set('shopwell.jwt_config', JWTConfiguration::class)
         ->factory([JWTConfigurationFactory::class, 'createJWTConfiguration']);
 
     $services->set(FakeCryptKey::class)
         ->args([
-            service('shopware.jwt_config'),
+            service('shopwell.jwt_config'),
         ]);
 
-    $services->set('shopware.api.authorization_server', AuthorizationServer::class)
+    $services->set('shopwell.api.authorization_server', AuthorizationServer::class)
         ->args([
             service(ClientRepository::class),
             service(AccessTokenRepository::class),
@@ -436,7 +436,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(AccessTokenRepository::class),
             service(Connection::class),
-            service('shopware.jwt_config'),
+            service('shopwell.jwt_config'),
         ]);
 
     $services->set(JsonRequestTransformerListener::class)
@@ -444,7 +444,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ExpectationSubscriber::class)
         ->args([
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
             param('kernel.plugin_infos'),
         ])
         ->tag('kernel.event_subscriber');
@@ -471,17 +471,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(UserService::class),
             service(ExternalTokenService::class),
             service(ClockInterface::class),
-            param('shopware.api.refresh_token_ttl'),
-            param('shopware.api.auth_code_ttl'),
+            param('shopwell.api.refresh_token_ttl'),
+            param('shopwell.api.auth_code_ttl'),
         ]);
 
     $services->set(ApiAuthenticationListener::class)
         ->args([
             service(SymfonyBearerTokenValidator::class),
-            service('shopware.api.authorization_server'),
+            service('shopwell.api.authorization_server'),
             service(GrantTypeFactory::class),
             service(RouteScopeRegistry::class),
-            param('shopware.api.access_token_ttl'),
+            param('shopwell.api.access_token_ttl'),
         ])
         ->tag('kernel.event_subscriber');
 

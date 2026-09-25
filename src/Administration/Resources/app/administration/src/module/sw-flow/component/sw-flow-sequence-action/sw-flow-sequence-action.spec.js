@@ -13,7 +13,7 @@ import { createPinia, setActivePinia } from 'pinia';
 
 const { ACTION } = Shopwell.Constants.FLOW;
 
-Shopwell.Service().register('shopwareDiscountCampaignService', () => {
+Shopwell.Service().register('shopwellDiscountCampaignService', () => {
     return { isDiscountCampaignActive: jest.fn(() => true) };
 });
 

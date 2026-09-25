@@ -96,13 +96,13 @@ class ContextController extends StorefrontController
         /*
          * possible domains
          *
-         * http://shopware.de/de
-         * http://shopware.de/en
-         * http://shopware.de/fr
+         * http://shopwell.cn/de
+         * http://shopwell.cn/en
+         * http://shopwell.cn/fr
          *
-         * http://shopware.fr
+         * http://shopwell.fr
          * http://shopwell.cn
-         * http://shopware.de
+         * http://shopwell.cn
          *
          * http://color.com
          * http://farben.de

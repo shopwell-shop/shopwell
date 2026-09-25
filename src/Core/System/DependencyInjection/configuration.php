@@ -38,10 +38,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ConfigurationService::class),
             service(DataValidator::class),
         ])
-        ->tag('shopware.system_config.validation');
+        ->tag('shopwell.system_config.validation');
 
     $services->set(SystemConfigDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set('kernel.bundles', \Iterator::class)
         ->factory([service('kernel'), 'getBundles']);
@@ -101,7 +101,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(SymfonySystemConfigService::class)
         ->args([
-            param('shopware.system_config'),
+            param('shopwell.system_config'),
         ]);
 
     $services->set(SystemConfigLoader::class)

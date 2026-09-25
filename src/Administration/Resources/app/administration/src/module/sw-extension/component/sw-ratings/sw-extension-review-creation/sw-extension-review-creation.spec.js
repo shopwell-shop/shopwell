@@ -5,7 +5,7 @@ import { mount } from '@vue/test-utils';
  */
 describe('src/module/sw-extension/component/sw-ratings/sw-extension-review-creation', () => {
     beforeAll(() => {
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([
             {
                 name: 'Test',
                 installedAt: null,

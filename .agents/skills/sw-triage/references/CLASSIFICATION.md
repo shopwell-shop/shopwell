@@ -7,22 +7,22 @@ Exactly one of:
 - **`valid-bug`** — Defect with a clear understanding of what's broken. The actual_behaviour is unambiguous. Minor template gaps are FINE if the defect itself is clear. **Default to `valid-bug` for any plausible defect where you can describe the problem in your own words.**
 - **`duplicate`** — Same defect as an already-tracked issue. Set `duplicate_of` to the issue number. Only assert if symptoms genuinely match.
 - **`needs-info`** — Issue is **fundamentally unclear**: the defect cannot be understood from the input. Empty/vague actual_behaviour, off-topic, gibberish, or repro steps insufficient to reproduce. **Do NOT use just because a template field is short or has a placeholder (`.` / `_No response_`)** — only when you genuinely cannot tell what the bug is.
-- **`not-a-bug`** — Working-as-designed, config question, third-party plugin issue, support request misfiled as bug, or **product/user-centric request** that belongs in the Shopware Feedback & Ideas portal rather than as a code change.
+- **`not-a-bug`** — Working-as-designed, config question, third-party plugin issue, support request misfiled as bug, or **product/user-centric request** that belongs in the Shopwell Feedback & Ideas portal rather than as a code change.
 - **`feature-request`** — Describes a desired capability or **technical improvement / refactor** disguised as a bug. Use this for technical change requests; use `not-a-bug` for end-user product feedback.
 
 **Heuristik:** Try to describe the defect in one sentence. If you can, it's `valid-bug` (or `duplicate`). If you can't, it's `needs-info`. If it's a desired change rather than a broken behaviour, it's `feature-request` (technical) or `not-a-bug` (product/UX wish).
 
 ## Severity rubric
 
-Severity reflects **impact × probability**: how broken is the system AND how many merchants are realistically affected? Shopware uses separate `priority/*` labels for business urgency — do not invent those.
+Severity reflects **impact × probability**: how broken is the system AND how many merchants are realistically affected? Shopwell uses separate `priority/*` labels for business urgency — do not invent those.
 
 Exactly one of:
 
 ### `critical`
 
-Immediate, direct impact on customers / partners / Shopware itself. Includes data loss, security, legal, large revenue/cost impact, or a flagship feature losing its main functionality.
+Immediate, direct impact on customers / partners / Shopwell itself. Includes data loss, security, legal, large revenue/cost impact, or a flagship feature losing its main functionality.
 
-Concrete Shopware patterns that are usually `critical`:
+Concrete Shopwell patterns that are usually `critical`:
 
 - CRUD of products, orders, customers, categories broken
 - General checkout broken (payment or shipping methods)
@@ -83,7 +83,7 @@ The two factors are independent — neither alone is enough.
 
 ## Confidence calibration
 
-Confidence is your subjective probability that `disposition + severity + primary domain + duplicate_of` match what a senior Shopware engineer would conclude after the same 5–10 minutes of investigation.
+Confidence is your subjective probability that `disposition + severity + primary domain + duplicate_of` match what a senior Shopwell engineer would conclude after the same 5–10 minutes of investigation.
 
 | Range | Meaning |
 |---|---|

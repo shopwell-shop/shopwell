@@ -25,13 +25,13 @@ All Meteor components follow the `mt-*` prefix naming convention:
 ### External Repository
 
 The Meteor Component Library is maintained as a separate package:
-- **Repository**: https://github.com/shopware/meteor
-- **Package**: `@shopware-ag/meteor-component-library`
+- **Repository**: https://github.com/shopwell-shop/meteor
+- **Package**: `@shopwell-ag/meteor-component-library`
 - **Documentation**: https://meteor-component-library.vercel.app/
 
 ### Design Token Integration
 
-Meteor components consume design tokens from `@shopware-ag/meteor-tokens`, providing:
+Meteor components consume design tokens from `@shopwell-ag/meteor-tokens`, providing:
 - **Color system** with semantic color names
 - **Typography scale** with consistent font sizes and weights
 - **Spacing system** with standardized margins and paddings
@@ -106,7 +106,7 @@ Shopwell 6 uses a wrapper pattern to integrate Meteor components while maintaini
 
 ```typescript
 // Example: mt-card wrapper
-import { MtCard } from '@shopware-ag/meteor-component-library';
+import { MtCard } from '@shopwell-ag/meteor-component-library';
 import template from './mt-card.html.twig';
 
 export default Shopwell.Component.wrapComponentConfig({
@@ -161,7 +161,7 @@ Wrapped components provide extension points for plugins:
 For new development, components can be imported directly:
 
 ```javascript
-import { MtButton, MtCard, MtTextField } from '@shopware-ag/meteor-component-library';
+import { MtButton, MtCard, MtTextField } from '@shopwell-ag/meteor-component-library';
 
 export default {
     components: {
@@ -197,8 +197,8 @@ Import required stylesheets in your application:
 
 ```javascript
 // Required styles
-import '@shopware-ag/meteor-component-library/styles.css';
-import '@shopware-ag/meteor-component-library/font.css';
+import '@shopwell-ag/meteor-component-library/styles.css';
+import '@shopwell-ag/meteor-component-library/font.css';
 ```
 
 ## Theming & Customization
@@ -253,6 +253,6 @@ Most components support multiple variants:
 ## Resources
 
 - **Storybook Documentation**: https://meteor-component-library.vercel.app/
-- **GitHub Repository**: https://github.com/shopware/meteor
-- **Design System**: https://shopware.design/
-- **NPM Package**: https://www.npmjs.com/package/@shopware-ag/meteor-component-library
+- **GitHub Repository**: https://github.com/shopwell-shop/meteor
+- **Design System**: https://shopwell.design/
+- **NPM Package**: https://www.npmjs.com/package/@shopwell-ag/meteor-component-library

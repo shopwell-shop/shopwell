@@ -4,7 +4,7 @@ import PluginBaseClass from 'src/plugin-system/plugin.class';
 import 'src/plugin-system/plugin.config.manager';
 
 /**
- * this file handles the plugin functionality of shopware
+ * this file handles the plugin functionality of shopwell
  *
  * to use the PluginManager:
  * ```

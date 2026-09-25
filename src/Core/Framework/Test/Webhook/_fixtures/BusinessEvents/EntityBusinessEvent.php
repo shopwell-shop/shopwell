@@ -24,7 +24,7 @@ class EntityBusinessEvent implements FlowEventAware, BusinessEventEncoderTestInt
             ->add('tax', new EntityType(TaxDefinition::class));
     }
 
-    public function getEncodeValues(string $shopwareVersion): array
+    public function getEncodeValues(string $shopwellVersion): array
     {
         return [
             'tax' => [

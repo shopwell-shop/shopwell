@@ -8,7 +8,7 @@ issue: NEXT-34463
 * Changed `src/Core/Content/Media/Thumbnail/ThumbnailService.php` to throw an exception if remote thumbnails is enabled
 * Changed `persistFileToMedia` method in `src/Core/Content/Media/File/FileSaver.php` to disable thumbnail generation if remote thumbnails is enabled
 * Added `src/Core/Content/Media/Core/Application/RemoteThumbnailLoader.php` service to load remote thumbnails
-* Added `shopware.media.remote_thumbnails.enable`, `shopware.media.remote_thumbnails.pattern` parameters to `src/Core/Framework/Resources/config/packages/shopware.yaml` to allow configuration of remote thumbnail generation
+* Added `shopwell.media.remote_thumbnails.enable`, `shopwell.media.remote_thumbnails.pattern` parameters to `src/Core/Framework/Resources/config/packages/shopwell.yaml` to allow configuration of remote thumbnail generation
 ___
 # Upgrade Information
 
@@ -16,11 +16,11 @@ Thumbnail handling performance can now be improved by using remote thumbnails.
 
 ## Remote Thumbnail Configuration
 
-To use remote thumbnails, you need to adjust the following parameters in your `shopware.yaml`:
+To use remote thumbnails, you need to adjust the following parameters in your `shopwell.yaml`:
 
-1. `shopware.media.remote_thumbnails.enable`: Set this parameter to `true` to enable the use of remote thumbnails.
+1. `shopwell.media.remote_thumbnails.enable`: Set this parameter to `true` to enable the use of remote thumbnails.
 
-2. `shopware.media.remote_thumbnails.pattern`: This parameter defines the URL pattern for your remote thumbnails. Replace it with your actual URL pattern.
+2. `shopwell.media.remote_thumbnails.pattern`: This parameter defines the URL pattern for your remote thumbnails. Replace it with your actual URL pattern.
    
 This pattern supports the following variables:
    *  `mediaUrl`: The base URL of the media file.

@@ -57,12 +57,12 @@ test(
         });
 
         await test.step('Assets are referenced from the second domain', async () => {
-            const shopwareScripts = await ShopCustomer.page.locator('script[src*="shopware.js"]').all();
-            ShopCustomer.expects(shopwareScripts.length).toBeGreaterThan(0);
+            const shopwellScripts = await ShopCustomer.page.locator('script[src*="shopwell.js"]').all();
+            ShopCustomer.expects(shopwellScripts.length).toBeGreaterThan(0);
 
             const pageHost = new URL(ShopCustomer.page.url()).host;
 
-            for (const script of shopwareScripts) {
+            for (const script of shopwellScripts) {
                 await ShopCustomer.expects(script).toHaveAttribute('src', /.+/);
                 const src = await script.getAttribute('src');
 

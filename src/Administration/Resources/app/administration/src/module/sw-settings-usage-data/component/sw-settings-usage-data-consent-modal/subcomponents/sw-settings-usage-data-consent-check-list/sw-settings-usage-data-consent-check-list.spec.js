@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { MtIcon } from '@shopware-ag/meteor-component-library';
+import { MtIcon } from '@shopwell-ag/meteor-component-library';
 import SwSettingsUsageDataConsentCheckList from './index';
 
 describe('module/sw-settings-usage-data/component/sw-settings-usage-data-consent-modal/subcomponents/sw-settings-usage-data-consent-check-list', () => {

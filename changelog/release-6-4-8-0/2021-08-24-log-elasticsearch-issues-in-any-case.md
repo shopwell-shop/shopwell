@@ -7,4 +7,4 @@ author_github: @JoshuaBehrens
 ---
 # Core
 * Changed order of statements in `logOrThrowException` in `src/Elasticsearch/Framework/ElasticsearchHelper.php` to always log exceptions
-* Deprecated and renamed `Shopware\Elasticsearch\Framework\ElasticsearchHelper::logOrThrowException` to match new behaviour into `logAndThrowException`
+* Deprecated and renamed `Shopwell\Elasticsearch\Framework\ElasticsearchHelper::logOrThrowException` to match new behaviour into `logAndThrowException`

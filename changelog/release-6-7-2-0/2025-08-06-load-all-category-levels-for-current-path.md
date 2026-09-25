@@ -2,7 +2,7 @@
 title: Load all category levels for current path
 ---
 # Core
-* Changed `\Shopware\Core\Content\Category\SalesChannel\NavigationRoute` to load all category levels in the path to the currently active category.
+* Changed `\Shopwell\Core\Content\Category\SalesChannel\NavigationRoute` to load all category levels in the path to the currently active category.
 ___
 # Storefront
 * Changed `storefront/layout/sidebar/category-navigation.html.twig` template to show all loaded category levels and don't stop on the configured level

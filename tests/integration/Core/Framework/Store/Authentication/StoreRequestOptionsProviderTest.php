@@ -82,8 +82,8 @@ class StoreRequestOptionsProviderTest extends TestCase
     {
         $queries = $this->storeRequestOptionsProvider->getDefaultQueryParameters($this->storeContext);
 
-        static::assertArrayHasKey('shopwareVersion', $queries);
-        static::assertSame($this->getShopwellVersion(), $queries['shopwareVersion']);
+        static::assertArrayHasKey('shopwellVersion', $queries);
+        static::assertSame($this->getShopwellVersion(), $queries['shopwellVersion']);
     }
 
     public function testGetDefaultQueriesDoesHaveDomainSetEvenIfLicenseDomainIsNull(): void
@@ -98,12 +98,12 @@ class StoreRequestOptionsProviderTest extends TestCase
 
     public function testGetDefaultQueriesDoesHaveDomainSetIfLicenseDomainIsSet(): void
     {
-        $this->setLicenseDomain('shopware.swag');
+        $this->setLicenseDomain('shopwell.swag');
 
         $queries = $this->storeRequestOptionsProvider->getDefaultQueryParameters($this->storeContext);
 
         static::assertArrayHasKey('domain', $queries);
-        static::assertSame('shopware.swag', $queries['domain']);
+        static::assertSame('shopwell.swag', $queries['domain']);
     }
 
     public function testGetDefaultQueriesWithLicenseDomain(): void

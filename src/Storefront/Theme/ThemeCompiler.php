@@ -182,8 +182,8 @@ class ThemeCompiler implements ThemeCompilerInterface
             $imports[$specifier] = '/bundles/' . $this->toAssetDirectory('Storefront') . '/storefront/components/' . $chunkPath;
         }
 
-        // The shopware singleton is published as a normal bundle asset.
-        $imports['shopware'] = '/bundles/' . $this->toAssetDirectory('Storefront') . '/storefront/shopware/shopware.js';
+        // The shopwell singleton is published as a normal bundle asset.
+        $imports['shopwell'] = '/bundles/' . $this->toAssetDirectory('Storefront') . '/storefront/shopwell/shopwell.js';
 
         // Component entries (with content-hashed filenames) come from per-bundle
         // build metadata in `public/bundles/<bundle>/storefront/components/.vite/build-meta.json`.

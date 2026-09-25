@@ -17,8 +17,8 @@ use Symfony\Component\Finder\Finder;
 #[Package('framework')]
 class PluginFinder
 {
-    final public const COMPOSER_TYPE = 'shopware-platform-plugin';
-    private const SHOPWARE_PLUGIN_CLASS_EXTRA_IDENTIFIER = 'shopware-plugin-class';
+    final public const COMPOSER_TYPE = 'shopwell-platform-plugin';
+    private const SHOPWELL_PLUGIN_CLASS_EXTRA_IDENTIFIER = 'shopwell-plugin-class';
 
     /**
      * @internal
@@ -95,14 +95,14 @@ class PluginFinder
 
     private function isPluginComposerValid(CompletePackageInterface $package): bool
     {
-        return isset($package->getExtra()[self::SHOPWARE_PLUGIN_CLASS_EXTRA_IDENTIFIER])
-            && $package->getExtra()[self::SHOPWARE_PLUGIN_CLASS_EXTRA_IDENTIFIER] !== ''
+        return isset($package->getExtra()[self::SHOPWELL_PLUGIN_CLASS_EXTRA_IDENTIFIER])
+            && $package->getExtra()[self::SHOPWELL_PLUGIN_CLASS_EXTRA_IDENTIFIER] !== ''
             && !empty($package->getExtra()['label']);
     }
 
     private function getPluginNameFromPackage(CompletePackageInterface $pluginPackage): string
     {
-        return $pluginPackage->getExtra()[self::SHOPWARE_PLUGIN_CLASS_EXTRA_IDENTIFIER];
+        return $pluginPackage->getExtra()[self::SHOPWELL_PLUGIN_CLASS_EXTRA_IDENTIFIER];
     }
 
     /**
@@ -179,7 +179,7 @@ class PluginFinder
                 \sprintf(
                     'Plugin composer.json has invalid "type" (must be "%s"), or invalid "extra/%s" value, or missing extra.label property',
                     self::COMPOSER_TYPE,
-                    self::SHOPWARE_PLUGIN_CLASS_EXTRA_IDENTIFIER
+                    self::SHOPWELL_PLUGIN_CLASS_EXTRA_IDENTIFIER
                 ),
             ]
         ));

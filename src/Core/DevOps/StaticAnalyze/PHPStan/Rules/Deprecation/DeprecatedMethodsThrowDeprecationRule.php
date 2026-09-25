@@ -87,7 +87,7 @@ class DeprecatedMethodsThrowDeprecationRule implements Rule
                         $class->getName(),
                         $method->getName()
                     ))
-                        ->identifier('shopware.deprecatedClass')
+                        ->identifier('shopwell.deprecatedClass')
                         ->build(),
                 ];
             }
@@ -110,7 +110,7 @@ class DeprecatedMethodsThrowDeprecationRule implements Rule
                         $method->getName(),
                         $class->getName()
                     ))
-                        ->identifier('shopware.deprecatedMethod')
+                        ->identifier('shopwell.deprecatedMethod')
                         ->build(),
                 ];
             }

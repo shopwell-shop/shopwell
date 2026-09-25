@@ -28,7 +28,7 @@ class ConfigurationTest extends TestCase
         $configuration = new Configuration();
         $tree = $configuration->getConfigTreeBuilder();
 
-        static::assertSame('shopware', $tree->buildTree()->getName());
+        static::assertSame('shopwell', $tree->buildTree()->getName());
     }
 
     public function testFeatureToggleConfigTreeNode(): void
@@ -88,7 +88,7 @@ class ConfigurationTest extends TestCase
         $configuration = new Configuration();
 
         $this->expectExceptionObject(new InvalidConfigurationException(
-            'Invalid type for path "shopware.translation.languages". Expected "array", but got "string"'
+            'Invalid type for path "shopwell.translation.languages". Expected "array", but got "string"'
         ));
 
         (new Processor())->processConfiguration($configuration, [
@@ -140,7 +140,7 @@ class ConfigurationTest extends TestCase
     public function testNoVarySearchConfigRejectsInvalidValues($value, string $given): void
     {
         $this->expectExceptionObject(new InvalidConfigurationException(\sprintf(
-            'Invalid configuration for path "shopware.http_cache.policies.my_policy.headers.no_vary_search": '
+            'Invalid configuration for path "shopwell.http_cache.policies.my_policy.headers.no_vary_search": '
             . 'The "no_vary_search" option must be a single line of printable ASCII, %s given.',
             $given
         )));
@@ -427,7 +427,7 @@ class ConfigurationTest extends TestCase
 
     public function testAppSystemNetworkPolicyRejectsInvalidAllowedIpAddress(): void
     {
-        $this->expectExceptionObject(new InvalidConfigurationException('Invalid configuration for path "shopware.app_system.allowed_private_ip_addresses.0": ""not-an-ip"" is not a valid IP address.'));
+        $this->expectExceptionObject(new InvalidConfigurationException('Invalid configuration for path "shopwell.app_system.allowed_private_ip_addresses.0": ""not-an-ip"" is not a valid IP address.'));
 
         (new Processor())->processConfiguration(new Configuration(), [
             [
@@ -552,13 +552,13 @@ class ConfigurationTest extends TestCase
     {
         yield 'zero width' => [
             'fallbackSize' => ['width' => 0, 'height' => 100],
-            'path' => 'shopware.media.remote_thumbnails.fallback_sizes.0.width',
+            'path' => 'shopwell.media.remote_thumbnails.fallback_sizes.0.width',
             'value' => 0,
         ];
 
         yield 'negative height' => [
             'fallbackSize' => ['width' => 100, 'height' => -1],
-            'path' => 'shopware.media.remote_thumbnails.fallback_sizes.0.height',
+            'path' => 'shopwell.media.remote_thumbnails.fallback_sizes.0.height',
             'value' => -1,
         ];
     }
@@ -639,7 +639,7 @@ class ConfigurationTest extends TestCase
         $salesChannelId = Uuid::randomHex();
 
         $systemConfigs = (new Processor())->processConfiguration($configuration, [
-            'shopware' => [
+            'shopwell' => [
                 'system_config' => [
                     'default' => [
                         'core.listing.allowBuyInListing' => true,
@@ -657,12 +657,12 @@ class ConfigurationTest extends TestCase
 
     public function testInvalidSystemConfigKeys(): void
     {
-        $this->expectExceptionObject(new InvalidConfigurationException('Invalid configuration for path "shopware.system_config": Key must be "default" or a valid UUID'));
+        $this->expectExceptionObject(new InvalidConfigurationException('Invalid configuration for path "shopwell.system_config": Key must be "default" or a valid UUID'));
 
         $configuration = new Configuration();
 
         (new Processor())->processConfiguration($configuration, [
-            'shopware' => [
+            'shopwell' => [
                 'system_config' => [
                     'default' => [
                         'core.listing.allowBuyInListing' => true,

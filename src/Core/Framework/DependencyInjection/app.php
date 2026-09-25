@@ -189,7 +189,7 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->parameters()
-        ->set('shopware.app_dir', '%kernel.project_dir%/custom/apps');
+        ->set('shopwell.app_dir', '%kernel.project_dir%/custom/apps');
 
     $services = $containerConfigurator->services();
 
@@ -228,35 +228,35 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(TranslationValidator::class)
-        ->tag('shopware.app_manifest.validator');
+        ->tag('shopwell.app_manifest.validator');
 
     $services->set(AppNameValidator::class)
-        ->tag('shopware.app_manifest.validator');
+        ->tag('shopwell.app_manifest.validator');
 
     $services->set(ManifestValidator::class)
         ->args([
-            tagged_iterator('shopware.app_manifest.validator'),
+            tagged_iterator('shopwell.app_manifest.validator'),
         ]);
 
     $services->set(ConfigValidator::class)
         ->args([
             service(ConfigReader::class),
         ])
-        ->tag('shopware.app_manifest.validator');
+        ->tag('shopwell.app_manifest.validator');
 
     $services->set(HookableValidator::class)
         ->args([
             service(HookableEventCollector::class),
             service(PolicyRegistry::class),
         ])
-        ->tag('shopware.app_manifest.validator');
+        ->tag('shopwell.app_manifest.validator');
 
     $services->set(SecureUrlValidator::class);
 
     $services->set(PublicAccess::class)
         ->args([
             service(SecureUrlValidator::class),
-            service('shopware.app_system.guzzle'),
+            service('shopwell.app_system.guzzle'),
         ])
         ->tag('app.requirements_validator')
         ->tag('kernel.reset', ['method' => 'reset']);
@@ -281,7 +281,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('app_flow_action.repository'),
             service(Connection::class),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => 0]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => 0]);
 
     $services->set(WebhookLifecycleHandler::class)
         ->args([
@@ -290,14 +290,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ClockInterface::class),
             service(WebhookTargetValidator::class),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -100]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -100]);
 
     $services->set(FlowEventLifecycleHandler::class)
         ->args([
             service('app_flow_event.repository'),
             service(Connection::class),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -200]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -200]);
 
     $services->set(PaymentMethodLifecycleHandler::class)
         ->args([
@@ -305,19 +305,19 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('media.repository'),
             service(MediaService::class),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -300]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -300]);
 
     $services->set(TaxProviderLifecycleHandler::class)
         ->args([
             service('tax_provider.repository'),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -400]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -400]);
 
     $services->set(ModuleLifecycleHandler::class)
         ->args([
             service('app.repository'),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -500]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -500]);
 
     $services->set(ShippingMethodLifecycleHandler::class)
         ->args([
@@ -326,7 +326,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('media.repository'),
             service(MediaService::class),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -600]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -600]);
 
     $services->set(RuleConditionLifecycleHandler::class)
         ->args([
@@ -334,13 +334,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('app_script_condition.repository'),
             service('app.repository'),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -700]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -700]);
 
     $services->set(ActionButtonLifecycleHandler::class)
         ->args([
             service('app_action_button.repository'),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -800]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -800]);
 
     $services->set(TemplateLifecycleHandler::class)
         ->args([
@@ -349,7 +349,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('app.repository'),
             service(CacheClearer::class),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -900]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -900]);
 
     $services->set(ScriptLifecycleHandler::class)
         ->args([
@@ -357,31 +357,31 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('script.repository'),
             service('app.repository'),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -1000]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -1000]);
 
     $services->set(CustomFieldLifecycleHandler::class)
         ->args([
             service(CustomFieldSetPersister::class),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -1100]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -1100]);
 
     $services->set(CmsBlockLifecycleHandler::class)
         ->args([
             service('app_cms_block.repository'),
             service(BlockTemplateLoader::class),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -1200]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -1200]);
 
     $services->set(AppFeatureLifecycleHandler::class)
         ->args([
             service(AppFeatureDefinitionRegistry::class),
             service(AppFeatureStorage::class),
         ])
-        ->tag('shopware.app_lifecycle.handler', ['priority' => -1300]);
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -1300]);
 
     $services->set(AppFeatureDefinitionRegistry::class)
         ->args([
-            tagged_iterator('shopware.app_feature.definition'),
+            tagged_iterator('shopwell.app_feature.definition'),
         ]);
 
     $services->set(AppFeatureStorage::class)
@@ -430,27 +430,27 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(PaymentPayloadService::class)
         ->args([
             service(AppPayloadServiceHelper::class),
-            service('shopware.app_system.guzzle'),
+            service('shopwell.app_system.guzzle'),
         ]);
 
     $services->set(TaxProviderPayloadService::class)
         ->args([
             service(AppPayloadServiceHelper::class),
-            service('shopware.app_system.guzzle'),
+            service('shopwell.app_system.guzzle'),
             service(ExceptionLogger::class),
         ]);
 
     $services->set(AppCheckoutGatewayPayloadService::class)
         ->args([
             service(AppPayloadServiceHelper::class),
-            service('shopware.app_system.guzzle'),
+            service('shopwell.app_system.guzzle'),
             service(ExceptionLogger::class),
         ]);
 
     $services->set(AppContextGatewayPayloadService::class)
         ->args([
             service(AppPayloadServiceHelper::class),
-            service('shopware.app_system.guzzle'),
+            service('shopwell.app_system.guzzle'),
         ]);
 
     $services->set(AppCheckoutGateway::class)
@@ -491,16 +491,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('app.repository'),
             service(Connection::class),
         ])
-        ->tag('shopware.payment.method');
+        ->tag('shopwell.payment.method');
 
     $services->set(AppRegistrationService::class)
         ->args([
             service(HandshakeFactory::class),
-            service('shopware.app_system.guzzle'),
+            service('shopwell.app_system.guzzle'),
             service('app.repository'),
             env('APP_URL'),
             service(ShopIdProvider::class),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
             service(ClockInterface::class),
             service('logger'),
         ]);
@@ -532,13 +532,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             env('APP_URL'),
             service(ShopIdProvider::class),
             service(StoreClient::class),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
             service(ClockInterface::class),
         ]);
 
     $services->set(AppManager::class)
         ->args([
-            tagged_iterator('shopware.app_lifecycle.handler'),
+            tagged_iterator('shopwell.app_lifecycle.handler'),
             service('app.repository'),
             service(PermissionLifecycleService::class),
             service('event_dispatcher'),
@@ -555,7 +555,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ScriptExecutor::class),
             param('kernel.project_dir'),
             service(CustomEntityLifecycleService::class),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
             service(AppFeatureValidator::class),
             service(SourceResolver::class),
             service(ConfigReader::class),
@@ -591,7 +591,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(UpdateAppsTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(UpdateAppsHandler::class)
         ->args([
@@ -602,7 +602,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('messenger.message_handler');
 
     $services->set(DeleteCascadeAppsTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(DeleteCascadeAppsHandler::class)
         ->args([
@@ -622,32 +622,32 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(AppLoader::class)
         ->args([
-            param('shopware.app_dir'),
+            param('shopwell.app_dir'),
             service('logger'),
         ]);
 
-    $services->set('shopware.app_system.guzzle.middleware', AuthMiddleware::class)
+    $services->set('shopwell.app_system.guzzle.middleware', AuthMiddleware::class)
         ->args([
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
             service(AppLocaleProvider::class),
         ]);
 
-    $services->set('shopware.app_system.trusted_url_resolver', TrustedUrlResolver::class)
+    $services->set('shopwell.app_system.trusted_url_resolver', TrustedUrlResolver::class)
         ->args([
             null,
             true,
-            param('shopware.app_system.allowed_private_ip_addresses'),
+            param('shopwell.app_system.allowed_private_ip_addresses'),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
 
-    $services->set('shopware.app_system.guzzle.security_middleware', AppSystemHttpMiddleware::class)
+    $services->set('shopwell.app_system.guzzle.security_middleware', AppSystemHttpMiddleware::class)
         ->args([
-            service('shopware.app_system.trusted_url_resolver'),
-            param('shopware.app_system.allow_unencrypted_traffic'),
+            service('shopwell.app_system.trusted_url_resolver'),
+            param('shopwell.app_system.allow_unencrypted_traffic'),
         ])
-        ->arg('$enableUrlValidation', param('shopware.app_system.enable_url_validation'));
+        ->arg('$enableUrlValidation', param('shopwell.app_system.enable_url_validation'));
 
-    $services->set('shopware.app_system.guzzle', Client::class)
+    $services->set('shopwell.app_system.guzzle', Client::class)
         ->lazy()
         ->args([
             [
@@ -659,11 +659,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
                     ->factory([HandlerStack::class, 'create'])
                     ->call('after', [
                         'allow_redirects',
-                        service('shopware.app_system.guzzle.security_middleware'),
+                        service('shopwell.app_system.guzzle.security_middleware'),
                         'app_system_http_security',
                     ])
                     ->call('push', [
-                        service('shopware.app_system.guzzle.middleware'),
+                        service('shopwell.app_system.guzzle.middleware'),
                     ]),
             ],
         ]);
@@ -675,31 +675,31 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ActionButtonResponseFactory::class)
         ->args([
-            tagged_iterator('shopware.action_button.response_factory'),
+            tagged_iterator('shopwell.action_button.response_factory'),
         ]);
 
     $services->set(NotificationResponseFactory::class)
-        ->tag('shopware.action_button.response_factory');
+        ->tag('shopwell.action_button.response_factory');
 
     $services->set(OpenModalResponseFactory::class)
         ->args([
             service(QuerySigner::class),
         ])
-        ->tag('shopware.action_button.response_factory');
+        ->tag('shopwell.action_button.response_factory');
 
     $services->set(OpenNewTabResponseFactory::class)
         ->args([
             service(QuerySigner::class),
         ])
-        ->tag('shopware.action_button.response_factory');
+        ->tag('shopwell.action_button.response_factory');
 
     $services->set(ReloadDataResponseFactory::class)
-        ->tag('shopware.action_button.response_factory');
+        ->tag('shopwell.action_button.response_factory');
 
     $services->set(QuerySigner::class)
         ->args([
             env('APP_URL'),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
             service(LocaleProvider::class),
             service(ShopIdProvider::class),
             service(InAppPurchase::class),
@@ -708,7 +708,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(Executor::class)
         ->args([
-            service('shopware.app_system.guzzle'),
+            service('shopwell.app_system.guzzle'),
             service('logger'),
             service(ActionButtonResponseFactory::class),
             service(ShopIdProvider::class),
@@ -815,13 +815,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CreateAppCommand::class)
         ->args([
             service(AppLifecycle::class),
-            param('shopware.app_dir'),
+            param('shopwell.app_dir'),
         ])
         ->tag('console.command');
 
     $services->set(ValidateAppCommand::class)
         ->args([
-            param('shopware.app_dir'),
+            param('shopwell.app_dir'),
             service(ManifestValidator::class),
         ])
         ->tag('console.command');
@@ -860,7 +860,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(Resolver::class)
         ->public()
         ->args([
-            tagged_iterator('shopware.app_url_changed_resolver'),
+            tagged_iterator('shopwell.app_url_changed_resolver'),
         ]);
 
     $services->set(MoveShopPermanentlyStrategy::class)
@@ -870,7 +870,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ShopIdProvider::class),
             service('logger'),
         ])
-        ->tag('shopware.app_url_changed_resolver', ['priority' => -100]);
+        ->tag('shopwell.app_url_changed_resolver', ['priority' => -100]);
 
     $services->set(ReinstallAppsStrategy::class)
         ->args([
@@ -879,7 +879,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ShopIdProvider::class),
             service('logger'),
         ])
-        ->tag('shopware.app_url_changed_resolver', ['priority' => 100]);
+        ->tag('shopwell.app_url_changed_resolver', ['priority' => 100]);
 
     $services->set(UninstallAppsStrategy::class)
         ->args([
@@ -887,57 +887,57 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ShopIdProvider::class),
             service(AppManager::class),
         ])
-        ->tag('shopware.app_url_changed_resolver', ['priority' => 0]);
+        ->tag('shopwell.app_url_changed_resolver', ['priority' => 0]);
 
     // DELTA
     $services->set(PermissionsDeltaProvider::class)
-        ->tag('shopware.app_delta');
+        ->tag('shopwell.app_delta');
 
     $services->set(DomainsDeltaProvider::class)
-        ->tag('shopware.app_delta');
+        ->tag('shopwell.app_delta');
 
     // ENTITY DEFINITIONS
     $services->set(AppDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ActionButtonDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ActionButtonTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(TemplateDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppPaymentMethodDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppScriptConditionDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppScriptConditionTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppCmsBlockDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppCmsBlockTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppFlowActionDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppFlowActionTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppFlowEventDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppShippingMethodDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppFlowActionLoadedSubscriber::class)
         ->tag('kernel.event_subscriber');
@@ -954,7 +954,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(AppConfirmationDeltaProvider::class)
         ->args([
-            tagged_iterator('shopware.app_delta'),
+            tagged_iterator('shopwell.app_delta'),
         ]);
 
     $services->set(NoDatabaseSourceResolver::class)
@@ -1002,7 +1002,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Meter::class),
         ])
         ->tag('kernel.event_subscriber')
-        ->tag('shopware.telemetry.subscriber');
+        ->tag('shopwell.telemetry.subscriber');
 
     $services->set(Privileges::class)
         ->args([
@@ -1026,20 +1026,20 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.app_system.shop_id_fingerprint');
+        ->tag('shopwell.app_system.shop_id_fingerprint');
 
     $services->set(InstallationPath::class)
         ->args([
             param('kernel.project_dir'),
         ])
-        ->tag('shopware.app_system.shop_id_fingerprint');
+        ->tag('shopwell.app_system.shop_id_fingerprint');
 
     $services->set(AppUrl::class)
-        ->tag('shopware.app_system.shop_id_fingerprint');
+        ->tag('shopwell.app_system.shop_id_fingerprint');
 
     $services->set(FingerprintGenerator::class)
         ->args([
-            tagged_iterator('shopware.app_system.shop_id_fingerprint'),
+            tagged_iterator('shopwell.app_system.shop_id_fingerprint'),
         ]);
 
     $services->set(CheckShopIdCommand::class)
@@ -1050,7 +1050,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('console.command');
 
     $services->set(SystemHeartbeatTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(SystemHeartbeatHandler::class)
         ->args([
@@ -1080,7 +1080,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(AppUrlVerifier::class)
         ->args([
             param('kernel.environment'),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
             service('cache.app'),
             service(HttpClientInterface::class),
             service('lock.factory'),
@@ -1111,7 +1111,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(VerifyShopController::class)
         ->public()
         ->args([
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
             service(AppUrlVerifier::class),
         ]);
 };

@@ -56,14 +56,14 @@ class MigrationCollectionFactory
             $coreBasePath = $this->projectDir . '/src/Core';
             $storefrontBasePath = $this->projectDir . '/src/Storefront';
             $adminBasePath = $this->projectDir . '/src/Administration';
-        } elseif (\is_file($this->projectDir . '/vendor/shopware/platform/src/Core/schema.sql')) {
-            $coreBasePath = $this->projectDir . '/vendor/shopware/platform/src/Core';
-            $storefrontBasePath = $this->projectDir . '/vendor/shopware/platform/src/Storefront';
-            $adminBasePath = $this->projectDir . '/vendor/shopware/platform/src/Administration';
+        } elseif (\is_file($this->projectDir . '/vendor/shopwell/platform/src/Core/schema.sql')) {
+            $coreBasePath = $this->projectDir . '/vendor/shopwell/platform/src/Core';
+            $storefrontBasePath = $this->projectDir . '/vendor/shopwell/platform/src/Storefront';
+            $adminBasePath = $this->projectDir . '/vendor/shopwell/platform/src/Administration';
         } else {
-            $coreBasePath = $this->projectDir . '/vendor/shopware/core';
-            $storefrontBasePath = $this->projectDir . '/vendor/shopware/storefront';
-            $adminBasePath = $this->projectDir . '/vendor/shopware/administration';
+            $coreBasePath = $this->projectDir . '/vendor/shopwell/core';
+            $storefrontBasePath = $this->projectDir . '/vendor/shopwell/storefront';
+            $adminBasePath = $this->projectDir . '/vendor/shopwell/administration';
         }
 
         $hasStorefrontMigrations = is_dir($storefrontBasePath);

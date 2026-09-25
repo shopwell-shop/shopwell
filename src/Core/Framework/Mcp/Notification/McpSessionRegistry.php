@@ -18,7 +18,7 @@ use Symfony\Component\Lock\LockFactory;
 #[Package('framework')]
 class McpSessionRegistry
 {
-    private const CACHE_KEY = 'shopware.mcp.active_session_ids';
+    private const CACHE_KEY = 'shopwell.mcp.active_session_ids';
 
     /**
      * @param string $cacheKey the cache key holding this scope's active session ids; distinct keys

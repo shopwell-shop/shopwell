@@ -6,5 +6,5 @@ author_email: hannes.wernery@pickware.de
 author_github: hanneswernery
 ---
 # Core
-*  Changed type hints in `Shopware\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionEntity` from
+*  Changed type hints in `Shopwell\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionEntity` from
    `StateMachineStateEntity` to `StateMachineEntity`.

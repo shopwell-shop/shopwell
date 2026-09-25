@@ -2,15 +2,15 @@
 title: Upload and usage of spatial objects as media
 issue: NEXT-29686
 author: Viktor Buzyka
-author_email: v.buzyka@shopware.com
+author_email: v.buzyka@shopwell.com
 ---
 # Core
-* Added static method `getMimeType` to `Shopware\Core\Content\Media\File\FileInfoHelper` for more accurate detection of mime type
-* Added `Shopware\Core\Content\Media\MediaType\SpatialObjectType` to support spatial objects in media
-* Added `Shopware\Core\Content\Media\TypeDetector\SpatialObjectTypeDetector`
-* Added property `spatialObjectType` to `Shopware\Core\Content\Media\MediaEntity` to store spatial object configuration  
-* Added property `config` to `Shopware\Core\Content\Media\MediaDefinition` 
-* Added method `invalidateMedia` to `Shopware\Core\Framework\Adapter\Cache\CacheInvalidationSubscribe` to cache for products that use updated media objects
+* Added static method `getMimeType` to `Shopwell\Core\Content\Media\File\FileInfoHelper` for more accurate detection of mime type
+* Added `Shopwell\Core\Content\Media\MediaType\SpatialObjectType` to support spatial objects in media
+* Added `Shopwell\Core\Content\Media\TypeDetector\SpatialObjectTypeDetector`
+* Added property `spatialObjectType` to `Shopwell\Core\Content\Media\MediaEntity` to store spatial object configuration  
+* Added property `config` to `Shopwell\Core\Content\Media\MediaDefinition` 
+* Added method `invalidateMedia` to `Shopwell\Core\Framework\Adapter\Cache\CacheInvalidationSubscribe` to cache for products that use updated media objects
 ___
 # API
 * Added `config` field to `media` entity

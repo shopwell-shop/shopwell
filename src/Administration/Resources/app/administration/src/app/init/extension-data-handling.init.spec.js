@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 import initializeExtensionDataLoader from 'src/app/init/extension-data-handling.init';
-import { send } from '@shopware-ag/meteor-admin-sdk/es/channel';
+import { send } from '@shopwell-ag/meteor-admin-sdk/es/channel';
 import Criteria from 'src/core/data/criteria.data';
 
 describe('src/app/init/extension-data-handling.init.ts', () => {

@@ -2,7 +2,7 @@
 title: Add missing feature inject
 issue: NEXT-29013
 author: Sebastian Seggewiß
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration

@@ -9,7 +9,7 @@ describe('build/vite-plugins/inject-html', () => {
         const plugin = InjectHtmlPlugin(injections);
 
         expect(plugin).toEqual({
-            name: 'shopware-vite-plugin-inject-html',
+            name: 'shopwell-vite-plugin-inject-html',
             transformIndexHtml: expect.any(Function),
         });
     });

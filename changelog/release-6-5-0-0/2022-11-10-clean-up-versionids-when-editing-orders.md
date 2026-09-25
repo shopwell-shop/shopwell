@@ -2,7 +2,7 @@
 title: Clean up versionIds when editing orders
 issue: NEXT-23484
 author: Markus Velt
-author_email: m.velt@shopware.com
+author_email: m.velt@shopwell.com
 author_github: raknison
 ---
 # Administration

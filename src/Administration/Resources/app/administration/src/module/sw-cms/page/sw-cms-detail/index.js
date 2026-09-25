@@ -309,7 +309,7 @@ export default {
     },
 
     beforeRouteLeave() {
-        Shopwell.Store.get('shopwareApps').selectedIds = [];
+        Shopwell.Store.get('shopwellApps').selectedIds = [];
     },
 
     beforeUnmount() {
@@ -331,7 +331,7 @@ export default {
             if (this.$route.params.id) {
                 this.pageId = this.$route.params.id.toLowerCase();
                 this.isLoading = true;
-                Shopwell.Store.get('shopwareApps').selectedIds = [this.pageId];
+                Shopwell.Store.get('shopwellApps').selectedIds = [this.pageId];
 
                 this.loadPage(this.pageId);
             }

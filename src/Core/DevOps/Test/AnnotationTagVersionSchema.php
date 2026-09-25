@@ -13,7 +13,7 @@ use Shopwell\Core\Framework\Log\Package;
 enum AnnotationTagVersionSchema: string
 {
     /**
-     * captures any shopware version like 6.4.0.0 but also old version with 3 digits like 6.2.0
+     * captures any shopwell version like 6.4.0.0 but also old version with 3 digits like 6.2.0
      */
     case PLATFORM_VERSION_SCHEMA = '((\d+\.?){2,3}\d+)';
 

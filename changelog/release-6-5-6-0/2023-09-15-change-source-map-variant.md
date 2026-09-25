@@ -2,7 +2,7 @@
 title: Change source map variant
 issue: NEXT-30509
 author: Sebastian Seggewiß
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration

@@ -58,7 +58,7 @@ class ElasticsearchResetCommandTest extends TestCase
         static::assertStringContainsString('Elasticsearch indices deleted and queue cleared', $message);
 
         $client = $this->getDiContainer()->get(Client::class);
-        $client->indices()->get(['index' => EnvironmentHelper::getVariable('SHOPWARE_ES_INDEX_PREFIX') . '*']);
+        $client->indices()->get(['index' => EnvironmentHelper::getVariable('SHOPWELL_ES_INDEX_PREFIX') . '*']);
 
         $tasks = $this->connection->fetchAllAssociative('SELECT `index` FROM elasticsearch_index_task');
 

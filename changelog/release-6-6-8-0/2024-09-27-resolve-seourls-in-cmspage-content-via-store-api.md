@@ -2,7 +2,7 @@
 title: Resolve seoUrls in cmsPage content via store API
 issue: NEXT-33839
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: @BrocksiNet
 ---
 # API

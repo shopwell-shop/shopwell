@@ -110,7 +110,7 @@ class PluginLifecycleServiceTest extends TestCase
         $this->pluginServiceMock = static::createStub(PluginService::class);
         $this->commandExecutor = static::createStub(CommandExecutor::class);
 
-        $this->container->setParameter('shopware.deployment.cluster_setup', false);
+        $this->container->setParameter('shopwell.deployment.cluster_setup', false);
 
         $this->pluginMock = $this->createMock(Plugin::class);
 
@@ -153,7 +153,7 @@ class PluginLifecycleServiceTest extends TestCase
         $pluginEntityMock = $this->getPluginEntityMock();
         $pluginEntityMock->setComposerName('MockPlugin');
 
-        $this->container->setParameter('shopware.deployment.cluster_setup', true);
+        $this->container->setParameter('shopwell.deployment.cluster_setup', true);
 
         $commandExecutor = $this->createMock(CommandExecutor::class);
         $commandExecutor->expects($this->never())->method('require');
@@ -275,7 +275,7 @@ class PluginLifecycleServiceTest extends TestCase
         $pluginEntityMock->setManagedByComposer(true);
         $pluginEntityMock->setComposerName('MockPlugin');
 
-        $this->container->setParameter('shopware.deployment.cluster_setup', true);
+        $this->container->setParameter('shopwell.deployment.cluster_setup', true);
 
         $this->pluginMock->expects($this->once())->method('executeComposerCommands')->willReturn(true);
 
@@ -498,7 +498,7 @@ class PluginLifecycleServiceTest extends TestCase
                 $commandExecutor,
                 $this->requirementsValidatorMock,
                 $this->cacheItemPoolInterfaceMock,
-                Kernel::SHOPWARE_FALLBACK_VERSION,
+                Kernel::SHOPWELL_FALLBACK_VERSION,
                 static::createStub(SystemConfigService::class),
                 static::createStub(CustomEntityPersister::class),
                 static::createStub(CustomEntitySchemaUpdater::class),
@@ -548,7 +548,7 @@ class PluginLifecycleServiceTest extends TestCase
         $plugin->setUpgradeVersion('1.0.1');
         $plugin->setManagedByComposer(true);
         $plugin->setComposerName('swag/mock-plugin');
-        $plugin->setPath('vendor/shopware/mock-plugin');
+        $plugin->setPath('vendor/shopwell/mock-plugin');
 
         $this->pluginMock->expects($this->once())->method('executeComposerCommands');
 
@@ -1133,7 +1133,7 @@ class PluginLifecycleServiceTest extends TestCase
             $commandExecutor ?? $this->commandExecutor,
             $requirementsValidator ?? $this->requirementsValidatorMock,
             $this->cacheItemPoolInterfaceMock,
-            Kernel::SHOPWARE_FALLBACK_VERSION,
+            Kernel::SHOPWELL_FALLBACK_VERSION,
             static::createStub(SystemConfigService::class),
             static::createStub(CustomEntityPersister::class),
             static::createStub(CustomEntitySchemaUpdater::class),

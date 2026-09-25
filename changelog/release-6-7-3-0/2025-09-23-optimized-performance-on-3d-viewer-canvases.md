@@ -1,7 +1,7 @@
 ---
 title: Optimized performance on 3D viewer canvases
 author: Felix Frank
-author_email: f.frank@shopware.com
+author_email: f.frank@shopwell.com
 author_github: @ffrank913
 ---
 # Storefront

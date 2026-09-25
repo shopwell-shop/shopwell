@@ -16,7 +16,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * The `repository` service allows you to query data, that is stored inside shopware.
+ * The `repository` service allows you to query data, that is stored inside shopwell.
  * Keep in mind that your app needs to have the correct permissions for the data it queries through this service.
  *
  * @script-service data_loading

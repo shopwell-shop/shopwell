@@ -12,11 +12,11 @@ We have now integrated such a protection into all our services using the [`\Symf
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\Checkout\Cart;
+namespace Shopwell\Core\Checkout\Cart;
 
 use Psr\Log\LoggerInterface;
-use Shopware\Core\Content\Rule\RuleCollection;
-use Shopware\Core\Framework\Context;
+use Shopwell\Core\Content\Rule\RuleCollection;
+use Shopwell\Core\Framework\Context;
 use Symfony\Component\Cache\Adapter\TagAwareAdapterInterface;
 
 class CachedRuleLoader extends AbstractRuleLoader
@@ -71,10 +71,10 @@ class CachedRuleLoader extends AbstractRuleLoader
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\Checkout\Cart;
+namespace Shopwell\Core\Checkout\Cart;
 
-use Shopware\Core\Content\Rule\RuleCollection;
-use Shopware\Core\Framework\Context;
+use Shopwell\Core\Content\Rule\RuleCollection;
+use Shopwell\Core\Framework\Context;
 use Symfony\Contracts\Cache\CacheInterface;
 
 class CachedRuleLoader extends AbstractRuleLoader

@@ -3,7 +3,7 @@ title: Refactor flow builder core
 issue: NEXT-19345
 ---
 # Core
-* Added `DelayAware` interface at `Shopware\Core\Framework\Event` which defines if flow actions are able to delay.
+* Added `DelayAware` interface at `Shopwell\Core\Framework\Event` which defines if flow actions are able to delay.
 * Added `DelayAware` as one of the return elements of the following requirements of action:
   * `AddCustomerAffiliateAndCampaignCodeAction.php`
   * `AddCustomerTagAction.php`

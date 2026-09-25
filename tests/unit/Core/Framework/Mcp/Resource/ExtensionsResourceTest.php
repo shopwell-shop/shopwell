@@ -21,7 +21,7 @@ class ExtensionsResourceTest extends TestCase
     {
         $result = ($this->makeResource())();
 
-        static::assertSame('shopware://extensions', $result['uri']);
+        static::assertSame('shopwell://extensions', $result['uri']);
         static::assertSame('application/json', $result['mimeType']);
     }
 

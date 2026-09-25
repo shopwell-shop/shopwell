@@ -104,7 +104,7 @@ class AccountServiceTest extends TestCase
             new NativeClock(),
         );
 
-        $token = $accountService->loginByCredentials('foo@bar.de', 'shopware', $salesChannelContext);
+        $token = $accountService->loginByCredentials('foo@bar.de', 'shopwell', $salesChannelContext);
         static::assertSame($loggedinSalesChannelContext->getToken(), $token);
         static::assertTrue($beforeLoginEventCalled);
         static::assertTrue($loginEventCalled);
@@ -515,6 +515,6 @@ class AccountServiceTest extends TestCase
         );
 
         $this->expectException(CustomerOptinNotCompletedException::class);
-        $accountService->getCustomerByLogin('foo@bar.de', 'shopware', $salesChannelContext);
+        $accountService->getCustomerByLogin('foo@bar.de', 'shopwell', $salesChannelContext);
     }
 }

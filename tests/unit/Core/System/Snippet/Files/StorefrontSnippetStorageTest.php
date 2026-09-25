@@ -44,7 +44,7 @@ class StorefrontSnippetStorageTest extends TestCase
         $this->adapter = new SnippetSnapshotAdapter();
         $this->filesystem = new Filesystem($this->adapter);
         $this->io = new Io();
-        $this->directory = sys_get_temp_dir() . '/' . uniqid('shopware-snippet-storage-', true);
+        $this->directory = sys_get_temp_dir() . '/' . uniqid('shopwell-snippet-storage-', true);
     }
 
     protected function tearDown(): void

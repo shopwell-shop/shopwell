@@ -2,7 +2,7 @@
 title: Updated child order line item quantity on parent quantity change
 issue: NEXT-19806
 author: Michel Bade
-author_email: m.bade@shopware.com
+author_email: m.bade@shopwell.com
 author_github: @cyl3x
 ---
 # Administration

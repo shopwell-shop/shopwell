@@ -1,6 +1,6 @@
 name: "PHPUnit prepare"
-description: "Set up Shopware for a PHPUnit run: PHP + composer install, optional service waits, webserver, and the test-database installation"
-author: "shopware AG"
+description: "Set up Shopwell for a PHPUnit run: PHP + composer install, optional service waits, webserver, and the test-database installation"
+author: "Shopwell"
 
 inputs:
   php-version:
@@ -8,10 +8,10 @@ inputs:
     description: PHP version to set up
   mysql-version:
     default: "skip"
-    description: "setup-shopware mysql-version. 'skip' when the caller provides a database service; set a version to let setup-shopware provision MySQL."
+    description: "setup-shopwell mysql-version. 'skip' when the caller provides a database service; set a version to let setup-shopwell provision MySQL."
   keep-composer-tools:
     default: "false"
-    description: Pass through to setup-shopware's keep-composer-tools
+    description: Pass through to setup-shopwell's keep-composer-tools
   needs-opensearch:
     default: "false"
     description: "Wait for OpenSearch/Elasticsearch to be healthy before running (set for the Elasticsearch shard)"
@@ -25,14 +25,14 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Setup Shopware
-      uses: shopware/setup-shopware@main
+    - name: Setup Shopwell
+      uses: shopwell/setup-shopwell@main
       with:
         php-version: ${{ inputs.php-version }}
         mysql-version: ${{ inputs.mysql-version }}
         keep-composer-tools: ${{ inputs.keep-composer-tools }}
-        shopware-version: ${{ github.ref }}
-        shopware-repository: ${{ github.repository }}
+        shopwell-version: ${{ github.ref }}
+        shopwell-repository: ${{ github.repository }}
 
     - name: Wait for OpenSearch/Elasticsearch
       if: ${{ inputs.needs-opensearch == 'true' }}
@@ -62,6 +62,6 @@ runs:
       run: |
         sed -i -e 's|<directory suffix=".php">src</directory>|<directory suffix=".php">src/Administration/Migration</directory><directory suffix=".php">src/Core/Migration</directory><directory suffix=".php">src/ElasticSearch/Migration</directory><directory suffix=".php">src/Storefront/Migration</directory>|' phpunit.xml.dist
 
-    - name: Install Shopware
+    - name: Install Shopwell
       shell: bash
       run: php src/Core/TestBootstrap.php

@@ -191,7 +191,7 @@ describe('core/service/login.service.js', () => {
             refresh_token: 'rEfReSh_ToKeN',
         });
 
-        const auth = await loginService.loginByUsername('admin', 'shopware');
+        const auth = await loginService.loginByUsername('admin', 'shopwell');
 
         expect(auth).toEqual({
             expiry: Date.now() + 600 * 1000,
@@ -218,7 +218,7 @@ describe('core/service/login.service.js', () => {
             refresh_token: 'rEfReSh_ToKeN',
         });
 
-        await loginService.loginByUsername('admin', 'shopware');
+        await loginService.loginByUsername('admin', 'shopwell');
 
         clientMock.onPost('/oauth/token').reply(200, {
             token_type: 'Bearer',
@@ -241,7 +241,7 @@ describe('core/service/login.service.js', () => {
             refresh_token: 'rEfReSh_ToKeN',
         });
 
-        await loginService.loginByUsername('admin', 'shopware');
+        await loginService.loginByUsername('admin', 'shopwell');
 
         clientMock.onPost('/oauth/token').reply(200, {
             token_type: 'Bearer',
@@ -270,7 +270,7 @@ describe('core/service/login.service.js', () => {
             refresh_token: 'rEfReSh_ToKeN',
         });
 
-        await loginService.loginByUsername('admin', 'shopware');
+        await loginService.loginByUsername('admin', 'shopwell');
 
         const authLoggedIn = loginService.getBearerAuthentication();
         expect(authLoggedIn).toEqual({
@@ -303,7 +303,7 @@ describe('core/service/login.service.js', () => {
             refresh_token: 'rEfReSh_ToKeN',
         });
 
-        await loginService.loginByUsername('admin', 'shopware');
+        await loginService.loginByUsername('admin', 'shopwell');
 
         expect(loginService.isLoggedIn()).toBeTruthy();
     });
@@ -318,7 +318,7 @@ describe('core/service/login.service.js', () => {
             refresh_token: 'rEfReSh_ToKeN',
         });
 
-        await loginService.loginByUsername('admin', 'shopware');
+        await loginService.loginByUsername('admin', 'shopwell');
 
         expect(loginService.getToken()).toBe('aCcEsS_tOkEn');
     });
@@ -349,7 +349,7 @@ describe('core/service/login.service.js', () => {
 
         expect(tokenChangedListener).not.toHaveBeenCalled();
 
-        await loginService.loginByUsername('admin', 'shopware');
+        await loginService.loginByUsername('admin', 'shopwell');
 
         expect(tokenChangedListener).toHaveBeenCalled();
 
@@ -429,7 +429,7 @@ describe('core/service/login.service.js', () => {
             refresh_token: 'rEfReSh_ToKeN_first',
         });
 
-        await loginService.loginByUsername('admin', 'shopware');
+        await loginService.loginByUsername('admin', 'shopwell');
 
         expect(clientMock.history.post[0]).toBeDefined();
         expect(clientMock.history.post[1]).toBeUndefined();
@@ -451,7 +451,7 @@ describe('core/service/login.service.js', () => {
             refresh_token: 'rEfReSh_ToKeN',
         });
 
-        await loginService.loginByUsername('admin', 'shopware');
+        await loginService.loginByUsername('admin', 'shopwell');
 
         clientMock.onPost('/oauth/token').reply(200, {
             token_type: 'Bearer',
@@ -490,7 +490,7 @@ describe('core/service/login.service.js', () => {
             refresh_token: 'rEfReSh_ToKeN_first',
         });
 
-        await loginService.loginByUsername('admin', 'shopware');
+        await loginService.loginByUsername('admin', 'shopwell');
 
         expect(clientMock.history.post[0]).toBeDefined();
         expect(clientMock.history.post[1]).toBeUndefined();
@@ -532,7 +532,7 @@ describe('core/service/login.service.js', () => {
             refresh_token: 'rEfReSh_ToKeN',
         });
 
-        await loginService.loginByUsername('admin', 'shopware');
+        await loginService.loginByUsername('admin', 'shopwell');
 
         lastUserActivity = new Date(Date.now() - 30 * 60 * 1000 - 1);
 
@@ -562,7 +562,7 @@ describe('core/service/login.service.js', () => {
                     refresh_token: 'rEfReSh_ToKeN',
                 });
 
-                await loginService.loginByUsername('admin', 'shopware');
+                await loginService.loginByUsername('admin', 'shopwell');
 
                 clientMock.onPost('/oauth/token').replyOnce(200, {
                     token_type: 'Bearer',
@@ -592,7 +592,7 @@ describe('core/service/login.service.js', () => {
                 refresh_token: 'rEfReSh_ToKeN',
             });
 
-            await loginService.loginByUsername('admin', 'shopware');
+            await loginService.loginByUsername('admin', 'shopwell');
 
             clientMock.onPost('/oauth/token').reply(400, {
                 error: 'invalid_grant',
@@ -623,7 +623,7 @@ describe('core/service/login.service.js', () => {
                 refresh_token: 'rEfReSh_ToKeN',
             });
 
-            await loginService.loginByUsername('admin', 'shopware');
+            await loginService.loginByUsername('admin', 'shopwell');
             clientMock.resetHistory();
 
             clientMock.onPost('/oauth/token').replyOnce(400, { error: 'invalid_grant' });
@@ -669,7 +669,7 @@ describe('core/service/login.service.js', () => {
                 return [400, { error: 'invalid_grant' }];
             });
 
-            await loginService.loginByUsername('admin', 'shopware');
+            await loginService.loginByUsername('admin', 'shopwell');
 
             const refreshPromise = loginService.refreshToken();
             const advanceTimePromise = jest.advanceTimersByTimeAsync(2000);
@@ -695,7 +695,7 @@ describe('core/service/login.service.js', () => {
                 refresh_token: 'shared_refresh',
             });
 
-            await loginService.loginByUsername('admin', 'shopware');
+            await loginService.loginByUsername('admin', 'shopwell');
 
             clientMock.reset();
 
@@ -777,7 +777,7 @@ describe('core/service/login.service.js', () => {
                 refresh_token: 'rEfReSh_ToKeN',
             });
 
-            await loginService.loginByUsername('admin', 'shopware');
+            await loginService.loginByUsername('admin', 'shopwell');
 
             clientMock.onGet(/\/oauth\/sso\/config/).reply(200, {
                 useDefault: false,
@@ -811,7 +811,7 @@ describe('core/service/login.service.js', () => {
                 refresh_token: 'rEfReSh_ToKeN',
             });
 
-            await loginService.loginByUsername('admin', 'shopware');
+            await loginService.loginByUsername('admin', 'shopwell');
 
             clientMock.onGet(/\/oauth\/sso\/config/).reply(500);
 
@@ -838,7 +838,7 @@ describe('core/service/login.service.js', () => {
                 refresh_token: 'rEfReSh_ToKeN',
             });
 
-            await loginService.loginByUsername('admin', 'shopware');
+            await loginService.loginByUsername('admin', 'shopwell');
 
             clientMock.onGet(/\/oauth\/sso\/config/).reply(200, {
                 useDefault: true,
@@ -865,7 +865,7 @@ describe('core/service/login.service.js', () => {
                 refresh_token: 'rEfReSh_ToKeN',
             });
 
-            await loginService.loginByUsername('admin', 'shopware');
+            await loginService.loginByUsername('admin', 'shopwell');
 
             clientMock.onGet(/\/oauth\/sso\/config/).reply(200, {
                 useDefault: false,
@@ -895,7 +895,7 @@ describe('core/service/login.service.js', () => {
                 refresh_token: 'rEfReSh_ToKeN',
             });
 
-            await loginService.loginByUsername('admin', 'shopware');
+            await loginService.loginByUsername('admin', 'shopwell');
 
             sessionStorage.removeItem('sw-sso-session');
 
@@ -926,7 +926,7 @@ describe('core/service/login.service.js', () => {
                 refresh_token: 'rEfReSh_ToKeN',
             });
 
-            await loginService.loginByUsername('admin', 'shopware');
+            await loginService.loginByUsername('admin', 'shopwell');
 
             sessionStorage.setItem('sw-sso-session', 'true');
 
@@ -956,7 +956,7 @@ describe('core/service/login.service.js', () => {
                 refresh_token: 'rEfReSh_ToKeN',
             });
 
-            await loginService.loginByUsername('admin', 'shopware');
+            await loginService.loginByUsername('admin', 'shopwell');
 
             clientMock.onGet(/\/oauth\/sso\/config/).reply(200, {
                 useDefault: false,
@@ -1013,7 +1013,7 @@ describe('core/service/login.service.js', () => {
                     refresh_token: 'initial_refresh_token',
                 });
 
-                await tab1.loginService.loginByUsername('admin', 'shopware');
+                await tab1.loginService.loginByUsername('admin', 'shopwell');
 
                 tab1.clientMock.resetHistory();
                 tab2.clientMock.resetHistory();

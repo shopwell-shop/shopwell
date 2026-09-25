@@ -7,7 +7,7 @@ import type { OAuthAuthorizationInfo } from 'src/core/service/api/oauth-authoriz
 
 const validQuery = {
     response_type: 'code',
-    client_id: 'shopware-cli',
+    client_id: 'shopwell-cli',
     redirect_uri: 'http://127.0.0.1:53421/callback',
     state: 'xyz',
     code_challenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
@@ -16,7 +16,7 @@ const validQuery = {
 };
 
 const defaultInfo: OAuthAuthorizationInfo = {
-    client: { id: 'shopware-cli', name: 'Shopwell CLI' },
+    client: { id: 'shopwell-cli', name: 'Shopwell CLI' },
     redirectUri: 'http://127.0.0.1:53421/callback',
     scopes: ['write'],
 };
@@ -92,11 +92,11 @@ describe('src/module/sw-oauth-authorize/page/index', () => {
         expect(Shopwell.Component.getComponentRegistry().has('sw-oauth-authorize-index')).toBe(true);
     });
 
-    it('should load the shopware logo', async () => {
+    it('should load the shopwell logo', async () => {
         const { wrapper } = await createWrapper();
 
         expect(wrapper.get('img.sw-oauth-authorize__logo').attributes('src')).toBe(
-            'administration/administration/static/img/shopware_logo_blue.svg',
+            'administration/administration/static/img/shopwell_logo_blue.svg',
         );
     });
 

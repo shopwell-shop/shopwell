@@ -5,4 +5,4 @@ author_email: Discord.Benjamin@web.de
 author_github: gecolay
 ---
 # Core
-* Changed `products` association ApiAware visibility in `Shopware\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistDefinition`
+* Changed `products` association ApiAware visibility in `Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistDefinition`

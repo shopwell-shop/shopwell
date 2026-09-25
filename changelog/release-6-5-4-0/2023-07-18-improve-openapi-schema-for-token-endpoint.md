@@ -2,7 +2,7 @@
 title: improve open api schema for /token endpoint
 issue: NEXT-29227
 author: Patryk Tomczyk
-author_email: p.tomczyk@shopware.com
+author_email: p.tomczyk@shopwell.com
 author_github: patzick
 ---
 

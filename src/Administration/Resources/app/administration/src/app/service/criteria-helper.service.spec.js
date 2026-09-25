@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  */
-import Criteria from '@shopware-ag/meteor-admin-sdk/es/data/Criteria';
+import Criteria from '@shopwell-ag/meteor-admin-sdk/es/data/Criteria';
 import createCriteriaFromArray from './criteria-helper.service';
 
 describe('src/app/service/criteria-helper.service.ts', () => {

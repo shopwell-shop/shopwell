@@ -345,7 +345,7 @@ class ServiceDefinitionRule implements Rule
         return RuleErrorBuilder::message($message)
             ->file($file)
             ->line(1)
-            ->identifier('shopware.serviceDefinition')
+            ->identifier('shopwell.serviceDefinition')
             ->build();
     }
 }

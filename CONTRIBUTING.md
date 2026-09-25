@@ -1,18 +1,18 @@
 # Get involved
 
-Shopware is available under the MIT license.
+Shopwell is available under the MIT license.
 If you want to contribute code (features or bug fixes), you have to create a pull request and include valid license information.
 Contribute your code under the MIT license.
 
-If you want more details about available licensing or the contribution agreements we offer, you can contact us at <contact@shopware.com>.
+If you want more details about available licensing or the contribution agreements we offer, you can contact us at <contact@shopwell.com>.
 
-## Contributing to the Shopware code base
+## Contributing to the Shopwell code base
 
-If you want to learn how to contribute code to Shopware, please refer to [Contributing Code](https://developer.shopware.com/docs/resources/guidelines/code/contribution.html).
+If you want to learn how to contribute code to Shopwell, please refer to [Contributing Code](https://developer.shopwell.com/docs/resources/guidelines/code/contribution.html).
 For repository-specific code-level guidance, see [AGENTS.md](AGENTS.md) for concise global rules and [coding-guidelines/](coding-guidelines/) for detailed guidelines.
 Task-specific guidance lives in Agent Skills under [`.agents/skills/`](.agents/skills/README.md).
 Also, make sure that if you change something in a manner that is relevant to external developers please describe your change in a meaningful way.
-For more information refer to [this document](https://github.com/shopware/shopware/blob/trunk/delivery-process/documenting-a-release.md).
+For more information refer to [this document](https://github.com/shopwell-shop/shopwell/blob/trunk/delivery-process/documenting-a-release.md).
 
 ## Docker Setup (Recommended)
 
@@ -29,8 +29,8 @@ This is the **recommended** way to set up your development environment.
 Checkout the repository and start the containers:
 
 ```bash
-git clone git@github.com:shopware/shopware.git
-cd shopware
+git clone git@github.com:shopwell/shopwell.git
+cd shopwell
 docker compose up -d
 ```
 
@@ -42,7 +42,7 @@ docker compose exec web composer setup
 
 This runs `composer setup` which performs the full setup:
 1. Installs PHP dependencies (`composer install -o`)
-2. Creates the database and installs Shopware (`init:db`)
+2. Creates the database and installs Shopwell (`init:db`)
 3. Installs JavaScript dependencies (`init:js`)
 4. Builds all frontend assets (`build:js`)
 5. Activates the Storefront theme
@@ -56,7 +56,7 @@ After the setup is complete, you can access the application:
 | Database (Adminer)     | [http://localhost:9080](http://localhost:9080)             |
 | Mailpit (Mail catcher) | [http://localhost:8025](http://localhost:8025)             |
 
-**Default login**: Username `admin`, Password `shopware`.
+**Default login**: Username `admin`, Password `shopwell`.
 
 **Database credentials (Adminer)**:
 - Server: `database`
@@ -71,7 +71,7 @@ Depending on what you're working on, you may not need the full `composer setup`.
 |--------------------------------|-----------------------------------------------------------------------|
 | `composer setup`               | Full setup (install, database, JS, build)                             |
 | `composer install -o`          | Install PHP dependencies with optimized autoloader                    |
-| `composer init:db`             | Drop existing database and reinstall Shopware                         |
+| `composer init:db`             | Drop existing database and reinstall Shopwell                         |
 | `composer init:js`             | Install all JavaScript dependencies (admin + storefront + extensions) |
 | `composer init:testdb`         | Initialize the test database                                          |
 | `composer build:js`            | Build all frontend assets (admin + storefront)                        |
@@ -120,7 +120,7 @@ If you are using VS Code, Cursor AI, or any VS Code-based IDE, you can use the D
 The IDE will restart with your environment set up inside the container.
 The container starts automatically each time you reopen the project.
 The terminal and other tools (including AI agent commands in Cursor) will use the container shell.
-PHP tooling and other extensions will be configured for optimal use with Shopware.
+PHP tooling and other extensions will be configured for optimal use with Shopwell.
 
 ### Changing Environment Variables
 
@@ -160,7 +160,7 @@ services:
 
 Instead of using regular ports, you can use OrbStack's URL generation feature.
 OrbStack generates URLs like `https://web.orb.local` for each running container, allowing easier access without managing port mappings.
-This also lets you run multiple Shopware instances simultaneously without port conflicts.
+This also lets you run multiple Shopwell instances simultaneously without port conflicts.
 
 Create a `compose.override.yaml`:
 
@@ -184,10 +184,10 @@ services:
 ```
 
 The `APP_URL` follows the pattern `web.<project-name>.orb.local` — the project name is your folder name.
-So for a folder called `shopware`, the URL becomes `https://web.shopware.orb.local`.
+So for a folder called `shopwell`, the URL becomes `https://web.shopwell.orb.local`.
 You can also visit `https://orb.local` in your browser to see all running containers and their URLs.
 
-The `SYMFONY_TRUSTED_PROXIES` setting is required to access Shopware via HTTPS using `.orb.local` domains.
+The `SYMFONY_TRUSTED_PROXIES` setting is required to access Shopwell via HTTPS using `.orb.local` domains.
 
 For the Storefront watcher with OrbStack, set the `PROXY_URL` environment variable:
 
@@ -211,7 +211,7 @@ All commands below should be run inside the Docker container prefixed with `dock
 |--------------------------------|-----------------------------------------------------------------------|
 | `composer setup`               | Full setup: install dependencies, init DB, install JS, build assets   |
 | `composer install -o`          | Install PHP dependencies with optimized autoloader                    |
-| `composer init:db`             | Drop existing database and reinstall Shopware with demo data          |
+| `composer init:db`             | Drop existing database and reinstall Shopwell with demo data          |
 | `composer init:js`             | Install all JavaScript dependencies (admin + storefront + extensions) |
 | `composer init:testdb`         | Initialize the test database                                          |
 | `composer build:js`            | Build all frontend assets (admin + storefront)                        |
@@ -329,10 +329,10 @@ docker compose exec web composer build:js
 
 ## Documentation
 
-Developer documentation for Shopware is available [here](https://developer.shopware.com/docs/).
-You can also contribute to the documentation by submitting your pull requests to [this repository](https://github.com/shopware/docs).
+Developer documentation for Shopwell is available [here](https://developer.shopwell.com/docs/).
+You can also contribute to the documentation by submitting your pull requests to [this repository](https://github.com/shopwell-shop/docs).
 
 ## Translations
 
-Shopware translations are done by the community and can be installed from the plugin store.
-If you wish to improve Shopware's translations, you can do so in our [Crowdin project page](https://crowdin.com/project/shopware6).
+Shopwell translations are done by the community and can be installed from the plugin store.
+If you wish to improve Shopwell's translations, you can do so in our [Crowdin project page](https://crowdin.com/project/shopwell6).

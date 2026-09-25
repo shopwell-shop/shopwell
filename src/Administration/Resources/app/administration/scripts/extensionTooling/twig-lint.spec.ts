@@ -60,8 +60,8 @@ const filterTwig = ['<p>{{ theme.description | truncate(140) }}</p>', ''].join('
 const probeScript = `
 import { ESLint } from 'eslint';
 
-const { shopwareAdminExtension } = await import(${JSON.stringify(factoryUrl)});
-const config = shopwareAdminExtension({ tsconfigRootDir: process.cwd() });
+const { shopwellAdminExtension } = await import(${JSON.stringify(factoryUrl)});
+const config = shopwellAdminExtension({ tsconfigRootDir: process.cwd() });
 // The factory leaves html-indent off on legacy Twig; the Administration's own
 // config runs it as an error over the same templates, so turn it on here to
 // guard the parser behaviour that keeps those 994 files clean.

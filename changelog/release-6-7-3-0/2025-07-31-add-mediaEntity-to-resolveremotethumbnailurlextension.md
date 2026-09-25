@@ -5,9 +5,9 @@ author_email: sascha.heilmeier@netlogix.de
 author_github: @scarbous
 ---
 # Core
-* Added `Shopware\Core\Content\Media\MediaEntity` to `Shopware\Core\Content\Media\Extension\ResolveRemoteThumbnailUrlExtension` to allow individual media handling.
-* Added `mimeType` to `Shopware\Core\Content\Media\Core\Params\UrlParams` 
-* Changed `Shopware\Core\Content\Media\Extension\ResolveRemoteThumbnailUrlExtension` to allow to skip thumbnail loading by returning `null` as result
+* Added `Shopwell\Core\Content\Media\MediaEntity` to `Shopwell\Core\Content\Media\Extension\ResolveRemoteThumbnailUrlExtension` to allow individual media handling.
+* Added `mimeType` to `Shopwell\Core\Content\Media\Core\Params\UrlParams` 
+* Changed `Shopwell\Core\Content\Media\Extension\ResolveRemoteThumbnailUrlExtension` to allow to skip thumbnail loading by returning `null` as result
 
 ___
 
@@ -15,13 +15,13 @@ ___
 
 ## Deprecation of properties in `ResolveRemoteThumbnailUrlExtension`
 
-The properties `mediaPath` and `mediaUpdatedAt` from `Shopware\Core\Content\Media\Extension\ResolveRemoteThumbnailUrlExtension` are deprecated and will be removed with the next major version. Set the values directly into the newly added `mediaEntity` property.
+The properties `mediaPath` and `mediaUpdatedAt` from `Shopwell\Core\Content\Media\Extension\ResolveRemoteThumbnailUrlExtension` are deprecated and will be removed with the next major version. Set the values directly into the newly added `mediaEntity` property.
 
 ## Deprecation of `media` and `thumbnail` in `MediaPathChangedEvent`
 
-The method `media` from `Shopware\Core\Content\Media\Event\MediaPathChangedEvent` is deprecated and will be removed with the next major version. Use the newly added `mediaWithMimeType` method instead.
+The method `media` from `Shopwell\Core\Content\Media\Event\MediaPathChangedEvent` is deprecated and will be removed with the next major version. Use the newly added `mediaWithMimeType` method instead.
 
-The method `thumbnail` from `Shopware\Core\Content\Media\Event\MediaPathChangedEvent` is deprecated and will be removed with the next major version. Use the newly added `thumbnailWithMimeType` method instead.
+The method `thumbnail` from `Shopwell\Core\Content\Media\Event\MediaPathChangedEvent` is deprecated and will be removed with the next major version. Use the newly added `thumbnailWithMimeType` method instead.
 
 ___
 
@@ -29,4 +29,4 @@ ___
 
 ## Removal of properties in `ResolveRemoteThumbnailUrlExtension`
 
-The properties `$mediaPath` and `$mediaUpdatedAt` from `Shopware\Core\Content\Media\Extension\ResolveRemoteThumbnailUrlExtension` were removed. Set the values directly into the `mediaEntity` property.
+The properties `$mediaPath` and `$mediaUpdatedAt` from `Shopwell\Core\Content\Media\Extension\ResolveRemoteThumbnailUrlExtension` were removed. Set the values directly into the `mediaEntity` property.

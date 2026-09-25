@@ -2,7 +2,7 @@
 title: Transition extension store to Pinia
 issue: NEXT-38626
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com
+author_email: j.leifeld@shopwell.com
 author_github: @Jannis Leifeld
 ---
 # Administration

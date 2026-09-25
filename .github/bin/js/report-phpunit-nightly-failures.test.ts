@@ -18,18 +18,18 @@ import {
 const JUNIT_FIXTURE = `<?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
   <testsuite name="integration" tests="4" failures="1" errors="1">
-    <testcase name="testPasses" class="Shopware\\Tests\\Integration\\Core\\Checkout\\CartTest" file="/home/runner/work/shopware/shopware/tests/integration/Core/Checkout/CartTest.php"/>
-    <testcase name="testFails" class="Shopware\\Tests\\Integration\\Core\\Checkout\\CartTest" file="/home/runner/work/shopware/shopware/tests/integration/Core/Checkout/CartTest.php">
-      <failure type="PHPUnit\\Framework\\ExpectationFailedException">Shopware\\Tests\\Integration\\Core\\Checkout\\CartTest::testFails
+    <testcase name="testPasses" class="Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest" file="/home/runner/work/shopwell/shopwell/tests/integration/Core/Checkout/CartTest.php"/>
+    <testcase name="testFails" class="Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest" file="/home/runner/work/shopwell/shopwell/tests/integration/Core/Checkout/CartTest.php">
+      <failure type="PHPUnit\\Framework\\ExpectationFailedException">Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest::testFails
 Failed asserting that &quot;a&quot; is identical to &quot;b&quot;.
 
-/home/runner/work/shopware/shopware/tests/integration/Core/Checkout/CartTest.php:42</failure>
+/home/runner/work/shopwell/shopwell/tests/integration/Core/Checkout/CartTest.php:42</failure>
     </testcase>
-    <testcase name="testErrors with data set &quot;first&quot;" class="Shopware\\Tests\\Integration\\Storefront\\ThemeTest" file="/home/runner/work/shopware/shopware/tests/integration/Storefront/ThemeTest.php">
-      <error type="RuntimeException">Shopware\\Tests\\Integration\\Storefront\\ThemeTest::testErrors with data set "first"
+    <testcase name="testErrors with data set &quot;first&quot;" class="Shopwell\\Tests\\Integration\\Storefront\\ThemeTest" file="/home/runner/work/shopwell/shopwell/tests/integration/Storefront/ThemeTest.php">
+      <error type="RuntimeException">Shopwell\\Tests\\Integration\\Storefront\\ThemeTest::testErrors with data set "first"
 Table 'root_test.theme' doesn't exist</error>
     </testcase>
-    <testcase name="testSkipped" class="Shopware\\Tests\\Integration\\Core\\Checkout\\CartTest" file="/home/runner/work/shopware/shopware/tests/integration/Core/Checkout/CartTest.php">
+    <testcase name="testSkipped" class="Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest" file="/home/runner/work/shopwell/shopwell/tests/integration/Core/Checkout/CartTest.php">
       <skipped/>
     </testcase>
   </testsuite>
@@ -118,7 +118,7 @@ describe('groupByDomain / buildIssuePayload', () => {
   });
 
   it('groups unresolvable tests under a manual-routing bucket', () => {
-    const groups = groupByDomain([failedTest('Shopware\\Tests\\Integration\\A', 'testA')], '/nonexistent');
+    const groups = groupByDomain([failedTest('Shopwell\\Tests\\Integration\\A', 'testA')], '/nonexistent');
 
     assert.equal(groups.length, 1);
     assert.equal(groups[0].label, 'needs manual routing');
@@ -126,7 +126,7 @@ describe('groupByDomain / buildIssuePayload', () => {
 
   it('builds one flat issue per group with its own marker and capped test list', () => {
     const tests = Array.from({ length: 45 }, (_, index) =>
-      failedTest('Shopware\\Tests\\Integration\\Core\\FooTest', `testCase${String(index).padStart(2, '0')}`)
+      failedTest('Shopwell\\Tests\\Integration\\Core\\FooTest', `testCase${String(index).padStart(2, '0')}`)
     );
     const payload = buildIssuePayload('[nightly] Nightly Major PHPUnit failures', groupByDomain(tests, '/nonexistent'), 'https://example.invalid/run/1');
 
@@ -150,7 +150,7 @@ describe('groupByDomain / buildIssuePayload', () => {
     const group = {
       label: 'domain/checkout',
       packageKeys: new Set(['checkout']),
-      tests: [failedTest('Shopware\\Tests\\Integration\\Core\\Checkout\\CartTest', 'testFails')],
+      tests: [failedTest('Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest', 'testFails')],
     };
     const payload = buildIssuePayload('[nightly] Nightly PHPUnit failures', [group], 'https://example.invalid/run/1');
 
@@ -163,7 +163,7 @@ describe('groupByDomain / buildIssuePayload', () => {
     const group = {
       label: 'domain/checkout',
       packageKeys: new Set(['checkout']),
-      tests: [failedTest('Shopware\\Tests\\Integration\\Core\\Checkout\\CartTest', 'testFails')],
+      tests: [failedTest('Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest', 'testFails')],
     };
     const payload = buildIssuePayload('[nightly] Nightly PHPUnit failures', [group], 'https://example.invalid/run/1', [
       'junit-phpunit-blue-green-66-67',
@@ -202,13 +202,13 @@ describe('groupByDomain / buildIssuePayload', () => {
   });
 });
 const JEST_JUNIT_FIXTURE = `<?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="Shopware 6 Unit Tests" tests="3" failures="1" errors="0">
+<testsuites name="Shopwell 6 Unit Tests" tests="3" failures="1" errors="0">
   <testsuite name="src/app/component/form/sw-field" errors="0" failures="1" skipped="0" tests="3">
     <testcase classname="src/app/component/form/sw-field renders the label" name="src/app/component/form/sw-field renders the label" time="0.1">
     </testcase>
     <testcase classname="src/app/component/form/sw-field emits the change event" name="src/app/component/form/sw-field emits the change event" time="0.2">
       <failure>TypeError: wrapper.vm.emit is not a function
-    at Object.&lt;anonymous&gt; (/home/runner/work/shopware/shopware/src/Administration/Resources/app/administration/src/app/component/form/sw-field.spec.js:42:5)</failure>
+    at Object.&lt;anonymous&gt; (/home/runner/work/shopwell/shopwell/src/Administration/Resources/app/administration/src/app/component/form/sw-field.spec.js:42:5)</failure>
     </testcase>
     <testcase classname="src/app/component/form/sw-field is accessible" name="src/app/component/form/sw-field is accessible" time="0.1">
     </testcase>
@@ -292,14 +292,14 @@ describe('scanReports', () => {
   const CLEAN_JUNIT = `<?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
   <testsuite name="blue-green" tests="2" failures="0" errors="0">
-    <testcase name="testPasses" class="Shopware\\Tests\\Integration\\Core\\Checkout\\CartTest"/>
-    <testcase name="testAlsoPasses" class="Shopware\\Tests\\Integration\\Core\\Checkout\\CartTest"/>
+    <testcase name="testPasses" class="Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest"/>
+    <testcase name="testAlsoPasses" class="Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest"/>
   </testsuite>
 </testsuites>
 `;
 
   const CLEAN_JEST = `<?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="Shopware 6 Unit Tests" tests="1" failures="0" errors="0">
+<testsuites name="Shopwell 6 Unit Tests" tests="1" failures="0" errors="0">
   <testsuite name="src/app/component/form/sw-field" errors="0" failures="0" tests="1">
     <testcase classname="src/app/component/form/sw-field renders" name="src/app/component/form/sw-field renders" time="0.1">
     </testcase>

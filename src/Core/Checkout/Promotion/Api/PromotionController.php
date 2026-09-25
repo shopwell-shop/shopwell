@@ -50,7 +50,7 @@ class PromotionController extends AbstractController
         if ($codePattern === '') {
             // @deprecated tag:v6.8.0 - remove this if block
             if (!Feature::isActive('v6.8.0.0')) {
-                throw RoutingException::missingRequestParameter('codePattern'); // @phpstan-ignore-line shopware.domainException
+                throw RoutingException::missingRequestParameter('codePattern'); // @phpstan-ignore-line shopwell.domainException
             }
             throw PromotionException::missingRequestParameter('codePattern');
         }
@@ -104,7 +104,7 @@ class PromotionController extends AbstractController
         if ($codePattern === '') {
             // @deprecated tag:v6.8.0 - remove this if block
             if (!Feature::isActive('v6.8.0.0')) {
-                throw RoutingException::missingRequestParameter('codePattern'); // @phpstan-ignore-line shopware.domainException
+                throw RoutingException::missingRequestParameter('codePattern'); // @phpstan-ignore-line shopwell.domainException
             }
             throw PromotionException::missingRequestParameter('codePattern');
         }

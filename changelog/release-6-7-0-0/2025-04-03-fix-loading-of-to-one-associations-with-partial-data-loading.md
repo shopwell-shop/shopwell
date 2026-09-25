@@ -5,4 +5,4 @@ author_email: pascal.paul@pickware.de
 author_github: @pascalniklaspaul
 ---
 # Core
-* Changed `\Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityReader` to always load the reference field of to-one associations when using partial data loading.
+* Changed `\Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityReader` to always load the reference field of to-one associations when using partial data loading.

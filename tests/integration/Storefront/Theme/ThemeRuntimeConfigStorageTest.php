@@ -288,7 +288,7 @@ class ThemeRuntimeConfigStorageTest extends TestCase
             ],
             'imports' => [
                 'debounce' => 'js/components/MyPlugin/vendor/debounce-abc123.js',
-                'shopware' => '/bundles/storefront/storefront/shopware/shopware.js',
+                'shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js',
                 'Sw:Button' => 'js/components/Sw/Button.js',
             ],
         ];

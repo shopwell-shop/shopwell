@@ -3,8 +3,8 @@ title: Improved Checkout accessibility
 issue: NEXT-38513
 ---
 # Core
-* Changed `Shopware\Core\Checkout\Payment\PaymentMethodCollection` to not re-sort selected payment method.
-* Changed `Shopware\Core\Checkout\Shipping\ShippingMethodCollection` to not re-sort selected shipping method.
+* Changed `Shopwell\Core\Checkout\Payment\PaymentMethodCollection` to not re-sort selected payment method.
+* Changed `Shopwell\Core\Checkout\Shipping\ShippingMethodCollection` to not re-sort selected shipping method.
 ___
 # Storefront
 * Changed `Resources/views/storefront/component/payment/payment-form.html.twig` to list all payment methods instead of only 5.
@@ -39,7 +39,7 @@ ___
 * Deprecated CSS classes `confirm-checkout-collapse-trigger` and `icon-confirm-checkout-chevron`
 ___
 # Next Major Version Changes
-## Payment & shipping method display in Shopware 6.7
+## Payment & shipping method display in Shopwell 6.7
 The payment and shipping method selection in the checkout in the Storefront has been improved for accessibility.
 There are now all methods listed instead of only 5, which makes the `CollapseCheckoutConfirmMethodsPlugin` unnecessary and will be removed.
 Also, the payment and shipping method descriptions are now only shown for the selected method.

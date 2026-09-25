@@ -2,22 +2,22 @@
 title:              Optimize aggregations
 issue:              NEXT-10789
 author:             Oliver Skroblin
-author_email:       o.skroblin@shopware.com
+author_email:       o.skroblin@shopwell.com
 author_github:      @OliverSkroblin
 ---
 # Core
-* Added `\Shopware\Core\Content\Product\SalesChannel\Listing\FilterCollection`, which contains all filter definitions for a listing
-* Added `\Shopware\Core\Content\Product\SalesChannel\Listing\Filter`, which contains all meta information about a listing filter
-* Added `\Shopware\Core\Content\Product\Events\ProductListingCollectFilterEvent`, which allows to simply add new filters for listing
+* Added `\Shopwell\Core\Content\Product\SalesChannel\Listing\FilterCollection`, which contains all filter definitions for a listing
+* Added `\Shopwell\Core\Content\Product\SalesChannel\Listing\Filter`, which contains all meta information about a listing filter
+* Added `\Shopwell\Core\Content\Product\Events\ProductListingCollectFilterEvent`, which allows to simply add new filters for listing
 ___
 # Upgrade Information
 ## Product listing filter handling
 We optimized the product listing aggregation handling. 
 
 In order to implement a filter for a product listing before, you had to register for the following events:
-* `\Shopware\Core\Content\Product\Events\ProductListingCriteriaEvent`
+* `\Shopwell\Core\Content\Product\Events\ProductListingCriteriaEvent`
     * Adds the filter and aggregations to the criteria
-* `\Shopware\Core\Content\Product\Events\ProductListingResultEvent`
+* `\Shopwell\Core\Content\Product\Events\ProductListingResultEvent`
     * Adds the filtered values to the result
 
 ### Before
@@ -68,7 +68,7 @@ class ExampleListingSubscriber implements EventSubscriberInterface
 
 ### After
 As we have now introduced a new mode for the filters, where the filters have been further reduced with each filtering, we have simplified the system.
-For this, the event `\Shopware\Core\Content\Product\Events\ProductListingCollectFilterEvent` was introduced, where every developer can specify the meta data for a filter. 
+For this, the event `\Shopwell\Core\Content\Product\Events\ProductListingCollectFilterEvent` was introduced, where every developer can specify the meta data for a filter. 
 The handling, if and how a filter is added, is done by the core.
 
 ```

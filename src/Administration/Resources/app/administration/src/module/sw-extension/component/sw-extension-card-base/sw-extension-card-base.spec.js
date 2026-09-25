@@ -4,7 +4,7 @@ async function createWrapper(propsData = {}, provide = {}) {
     return mount(await wrapTestComponent('sw-extension-card-base', { sync: true }), {
         global: {
             provide: {
-                shopwareExtensionService: {
+                shopwellExtensionService: {
                     getOpenLink: () => null,
                 },
                 extensionStoreActionService: {},
@@ -167,7 +167,7 @@ describe('src/module/sw-extension/component/sw-extension-card-base', () => {
                 },
             },
             {
-                shopwareExtensionService: {
+                shopwellExtensionService: {
                     canBeOpened: () => false,
                     getOpenLink: () => null,
                 },
@@ -189,7 +189,7 @@ describe('src/module/sw-extension/component/sw-extension-card-base', () => {
                 },
             },
             {
-                shopwareExtensionService: {
+                shopwellExtensionService: {
                     getOpenLink: () => {
                         return Promise.resolve({
                             name: 'jest',
@@ -239,7 +239,7 @@ describe('src/module/sw-extension/component/sw-extension-card-base', () => {
                 },
             },
             {
-                shopwareExtensionService: {
+                shopwellExtensionService: {
                     canBeOpened: () => true,
                     getOpenLink: () => null,
                 },
@@ -260,7 +260,7 @@ describe('src/module/sw-extension/component/sw-extension-card-base', () => {
                 },
             },
             {
-                shopwareExtensionService: {
+                shopwellExtensionService: {
                     getOpenLink: () => null,
                     updateExtension: async () => {
                         const error = new Error();

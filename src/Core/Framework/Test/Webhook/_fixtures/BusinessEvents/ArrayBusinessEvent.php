@@ -32,7 +32,7 @@ class ArrayBusinessEvent implements FlowEventAware, BusinessEventEncoderTestInte
             ->add('taxes', new ArrayType(new EntityType(TaxDefinition::class)));
     }
 
-    public function getEncodeValues(string $shopwareVersion): array
+    public function getEncodeValues(string $shopwellVersion): array
     {
         $taxes = [];
 

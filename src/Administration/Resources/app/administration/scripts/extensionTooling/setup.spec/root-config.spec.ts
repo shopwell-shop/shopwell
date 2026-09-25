@@ -131,7 +131,7 @@ describe('scripts/extensionTooling/setup root-config bridge mode', () => {
         setupExtensionTooling({ projectRoot, administrationRoot, rootConfig: { extension: 'Mono', dir: '.' } });
 
         expect(countBridges(path.join(projectRoot, 'custom/plugins/Mono'))).toBe(1);
-        expect(fs.existsSync(path.join(projectRoot, 'custom/plugins/Mono/.shopware/tsconfig.json'))).toBe(true);
+        expect(fs.existsSync(path.join(projectRoot, 'custom/plugins/Mono/.shopwell/tsconfig.json'))).toBe(true);
         expect(
             fs.existsSync(
                 path.join(projectRoot, 'custom/plugins/Mono/src/BundleA/Resources/app/administration/tsconfig.json'),
@@ -140,7 +140,7 @@ describe('scripts/extensionTooling/setup root-config bridge mode', () => {
 
         const scaffold = fs.readFileSync(path.join(projectRoot, 'custom/plugins/Mono/tsconfig.json'), 'utf8');
 
-        expect(scaffold).toContain('"extends": "./.shopware/tsconfig.json"');
+        expect(scaffold).toContain('"extends": "./.shopwell/tsconfig.json"');
         expect(scaffold).toContain('src/BundleA/Resources/app/administration/src/**/*.ts');
         expect(scaffold).toContain('src/BundleB/Resources/app/administration/src/**/*.ts');
 
@@ -159,7 +159,7 @@ describe('scripts/extensionTooling/setup root-config bridge mode', () => {
         const result = setupExtensionTooling({ projectRoot, administrationRoot });
 
         expect(countBridges(path.join(projectRoot, 'custom/plugins/Shared'))).toBe(1);
-        expect(fs.existsSync(path.join(projectRoot, 'custom/plugins/Shared/.shopware/tsconfig.json'))).toBe(true);
+        expect(fs.existsSync(path.join(projectRoot, 'custom/plugins/Shared/.shopwell/tsconfig.json'))).toBe(true);
         // The pre-existing package config is never rewritten.
         expect(fs.readFileSync(path.join(projectRoot, 'custom/plugins/Shared/tsconfig.json'), 'utf8')).not.toContain(
             '@generated',
@@ -193,8 +193,8 @@ describe('scripts/extensionTooling/setup root-config bridge mode', () => {
         // Two package-level configs each governing two roots: one bridge each,
         // rather than a refusal that needs a flag to resolve.
         expect(countBridges(path.join(projectRoot, 'custom/plugins/Ambiguous'))).toBe(2);
-        expect(fs.existsSync(path.join(projectRoot, 'custom/plugins/Ambiguous/src/GroupOne/.shopware'))).toBe(true);
-        expect(fs.existsSync(path.join(projectRoot, 'custom/plugins/Ambiguous/src/GroupTwo/.shopware'))).toBe(true);
+        expect(fs.existsSync(path.join(projectRoot, 'custom/plugins/Ambiguous/src/GroupOne/.shopwell'))).toBe(true);
+        expect(fs.existsSync(path.join(projectRoot, 'custom/plugins/Ambiguous/src/GroupTwo/.shopwell'))).toBe(true);
         expect(warningText(result)).not.toContain('was not bridged');
     });
 

@@ -2,7 +2,7 @@
 title: Changed manufacturer wrapper from `<a>` to `<div>` when link is missing
 issue: #9615
 author: Tam Dao
-author_email: t.dao@shopware.com
+author_email: t.dao@shopwell.com
 author_github: @daothithientamm
 ---
 # Storefront

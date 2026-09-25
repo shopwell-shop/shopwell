@@ -31,7 +31,7 @@ class ScriptEnvironmentFactory implements ResetInterface
     public function __construct(
         private readonly DebugExtension $debugExtension,
         private readonly iterable $twigExtensions,
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
     ) {
     }
 
@@ -56,8 +56,8 @@ class ScriptEnvironmentFactory implements ResetInterface
             $twig->addExtension($this->debugExtension);
         }
 
-        $twig->addGlobal('shopware', new ArrayStruct([
-            'version' => $this->shopwareVersion,
+        $twig->addGlobal('shopwell', new ArrayStruct([
+            'version' => $this->shopwellVersion,
         ]));
 
         // memoize 250 envs at max, to prevent memory leaks

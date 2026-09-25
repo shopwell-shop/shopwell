@@ -23,7 +23,7 @@ readonly class HandshakeFactory
         private string $shopUrl,
         private ShopIdProvider $shopIdProvider,
         private StoreClient $storeClient,
-        private string $shopwareVersion,
+        private string $shopwellVersion,
         private ClockInterface $clock,
     ) {
     }
@@ -64,7 +64,7 @@ readonly class HandshakeFactory
                 $setup->getRegistrationUrl(),
                 $metadata->getName(),
                 $shopId,
-                $this->shopwareVersion,
+                $this->shopwellVersion,
                 $this->clock,
                 $currentAppSecret,
             );
@@ -76,7 +76,7 @@ readonly class HandshakeFactory
             $metadata->getName(),
             $shopId,
             $this->storeClient,
-            $this->shopwareVersion,
+            $this->shopwellVersion,
             $this->clock,
             $currentAppSecret,
         );

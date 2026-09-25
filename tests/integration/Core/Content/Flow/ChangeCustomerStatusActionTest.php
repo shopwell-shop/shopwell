@@ -107,7 +107,7 @@ class ChangeCustomerStatusActionTest extends TestCase
             ],
         ], Context::createDefaultContext());
 
-        $this->login($email, 'shopware');
+        $this->login($email, 'shopwell');
 
         /** @var CustomerEntity $customer */
         $customer = $this->customerRepository->search(

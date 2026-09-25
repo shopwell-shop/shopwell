@@ -85,10 +85,10 @@ class RequirementsValidatorTest extends TestCase
     {
         $requirements = new RequirementsValidator(new \ArrayIterator([
             'service_consent' => $this->requirement(Gate::PRIVILEGES, true),
-            'shopware_account' => $this->requirement(Gate::PRIVILEGES, true, permitsStateChange: false),
+            'shopwell_account' => $this->requirement(Gate::PRIVILEGES, true, permitsStateChange: false),
         ]));
 
-        static::assertFalse($requirements->permitsStateChange(['service_consent', 'shopware_account']));
+        static::assertFalse($requirements->permitsStateChange(['service_consent', 'shopwell_account']));
         static::assertTrue($requirements->permitsStateChange(['service_consent']));
     }
 
@@ -96,10 +96,10 @@ class RequirementsValidatorTest extends TestCase
     {
         // the policy is about who controls the state, not about whether the requirement is currently met
         $requirements = new RequirementsValidator(new \ArrayIterator([
-            'shopware_account' => $this->requirement(Gate::PRIVILEGES, false, permitsStateChange: false),
+            'shopwell_account' => $this->requirement(Gate::PRIVILEGES, false, permitsStateChange: false),
         ]));
 
-        static::assertFalse($requirements->permitsStateChange(['shopware_account']));
+        static::assertFalse($requirements->permitsStateChange(['shopwell_account']));
     }
 
     public function testStateChangeNotPermittedForUnknownRequirement(): void

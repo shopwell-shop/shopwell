@@ -26,7 +26,7 @@ class McpListChangedNotifier
      * current session. The controller flushes it only after the SDK has persisted its in-memory
      * session (see notifySession()), so the queued notification is not overwritten.
      */
-    final public const PENDING_TOOLS_LIST_CHANGED_ATTRIBUTE = 'shopware.mcp.pending_tools_list_changed';
+    final public const PENDING_TOOLS_LIST_CHANGED_ATTRIBUTE = 'shopwell.mcp.pending_tools_list_changed';
 
     private const SESSION_OUTGOING_QUEUE = '_mcp';
     private const SESSION_OUTGOING_QUEUE_KEY = 'outgoing_queue';

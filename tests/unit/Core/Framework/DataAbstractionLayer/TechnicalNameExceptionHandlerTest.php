@@ -77,7 +77,7 @@ class TechnicalNameExceptionHandlerTest extends TestCase
             'An exception occurred while executing a query: SQLSTATE[23000]: '
             . 'Integrity constraint violation: 1451 Cannot delete or update a parent row: '
             . 'a foreign key constraint fails '
-            . '(`shopware`.`theme_media`, CONSTRAINT `fk.theme_media.media_id` FOREIGN KEY (`media_id`) REFERENCES `media` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE)'
+            . '(`shopwell`.`theme_media`, CONSTRAINT `fk.theme_media.media_id` FOREIGN KEY (`media_id`) REFERENCES `media` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE)'
         );
 
         $handler = new TechnicalNameExceptionHandler();

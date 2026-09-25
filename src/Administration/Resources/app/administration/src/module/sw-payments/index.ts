@@ -6,13 +6,13 @@ import './acl';
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 Shopwell.Module.register('sw-payments', {
     type: 'core',
-    name: 'shopware-payments',
+    name: 'shopwell-payments',
     title: 'sw-payments.general.mainMenuItemGeneral',
     description: 'sw-payments.general.description',
     version: '1.0.0',
     targetVersion: '1.0.0',
     color: '#FFBC51',
-    icon: 'solid-shopware-payments',
+    icon: 'solid-shopwell-payments',
 
     // stub route, otherwise the module will not show
     routes: {
@@ -26,7 +26,7 @@ Shopwell.Module.register('sw-payments', {
             id: 'sw-payments',
             label: 'global.sw-admin-menu.navigation.mainMenuItemShopwellPayments',
             color: '#FFBC51',
-            icon: 'regular-shopware-payments',
+            icon: 'regular-shopwell-payments',
             position: 35,
             privilege: 'sw-payments.viewer',
         },

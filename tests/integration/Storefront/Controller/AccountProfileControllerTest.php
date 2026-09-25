@@ -222,7 +222,7 @@ class AccountProfileControllerTest extends TestCase
             $_SERVER['APP_URL'] . '/account/login',
             $this->tokenize('frontend.account.login', [
                 'username' => $email,
-                'password' => 'shopware',
+                'password' => 'shopwell',
             ])
         );
         $response = $browser->getResponse();
@@ -280,7 +280,7 @@ class AccountProfileControllerTest extends TestCase
             'id' => $customerId,
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
-            'company' => 'shopware AG',
+            'company' => 'Shopwell',
             'defaultShippingAddress' => [
                 'id' => $addressId,
                 'firstName' => 'Max',
@@ -288,7 +288,7 @@ class AccountProfileControllerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'company' => 'shopware AG',
+                'company' => 'Shopwell',
                 'salutationId' => $this->getValidSalutationId(),
                 'country' => ['name' => 'VAT Test Country', 'vatIdRequired' => $vatIdRequired],
             ],

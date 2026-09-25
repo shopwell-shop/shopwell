@@ -2,7 +2,7 @@
 title: Configurable layout filter in the category settings
 issue: NEXT-38410
 author: Krzykawski
-author_email: m.krzykawski@shopware.com
+author_email: m.krzykawski@shopwell.com
 author_github: @MartinKrzykawski
 ---
 # Administration

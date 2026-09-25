@@ -191,7 +191,7 @@ class TaskSchedulerTest extends TestCase
             $scheduledTaskRepository,
             $bus,
             new ParameterBag([
-                'shopware.test.active' => false,
+                'shopwell.test.active' => false,
             ]),
             new Logger('test'),
             12,
@@ -243,7 +243,7 @@ class TaskSchedulerTest extends TestCase
         $scheduler = new TaskScheduler(
             $scheduledTaskRepository,
             $bus,
-            new ParameterBag(['shopware.test.active' => $shouldSchedule]),
+            new ParameterBag(['shopwell.test.active' => $shouldSchedule]),
             new Logger('test'),
             12,
             new NativeClock()
@@ -328,7 +328,7 @@ class TestScheduledTask extends ScheduledTask
 {
     public static function getTaskName(): string
     {
-        return 'shopware.test';
+        return 'shopwell.test';
     }
 
     public static function getDefaultInterval(): int
@@ -338,6 +338,6 @@ class TestScheduledTask extends ScheduledTask
 
     public static function shouldRun(ParameterBagInterface $bag): bool
     {
-        return (bool) $bag->get('shopware.test.active');
+        return (bool) $bag->get('shopwell.test.active');
     }
 }

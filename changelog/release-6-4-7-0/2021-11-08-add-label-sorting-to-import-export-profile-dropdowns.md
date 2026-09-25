@@ -2,7 +2,7 @@
 title: Add label sorting to import / export profile dropdowns
 issue: NEXT-18233
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com 
+author_email: k.luetjann@shopwell.com 
 author_github: King-of-Babylon
 ---
 # Administration

@@ -29,8 +29,8 @@ class ComposerVersionConstraints
             '^rector\/type-perfect$' => 'Even patch updates for PHPStan plugins may lead to a red CI pipeline, because of new static analysis errors',
             '^phpat\/phpat$' => 'Even patch updates for PHPStan plugins may lead to a red CI pipeline, because of new static analysis errors',
             '^scssphp\/scssphp$' => 'Patch updates of scssphp might lead to UI breaks, therefore it is pinned.',
-            '^shopware\/conflicts$' => 'The shopware conflicts packages should be required in any version, so use `*` constraint',
-            '^shopware\/core$' => 'The shopware core packages should be required in any version, so use `*` constraint, the version constraint will be automatically synced during the release process',
+            '^shopwell\/conflicts$' => 'The shopwell conflicts packages should be required in any version, so use `*` constraint',
+            '^shopwell\/core$' => 'The shopwell core packages should be required in any version, so use `*` constraint, the version constraint will be automatically synced during the release process',
             '^ext-.*$' => 'PHP extension version ranges should be required in any version, so use `*` constraint',
         ],
     ];

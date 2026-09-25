@@ -25,63 +25,63 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     // Filesystem
     $services->set(FilesystemFactory::class)
         ->args([
-            tagged_iterator('shopware.filesystem.factory'),
+            tagged_iterator('shopwell.filesystem.factory'),
         ]);
 
-    $services->set('shopware.filesystem.public', FilesystemOperator::class)
+    $services->set('shopwell.filesystem.public', FilesystemOperator::class)
         ->public()
         ->factory([service(FilesystemFactory::class), 'factory'])
         ->args([
-            param('shopware.filesystem.public'),
+            param('shopwell.filesystem.public'),
         ]);
 
-    $services->set('shopware.filesystem.private', FilesystemOperator::class)
+    $services->set('shopwell.filesystem.private', FilesystemOperator::class)
         ->public()
         ->factory([service(FilesystemFactory::class), 'privateFactory'])
         ->args([
-            param('shopware.filesystem.private'),
+            param('shopwell.filesystem.private'),
         ]);
 
-    $services->set('shopware.filesystem.temp', FilesystemOperator::class)
+    $services->set('shopwell.filesystem.temp', FilesystemOperator::class)
         ->public()
         ->factory([service(FilesystemFactory::class), 'privateFactory'])
         ->args([
-            param('shopware.filesystem.temp'),
+            param('shopwell.filesystem.temp'),
         ]);
 
-    $services->set('shopware.filesystem.theme', FilesystemOperator::class)
+    $services->set('shopwell.filesystem.theme', FilesystemOperator::class)
         ->public()
         ->factory([service(FilesystemFactory::class), 'factory'])
         ->args([
-            param('shopware.filesystem.theme'),
+            param('shopwell.filesystem.theme'),
         ]);
 
-    $services->set('shopware.filesystem.sitemap', FilesystemOperator::class)
+    $services->set('shopwell.filesystem.sitemap', FilesystemOperator::class)
         ->public()
         ->factory([service(FilesystemFactory::class), 'factory'])
         ->args([
-            param('shopware.filesystem.sitemap'),
+            param('shopwell.filesystem.sitemap'),
         ]);
 
-    $services->set('shopware.filesystem.asset', FilesystemOperator::class)
+    $services->set('shopwell.filesystem.asset', FilesystemOperator::class)
         ->public()
         ->factory([service(FilesystemFactory::class), 'factory'])
         ->args([
-            param('shopware.filesystem.asset'),
+            param('shopwell.filesystem.asset'),
         ]);
 
     $services->set(FilesystemFactory::class . '.local', LocalFactory::class)
-        ->tag('shopware.filesystem.factory');
+        ->tag('shopwell.filesystem.factory');
 
     $services->set(FilesystemFactory::class . '.amazon_s3', AwsS3v3Factory::class)
         ->args([
-            param('shopware.filesystem.batch_write_size'),
-            service('shopware.filesystem.s3.client')->nullOnInvalid(),
+            param('shopwell.filesystem.batch_write_size'),
+            service('shopwell.filesystem.s3.client')->nullOnInvalid(),
         ])
-        ->tag('shopware.filesystem.factory');
+        ->tag('shopwell.filesystem.factory');
 
     $services->set(FilesystemFactory::class . '.google_storage', GoogleStorageFactory::class)
-        ->tag('shopware.filesystem.factory');
+        ->tag('shopwell.filesystem.factory');
 
     $services->set('console.command.assets_install', AssetInstallCommand::class)
         ->args([
@@ -92,69 +92,69 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('console.command');
 
     // Assets
-    $services->set('shopware.asset.public', FallbackUrlPackage::class)
+    $services->set('shopwell.asset.public', FallbackUrlPackage::class)
         ->lazy()
         ->args([
             [
-                param('shopware.filesystem.public.url'),
+                param('shopwell.filesystem.public.url'),
             ],
             service('assets.empty_version_strategy'),
             service('request_stack')->nullOnInvalid(),
         ])
-        ->tag('shopware.asset', ['asset' => 'public']);
+        ->tag('shopwell.asset', ['asset' => 'public']);
 
-    $services->set('shopware.asset.public.version_strategy', FlysystemLastModifiedVersionStrategy::class)
+    $services->set('shopwell.asset.public.version_strategy', FlysystemLastModifiedVersionStrategy::class)
         ->args([
             'theme-metaData',
-            service('shopware.filesystem.public'),
+            service('shopwell.filesystem.public'),
             service('cache.object'),
         ]);
 
-    $services->set('shopware.asset.theme.version_strategy', FlysystemLastModifiedVersionStrategy::class)
+    $services->set('shopwell.asset.theme.version_strategy', FlysystemLastModifiedVersionStrategy::class)
         ->args([
             'theme-metaData',
-            service('shopware.filesystem.theme'),
+            service('shopwell.filesystem.theme'),
             service('cache.object'),
         ]);
 
-    $services->set('shopware.asset.asset.version_strategy', FlysystemLastModifiedVersionStrategy::class)
+    $services->set('shopwell.asset.asset.version_strategy', FlysystemLastModifiedVersionStrategy::class)
         ->args([
             'asset-metaData',
-            service('shopware.filesystem.asset'),
+            service('shopwell.filesystem.asset'),
             service('cache.object'),
         ]);
 
-    $services->set('shopware.asset.asset', FallbackUrlPackage::class)
+    $services->set('shopwell.asset.asset', FallbackUrlPackage::class)
         ->lazy()
         ->args([
             [
-                param('shopware.filesystem.asset.url'),
+                param('shopwell.filesystem.asset.url'),
             ],
-            service('shopware.asset.asset.version_strategy'),
+            service('shopwell.asset.asset.version_strategy'),
             service('request_stack')->nullOnInvalid(),
         ])
-        ->tag('shopware.asset', ['asset' => 'asset']);
+        ->tag('shopwell.asset', ['asset' => 'asset']);
 
-    $services->set('shopware.asset.asset_without_versioning', FallbackUrlPackage::class)
+    $services->set('shopwell.asset.asset_without_versioning', FallbackUrlPackage::class)
         ->lazy()
         ->args([
             [
-                param('shopware.filesystem.asset.url'),
+                param('shopwell.filesystem.asset.url'),
             ],
             service('assets.empty_version_strategy'),
             service('request_stack')->nullOnInvalid(),
         ]);
 
-    $services->set('shopware.asset.sitemap', FallbackUrlPackage::class)
+    $services->set('shopwell.asset.sitemap', FallbackUrlPackage::class)
         ->lazy()
         ->args([
             [
-                param('shopware.filesystem.sitemap.url'),
+                param('shopwell.filesystem.sitemap.url'),
             ],
             service('assets.empty_version_strategy'),
             service('request_stack')->nullOnInvalid(),
         ])
-        ->tag('shopware.asset', ['asset' => 'sitemap']);
+        ->tag('shopwell.asset', ['asset' => 'sitemap']);
 
     $services->set(CopyBatchInputFactory::class);
 };

@@ -1,4 +1,4 @@
-import type { Toast } from '@shopware-ag/meteor-component-library/dist/esm/MtToast';
+import type { Toast } from '@shopwell-ag/meteor-component-library/dist/esm/MtToast';
 import template from './sw-admin.html.twig';
 
 const { Component } = Shopwell;

@@ -1,6 +1,6 @@
 {
   "name": "Shopwell default theme",
-  "author": "shopware AG",
+  "author": "Shopwell",
   "description": {
     "en-GB": "Default theme of Shopwell 6",
     "de-DE": "Standard Theme von Shopwell 6"
@@ -13,7 +13,7 @@
           "vendor": "app/storefront/vendor"
         }
       },
-      "app/storefront/src/scss/skin/shopware/_base.scss": {
+      "app/storefront/src/scss/skin/shopwell/_base.scss": {
         "resolve": {
           "vendor": "app/storefront/vendor"
         }

@@ -5,4 +5,4 @@ author_email: Discord.Benjamin@web.de
 author_github: gecolay
 ---
 # Core
-* Changed several appearances of the `AddCacheTagEvent`, which have been replaced by the `Shopware\Core\Framework\Adapter\Cache\CacheTagCollector` `addTag` method
+* Changed several appearances of the `AddCacheTagEvent`, which have been replaced by the `Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector` `addTag` method

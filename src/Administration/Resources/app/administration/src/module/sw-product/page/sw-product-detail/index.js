@@ -500,7 +500,7 @@ export default {
     },
 
     beforeRouteLeave() {
-        Shopwell.Store.get('shopwareApps').selectedIds = [];
+        Shopwell.Store.get('shopwellApps').selectedIds = [];
     },
 
     methods: {
@@ -683,7 +683,7 @@ export default {
 
         loadState() {
             Shopwell.Store.get('swProductDetail').localMode = false;
-            Shopwell.Store.get('shopwareApps').selectedIds = [this.productId];
+            Shopwell.Store.get('shopwellApps').selectedIds = [this.productId];
 
             return this.loadAll();
         },
@@ -700,7 +700,7 @@ export default {
         createState() {
             // set local mode
             Shopwell.Store.get('swProductDetail').localMode = true;
-            Shopwell.Store.get('shopwareApps').selectedIds = [];
+            Shopwell.Store.get('shopwellApps').selectedIds = [];
 
             Shopwell.Store.get('swProductDetail').setLoading(['product', true]);
 
@@ -843,7 +843,7 @@ export default {
 
         async onProductNotFound() {
             this.isProductNotFound = true;
-            Shopwell.Store.get('shopwareApps').selectedIds = [];
+            Shopwell.Store.get('shopwellApps').selectedIds = [];
 
             this.createNotificationError({
                 message: this.$t('sw-product.detail.messageProductNotFound'),

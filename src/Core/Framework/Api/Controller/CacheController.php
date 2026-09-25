@@ -46,7 +46,7 @@ class CacheController extends AbstractController
     {
         return new JsonResponse([
             'environment' => $this->getParameter('kernel.environment'),
-            'httpCache' => $this->container->get('parameter_bag')->has('shopware.http.cache.enabled') && $this->getParameter('shopware.http.cache.enabled'),
+            'httpCache' => $this->container->get('parameter_bag')->has('shopwell.http.cache.enabled') && $this->getParameter('shopwell.http.cache.enabled'),
             'cacheAdapter' => $this->getUsedCache($this->adapter),
             'indexers' => $this->indexerRegistry->getIndexers(),
         ]);

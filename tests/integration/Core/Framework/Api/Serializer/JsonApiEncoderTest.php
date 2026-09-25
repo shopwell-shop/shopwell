@@ -224,7 +224,7 @@ class JsonApiEncoderTest extends TestCase
                 'tax' => ['name' => 'test', 'taxRate' => 5],
                 'manufacturer' => [
                     'id' => Uuid::randomHex(),
-                    'name' => 'shopware AG',
+                    'name' => 'Shopwell',
                     'link' => 'https://shopwell.cn',
                 ],
                 'toOne' => [
@@ -267,7 +267,7 @@ class JsonApiEncoderTest extends TestCase
                 'tax' => ['name' => 'test', 'taxRate' => 5],
                 'manufacturer' => [
                     'id' => Uuid::randomHex(),
-                    'name' => 'shopware AG',
+                    'name' => 'Shopwell',
                     'link' => 'https://shopwell.cn',
                 ],
                 'oneToMany' => [

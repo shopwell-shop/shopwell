@@ -32,7 +32,7 @@ class TranslationConfigLoader extends AbstractTranslationConfigLoader
     private const DOCUMENTATION_URL_SNIPPET_KEY = 'documentation-url-snippet-key';
 
     /**
-     * @description Maps the snake_case keys of the `shopware.translation` config section to the dash-separated keys used in translation.yaml.
+     * @description Maps the snake_case keys of the `shopwell.translation` config section to the dash-separated keys used in translation.yaml.
      */
     private const OVERRIDE_KEY_MAP = [
         'repository_url' => self::REPOSITORY_URL,
@@ -50,7 +50,7 @@ class TranslationConfigLoader extends AbstractTranslationConfigLoader
     /**
      * @param array<string, mixed> $translationConfig
      *
-     * @description `shopware.translation` config section - keys left null fall back to translation.yaml
+     * @description `shopwell.translation` config section - keys left null fall back to translation.yaml
      */
     public function __construct(
         private readonly Filesystem $configReader,

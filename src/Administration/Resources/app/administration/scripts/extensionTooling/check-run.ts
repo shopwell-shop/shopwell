@@ -36,7 +36,7 @@ import type { CheckExtensionsOptions, ExtensionCheckResult, Limiter, ToolRunResu
 /**
  * The tsconfig the check runner feeds to vue-tsc for a source root: the
  * extension's own config when it composes, otherwise the generated bridge
- * tsconfig that sits in `<source-root-parent>/.shopware/` (see setup-bridge.ts).
+ * tsconfig that sits in `<source-root-parent>/.shopwell/` (see setup-bridge.ts).
  */
 export function checkTsconfigPath(target: AdministrationTarget): string {
     if (target.tsconfig?.composes) {
@@ -49,7 +49,7 @@ export function checkTsconfigPath(target: AdministrationTarget): string {
 /**
  * The dedicated spec tsconfig for a source root: the generated companion beside
  * the runtime bridge that adds jest types and includes only the spec files the
- * runtime program excludes. It always lives in the generated `.shopware/`
+ * runtime program excludes. It always lives in the generated `.shopwell/`
  * bridge (never the extension's own config, which type-checks no specs), so it
  * sits next to the config that composes it or beside the source root otherwise.
  */

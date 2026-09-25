@@ -117,10 +117,10 @@ class McpServerControllerTest extends TestCase
         $meta = $result->_meta ?? null;
         static::assertInstanceOf(\stdClass::class, $meta);
 
-        $shopwareMeta = $meta->shopware ?? null;
-        static::assertInstanceOf(\stdClass::class, $shopwareMeta);
+        $shopwellMeta = $meta->shopwell ?? null;
+        static::assertInstanceOf(\stdClass::class, $shopwellMeta);
 
-        $integrationMeta = $shopwareMeta->integration ?? null;
+        $integrationMeta = $shopwellMeta->integration ?? null;
         static::assertInstanceOf(\stdClass::class, $integrationMeta);
         static::assertSame('integration-id', $integrationMeta->id ?? null);
     }
@@ -200,7 +200,7 @@ class McpServerControllerTest extends TestCase
         $httpFoundationFactory->method('createResponse')->willReturn(new Response('', 400));
 
         $allowlistProvider = static::createStub(McpAllowlistProvider::class);
-        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: ['shopware-entity-search'], resources: null, prompts: null));
+        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: ['shopwell-entity-search'], resources: null, prompts: null));
 
         $controller = $this->buildController($psrRequest, $httpFoundationFactory, $allowlistProvider);
         $sfRequest = Request::create('/api/_mcp', 'POST', content: 'not-json');
@@ -216,8 +216,8 @@ class McpServerControllerTest extends TestCase
     public static function allowedToolCallProvider(): iterable
     {
         yield 'tool explicitly in allowlist' => [
-            'shopware-entity-search',
-            new McpAllowlist(tools: ['shopware-entity-search'], resources: null, prompts: null),
+            'shopwell-entity-search',
+            new McpAllowlist(tools: ['shopwell-entity-search'], resources: null, prompts: null),
         ];
         yield 'null tools allows all tools' => [
             'any-tool',
@@ -255,7 +255,7 @@ class McpServerControllerTest extends TestCase
             'jsonrpc' => '2.0',
             'id' => 1,
             'method' => 'tools/call',
-            'params' => ['name' => 'shopware-tool-search', 'arguments' => ['query' => 'entity']],
+            'params' => ['name' => 'shopwell-tool-search', 'arguments' => ['query' => 'entity']],
         ], \JSON_THROW_ON_ERROR);
 
         $psrRequest = new ServerRequest('POST', '/api/_mcp', ['Content-Type' => 'application/json'], $body);
@@ -349,12 +349,12 @@ class McpServerControllerTest extends TestCase
             'jsonrpc' => '2.0',
             'id' => 1,
             'method' => 'tools/call',
-            'params' => ['name' => 'shopware-entity-read', 'arguments' => []],
+            'params' => ['name' => 'shopwell-entity-read', 'arguments' => []],
         ], \JSON_THROW_ON_ERROR);
 
         $psrRequest = new ServerRequest('POST', '/api/_mcp', ['Content-Type' => 'application/json'], $body);
         $allowlistProvider = static::createStub(McpAllowlistProvider::class);
-        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: ['shopware-entity-search'], resources: null, prompts: null));
+        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: ['shopwell-entity-search'], resources: null, prompts: null));
 
         $controller = $this->buildController($psrRequest, null, $allowlistProvider);
         $sfRequest = Request::create('/api/_mcp', 'POST', content: $body);
@@ -363,7 +363,7 @@ class McpServerControllerTest extends TestCase
         static::assertSame(200, $response->getStatusCode());
         $data = json_decode((string) $response->getContent(), true);
         static::assertSame(-32001, $data['error']['code']);
-        static::assertStringContainsString('shopware-entity-read', $data['error']['message']);
+        static::assertStringContainsString('shopwell-entity-read', $data['error']['message']);
         static::assertStringContainsString('allowlist', $data['error']['message']);
     }
 
@@ -373,7 +373,7 @@ class McpServerControllerTest extends TestCase
             'jsonrpc' => '2.0',
             'id' => 1,
             'method' => 'tools/call',
-            'params' => ['name' => 'shopware-entity-schema', 'arguments' => []],
+            'params' => ['name' => 'shopwell-entity-schema', 'arguments' => []],
         ], \JSON_THROW_ON_ERROR);
 
         $psrRequest = new ServerRequest('POST', '/api/_mcp', ['Content-Type' => 'application/json'], $body);
@@ -395,12 +395,12 @@ class McpServerControllerTest extends TestCase
             'jsonrpc' => '2.0',
             'id' => 1,
             'method' => 'resources/read',
-            'params' => ['uri' => 'shopware://state-machines'],
+            'params' => ['uri' => 'shopwell://state-machines'],
         ], \JSON_THROW_ON_ERROR);
 
         $psrRequest = new ServerRequest('POST', '/api/_mcp', ['Content-Type' => 'application/json'], $body);
         $allowlistProvider = static::createStub(McpAllowlistProvider::class);
-        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: null, resources: ['shopware://entities'], prompts: null));
+        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: null, resources: ['shopwell://entities'], prompts: null));
 
         $controller = $this->buildController($psrRequest, null, $allowlistProvider);
         $sfRequest = Request::create('/api/_mcp', 'POST', content: $body);
@@ -409,7 +409,7 @@ class McpServerControllerTest extends TestCase
         static::assertSame(200, $response->getStatusCode());
         $data = json_decode((string) $response->getContent(), true);
         static::assertSame(-32001, $data['error']['code']);
-        static::assertStringContainsString('shopware://state-machines', $data['error']['message']);
+        static::assertStringContainsString('shopwell://state-machines', $data['error']['message']);
     }
 
     public function testResourceReadAllowedWhenInAllowlist(): void
@@ -418,7 +418,7 @@ class McpServerControllerTest extends TestCase
             'jsonrpc' => '2.0',
             'id' => 1,
             'method' => 'resources/read',
-            'params' => ['uri' => 'shopware://entities'],
+            'params' => ['uri' => 'shopwell://entities'],
         ], \JSON_THROW_ON_ERROR);
 
         $psrRequest = new ServerRequest('POST', '/api/_mcp', ['Content-Type' => 'application/json'], $body);
@@ -426,7 +426,7 @@ class McpServerControllerTest extends TestCase
         $httpFoundationFactory->method('createResponse')->willReturn(new Response('{}', 200));
 
         $allowlistProvider = static::createStub(McpAllowlistProvider::class);
-        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: null, resources: ['shopware://entities'], prompts: null));
+        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: null, resources: ['shopwell://entities'], prompts: null));
 
         $controller = $this->buildController($psrRequest, $httpFoundationFactory, $allowlistProvider);
         $sfRequest = Request::create('/api/_mcp', 'POST', content: $body);
@@ -441,12 +441,12 @@ class McpServerControllerTest extends TestCase
             'jsonrpc' => '2.0',
             'id' => 1,
             'method' => 'prompts/get',
-            'params' => ['name' => 'shopware-developer'],
+            'params' => ['name' => 'shopwell-developer'],
         ], \JSON_THROW_ON_ERROR);
 
         $psrRequest = new ServerRequest('POST', '/api/_mcp', ['Content-Type' => 'application/json'], $body);
         $allowlistProvider = static::createStub(McpAllowlistProvider::class);
-        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: null, resources: null, prompts: ['shopware-context']));
+        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: null, resources: null, prompts: ['shopwell-context']));
 
         $controller = $this->buildController($psrRequest, null, $allowlistProvider);
         $sfRequest = Request::create('/api/_mcp', 'POST', content: $body);
@@ -455,7 +455,7 @@ class McpServerControllerTest extends TestCase
         static::assertSame(200, $response->getStatusCode());
         $data = json_decode((string) $response->getContent(), true);
         static::assertSame(-32001, $data['error']['code']);
-        static::assertStringContainsString('shopware-developer', $data['error']['message']);
+        static::assertStringContainsString('shopwell-developer', $data['error']['message']);
     }
 
     public function testPromptGetAllowedWhenInAllowlist(): void
@@ -464,7 +464,7 @@ class McpServerControllerTest extends TestCase
             'jsonrpc' => '2.0',
             'id' => 1,
             'method' => 'prompts/get',
-            'params' => ['name' => 'shopware-context'],
+            'params' => ['name' => 'shopwell-context'],
         ], \JSON_THROW_ON_ERROR);
 
         $psrRequest = new ServerRequest('POST', '/api/_mcp', ['Content-Type' => 'application/json'], $body);
@@ -472,7 +472,7 @@ class McpServerControllerTest extends TestCase
         $httpFoundationFactory->method('createResponse')->willReturn(new Response('{}', 200));
 
         $allowlistProvider = static::createStub(McpAllowlistProvider::class);
-        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: null, resources: null, prompts: ['shopware-context']));
+        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: null, resources: null, prompts: ['shopwell-context']));
 
         $controller = $this->buildController($psrRequest, $httpFoundationFactory, $allowlistProvider);
         $sfRequest = Request::create('/api/_mcp', 'POST', content: $body);
@@ -492,7 +492,7 @@ class McpServerControllerTest extends TestCase
 
         $psrRequest = new ServerRequest('POST', '/api/_mcp', ['Content-Type' => 'application/json'], $body);
         $allowlistProvider = static::createStub(McpAllowlistProvider::class);
-        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: ['shopware-entity-search'], resources: null, prompts: null));
+        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: ['shopwell-entity-search'], resources: null, prompts: null));
 
         $controller = $this->buildController($psrRequest, null, $allowlistProvider);
         $sfRequest = Request::create('/api/_mcp', 'POST', content: $body);
@@ -514,7 +514,7 @@ class McpServerControllerTest extends TestCase
 
         $psrRequest = new ServerRequest('POST', '/api/_mcp', ['Content-Type' => 'application/json'], $body);
         $allowlistProvider = static::createStub(McpAllowlistProvider::class);
-        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: null, resources: ['shopware://entities'], prompts: null));
+        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: null, resources: ['shopwell://entities'], prompts: null));
 
         $controller = $this->buildController($psrRequest, null, $allowlistProvider);
         $sfRequest = Request::create('/api/_mcp', 'POST', content: $body);
@@ -536,7 +536,7 @@ class McpServerControllerTest extends TestCase
 
         $psrRequest = new ServerRequest('POST', '/api/_mcp', ['Content-Type' => 'application/json'], $body);
         $allowlistProvider = static::createStub(McpAllowlistProvider::class);
-        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: null, resources: null, prompts: ['shopware-context']));
+        $allowlistProvider->method('forCurrentRequest')->willReturn(new McpAllowlist(tools: null, resources: null, prompts: ['shopwell-context']));
 
         $controller = $this->buildController($psrRequest, null, $allowlistProvider);
         $sfRequest = Request::create('/api/_mcp', 'POST', content: $body);
@@ -609,8 +609,8 @@ class McpServerControllerTest extends TestCase
         static::assertInstanceOf(\stdClass::class, $data);
         static::assertInstanceOf(\stdClass::class, $data->result);
         static::assertInstanceOf(\stdClass::class, $data->result->_meta);
-        static::assertInstanceOf(\stdClass::class, $data->result->_meta->shopware);
-        $userMeta = $data->result->_meta->shopware->user;
+        static::assertInstanceOf(\stdClass::class, $data->result->_meta->shopwell);
+        $userMeta = $data->result->_meta->shopwell->user;
         static::assertInstanceOf(\stdClass::class, $userMeta);
         static::assertSame('user-id-123', $userMeta->id ?? null);
     }

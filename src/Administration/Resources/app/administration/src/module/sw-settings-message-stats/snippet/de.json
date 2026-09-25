@@ -19,7 +19,7 @@
             "count": "Anzahl",
             "seconds": "s",
             "statsDisabledTitle": "Nachrichtenwarteschlangen-Statistiken sind deaktiviert",
-            "statsDisabledContent": "Um Nachrichtenwarteschlangen-Statistiken zu aktivieren, setzen Sie den Schlüssel \"shopware.messenger.stats.enabled\" in Ihrer shopware.yaml-Konfigurationsdatei auf true und starten Sie die Worker neu."
+            "statsDisabledContent": "Um Nachrichtenwarteschlangen-Statistiken zu aktivieren, setzen Sie den Schlüssel \"shopwell.messenger.stats.enabled\" in Ihrer shopwell.yaml-Konfigurationsdatei auf true und starten Sie die Worker neu."
         }
     }
 }

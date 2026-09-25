@@ -25,13 +25,13 @@ Example:
 ```
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\Checkout\Cart;
+namespace Shopwell\Core\Checkout\Cart;
 
-use Shopware\Core\Checkout\Cart\Error\IncompleteLineItemError;
-use Shopware\Core\Checkout\Cart\LineItem\CartDataCollection;
-use Shopware\Core\Checkout\Cart\LineItem\LineItem;
-use Shopware\Core\Content\Product\Cart\ProductCartProcessor;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Checkout\Cart\Error\IncompleteLineItemError;
+use Shopwell\Core\Checkout\Cart\LineItem\CartDataCollection;
+use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Content\Product\Cart\ProductCartProcessor;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 
 class PluginCartProcessor implements CartProcessorInterface
 {
@@ -106,5 +106,5 @@ class PluginCartProcessor implements CartProcessorInterface
 
 ## Consequences
 
-The plugins have to implement their only processing logic or alternatively extend shopware's cart processors, when using
+The plugins have to implement their only processing logic or alternatively extend shopwell's cart processors, when using
 a specific implementation of nested line items.

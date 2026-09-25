@@ -5,5 +5,5 @@ issue: NEXT-21195
 
 # Core
 
-* Deprecated classes `\Shopware\Core\Framework\App\EmptyActiveAppsLoader` and `\Shopware\Core\Framework\DependencyInjection\CompilerPass\DisableExtensionsCompilerPass` without replacement.
+* Deprecated classes `\Shopwell\Core\Framework\App\EmptyActiveAppsLoader` and `\Shopwell\Core\Framework\DependencyInjection\CompilerPass\DisableExtensionsCompilerPass` without replacement.
 

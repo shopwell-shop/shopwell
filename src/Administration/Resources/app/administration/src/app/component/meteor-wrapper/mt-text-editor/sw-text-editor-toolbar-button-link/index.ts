@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/vue-3';
-import type { CustomButton } from '@shopware-ag/meteor-component-library/dist/esm/MtTextEditorToolbar';
+import type { CustomButton } from '@shopwell-ag/meteor-component-library/dist/esm/MtTextEditorToolbar';
 import template from './sw-text-editor-toolbar-button-link.html.twig';
 import './sw-text-editor-toolbar-button-link.scss';
 import type EntityCollectionType from '../../../../../core/data/entity-collection.data';

@@ -373,7 +373,7 @@ class FeatureTest extends TestCase
         $deprecationTrigger = $this->createMock(Triggerer::class);
         $deprecationTrigger->expects($this->once())
             ->method('deprecation')
-            ->with($introducedIn === null ? '' : 'shopware/core', $introducedIn ?? '', $deprecatedMessage);
+            ->with($introducedIn === null ? '' : 'shopwell/core', $introducedIn ?? '', $deprecatedMessage);
         Feature::$triggerer = $deprecationTrigger;
 
         Feature::callSilentIfInactive('v6.5.0.0', static function () use ($deprecatedMessage, $majorVersion, $introducedIn): void {

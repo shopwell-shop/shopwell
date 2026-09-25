@@ -45,7 +45,7 @@ class DeleteExpiredFilesCommandTest extends TestCase
 
         $this->context = Context::createDefaultContext();
 
-        $this->filesystem = $this->getFilesystem('shopware.filesystem.private');
+        $this->filesystem = $this->getFilesystem('shopwell.filesystem.private');
     }
 
     public function testExecuteWithoutExpiredFiles(): void

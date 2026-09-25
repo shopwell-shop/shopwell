@@ -17,7 +17,7 @@ class StructTest extends TestCase
     public function testGetApiAliasConvertsTheClassNameToSnakeCase(): void
     {
         static::assertSame(
-            'shopware_tests_unit_core_framework_struct_api_alias_example_struct',
+            'shopwell_tests_unit_core_framework_struct_api_alias_example_struct',
             (new ApiAliasExampleStruct())->getApiAlias()
         );
     }

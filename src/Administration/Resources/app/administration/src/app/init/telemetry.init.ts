@@ -1,4 +1,4 @@
-import type { telemetryDispatch } from '@shopware-ag/meteor-admin-sdk/es/telemetry';
+import type { telemetryDispatch } from '@shopwell-ag/meteor-admin-sdk/es/telemetry';
 import type { TrackableType } from '../../core/telemetry/types';
 
 /**

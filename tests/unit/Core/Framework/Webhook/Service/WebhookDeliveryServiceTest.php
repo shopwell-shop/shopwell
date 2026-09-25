@@ -358,9 +358,9 @@ class WebhookDeliveryServiceTest extends TestCase
     public function testBuildRequestStripsReservedWebhookHeadersCaseInsensitively(): void
     {
         $msg = $this->createMessage(webhookHeaders: [
-            'x-shopware-event-id' => 'spoofed-event',
+            'x-shopwell-event-id' => 'spoofed-event',
             'X-Shopwell-Sequence' => 'spoofed-sequence',
-            'X-SHOPWARE-ATTEMPT' => 'spoofed-attempt',
+            'X-SHOPWELL-ATTEMPT' => 'spoofed-attempt',
             'X-Custom' => 'value',
         ]);
         $entry = new OutboxEntry(webhookEventId: $msg->getWebhookEventId(), sequence: 42, executionCount: 3, deliveryStatus: 'running');
@@ -384,8 +384,8 @@ class WebhookDeliveryServiceTest extends TestCase
                         && $headers[WebhookDeliveryService::HEADER_SEQUENCE] === '42'
                         && $headers[WebhookDeliveryService::HEADER_ATTEMPT] === '2'
                         && $headers['X-Custom'] === 'value'
-                        && !isset($headers['x-shopware-event-id'])
-                        && !isset($headers['X-SHOPWARE-ATTEMPT']);
+                        && !isset($headers['x-shopwell-event-id'])
+                        && !isset($headers['X-SHOPWELL-ATTEMPT']);
                 })
             )
             ->willReturn($this->createWebhookRequest());
@@ -475,7 +475,7 @@ class WebhookDeliveryServiceTest extends TestCase
             payload: ['data' => 'test-payload'],
             appId: Uuid::randomHex(),
             webhookId: $webhookId ?? Uuid::randomHex(),
-            shopwareVersion: '6.7.0',
+            shopwellVersion: '6.7.0',
             url: 'https://example.com/webhook',
             secret: 'test-secret',
             languageId: Uuid::randomHex(),

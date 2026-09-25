@@ -64,8 +64,8 @@ class CreateIntegrationCommandTest extends TestCase
 
         $parsedEnv = (new Dotenv())->parse($output);
         static::assertCount(2, $parsedEnv);
-        static::assertSame($accessKey, $parsedEnv['SHOPWARE_ACCESS_KEY_ID']);
-        static::assertSame($secretAccessKey, $parsedEnv['SHOPWARE_SECRET_ACCESS_KEY']);
+        static::assertSame($accessKey, $parsedEnv['SHOPWELL_ACCESS_KEY_ID']);
+        static::assertSame($secretAccessKey, $parsedEnv['SHOPWELL_SECRET_ACCESS_KEY']);
     }
 
     public function testCreateIntegrationWithCustomKeys(): void
@@ -106,7 +106,7 @@ class CreateIntegrationCommandTest extends TestCase
 
         $parsedEnv = (new Dotenv())->parse($output);
         static::assertCount(2, $parsedEnv);
-        static::assertSame($customAccessKey, $parsedEnv['SHOPWARE_ACCESS_KEY_ID']);
-        static::assertSame($customSecretAccessKey, $parsedEnv['SHOPWARE_SECRET_ACCESS_KEY']);
+        static::assertSame($customAccessKey, $parsedEnv['SHOPWELL_ACCESS_KEY_ID']);
+        static::assertSame($customSecretAccessKey, $parsedEnv['SHOPWELL_SECRET_ACCESS_KEY']);
     }
 }

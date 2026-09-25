@@ -35,7 +35,7 @@ class AdminConfigurationServiceTest extends TestCase
                     static::assertTrue($data['admin']);
                     static::assertTrue($data['active']);
 
-                    return password_verify('shopware', (string) $data['password']);
+                    return password_verify('shopwell', (string) $data['password']);
                 })
             );
 
@@ -48,7 +48,7 @@ class AdminConfigurationServiceTest extends TestCase
 
         $user = [
             'username' => 'admin',
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'firstName' => 'first',
             'lastName' => 'last',
             'email' => 'test@test.com',

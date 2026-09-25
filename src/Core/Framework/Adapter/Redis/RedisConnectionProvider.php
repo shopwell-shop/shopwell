@@ -41,6 +41,6 @@ class RedisConnectionProvider
 
     private function getServiceName(string $connectionName): string
     {
-        return 'shopware.redis.connection.' . $connectionName;
+        return 'shopwell.redis.connection.' . $connectionName;
     }
 }

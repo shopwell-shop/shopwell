@@ -67,7 +67,7 @@ $measurementSystem = new MeasurementUnits('metric', [
 $salesChannelContext->setMeasurementSystem($measurementSystem);
 ```
 
-The `MeasurementUnits` will be initialized in `\Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory::create` based on current sales channel domain
+The `MeasurementUnits` will be initialized in `\Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory::create` based on current sales channel domain
 
 The measurement configuration will be visible in `/store-api/context`:
 
@@ -95,7 +95,7 @@ Measurement units will be dynamically converted based on the configured measurem
 The `measurementUnits` is a runtime-calculated field based on the product’s measurement values and selected units.
 
 ```php
-namespace Shopware\Core\Content\Product\Subscriber;
+namespace Shopwell\Core\Content\Product\Subscriber;
 
 class ProductSubscriber implements EventSubscriberInterface 
 {

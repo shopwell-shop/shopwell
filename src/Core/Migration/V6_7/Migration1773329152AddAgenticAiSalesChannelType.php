@@ -43,7 +43,7 @@ class Migration1773329152AddAgenticAiSalesChannelType extends MigrationStep
             $translations = [
                 $systemLanguageId => [
                     'name' => 'Agentic Commerce',
-                    'manufacturer' => 'shopware AG',
+                    'manufacturer' => 'Shopwell',
                     'description' => 'Sales channel for agentic commerce platforms',
                 ],
             ];
@@ -53,7 +53,7 @@ class Migration1773329152AddAgenticAiSalesChannelType extends MigrationStep
             if ($englishLanguageId !== null && $englishLanguageId !== $systemLanguageId) {
                 $translations[$englishLanguageId] = [
                     'name' => 'Agentic Commerce',
-                    'manufacturer' => 'shopware AG',
+                    'manufacturer' => 'Shopwell',
                     'description' => 'Sales channel for agentic commerce platforms',
                 ];
             }
@@ -63,7 +63,7 @@ class Migration1773329152AddAgenticAiSalesChannelType extends MigrationStep
             if ($germanLanguageId !== null && $germanLanguageId !== $systemLanguageId) {
                 $translations[$germanLanguageId] = [
                     'name' => 'Agentic Commerce',
-                    'manufacturer' => 'shopware AG',
+                    'manufacturer' => 'Shopwell',
                     'description' => 'Verkaufskanal für Agentic-Commerce-Plattformen',
                 ];
             }

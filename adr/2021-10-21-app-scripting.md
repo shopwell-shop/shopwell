@@ -22,7 +22,7 @@ Additionally, such a Scripting feature generally improves the capabilities of th
 ## Decision
 
 We use Twig as it brings a secure PHP sandbox and allows interacting directly with objects. The scripts will be saved in the database and mapped to a specific scripting event. 
-Scripting events are placed in many sections in Shopware to be able to adjust them. Apps can subscribe to the scripting events by placing their scripts into the correspondingly named folders.
+Scripting events are placed in many sections in Shopwell to be able to adjust them. Apps can subscribe to the scripting events by placing their scripts into the correspondingly named folders.
 
 ### Scripting Events
 
@@ -130,7 +130,7 @@ For this reason we decided to generate as much of the documentation as possible,
 ## Consequences
 
 - Added script events with the passed arguments need to be supported for a long time
-- We will create a new domain-specific way to interact with shopware core domain logic. This means we have to think of and develop a higher-level description of our core domain logic and represent it through new
+- We will create a new domain-specific way to interact with shopwell core domain logic. This means we have to think of and develop a higher-level description of our core domain logic and represent it through new
 functions that perform domain-specific tasks. For example, the block cart function in the example above. Those domain objects represent the API of the AppScripts, therefore, breaking changes need to be considered carefully and should definitely follow our general breaking change policy. 
 Additionally, the domain-specific layer may allow us to not break the public interface, when the implementation in the underlying services may break, so we can try to ensure even longer compatibility in the domain layer.
-However, to make evolvability possible at all, we need to inject the shopware version into the context of the app scripts, so that in the app scripts the version can be detected and new features used accordingly.
+However, to make evolvability possible at all, we need to inject the shopwell version into the context of the app scripts, so that in the app scripts the version can be detected and new features used accordingly.

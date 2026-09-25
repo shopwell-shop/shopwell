@@ -25,14 +25,14 @@ use Symfony\Component\Routing\RouteCollection;
 #[CoversClass(InstallerKernel::class)]
 class InstallerKernelTest extends TestCase
 {
-    #[TestDox('constructor resolves version from shopware/platform when installed')]
+    #[TestDox('constructor resolves version from shopwell/platform when installed')]
     public function testConstructorUsesPlatformVersionWhenInstalled(): void
     {
         $kernel = new InstallerKernelStub('test', false, '6.6.0.0@abc123platform');
         $params = $kernel->exposeKernelParameters();
 
-        static::assertSame('6.6.0.0', $params['kernel.shopware_version']);
-        static::assertSame('abc123platform', $params['kernel.shopware_version_revision']);
+        static::assertSame('6.6.0.0', $params['kernel.shopwell_version']);
+        static::assertSame('abc123platform', $params['kernel.shopwell_version_revision']);
     }
 
     #[TestDox('registerBundles yields FrameworkBundle, TwigBundle and Installer')]
@@ -88,7 +88,7 @@ class InstallerKernelTest extends TestCase
         $kernel->exposeConfigureRoutes($routes);
     }
 
-    #[TestDox('resolveComposerVersion falls back to shopware/core when shopware/platform is not installed')]
+    #[TestDox('resolveComposerVersion falls back to shopwell/core when shopwell/platform is not installed')]
     public function testResolveComposerVersionFallsBackToCorePackage(): void
     {
         $originalData = InstalledVersions::getAllRawData();
@@ -97,7 +97,7 @@ class InstallerKernelTest extends TestCase
         try {
             InstalledVersions::reload([
                 'root' => [
-                    'name' => 'shopware/production',
+                    'name' => 'shopwell/production',
                     'pretty_version' => '6.6.1.0',
                     'version' => '6.6.1.0',
                     'reference' => 'abc123',
@@ -107,7 +107,7 @@ class InstallerKernelTest extends TestCase
                     'dev' => false,
                 ],
                 'versions' => [
-                    'shopware/core' => [
+                    'shopwell/core' => [
                         'pretty_version' => '6.6.1.0',
                         'version' => '6.6.1.0',
                         'reference' => 'coreref123',
@@ -120,8 +120,8 @@ class InstallerKernelTest extends TestCase
             $kernel = new InstallerKernelStub('test', false);
             $params = $kernel->exposeKernelParameters();
 
-            static::assertSame('6.6.1.0', $params['kernel.shopware_version']);
-            static::assertSame('coreref123', $params['kernel.shopware_version_revision']);
+            static::assertSame('6.6.1.0', $params['kernel.shopwell_version']);
+            static::assertSame('coreref123', $params['kernel.shopwell_version_revision']);
         } finally { // tear down no matter the results of assertions above
             $canGetVendors->setValue(null, null);
             InstalledVersions::reload($originalData[0]);

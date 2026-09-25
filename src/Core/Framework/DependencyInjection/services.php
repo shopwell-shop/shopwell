@@ -167,31 +167,31 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 return static function (ContainerConfigurator $containerConfigurator): void {
     $parameters = $containerConfigurator->parameters();
 
-    $parameters->set('shopware.slug.config', [
+    $parameters->set('shopwell.slug.config', [
         'regexp' => '/([^A-Za-z0-9\.]|-)+/',
         'lowercase' => false,
     ]);
 
     // Populated by RouteScopeCompilerPass with all route prefixes from the registers RouteScopes
-    $parameters->set('shopware.routing.registered_api_prefixes', []);
+    $parameters->set('shopwell.routing.registered_api_prefixes', []);
 
     // Migration config
     $parameters->set('core.migration.directories', []);
 
-    $parameters->set('shopware.security.csp_templates', [
+    $parameters->set('shopwell.security.csp_templates', [
         'default' => "\nobject-src 'none';\nscript-src 'none';\nbase-uri 'self';\nframe-ancestors 'none';\n            ",
         'administration' => "\nobject-src 'none';\nscript-src 'strict-dynamic' 'nonce-%%nonce%%' 'unsafe-inline' 'unsafe-eval' https: http:;\nbase-uri 'self';\nframe-ancestors 'none';\n            ",
         'storefront' => '',
         'installer' => '',
     ]);
 
-    $parameters->set('shopware_http_cache_enabled_default', 1);
-    $parameters->set('shopware.http.cache.enabled', env('SHOPWARE_HTTP_CACHE_ENABLED')->default('shopware_http_cache_enabled_default'));
+    $parameters->set('shopwell_http_cache_enabled_default', 1);
+    $parameters->set('shopwell.http.cache.enabled', env('SHOPWELL_HTTP_CACHE_ENABLED')->default('shopwell_http_cache_enabled_default'));
 
     // @deprecated tag:v6.8.0 Will be removed
-    $parameters->set('shopware_http_cache_default_ttl_default', 7200);
+    $parameters->set('shopwell_http_cache_default_ttl_default', 7200);
     // @deprecated tag:v6.8.0 Will be removed
-    $parameters->set('shopware.http.cache.default_ttl', env('SHOPWARE_HTTP_DEFAULT_TTL')->default('shopware_http_cache_default_ttl_default'));
+    $parameters->set('shopwell.http.cache.default_ttl', env('SHOPWELL_HTTP_DEFAULT_TTL')->default('shopwell_http_cache_default_ttl_default'));
 
     $containerConfigurator->extension('monolog', [
         'channels' => ['business_events'],
@@ -230,7 +230,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     // Cache
     $services->set('slugify', Slugify::class)
         ->args([
-            param('shopware.slug.config'),
+            param('shopwell.slug.config'),
         ]);
 
     // Migration
@@ -238,50 +238,50 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             'core',
         ])
-        ->tag('shopware.migration_source');
+        ->tag('shopwell.migration_source');
 
     $services->set(MigrationSource::class . '.core.V6_3', MigrationSource::class)
         ->args([
             'core.V6_3',
         ])
-        ->tag('shopware.migration_source');
+        ->tag('shopwell.migration_source');
 
     $services->set(MigrationSource::class . '.core.V6_4', MigrationSource::class)
         ->args([
             'core.V6_4',
         ])
-        ->tag('shopware.migration_source');
+        ->tag('shopwell.migration_source');
 
     $services->set(MigrationSource::class . '.core.V6_5', MigrationSource::class)
         ->args([
             'core.V6_5',
         ])
-        ->tag('shopware.migration_source');
+        ->tag('shopwell.migration_source');
 
     $services->set(MigrationSource::class . '.core.V6_6', MigrationSource::class)
         ->args([
             'core.V6_6',
         ])
-        ->tag('shopware.migration_source');
+        ->tag('shopwell.migration_source');
 
     $services->set(MigrationSource::class . '.core.V6_7', MigrationSource::class)
         ->args([
             'core.V6_7',
         ])
-        ->tag('shopware.migration_source');
+        ->tag('shopwell.migration_source');
 
     $services->set(MigrationSource::class . '.core.V6_8', MigrationSource::class)
         ->args([
             'core.V6_8',
         ])
-        ->tag('shopware.migration_source');
+        ->tag('shopwell.migration_source');
 
     $services->set(MigrationSource::class . '.null', MigrationSource::class)
         ->args([
             'null',
             [],
         ])
-        ->tag('shopware.migration_source');
+        ->tag('shopwell.migration_source');
 
     $services->set(MigrationRuntime::class)
         ->args([
@@ -295,7 +295,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(MigrationRuntime::class),
             service('logger'),
-            tagged_iterator('shopware.migration_source'),
+            tagged_iterator('shopwell.migration_source'),
         ]);
 
     $services->set(MigrationInfo::class)
@@ -306,8 +306,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CreateMigrationCommand::class)
         ->args([
             service(KernelPluginCollection::class),
-            param('kernel.shopware_core_dir'),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_core_dir'),
+            param('kernel.shopwell_version'),
         ])
         ->tag('console.command');
 
@@ -322,7 +322,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(MigrationCollectionLoader::class),
             service('cache.object'),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
         ])
         ->tag('console.command');
 
@@ -338,7 +338,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(MigrationCollectionLoader::class),
             service('cache.object'),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
         ])
         ->tag('console.command');
 
@@ -361,22 +361,22 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(CoreSubscriber::class)
         ->args([
-            param('shopware.security.csp_templates'),
+            param('shopwell.security.csp_templates'),
             service(ScriptExecutor::class),
         ])
         ->tag('kernel.event_subscriber');
 
     $services->set(SymfonyRouteScopeWhitelist::class)
-        ->tag('shopware.route_scope_whitelist');
+        ->tag('shopwell.route_scope_whitelist');
 
     $services->set(PaymentScopeWhitelist::class)
-        ->tag('shopware.route_scope_whitelist');
+        ->tag('shopwell.route_scope_whitelist');
 
     $services->set(RouteScopeListener::class)
         ->args([
             service(RouteScopeRegistry::class),
             service('request_stack'),
-            tagged_iterator('shopware.route_scope_whitelist'),
+            tagged_iterator('shopwell.route_scope_whitelist'),
         ])
         ->tag('kernel.event_subscriber');
 
@@ -417,7 +417,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
         ])
         ->tag('kernel.event_subscriber')
-        ->tag('shopware.telemetry.subscriber');
+        ->tag('shopwell.telemetry.subscriber');
 
     $services->set(RouteBlocklistService::class)
         ->args([
@@ -480,7 +480,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SnippetFilterFactory::class),
             service(ExtensionDispatcher::class),
             service('event_dispatcher'),
-            service('shopware.filesystem.translation'),
+            service('shopwell.filesystem.translation'),
             service('filesystem'),
         ]);
 
@@ -514,7 +514,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ActiveAppsLoader::class),
             service(TranslationConfig::class),
             service(TranslationLoader::class),
-            service('shopware.filesystem.translation'),
+            service('shopwell.filesystem.translation'),
             service(StorefrontSnippetStorage::class),
         ]);
 
@@ -536,30 +536,30 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(SnippetFilterFactory::class)
         ->public()
         ->args([
-            tagged_iterator('shopware.snippet.filter'),
+            tagged_iterator('shopwell.snippet.filter'),
         ]);
 
     // SnippetFilters
     $services->set(AuthorFilter::class)
-        ->tag('shopware.snippet.filter');
+        ->tag('shopwell.snippet.filter');
 
     $services->set(AddedFilter::class)
-        ->tag('shopware.snippet.filter');
+        ->tag('shopwell.snippet.filter');
 
     $services->set(EditedFilter::class)
-        ->tag('shopware.snippet.filter');
+        ->tag('shopwell.snippet.filter');
 
     $services->set(EmptySnippetFilter::class)
-        ->tag('shopware.snippet.filter');
+        ->tag('shopwell.snippet.filter');
 
     $services->set(NamespaceFilter::class)
-        ->tag('shopware.snippet.filter');
+        ->tag('shopwell.snippet.filter');
 
     $services->set(TermFilter::class)
-        ->tag('shopware.snippet.filter');
+        ->tag('shopwell.snippet.filter');
 
     $services->set(TranslationKeyFilter::class)
-        ->tag('shopware.snippet.filter');
+        ->tag('shopwell.snippet.filter');
 
     // Twig
     $services->set(TemplateFinder::class)
@@ -575,7 +575,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(NamespaceHierarchyBuilder::class)
         ->args([
-            tagged_iterator('shopware.twig.hierarchy_builder'),
+            tagged_iterator('shopwell.twig.hierarchy_builder'),
         ]);
 
     $services->set(BundleHierarchyBuilder::class)
@@ -583,7 +583,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('kernel'),
             service(Connection::class),
         ])
-        ->tag('shopware.twig.hierarchy_builder', ['priority' => 1000]);
+        ->tag('shopwell.twig.hierarchy_builder', ['priority' => 1000]);
 
     $services->set(TemplateScopeDetector::class)
         ->args([
@@ -599,8 +599,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(PhpSyntaxExtension::class)
         ->tag('twig.extension')
-        ->tag('shopware.seo_url.twig.extension')
-        ->tag('shopware.app_script.twig.extension');
+        ->tag('shopwell.seo_url.twig.extension')
+        ->tag('shopwell.app_script.twig.extension');
 
     $services->set(FeatureFlagExtension::class)
         ->tag('twig.extension');
@@ -622,11 +622,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('translator'),
         ])
         ->tag('twig.extension')
-        ->tag('shopware.app_script.twig.extension');
+        ->tag('shopwell.app_script.twig.extension');
 
     $services->set(PcreExtension::class)
         ->tag('twig.extension')
-        ->tag('shopware.app_script.twig.extension');
+        ->tag('shopwell.app_script.twig.extension');
 
     $services->set(InstanceOfExtension::class)
         ->tag('twig.extension');
@@ -648,14 +648,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('slugify'),
         ])
         ->tag('twig.extension')
-        ->tag('shopware.seo_url.twig.extension');
+        ->tag('shopwell.seo_url.twig.extension');
 
     $services->set(ReplaceRecursiveFilter::class)
         ->tag('twig.extension')
-        ->tag('shopware.app_script.twig.extension');
+        ->tag('shopwell.app_script.twig.extension');
 
     $services->set(ComparisonExtension::class)
-        ->tag('shopware.app_script.twig.extension');
+        ->tag('shopwell.app_script.twig.extension');
 
     $services->set(BackwardCompatibleIntlExtension::class)
         ->args([
@@ -665,11 +665,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(SecurityExtension::class)
         ->args([
-            param('shopware.twig.allowed_php_functions'),
+            param('shopwell.twig.allowed_php_functions'),
         ])
         ->tag('twig.extension')
-        ->tag('shopware.seo_url.twig.extension')
-        ->tag('shopware.app_script.twig.extension');
+        ->tag('shopwell.seo_url.twig.extension')
+        ->tag('shopwell.app_script.twig.extension');
 
     $services->set(InAppPurchaseExtension::class)
         ->args([
@@ -680,7 +680,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(StringTemplateRenderer::class)
         ->args([
             service('twig'),
-            param('shopware.cache.twig.string_template_renderer_cache_dir'),
+            param('shopwell.cache.twig.string_template_renderer_cache_dir'),
         ]);
 
     $services->set(TemplateIterator::class)
@@ -752,17 +752,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(RouteScope::class)
-        ->tag('shopware.route_scope');
+        ->tag('shopwell.route_scope');
 
     $services->set(ApiRouteScope::class)
-        ->tag('shopware.route_scope');
+        ->tag('shopwell.route_scope');
 
     $services->set(StoreApiRouteScope::class)
-        ->tag('shopware.route_scope');
+        ->tag('shopwell.route_scope');
 
     $services->set(RouteScopeRegistry::class)
         ->args([
-            tagged_iterator('shopware.route_scope'),
+            tagged_iterator('shopwell.route_scope'),
         ]);
 
     // Logging
@@ -776,12 +776,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ExceptionLogger::class)
         ->args([
             param('kernel.environment'),
-            param('shopware.logger.enforce_throw_exception'),
+            param('shopwell.logger.enforce_throw_exception'),
             service('logger'),
         ]);
 
     $services->set(LogCleanupTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(LogCleanupTaskHandler::class)
         ->args([
@@ -799,7 +799,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(LogEntryDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(CriteriaValueResolver::class)
         ->args([
@@ -835,11 +835,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(S3FilesystemVisibilityCommand::class)
         ->args([
-            service('shopware.filesystem.private'),
-            service('shopware.filesystem.public'),
-            service('shopware.filesystem.theme'),
-            service('shopware.filesystem.sitemap'),
-            service('shopware.filesystem.asset'),
+            service('shopwell.filesystem.private'),
+            service('shopwell.filesystem.public'),
+            service('shopwell.filesystem.theme'),
+            service('shopwell.filesystem.sitemap'),
+            service('shopwell.filesystem.asset'),
         ])
         ->tag('console.command');
 
@@ -848,11 +848,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(HtmlSanitizer::class)
         ->public()
         ->args([
-            param('shopware.html_sanitizer.cache_dir'),
-            param('shopware.html_sanitizer.cache_enabled'),
-            param('shopware.html_sanitizer.sets'),
-            param('shopware.html_sanitizer.fields'),
-            param('shopware.html_sanitizer.enabled'),
+            param('shopwell.html_sanitizer.cache_dir'),
+            param('shopwell.html_sanitizer.cache_enabled'),
+            param('shopwell.html_sanitizer.sets'),
+            param('shopwell.html_sanitizer.fields'),
+            param('shopwell.html_sanitizer.enabled'),
             service(HtmlPurifierConfigProvider::class),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
@@ -861,21 +861,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->decorate('monolog.handler.main', null, 0, ContainerInterface::IGNORE_ON_INVALID_REFERENCE)
         ->args([
             service(ExcludeExceptionHandler::class . '.inner'),
-            param('shopware.logger.exclude_exception'),
+            param('shopwell.logger.exclude_exception'),
         ]);
 
     $services->set(ErrorCodeLogLevelHandler::class)
         ->decorate('monolog.handler.main', null, 0, ContainerInterface::IGNORE_ON_INVALID_REFERENCE)
         ->args([
             service(ErrorCodeLogLevelHandler::class . '.inner'),
-            param('shopware.logger.error_code_log_levels'),
+            param('shopwell.logger.error_code_log_levels'),
         ]);
 
     $services->set(ExcludeFlowEventHandler::class)
         ->decorate('monolog.handler.main', null, 0, ContainerInterface::IGNORE_ON_INVALID_REFERENCE)
         ->args([
             service(ExcludeFlowEventHandler::class . '.inner'),
-            param('shopware.logger.exclude_events'),
+            param('shopwell.logger.exclude_events'),
         ]);
 
     $services->set(RouteParamsCleanupListener::class)
@@ -883,7 +883,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(RedisConnectionFactory::class)
         ->args([
-            param('shopware.cache.redis_prefix'),
+            param('shopwell.cache.redis_prefix'),
         ]);
 
     $services->set(RedisConnectionProvider::class)
@@ -926,7 +926,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('esi'),
             [],
             service('event_dispatcher'),
-            param('shopware.http_cache.reverse_proxy.enabled'),
+            param('shopwell.http_cache.reverse_proxy.enabled'),
         ]);
 
     $services->set(CacheStore::class)
@@ -939,7 +939,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(MaintenanceModeResolver::class),
             param('session.storage.options'),
             service(CacheTagCollector::class),
-            param('shopware.http_cache.soft_purge'),
+            param('shopwell.http_cache.soft_purge'),
             service('messenger.bus.default'),
             service(ClockInterface::class),
         ]);
@@ -948,12 +948,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             param('kernel.cache.hash'),
             service('event_dispatcher'),
-            param('shopware.http_cache.ignored_url_parameters'),
+            param('shopwell.http_cache.ignored_url_parameters'),
         ]);
 
     $services->set(CacheStateValidator::class)
         ->args([
-            param('shopware.cache.invalidation.http_cache'),
+            param('shopwell.cache.invalidation.http_cache'),
         ]);
 
     $services->set(BacktraceCollector::class);

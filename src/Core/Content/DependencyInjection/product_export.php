@@ -48,7 +48,7 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 return static function (ContainerConfigurator $containerConfigurator): void {
     $parameters = $containerConfigurator->parameters();
     $parameters->set('product_export.directory', 'export');
-    $parameters->set('product_export.read_buffer_size', '%shopware.product_export.read_buffer_size%');
+    $parameters->set('product_export.read_buffer_size', '%shopwell.product_export.read_buffer_size%');
     // Stale detection tuning: unlock stuck exports when older than max(min_seconds, factor * interval)
     $parameters->set('product_export.stale_min_seconds', 300);
     $parameters->set('product_export.stale_interval_factor', 2.0);
@@ -56,7 +56,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(ProductExportDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(FeedLabelValidator::class)
         ->tag('kernel.event_subscriber');
@@ -79,7 +79,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ProductExportFileHandler::class)
         ->args([
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
             param('product_export.directory'),
             service(ClockInterface::class),
         ]);
@@ -113,7 +113,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('console.command');
 
     $services->set(ProductExportGenerateTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(ProductExportGenerateTaskHandler::class)
         ->args([
@@ -158,26 +158,26 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ProductExportValidator::class)
         ->args([
-            tagged_iterator('shopware.product_export.validator'),
+            tagged_iterator('shopwell.product_export.validator'),
         ]);
 
     $services->set(JsonlRowParser::class);
 
     $services->set(XmlValidator::class)
-        ->tag('shopware.product_export.validator');
+        ->tag('shopwell.product_export.validator');
 
     $services->set(OpenAiProductExportValidator::class)
         ->args([
             service(JsonlRowParser::class),
         ])
-        ->tag('shopware.product_export.validator');
+        ->tag('shopwell.product_export.validator');
 
     $services->set(GoogleProductExportValidator::class)
-        ->tag('shopware.product_export.validator');
+        ->tag('shopwell.product_export.validator');
 
     $services->set(AgenticCommerceProductExportProviderRegistry::class)
         ->args([
-            tagged_iterator('shopware.product_export.provider'),
+            tagged_iterator('shopwell.product_export.provider'),
         ]);
 
     $services->set(OpenAiProductExportProvider::class)
@@ -185,23 +185,23 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('sales_channel.repository'),
             service(SystemConfigService::class),
         ])
-        ->tag('shopware.product_export.provider');
+        ->tag('shopwell.product_export.provider');
 
     $services->set(GoogleProductExportProvider::class)
         ->args([
             service('sales_channel.repository'),
             service(SystemConfigService::class),
         ])
-        ->tag('shopware.product_export.provider');
+        ->tag('shopwell.product_export.provider');
 
     $services->set(ProductExportExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(ProductExportEventListener::class)
         ->args([
             service('product_export.repository'),
             service(ProductExportFileHandler::class),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
         ])
         ->tag('kernel.event_subscriber');
 
@@ -216,7 +216,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(ProductExporter::class),
             service(ProductExportFileHandler::class),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
             service('event_dispatcher'),
             service('product_export.repository'),
             service(SalesChannelContextFactory::class),

@@ -45,7 +45,7 @@ final class ClassAliasRegistry
         foreach ($aliases as $previousClassName => $currentClassName) {
             $registeredClassName = self::canonicalClassName($previousClassName);
             if ($registeredClassName !== null && $registeredClassName !== $currentClassName) {
-                // @phpstan-ignore shopware.domainException (Composer bootstrap validates conflicting alias declarations.)
+                // @phpstan-ignore shopwell.domainException (Composer bootstrap validates conflicting alias declarations.)
                 throw new \LogicException(\sprintf(
                     'Cannot register class alias "%s" to "%s": the alias is already registered for "%s".',
                     $previousClassName,
@@ -91,7 +91,7 @@ final class ClassAliasRegistry
             $registeredClassName = (new \ReflectionClass($previousClassName))->getName();
 
             if ($registeredClassName !== $currentClassName) {
-                // @phpstan-ignore shopware.domainException (Composer bootstrap validates conflicting alias declarations.)
+                // @phpstan-ignore shopwell.domainException (Composer bootstrap validates conflicting alias declarations.)
                 throw new \LogicException(\sprintf('Cannot register class alias "%s" to "%s": the name already refers to "%s".', $previousClassName, $currentClassName, $registeredClassName));
             }
 
@@ -99,7 +99,7 @@ final class ClassAliasRegistry
         }
 
         if (!class_exists($currentClassName)) {
-            // @phpstan-ignore shopware.domainException (Composer bootstrap validates contributed aliases.)
+            // @phpstan-ignore shopwell.domainException (Composer bootstrap validates contributed aliases.)
             throw new \LogicException(\sprintf('Cannot register class alias "%s" to "%s": the canonical class does not exist.', $previousClassName, $currentClassName));
         }
 

@@ -76,7 +76,7 @@ class NoExpectExceptionMessageRule implements Rule
             RuleErrorBuilder::message(
                 'expectExceptionMessage() is soft-deprecated in PHPUnit 13.2 and scheduled for removal in 15.0. Use expectExceptionObject(new YourException(...)) so the exception class, code and message are asserted from a single source of truth.'
             )
-                ->identifier('shopware.expectExceptionMessage')
+                ->identifier('shopwell.expectExceptionMessage')
                 ->build(),
         ];
     }

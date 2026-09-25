@@ -55,7 +55,7 @@ class CaptchaRouteListenerTest extends TestCase
             'subject' => 'Captcha',
             'comment' => 'Basic Captcha',
             'phone' => '+4920 3920173',
-            'shopware_basic_captcha_confirm' => 'notkyln',
+            'shopwell_basic_captcha_confirm' => 'notkyln',
         ];
 
         $browser = $this->createCustomSalesChannelBrowser();
@@ -95,7 +95,7 @@ class CaptchaRouteListenerTest extends TestCase
         ]);
 
         $data = [
-            'shopware_basic_captcha_confirm' => 'kyln',
+            'shopwell_basic_captcha_confirm' => 'kyln',
         ];
 
         $browser = $this->createCustomSalesChannelBrowser();
@@ -123,7 +123,7 @@ class CaptchaRouteListenerTest extends TestCase
         ]);
 
         $data = [
-            'shopware_basic_captcha_confirm' => 'invalid',
+            'shopwell_basic_captcha_confirm' => 'invalid',
             'errorRoute' => 'frontend.account.register.page',
         ];
 

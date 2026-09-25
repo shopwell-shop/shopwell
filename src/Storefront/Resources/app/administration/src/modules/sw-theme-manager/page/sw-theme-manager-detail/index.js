@@ -487,7 +487,7 @@ export default {
                             const fieldName = error.meta.parameters.name;
 
                             // Compatibility for issue within mt-field-error.vue
-                            // See GitHub issue: https://github.com/shopware/meteor/issues/906
+                            // See GitHub issue: https://github.com/shopwell-shop/meteor/issues/906
                             error.parameters = error.meta.parameters;
 
                             if (fieldName) {

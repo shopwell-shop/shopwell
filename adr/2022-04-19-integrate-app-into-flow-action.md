@@ -8,7 +8,7 @@ tags: [flow, app, flow-action]
 We want to offer apps the possibility to deliver their own flow actions. Each app should be able to deliver multiple flow actions. The implementation should be done via webhooks and XML configuration. The information will be stored in the database as usual. If the app is uninstalled, all data will be deleted.
 
 ## Webhooks
-Actions within a flow are currently realized via the event system. If the user has configured certain flow actions for a flow trigger (a business event within Shopware, e.g. `CheckoutOrderPlaced`), an event is triggered in the background for each configured action. Each action defines a listener for this event, which then executes the corresponding logic. However, since apps cannot include PHP code, we want to give apps the ability to automatically call a configurable webhook in the background.
+Actions within a flow are currently realized via the event system. If the user has configured certain flow actions for a flow trigger (a business event within Shopwell, e.g. `CheckoutOrderPlaced`), an event is triggered in the background for each configured action. Each action defines a listener for this event, which then executes the corresponding logic. However, since apps cannot include PHP code, we want to give apps the ability to automatically call a configurable webhook in the background.
 
 To identify these flow actions, we store an `app_id` at each `flow_sequence` record in the database. In the `FlowExecutor`, we can thus identify that it is a flow action and automatically call the corresponding webhook for that app.
 

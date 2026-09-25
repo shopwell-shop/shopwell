@@ -5,14 +5,14 @@
  */
 import { mount } from '@vue/test-utils';
 
-// Mock QuickView from @shopware-ag/dive/quickview
+// Mock QuickView from @shopwell-ag/dive/quickview
 const mockQuickView = jest.fn();
 const mockQuickViewDispose = jest.fn();
-jest.mock('@shopware-ag/dive/quickview', () => ({
+jest.mock('@shopwell-ag/dive/quickview', () => ({
     QuickView: mockQuickView,
 }));
 
-// Mock Toolbox from @shopware-ag/dive/toolbox
+// Mock Toolbox from @shopwell-ag/dive/toolbox
 const mockToolboxDispose = jest.fn();
 const mockSetGizmoMode = jest.fn();
 const mockEnableTool = jest.fn();
@@ -27,7 +27,7 @@ const mockToolbox = jest.fn().mockImplementation(() => ({
     }),
     selectionState: { select: mockSelect },
 }));
-jest.mock('@shopware-ag/dive/toolbox', () => ({
+jest.mock('@shopwell-ag/dive/toolbox', () => ({
     Toolbox: mockToolbox,
 }));
 

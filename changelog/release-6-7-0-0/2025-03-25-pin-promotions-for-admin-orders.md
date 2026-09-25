@@ -1,7 +1,7 @@
 ---
 title: Pin promotions for admin orders
 author: Michel Bade
-author_email: m.bade@shopware.com
+author_email: m.bade@shopwell.com
 author_github: @cyl3x
 ---
 # Core

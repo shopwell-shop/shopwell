@@ -2,7 +2,7 @@
 title: Added rule condition for cart and line item volume
 issue: NEXT-15227
 author: d.neustadt
-author_email: d.neustadt@shopware.com 
+author_email: d.neustadt@shopwell.com 
 author_github: dneustadt
 ---
 # Core

@@ -2,7 +2,7 @@
 title: Improved AR Error feeback
 issue: #9887
 author: Felix Frank
-author_email: f.frank@shopware.com
+author_email: f.frank@shopwell.com
 author_github: @ffrank913
 ---
 # Storefront

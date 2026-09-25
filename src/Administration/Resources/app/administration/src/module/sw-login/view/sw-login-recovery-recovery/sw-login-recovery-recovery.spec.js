@@ -39,8 +39,8 @@ describe('src/module/sw-login/view/sw-login-recovery-recovery', () => {
         wrapper.vm.userRecoveryService.updateUserPassword = jest.fn(() => Promise.resolve());
 
         await wrapper.setData({
-            newPassword: 'shopware',
-            newPasswordConfirm: 'shopware',
+            newPassword: 'shopwell',
+            newPasswordConfirm: 'shopwell',
         });
         await wrapper.vm.updatePassword();
 
@@ -91,8 +91,8 @@ describe('src/module/sw-login/view/sw-login-recovery-recovery', () => {
         wrapper.vm.userRecoveryService.updateUserPassword = jest.fn(() => Promise.reject(new Error('Bad gateway')));
 
         await wrapper.setData({
-            newPassword: 'shopware',
-            newPasswordConfirm: 'shopware',
+            newPassword: 'shopwell',
+            newPasswordConfirm: 'shopwell',
         });
         await wrapper.vm.updatePassword();
         await flushPromises();

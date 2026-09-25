@@ -53,7 +53,7 @@ class PaymentHandlerIdentifierSubscriberTest extends TestCase
         static::assertContainsOnlyInstancesOf(PaymentMethodEntity::class, $methods);
         static::assertCount(1, $methods);
 
-        static::assertSame('handler_shopware_apppaymenthandler', $methods[0]->getFormattedHandlerIdentifier());
+        static::assertSame('handler_shopwell_apppaymenthandler', $methods[0]->getFormattedHandlerIdentifier());
     }
 
     public function testNonNamespacedIdentifier(): void

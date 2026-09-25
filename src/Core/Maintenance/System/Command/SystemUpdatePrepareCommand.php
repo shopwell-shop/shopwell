@@ -24,7 +24,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 )]
 class SystemUpdatePrepareCommand extends Command
 {
-    public function __construct(private readonly ContainerInterface $container, private readonly string $shopwareVersion)
+    public function __construct(private readonly ContainerInterface $container, private readonly string $shopwellVersion)
     {
         parent::__construct();
     }
@@ -48,9 +48,9 @@ class SystemUpdatePrepareCommand extends Command
         $newVersion = '';
 
         $eventDispatcher = $this->container->get('event_dispatcher');
-        $eventDispatcher->dispatch(new UpdatePrePrepareEvent($context, $this->shopwareVersion, $newVersion));
+        $eventDispatcher->dispatch(new UpdatePrePrepareEvent($context, $this->shopwellVersion, $newVersion));
 
-        $eventDispatcher->dispatch(new UpdatePostPrepareEvent($context, $this->shopwareVersion, $newVersion));
+        $eventDispatcher->dispatch(new UpdatePostPrepareEvent($context, $this->shopwellVersion, $newVersion));
 
         return self::SUCCESS;
     }

@@ -18,17 +18,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(MeasurementSystemEntity::class)
-        ->tag('shopware.entity');
+        ->tag('shopwell.entity');
 
     $services->set(MeasurementDisplayUnitEntity::class)
-        ->tag('shopware.entity');
+        ->tag('shopwell.entity');
 
     $services->set(MeasurementUnitsFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(MeasurementUnitProvider::class)
         ->args([

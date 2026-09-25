@@ -84,19 +84,19 @@ class TemplateDataExtensionTest extends TestCase
             $connection,
         ))->getGlobals();
 
-        static::assertArrayHasKey('shopware', $globals);
-        static::assertArrayHasKey('dateFormat', $globals['shopware']);
-        static::assertSame('Y-m-d\TH:i:sP', $globals['shopware']['dateFormat']);
-        static::assertArrayHasKey('navigation', $globals['shopware']);
-        $navigationInfo = $globals['shopware']['navigation'];
+        static::assertArrayHasKey('shopwell', $globals);
+        static::assertArrayHasKey('dateFormat', $globals['shopwell']);
+        static::assertSame('Y-m-d\TH:i:sP', $globals['shopwell']['dateFormat']);
+        static::assertArrayHasKey('navigation', $globals['shopwell']);
+        $navigationInfo = $globals['shopwell']['navigation'];
         static::assertInstanceOf(NavigationInfo::class, $navigationInfo);
         static::assertSame($salesChannelContext->getSalesChannel()->getNavigationCategoryId(), $navigationInfo->id);
         // Make sure, the root category is not part of the pathIdList
         static::assertSame(['019503b99fb57238a79d33ec1461e512', '019503c1e1397116a3a7c754858927ef'], $navigationInfo->pathIdList);
-        static::assertArrayHasKey('minSearchLength', $globals['shopware']);
-        static::assertSame($expectedMinSearchLength, $globals['shopware']['minSearchLength']);
-        static::assertArrayHasKey('showStagingBanner', $globals['shopware']);
-        static::assertTrue($globals['shopware']['showStagingBanner']);
+        static::assertArrayHasKey('minSearchLength', $globals['shopwell']);
+        static::assertSame($expectedMinSearchLength, $globals['shopwell']['minSearchLength']);
+        static::assertArrayHasKey('showStagingBanner', $globals['shopwell']);
+        static::assertTrue($globals['shopwell']['showStagingBanner']);
 
         static::assertArrayHasKey('themeId', $globals);
         static::assertSame($themeId, $globals['themeId']);
@@ -153,7 +153,7 @@ class TemplateDataExtensionTest extends TestCase
             $connection,
         ))->getGlobals();
 
-        $navigationInfo = $globals['shopware']['navigation'];
+        $navigationInfo = $globals['shopwell']['navigation'];
         static::assertInstanceOf(NavigationInfo::class, $navigationInfo);
         static::assertSame($linkedCategoryId, $navigationInfo->id);
     }
@@ -194,7 +194,7 @@ class TemplateDataExtensionTest extends TestCase
             $connection,
         ))->getGlobals();
 
-        $navigationInfo = $globals['shopware']['navigation'];
+        $navigationInfo = $globals['shopwell']['navigation'];
         static::assertInstanceOf(NavigationInfo::class, $navigationInfo);
         static::assertSame($rootCategoryId, $navigationInfo->id);
     }

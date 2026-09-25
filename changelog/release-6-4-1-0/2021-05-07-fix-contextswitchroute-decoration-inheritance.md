@@ -6,4 +6,4 @@ author_email: jonas@wexo.dk
 author_github: Josniii
 ---
 # Core
-*  Changed constructor of \Shopware\Core\System\SalesChannel\SalesChannel\SalesChannelContextSwitcher to use abstract class to allow decorators to inherit \Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute
+*  Changed constructor of \Shopwell\Core\System\SalesChannel\SalesChannel\SalesChannelContextSwitcher to use abstract class to allow decorators to inherit \Shopwell\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute

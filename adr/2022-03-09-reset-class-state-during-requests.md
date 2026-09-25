@@ -21,7 +21,7 @@ A class that holds memoized data in an instance variable, needs to provide a met
 For consistency, we implement the `\Symfony\Contracts\Service\ResetInterface` which will add a `public function reset(): void`, where the reset is performed. 
 The only exceptions to this rule are services that already implement a `reset`-method, and thus we cannot add one, in that case we will add a method with a different suitable name to reset the internal state, and configure that method to be used to reset data in the service tag.
 
-This way we can build part of shopware already in a way that is compatible with modern PHP applications servers, and we are future-proof.
+This way we can build part of shopwell already in a way that is compatible with modern PHP applications servers, and we are future-proof.
 This reset is especially important in the cloud environment, as there the next request may be for different shop/tenant, so if we won't reset the data, we would not just serve stale data, but we wil instead data from a different instance!
 Additionally, it makes unit testing easier, as PHPUnit already reuses service instances between execution of each test cases which already made trouble in the past.
 

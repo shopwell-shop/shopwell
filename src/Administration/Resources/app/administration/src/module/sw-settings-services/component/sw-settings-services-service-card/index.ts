@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 import type { PropType } from 'vue';
-import type { CategorizedPermissions, ServiceDescription, ServiceState } from '../../service/shopware-services.service';
+import type { CategorizedPermissions, ServiceDescription, ServiceState } from '../../service/shopwell-services.service';
 import template from './sw-settings-services-service-card.html.twig';
 import './sw-settings-services-service-card.scss';
 import extractErrorMessage from '../../composables/extract-error';
@@ -105,7 +105,7 @@ export default Shopwell.Component.wrapComponentConfig({
             this.isLoading = true;
 
             try {
-                const servicesService = Shopwell.Service('shopwareServicesService');
+                const servicesService = Shopwell.Service('shopwellServicesService');
 
                 if (active) {
                     await servicesService.activateService(this.service.name);
@@ -131,7 +131,7 @@ export default Shopwell.Component.wrapComponentConfig({
         async openPermissionsModal(toggleFloatingUi: () => void) {
             try {
                 if (this.categorizedPermissions === null) {
-                    const servicesService = Shopwell.Service('shopwareServicesService');
+                    const servicesService = Shopwell.Service('shopwellServicesService');
 
                     const { permissions } = await servicesService.getCategorizedPermissions(this.service.name);
                     this.categorizedPermissions = permissions;

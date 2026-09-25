@@ -26,14 +26,14 @@ class McpAllowlistFilter
     /**
      * Returns true when a resources/read for $resourceUri should be rejected.
      *
-     * shopware://tool-result/ URIs are always allowed — they are session-scoped
+     * shopwell://tool-result/ URIs are always allowed — they are session-scoped
      * internal resources produced by tool calls, not app-registered resources.
      *
      * @param list<string> $allowlist
      */
     public function isResourceReadDenied(string $resourceUri, array $allowlist): bool
     {
-        if (str_starts_with($resourceUri, 'shopware://tool-result/')) {
+        if (str_starts_with($resourceUri, 'shopwell://tool-result/')) {
             return false;
         }
 

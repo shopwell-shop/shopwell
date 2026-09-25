@@ -3,9 +3,9 @@ title: Add generics to collections
 issue: NEXT-15740
 ---
 # Core
-* Changed `\Shopware\Core\Framework\Struct\Collection` to allow specifying the generic type of the collection and using that type as return type were applicable.
-* Changed all classes extending from `\Shopware\Core\Framework\Struct\Collection` to specify the generic type of the collection.
-* Added `\Shopware\Core\DevOps\StaticAnalyze\PHPStan\Type\CollectionHasSpecifyingExtension` to improve static analysis of collections.
+* Changed `\Shopwell\Core\Framework\Struct\Collection` to allow specifying the generic type of the collection and using that type as return type were applicable.
+* Changed all classes extending from `\Shopwell\Core\Framework\Struct\Collection` to specify the generic type of the collection.
+* Added `\Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Type\CollectionHasSpecifyingExtension` to improve static analysis of collections.
 ___
 # Upgrade information
 ## Generics for collections

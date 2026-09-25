@@ -1,4 +1,4 @@
-import MtDatepickerOriginal from '@shopware-ag/meteor-component-library/dist/esm/MtDatepicker';
+import MtDatepickerOriginal from '@shopwell-ag/meteor-component-library/dist/esm/MtDatepicker';
 import type { DateTimeOptions } from 'vue-i18n';
 import template from './mt-datepicker.html.twig';
 

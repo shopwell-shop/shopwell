@@ -14,7 +14,7 @@ import {
     shouldDetect,
 } from './major-label.ts';
 
-const REGISTRY = `shopware:
+const REGISTRY = `shopwell:
   feature:
     flags:
       - name: v6.7.0.0
@@ -84,7 +84,7 @@ test('resolveInFlightMajors derives the version from the pending major flag', ()
 });
 
 test('resolveInFlightMajors returns every unreleased major, oldest first', () => {
-    const flags = parseFeatureRegistry(`shopware:
+    const flags = parseFeatureRegistry(`shopwell:
       feature:
         flags:
           - name: v6.9.0.0
@@ -98,7 +98,7 @@ test('resolveInFlightMajors returns every unreleased major, oldest first', () =>
 });
 
 test('resolveInFlightMajors is empty once every major flag has flipped', () => {
-    const flags = parseFeatureRegistry(`shopware:
+    const flags = parseFeatureRegistry(`shopwell:
       feature:
         flags:
           - name: v6.8.0.0
@@ -288,7 +288,7 @@ test('unrelated changes match nothing', () => {
 });
 
 test('regex metacharacters in a version or flag name are matched literally', () => {
-    const flags = parseFeatureRegistry(`shopware:
+    const flags = parseFeatureRegistry(`shopwell:
       feature:
         flags:
           - name: FLAG(A|B)
@@ -355,7 +355,7 @@ test('shouldDetect rejects other actions and events', () => {
 test('missingLabels drops labels the pull request already carries', () => {
     const context = {
         eventName: 'pull_request_target',
-        repo: { owner: 'shopware', repo: 'shopware' },
+        repo: { owner: 'shopwell', repo: 'shopwell' },
         payload: {
             action: 'synchronize',
             pull_request: { number: 1, labels: [{ name: 'major/6.8' }, { name: 'domain/checkout' }] },
@@ -365,7 +365,7 @@ test('missingLabels drops labels the pull request already carries', () => {
     assert.deepEqual(missingLabels(context, ['major/6.8']), []);
 });
 
-const TWO_MAJORS = parseFeatureRegistry(`shopware:
+const TWO_MAJORS = parseFeatureRegistry(`shopwell:
   feature:
     flags:
       - name: v6.7.0.0
@@ -434,7 +434,7 @@ test('one pull request can earn labels for both majors', () => {
 });
 
 test('labelsForDiff emits nothing when no major is in flight', () => {
-    const shipped = parseFeatureRegistry(`shopware:
+    const shipped = parseFeatureRegistry(`shopwell:
       feature:
         flags:
           - name: v6.8.0.0

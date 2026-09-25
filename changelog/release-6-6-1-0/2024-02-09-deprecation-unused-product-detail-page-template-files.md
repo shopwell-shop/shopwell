@@ -5,8 +5,8 @@ author: Michael Telgmann
 author_github: mitelg
 ---
 # Storefront
-* Deprecated unused property `\Shopware\Storefront\Page\Product\ProductPage::$reviewLoaderResult` and its corresponding getter and setter methods.
-* Deprecated unused property `\Shopware\Storefront\Page\Product\ProductPage::$crossSellings` and its corresponding getter and setter methods.
+* Deprecated unused property `\Shopwell\Storefront\Page\Product\ProductPage::$reviewLoaderResult` and its corresponding getter and setter methods.
+* Deprecated unused property `\Shopwell\Storefront\Page\Product\ProductPage::$crossSellings` and its corresponding getter and setter methods.
 * Deprecated the following unused product detail page template files. They will be removed. Use the corresponding CMS templates mentioned in the files instead.
   * `src/Storefront/Resources/views/storefront/page/product-detail/buy-widget-form.html.twig`
   * `src/Storefront/Resources/views/storefront/page/product-detail/buy-widget-price.html.twig`

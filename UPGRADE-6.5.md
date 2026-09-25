@@ -4,7 +4,7 @@ With 6.6 we are marking a lot of HTTP Cache and Reverse Proxy classes as @intern
 We are preparing a bigger cache rework in the next releases. The cache rework will be done within the v6.6 version lane and and will be released with 6.7.0 major version. 
 The cache rework will be a breaking change and will be announced in the changelog of 6.7.0. We will provide a migration guide for the cache rework, so that you can prepare your project for the cache rework.
 
-You can find more details about the cache rework in the [shopware/shopware discussions](https://github.com/shopware/shopware/discussions/3299)
+You can find more details about the cache rework in the [shopwell/shopwell discussions](https://github.com/shopwell-shop/shopwell/discussions/3299)
 
 Since the cache is a critical component for systems, we have taken the liberty of marking almost all classes as @internal for the time being. However, we have left the important events and interfaces public so that you can prepare your systems for the changes now.
 Even though there were a lot of deprecations in this release, 99% of them involved moving the classes to the core domain.
@@ -89,9 +89,9 @@ Since we are moving the cache to the core, you have to change the way you can ma
 
 namespace Foo;
 
-use Shopware\Storefront\Framework\Cache\Event\HttpCacheGenerateKeyEvent;
-use Shopware\Storefront\Framework\Cache\Event\HttpCacheHitEvent;
-use Shopware\Storefront\Framework\Cache\Event\HttpCacheItemWrittenEvent;
+use Shopwell\Storefront\Framework\Cache\Event\HttpCacheGenerateKeyEvent;
+use Shopwell\Storefront\Framework\Cache\Event\HttpCacheHitEvent;
+use Shopwell\Storefront\Framework\Cache\Event\HttpCacheItemWrittenEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class Subscriber implements EventSubscriberInterface
@@ -111,9 +111,9 @@ class Subscriber implements EventSubscriberInterface
 
 namespace Foo;
 
-use Shopware\Core\Framework\Adapter\Cache\Event\HttpCacheHitEvent;
-use Shopware\Core\Framework\Adapter\Cache\Event\HttpCacheKeyEvent;
-use Shopware\Core\Framework\Adapter\Cache\Event\HttpCacheStoreEvent;
+use Shopwell\Core\Framework\Adapter\Cache\Event\HttpCacheHitEvent;
+use Shopwell\Core\Framework\Adapter\Cache\Event\HttpCacheKeyEvent;
+use Shopwell\Core\Framework\Adapter\Cache\Event\HttpCacheStoreEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class Subscriber implements EventSubscriberInterface
@@ -138,7 +138,7 @@ If you implement an own reverse proxy gateway, you have to change the namespace 
 ```php
 #### Before
 
-class RedisReverseProxyGateway extends \Shopware\Storefront\Framework\Cache\ReverseProxy\AbstractReverseProxyGateway
+class RedisReverseProxyGateway extends \Shopwell\Storefront\Framework\Cache\ReverseProxy\AbstractReverseProxyGateway
 {
     // ...
 }
@@ -146,7 +146,7 @@ class RedisReverseProxyGateway extends \Shopware\Storefront\Framework\Cache\Reve
 
 #### After
 
-class RedisReverseProxyGateway extends \Shopware\Core\Framework\Adapter\Cache\ReverseProxy\AbstractReverseProxyGateway
+class RedisReverseProxyGateway extends \Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\AbstractReverseProxyGateway
 {
     // ...
 }
@@ -155,7 +155,7 @@ class RedisReverseProxyGateway extends \Shopware\Core\Framework\Adapter\Cache\Re
 ### Http cache warmer
 
 We deprecated all Http cache warmer, because they will be not usable with the new http kernel anymore. 
-They are also not suitable for the new cache rework or for systems which have a reverse proxy or a load balancer in front of the shopware system.
+They are also not suitable for the new cache rework or for systems which have a reverse proxy or a load balancer in front of the shopwell system.
 Therefore, we marked them as deprecated and will remove them in the next major version.
 You should use instead a real website crawler to warmup your desired sites, which is much more suitable and realistic for your system.
 
@@ -170,7 +170,7 @@ You can now simply adding a context state temporarily for an internal process wi
 
 namespace Examples;
 
-use Shopware\Core\Framework\Context;
+use Shopwell\Core\Framework\Context;
 
 class Before
 {
@@ -213,7 +213,7 @@ Due to this change, the usage of the `UrlGeneratorInterface` changed. The genera
 
 namespace Examples;
 
-use Shopware\Core\Content\Media\Core\Application\AbstractMediaUrlGenerator;use Shopware\Core\Content\Media\Core\Params\UrlParams;use Shopware\Core\Content\Media\MediaCollection;use Shopware\Core\Content\Media\MediaEntity;use Shopware\Core\Content\Media\Pathname\UrlGeneratorInterface;
+use Shopwell\Core\Content\Media\Core\Application\AbstractMediaUrlGenerator;use Shopwell\Core\Content\Media\Core\Params\UrlParams;use Shopwell\Core\Content\Media\MediaCollection;use Shopwell\Core\Content\Media\MediaEntity;use Shopwell\Core\Content\Media\Pathname\UrlGeneratorInterface;
 
 class BeforeChange
 {
@@ -298,7 +298,7 @@ class ForwardCompatible
 ### Path strategies
 Beside the url generator change, we also had to change the media path strategy. The strategies are no longer working with a `MediaEntity`. They are now working with a `MediaFile` object. This object is a simple struct, which contains the path and the updated at timestamp. The path is the same as the one stored in the database. The updated at timestamp is the timestamp, when the path was generated. This is important for the cache invalidation. The `MediaFile` object is also used for the thumbnail generation. The thumbnail generation is now also working with a `MediaLocation` object instead.
 
-As foundation, we use `\Shopware\Core\Content\Media\Core\Application\AbstractMediaPathStrategy` as base class and dependency injection service id:
+As foundation, we use `\Shopwell\Core\Content\Media\Core\Application\AbstractMediaPathStrategy` as base class and dependency injection service id:
 
 ```php
 <?php
@@ -359,7 +359,7 @@ These structs are simple structs, which contains the necessary information to ge
 
 namespace Examples;
 
-use Shopware\Core\Content\Media\Core\Application\AbstractMediaPathStrategy;use Shopware\Core\Content\Media\Core\Application\MediaLocationBuilder;
+use Shopwell\Core\Content\Media\Core\Application\AbstractMediaPathStrategy;use Shopwell\Core\Content\Media\Core\Application\MediaLocationBuilder;
 
 class Consumer
 {
@@ -431,7 +431,7 @@ class LowPriorityMessage implements LowPriorityMessageInterface
 framework:
     messenger:
         routing:
-            'Shopware\Core\Framework\MessageQueue\LowPriorityMessageInterface': low_priority
+            'Shopwell\Core\Framework\MessageQueue\LowPriorityMessageInterface': low_priority
             'Your\Custom\LowPriorityMessage': async
 ```
 
@@ -479,21 +479,21 @@ class Message implements LowPriorityMessageInterface
 ```
 ## LineItem payload replacement behavior
 
-The method `\Shopware\Core\Checkout\Cart\LineItem\LineItem::replacePayload` does not do a recursive replacement of the payload anymore, but replaces the payload only on a first level.
+The method `\Shopwell\Core\Checkout\Cart\LineItem\LineItem::replacePayload` does not do a recursive replacement of the payload anymore, but replaces the payload only on a first level.
 
 Therefore, subarrays of the payload may reduce in items instead of being only added to.
 
 # 6.5.6.0
 ## Cluster setup configuration
 
-There is a new configuration option `shopware.deployment.cluster_setup` which is set to `false` by default. If you are using a cluster setup, you need to set this option to `true` in your `config/packages/shopware.yaml` file.
+There is a new configuration option `shopwell.deployment.cluster_setup` which is set to `false` by default. If you are using a cluster setup, you need to set this option to `true` in your `config/packages/shopwell.yaml` file.
 ## Deprecation of CacheInvalidatorStorage
 
 We deprecated the default delayed cache invalidation storage, as it is not ideal for multi-server usage.
 Make sure you switch until 6.6 to the new RedisInvalidatorStorage.
 
 ```yaml
-shopware:
+shopwell:
     cache:
         invalidation:
             delay_options:
@@ -501,14 +501,14 @@ shopware:
                 dsn: 'redis://localhost'
 ```
 
-Since 6.6.10.0 we also have a MySQL implementation available: `\Shopware\Core\Framework\Adapter\Cache\InvalidatorStorage\MySQLInvalidatorStorage`. Use it via `mysql`
+Since 6.6.10.0 we also have a MySQL implementation available: `\Shopwell\Core\Framework\Adapter\Cache\InvalidatorStorage\MySQLInvalidatorStorage`. Use it via `mysql`
 
 # 6.5.5.0
-Shopware 6.5 introduces a new more flexible stock management system. Please see the [ADR](adr/2023-05-15-stock-api.md) for a more detailed description of the why & how.
+Shopwell 6.5 introduces a new more flexible stock management system. Please see the [ADR](adr/2023-05-15-stock-api.md) for a more detailed description of the why & how.
 
 It is disabled by default, but you can opt in to the new system by enabling the `STOCK_HANDLING` feature flag.
 
-When you opt in and Shopware is your main source of truth for stock values, you might want to migrate the available_stock field to the `stock` field so that the `stock` value takes into account open orders.
+When you opt in and Shopwell is your main source of truth for stock values, you might want to migrate the available_stock field to the `stock` field so that the `stock` value takes into account open orders.
 
 You can use the following SQL:
 
@@ -516,27 +516,27 @@ You can use the following SQL:
 UPDATE product SET stock = available_stock WHERE stock != available_stock
 ```
 
-Bear in mind that this query might take a long time, so you could do it in a loop with a limit. See `\Shopware\Core\Migration\V6_6\Migration1691662140MigrateAvailableStock` for inspiration.
+Bear in mind that this query might take a long time, so you could do it in a loop with a limit. See `\Shopwell\Core\Migration\V6_6\Migration1691662140MigrateAvailableStock` for inspiration.
 
 ## If you have decorated `StockUpdater::update`
 
-If you have previously decorated `\Shopware\Core\Content\Product\DataAbstractionLayer\StockUpdater` you must refactor your code. Depending on what you want to accomplish you have two options:
+If you have previously decorated `\Shopwell\Core\Content\Product\DataAbstractionLayer\StockUpdater` you must refactor your code. Depending on what you want to accomplish you have two options:
 
-* You have the possibility to decorate the `\Shopware\Core\Content\Product\Stock\AbstractStockStorage::alter` method. This method is called by `\Shopware\Core\Content\Product\Stock\OrderStockSubscriber` as orders are created and transitioned through the various states. By decorating you can persist the stock deltas to a different storage. For example, an API.
-* You can disable `\Shopware\Core\Content\Product\Stock\OrderStockSubscriber` entirely with the `stock.enable_stock_management` configuration setting, and implement your own subscriber to listen to order events. You can use Shopware's stock storage `\Shopware\Core\Content\Product\Stock\AbstractStockStorage`, or implement your own entirely.
+* You have the possibility to decorate the `\Shopwell\Core\Content\Product\Stock\AbstractStockStorage::alter` method. This method is called by `\Shopwell\Core\Content\Product\Stock\OrderStockSubscriber` as orders are created and transitioned through the various states. By decorating you can persist the stock deltas to a different storage. For example, an API.
+* You can disable `\Shopwell\Core\Content\Product\Stock\OrderStockSubscriber` entirely with the `stock.enable_stock_management` configuration setting, and implement your own subscriber to listen to order events. You can use Shopwell's stock storage `\Shopwell\Core\Content\Product\Stock\AbstractStockStorage`, or implement your own entirely.
 
-## Decorating `\Shopware\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader::load()` && `\Shopware\Core\Content\Product\SalesChannel\Detail\AvailableCombinationLoader::load()`
+## Decorating `\Shopwell\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader::load()` && `\Shopwell\Core\Content\Product\SalesChannel\Detail\AvailableCombinationLoader::load()`
 
-If you decorated `\Shopware\Core\Content\Product\SalesChannel\Detail\AvailableCombinationLoader::load()` you should instead decorate `\Shopware\Core\Content\Product\SalesChannel\Detail\AvailableCombinationLoader::loadCombinations()`. The method does the same, but the signature is slightly modified.
+If you decorated `\Shopwell\Core\Content\Product\SalesChannel\Detail\AvailableCombinationLoader::load()` you should instead decorate `\Shopwell\Core\Content\Product\SalesChannel\Detail\AvailableCombinationLoader::loadCombinations()`. The method does the same, but the signature is slightly modified.
 
-If you extended `\Shopware\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader`, you should implement the new `loadCombinations` instead of `load` method.
+If you extended `\Shopwell\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader`, you should implement the new `loadCombinations` instead of `load` method.
 
 Before:
 
 ```php
-use Shopware\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader;
-use Shopware\Core\Content\Product\SalesChannel\Detail\AvailableCombinationResult;
-use Shopware\Core\Framework\Context;
+use Shopwell\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader;
+use Shopwell\Core\Content\Product\SalesChannel\Detail\AvailableCombinationResult;
+use Shopwell\Core\Framework\Context;
 
 class AvailableCombinationLoaderDecorator extends AbstractAvailableCombinationLoader
 {
@@ -550,9 +550,9 @@ class AvailableCombinationLoaderDecorator extends AbstractAvailableCombinationLo
 After:
 
 ```php
-use Shopware\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader;
-use Shopware\Core\Content\Product\SalesChannel\Detail\AvailableCombinationResult;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader;
+use Shopwell\Core\Content\Product\SalesChannel\Detail\AvailableCombinationResult;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 
 class AvailableCombinationLoaderDecorator extends AbstractAvailableCombinationLoader
 {
@@ -564,13 +564,13 @@ class AvailableCombinationLoaderDecorator extends AbstractAvailableCombinationLo
 }
 ```
 
-Similarly, if you consume `\Shopware\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader` then you will need to adjust your code, to pass in `\Shopware\Core\System\SalesChannel\SalesChannelContext`.
+Similarly, if you consume `\Shopwell\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader` then you will need to adjust your code, to pass in `\Shopwell\Core\System\SalesChannel\SalesChannelContext`.
 
 Before:
 
 ```php
-use Shopware\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 
 class SomeService
 {
@@ -587,8 +587,8 @@ class SomeService
 After:
 
 ```php
-use Shopware\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Content\Product\SalesChannel\Detail\AbstractAvailableCombinationLoader;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 
 class SomeService
 {
@@ -604,7 +604,7 @@ class SomeService
 
 ## Loading stock information from a different source
 
-If Shopware is not the source of truth for your stock data, you can decorate `\Shopware\Core\Content\Product\Stock\AbstractStockStorage` and implement the `load` method. When products are loaded in Shopware the `load` method will be invoked with the loaded product ID's. You can return a collection of `\Shopware\Core\Content\Product\Stock\StockData` objects, each representing a products stock level and configuration. This data will be merged with the Shopware stock levels and configuration from the product. Any data specified will override the product's data.
+If Shopwell is not the source of truth for your stock data, you can decorate `\Shopwell\Core\Content\Product\Stock\AbstractStockStorage` and implement the `load` method. When products are loaded in Shopwell the `load` method will be invoked with the loaded product ID's. You can return a collection of `\Shopwell\Core\Content\Product\Stock\StockData` objects, each representing a products stock level and configuration. This data will be merged with the Shopwell stock levels and configuration from the product. Any data specified will override the product's data.
 
 For example, you can use an API to fetch the stock data:
 
@@ -614,12 +614,12 @@ For example, you can use an API to fetch the stock data:
 
 namespace Swag\Example\Service;
 
-use Shopware\Core\Content\Product\Stock\AbstractStockStorage;
-use Shopware\Core\Content\Product\Stock\StockData;
-use Shopware\Core\Content\Product\Stock\StockDataCollection;
-use Shopware\Core\Content\Product\Stock\StockLoadRequest;
-use Shopware\Core\Framework\Context;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Content\Product\Stock\AbstractStockStorage;
+use Shopwell\Core\Content\Product\Stock\StockData;
+use Shopwell\Core\Content\Product\Stock\StockDataCollection;
+use Shopwell\Core\Content\Product\Stock\StockLoadRequest;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 
 class StockStorageDecorator extends AbstractStockStorage
 {
@@ -662,7 +662,7 @@ class StockStorageDecorator extends AbstractStockStorage
 ```xml
 <!--<plugin root>/src/Resources/config/services.xml-->
 <services>
-    <service id="Swag\Example\Service\StockStorageDecorator" decorates="Shopware\Core\Content\Product\Stock\StockStorage">
+    <service id="Swag\Example\Service\StockStorageDecorator" decorates="Shopwell\Core\Content\Product\Stock\StockStorage">
         <argument type="service" id="Swag\Example\Service\StockStorageDecorator.inner" />
     </service>
 
@@ -676,14 +676,14 @@ The `product.stock` field is now a realtime representation of the product stock.
 Before:
 
 ```php
-/** \Shopware\Core\Content\Product\ProductEntity $product */
+/** \Shopwell\Core\Content\Product\ProductEntity $product */
 $stock = $product->getAvailableStock();
 ```
 
 After:
 
 ```php
-/** \Shopware\Core\Content\Product\ProductEntity $product */
+/** \Shopwell\Core\Content\Product\ProductEntity $product */
 $stock = $product->getStock();
 ```
 
@@ -721,9 +721,9 @@ $this->productRepository->update(
 );
 ```
 
-## Disabling Shopware's stock management system
+## Disabling Shopwell's stock management system
 
-You can disable `\Shopware\Core\Content\Product\Stock\OrderStockSubscriber` entirely with the `stock.enable_stock_management` configuration setting.
+You can disable `\Shopwell\Core\Content\Product\Stock\OrderStockSubscriber` entirely with the `stock.enable_stock_management` configuration setting.
 
 ## Implementing your own stock storage
 
@@ -734,7 +734,7 @@ This method is triggered whenever an order is created or transitioned through th
 
 ## Listening to entity delete events
 
-The `BeforeDeleteEvent` has been renamed to `\Shopware\Core\Framework\DataAbstractionLayer\Event\EntityDeleteEvent`. Please update your usages:
+The `BeforeDeleteEvent` has been renamed to `\Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityDeleteEvent`. Please update your usages:
 
 Before:
 
@@ -745,7 +745,7 @@ Before:
 public static function getSubscribedEvents(): array
 {
     return [
-        \Shopware\Core\Framework\DataAbstractionLayer\Event\BeforeDeleteEvent::class => 'onBeforeDelete',
+        \Shopwell\Core\Framework\DataAbstractionLayer\Event\BeforeDeleteEvent::class => 'onBeforeDelete',
     ];
 }
 ```
@@ -759,7 +759,7 @@ After:
 public static function getSubscribedEvents(): array
 {
     return [
-        \Shopware\Core\Framework\DataAbstractionLayer\Event\EntityDeleteEvent::class => 'onBeforeDelete',
+        \Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityDeleteEvent::class => 'onBeforeDelete',
     ];
 }
 ```
@@ -777,11 +777,11 @@ This allows to define the entity type of the repository, which improves the IDE 
 Usage:
 
 ```php
-use Shopware\Core\Content\Product\ProductCollection;
-use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 
 class MyService
     /**
@@ -800,7 +800,7 @@ class MyService
     }
 ```
 ## Clean duplicated theme images
-With [4457](https://github.com/shopware/shopware/issues/4457) we fixed an issue with duplicated theme images on `system:update` and `theme:refresh`.
+With [4457](https://github.com/shopwell-shop/shopwell/issues/4457) we fixed an issue with duplicated theme images on `system:update` and `theme:refresh`.
 This fix will only prevent future duplicates. In order to remove already existing duplicates from your setup, follow these steps:
 
 1. Open the administration media section
@@ -814,14 +814,14 @@ This fix will only prevent future duplicates. In order to remove already existin
 9. Now you should be able to delete these duplicates in the administration media section in the folder `Theme Media`
 10. Now do a `composer theme:refresh`
 
-This comment on github could also be helpful: [github how to clean theme media](https://github.com/shopware/platform/discussions/3254#discussioncomment-6666360)
+This comment on github could also be helpful: [github how to clean theme media](https://github.com/shopwell-shop/platform/discussions/3254#discussioncomment-6666360)
 The images should not be doubled again.
 
 
 # 6.5.3.0
 ## The app custom trigger and the app action can be defined in one xml file.
 Since v6.5.2.0, we can define the flow custom trigger and the flow app action in one XML file.
-To do that, we add the `Shopware\Core\Framework\App\Flow\Schema\flow-1.0.xsd` to support defining both of them.
+To do that, we add the `Shopwell\Core\Framework\App\Flow\Schema\flow-1.0.xsd` to support defining both of them.
 
 * ***Example***
 ```xml
@@ -890,12 +890,12 @@ This change allows importing medias with filenames that contain special characte
 The `context` property is used instead of `contextData` property in `src/Core/Content/Media/Message/GenerateThumbnailsMessage` due to the `context` data is serialized in context source
 
 ## Update to Symfony 6.3
-Shopware now uses Symfony version 6.3, please make sure your plugins are compatible.
+Shopwell now uses Symfony version 6.3, please make sure your plugins are compatible.
 
 ## Introduce BeforeLoadStorableFlowDataEvent
 The event is dispatched before the flow storer restores the data, so you can customize the criteria before passing it to the entity repository
 
-**Reference: Shopware\Core\Content\Flow\Events\BeforeLoadStorableFlowDataEvent**
+**Reference: Shopwell\Core\Content\Flow\Events\BeforeLoadStorableFlowDataEvent**
 
 **Examples:**
 
@@ -941,7 +941,7 @@ class YourBeforeLoadStorableFlowOrderDataSubscriber implements EventSubscriberIn
 }
 ```
 If you are relying on the association `import_export_log.file`, please associate the definition directly with the criteria because we will remove autoload from version 6.6.0.0.
-* Renamed error code from `FRAMEWORK__STORE_CANNOT_DOWNLOAD_PLUGIN_MANAGED_BY_SHOPWARE` to `FRAMEWORK__STORE_CANNOT_DELETE_COMPOSER_MANAGED`
+* Renamed error code from `FRAMEWORK__STORE_CANNOT_DOWNLOAD_PLUGIN_MANAGED_BY_SHOPWELL` to `FRAMEWORK__STORE_CANNOT_DELETE_COMPOSER_MANAGED`
 
 # 6.5.1.0
 
@@ -961,7 +961,7 @@ If you implemented one of the deprecated interfaces or implemented an own interf
 ```php
 
 // before
-class MyEvent extends Event implements \Shopware\Core\Content\Flow\Dispatching\Aware\UrlAware
+class MyEvent extends Event implements \Shopwell\Core\Content\Flow\Dispatching\Aware\UrlAware
 {
     private string $url;
 
@@ -980,7 +980,7 @@ class MyEvent extends Event implements \Shopware\Core\Content\Flow\Dispatching\A
 
 // after
 
-class MyEvent extends Event implements \Shopware\Core\Content\Flow\Dispatching\Aware\ScalarValuesAware
+class MyEvent extends Event implements \Shopwell\Core\Content\Flow\Dispatching\Aware\ScalarValuesAware
 {
     private string $url;
 
@@ -1019,76 +1019,76 @@ The deprecated flow storer interfaces are:
 * `TemplateDataAware`
 * `UrlAware`
 ## Marking media as used 
-If your plugin references media in a way that is not understood by the DAL, for example in JSON blobs, it is now possible for your plugin to inform the system that this media is used and should not be deleted when the `\Shopware\Core\Content\Media\UnusedMediaPurger` service is executed.
-To do this, you need to create a listener for the `Shopware\Core\Content\Media\Event\UnusedMediaSearchEvent` event. This event can be called multiple times during the cleanup task with different sets of media ID's scheduled to be deleted. Your listener should check if any of the media ID's passed to the event are used by your plugin and mark them as used by calling the `markMediaAsUsed` method on the event object with an array of the used media ID's.
+If your plugin references media in a way that is not understood by the DAL, for example in JSON blobs, it is now possible for your plugin to inform the system that this media is used and should not be deleted when the `\Shopwell\Core\Content\Media\UnusedMediaPurger` service is executed.
+To do this, you need to create a listener for the `Shopwell\Core\Content\Media\Event\UnusedMediaSearchEvent` event. This event can be called multiple times during the cleanup task with different sets of media ID's scheduled to be deleted. Your listener should check if any of the media ID's passed to the event are used by your plugin and mark them as used by calling the `markMediaAsUsed` method on the event object with an array of the used media ID's.
 You can get the media ID's scheduled for deletion from the event object by calling the `getMediaIds` method.
 
 See the following implementations for an example: 
-* \Shopware\Core\Content\Cms\Subscriber\UnusedMediaSubscriber
-* \Shopware\Storefront\Theme\Subscriber\UnusedMediaSubscriber
+* \Shopwell\Core\Content\Cms\Subscriber\UnusedMediaSubscriber
+* \Shopwell\Storefront\Theme\Subscriber\UnusedMediaSubscriber
 ## Fix method signatures to comply with parent class/interface signature
 The following method signatures were changed to comply with the parent class/interface signature:
 **Visibility changes:**
 * Method `configure()` was changed from public to protected in:
-  * `Shopware\Storefront\Theme\Command\ThemeCompileCommand`
+  * `Shopwell\Storefront\Theme\Command\ThemeCompileCommand`
 * Method `execute()` was changed from public to protected in:
-  * `Shopware\Core\Framework\Adapter\Asset\AssetInstallCommand`
-  * `Shopware\Core\DevOps\System\Command\SystemDumpDatabaseCommand`
-  * `Shopware\Core\DevOps\System\Command\SystemRestoreDatabaseCommand`
-  * `Shopware\Core\DevOps\Docs\App\DocsAppEventCommand`
+  * `Shopwell\Core\Framework\Adapter\Asset\AssetInstallCommand`
+  * `Shopwell\Core\DevOps\System\Command\SystemDumpDatabaseCommand`
+  * `Shopwell\Core\DevOps\System\Command\SystemRestoreDatabaseCommand`
+  * `Shopwell\Core\DevOps\Docs\App\DocsAppEventCommand`
   * 
 * Method `getExpectedClass()` was changed from public to protected in:
-  * `Shopware\Storefront\Theme\ThemeSalesChannelCollection`
-  * `Shopware\Core\Framework\Store\Struct\PluginRecommendationCollection`
-  * `Shopware\Core\Framework\Store\Struct\PluginCategoryCollection`
-  * `Shopware\Core\Framework\Store\Struct\LicenseDomainCollection`
-  * `Shopware\Core\Framework\Store\Struct\PluginRegionCollection`
-  * `Shopware\Core\Content\ImportExport\Processing\Mapping\UpdateByCollection`
-  * `Shopware\Core\Content\ImportExport\Processing\Mapping\MappingCollection`
-  * `Shopware\Core\Content\Product\Aggregate\ProductCrossSellingAssignedProducts\ProductCrossSellingAssignedProductsCollection`
-  * `Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingCollection`
-  * `Shopware\Core\Content\Product\SalesChannel\CrossSelling\CrossSellingElementCollection`
-  * `Shopware\Core\Content\Product\SalesChannel\SalesChannelProductCollection`
-  * `Shopware\Core\Checkout\Promotion\Aggregate\PromotionDiscountPrice\PromotionDiscountPriceCollection`
+  * `Shopwell\Storefront\Theme\ThemeSalesChannelCollection`
+  * `Shopwell\Core\Framework\Store\Struct\PluginRecommendationCollection`
+  * `Shopwell\Core\Framework\Store\Struct\PluginCategoryCollection`
+  * `Shopwell\Core\Framework\Store\Struct\LicenseDomainCollection`
+  * `Shopwell\Core\Framework\Store\Struct\PluginRegionCollection`
+  * `Shopwell\Core\Content\ImportExport\Processing\Mapping\UpdateByCollection`
+  * `Shopwell\Core\Content\ImportExport\Processing\Mapping\MappingCollection`
+  * `Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingAssignedProducts\ProductCrossSellingAssignedProductsCollection`
+  * `Shopwell\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingCollection`
+  * `Shopwell\Core\Content\Product\SalesChannel\CrossSelling\CrossSellingElementCollection`
+  * `Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductCollection`
+  * `Shopwell\Core\Checkout\Promotion\Aggregate\PromotionDiscountPrice\PromotionDiscountPriceCollection`
 * Method `getParentDefinitionClass()` was changed from public to protected in:
-  * `Shopware\Core\System\SalesChannel\Aggregate\SalesChannelAnalytics\SalesChannelAnalyticsDefinition`
-  * `Shopware\Core\Content\ImportExport\ImportExportProfileTranslationDefinition`
-  * `Shopware\Core\Content\Product\Aggregate\ProductCrossSellingAssignedProducts\ProductCrossSellingAssignedProductsDefinition`
-  * `Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition`
-  * `Shopware\Core\Content\Product\Aggregate\ProductFeatureSetTranslation\ProductFeatureSetTranslationDefinition`
-  * `Shopware\Core\Checkout\Promotion\Aggregate\PromotionTranslation\PromotionTranslationDefinition`
+  * `Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelAnalytics\SalesChannelAnalyticsDefinition`
+  * `Shopwell\Core\Content\ImportExport\ImportExportProfileTranslationDefinition`
+  * `Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingAssignedProducts\ProductCrossSellingAssignedProductsDefinition`
+  * `Shopwell\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition`
+  * `Shopwell\Core\Content\Product\Aggregate\ProductFeatureSetTranslation\ProductFeatureSetTranslationDefinition`
+  * `Shopwell\Core\Checkout\Promotion\Aggregate\PromotionTranslation\PromotionTranslationDefinition`
 * Method `getDecorated()` was changed from public to protected in:
-  * `Shopware\Core\System\Country\SalesChannel\CachedCountryRoute`
-  * `Shopware\Core\System\Country\SalesChannel\CachedCountryStateRoute`
+  * `Shopwell\Core\System\Country\SalesChannel\CachedCountryRoute`
+  * `Shopwell\Core\System\Country\SalesChannel\CachedCountryStateRoute`
 * Method `getSerializerClass()` was changed from public to protected in:
-  * `Shopware\Core\Framework\DataAbstractionLayer\Field\StateMachineStateField`
+  * `Shopwell\Core\Framework\DataAbstractionLayer\Field\StateMachineStateField`
 
 **Parameter type changes:**
 * Changed parameter `$url` to `string` in:
-  * `Shopware\Storefront\Framework\Cache\ReverseProxy\ReverseProxyCache#purge()`
+  * `Shopwell\Storefront\Framework\Cache\ReverseProxy\ReverseProxyCache#purge()`
 * Changed parameter `$data` and `$format` to `string` in:
-  * `Shopware\Core\Framework\Struct\Serializer\StructDecoder#decode()`
-  * `Shopware\Core\Framework\Struct\Serializer\StructDecoder#supportsDecoding()`
-  * `Shopware\Core\Framework\Api\Serializer\JsonApiDecoder#decode()`
-  * `Shopware\Core\Framework\Api\Serializer\JsonApiDecoder#supportsDecoding()`
+  * `Shopwell\Core\Framework\Struct\Serializer\StructDecoder#decode()`
+  * `Shopwell\Core\Framework\Struct\Serializer\StructDecoder#supportsDecoding()`
+  * `Shopwell\Core\Framework\Api\Serializer\JsonApiDecoder#decode()`
+  * `Shopwell\Core\Framework\Api\Serializer\JsonApiDecoder#supportsDecoding()`
 * Changed parameter `$storageName` and `$propertyName` to `string` in:
-  * `Shopware\Core\Framework\DataAbstractionLayer\Field\CustomFields#__construct()`
+  * `Shopwell\Core\Framework\DataAbstractionLayer\Field\CustomFields#__construct()`
 * Changed parameter `$event` to `object` in:
-  * `Shopware\Core\Framework\Event\NestedEventDispatcher#dispatch()`
+  * `Shopwell\Core\Framework\Event\NestedEventDispatcher#dispatch()`
 * Changed parameter `$listener` to `callable` in:
-  * `Shopware\Core\Framework\Event\NestedEventDispatcher#removeListener()`
-  * `Shopware\Core\Framework\Event\NestedEventDispatcher#getListenerPriority()`
-  * `Shopware\Core\Framework\Webhook\WebhookDispatcher#removeListener()`
-  * `Shopware\Core\Framework\Webhook\WebhookDispatcher#getListenerPriority()`
+  * `Shopwell\Core\Framework\Event\NestedEventDispatcher#removeListener()`
+  * `Shopwell\Core\Framework\Event\NestedEventDispatcher#getListenerPriority()`
+  * `Shopwell\Core\Framework\Webhook\WebhookDispatcher#removeListener()`
+  * `Shopwell\Core\Framework\Webhook\WebhookDispatcher#getListenerPriority()`
 * Changed parameter `$constraints` to `Symfony\Component\Validator\Constraint|array|null` in:
-  * `Shopware\Core\Framework\Validation\HappyPathValidator#validate()`
+  * `Shopwell\Core\Framework\Validation\HappyPathValidator#validate()`
 * Changed parameter `$object` to `object`, `$propertyName` to `string`, `$groups` to `string|Symfony\Component\Validator\Constraints\GroupSequence|array|null` and `$objectOrClass` to `object|string` in:
-  * `Shopware\Core\Framework\Validation\HappyPathValidator#validateProperty()`
-  * `Shopware\Core\Framework\Validation\HappyPathValidator#validatePropertyValue()`
+  * `Shopwell\Core\Framework\Validation\HappyPathValidator#validateProperty()`
+  * `Shopwell\Core\Framework\Validation\HappyPathValidator#validatePropertyValue()`
 * Changed parameter `$record` to `iterable` in:
-  * `Shopware\Core\Content\ImportExport\Processing\Pipe\EntityPipe#in()`
+  * `Shopwell\Core\Content\ImportExport\Processing\Pipe\EntityPipe#in()`
 * Changed parameter `$warmupDir` to `string` in:
-  * `Shopware\Core\Kernel#reboot()`
+  * `Shopwell\Core\Kernel#reboot()`
 ## Twig cache independent from kernel cache dir
 
 You can now use the `twig.cache` configuration to configure the directory where twig caches are stored as described in the [symfony docs](https://symfony.com/doc/current/reference/configuration/twig.html#cache). This is independent from the `kernel.cache_dir` configuration, but by default it will still fallback to the `%kernel.cache_dir%/twig` directory.
@@ -1100,11 +1100,11 @@ This is useful when the `kernel.cache_dir` is configured to be a read-only direc
 * Deprecated `ImportExport\PriceFieldSerializer::isValidPrice`, function will be private in v6.6
 * Deprecated `CsvReader::loadConfig`, function will be private in v6.6
 * Deprecated `NewsletterSubscribeRoute.php`, function will be private in v6.6
-## App scripts have access to shopware version
+## App scripts have access to shopwell version
 
-App scripts now have access to the shopware version via the `shopware.version` global variable.
+App scripts now have access to the shopwell version via the `shopwell.version` global variable.
 ```twig
-{% if version_compare('6.4', shopware.version, '<=') %}
+{% if version_compare('6.4', shopwell.version, '<=') %}
     {# 6.4 or lower compatible code #}
 {% else %}
     {# 6.5 or higher compatible code #}    
@@ -1119,7 +1119,7 @@ Increased Node version to 18 and NPM to version 8 or 9.
 
 ## Removal of old icons:
 
-* Replace any old icon your integration uses with its successor. A mapping can be found [here](https://github.com/shopware/shopware/blob/v6.4.20.2/src/Administration/Resources/app/administration/src/app/component/base/sw-icon/legacy-icon-mapping.js).
+* Replace any old icon your integration uses with its successor. A mapping can be found [here](https://github.com/shopwell-shop/shopwell/blob/v6.4.20.2/src/Administration/Resources/app/administration/src/app/component/base/sw-icon/legacy-icon-mapping.js).
 * The object keys of the json file are the legacy icons. The values the replacement.
 * In the next major, the icons will have no space around them by default. This could eventually lead to bigger looking icons in some places. If this is the case you need to adjust the styling with CSS so that it matches your wanted look.
 
@@ -1164,17 +1164,17 @@ No required props have been added or removed, only the styling and layout of the
 
 ## Deprecated action:
 
-* action `setAppModules` in `src/app/state/shopware-apps.store.ts` is removed
-* action `setAppModules` in `src/app/state/shopware-apps.store.ts` is removed
+* action `setAppModules` in `src/app/state/shopwell-apps.store.ts` is removed
+* action `setAppModules` in `src/app/state/shopwell-apps.store.ts` is removed
 
 # Core
 
 ## Update minimum PHP version to 8.1
-Shopware 6 now requires at least PHP 8.1.0. Please update your PHP version to at least 8.1.0.
+Shopwell 6 now requires at least PHP 8.1.0. Please update your PHP version to at least 8.1.0.
 Refer to the upgrade guide to [v8.0](https://www.php.net/manual/en/migration80.php) and [v8.1](https://www.php.net/manual/en/migration81.php) for more information.
 
 ## Update to Symfony 6.2
-Shopware now uses symfony components in version 6.2, please make sure your plugins are compatible.
+Shopwell now uses symfony components in version 6.2, please make sure your plugins are compatible.
 Refer to the upgrade guides to [v6.0](https://github.com/symfony/symfony/blob/6.2/UPGRADE-6.0.md), [v6.1](https://github.com/symfony/symfony/blob/6.2/UPGRADE-6.1.md) and [v6.2](https://github.com/symfony/symfony/blob/6.2/UPGRADE-6.2.md).
 
 ## Change Elasticsearch DSL/SDK library OpenSearch
@@ -1194,14 +1194,14 @@ Also, we changed the Elasticsearch PHP SDK to OpenSearch
 ## Change of environment variables
 
 * Renamed following environment variables to use more generic environment variable name used by cloud providers:
-    * `SHOPWARE_ES_HOSTS` to `OPENSEARCH_URL`
+    * `SHOPWELL_ES_HOSTS` to `OPENSEARCH_URL`
     * `MAILER_URL` to `MAILER_DSN`
 
 You can change this variable back in your installation using a `config/packages/elasticsearch.yaml` with
 
 ```yaml
 elasticsearch:
-    hosts: "%env(string:SHOPWARE_ES_HOSTS)%"
+    hosts: "%env(string:SHOPWELL_ES_HOSTS)%"
 ```
 
 or prepare your env by replacing the var with the new one like
@@ -1262,11 +1262,11 @@ public function myRoute(): Response
 ```
 
 ## Only mapped properties encoded
-The `\Shopware\Core\System\SalesChannel\Api\StructEncoder` now only encodes entity properties which are mapped in the entity definition.  If you have custom code which relies on the encoder to encode properties which aren't mapped in the entity definition, you need to adjust your code to map these properties in the entity definition.
+The `\Shopwell\Core\System\SalesChannel\Api\StructEncoder` now only encodes entity properties which are mapped in the entity definition.  If you have custom code which relies on the encoder to encode properties which aren't mapped in the entity definition, you need to adjust your code to map these properties in the entity definition.
 
 ## `EntityRepositoryInterface` removal
 
-All type hints from EntityRepositoryInterface should be changed to EntityRepository, you can use [rector](https://github.com/FriendsOfShopware/shopware-rector) for that.
+All type hints from EntityRepositoryInterface should be changed to EntityRepository, you can use [rector](https://github.com/FriendsOfShopwell/shopwell-rector) for that.
 
 We removed the `EntityRepositoryInterface` & `SalesChannelRepositoryInterface` classes and declared the `EntityRepository` & `SalesChannelRepository` as final.
 Therefore, if you implemented an own repository class for your entities, you have to remove this now.
@@ -1304,9 +1304,9 @@ Please provide the active value if you create shipping methods over the API.
 
 ## Flow builder doesn't use event manager anymore
 
-* In the next major, the flow actions aren't executed over the symfony events anymore; we'll remove the dependence from `EventSubscriberInterface` in `Shopware\Core\Content\Flow\Dispatching\Action\FlowAction`.
+* In the next major, the flow actions aren't executed over the symfony events anymore; we'll remove the dependence from `EventSubscriberInterface` in `Shopwell\Core\Content\Flow\Dispatching\Action\FlowAction`.
 * In the next major, the flow actions aren't executed via symfony events anymore;
-  we'll remove the dependency from `EventSubscriberInterface` in `Shopware\Core\Content\Flow\Dispatching\Action\FlowAction`.
+  we'll remove the dependency from `EventSubscriberInterface` in `Shopwell\Core\Content\Flow\Dispatching\Action\FlowAction`.
   That means, all the flow actions extending `FlowAction` get the "services" tag.
 * The flow builder will execute the actions when calling the `handleFlow` function directly, instead of dispatching an action event.
 * To get an action service in flow builder, we need to define the tag action service with an unique key, which should be an action name.
@@ -1316,7 +1316,7 @@ Please provide the active value if you create shipping methods over the API.
 
 **before**
 ```xml
- <service id="Shopware\Core\Content\Flow\Dispatching\Action\SendMailAction">
+ <service id="Shopwell\Core\Content\Flow\Dispatching\Action\SendMailAction">
     ...
     <tag name="flow.action"/>
 </service>
@@ -1360,7 +1360,7 @@ class SendMailAction extends FlowAction
 
 **after**
 ```xml
- <service id="Shopware\Core\Content\Flow\Dispatching\Action\SendMailAction">
+ <service id="Shopwell\Core\Content\Flow\Dispatching\Action\SendMailAction">
     ...
     <tag name="flow.action" key="action.mail.send" />
 </service>
@@ -1470,14 +1470,14 @@ abstract public function sort(EntityCollection $options): PropertyGroupCollectio
 ## Seo url refactoring
 
 Seo url generation will now only generate urls when the entity is also assigned to this sales channel.
-To archive this `\Shopware\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteInterface::prepareCriteria` gets as second parameter the SalesChannelEntity which will be currently proceed, to filter the criteria for this scope.
+To archive this `\Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteInterface::prepareCriteria` gets as second parameter the SalesChannelEntity which will be currently proceed, to filter the criteria for this scope.
 
 To make your Plugin already compatible for next major version you can use ReflectionClass with an if condition to avoid interface issues
 
 $criteria->addFilter(new EqualsFilter('visibilities.salesChannelId', $salesChannel->getId()));
 
 ```php
-use Shopware\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteInterface;
+use Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteInterface;
 
 if (($r = new ReflectionClass(SeoUrlRouteInterface::class)) && $r->hasMethod('prepareCriteria') && $r->getMethod('prepareCriteria')->getNumberOfRequiredParameters() === 2) {
     class MyPluginRoute implements SeoUrlRouteInterface
@@ -1541,7 +1541,7 @@ Instead of using `response.salesChannel.languageId`, please use `response.contex
 
 ## Refactoring of `HreflangLoader`
 
-The protected method `\Shopware\Core\Content\Seo\HreflangLoader::generateHreflangHome()` was removed, use `\Shopware\Core\Content\Seo\HreflangLoader::load()` with `route = 'frontend.home.page'` instead.
+The protected method `\Shopwell\Core\Content\Seo\HreflangLoader::generateHreflangHome()` was removed, use `\Shopwell\Core\Content\Seo\HreflangLoader::load()` with `route = 'frontend.home.page'` instead.
 
 ### Before
 
@@ -1576,7 +1576,7 @@ Therefore, the `psalm` dev-dependency was removed.
 If you used the dev-dependency from platform in your project, please install the `psalm` package directly into your project.
 
 ## Double OptIn customers will be active by default
-If the double opt in feature for the customer registration is enabled the customer accounts will be set active by default starting from Shopware 6.6.0.0. The validation now only considers if the customer has the double opt in registration enabled, i.e. the database value `customer.double_opt_in_registration` equals `1` and if there exists an double opt in date in `customer.double_opt_in_confirm_date`.
+If the double opt in feature for the customer registration is enabled the customer accounts will be set active by default starting from Shopwell 6.6.0.0. The validation now only considers if the customer has the double opt in registration enabled, i.e. the database value `customer.double_opt_in_registration` equals `1` and if there exists an double opt in date in `customer.double_opt_in_confirm_date`.
 
 ## Custom fields in cart
 Custom fields will now be removed from the cart for performance reasons. Add the to the allow list with CartBeforeSerializationEvent if you need them in cart.
@@ -1597,9 +1597,9 @@ The `addForwardTrigger()`, `addBackwardTrigger()` and `addTrigger()` methods of 
 Don't rely on the state of already executed migrations in your database triggers anymore!
 Additionally, the `@MIGRATION_{migration}_IS_ACTIVE` DB connection variables aren't set at kernel boot anymore.
 
-## Removal of `\Shopware\Core\Framework\Event\FlowEvent`
+## Removal of `\Shopwell\Core\Framework\Event\FlowEvent`
 
-We removed `\Shopware\Core\Framework\Event\FlowEvent`, since Flow Actions aren't executed via symfony's event system anymore.
+We removed `\Shopwell\Core\Framework\Event\FlowEvent`, since Flow Actions aren't executed via symfony's event system anymore.
 You should implement the `handleFlow()` method in your `FlowAction` and tag your actions as `flow.action`.
 
 ## Internal Migrations
@@ -1623,13 +1623,13 @@ The migrations can't be executed over the API anymore. Database migrations shoul
 
 ## Removed `DatabaseInitializer`
 
-Removed class `\Shopware\Core\Maintenance\System\Service\DatabaseInitializer`, use `SetupDatabaseAdapter` instead.
+Removed class `\Shopwell\Core\Maintenance\System\Service\DatabaseInitializer`, use `SetupDatabaseAdapter` instead.
 
 ## Removed `JwtCertificateService`
 
-Removed class `\Shopware\Recovery\Common\Service\JwtCertificateService`, use `JwtCertificateGenerator` instead.
+Removed class `\Shopwell\Recovery\Common\Service\JwtCertificateService`, use `JwtCertificateGenerator` instead.
 
-### Removal of `\Shopware\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternRegistry::getPatternResolver()`
+### Removal of `\Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternRegistry::getPatternResolver()`
 
 We removed the `ValueGeneratorPatternRegistry::getPatternResolver()` method, please call the `generatePattern()` method now directly.
 
@@ -1651,8 +1651,8 @@ $generated .= $this->valueGeneratorPatternRegistry->generatePattern($pattern, $p
 
 ### Removal of `ValueGeneratorPatternInterface`
 
-We removed the `Shopware\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternInterface`.
-If you've implemented a custom value pattern please use the abstract class `Shopware\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator`.
+We removed the `Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\ValueGeneratorPatternInterface`.
+If you've implemented a custom value pattern please use the abstract class `Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator`.
 
 ```php
 class CustomPattern implements ValueGeneratorPatternInterface
@@ -1689,9 +1689,9 @@ class CustomIncrementStorage extends AbstractValueGenerator
 }
 ```
 
-## Removal of `\Shopware\Core\Framework\Adapter\Twig\EntityTemplateLoader::clearInternalCache()`
+## Removal of `\Shopwell\Core\Framework\Adapter\Twig\EntityTemplateLoader::clearInternalCache()`
 
-We removed `\Shopware\Core\Framework\Adapter\Twig\EntityTemplateLoader::clearInternalCache()`, use `reset()` instead.
+We removed `\Shopwell\Core\Framework\Adapter\Twig\EntityTemplateLoader::clearInternalCache()`, use `reset()` instead.
 
 ## Refactoring of Number Ranges
 
@@ -1699,19 +1699,19 @@ We refactored the number range handling, to be faster and allow different storag
 
 ### Removal of `IncrementStorageInterface`
 
-We removed the `Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementStorageInterface`.
-If you've implemented a custom increment storage please use the abstract class `Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage`.
+We removed the `Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\IncrementStorageInterface`.
+If you've implemented a custom increment storage please use the abstract class `Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage`.
 Before:
 
 ```php
 class CustomIncrementStorage implements IncrementStorageInterface
 {
-    public function pullState(\Shopware\Core\System\NumberRange\NumberRangeEntity $configuration): string
+    public function pullState(\Shopwell\Core\System\NumberRange\NumberRangeEntity $configuration): string
     {
         return $this->increment($configuration->getId(), $configuration->getPattern());
     }
     
-    public function getNext(\Shopware\Core\System\NumberRange\NumberRangeEntity $configuration): string
+    public function getNext(\Shopwell\Core\System\NumberRange\NumberRangeEntity $configuration): string
     {
         return $this->get($configuration->getId(), $configuration->getPattern());
     }
@@ -1742,17 +1742,17 @@ class CustomIncrementStorage extends AbstractIncrementStorage
 
 ## New Profiling pattern
 Due to a new and better profiling pattern we removed the following services:
-* `\Shopware\Core\Profiling\Checkout\SalesChannelContextServiceProfiler`
-* `\Shopware\Core\Profiling\Entity\EntityAggregatorProfiler`
-* `\Shopware\Core\Profiling\Entity\EntitySearcherProfiler`
-* `\Shopware\Core\Profiling\Entity\EntityReaderProfiler`
+* `\Shopwell\Core\Profiling\Checkout\SalesChannelContextServiceProfiler`
+* `\Shopwell\Core\Profiling\Entity\EntityAggregatorProfiler`
+* `\Shopwell\Core\Profiling\Entity\EntitySearcherProfiler`
+* `\Shopwell\Core\Profiling\Entity\EntityReaderProfiler`
 
 You can now use the `Profiler::trace()` function to add custom traces directly from your services.
 
 ## Skipping of the cart calculation if the cart is empty
 
 If the cart is empty the cart calculation will be skipped.
-This means that all `\Shopware\Core\Checkout\Cart\CartProcessorInterface` and `\Shopware\Core\Checkout\Cart\CartDataCollectorInterface` will not be executed anymore if the cart is empty.
+This means that all `\Shopwell\Core\Checkout\Cart\CartProcessorInterface` and `\Shopwell\Core\Checkout\Cart\CartDataCollectorInterface` will not be executed anymore if the cart is empty.
 
 ## ArrayEntity::getVars():
 
@@ -1774,13 +1774,13 @@ $entity = new ArrayEntity(['foo' => 'bar']);
 assert($entity->getVars(), ['foo' => 'bar']);
 ```
 
-## Deprecations in `Shopware\Core\Framework\Store\Services\StoreAppLifecycleService`
+## Deprecations in `Shopwell\Core\Framework\Store\Services\StoreAppLifecycleService`
 
 The class `StoreAppLifecycleService` has been marked as internal.
 
 We also removed the `StoreAppLifecycleService::getAppIdByName()` method.
 
-## Removal of `Shopware\Core\Framework\Store\Exception\ExtensionRequiresNewPrivilegesException`
+## Removal of `Shopwell\Core\Framework\Store\Exception\ExtensionRequiresNewPrivilegesException`
 
 We removed the `ExtensionRequiresNewPrivilegesException` exception.
 Will be replaced with the internal `ExtensionUpdateRequiresConsentAffirmationException` exception to have a more generic one.
@@ -1810,7 +1810,7 @@ The class `StringTemplateRenderer` should not be extended and will become `final
 ## Bootstrap 5 upgrade
 
 Bootstrap v5 introduces breaking changes in HTML, (S)CSS and JavaScript.
-Below you can find a migration overview of the effected areas in the Shopware platform.
+Below you can find a migration overview of the effected areas in the Shopwell platform.
 Please consider that we can't provide code migration examples for every possible scenario of a UI-Framework like Bootstrap.
 You can find a full migration guide on the official Bootstrap website: [Migrating to v5](https://getbootstrap.com/docs/5.1/migration)
 
@@ -1900,7 +1900,7 @@ Please consider that the classes documented in "HTML/Twig" must also be replaced
 
 ### JavaScript/jQuery
 
-With the update to Bootstrap v5, the jQuery dependency will be removed from the shopware platform.
+With the update to Bootstrap v5, the jQuery dependency will be removed from the shopwell platform.
 We strongly recommend migrating jQuery implementations to Vanilla JavaScript.
 
 #### Initializing Bootstrap JavaScript plugins
@@ -1946,15 +1946,15 @@ collapse.addEventListener('hide.bs.collapse', this._myMethod.bind(this));
 #### Still need jQuery?
 
 In case you still need jQuery, you can add it to your own app or theme.
-This is the recommended method for all apps/themes which don't have control over the Shopware environment in which they're running in.
+This is the recommended method for all apps/themes which don't have control over the Shopwell environment in which they're running in.
 
 * Extend the file `platform/src/Storefront/Resources/views/storefront/layout/meta.html.twig`.
 * Use the block `layout_head_javascript_jquery` to add a `<script>` tag containing jQuery. **Only use this block to add jQuery**.
-* This block is not deprecated and can be used in the long term beyond the next major version of shopware.
+* This block is not deprecated and can be used in the long term beyond the next major version of shopwell.
 * Don't** use the `{{ parent() }}` call. This prevents multiple usages of jQuery. Even if multiple other plugins/apps use this method, the jQuery script will only be added once.
 * Please use jQuery version `3.5.1` (slim minified) to avoid compatibility issues between different plugins/apps.
 * If you don't want to use a CDN for jQuery, [download jQuery from the official website](https://releases.jquery.com/jquery/) (jQuery Core 3.5.1 - slim minified) and add it to `MyExtension/src/Resources/public/assets/jquery-3.5.1.slim.min.js`
-* After executing `bin/console asset:install`, you can reference the file using the `assset()` function. See also: https://developer.shopware.com/docs/guides/plugins/plugins/storefront/add-custom-assets
+* After executing `bin/console asset:install`, you can reference the file using the `assset()` function. See also: https://developer.shopwell.com/docs/guides/plugins/plugins/storefront/add-custom-assets
 
 ```html
 {% sw_extends '@Storefront/storefront/layout/meta.html.twig' %}
@@ -1979,13 +1979,13 @@ The block `base_script_jquery` will be moved to `layout/meta.html.twig` with the
 ## Storefront bundled JavaScript
 
 With the major version 6.5, we've updated to webpack v5 and Bootstrap to v5. Because of these changes to the JavaScript bundling and vendor libraries,
-previously bundled JavaScript which was created with Shopware 6.4.x is not compatible with Shopware 6.5.
+previously bundled JavaScript which was created with Shopwell 6.4.x is not compatible with Shopwell 6.5.
 
 Please re-build your bundled JavaScript inside `<YourPlugin>/src/Resources/app/storefront/dist/storefront/js/<your-plugin>.js` using `bin/build-storefront.sh`
 
 ## CSRF Removal in Favor of SameSite
 
-We removed the CSRF protection in favor of SameSite strategy which is already implemented in shopware6.
+We removed the CSRF protection in favor of SameSite strategy which is already implemented in shopwell6.
 
 If you changed or added forms with csrf protection, you have to remove all calls to the twig function `sw_csrf` and every input (hidden) field which holds the csrf token.
 You can no longer use the JavaScript properties `window.csrf` or `window.storeApiProxyToken`.
@@ -2007,7 +2007,7 @@ To access the cart via storefront javascript, you can use the `/checkout/cart.js
 
 ## Storefront theme asset refactoring
 
-In previous Shopware versions the theme assets has been copied to both folders `bundles/[theme-name]/file.png` and `theme/[id]/file.png`.
+In previous Shopwell versions the theme assets has been copied to both folders `bundles/[theme-name]/file.png` and `theme/[id]/file.png`.
 This was needed to be able to link the asset in the Storefront as the theme asset doesn't include the theme path prefix.
 
 To improve the performance of `theme:compile` and to reduce the confusion of the usage of assets we copy the files only to `theme/[id]`.
@@ -2016,7 +2016,7 @@ To use the updated asset package,
 replace your current `{{ asset('logo.png', '@ThemeName') }}` with `{{ asset('logo.png', 'theme') }}`
 
 ## Moved and changed the `ThemeCompilerEnrichScssVariablesEvent`
-We moved the event `ThemeCompilerEnrichScssVariablesEvent` from `\Shopware\Storefront\Event\ThemeCompilerEnrichScssVariablesEvent` to `\Shopware\Storefront\Theme\Event\ThemeCompilerEnrichScssVariablesEvent`.
+We moved the event `ThemeCompilerEnrichScssVariablesEvent` from `\Shopwell\Storefront\Event\ThemeCompilerEnrichScssVariablesEvent` to `\Shopwell\Storefront\Theme\Event\ThemeCompilerEnrichScssVariablesEvent`.
 Please use the new event now.
 
 ## Change the script tag location in the default Storefront theme
@@ -2152,10 +2152,10 @@ To allow atomic theme compilations, a seeding mechanism for `AbstractThemePathBu
 Whenever a theme is compiled, a new seed is generated and passed to the `generateNewPath()` method, to generate a new theme path with that seed.
 After the theme was compiled successfully the `saveSeed()` method is called to that seed, after that subsequent calls to the `assemblePath()` method, must use the newly saved seed for the path generation.
 
-Additionally, the default implementation for `\Shopware\Storefront\Theme\AbstractThemePathBuilder` was changed from `\Shopware\Storefront\Theme\MD5ThemePathBuilder` to `\Shopware\Storefront\Theme\SeedingThemePathBuilder`.
+Additionally, the default implementation for `\Shopwell\Storefront\Theme\AbstractThemePathBuilder` was changed from `\Shopwell\Storefront\Theme\MD5ThemePathBuilder` to `\Shopwell\Storefront\Theme\SeedingThemePathBuilder`.
 
 Obsolete compiled theme files are now deleted with a delay, whenever a new theme compilation created new files.
-The delay time can be configured in the `shopware.yaml` file with the new `storefront.theme.file_delete_delay` option, by default it is set to 900 seconds (15 min), if the old theme files should be deleted immediately you can set the value to 0.
+The delay time can be configured in the `shopwell.yaml` file with the new `storefront.theme.file_delete_delay` option, by default it is set to 900 seconds (15 min), if the old theme files should be deleted immediately you can set the value to 0.
 
 For more details refer to the corresponding [ADR](adr/2023-01-10-atomic-theme-compilation.md).
 
@@ -2247,7 +2247,7 @@ const entry = {
     privilege: `app.${app.name}`,
 };
 ```
-**Example:** `Your App - Module Label` will become `Module Label` in Shopware's Administration menu.
+**Example:** `Your App - Module Label` will become `Module Label` in Shopwell's Administration menu.
 
 **Important:** Please update your module label in your app's `manifest.xml` so it's clearly identifiable by your users.
 Keep in mind that using a generic label could lead to cases where multiple apps use the same or similar module labels.
@@ -2257,23 +2257,23 @@ Keep in mind that using a generic label could lead to cases where multiple apps 
 If your plugin provides 3rd party dependencies, override the `executeComposerCommands` method in your plugin base class
 and return true.
 Now on plugin installation and update of the plugin a `composer require` of your plugin will also be executed,
-which installs your dependencies to the root vendor directory of Shopware.
+which installs your dependencies to the root vendor directory of Shopwell.
 On plugin uninstallation a `composer remove` of your plugin will be executed,
 which will also remove all your dependencies.
 If you ship dependencies with your plugins within the plugin ZIP file, you should now consider using this config instead.
 
 ## Deprecated manifest-1.0.xsd
 
-With the upcoming major release, we're going to release a new XML-schema for Shopware Apps.
+With the upcoming major release, we're going to release a new XML-schema for Shopwell Apps.
 In the new schema we remove two deprecations from the existing schema.
 
 1. attribute `parent` for element `module` will be required.
 
    Please make sure that every of your admin modules has this attribute set
-   like described in [our documentation](https://developer.shopware.com/docs/guides/plugins/apps/administration/add-custom-modules)
+   like described in [our documentation](https://developer.shopwell.com/docs/guides/plugins/apps/administration/add-custom-modules)
 2. attribute `openNewTab` for element `action-button` will be removed.
 
-   Make sure to remove the attribute `openNewTab` from your `action-button` elements in your `manifest.xml` and use ActionButtonResponses as described in our [documentation](https://developer.shopware.com/docs/guides/plugins/apps/administration/add-custom-action-button) instead.
+   Make sure to remove the attribute `openNewTab` from your `action-button` elements in your `manifest.xml` and use ActionButtonResponses as described in our [documentation](https://developer.shopwell.com/docs/guides/plugins/apps/administration/add-custom-action-button) instead.
 3. Deprecation of `manifest-1.0.xsd`
 
-   Update the `xsi:noNamespaceSchemaLocation` attribute of your `manifest` root element to `https://raw.githubusercontent.com/shopware/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-2.0.xsd`
+   Update the `xsi:noNamespaceSchemaLocation` attribute of your `manifest` root element to `https://raw.githubusercontent.com/shopwell/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-2.0.xsd`

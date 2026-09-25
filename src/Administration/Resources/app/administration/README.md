@@ -37,7 +37,7 @@ Performance tests use Lighthouse CI to measure real-world runtime performance of
 
 1. Ensure Shopwell is installed and running locally (e.g., via `symfony server:start`)
 2. The admin panel should be accessible at `http://localhost:8000/admin`
-3. Default admin credentials should work (admin/shopware)
+3. Default admin credentials should work (admin/shopwell)
 
 ### Running Performance Tests
 

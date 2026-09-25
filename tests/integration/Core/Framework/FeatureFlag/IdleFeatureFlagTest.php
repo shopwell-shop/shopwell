@@ -54,7 +54,7 @@ class IdleFeatureFlagTest extends TestCase
         $_ENV['FEATURE_ALL'] = 'false';
 
         Feature::resetRegisteredFeatures();
-        Feature::registerFeatures(self::getContainer()->getParameter('shopware.feature.flags'));
+        Feature::registerFeatures(self::getContainer()->getParameter('shopwell.feature.flags'));
     }
 
     public function testNoIdleFeatureFlagsArePresent(): void

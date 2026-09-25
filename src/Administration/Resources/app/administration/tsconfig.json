@@ -17,12 +17,12 @@
     // vue/src from node_modules and baseUrl, not through the preset mappings.
     "paths": {
       "src": ["src"],
-      "@shopware-ag/dive/quickview": ["./node_modules/@shopware-ag/dive/build/plugins/quickview/index.d.ts"],
-      "@shopware-ag/dive/toolbox": ["./node_modules/@shopware-ag/dive/build/plugins/toolbox/index.d.ts"],
-      "@shopware-ag/dive/orbitcontroller": ["./node_modules/@shopware-ag/dive/build/plugins/orbitcontroller/index.d.ts"],
-      "@shopware-ag/dive/assetexporter": ["./node_modules/@shopware-ag/dive/build/plugins/assetexporter/index.d.ts"],
-      "@tiptap/vue-3": ["./node_modules/@tiptap/vue-3/dist/index.d.ts", "./node_modules/@shopware-ag/meteor-component-library/node_modules/@tiptap/vue-3/dist/index.d.ts"],
-      "@tiptap/extension-link": ["./node_modules/@tiptap/extension-link/dist/index.d.ts", "./node_modules/@shopware-ag/meteor-component-library/node_modules/@tiptap/extension-link/dist/index.d.ts"],
+      "@shopwell-ag/dive/quickview": ["./node_modules/@shopwell-ag/dive/build/plugins/quickview/index.d.ts"],
+      "@shopwell-ag/dive/toolbox": ["./node_modules/@shopwell-ag/dive/build/plugins/toolbox/index.d.ts"],
+      "@shopwell-ag/dive/orbitcontroller": ["./node_modules/@shopwell-ag/dive/build/plugins/orbitcontroller/index.d.ts"],
+      "@shopwell-ag/dive/assetexporter": ["./node_modules/@shopwell-ag/dive/build/plugins/assetexporter/index.d.ts"],
+      "@tiptap/vue-3": ["./node_modules/@tiptap/vue-3/dist/index.d.ts", "./node_modules/@shopwell-ag/meteor-component-library/node_modules/@tiptap/vue-3/dist/index.d.ts"],
+      "@tiptap/extension-link": ["./node_modules/@tiptap/extension-link/dist/index.d.ts", "./node_modules/@shopwell-ag/meteor-component-library/node_modules/@tiptap/extension-link/dist/index.d.ts"],
     },
     // The base empties "types" so extension programs stay runner-free; the
     // admin program does include its specs and needs the jest globals.
@@ -54,6 +54,6 @@
   "exclude": ["node_modules", "build/vite-plugins/**/fixtures/**", "scripts/codemods/**/__fixtures__/**"],
   "files": [
     "node_modules/jest-expect-message/types/index.d.ts",
-    "build/vue-setup-transform/shopware-setup-macros.d.ts"
+    "build/vue-setup-transform/shopwell-setup-macros.d.ts"
   ]
 }

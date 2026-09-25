@@ -53,7 +53,7 @@ class NoRouteOverrideInDecoratorsRule implements Rule
                     $reflection->getName(),
                 )
             )
-            ->identifier('shopware.routeDecorator')
+            ->identifier('shopwell.routeDecorator')
             ->build(),
         ];
     }

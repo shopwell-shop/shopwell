@@ -12,7 +12,7 @@ use Shopwell\Core\Framework\Log\Package;
  * This class is created to have a quick working solution for BC breaks in DAL QueryBuilder API.
  * It's usage is strongly discouraged, as it may break with future DBAL changes.
  *
- * It should be removed as soon as no tests are using it anymore (see https://github.com/shopware/shopware/issues/7760).
+ * It should be removed as soon as no tests are using it anymore (see https://github.com/shopwell-shop/shopwell/issues/7760).
  *
  * @internal
  */

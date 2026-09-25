@@ -26,7 +26,7 @@ class FeatureFlagsCompilerPassTest extends TestCase
     public function testItRemovesServiceIfInactive(): void
     {
         $definition = new Definition();
-        $definition->addTag('shopware.feature', [
+        $definition->addTag('shopwell.feature', [
             'flag' => 'FEATURE_NEXT_123',
         ]);
 
@@ -35,7 +35,7 @@ class FeatureFlagsCompilerPassTest extends TestCase
             'feature_service' => $definition,
         ]);
 
-        $container->setParameter('shopware.feature.flags', [
+        $container->setParameter('shopwell.feature.flags', [
             'FEATURE_NEXT_123' => [
                 'name' => 'FEATURE_NEXT_123',
                 'active' => false,
@@ -52,7 +52,7 @@ class FeatureFlagsCompilerPassTest extends TestCase
     public function testItKeepServiceIfActive(): void
     {
         $definition = new Definition();
-        $definition->addTag('shopware.feature', [
+        $definition->addTag('shopwell.feature', [
             'flag' => 'FEATURE_NEXT_123',
         ]);
 
@@ -61,7 +61,7 @@ class FeatureFlagsCompilerPassTest extends TestCase
             'feature_service' => $definition,
         ]);
 
-        $container->setParameter('shopware.feature.flags', [
+        $container->setParameter('shopwell.feature.flags', [
             'FEATURE_NEXT_123' => [
                 'name' => 'FEATURE_NEXT_123',
                 'active' => true,
@@ -78,17 +78,17 @@ class FeatureFlagsCompilerPassTest extends TestCase
     public function testItRemovesInactiveFeatureFlaggedServiceFromTaggedServices(): void
     {
         $definition = new Definition();
-        $definition->addTag('shopware.feature', [
+        $definition->addTag('shopwell.feature', [
             'flag' => 'FEATURE_NEXT_123',
         ]);
-        $definition->addTag('shopware.app_lifecycle.persister');
+        $definition->addTag('shopwell.app_lifecycle.persister');
 
         $container = new ContainerBuilder();
         $container->setDefinitions([
             'feature_service' => $definition,
         ]);
 
-        $container->setParameter('shopware.feature.flags', [
+        $container->setParameter('shopwell.feature.flags', [
             'FEATURE_NEXT_123' => [
                 'name' => 'FEATURE_NEXT_123',
                 'active' => false,
@@ -99,23 +99,23 @@ class FeatureFlagsCompilerPassTest extends TestCase
         ]);
         $this->compilerPass->process($container);
 
-        static::assertSame([], $container->findTaggedServiceIds('shopware.app_lifecycle.persister'));
+        static::assertSame([], $container->findTaggedServiceIds('shopwell.app_lifecycle.persister'));
     }
 
     public function testItKeepsActiveFeatureFlaggedServiceInTaggedServices(): void
     {
         $definition = new Definition();
-        $definition->addTag('shopware.feature', [
+        $definition->addTag('shopwell.feature', [
             'flag' => 'FEATURE_NEXT_123',
         ]);
-        $definition->addTag('shopware.app_lifecycle.persister');
+        $definition->addTag('shopwell.app_lifecycle.persister');
 
         $container = new ContainerBuilder();
         $container->setDefinitions([
             'feature_service' => $definition,
         ]);
 
-        $container->setParameter('shopware.feature.flags', [
+        $container->setParameter('shopwell.feature.flags', [
             'FEATURE_NEXT_123' => [
                 'name' => 'FEATURE_NEXT_123',
                 'active' => true,
@@ -126,6 +126,6 @@ class FeatureFlagsCompilerPassTest extends TestCase
         ]);
         $this->compilerPass->process($container);
 
-        static::assertArrayHasKey('feature_service', $container->findTaggedServiceIds('shopware.app_lifecycle.persister'));
+        static::assertArrayHasKey('feature_service', $container->findTaggedServiceIds('shopwell.app_lifecycle.persister'));
     }
 }

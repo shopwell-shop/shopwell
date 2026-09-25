@@ -85,7 +85,7 @@ class AppManager
         private readonly ScriptExecutor $scriptExecutor,
         private readonly string $projectDir,
         private readonly CustomEntityLifecycleService $customEntityLifecycleService,
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
         private readonly AppFeatureValidator $appFeatureValidator,
         private readonly SourceResolver $sourceResolver,
         private readonly ConfigReader $configReader,
@@ -371,7 +371,7 @@ class AppManager
     private function ensureIsCompatible(Manifest $manifest): void
     {
         $versionParser = new VersionParser();
-        if (!$manifest->getMetadata()->getCompatibility()->matches($versionParser->parseConstraints($this->shopwareVersion))) {
+        if (!$manifest->getMetadata()->getCompatibility()->matches($versionParser->parseConstraints($this->shopwellVersion))) {
             throw AppException::notCompatible($manifest->getMetadata()->getName());
         }
     }

@@ -12,16 +12,16 @@ ___
 # Upgrade Information
 ## "swFlow" Vuex store moved to Pinia
 
-The swFlow store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopware.Store.get('swFlow')`.
+The swFlow store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopwell.Store.get('swFlow')`.
 
 ### Before:
 ```js
-Shopware.State.get('swFlow');
+Shopwell.State.get('swFlow');
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swFlow');
+Shopwell.Store.get('swFlow');
 ``` 
 
 ## Removed `setTriggerActions` getter from `swFlow` store
@@ -30,12 +30,12 @@ The `setTriggerActions` mutation has been removed from the `swFlow` store. Inste
 
 ### Before:
 ```js
-Shopware.State.dispatch('swFlow/setTriggerActions', actions);
+Shopwell.State.dispatch('swFlow/setTriggerActions', actions);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swFlow').triggerActions = actions;
+Shopwell.Store.get('swFlow').triggerActions = actions;
 ```
 
 ## Removed `setTriggerEvent` getter from `swFlow` store
@@ -44,12 +44,12 @@ The `setTriggerEvent` mutation has been removed from the `swFlow` store. Instead
 
 ### Before:
 ```js
-Shopware.State.dispatch('swFlow/setTriggerEvent', event);
+Shopwell.State.dispatch('swFlow/setTriggerEvent', event);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swFlow').triggerEvent = event;
+Shopwell.Store.get('swFlow').triggerEvent = event;
 ```
 
 ## Removed `setTriggerEvents` getter from `swFlow` store
@@ -58,12 +58,12 @@ The `setTriggerEvents` mutation has been removed from the `swFlow` store. Instea
 
 ### Before:
 ```js
-Shopware.State.dispatch('swFlow/setTriggerEvents', events);
+Shopwell.State.dispatch('swFlow/setTriggerEvents', events);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swFlow').triggerEvents = events;
+Shopwell.Store.get('swFlow').triggerEvents = events;
 ```
 
 ## Removed `setStateMachineState` getter from `swFlow` store
@@ -72,12 +72,12 @@ The `setStateMachineState` mutation has been removed from the `swFlow` store. In
 
 ### Before:
 ```js
-Shopware.State.dispatch('swFlow/setStateMachineState', state);
+Shopwell.State.dispatch('swFlow/setStateMachineState', state);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swFlow').stateMachineState = state;
+Shopwell.Store.get('swFlow').stateMachineState = state;
 ```
 
 ## Removed `setInvalidSequences` getter from `swFlow` store
@@ -86,12 +86,12 @@ The `setInvalidSequences` mutation has been removed from the `swFlow` store. Ins
 
 ### Before:
 ```js
-Shopware.State.dispatch('swFlow/setInvalidSequences', invalidSequences);
+Shopwell.State.dispatch('swFlow/setInvalidSequences', invalidSequences);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swFlow').invalidSequences = invalidSequences;
+Shopwell.Store.get('swFlow').invalidSequences = invalidSequences;
 ```
 
 ## Removed `setDocumentTypes` getter from `swFlow` store
@@ -100,12 +100,12 @@ The `setDocumentTypes` mutation has been removed from the `swFlow` store. Instea
 
 ### Before:
 ```js
-Shopware.State.dispatch('swFlow/setDocumentTypes', documentTypes);
+Shopwell.State.dispatch('swFlow/setDocumentTypes', documentTypes);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swFlow').documentTypes = documentTypes;
+Shopwell.Store.get('swFlow').documentTypes = documentTypes;
 ```
 
 ## Removed `setCustomerGroups` getter from `swFlow` store
@@ -114,12 +114,12 @@ The `setCustomerGroups` mutation has been removed from the `swFlow` store. Inste
 
 ### Before:
 ```js
-Shopware.State.dispatch('swFlow/setCustomerGroups', customerGroups);
+Shopwell.State.dispatch('swFlow/setCustomerGroups', customerGroups);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swFlow').customerGroups = customerGroups;
+Shopwell.Store.get('swFlow').customerGroups = customerGroups;
 ```
 
 ## Removed `setMailTemplates` getter from `swFlow` store
@@ -128,12 +128,12 @@ The `setMailTemplates` mutation has been removed from the `swFlow` store. Instea
 
 ### Before:
 ```js
-Shopware.State.dispatch('swFlow/setMailTemplates', mailTemplates);
+Shopwell.State.dispatch('swFlow/setMailTemplates', mailTemplates);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swFlow').mailTemplates = mailTemplates;
+Shopwell.Store.get('swFlow').mailTemplates = mailTemplates;
 ```
 
 ## Removed `setCustomFieldSets` getter from `swFlow` store
@@ -142,12 +142,12 @@ The `setCustomFieldSets` mutation has been removed from the `swFlow` store. Inst
 
 ### Before:
 ```js
-Shopware.State.dispatch('swFlow/setCustomFieldSets', customFieldSets);
+Shopwell.State.dispatch('swFlow/setCustomFieldSets', customFieldSets);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swFlow').customFieldSets = customFieldSets;
+Shopwell.Store.get('swFlow').customFieldSets = customFieldSets;
 ```
 
 ## Removed `setCustomFields` getter from `swFlow` store
@@ -156,12 +156,12 @@ The `setCustomFields` mutation has been removed from the `swFlow` store. Instead
 
 ### Before:
 ```js
-Shopware.State.dispatch('swFlow/setCustomFields', customFields);
+Shopwell.State.dispatch('swFlow/setCustomFields', customFields);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swFlow').customFields = customFields;
+Shopwell.Store.get('swFlow').customFields = customFields;
 ```
 
 ## Removed `setRestrictedRules` getter from `swFlow` store
@@ -170,12 +170,12 @@ The `setRestrictedRules` mutation has been removed from the `swFlow` store. Inst
 
 ### Before:
 ```js
-Shopware.State.dispatch('swFlow/setRestrictedRules', restrictedRules);
+Shopwell.State.dispatch('swFlow/setRestrictedRules', restrictedRules);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swFlow').restrictedRules = restrictedRules;
+Shopwell.Store.get('swFlow').restrictedRules = restrictedRules;
 ```
 
 

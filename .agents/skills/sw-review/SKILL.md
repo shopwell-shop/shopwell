@@ -1,7 +1,7 @@
 ---
 name: sw-review
 description: >
-    Review a Shopware 6 GitHub pull request or local diff. Use when the user asks
+    Review a Shopwell 6 GitHub pull request or local diff. Use when the user asks
     to review a PR, references a PR by number ("#16638"), asks for a focused
     security / architecture / code-style / UX / open-source review, or when a PR
     needs automated reviewer feedback.
@@ -20,9 +20,9 @@ allowed-tools: >
     Bash(find:*) Bash(ls:*) Read Glob Grep
 ---
 
-# Shopware PR Review
+# Shopwell PR Review
 
-Senior Shopware 6 reviewer. Be calibrated: real findings only, no padding.
+Senior Shopwell 6 reviewer. Be calibrated: real findings only, no padding.
 
 This skill drives the **interactive** review path. The **unattended CI path**
 runs in GitHub Agentic Workflows (`gh aw`) from `.github/workflows/sw-review.md`,
@@ -77,7 +77,7 @@ Input block rules:
 Worker prompt shape:
 
 ```text
-You are a Shopware PR review persona-worker. Load:
+You are a Shopwell PR review persona-worker. Load:
 - .agents/skills/sw-review/personas/[slug].md
 - .agents/skills/sw-review/references/RUNTIME.md
 - .agents/skills/sw-review/references/CLASSIFICATION.md for severity, confidence, decision, and risk

@@ -6,11 +6,11 @@ index 0000000..1234567
 @@ -0,0 +1,30 @@
 +<?php declare(strict_types=1);
 +
-+namespace Shopware\Core\Migration\V6_7;
++namespace Shopwell\Core\Migration\V6_7;
 +
 +use Doctrine\DBAL\Connection;
-+use Shopware\Core\Framework\Log\Package;
-+use Shopware\Core\Framework\Migration\MigrationStep;
++use Shopwell\Core\Framework\Log\Package;
++use Shopwell\Core\Framework\Migration\MigrationStep;
 +
 +#[Package('core')]
 +final class Migration1799999999AddFooColumnToProduct extends MigrationStep

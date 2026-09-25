@@ -2,7 +2,7 @@
 title: Migrate swOrder store to Pinia
 issue: NEXT-40012
 author: Iván Tajes Vidal
-author_email: i.tajesvidal@shopware.com
+author_email: i.tajesvidal@shopwell.com
 author_github: @Iván Tajes Vidal
 ---
 # Administration
@@ -12,14 +12,14 @@ ___
 # Upgrade Information
 ## "swOrder" Vuex store moved to Pinia
 
-The `swOrder` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopware.Store.get('swOrder')`.
+The `swOrder` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopwell.Store.get('swOrder')`.
 
 ### Before:
 ```js
-Shopware.State.get('swOrder');
+Shopwell.State.get('swOrder');
 ```
 
 ### After:
 ```js
-Shopware.Store.get('swOrder');
+Shopwell.Store.get('swOrder');
 ```

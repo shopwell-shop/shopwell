@@ -6,7 +6,7 @@ return [
         'pretty_version' => '1.0.0',
         'version' => '1.0.0.0',
         'reference' => null,
-        'type' => 'shopware-platform-plugin',
+        'type' => 'shopwell-platform-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => [],
         'dev' => true,

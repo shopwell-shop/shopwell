@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 
-import type { uiMediaModalOpen, uiMediaModalOpenSaveMedia } from '@shopware-ag/meteor-admin-sdk/es/ui/media-modal';
+import type { uiMediaModalOpen, uiMediaModalOpenSaveMedia } from '@shopwell-ag/meteor-admin-sdk/es/ui/media-modal';
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export type MediaModalConfig = Omit<uiMediaModalOpen, 'responseType'>;

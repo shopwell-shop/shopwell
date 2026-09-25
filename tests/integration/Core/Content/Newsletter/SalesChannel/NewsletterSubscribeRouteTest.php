@@ -515,7 +515,7 @@ class NewsletterSubscribeRouteTest extends TestCase
     public static function subscribeWithDomainProvider(): \Generator
     {
         yield 'invalid with first name' => [
-            'Y http:/shopware.test',
+            'Y http:/shopwell.test',
             'Tran',
             static function (array $response): void {
                 static::assertArrayHasKey('errors', $response);
@@ -529,7 +529,7 @@ class NewsletterSubscribeRouteTest extends TestCase
 
         yield 'invalid with last name' => [
             'Y',
-            'Tran https:/shopware.test',
+            'Tran https:/shopwell.test',
             static function (array $response): void {
                 static::assertArrayHasKey('errors', $response);
                 static::assertCount(1, $response['errors']);
@@ -541,8 +541,8 @@ class NewsletterSubscribeRouteTest extends TestCase
         ];
 
         yield 'invalid with domain name *://' => [
-            'Y http://shopware.test',
-            'Tran https://shopware.test',
+            'Y http://shopwell.test',
+            'Tran https://shopwell.test',
             static function (array $response): void {
                 static::assertArrayHasKey('errors', $response);
                 static::assertCount(2, $response['errors']);
@@ -555,8 +555,8 @@ class NewsletterSubscribeRouteTest extends TestCase
         ];
 
         yield 'invalid with domain name *:/' => [
-            'Y http:/shopware.test',
-            'Tran https:/shopware.test',
+            'Y http:/shopwell.test',
+            'Tran https:/shopwell.test',
             static function (array $response): void {
                 static::assertArrayHasKey('errors', $response);
                 static::assertCount(2, $response['errors']);

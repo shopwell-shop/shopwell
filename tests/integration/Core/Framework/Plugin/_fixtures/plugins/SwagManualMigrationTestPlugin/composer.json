@@ -2,20 +2,20 @@
     "name": "swag/manual-migration-test",
     "description": "Test description",
     "version": "v1.0.1",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "license": "MIT",
     "authors": [
         {
-            "name": "shopware AG"
+            "name": "Shopwell"
         }
     ],
     "require": {
-        "shopware/core": ">=6.0"
+        "shopwell/core": ">=6.0"
     },
     "extra": {
-        "shopware-plugin-class": "SwagManualMigrationTestPlugin\\SwagManualMigrationTestPlugin",
+        "shopwell-plugin-class": "SwagManualMigrationTestPlugin\\SwagManualMigrationTestPlugin",
         "plugin-icon": "src/Resources/public/plugin.png",
-        "copyright": "(c) by shopware AG",
+        "copyright": "(c) by Shopwell",
         "label": {
             "de-DE": "Deutscher Pluginname",
             "de-CH": "Schweizerdeutsch Pluginname",

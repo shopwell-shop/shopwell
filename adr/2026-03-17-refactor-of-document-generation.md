@@ -24,12 +24,12 @@ where these additional requirements were patched in rather than being addressed 
   - Adding new document types or formats requires disproportionate effort.
   - We think we can provide a better API surface than the existing one.
 - Apps cannot currently provide custom document generators or hook into existing ones to modify their output
-  (see [shopware#9676](https://github.com/shopware/shopware/issues/9676) and
-  [shopware#10478](https://github.com/shopware/shopware/issues/10478)).
+  (see [shopwell#9676](https://github.com/shopwell-shop/shopwell/issues/9676) and
+  [shopwell#10478](https://github.com/shopwell-shop/shopwell/issues/10478)).
 - The Zugferd library we use, [horstoeko/zugferd](https://github.com/horstoeko/zugferd), has been declared legacy.
   - This means that in the future we will likely have to migrate to a successor or something else.
   - Additionally, exposing its builder pattern to third-party extensions is not the cleanest interface,
-    especially for apps. Right now it is wrapped behind a Shopware `ZugferdBuilder`,
+    especially for apps. Right now it is wrapped behind a Shopwell `ZugferdBuilder`,
     but that also does not expose all features.
 
 ### Goals for the new implementation
@@ -58,7 +58,7 @@ where these additional requirements were patched in rather than being addressed 
 We will refactor the document generation codebase to make it more maintainable and extensible.
 It will lead to better separation of concerns between document types and their formats,
 as well as a better API surface for extensions, so they do not rely on PHP class decoration,
-break easily with each Shopware major release, and block future internal improvements.
+break easily with each Shopwell major release, and block future internal improvements.
 
 The new implementation will be opt-in during 6.7 and will become the default in 6.8, replacing
 the existing (old) implementation. More details on the concrete migration strategy will be described in a separate ADR,
@@ -68,10 +68,10 @@ With the new implementation we will also generate Zugferd XML data via Twig temp
 extendability, and we remove the `horstoeko/zugferd` dependency.
 
 The architecture of the new implementation will be described in a separate ADR, which you can find here:
-[2026-03-18-new-document-generation-architecture.md](https://github.com/shopware/shopware/blob/trunk/adr/2026-03-18-new-document-generation-architecture.md)
+[2026-03-18-new-document-generation-architecture.md](https://github.com/shopwell-shop/shopwell/blob/trunk/adr/2026-03-18-new-document-generation-architecture.md)
 
 The new extension points are described here:
-[2026-03-19-new-document-generation-extension-points.md](https://github.com/shopware/shopware/blob/trunk/adr/2026-03-19-new-document-generation-extension-points.md)
+[2026-03-19-new-document-generation-extension-points.md](https://github.com/shopwell-shop/shopwell/blob/trunk/adr/2026-03-19-new-document-generation-extension-points.md)
 
 ## Consequences
 

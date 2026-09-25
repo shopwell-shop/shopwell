@@ -1,9 +1,9 @@
 import { loadDIVE } from 'src/plugin/spatial/utils/spatial-dive-load-util';
 
-jest.mock('@shopware-ag/dive', () => ({ DIVE: {} }));
-jest.mock('@shopware-ag/dive/ar', () => ({ ARSystem: {} }));
-jest.mock('@shopware-ag/dive/quickview', () => ({ QuickView: {} }));
-jest.mock('@shopware-ag/dive/animation', () => ({ AnimationSystem: {} }));
+jest.mock('@shopwell-ag/dive', () => ({ DIVE: {} }));
+jest.mock('@shopwell-ag/dive/ar', () => ({ ARSystem: {} }));
+jest.mock('@shopwell-ag/dive/quickview', () => ({ QuickView: {} }));
+jest.mock('@shopwell-ag/dive/animation', () => ({ AnimationSystem: {} }));
 
 
 /**

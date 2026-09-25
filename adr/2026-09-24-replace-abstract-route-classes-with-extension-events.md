@@ -21,7 +21,7 @@ This pattern has three drawbacks:
 * **Coarse hooks.**
   Input changes, result processing, and error handling all require wrapping the whole method and managing delegation.
 
-Shopware already provides `Extension` and `ExtensionDispatcher` for this purpose, as defined in [Transition to an Event-Based Extension System](./2024-06-18-extended-event-system.md).
+Shopwell already provides `Extension` and `ExtensionDispatcher` for this purpose, as defined in [Transition to an Event-Based Extension System](./2024-06-18-extended-event-system.md).
 They are used in areas including cart processing, document rendering, and product listing.
 
 ## Decision
@@ -30,7 +30,7 @@ Use the existing extension event system as the preferred public extension point 
 
 Each route keeps its public method and `#[Route]` attribute and passes its body, extracted into a private method, to `ExtensionDispatcher::publish()`.
 A dedicated `Extension` subclass carries the input parameters as public readonly properties and declares a stable `NAME`.
-Its constructor is `@internal` and owned by Shopware; its properties are public API.
+Its constructor is `@internal` and owned by Shopwell; its properties are public API.
 
 ### Example of a new route class
 
@@ -39,19 +39,19 @@ Its constructor is `@internal` and owned by Shopware; its properties are public 
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\System\Country\SalesChannel;
+namespace Shopwell\Core\System\Country\SalesChannel;
 
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\Extensions\ExtensionDispatcher;
-use Shopware\Core\Framework\Log\Package;
-use Shopware\Core\Framework\Routing\StoreApiRouteScope;
-use Shopware\Core\PlatformRequest;
-use Shopware\Core\System\Country\CountryCollection;
-use Shopware\Core\System\Country\CountryDefinition;
-use Shopware\Core\System\Country\Extension\ActiveCountryRouteExtension;
-use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
+use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\Country\CountryCollection;
+use Shopwell\Core\System\Country\CountryDefinition;
+use Shopwell\Core\System\Country\Extension\ActiveCountryRouteExtension;
+use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -99,13 +99,13 @@ class ActiveCountryRoute
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\System\Country\Extension;
+namespace Shopwell\Core\System\Country\Extension;
 
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\Extensions\Extension;
-use Shopware\Core\Framework\Log\Package;
-use Shopware\Core\System\Country\SalesChannel\CountryRouteResponse;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Extensions\Extension;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Country\SalesChannel\CountryRouteResponse;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 
 /**
  * @public
@@ -118,7 +118,7 @@ final class ActiveCountryRouteExtension extends Extension
     public const NAME = 'active-country-route.load';
 
     /**
-     * @internal Shopware owns the constructor; the properties are public API.
+     * @internal Shopwell owns the constructor; the properties are public API.
      */
     public function __construct(
         public readonly Criteria $criteria,
@@ -158,7 +158,7 @@ Plugins subscribe to the following hooks:
   Introducing new events does not justify a deprecation, and there is no global timeline for phasing these patterns out.
 * When adjusting a route, core decorators such as `ResolvedCriteriaProductSearchRoute` can become subscribers or be merged into the route body, subject to backward compatibility.
 * Route tests must verify that the correct extension name and object, including its input parameters, are dispatched.
-* Update the developer guides for [adding Store API routes](https://developer.shopware.com/docs/guides/plugins/plugins/framework/store-api/add-store-api-route.html) and [overriding existing routes](https://developer.shopware.com/docs/guides/plugins/plugins/framework/store-api/override-existing-route.html), which currently teach the decorator pattern.
+* Update the developer guides for [adding Store API routes](https://developer.shopwell.com/docs/guides/plugins/plugins/framework/store-api/add-store-api-route.html) and [overriding existing routes](https://developer.shopwell.com/docs/guides/plugins/plugins/framework/store-api/override-existing-route.html), which currently teach the decorator pattern.
   Document event-based extension and migration, retaining decoration guidance for routes that do not yet expose events.
 * Plugins migrating from decoration use listener priorities to control ordering.
 
@@ -175,11 +175,11 @@ Before migration, it wraps `ProductSearchRoute`:
 
 namespace Acme\FreeShipping;
 
-use Shopware\Core\Content\Product\SalesChannel\Search\AbstractProductSearchRoute;
-use Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRouteResponse;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Content\Product\SalesChannel\Search\AbstractProductSearchRoute;
+use Shopwell\Core\Content\Product\SalesChannel\Search\ProductSearchRouteResponse;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 
 final class FreeShippingSearchRoute extends AbstractProductSearchRoute
@@ -209,8 +209,8 @@ After migration, the same filter is applied by a listener on the `.pre` event:
 
 namespace Acme\FreeShipping;
 
-use Shopware\Core\Content\Product\Extension\ProductSearchRouteExtension;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Content\Product\Extension\ProductSearchRouteExtension;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 final class FreeShippingSearchSubscriber implements EventSubscriberInterface
@@ -230,7 +230,7 @@ final class FreeShippingSearchSubscriber implements EventSubscriberInterface
 ## Considered alternatives
 
 * **Keep decoration as the primary extension model.**
-  Avoids migration work but retains the drawbacks above and diverges from Shopware's event-based direction.
+  Avoids migration work but retains the drawbacks above and diverges from Shopwell's event-based direction.
 * **Recommend both models permanently.**
   Preserves choice but doubles the extension surface to understand and maintain.
   Coexistence supports compatibility; it is not the intended long-term model.

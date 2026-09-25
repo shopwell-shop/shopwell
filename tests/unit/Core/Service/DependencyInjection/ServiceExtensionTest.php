@@ -22,14 +22,14 @@ class ServiceExtensionTest extends TestCase
     {
         $container = $this->prepend($environment);
 
-        static::assertSame('%env(service-registry-url:SERVICE_REGISTRY_URL)%', $container->getParameter('shopware.service_registry.url'));
+        static::assertSame('%env(service-registry-url:SERVICE_REGISTRY_URL)%', $container->getParameter('shopwell.service_registry.url'));
     }
 
     public function testRegistryUrlIsRestrictedToShopwellDomainsInProduction(): void
     {
         $container = $this->prepend('prod');
 
-        static::assertSame(['shopware.io'], $container->getParameter('shopware.service_registry.trusted_domains'));
+        static::assertSame(['shopwell.cn'], $container->getParameter('shopwell.service_registry.trusted_domains'));
     }
 
     #[DataProvider('nonProductionEnvironmentProvider')]
@@ -37,7 +37,7 @@ class ServiceExtensionTest extends TestCase
     {
         $container = $this->prepend($environment);
 
-        static::assertSame([], $container->getParameter('shopware.service_registry.trusted_domains'));
+        static::assertSame([], $container->getParameter('shopwell.service_registry.trusted_domains'));
     }
 
     public function testRegistryHttpClientUsesTheResolvedRegistryUrl(): void
@@ -48,7 +48,7 @@ class ServiceExtensionTest extends TestCase
             'http_client' => [
                 'scoped_clients' => [
                     'service_registry.http_client' => [
-                        'base_uri' => '%shopware.service_registry.url%',
+                        'base_uri' => '%shopwell.service_registry.url%',
                         'max_duration' => 5,
                     ],
                 ],

@@ -45,7 +45,7 @@ class CartMigrateCommand extends Command
      */
     public function __construct(
         /**
-         * @phpstan-ignore shopware.propertyNativeType (Cannot type natively, as Symfony might change the implementation in the future)
+         * @phpstan-ignore shopwell.propertyNativeType (Cannot type natively, as Symfony might change the implementation in the future)
          */
         private $redis,
         private readonly Connection $connection,
@@ -133,7 +133,7 @@ class CartMigrateCommand extends Command
                 continue;
             }
 
-            /** @phpstan-ignore shopware.unserializeUsage */
+            /** @phpstan-ignore shopwell.unserializeUsage */
             $value = \unserialize($value);
 
             $content = $this->cartCompressor->unserialize($value['content'], (int) $value['compressed']);

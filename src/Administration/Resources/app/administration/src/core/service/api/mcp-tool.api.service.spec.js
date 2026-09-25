@@ -22,7 +22,7 @@ describe('McpToolApiService', () => {
 
     it('calls the correct endpoint to fetch tools', async () => {
         const { mcpToolService, clientMock } = createMcpToolService();
-        const tools = [{ name: 'shopware-system-config-read', description: 'Read system config' }];
+        const tools = [{ name: 'shopwell-system-config-read', description: 'Read system config' }];
 
         clientMock.onGet('/_action/mcp/tools').reply(200, { data: tools });
 

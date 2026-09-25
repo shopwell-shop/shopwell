@@ -2,7 +2,7 @@
 title: Add h1 to listing layouts
 issue: NEXT-37481
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: @BrocksiNet
 ---
 # Storefront

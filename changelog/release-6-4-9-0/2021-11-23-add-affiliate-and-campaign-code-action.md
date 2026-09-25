@@ -3,8 +3,8 @@ title: Add an affiliate and campaign code action
 issue: NEXT-18082
 ---
 # Core
-* Added `Shopware/Core/Content/Flow/Dispatching/Action/AddCustomerAffiliateAndCampaignCodeAction` class to handle add affiliate and campaign code to Customer action.
-* Added `Shopware/Core/Content/Flow/Dispatching/Action/AddOrderAffiliateAndCampaignCodeAction` class to handle add affiliate and campaign code to Order action.
+* Added `Shopwell/Core/Content/Flow/Dispatching/Action/AddCustomerAffiliateAndCampaignCodeAction` class to handle add affiliate and campaign code to Customer action.
+* Added `Shopwell/Core/Content/Flow/Dispatching/Action/AddOrderAffiliateAndCampaignCodeAction` class to handle add affiliate and campaign code to Order action.
 ___
 # Administration
 * Added component `sw-flow-affiliate-and-campaign-code-modal` to show a modal that allows adding affiliate and campaign code for customer/order.

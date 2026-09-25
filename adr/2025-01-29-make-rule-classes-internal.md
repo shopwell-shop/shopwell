@@ -8,7 +8,7 @@ tags: [core, rules]
 ## Context
 The existing rule system is flexible but complex, making it difficult to evolve and maintain. Allowing unrestricted extensions of rule classes slows down improvements and increases the complexity of the system.
 
-See RFC: https://github.com/shopware/shopware/discussions/5785
+See RFC: https://github.com/shopwell-shop/shopwell/discussions/5785
 
 ## Decision
 We will mark existing rule classes as internal, limiting direct usage by third parties. Developers should create new rule classes instead of modifying existing ones. 

@@ -6,7 +6,7 @@ import {
     MtModalAction,
     MtModalTrigger,
     MtModalRoot,
-} from '@shopware-ag/meteor-component-library';
+} from '@shopwell-ag/meteor-component-library';
 import useConsentStore from 'src/core/consent/consent.store';
 import { ConsentEvent } from 'src/core/consent/events';
 import swSettingsUsageDataConsentModal from './index';

@@ -45,7 +45,7 @@
 /storefront/layout/footer/footer.html.twig
 
 # break statement in for loop is not vanilla twig
-# this should be fixed with: https://shopware.atlassian.net/browse/NEXT-39634
+# this should be fixed with: https://shopwell.atlassian.net/browse/NEXT-39634
 /storefront/section/cms-section-block-container.html.twig
 
 # -------------------------------------------

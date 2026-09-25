@@ -2,28 +2,28 @@
 title: Landing page feature
 issue: NEXT-12032
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com 
+author_email: k.luetjann@shopwell.com 
 author_github: King-of-Babylon
 ---
 # Core
 * Added definitions for landing page feature:
-    * `\Shopware\Core\Content\LandingPage\LandingPageDefinition`
-    * `\Shopware\Core\Content\LandingPage\Aggregate\LandingPageSalesChannel\LandingPageSalesChannelDefinition`
-    * `\Shopware\Core\Content\LandingPage\Aggregate\LandingPageTag\LandingPageTagDefinition`
-    * `\Shopware\Core\Content\LandingPage\Aggregate\LandingPageTranslation\LandingPageTranslationDefinition`
+    * `\Shopwell\Core\Content\LandingPage\LandingPageDefinition`
+    * `\Shopwell\Core\Content\LandingPage\Aggregate\LandingPageSalesChannel\LandingPageSalesChannelDefinition`
+    * `\Shopwell\Core\Content\LandingPage\Aggregate\LandingPageTag\LandingPageTagDefinition`
+    * `\Shopwell\Core\Content\LandingPage\Aggregate\LandingPageTranslation\LandingPageTranslationDefinition`
 * Added the landing page indexer, event and message:
-    * `\Shopware\Core\Content\LandingPage\DataAbstractionLayer\LandingPageIndexer`
-    * `\Shopware\Core\Content\LandingPage\LandingPageEvents`
-    * `\Shopware\Core\Content\LandingPage\Event\LandingPageIndexerEvent`
-    * `\Shopware\Core\Content\LandingPage\DataAbstractionLayer\LandingPageIndexingMessage`
+    * `\Shopwell\Core\Content\LandingPage\DataAbstractionLayer\LandingPageIndexer`
+    * `\Shopwell\Core\Content\LandingPage\LandingPageEvents`
+    * `\Shopwell\Core\Content\LandingPage\Event\LandingPageIndexerEvent`
+    * `\Shopwell\Core\Content\LandingPage\DataAbstractionLayer\LandingPageIndexingMessage`
 * Added landing page route for sales channel:
-    * `\Shopware\Core\Content\LandingPage\SalesChannel\AbstractLandingPageRoute`
-    * `\Shopware\Core\Content\LandingPage\Exception\LandingPageNotFoundException`
-    * `\Shopware\Core\Content\LandingPage\SalesChannel\LandingPageRoute`
-    * `\Shopware\Core\Content\LandingPage\SalesChannel\LandingPageRouteResponse`
-    * `\Shopware\Core\Content\LandingPage\SalesChannel\SalesChannelLandingPageDefinition`
+    * `\Shopwell\Core\Content\LandingPage\SalesChannel\AbstractLandingPageRoute`
+    * `\Shopwell\Core\Content\LandingPage\Exception\LandingPageNotFoundException`
+    * `\Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRoute`
+    * `\Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRouteResponse`
+    * `\Shopwell\Core\Content\LandingPage\SalesChannel\SalesChannelLandingPageDefinition`
 * Added validator for the sales channel association to landing pages:
-    * `Shopware\Core\Content\LandingPage\LandingPageValidator`
+    * `Shopwell\Core\Content\LandingPage\LandingPageValidator`
 ___
 # Administration
 * Added props `shouldShowActiveState`, `allowDuplicate` and `allowCreateWithoutPosition` to `sw-tree-item` component
@@ -57,8 +57,8 @@ ___
 ___
 # Storefront
 * Added the landing page controller with the seo url route:
-    * `\Shopware\Storefront\Controller\LandingPageController`
-    * `\Shopware\Storefront\Framework\Seo\SeoUrlRoute\LandingPageSeoUrlRoute`
-    * `\Shopware\Storefront\Page\LandingPage\LandingPage`
-    * `\Shopware\Storefront\Page\LandingPage\LandingPageLoader`
-* Added the `updateLandingPageUrls` method to `\Shopware\Storefront\Framework\Seo\SeoUrlRoute\SeoUrlUpdateListener`
+    * `\Shopwell\Storefront\Controller\LandingPageController`
+    * `\Shopwell\Storefront\Framework\Seo\SeoUrlRoute\LandingPageSeoUrlRoute`
+    * `\Shopwell\Storefront\Page\LandingPage\LandingPage`
+    * `\Shopwell\Storefront\Page\LandingPage\LandingPageLoader`
+* Added the `updateLandingPageUrls` method to `\Shopwell\Storefront\Framework\Seo\SeoUrlRoute\SeoUrlUpdateListener`

@@ -43,13 +43,13 @@ class Kernel extends HttpKernel
     /**
      * @var string Fallback version if nothing is provided via kernel constructor
      */
-    final public const SHOPWARE_FALLBACK_VERSION = '6.7.9999999-dev';
+    final public const SHOPWELL_FALLBACK_VERSION = '6.7.9999999-dev';
 
     protected static ?Connection $connection = null;
 
-    protected string $shopwareVersion;
+    protected string $shopwellVersion;
 
-    protected ?string $shopwareVersionRevision;
+    protected ?string $shopwellVersionRevision;
 
     private bool $rebooting = false;
 
@@ -73,8 +73,8 @@ class Kernel extends HttpKernel
         self::$connection = $connection;
 
         $versionArray = VersionParser::parseShopwellVersion($version);
-        $this->shopwareVersion = $versionArray['version'];
-        $this->shopwareVersionRevision = $versionArray['revision'];
+        $this->shopwellVersion = $versionArray['version'];
+        $this->shopwellVersionRevision = $versionArray['revision'];
 
         $this->cacheRootDir = EnvironmentHelper::getVariable('APP_CACHE_DIR', $this->getProjectDir()) . '/var/cache';
     }
@@ -298,9 +298,9 @@ class Kernel extends HttpKernel
             $parameters,
             [
                 'kernel.cache.hash' => $this->getCacheHash(),
-                'kernel.shopware_version' => $this->shopwareVersion,
-                'kernel.shopware_version_revision' => $this->shopwareVersionRevision,
-                'kernel.shopware_core_dir' => $coreDir,
+                'kernel.shopwell_version' => $this->shopwellVersion,
+                'kernel.shopwell_version_revision' => $this->shopwellVersionRevision,
+                'kernel.shopwell_core_dir' => $coreDir,
                 'kernel.plugin_dir' => $pluginDir,
                 'kernel.app_dir' => rtrim($this->getProjectDir(), '/') . '/custom/apps',
                 'kernel.active_plugins' => $activePluginMeta,
@@ -327,7 +327,7 @@ class Kernel extends HttpKernel
 
         return Hasher::hash([
             $this->cacheId,
-            (string) $this->shopwareVersionRevision,
+            (string) $this->shopwellVersionRevision,
             $plugins,
         ]);
     }

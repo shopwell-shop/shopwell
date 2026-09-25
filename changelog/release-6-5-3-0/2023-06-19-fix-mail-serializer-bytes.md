@@ -5,5 +5,5 @@ issue: NEXT-28169
 
 # Core
 
-* Changed `\Shopware\Core\Framework\MessageQueue\SendEmailMessageJsonSerializer` to correctly handle bytes in mail content or attachments
+* Changed `\Shopwell\Core\Framework\MessageQueue\SendEmailMessageJsonSerializer` to correctly handle bytes in mail content or attachments
 

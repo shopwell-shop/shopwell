@@ -33,7 +33,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(SsoController::class)
         ->public()
         ->args([
-            service('shopware.api.authorization_server'),
+            service('shopwell.api.authorization_server'),
             service(PsrHttpFactory::class),
             service(LoginConfigService::class),
             service(LoginResponseService::class),
@@ -47,7 +47,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(LoginConfigService::class)
         ->args([
-            param('shopware.admin_login'),
+            param('shopwell.admin_login'),
             service(RouterInterface::class),
         ]);
 

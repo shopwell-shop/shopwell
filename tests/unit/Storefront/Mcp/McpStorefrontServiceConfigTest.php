@@ -14,7 +14,7 @@ use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 /**
  * Guards that Storefront MCP services are correctly registered and tagged.
  *
- * The tag must be `mcp.tool` (not `shopware.mcp.tool`). Non-Core bundle tools
+ * The tag must be `mcp.tool` (not `shopwell.mcp.tool`). Non-Core bundle tools
  * are not processed by McpToolCompilerPass, so they must use the SDK tag directly.
  * Wrong tags cause silent disappearance from the MCP tool registry.
  *
@@ -48,7 +48,7 @@ class McpStorefrontServiceConfigTest extends TestCase
     {
         static::assertTrue(
             $this->container->getDefinition(ThemeConfigTool::class)->hasTag('mcp.tool'),
-            'ThemeConfigTool must be tagged "mcp.tool" (not "shopware.mcp.tool"). Non-Core bundle tools are not processed by McpToolCompilerPass',
+            'ThemeConfigTool must be tagged "mcp.tool" (not "shopwell.mcp.tool"). Non-Core bundle tools are not processed by McpToolCompilerPass',
         );
     }
 }

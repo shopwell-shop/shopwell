@@ -8,12 +8,12 @@ use Shopwell\Core\Framework\Log\Package;
 /**
  * @internal
  *
- * This requirement gates the privilege granting step. When a shopware account is not logged in, privileges are not granted.
+ * This requirement gates the privilege granting step. When a shopwell account is not logged in, privileges are not granted.
  */
 #[Package('framework')]
 class ShopwellAccountRequirement implements ServiceRequirement
 {
-    public const NAME = 'shopware_account';
+    public const NAME = 'shopwell_account';
 
     public function __construct(
         private readonly Connection $connection,

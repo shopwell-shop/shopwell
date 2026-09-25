@@ -51,7 +51,7 @@ export default Shopwell.Component.wrapComponentConfig({
 
         appDefinition(): AppModuleDefinition | null {
             return (
-                Shopwell.Store.get('shopwareApps').apps.find((app) => {
+                Shopwell.Store.get('shopwellApps').apps.find((app) => {
                     return app.name === this.appName;
                 }) ?? null
             );
@@ -93,7 +93,7 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         appsLoaded(): boolean {
-            return Shopwell.Store.get('shopwareApps').appsLoaded;
+            return Shopwell.Store.get('shopwellApps').appsLoaded;
         },
 
         heading(): string | null {

@@ -129,7 +129,7 @@ class CacheResponseSubscriber implements EventSubscriberInterface
         }
 
         $route = $request->attributes->get('_route');
-        /** @phpstan-ignore shopware.storefrontRouteUsage (Do not use Storefront routes in the core. Will be fixed with https://github.com/shopware/shopware/issues/12968) */
+        /** @phpstan-ignore shopwell.storefrontRouteUsage (Do not use Storefront routes in the core. Will be fixed with https://github.com/shopwell-shop/shopwell/issues/12968) */
         if ($route === 'frontend.checkout.configure') {
             if (!Feature::isActive('v6.8.0.0') && !Feature::isActive('PERFORMANCE_TWEAKS') && !Feature::isActive('CACHE_REWORK')) {
                 $this->setCurrencyCookie($request, $response);

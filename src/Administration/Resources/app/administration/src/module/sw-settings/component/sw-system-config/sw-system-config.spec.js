@@ -9,7 +9,7 @@ import { mount } from '@vue/test-utils';
 import { computed, inject, ref } from 'vue';
 import ShopwellError from 'src/core/data/ShopwellError';
 import ErrorResolverSystemConfig from 'src/core/data/error-resolver.system-config.data';
-import { MtTextField, MtUrlField } from '@shopware-ag/meteor-component-library';
+import { MtTextField, MtUrlField } from '@shopwell-ag/meteor-component-library';
 import kebabCase from 'lodash-es/kebabCase';
 import uuid from 'test/_helper_/uuid';
 import 'src/app/filter/media-name.filter';
@@ -295,8 +295,8 @@ function createConfig() {
                 domValueCheck: (field, domValue) => {
                     expect(field.find('input').element.value).toBe(domValue);
                 },
-                afterValue: 'https://www.shopware.de',
-                afterValueDom: 'www.shopware.de',
+                afterValue: 'https://www.shopwell.cn',
+                afterValueDom: 'www.shopwell.cn',
                 childValue: 'https://www.child.shopwell.cn',
                 childValueDom: 'www.child.shopwell.cn',
                 changeValueFunction: async (field, afterValue) => {

@@ -4,13 +4,13 @@ issue: NEXT-10272
 ---
 # Core
 
-*  Changed the constructor of following classes to `\Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult`:
-    * `\Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRouteResponse`
-    * `\Shopware\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute`
-    * `\Shopware\Core\Content\Seo\SalesChannel\SeoUrlRouteResponse`
-    * `\Shopware\Core\System\Language\SalesChannel\LanguageRouteResponse`
-    * `\Shopware\Core\System\Salutation\SalesChannel\SalutationRouteResponse`
-    * `\Shopware\Core\System\Currency\SalesChannel\CurrencyRouteResponse`
+*  Changed the constructor of following classes to `\Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult`:
+    * `\Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRouteResponse`
+    * `\Shopwell\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute`
+    * `\Shopwell\Core\Content\Seo\SalesChannel\SeoUrlRouteResponse`
+    * `\Shopwell\Core\System\Language\SalesChannel\LanguageRouteResponse`
+    * `\Shopwell\Core\System\Salutation\SalesChannel\SalutationRouteResponse`
+    * `\Shopwell\Core\System\Currency\SalesChannel\CurrencyRouteResponse`
 ___
 # API
 

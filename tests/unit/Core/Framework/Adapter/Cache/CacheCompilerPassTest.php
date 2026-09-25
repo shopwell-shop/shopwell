@@ -23,47 +23,47 @@ class CacheCompilerPassTest extends TestCase
     {
         $this->container = new ContainerBuilder();
         $this->container->addDefinitions([
-            'shopware.cache.invalidator.storage.redis_adapter' => new Definition(),
-            'shopware.cache.invalidator.storage.redis' => new Definition(),
-            'shopware.cache.invalidator.storage.mysql' => new Definition(),
+            'shopwell.cache.invalidator.storage.redis_adapter' => new Definition(),
+            'shopwell.cache.invalidator.storage.redis' => new Definition(),
+            'shopwell.cache.invalidator.storage.mysql' => new Definition(),
         ]);
-        $this->container->setParameter('shopware.number_range.config.connection', null);
+        $this->container->setParameter('shopwell.number_range.config.connection', null);
     }
 
     public function testProcessMySQL(): void
     {
         $container = $this->container;
-        $container->setParameter('shopware.cache.invalidation.delay_options.storage', 'mysql');
+        $container->setParameter('shopwell.cache.invalidation.delay_options.storage', 'mysql');
 
         $compilerPass = new CacheCompilerPass();
         $compilerPass->process($container);
 
-        static::assertFalse($container->hasDefinition('shopware.cache.invalidator.storage.redis'));
-        static::assertFalse($container->hasDefinition('shopware.cache.invalidator.storage.redis_adapter'));
-        static::assertTrue($container->hasDefinition('shopware.cache.invalidator.storage.mysql'));
+        static::assertFalse($container->hasDefinition('shopwell.cache.invalidator.storage.redis'));
+        static::assertFalse($container->hasDefinition('shopwell.cache.invalidator.storage.redis_adapter'));
+        static::assertTrue($container->hasDefinition('shopwell.cache.invalidator.storage.mysql'));
     }
 
     public function testProcessRedis(): void
     {
         $container = $this->container;
-        $container->setParameter('shopware.cache.invalidation.delay_options.storage', 'redis');
-        $container->setParameter('shopware.cache.invalidation.delay_options.connection', 'connection_name');
+        $container->setParameter('shopwell.cache.invalidation.delay_options.storage', 'redis');
+        $container->setParameter('shopwell.cache.invalidation.delay_options.connection', 'connection_name');
 
         $compilerPass = new CacheCompilerPass();
         $compilerPass->process($container);
 
-        static::assertTrue($container->hasDefinition('shopware.cache.invalidator.storage.redis'));
-        static::assertTrue($container->hasDefinition('shopware.cache.invalidator.storage.redis_adapter'));
-        static::assertFalse($container->hasDefinition('shopware.cache.invalidator.storage.mysql'));
+        static::assertTrue($container->hasDefinition('shopwell.cache.invalidator.storage.redis'));
+        static::assertTrue($container->hasDefinition('shopwell.cache.invalidator.storage.redis_adapter'));
+        static::assertFalse($container->hasDefinition('shopwell.cache.invalidator.storage.mysql'));
     }
 
     public function testProcessRedisNoConnectionConfigured(): void
     {
         $container = $this->container;
-        $container->setParameter('shopware.cache.invalidation.delay_options.storage', 'redis');
-        $container->setParameter('shopware.cache.invalidation.delay_options.connection', null); // default value
+        $container->setParameter('shopwell.cache.invalidation.delay_options.storage', 'redis');
+        $container->setParameter('shopwell.cache.invalidation.delay_options.connection', null); // default value
 
-        self::expectExceptionObject(AdapterException::missingRequiredParameter('shopware.cache.invalidation.delay_options.connection'));
+        self::expectExceptionObject(AdapterException::missingRequiredParameter('shopwell.cache.invalidation.delay_options.connection'));
         $compilerPass = new CacheCompilerPass();
         $compilerPass->process($container);
     }

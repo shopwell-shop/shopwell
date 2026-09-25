@@ -6,5 +6,5 @@ author_email: andreas.allacher@massiveart.com
 author_github: @AndreasA
 ---
 # Core
-* Added `Shopware\Core\System\SystemConfig\Event\BeforeSystemConfigChangedEvent` and dispatch it before a system config value is stored.
-* Added `\Shopware\Core\System\SystemConfig\Event\SystemConfigDomainLoadedEvent` and dispatch it after the domain configuration is loaded.
+* Added `Shopwell\Core\System\SystemConfig\Event\BeforeSystemConfigChangedEvent` and dispatch it before a system config value is stored.
+* Added `\Shopwell\Core\System\SystemConfig\Event\SystemConfigDomainLoadedEvent` and dispatch it after the domain configuration is loaded.

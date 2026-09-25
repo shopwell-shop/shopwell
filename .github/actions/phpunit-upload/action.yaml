@@ -1,6 +1,6 @@
 name: "PHPUnit upload"
 description: "Upload PHPUnit artifacts to Codecov: cobertura coverage and junit test results. Requires ./.github/actions/phpunit-run to have run first. Call with `if: !cancelled()` so test results upload even when tests fail."
-author: "shopware AG"
+author: "Shopwell"
 
 inputs:
   coverage:

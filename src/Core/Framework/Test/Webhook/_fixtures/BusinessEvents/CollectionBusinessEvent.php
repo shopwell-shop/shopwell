@@ -24,7 +24,7 @@ class CollectionBusinessEvent implements FlowEventAware, BusinessEventEncoderTes
             ->add('taxes', new EntityCollectionType(TaxDefinition::class));
     }
 
-    public function getEncodeValues(string $shopwareVersion): array
+    public function getEncodeValues(string $shopwellVersion): array
     {
         $taxes = [];
 

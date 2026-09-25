@@ -42,15 +42,15 @@ class StoreController extends AbstractController
     #[Route(path: '/api/_action/store/login', name: 'api.custom.store.login', methods: ['POST'])]
     public function login(Request $request, Context $context): JsonResponse
     {
-        $shopwareId = $request->request->get('shopwareId');
+        $shopwellId = $request->request->get('shopwellId');
         $password = $request->request->get('password');
 
-        if (!\is_string($shopwareId) || !\is_string($password)) {
+        if (!\is_string($shopwellId) || !\is_string($password)) {
             throw StoreException::invalidCredentials();
         }
 
         try {
-            $this->storeClient->loginWithShopwellId($shopwareId, $password, $context);
+            $this->storeClient->loginWithShopwellId($shopwellId, $password, $context);
         } catch (ClientException $exception) {
             throw StoreException::storeError($exception);
         }

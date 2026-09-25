@@ -21,7 +21,7 @@ import '../src/html-shim';
 // The native-setup compile-time macros (`swDefinePublic`, `swDefineOverride`,
 // `useSw*`). The Shopwell setup transform strips them, but extension code
 // references them in `<script setup>`, so they must be in the type surface.
-import '../build/vue-setup-transform/shopware-setup-macros';
+import '../build/vue-setup-transform/shopwell-setup-macros';
 
 // Global `ServiceContainer` augmentations that live outside the module graph
 // reachable from `global.types.ts`. The Administration's own program compiles

@@ -20,7 +20,7 @@ class ExpectationSubscriberTest extends TestCase
 
     public function testPublicApiRouteRejectsTheHeaderWithoutDisclosingVersions(): void
     {
-        $content = $this->requestHealthCheck('shopware/core:~0.1,symfony/http-kernel:~0.1', Response::HTTP_EXPECTATION_FAILED);
+        $content = $this->requestHealthCheck('shopwell/core:~0.1,symfony/http-kernel:~0.1', Response::HTTP_EXPECTATION_FAILED);
 
         static::assertStringContainsString(ApiException::API_EXPECTATION_NOT_SUPPORTED, $content);
         static::assertStringNotContainsString('Installed is', $content);
@@ -28,7 +28,7 @@ class ExpectationSubscriberTest extends TestCase
 
     public function testPublicApiRouteRejectionDoesNotRevealWhetherAPackageIsInstalled(): void
     {
-        $installed = $this->requestHealthCheck('shopware/core:~0.1', Response::HTTP_EXPECTATION_FAILED);
+        $installed = $this->requestHealthCheck('shopwell/core:~0.1', Response::HTTP_EXPECTATION_FAILED);
         $notInstalled = $this->requestHealthCheck('swag/not-installed:*', Response::HTTP_EXPECTATION_FAILED);
 
         static::assertStringNotContainsString('is not available', $notInstalled);
@@ -53,7 +53,7 @@ class ExpectationSubscriberTest extends TestCase
         $browser->request(
             Request::METHOD_GET,
             '/api/tax',
-            server: ['HTTP_SW_EXPECT_PACKAGES' => 'shopware/core:~0.1']
+            server: ['HTTP_SW_EXPECT_PACKAGES' => 'shopwell/core:~0.1']
         );
 
         $response = $browser->getResponse();

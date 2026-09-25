@@ -24,7 +24,7 @@ class MediaLoadedSubscriber
             $mediaTypeRaw = $media->has('mediaTypeRaw') ? $media->get('mediaTypeRaw') : null;
 
             if ($mediaTypeRaw) {
-                /** @phpstan-ignore shopware.unserializeUsage */
+                /** @phpstan-ignore shopwell.unserializeUsage */
                 $media->assign(['mediaType' => \unserialize($mediaTypeRaw)]);
             }
 
@@ -35,7 +35,7 @@ class MediaLoadedSubscriber
             $thumbnailsRo = $media->has('thumbnailsRo') ? $media->get('thumbnailsRo') : null;
 
             $thumbnails = match (true) {
-                /** @phpstan-ignore shopware.unserializeUsage */
+                /** @phpstan-ignore shopwell.unserializeUsage */
                 $thumbnailsRo !== null => \unserialize($thumbnailsRo),
                 default => new MediaThumbnailCollection(),
             };

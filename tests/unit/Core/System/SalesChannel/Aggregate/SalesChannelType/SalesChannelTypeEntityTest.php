@@ -24,7 +24,7 @@ class SalesChannelTypeEntityTest extends TestCase
         $translations = new SalesChannelTypeTranslationCollection();
 
         $type->setName('Storefront');
-        $type->setManufacturer('shopware AG');
+        $type->setManufacturer('Shopwell');
         $type->setDescription('Sales channel with HTML storefront');
         $type->setDescriptionLong('Sales channel with HTML storefront.');
         $type->setCoverUrl('https://example.com/cover.png');
@@ -34,7 +34,7 @@ class SalesChannelTypeEntityTest extends TestCase
         $type->setTranslations($translations);
 
         static::assertSame('Storefront', $type->getName());
-        static::assertSame('shopware AG', $type->getManufacturer());
+        static::assertSame('Shopwell', $type->getManufacturer());
         static::assertSame('Sales channel with HTML storefront', $type->getDescription());
         static::assertSame('Sales channel with HTML storefront.', $type->getDescriptionLong());
         static::assertSame('https://example.com/cover.png', $type->getCoverUrl());

@@ -94,7 +94,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(SystemUpdatePrepareCommand::class)
         ->args([
             service('service_container'),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
         ])
         ->tag('console.command');
 
@@ -102,7 +102,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('event_dispatcher'),
             service(SystemConfigService::class),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
         ])
         ->tag('console.command');
 
@@ -127,13 +127,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(AppUrlVerifier::class)
         ->args([
-            service('shopware.maintenance.client'),
+            service('shopwell.maintenance.client'),
             service(Connection::class),
             param('kernel.environment'),
             env('APP_URL_CHECK_DISABLED')->bool(),
         ]);
 
-    $services->set('shopware.maintenance.client', Client::class);
+    $services->set('shopwell.maintenance.client', Client::class);
 
     $services->set(ShopConfigurator::class)
         ->args([
@@ -213,10 +213,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('event_dispatcher'),
             service(SystemConfigService::class),
-            param('shopware.staging.mailing.disable_delivery'),
-            param('shopware.staging.sales_channel.domain_rewrite'),
-            param('shopware.staging.extensions.disable'),
-            param('shopware.staging.system_config'),
+            param('shopwell.staging.mailing.disable_delivery'),
+            param('shopwell.staging.sales_channel.domain_rewrite'),
+            param('shopwell.staging.extensions.disable'),
+            param('shopwell.staging.system_config'),
         ])
         ->tag('console.command');
 

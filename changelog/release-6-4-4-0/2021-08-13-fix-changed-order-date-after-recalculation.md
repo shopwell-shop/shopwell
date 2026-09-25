@@ -4,7 +4,7 @@ issue: NEXT-16475
 author: Max Stegmeyer
 ---
 # Core
-* Changed `Shopware\Core\Checkout\Cart\Order\RecalculationService` to not update the order date when recalculating
-* Added option `shouldIncludeOrderDate` to `Shopware\Core\Checkout\Cart\Order\OrderConversionContext`
-* Added parameter `setOrderDate` to `Shopware\Core\Checkout\Cart\Order\Transformer\CartTransformer`
-* Changed `Shopware\Core\Checkout\Cart\Order\OrderConverter` to respect context option for setting order date
+* Changed `Shopwell\Core\Checkout\Cart\Order\RecalculationService` to not update the order date when recalculating
+* Added option `shouldIncludeOrderDate` to `Shopwell\Core\Checkout\Cart\Order\OrderConversionContext`
+* Added parameter `setOrderDate` to `Shopwell\Core\Checkout\Cart\Order\Transformer\CartTransformer`
+* Changed `Shopwell\Core\Checkout\Cart\Order\OrderConverter` to respect context option for setting order date

@@ -72,7 +72,7 @@ class MediaSerializerTest extends TestCase
             ->method('persistFileToMedia');
 
         $result = $mediaSerializer->deserialize(new Config([], [], []), $mediaDefinition, [
-            'url' => 'http://172.16.11.80/shopware-logo.png',
+            'url' => 'http://172.16.11.80/shopwell-logo.png',
             'mediaFolderId' => Uuid::randomHex(),
         ]);
         $result = \is_array($result) ? $result : iterator_to_array($result);
@@ -107,7 +107,7 @@ class MediaSerializerTest extends TestCase
         $mediaEntity = new MediaEntity();
         $mediaEntity->assign([
             'id' => $existingMediaId,
-            'url' => 'http://shopware.test/media/generated/path/shopware-logo.png',
+            'url' => 'http://shopwell.test/media/generated/path/shopwell-logo.png',
             'metaData' => [
                 'hash' => $hash,
             ],
@@ -135,7 +135,7 @@ class MediaSerializerTest extends TestCase
 
         $result = $mediaSerializer->deserialize(new Config([], [], []), $mediaDefinition, [
             'id' => $existingMediaId,
-            'url' => 'http://shopware.test/media/exported/path/shopware-logo.png',
+            'url' => 'http://shopwell.test/media/exported/path/shopwell-logo.png',
             'mediaFolderId' => Uuid::randomHex(),
         ]);
         $result = \is_array($result) ? $result : iterator_to_array($result);

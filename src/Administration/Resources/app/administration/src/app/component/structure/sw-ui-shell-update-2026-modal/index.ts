@@ -1,8 +1,8 @@
 /**
  * @sw-package framework
  */
-import { MtBadge, MtModal, MtModalRoot } from '@shopware-ag/meteor-component-library';
-import type { Theme } from '@shopware-ag/meteor-component-library';
+import { MtBadge, MtModal, MtModalRoot } from '@shopwell-ag/meteor-component-library';
+import type { Theme } from '@shopwell-ag/meteor-component-library';
 import useTheme from 'src/app/composables/use-theme';
 import template from './sw-ui-shell-update-2026-modal.html.twig';
 import './sw-ui-shell-update-2026-modal.scss';

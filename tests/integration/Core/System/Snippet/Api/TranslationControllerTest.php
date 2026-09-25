@@ -34,7 +34,7 @@ class TranslationControllerTest extends TestCase
     #[After]
     public function cleanupTranslationFilesystem(): void
     {
-        $filesystem = static::getContainer()->get('shopware.filesystem.private');
+        $filesystem = static::getContainer()->get('shopwell.filesystem.private');
         static::assertInstanceOf(Filesystem::class, $filesystem);
 
         if ($filesystem->directoryExists(AbstractTranslationLoader::TRANSLATION_DIR)) {
@@ -143,7 +143,7 @@ class TranslationControllerTest extends TestCase
         $browser->jsonRequest('POST', '/api/_action/translation/install', ['locales' => [self::LOCALE]]);
         static::assertSame(200, $browser->getResponse()->getStatusCode());
 
-        $filesystem = static::getContainer()->get('shopware.filesystem.private');
+        $filesystem = static::getContainer()->get('shopwell.filesystem.private');
         static::assertInstanceOf(Filesystem::class, $filesystem);
         static::assertTrue($filesystem->directoryExists('translation/locale/' . self::LOCALE));
 

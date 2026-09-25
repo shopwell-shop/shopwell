@@ -6,4 +6,4 @@ author_email: mp@mopie.de
 author_github: pietzschke
 ---
 # Core
-* Added `SHOPWARE_DBAL_TOKEN_MINIMUM_LENGTH` .env variable, which allows to configure the minimum token length for search keywords.
+* Added `SHOPWELL_DBAL_TOKEN_MINIMUM_LENGTH` .env variable, which allows to configure the minimum token length for search keywords.

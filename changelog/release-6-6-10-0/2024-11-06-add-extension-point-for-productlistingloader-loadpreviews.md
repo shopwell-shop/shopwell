@@ -6,4 +6,4 @@ author_email: rune@laenen.me
 author_github: @runelaenen
 ---
 # Core
-* Added extension point in `\Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader::resolvePreviews`
+* Added extension point in `\Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingLoader::resolvePreviews`

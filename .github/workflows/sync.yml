@@ -11,7 +11,7 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-24.04
-    if: github.repository == 'shopware/shopware'
+    if: github.repository == 'shopwell/shopwell'
     permissions:
       id-token: write
     steps:
@@ -21,16 +21,16 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: shopware/octo-sts-action@main
-        id: sts-shopware-private
+      - uses: shopwell/octo-sts-action@main
+        id: sts-shopwell-private
         with:
-          scope: shopware
-          identity: ShopwarePrivateSync
+          scope: shopwell
+          identity: ShopwellPrivateSync
 
       - name: Push to private fork
         run: |
-          git config "http.https://github.com/shopware/shopware-private.git/.extraheader" "AUTHORIZATION: basic $(echo -n "x-access-token:${{ steps.sts-shopware-private.outputs.token }}" | base64 -w0)"
-          git remote add private https://github.com/shopware/shopware-private.git
+          git config "http.https://github.com/shopwell-shop/shopwell-private.git/.extraheader" "AUTHORIZATION: basic $(echo -n "x-access-token:${{ steps.sts-shopwell-private.outputs.token }}" | base64 -w0)"
+          git remote add private https://github.com/shopwell-shop/shopwell-private.git
           git fetch private
           git push -f private ${{ github.ref }}
 

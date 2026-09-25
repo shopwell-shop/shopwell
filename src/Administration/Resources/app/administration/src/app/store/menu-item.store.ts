@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 
-import type { menuItemAdd } from '@shopware-ag/meteor-admin-sdk/es/ui/menu';
+import type { menuItemAdd } from '@shopwell-ag/meteor-admin-sdk/es/ui/menu';
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export type MenuItemEntry = Omit<menuItemAdd, 'responseType' | 'locationId' | 'displaySearchBar'> & {

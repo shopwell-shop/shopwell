@@ -2,7 +2,7 @@
 title: Fix draco encoders path
 issue: NEXT-39803
 author: Simon Vorgers
-author_email: s.vorgers@shopware.com
+author_email: s.vorgers@shopwell.com
 author_github: @Simon Vorgers
 ---
 # Storefront

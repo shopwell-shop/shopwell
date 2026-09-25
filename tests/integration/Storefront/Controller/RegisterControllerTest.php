@@ -589,7 +589,7 @@ class RegisterControllerTest extends TestCase
             PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StorefrontRouteScope::ID],
             PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID => TestDefaults::SALES_CHANNEL,
         ]);
-        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopware.test');
+        $request->attributes->set(RequestTransformer::STOREFRONT_URL, 'shopwell.test');
 
         static::getContainer()->get('request_stack')->push($request);
 

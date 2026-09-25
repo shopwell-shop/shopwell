@@ -5,10 +5,10 @@
 
 :root {
     --color-background: #f9fafb;
-    --color-shopware-brand-50: #e3f3ff;
-    --color-shopware-brand-500: #189eff;
-    --color-shopware-brand-700: #118cff;
-    --color-shopware-brand-800: #0e82ff;
+    --color-shopwell-brand-50: #e3f3ff;
+    --color-shopwell-brand-500: #189eff;
+    --color-shopwell-brand-700: #118cff;
+    --color-shopwell-brand-800: #0e82ff;
     --color-gray-50: #f9fafb;
     --color-gray-100: #f0f2f5;
     --color-gray-200: #e0e6eb;
@@ -126,7 +126,7 @@ h6 {
 }
 
 a {
-    color: var(--color-shopware-brand-500);
+    color: var(--color-shopwell-brand-500);
 }
 /*endregion*/
 
@@ -192,7 +192,7 @@ input[type="number"]:focus,
 input[type="email"]:focus,
 input[type="password"]:focus,
 select:focus {
-    border-color: var(--color-shopware-brand-500);
+    border-color: var(--color-shopwell-brand-500);
     box-shadow: var(--box-shadow-field);
 }
 
@@ -329,7 +329,7 @@ details > summary::-webkit-details-marker {
 }
 
 .custom-switch input[type="checkbox"]:checked ~ label:before {
-    background-color: var(--color-shopware-brand-500);
+    background-color: var(--color-shopwell-brand-500);
 }
 
 .custom-switch input[type="checkbox"]:checked ~ label:after {
@@ -395,7 +395,7 @@ details > summary::-webkit-details-marker {
 
 .custom-checkbox input[type="checkbox"]:checked ~ label:before {
     border-color: transparent;
-    background-color: var(--color-shopware-brand-500);
+    background-color: var(--color-shopwell-brand-500);
 }
 
 .custom-checkbox input[type="checkbox"]:checked ~ label:after {
@@ -464,19 +464,19 @@ details > summary::-webkit-details-marker {
 
 .btn-primary {
     border: 1px solid transparent;
-    background-color: var(--color-shopware-brand-500);
+    background-color: var(--color-shopwell-brand-500);
     color: var(--color-white);
 }
 
 .btn-primary:hover {
     border: 1px solid transparent;
-    background-color: var(--color-shopware-brand-700);
+    background-color: var(--color-shopwell-brand-700);
     color: var(--color-white);
 }
 
 .btn-primary:active {
     border: 1px solid transparent;
-    background-color: var(--color-shopware-brand-800);
+    background-color: var(--color-shopwell-brand-800);
     color: var(--color-white);
 }
 
@@ -520,12 +520,12 @@ button:disabled,
 }
 
 .alert-info {
-    border-color: var(--color-shopware-brand-500);
-    background-color: var(--color-shopware-brand-50);
+    border-color: var(--color-shopwell-brand-500);
+    background-color: var(--color-shopwell-brand-50);
 }
 
 .alert-info [class^="icon-"] {
-    color: var(--color-shopware-brand-500);
+    color: var(--color-shopwell-brand-500);
 }
 
 .alert-warning {
@@ -936,11 +936,11 @@ table .notice-text td p {
 }
 
 .navigation--main .is--active:before {
-    background: var(--color-shopware-brand-50);
+    background: var(--color-shopwell-brand-50);
 }
 
 .navigation--main .is--active:after {
-    border-color: var(--color-shopware-brand-500);
+    border-color: var(--color-shopwell-brand-500);
 }
 
 .navigation--main .is--complete:before {
@@ -990,7 +990,7 @@ table .notice-text td p {
     line-height: 20px;
     color: var(--color-white);
     text-align: center;
-    background-color: var(--color-shopware-brand-500);
+    background-color: var(--color-shopwell-brand-500);
     transition: width .6s ease;
     border-radius: 25px;
 }
@@ -1159,7 +1159,7 @@ table .notice-text td p {
 }
 
 .help-badge {
-    color: var(--color-shopware-brand-500);
+    color: var(--color-shopwell-brand-500);
     font-size: 16px;
     display: inline-block;
     margin: 0 5px;
@@ -1206,7 +1206,7 @@ table .notice-text td p {
 }
 
 .welcome-intro-message a:hover {
-    color: var(--color-shopware-brand-500);
+    color: var(--color-shopwell-brand-500);
     text-decoration: underline;
 }
 /*endregion*/
@@ -1332,7 +1332,7 @@ table .notice-text td p {
 }
 
 .database-refresh {
-    color: var(--color-shopware-brand-500);
+    color: var(--color-shopwell-brand-500);
     text-decoration: underline;
     margin-top: 8px;
     border: none;
@@ -1443,7 +1443,7 @@ table .notice-text td p {
     gap: 16px;
 }
 .languages-actions a {
-    color: var(--color-shopware-brand-500);
+    color: var(--color-shopwell-brand-500);
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;

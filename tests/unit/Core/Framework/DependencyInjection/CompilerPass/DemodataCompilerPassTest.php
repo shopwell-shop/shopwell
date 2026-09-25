@@ -32,7 +32,7 @@ class DemodataCompilerPassTest extends TestCase
     public function test(?string $name, ?int $default, ?string $description): void
     {
         $definition = new Definition(\ArrayObject::class);
-        $definition->addTag('shopware.demodata_generator', ['option-name' => $name, 'option-default' => $default, 'option-description' => $description]);
+        $definition->addTag('shopwell.demodata_generator', ['option-name' => $name, 'option-default' => $default, 'option-description' => $description]);
 
         $this->builder->setDefinition('foo', $definition);
 

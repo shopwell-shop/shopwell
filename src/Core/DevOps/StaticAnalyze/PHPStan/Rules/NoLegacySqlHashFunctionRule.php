@@ -66,7 +66,7 @@ class NoLegacySqlHashFunctionRule implements Rule
                         'Legacy SQL hash function detected in `%s()`. Do not use MD5()/SHA1() in SQL, use SHA2() or compute hash in PHP.',
                         $methodName
                     )
-                )->identifier('shopware.noLegacySqlHash')->build(),
+                )->identifier('shopwell.noLegacySqlHash')->build(),
             ];
         }
 

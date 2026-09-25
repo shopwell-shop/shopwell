@@ -19,8 +19,8 @@ import type { SourceEdit } from '../source-edits/apply-source-edits';
 import { transformRanges } from '../source-edits/transform-ranges';
 import type { BaseSetupScriptAnalysis } from '../script-analyzer';
 import type { TemplateAnalysis } from '../template-analyzer';
-import { SHOPWARE_SETUP_INTERNAL_PREFIX } from '../script-analyzer/macros';
-import type { ShopwellSetupBlock } from '../utils/shopware-setup-block';
+import { SHOPWELL_SETUP_INTERNAL_PREFIX } from '../script-analyzer/macros';
+import type { ShopwellSetupBlock } from '../utils/shopwell-setup-block';
 import { escapeSingleQuoted, formatObjectProperties } from './shared';
 
 /**
@@ -31,7 +31,7 @@ import { escapeSingleQuoted, formatObjectProperties } from './shared';
  * is what makes an alias collision impossible.
  */
 function toAuthorAlias(localName: string): string {
-    return `${SHOPWARE_SETUP_INTERNAL_PREFIX}Author_${localName}`;
+    return `${SHOPWELL_SETUP_INTERNAL_PREFIX}Author_${localName}`;
 }
 
 /**

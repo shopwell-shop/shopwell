@@ -38,7 +38,7 @@ describe('mcp-allowlist.utils', () => {
 
     describe('humanizeLabel', () => {
         it('capitalizes each hyphen-separated word', () => {
-            expect(humanizeLabel('shopware-entity-search')).toBe('Shopwell Entity Search');
+            expect(humanizeLabel('shopwell-entity-search')).toBe('Shopwell Entity Search');
         });
 
         it('capitalizes each underscore-separated word', () => {
@@ -46,7 +46,7 @@ describe('mcp-allowlist.utils', () => {
         });
 
         it('handles a single word', () => {
-            expect(humanizeLabel('shopware')).toBe('Shopwell');
+            expect(humanizeLabel('shopwell')).toBe('Shopwell');
         });
     });
 
@@ -56,11 +56,11 @@ describe('mcp-allowlist.utils', () => {
         });
 
         it('returns full humanized name for a single entry', () => {
-            expect(humanizeCommonPrefix(['shopware-entity-search'])).toBe('Shopwell Entity Search');
+            expect(humanizeCommonPrefix(['shopwell-entity-search'])).toBe('Shopwell Entity Search');
         });
 
         it('returns longest common prefix for multiple names sharing a prefix', () => {
-            const names = ['shopware-entity-search', 'shopware-entity-read', 'shopware-entity-aggregate'];
+            const names = ['shopwell-entity-search', 'shopwell-entity-read', 'shopwell-entity-aggregate'];
 
             expect(humanizeCommonPrefix(names)).toBe('Shopwell Entity');
         });
@@ -72,7 +72,7 @@ describe('mcp-allowlist.utils', () => {
         });
 
         it('returns empty string when names share no common prefix', () => {
-            const names = ['shopware-search', 'acme-orders'];
+            const names = ['shopwell-search', 'acme-orders'];
 
             expect(humanizeCommonPrefix(names)).toBe('');
         });

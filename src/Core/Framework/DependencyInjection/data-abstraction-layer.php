@@ -157,12 +157,12 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->parameters()
         // @deprecated tag:v6.8.0 Will be removed, it's then always enabled
-        ->set('env(SHOPWARE_DBAL_TIMEZONE_SUPPORT_ENABLED)', '0')
-        ->set('shopware.dbal.time_zone_support_enabled', env('SHOPWARE_DBAL_TIMEZONE_SUPPORT_ENABLED')->bool())
+        ->set('env(SHOPWELL_DBAL_TIMEZONE_SUPPORT_ENABLED)', '0')
+        ->set('shopwell.dbal.time_zone_support_enabled', env('SHOPWELL_DBAL_TIMEZONE_SUPPORT_ENABLED')->bool())
         // @deprecated tag:v6.8.0 Will be removed
-        ->set('env(SHOPWARE_DBAL_TOKEN_MINIMUM_LENGTH)', '3')
+        ->set('env(SHOPWELL_DBAL_TOKEN_MINIMUM_LENGTH)', '3')
         // @deprecated tag:v6.8.0 Will be removed
-        ->set('shopware.dbal.token_minimum_length', env('SHOPWARE_DBAL_TOKEN_MINIMUM_LENGTH')->int());
+        ->set('shopwell.dbal.token_minimum_length', env('SHOPWELL_DBAL_TOKEN_MINIMUM_LENGTH')->int());
 
     $services = $containerConfigurator->services();
 
@@ -183,8 +183,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('kernel'),
             service(Filesystem::class),
             service(MigrationFileRenderer::class),
-            param('kernel.shopware_core_dir'),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_core_dir'),
+            param('kernel.shopwell_version'),
             service(ClockInterface::class),
         ])
         ->tag('console.command');
@@ -235,14 +235,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(Tokenizer::class)
         ->args([
-            param('shopware.dbal.token_minimum_length'),
-            param('shopware.search.preserved_chars'),
+            param('shopwell.dbal.token_minimum_length'),
+            param('shopwell.search.preserved_chars'),
         ]);
 
     $services->set(SearchTermInterpreter::class)
         ->args([
             service(Tokenizer::class),
-            param('shopware.dbal.token_minimum_length'),
+            param('shopwell.dbal.token_minimum_length'),
         ]);
 
     $services->set(EntityScoreQueryBuilder::class);
@@ -255,7 +255,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(TokenFilter::class),
             service(KeywordLoader::class),
             service(SearchConfigLoader::class),
-            param('shopware.product.search_keyword.relevant_keyword_count'),
+            param('shopwell.product.search_keyword.relevant_keyword_count'),
         ]);
 
     $services->set(KeywordLoader::class)
@@ -269,7 +269,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ApiCriteriaValidator::class),
             service(CriteriaArrayConverter::class),
             service(CompressedCriteriaDecoder::class),
-            param('shopware.api.max_limit'),
+            param('shopwell.api.max_limit'),
         ]);
 
     $services->set(SearchConfigLoader::class)
@@ -304,7 +304,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ApiCriteriaValidator::class),
             service(CriteriaArrayConverter::class),
             service(CompressedCriteriaDecoder::class),
-            param('shopware.api.store.max_limit'),
+            param('shopwell.api.store.max_limit'),
         ]);
 
     $services->set(ApiCriteriaValidator::class)
@@ -360,7 +360,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(EntityDefinitionQueryHelper::class),
             service(DefinitionInstanceRegistry::class),
             service(CriteriaQueryBuilder::class),
-            param('shopware.dbal.time_zone_support_enabled'),
+            param('shopwell.dbal.time_zone_support_enabled'),
             service(SearchTermInterpreter::class),
             service(EntityScoreQueryBuilder::class),
         ]);
@@ -415,7 +415,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(EntityWriteGatewayInterface::class, EntityWriteGateway::class)
         ->public()
         ->args([
-            param('shopware.dal.batch_size'),
+            param('shopwell.dal.batch_size'),
             service(Connection::class),
             service('event_dispatcher'),
             service(ExceptionHandlerRegistry::class),
@@ -441,56 +441,56 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(EntityDefinitionQueryHelper::class),
             service(Connection::class),
         ])
-        ->tag('shopware.field_resolver', ['priority' => -50]);
+        ->tag('shopwell.field_resolver', ['priority' => -50]);
 
     $services->set(OneToManyAssociationFieldResolver::class)
-        ->tag('shopware.field_resolver', ['priority' => -50]);
+        ->tag('shopwell.field_resolver', ['priority' => -50]);
 
     $services->set(ManyToManyAssociationFieldResolver::class)
-        ->tag('shopware.field_resolver', ['priority' => -50]);
+        ->tag('shopwell.field_resolver', ['priority' => -50]);
 
     $services->set(TranslationFieldResolver::class)
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.field_resolver', ['priority' => -50]);
+        ->tag('shopwell.field_resolver', ['priority' => -50]);
 
     $services->set(PriceFieldAccessorBuilder::class)
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.field_accessor_builder', ['priority' => -100]);
+        ->tag('shopwell.field_accessor_builder', ['priority' => -100]);
 
     $services->set(JsonFieldAccessorBuilder::class)
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.field_accessor_builder', ['priority' => -150]);
+        ->tag('shopwell.field_accessor_builder', ['priority' => -150]);
 
     $services->set(DefaultFieldAccessorBuilder::class)
-        ->tag('shopware.field_accessor_builder', ['priority' => -200]);
+        ->tag('shopwell.field_accessor_builder', ['priority' => -200]);
 
     $services->set(ConfigJsonFieldAccessorBuilder::class)
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.field_accessor_builder', ['priority' => -100]);
+        ->tag('shopwell.field_accessor_builder', ['priority' => -100]);
 
     $services->set(CustomFieldsAccessorBuilder::class)
         ->args([
             service(CustomFieldService::class),
             service(Connection::class),
         ])
-        ->tag('shopware.field_accessor_builder', ['priority' => -100]);
+        ->tag('shopwell.field_accessor_builder', ['priority' => -100]);
 
     $services->set(VersionDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(VersionCommitDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(VersionCommitDataDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(RefreshIndexCommand::class)
         ->args([
@@ -537,28 +537,28 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(CartPriceFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(CashRoundingConfigFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(TaxFreeConfigFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(PriceDefinitionFieldSerializer::class)
         ->args([
@@ -566,21 +566,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('validator'),
             service(RuleConditionRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(BoolFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(WasModifiedByUserFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(CreatedAtFieldSerializer::class)
         ->args([
@@ -588,70 +588,70 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DefinitionInstanceRegistry::class),
             service(ClockInterface::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(DateFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(DateTimeFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(EmailFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(EnumFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(FkFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(StateMachineStateFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(FloatFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(IdFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(IntFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(RemoteAddressFieldSerializer::class)
         ->args([
@@ -659,21 +659,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DefinitionInstanceRegistry::class),
             service(SystemConfigService::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(JsonFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(ConfigJsonFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(LongTextFieldSerializer::class)
         ->args([
@@ -681,45 +681,45 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DefinitionInstanceRegistry::class),
             service(HtmlSanitizer::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(ListFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(ManyToManyAssociationFieldSerializer::class)
         ->args([
             service(WriteCommandExtractor::class),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(ManyToOneAssociationFieldSerializer::class)
         ->args([
             service(WriteCommandExtractor::class),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(OneToOneAssociationFieldSerializer::class)
         ->args([
             service(WriteCommandExtractor::class),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(BlobFieldSerializer::class)
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(OneToManyAssociationFieldSerializer::class)
         ->args([
             service(WriteCommandExtractor::class),
             service(EntityWriteGatewayInterface::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(PasswordFieldSerializer::class)
         ->args([
@@ -727,27 +727,27 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DefinitionInstanceRegistry::class),
             service(SystemConfigService::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(PHPUnserializeFieldSerializer::class)
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(PriceFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(VariantListingConfigFieldSerializer::class)
         ->args([
             service(DefinitionInstanceRegistry::class),
             service('validator'),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(ReferenceVersionFieldSerializer::class)
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(StringFieldSerializer::class)
         ->args([
@@ -755,17 +755,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DefinitionInstanceRegistry::class),
             service(HtmlSanitizer::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(TranslatedFieldSerializer::class)
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(TranslationsAssociationFieldSerializer::class)
         ->args([
             service(WriteCommandExtractor::class),
             service(EntityWriteGatewayInterface::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(UpdatedAtFieldSerializer::class)
         ->args([
@@ -773,13 +773,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DefinitionInstanceRegistry::class),
             service(ClockInterface::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(VersionDataPayloadFieldSerializer::class)
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(VersionFieldSerializer::class)
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(CustomFieldsSerializer::class)
         ->args([
@@ -787,42 +787,42 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('validator'),
             service(CustomFieldService::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(CreatedByFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(UpdatedByFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(TimeZoneFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(CronIntervalFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(DateIntervalFieldSerializer::class)
         ->args([
             service('validator'),
             service(DefinitionInstanceRegistry::class),
         ])
-        ->tag('shopware.field_serializer');
+        ->tag('shopwell.field_serializer');
 
     $services->set(EntityExistsValidator::class)
         ->args([
@@ -887,16 +887,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(SyncFkResolver::class)
         ->args([
             service(DefinitionInstanceRegistry::class),
-            tagged_iterator('shopware.sync.fk_resolver'),
+            tagged_iterator('shopwell.sync.fk_resolver'),
         ]);
 
     $services->set(ExceptionHandlerRegistry::class)
         ->args([
-            tagged_iterator('shopware.dal.exception_handler'),
+            tagged_iterator('shopwell.dal.exception_handler'),
         ]);
 
     $services->set(TechnicalNameExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(EntityProtectionValidator::class)
         ->args([
@@ -907,7 +907,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(EntityIndexerRegistry::class)
         ->public()
         ->args([
-            tagged_iterator('shopware.entity_indexer'),
+            tagged_iterator('shopwell.entity_indexer'),
             service('messenger.default_bus'),
             service('event_dispatcher'),
             service(IndexerMetricsInstrumentor::class),
@@ -944,14 +944,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(CleanupVersionTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(CleanupVersionTaskHandler::class)
         ->args([
             service('scheduled_task.repository'),
             service('logger'),
             service(Connection::class),
-            param('shopware.dal.versioning.expire_days'),
+            param('shopwell.dal.versioning.expire_days'),
             service(ClockInterface::class),
             service(EventDispatcherInterface::class),
         ])
@@ -962,7 +962,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Meter::class),
         ])
         ->tag('kernel.event_subscriber')
-        ->tag('shopware.telemetry.subscriber');
+        ->tag('shopwell.telemetry.subscriber');
 
     // shared entity-name bucketing for telemetry labels (DAL search collectors + HTTP request domain)
     $services->set(EntityGroupResolver::class);
@@ -973,6 +973,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Meter::class),
             service(EntityGroupResolver::class),
             service(MetricConfigProvider::class),
-            param('shopware.telemetry.metrics.enabled'),
+            param('shopwell.telemetry.metrics.enabled'),
         ]);
 };

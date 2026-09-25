@@ -2,7 +2,7 @@
 title: Add 3D Scene editor primitives and materials to data collection
 issue: NEXT-38681
 author: Nicola Saliu
-author_email: n.saliu@shopware.com
+author_email: n.saliu@shopwell.com
 author_github: nsaliu
 ---
 # Core

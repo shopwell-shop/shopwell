@@ -1,5 +1,5 @@
 import { test } from '@fixtures/AcceptanceTest';
-import { FlowConfig } from '@shopware-ag/acceptance-test-suite';
+import { FlowConfig } from '@shopwell-ag/acceptance-test-suite';
 
 test(
     'As an admin user, I want to create a new flow',
@@ -7,7 +7,7 @@ test(
         tag: '@Flow',
         annotation: {
             type: 'issue',
-            description: 'https://github.com/shopware/shopware/issues/15749',
+            description: 'https://github.com/shopwell-shop/shopwell/issues/15749',
         },
     },
     async ({ ShopAdmin, AdminFlowBuilderListing, AdminFlowBuilderDetail, IdProvider, TestDataService, CreateFlow }) => {

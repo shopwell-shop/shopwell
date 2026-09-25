@@ -156,7 +156,7 @@ async function createWrapper(options = {}) {
 
 describe('src/module/sw-product/view/sw-product-detail-variants', () => {
     beforeAll(() => {
-        Shopwell.Service().register('shopwareDiscountCampaignService', () => {
+        Shopwell.Service().register('shopwellDiscountCampaignService', () => {
             return new ShopwellDiscountCampaignService();
         });
 

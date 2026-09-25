@@ -102,7 +102,7 @@ class AdminExtensionApiControllerTest extends TestCase
     {
         $this->expectExceptionObject(AppException::invalidArgument('test-host is not a valid url'));
 
-        $entity = $this->buildAppEntity('test-app', 'test-secrets', ['shopware']);
+        $entity = $this->buildAppEntity('test-app', 'test-secrets', ['shopwell']);
         $entityRepository = $this->assertEntityRepositoryWithEntity($entity);
 
         $this->buildController(entityRepository: $entityRepository)->runAction(
@@ -115,7 +115,7 @@ class AdminExtensionApiControllerTest extends TestCase
     {
         $this->expectExceptionObject(AppException::hostNotAllowed('https://not-allowed.example', 'test-app'));
 
-        $entity = $this->buildAppEntity('test-app', 'test-secrets', ['shopware']);
+        $entity = $this->buildAppEntity('test-app', 'test-secrets', ['shopwell']);
         $entityRepository = $this->assertEntityRepositoryWithEntity($entity);
 
         $this->buildController(entityRepository: $entityRepository)->runAction(

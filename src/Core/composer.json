@@ -1,9 +1,9 @@
 {
-    "name": "shopware/core",
+    "name": "shopwell/core",
     "type": "library",
     "description": "Shopwell platform is the core for all Shopwell ecommerce products.",
     "keywords": [
-        "shopware",
+        "shopwell",
         "shop"
     ],
     "homepage": "http://www.shopwell.cn",
@@ -21,7 +21,7 @@
         ]
     },
     "support": {
-        "issues": "https://github.com/shopware/shopware/issues",
+        "issues": "https://github.com/shopwell-shop/shopwell/issues",
         "forum": "https://forum.shopwell.cn",
         "wiki": "https://developer.shopwell.cn",
         "docs": "https://developer.shopwell.cn",
@@ -93,7 +93,7 @@
         "ramsey/uuid": "^4.7",
         "setasign/fpdi": "^2.3.7",
         "setasign/tfpdf": "^1.33",
-        "shopware/conflicts": "0.6.3",
+        "shopwell/conflicts": "0.6.3",
         "squirrelphp/twig-php-syntax": "^1.13.0",
         "symfony/asset": "~7.4.0",
         "symfony/cache": "~7.4.12",
@@ -160,7 +160,7 @@
         "zircote/swagger-php": "^6.4"
     },
     "suggest": {
-        "shopware/dev-tools": "For development tools, profiler, faker, etc",
+        "shopwell/dev-tools": "For development tools, profiler, faker, etc",
         "league/flysystem-async-aws-s3": "Required to use the Flysystem S3 driver (^3.10.3)",
         "league/flysystem-google-cloud-storage": "Required to use the Flysystem Google cloud driver (^3.10.3)"
     },

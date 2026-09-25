@@ -1,4 +1,4 @@
-import type { buttonProps } from '@shopware-ag/meteor-admin-sdk/es/ui/modal';
+import type { buttonProps } from '@shopwell-ag/meteor-admin-sdk/es/ui/modal';
 import type { ModalItemEntry } from 'src/app/store/modals.store';
 import DOMPurify from 'dompurify';
 import template from './sw-modals-renderer.html.twig';

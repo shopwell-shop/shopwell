@@ -2,7 +2,7 @@
 title: Fix download of invalid records after aborting import
 issue: NEXT-19152
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com
+author_email: k.luetjann@shopwell.com
 author_github: King-of-Babylon
 ---
 # Core

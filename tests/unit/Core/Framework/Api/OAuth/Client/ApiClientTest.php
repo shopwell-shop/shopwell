@@ -30,7 +30,7 @@ class ApiClientTest extends TestCase
     public function testRedirectUrisAndGrantTypesCanBeRestricted(): void
     {
         $client = new ApiClient(
-            'shopware-cli',
+            'shopwell-cli',
             writeAccess: true,
             name: 'Shopwell CLI',
             confidential: false,

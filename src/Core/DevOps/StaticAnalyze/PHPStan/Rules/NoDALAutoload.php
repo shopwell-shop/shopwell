@@ -119,7 +119,7 @@ class NoDALAutoload implements Rule
                     $constantValue->value,
                     $propType->getConstantStrings()[0]->getValue()
                 ))
-                    ->identifier('shopware.associationAutoload')
+                    ->identifier('shopwell.associationAutoload')
                     ->build(),
             ];
         }

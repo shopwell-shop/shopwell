@@ -6,4 +6,4 @@ author_github: mitelg
 ---
 
 # Storefront
-* Deprecated `InvalidThemeException`. Use `Shopware\Storefront\Theme\Exception\ThemeException::invalidTheme` instead.
+* Deprecated `InvalidThemeException`. Use `Shopwell\Storefront\Theme\Exception\ThemeException::invalidTheme` instead.

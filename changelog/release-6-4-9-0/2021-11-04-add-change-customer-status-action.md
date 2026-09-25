@@ -3,7 +3,7 @@ title: Add change customer status action
 issue: NEXT-18193
 ---
 # Core
-* Added `Shopware/Core/Content/Flow/Dispatching/Action/ChangeCustomerStatusAction` class to handle change customer status flow action.
+* Added `Shopwell/Core/Content/Flow/Dispatching/Action/ChangeCustomerStatusAction` class to handle change customer status flow action.
 ___
 # Administration
 * Added component `sw-flow-change-customer-status-modal` to show a modal that allows changing customer group for customer.

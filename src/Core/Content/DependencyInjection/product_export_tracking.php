@@ -18,19 +18,19 @@ return static function (ContainerConfigurator $container): void {
     $services = $container->services();
 
     $services->set(SalesChannelTrackingOrderDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'sales_channel_tracking_order']);
+        ->tag('shopwell.entity.definition', ['entity' => 'sales_channel_tracking_order']);
 
     $services->set(SalesChannelTrackingCustomerDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'sales_channel_tracking_customer']);
+        ->tag('shopwell.entity.definition', ['entity' => 'sales_channel_tracking_customer']);
 
     $services->set(OrderSalesChannelTrackingExtension::class)
-        ->tag('shopware.entity.extension');
+        ->tag('shopwell.entity.extension');
 
     $services->set(CustomerSalesChannelTrackingExtension::class)
-        ->tag('shopware.entity.extension');
+        ->tag('shopwell.entity.extension');
 
     $services->set(SalesChannelProductExportTrackingExtension::class)
-        ->tag('shopware.entity.extension');
+        ->tag('shopwell.entity.extension');
 
     $services->set(SalesChannelTrackingListener::class)
         ->args([

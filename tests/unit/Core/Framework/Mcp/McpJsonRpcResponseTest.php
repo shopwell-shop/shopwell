@@ -55,7 +55,7 @@ class McpJsonRpcResponseTest extends TestCase
             'result' => [
                 'protocolVersion' => 123,
                 'capabilities' => new \stdClass(),
-                'serverInfo' => ['name' => 'shopware', 'version' => '6.7.0'],
+                'serverInfo' => ['name' => 'shopwell', 'version' => '6.7.0'],
             ],
         ]);
 
@@ -97,7 +97,7 @@ class McpJsonRpcResponseTest extends TestCase
     public function testFromJsonParsesResourcesListResponse(): void
     {
         $response = McpJsonRpcResponse::fromJson($this->resourcesListJson([
-            ['uri' => 'shopware://entities', 'name' => 'shopware-entities'],
+            ['uri' => 'shopwell://entities', 'name' => 'shopwell-entities'],
         ]));
 
         static::assertNotNull($response);
@@ -105,7 +105,7 @@ class McpJsonRpcResponseTest extends TestCase
 
     public function testFromJsonParsesPromptsListResponse(): void
     {
-        $response = McpJsonRpcResponse::fromJson($this->promptsListJson(['shopware-context']));
+        $response = McpJsonRpcResponse::fromJson($this->promptsListJson(['shopwell-context']));
 
         static::assertNotNull($response);
     }
@@ -156,7 +156,7 @@ class McpJsonRpcResponseTest extends TestCase
 
     public function testFilterToolsIsNoOpForNonToolsResponse(): void
     {
-        $json = $this->resourcesListJson([['uri' => 'shopware://entities', 'name' => 'shopware-entities']]);
+        $json = $this->resourcesListJson([['uri' => 'shopwell://entities', 'name' => 'shopwell-entities']]);
         $response = McpJsonRpcResponse::fromJson($json);
         static::assertNotNull($response);
 
@@ -191,23 +191,23 @@ class McpJsonRpcResponseTest extends TestCase
     public function testFilterResourcesKeepsAllowedResources(): void
     {
         $response = McpJsonRpcResponse::fromJson($this->resourcesListJson([
-            ['uri' => 'shopware://entities', 'name' => 'shopware-entities'],
-            ['uri' => 'shopware://currencies', 'name' => 'shopware-currencies'],
-            ['uri' => 'shopware://state-machines', 'name' => 'shopware-state-machines'],
+            ['uri' => 'shopwell://entities', 'name' => 'shopwell-entities'],
+            ['uri' => 'shopwell://currencies', 'name' => 'shopwell-currencies'],
+            ['uri' => 'shopwell://state-machines', 'name' => 'shopwell-state-machines'],
         ]));
         static::assertNotNull($response);
 
-        $response->filterResources(['shopware://entities', 'shopware://currencies']);
+        $response->filterResources(['shopwell://entities', 'shopwell://currencies']);
 
         $data = json_decode(Json::encode($response), true, 512, \JSON_THROW_ON_ERROR);
         $uris = array_column($data['result']['resources'], 'uri');
-        static::assertSame(['shopware://entities', 'shopware://currencies'], $uris);
+        static::assertSame(['shopwell://entities', 'shopwell://currencies'], $uris);
     }
 
     public function testFilterResourcesWithEmptyAllowlistRemovesAll(): void
     {
         $response = McpJsonRpcResponse::fromJson($this->resourcesListJson([
-            ['uri' => 'shopware://entities', 'name' => 'shopware-entities'],
+            ['uri' => 'shopwell://entities', 'name' => 'shopwell-entities'],
         ]));
         static::assertNotNull($response);
 
@@ -220,16 +220,16 @@ class McpJsonRpcResponseTest extends TestCase
     public function testFilterResourcesReindexesArray(): void
     {
         $response = McpJsonRpcResponse::fromJson($this->resourcesListJson([
-            ['uri' => 'shopware://entities', 'name' => 'shopware-entities'],
-            ['uri' => 'shopware://currencies', 'name' => 'shopware-currencies'],
+            ['uri' => 'shopwell://entities', 'name' => 'shopwell-entities'],
+            ['uri' => 'shopwell://currencies', 'name' => 'shopwell-currencies'],
         ]));
         static::assertNotNull($response);
 
-        $response->filterResources(['shopware://currencies']);
+        $response->filterResources(['shopwell://currencies']);
 
         $data = json_decode(Json::encode($response), true, 512, \JSON_THROW_ON_ERROR);
         static::assertArrayHasKey(0, $data['result']['resources']);
-        static::assertSame('shopware://currencies', $data['result']['resources'][0]['uri']);
+        static::assertSame('shopwell://currencies', $data['result']['resources'][0]['uri']);
     }
 
     public function testFilterResourcesIsNoOpForNonResourcesResponse(): void
@@ -237,7 +237,7 @@ class McpJsonRpcResponseTest extends TestCase
         $response = McpJsonRpcResponse::fromJson($this->toolsListJson(['tool-a']));
         static::assertNotNull($response);
 
-        $response->filterResources(['shopware://entities']);
+        $response->filterResources(['shopwell://entities']);
 
         $data = json_decode(Json::encode($response), true, 512, \JSON_THROW_ON_ERROR);
         static::assertArrayNotHasKey('resources', $data['result']);
@@ -247,19 +247,19 @@ class McpJsonRpcResponseTest extends TestCase
 
     public function testFilterPromptsKeepsAllowedPrompts(): void
     {
-        $response = McpJsonRpcResponse::fromJson($this->promptsListJson(['shopware-context', 'shopware-developer']));
+        $response = McpJsonRpcResponse::fromJson($this->promptsListJson(['shopwell-context', 'shopwell-developer']));
         static::assertNotNull($response);
 
-        $response->filterPrompts(['shopware-context']);
+        $response->filterPrompts(['shopwell-context']);
 
         $data = json_decode(Json::encode($response), true, 512, \JSON_THROW_ON_ERROR);
         $names = array_column($data['result']['prompts'], 'name');
-        static::assertSame(['shopware-context'], $names);
+        static::assertSame(['shopwell-context'], $names);
     }
 
     public function testFilterPromptsWithEmptyAllowlistRemovesAll(): void
     {
-        $response = McpJsonRpcResponse::fromJson($this->promptsListJson(['shopware-context']));
+        $response = McpJsonRpcResponse::fromJson($this->promptsListJson(['shopwell-context']));
         static::assertNotNull($response);
 
         $response->filterPrompts([]);
@@ -273,7 +273,7 @@ class McpJsonRpcResponseTest extends TestCase
         $response = McpJsonRpcResponse::fromJson($this->toolsListJson(['tool-a']));
         static::assertNotNull($response);
 
-        $response->filterPrompts(['shopware-context']);
+        $response->filterPrompts(['shopwell-context']);
 
         $data = json_decode(Json::encode($response), true, 512, \JSON_THROW_ON_ERROR);
         static::assertArrayNotHasKey('prompts', $data['result']);
@@ -306,8 +306,8 @@ class McpJsonRpcResponseTest extends TestCase
 
         static::assertTrue($added);
         $data = json_decode(Json::encode($response), true, 512, \JSON_THROW_ON_ERROR);
-        static::assertSame('user-123', $data['result']['_meta']['shopware']['user']['id']);
-        static::assertArrayNotHasKey('integration', $data['result']['_meta']['shopware']);
+        static::assertSame('user-123', $data['result']['_meta']['shopwell']['user']['id']);
+        static::assertArrayNotHasKey('integration', $data['result']['_meta']['shopwell']);
     }
 
     public function testAddShopwellMetaAddsIntegrationId(): void
@@ -319,8 +319,8 @@ class McpJsonRpcResponseTest extends TestCase
 
         static::assertTrue($added);
         $data = json_decode(Json::encode($response), true, 512, \JSON_THROW_ON_ERROR);
-        static::assertSame('integration-456', $data['result']['_meta']['shopware']['integration']['id']);
-        static::assertArrayNotHasKey('user', $data['result']['_meta']['shopware']);
+        static::assertSame('integration-456', $data['result']['_meta']['shopwell']['integration']['id']);
+        static::assertArrayNotHasKey('user', $data['result']['_meta']['shopwell']);
     }
 
     public function testAddShopwellMetaAddsBoth(): void
@@ -331,8 +331,8 @@ class McpJsonRpcResponseTest extends TestCase
         $response->addShopwellMeta('user-123', 'integration-456');
 
         $data = json_decode(Json::encode($response), true, 512, \JSON_THROW_ON_ERROR);
-        static::assertSame('user-123', $data['result']['_meta']['shopware']['user']['id']);
-        static::assertSame('integration-456', $data['result']['_meta']['shopware']['integration']['id']);
+        static::assertSame('user-123', $data['result']['_meta']['shopwell']['user']['id']);
+        static::assertSame('integration-456', $data['result']['_meta']['shopwell']['integration']['id']);
     }
 
     public function testAddShopwellMetaPreservesServerCapabilitiesAsObjects(): void
@@ -411,7 +411,7 @@ class McpJsonRpcResponseTest extends TestCase
                     'prompts' => new \stdClass(),
                     'resources' => new \stdClass(),
                 ],
-                'serverInfo' => ['name' => 'shopware', 'version' => '6.7.0'],
+                'serverInfo' => ['name' => 'shopwell', 'version' => '6.7.0'],
             ],
         ]);
     }

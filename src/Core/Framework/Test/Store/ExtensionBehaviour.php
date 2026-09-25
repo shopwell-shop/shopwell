@@ -22,7 +22,7 @@ trait ExtensionBehaviour
         $fs = new Filesystem();
 
         $name = basename($path);
-        $appDir = static::getContainer()->getParameter('shopware.app_dir') . '/' . $name;
+        $appDir = static::getContainer()->getParameter('shopwell.app_dir') . '/' . $name;
         $fs->mirror($path, $appDir);
 
         if ($install) {
@@ -34,7 +34,7 @@ trait ExtensionBehaviour
     {
         $fs = new Filesystem();
 
-        $fs->remove(static::getContainer()->getParameter('shopware.app_dir') . '/' . basename($path));
+        $fs->remove(static::getContainer()->getParameter('shopwell.app_dir') . '/' . basename($path));
     }
 
     public function registerPlugin(string $path): void

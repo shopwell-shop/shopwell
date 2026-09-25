@@ -85,7 +85,7 @@ class StoreSessionExpiredMiddlewareTest extends TestCase
 
         $response = new Response(401, [], '{"code":"ShopwellPlatformException-1"}');
         $request = new Psr7Request('GET', '/', headers: [
-            StoreRequestOptionsProvider::SHOPWARE_PLATFORM_TOKEN_HEADER => $token,
+            StoreRequestOptionsProvider::SHOPWELL_PLATFORM_TOKEN_HEADER => $token,
         ]);
 
         $connection = $this->createMock(Connection::class);

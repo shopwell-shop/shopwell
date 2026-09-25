@@ -10,7 +10,7 @@ type FeatureFlag = {
 };
 
 type FeatureConfig = {
-    shopware?: {
+    shopwell?: {
         feature?: {
             flags?: Array<FeatureFlag>;
         };
@@ -68,7 +68,7 @@ export default function getMajorFeatureFlags(config: FeatureConfig, featureAll: 
         return [];
     }
 
-    return (config.shopware?.feature?.flags ?? [])
+    return (config.shopwell?.feature?.flags ?? [])
         .filter((flag) => flag.major)
         .filter((flag) => target === null || arrivesUpTo(flag, target))
         .map(({ name }) => normalizeName(name));

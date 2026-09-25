@@ -6,4 +6,4 @@ author_email: support@kiplingi.de
 author_github: @kiplingi
 ---
 # Core
-* Changed `\Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult::createNew` to reflect actual search result count and not the one from original instance.
+* Changed `\Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult::createNew` to reflect actual search result count and not the one from original instance.

@@ -72,7 +72,7 @@ class SeoUrlGeneratorTest extends TestCase
             static::getContainer()->get(DefinitionInstanceRegistry::class),
             static::getContainer()->get('router.default'),
             static::getContainer()->get('request_stack'),
-            static::getContainer()->get('shopware.seo_url.twig'),
+            static::getContainer()->get('shopwell.seo_url.twig'),
             static::getContainer()->get(TwigVariableParserFactory::class),
             new NullLogger(),
         );
@@ -262,7 +262,7 @@ class SeoUrlGeneratorTest extends TestCase
         $product = (new ProductBuilder($ids, 'product'))
             ->price(100)
             ->visibility($this->salesChannelId)
-            ->manufacturer('shopware')
+            ->manufacturer('shopwell')
             ->category('test category');
 
         static::getContainer()->get('product.repository')
@@ -275,7 +275,7 @@ class SeoUrlGeneratorTest extends TestCase
 
         $result = $this->seoUrlGenerator->generate($productIds, $template, $route, Context::createDefaultContext(), $this->salesChannelContext->getSalesChannel());
 
-        $expected = ['test-category-shopware-product'];
+        $expected = ['test-category-shopwell-product'];
         foreach ($result as $index => $seoUrl) {
             static::assertSame($expected[$index], $seoUrl->getSeoPathInfo());
         }
@@ -368,7 +368,7 @@ class SeoUrlGeneratorTest extends TestCase
             static::getContainer()->get(DefinitionInstanceRegistry::class),
             static::getContainer()->get('router.default'),
             static::getContainer()->get('request_stack'),
-            static::getContainer()->get('shopware.seo_url.twig'),
+            static::getContainer()->get('shopwell.seo_url.twig'),
             static::getContainer()->get(TwigVariableParserFactory::class),
             $logger,
         );

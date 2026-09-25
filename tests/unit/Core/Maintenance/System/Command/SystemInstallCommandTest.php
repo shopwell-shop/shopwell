@@ -121,7 +121,7 @@ class SystemInstallCommandTest extends TestCase
 
     public function testSkipWebInstallerWithFalsyEnvironmentVariable(): void
     {
-        $this->setEnvVars(['SHOPWARE_SKIP_WEBINSTALLER' => '0']);
+        $this->setEnvVars(['SHOPWELL_SKIP_WEBINSTALLER' => '0']);
 
         $command = $this->prepareCommandInstanceWithDefaultInstallCommands(['assets:install']);
 
@@ -137,7 +137,7 @@ class SystemInstallCommandTest extends TestCase
 
     public function testSkipWebInstallerWithTruthyEnvironmentVariable(): void
     {
-        $this->setEnvVars(['SHOPWARE_SKIP_WEBINSTALLER' => '1']);
+        $this->setEnvVars(['SHOPWELL_SKIP_WEBINSTALLER' => '1']);
 
         $command = $this->prepareCommandInstanceWithDefaultInstallCommands(['assets:install']);
 
@@ -166,7 +166,7 @@ class SystemInstallCommandTest extends TestCase
     {
         touch(__DIR__ . '/install.lock');
 
-        $this->setEnvVars(['SHOPWARE_SKIP_WEBINSTALLER' => '1']);
+        $this->setEnvVars(['SHOPWELL_SKIP_WEBINSTALLER' => '1']);
 
         $command = $this->prepareCommandInstance();
 
@@ -254,7 +254,7 @@ class SystemInstallCommandTest extends TestCase
 
     public function testHtaccessSkippedWithWebInstallerSkip(): void
     {
-        $this->setEnvVars(['SHOPWARE_SKIP_WEBINSTALLER' => '1']);
+        $this->setEnvVars(['SHOPWELL_SKIP_WEBINSTALLER' => '1']);
         $this->createHtaccessDist('Test .htaccess content');
 
         $command = $this->prepareCommandInstanceWithDefaultInstallCommands(['assets:install']);
@@ -272,7 +272,7 @@ class SystemInstallCommandTest extends TestCase
 
     public function testHtaccessCreatedWithWebInstallerNotSkipped(): void
     {
-        $this->setEnvVars(['SHOPWARE_SKIP_WEBINSTALLER' => '0']);
+        $this->setEnvVars(['SHOPWELL_SKIP_WEBINSTALLER' => '0']);
         $this->createHtaccessDist('Test .htaccess content');
 
         $command = $this->prepareCommandInstanceWithDefaultInstallCommands(['assets:install']);
@@ -394,7 +394,7 @@ class SystemInstallCommandTest extends TestCase
 
     public function testDispatchesSystemInstallCompletedEventWhenWebInstallerIsSkipped(): void
     {
-        $this->setEnvVars(['SHOPWARE_SKIP_WEBINSTALLER' => '1']);
+        $this->setEnvVars(['SHOPWELL_SKIP_WEBINSTALLER' => '1']);
 
         $dispatcher = new EventDispatcher();
         $dispatched = false;

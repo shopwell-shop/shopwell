@@ -2,8 +2,8 @@
 title: Remove FK delete exception handler
 ---
 # Core
-* Changed `\Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityForeignKeyResolver::fetch` to return language foreign keys for restrict delete and thus enabling foreign key checks in `\Shopware\Core\Framework\DataAbstractionLayer\Write\EntityWriter::extractDeleteCommands`.
-* Changed all implementations of `\Shopware\Core\Framework\DataAbstractionLayer\Dbal\ExceptionHandlerInterface`, that check for foreign key violations to not throw any exceptions anymore, as the DAL now handles those directly. This means that the following handler classes and excpetions are now deprecated:
+* Changed `\Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityForeignKeyResolver::fetch` to return language foreign keys for restrict delete and thus enabling foreign key checks in `\Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriter::extractDeleteCommands`.
+* Changed all implementations of `\Shopwell\Core\Framework\DataAbstractionLayer\Dbal\ExceptionHandlerInterface`, that check for foreign key violations to not throw any exceptions anymore, as the DAL now handles those directly. This means that the following handler classes and excpetions are now deprecated:
   * `LanguageOfOrderDeleteException`
   * `OrderExceptionHandler`
   * `LanguageOfNewsletterDeleteException`

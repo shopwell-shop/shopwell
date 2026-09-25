@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { MtSwitch, MtLoader } from '@shopware-ag/meteor-component-library';
+import { MtSwitch, MtLoader } from '@shopwell-ag/meteor-component-library';
 import SwSettingsUsageDataUserDataConsentCard from './index';
 
 describe('module/sw-settings-usage-data/component/sw-settings-usage-data-consent-modal/subcomponents/sw-settings-usage-data-user-data-consent-card', () => {

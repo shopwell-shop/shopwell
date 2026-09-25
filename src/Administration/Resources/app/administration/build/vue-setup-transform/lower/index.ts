@@ -19,7 +19,7 @@ import { buildOverrideScript } from './override';
 import type { ShopwellSetupScriptAnalysis } from '../script-analyzer';
 import type { SourceEdit } from '../source-edits/apply-source-edits';
 import type { TemplateAnalysis } from '../template-analyzer';
-import type { ShopwellSetupBlock } from '../utils/shopware-setup-block';
+import type { ShopwellSetupBlock } from '../utils/shopwell-setup-block';
 
 /**
  * Dispatches to the mode-specific lowering path after shared analysis has completed.

@@ -50,7 +50,7 @@ describe('BasicCaptchaPlugin tests', () => {
     test('Plugin should create a fake input', () => {
         basicCaptchaPlugin = new BasicCaptchaPlugin(captchaElement);
 
-        const fakeInput = basicCaptchaPlugin.el.querySelector('#shopware_basic_captcha_check');
+        const fakeInput = basicCaptchaPlugin.el.querySelector('#shopwell_basic_captcha_check');
 
         expect(fakeInput).toBeDefined();
         expect(fakeInput.required).toBe(true);

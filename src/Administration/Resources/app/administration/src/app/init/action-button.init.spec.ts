@@ -3,7 +3,7 @@
  */
 import { createPinia, setActivePinia } from 'pinia';
 import initActionButtons from 'src/app/init/action-button.init';
-import { add } from '@shopware-ag/meteor-admin-sdk/es/ui/action-button';
+import { add } from '@shopwell-ag/meteor-admin-sdk/es/ui/action-button';
 import type { ActionButtonsStore } from '../store/action-buttons.store';
 
 describe('src/app/init/action-button.init.ts', () => {

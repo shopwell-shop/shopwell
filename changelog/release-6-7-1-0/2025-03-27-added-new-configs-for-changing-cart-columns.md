@@ -1,6 +1,6 @@
 ---
 title: Added new configs for changing cart columns
-issue: https://github.com/shopware/shopware/issues/7482
+issue: https://github.com/shopwell-shop/shopwell/issues/7482
 author_github: @En0Ma1259
 ---
 # Core

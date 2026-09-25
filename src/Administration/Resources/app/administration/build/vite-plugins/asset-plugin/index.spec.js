@@ -16,7 +16,7 @@ describe('build/vite-plugins/asset-plugin', () => {
 
         // Identify plugin by name
         expect(plugin).toHaveProperty('name');
-        expect(plugin.name).toBe('shopware-vite-plugin-serve-multiple-static');
+        expect(plugin.name).toBe('shopwell-vite-plugin-serve-multiple-static');
 
         // Check if the plugin has a configureServer method
         expect(plugin).toHaveProperty('configureServer');
@@ -63,7 +63,7 @@ describe('build/vite-plugins/asset-plugin', () => {
 
         // Identify plugin by name
         expect(plugin).toHaveProperty('name');
-        expect(plugin.name).toBe('shopware-vite-plugin-copy-static-assets');
+        expect(plugin.name).toBe('shopwell-vite-plugin-copy-static-assets');
 
         // Check if the plugin has a closeBundle method
         expect(plugin).toHaveProperty('closeBundle');

@@ -6,7 +6,7 @@ tags: [payment, refund, capture]
 ---
 
 ## Context
-Shopware offers no way of unified refund handling. This results in every payment extension either implementing it themselves or not at all.
+Shopwell offers no way of unified refund handling. This results in every payment extension either implementing it themselves or not at all.
 
 ## Decision
 We want to implement the following structure to offer a unified refund handling for all extension types.
@@ -145,7 +145,7 @@ public function processRefund(string $refundId, Context $context): Response;
 ## Apps
 The whole refund handling should be available for apps and plugins. The following changes are required to allow apps to handle refunds.
 
-### \Shopware\Core\Framework\App\Manifest\Xml\PaymentMethod
+### \Shopwell\Core\Framework\App\Manifest\Xml\PaymentMethod
 Add `refundUrl` to the manifest `PaymentMethod`. Also change the xsd accordingly.
 
 ### AppRefundHandler

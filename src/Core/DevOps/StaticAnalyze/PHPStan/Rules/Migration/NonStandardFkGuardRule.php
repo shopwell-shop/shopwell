@@ -75,7 +75,7 @@ class NonStandardFkGuardRule implements Rule
                 . 'table (MySQL bug #118151).',
                 $table
             ))
-                ->identifier('shopware.nonStandardFkGuard')
+                ->identifier('shopwell.nonStandardFkGuard')
                 ->build(),
         ];
     }

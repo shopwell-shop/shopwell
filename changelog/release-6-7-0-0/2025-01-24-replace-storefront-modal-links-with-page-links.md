@@ -3,7 +3,7 @@ title: Replace Storefront modal links with page links
 issue: NEXT-40307
 flag: ACCESSIBILITY_TWEAKS
 author: Benedikt Schulze Baek
-author_email: b.schulze-baek@shopware.com
+author_email: b.schulze-baek@shopwell.com
 author_github: @bschulzebaek
 ---
 # Storefront
@@ -14,7 +14,7 @@ author_github: @bschulzebaek
 ___
 # Upgrade Information
 To make some internal links more accessible and avoid duplicate overlays/modals, we are replacing links that load content into modals with links loading the content as a new page. See above for a list of affected templates.
-This is achieved by providing a new controller action (`Shopware\Storefront\Controller\CmsController::pageFull`), which renders CMS layouts as full pages instead of partial widgets. This is using the CMS layouts already assigned to Storefronts in the "Settings > Basic Information" module.
+This is achieved by providing a new controller action (`Shopwell\Storefront\Controller\CmsController::pageFull`), which renders CMS layouts as full pages instead of partial widgets. This is using the CMS layouts already assigned to Storefronts in the "Settings > Basic Information" module.
 
 Generally, this change is replacing calls to the controller action `frontend.cms.page` with `frontend.cms.page.full` and replacing elements using the modal data attributes (see below) with native links. See the following examples for reference.
 

@@ -7,13 +7,13 @@ tags: [core, sales-channel, performance, cache]
 Within each store api request (and storefront), the sales channel context must be built.
 Building the sales channel context is a very resource consuming task for the database,
 since many DAL objects are now included in the sales channel context.
-Therefore, a cache for the corresponding service (`Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory`) has already been implemented in the past: `Shopware\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory`.
+Therefore, a cache for the corresponding service (`Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory`) has already been implemented in the past: `Shopwell\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory`.
 However, since the context also contains the customer and the selected shipping address as well as billing address, the context cannot be cached once a customer is logged in:
 
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\System\SalesChannel\Context;
+namespace Shopwell\Core\System\SalesChannel\Context;
 
 class CachedSalesChannelContextFactory extends AbstractSalesChannelContextFactory
 {
@@ -37,12 +37,12 @@ class CachedSalesChannelContextFactory extends AbstractSalesChannelContextFactor
 
 However, since there is also data in the context that is independent of a customer's data,
 it is possible to cache some of this resource-costing data across customers, even if the customer is logged in, has selected a different payment method, shipping method or address.
-For this we have implemented the `Shopware\Core\System\SalesChannel\Context\BaseSalesChannelContextFactory`, which is responsible for creating the `Shopware\Core\System\SalesChannel\BaseSalesChannelContext`.
+For this we have implemented the `Shopwell\Core\System\SalesChannel\Context\BaseSalesChannelContextFactory`, which is responsible for creating the `Shopwell\Core\System\SalesChannel\BaseSalesChannelContext`.
 Only data that belongs to the sales channel or is independent of the customer account is loaded into the `BaseSalesChannelContext`:
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\System\SalesChannel;
+namespace Shopwell\Core\System\SalesChannel;
 
 class BaseSalesChannelContext
 {
@@ -82,13 +82,13 @@ The `BaseSalesChannelContextFactory` takes into account the following parameters
 * `currencyId` - Contains the id of the selected currency
 * `languageId` - Contains the id of the selected language
 
-In addition to the `Shopware\Core\System\SalesChannel\Context\BaseSalesChannelContextFactory` the `Shopware\Core\System\SalesChannel\Context\CachedBaseSalesChannelContextFactory` was implemented, which is responsible for caching the base context.
+In addition to the `Shopwell\Core\System\SalesChannel\Context\BaseSalesChannelContextFactory` the `Shopwell\Core\System\SalesChannel\Context\CachedBaseSalesChannelContextFactory` was implemented, which is responsible for caching the base context.
 It assembles the cache key based on the parameters listed above and loads the base context from the cache if it has already been loaded once.
 
 ```php
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\System\SalesChannel\Context;
+namespace Shopwell\Core\System\SalesChannel\Context;
 
 class CachedBaseSalesChannelContextFactory extends AbstractBaseSalesChannelContextFactory
 {

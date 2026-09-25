@@ -217,12 +217,12 @@ class RateLimiterTest extends TestCase
 
         static::getContainer()->get('request_stack')->push(new Request([
             'email' => 'loginTest@example.com',
-            'password' => 'shopware',
+            'password' => 'shopwell',
         ]));
 
         $route->login(new RequestDataBag([
             'email' => 'loginTest@example.com',
-            'password' => 'shopware',
+            'password' => 'shopwell',
         ]), $this->salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL));
     }
 
@@ -557,9 +557,9 @@ class RateLimiterTest extends TestCase
             RateLimiter::NEWSLETTER_UNSUBSCRIBE_FORM,
         ];
 
-        // LoginRoute is injected with RateLimiter::class, AuthController with 'shopware.rate_limiter'
+        // LoginRoute is injected with RateLimiter::class, AuthController with 'shopwell.rate_limiter'
         // These may be separate instances in the compiled container, so override both
-        foreach ([RateLimiter::class, 'shopware.rate_limiter'] as $serviceId) {
+        foreach ([RateLimiter::class, 'shopwell.rate_limiter'] as $serviceId) {
             $rateLimiter = static::getContainer()->get($serviceId);
             \assert($rateLimiter instanceof RateLimiter);
             foreach ($routes as $name) {

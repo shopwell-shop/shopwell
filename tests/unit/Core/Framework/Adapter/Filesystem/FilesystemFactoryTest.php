@@ -107,7 +107,7 @@ class FilesystemFactoryTest extends TestCase
 
     private function createTemporaryDirectory(): string
     {
-        $this->temporaryDirectory = sys_get_temp_dir() . '/shopware-filesystem-factory-' . bin2hex(random_bytes(4));
+        $this->temporaryDirectory = sys_get_temp_dir() . '/shopwell-filesystem-factory-' . bin2hex(random_bytes(4));
         mkdir($this->temporaryDirectory);
 
         return $this->temporaryDirectory;

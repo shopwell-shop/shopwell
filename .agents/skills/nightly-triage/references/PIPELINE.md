@@ -7,9 +7,9 @@ intermediates to the session scratchpad, not the repo.
 ## 1. Run inventory
 
 ```bash
-gh run view <RUN_ID> --repo shopware/shopware \
+gh run view <RUN_ID> --repo shopwell/shopwell \
   --json displayTitle,workflowName,headBranch,conclusion,event
-gh run view <RUN_ID> --repo shopware/shopware --json jobs \
+gh run view <RUN_ID> --repo shopwell/shopwell --json jobs \
   --jq '.jobs[] | select(.conclusion=="failure") | "\(.databaseId)\t\(.name)"'
 ```
 
@@ -20,11 +20,11 @@ the per-test provenance tag.
 
 ```bash
 # parallel download (one gh call per failing job)
-gh run view --repo shopware/shopware --job <JOB_ID> --log-failed > job-<slug>.log
+gh run view --repo shopwell/shopwell --job <JOB_ID> --log-failed > job-<slug>.log
 
 # PHPUnit failure headers — errors and failures are SEPARATE numbered lists,
 # so "1)" appears twice per log; dedupe with sort -u
-grep -oE '[0-9]+\) Shopware\\Tests\\[A-Za-z0-9\\]+::[A-Za-z_0-9]+' job-<slug>.log \
+grep -oE '[0-9]+\) Shopwell\\Tests\\[A-Za-z0-9\\]+::[A-Za-z_0-9]+' job-<slug>.log \
   | sed 's/^[0-9]*) //' | sort -u > fails-<slug>.txt
 
 # sanity: compare against the PHPUnit summary line
@@ -50,7 +50,7 @@ cause from the count — reproduce locally (REPRODUCTION.md).
 
 Use Python, not shell — FQCNs contain backslashes that break shell loops.
 
-1. FQCN → path: `Shopware\Tests\Integration\…` → `tests/integration/…` + `.php`.
+1. FQCN → path: `Shopwell\Tests\Integration\…` → `tests/integration/…` + `.php`.
 2. `#[Package('…')]` on the test file wins.
 3. Else mirrored src file: `tests/integration/X` → `src/X`, strip trailing `Test`.
 4. Else dominant marker of the mirrored src directory (count with
@@ -102,7 +102,7 @@ Issue layout (title:
   APP_ENV=test FEATURE_ALL=major BLUE_GREEN_DEPLOYMENT=1 FORCE_INSTALL=true composer init:testdb
   ```
 
-  then rerun the test (this matches the CI job env in [`.github/workflows/integration-major.yml`](https://github.com/shopware/shopware/blob/trunk/.github/workflows/integration-major.yml)).
+  then rerun the test (this matches the CI job env in [`.github/workflows/integration-major.yml`](https://github.com/shopwell-shop/shopwell/blob/trunk/.github/workflows/integration-major.yml)).
 
   While more than one major is in flight, that job runs one lane per major: take the `FEATURE_ALL` value from the failing job's name (`v6.8.0.0`) instead of `major`, which would enable the next major as well.
 

@@ -95,7 +95,7 @@ class UpdateControllerTest extends TestCase
             static::createStub(SystemConfigService::class),
             static::createStub(AbstractExtensionLifecycle::class),
             '6.1.0.0',
-            shopwareUpdateEnabled: false,
+            shopwellUpdateEnabled: false,
         );
 
         $response = $updateController->updateApiCheck();
@@ -340,7 +340,7 @@ class UpdateControllerTest extends TestCase
             static::createStub(SystemConfigService::class),
             static::createStub(AbstractExtensionLifecycle::class),
             '6.1.0',
-            shopwareUpdateEnabled: false,
+            shopwellUpdateEnabled: false,
         );
 
         $this->expectExceptionObject(UpdateException::autoUpdateDisabled());
@@ -361,7 +361,7 @@ class UpdateControllerTest extends TestCase
             static::createStub(SystemConfigService::class),
             static::createStub(AbstractExtensionLifecycle::class),
             '6.1.0',
-            shopwareUpdateEnabled: false,
+            shopwellUpdateEnabled: false,
         );
 
         $this->expectExceptionObject(UpdateException::autoUpdateDisabled());
@@ -382,7 +382,7 @@ class UpdateControllerTest extends TestCase
             $systemConfig,
             static::createStub(AbstractExtensionLifecycle::class),
             '6.1.0',
-            shopwareUpdateEnabled: false,
+            shopwellUpdateEnabled: false,
         );
 
         static::assertSame('{"isValid":true}', (string) $updateController->checkLicense()->getContent());

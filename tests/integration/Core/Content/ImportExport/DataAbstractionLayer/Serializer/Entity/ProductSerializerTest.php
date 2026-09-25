@@ -115,10 +115,10 @@ class ProductSerializerTest extends TestCase
         static::assertSame((string) $product->getStock(), $serialized['stock']);
         static::assertSame($product->getProductNumber(), $serialized['productNumber']);
         static::assertSame('1', $serialized['active']);
-        static::assertStringContainsString('shopware-logo.png', $serialized['cover']['media']['url']);
-        static::assertStringContainsString('shopware-icon.png', $serialized['media']);
-        static::assertStringContainsString('shopware-background.png', $serialized['media']);
-        static::assertStringNotContainsString('shopware-logo.png', $serialized['media']);
+        static::assertStringContainsString('shopwell-logo.png', $serialized['cover']['media']['url']);
+        static::assertStringContainsString('shopwell-icon.png', $serialized['media']);
+        static::assertStringContainsString('shopwell-background.png', $serialized['media']);
+        static::assertStringNotContainsString('shopwell-logo.png', $serialized['media']);
 
         $iterator = $serializer->deserialize(new Config([], [], []), $productDefinition, $serialized);
         static::assertInstanceOf(\Traversable::class, $iterator);
@@ -166,7 +166,7 @@ class ProductSerializerTest extends TestCase
 
         $mediaService = static::createStub(MediaService::class);
         $expectedMediaFile = new MediaFile(
-            '/tmp/foo/bar/shopware-logo.png',
+            '/tmp/foo/bar/shopwell-logo.png',
             'image/png',
             'png',
             1000,
@@ -174,7 +174,7 @@ class ProductSerializerTest extends TestCase
         );
         $mediaService->method('fetchFile')
             ->willReturnCallback(static function (Request $request) use ($expectedMediaFile): MediaFile {
-                if ($request->query->get('url') === 'http://172.16.11.80/shopware-logo.png') {
+                if ($request->query->get('url') === 'http://172.16.11.80/shopwell-logo.png') {
                     return $expectedMediaFile;
                 }
 
@@ -204,7 +204,7 @@ class ProductSerializerTest extends TestCase
 
         $record = [
             'id' => $product->getId(),
-            'media' => 'http://172.16.11.80/shopware-logo.png|http://172.16.11.80/shopware-logo2.png',
+            'media' => 'http://172.16.11.80/shopwell-logo.png|http://172.16.11.80/shopwell-logo2.png',
         ];
 
         $productDefinition = static::getContainer()->get(ProductDefinition::class);
@@ -299,8 +299,8 @@ class ProductSerializerTest extends TestCase
                 'position' => 0,
                 'media' => [
                     'id' => Uuid::randomHex(),
-                    'fileName' => 'shopware-logo',
-                    'path' => 'shopware-logo.png',
+                    'fileName' => 'shopwell-logo',
+                    'path' => 'shopwell-logo.png',
                     'fileExtension' => 'png',
                     'mimeType' => 'image/png',
                     'metaData' => [
@@ -314,8 +314,8 @@ class ProductSerializerTest extends TestCase
                     'position' => 1,
                     'media' => [
                         'id' => Uuid::randomHex(),
-                        'fileName' => 'shopware-icon',
-                        'path' => 'shopware-icon.png',
+                        'fileName' => 'shopwell-icon',
+                        'path' => 'shopwell-icon.png',
                         'fileExtension' => 'png',
                         'mimeType' => 'image/png',
                     ],
@@ -325,8 +325,8 @@ class ProductSerializerTest extends TestCase
                     'position' => 2,
                     'media' => [
                         'id' => Uuid::randomHex(),
-                        'fileName' => 'shopware-background',
-                        'path' => 'shopware-background.png',
+                        'fileName' => 'shopwell-background',
+                        'path' => 'shopwell-background.png',
                         'fileExtension' => 'png',
                         'mimeType' => 'image/png',
                     ],

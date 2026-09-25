@@ -18,7 +18,7 @@ class ThemeRuntimeConfigTest extends TestCase
     {
         $importMap = [
             'imports' => [
-                'shopware' => '/bundles/storefront/storefront/shopware/shopware.js',
+                'shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js',
                 'Sw:Button' => 'js/components/Sw/Button.js',
             ],
         ];
@@ -160,7 +160,7 @@ class ThemeRuntimeConfigTest extends TestCase
             'scriptFiles' => ['file1.js'],
             'iconSets' => [],
             'importMap' => [
-                'imports' => ['shopware' => '/bundles/storefront/storefront/shopware/shopware.js'],
+                'imports' => ['shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js'],
             ],
             'updatedAt' => new \DateTimeImmutable(),
         ]);

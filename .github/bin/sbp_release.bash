@@ -66,7 +66,7 @@ request_sbp() {
   fi
 
   if [ -n "${DRY_RUN:-}" ] && [ "${method}" != "GET" ]; then
-    xargs -0 printf 'curl %s --request %s --url %s --header %s --header %s --header %s --data %s\n' "${curl_opts}" "${method}" "${url}" 'Accept: application/json' "X-Shopware-Token: [redacted]" 'Content-Type: application/json'
+    xargs -0 printf 'curl %s --request %s --url %s --header %s --header %s --header %s --data %s\n' "${curl_opts}" "${method}" "${url}" 'Accept: application/json' "X-Shopwell-Token: [redacted]" 'Content-Type: application/json'
     return
   fi
 
@@ -74,7 +74,7 @@ request_sbp() {
     --url "${url}" \
     --header 'Accept: application/json' \
     --header 'Content-Type: application/json' \
-    --header "X-Shopware-Token: ${SBP_TOKEN}" \
+    --header "X-Shopwell-Token: ${SBP_TOKEN}" \
     --data "${data}"
 }
 

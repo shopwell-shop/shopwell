@@ -61,7 +61,7 @@ class Migration1770903396AddRequirementsToServiceSourceConfigTest extends TestCa
                 'hash' => 'b453f',
                 'revision' => '1.0.0-b453f',
                 'zip-url' => 'https://example.com/zip',
-                'requirements' => ['shopware_account'],
+                'requirements' => ['shopwell_account'],
             ]
         );
         $nonSelfManagedMissingRequirements = $this->insertApp(
@@ -81,7 +81,7 @@ class Migration1770903396AddRequirementsToServiceSourceConfigTest extends TestCa
         ]);
 
         static::assertArrayNotHasKey('requirements', $before[$selfManagedMissingRequirements]);
-        static::assertSame(['shopware_account'], $before[$selfManagedExistingRequirements]['requirements']);
+        static::assertSame(['shopwell_account'], $before[$selfManagedExistingRequirements]['requirements']);
         static::assertArrayNotHasKey('requirements', $before[$nonSelfManagedMissingRequirements]);
 
         $migration = new Migration1770903396AddRequirementsToServiceSourceConfig();
@@ -99,7 +99,7 @@ class Migration1770903396AddRequirementsToServiceSourceConfigTest extends TestCa
             $after[$selfManagedMissingRequirements]['requirements']
         );
         static::assertSame(
-            ['shopware_account'],
+            ['shopwell_account'],
             $after[$selfManagedExistingRequirements]['requirements']
         );
         static::assertArrayNotHasKey('requirements', $after[$nonSelfManagedMissingRequirements]);

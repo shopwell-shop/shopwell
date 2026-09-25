@@ -1,11 +1,11 @@
-# Shopware 6
+# Shopwell 6
 
-Shopware is an open-source e-commerce platform with API-first architecture exposing three distinct APIs (Admin, Store, Sync) alongside a built-in Twig-based storefront. It uses a custom Data Abstraction Layer instead of a traditional ORM, an event-driven extension system replacing decorators, and Flow Builder for business automation.
+Shopwell is an open-source e-commerce platform with API-first architecture exposing three distinct APIs (Admin, Store, Sync) alongside a built-in Twig-based storefront. It uses a custom Data Abstraction Layer instead of a traditional ORM, an event-driven extension system replacing decorators, and Flow Builder for business automation.
 
 ## Project Structure
 
 ```
-shopware/
+shopwell/
 ├── src/
 │   ├── Core/                     # Business logic & framework
 │   ├── Administration/           # Admin UI
@@ -25,7 +25,7 @@ shopware/
 - **Cache**: Redis (optional), Symfony Cache
 - **Testing**: PHPUnit, PHPStan, Jest, Playwright
 
-## Shopware Architecture
+## Shopwell Architecture
 
 ### NOT Standard Symfony/Doctrine
 - **NO Doctrine ORM** - Uses custom Data Abstraction Layer (DAL)
@@ -49,9 +49,9 @@ This repo ships Agent Skills under `.agents/skills/`, with `.claude/skills` as a
 ### Definition of Done — mandatory for every change
 
 Before you commit or hand work back:
-- **Behaviour change ⇒ tests are required.** Admin JS/TS/Vue → follow `shopware-admin-js`; PHP → `shopware-phpunit-tests`. Style-only, snippet/translation, and docs-only changes do not need tests; still add one when it is useful and follows an established pattern.
-- **Writing a PR title or description? → follow `shopware-pr-hygiene`** — the Shopware PR template is required, not a generic one.
-- **Behavioural change, feature, deprecation, or config change? → check `shopware-release-docs`** for RELEASE_INFO / UPGRADE entries.
+- **Behaviour change ⇒ tests are required.** Admin JS/TS/Vue → follow `shopwell-admin-js`; PHP → `shopwell-phpunit-tests`. Style-only, snippet/translation, and docs-only changes do not need tests; still add one when it is useful and follows an established pattern.
+- **Writing a PR title or description? → follow `shopwell-pr-hygiene`** — the Shopwell PR template is required, not a generic one.
+- **Behavioural change, feature, deprecation, or config change? → check `shopwell-release-docs`** for RELEASE_INFO / UPGRADE entries.
 - **Touching `.github/workflows/`, `.github/actions/`, or `.github/bin/`? → follow [`.github/AGENTS.md`](.github/AGENTS.md)** — a CI job must never report success without proving the work ran.
 - **Commit with a conventional message incl. scope**, e.g. `feat(administration): …`.
 - **After review feedback or CI failures**, create a follow-up commit; do not amend or force-push unless explicitly asked.
@@ -61,13 +61,13 @@ When a task matches a skill, open `.agents/skills/<name>/SKILL.md` and follow it
 
 ### Guidance Skills
 
-- `shopware-knowledge-capture` — saving durable knowledge; routing it to AGENTS, coding guidelines, README, ADR, skills, or local notes.
-- `shopware-change-scope` — root-cause analysis, boyscouting, and cleanup scope.
-- `shopware-release-docs` — release notes, upgrade notes, developer-facing changelog decisions.
-- `shopware-pr-hygiene` — PR templates, conventional titles, review follow-up commits.
-- `shopware-php-code` — PHP architecture, API schema, migrations, deprecations, BC-sensitive code.
-- `shopware-admin-js` — Administration JavaScript, TypeScript, Vue, ACL, Jest.
-- `shopware-phpunit-tests` — PHPUnit test structure, fixtures, feature flags, coverage, data providers.
+- `shopwell-knowledge-capture` — saving durable knowledge; routing it to AGENTS, coding guidelines, README, ADR, skills, or local notes.
+- `shopwell-change-scope` — root-cause analysis, boyscouting, and cleanup scope.
+- `shopwell-release-docs` — release notes, upgrade notes, developer-facing changelog decisions.
+- `shopwell-pr-hygiene` — PR templates, conventional titles, review follow-up commits.
+- `shopwell-php-code` — PHP architecture, API schema, migrations, deprecations, BC-sensitive code.
+- `shopwell-admin-js` — Administration JavaScript, TypeScript, Vue, ACL, Jest.
+- `shopwell-phpunit-tests` — PHPUnit test structure, fixtures, feature flags, coverage, data providers.
 
 Skills can have an optional unattended twin via [GitHub Agentic Workflows](https://github.com/githubnext/gh-aw) at `.github/workflows/<name>.md` + `.github/aw/<name>-policy.md`. Editing or compiling these workflows requires the `gh aw` CLI extension; the current pin lives in [`.github/aw/README.md`](.github/aw/README.md) → "Pinning".
 
@@ -75,9 +75,9 @@ To add a new skill (interactive or unattended), follow the checklist in [`coding
 
 ## Subtree Guidance
 
-- PHP/server code: use the `shopware-php-code` skill when the task touches PHP architecture, API schema, migrations, deprecations, or BC-sensitive code.
-- Administration JS/TS/Vue code: detailed guidance starts at `src/Administration/Resources/app/administration/AGENTS.md`; use the `shopware-admin-js` skill for Admin coding rules.
-- PHPUnit tests: use the `shopware-phpunit-tests` skill.
+- PHP/server code: use the `shopwell-php-code` skill when the task touches PHP architecture, API schema, migrations, deprecations, or BC-sensitive code.
+- Administration JS/TS/Vue code: detailed guidance starts at `src/Administration/Resources/app/administration/AGENTS.md`; use the `shopwell-admin-js` skill for Admin coding rules.
+- PHPUnit tests: use the `shopwell-phpunit-tests` skill.
 - CI workflows, composite actions, and automation scripts: local rules in `.github/AGENTS.md`, rationale and examples in `coding-guidelines/core/ci-workflows.md`.
 - More specific nested `AGENTS.md` files add local rules for their subtree.
 

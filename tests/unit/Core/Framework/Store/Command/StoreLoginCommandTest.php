@@ -36,8 +36,8 @@ class StoreLoginCommandTest extends TestCase
         $storeClient
             ->expects($this->once())
             ->method('loginWithShopwellId')
-            ->willReturnCallback(function (string $shopwareId, string $password, Context $context) use ($userId): void {
-                $this->assertSame('user@example.com', $shopwareId);
+            ->willReturnCallback(function (string $shopwellId, string $password, Context $context) use ($userId): void {
+                $this->assertSame('user@example.com', $shopwellId);
                 $this->assertSame('secret', $password);
                 $source = $context->getSource();
                 $this->assertInstanceOf(AdminApiSource::class, $source);
@@ -48,7 +48,7 @@ class StoreLoginCommandTest extends TestCase
         $configService
             ->expects($this->once())
             ->method('set')
-            ->with('core.store.licenseHost', 'example.shopware.store', null, false);
+            ->with('core.store.licenseHost', 'example.shopwell.store', null, false);
 
         $commandTester = new CommandTester(new StoreLoginCommand(
             $storeClient,
@@ -57,10 +57,10 @@ class StoreLoginCommandTest extends TestCase
         ));
 
         static::assertSame(Command::SUCCESS, $commandTester->execute([
-            '--shopwareId' => 'user@example.com',
+            '--shopwellId' => 'user@example.com',
             '--password' => 'secret',
             '--user' => 'admin',
-            '--host' => 'example.shopware.store',
+            '--host' => 'example.shopwell.store',
         ]));
         static::assertStringContainsString('Successfully logged in.', $commandTester->getDisplay());
     }
@@ -78,7 +78,7 @@ class StoreLoginCommandTest extends TestCase
         ));
 
         static::assertSame(Command::FAILURE, $commandTester->execute([
-            '--shopwareId' => 'user@example.com',
+            '--shopwellId' => 'user@example.com',
             '--password' => 'secret',
             '--user' => 'unknown',
         ]));
@@ -124,7 +124,7 @@ class StoreLoginCommandTest extends TestCase
         ));
 
         static::assertSame(Command::FAILURE, $commandTester->execute([
-            '--shopwareId' => 'user@example.com',
+            '--shopwellId' => 'user@example.com',
             '--password' => 'wrong',
             '--user' => 'admin',
         ]));

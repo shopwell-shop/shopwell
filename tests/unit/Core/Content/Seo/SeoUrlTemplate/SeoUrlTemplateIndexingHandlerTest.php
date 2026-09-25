@@ -210,7 +210,7 @@ class SeoUrlTemplateIndexingHandlerTest extends TestCase
 
     public function testProcessesHeadlessStoreApiRouteNotInTheRouteRegistry(): void
     {
-        // Headless store-api routes are tagged `shopware.entity.seo_url.route` and are
+        // Headless store-api routes are tagged `shopwell.entity.seo_url.route` and are
         // absent from the SeoUrlRouteRegistry, but their templates are equally editable,
         // so the reindex must run for them too.
         $ids = $this->randomHexIds(2);

@@ -42,7 +42,7 @@ class EntityDeleteSubscriberTest extends TestCase
         $this->connection = static::getContainer()->get(Connection::class);
 
         /** @var MockHttpClient $client */
-        $client = static::getContainer()->get('shopware.usage_data.gateway.client');
+        $client = static::getContainer()->get('shopwell.usage_data.gateway.client');
         $client->setResponseFactory(static function (string $method, string $url): ResponseInterface {
             if (\str_ends_with($url, '/killswitch')) {
                 $body = json_encode(['killswitch' => false]);

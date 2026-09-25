@@ -88,7 +88,7 @@ class MockingSimpleObjectsNotAllowedRule implements Rule
 
         return [
             RuleErrorBuilder::message(\sprintf('Mocking of %s is not allowed. The object is very basic and can be constructed', $mockedClassString))
-                ->identifier('shopware.mockingSimpleObjects')
+                ->identifier('shopwell.mockingSimpleObjects')
                 ->build(),
         ];
     }

@@ -21,11 +21,11 @@ use Shopwell\Core\Framework\ShopwellHttpException;
  */
 #[Package('framework')]
 #[McpTool(
-    name: 'shopware-entity-read',
+    name: 'shopwell-entity-read',
     title: 'Entity Read',
-    description: 'Read a single Shopwell entity by its UUID. Use when you already have an entity ID. For searching by other fields, use shopware-entity-search instead. Returns {success, data: {id, ...fields}, _meta: {}}. Pass criteria JSON to include associations or select fields.'
+    description: 'Read a single Shopwell entity by its UUID. Use when you already have an entity ID. For searching by other fields, use shopwell-entity-search instead. Returns {success, data: {id, ...fields}, _meta: {}}. Pass criteria JSON to include associations or select fields.'
 )]
-#[McpToolDependsOn('shopware-entity-schema')]
+#[McpToolDependsOn('shopwell-entity-schema')]
 #[McpToolGroup('entity')]
 #[McpToolRequires(entityParam: 'entity', operations: ['read'])]
 class EntityReadTool extends McpToolResponse
@@ -45,9 +45,9 @@ class EntityReadTool extends McpToolResponse
     }
 
     public function __invoke(
-        #[Schema(description: 'Entity name to read, e.g. "order" or "product". See the shopware://entities resource for the full list.')]
+        #[Schema(description: 'Entity name to read, e.g. "order" or "product". See the shopwell://entities resource for the full list.')]
         string $entity,
-        #[Schema(description: 'The entity\'s UUID (32-character hex). To find a record by any other field, use shopware-entity-search instead.')]
+        #[Schema(description: 'The entity\'s UUID (32-character hex). To find a record by any other field, use shopwell-entity-search instead.')]
         string $id,
         #[Schema(description: 'A JSON OBJECT of Admin API criteria, as a string — most usefully "associations" to include related data, e.g. {"associations":{"lineItems":{}}} on an order, and "includes" to trim the response. Defaults to no criteria.')]
         string $criteria = '{}',
@@ -55,7 +55,7 @@ class EntityReadTool extends McpToolResponse
         $context = $this->contextProvider->getContext();
 
         if (!$this->registry->has($entity)) {
-            return $this->error(\sprintf('Entity "%s" not found. Use the shopware://entities resource for available entity names.', $entity));
+            return $this->error(\sprintf('Entity "%s" not found. Use the shopwell://entities resource for available entity names.', $entity));
         }
 
         if ($error = $this->requirePrivilege($context, $entity . ':read')) {

@@ -6,8 +6,8 @@ author_github: @JoshuaBehrens
 issue: NEXT-31920
 ---
 # Core
-* Added `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\MessageQueue\FullEntityIndexerMessage`, that will be handled as `dal:refresh:index`
-* Changed `api.action.cache.index` route to dispatch `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\MessageQueue\FullEntityIndexerMessage` instead of `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\MessageQueue\IterateEntityIndexerMessage`
+* Added `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\MessageQueue\FullEntityIndexerMessage`, that will be handled as `dal:refresh:index`
+* Changed `api.action.cache.index` route to dispatch `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\MessageQueue\FullEntityIndexerMessage` instead of `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\MessageQueue\IterateEntityIndexerMessage`
 ___
 # API
 * Added body parameter `only` to `api/_action/index` to reduce complexity when using `skip` instead

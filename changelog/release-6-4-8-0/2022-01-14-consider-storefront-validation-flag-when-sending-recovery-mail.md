@@ -5,4 +5,4 @@ author: Jeffrey Boehm
 author_github: jeboehm
 ---
 # Core
-* Changed `Shopware\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute` to pass `$validateStorefrontUrl` to the validation method
+* Changed `Shopwell\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute` to pass `$validateStorefrontUrl` to the validation method

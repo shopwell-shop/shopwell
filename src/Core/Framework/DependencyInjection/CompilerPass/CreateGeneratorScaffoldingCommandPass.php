@@ -17,7 +17,7 @@ class CreateGeneratorScaffoldingCommandPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        $generators = $container->findTaggedServiceIds('shopware.scaffold.generator');
+        $generators = $container->findTaggedServiceIds('shopwell.scaffold.generator');
 
         foreach ($generators as $id => $tags) {
             $def = $container->getDefinition($id);
@@ -28,7 +28,7 @@ class CreateGeneratorScaffoldingCommandPass implements CompilerPassInterface
             $class = $container->getParameterBag()->resolveValue($def->getClass());
 
             if (!is_subclass_of($class, ScaffoldingGenerator::class)) {
-                throw DependencyInjectionException::taggedServiceHasWrongType($id, 'shopware.scaffold.generator', ScaffoldingGenerator::class);
+                throw DependencyInjectionException::taggedServiceHasWrongType($id, 'shopwell.scaffold.generator', ScaffoldingGenerator::class);
             }
 
             $commandDefinition = new ChildDefinition('maker.auto_command.abstract');

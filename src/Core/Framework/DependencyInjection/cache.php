@@ -78,41 +78,41 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(StampedeProtectionConfigurator::class)
         ->public()
         ->args([
-            param('shopware.cache.disable_stampede_protection'),
+            param('shopwell.cache.disable_stampede_protection'),
         ]);
 
-    $services->set('shopware.cache.invalidator.storage.redis_adapter', \Redis::class)
+    $services->set('shopwell.cache.invalidator.storage.redis_adapter', \Redis::class)
         ->public()
         ->factory([service(RedisConnectionProvider::class), 'getConnection'])
         ->args([
-            param('shopware.cache.invalidation.delay_options.connection'),
+            param('shopwell.cache.invalidation.delay_options.connection'),
         ]);
 
-    $services->set('shopware.cache.invalidator.storage.redis', RedisInvalidatorStorage::class)
+    $services->set('shopwell.cache.invalidator.storage.redis', RedisInvalidatorStorage::class)
         ->lazy()
         ->args([
-            service('shopware.cache.invalidator.storage.redis_adapter'),
+            service('shopwell.cache.invalidator.storage.redis_adapter'),
             service('logger'),
         ])
-        ->tag('shopware.cache.invalidator.storage', ['storage' => 'redis']);
+        ->tag('shopwell.cache.invalidator.storage', ['storage' => 'redis']);
 
-    $services->set('shopware.cache.invalidator.storage.mysql', MySQLInvalidatorStorage::class)
+    $services->set('shopwell.cache.invalidator.storage.mysql', MySQLInvalidatorStorage::class)
         ->lazy()
         ->args([
             service(Connection::class),
             service('logger'),
         ])
-        ->tag('shopware.cache.invalidator.storage', ['storage' => 'mysql']);
+        ->tag('shopwell.cache.invalidator.storage', ['storage' => 'mysql']);
 
-    $services->set('shopware.cache.invalidator.storage.locator', TaggedServiceLocator::class)
+    $services->set('shopwell.cache.invalidator.storage.locator', TaggedServiceLocator::class)
         ->args([
-            tagged_locator('shopware.cache.invalidator.storage', 'storage'),
+            tagged_locator('shopwell.cache.invalidator.storage', 'storage'),
         ]);
 
     $services->set(AbstractInvalidatorStorage::class)
-        ->factory([service('shopware.cache.invalidator.storage.locator'), 'get'])
+        ->factory([service('shopwell.cache.invalidator.storage.locator'), 'get'])
         ->args([
-            param('shopware.cache.invalidation.delay_options.storage'),
+            param('shopwell.cache.invalidation.delay_options.storage'),
         ]);
 
     $services->set(CacheInvalidator::class)
@@ -128,16 +128,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(LoggerInterface::class),
             service('request_stack'),
             service('cache.http'),
-            param('shopware.http_cache.soft_purge'),
-            param('shopware.cache.invalidation.delay_enabled'),
-            param('shopware.cache.invalidation.tag_invalidation_log_enabled'),
+            param('shopwell.http_cache.soft_purge'),
+            param('shopwell.cache.invalidation.delay_enabled'),
+            param('shopwell.cache.invalidation.tag_invalidation_log_enabled'),
             service(BacktraceCollector::class),
             service(ClockInterface::class),
             service(AbstractReverseProxyGateway::class)->nullOnInvalid(),
         ]);
 
     $services->set(InvalidateCacheTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(InvalidateCacheTaskHandler::class)
         ->args([
@@ -159,8 +159,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('filesystem'),
             param('kernel.cache_dir'),
             param('kernel.environment'),
-            param('shopware.deployment.cluster_setup'),
-            param('shopware.http_cache.reverse_proxy.enabled'),
+            param('shopwell.deployment.cluster_setup'),
+            param('shopwell.http_cache.reverse_proxy.enabled'),
             service('messenger.default_bus'),
             service('logger'),
             service('lock.factory'),
@@ -196,7 +196,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(CacheInvalidator::class),
             service(Connection::class),
-            param('shopware.product_stream.indexing'),
+            param('shopwell.product_stream.indexing'),
         ])
         ->tag('kernel.event_listener', ['event' => CategoryIndexerEvent::class, 'method' => 'invalidateCategoryRouteByCategoryIds', 'priority' => 2000])
         ->tag('kernel.event_listener', ['event' => LandingPageIndexerEvent::class, 'method' => 'invalidateIndexedLandingPages', 'priority' => 2000])
@@ -245,19 +245,19 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CachePolicyProvider::class)
         ->factory([CachePolicyProviderFactory::class, 'create'])
         ->args([
-            param('shopware.http_cache.policies'),
-            param('shopware.http_cache.route_policies'),
-            param('shopware.http_cache.default_policies'),
+            param('shopwell.http_cache.policies'),
+            param('shopwell.http_cache.route_policies'),
+            param('shopwell.http_cache.default_policies'),
         ]);
 
     $services->set(CacheResponseSubscriber::class)
         ->args([
             service(CartService::class),
-            param('shopware.http.cache.default_ttl'),
-            param('shopware.http.cache.enabled'),
+            param('shopwell.http.cache.default_ttl'),
+            param('shopwell.http.cache.enabled'),
             service(MaintenanceModeResolver::class),
-            param('shopware.http_cache.stale_while_revalidate'),
-            param('shopware.http_cache.stale_if_error'),
+            param('shopwell.http_cache.stale_while_revalidate'),
+            param('shopwell.http_cache.stale_if_error'),
             service(CacheHeadersService::class),
             service(CachePolicyProvider::class),
         ])
@@ -267,7 +267,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(ExtensionDispatcher::class),
             service(CacheRelevantRulesResolver::class),
-            param('shopware.http_cache.cookies'),
+            param('shopwell.http_cache.cookies'),
             service('event_dispatcher'),
         ]);
 
@@ -282,7 +282,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->autoconfigure()
         ->autowire()
         ->args([
-            param('shopware.http_cache.reverse_proxy.enabled'),
+            param('shopwell.http_cache.reverse_proxy.enabled'),
             service('event_dispatcher'),
         ])
         ->tag('kernel.event_listener', ['event' => BeforeSendResponseEvent::class]);
@@ -290,7 +290,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ReverseProxyCache::class)
         ->args([
             service(AbstractReverseProxyGateway::class),
-            param('shopware.cache.invalidation.http_cache'),
+            param('shopwell.cache.invalidation.http_cache'),
             service(CacheTagCollector::class),
         ])
         ->tag('kernel.event_listener');
@@ -315,25 +315,25 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('console.command');
 
-    $services->set('shopware.reverse_proxy.http_client', Client::class);
+    $services->set('shopwell.reverse_proxy.http_client', Client::class);
 
     $services->set(AbstractReverseProxyGateway::class, VarnishReverseProxyGateway::class)
         ->args([
-            param('shopware.http_cache.reverse_proxy.hosts'),
-            param('shopware.http_cache.reverse_proxy.max_parallel_invalidations'),
-            service('shopware.reverse_proxy.http_client'),
+            param('shopwell.http_cache.reverse_proxy.hosts'),
+            param('shopwell.http_cache.reverse_proxy.max_parallel_invalidations'),
+            service('shopwell.reverse_proxy.http_client'),
             service('logger'),
         ]);
 
     $services->set(FastlyReverseProxyGateway::class)
         ->args([
-            service('shopware.reverse_proxy.http_client'),
-            param('shopware.http_cache.reverse_proxy.fastly.service_id'),
-            param('shopware.http_cache.reverse_proxy.fastly.api_key'),
-            param('shopware.http_cache.reverse_proxy.fastly.soft_purge'),
-            param('shopware.http_cache.reverse_proxy.max_parallel_invalidations'),
-            param('shopware.http_cache.reverse_proxy.fastly.tag_prefix'),
-            param('shopware.http_cache.reverse_proxy.fastly.instance_tag'),
+            service('shopwell.reverse_proxy.http_client'),
+            param('shopwell.http_cache.reverse_proxy.fastly.service_id'),
+            param('shopwell.http_cache.reverse_proxy.fastly.api_key'),
+            param('shopwell.http_cache.reverse_proxy.fastly.soft_purge'),
+            param('shopwell.http_cache.reverse_proxy.max_parallel_invalidations'),
+            param('shopwell.http_cache.reverse_proxy.fastly.tag_prefix'),
+            param('shopwell.http_cache.reverse_proxy.fastly.instance_tag'),
             env('APP_URL'),
             service('logger'),
         ]);
@@ -343,5 +343,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Meter::class),
         ])
         ->tag('kernel.event_subscriber')
-        ->tag('shopware.telemetry.subscriber');
+        ->tag('shopwell.telemetry.subscriber');
 };

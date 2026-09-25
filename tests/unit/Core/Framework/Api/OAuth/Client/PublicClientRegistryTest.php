@@ -20,7 +20,7 @@ class PublicClientRegistryTest extends TestCase
     protected function setUp(): void
     {
         $this->registry = new PublicClientRegistry([
-            'shopware-cli' => [
+            'shopwell-cli' => [
                 'name' => 'Shopwell CLI',
                 'redirect_uris' => ['http://127.0.0.1/callback', 'http://[::1]/callback'],
             ],
@@ -33,7 +33,7 @@ class PublicClientRegistryTest extends TestCase
 
     public function testHas(): void
     {
-        static::assertTrue($this->registry->has('shopware-cli'));
+        static::assertTrue($this->registry->has('shopwell-cli'));
         static::assertTrue($this->registry->has('my-app'));
         static::assertFalse($this->registry->has('administration'));
         static::assertFalse($this->registry->has(''));
@@ -41,10 +41,10 @@ class PublicClientRegistryTest extends TestCase
 
     public function testGetBuildsPublicClientLimitedToAuthorizationCodeAndRefreshToken(): void
     {
-        $client = $this->registry->get('shopware-cli');
+        $client = $this->registry->get('shopwell-cli');
 
         static::assertNotNull($client);
-        static::assertSame('shopware-cli', $client->getIdentifier());
+        static::assertSame('shopwell-cli', $client->getIdentifier());
         static::assertSame('Shopwell CLI', $client->getName());
         static::assertFalse($client->isConfidential());
         static::assertTrue($client->getWriteAccess());
@@ -72,13 +72,13 @@ class PublicClientRegistryTest extends TestCase
      */
     public static function redirectUriProvider(): iterable
     {
-        yield 'loopback IPv4 with any port is allowed' => ['shopware-cli', 'http://127.0.0.1:54321/callback', true];
-        yield 'loopback IPv4 without port is allowed' => ['shopware-cli', 'http://127.0.0.1/callback', true];
-        yield 'loopback IPv6 with any port is allowed' => ['shopware-cli', 'http://[::1]:54321/callback', true];
-        yield 'localhost is not a loopback literal and is rejected' => ['shopware-cli', 'http://localhost:54321/callback', false];
-        yield 'loopback with different path is rejected' => ['shopware-cli', 'http://127.0.0.1:54321/other', false];
-        yield 'loopback with https scheme is rejected' => ['shopware-cli', 'https://127.0.0.1:54321/callback', false];
-        yield 'foreign host is rejected' => ['shopware-cli', 'http://evil.example/callback', false];
+        yield 'loopback IPv4 with any port is allowed' => ['shopwell-cli', 'http://127.0.0.1:54321/callback', true];
+        yield 'loopback IPv4 without port is allowed' => ['shopwell-cli', 'http://127.0.0.1/callback', true];
+        yield 'loopback IPv6 with any port is allowed' => ['shopwell-cli', 'http://[::1]:54321/callback', true];
+        yield 'localhost is not a loopback literal and is rejected' => ['shopwell-cli', 'http://localhost:54321/callback', false];
+        yield 'loopback with different path is rejected' => ['shopwell-cli', 'http://127.0.0.1:54321/other', false];
+        yield 'loopback with https scheme is rejected' => ['shopwell-cli', 'https://127.0.0.1:54321/callback', false];
+        yield 'foreign host is rejected' => ['shopwell-cli', 'http://evil.example/callback', false];
         yield 'non loopback uri must match exactly' => ['my-app', 'https://my-app.example/oauth/callback', true];
         yield 'non loopback uri with other port is rejected' => ['my-app', 'https://my-app.example:8443/oauth/callback', false];
         yield 'unknown client is rejected' => ['unknown', 'http://127.0.0.1:54321/callback', false];

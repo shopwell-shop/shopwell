@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  */
-import { ShopwellInstance } from 'src/core/shopware';
+import { ShopwellInstance } from 'src/core/shopwell';
 
 // IIFE
 void (async () => {

@@ -2,7 +2,7 @@
 title: Deprecated entity indexer registry flags
 issue: NEXT-16301
 author: OliverSkroblin
-author_email: o.skroblin@shopware.com 
+author_email: o.skroblin@shopwell.com 
 author_github: OliverSkroblin
 ---
 # Core

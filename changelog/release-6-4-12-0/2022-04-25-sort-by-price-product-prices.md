@@ -6,4 +6,4 @@ author_email: hello@huzaifamustafa.com
 author_github: @zaifastafa
 ---
 # Core
-* Add helper method `sortByPrice` in `\Shopware\Core\Content\Product\Aggregate\ProductPrice\ProductPriceCollection`
+* Add helper method `sortByPrice` in `\Shopwell\Core\Content\Product\Aggregate\ProductPrice\ProductPriceCollection`

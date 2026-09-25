@@ -3,44 +3,44 @@ title: Unify setup scripts
 issue: NEXT-17218
 ---
 # Core
-* Added `\Shopware\Core\Maintenance\Maintenance` bundle
-  * Added `\Shopware\Core\Maintenance\System\Command\SystemGenerateAppSecretCommand`
-  * Deprecated `\Shopware\Core\DevOps\System\Command\SystemGenerateAppSecretCommand`, use `\Shopware\Core\Maintenance\System\Command\SystemGenerateAppSecretCommand` instead
-  * Added `\Shopware\Core\Maintenance\System\Command\SystemGenerateJwtSecretCommand`
-  * Deprecated `\Shopware\Core\DevOps\System\Command\SystemGenerateJwtSecretCommand`, use `\Shopware\Core\Maintenance\System\Command\SystemGenerateJwtSecretCommand` instead
-  * Added `\Shopware\Core\Maintenance\System\Command\SystemInstallCommand`
-  * Deprecated `\Shopware\Core\DevOps\System\Command\SystemInstallCommand`, use `\Shopware\Core\Maintenance\System\Command\SystemInstallCommand` instead
-  * Added `\Shopware\Core\Maintenance\System\Command\SystemSetupCommand`
-  * Deprecated `\Shopware\Core\DevOps\System\Command\SystemSetupCommand`, use `\Shopware\Core\Maintenance\System\Command\SystemSetupCommand` instead
-  * Added `\Shopware\Core\Maintenance\System\Command\SystemUpdateFinishCommand`
-  * Deprecated `\Shopware\Core\DevOps\System\Command\SystemUpdateFinishCommand`, use `\Shopware\Core\Maintenance\System\Command\SystemUpdateFinishCommand` instead
-  * Added `\Shopware\Core\Maintenance\System\Command\SystemUpdatePrepareCommand`
-  * Deprecated `\Shopware\Core\DevOps\System\Command\SystemUpdatePrepareCommand`, use `\Shopware\Core\Maintenance\System\Command\SystemUpdatePrepareCommand` instead
-  * Added `\Shopware\Core\Maintenance\SalesChannel\Command\SalesChannelCreateCommand`
-  * Deprecated `\Shopware\Core\System\SalesChannel\Command\SalesChannelCreateCommand`, use `\Shopware\Core\Maintenance\SalesChannel\Command\SalesChannelCreateCommand` instead
-  * Added `\Shopware\Core\Maintenance\SalesChannel\Command\SalesChannelListCommand`
-  * Deprecated `\Shopware\Core\System\SalesChannel\Command\SalesChannelListCommand`, use `\Shopware\Core\Maintenance\SalesChannel\Command\SalesChannelListCommand` instead
-  * Added `\Shopware\Core\Maintenance\SalesChannel\Command\SalesChannelMaintenanceDisableCommand`
-  * Deprecated `\Shopware\Core\System\SalesChannel\Command\SalesChannelMaintenanceDisableCommand`, use `\Shopware\Core\Maintenance\SalesChannel\Command\SalesChannelMaintenanceDisableCommand` instead
-  * Added `\Shopware\Core\Maintenance\SalesChannel\Command\SalesChannelMaintenanceEnableCommand`
-  * Deprecated `\Shopware\Core\System\SalesChannel\Command\SalesChannelMaintenanceEnableCommand`, use `\Shopware\Core\Maintenance\SalesChannel\Command\SalesChannelMaintenanceEnableCommand` instead
-  * Added `\Shopware\Core\Maintenance\SalesChannel\Service\SalesChannelCreator`
-  * Added `\Shopware\Core\Maintenance\System\Command\SystemConfigureShopCommand`
-  * Added `\Shopware\Core\Maintenance\System\Service\DatabaseConnectionFactory`
-  * Added `\Shopware\Core\Maintenance\System\Service\DatabaseInitializer`
-  * Added `\Shopware\Core\Maintenance\System\Service\JwtCertificateGenerator`
-  * Added `\Shopware\Core\Maintenance\System\Service\ShopConfigurator`
-  * Added `\Shopware\Core\Maintenance\User\Command\UserChangePasswordCommand`
-  * Deprecated `\Shopware\Core\System\User\Command\UserChangePasswordCommand`, use `\Shopware\Core\Maintenance\User\Command\UserChangePasswordCommand` instead
-  * Added `\Shopware\Core\Maintenance\User\Command\UserCreateCommand`
-  * Deprecated `\Shopware\Core\System\User\Command\UserCreateCommand`, use `\Shopware\Core\Maintenance\User\Command\UserCreateCommand` instead
-  * Added `\Shopware\Core\Maintenance\User\Service\UserProvisioner`
-  * Deprecated `\Shopware\Core\System\User\Service\UserProvisioner`, use `\Shopware\Core\Maintenance\User\Service\UserProvisioner` instead
-* Changed `\Shopware\Core\Framework\Adapter\Asset\AssetInstallCommand` to additionally install assets from the Recovery bundle if it is present
-* Added `\Shopware\Core\Framework\Plugin\Util\AssetService::copyRecoveryAssets()` to copy assets of the recovery bundle to the public folder
+* Added `\Shopwell\Core\Maintenance\Maintenance` bundle
+  * Added `\Shopwell\Core\Maintenance\System\Command\SystemGenerateAppSecretCommand`
+  * Deprecated `\Shopwell\Core\DevOps\System\Command\SystemGenerateAppSecretCommand`, use `\Shopwell\Core\Maintenance\System\Command\SystemGenerateAppSecretCommand` instead
+  * Added `\Shopwell\Core\Maintenance\System\Command\SystemGenerateJwtSecretCommand`
+  * Deprecated `\Shopwell\Core\DevOps\System\Command\SystemGenerateJwtSecretCommand`, use `\Shopwell\Core\Maintenance\System\Command\SystemGenerateJwtSecretCommand` instead
+  * Added `\Shopwell\Core\Maintenance\System\Command\SystemInstallCommand`
+  * Deprecated `\Shopwell\Core\DevOps\System\Command\SystemInstallCommand`, use `\Shopwell\Core\Maintenance\System\Command\SystemInstallCommand` instead
+  * Added `\Shopwell\Core\Maintenance\System\Command\SystemSetupCommand`
+  * Deprecated `\Shopwell\Core\DevOps\System\Command\SystemSetupCommand`, use `\Shopwell\Core\Maintenance\System\Command\SystemSetupCommand` instead
+  * Added `\Shopwell\Core\Maintenance\System\Command\SystemUpdateFinishCommand`
+  * Deprecated `\Shopwell\Core\DevOps\System\Command\SystemUpdateFinishCommand`, use `\Shopwell\Core\Maintenance\System\Command\SystemUpdateFinishCommand` instead
+  * Added `\Shopwell\Core\Maintenance\System\Command\SystemUpdatePrepareCommand`
+  * Deprecated `\Shopwell\Core\DevOps\System\Command\SystemUpdatePrepareCommand`, use `\Shopwell\Core\Maintenance\System\Command\SystemUpdatePrepareCommand` instead
+  * Added `\Shopwell\Core\Maintenance\SalesChannel\Command\SalesChannelCreateCommand`
+  * Deprecated `\Shopwell\Core\System\SalesChannel\Command\SalesChannelCreateCommand`, use `\Shopwell\Core\Maintenance\SalesChannel\Command\SalesChannelCreateCommand` instead
+  * Added `\Shopwell\Core\Maintenance\SalesChannel\Command\SalesChannelListCommand`
+  * Deprecated `\Shopwell\Core\System\SalesChannel\Command\SalesChannelListCommand`, use `\Shopwell\Core\Maintenance\SalesChannel\Command\SalesChannelListCommand` instead
+  * Added `\Shopwell\Core\Maintenance\SalesChannel\Command\SalesChannelMaintenanceDisableCommand`
+  * Deprecated `\Shopwell\Core\System\SalesChannel\Command\SalesChannelMaintenanceDisableCommand`, use `\Shopwell\Core\Maintenance\SalesChannel\Command\SalesChannelMaintenanceDisableCommand` instead
+  * Added `\Shopwell\Core\Maintenance\SalesChannel\Command\SalesChannelMaintenanceEnableCommand`
+  * Deprecated `\Shopwell\Core\System\SalesChannel\Command\SalesChannelMaintenanceEnableCommand`, use `\Shopwell\Core\Maintenance\SalesChannel\Command\SalesChannelMaintenanceEnableCommand` instead
+  * Added `\Shopwell\Core\Maintenance\SalesChannel\Service\SalesChannelCreator`
+  * Added `\Shopwell\Core\Maintenance\System\Command\SystemConfigureShopCommand`
+  * Added `\Shopwell\Core\Maintenance\System\Service\DatabaseConnectionFactory`
+  * Added `\Shopwell\Core\Maintenance\System\Service\DatabaseInitializer`
+  * Added `\Shopwell\Core\Maintenance\System\Service\JwtCertificateGenerator`
+  * Added `\Shopwell\Core\Maintenance\System\Service\ShopConfigurator`
+  * Added `\Shopwell\Core\Maintenance\User\Command\UserChangePasswordCommand`
+  * Deprecated `\Shopwell\Core\System\User\Command\UserChangePasswordCommand`, use `\Shopwell\Core\Maintenance\User\Command\UserChangePasswordCommand` instead
+  * Added `\Shopwell\Core\Maintenance\User\Command\UserCreateCommand`
+  * Deprecated `\Shopwell\Core\System\User\Command\UserCreateCommand`, use `\Shopwell\Core\Maintenance\User\Command\UserCreateCommand` instead
+  * Added `\Shopwell\Core\Maintenance\User\Service\UserProvisioner`
+  * Deprecated `\Shopwell\Core\System\User\Service\UserProvisioner`, use `\Shopwell\Core\Maintenance\User\Service\UserProvisioner` instead
+* Changed `\Shopwell\Core\Framework\Adapter\Asset\AssetInstallCommand` to additionally install assets from the Recovery bundle if it is present
+* Added `\Shopwell\Core\Framework\Plugin\Util\AssetService::copyRecoveryAssets()` to copy assets of the recovery bundle to the public folder
 ___
 # Storefront
-* Changed `\Shopware\Storefront\Framework\Command\SalesChannelCreateStorefrontCommand` to add `snippetSetId`-parameter and to no longer ignore the `navigationCategoryId`-parameter
+* Changed `\Shopwell\Storefront\Framework\Command\SalesChannelCreateStorefrontCommand` to add `snippetSetId`-parameter and to no longer ignore the `navigationCategoryId`-parameter
 ___
 # Upgrade Information
 
@@ -52,7 +52,7 @@ To load enable that bundle, you should add the following line to your `/config/b
 ```php
 return [
    ...
-   Shopware\Core\Maintenance\Maintenance::class => ['all' => true],
+   Shopwell\Core\Maintenance\Maintenance::class => ['all' => true],
 ];
 ```
 In that refactoring we moved some CLI commands into that new bundle and deprecated the old command classes. The new commands are marked as internal, as you should not rely on the PHP interface of those commands, only on the CLI API.
@@ -60,9 +60,9 @@ In that refactoring we moved some CLI commands into that new bundle and deprecat
 Additionally we've moved the `UserProvisioner` service from the `Core/System/User` namespace, to the `Core/Maintenance/User` namespace, make sure you use the service from the new location.
 Before:
 ```php
-use Shopware\Core\System\User\Service\UserProvisioner;
+use Shopwell\Core\System\User\Service\UserProvisioner;
 ```
 After:
 ```php
-use Shopware\Core\Maintenance\User\Service\UserProvisioner;
+use Shopwell\Core\Maintenance\User\Service\UserProvisioner;
 ```

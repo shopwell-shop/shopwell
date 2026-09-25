@@ -9,7 +9,7 @@ type Options = {
 
 /**
  * @sw-package framework
- * @private - Only to be used by shopware directly
+ * @private - Only to be used by shopwell directly
  *
  * Creates a Vite plugin that automatically imports all *.override.vue files
  * into the bundle entry file.
@@ -21,7 +21,7 @@ export default function viteOverridePlugin(options: Options): Plugin {
     let overrideFiles = [] as string[];
 
     return {
-        name: 'shopware-vite-plugin-override-component',
+        name: 'shopwell-vite-plugin-override-component',
 
         configResolved() {
             // Find all override files. Sorted because the directory walk follows filesystem order, which

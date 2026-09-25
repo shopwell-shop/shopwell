@@ -170,9 +170,9 @@ jobs:
 
       - id: sts
         continue-on-error: true
-        uses: shopware/octo-sts-action@main
+        uses: shopwell/octo-sts-action@main
         with:
-          scope: shopware
+          scope: shopwell
           identity: ManageProjects
 
       - name: Create or update audit issue

@@ -54,7 +54,7 @@ class UseCLIContextRule implements Rule
                 return [
                     RuleErrorBuilder::message('Method Context::createDefaultContext() should not be used in CLI context. Use Context::createCLIContext() instead.')
                         ->line($node->getStartLine())
-                        ->identifier('shopware.cliContext')
+                        ->identifier('shopwell.cliContext')
                         ->build(),
                 ];
             }

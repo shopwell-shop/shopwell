@@ -32,7 +32,7 @@ class UpdatedByField extends FkField
 
         if (\func_num_args() === 0 && !Feature::isActive('v6.8.0.0') && !EnvironmentHelper::getVariable('TESTS_RUNNING')) {
             trigger_deprecation(
-                'shopware/core',
+                'shopwell/core',
                 '',
                 \sprintf(
                     'Not passing $allowedWriteScopes to %s::__construct() will include Context::CRUD_API_SCOPE by default in v6.8.0. Pass the desired scopes explicitly to keep the current behavior.',

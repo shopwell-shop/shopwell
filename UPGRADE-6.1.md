@@ -4,16 +4,16 @@ UPGRADE FROM 6.0 to 6.1
 Core
 ----
 
-* `\Shopware\Storefront\Controller\StorefrontController::forwardToRoute` now handles parameters correctly.
+* `\Shopwell\Storefront\Controller\StorefrontController::forwardToRoute` now handles parameters correctly.
 * Request scope changes during a single request handle are prohibited.
-* Use `\Shopware\Core\Framework\Routing\RequestTransformerInterface::extractInheritableAttributes` if you want to create a true subrequest.
+* Use `\Shopwell\Core\Framework\Routing\RequestTransformerInterface::extractInheritableAttributes` if you want to create a true subrequest.
 * The Context will only be resolved when a valid scope is dipatched.
 * All admin and api routes are now authentication protected by default.
-* Changed the `\Symfony\Component\HttpKernel\KernelEvents::CONTROLLER` Event-Subscriber priorities. Now all Shopware Listeners are handled after the core symfony event handlers. You can find the priorities in `\Shopware\Core\Framework\Routing\KernelListenerPriorities`.
-* Removed the `Shopware\Core\Framework\Routing\Event\RouteScopeWhitlistCollectEvent` in favor of a taggable interface named `Shopware\Core\Framework\Routing\RouteScopeWhitelistInterface`.
+* Changed the `\Symfony\Component\HttpKernel\KernelEvents::CONTROLLER` Event-Subscriber priorities. Now all Shopwell Listeners are handled after the core symfony event handlers. You can find the priorities in `\Shopwell\Core\Framework\Routing\KernelListenerPriorities`.
+* Removed the `Shopwell\Core\Framework\Routing\Event\RouteScopeWhitlistCollectEvent` in favor of a taggable interface named `Shopwell\Core\Framework\Routing\RouteScopeWhitelistInterface`.
 * Requests can no longer be forwarded across different request scopes.
 * If you have implemented a custom FieldResolver, you need to implement the `getJoinBuilder` method.
-* `\Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria` association handling
+* `\Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria` association handling
 
     We removed the `$criteria` parameter from the `addAssociation` function. By setting the criteria object the already added criteria was overwritten. This led to problems especially with multiple extensions by plugins. Furthermore the function `addAssociationPath` was removed from the criteria. The following functions are now available on the criteria object:
 
@@ -53,13 +53,13 @@ Core
 
     ```
 
-* If you have implemented a custom `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\IndexerInterface`, you need to implement the `partial` method.
+* If you have implemented a custom `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\IndexerInterface`, you need to implement the `partial` method.
     Here are two good example implementations:
-    1. simple iteration: `\Shopware\Core\Content\Product\DataAbstractionLayer\Indexing\ProductCategoryTreeIndexer::partial`
-    2. iteration with several ids: `\Shopware\Core\Content\Category\DataAbstractionLayer\Indexing\BreadcrumbIndexer::partial`
+    1. simple iteration: `\Shopwell\Core\Content\Product\DataAbstractionLayer\Indexing\ProductCategoryTreeIndexer::partial`
+    2. iteration with several ids: `\Shopwell\Core\Content\Category\DataAbstractionLayer\Indexing\BreadcrumbIndexer::partial`
 
-* If you have implemented the `\Shopware\Core\Framework\DataAbstractionLayer\Search\EntityAggregatorInterface`, you need to return now a `\Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\AggregationResultCollection`
-* We changed the constructor parameter order of `\Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Aggregation`
+* If you have implemented the `\Shopwell\Core\Framework\DataAbstractionLayer\Search\EntityAggregatorInterface`, you need to return now a `\Shopwell\Core\Framework\DataAbstractionLayer\Search\AggregationResult\AggregationResultCollection`
+* We changed the constructor parameter order of `\Shopwell\Core\Framework\DataAbstractionLayer\Search\Aggregation\Aggregation`
 * Aggregations are now returned directly in a collection:
     ```php
     $criteria->addAggregation(
@@ -89,8 +89,8 @@ Core
         $count = $bucket->getCount();
     }
     ```
-* We changed the type hint of `\Shopware\Core\Framework\DataAbstractionLayer\Event\EntityAggregationResultLoadedEvent::getResult` to `AggregationResultCollection`
-* We removed the `Aggregation::groupByFields` and `Aggregation::filters` property, use `\Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\FilterAggregation` and `\Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\TermsAggregation` instead
+* We changed the type hint of `\Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityAggregationResultLoadedEvent::getResult` to `AggregationResultCollection`
+* We removed the `Aggregation::groupByFields` and `Aggregation::filters` property, use `\Shopwell\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\FilterAggregation` and `\Shopwell\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\TermsAggregation` instead
     ```php
     $criteria->addAggregation(
         new FilterAggregation(
@@ -112,22 +112,22 @@ Core
        }
     }
     ```
-* We've changed the kernel plugin loading. Replace the `ClassLoader` with an instance of `\Shopware\Core\Framework\Plugin\KernelPluginLoader\KernelPluginLoader`.
+* We've changed the kernel plugin loading. Replace the `ClassLoader` with an instance of `\Shopwell\Core\Framework\Plugin\KernelPluginLoader\KernelPluginLoader`.
 
     Before:
     ```php
-    $kernel = new \Shopware\Core\Kernel($env, $debug, $classLoader, $version);
+    $kernel = new \Shopwell\Core\Kernel($env, $debug, $classLoader, $version);
     ```
 
     After:
     ```php
-    $connection = \Shopware\Core\Kernel::getConnection();
-    $pluginLoader = new \Shopware\Core\Framework\Plugin\KernelPluginLoader\DbalKernelPluginLoader($classLoader, null, $connection);
-    $kernel = new \Shopware\Core\Kernel($env, $debug, $pluginLoader, $version);
+    $connection = \Shopwell\Core\Kernel::getConnection();
+    $pluginLoader = new \Shopwell\Core\Framework\Plugin\KernelPluginLoader\DbalKernelPluginLoader($classLoader, null, $connection);
+    $kernel = new \Shopwell\Core\Kernel($env, $debug, $pluginLoader, $version);
 
     // or without plugins
-    $pluginLoader = new \Shopware\Core\Framework\Plugin\KernelPluginLoader\StaticKernelPluginLoader($classLoader, null, []);
-    $kernel = new \Shopware\Core\Kernel($env, $debug, $pluginLoader, $version);
+    $pluginLoader = new \Shopwell\Core\Framework\Plugin\KernelPluginLoader\StaticKernelPluginLoader($classLoader, null, []);
+    $kernel = new \Shopwell\Core\Kernel($env, $debug, $pluginLoader, $version);
 
     // or with a static plugin list
     $plugins = [
@@ -139,28 +139,28 @@ Core
             'managedByComposer' => false,
         ]
     ];
-    $pluginLoader = new \Shopware\Core\Framework\Plugin\KernelPluginLoader\StaticKernelPluginLoader($classLoader, null, $plugins);
-    $kernel = new \Shopware\Core\Kernel($env, $debug, $pluginLoader, $version);
+    $pluginLoader = new \Shopwell\Core\Framework\Plugin\KernelPluginLoader\StaticKernelPluginLoader($classLoader, null, $plugins);
+    $kernel = new \Shopwell\Core\Kernel($env, $debug, $pluginLoader, $version);
     ```
 
-* the parameter for the `\Shopware\Core\Kernel::boot` method was removed. Instead, use the `StaticKernelPluginLoader` with an empty list.
-* If you have implemented a custom `Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\AbstractFieldSerializer`, you must now provide a `DefinitionInstanceRegistry` when calling the super constructor
-* Removed `Shopware\Core\Framework\DataAbstractionLayer\EntityWrittenContainerEvent::getEventByDefinition`. Use `getEventByEntityName` instead, which takes the entity name instead of the entity classname but proved the same functionality.
-* Removed `getDefinition` and the corresponding `definition` member from `\Shopware\Core\Framework\DataAbstractionLayer\EntityWriteResults` and `...\Event\EntityWrittenEvent`. Classes which used this function can access the name of the written entity via the new method `getEntityName` and retrieve the definition using the `DefinitionInstanceRegistry`
-* Replace service id `shopware.cache` with `cache.object`
-* If you invalidated the entity cache over the `shopware.cache` service, use the `\Shopware\Core\Framework\Adapter\Cache\CacheClearer` instead.
-* All customer events in `Shopware\Core\Checkout\Customer\Event` now get the `Shopware\Core\Syste\SalesChannel\SalesChannelContext` instead of `Shopware\Core\Framework\Context` and a `salesChannelId`
-* Implement `getName` for classes that implement `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\IndexerInterface`
-* We've moved the seo module into the core. Replace the namespace `Shopware\Storefront\Framework\Seo\` with `Shopware\Core\Content\Seo\`
-* Switch the usage of `\Shopware\Core\Framework\Migration\MigrationStep::addForwardTrigger()` and `\Shopware\Core\Framework\Migration\MigrationStep::addBackwardTrigger()`, as the execution conditions were switched. 
-* `\Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity::$trackingCode` has been replaced with `\Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity::$trackingCodes`.
+* the parameter for the `\Shopwell\Core\Kernel::boot` method was removed. Instead, use the `StaticKernelPluginLoader` with an empty list.
+* If you have implemented a custom `Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\AbstractFieldSerializer`, you must now provide a `DefinitionInstanceRegistry` when calling the super constructor
+* Removed `Shopwell\Core\Framework\DataAbstractionLayer\EntityWrittenContainerEvent::getEventByDefinition`. Use `getEventByEntityName` instead, which takes the entity name instead of the entity classname but proved the same functionality.
+* Removed `getDefinition` and the corresponding `definition` member from `\Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResults` and `...\Event\EntityWrittenEvent`. Classes which used this function can access the name of the written entity via the new method `getEntityName` and retrieve the definition using the `DefinitionInstanceRegistry`
+* Replace service id `shopwell.cache` with `cache.object`
+* If you invalidated the entity cache over the `shopwell.cache` service, use the `\Shopwell\Core\Framework\Adapter\Cache\CacheClearer` instead.
+* All customer events in `Shopwell\Core\Checkout\Customer\Event` now get the `Shopwell\Core\Syste\SalesChannel\SalesChannelContext` instead of `Shopwell\Core\Framework\Context` and a `salesChannelId`
+* Implement `getName` for classes that implement `\Shopwell\Core\Framework\DataAbstractionLayer\Indexing\IndexerInterface`
+* We've moved the seo module into the core. Replace the namespace `Shopwell\Storefront\Framework\Seo\` with `Shopwell\Core\Content\Seo\`
+* Switch the usage of `\Shopwell\Core\Framework\Migration\MigrationStep::addForwardTrigger()` and `\Shopwell\Core\Framework\Migration\MigrationStep::addBackwardTrigger()`, as the execution conditions were switched. 
+* `\Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity::$trackingCode` has been replaced with `\Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity::$trackingCodes`.
 * Add Bearer Auth Token to requests to `/api/v{version}/_info/entity-schema.json` and `/api/v{version}/_info/business-events.json` routes
-* Removed `shopware.api.api_browser.public` config value, use `shopware.api.api_browser.auth_required = true` instead, to limit access to the open api routes
+* Removed `shopwell.api.api_browser.public` config value, use `shopwell.api.api_browser.auth_required = true` instead, to limit access to the open api routes
 * Replace `product/category.extensions.seoUrls` with `product/category.seoUrls`
 * Dropped `additionalText` column of product entity, use `metaDescription` instead
-* If your entity definition overwrites the `\Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition::getDefaults` method, you will have to remove the parameter, as it is not needed anymore. Remove the check `$existence->exists()` as this is done before by the Core now. If you want to define different defaults for child entities, overwrite `\Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition::getChildDefaults`
-* If you depend on `\Shopware\Core\Framework\Context::createDefaultContext()` outside of tests, pass the context as a parameter to your method instead
-* The Shopware entity cache has been removed and has been replaced by a symfony cache pool. You have to remove any configuration files pointing to `shopware.entity_cache`.
+* If your entity definition overwrites the `\Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition::getDefaults` method, you will have to remove the parameter, as it is not needed anymore. Remove the check `$existence->exists()` as this is done before by the Core now. If you want to define different defaults for child entities, overwrite `\Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition::getChildDefaults`
+* If you depend on `\Shopwell\Core\Framework\Context::createDefaultContext()` outside of tests, pass the context as a parameter to your method instead
+* The Shopwell entity cache has been removed and has been replaced by a symfony cache pool. You have to remove any configuration files pointing to `shopwell.entity_cache`.
 
     Example: Redis implementation
     ```yaml
@@ -186,35 +186,35 @@ Core
             app: cache.adapter.array
     ```
   
- * Add the `extractInheritableAttributes()` function to your implementations of `\Shopware\Core\Framework\Routing\RequestTransformerInterface`
- * Find and replace `Shopware\Core\Framework\Acl` with `Shopware\Core\Framework\Api\Acl`
- * Find and replace `Shopware\Core\Framework\CustomField` with `Shopware\Core\System\CustomField`
- * Find and replace `Shopware\Core\Framework\Language` with `Shopware\Core\System\Language`
- * Find and replace `Shopware\Core\Framework\Snippet` with `Shopware\Core\System\Snippet`
- * Find and replace `Shopware\Core\Framework\Doctrine` with `Shopware\Core\Framework\DataAbstractionLayer\Doctrine`
- * Find and replace `Shopware\Core\Framework\Pricing` with `Shopware\Core\Framework\DataAbstractionLayer\Pricing`
- * Find and replace `Shopware\Core\Framework\Version` with `Shopware\Core\Framework\DataAbstractionLayer\Version`
- * Find and replace `Shopware\Core\Framework\Faker` with `Shopware\Core\Framework\Demodata\Faker`
- * Find and replace `Shopware\Core\Framework\PersonalData` with `Shopware\Core\Framework\Demodata\PersonalData`
- * Find and replace `Shopware\Core\Framework\Logging` with `Shopware\Core\Framework\Log`
- * Find and replace `Shopware\Core\Framework\ScheduledTask` with `Shopware\Core\Framework\MessageQueue\ScheduledTask`
- * Find and replace `Shopware\Core\Framework\Twig` with `Shopware\Core\Framework\Adapter\Twig`
- * Find and replace `Shopware\Core\Framework\Asset` with `Shopware\Core\Framework\Adapter\Asset`
- * Find and replace `Shopware\Core\Framework\Console` with `Shopware\Core\Framework\Adapter\Console`
- * Find and replace `Shopware\Core\Framework\Cache` with `Shopware\Core\Framework\Adapter\Cache`
- * Find and replace `Shopware\Core\Framework\Filesystem` with `Shopware\Core\Framework\Adapter\Filesystem`
- * Find and replace `Shopware\Core\Framework\Translation` with `Shopware\Core\Framework\Adapter\Translation`
- * Find and replace `Shopware\Core\Framework\Seo` with `Shopware\Core\Content\Seo`
- * Find and replace `Shopware\Core\Content\DeliveryTime` with `Shopware\Core\System\DeliveryTime`
- * Find and replace `Shopware\Core\Framework\Context\` with `Shopware\Core\Framework\Api\Context\`
- * Find and replace `Shopware\Core\System\User\Service\UserProvisioner` with `Shopware\Core\System\User\Service\UserProvisioner`
-    * Warning: Do not replace `Shopware\Core\Framework\Context` with `Shopware\Core\Framework\Api\Context`, this would replace the `Framework\Context.php` usage.
+ * Add the `extractInheritableAttributes()` function to your implementations of `\Shopwell\Core\Framework\Routing\RequestTransformerInterface`
+ * Find and replace `Shopwell\Core\Framework\Acl` with `Shopwell\Core\Framework\Api\Acl`
+ * Find and replace `Shopwell\Core\Framework\CustomField` with `Shopwell\Core\System\CustomField`
+ * Find and replace `Shopwell\Core\Framework\Language` with `Shopwell\Core\System\Language`
+ * Find and replace `Shopwell\Core\Framework\Snippet` with `Shopwell\Core\System\Snippet`
+ * Find and replace `Shopwell\Core\Framework\Doctrine` with `Shopwell\Core\Framework\DataAbstractionLayer\Doctrine`
+ * Find and replace `Shopwell\Core\Framework\Pricing` with `Shopwell\Core\Framework\DataAbstractionLayer\Pricing`
+ * Find and replace `Shopwell\Core\Framework\Version` with `Shopwell\Core\Framework\DataAbstractionLayer\Version`
+ * Find and replace `Shopwell\Core\Framework\Faker` with `Shopwell\Core\Framework\Demodata\Faker`
+ * Find and replace `Shopwell\Core\Framework\PersonalData` with `Shopwell\Core\Framework\Demodata\PersonalData`
+ * Find and replace `Shopwell\Core\Framework\Logging` with `Shopwell\Core\Framework\Log`
+ * Find and replace `Shopwell\Core\Framework\ScheduledTask` with `Shopwell\Core\Framework\MessageQueue\ScheduledTask`
+ * Find and replace `Shopwell\Core\Framework\Twig` with `Shopwell\Core\Framework\Adapter\Twig`
+ * Find and replace `Shopwell\Core\Framework\Asset` with `Shopwell\Core\Framework\Adapter\Asset`
+ * Find and replace `Shopwell\Core\Framework\Console` with `Shopwell\Core\Framework\Adapter\Console`
+ * Find and replace `Shopwell\Core\Framework\Cache` with `Shopwell\Core\Framework\Adapter\Cache`
+ * Find and replace `Shopwell\Core\Framework\Filesystem` with `Shopwell\Core\Framework\Adapter\Filesystem`
+ * Find and replace `Shopwell\Core\Framework\Translation` with `Shopwell\Core\Framework\Adapter\Translation`
+ * Find and replace `Shopwell\Core\Framework\Seo` with `Shopwell\Core\Content\Seo`
+ * Find and replace `Shopwell\Core\Content\DeliveryTime` with `Shopwell\Core\System\DeliveryTime`
+ * Find and replace `Shopwell\Core\Framework\Context\` with `Shopwell\Core\Framework\Api\Context\`
+ * Find and replace `Shopwell\Core\System\User\Service\UserProvisioner` with `Shopwell\Core\System\User\Service\UserProvisioner`
+    * Warning: Do not replace `Shopwell\Core\Framework\Context` with `Shopwell\Core\Framework\Api\Context`, this would replace the `Framework\Context.php` usage.
  * Added unique constraint for `iso_code` column of `currency` table. The migration can fail if there are already duplicate `iso_codes` in the table
  * Replace `mailer` usage with `core_mailer` in your service definitions. 
- * If you call `\Shopware\Core\Framework\Api\Response\ResponseFactoryInterface::createDetailResponse` or `\Shopware\Core\Framework\Api\Response\ResponseFactoryInterface::createListingResponse` in your plugin, the first parameter to be passed now is the `Criteria` object with which the data was loaded.
- * We changed the type hint of `Shopware\Core\Framework\Validation\ValidationServiceInterface::buildCreateValidation` and `Shopware\Core\Framework\Validation\ValidationServiceInterface::buildUpdateValidation` to `SalesChannelContext`
- * Replace `\Shopware\Core\Framework\Plugin::getExtraBundles` with `\Shopware\Core\Framework\Plugin::getAdditionalBundles`. Dont use both.
- * We implemented the new `Shopware\Core\HttpKernel` class which simplifies the kernel initialisation. This kernel can simply initialed and can be used in your `index.php` file as follow:
+ * If you call `\Shopwell\Core\Framework\Api\Response\ResponseFactoryInterface::createDetailResponse` or `\Shopwell\Core\Framework\Api\Response\ResponseFactoryInterface::createListingResponse` in your plugin, the first parameter to be passed now is the `Criteria` object with which the data was loaded.
+ * We changed the type hint of `Shopwell\Core\Framework\Validation\ValidationServiceInterface::buildCreateValidation` and `Shopwell\Core\Framework\Validation\ValidationServiceInterface::buildUpdateValidation` to `SalesChannelContext`
+ * Replace `\Shopwell\Core\Framework\Plugin::getExtraBundles` with `\Shopwell\Core\Framework\Plugin::getAdditionalBundles`. Dont use both.
+ * We implemented the new `Shopwell\Core\HttpKernel` class which simplifies the kernel initialisation. This kernel can simply initialed and can be used in your `index.php` file as follow:
     ```php
     $request = Request::createFromGlobals();
 
@@ -225,9 +225,9 @@ Core
 
     $kernel->terminate($result->getRequest(), $result->getResponse());
     ```
- * If you used the `\Shopware\Core\Content\Seo\SeoUrlGenerator` in your sources, please use the `generate` function instead of the `generateSeoUrls`
+ * If you used the `\Shopwell\Core\Content\Seo\SeoUrlGenerator` in your sources, please use the `generate` function instead of the `generateSeoUrls`
  
- * If you update your decoration implementations of `\Shopware\Core\Framework\Validation\ValidationServiceInterface` to  `\Shopware\Core\Framework\Validation\DataValidationFactoryInterface` make sure to still implement the old interface
+ * If you update your decoration implementations of `\Shopwell\Core\Framework\Validation\ValidationServiceInterface` to  `\Shopwell\Core\Framework\Validation\DataValidationFactoryInterface` make sure to still implement the old interface
     and when calling the inner implementation please make sure to check if the inner implementation already supports the interface, like
     ```php
        public function createValidation(SalesChannelContext $context): DataValidationDefinition
@@ -243,22 +243,22 @@ Core
            return $validation;              
        }
     ```
- * We will change the `\Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getEntityTag` signature from
+ * We will change the `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getEntityTag` signature from
     * Before: `public function getEntityTag(string $id, EntityDefinition $definition): string`
     * After:  `public function getEntityTag(string $id, string $entityName): string`
     * If you called this function, simply replace the second function parameter to your entity name
     * Currently both ways are supported. The `string $entityName` type hint will be added with `v6.3.0`
- * We'll stop deleting the plugin migration data on plugin uninstall in `v6.3.0` If you want to keep removing it anyway you have to call `\Shopware\Core\Framework\Plugin::removeMigrations`.
+ * We'll stop deleting the plugin migration data on plugin uninstall in `v6.3.0` If you want to keep removing it anyway you have to call `\Shopwell\Core\Framework\Plugin::removeMigrations`.
 
 Administration
 --------------
 
-* The admin core framework of shopware from `src/core/` should always be accessed via the global available `Shopware` object and not via static imports. This is important to provide a consistent access point to the core framework of the shopware administration, either you are using Webpack or not. It will also ensure the correct bundling of source files via Webpack. Especially third party plugins have to ensure to access the core framework only via the global `Shopware` object. Using the concept of destructuring can help to access just specific parts of the framework and maintain readability of your code. Nevertheless you can use static imports in your plugins to import other source files of your plugin or NPM dependencies.
+* The admin core framework of shopwell from `src/core/` should always be accessed via the global available `Shopwell` object and not via static imports. This is important to provide a consistent access point to the core framework of the shopwell administration, either you are using Webpack or not. It will also ensure the correct bundling of source files via Webpack. Especially third party plugins have to ensure to access the core framework only via the global `Shopwell` object. Using the concept of destructuring can help to access just specific parts of the framework and maintain readability of your code. Nevertheless you can use static imports in your plugins to import other source files of your plugin or NPM dependencies.
 
 Before:
 
 ```
-import { Component } from 'src/core/shopware';
+import { Component } from 'src/core/shopwell';
 import Criteria from 'src/core/data-new/criteria.data';
 import template from './my-component.html.twig';
 
@@ -305,8 +305,8 @@ After:
 ```
 import template from './my-component.html.twig';
 
-const { Component } = Shopware;
-const { Criteria } = Shopware.Data;
+const { Component } = Shopwell;
+const { Criteria } = Shopwell.Data;
 
 Component.register('my-component', {
     template,
@@ -391,28 +391,28 @@ See `2019-09-02-cms-remove-store.md` for more information
     * Components work with v-model and do not mutate the value property anymore
     * Components are based on the sw-field base components to provide a consistent styling, error handling etc for all form fields
     
-* **Important Change:** Removed module export of `Shopware` and all children
+* **Important Change:** Removed module export of `Shopwell` and all children
 
      Before:
      ```
-        import Application from 'src/core/shopware';
+        import Application from 'src/core/shopwell';
      ```
   
     After:
     ```
-        const Application = Shopware.Application;
+        const Application = Shopwell.Application;
     ```
   
 * **Important Change:** `context` is now only available in `service`
 
      Before:
      ```
-        const context = Shopware.Application.getContainer('init').contextService;
+        const context = Shopwell.Application.getContainer('init').contextService;
      ```
   
     After:
     ```
-        const context = Shopware.Application.getContainer('service').context;
+        const context = Shopwell.Application.getContainer('service').context;
     ```
   
 * **Important Change:** You can use specific helper functions for components with `getComponentHelper()`
@@ -425,7 +425,7 @@ See `2019-09-02-cms-remove-store.md` for more information
   
     After:
     ```
-        const { mapApiErrors, mapState, mapGetters } = Shopware.Component.getComponentHelper();
+        const { mapApiErrors, mapState, mapGetters } = Shopwell.Component.getComponentHelper();
   
 * **Important Change:** All factories and services are initialized before app starts
 
@@ -434,7 +434,7 @@ See `2019-09-02-cms-remove-store.md` for more information
       import deDeSnippets from './snippet/de-DE.json';
       import enGBSnippets from './snippet/en-GB.json';
       
-      Shopware.Application.addInitializerDecorator('locale', (localeFactory) => {
+      Shopwell.Application.addInitializerDecorator('locale', (localeFactory) => {
           localeFactory.extend('de-DE', deDeSnippets);
           localeFactory.extend('en-GB', enGBSnippets);
       
@@ -447,8 +447,8 @@ See `2019-09-02-cms-remove-store.md` for more information
       import deDeSnippets from './snippet/de-DE.json';
       import enGBSnippets from './snippet/en-GB.json';
        
-      Shopware.Locale.extend('de-DE', deDeSnippets);
-      Shopware.Locale.extend('en-GB', enGBSnippets);
+      Shopwell.Locale.extend('de-DE', deDeSnippets);
+      Shopwell.Locale.extend('en-GB', enGBSnippets);
   ```
   
 * Component have to be registered before they can be used in the modules
@@ -478,7 +478,7 @@ See `2019-09-02-cms-remove-store.md` for more information
 
   After:
   ```
-     Shopware.Component.register('demo-component', {
+     Shopwell.Component.register('demo-component', {
           ...
      });
   ```
@@ -503,7 +503,7 @@ See `2019-09-02-cms-remove-store.md` for more information
     * Plugins have full access to all functionalities which are used by the `app`
     * The booting of the login is separated from the application booting. Therefore the login is not expandable with plugins anymore.
     
-* We unified the implementation of `\Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria` and the Admin criteria `src/core/data-new/criteria.data.js`
+* We unified the implementation of `\Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria` and the Admin criteria `src/core/data-new/criteria.data.js`
     * Removed `addAssociationPath`
     * Changed signature of `addAssociation`
         ```js
@@ -529,19 +529,19 @@ See `2019-09-02-cms-remove-store.md` for more information
 The Shopping Experiences now have sections to separate the blocks of a page.
 Also the change allows it to have different types of sections eg. one with a sidebar. <br><br>
 Structure is now Page->**Section**->blocks->slots <br>
-To migrate your existing data run `bin/console database:migrate --all Shopware\\` <br><br> See `2019-09-27-breaking-change-cms-sections` for more information
+To migrate your existing data run `bin/console database:migrate --all Shopwell\\` <br><br> See `2019-09-27-breaking-change-cms-sections` for more information
 
 * Context is seperated in App and Api Context
 
     Before:
     ```js
-      Shopware.Context
+      Shopwell.Context
     ```
   
     After:
     ```js
-      Shopware.Context.app // or
-      Shopware.Context.api
+      Shopwell.Context.app // or
+      Shopwell.Context.api
     ```
   
     Before:
@@ -560,19 +560,19 @@ To migrate your existing data run `bin/console database:migrate --all Shopware\\
     After:  
     Now you do not need to inject the context and can use the context directly.
     ```
-      this.repository.search(criteria, Shopware.Context.api)
+      this.repository.search(criteria, Shopwell.Context.api)
     ```
   
 * State was replaced by Vuex state. The old state was renamed to `StateDeprecated`
 
     Before:
     ```js
-      Shopware.State
+      Shopwell.State
     ```
   
     After:
     ```js
-      Shopware.StateDeprecated
+      Shopwell.StateDeprecated
     ```
 
 * Refactored the multiple inheritance of vuejs components and `$super` method with a **breaking change**!
@@ -771,24 +771,24 @@ Storefront
 
 **Changes**
 
-* A theme must now implement the `Shopware\Storefront\Framework\ThemeInterface`.
+* A theme must now implement the `Shopwell\Storefront\Framework\ThemeInterface`.
 * If your javascript lives in `Resources/storefront/script` you have to explicitly define this path in the `getStorefrontScriptPath()` method of your plugin base class as we have changed the default path to `Resources/dist/storefront/js`.
-* Added `extractIdsToUpdate` to `Shopware\Storefront\Framework\Seo\SeoUrlRoute\SeoUrlRouteInterface`. `extractIdsToUpdate` must provide the ids of entities which seo urls should be updated based on an EntityWrittenContainerEvent.
+* Added `extractIdsToUpdate` to `Shopwell\Storefront\Framework\Seo\SeoUrlRoute\SeoUrlRouteInterface`. `extractIdsToUpdate` must provide the ids of entities which seo urls should be updated based on an EntityWrittenContainerEvent.
 * Replace `productUrl(product)` with `seoUrl('frontend.detail.page', {'productId': product.id}) }` and `navigationUrl(navigation)` with `seoUrl('frontend.navigation.page', { 'navigationId': navigation.id })`'
 * The JavaScript `CmsSlotReloadPlugin` is no longer used to render the response after paginating a product list. This has been moved to the `ListingPlugin` which can be found in `platform/src/Storefront/Resources/src/script/plugin/listing/listing.plugin.js`.
   * The `ListingPlugin` now handles the pagination as well as the product filter and the new sorting element.
   * The pagination uses a separate JavaScript plugin `listing-sorting.plugin.js`.
-* We simplified the implementation of the `\Shopware\Storefront\Framework\Cache\CacheWarmer\CacheRouteWarmer`
+* We simplified the implementation of the `\Shopwell\Storefront\Framework\Cache\CacheWarmer\CacheRouteWarmer`
     * The class is now an interface instead of an abstract class
     * It is no longer necessary to implement your own `WarmUpMessage` class
     * It is no longer necessary to register your class as message queue handler
     * Removed the `handle` function removed without any replacement
-    * The `\Shopware\Storefront\Framework\Cache\CacheWarmer\WarmUpMessage` now expects the route name and a parameter list
-    * See `\Shopware\Storefront\Framework\Cache\CacheWarmer\Product\ProductRouteWarmer` for detail information.
-* We added two new environment variables `SHOPWARE_HTTP_CACHE_ENABLED` and `SHOPWARE_HTTP_DEFAULT_TTL` which have to be defined in your `.env` file
+    * The `\Shopwell\Storefront\Framework\Cache\CacheWarmer\WarmUpMessage` now expects the route name and a parameter list
+    * See `\Shopwell\Storefront\Framework\Cache\CacheWarmer\Product\ProductRouteWarmer` for detail information.
+* We added two new environment variables `SHOPWELL_HTTP_CACHE_ENABLED` and `SHOPWELL_HTTP_DEFAULT_TTL` which have to be defined in your `.env` file
 ```
-SHOPWARE_HTTP_CACHE_ENABLED=1
-SHOPWARE_HTTP_DEFAULT_TTL=7200
+SHOPWELL_HTTP_CACHE_ENABLED=1
+SHOPWELL_HTTP_DEFAULT_TTL=7200
 ```
 * We supports now the symfony http cache. You have to change the `index.php` of your project as follow:
 
@@ -809,9 +809,9 @@ SHOPWARE_HTTP_DEFAULT_TTL=7200
         ->get(RequestTransformerInterface::class)
         ->transform($request);
 
-    $enabled = $kernel->getContainer()->getParameter('shopware.http.cache.enabled');
+    $enabled = $kernel->getContainer()->getParameter('shopwell.http.cache.enabled');
     if ($enabled) {
-        $store = $kernel->getContainer()->get(\Shopware\Storefront\Framework\Cache\CacheStore::class);
+        $store = $kernel->getContainer()->get(\Shopwell\Storefront\Framework\Cache\CacheStore::class);
         $kernel = new \Symfony\Component\HttpKernel\HttpCache\HttpCache($kernel, $store, null, ['debug' => $debug]);
     }
 
@@ -904,14 +904,14 @@ Elasticsearch
 
 **Changes**
 
-* The env variables `SHOPWARE_SES_*` were renamed to `SHOPWARE_ES_*`.
+* The env variables `SHOPWELL_SES_*` were renamed to `SHOPWELL_ES_*`.
 * If you used one of the elastic search parameter in your services.xml you have to change it as follow:
     Before:
     ```
       <service ....>
-         <argument>%shopware.ses.enabled%</argument>
-         <argument>%shopware.ses.indexing.enabled%</argument>
-         <argument>%shopware.ses.index_prefix%</argument>
+         <argument>%shopwell.ses.enabled%</argument>
+         <argument>%shopwell.ses.indexing.enabled%</argument>
+         <argument>%shopwell.ses.index_prefix%</argument>
       </service>       
     ```
 

@@ -91,10 +91,10 @@ guaranteeing a final flush.
 
 Three mechanisms work together to minimize overhead at different levels:
 
-Level 1 — Global off: When `shopware.telemetry.metrics.enabled` is `false`:
+Level 1 — Global off: When `shopwell.telemetry.metrics.enabled` is `false`:
   - `Meter::emit()` checks the `enabled` flag and returns immediately. This is already near-no-op.
-  - A compiler pass removes services tagged with `shopware.telemetry.subscriber` (event subscribers,
-    flush listener) and `shopware.telemetry.periodic_metric_collector` from the container, so they
+  - A compiler pass removes services tagged with `shopwell.telemetry.subscriber` (event subscribers,
+    flush listener) and `shopwell.telemetry.periodic_metric_collector` from the container, so they
     are neither invoked by the event dispatcher nor iterated by the periodic-metric task handler.
   - The `CollectPeriodicMetricsTask` itself stays registered but reports `shouldRun() === false`, so
     the scheduler keeps the row in `skipped` state without dispatching.
@@ -116,9 +116,9 @@ Level 3 — Expensive value computation: delayed computation
 
 The compiler pass only affects subscribers; the `enabled` check in `Meter::emit()` covers inline emitters.
 
-**Subscriber identification**: Telemetry subscribers are identified by the `shopware.telemetry.subscriber`
+**Subscriber identification**: Telemetry subscribers are identified by the `shopwell.telemetry.subscriber`
 DI tag, added to their service definitions. Periodic-metric collectors are identified by the
-`shopware.telemetry.periodic_metric_collector` tag. When telemetry is globally disabled, the compiler
+`shopwell.telemetry.periodic_metric_collector` tag. When telemetry is globally disabled, the compiler
 pass removes the entire service definition for both tag groups.
 
 **Considered alternative — marker interface (`TelemetryAwareSubscriberInterface`):**
@@ -160,7 +160,7 @@ on the metric type. The default policy is derived from the metric type's semanti
 | UpDownCounter | `replace` | Additive: losing a delta causes value drift. |
 | Gauge | `discard` | Non-additive: `replace` causes meaningless oscillation when multiple sources collapse into one label value (last write wins for the same label set). |
 
-- Replacement value: Configured globally via `shopware.telemetry.metrics.replace_unknown_label_values_with`
+- Replacement value: Configured globally via `shopwell.telemetry.metrics.replace_unknown_label_values_with`
   (default: `'other'`). Applies to all labels using the `replace` policy.
 - Per-label policy override: Each label can set `policy: replace|discard|open` to override the type default.
   The developer who ships the metric knows the expected values and sets the appropriate policy. Operators can override
@@ -242,7 +242,7 @@ Scrape-time events are not part of core. Pull transports own their scrape lifecy
 
 Metrics that should be collected on a schedule rather than emitted inline - typically expensive
 computations (database aggregations) or low-frequency information metrics - are collected
-by a Shopware scheduled task iterating tagged `PeriodicMetricCollectorInterface` services:
+by a Shopwell scheduled task iterating tagged `PeriodicMetricCollectorInterface` services:
 
 ```php
 interface PeriodicMetricCollectorInterface
@@ -252,7 +252,7 @@ interface PeriodicMetricCollectorInterface
 }
 ```
 
-The task uses Shopware's standard scheduled-task scheduling — `CollectPeriodicMetricsTask::getDefaultInterval()`
+The task uses Shopwell's standard scheduled-task scheduling — `CollectPeriodicMetricsTask::getDefaultInterval()`
 returns 300 seconds (5 minutes). The interval can be tuned per environment through the existing
 `scheduled_task` administration just like any other scheduled task; we deliberately do not introduce
 a parallel config key. Owning a separate interval would duplicate state with the `scheduled_task` table
@@ -262,7 +262,7 @@ Each collector is wrapped in try/catch — one failure does not prevent others f
 Collected metrics are emitted via `Meter`, so both push and pull transports receive them through the
 standard `emit()` path.
 
-Plugins needing a different frequency register their own Shopware scheduled task.
+Plugins needing a different frequency register their own Shopwell scheduled task.
 
 **Considered alternative — per-collector configurable interval:**
   - Fine-grained control over collection frequency.
@@ -321,7 +321,7 @@ final class Span
 {
     public function __construct(
         public readonly string $name,
-        public readonly string $category = 'shopware',
+        public readonly string $category = 'shopwell',
         public readonly array $tags = [],
     ) {}
 }
@@ -457,11 +457,11 @@ and `RetryableTransaction` (static code that cannot receive DI). Until those cal
 
 ## Consequences
 
-- **Transport packages** (shopware/opentelemetry, shopware/prometheus-exporter):
+- **Transport packages** (shopwell/opentelemetry, shopwell/prometheus-exporter):
   - Must implement `flush()` on `MetricTransportInterface` (no-op if not needed).
   - Prometheus transport owns its storage, scrape endpoint, and any scrape-time events.
 - **Developers**:
-  - Telemetry subscribers should be tagged with `shopware.telemetry.subscriber` for zero-overhead global disable.
+  - Telemetry subscribers should be tagged with `shopwell.telemetry.subscriber` for zero-overhead global disable.
   - For expensive metrics: use closure values in `ConfiguredMetric` for lazy evaluation.
   - For metrics that should run on a schedule (expensive aggregations, info metrics, slowly-changing data):
     implement `PeriodicMetricCollectorInterface`, tag the service.
@@ -477,7 +477,7 @@ and `RetryableTransaction` (static code that cannot receive DI). Until those cal
     Do not call `Profiler::trace()` directly in new code — routing through `Telemetry` keeps call
     sites testable and provides a migration path for when `Profiler` becomes injectable.
 - **Operators**:
-  - Use `shopware.telemetry.metrics.enabled: true/false` to enable/disable globally
+  - Use `shopwell.telemetry.metrics.enabled: true/false` to enable/disable globally
     (additional kill-switch alongside `TELEMETRY_METRICS` feature flag, which will be removed with feature stabilization).
   - Tune the `telemetry.collect_periodic_metrics` scheduled task interval (default 5 minutes) via the standard
     scheduled-task administration to trade periodic-metric freshness against load.

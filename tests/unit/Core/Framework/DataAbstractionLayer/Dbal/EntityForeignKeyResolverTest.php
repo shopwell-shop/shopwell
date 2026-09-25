@@ -62,7 +62,7 @@ class EntityForeignKeyResolverTest extends TestCase
             [
                 'id' => $downloadId,
                 '_id' => Uuid::fromHexToBytes($mediaId),
-                '_fileName' => 'shopware-logo',
+                '_fileName' => 'shopwell-logo',
                 '_fileExtension' => 'png',
             ],
         ]);
@@ -72,7 +72,7 @@ class EntityForeignKeyResolverTest extends TestCase
             [
                 'id' => $cmsPageId,
                 '_id' => Uuid::fromHexToBytes($mediaId),
-                '_fileName' => 'shopware-logo',
+                '_fileName' => 'shopwell-logo',
                 '_fileExtension' => 'png',
             ],
         ]);
@@ -104,7 +104,7 @@ class EntityForeignKeyResolverTest extends TestCase
                     'media' => [
                         'id' => $mediaId,
                         'fileExtension' => 'png',
-                        'fileName' => 'shopware-logo',
+                        'fileName' => 'shopwell-logo',
                     ],
                 ],
             ],
@@ -114,7 +114,7 @@ class EntityForeignKeyResolverTest extends TestCase
                     'media' => [
                         'id' => $mediaId,
                         'fileExtension' => 'png',
-                        'fileName' => 'shopware-logo',
+                        'fileName' => 'shopwell-logo',
                     ],
                 ],
             ],

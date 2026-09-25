@@ -41,7 +41,7 @@ The highest priority defines, which *tax provider* is called first. If no parame
 
 ### Calling the *tax provider*
 
-The `TaxProviderProcessor` will call a class that is tagged `shopware.tax.provider`, named in the `providerIdentifier` and implements the `TaxProviderInterface`.
+The `TaxProviderProcessor` will call a class that is tagged `shopwell.tax.provider`, named in the `providerIdentifier` and implements the `TaxProviderInterface`.
 If the class does not exist, the Processor will throw a `TaxProviderHook`, that has the identifier and the return struct as additional parameters, so it can be filled via app scripting, if the identifier matches with the app.
 To allow for app scripting to call the provider, we need to add a possibility to do requests to the app, e.g. via Guzzle.
 

@@ -5,7 +5,7 @@ author_email: lackner.elias@gmail.com
 author_github: @lacknere
 ---
 # Core
-* Added `Shopware\Core\Migration\V6_7\Migration1740321707SetAutoplayTimeoutAndSpeedSettingsForProductSlider` to set the default autoplay timeout and speed settings for product slider CMS elements.
+* Added `Shopwell\Core\Migration\V6_7\Migration1740321707SetAutoplayTimeoutAndSpeedSettingsForProductSlider` to set the default autoplay timeout and speed settings for product slider CMS elements.
 ___
 # Administration
 * Deprecated block `sw_cms_element_image_gallery_config_settings_display_mode` in `sw-cms-el-config-image-slider.html.twig`. Use `sw_cms_element_image_slider_config_settings_display_mode` instead.

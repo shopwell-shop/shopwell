@@ -10,7 +10,7 @@ use Shopwell\Core\Framework\Log\Package;
 #[Package('framework')]
 interface StoreApiSchemaMigrationScopeProviderInterface
 {
-    public const SERVICE_TAG = 'shopware.store_api_schema_migration.scope_provider';
+    public const SERVICE_TAG = 'shopwell.store_api_schema_migration.scope_provider';
 
     public function getScope(): string;
 

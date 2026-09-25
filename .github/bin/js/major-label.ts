@@ -14,7 +14,7 @@
  *
  * In-flight majors are derived exactly as the test lanes derive theirs: a `major: true`
  * flag named after its version and still `default: false`. This is the TypeScript twin of
- * `shopware_in_flight_majors()` in `.github/bin/lib/feature-flags.php`; the two must agree,
+ * `shopwell_in_flight_majors()` in `.github/bin/lib/feature-flags.php`; the two must agree,
  * or a major would get a lane without a label or the reverse. Registering the next major
  * flag adds its labels with nothing to maintain here.
  *
@@ -127,7 +127,7 @@ export function pendingMajorFlags(flags: FeatureFlag[]): string[] {
 
 /**
  * The majors that have not shipped, oldest first — `['6.8', '6.9']`.
- * Mirrors `shopware_in_flight_majors()`, including its "named after its version" rule.
+ * Mirrors `shopwell_in_flight_majors()`, including its "named after its version" rule.
  */
 export function resolveInFlightMajors(flags: FeatureFlag[]): string[] {
     return pendingMajorFlags(flags)

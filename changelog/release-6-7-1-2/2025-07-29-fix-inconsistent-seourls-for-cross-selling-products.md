@@ -3,15 +3,15 @@ title: Fix inconsistent seoUrls for cross-selling products
 issue: 11550
 ---
 # Core
-* Added new method `Shopware\Core\Content\Seo\SalesChannel\SeoResolverData::getAll` to return all items with the given entity and identifier
-* Deprecated method `Shopware\Core\Content\Seo\SalesChannel\SeoResolverData::get`, please use `getAll` instead, as `get` returns only the first item which could lead to other items with the same entity and identifier being ignored
+* Added new method `Shopwell\Core\Content\Seo\SalesChannel\SeoResolverData::getAll` to return all items with the given entity and identifier
+* Deprecated method `Shopwell\Core\Content\Seo\SalesChannel\SeoResolverData::get`, please use `getAll` instead, as `get` returns only the first item which could lead to other items with the same entity and identifier being ignored
 ___
 # Upgrade Information
 
-## Deprecate method Shopware\Core\Content\Seo\SalesChannel\SeoResolverData::get
+## Deprecate method Shopwell\Core\Content\Seo\SalesChannel\SeoResolverData::get
 
-In some occasions, the method `Shopware\Core\Content\Seo\SalesChannel\SeoResolverData::get` was used to retrieve a single item based on its entity and identifier. However, this method only returns the first item found, which can lead to inconsistencies when multiple items share the same entity and identifier.
-Because of this, we have introduced a new method `Shopware\Core\Content\Seo\SalesChannel\SeoResolverData::getAll` that retrieves all items with the given entity and identifier. This change ensures that all relevant items are considered, preventing potential seoUrls loss or misrepresentation.
+In some occasions, the method `Shopwell\Core\Content\Seo\SalesChannel\SeoResolverData::get` was used to retrieve a single item based on its entity and identifier. However, this method only returns the first item found, which can lead to inconsistencies when multiple items share the same entity and identifier.
+Because of this, we have introduced a new method `Shopwell\Core\Content\Seo\SalesChannel\SeoResolverData::getAll` that retrieves all items with the given entity and identifier. This change ensures that all relevant items are considered, preventing potential seoUrls loss or misrepresentation.
 
 Before
 
@@ -39,10 +39,10 @@ foreach ($entities as $entity) {
 ___
 # Next Major Version Changes
 
-## Remove method Shopware\Core\Content\Seo\SalesChannel\SeoResolverData::get
+## Remove method Shopwell\Core\Content\Seo\SalesChannel\SeoResolverData::get
 
-The method `Shopware\Core\Content\Seo\SalesChannel\SeoResolverData::get` was removed as it's no longer used because it only returns the first entity found, which can lead to inconsistencies when multiple items share the same entity and identifier.
-A new method `Shopware\Core\Content\Seo\SalesChannel\SeoResolverData::getAll` was introduced which returns all items with the given entity and identifier. This change ensures that all relevant items are considered, preventing potential seoUrls loss or misrepresentation.
+The method `Shopwell\Core\Content\Seo\SalesChannel\SeoResolverData::get` was removed as it's no longer used because it only returns the first entity found, which can lead to inconsistencies when multiple items share the same entity and identifier.
+A new method `Shopwell\Core\Content\Seo\SalesChannel\SeoResolverData::getAll` was introduced which returns all items with the given entity and identifier. This change ensures that all relevant items are considered, preventing potential seoUrls loss or misrepresentation.
 If you use the method `get` in your code, you have to use the `getAll` method instead.
 
 Before

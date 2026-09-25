@@ -84,7 +84,7 @@ export default {
                     label: this.$t('sw-first-run-wizard.general.buttonNext'),
                     position: 'right',
                     variant: 'primary',
-                    action: 'sw.first.run.wizard.index.shopware.account',
+                    action: 'sw.first.run.wizard.index.shopwell.account',
                     disabled: false,
                 },
             ];

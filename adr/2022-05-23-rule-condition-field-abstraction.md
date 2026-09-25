@@ -6,7 +6,7 @@ tags: [rule, abstraction, administration]
 ---
 
 ## Context
-Conditions for the Rule Builder consist of a `shopware.rule.definition` tagged service and a corresponding Vue component. Many of these Vue components follow a common scheme, so it is possible to use an abstracted single component for all of these.
+Conditions for the Rule Builder consist of a `shopwell.rule.definition` tagged service and a corresponding Vue component. Many of these Vue components follow a common scheme, so it is possible to use an abstracted single component for all of these.
 
 ## Decision
 We want to reduce the number of rule condition components in the administration and use a single abstracted component instead. This would also decrease the number of necessary steps when introducing a new rule condition and would require writing less JavaScript.

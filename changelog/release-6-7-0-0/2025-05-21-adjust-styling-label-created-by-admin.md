@@ -2,7 +2,7 @@
 title: Adjust styling label created by admin on customer detail page
 issue: #9433
 author: Tam Dao
-author_email: t.dao@shopware.com
+author_email: t.dao@shopwell.com
 author_github: @daothithientamm
 ---
 # Administration

@@ -34,7 +34,7 @@ class BusinessEventsResourceTest extends TestCase
         $resource = new BusinessEventsResource($collector, $contextProvider);
         $result = ($resource)();
 
-        static::assertSame('shopware://business-events', $result['uri']);
+        static::assertSame('shopwell://business-events', $result['uri']);
         static::assertSame('application/json', $result['mimeType']);
 
         $events = json_decode($result['text'], true, 512, \JSON_THROW_ON_ERROR);

@@ -45,7 +45,7 @@ function fileToTag(relPath: string, namespace: string | undefined): string {
  *
  *   imports  — a complete ES module import map that PHP injects as
  *              `<script type="importmap">`. Every bare specifier
- *              (`shopware`, `Sw:Header:Navbar`, …) points directly to the
+ *              (`shopwell`, `Sw:Header:Navbar`, …) points directly to the
  *              running dev server, so no URL rewriting is needed in PHP.
  *
  *   styles   — an ordered array of Vite dev-server CSS URLs produced by the
@@ -342,11 +342,11 @@ export function devImportMapPlugin(projectRoot: string, scssLoadPaths: string[] 
                 const origin = resolveDevOrigin(server);
                 const imports: Record<string, string> = {};
 
-                // shopware runtime module — lives inside the Vite root so it
+                // shopwell runtime module — lives inside the Vite root so it
                 // gets a clean URL without the /@fs/ prefix.
-                const shopwareSrc = path.join(viteRoot, 'src/shopware.ts');
-                if (fs.existsSync(shopwareSrc)) {
-                    imports['shopware'] = `${origin}/src/shopware.ts`;
+                const shopwellSrc = path.join(viteRoot, 'src/shopwell.ts');
+                if (fs.existsSync(shopwellSrc)) {
+                    imports['shopwell'] = `${origin}/src/shopwell.ts`;
                 }
 
                 for (const bundle of componentBundles) {

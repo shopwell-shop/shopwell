@@ -63,7 +63,7 @@ The OpenAPI workflow must install and serve Shopwell in the `prod` environment. 
 
 `--scope=core` checks platform entity definitions against the core Framework StoreAPI JSON schema directory only. It intentionally ignores extension PHP definitions and extension schema files, so downstream repositories do not inherit core migration debt. Use `--scope=all` only for local investigation when installed extensions should be included in the report.
 
-Scopes are provided through services implementing `StoreApiSchemaMigrationScopeProviderInterface` and tagged with `shopware.store_api_schema_migration.scope_provider`. Downstream repositories that want to enforce their own migration state should add a dedicated scope provider with extension-owned definition class prefixes and schema paths instead of copying the reporter, report, or command logic.
+Scopes are provided through services implementing `StoreApiSchemaMigrationScopeProviderInterface` and tagged with `shopwell.store_api_schema_migration.scope_provider`. Downstream repositories that want to enforce their own migration state should add a dedicated scope provider with extension-owned definition class prefixes and schema paths instead of copying the reporter, report, or command logic.
 
 ### Using `x-parameter-group` for Reusable Parameters
 

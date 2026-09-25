@@ -108,12 +108,12 @@ class WebhookEventMessageHandlerTest extends TestCase
         static::assertGreaterThanOrEqual($body['timestamp'], $timestamp);
         static::assertTrue($request->hasHeader('sw-version'));
         static::assertSame($request->getHeaderLine('sw-version'), '6.4');
-        static::assertSame($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE), 'en-GB');
-        static::assertSame($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE), Defaults::LANGUAGE_SYSTEM);
-        static::assertTrue($request->hasHeader('shopware-shop-signature'));
+        static::assertSame($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE), 'en-GB');
+        static::assertSame($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE), Defaults::LANGUAGE_SYSTEM);
+        static::assertTrue($request->hasHeader('shopwell-shop-signature'));
         static::assertSame(
             hash_hmac('sha256', $payload, 's3cr3t'),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
 
         $webhookEventLog = $webhookEventLogRepository->search(new Criteria([$webhookEventId]), Context::createDefaultContext())->getEntities()->first();
@@ -131,8 +131,8 @@ class WebhookEventMessageHandlerTest extends TestCase
         $headers = $requestContent['headers'] ?? [];
         static::assertSame('application/json', $headers['Content-Type']);
         static::assertSame('6.4', $headers['sw-version']);
-        static::assertSame(Defaults::LANGUAGE_SYSTEM, $headers[AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE]);
-        static::assertSame('en-GB', $headers[AuthMiddleware::SHOPWARE_USER_LANGUAGE]);
+        static::assertSame(Defaults::LANGUAGE_SYSTEM, $headers[AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE]);
+        static::assertSame('en-GB', $headers[AuthMiddleware::SHOPWELL_USER_LANGUAGE]);
         static::assertArrayNotHasKey('X-Shopwell-Event-Id', $headers);
         static::assertArrayNotHasKey('X-Shopwell-Sequence', $headers);
         static::assertArrayNotHasKey('X-Shopwell-Attempt', $headers);
@@ -208,12 +208,12 @@ class WebhookEventMessageHandlerTest extends TestCase
         static::assertGreaterThanOrEqual($body['timestamp'], $timestamp);
         static::assertTrue($request->hasHeader('sw-version'));
         static::assertSame($request->getHeaderLine('sw-version'), '6.4');
-        static::assertSame($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE), 'en-GB');
-        static::assertSame($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE), Defaults::LANGUAGE_SYSTEM);
-        static::assertTrue($request->hasHeader('shopware-shop-signature'));
+        static::assertSame($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE), 'en-GB');
+        static::assertSame($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE), Defaults::LANGUAGE_SYSTEM);
+        static::assertTrue($request->hasHeader('shopwell-shop-signature'));
         static::assertSame(
             hash_hmac('sha256', $payload, 's3cr3t'),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
 
         $webhookEventLog = $webhookEventLogRepository->search(new Criteria([$webhookEventId]), Context::createDefaultContext())->getEntities()->first();
@@ -280,12 +280,12 @@ class WebhookEventMessageHandlerTest extends TestCase
         static::assertGreaterThanOrEqual($body['timestamp'], $timestamp);
         static::assertTrue($request->hasHeader('sw-version'));
         static::assertSame($request->getHeaderLine('sw-version'), '6.4');
-        static::assertSame($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE), 'en-GB');
-        static::assertSame($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE), Defaults::LANGUAGE_SYSTEM);
-        static::assertTrue($request->hasHeader('shopware-shop-signature'));
+        static::assertSame($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE), 'en-GB');
+        static::assertSame($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE), Defaults::LANGUAGE_SYSTEM);
+        static::assertTrue($request->hasHeader('shopwell-shop-signature'));
         static::assertSame(
             hash_hmac('sha256', $payload, 's3cr3t'),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
         // Verify custom webhook headers are sent
         static::assertSame('custom-value', $request->getHeaderLine('X-Custom-Header'));

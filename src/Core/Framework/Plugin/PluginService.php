@@ -43,12 +43,12 @@ class PluginService
     ) {
     }
 
-    public function refreshPlugins(Context $shopwareContext, IOInterface $composerIO): ExceptionCollection
+    public function refreshPlugins(Context $shopwellContext, IOInterface $composerIO): ExceptionCollection
     {
         $errors = new ExceptionCollection();
         $pluginsFromFileSystem = $this->pluginFinder->findPlugins($this->pluginDir, $this->projectDir, $errors, $composerIO);
 
-        $installedPlugins = $this->getPlugins(new Criteria(), $shopwareContext);
+        $installedPlugins = $this->getPlugins(new Criteria(), $shopwellContext);
 
         $plugins = [];
         foreach ($pluginsFromFileSystem as $pluginFromFileSystem) {
@@ -93,7 +93,7 @@ class PluginService
                 'managedByComposer' => $pluginFromFileSystem->getManagedByComposer(),
             ];
 
-            $pluginData['translations'] = $this->getTranslations($shopwareContext, $extra);
+            $pluginData['translations'] = $this->getTranslations($shopwellContext, $extra);
 
             $currentPluginEntity = $installedPlugins->filterByProperty('baseClass', $baseClass)->first();
             if ($currentPluginEntity !== null) {
@@ -118,7 +118,7 @@ class PluginService
         }
 
         if ($plugins !== []) {
-            $shopwareContext->scope(Context::SYSTEM_SCOPE, function (Context $context) use ($plugins, $errors): void {
+            $shopwellContext->scope(Context::SYSTEM_SCOPE, function (Context $context) use ($plugins, $errors): void {
                 foreach ($plugins as $plugin) {
                     try {
                         $this->pluginRepo->upsert([$plugin], $context);
@@ -136,7 +136,7 @@ class PluginService
             foreach ($deletePluginIds as $deletePluginId) {
                 $deletePlugins[] = ['id' => $deletePluginId];
             }
-            $shopwareContext->scope(Context::SYSTEM_SCOPE, function (Context $context) use ($deletePlugins): void {
+            $shopwellContext->scope(Context::SYSTEM_SCOPE, function (Context $context) use ($deletePlugins): void {
                 $this->pluginRepo->delete($deletePlugins, $context);
             });
         }
@@ -228,7 +228,7 @@ class PluginService
         /*
          * @example payload
          * {
-         *     "shopware-plugin-class":"Swag\\MyDemoData\\MyDemoData",
+         *     "shopwell-plugin-class":"Swag\\MyDemoData\\MyDemoData",
          *     "label":{
          *         "de-DE":"Label für das Plugin MyDemoData",
          *         "en-GB":"Label for the plugin MyDemoData"

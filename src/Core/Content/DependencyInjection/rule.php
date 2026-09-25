@@ -26,13 +26,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(RuleDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(RuleConditionDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(RuleTagDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(RuleValidator::class)
         ->args([
@@ -58,7 +58,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(RuleAreaUpdater::class),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.entity_indexer');
+        ->tag('shopwell.entity_indexer');
 
     $services->set(RuleIndexerSubscriber::class)
         ->args([

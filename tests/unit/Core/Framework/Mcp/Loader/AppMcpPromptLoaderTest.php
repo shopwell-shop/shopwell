@@ -204,7 +204,7 @@ class AppMcpPromptLoaderTest extends TestCase
         $promptRow = [
             'name' => 'context',
             'url' => 'https://app.example.com/mcp/prompt/context',
-            'app_name' => 'shopware',
+            'app_name' => 'shopwell',
             'app_secret' => 'secret',
             'label' => null,
             'description' => null,

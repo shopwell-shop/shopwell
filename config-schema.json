@@ -9,8 +9,8 @@
                 "parameters": {
                     "$ref": "#/definitions/parameters"
                 },
-                "shopware": {
-                    "$ref": "#/definitions/shopware"
+                "shopwell": {
+                    "$ref": "#/definitions/shopwell"
                 },
                 "storefront": {
                     "$ref": "#/definitions/storefront"
@@ -29,7 +29,7 @@
             "additionalProperties": true,
             "title": "Parameters"
         },
-        "shopware": {
+        "shopwell": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
@@ -55,7 +55,7 @@
                     "$ref": "#/definitions/auto_update"
                 },
                 "store": {
-                    "$ref": "#/definitions/shopware_store"
+                    "$ref": "#/definitions/shopwell_store"
                 },
                 "analytics": {
                     "$ref": "#/definitions/analytics"
@@ -1610,7 +1610,7 @@
             },
             "title": "translation"
         },
-        "shopware_store": {
+        "shopwell_store": {
             "type": "object",
             "additionalProperties": false,
             "properties": {

@@ -44,7 +44,7 @@ class SendEmailMessageJsonSerializer implements NormalizerInterface, Denormalize
             throw MessageQueueException::cannotUnserializeMessage($data[self::class]);
         }
 
-        /** @phpstan-ignore shopware.unserializeUsage */
+        /** @phpstan-ignore shopwell.unserializeUsage */
         return \unserialize($value);
     }
 

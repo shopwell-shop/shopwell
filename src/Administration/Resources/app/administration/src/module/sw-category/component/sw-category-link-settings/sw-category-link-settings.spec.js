@@ -2,7 +2,7 @@
  * @sw-package discovery
  */
 import { mount } from '@vue/test-utils';
-import { MtUrlField } from '@shopware-ag/meteor-component-library';
+import { MtUrlField } from '@shopwell-ag/meteor-component-library';
 
 async function createWrapper(category = {}) {
     const responses = global.repositoryFactoryMock.responses;

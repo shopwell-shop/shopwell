@@ -2,7 +2,7 @@
 title: Add twig blocks to cms-element-image-gallery.html.twig
 issue: NEXT-39607
 author: Simon Vorgers
-author_email: s.vorgers@shopware.com
+author_email: s.vorgers@shopwell.com
 author_github: @Simon Vorgers
 ---
 # Storefront

@@ -16,24 +16,24 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
-    $services->set('shopware.increment.gateway.registry', IncrementGatewayRegistry::class)
+    $services->set('shopwell.increment.gateway.registry', IncrementGatewayRegistry::class)
         ->public()
         ->args([
-            tagged_iterator('shopware.increment.gateway'),
+            tagged_iterator('shopwell.increment.gateway'),
         ]);
 
-    $services->set('shopware.increment.gateway.mysql', MySQLIncrementer::class)
+    $services->set('shopwell.increment.gateway.mysql', MySQLIncrementer::class)
         ->args([
             service(Connection::class),
             service(ClockInterface::class),
         ]);
 
-    $services->set('shopware.increment.gateway.array', ArrayIncrementer::class)
+    $services->set('shopwell.increment.gateway.array', ArrayIncrementer::class)
         ->tag('kernel.reset', ['method' => 'resetAll']);
 
     $services->set(IncrementApiController::class)
         ->public()
         ->args([
-            service('shopware.increment.gateway.registry'),
+            service('shopwell.increment.gateway.registry'),
         ]);
 };

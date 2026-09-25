@@ -17,7 +17,7 @@ use Symfony\Component\Filesystem\Filesystem;
 #[Package('framework')]
 #[AsCommand(
     name: 'sync:composer:version',
-    description: 'Syncs the composer version with the shopware version',
+    description: 'Syncs the composer version with the shopwell version',
 )]
 class SyncComposerVersionCommand extends Command
 {
@@ -73,7 +73,7 @@ class SyncComposerVersionCommand extends Command
 
             // Check if all bundle dependencies are in the root composer.json file
             foreach ($bundleJson['require'] ?? [] as $package => $version) {
-                if ($package === 'shopware/core') {
+                if ($package === 'shopwell/core') {
                     continue;
                 }
                 if (!isset($rootComposerJson['require'][$package])) {

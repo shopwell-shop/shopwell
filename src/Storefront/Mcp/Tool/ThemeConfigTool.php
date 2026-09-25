@@ -20,12 +20,12 @@ use Shopwell\Storefront\Theme\ThemeService;
  * This tool lives in the Storefront bundle because it depends on ThemeService,
  * which is a Storefront service. Placing it in Core/Framework would create an
  * inverted dependency (Core -> Storefront). The McpToolCompilerPass discovers
- * any service tagged shopware.mcp.tool regardless of bundle.
+ * any service tagged shopwell.mcp.tool regardless of bundle.
  */
 #[Package('discovery')]
 #[McpTool(
-    name: 'shopware-theme-config',
-    description: 'Read or update theme appearance settings (colors, logos, fonts) for a sales channel. Use action "get" to read the current theme config. Use action "update" with a config JSON to change values; dryRun=true (default) previews changes. salesChannelId accepts either the sales channel UUID or its name as shown in the admin, e.g. "Storefront". See shopware://sales-channels for the full list.'
+    name: 'shopwell-theme-config',
+    description: 'Read or update theme appearance settings (colors, logos, fonts) for a sales channel. Use action "get" to read the current theme config. Use action "update" with a config JSON to change values; dryRun=true (default) previews changes. salesChannelId accepts either the sales channel UUID or its name as shown in the admin, e.g. "Storefront". See shopwell://sales-channels for the full list.'
 )]
 #[McpToolGroup('theme')]
 #[McpToolRequires('theme:read')]
@@ -48,7 +48,7 @@ class ThemeConfigTool extends McpToolResponse
     }
 
     public function __invoke(
-        #[Schema(description: 'The sales channel\'s UUID, or its name as shown in the admin, e.g. "Storefront". See the shopware://sales-channels resource.')]
+        #[Schema(description: 'The sales channel\'s UUID, or its name as shown in the admin, e.g. "Storefront". See the shopwell://sales-channels resource.')]
         string $salesChannelId = '',
         #[Schema(description: '"get" to read the current theme config, "update" to change it.')]
         string $action = 'get',
@@ -62,7 +62,7 @@ class ThemeConfigTool extends McpToolResponse
         }
 
         if ($salesChannelId === '') {
-            return $this->error('salesChannelId is required. Use the shopware://sales-channels resource to find available sales channel IDs.');
+            return $this->error('salesChannelId is required. Use the shopwell://sales-channels resource to find available sales channel IDs.');
         }
 
         $context = $this->contextProvider->getContext();
@@ -158,7 +158,7 @@ class ThemeConfigTool extends McpToolResponse
 
         if ($ids === []) {
             return ['error' => \sprintf(
-                'Sales channel "%s" not found. Available sales channels: %s. Pass one of these names or a sales channel UUID (see shopware://sales-channels).',
+                'Sales channel "%s" not found. Available sales channels: %s. Pass one of these names or a sales channel UUID (see shopwell://sales-channels).',
                 $input,
                 $this->listSalesChannelNames(),
             )];

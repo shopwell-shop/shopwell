@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  */
-import { send, type HandleMethod } from '@shopware-ag/meteor-admin-sdk/es/channel';
+import { send, type HandleMethod } from '@shopwell-ag/meteor-admin-sdk/es/channel';
 import useExtensionsStore from 'src/app/store/extensions.store';
 import useConsentStore, { type ConsentDTO } from 'src/core/consent/consent.store';
 

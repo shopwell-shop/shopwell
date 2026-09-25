@@ -8,7 +8,7 @@
  * shape `feature.yaml` uses, a flat list of `- name:` blocks with scalar keys, and nothing else.
  */
 
-const SHOPWARE_FEATURE_CONFIG = __DIR__ . '/../../../src/Core/Framework/Resources/config/packages/feature.yaml';
+const SHOPWELL_FEATURE_CONFIG = __DIR__ . '/../../../src/Core/Framework/Resources/config/packages/feature.yaml';
 
 /**
  * The test lanes that cover the in-flight majors: one `FEATURE_ALL` value per major that has not
@@ -20,9 +20,9 @@ const SHOPWARE_FEATURE_CONFIG = __DIR__ . '/../../../src/Core/Framework/Resource
  *
  * @return list<string> e.g. ['v6.8.0.0', 'v6.9.0.0'], oldest major first
  */
-function shopware_major_lanes(string $featureConfigPath = SHOPWARE_FEATURE_CONFIG): array
+function shopwell_major_lanes(string $featureConfigPath = SHOPWELL_FEATURE_CONFIG): array
 {
-    $lanes = shopware_in_flight_majors($featureConfigPath);
+    $lanes = shopwell_in_flight_majors($featureConfigPath);
 
     return $lanes === [] ? ['major'] : $lanes;
 }
@@ -30,11 +30,11 @@ function shopware_major_lanes(string $featureConfigPath = SHOPWARE_FEATURE_CONFI
 /**
  * @return list<string> the registered majors that are still switched off by default
  */
-function shopware_in_flight_majors(string $featureConfigPath = SHOPWARE_FEATURE_CONFIG): array
+function shopwell_in_flight_majors(string $featureConfigPath = SHOPWELL_FEATURE_CONFIG): array
 {
     $majors = [];
 
-    foreach (shopware_read_feature_flags($featureConfigPath) as $name => $flag) {
+    foreach (shopwell_read_feature_flags($featureConfigPath) as $name => $flag) {
         // Only majors named after their version identify a release state; the other major flags
         // (JSON_LD_DATA, ACCESSIBILITY_TWEAKS, ...) ride along in every lane.
         if (!\preg_match('/^v\d+\.\d+\.\d+\.\d+$/i', $name)) {
@@ -57,7 +57,7 @@ function shopware_in_flight_majors(string $featureConfigPath = SHOPWARE_FEATURE_
 /**
  * @return array<string, array<string, string>> flag name => its scalar options as written in the YAML
  */
-function shopware_read_feature_flags(string $featureConfigPath = SHOPWARE_FEATURE_CONFIG): array
+function shopwell_read_feature_flags(string $featureConfigPath = SHOPWELL_FEATURE_CONFIG): array
 {
     if (!\is_file($featureConfigPath)) {
         throw new RuntimeException(\sprintf('Cannot read the feature flag registry at "%s".', $featureConfigPath));

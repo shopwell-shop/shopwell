@@ -1,6 +1,6 @@
 import { type VNode } from 'vue';
 import type { RouteLocationNamedRaw, RouteLocationRaw } from 'vue-router';
-import type { TabItem } from '@shopware-ag/meteor-component-library/dist/esm/MtTabs';
+import type { TabItem } from '@shopwell-ag/meteor-component-library/dist/esm/MtTabs';
 import type { ModuleManifest } from 'src/core/factory/module.factory';
 import { getTabItemsFromSlotContent, getTextFromSlotItem, triggerTabItemClick } from '../tab-slot-parser';
 import template from './sw-meteor-page.html.twig';

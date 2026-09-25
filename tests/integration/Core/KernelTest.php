@@ -32,7 +32,7 @@ class KernelTest extends TestCase
     protected function setUp(): void
     {
         $this->filesystem = new Filesystem();
-        $this->appCacheDir = sys_get_temp_dir() . '/shopware-kernel-test-' . bin2hex(random_bytes(8));
+        $this->appCacheDir = sys_get_temp_dir() . '/shopwell-kernel-test-' . bin2hex(random_bytes(8));
         $this->cacheRootDir = $this->appCacheDir . '/var/cache';
 
         $this->setEnvVars(['APP_CACHE_DIR' => $this->appCacheDir]);

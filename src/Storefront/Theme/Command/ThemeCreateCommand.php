@@ -210,10 +210,10 @@ EOL;
 {
   "name": "#composer-name#",
   "description": "Theme skeleton plugin",
-  "type": "shopware-platform-plugin",
+  "type": "shopwell-platform-plugin",
   "license": "MIT",
   "require": {
-    "shopware/core": "~6.7.0"
+    "shopwell/core": "~6.7.0"
   },
   "autoload": {
     "psr-4": {
@@ -221,7 +221,7 @@ EOL;
     }
   },
   "extra": {
-    "shopware-plugin-class": "#namespace#\\\\#class#",
+    "shopwell-plugin-class": "#namespace#\\\\#class#",
     "label": {
       "de-DE": "Theme #namespace# plugin",
       "en-GB": "Theme #namespace# plugin"
@@ -236,7 +236,7 @@ EOL;
         return <<<EOL
 <?xml version="1.0" encoding="UTF-8"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
 
     <card>
         <title>Theme configuration</title>

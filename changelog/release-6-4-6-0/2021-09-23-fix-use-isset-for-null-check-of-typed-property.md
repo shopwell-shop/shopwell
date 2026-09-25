@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Changed method `Shopware\Core\Framework\DataAbstractionLayer\EntityRepository::setEntityLoadedEventFactory()` to use isset for null check of typed property 
+* Changed method `Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository::setEntityLoadedEventFactory()` to use isset for null check of typed property 

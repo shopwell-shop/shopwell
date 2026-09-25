@@ -225,13 +225,13 @@ class ThemeLifecycleServiceTest extends TestCase
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
-        $shopwareLogo = $this->getMedia('shopware_logo');
-        $this->createCmsPage($shopwareLogo->getId());
+        $shopwellLogo = $this->getMedia('shopwell_logo');
+        $this->createCmsPage($shopwellLogo->getId());
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
-        // assert that the file shopware_logo was not deleted and is assigned to same media entity as before
-        static::assertEquals($shopwareLogo, $this->getMedia('shopware_logo'));
+        // assert that the file shopwell_logo was not deleted and is assigned to same media entity as before
+        static::assertEquals($shopwellLogo, $this->getMedia('shopwell_logo'));
     }
 
     public function testItDontRenamesThemeMediaIfItExistsBeforeAndIsSame(): void
@@ -241,15 +241,15 @@ class ThemeLifecycleServiceTest extends TestCase
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
-        $shopwareLogoId = $this->getMedia('shopware_logo');
-        $this->createCmsPage($shopwareLogoId->getId());
+        $shopwellLogoId = $this->getMedia('shopwell_logo');
+        $this->createCmsPage($shopwellLogoId->getId());
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
         $themeEntity = $this->getTheme($bundle);
 
         static::assertInstanceOf(MediaCollection::class, $themeEntity->getMedia());
-        $renamedShopwellLogoId = $this->getMedia('shopware_logo');
+        $renamedShopwellLogoId = $this->getMedia('shopwell_logo');
         static::assertNotNull($themeEntity->getMedia()->get($renamedShopwellLogoId->getId()));
     }
 
@@ -260,15 +260,15 @@ class ThemeLifecycleServiceTest extends TestCase
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
-        $shopwareLogoId = $this->getMedia('shopware_logo');
-        $this->createCmsPage($shopwareLogoId->getId());
+        $shopwellLogoId = $this->getMedia('shopwell_logo');
+        $this->createCmsPage($shopwellLogoId->getId());
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
         $themeEntity = $this->getTheme($bundle);
 
         static::assertInstanceOf(MediaCollection::class, $themeEntity->getMedia());
-        $renamedShopwellLogoId = $this->getMedia('shopware_logo_pink2');
+        $renamedShopwellLogoId = $this->getMedia('shopwell_logo_pink2');
         static::assertNotNull($themeEntity->getMedia()->get($renamedShopwellLogoId->getId()));
     }
 
@@ -279,15 +279,15 @@ class ThemeLifecycleServiceTest extends TestCase
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
-        $shopwareLogoId = $this->getMedia('shopware_logo');
-        $this->createCmsPage($shopwareLogoId->getId());
+        $shopwellLogoId = $this->getMedia('shopwell_logo');
+        $this->createCmsPage($shopwellLogoId->getId());
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
         $themeEntity = $this->getTheme($bundle);
 
         static::assertInstanceOf(MediaCollection::class, $themeEntity->getMedia());
-        $this->hasNoMedia('shopware_logo_pink2');
+        $this->hasNoMedia('shopwell_logo_pink2');
     }
 
     public function testItUploadsFilesIntoTheRootFolderIfThemeDefaultFolderDoesNotExist(): void
@@ -550,13 +550,13 @@ class ThemeLifecycleServiceTest extends TestCase
     private function addPinkLogoToTheme(StorefrontPluginConfiguration $bundle): void
     {
         $config = $bundle->getThemeConfig();
-        $config['fields']['shopwareLogoPink'] = [
+        $config['fields']['shopwellLogoPink'] = [
             'label' => [
-                'en-GB' => 'shopware_logo_pink',
-                'de-DE' => 'shopware_logo_pink',
+                'en-GB' => 'shopwell_logo_pink',
+                'de-DE' => 'shopwell_logo_pink',
             ],
             'type' => 'media',
-            'value' => 'app/storefront/src/assets/image/shopware_logo_pink.svg',
+            'value' => 'app/storefront/src/assets/image/shopwell_logo_pink.svg',
         ];
 
         $bundle->setThemeConfig($config);
@@ -565,13 +565,13 @@ class ThemeLifecycleServiceTest extends TestCase
     private function addPinkLogoToThemeChanged(StorefrontPluginConfiguration $bundle): void
     {
         $config = $bundle->getThemeConfig();
-        $config['fields']['shopwareLogoPink'] = [
+        $config['fields']['shopwellLogoPink'] = [
             'label' => [
-                'en-GB' => 'shopware_logo_pink',
-                'de-DE' => 'shopware_logo_pink',
+                'en-GB' => 'shopwell_logo_pink',
+                'de-DE' => 'shopwell_logo_pink',
             ],
             'type' => 'media',
-            'value' => 'app/storefront/src/assets/image/shopware_logo_pink2.svg',
+            'value' => 'app/storefront/src/assets/image/shopwell_logo_pink2.svg',
         ];
 
         $bundle->setThemeConfig($config);
@@ -580,10 +580,10 @@ class ThemeLifecycleServiceTest extends TestCase
     private function addPinkLogoToThemeWithoutValue(StorefrontPluginConfiguration $bundle): void
     {
         $config = $bundle->getThemeConfig();
-        $config['fields']['shopwareLogoPink'] = [
+        $config['fields']['shopwellLogoPink'] = [
             'label' => [
-                'en-GB' => 'shopware_logo_pink',
-                'de-DE' => 'shopware_logo_pink',
+                'en-GB' => 'shopwell_logo_pink',
+                'de-DE' => 'shopwell_logo_pink',
             ],
             'type' => 'media',
         ];

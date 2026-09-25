@@ -36,7 +36,7 @@ export default {
             type: String,
             required: false,
             default() {
-                return 'SHOPWARE_INVALID_IP';
+                return 'SHOPWELL_INVALID_IP';
             },
         },
     },

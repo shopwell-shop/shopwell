@@ -3,7 +3,7 @@ title: Reorganized menu items on the settings page
 issue: NEXT-37079
 flag: v6.7.0.0
 author: Sebastian Kalicki
-author_email: s.kalicki@shopware.com
+author_email: s.kalicki@shopwell.com
 author_github: @s.kalicki
 ---
 # Administration

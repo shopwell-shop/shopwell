@@ -2,8 +2,8 @@
  * @sw-package framework
  */
 import { effectScope } from 'vue';
-import { useTheme as useMeteorTheme } from '@shopware-ag/meteor-component-library';
-import type { Theme, UseThemeReturn } from '@shopware-ag/meteor-component-library';
+import { useTheme as useMeteorTheme } from '@shopwell-ag/meteor-component-library';
+import type { Theme, UseThemeReturn } from '@shopwell-ag/meteor-component-library';
 
 /**
  * user_config key the theme preference is persisted under for the current user.

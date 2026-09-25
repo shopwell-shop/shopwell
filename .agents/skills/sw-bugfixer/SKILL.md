@@ -1,7 +1,7 @@
 ---
 name: sw-bugfixer
 description: >
-  Diagnose and fix a Shopware 6 GitHub issue, or improve an existing Bugfixer pull
+  Diagnose and fix a Shopwell 6 GitHub issue, or improve an existing Bugfixer pull
   request after maintainer feedback. Use when the user asks to fix an issue,
   create a bugfix PR, handle a qi/sw-bugfixer issue, improve a Bugfixer PR, or react to
   /sw-bugfixer feedback.
@@ -10,11 +10,11 @@ license: MIT
 allowed-tools: Bash(rg:*) Bash(find:*) Bash(ls:*) Bash(git log:*) Bash(git show:*) Bash(git diff:*) Bash(git blame:*) Bash(git status:*) Bash(git branch:*) Bash(git checkout:*) Bash(git switch:*) Bash(git rev-parse:*) Bash(git merge-base:*) Bash(gh issue view:*) Bash(gh issue list:*) Bash(gh pr view:*) Bash(gh pr diff:*) Bash(gh pr checks:*) Bash(gh api repos/*:*) Bash(composer:*) Bash(php:*) Bash(bin/console:*) Bash(npm:*) Bash(pnpm:*) Read Glob Grep Edit
 ---
 
-# Shopware Bugfixer
+# Shopwell Bugfixer
 
 ## Context (interactive)
 
-You operate inside the `shopware/shopware` monorepo with local edit access and
+You operate inside the `shopwell/shopwell` monorepo with local edit access and
 GitHub read access through shell tools. This skill drives the **interactive**
 Bugfixer path. The unattended CI twin runs in GitHub Agentic Workflows (`gh aw`)
 from `.github/workflows/sw-bugfixer.md` and uses safe outputs for branch creation,

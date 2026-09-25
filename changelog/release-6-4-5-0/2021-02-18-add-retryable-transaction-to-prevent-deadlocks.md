@@ -15,7 +15,7 @@ author_github: hanneswernery
   `src/Core/Framework/DataAbstractionLayer/Doctrine/RetryableQuery.php`. Use arguments
   `(Doctrine\DBAL\Connection $connection, \Closure $closure)` instead.
 * Remove second argument `Command $command` from
-  `Shopware\Core\Framework\DataAbstractionLayer\Dbal\ExceptionHandlerInterface` behind feature flag
+  `Shopwell\Core\Framework\DataAbstractionLayer\Dbal\ExceptionHandlerInterface` behind feature flag
   _FEATURE_NEXT_16640_.
 ___
 # Upgrade Information

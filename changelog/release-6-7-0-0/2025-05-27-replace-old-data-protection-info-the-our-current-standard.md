@@ -2,7 +2,7 @@
 title: Replace old data protection info the our current standard
 issue: #8388
 author: Marcel Brode
-author_email: m.brode@shopware.com
+author_email: m.brode@shopwell.com
 author_github: @Marcel Brode
 ---
 # Administration

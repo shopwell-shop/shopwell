@@ -3,7 +3,7 @@ title: Accessibility improvements for the main navigation
 issue: NEXT-36116
 flag: ACCESSIBILITY_TWEAKS
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: BrocksiNet
 ---
 # Storefront

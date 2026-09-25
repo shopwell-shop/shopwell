@@ -9,7 +9,7 @@ author_github: @JoshuaBehrens
 * Changed `/api/_admin/known-ips` to now also return IPv6 CIDR
 ___
 # Administration
-* Changed `\Shopware\Administration\Framework\Routing\KnownIps\KnownIpsCollector::collectIps` to also return common IPv6 CIDR masks
+* Changed `\Shopwell\Administration\Framework\Routing\KnownIps\KnownIpsCollector::collectIps` to also return common IPv6 CIDR masks
 * Added new attribute `errorCode` to `sw-multi-tag-ip-select` to change the kind of error, that is display on an invalid entry
 * Changed response filter in method `validKnownIps` in component `sw-multi-tag-ip-select` to validate the same way as manual entries are validated
 * Added `isValidCidr` to JS string utils

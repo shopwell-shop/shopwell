@@ -2,11 +2,11 @@
 title: Fix snippet default value sanitize
 issue: NEXT-30489
 author: Malte Janz
-author_email: m.janz@shopware.com
+author_email: m.janz@shopwell.com
 author_github: MalteJanz
 ---
 # Storefront
-* Changed the snippet sanitizer to allow the attribute `data-prev-url` in `src/Core/Framework/Resources/config/packages/shopware.yaml`
+* Changed the snippet sanitizer to allow the attribute `data-prev-url` in `src/Core/Framework/Resources/config/packages/shopwell.yaml`
 * Removed deprecated translation key `general.privacyNotice`. Use `general.privacyNoticeText` instead.
 * Removed deprecated translation key `account.profileDelete`. Use `account.profileDeleteText` instead.
 * Removed deprecated translation key `checkout.confirmTerms`. Use `checkout.confirmTermsText` instead.

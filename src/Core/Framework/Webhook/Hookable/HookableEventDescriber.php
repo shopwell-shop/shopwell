@@ -9,7 +9,7 @@ use Shopwell\Core\Framework\Log\Package;
  * This interface describes how additional webhook event names and their
  * required privileges are provided to the app-system.
  *
- * Implementations are discovered through the `shopware.hookable_event.describer` tag.
+ * Implementations are discovered through the `shopwell.hookable_event.describer` tag.
  *
  * @internal only for use by the app-system
  */

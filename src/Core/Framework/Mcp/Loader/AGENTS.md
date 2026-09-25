@@ -4,9 +4,9 @@
 Loaders extend the MCP SDK's capability discovery to include tools, prompts, and resources from Shopwell apps. Three concrete loaders (`AppMcpToolLoader`, `AppMcpPromptLoader`, `AppMcpResourceLoader`) extend `AbstractAppMcpLoader`, which provides the shared try/fetch/foreach pipeline plus `capabilityName()` (prefixes the app name) and `resolveDescription()` helpers.
 
 ## Plugin integration
-Plugins register MCP tools by tagging services with `shopware.mcp.tool` in their DI XML. At compile time, `McpToolDiscoveryCompilerPass` does two things:
+Plugins register MCP tools by tagging services with `shopwell.mcp.tool` in their DI XML. At compile time, `McpToolDiscoveryCompilerPass` does two things:
 
-1. Re-tags the service `shopware.mcp.tool` → `mcp.tool` so it is wired into the DI container and service locator.
+1. Re-tags the service `shopwell.mcp.tool` → `mcp.tool` so it is wired into the DI container and service locator.
 2. Assigns the class to the Admin API server through the MCP bundle's `mcp.servers.elements` parameter, so the bundle registers it on `mcp.server.admin.builder` and the tool appears in the live HTTP registry — not just in `debug:mcp`.
 
 Plugin lifecycle is fully respected: the service only exists in the container when the plugin is installed and active.
@@ -35,7 +35,7 @@ Apps declare tools in `Resources/mcp.xml`:
 4. Tool calls are proxied to the app webhook via `AppMcpCapabilityExecutor` with HMAC signing
 
 ### Reserved name enforcement
-App tool names are automatically prefixed with the app name (e.g., `my-erp-sync-orders`). If the resulting name starts with `shopware-`, the tool is silently skipped and a warning is logged. This prevents apps from overriding built-in core tools.
+App tool names are automatically prefixed with the app name (e.g., `my-erp-sync-orders`). If the resulting name starts with `shopwell-`, the tool is silently skipped and a warning is logged. This prevents apps from overriding built-in core tools.
 
 ### Response format
 App tool responses should follow the same envelope convention as core tools:
@@ -77,7 +77,7 @@ App tools whose `url` starts with `/` are dispatched as Symfony subrequests inst
 
 ### Classes
 - `AbstractAppMcpLoader` -- base class implementing `LoaderInterface`: wraps the DB fetch in a try/catch, iterates rows, and provides `capabilityName()` / `resolveDescription()` helpers for concrete loaders
-- `AppMcpToolLoader` -- reads from `app_mcp_tool`, registers tools, enforces reserved `shopware-` prefix, honors the `shopware.mcp.allowed_tools` compile-time allowlist
+- `AppMcpToolLoader` -- reads from `app_mcp_tool`, registers tools, enforces reserved `shopwell-` prefix, honors the `shopwell.mcp.allowed_tools` compile-time allowlist
 - `AppMcpPromptLoader` -- reads from `app_mcp_prompt`, registers prompts
 - `AppMcpResourceLoader` -- reads from `app_mcp_resource`, registers resources
 - `AppMcpCapabilityExecutor` -- branches on URL prefix: `/` → subrequest (no HMAC); `http(s)://` → HMAC-signed Guzzle POST. Used by all three loaders to invoke app capabilities. Returns response body as JSON string.

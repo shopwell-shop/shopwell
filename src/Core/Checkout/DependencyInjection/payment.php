@@ -53,13 +53,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(PaymentMethodDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelPaymentMethodDefinition::class)
-        ->tag('shopware.sales_channel.entity.definition');
+        ->tag('shopwell.sales_channel.entity.definition');
 
     $services->set(PaymentMethodTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PaymentMethodValidator::class)
         ->args([
@@ -120,7 +120,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(JWTFactoryV2::class)
         ->args([
-            service('shopware.jwt_config'),
+            service('shopwell.jwt_config'),
             service(Connection::class),
             service(ClockInterface::class),
         ]);
@@ -133,7 +133,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(PaymentTokenGenerator::class)
         ->args([
-            service('shopware.jwt_config'),
+            service('shopwell.jwt_config'),
             service(DataValidator::class),
             service(SystemConfigService::class),
         ]);
@@ -145,7 +145,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(PaymentHandlerRegistry::class)
         ->args([
-            tagged_locator('shopware.payment.method'),
+            tagged_locator('shopwell.payment.method'),
             service(Connection::class),
         ]);
 
@@ -153,31 +153,31 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(OrderTransactionStateHandler::class),
         ])
-        ->tag('shopware.payment.method');
+        ->tag('shopwell.payment.method');
 
     $services->set(DebitPayment::class)
         ->args([
             service(OrderTransactionStateHandler::class),
         ])
-        ->tag('shopware.payment.method');
+        ->tag('shopwell.payment.method');
 
     $services->set(CashPayment::class)
         ->args([
             service(OrderTransactionStateHandler::class),
         ])
-        ->tag('shopware.payment.method');
+        ->tag('shopwell.payment.method');
 
     $services->set(InvoicePayment::class)
         ->args([
             service(OrderTransactionStateHandler::class),
         ])
-        ->tag('shopware.payment.method');
+        ->tag('shopwell.payment.method');
 
     $services->set(DefaultPayment::class)
         ->args([
             service(OrderTransactionStateHandler::class),
         ])
-        ->tag('shopware.payment.method');
+        ->tag('shopwell.payment.method');
 
     $services->set(PaymentHandlerIdentifierSubscriber::class)
         ->tag('kernel.event_subscriber');
@@ -192,7 +192,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('payment_method.repository'),
             service(PaymentDistinguishableNameGenerator::class),
         ])
-        ->tag('shopware.entity_indexer');
+        ->tag('shopwell.entity_indexer');
 
     $services->set(PaymentDistinguishableNameGenerator::class)
         ->args([
@@ -200,10 +200,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(CartPaymentMethodValidator::class)
-        ->tag('shopware.cart.validator');
+        ->tag('shopwell.cart.validator');
 
     $services->set(CleanupPaymentTokenTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(CleanupPaymentTokenTaskHandler::class)
         ->args([
@@ -237,5 +237,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.sync.fk_resolver');
+        ->tag('shopwell.sync.fk_resolver');
 };

@@ -21,7 +21,7 @@ import {
     type TemplateAnalysis,
 } from './template-analyzer';
 import { parseShopwellSetupSfc } from './sfc-parser';
-import type { ShopwellSetupBlock } from './utils/shopware-setup-block';
+import type { ShopwellSetupBlock } from './utils/shopwell-setup-block';
 import { ShopwellSetupTransformError } from './utils/transform-error';
 
 type ShopwellSetupTransformResult = {

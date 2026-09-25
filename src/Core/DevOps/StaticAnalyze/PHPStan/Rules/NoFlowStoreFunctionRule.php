@@ -66,7 +66,7 @@ class NoFlowStoreFunctionRule implements Rule
 
         return [
             RuleErrorBuilder::message('Using Shopwell::getStore, outside storer classes, is not allowed. Use getData instead')
-                ->identifier('shopware.noFlowStoreFunction')
+                ->identifier('shopwell.noFlowStoreFunction')
                 ->build(),
         ];
     }

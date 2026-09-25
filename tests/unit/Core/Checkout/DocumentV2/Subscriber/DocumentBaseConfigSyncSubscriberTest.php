@@ -196,10 +196,10 @@ class DocumentBaseConfigSyncSubscriberTest extends TestCase
 
         yield 'insert: unmapped JSON keys are preserved without column promotion' => [
             'commandClass' => InsertCommand::class,
-            'payload' => ['config' => '{"companyName":"shopware"}'],
+            'payload' => ['config' => '{"companyName":"shopwell"}'],
             'existingJson' => null,
             'expected' => [
-                'config' => '{"companyName":"shopware"}',
+                'config' => '{"companyName":"shopwell"}',
             ],
             'absentKeys' => ['page_size', 'display_header', 'items_per_page'],
         ];
@@ -220,10 +220,10 @@ class DocumentBaseConfigSyncSubscriberTest extends TestCase
         yield 'update: column payload merges into existing JSON without clobbering siblings' => [
             'commandClass' => UpdateCommand::class,
             'payload' => ['page_size' => 'Letter'],
-            'existingJson' => '{"pageSize":"A4","companyName":"shopware"}',
+            'existingJson' => '{"pageSize":"A4","companyName":"shopwell"}',
             'expected' => [
                 'page_size' => 'Letter',
-                'config' => '{"pageSize":"Letter","companyName":"shopware"}',
+                'config' => '{"pageSize":"Letter","companyName":"shopwell"}',
             ],
         ];
 

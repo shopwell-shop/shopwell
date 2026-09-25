@@ -29,7 +29,7 @@ class ScalarBusinessEvent implements FlowEventAware, BusinessEventEncoderTestInt
             ->add('float', new ScalarValueType(ScalarValueType::TYPE_FLOAT));
     }
 
-    public function getEncodeValues(string $shopwareVersion): array
+    public function getEncodeValues(string $shopwellVersion): array
     {
         return [
             'string' => $this->getString(),

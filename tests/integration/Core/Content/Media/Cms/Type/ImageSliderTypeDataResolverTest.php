@@ -351,11 +351,11 @@ class ImageSliderTypeDataResolverTest extends TestCase
         $resolverContext = $this->getResolverContext($productMediaCollection);
 
         $this->publicFilesystem->write('/bundles/core/assets/default/cms/animated.gif', '');
-        $this->publicFilesystem->write('/bundles/core/assets/default/cms/shopware.jpg', '');
+        $this->publicFilesystem->write('/bundles/core/assets/default/cms/shopwell.jpg', '');
 
         $medias = [
             ['fileName' => 'bundles/core/assets/default/cms/animated.gif'],
-            ['fileName' => 'bundles/core/assets/default/cms/shopware.jpg'],
+            ['fileName' => 'bundles/core/assets/default/cms/shopwell.jpg'],
         ];
 
         $fieldConfig = new FieldConfigCollection();
@@ -385,7 +385,7 @@ class ImageSliderTypeDataResolverTest extends TestCase
         $secondSliderItem = $imageSliderItems[1];
         $secondSliderItemMedia = $secondSliderItem->getMedia();
         static::assertInstanceOf(MediaEntity::class, $secondSliderItemMedia);
-        static::assertSame('shopware', $secondSliderItemMedia->getFileName());
+        static::assertSame('shopwell', $secondSliderItemMedia->getFileName());
         static::assertSame('image/jpeg', $secondSliderItemMedia->getMimeType());
         static::assertSame('jpg', $secondSliderItemMedia->getFileExtension());
     }

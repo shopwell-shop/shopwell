@@ -2,7 +2,7 @@
 title: Add option to framework:schema command
 issue: NEXT-30456
 author: Micha Hobert
-author_email: m.hobert@shopware.com
+author_email: m.hobert@shopwell.com
 author_github: Isengo1989
 ---
 # Core

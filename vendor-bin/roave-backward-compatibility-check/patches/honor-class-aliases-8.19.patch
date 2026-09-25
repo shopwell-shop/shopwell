@@ -8,7 +8,7 @@ index 2378ef8..9c8ceea 100644
          } catch (IdentifierNotFound) {
 +            require_once dirname(__DIR__, 6) . '/vendor/autoload.php';
 +
-+            $aliases = array_change_key_case(\Shopware\Core\Framework\Deprecation\ClassAliasRegistry::aliases(), CASE_LOWER);
++            $aliases = array_change_key_case(\Shopwell\Core\Framework\Deprecation\ClassAliasRegistry::aliases(), CASE_LOWER);
 +            $newClassName = $aliases[strtolower($oldSymbol->getName())] ?? null;
 +            if ($newClassName !== null) {
 +                try {
@@ -30,7 +30,7 @@ diff --git a/src/DetectChanges/BCBreak/ClassBased/AncestorRemoved.php b/src/Dete
      public function __invoke(ReflectionClass $fromClass, ReflectionClass $toClass): Changes
      {
 +        require_once dirname(__DIR__, 9) . '/vendor/autoload.php';
-+        $classAliases = array_change_key_case(\Shopware\Core\Framework\Deprecation\ClassAliasRegistry::aliases(), CASE_LOWER);
++        $classAliases = array_change_key_case(\Shopwell\Core\Framework\Deprecation\ClassAliasRegistry::aliases(), CASE_LOWER);
 +
          $removedAncestors = Vec\concat(
 -            Vec\values(Dict\diff($fromClass->getParentClassNames(), $toClass->getParentClassNames())),

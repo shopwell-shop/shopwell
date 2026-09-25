@@ -34,7 +34,7 @@ For example:
 
 // This method for button save
 onSave() {
-    this.repository.save(this.data, Shopware.Context.api).then(() => {
+    this.repository.save(this.data, Shopwell.Context.api).then(() => {
         // We should add the method to re-fetch the entity data after save success here
         this.loadEntityData();
     });
@@ -43,7 +43,7 @@ onSave() {
 // This method to re-fetch the data
 loadEntityData() {
     const criteria = new Criteria();
-    const context = { ...Shopware.Context.api, inheritance: true };
+    const context = { ...Shopwell.Context.api, inheritance: true };
 
     this.repository.get(this.data.id, context, criteria).then((data) => {
         this.data = data;

@@ -6,4 +6,4 @@ author_email: rune@laenen.me
 author_github: runelaenen
 ---
 # Core
-* Added `array_values` in `\Shopware\Core\Framework\Plugin\Subscriber\PluginAclPrivilegesSubscriber::onAclRoleLoaded`.
+* Added `array_values` in `\Shopwell\Core\Framework\Plugin\Subscriber\PluginAclPrivilegesSubscriber::onAclRoleLoaded`.

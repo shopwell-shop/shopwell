@@ -2,7 +2,7 @@
  * @sw-package fundamentals@after-sales
  */
 import { mount } from '@vue/test-utils';
-import { MtSearch } from '@shopware-ag/meteor-component-library';
+import { MtSearch } from '@shopwell-ag/meteor-component-library';
 
 Shopwell.Utils.debounce = function debounce(fn) {
     return function execFunction(...args) {

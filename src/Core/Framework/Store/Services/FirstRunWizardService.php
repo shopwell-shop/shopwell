@@ -75,9 +75,9 @@ class FirstRunWizardService
         $this->eventDispatcher->dispatch(new FirstRunWizardStartedEvent($this->getFrwState(), $context));
     }
 
-    public function frwLogin(string $shopwareId, string $password, Context $context): void
+    public function frwLogin(string $shopwellId, string $password, Context $context): void
     {
-        $accessTokenResponse = $this->frwClient->frwLogin($shopwareId, $password, $context);
+        $accessTokenResponse = $this->frwClient->frwLogin($shopwellId, $password, $context);
         $accessToken = $this->createAccessTokenStruct($accessTokenResponse, $accessTokenResponse['firstRunWizardUserToken']);
 
         $this->updateFrwUserToken($context, $accessToken);

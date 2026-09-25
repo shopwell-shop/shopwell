@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Add missing method typehints to classes which extend from `Shopware\Core\Framework\DataAbstractionLayer\EntityCollection`
+* Add missing method typehints to classes which extend from `Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection`

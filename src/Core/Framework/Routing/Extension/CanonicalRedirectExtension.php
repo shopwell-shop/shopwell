@@ -24,7 +24,7 @@ final class CanonicalRedirectExtension extends Extension
     public const NAME = 'canonical-redirect';
 
     /**
-     * @internal shopware owns the __constructor, but the properties are public API
+     * @internal shopwell owns the __constructor, but the properties are public API
      */
     public function __construct(public readonly Request $request)
     {

@@ -25,16 +25,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(AdministrationNotFoundSubscriber::class)
         ->args([
-            param('shopware_administration.path_name'),
+            param('shopwell_administration.path_name'),
             service('service_container'),
         ])
         ->tag('kernel.event_subscriber');
 
     $services->set(AdministrationRouteScope::class)
         ->args([
-            param('shopware_administration.path_name'),
+            param('shopwell_administration.path_name'),
         ])
-        ->tag('shopware.route_scope');
+        ->tag('shopwell.route_scope');
 
     $services->set(AdministrationReadinessCheck::class)
         ->args([
@@ -44,7 +44,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('filesystem'),
             service(ClockInterface::class),
         ])
-        ->tag('shopware.system_check');
+        ->tag('shopwell.system_check');
 
     $services->set(KnownIpsCollector::class);
 
@@ -52,7 +52,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->decorate('pentatrion_vite.file_accessor')
         ->args([
             param('pentatrion_vite.configs'),
-            service('shopware.asset.asset'),
+            service('shopwell.asset.asset'),
             service('kernel'),
             service('filesystem'),
         ]);

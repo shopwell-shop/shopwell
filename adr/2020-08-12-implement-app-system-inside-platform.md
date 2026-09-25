@@ -8,14 +8,14 @@ tags: [app, cloud]
 ## Context
 
 We need a different extension mechanism besides the well known plugins, that works in cloud and on-prem environments in the same way.
-That's why we envisioned the app system, currently publicly available as a [plugin](https://github.com/shopware/app-system).
-We were able to quickly develop the app system, gather feedback and iterate over ideas without being bound to the strict release workflow of the shopware platform.
+That's why we envisioned the app system, currently publicly available as a [plugin](https://github.com/shopwell-shop/app-system).
+We were able to quickly develop the app system, gather feedback and iterate over ideas without being bound to the strict release workflow of the shopwell platform.
 That was the reason why we started working on the app system as a plugin in the first place.
 
 Now as the app system matured, it is time to integrate the app system back into the platform.
 This has the following benefits:
 * It sends the signal to partners and potential app manufacturers that the app system is stable
-* Partners / app manufacturers can rely on the shopware 6 release cycle and the according upgrade process
+* Partners / app manufacturers can rely on the shopwell 6 release cycle and the according upgrade process
 * Users don't need to install an extra plugin in order to use apps
 
 ### App system concept
@@ -26,8 +26,8 @@ An app consists of a manifest file, containing meta data about the app, for exam
 #### App system limitations
 
 * No PHP code execution: PHP code execution cannot be allowed in a multi tenant system due to security reasons, 
-as we cannot trust third party code, because of that we cannot run third party code on the shopware servers.
-In the app system third party backend code has to run on third party servers, that communicate over the api with the shopware server.
+as we cannot trust third party code, because of that we cannot run third party code on the shopwell servers.
+In the app system third party backend code has to run on third party servers, that communicate over the api with the shopwell server.
 
 * No general JS administration extensions: Extending the administration through custom JS like plugins cannot be allowed due to security reasons, too.
 This is mainly due to the fact that the apps JS code should not run in the context of the systems current user and with his/her permissions (as administration extensions from plugins do), but in the context of the app with only the permissions that app was granted.
@@ -41,23 +41,23 @@ Additionally, the storefront theme files (JS and CSS) only need to be accessed d
 
 #### App system extension points
 
-* [Webhook](https://docs.shopware.com/en/shopware-platform-dev-en/app-system-guide/app-base-guide?category=shopware-platform-dev-en/app-system-guide#webhooks): An app can register to webhooks to be notified on a predefined URL if some events happen inside shopware.
+* [Webhook](https://docs.shopwell.com/en/shopwell-platform-dev-en/app-system-guide/app-base-guide?category=shopwell-platform-dev-en/app-system-guide#webhooks): An app can register to webhooks to be notified on a predefined URL if some events happen inside shopwell.
 
-* [Action-Button](https://docs.shopware.com/en/shopware-platform-dev-en/app-system-guide/app-base-guide?category=shopware-platform-dev-en/app-system-guide#buttons): An app can display extra buttons on selected detail & listing pages inside the administration and can perform custom actions for the selected entities.
+* [Action-Button](https://docs.shopwell.com/en/shopwell-platform-dev-en/app-system-guide/app-base-guide?category=shopwell-platform-dev-en/app-system-guide#buttons): An app can display extra buttons on selected detail & listing pages inside the administration and can perform custom actions for the selected entities.
 
-* [Custom Modules](https://docs.shopware.com/en/shopware-platform-dev-en/app-system-guide/app-base-guide?category=shopware-platform-dev-en/app-system-guide#create-own-module): An app can display it's own UI inside the administration. This is done via iFrames that are embedded in the administration.
+* [Custom Modules](https://docs.shopwell.com/en/shopwell-platform-dev-en/app-system-guide/app-base-guide?category=shopwell-platform-dev-en/app-system-guide#create-own-module): An app can display it's own UI inside the administration. This is done via iFrames that are embedded in the administration.
 
-* [Custom Fields](https://docs.shopware.com/en/shopware-platform-dev-en/app-system-guide/app-base-guide?category=shopware-platform-dev-en/app-system-guide#custom-fields): An app can register it's own custom fields sets, that are displayed along the other custom fields inside the administration.
+* [Custom Fields](https://docs.shopwell.com/en/shopwell-platform-dev-en/app-system-guide/app-base-guide?category=shopwell-platform-dev-en/app-system-guide#custom-fields): An app can register it's own custom fields sets, that are displayed along the other custom fields inside the administration.
 
-* [Storefront Customizations](https://developer.shopware.com/docs/guides/plugins/apps/storefront/): An app should be able to customize the storefront in the same way a plugin does. This includes the theme system, custom twig templates and custom JS and CSS.
+* [Storefront Customizations](https://developer.shopwell.com/docs/guides/plugins/apps/storefront/): An app should be able to customize the storefront in the same way a plugin does. This includes the theme system, custom twig templates and custom JS and CSS.
 In regard to the theme system apps are treated the same way as plugins are, especially regarding the theme inheritance. Apps can be explicitly set in the inheritance chain via `@TechnicalAppName`, if they are not referenced directly they are part of the fallback `@Plugins` namespace.
 
 Extension points may be added as new features of the app system, but we have to make sure that it does not violate one of the limitations mentioned above. Additionally, it needs to be taken into account that it's possible to deploy and run that feature in the cloud environment.
 
 ## Decision
 
-We will migrate the existing app system from the [plugin](https://github.com/shopware/app-system) into the platform. The app system will be part of the core bundle, analogous to the plugin system.
-It will be moved to the `Shopware\Core\Framework\App` namespace.
+We will migrate the existing app system from the [plugin](https://github.com/shopwell-shop/app-system) into the platform. The app system will be part of the core bundle, analogous to the plugin system.
+It will be moved to the `Shopwell\Core\Framework\App` namespace.
 
 ### Migration process
 
@@ -71,7 +71,7 @@ Apps that work with v0.2.0 of the app system plugin will work in the same way wi
 For a plugin developer, who extended the app system itself, this migration will likely be a breaking change, as we will change the internal structure of the app system (e.g. change PHP class names, name spaces, entity names, etc.).
 
 After the migration process is finished we will release a v0.3.0 of the app system plugin. The sole purpose for this update is to migrate the app data from the old plugin data structures to the new platform data structures and make sure that apps that were previously installed (with the app system plugin) continue to work (with the app system in platform). 
-This means that shops on a shopware version prior to the version, in which we will release the app system as part of the platform, can use the app system plugin in v0.2.0 to already use the app system in their shops.
+This means that shops on a shopwell version prior to the version, in which we will release the app system as part of the platform, can use the app system plugin in v0.2.0 to already use the app system in their shops.
 Shops that are already on the version where the app system is included as part of the platform can start right away using apps and don't need the plugin. 
 For shops that used apps with the app system plugin and then update to a platform version where the app system is included, need to update the app system plugin to v0.3.0 right after upgrading the platform version, so that the already installed apps continue to work, after that the plugin can safely be deleted and is not necessary anymore.
  

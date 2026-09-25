@@ -17,7 +17,7 @@ use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
  *  - `messenger.message.handled.count` — one per handle grouped by outcome (handled/retried/failed) and message group,
  *  - `messenger.message.handling.duration` — received→terminal wall time, per outcome and message group.
  *
- * Tagged `shopware.telemetry.subscriber`, so `TelemetrySubscriberCompilerPass` removes the service
+ * Tagged `shopwell.telemetry.subscriber`, so `TelemetrySubscriberCompilerPass` removes the service
  * when telemetry is disabled.
  *
  * @internal

@@ -110,28 +110,28 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(StorefrontPluginRegistry::class),
         ])
-        ->tag('shopware.bundle_config.style_file_resolver');
+        ->tag('shopwell.bundle_config.style_file_resolver');
 
     $services->set(ScssPhpCompiler::class);
 
     $services->set(ThemeCompiler::class)
         ->args([
-            service('shopware.filesystem.theme'),
-            service('shopware.filesystem.temp'),
-            service('shopware.filesystem.asset'),
+            service('shopwell.filesystem.theme'),
+            service('shopwell.filesystem.temp'),
+            service('shopwell.filesystem.asset'),
             service(CopyBatchInputFactory::class),
             service(ThemeFileResolver::class),
             param('kernel.debug'),
             service(EventDispatcherInterface::class),
             service(ThemeFilesystemResolver::class),
-            tagged_iterator('shopware.asset'),
+            tagged_iterator('shopwell.asset'),
             service(CacheInvalidator::class),
             service(LoggerInterface::class),
             service(AbstractThemePathBuilder::class),
             service(ScssPhpCompiler::class),
             param('storefront.theme.allowed_scss_values'),
             param('storefront.theme.validate_on_compile'),
-            param('shopware.filesystem.theme.visibility'),
+            param('shopwell.filesystem.theme.visibility'),
         ]);
 
     $services->set(ThemeLifecycleService::class)
@@ -160,7 +160,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('request_stack'),
             service(ThemeRuntimeConfigService::class),
-            service('shopware.filesystem.temp'),
+            service('shopwell.filesystem.temp'),
             service(LoggerInterface::class),
         ]);
 
@@ -198,7 +198,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(ResolvedConfigLoader::class),
         ])
-        ->deprecate('shopware/core', '6.8.0', 'tag:v6.8.0 - The %service_id% service will be removed in v6.8.0.0 without replacement');
+        ->deprecate('shopwell/core', '6.8.0', 'tag:v6.8.0 - The %service_id% service will be removed in v6.8.0.0 without replacement');
 
     $services->set(ThemeConfigCacheInvalidator::class)
         ->args([
@@ -222,7 +222,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ThemeLifecycleHandler::class),
             service(ThemeLifecycleService::class),
         ])
-        ->tag('shopware.app_lifecycle.handler');
+        ->tag('shopwell.app_lifecycle.handler');
 
     $services->set(DatabaseAvailableThemeProvider::class)
         ->args([
@@ -260,7 +260,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(DeleteThemeFilesHandler::class)
         ->args([
-            service('shopware.filesystem.theme'),
+            service('shopwell.filesystem.theme'),
             service(AbstractThemePathBuilder::class),
         ])
         ->tag('messenger.message_handler');
@@ -289,13 +289,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(UnusedThemeDirectoryDeleter::class)
         ->args([
             service(Connection::class),
-            service('shopware.filesystem.theme'),
+            service('shopwell.filesystem.theme'),
             service(AbstractThemePathBuilder::class),
             service(ClockInterface::class),
         ]);
 
     $services->set(DeleteThemeFilesTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(DeleteThemeFilesTaskHandler::class)
         ->args([
@@ -307,60 +307,60 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(StaticFileConfigLoader::class)
         ->args([
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
         ]);
 
     $services->set(StaticFileAvailableThemeProvider::class)
         ->args([
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
         ]);
 
     $services->set(StaticFileConfigDumper::class)
         ->args([
             service(DatabaseConfigLoader::class),
             service(DatabaseAvailableThemeProvider::class),
-            service('shopware.filesystem.private'),
-            service('shopware.filesystem.temp'),
+            service('shopwell.filesystem.private'),
+            service('shopwell.filesystem.temp'),
         ])
         ->tag('kernel.event_subscriber');
 
-    $services->set('shopware.asset.theme', ThemeAssetPackage::class)
+    $services->set('shopwell.asset.theme', ThemeAssetPackage::class)
         ->lazy()
         ->args([
             [
-                param('shopware.filesystem.theme.url'),
+                param('shopwell.filesystem.theme.url'),
             ],
-            service('shopware.asset.theme.version_strategy'),
+            service('shopwell.asset.theme.version_strategy'),
             service('request_stack'),
             service(AbstractThemePathBuilder::class),
         ])
-        ->tag('shopware.asset', ['asset' => 'theme']);
+        ->tag('shopwell.asset', ['asset' => 'theme']);
 
     // Entity definitions
     $services->set(ThemeDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ThemeTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ThemeSalesChannelDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ThemeMediaDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ThemeChildDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     // Entity extensions
     $services->set(SalesChannelExtension::class)
-        ->tag('shopware.entity.extension');
+        ->tag('shopwell.entity.extension');
 
     $services->set(LanguageExtension::class)
-        ->tag('shopware.entity.extension');
+        ->tag('shopwell.entity.extension');
 
     $services->set(MediaExtension::class)
-        ->tag('shopware.entity.extension');
+        ->tag('shopwell.entity.extension');
 
     // Controller
     $services->set(ThemeController::class)
@@ -450,7 +450,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('kernel.event_subscriber')
         ->tag('kernel.reset', ['method' => 'reset'])
         // Make sure it runs after default `BundleHierarchyBuilder`
-        ->tag('shopware.twig.hierarchy_builder', ['priority' => 500]);
+        ->tag('shopwell.twig.hierarchy_builder', ['priority' => 500]);
 
     $services->set(FirstRunWizardSubscriber::class)
         ->args([
@@ -484,7 +484,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.entity_indexer');
+        ->tag('shopwell.entity_indexer');
 
     $services->set(DatabaseSalesChannelThemeLoader::class)
         ->public()
@@ -493,7 +493,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(ThemeExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(ThemeFilesystemResolver::class)
         ->public()

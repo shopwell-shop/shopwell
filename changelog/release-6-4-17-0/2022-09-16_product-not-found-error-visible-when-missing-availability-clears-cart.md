@@ -6,4 +6,4 @@ author_email: code@joshua-behrens.de
 author_github: JoshuaBehrens
 ---
 # Core
-* Changed level of `\Shopware\Core\Content\Product\Cart\ProductNotFoundError` from warning to error to display it on the cart page
+* Changed level of `\Shopwell\Core\Content\Product\Cart\ProductNotFoundError` from warning to error to display it on the cart page

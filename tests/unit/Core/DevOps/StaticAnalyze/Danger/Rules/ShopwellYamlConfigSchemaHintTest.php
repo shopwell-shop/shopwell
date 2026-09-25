@@ -23,7 +23,7 @@ class ShopwellYamlConfigSchemaHintTest extends TestCase
     /**
      * @param list<string> $touchedFiles
      */
-    #[TestDox('Warns when shopware.yaml changes without a config-schema.json change')]
+    #[TestDox('Warns when shopwell.yaml changes without a config-schema.json change')]
     #[DataProvider('touchedFilesProvider')]
     public function testConfigSchemaSync(array $touchedFiles, bool $expectWarning): void
     {
@@ -40,8 +40,8 @@ class ShopwellYamlConfigSchemaHintTest extends TestCase
 
     public static function touchedFilesProvider(): \Generator
     {
-        yield 'shopware.yaml without schema update warns' => [['config/packages/shopware.yaml'], true];
-        yield 'shopware.yaml with schema update passes' => [['config/packages/shopware.yaml', 'config-schema.json'], false];
+        yield 'shopwell.yaml without schema update warns' => [['config/packages/shopwell.yaml'], true];
+        yield 'shopwell.yaml with schema update passes' => [['config/packages/shopwell.yaml', 'config-schema.json'], false];
         yield 'schema-only change passes' => [['config-schema.json'], false];
         yield 'unrelated yaml change passes' => [['config/packages/framework.yaml'], false];
     }

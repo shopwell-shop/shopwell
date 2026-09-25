@@ -4,12 +4,12 @@ issue: NEXT-26184
 ---
 # Core
 * Added `lazyLoad` functions to replace deprecated `lazy` functions in:
-  * `Shopware\Core\Content\Flow\Dispatching\StorerCustomerGroupStorer`
-  * `Shopware\Core\Content\Flow\Dispatching\CustomerRecoveryStorer`
-  * `Shopware\Core\Content\Flow\Dispatching\CustomerStorer`
-  * `Shopware\Core\Content\Flow\Dispatching\NewsletterRecipientStorer`
-  * `Shopware\Core\Content\Flow\Dispatching\OrderStorer`
-  * `Shopware\Core\Content\Flow\Dispatching\OrderTransactionStorer`
-  * `Shopware\Core\Content\Flow\Dispatching\ProductStorer`
-  * `Shopware\Core\Content\Flow\Dispatching\UserStorer`
-* Changed `lazy` method in `Shopware\Core\Content\Flow\Dispatching\StorableFlow` to correct the lazy loader.
+  * `Shopwell\Core\Content\Flow\Dispatching\StorerCustomerGroupStorer`
+  * `Shopwell\Core\Content\Flow\Dispatching\CustomerRecoveryStorer`
+  * `Shopwell\Core\Content\Flow\Dispatching\CustomerStorer`
+  * `Shopwell\Core\Content\Flow\Dispatching\NewsletterRecipientStorer`
+  * `Shopwell\Core\Content\Flow\Dispatching\OrderStorer`
+  * `Shopwell\Core\Content\Flow\Dispatching\OrderTransactionStorer`
+  * `Shopwell\Core\Content\Flow\Dispatching\ProductStorer`
+  * `Shopwell\Core\Content\Flow\Dispatching\UserStorer`
+* Changed `lazy` method in `Shopwell\Core\Content\Flow\Dispatching\StorableFlow` to correct the lazy loader.

@@ -38,7 +38,7 @@ class AttributeEntityCompilerPassTest extends TestCase
 
         $attributeEntity = new Definition(TestAttributeEntity::class);
         $attributeEntity->setPublic(true);
-        $attributeEntity->addTag('shopware.entity');
+        $attributeEntity->addTag('shopwell.entity');
         $container->setDefinition(TestAttributeEntity::class, $attributeEntity);
 
         $compiler = new AttributeEntityCompiler();
@@ -47,13 +47,13 @@ class AttributeEntityCompilerPassTest extends TestCase
         $compilerPass->process($container);
 
         static::assertTrue($container->hasDefinition('test_attribute_entity.definition'));
-        static::assertTrue($container->getDefinition('test_attribute_entity.definition')->hasTag('shopware.entity.definition'));
+        static::assertTrue($container->getDefinition('test_attribute_entity.definition')->hasTag('shopwell.entity.definition'));
 
         static::assertTrue($container->hasDefinition('test_attribute_entity_translation.definition'));
-        static::assertTrue($container->getDefinition('test_attribute_entity_translation.definition')->hasTag('shopware.entity.definition'));
+        static::assertTrue($container->getDefinition('test_attribute_entity_translation.definition')->hasTag('shopwell.entity.definition'));
 
         static::assertTrue($container->hasDefinition('customer_test_attribute_entity.definition'));
-        static::assertTrue($container->getDefinition('customer_test_attribute_entity.definition')->hasTag('shopware.entity.definition'));
+        static::assertTrue($container->getDefinition('customer_test_attribute_entity.definition')->hasTag('shopwell.entity.definition'));
     }
 }
 

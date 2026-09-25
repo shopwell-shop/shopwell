@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import useConsentStore from 'src/core/consent/consent.store';
-import { MtModal, MtModalAction, MtModalClose, MtModalRoot, MtModalTrigger } from '@shopware-ag/meteor-component-library';
+import { MtModal, MtModalAction, MtModalClose, MtModalRoot, MtModalTrigger } from '@shopwell-ag/meteor-component-library';
 import SwSettingsUsageDataConsentModalDataProvider from './index';
 import SwSettingsUsageDataConsentModal from '../sw-settings-usage-data-consent-modal';
 

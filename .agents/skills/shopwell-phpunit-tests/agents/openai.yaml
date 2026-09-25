@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shopwell PHPUnit Tests"
+  short_description: "Write Shopwell PHPUnit tests in the project style."
+  default_prompt: "Write or update PHPUnit tests for this Shopwell change."

@@ -12,7 +12,7 @@ type EachRegister = (name: string, callback: jest.ProvidesCallback, timeout?: nu
 // `.each` supports both an inline table and a tagged-template call — `each`a|b`(...)` — which JS
 // invokes as (strings, ...values). Forward every argument so interpolated values are not dropped.
 type EachArgs = [table: EachTable] | [strings: TemplateStringsArray, ...values: unknown[]];
-const pendingFeatureFlagsSymbol = Symbol.for('shopware.pendingActiveFeatureFlags');
+const pendingFeatureFlagsSymbol = Symbol.for('shopwell.pendingActiveFeatureFlags');
 
 function getActiveFeatureFlags(): string[] {
     return globalThis.activeFeatureFlags ?? [];

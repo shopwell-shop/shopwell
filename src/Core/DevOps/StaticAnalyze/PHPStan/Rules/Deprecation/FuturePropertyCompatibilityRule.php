@@ -147,7 +147,7 @@ class FuturePropertyCompatibilityRule implements Rule
     private function error(string $message, int $line, string $identifier): IdentifierRuleError
     {
         return RuleErrorBuilder::message($message)
-            ->identifier('shopware.futureIncompatibility.' . $identifier)
+            ->identifier('shopwell.futureIncompatibility.' . $identifier)
             ->line($line)
             ->build();
     }

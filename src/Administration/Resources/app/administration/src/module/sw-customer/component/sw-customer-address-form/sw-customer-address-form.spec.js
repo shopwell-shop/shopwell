@@ -199,7 +199,7 @@ describe('module/sw-customer/page/sw-customer-address-form', () => {
         const wrapper = await createWrapper();
         await wrapper.setProps({
             customer: {
-                company: 'shopware',
+                company: 'shopwell',
             },
             address: new Entity('1', 'customer_address', {
                 id: '1',

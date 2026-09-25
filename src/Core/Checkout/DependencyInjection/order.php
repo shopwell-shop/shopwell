@@ -58,45 +58,45 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(OrderDefinition::class)
-        ->tag('shopware.entity.definition')
-        ->tag('shopware.entity.hookable');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.entity.hookable');
 
     $services->set(OrderAddressDefinition::class)
-        ->tag('shopware.entity.definition')
-        ->tag('shopware.entity.hookable');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.entity.hookable');
 
     $services->set(OrderExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(OrderCustomerDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(OrderDeliveryDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(OrderDeliveryPositionDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(OrderLineItemDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(OrderLineItemDownloadDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(OrderTagDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(OrderTransactionDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(OrderTransactionCaptureDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(OrderTransactionCaptureRefundDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(OrderTransactionCaptureRefundPositionDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(OrderService::class)
         ->args([
@@ -177,12 +177,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('order.repository'),
             service('promotion.repository'),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
             service('event_dispatcher'),
             service(AccountService::class),
             service(GuestAuthenticator::class),
             service(ClockInterface::class),
-            param('shopware.order.deep_link.expire_days'),
+            param('shopwell.order.deep_link.expire_days'),
         ]);
 
     $services->set(CancelOrderRoute::class)
@@ -231,5 +231,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SalesChannelTypeResolver::class),
         ])
         ->tag('kernel.event_subscriber')
-        ->tag('shopware.telemetry.subscriber');
+        ->tag('shopwell.telemetry.subscriber');
 };

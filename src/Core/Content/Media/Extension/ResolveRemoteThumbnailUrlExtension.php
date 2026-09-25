@@ -20,7 +20,7 @@ final class ResolveRemoteThumbnailUrlExtension extends Extension
     public const NAME = 'remote_thumbnail_url.resolve';
 
     /**
-     * @internal shopware owns the __constructor, but the properties are public API
+     * @internal shopwell owns the __constructor, but the properties are public API
      */
     public function __construct(
         public string $mediaUrl,

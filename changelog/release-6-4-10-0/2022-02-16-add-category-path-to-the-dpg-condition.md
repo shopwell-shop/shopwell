@@ -2,7 +2,7 @@
 title: Add category path to the DPG condition
 issue: NEXT-20136
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com
+author_email: k.luetjann@shopwell.com
 author_github: King-of-Babylon
 ---
 # Administration

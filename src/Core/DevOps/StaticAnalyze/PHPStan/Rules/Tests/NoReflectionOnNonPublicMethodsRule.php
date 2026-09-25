@@ -38,7 +38,7 @@ class NoReflectionOnNonPublicMethodsRule implements Rule
 
     public const ERROR_SET_ACCESSIBLE = 'ReflectionMethod::setAccessible() has no effect since PHP 8.1 and only signals reflective access to a non-public method. Remove it and test through the public API instead.';
 
-    private const IDENTIFIER = 'shopware.reflectionOnNonPublicMethod';
+    private const IDENTIFIER = 'shopwell.reflectionOnNonPublicMethod';
 
     /**
      * Reflecting into a third-party class can be unavoidable when a vendor API offers no public

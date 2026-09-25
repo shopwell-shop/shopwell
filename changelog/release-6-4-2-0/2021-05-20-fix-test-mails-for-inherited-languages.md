@@ -2,7 +2,7 @@
 title: Fix test mails for inherited languages
 issue: NEXT-14876
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com 
+author_email: j.leifeld@shopwell.com 
 author_github: @jleifeld
 ---
 # Administration

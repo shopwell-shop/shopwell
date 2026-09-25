@@ -7,7 +7,7 @@ tags: [app-system, validation, requirements]
 
 ## Context
 
-The Shopware app system allows third-party applications to extend platform functionality. However, certain apps may require specific environment conditions or infrastructure capabilities to function properly. Without proper validation of these requirements, apps might fail at runtime or behave unpredictably, leading to poor user experience and difficult troubleshooting.
+The Shopwell app system allows third-party applications to extend platform functionality. However, certain apps may require specific environment conditions or infrastructure capabilities to function properly. Without proper validation of these requirements, apps might fail at runtime or behave unpredictably, leading to poor user experience and difficult troubleshooting.
 
 Examples of such requirements include:
 - Public accessibility for webhook endpoints
@@ -61,7 +61,7 @@ The first requirement validator `PublicAccess` validates that:
 - The `APP_URL` environment variable is configured
 - The URL uses HTTPS scheme
 - The URL is not a localhost or IP address
-- The Shopware health check endpoint is publicly accessible
+- The Shopwell health check endpoint is publicly accessible
 
 ### Error Handling
 
@@ -90,7 +90,7 @@ The system is designed for easy extension:
 - **Validation Overhead**: Network checks (like public accessibility) add latency to installation process
 - **False Positives**: Overly strict validation might prevent legitimate installations in edge cases
 - **Backward Compatibility**: Existing apps without requirement declarations continue to work unchanged
-- **Custom Requirements**: Shopware update is required to add new requirement types.
+- **Custom Requirements**: Shopwell update is required to add new requirement types.
 
 **Migration Strategy:**
 - The feature is opt-in through manifest declarations

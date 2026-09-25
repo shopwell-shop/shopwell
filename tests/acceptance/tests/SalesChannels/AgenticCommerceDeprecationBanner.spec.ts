@@ -67,8 +67,8 @@ test(
         await ShopAdmin.goesTo(`/admin#/sw/sales/channel/detail/${salesChannelId}/base`);
 
         const pluginInstalled = await page.evaluate(() => {
-            const shopware = (globalThis as ShopwellContextConfig).Shopwell;
-            return !!shopware?.Context?.app?.config?.bundles?.SwagAgenticCommerce;
+            const shopwell = (globalThis as ShopwellContextConfig).Shopwell;
+            return !!shopwell?.Context?.app?.config?.bundles?.SwagAgenticCommerce;
         });
 
         if (!pluginInstalled) {
@@ -78,8 +78,8 @@ test(
 
             await test.step('clicking the install button always navigates somewhere', async () => {
                 const extensionStoreDetailExists = await page.evaluate(() => {
-                    const shopware = (globalThis as ShopwellContextConfig).Shopwell;
-                    return !!shopware?.Context?.app?.config?.bundles?.SwagExtensionStore;
+                    const shopwell = (globalThis as ShopwellContextConfig).Shopwell;
+                    return !!shopwell?.Context?.app?.config?.bundles?.SwagExtensionStore;
                 });
 
                 await page.locator('.mt-banner .mt-button').click();

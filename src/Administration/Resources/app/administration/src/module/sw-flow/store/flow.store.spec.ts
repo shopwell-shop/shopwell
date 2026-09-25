@@ -1,4 +1,4 @@
-import EntityCollection from '@shopware-ag/meteor-admin-sdk/es/_internals/data/EntityCollection';
+import EntityCollection from '@shopwell-ag/meteor-admin-sdk/es/_internals/data/EntityCollection';
 
 describe('module/sw-flow/store/flow.store', () => {
     const store = Shopwell.Store.get('swFlow');

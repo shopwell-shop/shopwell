@@ -7,11 +7,11 @@ tags: [core, performance, caching, reverse-proxy, developer-experience]
 
 ## Context
 
-Shopware currently supports an HTTP-cache layer; however, the current implementation has some limitations:
+Shopwell currently supports an HTTP-cache layer; however, the current implementation has some limitations:
 * **Only storefront requests are cached**: The cache is only used for storefront requests, store-api is not supported out of the box, leading to performance penalties in headless projects.
 * **Cache-Hit rate is rather low**: All matched rule ids are included in the cache-hash, this leads to a lot of cache permutations. As one consequence of that, by default, the whole caching is disabled as soon as the cart is filled or a customer logged in.
 * **Complex reverse proxy configuration**: The reverse proxy configuration is quite complex because of the use of different cache headers and cookies, as a result we only support Fastly and Varnish, other reverse proxies are hard to add.
-* **Actual cache-control configuration is hard-coded and splattered**: The values set for `cache-control` headers are hard-coded and splattered (e.g., hardcoded in the reverse proxy config and in shopware), they cannot be configured based on projects needs, and also on route level only the max-age is configurable.
+* **Actual cache-control configuration is hard-coded and splattered**: The values set for `cache-control` headers are hard-coded and splattered (e.g., hardcoded in the reverse proxy config and in shopwell), they cannot be configured based on projects needs, and also on route level only the max-age is configurable.
 
 ## Decision
 
@@ -39,14 +39,14 @@ set-cookie: sw-cache-hash=theHash;
 ```
 Adding it as header allows the default [`vary` header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Vary) implementation of reverse proxies to work.
 The cookie is used to make it easier for clients to pass along the correct hash with all further requests, without the need to manually handle the header.
-The only shopware specific reverse proxy configuration will be to set the `sw-cache-hash` header based on the `sw-cache-hash` cookie on the reverse proxy.
+The only shopwell specific reverse proxy configuration will be to set the `sw-cache-hash` header based on the `sw-cache-hash` cookie on the reverse proxy.
 
 Additionally, the use of clear and configurable policies for the cache-control headers will remove the need to manually override the cache-control headers on the reverse proxy side.
 
 ### HTTP-Cache support for store-api
 
 We will add HTTP-Cache support for the store-api as well. The caching behaviour and used patterns are the same as for the storefront.
-So the configuration (on the shopware side, as well as on the reverse proxy) will be the same as in the storefront.
+So the configuration (on the shopwell side, as well as on the reverse proxy) will be the same as in the storefront.
 To make the caching applicable for the store-api, we will adjust the store-api routes to support `GET` requests where it makes sense, clients should preferably use the `GET` requests.
 
 For detailed documentation on why and how we added support for the store-api caching, refer to the [specific store-api caching ADR](./2025-09-15-store-api-cache-strategy.md).

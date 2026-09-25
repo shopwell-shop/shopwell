@@ -57,7 +57,7 @@ class UseHasherRule implements Rule
         if (\in_array($name, self::NOT_ALLOWED_FUNCTIONS, true)) {
             return [
                 RuleErrorBuilder::message(\sprintf('Do not use %s function, use class %s instead.', $name, self::HASHER_CLASS))
-                    ->identifier('shopware.hasher')
+                    ->identifier('shopwell.hasher')
                     ->build(),
             ];
         }

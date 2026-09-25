@@ -67,43 +67,43 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     // DAL DEFINITIONS + SERVICES
     $services->set(PromotionDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionSalesChannelDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionIndividualCodeDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionDiscountDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionDiscountRuleDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionSetGroupDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionSetGroupRuleDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionOrderRuleDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionPersonaCustomerDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionPersonaRuleDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionCartRuleDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionDiscountPriceDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PromotionValidator::class)
         ->args([
@@ -127,21 +127,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(HtmlSanitizer::class),
             service(Connection::class),
         ])
-        ->tag('shopware.cart.collector', ['priority' => 4900]);
+        ->tag('shopwell.cart.collector', ['priority' => 4900]);
 
     $services->set(PromotionProcessor::class)
         ->args([
             service(PromotionCalculator::class),
             service(LineItemGroupBuilder::class),
         ])
-        ->tag('shopware.cart.processor', ['priority' => 4900]);
+        ->tag('shopwell.cart.processor', ['priority' => 4900]);
 
     $services->set(PromotionDeliveryProcessor::class)
         ->args([
             service(PromotionDeliveryCalculator::class),
             service(LineItemGroupBuilder::class),
         ])
-        ->tag('shopware.cart.processor', ['priority' => -5100]);
+        ->tag('shopwell.cart.processor', ['priority' => -5100]);
 
     $services->set(PromotionCalculator::class)
         ->args([
@@ -258,7 +258,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(PromotionRedemptionUpdater::class),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.entity_indexer');
+        ->tag('shopwell.entity_indexer');
 
     $services->set(PromotionRedemptionUpdater::class)
         ->args([

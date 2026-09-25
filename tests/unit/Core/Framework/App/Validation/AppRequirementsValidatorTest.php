@@ -280,8 +280,8 @@ class AppRequirementsValidatorTest extends TestCase
         $manifest->expects($this->once())->method('getMetadata')->willReturn(Metadata::fromArray([
             'name' => 'test-app',
             'label' => [],
-            'author' => 'shopware',
-            'copyright' => 'shopware',
+            'author' => 'shopwell',
+            'copyright' => 'shopwell',
             'license' => 'MIT',
             'version' => '1.0.0',
         ]));

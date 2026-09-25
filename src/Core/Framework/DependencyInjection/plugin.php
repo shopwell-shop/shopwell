@@ -106,14 +106,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('kernel'),
             service(ActiveAppsLoader::class),
-            tagged_iterator('shopware.bundle_config.style_file_resolver'),
+            tagged_iterator('shopwell.bundle_config.style_file_resolver'),
         ]);
 
     $services->set(PluginDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PluginTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(PluginService::class)
         ->args([
@@ -136,7 +136,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CommandExecutor::class),
             service(RequirementsValidator::class),
             service('cache.messenger.restart_workers_signal'),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
             service(SystemConfigService::class),
             service(CustomEntityPersister::class),
             service(CustomEntitySchemaUpdater::class),
@@ -156,7 +156,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(PluginService::class),
             service(Filesystem::class),
             service(CacheClearer::class),
-            service('shopware.store_download_client'),
+            service('shopwell.store_download_client'),
         ]);
 
     $services->set(ExtensionExtractor::class)
@@ -273,8 +273,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(AssetService::class)
         ->args([
-            service('shopware.filesystem.asset'),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.asset'),
+            service('shopwell.filesystem.private'),
             service('kernel'),
             service(KernelPluginLoader::class),
             service(CacheInvalidator::class),
@@ -286,7 +286,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->alias(
         'Shopwell\Core\Framework\Plugin\Util\AssetService',
         AssetService::class,
-    )->deprecate('shopware/core', '6.7.15.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.8.0. Use Shopwell\Core\Framework\Adapter\Asset\AssetService instead.');
+    )->deprecate('shopwell/core', '6.7.15.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.8.0. Use Shopwell\Core\Framework\Adapter\Asset\AssetService instead.');
 
     // Requirement
     $services->set(RequirementsValidator::class)
@@ -308,13 +308,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ScaffoldingCollector::class),
             service(ScaffoldingWriter::class),
             service(Filesystem::class),
-            tagged_iterator('shopware.scaffold.generator'),
+            tagged_iterator('shopwell.scaffold.generator'),
         ])
         ->tag('console.command');
 
     $services->set(ScaffoldingCollector::class)
         ->args([
-            tagged_iterator('shopware.scaffold.generator'),
+            tagged_iterator('shopwell.scaffold.generator'),
         ]);
 
     $services->set(ScaffoldingWriter::class)
@@ -323,54 +323,54 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(ComposerGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(PluginClassGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(TestsGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(CommandGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(ScheduledTaskGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(EventSubscriberGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(StorefrontControllerGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(StoreApiRouteGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(EntityGenerator::class)
         ->args([
             service(ClockInterface::class),
         ])
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(ConfigGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(JavascriptPluginGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(AdminModuleGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(CustomFieldsetGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(GitignoreGenerator::class)
-        ->tag('shopware.scaffold.generator');
+        ->tag('shopwell.scaffold.generator');
 
     $services->set(PluginTelemetrySubscriber::class)
         ->args([
             service(Meter::class),
         ])
         ->tag('kernel.event_subscriber')
-        ->tag('shopware.telemetry.subscriber');
+        ->tag('shopwell.telemetry.subscriber');
 };

@@ -134,7 +134,7 @@ class RemoveCustomerTagActionTest extends TestCase
 
         static::assertCount(2, $customerTag);
 
-        $this->login($email, 'shopware');
+        $this->login($email, 'shopwell');
 
         $customerTag = $this->connection->fetchAllAssociative(
             'SELECT * FROM customer_tag WHERE customer_id = (:customerId)',

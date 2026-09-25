@@ -42,7 +42,7 @@ two if the first result surprises you.
 ## Traps
 
 - **SwagCommercial B2B bootstrap crash**: `Table
-  'shopware_test.b2b_components_individual_pricing' doesn't exist` during
+  'shopwell_test.b2b_components_individual_pricing' doesn't exist` during
   `RefreshIndexCommand`. Cause: the commercial bundle loads from
   `var/plugins.json` regardless of DB state, so a freshly-recreated DB lacks
   its tables while its indexers are registered. If `FORCE_INSTALL` crashes

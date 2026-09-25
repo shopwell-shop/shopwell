@@ -3,16 +3,16 @@ title: Add force cache invalidate header
 issue: NEXT-31006
 ---
 # Core
-* Added `\Shopware\Core\PlatformRequest::HEADER_FORCE_CACHE_INVALIDATE` const: 'sw-force-cache-invalidate'
-* Changed `\Shopware\Core\Framework\Adapter\Cache\CacheInvalidator::invalidate` to force the immediate Cache invalidation if the `PlatformRequest::HEADER_FORCE_CACHE_INVALIDATE` header is set
+* Added `\Shopwell\Core\PlatformRequest::HEADER_FORCE_CACHE_INVALIDATE` const: 'sw-force-cache-invalidate'
+* Changed `\Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator::invalidate` to force the immediate Cache invalidation if the `PlatformRequest::HEADER_FORCE_CACHE_INVALIDATE` header is set
 ___
 # Next Major Version Changes
 ## Delayed Cache Invalidation
 In the next major version, the cache invalidation will be delayed by default. This means that the cache will be invalidated in regular intervals and not immediately.
 This will lead to better cache hit rates and way less (duplicated) cache invalidations, which will improve efficiency and scalability of the system.
-As this feature is now active by default the previous `shopware.cache.invalidation.delay` configuration is removed.
+As this feature is now active by default the previous `shopwell.cache.invalidation.delay` configuration is removed.
 
-The default interval is 5 min, this can be changed by adjusting the run interval of the `shopware.invalidate_cache` scheduled task.
+The default interval is 5 min, this can be changed by adjusting the run interval of the `shopwell.invalidate_cache` scheduled task.
 
 If you sent an API request with critical information, where the cache should be invalidated immediately, you can set the `sw-force-cache-invalidate` header on your request.
 ```

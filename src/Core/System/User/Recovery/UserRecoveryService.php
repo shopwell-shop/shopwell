@@ -199,7 +199,7 @@ class UserRecoveryService
             throw UserException::invalidAppUrl($appUrl);
         }
 
-        $pathName = trim((string) EnvironmentHelper::getVariable('SHOPWARE_ADMINISTRATION_PATH_NAME', 'admin'), '/');
+        $pathName = trim((string) EnvironmentHelper::getVariable('SHOPWELL_ADMINISTRATION_PATH_NAME', 'admin'), '/');
 
         return $appUrl . '/' . $pathName;
     }

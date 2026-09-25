@@ -103,7 +103,7 @@ class NoCreateMockWithoutExpectationsRule implements Rule
     /**
      * Narrows enforcement to matching test namespaces; an empty list disables the rule.
      * Consumers rolling the rule out domain by domain grow this list via the
-     * `shopware.createMockWithoutExpectationsEnabledNamespaces` parameter of their PHPStan config.
+     * `shopwell.createMockWithoutExpectationsEnabledNamespaces` parameter of their PHPStan config.
      *
      * @var list<string>
      */
@@ -1515,7 +1515,7 @@ class NoCreateMockWithoutExpectationsRule implements Rule
         $label = $this->resolveMockedClass($createMockCall) ?? '...';
 
         $builder = RuleErrorBuilder::message(\sprintf($message, $label, $detail ?? $label))
-            ->identifier('shopware.createMockWithoutExpectations')
+            ->identifier('shopwell.createMockWithoutExpectations')
             ->line($line);
 
         if ($file !== null) {

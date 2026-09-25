@@ -40,7 +40,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
  * Exercises the whole app-secret-rotation lifecycle — install, rotation and recovery — against a fake app
  * server, checking both the saved state at each step and the two signatures actually sent over HTTP. The
  * pending state is produced by a real rotation that ends without a clear answer (a 5xx confirm), not by
- * setting it up directly, and the assertions check which secret signs the `shopware-shop-signature-previous`
+ * setting it up directly, and the assertions check which secret signs the `shopwell-shop-signature-previous`
  * header at each step. That header is the heart of the re-registration signature contract, which the unit
  * and command tests do not check at the HTTP level.
  *
@@ -725,8 +725,8 @@ class AppSecretRotationEndToEndTest extends TestCase
     }
 
     /**
-     * A re-registration confirm carries two signatures over the same payload: `shopware-shop-signature` signed
-     * with the newly minted secret (proves the app handed us that secret) and `shopware-shop-signature-previous`
+     * A re-registration confirm carries two signatures over the same payload: `shopwell-shop-signature` signed
+     * with the newly minted secret (proves the app handed us that secret) and `shopwell-shop-signature-previous`
      * signed with the secret the app held before (proves we are the shop the app already knows). Both must be
      * present and correct, or only the original initiator could not confirm a re-registration.
      */
@@ -735,8 +735,8 @@ class AppSecretRotationEndToEndTest extends TestCase
         static::assertSame('POST', $confirm->getMethod());
 
         $json = $this->confirmPayloadJson($confirm);
-        static::assertSame(hash_hmac('sha256', $json, $newSecret), $confirm->getHeaderLine('shopware-shop-signature'));
-        static::assertSame(hash_hmac('sha256', $json, $previousSecret), $confirm->getHeaderLine('shopware-shop-signature-previous'));
+        static::assertSame(hash_hmac('sha256', $json, $newSecret), $confirm->getHeaderLine('shopwell-shop-signature'));
+        static::assertSame(hash_hmac('sha256', $json, $previousSecret), $confirm->getHeaderLine('shopwell-shop-signature-previous'));
     }
 
     /**

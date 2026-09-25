@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Added `gad_source` parameter to ignored http cache parameters `shopware.http_cache.ignored_url_parameters`
+* Added `gad_source` parameter to ignored http cache parameters `shopwell.http_cache.ignored_url_parameters`

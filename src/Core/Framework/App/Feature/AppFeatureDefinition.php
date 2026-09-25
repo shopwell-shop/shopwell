@@ -10,7 +10,7 @@ use Shopwell\Core\Framework\Util\Filesystem;
 /**
  * Maps one feature type between an app's declaration and its stored `app_feature` rows: on install
  * and update the lifecycle calls fromApp() then toPayload() to write the rows; reads rebuild the
- * config via fromPayload(). One implementation per type, tagged `shopware.app_feature.definition`.
+ * config via fromPayload(). One implementation per type, tagged `shopwell.app_feature.definition`.
  *
  * The lifecycle also calls validate() before the rows are written and persisted() afterwards, so a
  * definition can reject the app's declaration or provision related resources without a separate

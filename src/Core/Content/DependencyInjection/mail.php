@@ -41,7 +41,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(SendMailHandler::class)
         ->args([
             service('mailer.transports'),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
             service('logger'),
         ])
         ->tag('messenger.message_handler');
@@ -50,13 +50,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service('mailer.mailer'),
-            service('shopware.filesystem.private'),
+            service('shopwell.filesystem.private'),
             service(SystemConfigService::class),
-            param('shopware.mail.max_body_length'),
+            param('shopwell.mail.max_body_length'),
             service('logger'),
-            param('shopware.messenger.message_max_kib_size'),
+            param('shopwell.messenger.message_max_kib_size'),
             abstract_arg('message bus'),
-            param('shopware.staging.mailing.disable_delivery'),
+            param('shopwell.staging.mailing.disable_delivery'),
         ]);
 
     $services->set(MailFactory::class)
@@ -118,7 +118,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('mailer.transport_factory'),
             service(SystemConfigService::class),
             service(MailAttachmentsBuilder::class),
-            service('shopware.filesystem.public'),
+            service('shopwell.filesystem.public'),
             service('document.repository'),
         ]);
 

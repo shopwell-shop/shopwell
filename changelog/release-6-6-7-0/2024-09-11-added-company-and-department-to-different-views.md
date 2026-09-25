@@ -2,7 +2,7 @@
 title: Added company and department to different views
 issue: NEXT-19063
 author: Fabian Boensch
-author_email: f.boensch@shopware.com
+author_email: f.boensch@shopwell.com
 author_github: @En0Ma1259
 ---
 # Administration

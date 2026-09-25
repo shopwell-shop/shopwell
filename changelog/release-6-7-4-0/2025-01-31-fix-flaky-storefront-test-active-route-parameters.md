@@ -1,7 +1,7 @@
 ---
 title: Fix flaky storefront test for active route parameters
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: @BrocksiNet
 ---
 # Storefront

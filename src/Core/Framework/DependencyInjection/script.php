@@ -51,13 +51,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service('twig.extension.debug'),
-            tagged_iterator('shopware.app_script.twig.extension'),
-            param('kernel.shopware_version'),
+            tagged_iterator('shopwell.app_script.twig.extension'),
+            param('kernel.shopwell_version'),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(ScriptDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ScriptTraces::class)
         ->public()

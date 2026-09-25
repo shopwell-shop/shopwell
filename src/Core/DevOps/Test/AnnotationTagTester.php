@@ -16,7 +16,7 @@ class AnnotationTagTester
     private const BC_CHANGE_ATTRIBUTES = 'ReturnTypeNarrowing|ReturnTypeWidening|ParameterTypeNarrowing|ParameterTypeWidening|PropertyTypeNarrowing|PropertyTypeWidening|ExceptionChange|ExperimentalReplacement|NewOptionalParameter|NewRequiredParameter|ParameterDefaultValueChange|ParameterNameChange|ParameterRemoval|BecomesAbstract|BecomesInternal|BecomesFinal|BecomesReadonly|ClassHierarchyChange|ClassMoved|VisibilityChange';
 
     public function __construct(
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
         private readonly string $manifestVersion
     ) {
     }
@@ -202,7 +202,7 @@ class AnnotationTagTester
 
         $highestVersion = $schema === AnnotationTagVersionSchema::MANIFEST_VERSION_SCHEMA
             ? $this->manifestVersion
-            : $this->shopwareVersion;
+            : $this->shopwellVersion;
 
         $this->compareVersion($highestVersion, $matches[1]);
     }

@@ -36,7 +36,7 @@ class StructuredArrayObjectBusinessEvent implements FlowEventAware, BusinessEven
             );
     }
 
-    public function getEncodeValues(string $shopwareVersion): array
+    public function getEncodeValues(string $shopwellVersion): array
     {
         return [
             'inner' => $this->getInner(),

@@ -390,7 +390,7 @@ class DocumentGeneratorTest extends TestCase
     public function testCreateFileIsWrittenInFs(): void
     {
         /** @var FilesystemOperator $fileSystem */
-        $fileSystem = static::getContainer()->get('shopware.filesystem.private');
+        $fileSystem = static::getContainer()->get('shopwell.filesystem.private');
         $document = $this->createDocumentWithFile();
 
         static::assertNotNull($document->getDocumentMediaFile());
@@ -453,7 +453,7 @@ class DocumentGeneratorTest extends TestCase
         $documentId = Uuid::randomHex();
 
         /** @var FilesystemOperator $fileSystem */
-        $fileSystem = static::getContainer()->get('shopware.filesystem.private');
+        $fileSystem = static::getContainer()->get('shopwell.filesystem.private');
 
         $documentTypeRepository = static::getContainer()->get('document_type.repository');
 
@@ -877,7 +877,7 @@ class DocumentGeneratorTest extends TestCase
 
             static::assertNotNull($document);
 
-            $fileSystem = static::getContainer()->get('shopware.filesystem.private');
+            $fileSystem = static::getContainer()->get('shopwell.filesystem.private');
             $mediaRepository = static::getContainer()->get('media.repository');
 
             /** @var MediaCollection $mediaFiles */
@@ -994,7 +994,7 @@ class DocumentGeneratorTest extends TestCase
         $documentId = Uuid::randomHex();
         $mediaId = Uuid::randomHex();
 
-        $fileSystem = static::getContainer()->get('shopware.filesystem.private');
+        $fileSystem = static::getContainer()->get('shopwell.filesystem.private');
         $documentType = static::getContainer()
             ->get('document_type.repository')
             ->search(

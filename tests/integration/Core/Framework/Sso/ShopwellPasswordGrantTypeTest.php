@@ -47,9 +47,9 @@ class ShopwellPasswordGrantTypeTest extends TestCase
         $bearerResponse->setEncryptionKey('key');
 
         $ttl = new \DateInterval('PT1H');
-        $shopwarePasswordGrantType = $this->createShopwellPasswortGrantType();
+        $shopwellPasswordGrantType = $this->createShopwellPasswortGrantType();
 
-        $response = $shopwarePasswordGrantType->respondToAccessTokenRequest($psr7Request, $bearerResponse, $ttl);
+        $response = $shopwellPasswordGrantType->respondToAccessTokenRequest($psr7Request, $bearerResponse, $ttl);
         $result = $response->generateHttpResponse(new Psr7Response());
         static::assertSame(Response::HTTP_OK, $result->getStatusCode());
 
@@ -86,9 +86,9 @@ class ShopwellPasswordGrantTypeTest extends TestCase
         $bearerResponse->setEncryptionKey('key');
 
         $ttl = new \DateInterval('PT1H');
-        $shopwarePasswordGrantType = $this->createShopwellPasswortGrantType();
+        $shopwellPasswordGrantType = $this->createShopwellPasswortGrantType();
 
-        $response = $shopwarePasswordGrantType->respondToAccessTokenRequest($psr7Request, $bearerResponse, $ttl);
+        $response = $shopwellPasswordGrantType->respondToAccessTokenRequest($psr7Request, $bearerResponse, $ttl);
         $result = $response->generateHttpResponse(new Psr7Response());
         static::assertSame(Response::HTTP_OK, $result->getStatusCode());
 
@@ -121,26 +121,26 @@ class ShopwellPasswordGrantTypeTest extends TestCase
         $request->request->set('grant_type', 'password');
         $request->request->set('scope', 'write');
         $request->request->set('username', 'admin');
-        $request->request->set('password', 'shopware');
+        $request->request->set('password', 'shopwell');
 
         return $request;
     }
 
     private function createShopwellPasswortGrantType(): ShopwellPasswordGrantType
     {
-        $shopwarePasswordGrantType = new ShopwellPasswordGrantType(
+        $shopwellPasswordGrantType = new ShopwellPasswordGrantType(
             $this->getContainer()->get(UserRepository::class),
             new RefreshTokenRepository($this->getContainer()->get(Connection::class), new NativeClock()),
             $this->getContainer()->get(UserService::class)
         );
 
-        $shopwarePasswordGrantType->setClientRepository($this->getContainer()->get(ClientRepository::class));
-        $shopwarePasswordGrantType->setScopeRepository($this->getContainer()->get(ScopeRepository::class));
-        $shopwarePasswordGrantType->setAccessTokenRepository($this->getContainer()->get(AccessTokenRepository::class));
-        $shopwarePasswordGrantType->setPrivateKey(new FakeCryptKey(Configuration::forSymmetricSigner(new TestSigner(), new TestKey())));
-        $shopwarePasswordGrantType->setRefreshTokenTTL(new \DateInterval('PT1H'));
-        $shopwarePasswordGrantType->setDefaultScope('');
+        $shopwellPasswordGrantType->setClientRepository($this->getContainer()->get(ClientRepository::class));
+        $shopwellPasswordGrantType->setScopeRepository($this->getContainer()->get(ScopeRepository::class));
+        $shopwellPasswordGrantType->setAccessTokenRepository($this->getContainer()->get(AccessTokenRepository::class));
+        $shopwellPasswordGrantType->setPrivateKey(new FakeCryptKey(Configuration::forSymmetricSigner(new TestSigner(), new TestKey())));
+        $shopwellPasswordGrantType->setRefreshTokenTTL(new \DateInterval('PT1H'));
+        $shopwellPasswordGrantType->setDefaultScope('');
 
-        return $shopwarePasswordGrantType;
+        return $shopwellPasswordGrantType;
     }
 }

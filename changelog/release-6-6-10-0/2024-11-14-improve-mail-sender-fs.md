@@ -6,5 +6,5 @@ author_email: benjamin.wittwer@a-k-f.de
 author_github: akf-bw
 ---
 # Core
-* Deprecated the `envelope` parameter in `Shopware\Core\Content\Mail\Service\AbstractMailSender::send`
-* Changed `\Shopware\Core\Content\Mail\Service\MailSender` to write the serialized mail to the private file system and dispatch a `\Shopware\Core\Content\Mail\Message\SendMailMessage` to the message bus instead of directly sending the mail to the Symfony mailer
+* Deprecated the `envelope` parameter in `Shopwell\Core\Content\Mail\Service\AbstractMailSender::send`
+* Changed `\Shopwell\Core\Content\Mail\Service\MailSender` to write the serialized mail to the private file system and dispatch a `\Shopwell\Core\Content\Mail\Message\SendMailMessage` to the message bus instead of directly sending the mail to the Symfony mailer

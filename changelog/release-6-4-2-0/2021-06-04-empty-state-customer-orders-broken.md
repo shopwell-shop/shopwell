@@ -2,7 +2,7 @@
 title: Empty state Customer / Orders broken
 issue: NEXT-13150
 author: Niklas Limberg
-author_email: n.limberg@shopware.com
+author_email: n.limberg@shopwell.com
 author: NiklasLimberg
 author_github: NiklasLimberg
 ---

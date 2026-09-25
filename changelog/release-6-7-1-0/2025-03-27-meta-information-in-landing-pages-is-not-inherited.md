@@ -1,6 +1,6 @@
 ---
 title: Meta information in landing pages is not inherited
-issue: https://github.com/shopware/shopware/issues/3712
+issue: https://github.com/shopwell-shop/shopwell/issues/3712
 author: Stefan Reichelt
 author_email: stefan@kreativsoehne.de
 author_github: @Songworks

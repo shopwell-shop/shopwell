@@ -253,7 +253,7 @@ class ExtensionLoaderTest extends TestCase
         // no translation at all
         static::assertNull($extension->getPrivacyPolicyExtension());
         static::assertSame(base64_encode('icon-binary'), $extension->getIconRaw());
-        static::assertSame('shopware AG', $extension->getProducerName());
+        static::assertSame('Shopwell', $extension->getProducerName());
         static::assertSame('MIT', $extension->getLicense());
         static::assertSame('https://test.com/privacy', $extension->getPrivacyPolicyLink());
         static::assertSame('1.0.0', $extension->getVersion());

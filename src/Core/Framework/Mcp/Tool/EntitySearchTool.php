@@ -21,11 +21,11 @@ use Shopwell\Core\Framework\ShopwellHttpException;
  */
 #[Package('framework')]
 #[McpTool(
-    name: 'shopware-entity-search',
+    name: 'shopwell-entity-search',
     title: 'Entity Search',
-    description: 'Search, list and filter Shopwell entities of any type — orders, products, customers, categories and the rest. Use this to LIST or page through records ("the last 10 orders", "all customers in Berlin"), and to look one up by productNumber or any other exact field value, including as the first step in Storefront cart/checkout workflows. Sort with criteria.sort, e.g. [{"field":"orderDateTime","order":"DESC"}]. For count/sum/average reporting, use shopware-entity-aggregate instead (the _meta.total here is pagination metadata, not a reporting count). Accepts Admin API criteria JSON. Returns {success, data: [...], _meta: {total, page, limit}}. If you don\'t already know the field names, shopware-entity-schema will tell you.'
+    description: 'Search, list and filter Shopwell entities of any type — orders, products, customers, categories and the rest. Use this to LIST or page through records ("the last 10 orders", "all customers in Berlin"), and to look one up by productNumber or any other exact field value, including as the first step in Storefront cart/checkout workflows. Sort with criteria.sort, e.g. [{"field":"orderDateTime","order":"DESC"}]. For count/sum/average reporting, use shopwell-entity-aggregate instead (the _meta.total here is pagination metadata, not a reporting count). Accepts Admin API criteria JSON. Returns {success, data: [...], _meta: {total, page, limit}}. If you don\'t already know the field names, shopwell-entity-schema will tell you.'
 )]
-#[McpToolDependsOn('shopware-entity-schema')]
+#[McpToolDependsOn('shopwell-entity-schema')]
 #[McpToolGroup('entity')]
 #[McpToolRequires(entityParam: 'entity', operations: ['read'])]
 class EntitySearchTool extends McpToolResponse
@@ -45,11 +45,11 @@ class EntitySearchTool extends McpToolResponse
     }
 
     public function __invoke(
-        #[Schema(description: 'Entity name to search, e.g. "order", "product" or "customer". See the shopware://entities resource for the full list.')]
+        #[Schema(description: 'Entity name to search, e.g. "order", "product" or "customer". See the shopwell://entities resource for the full list.')]
         string $entity,
         #[Schema(description: 'A JSON OBJECT of Admin API criteria, as a string — "filter", "sort", "associations", "includes". E.g. {"sort":[{"field":"orderDateTime","order":"DESC"}]} for the most recent first, or {"filter":[{"type":"equals","field":"productNumber","value":"SW10001"}]} to look one up. Defaults to no criteria.')]
         string $criteria = '{}',
-        #[Schema(description: 'Records per page, starting at 1. The upper bound is the shop\'s configured Admin API limit (shopware.api.max_limit); exceeding it returns an error naming the real maximum.')]
+        #[Schema(description: 'Records per page, starting at 1. The upper bound is the shop\'s configured Admin API limit (shopwell.api.max_limit); exceeding it returns an error naming the real maximum.')]
         int $limit = 25,
         #[Schema(description: 'Page number, starting at 1.')]
         int $page = 1,
@@ -59,7 +59,7 @@ class EntitySearchTool extends McpToolResponse
         $context = $this->contextProvider->getContext();
 
         if (!$this->registry->has($entity)) {
-            return $this->error(\sprintf('Entity "%s" not found. Use the shopware://entities resource for available entity names.', $entity));
+            return $this->error(\sprintf('Entity "%s" not found. Use the shopwell://entities resource for available entity names.', $entity));
         }
 
         if ($error = $this->requirePrivilege($context, $entity . ':read')) {

@@ -2,7 +2,7 @@
 title: Added mail template test language not assigned to sales channel warning
 issue: NEXT-38845
 author: Lukas Rump
-author_email: l.rump@shopware.com
+author_email: l.rump@shopwell.com
 author_github: @lukasrump
 ---
 # Administration

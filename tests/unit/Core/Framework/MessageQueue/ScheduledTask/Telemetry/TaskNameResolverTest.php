@@ -25,10 +25,10 @@ class TaskNameResolverTest extends TestCase
     {
         // core task names pass through unchanged (closed allowlist)
         yield 'version.cleanup passes through' => ['version.cleanup', 'version.cleanup'];
-        yield 'shopware.invalidate_cache passes through' => ['shopware.invalidate_cache', 'shopware.invalidate_cache'];
+        yield 'shopwell.invalidate_cache passes through' => ['shopwell.invalidate_cache', 'shopwell.invalidate_cache'];
         yield 'theme.delete_files passes through' => ['theme.delete_files', 'theme.delete_files'];
         yield 'telemetry.collect_periodic_metrics passes through' => ['telemetry.collect_periodic_metrics', 'telemetry.collect_periodic_metrics'];
-        yield 'shopware.elasticsearch.create.alias passes through' => ['shopware.elasticsearch.create.alias', 'shopware.elasticsearch.create.alias'];
+        yield 'shopwell.elasticsearch.create.alias passes through' => ['shopwell.elasticsearch.create.alias', 'shopwell.elasticsearch.create.alias'];
 
         // unknown / plugin names collapse to other, bounding label cardinality
         yield 'plugin custom task is other' => ['my_plugin.custom_task', 'other'];

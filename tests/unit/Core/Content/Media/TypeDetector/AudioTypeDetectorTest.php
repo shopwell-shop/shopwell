@@ -30,7 +30,7 @@ class AudioTypeDetectorTest extends TestCase
     public function testDetectWebp(): void
     {
         $type = $this->getAudioTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware-logo.vp8x.webp'),
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell-logo.vp8x.webp'),
             null
         );
 
@@ -40,7 +40,7 @@ class AudioTypeDetectorTest extends TestCase
     public function testDetectAvif(): void
     {
         $type = $this->getAudioTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware-logo.avif'),
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell-logo.avif'),
             null
         );
 
@@ -60,7 +60,7 @@ class AudioTypeDetectorTest extends TestCase
     public function testDetectJpg(): void
     {
         $type = $this->getAudioTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware.jpg'),
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell.jpg'),
             null
         );
 
@@ -70,7 +70,7 @@ class AudioTypeDetectorTest extends TestCase
     public function testDetectPng(): void
     {
         $type = $this->getAudioTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware-logo.png'),
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell-logo.png'),
             null
         );
 

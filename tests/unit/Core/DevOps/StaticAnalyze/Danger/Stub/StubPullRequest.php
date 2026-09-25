@@ -31,7 +31,7 @@ class StubPullRequest extends PullRequest
         }
 
         $this->id = '1';
-        $this->projectIdentifier = 'shopware/shopware';
+        $this->projectIdentifier = 'shopwell/shopwell';
         $this->title = 'Test pull request';
         $this->body = '';
         $this->labels = $labels;

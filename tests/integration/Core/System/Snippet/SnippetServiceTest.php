@@ -176,7 +176,7 @@ class SnippetServiceTest extends TestCase
             'id' => Uuid::randomBytes(),
             'translation_key' => 'test.ab',
             'value' => 'foo_ab',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -211,7 +211,7 @@ class SnippetServiceTest extends TestCase
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.ab',
             'value' => 'foo_ab',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -229,7 +229,7 @@ class SnippetServiceTest extends TestCase
 
         static::assertCount(4, $result);
 
-        static::assertContains('shopware', $result);
+        static::assertContains('shopwell', $result);
         static::assertContains('test', $result);
         static::assertContains('foo', $result);
         static::assertContains('Admin', $result);
@@ -373,7 +373,7 @@ class SnippetServiceTest extends TestCase
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.ab',
             'value' => 'foo_ab',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -391,7 +391,7 @@ class SnippetServiceTest extends TestCase
 
         static::assertCount(2, $result);
 
-        static::assertContains('shopware', $result);
+        static::assertContains('shopwell', $result);
         static::assertContains('test', $result);
     }
 
@@ -438,7 +438,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.baz',
             'value' => 'foo_baz',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -480,7 +480,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.bar',
             'value' => 'foo_baz',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -529,7 +529,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'bar.baz',
             'value' => 'bar_baz',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $barId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -579,7 +579,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.bar',
             'value' => 'bar_baz',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $barId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -636,7 +636,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.test',
             'value' => 'foo_test',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -697,7 +697,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.ab',
             'value' => 'foo_ab',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -756,7 +756,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.ab',
             'value' => 'foo_ab',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -815,7 +815,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.ab',
             'value' => 'foo_ab',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -876,7 +876,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.ab',
             'value' => 'foo_ab',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -937,7 +937,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.ab',
             'value' => 'foo_ab',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -995,7 +995,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.ab',
             'value' => 'foo_ab',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -1003,7 +1003,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'bar.ab',
             'value' => 'bar_ab',
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -1046,7 +1046,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.ab',
             'value' => self::LONG_SNIPPET,
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -1076,7 +1076,7 @@ json
             'id' => Uuid::randomBytes(),
             'translation_key' => 'foo.ab',
             'value' => self::LONG_SNIPPET,
-            'author' => 'shopware',
+            'author' => 'shopwell',
             'snippet_set_id' => $fooId,
             'created_at' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
@@ -1132,7 +1132,7 @@ json
             static::getContainer()->get(SnippetFilterFactory::class),
             static::getContainer()->get(ExtensionDispatcher::class),
             static::getContainer()->get('event_dispatcher'),
-            static::getContainer()->get('shopware.filesystem.private'),
+            static::getContainer()->get('shopwell.filesystem.private'),
             static::getContainer()->get('filesystem'),
         );
     }

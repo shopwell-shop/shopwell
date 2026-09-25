@@ -10,7 +10,7 @@ https://symfony.com/doc/current/service_container/service_decoration.html
 
 ## How to use the decorator pattern
 
-Instead of interfaces, we use abstract classes to define the base functionality of a service. This allows us to add more functions without breaking existing code. This decision was made in this [ADR](https://github.com/shopware/shopware/blob/trunk/adr/2020-11-25-decoration-pattern.md).
+Instead of interfaces, we use abstract classes to define the base functionality of a service. This allows us to add more functions without breaking existing code. This decision was made in this [ADR](https://github.com/shopwell-shop/shopwell/blob/trunk/adr/2020-11-25-decoration-pattern.md).
 
 ## Rules for the decorator pattern
 
@@ -21,7 +21,7 @@ When defining a service, which should be decorated, you have to follow these rul
 - An implementation of the abstract class **can not** provide any other public functions than the ones defined in the abstract class.
 - Implementations of the abstract class **can not** act as an event subscriber, symfony event system **can not** handle this correctly.
 
-These rules are enforced by the `\Shopware\Core\DevOps\StaticAnalyze\PHPStan\Rules\DecorationPatternRule` class.
+These rules are enforced by the `\Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\DecorationPatternRule` class.
 
 ## Example
 ```php
@@ -68,7 +68,7 @@ abstract class AbstractRuleLoader
 
     abstract public function load(Context $context): RuleCollection;
 
-    // introduced with shopware/platform v6.6
+    // introduced with shopwell/platform v6.6
     public function create(Context $context): RuleCollection 
     {
         return $this->getDecorated()->create($context);

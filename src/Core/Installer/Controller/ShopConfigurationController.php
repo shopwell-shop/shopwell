@@ -141,7 +141,7 @@ class ShopConfigurationController extends InstallerController
         }
 
         /** @var array<string, array{currency: string }> $preselection */
-        $preselection = $this->container->getParameter('shopware.installer.configurationPreselection');
+        $preselection = $this->container->getParameter('shopwell.installer.configurationPreselection');
 
         $parameters = $request->request->all();
         $parameters['config_shop_currency'] ??= $preselection[$userLocale]['currency'] ?? 'EUR';
@@ -177,7 +177,7 @@ class ShopConfigurationController extends InstallerController
         $countryIsos = array_map(fn ($country) => [
             'iso3' => $country['iso3'],
             'default' => $country['iso'] === $localeIsoCode,
-            'translated' => $this->translator->trans('shopware.installer.select_country_' . mb_strtolower($country['iso3'])),
+            'translated' => $this->translator->trans('shopwell.installer.select_country_' . mb_strtolower($country['iso3'])),
         ], $countries);
 
         /** sorting country by translated */
@@ -197,16 +197,16 @@ class ShopConfigurationController extends InstallerController
         $languages = [
             'de-DE' => [
                 'id' => 'de-DE',
-                'label' => $this->translator->trans('shopware.installer.select_language_de-DE'),
+                'label' => $this->translator->trans('shopwell.installer.select_language_de-DE'),
             ],
             'en-GB' => [
                 'id' => 'en-GB',
-                'label' => $this->translator->trans('shopware.installer.select_language_en-GB'),
+                'label' => $this->translator->trans('shopwell.installer.select_language_en-GB'),
             ],
         ];
 
         foreach ($this->translationConfig->languages as $language) {
-            $translationKey = 'shopware.installer.select_language_' . $language->locale;
+            $translationKey = 'shopwell.installer.select_language_' . $language->locale;
             $translatedName = $this->translator->trans($translationKey);
 
             $label = ($translatedName !== $translationKey) ? $translatedName : $language->name;

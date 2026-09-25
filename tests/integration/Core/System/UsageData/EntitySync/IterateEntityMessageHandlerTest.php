@@ -47,7 +47,7 @@ class IterateEntityMessageHandlerTest extends TestCase
     protected function setUp(): void
     {
         /** @var MockHttpClient $client */
-        $client = static::getContainer()->get('shopware.usage_data.gateway.client');
+        $client = static::getContainer()->get('shopwell.usage_data.gateway.client');
         $client->setResponseFactory(static function (string $method, string $url): ResponseInterface {
             if (\str_ends_with($url, '/killswitch')) {
                 $body = json_encode(['killswitch' => false]);
@@ -79,7 +79,7 @@ class IterateEntityMessageHandlerTest extends TestCase
             new IterateEntitiesQueryBuilder(
                 $entityDefinitionService,
                 static::getContainer()->get(Connection::class),
-                static::getContainer()->getParameter('shopware.usage_data.gateway.batch_size'),
+                static::getContainer()->getParameter('shopwell.usage_data.gateway.batch_size'),
             ),
             $this->getContainer()->get(ConsentService::class),
             $entityDefinitionService,
@@ -129,7 +129,7 @@ class IterateEntityMessageHandlerTest extends TestCase
             new IterateEntitiesQueryBuilder(
                 $entityDefinitionService,
                 static::getContainer()->get(Connection::class),
-                static::getContainer()->getParameter('shopware.usage_data.gateway.batch_size'),
+                static::getContainer()->getParameter('shopwell.usage_data.gateway.batch_size'),
             ),
             $this->getContainer()->get(ConsentService::class),
             $entityDefinitionService,
@@ -180,7 +180,7 @@ class IterateEntityMessageHandlerTest extends TestCase
             new IterateEntitiesQueryBuilder(
                 $entityDefinitionService,
                 static::getContainer()->get(Connection::class),
-                static::getContainer()->getParameter('shopware.usage_data.gateway.batch_size'),
+                static::getContainer()->getParameter('shopwell.usage_data.gateway.batch_size'),
             ),
             $this->getContainer()->get(ConsentService::class),
             $entityDefinitionService,

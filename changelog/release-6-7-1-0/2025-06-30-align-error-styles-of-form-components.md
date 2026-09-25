@@ -2,7 +2,7 @@
 title: Align error styles of form components
 issue: #10030
 author: Alastair Simon
-author_email: a.fraser@shopware.com
+author_email: a.fraser@shopwell.com
 author_github: @alastair-simon
 ---
 # Administration

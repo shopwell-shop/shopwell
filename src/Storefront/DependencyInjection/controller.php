@@ -151,7 +151,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ApiCaptchaController::class)
         ->public()
         ->args([
-            tagged_iterator('shopware.storefront.captcha'),
+            tagged_iterator('shopwell.storefront.captcha'),
         ])
         ->call('setContainer', [service('service_container')]);
 
@@ -375,7 +375,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SearchPageLoader::class),
             service(SuggestPageLoader::class),
             service(ProductSearchRoute::class),
-            param('shopware.storefront.redirect_on_single_hit_fields'),
+            param('shopwell.storefront.redirect_on_single_hit_fields'),
         ])
         ->call('setContainer', [service('service_container')]);
 

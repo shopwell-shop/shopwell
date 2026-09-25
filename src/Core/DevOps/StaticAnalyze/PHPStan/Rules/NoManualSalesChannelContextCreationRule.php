@@ -71,7 +71,7 @@ class NoManualSalesChannelContextCreationRule implements Rule
 
         return [
             RuleErrorBuilder::message('Manual creation of `Shopwell\Core\System\SalesChannel\SalesChannelContext` is not allowed.')
-                ->identifier('shopware.noManualSalesChannelContextCreation')
+                ->identifier('shopwell.noManualSalesChannelContextCreation')
                 ->addTip('Use `Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory` or `Shopwell\Core\Test\Generator::generateSalesChannelContext` instead.')
                 ->build(),
         ];

@@ -205,7 +205,7 @@ class AssetService
         $manifest[$bundleOrAppName] = $localBundleManifest;
         $this->writeManifest($manifest);
 
-        if (!EnvironmentHelper::getVariable('SHOPWARE_SKIP_ASSET_INSTALL_CACHE_INVALIDATION', false)) {
+        if (!EnvironmentHelper::getVariable('SHOPWELL_SKIP_ASSET_INSTALL_CACHE_INVALIDATION', false)) {
             $this->cacheInvalidator->invalidate(['asset-metaData'], true);
         }
     }
@@ -306,7 +306,7 @@ class AssetService
         }
 
         if ($bundle === null) {
-            throw PluginException::notFound($bundleName); // @phpstan-ignore shopware.domainException (Keep the existing exception until AssetService becomes internal in v6.8.0.)
+            throw PluginException::notFound($bundleName); // @phpstan-ignore shopwell.domainException (Keep the existing exception until AssetService becomes internal in v6.8.0.)
         }
 
         return $bundle;
@@ -374,7 +374,7 @@ class AssetService
      */
     private function areAssetsStoredLocally(): bool
     {
-        return $this->parameterBag->get('shopware.filesystem.asset.type') === 'local';
+        return $this->parameterBag->get('shopwell.filesystem.asset.type') === 'local';
     }
 
     private function getAssetVisibility(): string
@@ -384,7 +384,7 @@ class AssetService
         if (!Feature::isActive('v6.8.0.0')) {
             // Remove the whole $legacyVisibility block when removing the v6.8.0.0 feature flag.
             try {
-                $assetConfig = $this->parameterBag->get('shopware.filesystem.asset.config');
+                $assetConfig = $this->parameterBag->get('shopwell.filesystem.asset.config');
             } catch (ParameterNotFoundException) {
                 $assetConfig = null;
             }
@@ -393,7 +393,7 @@ class AssetService
         }
 
         try {
-            return (string) ($legacyVisibility ?? $this->parameterBag->get('shopware.filesystem.asset.visibility') ?? Visibility::PUBLIC);
+            return (string) ($legacyVisibility ?? $this->parameterBag->get('shopwell.filesystem.asset.visibility') ?? Visibility::PUBLIC);
         } catch (ParameterNotFoundException) {
             return Visibility::PUBLIC;
         }

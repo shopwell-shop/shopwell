@@ -71,7 +71,7 @@ describe('src/app/composables/use-listing', () => {
         jest.spyOn(Shopwell, 'Service').mockImplementation(((name: string) =>
             name === 'searchRankingService' ? searchRankingService : undefined) as typeof Shopwell.Service);
 
-        Shopwell.Store.get('shopwareApps').selectedIds = [];
+        Shopwell.Store.get('shopwellApps').selectedIds = [];
         Shopwell.Store.get('swBulkEdit').selectedIds = [];
     });
 
@@ -176,7 +176,7 @@ describe('src/app/composables/use-listing', () => {
 
         expect(listing.selectionArray.value).toHaveLength(2);
         expect(listing.selectionCount.value).toBe(2);
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual(['id-1', 'id-2']);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual(['id-1', 'id-2']);
         expect(Shopwell.Store.get('swBulkEdit').selectedIds).toEqual(['id-1', 'id-2']);
     });
 
@@ -290,7 +290,7 @@ describe('src/app/composables/use-listing', () => {
         await router.push({ name: 'sw.product.detail' });
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual([]);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual([]);
         expect(Shopwell.Store.get('swBulkEdit').selectedIds).toEqual([]);
     });
 
@@ -303,7 +303,7 @@ describe('src/app/composables/use-listing', () => {
         await router.push({ name: 'sw.bulk.edit.product' });
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual(['id-1']);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual(['id-1']);
         expect(Shopwell.Store.get('swBulkEdit').selectedIds).toEqual(['id-1']);
     });
 

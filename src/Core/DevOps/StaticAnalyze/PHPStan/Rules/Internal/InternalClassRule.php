@@ -85,7 +85,7 @@ class InternalClassRule implements Rule
                     'Test classes (%s) must be flagged @internal to not be captured by the BC checker',
                     $node->getClassReflection()->getName()
                 ))
-                    ->identifier('shopware.internalClass')
+                    ->identifier('shopwell.internalClass')
                     ->build(),
             ];
         }
@@ -93,7 +93,7 @@ class InternalClassRule implements Rule
         if ($this->isStorefrontController($node)) {
             return [
                 RuleErrorBuilder::message('Storefront controllers must be flagged @internal to not be captured by the BC checker. The BC promise is checked over the route annotation.')
-                    ->identifier('shopware.internalClass')
+                    ->identifier('shopwell.internalClass')
                     ->build(),
             ];
         }
@@ -101,7 +101,7 @@ class InternalClassRule implements Rule
         if ($this->isBundle($node)) {
             return [
                 RuleErrorBuilder::message('Bundles must be flagged @internal to not be captured by the BC checker.')
-                    ->identifier('shopware.internalClass')
+                    ->identifier('shopwell.internalClass')
                     ->build(),
             ];
         }
@@ -109,7 +109,7 @@ class InternalClassRule implements Rule
         if ($this->isEventSubscriber($node) && !$this->isFinal($node->getClassReflection(), $doc) && !\in_array($class, self::SUBSCRIBER_EXCEPTIONS, true)) {
             return [
                 RuleErrorBuilder::message('Event subscribers must be flagged @internal or @final to not be captured by the BC checker.')
-                    ->identifier('shopware.internalClass')
+                    ->identifier('shopwell.internalClass')
                     ->build(),
             ];
         }
@@ -117,7 +117,7 @@ class InternalClassRule implements Rule
         if ($namespace = $this->isInInternalNamespace($node)) {
             return [
                 RuleErrorBuilder::message('Classes in `' . $namespace . '` namespace must be flagged @internal to not be captured by the BC checker.')
-                    ->identifier('shopware.internalClass')
+                    ->identifier('shopwell.internalClass')
                     ->build(),
             ];
         }
@@ -125,7 +125,7 @@ class InternalClassRule implements Rule
         if ($this->isInNamespace($node, '\\Framework\\Demodata') && !\in_array($class, self::DEMO_DATA_EXCEPTIONS, true)) {
             return [
                 RuleErrorBuilder::message('Classes in `Framework\\Demodata` namespace must be flagged @internal to not be captured by the BC checker.')
-                    ->identifier('shopware.internalClass')
+                    ->identifier('shopwell.internalClass')
                     ->build(),
             ];
         }
@@ -133,7 +133,7 @@ class InternalClassRule implements Rule
         if ($this->isMigrationStep($node)) {
             return [
                 RuleErrorBuilder::message('Migrations must be flagged @internal to not be captured by the BC checker.')
-                    ->identifier('shopware.internalClass')
+                    ->identifier('shopwell.internalClass')
                     ->build(),
             ];
         }
@@ -141,7 +141,7 @@ class InternalClassRule implements Rule
         if ($this->isMessageHandler($node) && !\in_array($class, self::MESSAGE_HANDLER_EXCEPTIONS, true)) {
             return [
                 RuleErrorBuilder::message('MessageHandlers must be flagged @internal to not be captured by the BC checker.')
-                    ->identifier('shopware.internalClass')
+                    ->identifier('shopwell.internalClass')
                     ->build(),
             ];
         }
@@ -149,7 +149,7 @@ class InternalClassRule implements Rule
         if ($this->isParentInternalAndAbstract($scope) && !$this->isFinal($node->getClassReflection(), $doc)) {
             return [
                 RuleErrorBuilder::message('Classes that extend an @internal abstract class must be flagged @internal or @final to not be captured by the BC checker.')
-                    ->identifier('shopware.internalClass')
+                    ->identifier('shopwell.internalClass')
                     ->build(),
             ];
         }

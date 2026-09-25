@@ -1,6 +1,6 @@
 ## Introduction
 Feature flags enable the developer to create new code which is hidden behind the flag and merge it into the trunk branch, even when the code is not finalized.
-We use this functionality to merge breaks into the trunk early, without them already being switched active. To learn more about breaking changes and backward compability take a look to our [Backward Compatibility Guide](https://developer.shopware.com/docs/resources/guidelines/code/backward-compatibility.html)
+We use this functionality to merge breaks into the trunk early, without them already being switched active. To learn more about breaking changes and backward compability take a look to our [Backward Compatibility Guide](https://developer.shopwell.com/docs/resources/guidelines/code/backward-compatibility.html)
 
 Related ADR: [Feature flags for major versions](../../adr/2022-01-20-feature-flags-for-major-versions.md).
 
@@ -52,7 +52,7 @@ The feature flag can be used in PHP to make specific code parts only executable 
 ### Using flags in methods
 When there is no option via the container you can use additional helper functions:
 ```php
-use Shopware\Core\Framework\Feature;
+use Shopwell\Core\Framework\Feature;
 
 class ApiController
 {
@@ -73,7 +73,7 @@ class ApiController
 
 You can also do it in a callback:
 ```php
-use Shopware\Core\Framework\Feature;
+use Shopwell\Core\Framework\Feature;
 
 class ApiController
 {
@@ -90,7 +90,7 @@ class ApiController
 
 And you can use it for conditions:
 ```php
-use Shopware\Core\Framework\Feature;
+use Shopwell\Core\Framework\Feature;
 
 class ApiController
 {
@@ -109,7 +109,7 @@ Putting the old behaviuor inside the if block makes it easier to remove the feat
 
 And you can use it simply to throw exceptions:
 ```php
-use Shopware\Core\Framework\Feature;
+use Shopwell\Core\Framework\Feature;
 
 /**
  * @deprecated tag:v6.5.0 - Class is deprecated, use ... instead
@@ -130,7 +130,7 @@ cannot be migrated to yet. Announce it anyway and mark it with `silentUntil`, na
 makes the replacement available:
 
 ```php
-use Shopware\Core\Framework\Feature;
+use Shopwell\Core\Framework\Feature;
 
 /**
  * @deprecated tag:v6.9.0 - Remove with the legacy document implementation
@@ -156,7 +156,7 @@ exists.
 ## Planning public API changes
 
 Plan an API break for the next major with the matching attribute from
-`Shopware\Core\Framework\Deprecation\BCChange`, for example
+`Shopwell\Core\Framework\Deprecation\BCChange`, for example
 `#[ParameterTypeNarrowing(version: 'v6.8.0', parameterName: 'id', newType: 'string')]`.
 These attributes describe a future contract change; they are not deprecations and the current API
 must remain usable until the announced version. Do not use `@deprecated reason:*` for this purpose:
@@ -185,11 +185,11 @@ attributes that do not describe a real future change.
 Use `#[ClassMoved]` when a supported class keeps its implementation but moves to a new fully qualified class name:
 
 ```php
-use Shopware\Core\Framework\Deprecation\BCChange\ClassMoved;
+use Shopwell\Core\Framework\Deprecation\BCChange\ClassMoved;
 
 #[ClassMoved(
     version: 'v6.8.0',
-    previousClassName: 'Shopware\OldNamespace\ExampleClass',
+    previousClassName: 'Shopwell\OldNamespace\ExampleClass',
 )]
 class ExampleClass
 {
@@ -209,10 +209,10 @@ PHPStan validates the attribute, runtime alias, optional service alias, and cano
 ### Using flags in tests
 In unit tests, current major feature flags are active by default. Test legacy/off behavior by disabling the relevant flag with the `#[DisabledFeatures]` attribute instead of calling `Feature::fake()` just to activate the current major flag.
 
-`#[DisabledFeatures]` only works in the unit suite: the feature-flag test extension processes `Shopware\Tests\Unit\` (plus namespaces registered via `FeatureFlagExtension::addTestNamespace()`). In integration tests the flag state comes from the job configuration (`FEATURE_ALL`), the attribute has no effect, and the test runner rejects it — a test carrying it fails the run. When an integration test must not run under a specific flag state, skip it at runtime with `Feature::skipTestIfActive()` / `Feature::skipTestIfInActive()`.
+`#[DisabledFeatures]` only works in the unit suite: the feature-flag test extension processes `Shopwell\Tests\Unit\` (plus namespaces registered via `FeatureFlagExtension::addTestNamespace()`). In integration tests the flag state comes from the job configuration (`FEATURE_ALL`), the attribute has no effect, and the test runner rejects it — a test carrying it fails the run. When an integration test must not run under a specific flag state, skip it at runtime with `Feature::skipTestIfActive()` / `Feature::skipTestIfInActive()`.
 
 ```php
-use Shopware\Core\Test\Annotation\DisabledFeatures;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 
 class ProductTest
 {
@@ -229,7 +229,7 @@ While two majors are in flight, pin a test to the older one by disabling the new
 In integration tests, the suite may run multiple times with different feature-flag states. Keep using `Feature::skipTestIfActive()` or `Feature::skipTestIfInActive()` when a scenario only makes sense for one state of a flag. This can also be used in the `setUp()` method. That is also how an integration test pins itself to a single major — `Feature::skipTestIfActive('v6.9.0.0', $this)` keeps it out of the 6.9 lane.
 
 ```php
-use Shopware\Core\Framework\Feature;
+use Shopwell\Core\Framework\Feature;
 
 class ProductTest
 {
@@ -274,7 +274,7 @@ When you want to toggle different parts of the template you can use the flag in 
 
 ### Using flags in config.xml
 
-When you want to toggle config input fields in config.xml like [basicInformatation.xml](https://gitlab.shopware.com/shopware/6/product/platform/-/blob/trunk/src/Core/System/Resources/config/basicInformation.xml), you can add a `flag` element like this:
+When you want to toggle config input fields in config.xml like [basicInformatation.xml](https://gitlab.shopwell.com/shopwell/6/product/platform/-/blob/trunk/src/Core/System/Resources/config/basicInformation.xml), you can add a `flag` element like this:
 
 ```xml
 <input-field type="bool" flag="v6.5.0.0">
@@ -313,7 +313,7 @@ Feature flags can also be used in plugins. Among other things, by adding your ow
 ### Major feature flag
 As mentioned before, we use the major feature flags (`v6.5.0.0`, `v6.6.0.0`) to signal breaks within the code ahead of time. This is an incredible help in the preparation of the next major release, as otherwise all breaks would have to be made within a short period of time.
 
-This procedure can also be applied to plugins, which also use this flag and internally query it to either prepare the plugin for the next major or to support multiple Shopware major versions with one plugin version. Since each major feature flag remains after the corresponding release, they can be used as an alternative version switch to the php equivalent `version_compare`.
+This procedure can also be applied to plugins, which also use this flag and internally query it to either prepare the plugin for the next major or to support multiple Shopwell major versions with one plugin version. Since each major feature flag remains after the corresponding release, they can be used as an alternative version switch to the php equivalent `version_compare`.
 
 ### Own plugin flags
 <alert-box type="warning">This is internal only and we may break this behaviour at any time!</alert-box>
@@ -329,7 +329,7 @@ so you have to register the new flag "on the fly".
     {
         Feature::setRegisteredFeatures(
             array_merge(array_keys(Feature::getAll()), self::FEATURE_FLAGS),
-            $this->container->getParameter('kernel.cache_dir') . '/shopware_features.php'
+            $this->container->getParameter('kernel.cache_dir') . '/shopwell_features.php'
         );
 ...
 ```

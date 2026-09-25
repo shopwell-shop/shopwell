@@ -39,9 +39,9 @@ describe('WishlistLocalStoragePlugin tests', () => {
     });
 
     test('LocalWishlistStoragePlugin methods test', () => {
-        window.salesChannelId = 'http://shopware.test';
+        window.salesChannelId = 'http://shopwell.test';
         const key = wishlistStoragePlugin._getStorageKey();
-        expect(key).toEqual('wishlist-http://shopware.test');
+        expect(key).toEqual('wishlist-http://shopwell.test');
 
         Storage.removeItem(key);
 

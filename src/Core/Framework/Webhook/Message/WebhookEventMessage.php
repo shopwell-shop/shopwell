@@ -23,7 +23,7 @@ class WebhookEventMessage
         private readonly array $payload,
         private readonly ?string $appId,
         private readonly string $webhookId,
-        private readonly string $shopwareVersion,
+        private readonly string $shopwellVersion,
         private readonly string $url,
         private readonly ?string $secret,
         private readonly string $languageId,
@@ -67,7 +67,7 @@ class WebhookEventMessage
 
     public function getShopwellVersion(): string
     {
-        return $this->shopwareVersion;
+        return $this->shopwellVersion;
     }
 
     public function getUrl(): string
@@ -116,7 +116,7 @@ class WebhookEventMessage
      *
      * @deprecated tag:v6.9.0 - Will be removed when all messages in the queue have been processed that were serialized without an explicit partition key.
      *
-     * @phpstan-ignore shopware.deprecatedMethod (called on every dispatch during the rollout window; deprecation notice would pollute logs)
+     * @phpstan-ignore shopwell.deprecatedMethod (called on every dispatch during the rollout window; deprecation notice would pollute logs)
      */
     public function isReworkEnvelope(): bool
     {

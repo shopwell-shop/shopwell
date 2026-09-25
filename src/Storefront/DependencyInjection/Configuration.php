@@ -28,7 +28,7 @@ class Configuration implements ConfigurationInterface
                         ->scalarNode('theme_path_builder_id')->defaultValue(SeedingThemePathBuilder::class)->end()
                         ->scalarNode('available_theme_provider')->defaultValue(DatabaseAvailableThemeProvider::class)->end()
                         ->integerNode('file_delete_delay')
-                            ->setDeprecated('shopware/storefront', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
+                            ->setDeprecated('shopwell/storefront', '6.8.0', 'The "%node%" option is deprecated and will be removed in 6.8.0 as it has no effect anymore.')
                             ->defaultValue(900)->end()
                         ->arrayNode('allowed_scss_values')->performNoDeepMerging()
                             ->defaultValue(['^\$.*'])

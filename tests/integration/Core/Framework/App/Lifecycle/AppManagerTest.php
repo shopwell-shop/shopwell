@@ -132,7 +132,7 @@ class AppManagerTest extends TestCase
         );
         // assert formatting with \n and \t is preserved
         static::assertSame(
-            'Following personal information will be processed on shopware AG\'s servers:
+            'Following personal information will be processed on Shopwell\'s servers:
 
 - Name
 - Billing address
@@ -260,7 +260,7 @@ class AppManagerTest extends TestCase
 
         $systemConfigService = static::getContainer()->get(SystemConfigService::class);
         static::assertSame([
-            'withConfig.config.email' => 'no-reply@shopware.de',
+            'withConfig.config.email' => 'no-reply@shopwell.cn',
         ], $systemConfigService->getDomain('withConfig.config'));
     }
 
@@ -713,7 +713,7 @@ class AppManagerTest extends TestCase
 
         $systemConfigService = static::getContainer()->get(SystemConfigService::class);
         static::assertSame([
-            'withConfig.config.email' => 'no-reply@shopware.de',
+            'withConfig.config.email' => 'no-reply@shopwell.cn',
         ], $systemConfigService->getDomain('withConfig.config'));
 
         $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
@@ -939,7 +939,7 @@ class AppManagerTest extends TestCase
         $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
         static::assertCount(1, $apps);
 
-        $filesystem = static::getContainer()->get('shopware.filesystem.asset');
+        $filesystem = static::getContainer()->get('shopwell.filesystem.asset');
         static::assertTrue($filesystem->fileExists('bundles/test/asset.txt'));
         $app = $apps->first();
         static::assertNotNull($app);
@@ -966,7 +966,7 @@ class AppManagerTest extends TestCase
 
         $systemConfigService = static::getContainer()->get(SystemConfigService::class);
         static::assertSame([
-            'withConfig.config.email' => 'no-reply@shopware.de',
+            'withConfig.config.email' => 'no-reply@shopwell.cn',
         ], $systemConfigService->getDomain('withConfig.config'));
 
         $this->appManager->uninstall($appEntity, $this->context);
@@ -988,13 +988,13 @@ class AppManagerTest extends TestCase
 
         $systemConfigService = static::getContainer()->get(SystemConfigService::class);
         static::assertSame([
-            'withConfig.config.email' => 'no-reply@shopware.de',
+            'withConfig.config.email' => 'no-reply@shopwell.cn',
         ], $systemConfigService->getDomain('withConfig.config'));
 
         $this->appManager->uninstall($appEntity, $this->context, true);
 
         static::assertSame([
-            'withConfig.config.email' => 'no-reply@shopware.de',
+            'withConfig.config.email' => 'no-reply@shopwell.cn',
         ], $systemConfigService->getDomain('withConfig.config'));
     }
 
@@ -1484,7 +1484,7 @@ class AppManagerTest extends TestCase
 
     private function assertAssetExists(string $appName): void
     {
-        $filesystem = static::getContainer()->get('shopware.filesystem.asset');
+        $filesystem = static::getContainer()->get('shopwell.filesystem.asset');
 
         static::assertTrue($filesystem->has('bundles/' . strtolower($appName) . '/asset.txt'));
     }

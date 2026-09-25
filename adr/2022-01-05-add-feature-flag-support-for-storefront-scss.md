@@ -15,8 +15,8 @@ tags: [feature-flag, scss]
 ## Decision
 
 * Add the possibility to check for feature flags inside SCSS, similar to the twig implementation.
-* The feature configuration from `Feature::getAll()` is converted to a SCSS map inside `\Shopware\Storefront\Theme\ThemeCompiler::getFeatureConfigScssMap`.
-  * This SCSS map is always added to the SCSS string which gets processed by `\Shopware\Storefront\Theme\ThemeCompiler::compileTheme`.
+* The feature configuration from `Feature::getAll()` is converted to a SCSS map inside `\Shopwell\Storefront\Theme\ThemeCompiler::getFeatureConfigScssMap`.
+  * This SCSS map is always added to the SCSS string which gets processed by `\Shopwell\Storefront\Theme\ThemeCompiler::compileTheme`.
   * For webpack hot-proxy the `var/config_js_features.json` is used instead.
 * The SCSS map looks like this: `$sw-features: ("FEATURE_NEXT_1234": false, "FEATURE_NEXT_1235": true);`
   * See https://sass-lang.com/documentation/values/maps

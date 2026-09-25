@@ -19,7 +19,7 @@ class Migration1787229827MakeDocumentOrderOptional extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        /** @phpstan-ignore shopware.dropStatement (FK is directly added again so dropping the FK is no issue for blue green) */
+        /** @phpstan-ignore shopwell.dropStatement (FK is directly added again so dropping the FK is no issue for blue green) */
         $this->dropForeignKeyIfExists($connection, 'document', 'fk.document.order_id');
 
         $connection->executeStatement('

@@ -22,16 +22,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(LandingPageDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(LandingPageTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(LandingPageTagDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(LandingPageSalesChannelDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(LandingPageIndexer::class)
         ->args([
@@ -39,10 +39,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('landing_page.repository'),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.entity_indexer', ['priority' => 1000]);
+        ->tag('shopwell.entity_indexer', ['priority' => 1000]);
 
     $services->set(SalesChannelLandingPageDefinition::class)
-        ->tag('shopware.sales_channel.entity.definition');
+        ->tag('shopwell.sales_channel.entity.definition');
 
     $services->set(LandingPageRoute::class)
         ->public()

@@ -33,15 +33,15 @@ class FrameworkExtensionTest extends TestCase
             ],
         ], $container);
 
-        static::assertFalse($container->getParameter('shopware.cache.compress'));
-        static::assertSame('deflate', $container->getParameter('shopware.cache.compression_method'));
-        static::assertFalse($container->getParameter('shopware.cache.cache_compression'));
-        static::assertSame('deflate', $container->getParameter('shopware.cache.cache_compression_method'));
+        static::assertFalse($container->getParameter('shopwell.cache.compress'));
+        static::assertSame('deflate', $container->getParameter('shopwell.cache.compression_method'));
+        static::assertFalse($container->getParameter('shopwell.cache.cache_compression'));
+        static::assertSame('deflate', $container->getParameter('shopwell.cache.cache_compression_method'));
     }
 
     public function testDeprecatedCacheCompressionConfigThrowsException(): void
     {
-        $this->expectExceptionObject(FeatureException::error('Tried to access deprecated functionality: Parameter "shopware.cache.cache_compression" is deprecated and will be removed. Please use "shopware.cache.compress" instead.'));
+        $this->expectExceptionObject(FeatureException::error('Tried to access deprecated functionality: Parameter "shopwell.cache.cache_compression" is deprecated and will be removed. Please use "shopwell.cache.compress" instead.'));
         (new FrameworkExtension())->load([
             [
                 'cache' => [
@@ -67,10 +67,10 @@ class FrameworkExtensionTest extends TestCase
             ],
         ], $container);
 
-        static::assertTrue($container->getParameter('shopware.cache.compress'));
-        static::assertSame('gzip', $container->getParameter('shopware.cache.compression_method'));
-        static::assertFalse($container->getParameter('shopware.cache.cache_compression'));
-        static::assertSame('deflate', $container->getParameter('shopware.cache.cache_compression_method'));
+        static::assertTrue($container->getParameter('shopwell.cache.compress'));
+        static::assertSame('gzip', $container->getParameter('shopwell.cache.compression_method'));
+        static::assertFalse($container->getParameter('shopwell.cache.cache_compression'));
+        static::assertSame('deflate', $container->getParameter('shopwell.cache.cache_compression_method'));
     }
 
     public function testDeprecatedCacheCompressionConfigIsSetForBC(): void
@@ -86,7 +86,7 @@ class FrameworkExtensionTest extends TestCase
             ],
         ], $container);
 
-        static::assertTrue($container->getParameter('shopware.cache.cache_compression'));
-        static::assertSame('gzip', $container->getParameter('shopware.cache.cache_compression_method'));
+        static::assertTrue($container->getParameter('shopwell.cache.cache_compression'));
+        static::assertSame('gzip', $container->getParameter('shopwell.cache.cache_compression_method'));
     }
 }

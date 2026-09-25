@@ -2,7 +2,7 @@
 title: Deprecated user_access_key.write_access
 issue: NEXT-15248
 author: OliverSkroblin
-author_email: o.skroblin@shopware.com 
+author_email: o.skroblin@shopwell.com 
 author_github: OliverSkroblin
 ---
 # Core

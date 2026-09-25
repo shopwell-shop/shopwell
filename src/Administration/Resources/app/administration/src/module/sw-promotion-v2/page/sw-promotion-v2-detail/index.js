@@ -157,7 +157,7 @@ export default {
     },
 
     beforeRouteLeave() {
-        Shopwell.Store.get('shopwareApps').selectedIds = [];
+        Shopwell.Store.get('shopwellApps').selectedIds = [];
     },
 
     methods: {
@@ -169,7 +169,7 @@ export default {
             });
             this.isLoading = true;
 
-            Shopwell.Store.get('shopwareApps').selectedIds = this.promotionId ? [this.promotionId] : [];
+            Shopwell.Store.get('shopwellApps').selectedIds = this.promotionId ? [this.promotionId] : [];
 
             if (!this.promotionId) {
                 // set language to system language

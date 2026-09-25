@@ -55,7 +55,7 @@ readonly class ThemeScripts
      * null when no dev server is running.
      *
      * The file lives at `cache/storefront_components.dev.json` within the
-     * `shopware.filesystem.temp` filesystem (rooted at `var/`).
+     * `shopwell.filesystem.temp` filesystem (rooted at `var/`).
      *
      * Structure written by dev-import-map-plugin:
      *   imports  — ES module import map (component tags → dev-server URLs)

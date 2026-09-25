@@ -2,7 +2,7 @@
 title: Add upload button to extension manager
 issue: NEXT-12612
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com 
+author_email: j.leifeld@shopwell.com 
 author_github: @jleifeld
 ---
 # Administration

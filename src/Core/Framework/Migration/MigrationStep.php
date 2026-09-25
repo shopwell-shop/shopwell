@@ -18,7 +18,7 @@ abstract class MigrationStep
 {
     use AddColumnTrait;
 
-    final public const INSTALL_ENVIRONMENT_VARIABLE = 'SHOPWARE_INSTALL';
+    final public const INSTALL_ENVIRONMENT_VARIABLE = 'SHOPWELL_INSTALL';
 
     private const MAX_INT_32_BIT = 2147483647;
 

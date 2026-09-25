@@ -144,7 +144,7 @@ class ConvertGuestControllerTest extends TestCase
         $domain = new SalesChannelDomainEntity();
         $domain->setUniqueIdentifier(Uuid::randomHex());
         $domain->setLanguageId(Uuid::randomHex());
-        $domain->setUrl('https://shopware.test');
+        $domain->setUrl('https://shopwell.test');
 
         $domains = new SalesChannelDomainCollection([$domain]);
         $salesChannel = $this->createSalesChannel($domains);
@@ -166,7 +166,7 @@ class ConvertGuestControllerTest extends TestCase
             ->with(
                 static::callback(function (RequestDataBag $data): bool {
                     return $data->get('email') === 'test@example.com'
-                        && $data->get('storefrontUrl') === 'https://shopware.test';
+                        && $data->get('storefrontUrl') === 'https://shopwell.test';
                 }),
                 static::identicalTo($salesChannelContext)
             );

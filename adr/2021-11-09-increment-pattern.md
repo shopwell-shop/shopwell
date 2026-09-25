@@ -37,7 +37,7 @@ Furthermore, it should also be possible to completely disable the message queue 
 You can easily tweak or define new increment pools in config file with your own pool's configuration. For e.g:
 
 ```yaml
-shopware:
+shopwell:
     increment:
         user_activity:
             type: 'mysql'
@@ -52,7 +52,7 @@ shopware:
 ```
 
 By default, we ship a Redis, MySQL and array adapter for the gateway. It should be possible to easily switch the adapter via config.
-If you want to override the default mysql or redis adapter, you need to register your own incrementer gateway in DI container with the id `shopware.increment.<custom_pool>.gateway.<adapter>`
+If you want to override the default mysql or redis adapter, you need to register your own incrementer gateway in DI container with the id `shopwell.increment.<custom_pool>.gateway.<adapter>`
 
 ## Consequences
 * We deprecate the `message_queue_stats` DAL classes

@@ -89,7 +89,7 @@ class ErrorControllerTest extends TestCase
             // Unbound (e.g. reCAPTCHA): must be flashed so it is visible on every form.
             new ConstraintViolation('', '', [], '', '', '', null, 'VIOLATION::RECAPTCHA_COOKIE_REQUIRED'),
             // Field-bound (e.g. basic captcha): rendered at the field, must not be flashed.
-            new ConstraintViolation('', '', [], '', '/shopware_basic_captcha_confirm', '', null, 'captcha.basic-captcha-invalid'),
+            new ConstraintViolation('', '', [], '', '/shopwell_basic_captcha_confirm', '', null, 'captcha.basic-captcha-invalid'),
         ]);
 
         $this->controller->onCaptchaFailure($violations, $request);

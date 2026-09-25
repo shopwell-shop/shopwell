@@ -3,8 +3,8 @@ title: Specify Translation overwrites in write payloads
 issue: NEXT-12900
 ---
 # Core
-* Changed `\Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\TranslatedFieldSerializer` to not overwrite values specified direct under `translations`.
-* Changed `\Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\TranslationsAssociationFieldSerializer` so that translation values with iso-codes take precedence over values with language ids.
+* Changed `\Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\TranslatedFieldSerializer` to not overwrite values specified direct under `translations`.
+* Changed `\Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\TranslationsAssociationFieldSerializer` so that translation values with iso-codes take precedence over values with language ids.
 ___
 # Upgrade Information
 ## Translation overwrite priority specified for write payloads

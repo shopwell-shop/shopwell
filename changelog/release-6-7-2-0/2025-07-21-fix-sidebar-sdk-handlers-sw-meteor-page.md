@@ -1,7 +1,7 @@
 ---
 title: Fix sidebar SDK handlers in Meteor page
 author: Dennis Höllmann
-author_email: d.hoellmann@shopware.com
+author_email: d.hoellmann@shopwell.com
 author_github: @Deristes
 ---
 # Administration

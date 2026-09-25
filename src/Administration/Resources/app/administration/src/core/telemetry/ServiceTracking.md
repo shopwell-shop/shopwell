@@ -1,7 +1,7 @@
 # Using Product Analytics in Services
 
 Extensions and apps run inside the Admin iframe and communicate with it via the
-[Meteor Admin SDK](https://github.com/shopware/meteor). Instead of calling `Shopwell.Telemetry.track()`
+[Meteor Admin SDK](https://github.com/shopwell-shop/meteor). Instead of calling `Shopwell.Telemetry.track()`
 directly (not available in the iframe context), use the SDK's `telemetry` module – events are forwarded to
 the Admin over `postMessage` and routed through the same pipeline as Admin core events.
 
@@ -9,7 +9,7 @@ the Admin over `postMessage` and routed through the same pipeline as Admin core 
 
 | | Admin core | Extension / Service                                                        |
 |---|---|----------------------------------------------------------------------------|
-| **Method** | `Shopwell.Telemetry.track(eventData)` | `telemetry.dispatch({ event, data })` from `@shopware-ag/meteor-admin-sdk` |
+| **Method** | `Shopwell.Telemetry.track(eventData)` | `telemetry.dispatch({ event, data })` from `@shopwell-ag/meteor-admin-sdk` |
 | **Transport** | Direct (same JS context) | `postMessage` via Admin SDK -> Admin receives and forwards                 |
 | **Auto-tracking** | DOM observer, `data-analytics-id` attributes | Not available – all tracking is explicit                                   |
 | **Consent gating** | Handled internally by Admin | Handled by Admin on receipt – no action needed in the service              |
@@ -18,7 +18,7 @@ the Admin over `postMessage` and routed through the same pipeline as Admin core 
 ## Firing events
 
 ```ts
-import { telemetry } from '@shopware-ag/meteor-admin-sdk';
+import { telemetry } from '@shopwell-ag/meteor-admin-sdk';
 
 await telemetry.dispatch({
     event: 'my_extension_something_happened',
@@ -53,7 +53,7 @@ A minimal composable wrapper keeps call sites clean (pattern from SwagAnalytics
 `client/src/composables/use-telemetry/index.ts`):
 
 ```ts
-import { telemetry } from '@shopware-ag/meteor-admin-sdk';
+import { telemetry } from '@shopwell-ag/meteor-admin-sdk';
 
 type TrackableValue = string | string[] | number | boolean | null;
 
@@ -121,7 +121,7 @@ If your service needs to react to consent state (e.g. to show or hide a UI eleme
 behavior), use the SDK `consent` module:
 
 ```ts
-import { consent } from '@shopware-ag/meteor-admin-sdk';
+import { consent } from '@shopwell-ag/meteor-admin-sdk';
 
 // read current state
 const state = await consent.status({ consent: 'product_analytics' });

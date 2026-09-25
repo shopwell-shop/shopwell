@@ -99,7 +99,7 @@ class FirstRunWizardServiceTest extends TestCase
         $this->expectExceptionObject($exception);
 
         $frwService->frwLogin(
-            'shopwareId',
+            'shopwellId',
             'password',
             Context::createDefaultContext(),
         );
@@ -117,7 +117,7 @@ class FirstRunWizardServiceTest extends TestCase
         $frwClient = $this->createMock(FirstRunWizardClient::class);
         $frwClient->expects($this->once())
             ->method('frwLogin')
-            ->with('shopwareId', 'password', $this->context)
+            ->with('shopwellId', 'password', $this->context)
             ->willReturn($firstRunWizardUserToken);
 
         $source = $this->context->getSource();
@@ -143,7 +143,7 @@ class FirstRunWizardServiceTest extends TestCase
         );
 
         $frwService->frwLogin(
-            'shopwareId',
+            'shopwellId',
             'password',
             $this->context,
         );
@@ -315,7 +315,7 @@ class FirstRunWizardServiceTest extends TestCase
 
     public function testVerifiesNewLicenseDomain(): void
     {
-        $domain = 'shopware.swag';
+        $domain = 'shopwell.swag';
         $edition = 'Community Edition';
 
         $domainVerificationRequestStruct = new DomainVerificationRequestStruct(
@@ -373,7 +373,7 @@ class FirstRunWizardServiceTest extends TestCase
 
     public function testThrowsExceptionIfNewLicenseDomainIsNotVerified(): void
     {
-        $domain = 'shopware.swag';
+        $domain = 'shopwell.swag';
         $edition = 'Community Edition';
 
         $domainVerificationRequestStruct = new DomainVerificationRequestStruct(
@@ -436,7 +436,7 @@ class FirstRunWizardServiceTest extends TestCase
 
     public function testThrowsExceptionIfVerificationSecretCanNotBeStoredOnFilesystem(): void
     {
-        $domain = 'shopware.swag';
+        $domain = 'shopwell.swag';
 
         $domainVerificationRequestStruct = new DomainVerificationRequestStruct(
             'v3r1f1c4t10n-s3cr3t',
@@ -490,7 +490,7 @@ class FirstRunWizardServiceTest extends TestCase
             ],
             [
                 'id' => 2,
-                'domain' => 'shopware.swag',
+                'domain' => 'shopwell.swag',
                 'verified' => true,
                 'edition' => [
                     'name' => 'Community Edition',
@@ -524,7 +524,7 @@ class FirstRunWizardServiceTest extends TestCase
 
         $otherLicenseDomain = $licenseDomains->last();
         static::assertInstanceOf(LicenseDomainStruct::class, $otherLicenseDomain);
-        static::assertSame('shopware.swag', $otherLicenseDomain->getDomain());
+        static::assertSame('shopwell.swag', $otherLicenseDomain->getDomain());
         static::assertFalse($otherLicenseDomain->isActive());
     }
 

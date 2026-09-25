@@ -1,6 +1,6 @@
 ---
 title: Add extension API handler to retrive the current view router path
-author_email: d.francos@shopware.com
+author_email: d.francos@shopwell.com
 author_github: dfrancos-hub
 ---
 # Administration

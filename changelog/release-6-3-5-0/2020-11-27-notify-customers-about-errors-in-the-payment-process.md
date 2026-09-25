@@ -5,4 +5,4 @@ author: Michael Telgmann
 author_github: mitelg
 ---
 # Core
-* Added error code to error URL in `Shopware\Core\Checkout\Payment\PaymentService::handlePaymentByOrder` to show error notification to customers
+* Added error code to error URL in `Shopwell\Core\Checkout\Payment\PaymentService::handlePaymentByOrder` to show error notification to customers

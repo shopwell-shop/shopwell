@@ -130,15 +130,15 @@ class FirstRunWizardController extends AbstractController
     )]
     public function frwLogin(RequestDataBag $requestDataBag, Context $context): JsonResponse
     {
-        $shopwareId = $requestDataBag->get('shopwareId');
+        $shopwellId = $requestDataBag->get('shopwellId');
         $password = $requestDataBag->get('password');
 
-        if ($shopwareId === null || $password === null) {
+        if ($shopwellId === null || $password === null) {
             throw StoreException::invalidCredentials();
         }
 
         try {
-            $this->frwService->frwLogin($shopwareId, $password, $context);
+            $this->frwService->frwLogin($shopwellId, $password, $context);
         } catch (ClientException $exception) {
             throw StoreException::storeError($exception);
         }

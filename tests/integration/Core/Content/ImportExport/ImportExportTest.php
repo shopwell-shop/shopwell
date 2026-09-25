@@ -194,7 +194,7 @@ class ImportExportTest extends AbstractImportExportTestCase
 
     public function testImportExport(): void
     {
-        $filesystem = static::getContainer()->get('shopware.filesystem.private');
+        $filesystem = static::getContainer()->get('shopwell.filesystem.private');
 
         $productId = Uuid::randomHex();
         $this->getTestProduct($productId);
@@ -286,7 +286,7 @@ class ImportExportTest extends AbstractImportExportTestCase
         ];
         $categoryRepository->upsert($categories, Context::createDefaultContext());
 
-        $filesystem = static::getContainer()->get('shopware.filesystem.private');
+        $filesystem = static::getContainer()->get('shopwell.filesystem.private');
 
         $criteria = new Criteria([$rootId, $betweenId, $childId]);
         $progress = $this->export(Context::createDefaultContext(), CategoryDefinition::ENTITY_NAME, $criteria);
@@ -322,7 +322,7 @@ class ImportExportTest extends AbstractImportExportTestCase
         $profile = $this->createCategoryProfileMock();
         $profileRepository->create([$profile], Context::createDefaultContext());
 
-        $filesystem = static::getContainer()->get('shopware.filesystem.private');
+        $filesystem = static::getContainer()->get('shopwell.filesystem.private');
 
         $criteria = new Criteria();
         $progress = $this->export(
@@ -358,7 +358,7 @@ class ImportExportTest extends AbstractImportExportTestCase
 
     public function testNewsletterRecipient(): void
     {
-        $filesystem = static::getContainer()->get('shopware.filesystem.private');
+        $filesystem = static::getContainer()->get('shopwell.filesystem.private');
         $testData = [
             'id' => Uuid::randomHex(),
             'salutation' => [
@@ -938,7 +938,7 @@ SWTEST;1;' . $productName . ';9.35;10;0c17372fe6aa46059a97fc28b40f46c4;7;7%%;%s'
         $importExport = new ImportExport(
             $importExportService,
             $logEntity,
-            static::getContainer()->get('shopware.filesystem.private'),
+            static::getContainer()->get('shopwell.filesystem.private'),
             $this->listener,
             static::getContainer()->get(Connection::class),
             static::createStub(EntityRepository::class),
@@ -1364,7 +1364,7 @@ SWTEST;1;' . $productName . ';9.35;10;0c17372fe6aa46059a97fc28b40f46c4;7;7%%;%s'
         static::assertInstanceOf(CustomerAddressCollection::class, $customerWithMultipleAddresses->getAddresses());
         static::assertCount(4, $customerWithMultipleAddresses->getAddresses());
         static::assertInstanceOf(CustomerAddressEntity::class, $customerWithMultipleAddresses->getDefaultBillingAddress());
-        static::assertSame('shopware AG', $customerWithMultipleAddresses->getDefaultBillingAddress()->getCompany());
+        static::assertSame('Shopwell', $customerWithMultipleAddresses->getDefaultBillingAddress()->getCompany());
 
         static::assertTrue($result->has('f3bb913bc8cc48479c3834a75e82920b'));
         $customerWithUpdatedAddresses = $result->get('f3bb913bc8cc48479c3834a75e82920b');
@@ -1372,7 +1372,7 @@ SWTEST;1;' . $productName . ';9.35;10;0c17372fe6aa46059a97fc28b40f46c4;7;7%%;%s'
         static::assertInstanceOf(CustomerAddressCollection::class, $customerWithUpdatedAddresses->getAddresses());
         static::assertCount(2, $customerWithUpdatedAddresses->getAddresses());
         static::assertInstanceOf(CustomerAddressEntity::class, $customerWithUpdatedAddresses->getDefaultShippingAddress());
-        static::assertSame('shopware AG', $customerWithUpdatedAddresses->getDefaultShippingAddress()->getCompany());
+        static::assertSame('Shopwell', $customerWithUpdatedAddresses->getDefaultShippingAddress()->getCompany());
 
         $progress = $this->export(
             $context,
@@ -1386,7 +1386,7 @@ SWTEST;1;' . $productName . ';9.35;10;0c17372fe6aa46059a97fc28b40f46c4;7;7%%;%s'
 
         $csv = $this->getCsvContent($progress->getLogId());
         static::assertStringContainsString($salesChannel['name'], $csv);
-        static::assertStringContainsString('shopware AG', $csv);
+        static::assertStringContainsString('Shopwell', $csv);
         static::assertStringContainsString('en-GB', $csv);
         static::assertStringContainsString('Standard customer group', $csv);
         static::assertStringNotContainsString('password', $csv);
@@ -1869,7 +1869,7 @@ SWTEST;1;' . $productName . ';9.35;10;0c17372fe6aa46059a97fc28b40f46c4;7;7%%;%s'
         $importExport = new ImportExport(
             $importExportService,
             $logEntity,
-            static::getContainer()->get('shopware.filesystem.private'),
+            static::getContainer()->get('shopwell.filesystem.private'),
             $this->listener,
             static::getContainer()->get(Connection::class),
             $mockRepository,
@@ -1989,7 +1989,7 @@ SWTEST;1;' . $productName . ';9.35;10;0c17372fe6aa46059a97fc28b40f46c4;7;7%%;%s'
 
     private function getCsvContent(string $logId): string
     {
-        $filesystem = static::getContainer()->get('shopware.filesystem.private');
+        $filesystem = static::getContainer()->get('shopwell.filesystem.private');
         $logfile = $this->getLogEntity($logId)->getFile();
         static::assertInstanceOf(ImportExportFileEntity::class, $logfile);
 

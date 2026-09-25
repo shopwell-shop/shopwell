@@ -28,8 +28,8 @@ use Symfony\Component\HttpFoundation\Response;
  * `resources/list` and `prompts/list` are the probe, because they are not subject to the
  * progressive tool disclosure that makes `tools/list` advertise only meta-tools on a fresh session.
  *
- * Note that resources are allowlisted by URI (`shopware://currencies`) but listed by name
- * (`shopware-currencies`). Tools and prompts use their name for both.
+ * Note that resources are allowlisted by URI (`shopwell://currencies`) but listed by name
+ * (`shopwell-currencies`). Tools and prompts use their name for both.
  *
  * @internal
  */
@@ -43,8 +43,8 @@ class McpAllowlistEnforcementTest extends TestCase
     {
         $browser = $this->getBrowser();
 
-        static::assertContains('shopware-entity-list', $this->list($browser, 'resources/list', 'resources'));
-        static::assertContains('shopware-context', $this->list($browser, 'prompts/list', 'prompts'));
+        static::assertContains('shopwell-entity-list', $this->list($browser, 'resources/list', 'resources'));
+        static::assertContains('shopwell-context', $this->list($browser, 'prompts/list', 'prompts'));
     }
 
     public function testAdministratorUserKeepsEveryCapabilityEvenWithARestrictiveAllowlist(): void
@@ -53,8 +53,8 @@ class McpAllowlistEnforcementTest extends TestCase
         $this->setUserAllowlist($browser, ['tools' => [], 'resources' => [], 'prompts' => []]);
 
         // The administrator bypass is resolved before the stored value is read at all.
-        static::assertContains('shopware-entity-list', $this->list($browser, 'resources/list', 'resources'));
-        static::assertContains('shopware-context', $this->list($browser, 'prompts/list', 'prompts'));
+        static::assertContains('shopwell-entity-list', $this->list($browser, 'resources/list', 'resources'));
+        static::assertContains('shopwell-context', $this->list($browser, 'prompts/list', 'prompts'));
     }
 
     public function testNonAdminUserWithoutAllowlistGetsNoCapabilities(): void
@@ -72,23 +72,23 @@ class McpAllowlistEnforcementTest extends TestCase
         $browser = $this->nonAdminBrowser();
         $this->setUserAllowlist($browser, [
             'tools' => [],
-            'resources' => ['shopware://entities'],
-            'prompts' => ['shopware-context'],
+            'resources' => ['shopwell://entities'],
+            'prompts' => ['shopwell-context'],
         ]);
 
-        static::assertSame(['shopware-entity-list'], $this->list($browser, 'resources/list', 'resources'));
-        static::assertSame(['shopware-context'], $this->list($browser, 'prompts/list', 'prompts'));
+        static::assertSame(['shopwell-entity-list'], $this->list($browser, 'resources/list', 'resources'));
+        static::assertSame(['shopwell-context'], $this->list($browser, 'prompts/list', 'prompts'));
     }
 
     public function testNonAdminUserWithANullPerTypeEntryGetsNothingOfThatType(): void
     {
         $browser = $this->nonAdminBrowser();
         $this->setUserAllowlist($browser, [
-            'resources' => ['shopware://entities'],
+            'resources' => ['shopwell://entities'],
             'prompts' => null,
         ]);
 
-        static::assertSame(['shopware-entity-list'], $this->list($browser, 'resources/list', 'resources'));
+        static::assertSame(['shopwell-entity-list'], $this->list($browser, 'resources/list', 'resources'));
         static::assertSame([], $this->list($browser, 'prompts/list', 'prompts'));
     }
 
@@ -117,11 +117,11 @@ class McpAllowlistEnforcementTest extends TestCase
         $browser = $this->getBrowserAuthenticatedWithIntegration();
         $this->setIntegrationAllowlist($browser, [
             'tools' => [],
-            'resources' => ['shopware://currencies'],
+            'resources' => ['shopwell://currencies'],
             'prompts' => [],
         ]);
 
-        static::assertSame(['shopware-currencies'], $this->list($browser, 'resources/list', 'resources'));
+        static::assertSame(['shopwell-currencies'], $this->list($browser, 'resources/list', 'resources'));
         static::assertSame([], $this->list($browser, 'prompts/list', 'prompts'));
     }
 
@@ -130,7 +130,7 @@ class McpAllowlistEnforcementTest extends TestCase
         $browser = $this->getBrowserAuthenticatedWithIntegration();
 
         $response = $this->send($browser, $this->initialize($browser), 'tools/call', [
-            'name' => 'shopware-entity-schema',
+            'name' => 'shopwell-entity-schema',
             'arguments' => ['entity' => 'product'],
         ]);
 
@@ -147,7 +147,7 @@ class McpAllowlistEnforcementTest extends TestCase
         sort($tools);
 
         static::assertSame(
-            ['shopware-tool-search', 'shopware-toolset-enable', 'shopware-toolsets-list'],
+            ['shopwell-tool-search', 'shopwell-toolset-enable', 'shopwell-toolsets-list'],
             $tools,
         );
     }
@@ -160,7 +160,7 @@ class McpAllowlistEnforcementTest extends TestCase
         // SYSTEM_SCOPE wrapper skipped AclWriteValidator entirely, so this write went through.
         $caller = $this->getBrowser(true, [], ['api_action_user_mcp-allowlist']);
 
-        $this->postAllowlist($caller, $victimId, ['tools' => ['shopware-entity-delete']]);
+        $this->postAllowlist($caller, $victimId, ['tools' => ['shopwell-entity-delete']]);
 
         static::assertSame(Response::HTTP_FORBIDDEN, $caller->getResponse()->getStatusCode());
         static::assertNull($this->allowlistColumn('user', Uuid::fromHexToBytes($victimId)));
@@ -172,7 +172,7 @@ class McpAllowlistEnforcementTest extends TestCase
 
         $caller = $this->getBrowser(true, [], ['api_action_user_mcp-allowlist', 'user:update']);
 
-        $this->postAllowlist($caller, $victimId, ['tools' => ['shopware-entity-search']]);
+        $this->postAllowlist($caller, $victimId, ['tools' => ['shopwell-entity-search']]);
 
         static::assertSame(Response::HTTP_NO_CONTENT, $caller->getResponse()->getStatusCode());
 
@@ -181,7 +181,7 @@ class McpAllowlistEnforcementTest extends TestCase
         $stored = $this->allowlistColumn('user', Uuid::fromHexToBytes($victimId));
         static::assertIsString($stored);
         static::assertSame(
-            ['tools' => ['shopware-entity-search']],
+            ['tools' => ['shopwell-entity-search']],
             json_decode($stored, true, 512, \JSON_THROW_ON_ERROR),
         );
     }
@@ -200,7 +200,7 @@ class McpAllowlistEnforcementTest extends TestCase
             [],
             [],
             ['CONTENT_TYPE' => 'application/json'],
-            json_encode(['allowlist' => ['tools' => ['shopware-entity-delete']]], \JSON_THROW_ON_ERROR),
+            json_encode(['allowlist' => ['tools' => ['shopwell-entity-delete']]], \JSON_THROW_ON_ERROR),
         );
 
         static::assertSame(Response::HTTP_FORBIDDEN, $caller->getResponse()->getStatusCode());

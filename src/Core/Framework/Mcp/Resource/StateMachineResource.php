@@ -15,9 +15,9 @@ use Shopwell\Core\System\StateMachine\StateMachineCollection;
  */
 #[Package('framework')]
 #[McpResource(
-    uri: 'shopware://state-machines',
-    name: 'shopware-state-machines',
-    description: 'All state machines with their states and transitions. Use this to understand valid actions for shopware-order-state.'
+    uri: 'shopwell://state-machines',
+    name: 'shopwell-state-machines',
+    description: 'All state machines with their states and transitions. Use this to understand valid actions for shopwell-order-state.'
 )]
 class StateMachineResource
 {
@@ -71,7 +71,7 @@ class StateMachineResource
         }
 
         return [
-            'uri' => 'shopware://state-machines',
+            'uri' => 'shopwell://state-machines',
             'mimeType' => 'application/json',
             'text' => Json::encode($machines),
         ];

@@ -4,4 +4,4 @@ issue: NEXT-23085
 author_github: @Dominik28111
 ---
 # Core
-* Changed `Shopware\Core\System\CustomEntity\Schema\DynamicFieldFactory` to register the correct repository for many to many associations.
+* Changed `Shopwell\Core\System\CustomEntity\Schema\DynamicFieldFactory` to register the correct repository for many to many associations.

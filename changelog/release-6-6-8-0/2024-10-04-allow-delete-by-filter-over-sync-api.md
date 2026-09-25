@@ -3,7 +3,7 @@ title: Allow delete by filter over sync API
 issue: NEXT-38713
 ---
 # Core
-* Changed `\Shopware\Core\Framework\Api\Sync\SyncService` to allow deletion of entities by filter for all entities and remove default api limits.
+* Changed `\Shopwell\Core\Framework\Api\Sync\SyncService` to allow deletion of entities by filter for all entities and remove default api limits.
 ___
 # Next Major Version Changes
 ## Deletes by filter over the Sync API

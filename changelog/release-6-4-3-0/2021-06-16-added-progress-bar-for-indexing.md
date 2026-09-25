@@ -2,16 +2,16 @@
 title: Added progress bar for indexing
 issue: NEXT-15366
 author: OliverSkroblin
-author_email: o.skroblin@shopware.com 
+author_email: o.skroblin@shopwell.com 
 author_github: OliverSkroblin
 ---
 # Core
-* Added `Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer::getTotal()`, to find out the number of records of an indexer to be processed
-* Added `Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer::getDecorated()`, to fulfill the decoration pattern requirements 
+* Added `Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer::getTotal()`, to find out the number of records of an indexer to be processed
+* Added `Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer::getDecorated()`, to fulfill the decoration pattern requirements 
 ___
 # Upgrade Information
 ## Update EntityIndexer implementation
-Two new methods have been added to the abstract `Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer`.
+Two new methods have been added to the abstract `Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer`.
 * `getTotal` - Shall return the number of records to be processed by the indexer on a Full index.
 * `getDecorated` - Shall return the decorated service (see decoration pattern adr).
 

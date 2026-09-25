@@ -11,7 +11,7 @@ class SitemapGenerateTask extends ScheduledTask
 {
     public static function getTaskName(): string
     {
-        return 'shopware.sitemap_generate';
+        return 'shopwell.sitemap_generate';
     }
 
     public static function getDefaultInterval(): int
@@ -21,7 +21,7 @@ class SitemapGenerateTask extends ScheduledTask
 
     public static function shouldRun(ParameterBagInterface $bag): bool
     {
-        return (bool) $bag->get('shopware.sitemap.scheduled_task.enabled');
+        return (bool) $bag->get('shopwell.sitemap.scheduled_task.enabled');
     }
 
     public static function shouldRescheduleOnFailure(): bool

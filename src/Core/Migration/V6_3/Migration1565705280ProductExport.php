@@ -83,7 +83,7 @@ class Migration1565705280ProductExport extends MigrationStep
                 'sales_channel_type_id' => $salesChannelTypeId,
                 'language_id' => $languageEN,
                 'name' => 'Product comparison',
-                'manufacturer' => 'shopware AG',
+                'manufacturer' => 'Shopwell',
                 'description' => 'Sales channel for product comparison platforms',
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             ]
@@ -94,7 +94,7 @@ class Migration1565705280ProductExport extends MigrationStep
                 'sales_channel_type_id' => $salesChannelTypeId,
                 'language_id' => $languageDE,
                 'name' => 'Produktvergleich',
-                'manufacturer' => 'shopware AG',
+                'manufacturer' => 'Shopwell',
                 'description' => 'Verkaufskanal für Produktvergleichsportale',
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             ]

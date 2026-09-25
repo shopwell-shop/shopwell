@@ -124,8 +124,8 @@ class DomainExceptionRule implements Rule
         }
 
         return [
-            RuleErrorBuilder::message('Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopware/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md')
-                ->identifier('shopware.domainException')
+            RuleErrorBuilder::message('Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md')
+                ->identifier('shopwell.domainException')
                 ->build(),
         ];
     }
@@ -146,7 +146,7 @@ class DomainExceptionRule implements Rule
         if (!$exception->is(HttpException::class)) {
             return [
                 RuleErrorBuilder::message(\sprintf('Domain exception class %s has to extend the \Shopwell\Core\Framework\HttpException class', $exceptionClass))
-                    ->identifier('shopware.domainException')
+                    ->identifier('shopwell.domainException')
                     ->build(),
             ];
         }
@@ -187,7 +187,7 @@ class DomainExceptionRule implements Rule
 
         return [
             RuleErrorBuilder::message(\sprintf('Expected domain exception class %s, got %s', $acceptedClasses[0], $exceptionClass))
-                ->identifier('shopware.domainException')
+                ->identifier('shopwell.domainException')
                 ->build(),
         ];
     }

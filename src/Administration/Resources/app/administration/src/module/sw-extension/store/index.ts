@@ -1,4 +1,4 @@
-import type { ShopwellClass } from 'src/core/shopware';
+import type { ShopwellClass } from 'src/core/shopwell';
 import useSession from '../../../app/composables/use-session';
 import './extensions.store';
 
@@ -20,6 +20,6 @@ export default function initState(Shopwell: ShopwellClass): void {
             return;
         }
 
-        await Shopwell.Service('shopwareExtensionService').updateExtensionData(false);
+        await Shopwell.Service('shopwellExtensionService').updateExtensionData(false);
     });
 }

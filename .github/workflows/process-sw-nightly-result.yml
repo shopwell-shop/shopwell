@@ -15,7 +15,7 @@ name: Nightly Triage Result Processor
 
 on:
   workflow_run:
-    workflows: ["Shopware Nightly Failure Triage"]
+    workflows: ["Shopwell Nightly Failure Triage"]
     types: [completed]
 
 permissions:
@@ -245,7 +245,7 @@ jobs:
 
             const backtickRuns = rawOutput.match(/`+/g) ?? [];
             const fence = '`'.repeat(Math.max(3, ...backtickRuns.map((run) => run.length + 1)));
-            const marker = `<!-- shopware-ai-nightly:${runId} -->`;
+            const marker = `<!-- shopwell-ai-nightly:${runId} -->`;
             const body = [
               marker,
               '## AI Nightly Triage Result',

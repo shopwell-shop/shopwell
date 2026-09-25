@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 import { computed, reactive } from 'vue';
-import type { privileges } from '@shopware-ag/meteor-admin-sdk/es/_internals/privileges';
+import type { privileges } from '@shopwell-ag/meteor-admin-sdk/es/_internals/privileges';
 
 type ApiAuthToken = {
     access: string;

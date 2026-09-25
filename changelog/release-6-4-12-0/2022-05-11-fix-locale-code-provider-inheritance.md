@@ -5,4 +5,4 @@ author: Silvio Kennecke
 author_github: @silviokennecke
 ---
 # Core
-*  Changed `\Shopware\Core\System\Locale\LanguageLocaleCodeProvider::getLanguages()` to resolve inherited language codes from parent language.
+*  Changed `\Shopwell\Core\System\Locale\LanguageLocaleCodeProvider::getLanguages()` to resolve inherited language codes from parent language.

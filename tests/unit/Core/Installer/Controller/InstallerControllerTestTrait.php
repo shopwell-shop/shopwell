@@ -31,9 +31,9 @@ trait InstallerControllerTestTrait
         $request->setSession($session);
         $requestStack->push($request);
         $container->set('request_stack', $requestStack);
-        $container->setParameter('shopware.installer.supportedLanguages', $this->getSupportedLanguages());
-        $container->setParameter('shopware.installer.configurationPreselection', $this->getSupportedPreselection());
-        $container->setParameter('kernel.shopware_version', Kernel::SHOPWARE_FALLBACK_VERSION);
+        $container->setParameter('shopwell.installer.supportedLanguages', $this->getSupportedLanguages());
+        $container->setParameter('shopwell.installer.configurationPreselection', $this->getSupportedPreselection());
+        $container->setParameter('kernel.shopwell_version', Kernel::SHOPWELL_FALLBACK_VERSION);
 
         foreach ($services as $id => $service) {
             $container->set($id, $service);
@@ -50,7 +50,7 @@ trait InstallerControllerTestTrait
      *       isCompleted: bool
      *     }[],
      *     supportedLanguages: SupportedLanguages,
-     *     shopware: array{version: string}
+     *     shopwell: array{version: string}
      *   }
      */
     private function getDefaultViewParams(): array
@@ -99,8 +99,8 @@ trait InstallerControllerTestTrait
                 ],
             ],
             'supportedLanguages' => $this->getSupportedLanguages(),
-            'shopware' => [
-                'version' => Kernel::SHOPWARE_FALLBACK_VERSION,
+            'shopwell' => [
+                'version' => Kernel::SHOPWELL_FALLBACK_VERSION,
             ],
         ];
     }

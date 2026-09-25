@@ -59,7 +59,7 @@ class ThemeCreateCommandTest extends TestCase
         static::assertIsString($composerJson);
         $composer = json_decode($composerJson, true, flags: \JSON_THROW_ON_ERROR);
         static::assertSame('custom/test-plugin', $composer['name']);
-        static::assertSame('~6.7.0', $composer['require']['shopware/core']);
+        static::assertSame('~6.7.0', $composer['require']['shopwell/core']);
     }
 
     public function testSuccessfulCreateAsStaticCommand(): void

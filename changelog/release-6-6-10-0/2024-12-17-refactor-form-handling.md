@@ -281,8 +281,8 @@ To make it easier to implement all best practices without recreating a lot of bo
 </form>
 ```
 
-### Updated Shopware standard forms
-The existing forms in the Shopware Storefront are already reworked to use the described practices and tools. The changes are part of our accessibility initiative and are still behind a feature flag. They will become the default with the Shopware 6.7.0.0 major version. If you already want to get these changes among other accessibility improvements you can activate the flag `ACCESSIBILITY_TWEAKS`.
+### Updated Shopwell standard forms
+The existing forms in the Shopwell Storefront are already reworked to use the described practices and tools. The changes are part of our accessibility initiative and are still behind a feature flag. They will become the default with the Shopwell 6.7.0.0 major version. If you already want to get these changes among other accessibility improvements you can activate the flag `ACCESSIBILITY_TWEAKS`.
 
 **Forms that are updated:**
 * Login
@@ -363,8 +363,8 @@ To make it easier to implement all best practices without recreating a lot of bo
 </form>
 ```
 
-### Updated Shopware standard forms
-The existing forms in the Shopware Storefront are already reworked to use the described practices and services. 
+### Updated Shopwell standard forms
+The existing forms in the Shopwell Storefront are already reworked to use the described practices and services. 
 
 **Forms that are affected by the changes:**
 * Login

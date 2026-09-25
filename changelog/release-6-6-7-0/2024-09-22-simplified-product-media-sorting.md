@@ -7,4 +7,4 @@ author_github: @aragon999
 ---
 # Core
 * Changed product media sorting to be sorted by the MySQL server and not on the PHP side
-* Deprecated protected method `Shopware\Core\Content\Media\Cms\Type\ImageSliderTypeDataResolver::sortItemsByPosition()`
+* Deprecated protected method `Shopwell\Core\Content\Media\Cms\Type\ImageSliderTypeDataResolver::sortItemsByPosition()`

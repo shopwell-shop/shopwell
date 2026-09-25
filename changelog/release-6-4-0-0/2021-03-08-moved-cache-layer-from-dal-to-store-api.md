@@ -2,7 +2,7 @@
 title: Moved cache layer from DAL to store api
 issue: NEXT-11735
 author: OliverSkroblin
-author_email: o.skroblin@shopware.com
+author_email: o.skroblin@shopwell.com
 author_github: OliverSkroblin
 ---
 # Core
@@ -81,7 +81,7 @@ author_github: OliverSkroblin
 * Added new `CacheInvalidator` which is used to invalidate the cache or to log the invalidation for a delayed invalidation.
     * Added `InvalidateCacheEvent` which is triggered when the cache will be invalidated
     * Added `InvalidateCacheTask` which triggers the logger to invalidate the delayed cache invalidation
-* Added `shopware.cache` configuration in `shopware.yaml` file for cache configuration
+* Added `shopwell.cache` configuration in `shopwell.yaml` file for cache configuration
 ```yaml
     cache:
         invalidation:
@@ -105,57 +105,57 @@ author_github: OliverSkroblin
 * Added `ConfigExtension` which provides to `config` and `theme_config` function
     * Added `config` twig function which allows to get access to system config values
     * Added `theme_config` twig function which allows to get access to theme config values
-* Added `\Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory::$domainId`
+* Added `\Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory::$domainId`
 * Added `SalesChannelContextServiceParameters` which is used as context service parameter to prevent signature changes in the future
 * Added cache for `SwSanitizeTwigFilter`
-* Removed `\Shopware\Core\Framework\Adapter\Cache\CacheClearer::invalidateIds`, use `\Shopware\Core\Framework\Adapter\Cache\CacheInvalidator::invalidate` instead
-* Removed `\Shopware\Core\Framework\Adapter\Cache\CacheClearer::invalidateTags`, use `\Shopware\Core\Framework\Adapter\Cache\CacheInvalidator::invalidate` instead
+* Removed `\Shopwell\Core\Framework\Adapter\Cache\CacheClearer::invalidateIds`, use `\Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator::invalidate` instead
+* Removed `\Shopwell\Core\Framework\Adapter\Cache\CacheClearer::invalidateTags`, use `\Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator::invalidate` instead
 * Removed `BlacklistRuleField`, because it leads to performance problems
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\CachedEntityAggregator`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\CachedEntityReader`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\CachedEntitySearcher`
-* Removed `\Shopware\Core\Checkout\Cart\CartRuleLoader::CHECKOUT_RULE_LOADER_CACHE_KEY`, use `\Shopware\Core\Checkout\Cart\CachedRuleLoader::CACHE_KEY` instead
-* Removed `\Shopware\Core\Framework\Context::getUseCache`
-* Removed `\Shopware\Core\Framework\Context::disableCache`
-* Removed `\Shopware\Core\Framework\Context::$useCache`
-* Removed `\Shopware\Core\Framework\Context::enableCache`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getEntityContextCacheKey`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getReadCriteriaCacheKey`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getSearchCacheKey`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getAggregationCacheKey`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getEntityTag`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getSearchTags`
-* Removed `\Shopware\Storefront\Framework\Cache\ObjectCacheKeyFinder`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getAssociatedTags`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getFieldTag`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getContextHash`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition::isBlacklistAware`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition::isWhitelistAware`
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Cache\InvalidateCacheSubscriber`, cache invalidation is now handled for each route individually
-* Removed `\Shopware\Core\Framework\Adapter\Cache\CacheClearer::invalidateIds` calls in indexer classes
-* Removed `\Shopware\Storefront\Theme\ThemeService::getResolvedThemeConfiguration`, use `theme_config` in templates instead
-* Removed `\Shopware\Core\Framework\DataAbstractionLayer\Field\WhitelistRuleField`
-* Changed `\Shopware\Core\System\SystemConfig\SystemConfigService::getDomain` annotation. The function is marked as `@internal` and should not be used inside a storefront request
-* Changed `\Shopware\Core\System\SystemConfig\SystemConfigService::all` annotation. The function is marked as `@internal` and should not be used inside a storefront request
-* Changed `\Shopware\Core\Framework\DataAbstractionLayer\VersionManager::writeAuditLog`, the function checks now `context->hasState(self::DISABLE_AUDIT_LOG)` instead of an extension
-* Changed `\Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult::__construct`, `page` and `limit` removed and `$entity` added as first parameter
-* Changed signature of `\Shopware\Core\System\SalesChannel\Context\SalesChannelContextService::get`, the function expects now the `SalesChannelContextServiceParameters` object as parameter instead of single values
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\CachedEntityAggregator`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\CachedEntityReader`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\CachedEntitySearcher`
+* Removed `\Shopwell\Core\Checkout\Cart\CartRuleLoader::CHECKOUT_RULE_LOADER_CACHE_KEY`, use `\Shopwell\Core\Checkout\Cart\CachedRuleLoader::CACHE_KEY` instead
+* Removed `\Shopwell\Core\Framework\Context::getUseCache`
+* Removed `\Shopwell\Core\Framework\Context::disableCache`
+* Removed `\Shopwell\Core\Framework\Context::$useCache`
+* Removed `\Shopwell\Core\Framework\Context::enableCache`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getEntityContextCacheKey`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getReadCriteriaCacheKey`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getSearchCacheKey`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getAggregationCacheKey`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getEntityTag`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getSearchTags`
+* Removed `\Shopwell\Storefront\Framework\Cache\ObjectCacheKeyFinder`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getAssociatedTags`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getFieldTag`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator::getContextHash`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition::isBlacklistAware`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition::isWhitelistAware`
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Cache\InvalidateCacheSubscriber`, cache invalidation is now handled for each route individually
+* Removed `\Shopwell\Core\Framework\Adapter\Cache\CacheClearer::invalidateIds` calls in indexer classes
+* Removed `\Shopwell\Storefront\Theme\ThemeService::getResolvedThemeConfiguration`, use `theme_config` in templates instead
+* Removed `\Shopwell\Core\Framework\DataAbstractionLayer\Field\WhitelistRuleField`
+* Changed `\Shopwell\Core\System\SystemConfig\SystemConfigService::getDomain` annotation. The function is marked as `@internal` and should not be used inside a storefront request
+* Changed `\Shopwell\Core\System\SystemConfig\SystemConfigService::all` annotation. The function is marked as `@internal` and should not be used inside a storefront request
+* Changed `\Shopwell\Core\Framework\DataAbstractionLayer\VersionManager::writeAuditLog`, the function checks now `context->hasState(self::DISABLE_AUDIT_LOG)` instead of an extension
+* Changed `\Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult::__construct`, `page` and `limit` removed and `$entity` added as first parameter
+* Changed signature of `\Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService::get`, the function expects now the `SalesChannelContextServiceParameters` object as parameter instead of single values
 
 ___
 # Storefront
-* Removed `shopware.config` variable, use `config('my_config_key')` instead
-* Removed `shopware.theme` variable, use `theme_config('my_config_key')` instead
-* Removed `shopware.theme.breakpoint`, use specific size variable instead `theme_config('breakpoint.sm')`
+* Removed `shopwell.config` variable, use `config('my_config_key')` instead
+* Removed `shopwell.theme` variable, use `theme_config('my_config_key')` instead
+* Removed `shopwell.theme.breakpoint`, use specific size variable instead `theme_config('breakpoint.sm')`
 ___
 # Upgrade Information
 ## Twig system config access
-The `shopware.config` variable was removed. To access a system config value inside twig, use `config('my_config_key')`.
+The `shopwell.config` variable was removed. To access a system config value inside twig, use `config('my_config_key')`.
 
 ## Twig theme config access
-The `shopware.theme` variable was removed. To access the theme config value inside twig, use `theme_config('my_config_key')`.
+The `shopwell.theme` variable was removed. To access the theme config value inside twig, use `theme_config('my_config_key')`.
 
 ## Theme breakpoint config array
-The `shopware.theme.breakpoint` config value is no more available, please use the corresponding sizes. If you need to restore the array, you can use the following code:
+The `shopwell.theme.breakpoint` config value is no more available, please use the corresponding sizes. If you need to restore the array, you can use the following code:
 ```
 {% set breakpoint = {
     'xs': theme_config('breakpoint.sm'),

@@ -1,6 +1,6 @@
 ---
 title: Fix admin order shipping cost input behaviour
-issue: https://github.com/shopware/shopware/issues/7958
+issue: https://github.com/shopwell-shop/shopwell/issues/7958
 author_github: @En0Ma1259
 ---
 ___

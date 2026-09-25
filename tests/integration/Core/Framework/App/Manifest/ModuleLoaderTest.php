@@ -318,16 +318,16 @@ class ModuleLoaderTest extends TestCase
         static::assertArrayHasKey('shop-id', $query);
         static::assertSame($shopId->id, $query['shop-id']);
         static::assertArrayHasKey('sw-version', $query);
-        static::assertSame(static::getContainer()->getParameter('kernel.shopware_version'), $query['sw-version']);
+        static::assertSame(static::getContainer()->getParameter('kernel.shopwell_version'), $query['sw-version']);
         static::assertArrayHasKey('sw-context-language', $query);
         static::assertSame(Context::createDefaultContext()->getLanguageId(), $query['sw-context-language']);
         static::assertArrayHasKey('sw-user-language', $query);
         static::assertSame('en-GB', $query['sw-user-language']);
-        static::assertArrayHasKey('shopware-shop-signature', $query);
+        static::assertArrayHasKey('shopwell-shop-signature', $query);
 
-        $signature = $query['shopware-shop-signature'];
+        $signature = $query['shopwell-shop-signature'];
         static::assertIsString($signature);
-        $signedQuery = str_replace('&shopware-shop-signature=' . $signature, '', $queryString);
+        $signedQuery = str_replace('&shopwell-shop-signature=' . $signature, '', $queryString);
 
         static::assertSame(hash_hmac('sha256', $signedQuery, $secret), $signature);
     }

@@ -6,4 +6,4 @@ author_email: evers.nils@gmail.com
 author_github: NilsEvers
 ---
 # Core
-* Changed `\Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute::switchContext` to only assign the `SalesChannelContext` to a customer if no permissions are set on the context. This prevents customers from being able to obtain permissions from an API call. 
+* Changed `\Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute::switchContext` to only assign the `SalesChannelContext` to a customer if no permissions are set on the context. This prevents customers from being able to obtain permissions from an API call. 

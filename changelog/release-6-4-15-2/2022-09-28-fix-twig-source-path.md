@@ -3,11 +3,11 @@ title: Fix twig source path for icons
 issue: NEXT-23464
 ---
 # Core
-* Changed `Shopware\Core\Framework\DependencyInjection\CompilerPass\TwigLoaderConfigCompilerPass` to add path `BUNDLE/Resources/app/storefront/dist` to the TwigFileLoader.
+* Changed `Shopwell\Core\Framework\DependencyInjection\CompilerPass\TwigLoaderConfigCompilerPass` to add path `BUNDLE/Resources/app/storefront/dist` to the TwigFileLoader.
 ___
 # Storefront
 * Changed `storefront/utilities/icon.html.twig` to only use `dist` directory for icons
-* Changed `Shopware\Storefront\Framework\Routing\StorefrontSubscriber::addIconSetConfig` to add path `BUNDLE/Resources/app/storefront/dist` to the TwigFileLoader.
+* Changed `Shopwell\Storefront\Framework\Routing\StorefrontSubscriber::addIconSetConfig` to add path `BUNDLE/Resources/app/storefront/dist` to the TwigFileLoader.
 ___
 # Upgrade Information
 

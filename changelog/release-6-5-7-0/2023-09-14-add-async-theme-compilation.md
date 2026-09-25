@@ -2,15 +2,15 @@
 title: Added async theme compilation configuration
 issue: NEXT-29828
 author: Stefan Sluiter
-author_email: s.sluiter@shopware.com
+author_email: s.sluiter@shopwell.com
 ---
 # Storefront
 * Changed `sw-settings-storefront-configuration.html.twig` and `modules/sw-settings-storefront/page/sw-settings-storefront-index/index.js` to add async compilatin setting.
-* Added `Shopware\Storefront\Theme\Message\CompileThemeMessage` for theme compiling messages.
-* Added `Shopware\Storefront\Theme\Message\CompileThemeHandler` as a handler for `Shopware\Storefront\Theme\Message\CompileThemeMessage` messages.
-* Changed `Shopware\Storefront\Theme\ThemeService::compileTheme` and `Shopware\Storefront\Theme\ThemeService::compileThemeById` to check whether the compiling should be done asynchronously.
-* Changed `Shopware\Storefront\Theme\ThemeService` by adding `reset` method.
-* Changed `Shopware\Storefront\Theme\ThemeService` to implement the ResetInterface
+* Added `Shopwell\Storefront\Theme\Message\CompileThemeMessage` for theme compiling messages.
+* Added `Shopwell\Storefront\Theme\Message\CompileThemeHandler` as a handler for `Shopwell\Storefront\Theme\Message\CompileThemeMessage` messages.
+* Changed `Shopwell\Storefront\Theme\ThemeService::compileTheme` and `Shopwell\Storefront\Theme\ThemeService::compileThemeById` to check whether the compiling should be done asynchronously.
+* Changed `Shopwell\Storefront\Theme\ThemeService` by adding `reset` method.
+* Changed `Shopwell\Storefront\Theme\ThemeService` to implement the ResetInterface
 ___
 # Upgrade Information
 ## Async theme compilation (@experimental)

@@ -109,7 +109,7 @@ class FuturePropertyVisibilityChangeRule implements Rule
     private function error(string $message, int $line): IdentifierRuleError
     {
         return RuleErrorBuilder::message($message)
-            ->identifier('shopware.futureIncompatibility.propertyVisibilityChange')
+            ->identifier('shopwell.futureIncompatibility.propertyVisibilityChange')
             ->line($line)
             ->build();
     }

@@ -453,7 +453,7 @@ class EntitySearchToolTest extends TestCase
 
         static::assertFalse($data['success']);
         static::assertStringContainsString('unknown_entity', $data['error']);
-        static::assertStringContainsString('shopware://entities', $data['error']);
+        static::assertStringContainsString('shopwell://entities', $data['error']);
     }
 
     #[TestDox('A rejected filter is answered with the parser pointer and detail instead of escaping to the SDK\'s generic error')]

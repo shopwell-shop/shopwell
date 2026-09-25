@@ -25,7 +25,7 @@ class PrivateHandshakeTest extends TestCase
         $appEndpoint = 'https://test.com/install';
         $shopId = Random::getAlphanumericString(12);
 
-        $handshake = new PrivateHandshake($shopUrl, $secret, $appEndpoint, '', $shopId, Kernel::SHOPWARE_FALLBACK_VERSION, new NativeClock());
+        $handshake = new PrivateHandshake($shopUrl, $secret, $appEndpoint, '', $shopId, Kernel::SHOPWELL_FALLBACK_VERSION, new NativeClock());
 
         $request = $handshake->assembleRequest();
         static::assertStringStartsWith($appEndpoint, (string) $request->getUri());
@@ -43,10 +43,10 @@ class PrivateHandshakeTest extends TestCase
         static::assertIsString($queryParams['timestamp']);
         static::assertNotEmpty($queryParams['timestamp']);
 
-        static::assertTrue($request->hasHeader('shopware-app-signature'));
+        static::assertTrue($request->hasHeader('shopwell-app-signature'));
         static::assertSame(
             hash_hmac('sha256', $request->getUri()->getQuery(), $secret),
-            $request->getHeaderLine('shopware-app-signature')
+            $request->getHeaderLine('shopwell-app-signature')
         );
 
         static::assertNotEmpty($request->getHeaderLine('sw-version'));
@@ -60,7 +60,7 @@ class PrivateHandshakeTest extends TestCase
         $appName = 'testapp';
         $shopId = Random::getAlphanumericString(12);
 
-        $handshake = new PrivateHandshake($shopUrl, $secret, $appEndpoint, $appName, $shopId, Kernel::SHOPWARE_FALLBACK_VERSION, new NativeClock());
+        $handshake = new PrivateHandshake($shopUrl, $secret, $appEndpoint, $appName, $shopId, Kernel::SHOPWELL_FALLBACK_VERSION, new NativeClock());
 
         $appProof = $handshake->fetchAppProof();
 

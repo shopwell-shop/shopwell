@@ -17,7 +17,7 @@ Not every deprecated Administration member is a supported runtime API. Types, st
 
 ### Runtime helper
 
-Add `Shopware.Feature.triggerDeprecationOrThrow(majorFlag, message)` to the Administration feature API.
+Add `Shopwell.Feature.triggerDeprecationOrThrow(majorFlag, message)` to the Administration feature API.
 
 Before the major flag is active, it emits a development deprecation warning with a useful migration message and call site. When the flag is active, it throws an `Error`.
 
@@ -26,7 +26,7 @@ The helper is used only at the boundary where deprecated functionality is actual
 ```ts
 Feature.triggerDeprecationOrThrow(
     'V6_9_0_0',
-    'Shopware.Service("example").oldMethod() is deprecated; use newMethod() instead.',
+    'Shopwell.Service("example").oldMethod() is deprecated; use newMethod() instead.',
 );
 ```
 
@@ -34,7 +34,7 @@ Feature.triggerDeprecationOrThrow(
 
 The following API categories require a runtime strategy and enforcement when they are public:
 
-* global `Shopware.*` APIs, registered services, and direct exported functions at their call boundary;
+* global `Shopwell.*` APIs, registered services, and direct exported functions at their call boundary;
 * registered components at mount/creation and deprecated props when the prop is supplied;
 * deprecated component `methods` and `computed` members of supported extension targets. The legacy component factory builds `$super` chains for both, so it can perform a guard while resolving `this.$super(member)`; a guard in the member itself additionally covers direct invocation;
 * Twig blocks, when the legacy Twig override shim receives the overridden block name. A compatibility shim for a deprecated block must warn or throw there, rather than treating every legacy block as deprecated.

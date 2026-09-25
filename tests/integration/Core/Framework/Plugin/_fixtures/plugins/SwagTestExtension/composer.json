@@ -2,11 +2,11 @@
   "name": "swag/test-extension",
   "description": "Test description",
   "version": "v1.0.2",
-  "type": "shopware-platform-plugin",
+  "type": "shopwell-platform-plugin",
   "license": "MIT",
   "authors": [
     {
-      "name": "shopware AG",
+      "name": "Shopwell",
       "role": "Manufacturer"
     },
     {
@@ -15,13 +15,13 @@
     }
   ],
   "require": {
-    "shopware/core": ">=6.0",
+    "shopwell/core": ">=6.0",
     "swag/test": ">=1.0"
   },
   "extra": {
-    "shopware-plugin-class": "SwagTestExtension\\SwagTestExtension",
+    "shopwell-plugin-class": "SwagTestExtension\\SwagTestExtension",
     "plugin-icon": "src/Resources/public/plugin.png",
-    "copyright": "(c) by shopware AG",
+    "copyright": "(c) by Shopwell",
     "label": {
       "de-DE": "Deutscher Pluginname",
       "de-CH": "Schweizerdeutsch Pluginname",

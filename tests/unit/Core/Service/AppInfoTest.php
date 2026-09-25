@@ -110,10 +110,10 @@ class AppInfoTest extends TestCase
             'app-zip-url' => 'https://example.com/zip',
             'app-hash-algorithm' => 'sha256',
             'app-min-shop-supported-version' => '6.6.0.0',
-            'app-requirements' => ['service_consent', 'shopware_account'],
+            'app-requirements' => ['service_consent', 'shopwell_account'],
         ]);
 
-        static::assertSame(['service_consent', 'shopware_account'], $appInfo->requirements);
+        static::assertSame(['service_consent', 'shopwell_account'], $appInfo->requirements);
     }
 
     public function testFromRegistryResponseUsesDefaultRequirementsWhenMissing(): void
@@ -139,10 +139,10 @@ class AppInfoTest extends TestCase
             'zip-url' => 'https://example.com/zip',
             'hash-algorithm' => 'sha256',
             'min-shop-supported-version' => '6.6.0.0',
-            'requirements' => ['shopware_account'],
+            'requirements' => ['shopwell_account'],
         ]);
 
-        static::assertSame(['shopware_account'], $appInfo->requirements);
+        static::assertSame(['shopwell_account'], $appInfo->requirements);
     }
 
     public function testToArray(): void
@@ -171,11 +171,11 @@ class AppInfoTest extends TestCase
             'a453f',
             '1.0.0-a453f',
             'https://example.com/zip',
-            ['service_consent', 'shopware_account'],
+            ['service_consent', 'shopwell_account'],
             'sha256',
             '6.6.0.0',
         );
 
-        static::assertSame(['service_consent', 'shopware_account'], $appInfo->toArray()['requirements']);
+        static::assertSame(['service_consent', 'shopwell_account'], $appInfo->toArray()['requirements']);
     }
 }

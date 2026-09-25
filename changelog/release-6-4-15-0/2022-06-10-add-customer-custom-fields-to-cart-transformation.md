@@ -6,4 +6,4 @@ author_email: axel.guckelsberger@guite.de
 author_github: Guite
 ---
 # Core
-* Added `customFields` property to `Shopware\Core\Order\Transformer\CustomerTransformer`, analogous to `AddressTransformer`.
+* Added `customFields` property to `Shopwell\Core\Order\Transformer\CustomerTransformer`, analogous to `AddressTransformer`.

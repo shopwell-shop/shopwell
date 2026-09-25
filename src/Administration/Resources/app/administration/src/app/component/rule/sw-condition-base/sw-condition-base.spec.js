@@ -43,7 +43,7 @@ function seedErrors(conditionId, errors) {
     });
 }
 
-function shopwareError(code = 'INVALID') {
+function shopwellError(code = 'INVALID') {
     return new ShopwellError({ detail: 'invalid', code });
 }
 
@@ -125,7 +125,7 @@ describe('src/app/component/rule/sw-condition-base', () => {
         });
 
         it('renders the field-errors component when a value error is present', async () => {
-            seedErrors(condition.id, { 'value.count': shopwareError() });
+            seedErrors(condition.id, { 'value.count': shopwellError() });
 
             const wrapper = await createWrapper({ condition });
             await flushPromises();
@@ -136,9 +136,9 @@ describe('src/app/component/rule/sw-condition-base', () => {
 
         it('passes the type error and field errors to the field-errors component', async () => {
             seedErrors(condition.id, {
-                type: shopwareError('RULE_TYPE_REQUIRED'),
-                'value.count': shopwareError(),
-                'value.operator': shopwareError(),
+                type: shopwellError('RULE_TYPE_REQUIRED'),
+                'value.count': shopwellError(),
+                'value.operator': shopwellError(),
             });
 
             const wrapper = await createWrapper({ condition });
@@ -153,8 +153,8 @@ describe('src/app/component/rule/sw-condition-base', () => {
 
         it('skips nested non-leaf value branches that are not ShopwellError instances', async () => {
             seedErrors(condition.id, {
-                'value.count': shopwareError(),
-                'value.timezone.nested': shopwareError(),
+                'value.count': shopwellError(),
+                'value.timezone.nested': shopwellError(),
             });
 
             const wrapper = await createWrapper({ condition });

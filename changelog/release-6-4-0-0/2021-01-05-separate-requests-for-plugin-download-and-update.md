@@ -3,7 +3,7 @@ title: Separate requests for plugin download and update
 issue: NEXT-12957
 ---
 # Core
-* Changed the `downloadPlugin` method in `\Shopware\Core\Framework\Store\Api\StoreController` so that it only executes
+* Changed the `downloadPlugin` method in `\Shopwell\Core\Framework\Store\Api\StoreController` so that it only executes
   the plugin download and does not trigger an update anymore
 ___
 # API

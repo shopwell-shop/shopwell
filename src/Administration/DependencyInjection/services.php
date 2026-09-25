@@ -58,8 +58,8 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->parameters()
-        ->set('env(SHOPWARE_ADMINISTRATION_PATH_NAME)', 'admin')
-        ->set('shopware_administration.path_name', env('SHOPWARE_ADMINISTRATION_PATH_NAME')->resolve());
+        ->set('env(SHOPWELL_ADMINISTRATION_PATH_NAME)', 'admin')
+        ->set('shopwell_administration.path_name', env('SHOPWELL_ADMINISTRATION_PATH_NAME')->resolve());
 
     $services = $containerConfigurator->services();
 
@@ -110,19 +110,19 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(KnownIpsCollector::class),
             service(Connection::class),
             service('event_dispatcher'),
-            param('kernel.shopware_core_dir'),
+            param('kernel.shopwell_core_dir'),
             service('customer.repository'),
             service('currency.repository'),
             service(HtmlSanitizer::class),
             service(DefinitionInstanceRegistry::class),
             service('parameter_bag'),
-            service('shopware.filesystem.asset'),
-            param('shopware.service_registry.url'),
+            service('shopwell.filesystem.asset'),
+            param('shopwell.service_registry.url'),
             service('language.repository'),
             service(SymfonyBearerTokenValidator::class),
             env('PRODUCT_ANALYTICS_GATEWAY_URL'),
             service(CustomerEmailUniqueChecker::class),
-            param('shopware.api.refresh_token_ttl'),
+            param('shopwell.api.refresh_token_ttl'),
         ])
         ->call('setContainer', [service('service_container')]);
 
@@ -170,7 +170,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         NotificationController::class,
     )
         ->public()
-        ->deprecate('shopware/administration', '6.7.15.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.8.0. Use Shopwell\Core\Framework\Notification\Api\NotificationController instead.');
+        ->deprecate('shopwell/administration', '6.7.15.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.8.0. Use Shopwell\Core\Framework\Notification\Api\NotificationController instead.');
 
     $services->set(AdminSearcher::class)
         ->args([
@@ -178,7 +178,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(AppAdministrationSnippetDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(AppAdministrationSnippetPersister::class)
         ->args([
@@ -192,7 +192,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('kernel'),
             service(Connection::class),
-            service('shopware.filesystem.translation'),
+            service('shopwell.filesystem.translation'),
             service(TranslationConfig::class),
             service(TranslationLoader::class),
             service(HtmlSanitizer::class),
@@ -217,7 +217,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->alias(
         'Shopwell\Administration\Notification\NotificationDefinition',
         NotificationDefinition::class,
-    )->deprecate('shopware/administration', '6.7.15.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.8.0. Use Shopwell\Core\Framework\Notification\NotificationDefinition instead.');
+    )->deprecate('shopwell/administration', '6.7.15.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.8.0. Use Shopwell\Core\Framework\Notification\NotificationDefinition instead.');
 
     $services->set(SalesChannelUserConfigSubscriber::class)
         ->args([
@@ -229,7 +229,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(Connection::class),
             service(CashRounding::class),
-            param('shopware.dbal.time_zone_support_enabled'),
+            param('shopwell.dbal.time_zone_support_enabled'),
         ]);
 
     $services->set(DashboardController::class)

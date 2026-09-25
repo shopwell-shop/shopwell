@@ -7,7 +7,7 @@ tags: [dal, acl, api, events, extensions]
 
 ## Context
 
-Shopware extensions can add DAL entities with their own ACL privileges and can react to core entity events, for example `product.written`.
+Shopwell extensions can add DAL entities with their own ACL privileges and can react to core entity events, for example `product.written`.
 Those listeners often write extension-owned technical data derived from the core write.
 
 Today these follow-up writes happen in the same CRUD API scope as the original API request.

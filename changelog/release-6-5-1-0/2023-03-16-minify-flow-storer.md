@@ -2,7 +2,7 @@
 title: Minify flow storer
 issue: NEXT-25364
 author: Oliver Skroblin
-author_email: o.skroblin@shopware.com
+author_email: o.skroblin@shopwell.com
 ---
 # Core
 * Added new `ScalarValuesAware` and `ScalarValuesStorer` class, which allows to store scalar values for flows.
@@ -64,7 +64,7 @@ If you implemented one of the deprecated interfaces or implemented an own interf
 ```php
 
 // before
-class MyEvent extends Event implements \Shopware\Core\Content\Flow\Dispatching\Aware\UrlAware
+class MyEvent extends Event implements \Shopwell\Core\Content\Flow\Dispatching\Aware\UrlAware
 {
     private string $url;
 
@@ -83,7 +83,7 @@ class MyEvent extends Event implements \Shopware\Core\Content\Flow\Dispatching\A
 
 // after
 
-class MyEvent extends Event implements \Shopware\Core\Content\Flow\Dispatching\Aware\ScalarValuesAware
+class MyEvent extends Event implements \Shopwell\Core\Content\Flow\Dispatching\Aware\ScalarValuesAware
 {
     private string $url;
 

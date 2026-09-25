@@ -85,7 +85,7 @@ class HookableEventCollector implements ResetInterface
     }
 
     /**
-     * Dynamically discovers all hookable entities by checking for services tagged with 'shopware.entity.hookable'.
+     * Dynamically discovers all hookable entities by checking for services tagged with 'shopwell.entity.hookable'.
      *
      * @return list<string>
      */

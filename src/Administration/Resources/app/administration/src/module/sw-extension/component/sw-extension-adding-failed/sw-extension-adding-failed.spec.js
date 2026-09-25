@@ -1,10 +1,10 @@
 import { mount } from '@vue/test-utils';
-import ShopwellExtensionService from 'src/module/sw-extension/service/shopware-extension.service';
+import ShopwellExtensionService from 'src/module/sw-extension/service/shopwell-extension.service';
 
 const licenceCancellationTextSelector = '.sw-extension-adding-failed__text-licence-cancellation';
 
 async function createWrapper() {
-    const shopwareExtensionService = new ShopwellExtensionService();
+    const shopwellExtensionService = new ShopwellExtensionService();
 
     return mount(await wrapTestComponent('sw-extension-adding-failed', { sync: true }), {
         global: {
@@ -18,7 +18,7 @@ async function createWrapper() {
                 'sw-loader': true,
             },
             provide: {
-                shopwareExtensionService,
+                shopwellExtensionService,
             },
         },
         props: {
@@ -40,7 +40,7 @@ describe('src/module/sw-extension-component/sw-extension-adding-failed', () => {
     });
 
     it('has a primary block button', async () => {
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([]);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([]);
 
         const wrapper = await createWrapper();
 
@@ -51,7 +51,7 @@ describe('src/module/sw-extension-component/sw-extension-adding-failed', () => {
     });
 
     it('emits close if close button is clicked', async () => {
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([]);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([]);
 
         const wrapper = await createWrapper();
 
@@ -61,7 +61,7 @@ describe('src/module/sw-extension-component/sw-extension-adding-failed', () => {
     });
 
     it('renders all information if extension has an active rent license', async () => {
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([
             {
                 name: 'test-app',
                 storeLicense: {
@@ -79,7 +79,7 @@ describe('src/module/sw-extension-component/sw-extension-adding-failed', () => {
     });
 
     it('does not render additional information if the rent license is cancelled', async () => {
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([
             {
                 name: 'test-app',
                 storeLicense: {
@@ -95,7 +95,7 @@ describe('src/module/sw-extension-component/sw-extension-adding-failed', () => {
     });
 
     it('does not render additional information if the license is not a subscription', async () => {
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([
             {
                 name: 'test-app',
                 storeLicense: {
@@ -116,7 +116,7 @@ describe('src/module/sw-extension-component/sw-extension-adding-failed', () => {
     });
 
     it('does not render additional information about licenses and uses general failure text if extension is not licensed', async () => {
-        Shopwell.Store.get('shopwareExtensions').setMyExtensions([]);
+        Shopwell.Store.get('shopwellExtensions').setMyExtensions([]);
 
         const wrapper = await createWrapper();
 

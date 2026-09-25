@@ -46,7 +46,7 @@ class MediaRepositoryTest extends TestCase
     use IntegrationTestBehaviour;
     use QueueTestBehaviour;
 
-    private const FIXTURE_FILE = __DIR__ . '/../fixtures/shopware-logo.png';
+    private const FIXTURE_FILE = __DIR__ . '/../fixtures/shopwell-logo.png';
 
     /**
      * @var EntityRepository<MediaCollection>
@@ -137,7 +137,7 @@ class MediaRepositoryTest extends TestCase
 
         static::assertInstanceOf(MediaEntity::class, $media);
 
-        $fileSystem = static::getContainer()->get('shopware.filesystem.private');
+        $fileSystem = static::getContainer()->get('shopwell.filesystem.private');
 
         $path = $media->getPath();
 

@@ -5,4 +5,4 @@ author_github: @raffaelecarelle
 ---
 
 # Core
- * Changed `\Shopware\Core\Framework\DataAbstractionLayer\Attribute\Entity` to allow defining a hydrator class
+ * Changed `\Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Entity` to allow defining a hydrator class

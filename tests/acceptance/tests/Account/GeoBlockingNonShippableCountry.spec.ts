@@ -27,7 +27,7 @@ test(
             firstName: 'Jeff',
             lastName: 'Goldblum',
             email: `${IdProvider.getIdPair().uuid}@test.com`,
-            password: 'shopware',
+            password: 'shopwell',
             street: 'Ebbinghof 10',
             city: 'Schöppingen',
             country: `${nonShippableCountry.name} (Delivery not possible)`,
@@ -102,7 +102,7 @@ test(
         const address = {
             firstName: 'New First Name',
             lastName: 'New Last Name',
-            company: 'shopware',
+            company: 'shopwell',
             department: 'Operations',
             street: 'Ebbinghof 10',
             zipcode: '48624',
@@ -112,7 +112,7 @@ test(
 
         const customer = {
             email: `${IdProvider.getIdPair().uuid}@test.com`,
-            password: 'shopware',
+            password: 'shopwell',
             country: `${nonShippableCountry.name} (Delivery not possible)`,
         };
 

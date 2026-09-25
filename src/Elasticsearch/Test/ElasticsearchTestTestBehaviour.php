@@ -185,7 +185,7 @@ trait ElasticsearchTestTestBehaviour
 
         $client = $c->get(Client::class);
 
-        $indices = $client->indices()->get(['index' => EnvironmentHelper::getVariable('SHOPWARE_ES_INDEX_PREFIX') . '*']);
+        $indices = $client->indices()->get(['index' => EnvironmentHelper::getVariable('SHOPWELL_ES_INDEX_PREFIX') . '*']);
 
         foreach ($indices as $name => $index) {
             $client->indices()->delete(['index' => $name]);

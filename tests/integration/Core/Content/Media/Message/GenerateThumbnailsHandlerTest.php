@@ -51,7 +51,7 @@ class GenerateThumbnailsHandlerTest extends TestCase
 
         $this->handler = static::getContainer()->get(GenerateThumbnailsHandler::class);
 
-        $this->remoteThumbnailsEnable = static::getContainer()->getParameter('shopware.media.remote_thumbnails.enable');
+        $this->remoteThumbnailsEnable = static::getContainer()->getParameter('shopwell.media.remote_thumbnails.enable');
     }
 
     public function testGenerateThumbnails(): void
@@ -86,7 +86,7 @@ class GenerateThumbnailsHandlerTest extends TestCase
 
         $this->getPublicFilesystem()->writeStream(
             $media->getPath(),
-            fopen(__DIR__ . '/../fixtures/shopware-logo.png', 'r')
+            fopen(__DIR__ . '/../fixtures/shopwell-logo.png', 'r')
         );
 
         $msg = new GenerateThumbnailsMessage();
@@ -147,7 +147,7 @@ class GenerateThumbnailsHandlerTest extends TestCase
 
         $this->getPublicFilesystem()->writeStream(
             $url,
-            fopen(__DIR__ . '/../fixtures/shopware-logo.png', 'r')
+            fopen(__DIR__ . '/../fixtures/shopwell-logo.png', 'r')
         );
 
         $msg = new UpdateThumbnailsMessage();

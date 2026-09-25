@@ -47,7 +47,7 @@ class MappingServiceTest extends TestCase
     {
         $this->profileRepository = static::getContainer()->get('import_export_profile.repository');
         $this->fileRepository = static::getContainer()->get('import_export_file.repository');
-        $this->fileSystem = static::getContainer()->get('shopware.filesystem.private');
+        $this->fileSystem = static::getContainer()->get('shopwell.filesystem.private');
 
         $this->mappingService = new MappingService(
             static::getContainer()->get(FileService::class),

@@ -6,4 +6,4 @@ author_email: huytdq94@gmail.com
 author_github: Huy Truong
 ---
 # Core
-* Added title while mapping address data in `Shopware\Core\Checkout\Customer\SalesChannel\RegisterRoute` class.
+* Added title while mapping address data in `Shopwell\Core\Checkout\Customer\SalesChannel\RegisterRoute` class.

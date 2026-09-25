@@ -27,14 +27,14 @@ class StoreApiMcpCapabilityDiscoveryTest extends TestCase
         $tools = $this->listTools($browser, $sessionId);
 
         // Progressive disclosure: only the default meta-tools are advertised up front.
-        static::assertContains('shopware-tool-search', $tools);
-        static::assertContains('shopware-toolsets-list', $tools);
-        static::assertContains('shopware-toolset-enable', $tools);
+        static::assertContains('shopwell-tool-search', $tools);
+        static::assertContains('shopwell-toolsets-list', $tools);
+        static::assertContains('shopwell-toolset-enable', $tools);
         // Store API tools live in their toolset and are hidden until enabled.
-        static::assertNotContains('shopware-store-api-context', $tools);
+        static::assertNotContains('shopwell-store-api-context', $tools);
         // Admin tools never leak into the store-api registry.
-        static::assertNotContains('shopware-entity-search', $tools);
-        static::assertNotContains('shopware-theme-config', $tools);
+        static::assertNotContains('shopwell-entity-search', $tools);
+        static::assertNotContains('shopwell-theme-config', $tools);
     }
 
     public function testStoreApiMcpToolSearchCarriesEnableUsageHint(): void
@@ -42,12 +42,12 @@ class StoreApiMcpCapabilityDiscoveryTest extends TestCase
         $browser = $this->createSalesChannelBrowser();
         $sessionId = $this->initialize($browser);
 
-        $result = $this->callTool($browser, $sessionId, 'shopware-tool-search', ['query' => 'context']);
+        $result = $this->callTool($browser, $sessionId, 'shopwell-tool-search', ['query' => 'context']);
         $payload = json_decode($result['content'][0]['text'], true, 512, \JSON_THROW_ON_ERROR);
 
         static::assertIsArray($payload);
         static::assertArrayHasKey('usage', $payload['_meta'] ?? []);
-        static::assertStringContainsString('shopware-toolset-enable', $payload['_meta']['usage']);
+        static::assertStringContainsString('shopwell-toolset-enable', $payload['_meta']['usage']);
     }
 
     public function testStoreApiMcpToolsetEnableRevealsHiddenToolsAndSignalsListChanged(): void
@@ -56,7 +56,7 @@ class StoreApiMcpCapabilityDiscoveryTest extends TestCase
         $sessionId = $this->initialize($browser);
 
         // The store-api toolset is listed and not yet enabled.
-        $toolsets = $this->callTool($browser, $sessionId, 'shopware-toolsets-list', []);
+        $toolsets = $this->callTool($browser, $sessionId, 'shopwell-toolsets-list', []);
         $listPayload = json_decode($toolsets['content'][0]['text'], true, 512, \JSON_THROW_ON_ERROR);
         $storeApiToolset = null;
         foreach ($listPayload['data']['toolsets'] ?? [] as $toolset) {
@@ -66,16 +66,16 @@ class StoreApiMcpCapabilityDiscoveryTest extends TestCase
         }
         static::assertNotNull($storeApiToolset, 'store-api toolset should be listed: ' . $toolsets['content'][0]['text']);
         static::assertFalse($storeApiToolset['enabled']);
-        static::assertContains('shopware-store-api-context', $storeApiToolset['tools']);
+        static::assertContains('shopwell-store-api-context', $storeApiToolset['tools']);
 
         // Enabling it reports listChanged.
-        $enable = $this->callTool($browser, $sessionId, 'shopware-toolset-enable', ['toolset' => 'store-api']);
+        $enable = $this->callTool($browser, $sessionId, 'shopwell-toolset-enable', ['toolset' => 'store-api']);
         $enablePayload = json_decode($enable['content'][0]['text'], true, 512, \JSON_THROW_ON_ERROR);
         static::assertTrue($enablePayload['_meta']['listChanged'] ?? false);
 
         // After enabling, the previously hidden tool is advertised.
         $tools = $this->listTools($browser, $sessionId);
-        static::assertContains('shopware-store-api-context', $tools);
+        static::assertContains('shopwell-store-api-context', $tools);
     }
 
     public function testStoreApiInitializeResponseInstructionsGuideToolDiscovery(): void
@@ -102,9 +102,9 @@ class StoreApiMcpCapabilityDiscoveryTest extends TestCase
         $instructions = $response['result']['instructions'] ?? '';
         static::assertIsString($instructions);
         static::assertStringContainsString(
-            'shopware-tool-search',
+            'shopwell-tool-search',
             $instructions,
-            'Store API server instructions must point clients at shopware-tool-search when no advertised tool matches the requested action.',
+            'Store API server instructions must point clients at shopwell-tool-search when no advertised tool matches the requested action.',
         );
     }
 

@@ -2,7 +2,7 @@
 title: CMS content override indicator
 issue: 12131
 author: Benedikt Schulze Baek
-author_email: b.schulze-baek@shopware.com
+author_email: b.schulze-baek@shopwell.com
 author_github: @bschulzebaek
 ---
 # Administration

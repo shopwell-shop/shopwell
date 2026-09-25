@@ -13,7 +13,7 @@ import type { ImportDeclaration, Node as BabelNode, Statement, VariableDeclarato
 import { ShopwellSetupTransformError } from '../utils/transform-error';
 import { absoluteRange, unwrapTransparentMacroExpression } from './utils';
 import { forEachPatternIdentifier } from '../utils/babel-patterns';
-import type { ShopwellSetupMode } from '../utils/shopware-setup-block';
+import type { ShopwellSetupMode } from '../utils/shopwell-setup-block';
 import { EXPOSABLE_SETUP_MACRO_NAMES, SETUP_INPUT_MACRO_NAMES, getRuntimeInputAliasNames } from './macro-registry';
 
 const RUNTIME_INPUT_ALIAS_NAMES: Record<ShopwellSetupMode, Set<string>> = {

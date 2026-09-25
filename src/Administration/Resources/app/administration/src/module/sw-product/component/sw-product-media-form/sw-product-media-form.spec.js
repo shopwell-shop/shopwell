@@ -31,7 +31,7 @@ async function createWrapper() {
                             if (entity === 'media') {
                                 return Promise.resolve({
                                     id: 'media1',
-                                    url: 'http://shopware.test/media1-new-url.jpg',
+                                    url: 'http://shopwell.test/media1-new-url.jpg',
                                 });
                             }
 
@@ -225,7 +225,7 @@ describe('module/sw-product/component/sw-product-media-form', () => {
         expect(wrapper.vm.product.media).toHaveLength(2);
         expect(wrapper.vm.product.media[1].mediaId).toBe('media1');
         // Check if new mediaItem has new url
-        expect(wrapper.vm.product.media[1].media.url).toBe('http://shopware.test/media1-new-url.jpg');
+        expect(wrapper.vm.product.media[1].media.url).toBe('http://shopwell.test/media1-new-url.jpg');
     });
 
     describe('when the product has not been loaded yet', () => {

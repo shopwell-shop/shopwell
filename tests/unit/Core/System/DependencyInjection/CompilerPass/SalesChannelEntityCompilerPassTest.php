@@ -37,7 +37,7 @@ class SalesChannelEntityCompilerPassTest extends TestCase
 
         $extension = new Definition(ProductEntityExtension::class);
         $extension->setPublic(true);
-        $extension->addTag('shopware.entity.extension');
+        $extension->addTag('shopwell.entity.extension');
         $container->setDefinition(ProductEntityExtension::class, $extension);
 
         $container->compile();
@@ -61,7 +61,7 @@ class SalesChannelEntityCompilerPassTest extends TestCase
 
         $extension = new Definition(BulkyProductExtension::class);
         $extension->setPublic(true);
-        $extension->addTag('shopware.bulk.entity.extension');
+        $extension->addTag('shopwell.bulk.entity.extension');
         $container->setDefinition(BulkyProductExtension::class, $extension);
 
         $container->compile();
@@ -85,7 +85,7 @@ class SalesChannelEntityCompilerPassTest extends TestCase
 
         $attributeDefinition = new Definition(AttributeEntityDefinition::class);
         $attributeDefinition->setPublic(true);
-        $attributeDefinition->addTag('shopware.entity.definition');
+        $attributeDefinition->addTag('shopwell.entity.definition');
         $attributeDefinition->addArgument([
             'entity_name' => 'test_attribute_entity',
             'fields' => [],
@@ -94,7 +94,7 @@ class SalesChannelEntityCompilerPassTest extends TestCase
 
         $extension = new Definition(AttributeEntityExtension::class);
         $extension->setPublic(true);
-        $extension->addTag('shopware.entity.extension');
+        $extension->addTag('shopwell.entity.extension');
         $container->setDefinition(AttributeEntityExtension::class, $extension);
 
         $container->compile();
@@ -122,12 +122,12 @@ class SalesChannelEntityCompilerPassTest extends TestCase
 
         $attributeDefinition = new Definition(AttributeEntityDefinition::class);
         $attributeDefinition->setPublic(true);
-        $attributeDefinition->addTag('shopware.entity.definition');
+        $attributeDefinition->addTag('shopwell.entity.definition');
         $container->setDefinition('test_attribute_entity.definition', $attributeDefinition);
 
         $extension = new Definition(AttributeEntityExtension::class);
         $extension->setPublic(true);
-        $extension->addTag('shopware.entity.extension');
+        $extension->addTag('shopwell.entity.extension');
         $container->setDefinition(AttributeEntityExtension::class, $extension);
 
         static::expectException(DefinitionNotFoundException::class);
@@ -145,7 +145,7 @@ class SalesChannelEntityCompilerPassTest extends TestCase
 
         $productRegular = new Definition(ProductDefinition::class);
         $productRegular->setPublic(true);
-        $productRegular->addTag('shopware.entity.definition');
+        $productRegular->addTag('shopwell.entity.definition');
         $container->setDefinition(ProductDefinition::class, $productRegular);
 
         return $container;

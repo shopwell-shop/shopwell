@@ -60,7 +60,7 @@ class ThumbnailExtensionTest extends TestCase
         ]);
 
         // Expect the image to be rendered with the default attributes
-        static::assertStringContainsString('src="https://shopware.local/media/cute-cat.webp"', $result);
+        static::assertStringContainsString('src="https://shopwell.local/media/cute-cat.webp"', $result);
         static::assertStringContainsString('alt="Very cute cat alt"', $result);
         static::assertStringContainsString('title="Very cute cat title"', $result);
         static::assertStringContainsString('loading="eager"', $result);
@@ -122,8 +122,8 @@ class ThumbnailExtensionTest extends TestCase
             'context' => Generator::generateSalesChannelContext(),
         ]);
 
-        static::assertStringContainsString('src="https://shopware.local/media/cute-cat.webp"', $result);
-        static::assertStringContainsString('srcset="https://shopware.local/thumbnail/cute-cat_800x800.webp 800w, https://shopware.local/thumbnail/cute-cat_400x400.webp 400w, https://shopware.local/thumbnail/cute-cat_280x280.webp 280w, https://shopware.local/thumbnail/cute-cat_1920x1920.webp 1920w"', $result);
+        static::assertStringContainsString('src="https://shopwell.local/media/cute-cat.webp"', $result);
+        static::assertStringContainsString('srcset="https://shopwell.local/thumbnail/cute-cat_800x800.webp 800w, https://shopwell.local/thumbnail/cute-cat_400x400.webp 400w, https://shopwell.local/thumbnail/cute-cat_280x280.webp 280w, https://shopwell.local/thumbnail/cute-cat_1920x1920.webp 1920w"', $result);
     }
 
     /**
@@ -140,7 +140,7 @@ class ThumbnailExtensionTest extends TestCase
             'context' => Generator::generateSalesChannelContext(),
         ]);
 
-        // Regression test for https://github.com/shopware/shopware/issues/16710.
+        // Regression test for https://github.com/shopwell-shop/shopwell/issues/16710.
         // Every breakpoint entry in the auto-generated sizes attribute must carry
         // a non-empty value. Before the fix the xxl entry was missing and produced
         // "(min-width: ...px) ," in the rendered output.
@@ -235,7 +235,7 @@ class ThumbnailExtensionTest extends TestCase
     {
         $media = new MediaEntity();
         $media->setId('test-media-id');
-        $media->setUrl('https://shopware.local/media/cute-cat.webp');
+        $media->setUrl('https://shopwell.local/media/cute-cat.webp');
         $media->setPath('media/cute-cat.webp');
         $media->setTranslated([
             'title' => 'Very cute cat title',
@@ -269,7 +269,7 @@ class ThumbnailExtensionTest extends TestCase
             $thumbnail->setId('thumb-' . $size);
             $thumbnail->setWidth($size);
             $thumbnail->setHeight($size);
-            $thumbnail->setUrl('https://shopware.local/thumbnail/cute-cat_' . $size . 'x' . $size . '.webp');
+            $thumbnail->setUrl('https://shopwell.local/thumbnail/cute-cat_' . $size . 'x' . $size . '.webp');
             $thumbnailCollection->add($thumbnail);
         }
 

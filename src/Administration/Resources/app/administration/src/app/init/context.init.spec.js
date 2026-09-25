@@ -13,15 +13,15 @@ import {
     getUserTimezone,
     getShopId,
     getTheme,
-} from '@shopware-ag/meteor-admin-sdk/es/context';
-import { isService } from '@shopware-ag/meteor-admin-sdk/es/_private/context';
-import { getId } from '@shopware-ag/meteor-admin-sdk/es/window';
-import { publish } from '@shopware-ag/meteor-admin-sdk/es/channel';
+} from '@shopwell-ag/meteor-admin-sdk/es/context';
+import { isService } from '@shopwell-ag/meteor-admin-sdk/es/_private/context';
+import { getId } from '@shopwell-ag/meteor-admin-sdk/es/window';
+import { publish } from '@shopwell-ag/meteor-admin-sdk/es/channel';
 import { nextTick } from 'vue';
 import useTheme from 'src/app/composables/use-theme';
 
-jest.mock('@shopware-ag/meteor-admin-sdk/es/channel', () => {
-    const actual = jest.requireActual('@shopware-ag/meteor-admin-sdk/es/channel');
+jest.mock('@shopwell-ag/meteor-admin-sdk/es/channel', () => {
+    const actual = jest.requireActual('@shopwell-ag/meteor-admin-sdk/es/channel');
 
     return {
         __esModule: true,
@@ -68,7 +68,7 @@ describe('src/app/init/context.init.ts', () => {
         });
     });
 
-    it('should handle shopware version', async () => {
+    it('should handle shopwell version', async () => {
         await getShopwellVersion().then((version) => {
             expect(version).toEqual(expect.any(String));
         });

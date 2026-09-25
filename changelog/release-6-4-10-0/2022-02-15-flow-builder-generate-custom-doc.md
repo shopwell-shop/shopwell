@@ -4,4 +4,4 @@ issue: NEXT-19532
 ---
 # Core
 * Added an exception `GenerateDocumentActionException` which will be thrown when have an error occur at `GenerateDocumentAction`
-* Deprecated constructor argument `logger` in `Shopware\Core\Content\Flow\Dispatching\Action\GenerateDocumentAction`
+* Deprecated constructor argument `logger` in `Shopwell\Core\Content\Flow\Dispatching\Action\GenerateDocumentAction`

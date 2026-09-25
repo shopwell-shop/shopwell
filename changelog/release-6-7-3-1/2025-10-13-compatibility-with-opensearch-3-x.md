@@ -1,9 +1,9 @@
 ---
 title: compatibility with OpenSearch 3.x
-issue: shopware/shopware#12979
+issue: shopwell/shopwell#12979
 ---
 # Core
-* Changed `\Shopware\Elasticsearch\Framework\ElasticsearchFieldBuilder::customFields` to omit custom fields's `properties` when its empty to comply with OpenSearch 3.x
+* Changed `\Shopwell\Elasticsearch\Framework\ElasticsearchFieldBuilder::customFields` to omit custom fields's `properties` when its empty to comply with OpenSearch 3.x
 ___
 # Upgrade Information
 

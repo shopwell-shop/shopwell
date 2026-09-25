@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Get versions
         id: versions
-        uses: shopware/github-actions/versions@main
+        uses: shopwell/github-actions/versions@main
         with:
           github-token: ${{ github.token }}
       - name: Get next minor
@@ -65,8 +65,8 @@ jobs:
                 const refVersion = `${versionBaseRef.slice(1, versionBaseRef.length - 1).join(".")}.0`
                 try {
                     await github.rest.repos.getReleaseByTag({
-                        owner: "shopware",
-                        repo: "shopware",
+                        owner: "shopwell",
+                        repo: "shopwell",
                         tag: `v${refVersion}`
                     });
                     // Use next patch if target is a version branch and the minor is released
@@ -100,9 +100,9 @@ jobs:
       # minting fails the label still lands, the check just re-runs on the next push.
       - id: sts-label
         continue-on-error: true
-        uses: shopware/octo-sts-action@main
+        uses: shopwell/octo-sts-action@main
         with:
-          scope: shopware
+          scope: shopwell
           identity: CreatePR
 
       - name: Set milestone label
@@ -217,5 +217,5 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # 9
         with:
           script: |
-            const { setMilestoneForPR } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopware-ag/gh-project-automation/dist/index.mjs')
+            const { setMilestoneForPR } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopwell-ag/gh-project-automation/dist/index.mjs')
             await setMilestoneForPR({github, core, context})

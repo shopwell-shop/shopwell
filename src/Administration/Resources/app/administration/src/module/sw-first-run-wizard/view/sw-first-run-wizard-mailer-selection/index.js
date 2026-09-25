@@ -28,7 +28,7 @@ export default {
         buttonConfig() {
             const disabledExtensionManagement =
                 Shopwell.Store.get('context').app.config.settings?.disableExtensionManagement;
-            const nextRoute = disabledExtensionManagement ? 'shopware.account' : 'paypal.info';
+            const nextRoute = disabledExtensionManagement ? 'shopwell.account' : 'paypal.info';
 
             return [
                 {

@@ -77,7 +77,7 @@ export default {
         },
 
         handleAction(action, notification) {
-            // Allow external links for example to the shopware account or store
+            // Allow external links for example to the shopwell account or store
             if (Shopwell.Utils.string.isUrl(action.route)) {
                 window.open(action.route);
                 return;

@@ -5,4 +5,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Changed property type of `Shopware\Core\Content\Media\MediaEntity::cmsPages` from `?CmsBlockCollection` to `?CmsPageCollection` and also adjusted the corresponding getter and setter
+* Changed property type of `Shopwell\Core\Content\Media\MediaEntity::cmsPages` from `?CmsBlockCollection` to `?CmsPageCollection` and also adjusted the corresponding getter and setter

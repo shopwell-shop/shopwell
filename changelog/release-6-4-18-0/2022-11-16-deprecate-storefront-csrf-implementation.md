@@ -78,5 +78,5 @@ issue: NEXT-23819
     * Deprecated option `addressEditorOptions.csrfToken` in `Resources/views/storefront/page/account/address.html.twig`
     * Deprecated option `addressEditorOptions.csrfToken` in `Resources/views/storefront/page/checkout/confirm/confirm-address.html.twig`
     * Deprecated option `guestWishlistPageOptions.pageletRouter.token` in `Resources/views/storefront/page/wishlist/index.html.twig`
-    * Deprecated `\Shopware\Storefront\Framework\Twig\Extension\CsrfFunctionExtension`
+    * Deprecated `\Shopwell\Storefront\Framework\Twig\Extension\CsrfFunctionExtension`
         * Deprecated twig function `sw_csrf`

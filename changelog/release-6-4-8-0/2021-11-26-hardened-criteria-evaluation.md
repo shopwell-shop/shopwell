@@ -6,5 +6,5 @@ author_email: ulrich.thomas.gabor@odd-solutions.de
 author_github: @UlrichThomasGabor
 ---
 # Core
-* Changed `\Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityReader` to validate criteria associations.
+* Changed `\Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityReader` to validate criteria associations.
 

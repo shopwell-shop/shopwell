@@ -6,4 +6,4 @@ author_email: max@swk-web.com
 author_github: @aragon999
 ---
 # Core
-* Changed the `Shopware\Core\Framework\Adapter\Twig\SecurityExtension` to accept `null` for the Twig filters `map`, `reduce`, `filter` and `sort`
+* Changed the `Shopwell\Core\Framework\Adapter\Twig\SecurityExtension` to accept `null` for the Twig filters `map`, `reduce`, `filter` and `sort`

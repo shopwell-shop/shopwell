@@ -6,9 +6,9 @@ issue: NEXT-10975
 * Added new bool field `displayInCustomerAccount` to data prop `generalFormFields` in `module/sw-settings-document/page/sw-settings-document-detail/index.js`
 ___
 # Core
-* Added `documents.documentType` association to `Shopware\Storefront\Page\Account\Order\AccountOrderPageLoader.php`
-* Added `documents.documentType` association to `Shopware\Storefront\Page\Account\Overview\AccountOverviewPageLoader.php`
-* Added `EqualsFilter` to `Shopware\Core\Checkout\Order\SalesChannel\OrderRoute.php`. Order documents will be filter by `sent` status and `displayInCustomerAccount` configuration.
+* Added `documents.documentType` association to `Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader.php`
+* Added `documents.documentType` association to `Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoader.php`
+* Added `EqualsFilter` to `Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute.php`. Order documents will be filter by `sent` status and `displayInCustomerAccount` configuration.
 ___
 # Storefront
 * Added block `page_account_order_documents_table` to the `src/Storefront/Resources/views/storefront/page/account/order-history/order-detail.html.twig` template

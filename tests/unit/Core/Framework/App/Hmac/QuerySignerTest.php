@@ -65,7 +65,7 @@ class QuerySignerTest extends TestCase
         static::assertArrayHasKey('in-app-purchases', $url);
         static::assertArrayHasKey('sw-context-language', $url);
         static::assertArrayHasKey('sw-user-language', $url);
-        static::assertArrayHasKey('shopware-shop-signature', $url);
+        static::assertArrayHasKey('shopwell-shop-signature', $url);
         static::assertArrayHasKey('app-version', $url);
         static::assertArrayHasKey('sw-user-id', $url);
 

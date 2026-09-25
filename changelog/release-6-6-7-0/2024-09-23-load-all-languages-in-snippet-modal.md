@@ -2,7 +2,7 @@
 title: Load all languages in snippet modal
 issue: NEXT-38409
 author: Marcel Brode
-author_email: m.brode@shopware.com
+author_email: m.brode@shopwell.com
 author_github: @Marcel Brode
 ---
 # Administration

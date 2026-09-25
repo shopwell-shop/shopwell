@@ -64,7 +64,7 @@ class StoreControllerTest extends TestCase
     public function testLoginWithCorrectCredentials(): void
     {
         $request = new Request([], [
-            'shopwareId' => 'j.doe@shopwell.cn',
+            'shopwellId' => 'j.doe@shopwell.cn',
             'password' => 'v3rys3cr3t',
         ]);
 
@@ -88,7 +88,7 @@ class StoreControllerTest extends TestCase
     public function testLoginWithInvalidCredentials(): void
     {
         $request = new Request([], [
-            'shopwareId' => 'j.doe@shopwell.cn',
+            'shopwellId' => 'j.doe@shopwell.cn',
             'password' => 'v3rys3cr3t',
         ]);
 
@@ -115,7 +115,7 @@ class StoreControllerTest extends TestCase
     public function testLoginWithInvalidCredentialsInput(): void
     {
         $request = new Request([], [
-            'shopwareId' => null,
+            'shopwellId' => null,
             'password' => null,
         ]);
 

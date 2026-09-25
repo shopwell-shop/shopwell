@@ -2,7 +2,7 @@
 title: Fix $super call stack exception
 issue: NEXT-36774
 author: Sebastian Seggewiss
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration

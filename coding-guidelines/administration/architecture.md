@@ -13,10 +13,10 @@ These rules apply to code under `src/Administration/Resources/app/administration
 
 ## Extension-aware access
 
-- Prefer extension-aware access through the global `Shopware` APIs where they are available, for example `Shopware.Component`, `Shopware.Service()`, and `Shopware.Store`. Component code may still use injected services, and boot code may need direct access before all globals are available.
+- Prefer extension-aware access through the global `Shopwell` APIs where they are available, for example `Shopwell.Component`, `Shopwell.Service()`, and `Shopwell.Store`. Component code may still use injected services, and boot code may need direct access before all globals are available.
 - Do not import factory internals directly when an extension-aware global API is available in that context.
 - Register Options API components with Twig blocks through the component factory. Vue SFC components that use the new extension system and native blocks may be registered natively.
-- Preserve extension points exposed through the global `Shopware` object when changing repositories, services, components, and stores.
+- Preserve extension points exposed through the global `Shopwell` object when changing repositories, services, components, and stores.
 
 ## Modules and UI
 

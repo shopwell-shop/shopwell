@@ -6,4 +6,4 @@ author_email: r4pt0s@protonmail.com
 author_github: @r4pt0s
 ---
 # Core
-- Changed `Shopware\Core\Checkout\Promotion\Subscriber\PromotionIndividualCodeRedeemer` to support multiple promotion line items
+- Changed `Shopwell\Core\Checkout\Promotion\Subscriber\PromotionIndividualCodeRedeemer` to support multiple promotion line items

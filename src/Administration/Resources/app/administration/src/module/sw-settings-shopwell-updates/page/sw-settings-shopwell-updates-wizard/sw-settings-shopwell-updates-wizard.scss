@@ -1,0 +1,176 @@
+.sw-settings-shopwell-updates-wizard {
+    &__content {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 100%;
+        padding-bottom: var(--scale-size-24);
+    }
+
+    .sw-data-grid.is--compact .sw-data-grid__body .sw-data-grid__cell-content {
+        height: initial;
+        min-height: 42px;
+    }
+}
+
+.sw-settings-shopwell-updates-version {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--scale-size-16);
+    margin-bottom: var(--scale-size-24);
+
+    &__content {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: var(--scale-size-8);
+    }
+
+    &__versions {
+        display: grid;
+        grid-template-columns: max-content max-content;
+        column-gap: var(--scale-size-24);
+        row-gap: var(--scale-size-4);
+        margin: 0;
+
+        dd {
+            margin: 0;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    &__changelog-link {
+        width: fit-content;
+    }
+}
+
+.sw-settings-shopwell-updates-up-to-date,
+.sw-shopwell-updates-extensions__empty-state {
+    margin: 0 auto;
+}
+
+.sw-shopwell-updates-progressbar {
+    .progress-title {
+        text-align: center;
+    }
+
+    .mt-progress-bar {
+        margin-bottom: 8px;
+    }
+
+    &.sw-modal {
+        .sw-modal__body {
+            padding: 40px 30px;
+        }
+
+        .sw-modal__close,
+        .sw-modal__footer {
+            display: none;
+        }
+
+        .sw-modal__dialog {
+            min-height: auto;
+        }
+    }
+}
+
+.sw-modal.sw-settings-shopwell-updates-check__start-update {
+    .sw-modal__footer {
+        display: flex;
+        align-items: center;
+    }
+
+    .sw-field--checkbox {
+        margin-bottom: 0;
+    }
+
+    .sw-settings-shopwell-updates-check__start-update-actions {
+        margin-left: auto;
+
+        .mt-button:not(:last-child) {
+            margin-right: 6px;
+        }
+    }
+
+    .mt-banner {
+        margin-bottom: var(--scale-size-16);
+    }
+}
+
+.sw-settings-shopwell-updates-methods {
+    --mt-inset-block-start: 0;
+
+    padding: var(--scale-size-24);
+    border-top: 1px solid var(--color-border-secondary-default);
+    background: var(--color-elevation-surface-sunken);
+}
+
+.sw-settings-shopwell-updates-methods-headline {
+    display: inline-block;
+    margin-bottom: var(--scale-size-16);
+}
+
+.sw-settings-shopwell-updates-cli-method {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scale-size-8);
+    margin-bottom: var(--scale-size-20);
+
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: var(--scale-size-8);
+    }
+
+    &__command {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--scale-size-8);
+        margin: var(--scale-size-8) 0 var(--scale-size-12) 0;
+        padding: var(--scale-size-4) var(--scale-size-4) var(--scale-size-4) var(--scale-size-12);
+        border: 1px solid var(--color-border-secondary-default);
+        border-radius: var(--border-radius-s);
+        background: var(--color-background-primary-default);
+        color: var(--color-text-primary-default);
+
+        code {
+            overflow: hidden;
+            font-family: ui-monospace, SFMono-Regular, menlo, monaco, consolas, monospace;
+            font-size: var(--font-size-xs);
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    &__install-link {
+        width: fit-content;
+    }
+}
+
+.sw-settings-shopwell-updates-method-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--scale-size-16);
+    margin-bottom: var(--scale-size-20);
+
+    &::before,
+    &::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--color-border-secondary-default);
+    }
+}
+
+.sw-settings-shopwell-updates-web-installer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--scale-size-12);
+
+    &__content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-4);
+    }
+}

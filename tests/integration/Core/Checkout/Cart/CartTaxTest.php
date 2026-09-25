@@ -392,7 +392,7 @@ class CartTaxTest extends TestCase
         $email = Uuid::randomHex() . '@example.com';
         $this->createCustomer($countryId, $email);
 
-        $this->login($email, 'shopware');
+        $this->login($email, 'shopwell');
     }
 
     private function login(?string $email = null, ?string $password = null): void

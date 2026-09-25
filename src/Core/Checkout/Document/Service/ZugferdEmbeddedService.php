@@ -25,7 +25,7 @@ use Shopwell\Core\Framework\Log\Package;
 )]
 final class ZugferdEmbeddedService
 {
-    final public const SHOPWARE_ZUGFERD_CREATOR_TAG_PREFIX = 'Shopwell@';
+    final public const SHOPWELL_ZUGFERD_CREATOR_TAG_PREFIX = 'Shopwell@';
 
     private const MISSING_ELECTRONIC_DOCUMENT_ERROR = 'Zugferd document is null';
 
@@ -42,7 +42,7 @@ final class ZugferdEmbeddedService
         DocumentRendererConfig $rendererConfig,
         RendererResult $baseDocument,
         AbstractDocumentRenderer $zugferdRenderer,
-        string $shopwareVersion,
+        string $shopwellVersion,
     ): RendererResult {
         $this->setSuccessDocumentNumbers($baseDocument->getSuccess(), $operations);
 
@@ -78,7 +78,7 @@ final class ZugferdEmbeddedService
                 $combined = $this->merge(
                     $electronicDoc->getContent(),
                     $pdfDocument->getContent(),
-                    $shopwareVersion
+                    $shopwellVersion
                 );
 
                 $pdfDocument->setName('embedded_' . $pdfDocument->getName());
@@ -123,10 +123,10 @@ final class ZugferdEmbeddedService
         }
     }
 
-    private function merge(string $electronicContent, string $pdfContent, string $shopwareVersion): string
+    private function merge(string $electronicContent, string $pdfContent, string $shopwellVersion): string
     {
         return (new ZugferdDocumentPdfMerger($electronicContent, $pdfContent))
-            ->setAdditionalCreatorTool(self::SHOPWARE_ZUGFERD_CREATOR_TAG_PREFIX . $shopwareVersion)
+            ->setAdditionalCreatorTool(self::SHOPWELL_ZUGFERD_CREATOR_TAG_PREFIX . $shopwellVersion)
             ->generateDocument()
             ->downloadString();
     }

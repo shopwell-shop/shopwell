@@ -21,7 +21,7 @@ describe('src/app/init-pre/state.init.ts', () => {
     });
 
     it('should initialized all state modules', () => {
-        expect(Shopwell.Store.get('shopwareApps')).toBeDefined();
+        expect(Shopwell.Store.get('shopwellApps')).toBeDefined();
     });
 
     it('should be able to get cmsPageState backwards compatible', () => {

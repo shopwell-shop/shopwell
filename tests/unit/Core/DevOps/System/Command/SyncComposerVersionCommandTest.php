@@ -23,7 +23,7 @@ class SyncComposerVersionCommandTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->projectDir = sys_get_temp_dir() . '/' . uniqid('shopware-sync-composer-version-test', true);
+        $this->projectDir = sys_get_temp_dir() . '/' . uniqid('shopwell-sync-composer-version-test', true);
         $this->fs = new Filesystem();
     }
 
@@ -91,7 +91,7 @@ class SyncComposerVersionCommandTest extends TestCase
         static::assertStringContainsString('The following packages are defined in the root composer.json but not in the bundles:', $output);
         static::assertStringContainsString('- test/package', $output);
         static::assertStringNotContainsString('- foo/bar', $output);
-        static::assertStringNotContainsString('- shopware/core', $output);
+        static::assertStringNotContainsString('- shopwell/core', $output);
     }
 
     public function testPackageInBundleButNotInRoot(): void

@@ -11,7 +11,7 @@ use Shopwell\Core\Framework\Webhook\Hookable;
 #[Package('framework')]
 class UpdatePostFinishEvent extends UpdateEvent implements Hookable
 {
-    public const EVENT_NAME = 'shopware.updated';
+    public const EVENT_NAME = 'shopwell.updated';
 
     private string $postUpdateMessage = '';
 

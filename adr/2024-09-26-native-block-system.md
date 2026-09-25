@@ -1,5 +1,5 @@
 ---
-title: Native Block System in Shopware
+title: Native Block System in Shopwell
 date: 2024-09-26
 area: administration
 tags: [admin, plugin, block, system]
@@ -16,7 +16,7 @@ The new `sw-block` and `sw-block-parent` components in Vue.js aim to replicate a
 ## Decision
 We have decided to migrate from the TwigJs-based block system to the Vue.js-based `sw-block` system. This decision aligns with the following goals:
 
-1. **Uniform Frontend Stack**: Vue.js is already used for the frontend in Shopware Administration. Moving blocks from TwigJs to Vue.js creates consistency in the technology stack, simplifying development and reducing the cognitive load on developers who previously had to switch between TwigJs and Vue.js.
+1. **Uniform Frontend Stack**: Vue.js is already used for the frontend in Shopwell Administration. Moving blocks from TwigJs to Vue.js creates consistency in the technology stack, simplifying development and reducing the cognitive load on developers who previously had to switch between TwigJs and Vue.js.
 
 2. **Improved Flexibility**: With Vue.js blocks we have control over the provided access to the component’s internals, allowing for more granular control over block behavior and content. This allows us to create a public API for any component, making it easier to extend and modify internal behavior, without breaking the public API.
 

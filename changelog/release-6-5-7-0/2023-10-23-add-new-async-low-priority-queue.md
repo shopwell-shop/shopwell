@@ -2,13 +2,13 @@
 title: Add new low_priority queue
 issue: NEXT-31249
 author: Frederik Schmitt
-author_email: f.schmitt@shopware.com
+author_email: f.schmitt@shopwell.com
 author_github: fschmtt
 ---
 # Core
 * Added new messenger transport `low_priority` to `src/Core/Framework/Resources/config/packages/framework.yaml`
 * Added new parameter `env(MESSENGER_TRANSPORT_LOW_PRIORITY_DSN)` to `src/Core/Framework/Resources/config/packages/framework.yaml` which defaults to Doctrine
-* Added new subscriber `Shopware\Core\Framework\MessageQueue\Subscriber\ConsumeMessagesSubscriber` to automatically handle low_priority queue
+* Added new subscriber `Shopwell\Core\Framework\MessageQueue\Subscriber\ConsumeMessagesSubscriber` to automatically handle low_priority queue
 ___
 # Upgrade Information
 ## Transport can be overridden on message level
@@ -29,7 +29,7 @@ class LowPriorityMessage implements LowPriorityMessageInterface
 framework:
     messenger:
         routing:
-            'Shopware\Core\Framework\MessageQueue\LowPriorityMessageInterface': low_priority
+            'Shopwell\Core\Framework\MessageQueue\LowPriorityMessageInterface': low_priority
             'Your\Custom\LowPriorityMessage': async
 ```
 

@@ -1,6 +1,6 @@
 # NPM Audit & Dependency Management Scripts
 
-TypeScript utilities for managing and validating package.json files across the Shopware repository.
+TypeScript utilities for managing and validating package.json files across the Shopwell repository.
 
 ## Scripts
 

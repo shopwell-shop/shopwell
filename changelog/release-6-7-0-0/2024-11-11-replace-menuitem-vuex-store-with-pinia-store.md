@@ -12,18 +12,18 @@ ___
 # Upgrade Information
 ## "menuItem" Vuex store moved to Pinia
 
-The `menuItem` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopware.Store.get('menuItem')`.
+The `menuItem` store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopwell.Store.get('menuItem')`.
 
 ### Before:
 ```js
-Shopware.State.get('menuItem');
+Shopwell.State.get('menuItem');
 
-Shopware.State.commit('menuItem/addMenuItem', menuItem);
+Shopwell.State.commit('menuItem/addMenuItem', menuItem);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('menuItem');
+Shopwell.Store.get('menuItem');
 
-Shopware.Store.get('menuItem').addMenuItem(menuItem);
+Shopwell.Store.get('menuItem').addMenuItem(menuItem);
 ```

@@ -1,4 +1,4 @@
-import type { TabItem } from '@shopware-ag/meteor-component-library/dist/esm/MtTabs';
+import type { TabItem } from '@shopwell-ag/meteor-component-library/dist/esm/MtTabs';
 import type Repository from 'src/core/data/repository.data';
 import type { Cart, PromotionCodeTag } from '../../order.types';
 import '../../store/order.store';

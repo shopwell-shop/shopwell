@@ -54,18 +54,18 @@ jobs:
             echo "REDIS_URL=redis://localhost:6379"
             echo "MAILER_DSN=smtp://localhost:1025"
             echo "MAILPIT_BASE_URL=http://localhost:8025"
-            echo "SHOPWARE_HTTP_CACHE_ENABLED=0"
-            echo "SHOPWARE_DISABLE_UPDATE_CHECK=true"
+            echo "SHOPWELL_HTTP_CACHE_ENABLED=0"
+            echo "SHOPWELL_DISABLE_UPDATE_CHECK=true"
             echo "BLUE_GREEN_DEPLOYMENT=1"
             echo "ENABLE_SERVICES=0"
           } >> "$GITHUB_ENV"
-      - name: Setup Shopware
-        uses: shopware/setup-shopware@main
+      - name: Setup Shopwell
+        uses: shopwell/setup-shopwell@main
         with:
           env: prod
           mysql-version: "builtin"
-          shopware-version: ${{ github.ref }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ github.ref }}
+          shopwell-repository: ${{ github.repository }}
           install: true
           install-admin: true
           install-storefront: true
@@ -97,8 +97,8 @@ jobs:
             --network=host \
             --user "$(id -u):$(id -g)" \
             -e APP_URL=http://localhost:8000 \
-            -e SHOPWARE_ADMIN_USERNAME=admin \
-            -e SHOPWARE_ADMIN_PASSWORD=shopware \
+            -e SHOPWELL_ADMIN_USERNAME=admin \
+            -e SHOPWELL_ADMIN_PASSWORD=shopwell \
             -e CURRENTS_PROJECT_ID \
             -e CURRENTS_RECORD_KEY \
             -e CURRENTS_BUILD_ID \
@@ -119,7 +119,7 @@ jobs:
 
       - name: Check if this run should attempt AWS operations
         id: check-aws-allowed
-        if: ${{ github.repository_owner == 'shopware' }}
+        if: ${{ github.repository_owner == 'shopwell' }}
         shell: bash
         run: |
           if [ -z "${{ secrets.PLAYWRIGHT_TRACES_UPLOAD_ROLE_ARN }}" ]; then
@@ -148,10 +148,10 @@ jobs:
           # build the destination prefix and export it for subsequent steps
           REPORT_DEST="playwright-reports/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${RANDOM_STR}"
 
-          aws s3 cp "playwright-report" "s3://shopware-ci-playwright-traces/${REPORT_DEST}/" --recursive
+          aws s3 cp "playwright-report" "s3://shopwell-ci-playwright-traces/${REPORT_DEST}/" --recursive
 
           echo "REPORT_DEST=${REPORT_DEST}" >> "$GITHUB_ENV"
-          echo "Uploaded to s3://shopware-ci-playwright-traces/${REPORT_DEST}/"
+          echo "Uploaded to s3://shopwell-ci-playwright-traces/${REPORT_DEST}/"
 
       - name: Publish S3 Static Website URL
         if: ${{ steps.check-aws-allowed.outputs.has_role_arn == 'true' && hashFiles('tests/acceptance/playwright-report/*') }}
@@ -164,7 +164,7 @@ jobs:
             exit 0
           fi
 
-          if ! aws s3 ls "s3://shopware-ci-playwright-traces/${REPORT_DEST}/index.html" >/dev/null 2>&1; then
+          if ! aws s3 ls "s3://shopwell-ci-playwright-traces/${REPORT_DEST}/index.html" >/dev/null 2>&1; then
             echo "Index file not found ... skipping publish." >&2
             exit 0
           fi
@@ -181,10 +181,10 @@ jobs:
 
       - name: Create token for PR
         if: ${{ inputs.update-snapshots }}
-        uses: shopware/octo-sts-action@main
+        uses: shopwell/octo-sts-action@main
         id: create-pr-token
         with:
-          scope: shopware
+          scope: shopwell
           identity: CreatePR
         continue-on-error: true
 

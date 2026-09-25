@@ -57,7 +57,7 @@ class AccountServiceTest extends TestCase
     {
         $salesChannelContext = $this->createSalesChannelContext();
         $customerId = $this->createCustomerOfSalesChannel($salesChannelContext->getSalesChannelId(), 'foo@bar.com');
-        $token = $this->accountService->loginByCredentials('foo@bar.com', 'shopware', $salesChannelContext);
+        $token = $this->accountService->loginByCredentials('foo@bar.com', 'shopwell', $salesChannelContext);
 
         $customer = $this->getCustomerFromToken($token, $salesChannelContext->getSalesChannelId());
 
@@ -81,7 +81,7 @@ class AccountServiceTest extends TestCase
         ]);
         $this->createCustomerOfSalesChannel($context->getSalesChannelId(), $email);
 
-        $customer = $this->accountService->getCustomerByLogin($email, 'shopware', $context);
+        $customer = $this->accountService->getCustomerByLogin($email, 'shopwell', $context);
         static::assertSame($email, $customer->getEmail());
         static::assertSame($context->getSalesChannelId(), $customer->getSalesChannelId());
     }
@@ -125,7 +125,7 @@ class AccountServiceTest extends TestCase
         $this->createCustomerOfSalesChannel($context->getSalesChannelId(), $email, true, true, $idCustomer1, '2022-10-21 10:00:00');
         $this->cloneCustomerWithDuplicateEmail($idCustomer1, $idCustomer2, '2022-10-22 10:00:00');
 
-        $customer = $this->accountService->getCustomerByLogin($email, 'shopware', $context);
+        $customer = $this->accountService->getCustomerByLogin($email, 'shopwell', $context);
         static::assertSame($idCustomer2, $customer->getId());
     }
 
@@ -161,11 +161,11 @@ class AccountServiceTest extends TestCase
 
         $this->createCustomerOfSalesChannel($context2->getSalesChannelId(), $email);
 
-        $customer1 = $this->accountService->getCustomerByLogin($email, 'shopware', $context1);
+        $customer1 = $this->accountService->getCustomerByLogin($email, 'shopwell', $context1);
 
         static::assertSame($context1->getSalesChannelId(), $customer1->getSalesChannelId());
 
-        $customer2 = $this->accountService->getCustomerByLogin($email, 'shopware', $context2);
+        $customer2 = $this->accountService->getCustomerByLogin($email, 'shopwell', $context2);
         static::assertSame($context2->getSalesChannelId(), $customer2->getSalesChannelId());
     }
 
@@ -186,7 +186,7 @@ class AccountServiceTest extends TestCase
         $this->createCustomerOfSalesChannel($context->getSalesChannelId(), $email, true, false);
 
         $this->expectExceptionObject(CustomerException::badCredentials());
-        $this->accountService->getCustomerByLogin($email, 'shopware', $context);
+        $this->accountService->getCustomerByLogin($email, 'shopwell', $context);
     }
 
     public function testGetCustomerByLoginLegacyPasswordIsUpdatedToNewOne(): void
@@ -204,9 +204,9 @@ class AccountServiceTest extends TestCase
                 ],
             ],
         ]);
-        $this->createCustomerOfSalesChannel($context->getSalesChannelId(), $email, true, true, $idCustomer, '2022-10-21 10:00:00', Hasher::hash('shopware', 'md5'), 'Md5');
+        $this->createCustomerOfSalesChannel($context->getSalesChannelId(), $email, true, true, $idCustomer, '2022-10-21 10:00:00', Hasher::hash('shopwell', 'md5'), 'Md5');
 
-        $customer = $this->accountService->getCustomerByLogin($email, 'shopware', $context);
+        $customer = $this->accountService->getCustomerByLogin($email, 'shopwell', $context);
         static::assertSame($email, $customer->getEmail());
         static::assertSame($context->getSalesChannelId(), $customer->getSalesChannelId());
 

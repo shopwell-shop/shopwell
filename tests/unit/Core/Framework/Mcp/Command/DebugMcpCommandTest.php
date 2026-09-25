@@ -296,7 +296,7 @@ class DebugMcpCommandTest extends TestCase
     {
         $registry = new Registry();
         $registry->registerResource(
-            new ResourceDefinition('shopware://test', 'my-resource', null, 'A helpful resource', null, null, null),
+            new ResourceDefinition('shopwell://test', 'my-resource', null, 'A helpful resource', null, null, null),
             'Acme\\MyResource',
         );
 
@@ -305,7 +305,7 @@ class DebugMcpCommandTest extends TestCase
 
         $output = $tester->getDisplay();
         static::assertStringContainsString('my-resource', $output);
-        static::assertStringContainsString('shopware://test', $output);
+        static::assertStringContainsString('shopwell://test', $output);
         static::assertStringContainsString('A helpful resource', $output);
         static::assertStringContainsString('resource', $output);
         static::assertSame(0, $tester->getStatusCode());
@@ -315,15 +315,15 @@ class DebugMcpCommandTest extends TestCase
     {
         $registry = new Registry();
         $registry->registerResource(
-            new ResourceDefinition('shopware://entities', 'entities', null, 'All entity types', null, null, null),
+            new ResourceDefinition('shopwell://entities', 'entities', null, 'All entity types', null, null, null),
             'Acme\\EntitiesResource',
         );
 
         $tester = new CommandTester($this->makeCommand($registry));
-        $tester->execute(['name' => 'shopware://entities']);
+        $tester->execute(['name' => 'shopwell://entities']);
 
         static::assertSame(0, $tester->getStatusCode());
-        static::assertStringContainsString('shopware://entities', $tester->getDisplay());
+        static::assertStringContainsString('shopwell://entities', $tester->getDisplay());
     }
 
     public function testToolsFilterShowsOnlyTools(): void
@@ -331,7 +331,7 @@ class DebugMcpCommandTest extends TestCase
         $registry = new Registry();
         $registry->registerTool(new Tool('my-tool', null, self::inputSchema(), 'Tool desc', null), 'Acme\\MyTool');
         $registry->registerPrompt(new Prompt('my-prompt', null, 'Prompt desc', []), 'Acme\\MyPrompt', []);
-        $registry->registerResource(new ResourceDefinition('shopware://test', 'my-resource', null, 'Resource desc', null, null, null), 'Acme\\MyResource');
+        $registry->registerResource(new ResourceDefinition('shopwell://test', 'my-resource', null, 'Resource desc', null, null, null), 'Acme\\MyResource');
 
         $tester = new CommandTester($this->makeCommand($registry));
         $tester->execute(['--tools' => true]);
@@ -420,23 +420,23 @@ class DebugMcpCommandTest extends TestCase
     {
         $registry = new Registry();
         $registry->registerTool(
-            new Tool('shopware-entity-delete', null, self::inputSchema(), 'Delete entities', null),
+            new Tool('shopwell-entity-delete', null, self::inputSchema(), 'Delete entities', null),
             'Acme\\DeleteTool',
         );
 
         $catalog = new McpCapabilityCatalog(
             $registry,
             $this->stubPrivilegeProvider(),
-            ['shopware-entity-delete' => ['shopware-entity-search']],
-            ['shopware-entity-delete' => ['static' => ['system_config:read'], 'entityParam' => null, 'operations' => []]],
+            ['shopwell-entity-delete' => ['shopwell-entity-search']],
+            ['shopwell-entity-delete' => ['static' => ['system_config:read'], 'entityParam' => null, 'operations' => []]],
         );
 
         $tester = new CommandTester($this->makeCommand($registry, catalog: $catalog));
-        $tester->execute(['name' => 'shopware-entity-delete']);
+        $tester->execute(['name' => 'shopwell-entity-delete']);
 
         $output = $tester->getDisplay();
         static::assertStringContainsString('Dependencies', $output);
-        static::assertStringContainsString('shopware-entity-search', $output);
+        static::assertStringContainsString('shopwell-entity-search', $output);
         static::assertStringContainsString('Privileges', $output);
         static::assertStringContainsString('system_config:read', $output);
     }
@@ -445,7 +445,7 @@ class DebugMcpCommandTest extends TestCase
     {
         $registry = new Registry();
         $registry->registerTool(
-            new Tool('shopware-entity-search', null, self::inputSchema(), 'Search entities', null),
+            new Tool('shopwell-entity-search', null, self::inputSchema(), 'Search entities', null),
             'Acme\\SearchTool',
         );
 
@@ -453,11 +453,11 @@ class DebugMcpCommandTest extends TestCase
             $registry,
             $this->stubPrivilegeProvider(),
             [],
-            ['shopware-entity-search' => ['static' => [], 'entityParam' => 'entity', 'operations' => ['read']]],
+            ['shopwell-entity-search' => ['static' => [], 'entityParam' => 'entity', 'operations' => ['read']]],
         );
 
         $tester = new CommandTester($this->makeCommand($registry, catalog: $catalog));
-        $tester->execute(['name' => 'shopware-entity-search']);
+        $tester->execute(['name' => 'shopwell-entity-search']);
 
         static::assertStringContainsString('<entity>:read', $tester->getDisplay());
     }
@@ -489,7 +489,7 @@ class DebugMcpCommandTest extends TestCase
     {
         $registry = new Registry();
         $registry->registerResource(
-            new ResourceDefinition('shopware://json', 'json-resource', null, 'JSON resource', 'application/json', null, null),
+            new ResourceDefinition('shopwell://json', 'json-resource', null, 'JSON resource', 'application/json', null, null),
             'Acme\\JsonResource',
         );
 
@@ -503,7 +503,7 @@ class DebugMcpCommandTest extends TestCase
     {
         $registry = new Registry();
         $registry->registerTool(
-            new Tool('shopware-entity-search', null, self::inputSchema(), 'Search entities', null),
+            new Tool('shopwell-entity-search', null, self::inputSchema(), 'Search entities', null),
             'Acme\\SearchTool',
         );
 
@@ -511,7 +511,7 @@ class DebugMcpCommandTest extends TestCase
             $registry,
             $this->stubPrivilegeProvider(),
             [],
-            ['shopware-entity-search' => ['static' => ['system_config:read'], 'entityParam' => 'entity', 'operations' => ['read']]],
+            ['shopwell-entity-search' => ['static' => ['system_config:read'], 'entityParam' => 'entity', 'operations' => ['read']]],
         );
 
         $tester = new CommandTester($this->makeCommand($registry, catalog: $catalog));
@@ -527,14 +527,14 @@ class DebugMcpCommandTest extends TestCase
     {
         $registry = new Registry();
         $registry->registerTool(
-            new Tool('shopware-entity-search', null, self::inputSchema(), 'Search entities', null),
+            new Tool('shopwell-entity-search', null, self::inputSchema(), 'Search entities', null),
             'Acme\\SearchTool',
         );
 
         $catalog = new McpCapabilityCatalog(
             $registry,
             $this->stubPrivilegeProvider(),
-            toolGroups: ['shopware-entity-search' => 'catalogue'],
+            toolGroups: ['shopwell-entity-search' => 'catalogue'],
         );
 
         $tester = new CommandTester($this->makeCommand($registry, catalog: $catalog));
@@ -792,10 +792,10 @@ class DebugMcpCommandTest extends TestCase
         $application->addCommand($this->makeCommand(new Registry()));
 
         $tester = new CommandTester($application->find('debug:mcp'));
-        $tester->execute(['name' => 'shopware-entity-search', '--native' => true]);
+        $tester->execute(['name' => 'shopwell-entity-search', '--native' => true]);
 
         static::assertSame(0, $tester->getStatusCode());
-        static::assertSame('shopware-entity-search', $seen);
+        static::assertSame('shopwell-entity-search', $seen);
     }
 
     public function testNativeOptionFailsWhenTheBundleCommandIsMissing(): void

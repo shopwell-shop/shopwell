@@ -3,8 +3,8 @@ title: Enable the editing of promotions in existing orders
 issue: NEXT-13002
 ---
 # Core
-* Changed const `\Shopware\Core\Checkout\Cart\Order\OrderConverter::ADMIN_EDIT_ORDER_PERMISSIONS` to public
-* Added methods `addPromotionLineItem` and `toggleAutomaticPromotion` in `\Shopware\Core\Checkout\Cart\Order\RecalculationService`
+* Changed const `\Shopwell\Core\Checkout\Cart\Order\OrderConverter::ADMIN_EDIT_ORDER_PERMISSIONS` to public
+* Added methods `addPromotionLineItem` and `toggleAutomaticPromotion` in `\Shopwell\Core\Checkout\Cart\Order\RecalculationService`
 ___
 # API
 * Added new routes `/api/_action/order/{orderId}/promotion-item` and `/api/_action/order/{orderId}/toggleAutomaticPromotions`

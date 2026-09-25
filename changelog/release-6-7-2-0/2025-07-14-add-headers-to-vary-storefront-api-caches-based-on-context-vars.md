@@ -1,6 +1,6 @@
 ---
 title: Add headers to vary Storefront API caches based on context vars
-issue: https://github.com/shopware/shopware/issues/7881
+issue: https://github.com/shopwell-shop/shopwell/issues/7881
 ---
 # Core
 * Added support for scoped response events `.scope.response` (like `storefront.scope.response`)

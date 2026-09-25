@@ -2,7 +2,7 @@
 title: Improve inheritance in cms-details page
 issue: NEXT-36016
 author: Alexandru Dumea
-author_email: a.dumea@shopware.com
+author_email: a.dumea@shopwell.com
 author_github: @Alexandru Dumea
 ---
 # Administration

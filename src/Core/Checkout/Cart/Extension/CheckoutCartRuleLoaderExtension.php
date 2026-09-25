@@ -23,7 +23,7 @@ final class CheckoutCartRuleLoaderExtension extends Extension implements Shopwel
     public const NAME = 'checkout.cart.rule-load';
 
     /**
-     * @internal shopware owns the __constructor, but the properties are public API
+     * @internal shopwell owns the __constructor, but the properties are public API
      */
     public function __construct(
         public readonly SalesChannelContext $salesChannelContext,

@@ -1,7 +1,7 @@
 ---
 title: Fix alignment of review stars
 author: Nils Haberkamp
-author_email: n.haberkamp@shopware.com
+author_email: n.haberkamp@shopwell.com
 author_github: @Haberkamp
 ---
 # Administration

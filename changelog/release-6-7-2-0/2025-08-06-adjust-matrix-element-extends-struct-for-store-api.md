@@ -5,4 +5,4 @@ author_email: Discord.Benjamin@web.de
 author_github: gecolay
 ---
 # Core
-* Changed `Shopware\Core\Content\Product\SalesChannel\Review\MatrixElement` to extend `Shopware\Core\Framework\Struct\Struct` so it can be serialized for the StoreApi
+* Changed `Shopwell\Core\Content\Product\SalesChannel\Review\MatrixElement` to extend `Shopwell\Core\Framework\Struct\Struct` so it can be serialized for the StoreApi

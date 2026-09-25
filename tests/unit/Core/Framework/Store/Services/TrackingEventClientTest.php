@@ -62,7 +62,7 @@ class TrackingEventClientTest extends TestCase
             [
                 'instanceId' => 'test-instance-id',
                 'additionalData' => [
-                    'shopwareVersion' => '6.5.0.0-test',
+                    'shopwellVersion' => '6.5.0.0-test',
                     'someAdditionalData' => 'xy',
                 ],
                 'event' => 'Tracking event fired and returned',
@@ -93,7 +93,7 @@ class TrackingEventClientTest extends TestCase
             [
                 'instanceId' => 'test-instance-id',
                 'additionalData' => [
-                    'shopwareVersion' => '6.5.0.0-test',
+                    'shopwellVersion' => '6.5.0.0-test',
                     'someAdditionalData' => 'xy',
                 ],
                 'event' => 'Tracking event fired and returned on request exception',

@@ -56,8 +56,8 @@ class UserMcpAllowlistControllerTest extends TestCase
     public function testSaveStructuredAllowlist(): void
     {
         $allowlist = [
-            'tools' => ['shopware-entity-read', 'shopware-entity-search'],
-            'resources' => ['shopware://entities'],
+            'tools' => ['shopwell-entity-read', 'shopwell-entity-search'],
+            'resources' => ['shopwell://entities'],
             'prompts' => null,
         ];
 
@@ -134,7 +134,7 @@ class UserMcpAllowlistControllerTest extends TestCase
 
         // A JSON object here would be stored but read back as an empty selection, so reject it
         // instead of silently persisting something that grants nothing.
-        $request = $this->makeRequest(['allowlist' => ['tools' => ['x' => 'shopware-entity-delete']]]);
+        $request = $this->makeRequest(['allowlist' => ['tools' => ['x' => 'shopwell-entity-delete']]]);
 
         $response = $this->controller->save($this->userId, $request, $this->context);
 

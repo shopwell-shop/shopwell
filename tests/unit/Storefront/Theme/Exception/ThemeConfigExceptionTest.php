@@ -41,7 +41,7 @@ class ThemeConfigExceptionTest extends TestCase
         $exception->tryToThrow();
     }
 
-    #[TestDox('getErrors flattens shopware and generic inner exceptions')]
+    #[TestDox('getErrors flattens shopwell and generic inner exceptions')]
     public function testGetErrors(): void
     {
         $exception = new ThemeConfigException();

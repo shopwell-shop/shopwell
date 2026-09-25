@@ -55,7 +55,7 @@ class MigrationDestructiveCommand extends MigrationCommand
                 throw MigrationException::invalidVersionSelectionMode($mode);
             }
 
-            return $this->loader->collectAllForVersion($this->shopwareVersion, $mode);
+            return $this->loader->collectAllForVersion($this->shopwellVersion, $mode);
         }
 
         return $this->loader->collect($identifier);

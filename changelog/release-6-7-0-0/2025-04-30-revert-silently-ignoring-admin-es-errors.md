@@ -6,4 +6,4 @@ author_github: @paulvonallwoerden
 ---
 
 # Core
-* Changed `Shopware\Elasticsearch\Admin\AdminSearchRegistry` to throw open search exceptions during indexing so that the triggering message queue message is correctly marked as a failure.
+* Changed `Shopwell\Elasticsearch\Admin\AdminSearchRegistry` to throw open search exceptions during indexing so that the triggering message queue message is correctly marked as a failure.

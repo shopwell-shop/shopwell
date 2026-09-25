@@ -6,4 +6,4 @@ author_email: cccpmik@gmail.com
 author_github: BlackScorp
 ---
 # Core
-* Changed `Shopware\Core\Framework\DataAbstractionLayer\VersionManager::cloneEntity()` to reset the createdAt and modifiedAt timestamps if exists 
+* Changed `Shopwell\Core\Framework\DataAbstractionLayer\VersionManager::cloneEntity()` to reset the createdAt and modifiedAt timestamps if exists 

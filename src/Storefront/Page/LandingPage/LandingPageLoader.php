@@ -42,7 +42,7 @@ class LandingPageLoader
         if ($landingPage->getCmsPage() === null) {
             // @deprecated tag:v6.8.0 - remove this if block
             if (!Feature::isActive('v6.8.0.0')) {
-                throw new PageNotFoundException($landingPageId); // @phpstan-ignore shopware.domainException
+                throw new PageNotFoundException($landingPageId); // @phpstan-ignore shopwell.domainException
             }
 
             throw LandingPageException::notFound($landingPageId);

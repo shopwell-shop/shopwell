@@ -47,8 +47,8 @@ class AuthMiddlewareTest extends TestCase
 
         static::assertArrayHasKey('sw-version', $request->getHeaders());
         static::assertSame('6.4', $request->getHeader('sw-version')[0]);
-        static::assertSame(Defaults::LANGUAGE_SYSTEM, $request->getHeader(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE)[0]);
-        static::assertSame('en-GB', $request->getHeader(AuthMiddleware::SHOPWARE_USER_LANGUAGE)[0]);
+        static::assertSame(Defaults::LANGUAGE_SYSTEM, $request->getHeader(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE)[0]);
+        static::assertSame('en-GB', $request->getHeader(AuthMiddleware::SHOPWELL_USER_LANGUAGE)[0]);
     }
 
     public function testSetDefaultHeaderWithSaleChannelApiSource(): void
@@ -60,8 +60,8 @@ class AuthMiddlewareTest extends TestCase
 
         static::assertArrayHasKey('sw-version', $request->getHeaders());
         static::assertSame('6.4', $request->getHeader('sw-version')[0]);
-        static::assertSame(Defaults::LANGUAGE_SYSTEM, $request->getHeader(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE)[0]);
-        static::assertSame('en-GB', $request->getHeader(AuthMiddleware::SHOPWARE_USER_LANGUAGE)[0]);
+        static::assertSame(Defaults::LANGUAGE_SYSTEM, $request->getHeader(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE)[0]);
+        static::assertSame('en-GB', $request->getHeader(AuthMiddleware::SHOPWELL_USER_LANGUAGE)[0]);
     }
 
     public function testSetDefaultHeaderExist(): void
@@ -85,13 +85,13 @@ class AuthMiddlewareTest extends TestCase
 
         $this->appendNewResponse(new Response(200));
 
-        $client = static::getContainer()->get('shopware.app_system.guzzle');
+        $client = static::getContainer()->get('shopwell.app_system.guzzle');
         $client->post(new Uri('https://example.local'), $optionsRequest);
 
         $request = $this->getLastRequest();
         static::assertNotNull($request);
 
-        static::assertArrayHasKey(RequestSigner::SHOPWARE_SHOP_SIGNATURE, $request->getHeaders());
+        static::assertArrayHasKey(RequestSigner::SHOPWELL_SHOP_SIGNATURE, $request->getHeaders());
 
         $historyCollector = static::getContainer()->get(GuzzleHistoryCollector::class);
         static::assertInstanceOf(GuzzleHistoryCollector::class, $historyCollector);
@@ -103,7 +103,7 @@ class AuthMiddlewareTest extends TestCase
         $this->appendNewResponse(new Response(301, ['Location' => 'https://example.local/moved']));
         $this->appendNewResponse(new Response(200));
 
-        $client = static::getContainer()->get('shopware.app_system.guzzle');
+        $client = static::getContainer()->get('shopwell.app_system.guzzle');
         $client->post(new Uri('https://example.local'), [
             AuthMiddleware::APP_REQUEST_TYPE => [AuthMiddleware::APP_SECRET => 'secret'],
             'body' => 'test',
@@ -119,7 +119,7 @@ class AuthMiddlewareTest extends TestCase
         static::assertSame('test', $forwarded->getBody()->getContents());
         static::assertSame(
             hash_hmac('sha256', 'test', 'secret'),
-            $forwarded->getHeaderLine(RequestSigner::SHOPWARE_SHOP_SIGNATURE)
+            $forwarded->getHeaderLine(RequestSigner::SHOPWELL_SHOP_SIGNATURE)
         );
     }
 
@@ -127,13 +127,13 @@ class AuthMiddlewareTest extends TestCase
     {
         $this->appendNewResponse(new Response(200));
 
-        $client = static::getContainer()->get('shopware.app_system.guzzle');
+        $client = static::getContainer()->get('shopwell.app_system.guzzle');
         $client->post(new Uri('https://example.local'));
 
         $request = $this->getLastRequest();
         static::assertNotNull($request);
 
-        static::assertArrayNotHasKey(RequestSigner::SHOPWARE_SHOP_SIGNATURE, $request->getHeaders());
+        static::assertArrayNotHasKey(RequestSigner::SHOPWELL_SHOP_SIGNATURE, $request->getHeaders());
     }
 
     public function testIncorrectInstanceOfOptionRequest(): void
@@ -143,7 +143,7 @@ class AuthMiddlewareTest extends TestCase
         $optionsRequest = [AuthMiddleware::APP_REQUEST_TYPE => new Response()];
         $this->appendNewResponse(new Response(200));
 
-        $client = static::getContainer()->get('shopware.app_system.guzzle');
+        $client = static::getContainer()->get('shopwell.app_system.guzzle');
         $client->post(new Uri('https://example.local'), $optionsRequest);
     }
 
@@ -154,7 +154,7 @@ class AuthMiddlewareTest extends TestCase
         $optionsRequest = [AuthMiddleware::APP_REQUEST_CONTEXT => new Response()];
         $this->appendNewResponse(new Response(200));
 
-        $client = static::getContainer()->get('shopware.app_system.guzzle');
+        $client = static::getContainer()->get('shopwell.app_system.guzzle');
         $client->post(new Uri('https://example.local'), $optionsRequest);
     }
 
@@ -171,7 +171,7 @@ class AuthMiddlewareTest extends TestCase
 
         $this->appendNewResponse(new Response(200));
 
-        $client = static::getContainer()->get('shopware.app_system.guzzle');
+        $client = static::getContainer()->get('shopwell.app_system.guzzle');
 
         $client->post(new Uri('https://example.local'), $optionsRequest);
     }
@@ -182,7 +182,7 @@ class AuthMiddlewareTest extends TestCase
 
         $this->appendNewResponse(new Response(200));
 
-        $client = static::getContainer()->get('shopware.app_system.guzzle');
+        $client = static::getContainer()->get('shopwell.app_system.guzzle');
 
         $optionsRequest
             = [AuthMiddleware::APP_REQUEST_TYPE => 'Not Array',
@@ -197,7 +197,7 @@ class AuthMiddlewareTest extends TestCase
 
         $this->appendNewResponse(new Response(200));
 
-        $client = static::getContainer()->get('shopware.app_system.guzzle');
+        $client = static::getContainer()->get('shopwell.app_system.guzzle');
 
         $optionsRequest
             = [AuthMiddleware::APP_REQUEST_TYPE => [

@@ -6,5 +6,5 @@ author_email: s.beisenherz@kellerkinder.de
 author_github: Sironheart
 ___
 # Storefront
-*  Changed the AccountOrderController so it now does not require the shopware implementation of the ContextSwitchRoute 
+*  Changed the AccountOrderController so it now does not require the shopwell implementation of the ContextSwitchRoute 
    anymore, instead accepting any implementation of the AbstractContextSwitchRoute

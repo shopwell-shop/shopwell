@@ -17,7 +17,7 @@ use Symfony\Component\Finder\Finder;
 #[Package('framework')]
 class AppLoader
 {
-    final public const COMPOSER_TYPE = 'shopware-app';
+    final public const COMPOSER_TYPE = 'shopwell-app';
 
     public function __construct(
         private readonly string $appDir,

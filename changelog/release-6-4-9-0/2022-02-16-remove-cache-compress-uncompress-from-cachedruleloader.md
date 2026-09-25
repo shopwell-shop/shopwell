@@ -2,7 +2,7 @@
 title: Remove cache compress/uncompress from CachedRuleLoader
 issue: NEXT-20149
 author: Krispin Lütjann
-author_email: k.luetjann@shopware.com
+author_email: k.luetjann@shopwell.com
 author_github: King-of-Babylon
 ---
 # Core

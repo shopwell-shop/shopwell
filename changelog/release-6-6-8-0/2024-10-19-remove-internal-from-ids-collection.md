@@ -7,7 +7,7 @@ author_email: oliver@goblin-coders.de
 author_github: OliverSkroblin
 ---
 # Core
-* Removed @internal flag from `\Shopware\Core\Framework\Test\IdsCollection`
-* Changed path from `\Shopware\Core\Framework\Test\IdsCollection` to `\Shopware\Core\Test\Stub\Framework\IdsCollection`
-* Removed `\Shopware\Core\Framework\Test\TestDataCollection` which was extending IdsCollection and doing nothing than renaming
+* Removed @internal flag from `\Shopwell\Core\Framework\Test\IdsCollection`
+* Changed path from `\Shopwell\Core\Framework\Test\IdsCollection` to `\Shopwell\Core\Test\Stub\Framework\IdsCollection`
+* Removed `\Shopwell\Core\Framework\Test\TestDataCollection` which was extending IdsCollection and doing nothing than renaming
 * Changed all tests consuming TestDataCollection, IdsCollection

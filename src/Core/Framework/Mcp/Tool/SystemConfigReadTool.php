@@ -14,9 +14,9 @@ use Shopwell\Core\System\SystemConfig\SystemConfigService;
  */
 #[Package('framework')]
 #[McpTool(
-    name: 'shopware-system-config-read',
+    name: 'shopwell-system-config-read',
     title: 'System Config Read',
-    description: 'Read Shopwell application configuration values in the core.* namespace. Pass a domain prefix (e.g. "core.listing") to get all keys, or a full dotted key to read a single value. For theme appearance settings (colors, logos, fonts), use shopware-theme-config instead. Optionally scope to a sales channel.'
+    description: 'Read Shopwell application configuration values in the core.* namespace. Pass a domain prefix (e.g. "core.listing") to get all keys, or a full dotted key to read a single value. For theme appearance settings (colors, logos, fonts), use shopwell-theme-config instead. Optionally scope to a sales channel.'
 )]
 #[McpToolGroup('system-config')]
 #[McpToolRequires('system_config:read')]

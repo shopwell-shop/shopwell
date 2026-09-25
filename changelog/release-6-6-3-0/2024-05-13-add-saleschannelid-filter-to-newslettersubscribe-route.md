@@ -4,4 +4,4 @@ issue: NEXT-36108
 author: wexoag
 ---
 # Core
-* Added `salesChannelId` filter to `Shopware\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute::getNewsletterRecipient`
+* Added `salesChannelId` filter to `Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute::getNewsletterRecipient`

@@ -4,4 +4,4 @@ issue: NEXT-10012
 author_github: @Dominik28111
 ---
 # Storefront
-* Changed `\Shopware\Core\Checkout\Order\SalesChannel\OrderRoute` to list only orders associated to the current sales channel
+* Changed `\Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute` to list only orders associated to the current sales channel

@@ -11,10 +11,10 @@ issue: NEXT-14001
 * Added `Core/Checkout/Customer/SalesChannel/NewsletterRecipientRoute.php`
 * Added `Core/Checkout/Customer/SalesChannel/NewsletterRecipientRouteResponse.php`
 * Added `Core/Content/Newsletter/SalesChannel/SalesChannelNewsletterRecipientDefinition.php`
-* Added constant `\Shopware\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute::OPTION_DIRECT`
-* Added constant `\Shopware\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute::OPTION_SUBSCRIBE`
-* Added constant `\Shopware\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute::OPTION_UNSUBSCRIBE`
-* Added constant `\Shopware\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute::OPTION_CONFIRM_SUBSCRIBE`
+* Added constant `\Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute::OPTION_DIRECT`
+* Added constant `\Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute::OPTION_SUBSCRIBE`
+* Added constant `\Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute::OPTION_UNSUBSCRIBE`
+* Added constant `\Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute::OPTION_CONFIRM_SUBSCRIBE`
 * Added system config `core.newsletter.doubleOptInRegistered` in `Core/System/Resources/config/newsletter.xml`
 * Added `Core/Migration/V6_4/Migration1625569667NewsletterDoiForRegistered.php` to add key `core.newsletter.doubleOptInRegistered` in `system_config` 
 ___
@@ -22,16 +22,16 @@ ___
 * Added new store-api route `/store-api/account/newsletter-recipient`
 ___
 # Storefront
-* Deprecated `\Shopware\Storefront\Controller\NewsletterController::$customerRepository`
-* Deprecated `\Shopware\Storefront\Controller\NewsletterController::$newsletterSubscribeRoute`
-* Deprecated `\Shopware\Storefront\Controller\NewsletterController::$newsletterUnsubscribeRoute`
-* Deprecated `\Shopware\Storefront\Controller\NewsletterController::hydrateFromCustomer`
-* Deprecated `\Shopware\Storefront\Controller\NewsletterController::setNewsletterFlag`
-* Changed `\Shopware\Storefront\Controller\NewsletterController::subscribeCustomer` to move logic to PageLoader
-* Changed  `\Shopware\Storefront\Controller\NewsletterController::__construct` by adding `\Shopware\Storefront\Pagelet\Newsletter\Account\NewsletterAccountPageletLoader` as parameter
+* Deprecated `\Shopwell\Storefront\Controller\NewsletterController::$customerRepository`
+* Deprecated `\Shopwell\Storefront\Controller\NewsletterController::$newsletterSubscribeRoute`
+* Deprecated `\Shopwell\Storefront\Controller\NewsletterController::$newsletterUnsubscribeRoute`
+* Deprecated `\Shopwell\Storefront\Controller\NewsletterController::hydrateFromCustomer`
+* Deprecated `\Shopwell\Storefront\Controller\NewsletterController::setNewsletterFlag`
+* Changed `\Shopwell\Storefront\Controller\NewsletterController::subscribeCustomer` to move logic to PageLoader
+* Changed  `\Shopwell\Storefront\Controller\NewsletterController::__construct` by adding `\Shopwell\Storefront\Pagelet\Newsletter\Account\NewsletterAccountPageletLoader` as parameter
 * Added property `newsletterAccountPagelet` to `Storefront/Page/Account/Overview/AccountOverviewPage.php`
 * Added property `newsletterAccountPageletLoader` to `Storefront/Page/Account/Overview/AccountOverviewPageLoader.php`
-* Changed `\Shopware\Storefront\Page\Account\Overview\AccountOverviewPageLoader::load` to add `newsletterAccountPagelet` by seperate Loader.
+* Changed `\Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoader::load` to add `newsletterAccountPagelet` by seperate Loader.
 * Added `Storefront/Pagelet/Newsletter/Account/NewsletterAccountPagelet.php`
 * Added `Storefront/Pagelet/Newsletter/Account/NewsletterAccountPageletLoadedEvent.php`
 * Added `Storefront/Pagelet/Newsletter/Account/NewsletterAccountPageletLoader.php`

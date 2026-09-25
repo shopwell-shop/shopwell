@@ -52,8 +52,8 @@ final class GrantTypeFactory
         );
         $refreshTokenGrant->setRefreshTokenTTL($refreshTokenInterval);
 
-        $shopwareGrant = new ShopwellGrantType($this->refreshTokenRepository, $this->userService, $this->tokenService, $this->clock);
-        $shopwareGrant->setRefreshTokenTTL($refreshTokenInterval);
+        $shopwellGrant = new ShopwellGrantType($this->refreshTokenRepository, $this->userService, $this->tokenService, $this->clock);
+        $shopwellGrant->setRefreshTokenTTL($refreshTokenInterval);
 
         $authCodeGrant = new ShopwellAuthCodeGrantType(
             $this->authCodeRepository,
@@ -66,7 +66,7 @@ final class GrantTypeFactory
             $passwordGrant,
             $refreshTokenGrant,
             new ClientCredentialsGrant(),
-            $shopwareGrant,
+            $shopwellGrant,
             $authCodeGrant,
         ];
     }

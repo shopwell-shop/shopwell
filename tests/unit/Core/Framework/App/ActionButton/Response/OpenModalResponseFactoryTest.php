@@ -69,7 +69,7 @@ class OpenModalResponseFactoryTest extends TestCase
         $signer->expects($this->once())
             ->method('signUri')
             ->with('http://iframe.url', $this->action->getApp(), $context)
-            ->willReturn(new Uri('http://iframe.url?shopware-shop-signature=signature'));
+            ->willReturn(new Uri('http://iframe.url?shopwell-shop-signature=signature'));
         $factory = new OpenModalResponseFactory($signer);
 
         $response = $factory->create($this->action, [

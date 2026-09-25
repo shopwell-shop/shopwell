@@ -14,5 +14,5 @@ issue: NEXT-13797
 * Deprecated `getRegisteredNodes` in FlatTree. It will be removed in future versions.
 * Deprecated `getMainMenu` in menuService.
 * Deprecated `addItem` and `removeItem` in menuService.
-* Deprecated getter `navigation` in store `shopwareApps`. Use `adminMenu/appModuleNavigation` instead
+* Deprecated getter `navigation` in store `shopwellApps`. Use `adminMenu/appModuleNavigation` instead
 * Deprecated computed `appEntries` in `sw-admin-menu`. Use `appModuleNavigation` instead

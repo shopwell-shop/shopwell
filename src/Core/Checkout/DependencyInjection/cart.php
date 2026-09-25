@@ -138,14 +138,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(AbsolutePriceCalculator::class),
         ])
-        ->tag('shopware.cart.processor');
+        ->tag('shopwell.cart.processor');
 
     $services->set(CustomCartProcessor::class)
         ->args([
             service(QuantityPriceCalculator::class),
         ])
-        ->tag('shopware.cart.processor', ['priority' => 4000])
-        ->tag('shopware.cart.collector');
+        ->tag('shopwell.cart.processor', ['priority' => 4000])
+        ->tag('shopwell.cart.collector');
 
     $services->set(CartValueResolver::class)
         ->args([
@@ -162,14 +162,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(CleanupCartTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(CleanupCartTaskHandler::class)
         ->args([
             service('scheduled_task.repository'),
             service('logger'),
             service(CartPersister::class),
-            param('shopware.cart.expire_days'),
+            param('shopwell.cart.expire_days'),
         ])
         ->tag('messenger.message_handler');
 
@@ -272,7 +272,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CartPersister::class),
             service('event_dispatcher'),
             service(LineItemFactoryRegistry::class),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
             service(CartLocker::class),
         ]);
 
@@ -371,12 +371,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(TaxProviderRegistry::class)
         ->public()
         ->args([
-            tagged_iterator('shopware.tax.provider'),
+            tagged_iterator('shopwell.tax.provider'),
         ]);
 
     $services->set(TaxAdjustmentCalculator::class);
 
-    $services->set('shopware.tax.adjustment_calculator', AmountCalculator::class)
+    $services->set('shopwell.tax.adjustment_calculator', AmountCalculator::class)
         ->args([
             service(CashRounding::class),
             service(PercentageTaxRuleBuilder::class),
@@ -385,7 +385,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(TaxAdjustment::class)
         ->args([
-            service('shopware.tax.adjustment_calculator'),
+            service('shopwell.tax.adjustment_calculator'),
             service(CashRounding::class),
             service(TransactionProcessor::class),
         ]);
@@ -401,7 +401,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(CheckoutGatewayCommandRegistry::class)
         ->args([
-            tagged_iterator('shopware.checkout.gateway.command'),
+            tagged_iterator('shopwell.checkout.gateway.command'),
         ]);
 
     $services->set(CheckoutGatewayCommandExecutor::class)
@@ -411,39 +411,39 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(AddCartErrorCommandHandler::class)
-        ->tag('shopware.checkout.gateway.command');
+        ->tag('shopwell.checkout.gateway.command');
 
     $services->set(AddPaymentMethodCommandHandler::class)
         ->args([
             service('payment_method.repository'),
             service(ExceptionLogger::class),
         ])
-        ->tag('shopware.checkout.gateway.command');
+        ->tag('shopwell.checkout.gateway.command');
 
     $services->set(AddPaymentMethodExtensionsCommandHandler::class)
         ->args([
             service(ExceptionLogger::class),
         ])
-        ->tag('shopware.checkout.gateway.command');
+        ->tag('shopwell.checkout.gateway.command');
 
     $services->set(RemovePaymentMethodCommandHandler::class)
-        ->tag('shopware.checkout.gateway.command');
+        ->tag('shopwell.checkout.gateway.command');
 
     $services->set(AddShippingMethodCommandHandler::class)
         ->args([
             service('payment_method.repository'),
             service(ExceptionLogger::class),
         ])
-        ->tag('shopware.checkout.gateway.command');
+        ->tag('shopwell.checkout.gateway.command');
 
     $services->set(AddShippingMethodExtensionsCommandHandler::class)
         ->args([
             service(ExceptionLogger::class),
         ])
-        ->tag('shopware.checkout.gateway.command');
+        ->tag('shopwell.checkout.gateway.command');
 
     $services->set(RemoveShippingMethodCommandHandler::class)
-        ->tag('shopware.checkout.gateway.command');
+        ->tag('shopwell.checkout.gateway.command');
 
     $services->set(DeliveryBuilder::class);
 
@@ -480,37 +480,37 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DeliveryCalculator::class),
             service('shipping_method.repository'),
         ])
-        ->tag('shopware.cart.processor', ['priority' => -5000])
-        ->tag('shopware.cart.collector', ['priority' => -5000]);
+        ->tag('shopwell.cart.processor', ['priority' => -5000])
+        ->tag('shopwell.cart.collector', ['priority' => -5000]);
 
     $services->set(DeliveryValidator::class)
-        ->tag('shopware.cart.validator');
+        ->tag('shopwell.cart.validator');
 
     $services->set(LineItemValidator::class)
-        ->tag('shopware.cart.validator');
+        ->tag('shopwell.cart.validator');
 
     $services->set(AddressValidator::class)
         ->args([
             service('sales_channel_country.repository'),
         ])
-        ->tag('shopware.cart.validator')
+        ->tag('shopwell.cart.validator')
         ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(Validator::class)
         ->args([
-            tagged_iterator('shopware.cart.validator'),
+            tagged_iterator('shopwell.cart.validator'),
         ]);
 
     $services->set(ProductLineItemValidator::class)
-        ->tag('shopware.cart.validator');
+        ->tag('shopwell.cart.validator');
 
     $services->set(Processor::class)
         ->args([
             service(Validator::class),
             service(AmountCalculator::class),
             service(TransactionProcessor::class),
-            tagged_iterator('shopware.cart.processor'),
-            tagged_iterator('shopware.cart.collector'),
+            tagged_iterator('shopwell.cart.processor'),
+            tagged_iterator('shopwell.cart.collector'),
             service(ScriptExecutor::class),
         ]);
 
@@ -524,8 +524,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(ProductTypeRegistry::class),
         ])
-        ->tag('shopware.cart.processor', ['priority' => 5000])
-        ->tag('shopware.cart.collector', ['priority' => 5000]);
+        ->tag('shopwell.cart.processor', ['priority' => 5000])
+        ->tag('shopwell.cart.collector', ['priority' => 5000]);
 
     $services->set(ProductFeatureBuilder::class)
         ->args([
@@ -609,7 +609,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(LineItemFactoryRegistry::class)
         ->args([
-            tagged_iterator('shopware.cart.line_item.factory'),
+            tagged_iterator('shopwell.cart.line_item.factory'),
             service(DataValidator::class),
             service('event_dispatcher'),
         ]);
@@ -618,24 +618,24 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(PriceDefinitionFactory::class),
         ])
-        ->tag('shopware.cart.line_item.factory');
+        ->tag('shopwell.cart.line_item.factory');
 
     $services->set(PromotionLineItemFactory::class)
-        ->tag('shopware.cart.line_item.factory');
+        ->tag('shopwell.cart.line_item.factory');
 
     $services->set(CreditLineItemFactory::class)
         ->args([
             service(PriceDefinitionFactory::class),
             service('media.repository'),
         ])
-        ->tag('shopware.cart.line_item.factory');
+        ->tag('shopwell.cart.line_item.factory');
 
     $services->set(CustomLineItemFactory::class)
         ->args([
             service(PriceDefinitionFactory::class),
             service('media.repository'),
         ])
-        ->tag('shopware.cart.line_item.factory');
+        ->tag('shopwell.cart.line_item.factory');
 
     // Line item groups
     $services->set(AbstractAnyRuleLineItemMatcher::class, AnyRuleLineItemMatcher::class);
@@ -706,7 +706,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(ContainerCartProcessor::class)
-        ->tag('shopware.cart.processor', ['priority' => 3800])
+        ->tag('shopwell.cart.processor', ['priority' => 3800])
         ->args([
             service(PercentagePriceCalculator::class),
             service(QuantityPriceCalculator::class),
@@ -714,7 +714,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(DiscountCartProcessor::class)
-        ->tag('shopware.cart.processor', ['priority' => 3700])
+        ->tag('shopwell.cart.processor', ['priority' => 3700])
         ->args([
             service(PercentagePriceCalculator::class),
             service(CurrencyPriceCalculator::class),
@@ -722,31 +722,31 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(CartCompressor::class)
         ->args([
-            param('shopware.cart.compress'),
-            param('shopware.cart.compression_method'),
-            param('shopware.cart.serialization_max_mb_size'),
+            param('shopwell.cart.compress'),
+            param('shopwell.cart.compression_method'),
+            param('shopwell.cart.serialization_max_mb_size'),
         ]);
 
     $services->set(RedisCartPersister::class)
         ->args([
-            service('shopware.cart.redis'),
+            service('shopwell.cart.redis'),
             service('event_dispatcher'),
             service(CartSerializationCleaner::class),
             service(CartCompressor::class),
-            param('shopware.cart.expire_days'),
+            param('shopwell.cart.expire_days'),
         ]);
 
-    $services->set('shopware.cart.redis', \Redis::class)
+    $services->set('shopwell.cart.redis', \Redis::class)
         ->factory([service(RedisConnectionProvider::class), 'getConnection'])
         ->args([
-            param('shopware.cart.storage.config.connection'),
+            param('shopwell.cart.storage.config.connection'),
         ]);
 
     $services->set(CartMigrateCommand::class)
         ->args([
-            service('shopware.cart.redis')->nullOnInvalid(),
+            service('shopwell.cart.redis')->nullOnInvalid(),
             service(Connection::class),
-            param('shopware.cart.expire_days'),
+            param('shopwell.cart.expire_days'),
             service(RedisConnectionFactory::class),
             service(CartCompressor::class),
             service(ClockInterface::class),

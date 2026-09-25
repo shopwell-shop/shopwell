@@ -12,7 +12,7 @@ const isHTMLFile = /\.html$/;
 /* @private */
 export default function twigPlugin(): Plugin {
     return {
-        name: 'shopware-vite-plugin-twigjs',
+        name: 'shopwell-vite-plugin-twigjs',
 
         transform(fileContent, id) {
             if (id.endsWith('src/Administration/Resources/app/administration/index.html')) {

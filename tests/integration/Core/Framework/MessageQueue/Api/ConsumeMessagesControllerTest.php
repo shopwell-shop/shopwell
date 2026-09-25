@@ -33,7 +33,7 @@ class ConsumeMessagesControllerTest extends TestCase
     protected function setUp(): void
     {
         if (!Feature::isActive('v6.8.0.0')) {
-            $this->incrementer = static::getContainer()->get('shopware.increment.gateway.registry')->get(IncrementGatewayRegistry::MESSAGE_QUEUE_POOL);
+            $this->incrementer = static::getContainer()->get('shopwell.increment.gateway.registry')->get(IncrementGatewayRegistry::MESSAGE_QUEUE_POOL);
         }
     }
 
@@ -84,7 +84,7 @@ class ConsumeMessagesControllerTest extends TestCase
         $message = new ProductIndexingMessage([Uuid::randomHex()]);
         $messageBus->dispatch($message);
 
-        $gateway = static::getContainer()->get('shopware.increment.gateway.registry');
+        $gateway = static::getContainer()->get('shopwell.increment.gateway.registry');
         $entries = $gateway->get(IncrementGatewayRegistry::MESSAGE_QUEUE_POOL)->list('message_queue_stats');
 
         static::assertArrayHasKey(ProductIndexingMessage::class, $entries);

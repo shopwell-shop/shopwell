@@ -21,7 +21,7 @@ use Shopwell\Core\Framework\Sso\UserService\UserService;
 #[Package('framework')]
 class ShopwellGrantType extends AbstractGrant
 {
-    public const TYPE = 'shopware_grant';
+    public const TYPE = 'shopwell_grant';
 
     public function __construct(
         RefreshTokenRepositoryInterface $refreshTokenRepository,

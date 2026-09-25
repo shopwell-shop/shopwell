@@ -18,7 +18,7 @@ class ShopwellAccountRequirementTest extends TestCase
 {
     public function testGetName(): void
     {
-        static::assertSame('shopware_account', ShopwellAccountRequirement::getName());
+        static::assertSame('shopwell_account', ShopwellAccountRequirement::getName());
     }
 
     public function testGatesPrivileges(): void

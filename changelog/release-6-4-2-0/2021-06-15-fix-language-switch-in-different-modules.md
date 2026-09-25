@@ -2,7 +2,7 @@
 title: Fix language switch in different modules
 issue: NEXT-10476
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com 
+author_email: j.leifeld@shopwell.com 
 author_github: jleifeld
 ---
 # Administration

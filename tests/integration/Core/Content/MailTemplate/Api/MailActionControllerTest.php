@@ -256,7 +256,7 @@ class MailActionControllerTest extends TestCase
             'lastName' => 'Mustermann',
             'customerNumber' => '1337',
             'email' => Uuid::randomHex() . '@example.com',
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultBillingAddressId' => $addressId,

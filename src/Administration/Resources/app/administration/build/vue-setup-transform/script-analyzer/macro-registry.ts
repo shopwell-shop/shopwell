@@ -16,7 +16,7 @@
 
 import type { CallExpression, Statement } from '@babel/types';
 import { ShopwellSetupTransformError } from '../utils/transform-error';
-import type { ShopwellSetupMode } from '../utils/shopware-setup-block';
+import type { ShopwellSetupMode } from '../utils/shopwell-setup-block';
 import { absoluteRange, unwrapTransparentMacroExpression } from './utils';
 
 type MacroName =

@@ -27,7 +27,7 @@ class ThemeEntityTest extends TestCase
 
         $theme->setTechnicalName('SwagTheme');
         $theme->setName('Swag Theme');
-        $theme->setAuthor('shopware AG');
+        $theme->setAuthor('Shopwell');
         $theme->setDescription('A theme');
         $theme->setPreviewMediaId('preview-media-id');
         $theme->setParentThemeId('parent-theme-id');
@@ -38,7 +38,7 @@ class ThemeEntityTest extends TestCase
 
         static::assertSame('SwagTheme', $theme->getTechnicalName());
         static::assertSame('Swag Theme', $theme->getName());
-        static::assertSame('shopware AG', $theme->getAuthor());
+        static::assertSame('Shopwell', $theme->getAuthor());
         static::assertSame('A theme', $theme->getDescription());
         static::assertSame('preview-media-id', $theme->getPreviewMediaId());
         static::assertSame('parent-theme-id', $theme->getParentThemeId());

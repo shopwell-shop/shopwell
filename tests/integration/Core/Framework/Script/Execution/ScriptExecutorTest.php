@@ -72,8 +72,8 @@ class ScriptExecutorTest extends TestCase
     public function testExecuteGetShopwellVersion(): void
     {
         $this->testExecute(
-            ['shopware-version-case'],
-            ['version' => static::getContainer()->getParameter('kernel.shopware_version'), 'version_compare' => true]
+            ['shopwell-version-case'],
+            ['version' => static::getContainer()->getParameter('kernel.shopwell_version'), 'version_compare' => true]
         );
     }
 

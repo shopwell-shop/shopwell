@@ -4,14 +4,14 @@ Storefront Component
 The Storefront component is a frontend for Shopwell\Core written in PHP. 
 
 This repository is considered **read-only**. Please send pull requests
-to our [main Shopwell\Core repository](https://github.com/shopware/shopware).
+to our [main Shopwell\Core repository](https://github.com/shopwell-shop/shopwell).
 
 
 Getting started
 ---------
 
 To compile the assets (scss/javascript) you have to run the webpack compiler.
-This is easily done by executing the following commands in the shopware root folder via `composer`.
+This is easily done by executing the following commands in the shopwell root folder via `composer`.
 You can also run the unit tests and code-style fixers via `composer` scripts.
 
 - `composer build:js:storefront`      Builds the project for production and re-compiles the theme
@@ -35,6 +35,6 @@ Resources
 
   * [Documentation](https://developer.shopwell.cn)
   * [Contributing](https://developer.shopwell.cn/docs/resources/guidelines/code/contribution.html)
-  * [Report issues](https://github.com/shopware/shopware/issues) and
-    [send Pull Requests](https://github.com/shopware/shopware/pulls)
-    in the [main Shopwell\Core repository](https://github.com/shopware/shopware)
+  * [Report issues](https://github.com/shopwell-shop/shopwell/issues) and
+    [send Pull Requests](https://github.com/shopwell-shop/shopwell/pulls)
+    in the [main Shopwell\Core repository](https://github.com/shopwell-shop/shopwell)

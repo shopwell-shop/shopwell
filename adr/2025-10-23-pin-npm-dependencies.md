@@ -16,7 +16,7 @@ NPM dependencies with range specifiers (e.g., `^1.2.3` or `~1.2.3`) allow automa
 
 ## Decision
 
-All NPM dependencies in Shopware 6 must be pinned to exact versions without range specifiers:
+All NPM dependencies in Shopwell 6 must be pinned to exact versions without range specifiers:
 - ❌ `"package": "^1.2.3"` or `"package": "~1.2.3"`
 - ✅ `"package": "1.2.3"`
 

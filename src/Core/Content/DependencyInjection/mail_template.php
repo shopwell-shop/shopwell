@@ -37,26 +37,26 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     // Template Entities
     $services->set(MailTemplateDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'mail_template']);
+        ->tag('shopwell.entity.definition', ['entity' => 'mail_template']);
 
     $services->set(MailTemplateTranslationDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'mail_template_translation']);
+        ->tag('shopwell.entity.definition', ['entity' => 'mail_template_translation']);
 
     $services->set(MailTemplateTypeDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'mail_template_type']);
+        ->tag('shopwell.entity.definition', ['entity' => 'mail_template_type']);
 
     $services->set(MailTemplateTypeTranslationDefinition::class)
-        ->tag('shopware.entity.definition', ['entity' => 'mail_template_type_translation']);
+        ->tag('shopwell.entity.definition', ['entity' => 'mail_template_type_translation']);
 
     $services->set(MailTemplateMediaDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     // Header Footer Entities
     $services->set(MailHeaderFooterDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(MailHeaderFooterTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     // Controller
     $services->set(MailActionController::class)
@@ -73,7 +73,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(MailDataProvider::class)
         ->args([
-            tagged_iterator('shopware.mail.data_provider', 'key'),
+            tagged_iterator('shopwell.mail.data_provider', 'key'),
         ]);
 
     $services->set(MailTemplateService::class)
@@ -101,7 +101,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(BusinessEventCollector::class),
             service(DefinitionInstanceRegistry::class),
             service('event_dispatcher'),
-            tagged_iterator('shopware.mail.data_provider', 'key'),
+            tagged_iterator('shopwell.mail.data_provider', 'key'),
             service(ClockInterface::class),
         ]);
 

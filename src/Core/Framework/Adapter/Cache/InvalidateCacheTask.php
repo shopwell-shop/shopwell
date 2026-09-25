@@ -11,7 +11,7 @@ class InvalidateCacheTask extends ScheduledTask implements DeduplicatableMessage
 {
     public static function getTaskName(): string
     {
-        return 'shopware.invalidate_cache';
+        return 'shopwell.invalidate_cache';
     }
 
     public static function getDefaultInterval(): int

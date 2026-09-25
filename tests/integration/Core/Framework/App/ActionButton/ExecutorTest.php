@@ -85,12 +85,12 @@ class ExecutorTest extends TestCase
 
         static::assertSame(
             hash_hmac('sha256', $body, $this->app->getAppSecret()),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
 
         static::assertNotEmpty($request->getHeaderLine('sw-version'));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
     }
 
     public function testExecutorReturnMessageWithFailedRequests(): void
@@ -143,12 +143,12 @@ class ExecutorTest extends TestCase
         $body = $request->getBody()->getContents();
         static::assertSame(
             hash_hmac('sha256', $body, $this->app->getAppSecret()),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
 
         static::assertNotEmpty($request->getHeaderLine('sw-version'));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
     }
 
     public function testContentIsCorrect(): void
@@ -208,12 +208,12 @@ class ExecutorTest extends TestCase
 
         static::assertSame(
             hash_hmac('sha256', $body, $this->app->getAppSecret()),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
 
         static::assertNotEmpty($request->getHeaderLine('sw-version'));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
     }
 
     public function testExecutorReturnEmptyResponseBody(): void
@@ -252,12 +252,12 @@ class ExecutorTest extends TestCase
 
         static::assertSame(
             hash_hmac('sha256', $body, $this->app->getAppSecret()),
-            $request->getHeaderLine('shopware-shop-signature')
+            $request->getHeaderLine('shopwell-shop-signature')
         );
 
         static::assertNotEmpty($request->getHeaderLine('sw-version'));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
     }
 
     public function testExecutorReturnMessageWithWrongHMac(): void
@@ -380,7 +380,7 @@ class ExecutorTest extends TestCase
             new Response(
                 200,
                 [
-                    'shopware-app-signature' => hash_hmac('sha256', $responseData, $appSecret),
+                    'shopwell-app-signature' => hash_hmac('sha256', $responseData, $appSecret),
                 ],
                 $responseData
             )

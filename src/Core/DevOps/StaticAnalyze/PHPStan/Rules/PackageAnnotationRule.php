@@ -45,7 +45,7 @@ class PackageAnnotationRule implements Rule
 
         return [
             RuleErrorBuilder::message('This class is missing the "#[Package(...)]" attribute')
-                ->identifier('shopware.missingPackageAttribute')
+                ->identifier('shopwell.missingPackageAttribute')
                 ->build(),
         ];
     }

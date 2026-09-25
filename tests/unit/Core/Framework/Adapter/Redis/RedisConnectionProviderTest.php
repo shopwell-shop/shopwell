@@ -34,8 +34,8 @@ class RedisConnectionProviderTest extends TestCase
         ];
 
         $factories = [
-            'shopware.redis.connection.persistent' => fn () => $this->connections['persistent'],
-            'shopware.redis.connection.ephemeral' => fn () => $this->connections['ephemeral'],
+            'shopwell.redis.connection.persistent' => fn () => $this->connections['persistent'],
+            'shopwell.redis.connection.ephemeral' => fn () => $this->connections['ephemeral'],
         ];
 
         $this->serviceLocator = new class($factories) implements ContainerInterface {

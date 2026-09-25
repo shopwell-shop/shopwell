@@ -5,4 +5,4 @@ author: AubreyHewes
 author_github: AubreyHewes
 ---
 # Storefront
-* Changed `Shopware\Storefront\Framework\Routing\MaintenanceModeResolver::isMaintenanceRequest` to use the correct logic
+* Changed `Shopwell\Storefront\Framework\Routing\MaintenanceModeResolver::isMaintenanceRequest` to use the correct logic

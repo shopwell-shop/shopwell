@@ -120,7 +120,7 @@ require_core_version() {
       fi
     fi
 
-    composer -d "${PLATFORM_DIR}/repos/${package_lower}" require "shopware/core:${package_version}" --no-update --no-install
+    composer -d "${PLATFORM_DIR}/repos/${package_lower}" require "shopwell/core:${package_version}" --no-update --no-install
   fi
 }
 

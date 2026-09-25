@@ -6,7 +6,7 @@ author_email: jmaier@notebooksbilliger.de
 author_github: @justusNBB
 ---
 # Core
-* Added `Shopware\Core\Checkout\Cart\Event\CartEvent interface` shared by all CartEvents supporting the getCart method
+* Added `Shopwell\Core\Checkout\Cart\Event\CartEvent interface` shared by all CartEvents supporting the getCart method
 * Added Cart- & SalesChannelEvent interfaces to CartEvents:
   * `Core/Checkout/Cart/Event/AfterLineItemAddedEvent`
   * `Core/Checkout/Cart/Event/AfterLineItemQuantityChangedEvent`
@@ -24,6 +24,6 @@ author_github: @justusNBB
   * `Core/Checkout/Cart/Event/CartSavedEvent`
   * `Core/Checkout/Cart/Event/CartVerifyPersistEvent`
   * `Core/Checkout/Cart/Event/LineItemRemovedEvent`
-* Deprecated `Shopware\Core\Checkout\Cart\Event\CartChangedEvent` method `getContext()` should return `Context`, the attribute name `$context` and the (missing) type of attribute `$cart`: Until this is solved CartChangedEvent cannot implement `ShopwareSalesChannelEvent`
-* Added `Shopware\Core\Checkout\Cart\Event\CartChangedEvent` method `getSalesChannelContext()` for consistency
-* Added `Shopware\Core\Checkout\Cart\Event\CartLoadedEvent` method `getContext()` for consistency
+* Deprecated `Shopwell\Core\Checkout\Cart\Event\CartChangedEvent` method `getContext()` should return `Context`, the attribute name `$context` and the (missing) type of attribute `$cart`: Until this is solved CartChangedEvent cannot implement `ShopwellSalesChannelEvent`
+* Added `Shopwell\Core\Checkout\Cart\Event\CartChangedEvent` method `getSalesChannelContext()` for consistency
+* Added `Shopwell\Core\Checkout\Cart\Event\CartLoadedEvent` method `getContext()` for consistency

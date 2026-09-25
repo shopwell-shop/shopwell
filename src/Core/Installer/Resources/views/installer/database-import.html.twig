@@ -2,7 +2,7 @@
 
 {% block base_content %}
     <div class="card__title">
-        <h2>{{ "shopware.installer.database-import_header"|trans }}</h2>
+        <h2>{{ "shopwell.installer.database-import_header"|trans }}</h2>
     </div>
 
     <div class="card__body database-import">
@@ -11,7 +11,7 @@
                 <div class="alert-hero-icon">
                     <i class="icon-warning"></i>
                 </div>
-                <h3 class="alert-hero-title">{{ "shopware.installer.database_import_error_title"|trans }}</h3>
+                <h3 class="alert-hero-title">{{ "shopwell.installer.database_import_error_title"|trans }}</h3>
                 <div class="alert-hero-text">{{ error }}</div>
             </div>
         {% endif %}
@@ -27,12 +27,12 @@
         </div>
 
         <div id="import-container" class="database-import-container">
-            <p class="database-import-text">{{ "shopware.installer.database-import_info_text"|trans }}</p>
+            <p class="database-import-text">{{ "shopwell.installer.database-import_info_text"|trans }}</p>
 
             <div class="database-import-count">
-                {{ "shopware.installer.database_import_install_label"|trans }} {{ "shopware.installer.database_import_install_step_text"|trans }}
+                {{ "shopwell.installer.database_import_install_label"|trans }} {{ "shopwell.installer.database_import_install_step_text"|trans }}
                 <span id="offset" class="database-import-count-offset">0</span>
-                {{ "shopware.installer.database_import_install_from_text"|trans }}
+                {{ "shopwell.installer.database_import_install_from_text"|trans }}
                 <span id="total" class="database-import-count-total">0</span>
             </div>
             <div id="progress" class="progress active">
@@ -45,7 +45,7 @@
                 <div class="alert-hero-icon">
                     <i class="icon-checkmark"></i>
                 </div>
-                <h3 class="alert-hero-title">{{ "shopware.installer.database_import_success"|trans }}</h3>
+                <h3 class="alert-hero-title">{{ "shopwell.installer.database_import_success"|trans }}</h3>
             </div>
         </div>
     </div>
@@ -56,14 +56,14 @@
             id="back"
             class="btn btn-default flex-item disabled"
             onclick="if (event.target.classList.contains('disabled')) event.preventDefault();">
-            {{ "shopware.installer.back"|trans }}
+            {{ "shopwell.installer.back"|trans }}
         </a>
         <a
             href="{{ url('installer.configuration') }}"
             id="next"
             class="btn btn-primary flex-item flex-right disabled"
             onclick="if (event.target.classList.contains('disabled')) event.preventDefault();">
-            {{ "shopware.installer.forward"|trans }}
+            {{ "shopwell.installer.forward"|trans }}
         </a>
     </div>
 

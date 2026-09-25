@@ -16,7 +16,7 @@ describe('build/vite-plugins/twigjs-plugin', () => {
 
         // Identify plugin by name
         expect(plugin).toHaveProperty('name');
-        expect(plugin.name).toBe('shopware-vite-plugin-twigjs');
+        expect(plugin.name).toBe('shopwell-vite-plugin-twigjs');
 
         // Check if the plugin has a transform method
         expect(plugin).toHaveProperty('transform');

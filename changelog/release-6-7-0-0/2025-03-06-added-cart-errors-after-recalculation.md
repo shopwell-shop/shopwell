@@ -1,6 +1,6 @@
 ---
 title: Added cart errors after recalculation
-issue: https://github.com/shopware/shopware/issues/7020
+issue: https://github.com/shopwell-shop/shopwell/issues/7020
 author_github: @En0Ma1259
 ---
 # Core

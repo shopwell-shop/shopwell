@@ -22,7 +22,7 @@ describe('extension tooling fix -> baseline workflow (e2e)', () => {
             const administrationRoot = createVendorAdmin(projectRoot, { entitySchema: 'real' });
             const sourceRoot = path.join(projectRoot, 'custom/plugins/FixBase/src/Resources/app/administration/src');
             const fixablePath = path.join(sourceRoot, 'fixable.js');
-            const baselinePath = path.join(projectRoot, 'custom/plugins/FixBase/.shopware-admin-baseline.json');
+            const baselinePath = path.join(projectRoot, 'custom/plugins/FixBase/.shopwell-admin-baseline.json');
 
             try {
                 writeFile(path.join(projectRoot, 'custom/plugins/FixBase/composer.json'), '{}\n');

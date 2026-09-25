@@ -2,11 +2,11 @@
 title: Ignore JS script files if they do not match the new file path pattern
 issue: NEXT-33857
 author: Björn Meyer
-author_email: b.meyer@shopware.com
+author_email: b.meyer@shopwell.com
 author_github: BrocksiNet
 ---
 # Storefront
-* Added condition to ignore JS script files if they do not match the new file path pattern ([see](https://github.com/shopware/shopware/discussions/3310)).
+* Added condition to ignore JS script files if they do not match the new file path pattern ([see](https://github.com/shopwell-shop/shopwell/discussions/3310)).
 
 Example for a Theme called MyOldTheme (theme.json):
 ```json

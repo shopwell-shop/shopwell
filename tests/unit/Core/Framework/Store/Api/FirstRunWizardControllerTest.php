@@ -344,7 +344,7 @@ class FirstRunWizardControllerTest extends TestCase
     public function testLoginWithFrw(): void
     {
         $requestDataBag = new RequestDataBag([
-            'shopwareId' => 'testShopwellId',
+            'shopwellId' => 'testShopwellId',
             'password' => 'testPassword',
         ]);
 
@@ -376,7 +376,7 @@ class FirstRunWizardControllerTest extends TestCase
     public function testTryToLoginWithFrwWithoutPassword(): void
     {
         $requestDataBag = new RequestDataBag([
-            'shopwareId' => 'testShopwellId',
+            'shopwellId' => 'testShopwellId',
         ]);
 
         $this->firstRunWizardService->expects($this->never())
@@ -391,7 +391,7 @@ class FirstRunWizardControllerTest extends TestCase
     public function testTryingToLoginWithFrwFails(): void
     {
         $requestDataBag = new RequestDataBag([
-            'shopwareId' => 'testShopwellId',
+            'shopwellId' => 'testShopwellId',
             'password' => 'testPassword',
         ]);
 

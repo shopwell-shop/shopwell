@@ -18,10 +18,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(LocaleDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(LocaleTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(LanguageLocaleCodeProvider::class)
         ->args([
@@ -36,11 +36,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('locale.repository'),
         ])
-        ->tag('shopware.system_check');
+        ->tag('shopwell.system_check');
 
     $services->set(LocaleCodeFkResolver::class)
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.sync.fk_resolver');
+        ->tag('shopwell.sync.fk_resolver');
 };

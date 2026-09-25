@@ -11,7 +11,7 @@ describe('marketing.store', () => {
 
     beforeAll(() => {
         // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
-        Shopwell.Service().register('shopwareDiscountCampaignService', () => {
+        Shopwell.Service().register('shopwellDiscountCampaignService', () => {
             return new ShopwellDiscountCampaignService();
         });
     });

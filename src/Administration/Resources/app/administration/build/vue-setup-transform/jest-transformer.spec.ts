@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 
-import shopwareSetupVueTransformer from '../../test/transformer/shopwareSetupVueTransformer';
+import shopwellSetupVueTransformer from '../../test/transformer/shopwellSetupVueTransformer';
 import { stripIndent } from './index.spec/helpers';
 
 const browserslistDataWarning = {
@@ -10,7 +10,7 @@ const browserslistDataWarning = {
     msg: 'Browserslist: browsers data',
 };
 
-describe('test/transformer/shopwareSetupVueTransformer integration', () => {
+describe('test/transformer/shopwellSetupVueTransformer integration', () => {
     beforeAll(() => {
         global.allowedErrors.push(browserslistDataWarning);
     });
@@ -50,7 +50,7 @@ describe('test/transformer/shopwareSetupVueTransformer integration', () => {
             </script>
         `;
 
-        const transformed = shopwareSetupVueTransformer.process(
+        const transformed = shopwellSetupVueTransformer.process(
             source,
             '/administration/src/sw-jest-transform-fixture.vue',
             { config: {} },

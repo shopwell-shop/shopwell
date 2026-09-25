@@ -14,7 +14,7 @@ const { Store, Mixin, Filter } = Shopwell;
 export default Shopwell.Component.wrapComponentConfig({
     template,
 
-    inject: ['systemConfigApiService', 'shopwareExtensionService', 'storeService'],
+    inject: ['systemConfigApiService', 'shopwellExtensionService', 'storeService'],
 
     mixins: [Mixin.getByName('notification')],
 
@@ -23,7 +23,7 @@ export default Shopwell.Component.wrapComponentConfig({
         unsubscribeStore: (() => void) | null;
         form: {
             password: string;
-            shopwareId: string;
+            shopwellId: string;
         };
     } {
         return {
@@ -31,18 +31,18 @@ export default Shopwell.Component.wrapComponentConfig({
             unsubscribeStore: null,
             form: {
                 password: '',
-                shopwareId: '',
+                shopwellId: '',
             },
         };
     },
 
     computed: {
         userInfo(): UserInfo | null {
-            return Store.get('shopwareExtensions').userInfo;
+            return Store.get('shopwellExtensions').userInfo;
         },
 
         isLoggedIn(): boolean {
-            return Store.get('shopwareExtensions').userInfo !== null;
+            return Store.get('shopwellExtensions').userInfo !== null;
         },
 
         assetFilter() {
@@ -53,7 +53,7 @@ export default Shopwell.Component.wrapComponentConfig({
     created() {
         this.createdComponent()
             .then(() => {
-                this.unsubscribeStore = Store.get('shopwareExtensions').$onAction(({ name, args }) =>
+                this.unsubscribeStore = Store.get('shopwellExtensions').$onAction(({ name, args }) =>
                     this.showErrorNotification({ type: name, payload: args as MappedError[][] }),
                 );
             })
@@ -70,7 +70,7 @@ export default Shopwell.Component.wrapComponentConfig({
         async createdComponent() {
             try {
                 this.isLoading = true;
-                await this.shopwareExtensionService.checkLogin();
+                await this.shopwellExtensionService.checkLogin();
             } finally {
                 this.isLoading = false;
             }
@@ -87,7 +87,7 @@ export default Shopwell.Component.wrapComponentConfig({
                     }>,
                 );
             } finally {
-                await this.shopwareExtensionService.checkLogin();
+                await this.shopwellExtensionService.checkLogin();
             }
         },
 
@@ -95,7 +95,7 @@ export default Shopwell.Component.wrapComponentConfig({
             this.isLoading = true;
 
             try {
-                await this.storeService.login(this.form.shopwareId, this.form.password);
+                await this.storeService.login(this.form.shopwellId, this.form.password);
 
                 this.$emit('login-success');
 
@@ -109,7 +109,7 @@ export default Shopwell.Component.wrapComponentConfig({
                     }>,
                 );
             } finally {
-                await this.shopwareExtensionService.checkLogin();
+                await this.shopwellExtensionService.checkLogin();
                 this.isLoading = false;
             }
         },
@@ -149,7 +149,7 @@ export default Shopwell.Component.wrapComponentConfig({
         commitErrors(errorResponse: AxiosError<{ errors: StoreApiException[] }>): never {
             if (errorResponse.response) {
                 const mappedErrors = extensionErrorHandler.mapErrors(errorResponse.response.data.errors);
-                Shopwell.Store.get('shopwareExtensions').pluginErrorsMapped(mappedErrors);
+                Shopwell.Store.get('shopwellExtensions').pluginErrorsMapped(mappedErrors);
             }
 
             throw errorResponse;

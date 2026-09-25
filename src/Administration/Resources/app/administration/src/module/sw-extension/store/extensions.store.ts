@@ -32,8 +32,8 @@ type SearchValue<T, K extends keyof T> = {
     value: T[K];
 };
 
-const shopwareExtensionsStore = Shopwell.Store.register({
-    id: 'shopwareExtensions',
+const shopwellExtensionsStore = Shopwell.Store.register({
+    id: 'shopwellExtensions',
 
     state: () =>
         ({
@@ -52,7 +52,7 @@ const shopwareExtensionsStore = Shopwell.Store.register({
                 data: [],
             },
             userInfo: null,
-            shopwareId: null,
+            shopwellId: null,
             loginStatus: false,
             licensedExtensions: {
                 loading: false,
@@ -94,10 +94,10 @@ const shopwareExtensionsStore = Shopwell.Store.register({
 /**
  * @private
  */
-export type ShopwellExtensionsStore = ReturnType<typeof shopwareExtensionsStore>;
+export type ShopwellExtensionsStore = ReturnType<typeof shopwellExtensionsStore>;
 
 /**
  * @sw-package checkout
  * @private
  */
-export default shopwareExtensionsStore;
+export default shopwellExtensionsStore;

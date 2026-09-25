@@ -276,7 +276,7 @@ class WebhookOutboxStore
      *
      * @deprecated tag:v6.8.0 - Only used for the Messenger-owned retry lifecycle that existed before WEBHOOKS_REWORK. Remove alongside the flag-OFF path in WebhookEventMessageHandler.
      *
-     * @phpstan-ignore shopware.deprecatedMethod (called on the flag-OFF retry path; deprecation notice would pollute logs)
+     * @phpstan-ignore shopwell.deprecatedMethod (called on the flag-OFF retry path; deprecation notice would pollute logs)
      */
     public function resetForRetry(OutboxEntry $entry, ?DeliveryResponse $response): bool
     {

@@ -25,7 +25,7 @@ class RateLimiterCompilerPassTest extends TestCase
     protected function setUp(): void
     {
         $config = [
-            'shopware.api.rate_limiter' => [
+            'shopwell.api.rate_limiter' => [
                 'cart_add_line_item' => [
                     'enabled' => true,
                     'id' => 'test_limit',
@@ -46,7 +46,7 @@ class RateLimiterCompilerPassTest extends TestCase
         $rateLimiterCompilerPass = new RateLimiterCompilerPass();
         $rateLimiterCompilerPass->process($container);
 
-        $this->rateLimiterDef = $container->getDefinition('shopware.rate_limiter');
+        $this->rateLimiterDef = $container->getDefinition('shopwell.rate_limiter');
     }
 
     public function testSystemServiceConfigReference(): void

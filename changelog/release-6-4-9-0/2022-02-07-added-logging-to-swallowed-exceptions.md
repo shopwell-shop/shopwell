@@ -6,4 +6,4 @@ author_email: github@mank.dev
 author_github: dominikmank
 ---
 # Storefront
-* Added logging to `Shopware\Storefront\Controller\AccountProfileController` when an exception is catched. 
+* Added logging to `Shopwell\Storefront\Controller\AccountProfileController` when an exception is catched. 

@@ -96,7 +96,7 @@ class RequirementsValidatorTest extends TestCase
             $packages[] = $requirement->getParameters()['requirement'];
         }
 
-        static::assertContains('shopware/platform', $packages);
+        static::assertContains('shopwell/platform', $packages);
         static::assertContains('test/not-installed', $packages);
     }
 
@@ -162,7 +162,7 @@ class RequirementsValidatorTest extends TestCase
             $packages[] = $requirement->getParameters()['requirement'];
         }
 
-        static::assertContains('shopware/platform', $packages);
+        static::assertContains('shopwell/platform', $packages);
         static::assertContains('test/not-installed', $packages);
     }
 
@@ -228,7 +228,7 @@ class RequirementsValidatorTest extends TestCase
         $this->expectExceptionMessageMatches(\sprintf(
             $regexTemplate,
             preg_quote($plugin->getComposerName(), '#'),
-            preg_quote('shopware/core', '#')
+            preg_quote('shopwell/core', '#')
         ));
         $this->createValidator()->validateRequirements($plugin, Context::createDefaultContext(), 'test');
     }

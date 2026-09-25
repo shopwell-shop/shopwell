@@ -15,7 +15,7 @@ use Shopwell\Core\Framework\Log\Package;
  * A parameterless tool — or a nested object parameter with no members — has an empty properties
  * map, and PHP encodes an empty array as `[]`. JSON Schema requires an object there, so strict
  * clients reject the whole payload — OpenAI answers
- * `400 invalid_function_parameters: "[] is not of type 'object'"`. Because `shopware-toolsets-list`
+ * `400 invalid_function_parameters: "[] is not of type 'object'"`. Because `shopwell-toolsets-list`
  * is advertised in every session, one malformed tool breaks every request such a client makes, not
  * just calls to that tool.
  *
@@ -25,7 +25,7 @@ use Shopwell\Core\Framework\Log\Package;
  * a tool's schema from a JSON-decoded associative array therefore loses the object type, because
  * `json_decode('{"properties":{}}', true)` yields `['properties' => []]`. This is the single place
  * Shopwell re-establishes the invariant, shared by every surface that emits a tool definition: the
- * HTTP transport (`tools/list`, over JSON and SSE) and the `shopware-tool-search` payload.
+ * HTTP transport (`tools/list`, over JSON and SSE) and the `shopwell-tool-search` payload.
  */
 #[Package('framework')]
 final class McpToolSchemaNormalizer

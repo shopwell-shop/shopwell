@@ -12,11 +12,11 @@ This makes it compatible with `Symfony\Bundle\FrameworkBundle\Test\MailerAsserti
 The MailerAssertionsTrait was introduces with Symfony 4.4  
 https://symfony.com/blog/new-in-symfony-4-4-phpunit-assertions-for-email-messages
 
-Also make the methods static in `Shopware\Tests\Bench` and `Shopware\Tests\Unit\Storefront\DependencyInjection\ReverseProxyCompilerPassTest`
+Also make the methods static in `Shopwell\Tests\Bench` and `Shopwell\Tests\Unit\Storefront\DependencyInjection\ReverseProxyCompilerPassTest`
 ___
 # Upgrade Information
 ## Changes to KernelTestBehaviour trait
-If you defined method `getKernel` and/or `getContainer` for anything using the  `Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour` trait, make them static:
+If you defined method `getKernel` and/or `getContainer` for anything using the  `Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour` trait, make them static:
 ```php
 abstract protected function getKernel(): KernelInterface;
 

@@ -216,10 +216,10 @@ class VideoTypeDataResolverTest extends TestCase
         $resolverContext = new ResolverContext(static::createStub(SalesChannelContext::class), new Request());
         $result = new ElementDataCollection();
 
-        $this->publicFilesystem->write('/bundles/storefront/assets/default/cms/shopware.mp4', '');
+        $this->publicFilesystem->write('/bundles/storefront/assets/default/cms/shopwell.mp4', '');
 
         $fieldConfig = new FieldConfigCollection();
-        $fieldConfig->add(new FieldConfig('media', FieldConfig::SOURCE_DEFAULT, 'bundles/storefront/assets/default/cms/shopware.mp4'));
+        $fieldConfig->add(new FieldConfig('media', FieldConfig::SOURCE_DEFAULT, 'bundles/storefront/assets/default/cms/shopwell.mp4'));
 
         $slot = new CmsSlotEntity();
         $slot->setFieldConfig($fieldConfig);
@@ -230,7 +230,7 @@ class VideoTypeDataResolverTest extends TestCase
         static::assertInstanceOf(VideoStruct::class, $videoStruct);
         $media = $videoStruct->getMedia();
         static::assertInstanceOf(MediaEntity::class, $media);
-        static::assertSame('shopware', $media->getFileName());
+        static::assertSame('shopwell', $media->getFileName());
         static::assertSame('video/mp4', $media->getMimeType());
         static::assertSame('mp4', $media->getFileExtension());
     }

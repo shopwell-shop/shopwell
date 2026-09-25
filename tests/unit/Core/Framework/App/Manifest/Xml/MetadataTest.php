@@ -27,8 +27,8 @@ class MetadataTest extends TestCase
     {
         $metaData = $this->manifest->getMetadata();
         static::assertSame('test', $metaData->getName());
-        static::assertSame('shopware AG', $metaData->getAuthor());
-        static::assertSame('(c) by shopware AG', $metaData->getCopyright());
+        static::assertSame('Shopwell', $metaData->getAuthor());
+        static::assertSame('(c) by Shopwell', $metaData->getCopyright());
         static::assertSame('MIT', $metaData->getLicense());
         static::assertSame('https://test.com/privacy', $metaData->getPrivacy());
         static::assertSame('1.0.0', $metaData->getVersion());
@@ -43,12 +43,12 @@ class MetadataTest extends TestCase
             'de-DE' => 'Test für das App System',
         ], $metaData->getDescription());
         static::assertSame([
-            'en-GB' => 'Following personal information will be processed on shopware AG\'s servers:
+            'en-GB' => 'Following personal information will be processed on Shopwell\'s servers:
 
 - Name
 - Billing address
 - Order value',
-            'de-DE' => 'Folgende Nutzerdaten werden auf Servern der shopware AG verarbeitet:
+            'de-DE' => 'Folgende Nutzerdaten werden auf Servern der Shopwell verarbeitet:
 
 - Name
 - Rechnungsadresse

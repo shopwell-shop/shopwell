@@ -66,7 +66,7 @@
             "topRecommendations": "Globale Empfehlungen",
             "otherRecommendations": "Regionale Empfehlungen"
         },
-        "shopwareAccount": {
+        "shopwellAccount": {
             "headline": "Shopwell Account - Anmeldung",
             "passwordLabel": "Passwort",
             "passwordPlaceholder": "Gib Dein Passwort ein ...",
@@ -83,7 +83,7 @@
         "error": {
             "messageLoginDataInvalid": "Falsche Login-Daten, bitte versuche es nochmal."
         },
-        "shopwareDomain": {
+        "shopwellDomain": {
             "headline": "Verifiziere Deine Domain",
             "message": "Mit welcher Domain willst Du diesen Shop verknüpfen? Wähle die entsprechende Domain aus oder lege eine neue an.",
             "labelCreateDomain": "Erstelle eine neue Shop-Domain",
@@ -123,7 +123,7 @@
             "mailer": "Mailer-Einstellungen",
             "setupPaypal": "PayPal einrichten",
             "plugins": "Erweiterungen",
-            "shopware": "Shopwell Account",
+            "shopwell": "Shopwell Account",
             "store": "Shopwell Store",
             "defaults": "Standardwerte"
         }

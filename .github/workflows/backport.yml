@@ -32,12 +32,12 @@ jobs:
       owner: ${{ steps.issue.outputs.owner }}
       repository: ${{ steps.issue.outputs.repository }}
     steps:
-      - uses: shopware/octo-sts-action@main
-        id: sts-shopware-backport
+      - uses: shopwell/octo-sts-action@main
+        id: sts-shopwell-backport
         if: ${{ !github.event.act }}
         with:
-          scope: shopware
-          identity: ShopwareBackport
+          scope: shopwell
+          identity: ShopwellBackport
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -58,9 +58,9 @@ jobs:
           PR_HEAD: ${{ github.event.pull_request.head.ref }}
           PR_ASSIGNEE: ${{ github.event.pull_request.assignee && github.event.pull_request.assignee.login || '' }}
         with:
-          github-token: ${{ github.event.act && secrets.GITHUB_TOKEN || steps.sts-shopware-backport.outputs.token }}
+          github-token: ${{ github.event.act && secrets.GITHUB_TOKEN || steps.sts-shopwell-backport.outputs.token }}
           script: |
-            const { getDevelopmentIssueForPullRequest } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopware-ag/gh-project-automation/dist/index.mjs')
+            const { getDevelopmentIssueForPullRequest } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopwell-ag/gh-project-automation/dist/index.mjs')
             const issue = await getDevelopmentIssueForPullRequest({github, core, context}, process.env.PR_REPO, parseInt(process.env.PR_NUMBER), process.env.PR_HEAD, process.env.PR_ASSIGNEE)
 
             core.setOutput('id', issue?.id || null)
@@ -86,12 +86,12 @@ jobs:
       ) && needs.find-linked-issue.outputs.id
     needs: [find-linked-issue]
     steps:
-      - uses: shopware/octo-sts-action@main
-        id: sts-shopware-backport
+      - uses: shopwell/octo-sts-action@main
+        id: sts-shopwell-backport
         if: ${{ !github.event.act }}
         with:
-          scope: shopware
-          identity: ShopwareBackport
+          scope: shopwell
+          identity: ShopwellBackport
 
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
@@ -100,7 +100,7 @@ jobs:
           ISSUE_REPOSITORY: ${{ needs.find-linked-issue.outputs.repository }}
           POST_COMMENT: 'Reopening issue because the related pull request needs to be backported.'
         with:
-          github-token: ${{ github.event.act && secrets.GITHUB_TOKEN || steps.sts-shopware-backport.outputs.token }}
+          github-token: ${{ github.event.act && secrets.GITHUB_TOKEN || steps.sts-shopwell-backport.outputs.token }}
           script: |
             const issue = await github.rest.issues.get({
               owner: process.env.ISSUE_OWNER,
@@ -219,17 +219,17 @@ jobs:
         target-branch: ${{ fromJSON(needs.parse-labels.outputs.target-branches) }}
       fail-fast: true
     steps:
-      - uses: shopware/octo-sts-action@main
-        id: sts-shopware-backport
+      - uses: shopwell/octo-sts-action@main
+        id: sts-shopwell-backport
         if: ${{ !github.event.act }}
         with:
-          scope: shopware
-          identity: ShopwareBackport
+          scope: shopwell
+          identity: ShopwellBackport
 
       - name: Backporting
         uses: kiegroup/git-backporting@2d651f7b8d88f89656c888eaa4779796db946b5b # main
         with:
-          auth: ${{ github.event.act && secrets.GITHUB_TOKEN || steps.sts-shopware-backport.outputs.token }}
+          auth: ${{ github.event.act && secrets.GITHUB_TOKEN || steps.sts-shopwell-backport.outputs.token }}
           target-branch: ${{ matrix.target-branch }}
           pull-request: ${{ github.event.pull_request.url }}
           bp-branch-name: ${{ format('{0}-backport-{1}', github.event.pull_request.head.ref, matrix.target-branch) }}

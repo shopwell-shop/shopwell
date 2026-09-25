@@ -919,7 +919,7 @@ class CheckoutControllerTest extends TestCase
             'price' => [
                 ['currencyId' => Defaults::CURRENCY, 'gross' => self::PRODUCT_PRICE, 'net' => 10, 'linked' => false],
             ],
-            'manufacturer' => ['id' => $productId, 'name' => 'shopware AG'],
+            'manufacturer' => ['id' => $productId, 'name' => 'Shopwell'],
             'tax' => ['id' => $productId, 'name' => 'testTaxRate', 'taxRate' => 15],
             'categories' => [
                 ['id' => $productId, 'name' => 'Test category'],

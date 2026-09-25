@@ -24,7 +24,7 @@ class CreateMigrationCommandTest extends TestCase
         $command = new CreateMigrationCommand(
             new KernelPluginCollection(),
             'coreDir',
-            'shopwareVersion'
+            'shopwellVersion'
         );
         $commandTester = new CommandTester($command);
 
@@ -40,7 +40,7 @@ class CreateMigrationCommandTest extends TestCase
         $command = new CreateMigrationCommand(
             new KernelPluginCollection(),
             'coreDir',
-            'shopwareVersion'
+            'shopwellVersion'
         );
         $commandTester = new CommandTester($command);
 
@@ -56,7 +56,7 @@ class CreateMigrationCommandTest extends TestCase
         $command = new CreateMigrationCommand(
             new KernelPluginCollection(),
             'coreDir',
-            'shopwareVersion'
+            'shopwellVersion'
         );
         $commandTester = new CommandTester($command);
 
@@ -77,7 +77,7 @@ class CreateMigrationCommandTest extends TestCase
         $command = new CreateMigrationCommand(
             $kernelPluginCollection,
             'coreDir',
-            'shopwareVersion'
+            'shopwellVersion'
         );
         $commandTester = new CommandTester($command);
 

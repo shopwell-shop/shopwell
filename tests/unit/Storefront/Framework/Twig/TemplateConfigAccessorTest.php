@@ -66,7 +66,7 @@ class TemplateConfigAccessorTest extends TestCase
     {
         $storedMap = [
             'imports' => [
-                'shopware' => '/bundles/storefront/storefront/shopware/shopware.js',
+                'shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js',
                 'Sw:Button' => '/bundles/storefront/storefront/components/Sw/Button.js',
                 'Sw:Product:BuyButton' => '/bundles/storefront/storefront/components/Sw/Product/BuyButton.js',
             ],
@@ -85,7 +85,7 @@ class TemplateConfigAccessorTest extends TestCase
         static::assertSame(
             [
                 'imports' => [
-                    'shopware' => 'https://cdn.example.com/bundles/storefront/storefront/shopware/shopware.js',
+                    'shopwell' => 'https://cdn.example.com/bundles/storefront/storefront/shopwell/shopwell.js',
                     'Sw:Button' => 'https://cdn.example.com/bundles/storefront/storefront/components/Sw/Button.js',
                     'Sw:Product:BuyButton' => 'https://cdn.example.com/bundles/storefront/storefront/components/Sw/Product/BuyButton.js',
                 ],
@@ -98,7 +98,7 @@ class TemplateConfigAccessorTest extends TestCase
     {
         $storedMap = [
             'imports' => [
-                'shopware' => '/bundles/storefront/storefront/shopware/shopware.js',
+                'shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js',
                 'debounce' => '/bundles/myplugin/storefront/components/vendor/debounce-abc123.js',
                 'MyPlugin:Wusel:Counter' => '/bundles/myplugin/storefront/components/MyPlugin/Wusel/Counter.js',
             ],
@@ -122,7 +122,7 @@ class TemplateConfigAccessorTest extends TestCase
         static::assertSame(
             [
                 'imports' => [
-                    'shopware' => 'https://cdn.example.com/bundles/storefront/storefront/shopware/shopware.js',
+                    'shopwell' => 'https://cdn.example.com/bundles/storefront/storefront/shopwell/shopwell.js',
                     'debounce' => 'https://cdn.example.com/bundles/myplugin/storefront/components/vendor/debounce-abc123.js',
                     'MyPlugin:Wusel:Counter' => 'https://cdn.example.com/bundles/myplugin/storefront/components/MyPlugin/Wusel/Counter.js',
                 ],
@@ -140,7 +140,7 @@ class TemplateConfigAccessorTest extends TestCase
     {
         $storedMap = [
             'imports' => [
-                'shopware' => '/bundles/storefront/storefront/shopware/shopware.js',
+                'shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js',
             ],
             'styles' => [
                 '/bundles/storefront/storefront/components/Sw/Button.css',
@@ -160,7 +160,7 @@ class TemplateConfigAccessorTest extends TestCase
         static::assertSame(
             [
                 'imports' => [
-                    'shopware' => 'https://cdn.example.com/bundles/storefront/storefront/shopware/shopware.js',
+                    'shopwell' => 'https://cdn.example.com/bundles/storefront/storefront/shopwell/shopwell.js',
                 ],
                 'styles' => [
                     'https://cdn.example.com/bundles/storefront/storefront/components/Sw/Button.css',
@@ -175,7 +175,7 @@ class TemplateConfigAccessorTest extends TestCase
     {
         $storedMap = [
             'imports' => [
-                'shopware' => '/bundles/storefront/storefront/shopware/shopware.js',
+                'shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js',
             ],
             'scopes' => [
                 '/bundles/myplugin/storefront/components/MyPlugin/' => [
@@ -311,7 +311,7 @@ class TemplateConfigAccessorTest extends TestCase
     public function testImportMapPrefersDevImportMapWhenDevEnvAndFlagFilePresent(): void
     {
         $devMap = [
-            'imports' => ['shopware' => 'http://localhost:5176/src/shopware.ts'],
+            'imports' => ['shopwell' => 'http://localhost:5176/src/shopwell.ts'],
             'styles' => ['http://localhost:5176/@fs/foo.scss'],
         ];
 
@@ -334,7 +334,7 @@ class TemplateConfigAccessorTest extends TestCase
 
     public function testImportMapFallsBackToStoredMapWhenDevServerAbsent(): void
     {
-        $storedMap = ['imports' => ['shopware' => '/bundles/storefront/storefront/shopware/shopware.js']];
+        $storedMap = ['imports' => ['shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js']];
 
         $this->themeScripts->method('getDevImportMap')->willReturn(null);
         $this->themeScripts->method('getImportMap')->willReturn($storedMap);
@@ -353,7 +353,7 @@ class TemplateConfigAccessorTest extends TestCase
     {
         // Production / test environments must never return the dev server flag file
         // even if one exists on disk (stale file after a dev/prod switch).
-        $storedMap = ['imports' => ['shopware' => '/bundles/storefront/storefront/shopware/shopware.js']];
+        $storedMap = ['imports' => ['shopwell' => '/bundles/storefront/storefront/shopwell/shopwell.js']];
 
         $themeScripts = $this->createMock(ThemeScripts::class);
         $themeScripts->expects($this->never())->method('getDevImportMap');

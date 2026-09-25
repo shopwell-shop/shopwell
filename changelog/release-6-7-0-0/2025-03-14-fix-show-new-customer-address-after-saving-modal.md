@@ -1,6 +1,6 @@
 ---
 title: Show new customer address after saving admin modal
-issue: https://github.com/shopware/shopware/issues/7350
+issue: https://github.com/shopwell-shop/shopwell/issues/7350
 author_github: @En0Ma1259
 ---
 # Administration

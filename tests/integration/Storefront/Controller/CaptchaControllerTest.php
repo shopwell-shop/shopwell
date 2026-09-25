@@ -51,7 +51,7 @@ class CaptchaControllerTest extends TestCase
 
         $payload = [
             'formId' => $formId,
-            'shopware_basic_captcha_confirm' => $basicCaptchaSession,
+            'shopwell_basic_captcha_confirm' => $basicCaptchaSession,
         ];
 
         // Basic Captcha Valid

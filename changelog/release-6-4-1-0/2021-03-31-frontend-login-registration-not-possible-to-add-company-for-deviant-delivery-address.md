@@ -3,7 +3,7 @@ title: frontend Login-Registration not possible to add company for deviant deliv
 issue: NEXT-14213
 ---
 # Core
-*  Changed function `validateRegistrationData` at `Shopware\Core\Checkout\Customer\SalesChannel\RegisterRoute` to add validator for shipping Address Company when `$data['shippingAddress']['accountType'] === 'business'` 
+*  Changed function `validateRegistrationData` at `Shopwell\Core\Checkout\Customer\SalesChannel\RegisterRoute` to add validator for shipping Address Company when `$data['shippingAddress']['accountType'] === 'business'` 
 ___
 # Storefront
 *  Added twig variable `customToggleTarget` to `/src/Storefront/Resources/views/storefront/component/address/address-personal.html.twig` to custom toggle field target

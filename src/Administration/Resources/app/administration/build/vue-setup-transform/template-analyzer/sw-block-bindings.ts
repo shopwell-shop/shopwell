@@ -11,7 +11,7 @@
  */
 
 import { NodeTypes, type TemplateChildNode } from '@vue/compiler-dom';
-import type { ShopwellSetupMode } from '../utils/shopware-setup-block';
+import type { ShopwellSetupMode } from '../utils/shopwell-setup-block';
 import { ShopwellSetupTransformError } from '../utils/transform-error';
 import { type DirectiveNode, type ElementNode, getDefaultSlotDirective, isSwBlockExtends } from './template-references';
 

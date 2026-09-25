@@ -34,7 +34,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 #[Package('framework')]
 class McpAllowlistListRequestHandler implements RequestHandlerInterface
 {
-    private const TOOL_SEARCH = 'shopware-tool-search';
+    private const TOOL_SEARCH = 'shopwell-tool-search';
 
     /**
      * The server-owned discovery meta-tools. They are always advertised and always callable,
@@ -319,13 +319,13 @@ class McpAllowlistListRequestHandler implements RequestHandlerInterface
         $decodedCursor = base64_decode($cursor, true);
 
         if ($decodedCursor === false || !is_numeric($decodedCursor)) {
-            throw new InvalidCursorException($cursor); // @phpstan-ignore shopware.domainException (MCP SDK request handlers use this SDK exception for invalid cursors.)
+            throw new InvalidCursorException($cursor); // @phpstan-ignore shopwell.domainException (MCP SDK request handlers use this SDK exception for invalid cursors.)
         }
 
         $offset = (int) $decodedCursor;
 
         if ($offset < 0 || $offset > $totalItems) {
-            throw new InvalidCursorException($cursor); // @phpstan-ignore shopware.domainException (MCP SDK request handlers use this SDK exception for invalid cursors.)
+            throw new InvalidCursorException($cursor); // @phpstan-ignore shopwell.domainException (MCP SDK request handlers use this SDK exception for invalid cursors.)
         }
 
         return $offset;

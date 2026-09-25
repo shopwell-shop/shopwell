@@ -127,8 +127,8 @@ describe('src/app/main.ts', () => {
         jest.mock('src/core/service/plugin-updates-listener.service');
         serviceMocks.PluginUpdatesListener = (await import('src/core/service/plugin-updates-listener.service')).default;
 
-        jest.mock('src/core/service/shopware-updates-listener.service');
-        serviceMocks.ShopwellUpdatesListener = (await import('src/core/service/shopware-updates-listener.service')).default;
+        jest.mock('src/core/service/shopwell-updates-listener.service');
+        serviceMocks.ShopwellUpdatesListener = (await import('src/core/service/shopwell-updates-listener.service')).default;
 
         jest.mock('src/core/service/customer-group-registration-listener.service');
         serviceMocks.CustomerGroupRegistrationListener = (
@@ -179,7 +179,7 @@ describe('src/app/main.ts', () => {
         // Reset the Shopwell object to make sure that the application is not already initialized
         Shopwell = undefined;
         // Import the Shopwell object
-        Shopwell = (await import('src/core/shopware')).ShopwellInstance;
+        Shopwell = (await import('src/core/shopwell')).ShopwellInstance;
         // Initialize the main application
         await import('src/app/main');
         // Import the VueAdapter to check if it is set in the application
@@ -280,7 +280,7 @@ describe('src/app/main.ts', () => {
         expect(services).toContain('mediaDefaultFolderService');
         expect(services).toContain('appAclService');
         expect(services).toContain('appCmsService');
-        expect(services).toContain('shopwareDiscountCampaignService');
+        expect(services).toContain('shopwellDiscountCampaignService');
         expect(services).toContain('searchRankingService');
         expect(services).toContain('recentlySearchService');
         expect(services).toContain('searchPreferencesService');
@@ -397,7 +397,7 @@ describe('src/app/main.ts', () => {
         expect(serviceMocks.AppCmsService).toHaveBeenCalled();
 
         expect(serviceMocks.ShopwellDiscountCampaignService).not.toHaveBeenCalled();
-        Shopwell.Service('shopwareDiscountCampaignService');
+        Shopwell.Service('shopwellDiscountCampaignService');
         expect(serviceMocks.ShopwellDiscountCampaignService).toHaveBeenCalled();
 
         expect(serviceMocks.SearchRankingService).not.toHaveBeenCalled();

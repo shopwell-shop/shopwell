@@ -1,5 +1,5 @@
 import { Fragment, type VNode } from 'vue';
-import type { TabItem } from '@shopware-ag/meteor-component-library/dist/esm/MtTabs';
+import type { TabItem } from '@shopwell-ag/meteor-component-library/dist/esm/MtTabs';
 
 /**
  * @sw-package framework

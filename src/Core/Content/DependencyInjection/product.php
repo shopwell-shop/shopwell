@@ -168,108 +168,108 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->instanceof(AbstractListingFilterHandler::class)
-        ->tag('shopware.listing.filter.handler');
+        ->tag('shopwell.listing.filter.handler');
 
     $services->set(ProductExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(ProductSortingExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(ProductDefinition::class)
-        ->tag('shopware.entity.definition')
-        ->tag('shopware.entity.hookable');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.entity.hookable');
 
     $services->set(ProductStreamMappingDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(SalesChannelProductDefinition::class)
-        ->tag('shopware.sales_channel.entity.definition');
+        ->tag('shopwell.sales_channel.entity.definition');
 
     $services->set(ProductCategoryDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductCustomFieldSetDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductTagDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductConfiguratorSettingDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductConfiguratorSettingExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(ProductPriceDefinition::class)
-        ->tag('shopware.entity.definition')
-        ->tag('shopware.entity.hookable');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.entity.hookable');
 
     $services->set(ProductPropertyDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductSearchKeywordDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductKeywordDictionaryDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductReviewDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductManufacturerDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductManufacturerTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductMediaDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductDownloadDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductOptionDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductCategoryTreeDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductCrossSellingDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductCrossSellingTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductCrossSellingAssignedProductsDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductFeatureSetDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductFeatureSetTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductSortingDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductSortingTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductSearchConfigDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductSearchConfigFieldDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductSearchConfigFieldExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(ProductSearchConfigExceptionHandler::class)
-        ->tag('shopware.dal.exception_handler');
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(ProductGateway::class)
         ->args([
@@ -373,13 +373,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(ProductDescriptionTeaserBuilder::class),
         ])
-        ->tag('shopware.entity_indexer');
+        ->tag('shopwell.entity_indexer');
 
     $services->set(OrderStockSubscriber::class)
         ->args([
             service(Connection::class),
             service(StockStorage::class),
-            param('shopware.stock.enable_stock_management'),
+            param('shopwell.stock.enable_stock_management'),
         ])
         ->tag('kernel.event_subscriber');
 
@@ -410,7 +410,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(ProductVisibilityDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(VariantCombinationLoader::class)
         ->args([
@@ -418,34 +418,34 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(DeliveryTimeDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(ProductBoxCmsElementResolver::class)
         ->args([
             service(SystemConfigService::class),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(ProductListingCmsElementResolver::class)
         ->args([
             service(ProductListingRoute::class),
             service('product_sorting.repository'),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(ProductSliderCmsElementResolver::class)
         ->args([
-            tagged_iterator('shopware.cms.product_slider.processor'),
+            tagged_iterator('shopwell.cms.product_slider.processor'),
             service('logger'),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(StaticProductProcessor::class)
         ->args([
             service(SystemConfigService::class),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.cms.product_slider.processor');
+        ->tag('shopwell.cms.product_slider.processor');
 
     $services->set(ProductStreamProcessor::class)
         ->args([
@@ -456,19 +456,19 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SystemConfigService::class),
             service(ProductCloseoutFilterFactory::class),
         ])
-        ->tag('shopware.cms.product_slider.processor');
+        ->tag('shopwell.cms.product_slider.processor');
 
     $services->set(ProductNameCmsElementResolver::class)
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(ManufacturerLogoCmsElementResolver::class)
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(CrossSellingCmsElementResolver::class)
         ->args([
             service(ProductCrossSellingRoute::class),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(ProductDescriptionReviewsCmsElementResolver::class)
         ->args([
@@ -476,7 +476,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ScriptExecutor::class),
             service(SystemConfigService::class),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(ProductPriceCalculator::class)
         ->args([
@@ -497,7 +497,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(CompositeListingProcessor::class)
         ->args([
-            tagged_iterator('shopware.listing.processor'),
+            tagged_iterator('shopwell.listing.processor'),
         ]);
 
     $services->set(CompressedCriteriaListingProcessor::class)
@@ -505,7 +505,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CompressedCriteriaDecoder::class),
         ])
         // priority needs to be higher than of all other processors to make custom filters passed in compressed criteria to work
-        ->tag('shopware.listing.processor', ['priority' => 1000]);
+        ->tag('shopwell.listing.processor', ['priority' => 1000]);
 
     $services->set(ManufacturerListingFilterHandler::class);
 
@@ -528,34 +528,34 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('product_sorting.repository'),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.listing.processor');
+        ->tag('shopwell.listing.processor');
 
     $services->set(AggregationListingProcessor::class)
         ->args([
-            tagged_iterator('shopware.listing.filter.handler'),
+            tagged_iterator('shopwell.listing.filter.handler'),
             service('event_dispatcher'),
         ])
-        ->tag('shopware.listing.processor');
+        ->tag('shopwell.listing.processor');
 
     $services->set(AssociationLoadingListingProcessor::class)
-        ->tag('shopware.listing.processor');
+        ->tag('shopwell.listing.processor');
 
     $services->set(BehaviorListingProcessor::class)
-        ->tag('shopware.listing.processor', ['priority' => -1000]);
+        ->tag('shopwell.listing.processor', ['priority' => -1000]);
 
     $services->set(PagingListingProcessor::class)
         ->args([
             service(SystemConfigService::class),
-            param('shopware.api.store.max_limit'),
+            param('shopwell.api.store.max_limit'),
         ])
-        ->tag('shopware.listing.processor');
+        ->tag('shopwell.listing.processor');
 
     $services->set(ProductSearchBuilderInterface::class, ProductSearchBuilder::class)
         ->args([
             service(ProductSearchTermInterpreter::class),
             service('logger'),
-            param('shopware.search.term_max_length'),
-            param('shopware.product.search_keyword.indexing'),
+            param('shopwell.search.term_max_length'),
+            param('shopwell.product.search_keyword.indexing'),
         ]);
 
     $services->set(ProductLineItemCommandValidator::class)
@@ -645,7 +645,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(StatesUpdater::class)->nullOnInvalid(),
             service(ClockInterface::class),
         ])
-        ->tag('shopware.entity_indexer', ['priority' => 100]);
+        ->tag('shopwell.entity_indexer', ['priority' => 100]);
 
     $services->set(ProductStreamUpdater::class)
         ->args([
@@ -655,16 +655,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('messenger.default_bus'),
             service(ManyToManyIdFieldUpdater::class),
             service('language.repository'),
-            param('shopware.product_stream.indexing'),
+            param('shopwell.product_stream.indexing'),
         ])
-        ->tag('shopware.entity_indexer');
+        ->tag('shopwell.entity_indexer');
 
     $services->set(ProductTypeRegistry::class)
         ->public()
         ->args([
-            param('shopware.product.allowed_types'),
+            param('shopwell.product.allowed_types'),
         ])
-        ->tag('shopware.api.enum_provider');
+        ->tag('shopwell.api.enum_provider');
 
     $services->set(StatesUpdater::class)
         ->args([
@@ -703,13 +703,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('product.repository'),
             service(ProductSearchKeywordAnalyzer::class),
             service(ClockInterface::class),
-            param('shopware.product.search_keyword.indexing'),
+            param('shopwell.product.search_keyword.indexing'),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(StockUpdateFilterProvider::class)
         ->args([
-            tagged_iterator('shopware.product.stock_filter'),
+            tagged_iterator('shopwell.product.stock_filter'),
         ]);
 
     $services->set(StockStorage::class)
@@ -824,7 +824,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ProductConfiguratorLoader::class),
             service('product_review.repository'),
         ])
-        ->tag('shopware.cms.data_resolver');
+        ->tag('shopwell.cms.data_resolver');
 
     $services->set(TokenFilter::class)
         ->args([
@@ -834,13 +834,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(CheapestPriceAccessorBuilder::class)
         ->args([
-            param('shopware.dal.max_rule_prices'),
+            param('shopwell.dal.max_rule_prices'),
             service('logger'),
         ])
-        ->tag('shopware.field_accessor_builder', ['priority' => -200]);
+        ->tag('shopwell.field_accessor_builder', ['priority' => -200]);
 
     $services->set(CleanupProductKeywordDictionaryTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(CleanupProductKeywordDictionaryTaskHandler::class)
         ->args([
@@ -851,7 +851,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('messenger.message_handler');
 
     $services->set(CleanupUnusedDownloadMediaTask::class)
-        ->tag('shopware.scheduled.task');
+        ->tag('shopwell.scheduled.task');
 
     $services->set(CleanupUnusedDownloadMediaTaskHandler::class)
         ->args([
@@ -867,5 +867,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.sync.fk_resolver');
+        ->tag('shopwell.sync.fk_resolver');
 };

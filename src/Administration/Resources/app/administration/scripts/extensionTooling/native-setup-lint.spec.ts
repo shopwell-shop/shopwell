@@ -14,7 +14,7 @@
  * `.vue` in this AST-only subset, so the macros type-resolve on the `vue-tsc`
  * path instead — covered by `type-surface.spec` and the e2e specs. The type-aware
  * blocks are dropped from the config because they need a real TypeScript project
- * (the generated `.shopware/` bridge) that only exists in the e2e specs. The
+ * (the generated `.shopwell/` bridge) that only exists in the e2e specs. The
  * factory is an .mjs module Jest cannot import directly, so one node subprocess
  * builds the config, runs ESLint, and serializes the rule ids per fixture.
  */
@@ -32,13 +32,13 @@ const withoutMarker = '<script setup>\nconst count = 1;\n</script>\n<template><d
 const probeScript = `
 import { ESLint } from 'eslint';
 
-const { shopwareAdminExtension } = await import(${JSON.stringify(factoryUrl)});
-const config = shopwareAdminExtension({ tsconfigRootDir: process.cwd() }).filter(
+const { shopwellAdminExtension } = await import(${JSON.stringify(factoryUrl)});
+const config = shopwellAdminExtension({ tsconfigRootDir: process.cwd() }).filter(
     (block) =>
-        block.name === 'shopware/admin-extension/native-setup' ||
+        block.name === 'shopwell/admin-extension/native-setup' ||
         (block.name &&
-            block.name.startsWith('shopware/admin-extension/vue-') &&
-            block.name !== 'shopware/admin-extension/vue-typescript'),
+            block.name.startsWith('shopwell/admin-extension/vue-') &&
+            block.name !== 'shopwell/admin-extension/vue-typescript'),
 );
 const eslint = new ESLint({ overrideConfigFile: true, overrideConfig: config });
 
@@ -72,8 +72,8 @@ describe('extension-tooling native-setup lint behaviour', () => {
         expect(result.good).toEqual([]);
     });
 
-    it('reports a missing setup marker through sw-core-rules/valid-shopware-setup', () => {
-        expect(result.noMarker).toContain('sw-core-rules/valid-shopware-setup');
+    it('reports a missing setup marker through sw-core-rules/valid-shopwell-setup', () => {
+        expect(result.noMarker).toContain('sw-core-rules/valid-shopwell-setup');
     });
 
     it('reports a non-kebab component filename through sw-core-rules/native-setup-filename', () => {

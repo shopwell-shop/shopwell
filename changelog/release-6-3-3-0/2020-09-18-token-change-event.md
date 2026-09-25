@@ -6,4 +6,4 @@ author_email: kevin.chen@perfecthair.ch
 author_github: @maqavelli
 ---
 # Core
-*  Added new event `Shopware\Core\System\SalesChannel\Event\SalesChannelContextTokenChangeEvent` which is dispatched in `Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister` replace method
+*  Added new event `Shopwell\Core\System\SalesChannel\Event\SalesChannelContextTokenChangeEvent` which is dispatched in `Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister` replace method

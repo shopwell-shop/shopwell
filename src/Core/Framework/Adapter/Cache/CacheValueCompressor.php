@@ -52,7 +52,7 @@ class CacheValueCompressor
         }
 
         if (!self::$compress) {
-            /** @phpstan-ignore shopware.unserializeUsage */
+            /** @phpstan-ignore shopwell.unserializeUsage */
             return \unserialize($value);
         }
 
@@ -68,7 +68,7 @@ class CacheValueCompressor
             throw AdapterException::cacheCompressionError('Could not uncompress value');
         }
 
-        /** @phpstan-ignore shopware.unserializeUsage */
+        /** @phpstan-ignore shopwell.unserializeUsage */
         return \unserialize($uncompressed);
     }
 }

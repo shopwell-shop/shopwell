@@ -4,4 +4,4 @@ issue: NEXT-17007
 author: Johannes Rahe
 ---
 # Storefront
-* Added alphabetical sorting to the `Shopware\Storefront\Pagelet\Header\HeaderPageletLoader` languages.
+* Added alphabetical sorting to the `Shopwell\Storefront\Pagelet\Header\HeaderPageletLoader` languages.

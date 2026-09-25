@@ -7,7 +7,7 @@ import { nextTick } from 'vue';
  * @sw-package fundamentals@framework
  */
 
-Shopwell.Service().register('shopwareDiscountCampaignService', () => {
+Shopwell.Service().register('shopwellDiscountCampaignService', () => {
     return {
         isDiscountCampaignActive: jest.fn(() => true),
     };

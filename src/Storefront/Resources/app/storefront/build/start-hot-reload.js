@@ -125,7 +125,7 @@ const proxyOptions = {
 
             if (err.code === 'SSL_ERROR_NO_CYPHER_OVERLAP') {
                 console.error('Try to start watcher again with specific path to https (key and crt) files like this:');
-                console.error('STOREFRONT_HTTPS_KEY_FILE=/var/www/html/.../certs/shopware.key STOREFRONT_HTTPS_CERTIFICATE_FILE=/var/www/html/../certs/shopware.crt composer run watch:storefront');
+                console.error('STOREFRONT_HTTPS_KEY_FILE=/var/www/html/.../certs/shopwell.key STOREFRONT_HTTPS_CERTIFICATE_FILE=/var/www/html/../certs/shopwell.crt composer run watch:storefront');
                 process.exit(1);
             }
 

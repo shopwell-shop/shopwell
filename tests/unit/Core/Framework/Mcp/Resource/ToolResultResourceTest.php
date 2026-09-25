@@ -38,7 +38,7 @@ class ToolResultResourceTest extends TestCase
         $resource = new ToolResultResource($storage);
         $result = ($resource)($id, $this->makeContext($sessionId));
 
-        static::assertSame('shopware://tool-result/' . $id, $result['uri']);
+        static::assertSame('shopwell://tool-result/' . $id, $result['uri']);
         static::assertSame('application/json', $result['mimeType']);
         static::assertSame('{"success":true}', $result['text']);
     }

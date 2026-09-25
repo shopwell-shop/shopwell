@@ -16,7 +16,7 @@ function escapeBundleName(bundleName: string): string {
  */
 export default function assetPathPlugin(bundleName = 'administration'): Plugin {
     return {
-        name: 'shopware-vite-plugin-asset-path',
+        name: 'shopwell-vite-plugin-asset-path',
         renderChunk(code) {
             // The code is minified afterward, so we can look for the none minified version directly
             // This code could change with every minor version of vite but there is no way around this.

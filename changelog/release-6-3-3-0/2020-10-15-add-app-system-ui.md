@@ -11,7 +11,7 @@ ___
 * Added component `sw-app-actions`
 * Added component `sw-app-app-url-changed-modal`
 * Added module `sw-my-apps`
-* Added state module `shopwareApps` to store information of installed apps
+* Added state module `shopwellApps` to store information of installed apps
 * Added appActionButtonService
 * Added appModulesService
 * Added appUrlChangeService

@@ -40,7 +40,7 @@ class MediaThumbnailRepositoryTest extends TestCase
     #[DataProvider('deleteThumbnailProvider')]
     public function testDeleteThumbnail(bool $private): void
     {
-        $service = $private ? 'shopware.filesystem.private' : 'shopware.filesystem.public';
+        $service = $private ? 'shopwell.filesystem.private' : 'shopwell.filesystem.public';
 
         $mediaId = Uuid::randomHex();
 

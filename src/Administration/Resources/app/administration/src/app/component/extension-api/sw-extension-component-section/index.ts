@@ -1,4 +1,4 @@
-import type { TabItem } from '@shopware-ag/meteor-component-library/dist/esm/MtTabs';
+import type { TabItem } from '@shopwell-ag/meteor-component-library/dist/esm/MtTabs';
 import type { ComponentSectionEntry } from 'src/app/store/extension-component-sections.store';
 import template from './sw-extension-component-section.html.twig';
 

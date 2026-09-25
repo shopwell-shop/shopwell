@@ -1,5 +1,5 @@
 import type { AxiosResponse } from 'axios';
-import type { Entity } from '@shopware-ag/meteor-admin-sdk/es/_internals/data/Entity';
+import type { Entity } from '@shopwell-ag/meteor-admin-sdk/es/_internals/data/Entity';
 import type { Cart, ContextSwitchParameters, LineItem, SalesChannelContext } from '../order.types';
 import type CartStoreService from '../../../core/service/api/cart-store-api.api.service';
 import type ContextStoreService from '../../../core/service/api/store-context.api.service';

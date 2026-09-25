@@ -1,5 +1,5 @@
 import { test, expect } from '@fixtures/AcceptanceTest';
-import { replaceElementsIndividually } from '@shopware-ag/acceptance-test-suite';
+import { replaceElementsIndividually } from '@shopwell-ag/acceptance-test-suite';
 
 test(
     'Visual: Storefront Shopping Cart.',

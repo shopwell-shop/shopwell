@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 
-import type { smartBarButtonAdd } from '@shopware-ag/meteor-admin-sdk/es/ui/main-module/';
+import type { smartBarButtonAdd } from '@shopwell-ag/meteor-admin-sdk/es/ui/main-module/';
 import type { ExtensionSdkModule } from './extension-sdk-module.store';
 
 describe('extensionSdkModules.store', () => {

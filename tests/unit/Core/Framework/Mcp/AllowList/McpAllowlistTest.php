@@ -63,10 +63,10 @@ class McpAllowlistTest extends TestCase
         yield 'empty object' => ['{}', [], [], []];
 
         yield 'explicit selection per type' => [
-            '{"tools":["tool-a"],"resources":["shopware://entities"],"prompts":["shopware-context"]}',
+            '{"tools":["tool-a"],"resources":["shopwell://entities"],"prompts":["shopwell-context"]}',
             ['tool-a'],
-            ['shopware://entities'],
-            ['shopware-context'],
+            ['shopwell://entities'],
+            ['shopwell-context'],
         ];
         yield 'explicit null per type' => [
             '{"tools":["tool-a"],"resources":null,"prompts":null}',
@@ -78,7 +78,7 @@ class McpAllowlistTest extends TestCase
 
         // json_decode(..., true) turns a JSON object into an associative array. It is not a list of
         // capability names, so reading its values as one would hand out capabilities nobody listed.
-        yield 'per-type value is an object' => ['{"tools":{"x":"shopware-entity-delete"}}', [], [], []];
+        yield 'per-type value is an object' => ['{"tools":{"x":"shopwell-entity-delete"}}', [], [], []];
         yield 'per-type value is a sparse list' => ['{"tools":{"0":"tool-a","2":"tool-b"}}', [], [], []];
 
         yield 'non-string entries are dropped' => [

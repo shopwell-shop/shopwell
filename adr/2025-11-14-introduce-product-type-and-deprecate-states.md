@@ -49,7 +49,7 @@ In a more detailed manner, we will make the following changes:
 
 #### Introduce a server-side `ProductTypeRegistry`
 
-- This registry help both core rules and plugins can register additional product types via the parameter `%shopware.product.allowed_types%` as an array.
+- This registry help both core rules and plugins can register additional product types via the parameter `%shopwell.product.allowed_types%` as an array.
 
 ```php
 class ProductTypeRegistry
@@ -81,10 +81,10 @@ class ProductTypeRegistry
 
 ### For third-party developers
 
-- You can now easily register new product types by override `shopware.product.allowed_types` in your `config/packages/shopware.yaml`. For e.g:
+- You can now easily register new product types by override `shopwell.product.allowed_types` in your `config/packages/shopwell.yaml`. For e.g:
 
 ```yaml
-shopware:
+shopwell:
     product:
         allowed_types:
         - bundle

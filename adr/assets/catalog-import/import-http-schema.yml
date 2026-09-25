@@ -190,7 +190,7 @@ components:
             $ref: '#/components/schemas/Error'
 
     ImportPush:
-      description: Shopware Ids in the same order as the import batch
+      description: Shopwell Ids in the same order as the import batch
       content:
         application/json:
           schema:
@@ -223,7 +223,7 @@ components:
         - id
         - name
         - startTime
-        - shopwareVersion
+        - shopwellVersion
       type: object
       properties:
         id:
@@ -231,7 +231,7 @@ components:
         startTime:
           type: string
           format: date-time
-        shopwareVersion:
+        shopwellVersion:
           type: string
         name:
           type: string

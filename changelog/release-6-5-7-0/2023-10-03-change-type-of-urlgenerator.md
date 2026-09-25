@@ -8,5 +8,5 @@ author_github: tinect
 
 # Core
 
-* Changed argument type of `UrlGenerator` to `UrlGeneratorInterface` in `Shopware\Core\Content\Media\Path\Domain\Strategy\BCStrategy`
+* Changed argument type of `UrlGenerator` to `UrlGeneratorInterface` in `Shopwell\Core\Content\Media\Path\Domain\Strategy\BCStrategy`
 

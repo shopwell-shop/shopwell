@@ -5,7 +5,7 @@
  */
 
 import { mount } from '@vue/test-utils';
-import { MtUrlField } from '@shopware-ag/meteor-component-library';
+import { MtUrlField } from '@shopwell-ag/meteor-component-library';
 
 const { Context } = Shopwell;
 const { EntityCollection } = Shopwell.Data;

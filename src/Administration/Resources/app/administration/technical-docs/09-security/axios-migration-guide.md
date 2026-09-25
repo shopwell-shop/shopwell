@@ -218,6 +218,6 @@ Use Shopwell's `HttpClient`, `HttpRequestConfig`, and `HttpResponse` types. If t
 
 ## Additional resources
 
-- [Original Shopwell migration issue](https://github.com/shopware/shopware/issues/14041)
+- [Original Shopwell migration issue](https://github.com/shopwell-shop/shopwell/issues/14041)
 - [Axios v1 documentation](https://axios-http.com/docs/intro)
 - [AbortController documentation](https://developer.mozilla.org/docs/Web/API/AbortController)

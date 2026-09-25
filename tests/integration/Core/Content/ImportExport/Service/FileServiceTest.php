@@ -30,7 +30,7 @@ class FileServiceTest extends TestCase
     public function testDetectType(array $fileData): void
     {
         $fileService = new FileService(
-            static::getContainer()->get('shopware.filesystem.private'),
+            static::getContainer()->get('shopwell.filesystem.private'),
             static::getContainer()->get('import_export_file.repository')
         );
 
@@ -53,7 +53,7 @@ class FileServiceTest extends TestCase
         /** @var EntityRepository<EntityCollection<ImportExportFileEntity>> $fileRepository */
         $fileRepository = static::getContainer()->get('import_export_file.repository');
         $fileService = new FileService(
-            static::getContainer()->get('shopware.filesystem.private'),
+            static::getContainer()->get('shopwell.filesystem.private'),
             $fileRepository
         );
 

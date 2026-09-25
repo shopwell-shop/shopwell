@@ -4,7 +4,7 @@ test('Visual: Administration settings page', { tag: '@Visual' }, async ({ ShopAd
     await test.step('Creates a screenshot of the settings overview page.', async () => {
         await ShopAdmin.goesTo(AdminSettingsListing.url());
         await setViewport(AdminSettingsListing.page, {
-            waitForSelector: AdminSettingsListing.shopwareServicesLink,
+            waitForSelector: AdminSettingsListing.shopwellServicesLink,
         });
         await assertScreenshot(AdminSettingsListing.page, 'Settings-Overview.png');
     });

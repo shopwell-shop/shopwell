@@ -51,7 +51,7 @@ class TypeDetectorTest extends TestCase
     public function testDetectWebp(): void
     {
         $type = $this->getTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware-logo.vp8x.webp')
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell-logo.vp8x.webp')
         );
 
         static::assertInstanceOf(ImageType::class, $type);
@@ -74,7 +74,7 @@ class TypeDetectorTest extends TestCase
     public function testDetectAvif(): void
     {
         $type = $this->getTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware-logo.avif')
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell-logo.avif')
         );
 
         static::assertInstanceOf(ImageType::class, $type);
@@ -108,7 +108,7 @@ class TypeDetectorTest extends TestCase
     public function testDetectJpg(): void
     {
         $type = $this->getTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware.jpg')
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell.jpg')
         );
 
         static::assertInstanceOf(ImageType::class, $type);
@@ -118,7 +118,7 @@ class TypeDetectorTest extends TestCase
     public function testDetectPng(): void
     {
         $type = $this->getTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware-logo.png')
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell-logo.png')
         );
 
         static::assertInstanceOf(ImageType::class, $type);

@@ -2,7 +2,7 @@
 title: Upgrade Admin webpack to version 5
 issue: NEXT-30952
 author: Sebastian Seggewiß
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration

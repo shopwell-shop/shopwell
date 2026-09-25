@@ -1,6 +1,6 @@
 ---
 title: Add fetchpriority attribute to first image slider and image gallery item
-issue: https://github.com/shopware/shopware/issues/11194
+issue: https://github.com/shopwell-shop/shopwell/issues/11194
 author: Marcus Müller
 author_email: 25648755+M-arcus@users.noreply.github.com
 author_github: @M-arcus

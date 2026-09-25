@@ -22,20 +22,20 @@ class StoreApiToolSearchToolTest extends TestCase
     public function testSearchReturnsStoreApiToolDefinitions(): void
     {
         $registry = new Registry();
-        $registry->registerTool(self::tool('shopware-store-api-product-search', 'Search products'), 'Acme\\ProductSearchTool');
+        $registry->registerTool(self::tool('shopwell-store-api-product-search', 'Search products'), 'Acme\\ProductSearchTool');
 
         $tool = new StoreApiToolSearchTool($registry, new ToolSearch());
 
         $data = json_decode($tool('product'), true, 512, \JSON_THROW_ON_ERROR);
 
         static::assertTrue($data['success']);
-        static::assertSame('shopware-store-api-product-search', $data['data'][0]['tool']['name']);
+        static::assertSame('shopwell-store-api-product-search', $data['data'][0]['tool']['name']);
     }
 
     public function testResultCarriesToolsetEnableUsageHint(): void
     {
         $registry = new Registry();
-        $registry->registerTool(self::tool('shopware-store-api-product-search', 'Search products'), 'Acme\\ProductSearchTool');
+        $registry->registerTool(self::tool('shopwell-store-api-product-search', 'Search products'), 'Acme\\ProductSearchTool');
 
         $tool = new StoreApiToolSearchTool($registry, new ToolSearch());
 
@@ -43,7 +43,7 @@ class StoreApiToolSearchToolTest extends TestCase
 
         // Store API now uses progressive disclosure, so tool-search nudges toward the enable path.
         static::assertArrayHasKey('usage', $data['_meta']);
-        static::assertStringContainsString('shopware-toolset-enable', $data['_meta']['usage']);
+        static::assertStringContainsString('shopwell-toolset-enable', $data['_meta']['usage']);
     }
 
     public function testInvokeIsDeclaredOnConcreteClassSoDiscoveryBindsToIt(): void

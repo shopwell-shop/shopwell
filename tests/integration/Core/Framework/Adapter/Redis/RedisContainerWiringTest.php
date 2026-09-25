@@ -50,8 +50,8 @@ class RedisContainerWiringTest extends TestCase
         $redisUrl = (string) EnvironmentHelper::getVariable('REDIS_URL');
 
         // Validate config is read correctly
-        static::assertTrue($container->hasParameter('shopware.redis.connections.ephemeral.dsn'));
-        static::assertSame($redisUrl, $container->getParameter('shopware.redis.connections.ephemeral.dsn'));
+        static::assertTrue($container->hasParameter('shopwell.redis.connections.ephemeral.dsn'));
+        static::assertSame($redisUrl, $container->getParameter('shopwell.redis.connections.ephemeral.dsn'));
 
         // Validate that connection provider is correctly set
         static::assertTrue($container->has(RedisConnectionProvider::class));
@@ -73,7 +73,7 @@ class RedisContainerWiringTest extends TestCase
     public function testIncrementGateway(): void
     {
         $container = self::$kernel->getContainer();
-        $gatewayRegistry = $container->get('shopware.increment.gateway.registry');
+        $gatewayRegistry = $container->get('shopwell.increment.gateway.registry');
         $gateway = $gatewayRegistry->get('redis_increment');
         static::assertInstanceOf(RedisIncrementer::class, $gateway);
 
@@ -96,8 +96,8 @@ class RedisContainerWiringTest extends TestCase
     {
         $container = self::$kernel->getContainer();
 
-        static::assertTrue($container->has('shopware.cache.invalidator.storage.redis_adapter'));
-        $redis = $container->get('shopware.cache.invalidator.storage.redis_adapter');
+        static::assertTrue($container->has('shopwell.cache.invalidator.storage.redis_adapter'));
+        $redis = $container->get('shopwell.cache.invalidator.storage.redis_adapter');
 
         $redisProvider = $container->get(RedisConnectionProvider::class);
         static::assertInstanceOf(RedisConnectionProvider::class, $redisProvider);
@@ -108,8 +108,8 @@ class RedisContainerWiringTest extends TestCase
     {
         $container = self::$kernel->getContainer();
 
-        static::assertTrue($container->has('shopware.number_range.redis'));
-        $redis = $container->get('shopware.number_range.redis');
+        static::assertTrue($container->has('shopwell.number_range.redis'));
+        $redis = $container->get('shopwell.number_range.redis');
 
         $redisProvider = $container->get(RedisConnectionProvider::class);
         static::assertInstanceOf(RedisConnectionProvider::class, $redisProvider);
@@ -120,8 +120,8 @@ class RedisContainerWiringTest extends TestCase
     {
         $container = self::$kernel->getContainer();
 
-        static::assertTrue($container->has('shopware.cart.redis'));
-        $redis = $container->get('shopware.cart.redis');
+        static::assertTrue($container->has('shopwell.cart.redis'));
+        $redis = $container->get('shopwell.cart.redis');
 
         $redisProvider = $container->get(RedisConnectionProvider::class);
         static::assertInstanceOf(RedisConnectionProvider::class, $redisProvider);

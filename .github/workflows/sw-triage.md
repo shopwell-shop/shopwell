@@ -1,5 +1,5 @@
 ---
-# gh aw SOURCE for Shopware issue triage (read-only).
+# gh aw SOURCE for Shopwell issue triage (read-only).
 # Compile with `gh aw compile` → produces sw-triage.lock.yml (committed, never hand-edited).
 
 on:
@@ -34,7 +34,7 @@ if: >-
     github.event.label.name == 'qi/sw-triage'
   )
 
-run-name: "Shopware Issue Triage #${{ github.event.issue.number || github.event.inputs.issue_number }}"
+run-name: "Shopwell Issue Triage #${{ github.event.issue.number || github.event.inputs.issue_number }}"
 
 concurrency:                 # explicit — workflow_dispatch default group cancels parallel runs (gh-aw #19467)
   group: sw-triage-${{ github.event.issue.number || github.event.inputs.issue_number }}
@@ -108,7 +108,7 @@ post-steps:
       if-no-files-found: error
 ---
 
-# Shopware Issue Triage
+# Shopwell Issue Triage
 
 {{#runtime-import .github/aw/sw-triage-policy.md}}
 

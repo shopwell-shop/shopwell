@@ -23,7 +23,7 @@ final class LoadPreviewExtension extends Extension
     public const NAME = 'listing-loader.load-previews';
 
     /**
-     * @internal shopware owns the __constructor, but the properties are public API
+     * @internal shopwell owns the __constructor, but the properties are public API
      */
     public function __construct(
         /**

@@ -2,7 +2,7 @@
  * @sw-package innovation
  */
 import initTopbarButtons from 'src/app/init/topbar-button.init';
-import { send } from '@shopware-ag/meteor-admin-sdk/es/channel';
+import { send } from '@shopwell-ag/meteor-admin-sdk/es/channel';
 
 describe('src/app/init/topbar-button.init.ts', () => {
     it('should handle __upsellingMenuButton', async () => {

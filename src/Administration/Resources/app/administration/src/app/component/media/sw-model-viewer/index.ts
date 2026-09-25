@@ -1,6 +1,6 @@
 import { markRaw } from 'vue';
 import type Repository from 'src/core/data/repository.data';
-import { QuickView } from '@shopware-ag/dive/quickview';
+import { QuickView } from '@shopwell-ag/dive/quickview';
 import template from './sw-model-viewer.html.twig';
 import './sw-model-viewer.scss';
 

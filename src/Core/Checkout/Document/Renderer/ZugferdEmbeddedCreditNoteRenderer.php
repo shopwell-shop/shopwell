@@ -27,7 +27,7 @@ class ZugferdEmbeddedCreditNoteRenderer extends AbstractDocumentRenderer
         protected AbstractDocumentRenderer $creditNoteRenderer,
         protected AbstractDocumentRenderer $zugferdCreditNoteRenderer,
         protected ZugferdEmbeddedService $zugferdEmbeddedService,
-        protected string $shopwareVersion,
+        protected string $shopwellVersion,
     ) {
     }
 
@@ -55,7 +55,7 @@ class ZugferdEmbeddedCreditNoteRenderer extends AbstractDocumentRenderer
             $rendererConfig,
             $creditNote,
             $this->zugferdCreditNoteRenderer,
-            $this->shopwareVersion,
+            $this->shopwellVersion,
         );
     }
 }

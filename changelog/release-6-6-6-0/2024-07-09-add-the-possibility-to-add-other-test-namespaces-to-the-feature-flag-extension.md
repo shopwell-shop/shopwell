@@ -3,4 +3,4 @@ title: Add the possibility to add other test namespaces to the FeatureFlagExtens
 issue: NEXT-37127
 ---
 # Core
-* Changed `\Shopware\Tests\Unit\Core\Test\PHPUnit\Extension\FeatureFlag\FeatureFlagExtensionTest` to add the possibility to add other test namespaces.
+* Changed `\Shopwell\Tests\Unit\Core\Test\PHPUnit\Extension\FeatureFlag\FeatureFlagExtensionTest` to add the possibility to add other test namespaces.

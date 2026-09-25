@@ -1,4 +1,4 @@
-import Criteria from '@shopware-ag/meteor-admin-sdk/es/data/Criteria';
+import Criteria from '@shopwell-ag/meteor-admin-sdk/es/data/Criteria';
 import template from './sw-category-detail-custom-entity.html.twig';
 import './sw-category-detail-custom-entity.scss';
 

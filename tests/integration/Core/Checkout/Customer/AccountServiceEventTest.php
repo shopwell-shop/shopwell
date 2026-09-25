@@ -91,7 +91,7 @@ class AccountServiceEventTest extends TestCase
         $dataBag = new DataBag();
         $dataBag->add([
             'username' => '',
-            'password' => 'shopware',
+            'password' => 'shopwell',
         ]);
 
         $this->expectExceptionObject(new BadCredentialsException());
@@ -111,7 +111,7 @@ class AccountServiceEventTest extends TestCase
         $this->expectExceptionObject(new BadCredentialsException());
 
         try {
-            $this->accountService->loginByCredentials('', 'shopware', $this->salesChannelContext);
+            $this->accountService->loginByCredentials('', 'shopwell', $this->salesChannelContext);
         } finally {
             static::assertFalse($this->eventDidRun, 'Event "' . CustomerBeforeLoginEvent::class . '" did run');
             $this->dispatcher->removeListener(CustomerBeforeLoginEvent::class, $this->emailListenerClosure);
@@ -125,7 +125,7 @@ class AccountServiceEventTest extends TestCase
         $dataBag = new DataBag();
         $dataBag->add([
             'username' => 'info@example.com',
-            'password' => 'shopware',
+            'password' => 'shopwell',
         ]);
 
         $this->loginRoute->login($dataBag->toRequestDataBag(), $this->salesChannelContext);
@@ -138,7 +138,7 @@ class AccountServiceEventTest extends TestCase
     {
         $this->addEventListener($this->dispatcher, CustomerBeforeLoginEvent::class, $this->emailListenerClosure);
 
-        $this->accountService->loginByCredentials('info@example.com', 'shopware', $this->salesChannelContext);
+        $this->accountService->loginByCredentials('info@example.com', 'shopwell', $this->salesChannelContext);
         static::assertTrue($this->eventDidRun, 'Event "' . CustomerBeforeLoginEvent::class . '" did not run');
 
         $this->dispatcher->removeListener(CustomerBeforeLoginEvent::class, $this->emailListenerClosure);
@@ -151,7 +151,7 @@ class AccountServiceEventTest extends TestCase
         $dataBag = new DataBag();
         $dataBag->add([
             'username' => 'info@example.com',
-            'password' => 'shopware',
+            'password' => 'shopwell',
         ]);
 
         $this->loginRoute->login($dataBag->toRequestDataBag(), $this->salesChannelContext);
@@ -164,7 +164,7 @@ class AccountServiceEventTest extends TestCase
     {
         $this->addEventListener($this->dispatcher, CustomerLoginEvent::class, $this->customerListenerClosure);
 
-        $this->accountService->loginByCredentials('info@example.com', 'shopware', $this->salesChannelContext);
+        $this->accountService->loginByCredentials('info@example.com', 'shopwell', $this->salesChannelContext);
         static::assertTrue($this->eventDidRun, 'Event "' . CustomerLoginEvent::class . '" did not run');
 
         $this->dispatcher->removeListener(CustomerLoginEvent::class, $this->customerListenerClosure);

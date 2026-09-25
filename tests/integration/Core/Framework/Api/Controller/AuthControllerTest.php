@@ -60,7 +60,7 @@ class AuthControllerTest extends TestCase
         $authPayload = [
             'grant_type' => 'password',
             'client_id' => 'administration',
-            'username' => 'shopware',
+            'username' => 'shopwell',
             'password' => 'not_a_real_password',
         ];
 
@@ -173,7 +173,7 @@ class AuthControllerTest extends TestCase
             'grant_type' => 'password',
             'client_id' => 'administration',
             'username' => 'admin',
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'scopes' => [],
         ];
 
@@ -238,7 +238,7 @@ class AuthControllerTest extends TestCase
             'grant_type' => 'password',
             'client_id' => 'administration',
             'username' => $username,
-            'password' => 'shopware',
+            'password' => 'shopwell',
         ];
 
         $client->request('POST', '/api/oauth/token', $authPayload, [], [], json_encode($authPayload, \JSON_THROW_ON_ERROR));
@@ -307,14 +307,14 @@ class AuthControllerTest extends TestCase
     public function testDefaultAccessTokenScopes(): void
     {
         $client = $this->getBrowser(false);
-        $configuration = static::getContainer()->get('shopware.jwt_config');
+        $configuration = static::getContainer()->get('shopwell.jwt_config');
         $jwtTokenParser = $configuration->parser();
 
         $authPayload = [
             'grant_type' => 'password',
             'client_id' => 'administration',
             'username' => 'admin',
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'scope' => '',
         ];
 
@@ -332,14 +332,14 @@ class AuthControllerTest extends TestCase
     public function testUniqueAccessTokenScopes(): void
     {
         $client = $this->getBrowser(false);
-        $configuration = static::getContainer()->get('shopware.jwt_config');
+        $configuration = static::getContainer()->get('shopwell.jwt_config');
         $jwtTokenParser = $configuration->parser();
 
         $authPayload = [
             'grant_type' => 'password',
             'client_id' => 'administration',
             'username' => 'admin',
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'scope' => 'admin write admin admin write write admin',
         ];
 
@@ -357,14 +357,14 @@ class AuthControllerTest extends TestCase
     public function testAccessTokenScopesChangedAfterRefreshGrant(): void
     {
         $client = $this->getBrowser(false);
-        $configuration = static::getContainer()->get('shopware.jwt_config');
+        $configuration = static::getContainer()->get('shopwell.jwt_config');
         $jwtTokenParser = $configuration->parser();
 
         $authPayload = [
             'grant_type' => 'password',
             'client_id' => 'administration',
             'username' => 'admin',
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'scope' => 'admin write',
         ];
 
@@ -394,14 +394,14 @@ class AuthControllerTest extends TestCase
     public function testSuperAdminScopeRemovedOnRefreshToken(): void
     {
         $client = $this->getBrowser(false);
-        $configuration = static::getContainer()->get('shopware.jwt_config');
+        $configuration = static::getContainer()->get('shopwell.jwt_config');
         $jwtTokenParser = $configuration->parser();
 
         $authPayload = [
             'grant_type' => 'password',
             'client_id' => 'administration',
             'username' => 'admin',
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'scope' => 'admin write ' . UserVerifiedScope::IDENTIFIER,
         ];
 
@@ -435,14 +435,14 @@ class AuthControllerTest extends TestCase
     public function testAccessTokenScopesUnchangedAfterRefreshGrant(): void
     {
         $client = $this->getBrowser(false);
-        $configuration = static::getContainer()->get('shopware.jwt_config');
+        $configuration = static::getContainer()->get('shopwell.jwt_config');
         $jwtTokenParser = $configuration->parser();
 
         $authPayload = [
             'grant_type' => 'password',
             'client_id' => 'administration',
             'username' => 'admin',
-            'password' => 'shopware',
+            'password' => 'shopwell',
             'scope' => 'admin write',
         ];
 
@@ -491,7 +491,7 @@ class AuthControllerTest extends TestCase
         $authPayload = [
             'grant_type' => 'client_credentials',
             'client_id' => $accessKey,
-            'client_secret' => 'shopware',
+            'client_secret' => 'shopwell',
         ];
 
         $client->request('POST', '/api/oauth/token', $authPayload, [], [], json_encode($authPayload, \JSON_THROW_ON_ERROR));

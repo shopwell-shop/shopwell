@@ -41,7 +41,7 @@ class MySQLFactory
 
         $url = (string) EnvironmentHelper::getVariable('DATABASE_URL', getenv('DATABASE_URL'));
         if ($url === '') {
-            $url = 'mysql://root:shopware@127.0.0.1:3306/shopware';
+            $url = 'mysql://root:shopwell@127.0.0.1:3306/shopwell';
         }
 
         $dsnParser = new DsnParser(['mysql' => 'pdo_mysql']);

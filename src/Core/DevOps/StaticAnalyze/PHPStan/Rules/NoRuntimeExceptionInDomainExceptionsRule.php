@@ -73,7 +73,7 @@ class NoRuntimeExceptionInDomainExceptionsRule implements Rule
                             $classReflection->getName(),
                             $node->name,
                         )
-                    )->identifier('shopware.noRuntimeExceptionInDomainExceptions')->line($node->getStartLine())
+                    )->identifier('shopwell.noRuntimeExceptionInDomainExceptions')->line($node->getStartLine())
                         ->build(),
                 ];
             }

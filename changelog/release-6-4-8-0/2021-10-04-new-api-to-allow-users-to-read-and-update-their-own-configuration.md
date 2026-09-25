@@ -3,10 +3,10 @@ title: New API to allow users to read and update their own configuration
 issue: NEXT-17591
 ---
 # Administration
-*  Added new controller `\Shopware\Administration\Controller\UserConfigController`
+*  Added new controller `\Shopwell\Administration\Controller\UserConfigController`
 ___
 # API
-* Added endpoint `api/_info/config-me` with method `GET` and `POST` into `Shopware\Core\Framework\Api\Controller\UserController`
+* Added endpoint `api/_info/config-me` with method `GET` and `POST` into `Shopwell\Core\Framework\Api\Controller\UserController`
 ___
 # Upgrade Information
 ## Get a list of user configuration from current logged-in user

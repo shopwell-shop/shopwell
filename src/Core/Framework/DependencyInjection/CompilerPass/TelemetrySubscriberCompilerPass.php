@@ -9,20 +9,20 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 /**
  * @internal
  *
- * When telemetry metrics are globally disabled, services tagged with `shopware.telemetry.subscriber`
- * or `shopware.telemetry.periodic_metric_collector` are removed to avoid overhead.
+ * When telemetry metrics are globally disabled, services tagged with `shopwell.telemetry.subscriber`
+ * or `shopwell.telemetry.periodic_metric_collector` are removed to avoid overhead.
  */
 #[Package('framework')]
 class TelemetrySubscriberCompilerPass implements CompilerPassInterface
 {
     private const REMOVABLE_TAGS = [
-        'shopware.telemetry.subscriber',
-        'shopware.telemetry.periodic_metric_collector',
+        'shopwell.telemetry.subscriber',
+        'shopwell.telemetry.periodic_metric_collector',
     ];
 
     public function process(ContainerBuilder $container): void
     {
-        if ($container->getParameter('shopware.telemetry.metrics.enabled')) {
+        if ($container->getParameter('shopwell.telemetry.metrics.enabled')) {
             return;
         }
 

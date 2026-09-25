@@ -4,4 +4,4 @@ issue: NEXT-15353
 author_github: @Dominik28111
 ---
 # Core
-* Changed method `Shopware\Core\Content\Sitemap\Service\SitemapExporter::initSitemapHandles()` to use https only if a domain has http and https.
+* Changed method `Shopwell\Core\Content\Sitemap\Service\SitemapExporter::initSitemapHandles()` to use https only if a domain has http and https.

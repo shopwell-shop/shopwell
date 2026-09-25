@@ -117,7 +117,7 @@ class ServicesLifecycleTest extends TestCase
         static::assertTrue($one->active);
         static::assertSame(['order:read'], $one->privileges);
         static::assertSame([], $one->requestedPrivileges);
-        static::assertSame(['shopware_account'], $one->requirements);
+        static::assertSame(['shopwell_account'], $one->requirements);
 
         $two = $this->assertInstalled(self::TWO, '1.2.0');
         static::assertTrue($two->active);
@@ -428,7 +428,7 @@ class ServicesLifecycleTest extends TestCase
             self::registryEntry(name: self::TWO, label: 'Example Two', host: 'https://two.services.example.com'),
         ];
         $this->appInfo = [
-            self::ONE => self::appInfo(name: self::ONE, version: '1.0.0', requirements: ['shopware_account']),
+            self::ONE => self::appInfo(name: self::ONE, version: '1.0.0', requirements: ['shopwell_account']),
             self::TWO => self::appInfo(name: self::TWO, version: '1.2.0', requirements: ['service_consent']),
         ];
         $this->responses = [
@@ -451,9 +451,9 @@ class ServicesLifecycleTest extends TestCase
 
         $container = static::getContainer();
         $container->set(Client::class, $registry);
-        $shopwareVersion = $container->getParameter('kernel.shopware_version');
-        static::assertIsString($shopwareVersion);
-        $container->set(ServiceClientFactory::class, new ServiceClientFactory($httpClient, $registry, $shopwareVersion));
+        $shopwellVersion = $container->getParameter('kernel.shopwell_version');
+        static::assertIsString($shopwellVersion);
+        $container->set(ServiceClientFactory::class, new ServiceClientFactory($httpClient, $registry, $shopwellVersion));
     }
 
     private function serveAppFilesFromFixtures(): void

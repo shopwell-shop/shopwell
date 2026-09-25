@@ -93,7 +93,7 @@ class ImageTypeDetectorTest extends TestCase
     public function testDetectWebp(): void
     {
         $type = $this->getImageTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware-logo.vp8x.webp'),
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell-logo.vp8x.webp'),
             null
         );
 
@@ -150,7 +150,7 @@ class ImageTypeDetectorTest extends TestCase
     public function testDetectAvif(): void
     {
         $type = $this->getImageTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware-logo.avif'),
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell-logo.avif'),
             null
         );
 
@@ -238,7 +238,7 @@ class ImageTypeDetectorTest extends TestCase
     public function testDetectJpg(): void
     {
         $type = $this->getImageTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware.jpg'),
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell.jpg'),
             null
         );
 
@@ -249,7 +249,7 @@ class ImageTypeDetectorTest extends TestCase
     public function testDetectPng(): void
     {
         $type = $this->getImageTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware-logo.png'),
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell-logo.png'),
             null
         );
 
@@ -261,7 +261,7 @@ class ImageTypeDetectorTest extends TestCase
     public function testDetectWorksForUpperCase(): void
     {
         $type = $this->getImageTypeDetector()->detect(
-            $this->createMediaFile(__DIR__ . '/../fixtures/shopware-logo-1.PNG'),
+            $this->createMediaFile(__DIR__ . '/../fixtures/shopwell-logo-1.PNG'),
             null
         );
 

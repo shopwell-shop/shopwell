@@ -38,7 +38,7 @@ class ThemeConfigField extends Struct
      *
      * @var array<mixed>|bool|float|int|string|null
      *
-     * @phpstan-ignore shopware.propertyNativeType (Will be natively typed with next major)
+     * @phpstan-ignore shopwell.propertyNativeType (Will be natively typed with next major)
      */
     protected $value;
 

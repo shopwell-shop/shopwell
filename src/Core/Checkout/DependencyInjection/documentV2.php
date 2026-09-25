@@ -62,7 +62,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(DocumentFileDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(DocumentNumberGenerator::class)
         ->args([
@@ -98,7 +98,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(DocumentConfigLoader::class),
         ])
-        ->tag('shopware.document_v2.provider');
+        ->tag('shopwell.document_v2.provider');
 
     $services->set(InvoiceDataProvider::class)
         ->public()
@@ -107,11 +107,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DocumentTypeRegistry::class),
             service('validator'),
         ])
-        ->tag('shopware.document_v2.provider');
+        ->tag('shopwell.document_v2.provider');
 
     $services->set(DeliveryNoteDataProvider::class)
         ->public()
-        ->tag('shopware.document_v2.provider');
+        ->tag('shopwell.document_v2.provider');
 
     $services->set(CreditItemResolver::class)
         ->args([
@@ -123,7 +123,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(InvoiceDataProvider::class),
         ])
-        ->tag('shopware.document_v2.provider');
+        ->tag('shopwell.document_v2.provider');
 
     $services->set(CreditNoteDataProvider::class)
         ->public()
@@ -131,24 +131,24 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(InvoiceDataProvider::class),
             service(CreditItemResolver::class),
         ])
-        ->tag('shopware.document_v2.provider');
+        ->tag('shopwell.document_v2.provider');
 
     $services->set(DocumentDataProviderRegistry::class)
         ->args([
-            tagged_iterator('shopware.document_v2.provider'),
+            tagged_iterator('shopwell.document_v2.provider'),
         ]);
 
     $services->set(InvoiceDocumentType::class)
-        ->tag('shopware.document_v2.type');
+        ->tag('shopwell.document_v2.type');
 
     $services->set(CancellationInvoiceDocumentType::class)
-        ->tag('shopware.document_v2.type');
+        ->tag('shopwell.document_v2.type');
 
     $services->set(DeliveryNoteDocumentType::class)
-        ->tag('shopware.document_v2.type');
+        ->tag('shopwell.document_v2.type');
 
     $services->set(CreditNoteDocumentType::class)
-        ->tag('shopware.document_v2.type');
+        ->tag('shopwell.document_v2.type');
 
     $services->set(DocumentAppFeatureDefinition::class)
         ->args([
@@ -156,11 +156,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('number_range_type.repository'),
             service('number_range.repository'),
         ])
-        ->tag('shopware.app_feature.definition');
+        ->tag('shopwell.app_feature.definition');
 
     $services->set(DocumentTypeRegistry::class)
         ->args([
-            tagged_iterator('shopware.document_v2.type'),
+            tagged_iterator('shopwell.document_v2.type'),
             service(AppFeatureStorage::class),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
@@ -184,7 +184,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(DocumentTemplateRenderer::class),
         ])
-        ->tag('shopware.document_v2.renderer');
+        ->tag('shopwell.document_v2.renderer');
 
     $services->set(XmlFormatter::class);
 
@@ -194,25 +194,25 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DocumentTemplateRenderer::class),
             service(XmlFormatter::class),
         ])
-        ->tag('shopware.document_v2.renderer');
+        ->tag('shopwell.document_v2.renderer');
 
     $services->set(PdfRenderer::class)
         ->public()
         ->args([
-            param('shopware.dompdf.options'),
+            param('shopwell.dompdf.options'),
         ])
-        ->tag('shopware.document_v2.renderer');
+        ->tag('shopwell.document_v2.renderer');
 
     $services->set(ZugferdEmbeddedPdfRenderer::class)
         ->public()
         ->args([
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
         ])
-        ->tag('shopware.document_v2.renderer');
+        ->tag('shopwell.document_v2.renderer');
 
     $services->set(DocumentRendererRegistry::class)
         ->args([
-            tagged_iterator('shopware.document_v2.renderer'),
+            tagged_iterator('shopwell.document_v2.renderer'),
         ]);
 
     $services->set(DocumentDependencyResolver::class)

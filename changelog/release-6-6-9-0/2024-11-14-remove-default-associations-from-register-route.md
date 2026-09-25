@@ -4,14 +4,14 @@ issue: NEXT-39603
 ---
 # Core
 
-* Changed `\Shopware\Core\Checkout\Customer\SalesChannel\RegisterRoute` to trigger indexer asynchronously and use the BaseContextFactory cache
-* Deprecated the default loaded associations in `\Shopware\Core\Checkout\Customer\SalesChannel\RegisterRoute` on following events the associations of CustomerEntity are not loaded anymore:
+* Changed `\Shopwell\Core\Checkout\Customer\SalesChannel\RegisterRoute` to trigger indexer asynchronously and use the BaseContextFactory cache
+* Deprecated the default loaded associations in `\Shopwell\Core\Checkout\Customer\SalesChannel\RegisterRoute` on following events the associations of CustomerEntity are not loaded anymore:
 
-- `\Shopware\Core\Checkout\Customer\Event\CustomerRegisterEvent`
-- `\Shopware\Core\Checkout\Customer\Event\CustomerRegisterEvent`
-- `\Shopware\Core\Checkout\Customer\Event\CustomerLoginEvent`
-- `\Shopware\Core\Checkout\Customer\Event\DoubleOptInGuestOrderEvent`
-- `\Shopware\Core\Checkout\Customer\Event\CustomerDoubleOptInRegistrationEvent`
+- `\Shopwell\Core\Checkout\Customer\Event\CustomerRegisterEvent`
+- `\Shopwell\Core\Checkout\Customer\Event\CustomerRegisterEvent`
+- `\Shopwell\Core\Checkout\Customer\Event\CustomerLoginEvent`
+- `\Shopwell\Core\Checkout\Customer\Event\DoubleOptInGuestOrderEvent`
+- `\Shopwell\Core\Checkout\Customer\Event\CustomerDoubleOptInRegistrationEvent`
 
 
 ___
@@ -25,8 +25,8 @@ This change reduces the amount of data loaded in the Store-API Register Route an
 
 In the following event, the CustomerEntity has no association loaded anymore:
 
-- `\Shopware\Core\Checkout\Customer\Event\CustomerRegisterEvent`
-- `\Shopware\Core\Checkout\Customer\Event\CustomerRegisterEvent`
-- `\Shopware\Core\Checkout\Customer\Event\CustomerLoginEvent`
-- `\Shopware\Core\Checkout\Customer\Event\DoubleOptInGuestOrderEvent`
-- `\Shopware\Core\Checkout\Customer\Event\CustomerDoubleOptInRegistrationEvent`
+- `\Shopwell\Core\Checkout\Customer\Event\CustomerRegisterEvent`
+- `\Shopwell\Core\Checkout\Customer\Event\CustomerRegisterEvent`
+- `\Shopwell\Core\Checkout\Customer\Event\CustomerLoginEvent`
+- `\Shopwell\Core\Checkout\Customer\Event\DoubleOptInGuestOrderEvent`
+- `\Shopwell\Core\Checkout\Customer\Event\CustomerDoubleOptInRegistrationEvent`

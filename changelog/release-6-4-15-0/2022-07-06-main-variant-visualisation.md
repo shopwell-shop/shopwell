@@ -4,15 +4,15 @@ issue: NEXT-17544
 author: Simon Vorgers & Ramona Schwering
 ---
 # Core
-* Added class `Shopware\Core\Framework\DataAbstractionLayer\VariantListingConfig`
-* Added class `Shopware\Core\Framework\DataAbstractionLayer\VariantListingConfigField`
-* Added class `Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\VariantListingConfigFieldSerializer`
-* Added `displayParent` to `Shopware\Core\Content\Product\ProductEntity`
-* Added `variantListingConfig` to `Shopware\Core\Content\Product\ProductEntity`
-* Added `display_parent` to `Shopware\Core\Content\Product\ProductDefinition`
-* Added `variant_listing_config` to `Shopware\Core\Content\Product\ProductDefinition`
-* Changed `Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute`
-* Changed `Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader`
+* Added class `Shopwell\Core\Framework\DataAbstractionLayer\VariantListingConfig`
+* Added class `Shopwell\Core\Framework\DataAbstractionLayer\VariantListingConfigField`
+* Added class `Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\VariantListingConfigFieldSerializer`
+* Added `displayParent` to `Shopwell\Core\Content\Product\ProductEntity`
+* Added `variantListingConfig` to `Shopwell\Core\Content\Product\ProductEntity`
+* Added `display_parent` to `Shopwell\Core\Content\Product\ProductDefinition`
+* Added `variant_listing_config` to `Shopwell\Core\Content\Product\ProductDefinition`
+* Changed `Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute`
+* Changed `Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingLoader`
 ___
 # Administration
 * Changed `src/Administration/Resources/app/administration/src/module/sw-product/component/sw-product-variants/sw-product-variants-delivery/sw-product-variants-delivery-listing/sw-product-variants-delivery-listing.html.twig`, including its `index.js` and `scss` files to adapt to the new main variant handling

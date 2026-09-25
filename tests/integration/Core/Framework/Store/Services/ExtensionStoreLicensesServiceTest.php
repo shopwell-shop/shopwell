@@ -52,7 +52,7 @@ class ExtensionStoreLicensesServiceTest extends TestCase
 
         static::assertSame(
             [
-                'shopwareVersion' => '___VERSION___',
+                'shopwellVersion' => '___VERSION___',
                 'language' => 'en-GB',
                 'domain' => 'localhost',
             ],

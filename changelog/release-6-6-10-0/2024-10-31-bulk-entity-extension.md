@@ -22,8 +22,8 @@ Before:
 
 namespace Examples\Extension;
 
-use Shopware\Core\Content\Product\ProductDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityExtension;
 
 class MyEntityExtension extends EntityExtension
 {
@@ -41,8 +41,8 @@ After:
 
 namespace Examples\Extension;
 
-use Shopware\Core\Content\Product\ProductDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityExtension;
 
 class MyEntityExtension extends EntityExtension
 {
@@ -61,11 +61,11 @@ The new `BulkEntityExtension` allows to define fields for different entities wit
 
 namespace Examples\Extension;
 
-use Shopware\Core\Content\Category\CategoryDefinition;
-use Shopware\Core\Content\Product\ProductDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\BulkEntityExtension;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Content\Category\CategoryDefinition;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\BulkEntityExtension;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 
 class MyEntityExtension extends BulkEntityExtension
 {
@@ -86,7 +86,7 @@ class MyEntityExtension extends BulkEntityExtension
 
 ```xml
 <service id="Examples\Extension\MyEntityExtension">
-    <tag name="shopware.bulk.entity.extension"/>
+    <tag name="shopwell.bulk.entity.extension"/>
 </service>
 ```
 ___
@@ -102,8 +102,8 @@ Before:
 
 namespace Examples\Extension;
 
-use Shopware\Core\Content\Product\ProductDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityExtension;
 
 class MyEntityExtension extends EntityExtension
 {
@@ -121,8 +121,8 @@ After:
 
 namespace Examples\Extension;
 
-use Shopware\Core\Content\Product\ProductDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
+use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityExtension;
 
 class MyEntityExtension extends EntityExtension
 {

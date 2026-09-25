@@ -72,7 +72,7 @@ class DemodataCommandTest extends TestCase
             static::createStub(DemodataService::class),
             $this->dispatcher,
             $this->name() === 'testShowNoticeWhenNotProd' ? 'dev' : 'prod',
-            [self::class], // always-present class, avoids dependency on shopware/dev-tools in unit tests
+            [self::class], // always-present class, avoids dependency on shopwell/dev-tools in unit tests
         );
     }
 
@@ -88,7 +88,7 @@ class DemodataCommandTest extends TestCase
         $tester = new CommandTester($command);
         $tester->execute([]);
 
-        static::assertStringContainsString('Please install composer package "shopware/dev-tools"', $tester->getDisplay());
+        static::assertStringContainsString('Please install composer package "shopwell/dev-tools"', $tester->getDisplay());
         static::assertSame(Command::FAILURE, $tester->getStatusCode());
     }
 

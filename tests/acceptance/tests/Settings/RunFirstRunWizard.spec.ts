@@ -70,7 +70,7 @@ test(
         await AdminFirstRunWizard.nextButton.click();
 
         // Shopwell account part
-        await ShopAdmin.expects(AdminFirstRunWizard.shopwareAccountHeader).toBeVisible();
+        await ShopAdmin.expects(AdminFirstRunWizard.shopwellAccountHeader).toBeVisible();
         await ShopAdmin.expects(AdminFirstRunWizard.emailAddressInputField).toBeVisible();
         await ShopAdmin.expects(AdminFirstRunWizard.passwordInputField).toBeVisible();
         await ShopAdmin.expects(AdminFirstRunWizard.forgotPasswordLink).toBeVisible();
@@ -78,7 +78,7 @@ test(
         await AdminFirstRunWizard.skipButton.click();
 
         // Shopwell store part
-        await ShopAdmin.expects(AdminFirstRunWizard.shopwareStoreHeader).toBeVisible({ timeout: 120000 });
+        await ShopAdmin.expects(AdminFirstRunWizard.shopwellStoreHeader).toBeVisible({ timeout: 120000 });
         await ShopAdmin.expects(AdminFirstRunWizard.extensionStoreHeading).toBeVisible({ timeout: 120000 });
         await AdminFirstRunWizard.skipButton.click();
 

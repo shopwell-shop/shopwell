@@ -20,7 +20,7 @@ describe('src/core/telemetry/product-analytics/gateway-client', () => {
 
         Shopwell.Store.get('context').app.config.shopId = 'shop-1';
         Shopwell.Store.get('context').app.config.version = '6.8.0.0';
-        Shopwell.Store.get('context').app.config.appUrl = 'https://admin.shopware.test';
+        Shopwell.Store.get('context').app.config.appUrl = 'https://admin.shopwell.test';
         Shopwell.Context.app.systemCurrencyISOCode = 'EUR';
         Shopwell.Application.view.router = {
             currentRoute: {
@@ -132,7 +132,7 @@ describe('src/core/telemetry/product-analytics/gateway-client', () => {
         expect(payload.user).toEqual({ shop_id: 'shop-1', id: 'user-1' });
         expect(payload.context).toEqual({
             sw_version: '6.8.0.0',
-            sw_app_url: 'https://admin.shopware.test',
+            sw_app_url: 'https://admin.shopwell.test',
             sw_browser_url: window.location.origin,
             sw_user_agent: window.navigator.userAgent,
             sw_default_language: 'English',

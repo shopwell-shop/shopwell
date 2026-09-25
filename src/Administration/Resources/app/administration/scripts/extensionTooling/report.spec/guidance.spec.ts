@@ -34,7 +34,7 @@ describe('scripts/extensionTooling/report describeNextStep', () => {
         ).join('\n');
 
         expect(steps).toContain('finish wiring it');
-        expect(steps).toContain('"extends": "./.shopware/tsconfig.json"');
+        expect(steps).toContain('"extends": "./.shopwell/tsconfig.json"');
         expect(steps).not.toContain('--shim');
     });
 
@@ -117,7 +117,7 @@ describe('scripts/extensionTooling/report describeToolGuidance', () => {
             ),
         );
 
-        expect(guidance?.fix.join('\n')).toContain("import shopware from './.shopware/eslint.mjs';");
+        expect(guidance?.fix.join('\n')).toContain("import shopwell from './.shopwell/eslint.mjs';");
     });
 
     it('returns null for composing tools and for vendor extensions', () => {

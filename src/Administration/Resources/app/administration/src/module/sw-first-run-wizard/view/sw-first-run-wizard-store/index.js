@@ -44,7 +44,7 @@ export default {
                 label: this.$t('global.default.back'),
                 position: 'left',
                 variant: 'secondary',
-                action: 'sw.first.run.wizard.index.shopware.account',
+                action: 'sw.first.run.wizard.index.shopwell.account',
                 disabled: this.isActivating || this.loadStatus,
             };
 

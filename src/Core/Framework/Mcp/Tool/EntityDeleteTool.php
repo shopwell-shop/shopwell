@@ -16,11 +16,11 @@ use Shopwell\Core\Framework\Mcp\Context\McpContextProvider;
  */
 #[Package('framework')]
 #[McpTool(
-    name: 'shopware-entity-delete',
+    name: 'shopwell-entity-delete',
     title: 'Entity Delete',
     description: 'Delete Shopwell entities by their UUIDs. Always use dryRun=true (default) first to preview cascade effects and dependent entity deletions, then set dryRun=false to execute. Returns {success, data: {deleted, notFound}, _meta: {dryRun}}.'
 )]
-#[McpToolDependsOn('shopware-entity-search')]
+#[McpToolDependsOn('shopwell-entity-search')]
 #[McpToolGroup('entity')]
 #[McpToolRequires(entityParam: 'entity', operations: ['delete'])]
 class EntityDeleteTool extends McpToolResponse
@@ -40,7 +40,7 @@ class EntityDeleteTool extends McpToolResponse
         $context = $this->contextProvider->getContext();
 
         if (!$this->registry->has($entity)) {
-            return $this->error(\sprintf('Entity "%s" not found. Use the shopware://entities resource for available entity names.', $entity));
+            return $this->error(\sprintf('Entity "%s" not found. Use the shopwell://entities resource for available entity names.', $entity));
         }
 
         if ($error = $this->requirePrivilege($context, $entity . ':delete')) {

@@ -2,11 +2,11 @@
     "name": "swag/testnodefaultlang",
     "description": "Test description no default lang",
     "version": "v1.0.1",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "license": "MIT",
     "authors": [
         {
-            "name": "shopware AG",
+            "name": "Shopwell",
             "role": "Manufacturer"
         },
         {
@@ -15,12 +15,12 @@
         }
     ],
     "require": {
-        "shopware/core": ">=6.0"
+        "shopwell/core": ">=6.0"
     },
     "extra": {
-        "shopware-plugin-class": "SwagTestNoDefaultLang\\SwagTestNoDefaultLang",
+        "shopwell-plugin-class": "SwagTestNoDefaultLang\\SwagTestNoDefaultLang",
         "plugin-icon": "src/Resources/public/plugin.png",
-        "copyright": "(c) by shopware AG",
+        "copyright": "(c) by Shopwell",
         "label": {
             "nl-NL": "Dutch Pluginname"
         },

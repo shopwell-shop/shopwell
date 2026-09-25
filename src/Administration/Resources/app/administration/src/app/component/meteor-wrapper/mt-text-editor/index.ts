@@ -1,5 +1,5 @@
-import MtTextEditorOriginal from '@shopware-ag/meteor-component-library/dist/esm/MtTextEditor';
-import type { CustomButton } from '@shopware-ag/meteor-component-library/dist/esm/MtTextEditorToolbar';
+import MtTextEditorOriginal from '@shopwell-ag/meteor-component-library/dist/esm/MtTextEditor';
+import type { CustomButton } from '@shopwell-ag/meteor-component-library/dist/esm/MtTextEditorToolbar';
 import template from './mt-text-editor.html.twig';
 import './mt-text-editor.scss';
 

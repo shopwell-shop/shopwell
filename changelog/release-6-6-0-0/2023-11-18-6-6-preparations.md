@@ -10,7 +10,7 @@ issue: NEXT-31638
 ___
 # Upgrade Information
 ## New System requirements
-We upgraded some system requirements according to this [proposal](https://github.com/shopware/shopware/discussions/3359).
+We upgraded some system requirements according to this [proposal](https://github.com/shopwell-shop/shopwell/discussions/3359).
 ### Min PHP 8.2
 We upgraded the minimum PHP version to 8.2.
 ### Min MariaDB 10.11

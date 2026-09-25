@@ -1,5 +1,5 @@
 import { test } from '@fixtures/AcceptanceTest';
-import { Manufacturer, Product, PropertyGroup } from '@shopware-ag/acceptance-test-suite';
+import { Manufacturer, Product, PropertyGroup } from '@shopwell-ag/acceptance-test-suite';
 
 const TIMEOUT = 15_000;
 

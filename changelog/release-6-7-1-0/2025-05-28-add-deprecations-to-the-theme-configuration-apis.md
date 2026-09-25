@@ -4,7 +4,7 @@ title: Add deprecations to the theme configuration APIs
 # Storefront
 * Added OpenAPI Schema for most of the `/api/_action/theme` endpoints.
 * Deprecated `label` and `helpText` fields in the API endpoints, that were deprecated in the relevant data structures
-  in the [#8027](https://github.com/shopware/shopware/pull/8027)
+  in the [#8027](https://github.com/shopwell-shop/shopwell/pull/8027)
 * Deprecated `ThemeService::getThemeConfiguration` and `ThemeService::getThemeConfigurationStructuredFields` methods.
 ___
 # Upgrade Information

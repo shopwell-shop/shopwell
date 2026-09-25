@@ -87,12 +87,12 @@ class McpHttpTransportFactoryTest extends TestCase
      * A parameterless tool encodes its empty properties map as `[]`, but JSON Schema requires an
      * object there. Strict clients reject the whole payload over it — OpenAI answers
      * `400 invalid_function_parameters: "[] is not of type 'object'"` — and because
-     * shopware-toolsets-list is advertised in every session, that breaks every request such a
+     * shopwell-toolsets-list is advertised in every session, that breaks every request such a
      * client makes, not just calls to that tool.
      */
     public function testCreateResponseForcesEmptyToolPropertiesToAnObject(): void
     {
-        $json = '{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"shopware-toolsets-list","inputSchema":{"type":"object","properties":[]}}]}}';
+        $json = '{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"shopwell-toolsets-list","inputSchema":{"type":"object","properties":[]}}]}}';
 
         $response = $this->factory()->createResponse($this->psrResponse('application/json', $json));
 
@@ -105,7 +105,7 @@ class McpHttpTransportFactoryTest extends TestCase
         // What tools/list looks like right after a toolset-enable: the list_changed notification
         // is batched alongside the response, so the tools travel the SSE path instead.
         $json = '[{"jsonrpc":"2.0","method":"notifications/tools/list_changed"},'
-            . '{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"shopware-toolsets-list","inputSchema":{"type":"object","properties":[]}}]}}]';
+            . '{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"shopwell-toolsets-list","inputSchema":{"type":"object","properties":[]}}]}}]';
 
         $response = $this->factory()->createResponse($this->psrResponse('application/json', $json));
 

@@ -8,6 +8,6 @@ issue: NEXT-11279
          `TAX_TYPE_AUTO`
          `TAX_TYPE_FIXED`
          `TAX_TYPE_HIGHEST`
-* Added method `highestRate` to `Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection.php` to get the tax rule that has the highest tax rate
-* Added method `getHighestTaxRule` to `Shopware\Core\Checkout\Cart\Price\Struct\PriceCollection` to get the tax rule from the highest tax rate
+* Added method `highestRate` to `Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection.php` to get the tax rule that has the highest tax rate
+* Added method `getHighestTaxRule` to `Shopwell\Core\Checkout\Cart\Price\Struct\PriceCollection` to get the tax rule from the highest tax rate
 * Changed method `calculateShippingCosts` to calculate shipping costs based on 3 types of tax

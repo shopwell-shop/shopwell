@@ -37,7 +37,7 @@ class AttributeFinalRule implements Rule
                     if (!$node->isFinal()) {
                         return [
                             RuleErrorBuilder::message('Attribute classes must be declared final.')
-                                ->identifier('shopware.attributeNotFinal')
+                                ->identifier('shopwell.attributeNotFinal')
                                 ->build(),
                         ];
                     }

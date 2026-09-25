@@ -7,6 +7,6 @@ author_github: @soebbing
 ---
 # Core
 * Added CustomFieldTypes constants:
-    - `Shopware\Core\System\CustomField::COLORPICKER`
-    - `Shopware\Core\System\CustomField::MEDIA`
-    - `Shopware\Core\System\CustomField::SWITCH`
+    - `Shopwell\Core\System\CustomField::COLORPICKER`
+    - `Shopwell\Core\System\CustomField::MEDIA`
+    - `Shopwell\Core\System\CustomField::SWITCH`

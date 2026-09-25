@@ -5,5 +5,5 @@ issue: NEXT-36780
 
 # Core
 
-* Changed `\Shopware\Core\Framework\Plugin\Composer\CommandExecutor` to update only directly affected packages instead of all packages.
-* Changed `\Shopware\Core\Framework\Plugin\PluginLifecycleService` to not modify vendor directory if Shopware is in cluster mode.
+* Changed `\Shopwell\Core\Framework\Plugin\Composer\CommandExecutor` to update only directly affected packages instead of all packages.
+* Changed `\Shopwell\Core\Framework\Plugin\PluginLifecycleService` to not modify vendor directory if Shopwell is in cluster mode.

@@ -27,7 +27,7 @@ class ThumbnailProcessorCompilerPassTest extends TestCase
 
         $container = new ContainerBuilder();
 
-        $container->setParameter('shopware.media.thumbnail_processor', 'imagick');
+        $container->setParameter('shopwell.media.thumbnail_processor', 'imagick');
         $container->setDefinition(ThumbnailProcessorInterface::class, new Definition(GdImageThumbnailProcessor::class));
 
         $pass = new ThumbnailProcessorCompilerPass();

@@ -6,4 +6,4 @@ author_github: @JoshuaBehrens
 issue: NEXT-31262
 ---
 # Core
-* Removed `internal` PHP docs from `\Shopware\Core\Framework\DataAbstractionLayer\PartialEntity`, `\Shopware\Core\Framework\DataAbstractionLayer\Event\PartialEntityLoadedEvent`, `\Shopware\Core\System\SalesChannel\Entity\PartialSalesChannelEntityLoadedEvent`, `\Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria::addFields` and `\Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria::getFields`
+* Removed `internal` PHP docs from `\Shopwell\Core\Framework\DataAbstractionLayer\PartialEntity`, `\Shopwell\Core\Framework\DataAbstractionLayer\Event\PartialEntityLoadedEvent`, `\Shopwell\Core\System\SalesChannel\Entity\PartialSalesChannelEntityLoadedEvent`, `\Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria::addFields` and `\Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria::getFields`

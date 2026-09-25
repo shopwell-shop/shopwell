@@ -58,7 +58,7 @@ class ProfilerTest extends TestCase
 
     public function testTraceWithoutTags(): void
     {
-        $this->createProfiler('test-trace', 'shopware', []);
+        $this->createProfiler('test-trace', 'shopwell', []);
 
         $result = Profiler::trace('test-trace', static fn () => 'test-result');
 
@@ -67,23 +67,23 @@ class ProfilerTest extends TestCase
 
     public function testTraceWithTags(): void
     {
-        $this->createProfiler('test-trace', 'shopware', ['key1' => 'value1', 'key2' => 'value2']);
+        $this->createProfiler('test-trace', 'shopwell', ['key1' => 'value1', 'key2' => 'value2']);
 
-        Profiler::trace('test-trace', static fn () => null, 'shopware', ['key1' => 'value1', 'key2' => 'value2']);
+        Profiler::trace('test-trace', static fn () => null, 'shopwell', ['key1' => 'value1', 'key2' => 'value2']);
     }
 
     public function testTraceWithGlobalTags(): void
     {
-        $this->createProfiler('test-trace', 'shopware', ['global' => 'tag', 'local' => 'tag']);
+        $this->createProfiler('test-trace', 'shopwell', ['global' => 'tag', 'local' => 'tag']);
 
         Profiler::addTag('global', 'tag');
-        Profiler::trace('test-trace', static fn () => null, 'shopware', ['local' => 'tag']);
+        Profiler::trace('test-trace', static fn () => null, 'shopwell', ['local' => 'tag']);
     }
 
     public function testTraceStopsProfilerEvenOnException(): void
     {
         $profilerMock = $this->createMock(ProfilerInterface::class);
-        $profilerMock->expects($this->once())->method('start')->with('test-trace', 'shopware', []);
+        $profilerMock->expects($this->once())->method('start')->with('test-trace', 'shopwell', []);
         $stopCalled = false;
 
         $profilerMock->expects($this->once())->method('stop')->with('test-trace')
@@ -105,11 +105,11 @@ class ProfilerTest extends TestCase
     public function testTraceWithMultipleProfilers(): void
     {
         $profilerMock1 = $this->createMock(ProfilerInterface::class);
-        $profilerMock1->expects($this->once())->method('start')->with('test-trace', 'shopware', []);
+        $profilerMock1->expects($this->once())->method('start')->with('test-trace', 'shopwell', []);
         $profilerMock1->expects($this->once())->method('stop')->with('test-trace');
 
         $profilerMock2 = $this->createMock(ProfilerInterface::class);
-        $profilerMock2->expects($this->once())->method('start')->with('test-trace', 'shopware', []);
+        $profilerMock2->expects($this->once())->method('start')->with('test-trace', 'shopwell', []);
         $profilerMock2->expects($this->once())->method('stop')->with('test-trace');
 
         new Profiler(new \ArrayIterator(['profiler1' => $profilerMock1, 'profiler2' => $profilerMock2]), ['profiler1', 'profiler2']);
@@ -119,7 +119,7 @@ class ProfilerTest extends TestCase
 
     public function testAddTag(): void
     {
-        $this->createProfiler('test-trace', 'shopware', ['tag1' => 'value1', 'tag2' => 'value2']);
+        $this->createProfiler('test-trace', 'shopwell', ['tag1' => 'value1', 'tag2' => 'value2']);
 
         Profiler::addTag('tag1', 'value1');
         Profiler::addTag('tag2', 'value2');
@@ -128,7 +128,7 @@ class ProfilerTest extends TestCase
 
     public function testRemoveTag(): void
     {
-        $this->createProfiler('test-trace', 'shopware', ['tag1' => 'value1']);
+        $this->createProfiler('test-trace', 'shopwell', ['tag1' => 'value1']);
 
         Profiler::addTag('tag1', 'value1');
         Profiler::addTag('tag2', 'value2');
@@ -138,11 +138,11 @@ class ProfilerTest extends TestCase
 
     public function testLocalTagsOverrideGlobalTags(): void
     {
-        $this->createProfiler('test-trace', 'shopware', ['tag1' => 'local-value', 'tag2' => 'global-value']);
+        $this->createProfiler('test-trace', 'shopwell', ['tag1' => 'local-value', 'tag2' => 'global-value']);
 
         Profiler::addTag('tag1', 'global-value');
         Profiler::addTag('tag2', 'global-value');
-        Profiler::trace('test-trace', static fn () => null, 'shopware', ['tag1' => 'local-value']);
+        Profiler::trace('test-trace', static fn () => null, 'shopwell', ['tag1' => 'local-value']);
     }
 
     /**

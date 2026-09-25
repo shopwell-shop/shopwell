@@ -37,7 +37,7 @@ class EntityCompilerPass implements CompilerPassInterface
     {
         $entityNameMap = [];
         $repositoryNameMap = [];
-        $services = $container->findTaggedServiceIds('shopware.entity.definition');
+        $services = $container->findTaggedServiceIds('shopwell.entity.definition');
 
         $ids = array_keys($services);
 
@@ -53,7 +53,7 @@ class EntityCompilerPass implements CompilerPassInterface
             $class = $service->getClass();
 
             if (!\is_subclass_of($class, EntityDefinition::class)) {
-                throw DependencyInjectionException::taggedServiceHasWrongType($serviceId, 'shopware.entity.definition', EntityDefinition::class);
+                throw DependencyInjectionException::taggedServiceHasWrongType($serviceId, 'shopwell.entity.definition', EntityDefinition::class);
             }
 
             if (\in_array($class, [AttributeEntityDefinition::class, AttributeTranslationDefinition::class, AttributeMappingDefinition::class], true)) {
@@ -99,7 +99,7 @@ class EntityCompilerPass implements CompilerPassInterface
 
     private function makeFieldSerializersPublic(ContainerBuilder $container): void
     {
-        $servicesIds = array_keys($container->findTaggedServiceIds('shopware.field_serializer'));
+        $servicesIds = array_keys($container->findTaggedServiceIds('shopwell.field_serializer'));
 
         foreach ($servicesIds as $servicesId) {
             $container->getDefinition($servicesId)->setPublic(true);
@@ -108,7 +108,7 @@ class EntityCompilerPass implements CompilerPassInterface
 
     private function makeFieldResolversPublic(ContainerBuilder $container): void
     {
-        $servicesIds = array_keys($container->findTaggedServiceIds('shopware.field_resolver'));
+        $servicesIds = array_keys($container->findTaggedServiceIds('shopwell.field_resolver'));
 
         foreach ($servicesIds as $servicesId) {
             $container->getDefinition($servicesId)->setPublic(true);
@@ -117,7 +117,7 @@ class EntityCompilerPass implements CompilerPassInterface
 
     private function makeFieldAccessorBuildersPublic(ContainerBuilder $container): void
     {
-        $servicesIds = array_keys($container->findTaggedServiceIds('shopware.field_accessor_builder'));
+        $servicesIds = array_keys($container->findTaggedServiceIds('shopwell.field_accessor_builder'));
 
         foreach ($servicesIds as $servicesId) {
             $container->getDefinition($servicesId)->setPublic(true);

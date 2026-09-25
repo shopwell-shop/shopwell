@@ -35,8 +35,8 @@ describe('App Client Service', () => {
             }))
             .mockImplementationOnce((url, args) => {
                 expect(url).toBe('https://my-app-backend.com');
-                expect(args.headers['shopware-app-token']).toBe('test-token')
-                expect(args.headers['shopware-app-shop-id']).toBe('foo');
+                expect(args.headers['shopwell-app-token']).toBe('test-token')
+                expect(args.headers['shopwell-app-shop-id']).toBe('foo');
 
                 return Promise.resolve({
                     ok: true,
@@ -64,8 +64,8 @@ describe('App Client Service', () => {
             }))
             .mockImplementationOnce((url, args) => {
                 expect(url).toBe('https://my-app-backend.com');
-                expect(args.headers['shopware-app-token']).toBe('test-token')
-                expect(args.headers['shopware-app-shop-id']).toBe('foo');
+                expect(args.headers['shopwell-app-token']).toBe('test-token')
+                expect(args.headers['shopwell-app-shop-id']).toBe('foo');
 
                 return Promise.resolve({
                     ok: true,
@@ -73,8 +73,8 @@ describe('App Client Service', () => {
             })
             .mockImplementationOnce((url, args) => {
                 expect(url).toBe('https://my-app-backend.com');
-                expect(args.headers['shopware-app-token']).toBe('test-token')
-                expect(args.headers['shopware-app-shop-id']).toBe('foo');
+                expect(args.headers['shopwell-app-token']).toBe('test-token')
+                expect(args.headers['shopwell-app-shop-id']).toBe('foo');
 
                 return Promise.resolve({
                     ok: true,

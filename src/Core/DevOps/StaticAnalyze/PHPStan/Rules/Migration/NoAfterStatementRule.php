@@ -60,7 +60,7 @@ class NoAfterStatementRule implements Rule
         if (preg_match($pattern, $arg->value)) {
             return [
                 RuleErrorBuilder::message('Usage of ALTER TABLE .. AFTER is disallowed in migrations to avoid implicit temporary table usage.')
-                ->identifier('shopware.afterStatement')
+                ->identifier('shopwell.afterStatement')
                 ->build(),
             ];
         }

@@ -7,7 +7,7 @@ test(
         tag: '@Visual',
         annotation: {
             type: 'issue',
-            description: 'https://github.com/shopware/shopware/issues/15253',
+            description: 'https://github.com/shopwell-shop/shopwell/issues/15253',
         },
     },
     async ({ ShopCustomer, TestDataService, IdProvider, StorefrontHome }) => {
@@ -185,7 +185,7 @@ test(
         tag: '@Visual',
         annotation: {
             type: 'issue',
-            description: 'https://github.com/shopware/shopware/issues/20286',
+            description: 'https://github.com/shopwell-shop/shopwell/issues/20286',
         },
     },
     async ({ ShopCustomer, TestDataService, IdProvider, StorefrontHome, InstanceMeta }) => {

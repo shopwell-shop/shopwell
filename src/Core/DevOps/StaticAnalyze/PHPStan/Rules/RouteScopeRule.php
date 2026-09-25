@@ -58,7 +58,7 @@ class RouteScopeRule implements Rule
                     $method->getName()
                 ))
                     ->line($method->getStartLine() ?: 0)
-                    ->identifier('shopware.routeScope')
+                    ->identifier('shopwell.routeScope')
                     ->build();
 
                 continue;
@@ -74,7 +74,7 @@ class RouteScopeRule implements Rule
                     )
                 )
                     ->line($method->getStartLine() ?: 0)
-                    ->identifier('shopware.routeScope')
+                    ->identifier('shopwell.routeScope')
                     ->build();
             }
         }

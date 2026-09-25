@@ -1,4 +1,4 @@
-import type { CustomButton } from '@shopware-ag/meteor-component-library/dist/esm/MtTextEditorToolbar';
+import type { CustomButton } from '@shopwell-ag/meteor-component-library/dist/esm/MtTextEditorToolbar';
 
 /**
  * @sw-package framework

@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   redis:
-    if: (github.repository == 'shopware/shopware' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     name: Redis
     runs-on: ubuntu-24.04
     strategy:
@@ -32,11 +32,11 @@ jobs:
       COMPOSER_ROOT_VERSION: 6.7.9999999-dev
 
     steps:
-      - name: Setup Shopware
-        uses: shopware/setup-shopware@main
+      - name: Setup Shopwell
+        uses: shopwell/setup-shopwell@main
         with:
-          shopware-version: ${{ github.ref }}
-          shopware-repository: ${{ github.repository }}
+          shopwell-version: ${{ github.ref }}
+          shopwell-repository: ${{ github.repository }}
       - name: Run PHPUnit
         run: |
           ./vendor/bin/phpunit --log-junit junit.xml --testsuite redis
@@ -51,7 +51,7 @@ jobs:
           overwrite: true
 
   admin:
-    if: (github.repository == 'shopware/shopware' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       contents: read
       pull-requests: read
@@ -60,7 +60,7 @@ jobs:
     with:
       extension-tooling-e2e: true
   integration:
-    if: (github.repository == 'shopware/shopware' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       contents: read
       security-events: write
@@ -69,7 +69,7 @@ jobs:
     with:
       profile: nightly
   acceptance:
-    if: (github.repository == 'shopware/shopware' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       actions: read
       contents: read
@@ -83,7 +83,7 @@ jobs:
       # major is prepared. Once they are green, drop this line to fold them back into nightly.
       major: exclude
   visual-tests:
-    if: (github.repository == 'shopware/shopware' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       contents: write
       id-token: write
@@ -93,7 +93,7 @@ jobs:
     with:
       currents: ${{ github.event_name == 'schedule' }}
   php:
-    if: (github.repository == 'shopware/shopware' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       contents: read
       id-token: write
@@ -101,15 +101,15 @@ jobs:
     uses: ./.github/workflows/php.yml
     secrets: inherit
   storefront:
-    if: (github.repository == 'shopware/shopware' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     uses: ./.github/workflows/storefront.yml
     secrets: inherit
   zugferd-compliance:
-    if: (github.repository == 'shopware/shopware' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     uses: ./.github/workflows/zugferd-compliance.yml
     secrets: inherit
   downstream:
-    if: (github.repository == 'shopware/shopware' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       actions: write
       checks: read
@@ -123,7 +123,7 @@ jobs:
     with:
       nightly: "true"
   prepare-release: # This will only execute dry-runs and push current trunk to the many-repos
-    if: (github.repository == 'shopware/shopware' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       contents: write
       id-token: write
@@ -154,7 +154,7 @@ jobs:
   # we need this for our LTS, because gh only runs scheduled for the default branch
   nightly-other-branches:
     runs-on: ubuntu-24.04
-    if: github.repository == 'shopware/shopware' && github.ref == 'refs/heads/trunk'
+    if: github.repository == 'shopwell/shopwell' && github.ref == 'refs/heads/trunk'
     permissions:
       id-token: write
     strategy:
@@ -166,11 +166,11 @@ jobs:
     steps:
       - name: Delay
         run: sleep 20m
-      - uses: shopware/octo-sts-action@main
+      - uses: shopwell/octo-sts-action@main
         id: sts
         with:
-          scope: shopware
-          identity: ShopwareNightly
+          scope: shopwell
+          identity: ShopwellNightly
       - env:
           GH_TOKEN: ${{ steps.sts.outputs.token }}
         run: gh workflow run "${{ github.workflow }}" --repo "${{ github.repository }}" --ref "${{ matrix.branch }}"

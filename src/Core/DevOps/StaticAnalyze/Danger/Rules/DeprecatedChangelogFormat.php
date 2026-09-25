@@ -19,7 +19,7 @@ class DeprecatedChangelogFormat
         $files = $context->platform->pullRequest->getFiles();
 
         if ($files->matches('changelog/_unreleased/*.md')->count() > 0) {
-            $context->failure('The Pull Request makes use of the old changelog format. Please document your changes in the `RELEASE_INFO-6.7.md` and `UPGRADE-6.8.md` file respectively. For detailed infos please refer to the [release documentation guide](https://github.com/shopware/shopware/blob/trunk/delivery-process/documenting-a-release.md).');
+            $context->failure('The Pull Request makes use of the old changelog format. Please document your changes in the `RELEASE_INFO-6.7.md` and `UPGRADE-6.8.md` file respectively. For detailed infos please refer to the [release documentation guide](https://github.com/shopwell-shop/shopwell/blob/trunk/delivery-process/documenting-a-release.md).');
         }
     }
 }

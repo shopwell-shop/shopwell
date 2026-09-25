@@ -133,7 +133,7 @@ class SystemInstallCommand extends Command
                 'command' => 'user:create',
                 'username' => 'admin',
                 '--admin' => true,
-                '--password' => 'shopware',
+                '--password' => 'shopwell',
             ];
 
             if ($application->has('sales-channel:create:storefront')) {
@@ -181,7 +181,7 @@ class SystemInstallCommand extends Command
         }
 
         if ($this->shouldSkipFileOperations()) {
-            $output->comment('Skipping install.lock and .htaccess creation (SHOPWARE_SKIP_WEBINSTALLER is set)');
+            $output->comment('Skipping install.lock and .htaccess creation (SHOPWELL_SKIP_WEBINSTALLER is set)');
         } else {
             $this->ensureHtaccessExists();
             $this->systemLocker->lock();
@@ -263,7 +263,7 @@ class SystemInstallCommand extends Command
 
     private function shouldSkipFileOperations(): bool
     {
-        return (bool) EnvironmentHelper::getVariable('SHOPWARE_SKIP_WEBINSTALLER', false);
+        return (bool) EnvironmentHelper::getVariable('SHOPWELL_SKIP_WEBINSTALLER', false);
     }
 
     private function ensureHtaccessExists(): void

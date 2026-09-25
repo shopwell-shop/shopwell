@@ -2,7 +2,7 @@
 title: Fix select indicator
 issue: NEXT-38490
 author: Sebastian Seggewiss
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration

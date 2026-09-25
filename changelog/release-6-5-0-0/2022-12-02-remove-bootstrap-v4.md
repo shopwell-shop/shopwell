@@ -7,7 +7,7 @@ issue: NEXT-23944
 * Removed deprecated NPM package `jquery` and all its usages
 * Removed deprecated class `Resources/app/storefront/src/utility/tooltip/tooltip.util.js` , use `Resources/app/storefront/src/utility/bootstrap/bootstrap.util.js` instead
 * Removed deprecated SCSS file `Resources/app/storefront/src/scss/base/_ie11-fixes.scss` without replacement because IE11 support is discontinued
-* Removed deprecated global Twig variables in favor of new Bootstrap v5 classes in `\Shopware\Storefront\Framework\Twig\TemplateDataExtension`
+* Removed deprecated global Twig variables in favor of new Bootstrap v5 classes in `\Shopwell\Storefront\Framework\Twig\TemplateDataExtension`
     * Removed `dataBsToggleAttr`, use `data-bs-toggle` instead
     * Removed `dataBsDismissAttr`, use `data-bs-dismiss` instead
     * Removed `dataBsTargetAttr`, use `data-bs-target` instead

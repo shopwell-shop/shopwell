@@ -1,6 +1,6 @@
 name: "PHPUnit run"
 description: "Run a PHPUnit suite (integration shard or unit/migration), optionally producing a cobertura coverage report. Requires ./.github/actions/phpunit-prepare to have run first; Codecov uploads live in ./.github/actions/phpunit-upload."
-author: "shopware AG"
+author: "Shopwell"
 
 inputs:
   test-path:

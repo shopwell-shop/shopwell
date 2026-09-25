@@ -204,7 +204,7 @@
                                             "name": {
                                                 "type": "string",
                                                 "description": "Unique tool identifier used in `tools\/call` requests.",
-                                                "example": "shopware-entity-search"
+                                                "example": "shopwell-entity-search"
                                             },
                                             "description": {
                                                 "type": ["string", "null"],
@@ -272,7 +272,7 @@
                                                 "type": "object",
                                                 "required": ["name"],
                                                 "properties": {
-                                                    "name": {"type": "string", "example": "shopware-entity-search"},
+                                                    "name": {"type": "string", "example": "shopwell-entity-search"},
                                                     "description": {"type": ["string", "null"]},
                                                     "dependencies": {"type": "array", "items": {"type": "string"}},
                                                     "requiredPrivileges": {
@@ -297,8 +297,8 @@
                                                 "type": "object",
                                                 "required": ["uri", "name"],
                                                 "properties": {
-                                                    "uri": {"type": "string", "example": "shopware:\/\/entity-list"},
-                                                    "name": {"type": "string", "example": "shopware-entity-list"},
+                                                    "uri": {"type": "string", "example": "shopwell:\/\/entity-list"},
+                                                    "name": {"type": "string", "example": "shopwell-entity-list"},
                                                     "description": {"type": ["string", "null"]},
                                                     "mimeType": {"type": ["string", "null"]}
                                                 }
@@ -310,7 +310,7 @@
                                                 "type": "object",
                                                 "required": ["name"],
                                                 "properties": {
-                                                    "name": {"type": "string", "example": "shopware-context"},
+                                                    "name": {"type": "string", "example": "shopwell-context"},
                                                     "description": {"type": ["string", "null"]}
                                                 }
                                             }

@@ -43,7 +43,7 @@ class ShopwellAuthCodeGrantTypeTest extends TestCase
     #[DataProvider('rejectedCodeChallengeMethodProvider')]
     public function testRejectsEveryCodeChallengeMethodExceptS256(?string $method): void
     {
-        $query = ['response_type' => 'code', 'client_id' => 'shopware-cli', 'code_challenge' => str_repeat('a', 43)];
+        $query = ['response_type' => 'code', 'client_id' => 'shopwell-cli', 'code_challenge' => str_repeat('a', 43)];
         if ($method !== null) {
             $query['code_challenge_method'] = $method;
         }
@@ -73,7 +73,7 @@ class ShopwellAuthCodeGrantTypeTest extends TestCase
     {
         $clients = static::createStub(ClientRepositoryInterface::class);
         $clients->method('getClientEntity')->willReturn(new ApiClient(
-            'shopware-cli',
+            'shopwell-cli',
             writeAccess: true,
             confidential: false,
             redirectUris: ['http://127.0.0.1/callback'],
@@ -81,7 +81,7 @@ class ShopwellAuthCodeGrantTypeTest extends TestCase
         $this->grant->setClientRepository($clients);
         $request = (new ServerRequest('GET', '/api/oauth/authorize'))->withQueryParams([
             'response_type' => 'code',
-            'client_id' => 'shopware-cli',
+            'client_id' => 'shopwell-cli',
             'redirect_uri' => 'https://example.invalid/callback',
             'code_challenge_method' => 'S256',
         ]);
@@ -95,7 +95,7 @@ class ShopwellAuthCodeGrantTypeTest extends TestCase
     {
         $clients = static::createStub(ClientRepositoryInterface::class);
         $clients->method('getClientEntity')->willReturn(new ApiClient(
-            'shopware-cli',
+            'shopwell-cli',
             writeAccess: true,
             confidential: false,
             redirectUris: ['http://127.0.0.1/callback'],
@@ -105,7 +105,7 @@ class ShopwellAuthCodeGrantTypeTest extends TestCase
         $this->grant->setDefaultScope('');
         $request = (new ServerRequest('GET', '/api/oauth/authorize'))->withQueryParams([
             'response_type' => 'code',
-            'client_id' => 'shopware-cli',
+            'client_id' => 'shopwell-cli',
             'redirect_uri' => 'http://127.0.0.1:54321/callback',
             'code_challenge' => str_repeat('a', 43),
             'code_challenge_method' => 'S256',

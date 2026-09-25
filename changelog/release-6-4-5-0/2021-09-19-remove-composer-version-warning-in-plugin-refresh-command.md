@@ -6,4 +6,4 @@ author_email: ea@networker.de
 author_github: Edip Aydin
 ---
 # Core
-* Removed version check when reading plugin composer.json to avoid warnings for all plugins in `Shopware\Core\Framework\Plugin\Composer\PackageProvider::getPluginComposerPackage()`
+* Removed version check when reading plugin composer.json to avoid warnings for all plugins in `Shopwell\Core\Framework\Plugin\Composer\PackageProvider::getPluginComposerPackage()`

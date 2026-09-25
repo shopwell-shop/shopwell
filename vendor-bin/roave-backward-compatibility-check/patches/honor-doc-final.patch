@@ -5,7 +5,7 @@
      }
  
 +    /**
-+     * @final classes are not supported extension points in Shopware (mirrored by the
++     * @final classes are not supported extension points in Shopwell (mirrored by the
 +     * PHPStan rules), so checks that only protect subclasses are skipped for them,
 +     * like for native final classes. Caller-facing checks (return type covariance,
 +     * parameter contravariance, method removal, ...) still apply.

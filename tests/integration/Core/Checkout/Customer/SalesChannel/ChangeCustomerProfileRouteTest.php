@@ -59,7 +59,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $this->customerRepository = static::getContainer()->get('customer.repository');
 
         $email = Uuid::randomHex() . '@example.com';
-        $this->customerId = $this->createCustomer('shopware', $email);
+        $this->customerId = $this->createCustomer('shopwell', $email);
 
         $this->browser
             ->request(
@@ -67,7 +67,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
                 '/store-api/account/login',
                 [
                     'email' => $email,
-                    'password' => 'shopware',
+                    'password' => 'shopwell',
                 ]
             );
 

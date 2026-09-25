@@ -6,15 +6,15 @@ author_github: @aragon999
 ---
 # Core
 
-* Deprecated the `\Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper`
+* Deprecated the `\Shopwell\Core\Framework\Test\TestCaseHelper\ReflectionHelper`
 
 ___
 
 # Upgrade Information
 
-## Deprecated the `\Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper`
+## Deprecated the `\Shopwell\Core\Framework\Test\TestCaseHelper\ReflectionHelper`
 
-Refection has significantly improved in particular since PHP 8.1, therefore the `Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper` was deprecated and will be removed in the next major release. See below for the explicit replacements:
+Refection has significantly improved in particular since PHP 8.1, therefore the `Shopwell\Core\Framework\Test\TestCaseHelper\ReflectionHelper` was deprecated and will be removed in the next major release. See below for the explicit replacements:
 
 ```diff
 - $property = ReflectionHelper->getProperty(MyClass::class, 'myProperty');
@@ -40,9 +40,9 @@ ___
 
 # Next Major Version Changes
 
-## Removal of `\Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper`
+## Removal of `\Shopwell\Core\Framework\Test\TestCaseHelper\ReflectionHelper`
 
-Refection has significantly improved in particular since PHP 8.1, therefore the `Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper` was removed, see below for the explicit replacements:
+Refection has significantly improved in particular since PHP 8.1, therefore the `Shopwell\Core\Framework\Test\TestCaseHelper\ReflectionHelper` was removed, see below for the explicit replacements:
 
 ```diff
 - $property = ReflectionHelper->getProperty(MyClass::class, 'myProperty');

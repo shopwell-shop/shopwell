@@ -22,7 +22,7 @@ function isConsentChangedMessage(message: unknown): message is ConsentChangedMes
  */
 export default function broadcastConsentChanges(): BroadcastChannel {
     const consentStore = useConsentStore();
-    const bc = new BroadcastChannel('shopware-consents');
+    const bc = new BroadcastChannel('shopwell-consents');
 
     bc.onmessage = ({ data }) => {
         if (!isConsentChangedMessage(data)) {

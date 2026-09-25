@@ -143,7 +143,7 @@ class AdapterException extends HttpException
         return new self(
             Response::HTTP_INTERNAL_SERVER_ERROR,
             self::REDIS_UNKNOWN_CONNECTION,
-            'Can\'t provide connection "{{ connectionName }}", check if it\'s configured under shopware.redis.connections.',
+            'Can\'t provide connection "{{ connectionName }}", check if it\'s configured under shopwell.redis.connections.',
             [
                 'connectionName' => $connectionName,
             ],
@@ -155,7 +155,7 @@ class AdapterException extends HttpException
         return new self(
             Response::HTTP_INTERNAL_SERVER_ERROR,
             self::REDIS_UNKNOWN_CONNECTION,
-            'shopware.redis.connections dsn of "%s" connection must be a string.',
+            'shopwell.redis.connections dsn of "%s" connection must be a string.',
             [
                 'connectionName' => $connectionName,
             ],

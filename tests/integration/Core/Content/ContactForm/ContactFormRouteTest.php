@@ -152,7 +152,7 @@ class ContactFormRouteTest extends TestCase
     public static function contactFormWithDomainProvider(): \Generator
     {
         yield 'subscribe with URL protocol HTTPS' => [
-            'Y https://shopware.test',
+            'Y https://shopwell.test',
             'Tran',
             static function (array $response): void {
                 static::assertArrayHasKey('errors', $response);
@@ -165,7 +165,7 @@ class ContactFormRouteTest extends TestCase
         ];
 
         yield 'subscribe with URL protocol HTTP' => [
-            'Y http://shopware.test',
+            'Y http://shopwell.test',
             'Tran',
             static function (array $response): void {
                 static::assertArrayHasKey('errors', $response);

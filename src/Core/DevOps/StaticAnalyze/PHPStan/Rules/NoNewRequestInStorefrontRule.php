@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\Request;
 #[Package('framework')]
 class NoNewRequestInStorefrontRule implements Rule
 {
-    private const SHOPWARE_STOREFRONT_CONTROLLER = 'Shopwell\\Storefront\\Controller';
+    private const SHOPWELL_STOREFRONT_CONTROLLER = 'Shopwell\\Storefront\\Controller';
 
     public function getNodeType(): string
     {
@@ -34,10 +34,10 @@ class NoNewRequestInStorefrontRule implements Rule
 
         if ($node->class instanceof Name && $node->class->toString() === Request::class) {
             $classReflection = $scope->getClassReflection();
-            if ($classReflection !== null && str_contains($classReflection->getName(), self::SHOPWARE_STOREFRONT_CONTROLLER)) {
+            if ($classReflection !== null && str_contains($classReflection->getName(), self::SHOPWELL_STOREFRONT_CONTROLLER)) {
                 return [
                     RuleErrorBuilder::message('Do not create new Request objects in storefront/controller namespace, because not all parameters might be available on the new request, leading to errors further down. Consider cloning the original request or use a different approach.')
-                    ->identifier('shopware.noNewRequestInStorefront')
+                    ->identifier('shopwell.noNewRequestInStorefront')
                     ->build(),
                 ];
             }

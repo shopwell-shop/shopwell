@@ -21,10 +21,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('debug.stopwatch')->nullOnInvalid(),
         ])
-        ->tag('shopware.profiler', ['integration' => 'Symfony']);
+        ->tag('shopwell.profiler', ['integration' => 'Symfony']);
 
     $services->set(Tideways::class)
-        ->tag('shopware.profiler', ['integration' => 'Tideways']);
+        ->tag('shopwell.profiler', ['integration' => 'Tideways']);
 
     $services->set(CacheWatchDelayedCommand::class)
         ->tag('console.command')
@@ -33,16 +33,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(Datadog::class)
-        ->tag('shopware.profiler', ['integration' => 'Datadog']);
+        ->tag('shopwell.profiler', ['integration' => 'Datadog']);
 
     $services->set(ServerTiming::class)
-        ->tag('shopware.profiler', ['integration' => 'ServerTiming'])
+        ->tag('shopwell.profiler', ['integration' => 'ServerTiming'])
         ->tag('kernel.event_listener', ['event' => 'kernel.response', 'method' => 'onResponseEvent']);
 
     $services->set(Profiler::class)
         ->public()
         ->args([
-            tagged_iterator('shopware.profiler', 'integration'),
-            param('shopware.profiler.integrations'),
+            tagged_iterator('shopwell.profiler', 'integration'),
+            param('shopwell.profiler.integrations'),
         ]);
 };

@@ -22,7 +22,7 @@ Especially as for internal deprecations we still want to ensure that they contin
 
 Symfony offers a tool to report all deprecations that are encountered when running the test inside their [PHPUnit Bridge](https://symfony.com/doc/current/components/phpunit_bridge.html).
 With enabling the [`SYMFONY_DEPRECATIONS_HELPER`](https://symfony.com/doc/current/components/phpunit_bridge.html#trigger-deprecation-notices) for our testsuite we can ensure that no deprecations are triggered while executing the tests.
-Previously we could not enable this as it also reported all deprecation usages for internal deprecations and also reported on deprecations that were triggered from inside external dependencies that we could not fix from inside shopware.
+Previously we could not enable this as it also reported all deprecation usages for internal deprecations and also reported on deprecations that were triggered from inside external dependencies that we could not fix from inside shopwell.
 
 But since lately a feature was added to use a [`ignoreFile`](https://symfony.com/doc/current/components/phpunit_bridge.html#ignoring-deprecations), in order to ignore specific deprecations by regex.
 

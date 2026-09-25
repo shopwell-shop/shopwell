@@ -14,7 +14,7 @@ const mailLogEntry = {
     context: {
         additionalData: {
             recipients: {
-                'shopware@example.com': {},
+                'shopwell@example.com': {},
             },
             contents: {
                 'text/html': '<strong>HTML mail body</strong>',
@@ -164,7 +164,7 @@ describe('src/module/sw-settings-logging/component/sw-settings-logging-entry-inf
                 name: 'raw',
             },
         ]);
-        expect(wrapper.text()).toContain('sw-settings-logging.mailInfo.recipientsTitle: shopware@example.com');
+        expect(wrapper.text()).toContain('sw-settings-logging.mailInfo.recipientsTitle: shopwell@example.com');
         expect(wrapper.html()).toContain('<strong>HTML mail body</strong>');
 
         await tabs.vm.$emit('new-item-active', 'plain');

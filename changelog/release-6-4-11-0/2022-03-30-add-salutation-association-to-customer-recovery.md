@@ -6,4 +6,4 @@ author_email: marcink@codepro.space
 author_github: CodeproSpace
 ---
 # Core
-* Added salutation association to `Shopware\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute::sendRecoveryMail()`.
+* Added salutation association to `Shopwell\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute::sendRecoveryMail()`.

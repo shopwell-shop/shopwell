@@ -4,6 +4,6 @@ issue: NEXT-32085
 ---
 # Storefront
 * Removed deprecated exception class `VerificationHashNotConfiguredException`
-* Changed method `Shopware\Storefront\Theme\StorefrontPluginConfiguration\AbstractStorefrontPluginConfigurationFactory::createFromThemeJson` to abstract.
-* Changed parameter `$basePath` in `Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfiguration` to be no more nullable.
-* Changed parameter `$pluginConfigurationFactory` in constructor of `Shopware\Storefront\Theme\ThemeLifecycleService` to be mandatory.
+* Changed method `Shopwell\Storefront\Theme\StorefrontPluginConfiguration\AbstractStorefrontPluginConfigurationFactory::createFromThemeJson` to abstract.
+* Changed parameter `$basePath` in `Shopwell\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfiguration` to be no more nullable.
+* Changed parameter `$pluginConfigurationFactory` in constructor of `Shopwell\Storefront\Theme\ThemeLifecycleService` to be mandatory.

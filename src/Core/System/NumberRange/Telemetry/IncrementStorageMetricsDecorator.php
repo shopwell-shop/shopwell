@@ -16,7 +16,7 @@ use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\Abs
  * Decorates the configured storage so one instrumentation point covers the MySQL, Redis and any custom backend.
  * `preview`/`list`/`set`/`increaseToAtLeast` are administrative paths and pass through unmeasured.
  *
- * The `storage` label is instance-constant (`shopware.number_range.increment_storage`), resolved once via DI.
+ * The `storage` label is instance-constant (`shopwell.number_range.increment_storage`), resolved once via DI.
  *
  * Merely-hot path: relies on `Meter::emit`'s early-return when telemetry is disabled, no compiler-pass gating.
  *

@@ -4,7 +4,7 @@
 Each file in this directory is a single MCP tool -- an action that AI clients can invoke via the MCP protocol.
 
 ## Naming
-- Tool names use `shopware-` prefix with kebab-case: `shopware-entity-search`, `shopware-entity-upsert`
+- Tool names use `shopwell-` prefix with kebab-case: `shopwell-entity-search`, `shopwell-entity-upsert`
 - Class names use PascalCase suffix `Tool`: `EntitySearchTool`, `EntityUpsertTool`
 - Plugin tools: `{plugin-name}-{tool-name}`
 - App tools: `{app-name}-{tool-name}`
@@ -26,8 +26,8 @@ Each file in this directory is a single MCP tool -- an action that AI clients ca
 The `description` argument on `#[McpTool]` is what the agent reads to pick a tool. It is a **routing surface**, not a docblock. Lessons captured from the GPT-4o eval suite:
 
 - **Lead with the user's trigger phrases.** A description that opens with "The correct tool for count, sum, average, and other aggregate questions" routes correctly when the user asks "how many products?". A description that opens with "Run aggregations over any Shopwell entity" does not.
-- **Use negative phrasing to break ties.** When two tools share keywords, the description must spell out the contrast: `"Use this — NOT shopware-entity-search — for any 'how many'…"` is more decisive than a positive description alone.
-- **Do not reference other tools as prerequisites unless they truly are.** Phrases like "Use shopware-foo-read to check current values first" train the agent to call the read tool even when the user explicitly asked to write. Declare prerequisites with `#[McpToolDependsOn]`, not in prose.
+- **Use negative phrasing to break ties.** When two tools share keywords, the description must spell out the contrast: `"Use this — NOT shopwell-entity-search — for any 'how many'…"` is more decisive than a positive description alone.
+- **Do not reference other tools as prerequisites unless they truly are.** Phrases like "Use shopwell-foo-read to check current values first" train the agent to call the read tool even when the user explicitly asked to write. Declare prerequisites with `#[McpToolDependsOn]`, not in prose.
 - **Mention the use cases the user will name.** If a prompt is "upload this image as a product cover", the description should contain the phrase "product cover" and clarify that no extra parameter is needed for that case. Otherwise the agent often returns no tool selection at all.
 - **Make required parameters truly required.** A parameter without a PHP default ends up `required: true` in the JSON schema. If users frequently won't supply it (a sales channel UUID, a tax ID), give it a default of `''` or `null` and validate inside `__invoke()`. GPT-4o refuses to call tools when required parameters are missing from the prompt — even when the description says they are optional.
 
@@ -46,14 +46,14 @@ When one tool only makes sense if the AI has already used another tool first, de
 ```php
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolDependsOn;
 
-#[McpTool(name: 'shopware-entity-delete', description: '...')]
-#[McpToolDependsOn('shopware-entity-search')]
+#[McpTool(name: 'shopwell-entity-delete', description: '...')]
+#[McpToolDependsOn('shopwell-entity-search')]
 class EntityDeleteTool extends McpToolResponse { ... }
 ```
 
 - The attribute is **repeatable** — add multiple `#[McpToolDependsOn]` lines if the tool depends on several others.
 - Dependencies are **tool-only** — tools can only depend on other tools, not on prompts or resources.
-- `McpToolAnalysisCompilerPass` resolves dependencies transitively and stores the result in the `shopware.mcp.tool_dependencies` container parameter, which the allowlist provider uses at runtime.
+- `McpToolAnalysisCompilerPass` resolves dependencies transitively and stores the result in the `shopwell.mcp.tool_dependencies` container parameter, which the allowlist provider uses at runtime.
 - **Allowlist auto-expansion:** when a user enables a tool in the Admin integration UI, all its declared dependencies (and their transitive dependencies) are automatically added to the allowlist. Removing a tool does **not** auto-remove its dependencies — they may be intentionally enabled independently.
 - `bin/console debug:mcp` shows the resolved dependencies in a **Dependencies** column.
 
@@ -61,12 +61,12 @@ class EntityDeleteTool extends McpToolResponse { ... }
 
 | Tool | Depends on |
 |---|---|
-| `shopware-entity-read` | `shopware-entity-schema` |
-| `shopware-entity-search` | `shopware-entity-schema` |
-| `shopware-entity-aggregate` | `shopware-entity-schema` |
-| `shopware-entity-upsert` | `shopware-entity-schema` |
-| `shopware-entity-delete` | `shopware-entity-search` (→ `shopware-entity-schema`) |
-| `shopware-system-config-write` | `shopware-system-config-read` |
+| `shopwell-entity-read` | `shopwell-entity-schema` |
+| `shopwell-entity-search` | `shopwell-entity-schema` |
+| `shopwell-entity-aggregate` | `shopwell-entity-schema` |
+| `shopwell-entity-upsert` | `shopwell-entity-schema` |
+| `shopwell-entity-delete` | `shopwell-entity-search` (→ `shopwell-entity-schema`) |
+| `shopwell-system-config-write` | `shopwell-system-config-read` |
 | `merchant-cart-checkout` | `merchant-cart-manage` |
 
 **Rule:** only add `#[McpToolDependsOn]` when the dependency is genuinely required to use the tool — not just convenient. Unnecessary dependencies inflate every integration's allowlist.
@@ -83,14 +83,14 @@ Two forms:
 ```php
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolRequires;
 
-#[McpTool(name: 'shopware-system-config-read', description: '...')]
+#[McpTool(name: 'shopwell-system-config-read', description: '...')]
 #[McpToolRequires('system_config:read')]
 class SystemConfigReadTool extends McpToolResponse { ... }
 ```
 
 **Dynamic privilege** (entity name comes from a runtime parameter):
 ```php
-#[McpTool(name: 'shopware-entity-read', description: '...')]
+#[McpTool(name: 'shopwell-entity-read', description: '...')]
 #[McpToolRequires(entityParam: 'entity', operations: ['read'])]
 class EntityReadTool extends McpToolResponse { ... }
 ```
@@ -103,16 +103,16 @@ class EntityReadTool extends McpToolResponse { ... }
 
 | Tool | Required privileges |
 |---|---|
-| `shopware-system-config-read` | `system_config:read` |
-| `shopware-system-config-write` | `system_config:update` |
-| `shopware-order-state` | `order:read`, `order:update`, `order_transaction:update`, `order_delivery:update` |
-| `shopware-media-upload` | `media:create`, `product:update` |
-| `shopware-entity-read` | `<entity>:read` (dynamic) |
-| `shopware-entity-search` | `<entity>:read` (dynamic) |
-| `shopware-entity-aggregate` | `<entity>:read` (dynamic) |
-| `shopware-entity-upsert` | `<entity>:create`, `<entity>:update` (dynamic) |
-| `shopware-entity-delete` | `<entity>:delete` (dynamic) |
-| `shopware-theme-config` (Storefront) | `theme:read`, `theme:update` |
+| `shopwell-system-config-read` | `system_config:read` |
+| `shopwell-system-config-write` | `system_config:update` |
+| `shopwell-order-state` | `order:read`, `order:update`, `order_transaction:update`, `order_delivery:update` |
+| `shopwell-media-upload` | `media:create`, `product:update` |
+| `shopwell-entity-read` | `<entity>:read` (dynamic) |
+| `shopwell-entity-search` | `<entity>:read` (dynamic) |
+| `shopwell-entity-aggregate` | `<entity>:read` (dynamic) |
+| `shopwell-entity-upsert` | `<entity>:create`, `<entity>:update` (dynamic) |
+| `shopwell-entity-delete` | `<entity>:delete` (dynamic) |
+| `shopwell-theme-config` (Storefront) | `theme:read`, `theme:update` |
 
 ## Response format convention
 All tools must extend the `McpToolResponse` abstract class. It provides two helpers:
@@ -133,10 +133,10 @@ Rules:
 - `_meta` is optional, used for pagination (`total`, `page`, `limit`), context (`salesChannelId`), and write metadata (`dryRun`)
 - `error` (string) only appears when `success` is false
 - Responses up to 100 KB are returned inline. Responses at or above 20 KB include `_meta.responseSize` so the LLM can see the cost of the current call and learn to use tighter `includes`/`limit` next time
-- Responses larger than 100 KB are stored in `mcp_tool_result_cache` (session-scoped) and returned as a `shopware://tool-result/{uuid}` resource URI in `_meta.resourceUri`. The full content is fetched via `resources/read` (handled by `ToolResultResource`). `_meta.query` echoes the originating tool name and arguments so the LLM can disambiguate which call produced which URI. Cache rows are wiped on session DELETE by `McpSessionCleanupSubscriber`. When no MCP session is active (CLI/test), the response falls back to inline delivery
+- Responses larger than 100 KB are stored in `mcp_tool_result_cache` (session-scoped) and returned as a `shopwell://tool-result/{uuid}` resource URI in `_meta.resourceUri`. The full content is fetched via `resources/read` (handled by `ToolResultResource`). `_meta.query` echoes the originating tool name and arguments so the LLM can disambiguate which call produced which URI. Cache rows are wiped on session DELETE by `McpSessionCleanupSubscriber`. When no MCP session is active (CLI/test), the response falls back to inline delivery
 - A PHPStan rule (`McpToolResponseRule`) enforces that all `#[McpTool]` classes extend the abstract class
 
-## Pagination with shopware-entity-search
+## Pagination with shopwell-entity-search
 
 `EntitySearchTool` exposes `limit` (default 25) and `page` (default 1) as top-level parameters alongside the criteria JSON. Every response includes a `_meta` block:
 
@@ -158,7 +158,7 @@ You can also set `limit` inside the criteria JSON string directly — the parame
 
 `EntitySearchTool` and `EntityAggregateTool` look similar but serve different purposes and have different output sizes:
 
-| | `shopware-entity-search` | `shopware-entity-aggregate` |
+| | `shopwell-entity-search` | `shopwell-entity-aggregate` |
 |---|---|---|
 | Returns | Entity records | Aggregation results only |
 | Entity rows | Up to `limit` (default 25) | Always 0 (`limit: 0` internally) |
@@ -196,23 +196,23 @@ $this->applyDefaultIncludes($definition, $criteriaObj);
 All entity read tools use `JsonEntityEncoder` for serialization (not the Store API serializer), so `includes`/`excludes` filtering works consistently regardless of whether the data comes from a regular or sales channel repository.
 
 ## Read tools
-- `EntitySchemaTool` (`shopware-entity-schema`) -- entity field/association introspection
-- `EntitySearchTool` (`shopware-entity-search`) -- criteria-based search; returns records only, **never aggregations** (see below)
-- `EntityAggregateTool` (`shopware-entity-aggregate`) -- aggregation-only queries (`limit: 0` internally, no entity rows in response)
-- `EntityReadTool` (`shopware-entity-read`) -- single entity read by ID
-- `SystemConfigReadTool` (`shopware-system-config-read`) -- read shop configuration
+- `EntitySchemaTool` (`shopwell-entity-schema`) -- entity field/association introspection
+- `EntitySearchTool` (`shopwell-entity-search`) -- criteria-based search; returns records only, **never aggregations** (see below)
+- `EntityAggregateTool` (`shopwell-entity-aggregate`) -- aggregation-only queries (`limit: 0` internally, no entity rows in response)
+- `EntityReadTool` (`shopwell-entity-read`) -- single entity read by ID
+- `SystemConfigReadTool` (`shopwell-system-config-read`) -- read shop configuration
 
 ## Write tools
-- `EntityUpsertTool` (`shopware-entity-upsert`) -- create/update entities (dryRun wraps in transaction + rollback)
-- `EntityDeleteTool` (`shopware-entity-delete`) -- delete entities (dryRun shows cascade impact)
-- `SystemConfigWriteTool` (`shopware-system-config-write`) -- update configuration values
-- `OrderStateTool` (`shopware-order-state`) -- change the state of an order, its transactions, and/or deliveries in one call
-- `MediaUploadTool` (`shopware-media-upload`) -- upload media from URL, optionally assign to product as cover image
+- `EntityUpsertTool` (`shopwell-entity-upsert`) -- create/update entities (dryRun wraps in transaction + rollback)
+- `EntityDeleteTool` (`shopwell-entity-delete`) -- delete entities (dryRun shows cascade impact)
+- `SystemConfigWriteTool` (`shopwell-system-config-write`) -- update configuration values
+- `OrderStateTool` (`shopwell-order-state`) -- change the state of an order, its transactions, and/or deliveries in one call
+- `MediaUploadTool` (`shopwell-media-upload`) -- upload media from URL, optionally assign to product as cover image
 
 ## Merchant workflow tools (plugin)
 Higher-level workflow tools for merchant operations live in the `SwagMcpMerchantAssistant` plugin (`custom/plugins/SwagMcpMerchantAssistant`), not in core. This separation keeps core tools focused on platform primitives while allowing merchant-specific tools to evolve independently.
 
-Plugin tools are registered via `shopware.mcp.tool` DI tag and use the `merchant-*` name prefix.
+Plugin tools are registered via `shopwell.mcp.tool` DI tag and use the `merchant-*` name prefix.
 
 ## Error handling for extension developers
 Tools extending `McpToolResponse` benefit from built-in error handling:
@@ -223,7 +223,7 @@ Tools extending `McpToolResponse` benefit from built-in error handling:
 
 ## Adding a new tool
 1. Create a class in this directory
-2. Add `#[McpTool(name: 'shopware-{tool-name}', description: '...')]` on the class
+2. Add `#[McpTool(name: 'shopwell-{tool-name}', description: '...')]` on the class
 3. If the tool only works after using another tool first, add `#[McpToolDependsOn('other-tool-name')]` (repeatable)
 4. If the tool requires specific ACL privileges, add `#[McpToolRequires('privilege:operation')]` (repeatable); for entity tools use `#[McpToolRequires(entityParam: 'entity', operations: ['read'])]`. Still call `$this->requirePrivilege()` inside `__invoke()` for actual runtime enforcement.
 5. Extend `McpToolResponse` and return via `$this->success()` / `$this->error()`
@@ -239,7 +239,7 @@ How registration works differs between core tools and plugin tools:
 | Tool location | Registration mechanism | What can go wrong |
 |---|---|---|
 | Core (`src/Core/Framework/Mcp/Tool/`) | `mcp.tool` DI tag; the namespace is covered by the Admin API server's `registry` prefixes in `packages/mcp.php` | Missing tag; a class moved outside the configured namespaces is assigned to no server |
-| Plugin (`shopware.mcp.tool` DI tag) | `McpToolDiscoveryCompilerPass` re-tags it and assigns it to the Admin API server | Missing tag; wrong tag name; attribute on method instead of class |
+| Plugin (`shopwell.mcp.tool` DI tag) | `McpToolDiscoveryCompilerPass` re-tags it and assigns it to the Admin API server | Missing tag; wrong tag name; attribute on method instead of class |
 
 **For core tools**, `McpCapabilityDiscoveryTest` (`tests/integration/Core/Framework/Mcp/McpCapabilityDiscoveryTest.php`) is the authoritative check. It boots the full kernel, calls the live `/api/_mcp` endpoint, and asserts every expected capability name is present. Add new core tool names to its `expectedTools()` list.
 

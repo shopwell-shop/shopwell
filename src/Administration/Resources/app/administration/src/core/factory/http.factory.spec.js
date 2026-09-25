@@ -168,7 +168,7 @@ describe('core/factory/http.factory.js', () => {
         };
 
         mock.onGet('/test').reply((request) => {
-            expect(request.headers['shopware-admin-active-route']).toBe('sw-dashboard-index');
+            expect(request.headers['shopwell-admin-active-route']).toBe('sw-dashboard-index');
 
             return [200, {}];
         });
@@ -278,7 +278,7 @@ describe('core/factory/http.factory.js', () => {
 
         const response = await client('/test-callable', {
             method: 'post',
-            headers: { 'x-shopware-test': 'value' },
+            headers: { 'x-shopwell-test': 'value' },
             data: { id: 'test-id' },
             useAxiosV1: true,
         });
@@ -287,7 +287,7 @@ describe('core/factory/http.factory.js', () => {
         expect(axiosV0Request).not.toHaveBeenCalled();
         expect(axiosV1Request).toHaveBeenCalledWith({
             method: 'post',
-            headers: { 'x-shopware-test': 'value' },
+            headers: { 'x-shopwell-test': 'value' },
             data: { id: 'test-id' },
             useAxiosV1: true,
             url: '/test-callable',
@@ -342,7 +342,7 @@ describe('core/factory/http.factory.js', () => {
         const requestInterceptor = jest.fn((config) => config);
         const responseInterceptor = jest.fn((response) => response);
 
-        client.defaults.headers.common['x-shopware-test'] = 'mirrored';
+        client.defaults.headers.common['x-shopwell-test'] = 'mirrored';
         const requestInterceptorId = client.interceptors.request.use(requestInterceptor);
         const responseInterceptorId = client.interceptors.response.use(responseInterceptor);
 
@@ -357,7 +357,7 @@ describe('core/factory/http.factory.js', () => {
             runWhen: null,
         });
         clientMock.onGet('/test-mirrored').reply((config) => {
-            expect(config.headers['x-shopware-test']).toBe('mirrored');
+            expect(config.headers['x-shopwell-test']).toBe('mirrored');
             return [200, {}];
         });
 

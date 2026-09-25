@@ -2,7 +2,7 @@
 title: Adjusted the styling of the tooltip dot marker
 issue: #9623
 author: Tam Dao
-author_email: t.dao@shopware.com
+author_email: t.dao@shopwell.com
 author_github: @daothithientamm
 ---
 # Administration

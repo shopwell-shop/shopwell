@@ -53,7 +53,7 @@ Payloads are opaque JSON: validation happens at manifest parse time (XSD) and in
 
 ### Code API
 
-The API will live in `Shopware\Core\Framework\App\Feature`, all `@internal` initially. Two contracts for feature owners:
+The API will live in `Shopwell\Core\Framework\App\Feature`, all `@internal` initially. Two contracts for feature owners:
 
 ```php
 interface AppFeatureConfig
@@ -62,7 +62,7 @@ interface AppFeatureConfig
 }
 
 /**
- * One implementation per feature kind, registered with the `shopware.app_feature.definition` DI tag.
+ * One implementation per feature kind, registered with the `shopwell.app_feature.definition` DI tag.
  *
  * @template T of AppFeatureConfig
  */
@@ -87,7 +87,7 @@ $features[0]->config->expiration;                            // the typed config
 
 Deactivated apps keep their rows; `forActiveApps()` filters on `app.active`, matching how `cookies` and `requested_privileges` behave today.
 
-Shop-side changes are written through `AppFeatureStorage::save($appId, $config)`, which stores the given config as is (the caller's state is authoritative) and requires the feature to be declared by the app. The app lifecycle syncs through `syncForApp()` via a regular `shopware.app_lifecycle.handler`.
+Shop-side changes are written through `AppFeatureStorage::save($appId, $config)`, which stores the given config as is (the caller's state is authoritative) and requires the feature to be declared by the app. The app lifecycle syncs through `syncForApp()` via a regular `shopwell.app_lifecycle.handler`.
 
 ### Reconciliation is owned by the definition
 
@@ -152,4 +152,4 @@ Existing JSON columns stay where they are. `AppEntity` getters for `cookies`, `m
 - On every app update each definition is handed the stored state next to the new declaration and decides what survives.
 - Feature owners get typed reads through `AppFeatureStorage` instead of ad-hoc queries against JSON columns.
 - The data is not exposed through the auto-generated Admin API. Capabilities that need to surface their data do so through their own endpoints.
-- All classes in `Shopware\Core\Framework\App\Feature` are `@internal` initially. The surface can be promoted to a supported extension point once the first consumers have settled the contract.
+- All classes in `Shopwell\Core\Framework\App\Feature` are `@internal` initially. The surface can be promoted to a supported extension point once the first consumers have settled the contract.

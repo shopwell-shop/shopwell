@@ -27,7 +27,7 @@ async function createWrapper() {
                     },
                 },
                 provide: {
-                    shopwareExtensionService: {
+                    shopwellExtensionService: {
                         checkLogin: () => {
                             return Promise.resolve({
                                 userInfo,
@@ -38,26 +38,26 @@ async function createWrapper() {
                         getValues: () => {
                             return Promise.resolve({
                                 'core.store.apiUri': 'https://api.shopwell.cn',
-                                'core.store.licenseHost': 'sw6.test.shopware.in',
+                                'core.store.licenseHost': 'sw6.test.shopwell.in',
                                 'core.store.shopSecret': 'very.s3cret',
                             });
                         },
                     },
                     storeService: {
-                        login: (shopwareId, password) => {
-                            if (shopwareId !== 'max@muster.com') {
+                        login: (shopwellId, password) => {
+                            if (shopwellId !== 'max@muster.com') {
                                 return Promise.reject();
                             }
                             if (password !== 'v3ryS3cret') {
                                 return Promise.reject();
                             }
 
-                            Shopwell.Store.get('shopwareExtensions').userInfo = userInfo;
+                            Shopwell.Store.get('shopwellExtensions').userInfo = userInfo;
 
                             return Promise.resolve();
                         },
                         logout: () => {
-                            Shopwell.Store.get('shopwareExtensions').userInfo = null;
+                            Shopwell.Store.get('shopwellExtensions').userInfo = null;
 
                             return Promise.resolve();
                         },
@@ -73,18 +73,18 @@ async function createWrapper() {
  */
 describe('src/module/sw-extension/page/sw-extension-my-extensions-account', () => {
     beforeEach(async () => {
-        Shopwell.Store.get('shopwareExtensions').userInfo = null;
+        Shopwell.Store.get('shopwellExtensions').userInfo = null;
     });
 
     it('should show the login fields when not logged in', async () => {
         const wrapper = await createWrapper();
 
-        const shopwareIdField = wrapper.find('.sw-extension-my-extensions-account__shopware-id-field');
+        const shopwellIdField = wrapper.find('.sw-extension-my-extensions-account__shopwell-id-field');
         const passwordField = wrapper.find('.sw-extension-my-extensions-account__password-field');
         const loginButton = wrapper.find('.sw-extension-my-extensions-account__login-button');
 
         // check if fields exists when user is not logged in
-        expect(shopwareIdField.isVisible()).toBe(true);
+        expect(shopwellIdField.isVisible()).toBe(true);
         expect(passwordField.isVisible()).toBe(true);
         expect(loginButton.isVisible()).toBe(true);
     });
@@ -97,12 +97,12 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-account', () =
         expect(loginStatus.exists()).toBe(false);
 
         // get fields
-        const shopwareIdField = wrapper.get('.sw-extension-my-extensions-account__shopware-id-field input');
+        const shopwellIdField = wrapper.get('.sw-extension-my-extensions-account__shopwell-id-field input');
         const passwordField = wrapper.findByLabel('sw-extension.my-extensions.account.passwordLabel');
         const loginButton = wrapper.find('.sw-extension-my-extensions-account__login-button');
 
         // enter credentials
-        await shopwareIdField.setValue('max@muster.com');
+        await shopwellIdField.setValue('max@muster.com');
         await passwordField.setValue('v3ryS3cret');
 
         await wrapper.vm.$nextTick();
@@ -119,7 +119,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-account', () =
     });
 
     it('should show the logged in view when logged in', async () => {
-        Shopwell.Store.get('shopwareExtensions').userInfo = userInfo;
+        Shopwell.Store.get('shopwellExtensions').userInfo = userInfo;
 
         // create component with logged in view
         const wrapper = await createWrapper();
@@ -133,7 +133,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-account', () =
     });
 
     it('should logout when user clicks logout button', async () => {
-        Shopwell.Store.get('shopwareExtensions').userInfo = userInfo;
+        Shopwell.Store.get('shopwellExtensions').userInfo = userInfo;
 
         // create component with logged in view
         const wrapper = await createWrapper();

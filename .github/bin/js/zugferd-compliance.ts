@@ -118,7 +118,7 @@ async function resolveLatestConfigUrl(): Promise<string> {
     const token = process.env.GITHUB_TOKEN;
 
     const headers: Record<string, string> = {
-        "User-Agent": "shopware-zugferd-compliance",
+        "User-Agent": "shopwell-zugferd-compliance",
         Accept: "application/vnd.github+json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };

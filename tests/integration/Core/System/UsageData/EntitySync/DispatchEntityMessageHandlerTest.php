@@ -478,7 +478,7 @@ class DispatchEntityMessageHandlerTest extends TestCase
 
     private function getMockHttpClient(): MockHttpClient
     {
-        $client = static::getContainer()->get('shopware.usage_data.gateway.client');
+        $client = static::getContainer()->get('shopwell.usage_data.gateway.client');
         static::assertInstanceOf(MockHttpClient::class, $client);
 
         return $client;

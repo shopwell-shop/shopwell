@@ -19,7 +19,7 @@ It allows the Index to allocate fewer new pages and to keep the index smaller.
 ## Decision
 
 Considering there is little risk to using UUIDv7, as v4 and v7 share the same
-length and are indistinguishable for shopware, we can switch to v7 without any risk
+length and are indistinguishable for shopwell, we can switch to v7 without any risk
 of breaking anything.
 
 The effort is also very low as we only need to change the

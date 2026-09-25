@@ -25,7 +25,7 @@ To take this points into account, we have decided to add a new inheritance key f
 ```json
 {
     "name": "MyDevelopmentTheme",
-    "author": "Shopware AG",
+    "author": "Shopwell AG",
     "views": [
         "@Storefront",
         "@Plugins",
@@ -180,7 +180,7 @@ The Consequences for the two approaches are described below:
 {
     "name": "swag/my-development-theme",
     "description": "My Development Theme",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "version": "1.7",
     "license": "MIT",
     "autoload": {
@@ -192,7 +192,7 @@ The Consequences for the two approaches are described below:
         "swag/previous-theme": "~1.1"
     },
     "extra": {
-        "shopware-plugin-class": "MyDevelopmentTheme\\MyDevelopmentTheme",
+        "shopwell-plugin-class": "MyDevelopmentTheme\\MyDevelopmentTheme",
         "label": {
             "de-DE": "Theme MyDevelopmentTheme plugin",
             "en-GB": "Theme MyDevelopmentTheme plugin"

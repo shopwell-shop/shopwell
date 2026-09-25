@@ -70,7 +70,7 @@ class RefreshTokenRepositoryTest extends TestCase
     private function createRefreshToken(): RefreshToken
     {
         $accessToken = new AccessToken(
-            new ApiClient('shopware-cli', true, confidential: false),
+            new ApiClient('shopwell-cli', true, confidential: false),
             [],
             Uuid::randomHex()
         );

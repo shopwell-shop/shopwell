@@ -1,5 +1,5 @@
 import { test } from '@fixtures/AcceptanceTest';
-import { Product } from '@shopware-ag/acceptance-test-suite';
+import { Product } from '@shopwell-ag/acceptance-test-suite';
 
 test(
     'Product is visible in listing and storefront search when set to "Visible".',

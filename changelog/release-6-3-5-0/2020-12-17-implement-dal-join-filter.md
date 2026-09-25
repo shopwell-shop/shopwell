@@ -2,7 +2,7 @@
 title: Implement dal join filter
 issue: NEXT-12156
 author: OliverSkroblin
-author_email: o.skroblin@shopware.com 
+author_email: o.skroblin@shopwell.com 
 author_github: OliverSkroblin
 ---
 # Core
@@ -16,7 +16,7 @@ author_github: OliverSkroblin
 * Added `src/Core/Framework/DataAbstractionLayer/Dbal/CriteriaQueryBuilder.php` which replaces the `src/Core/Framework/DataAbstractionLayer/Dbal/CriteriaQueryHelper.php`
 * Deprecated `src/Core/Framework/DataAbstractionLayer/Dbal/CriteriaQueryHelper.php` 
 * Deprecated `src/Core/Framework/DataAbstractionLayer/Dbal/FieldResolver/FieldResolverInterface.php`
-* Deprecated `\Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper::resolveAntiJoinAccessors`
+* Deprecated `\Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper::resolveAntiJoinAccessors`
 * Added `src/Core/Framework/DataAbstractionLayer/Dbal/JoinGroup.php` which is used internally to detect how often a to many association has to be joined
 * Added `src/Core/Framework/DataAbstractionLayer/Dbal/JoinGroupBuilder.php` which detects the `DataAbstractionLayer/Dbal/JoinGroup`
 * Deprecated `src/Core/Framework/DataAbstractionLayer/Search/Filter/AntiJoinFilter.php`

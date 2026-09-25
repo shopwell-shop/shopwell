@@ -34,7 +34,7 @@ class PHPUnserializeFieldSerializer extends AbstractFieldSerializer
             return null;
         }
 
-        /** @phpstan-ignore shopware.unserializeUsage */
+        /** @phpstan-ignore shopwell.unserializeUsage */
         return \unserialize($value);
     }
 }

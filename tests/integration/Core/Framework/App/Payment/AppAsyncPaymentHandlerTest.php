@@ -150,7 +150,7 @@ class AppAsyncPaymentHandlerTest extends AbstractAppPaymentHandlerTestCase
         $json = \json_encode($response, \JSON_THROW_ON_ERROR);
         static::assertNotFalse($json);
 
-        $mockResponse = new Response(200, ['shopware-app-signature' => 'invalid'], $json);
+        $mockResponse = new Response(200, ['shopwell-app-signature' => 'invalid'], $json);
         $this->appendNewResponse($mockResponse);
 
         $this->expectExceptionObject(new ServerException(
@@ -206,7 +206,7 @@ class AppAsyncPaymentHandlerTest extends AbstractAppPaymentHandlerTestCase
         $json = \json_encode($response, \JSON_THROW_ON_ERROR);
         static::assertNotFalse($json);
 
-        $this->appendNewResponse(new Response(200, ['shopware-app-signature' => 'invalid'], $json));
+        $this->appendNewResponse(new Response(200, ['shopwell-app-signature' => 'invalid'], $json));
 
         $return = $this->paymentProcessor->finalize($data['token'], new Request(), $this->getSalesChannelContext($data['paymentMethodId']));
 
@@ -228,7 +228,7 @@ class AppAsyncPaymentHandlerTest extends AbstractAppPaymentHandlerTestCase
         $json = \json_encode($response, \JSON_THROW_ON_ERROR);
         static::assertNotFalse($json);
 
-        $mockResponse = new Response(200, ['shopware-app-signature' => 'invalid'], $json);
+        $mockResponse = new Response(200, ['shopwell-app-signature' => 'invalid'], $json);
         $this->appendNewResponse($mockResponse);
 
         $this->expectExceptionObject(new ServerException(
@@ -361,11 +361,11 @@ class AppAsyncPaymentHandlerTest extends AbstractAppPaymentHandlerTestCase
         $appSecret = $this->app->getAppSecret();
         static::assertNotNull($appSecret);
 
-        static::assertTrue($request->hasHeader('shopware-shop-signature'));
-        static::assertSame(\hash_hmac('sha256', $body, $appSecret), $request->getHeaderLine('shopware-shop-signature'));
+        static::assertTrue($request->hasHeader('shopwell-shop-signature'));
+        static::assertSame(\hash_hmac('sha256', $body, $appSecret), $request->getHeaderLine('shopwell-shop-signature'));
         static::assertNotEmpty($request->getHeaderLine('sw-version'));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
         static::assertSame('POST', $request->getMethod());
         static::assertJson($body);
         $content = json_decode($body, true, 512, \JSON_THROW_ON_ERROR);
@@ -542,11 +542,11 @@ class AppAsyncPaymentHandlerTest extends AbstractAppPaymentHandlerTestCase
         $appSecret = $this->app->getAppSecret();
         static::assertNotNull($appSecret);
 
-        static::assertTrue($request->hasHeader('shopware-shop-signature'));
-        static::assertSame(\hash_hmac('sha256', $body, $appSecret), $request->getHeaderLine('shopware-shop-signature'));
+        static::assertTrue($request->hasHeader('shopwell-shop-signature'));
+        static::assertSame(\hash_hmac('sha256', $body, $appSecret), $request->getHeaderLine('shopwell-shop-signature'));
         static::assertNotEmpty($request->getHeaderLine('sw-version'));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_CONTEXT_LANGUAGE));
-        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWARE_USER_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_CONTEXT_LANGUAGE));
+        static::assertNotEmpty($request->getHeaderLine(AuthMiddleware::SHOPWELL_USER_LANGUAGE));
         static::assertSame('POST', $request->getMethod());
         static::assertJson($body);
         $content = json_decode($body, true, 512, \JSON_THROW_ON_ERROR);

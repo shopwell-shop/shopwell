@@ -25,7 +25,7 @@ class EntityGenerator implements ScaffoldingGenerator
     private string $servicesPhpEntry = <<<'EOL'
 
     $services->set(\{{ namespace }}\Core\Content\{{ entityName }}\{{ entityName }}Definition::class)
-        ->tag('shopware.entity.definition', ['entity' => '{{ tableName }}']);
+        ->tag('shopwell.entity.definition', ['entity' => '{{ tableName }}']);
 
 EOL;
 

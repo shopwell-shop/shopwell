@@ -292,7 +292,7 @@ Component.extend('sw-condition-script', 'sw-condition-base', {
                     return;
                 }
 
-                const errorProperty = Shopware.State.getters['error/getApiError'](this.condition, `value.${key}`);
+                const errorProperty = Shopwell.State.getters['error/getApiError'](this.condition, `value.${key}`);
 
                 if (errorProperty) {
                     error = errorProperty;

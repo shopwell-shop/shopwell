@@ -70,19 +70,19 @@ class ShopwellGrantTypeTest extends TestCase
         $session = new Session(new MockArraySessionStorage());
         $session->set('sso_proof_key_verifier', 'proofKeyVerifier');
 
-        $shopwareGrantType = new ShopwellGrantType(
+        $shopwellGrantType = new ShopwellGrantType(
             new RefreshTokenRepository($this->connection, new NativeClock()),
             $this->userService,
             $this->createExternalTokenService($idToken),
             new NativeClock()
         );
 
-        $shopwareGrantType->setClientRepository($this->getContainer()->get(ClientRepository::class));
-        $shopwareGrantType->setScopeRepository($this->getContainer()->get(ScopeRepository::class));
-        $shopwareGrantType->setAccessTokenRepository($this->getContainer()->get(AccessTokenRepository::class));
-        $shopwareGrantType->setPrivateKey(new FakeCryptKey(Configuration::forSymmetricSigner(new TestSigner(), new TestKey())));
-        $shopwareGrantType->setRefreshTokenTTL(new \DateInterval('PT1H'));
-        $shopwareGrantType->setDefaultScope('');
+        $shopwellGrantType->setClientRepository($this->getContainer()->get(ClientRepository::class));
+        $shopwellGrantType->setScopeRepository($this->getContainer()->get(ScopeRepository::class));
+        $shopwellGrantType->setAccessTokenRepository($this->getContainer()->get(AccessTokenRepository::class));
+        $shopwellGrantType->setPrivateKey(new FakeCryptKey(Configuration::forSymmetricSigner(new TestSigner(), new TestKey())));
+        $shopwellGrantType->setRefreshTokenTTL(new \DateInterval('PT1H'));
+        $shopwellGrantType->setDefaultScope('');
 
         $request = new Request();
         $request->headers->set('HOST', 'foo');
@@ -97,7 +97,7 @@ class ShopwellGrantTypeTest extends TestCase
         $bearerResponse = new BearerTokenResponse();
         $bearerResponse->setEncryptionKey('key');
 
-        $responseResult = $shopwareGrantType->respondToAccessTokenRequest($psr7Request, $bearerResponse, $ttl);
+        $responseResult = $shopwellGrantType->respondToAccessTokenRequest($psr7Request, $bearerResponse, $ttl);
         static::assertInstanceOf(BearerTokenResponse::class, $responseResult);
         $result = $responseResult->generateHttpResponse(new Psr7Response());
 

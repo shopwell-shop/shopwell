@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 
-import Entity, { assignSetterMethod } from '@shopware-ag/meteor-admin-sdk/es/_internals/data/Entity';
+import Entity, { assignSetterMethod } from '@shopwell-ag/meteor-admin-sdk/es/_internals/data/Entity';
 
 assignSetterMethod((draft, property, value) => {
     // @ts-expect-error

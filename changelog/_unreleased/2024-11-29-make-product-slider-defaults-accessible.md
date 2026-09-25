@@ -3,7 +3,7 @@ title: Make product slider defaults accessible
 issue: NEXT-39222
 flag: V6_7_0_0
 author: Benedikt Schulze Baek
-author_email: b.schulze-baek@shopware.com
+author_email: b.schulze-baek@shopwell.com
 author_github: @bschulzebaek
 ---
 # Next Major Version Changes

@@ -19,7 +19,7 @@ export default function viteAssetPlugin(isProd: boolean, adminDir: string, exten
     // Copy over all static assets for production
     if (isProd) {
         return {
-            name: 'shopware-vite-plugin-copy-static-assets',
+            name: 'shopwell-vite-plugin-copy-static-assets',
             // Hook into the build process after it's done
             closeBundle() {
                 const staticDir = path.resolve(adminDir, 'static');
@@ -35,7 +35,7 @@ export default function viteAssetPlugin(isProd: boolean, adminDir: string, exten
     }
 
     return {
-        name: 'shopware-vite-plugin-serve-multiple-static',
+        name: 'shopwell-vite-plugin-serve-multiple-static',
 
         configureServer(server) {
             /**

@@ -176,7 +176,7 @@ function provide3DMockOptions() {
             {
                 fileName: 'smth.glb',
                 mimeType: 'model/gltf-binary',
-                url: 'http://shopware.example.com/media/file/2b71335f118c4940b425c55352e69e44/media-1-three-d.glb',
+                url: 'http://shopwell.example.com/media/file/2b71335f118c4940b425c55352e69e44/media-1-three-d.glb',
             },
             true,
             true,
@@ -186,7 +186,7 @@ function provide3DMockOptions() {
             {
                 fileName: 'smth.glb',
                 mimeType: 'model/gltf-binary',
-                url: 'http://shopware.example.com/media/file/2b71335f118c4940b425c55352e69e44/media-1-three-d.glb',
+                url: 'http://shopwell.example.com/media/file/2b71335f118c4940b425c55352e69e44/media-1-three-d.glb',
             },
             true,
             true,

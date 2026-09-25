@@ -17,15 +17,15 @@ class CartStorageCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        $storage = $container->getParameter('shopware.cart.storage.type');
+        $storage = $container->getParameter('shopwell.cart.storage.type');
 
         switch ($storage) {
             case 'mysql':
-                $container->removeDefinition('shopware.cart.redis');
+                $container->removeDefinition('shopwell.cart.redis');
                 $container->removeDefinition(RedisCartPersister::class);
                 break;
             case 'redis':
-                if ($container->getParameter('shopware.cart.storage.config.connection') === null) {
+                if ($container->getParameter('shopwell.cart.storage.config.connection') === null) {
                     throw DependencyInjectionException::redisNotConfiguredForCartStorage();
                 }
 

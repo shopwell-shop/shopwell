@@ -385,7 +385,7 @@ class SeoActionControllerTest extends TestCase
     }
 
     /**
-     * Regression for shopware/shopware#4413: a write-protected (isModified=true) canonical
+     * Regression for shopwell/shopwell#4413: a write-protected (isModified=true) canonical
      * SEO URL must be editable again and resettable to the template-generated path.
      */
     public function testUpdateWriteProtectedCanonicalCanBeEditedAndReset(): void
@@ -461,7 +461,7 @@ class SeoActionControllerTest extends TestCase
     }
 
     /**
-     * Regression for shopware/shopware#4413 (same-path reset): a write-protected canonical whose
+     * Regression for shopwell/shopwell#4413 (same-path reset): a write-protected canonical whose
      * path already equals the template output must still be resettable through the admin endpoint.
      * Clearing the flag without changing the path must actually drop isModified instead of silently
      * keeping it write-protected.

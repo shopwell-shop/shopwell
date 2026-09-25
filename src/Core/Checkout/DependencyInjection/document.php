@@ -63,20 +63,20 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(DocumentDefinition::class)
-        ->tag('shopware.entity.definition')
-        ->tag('shopware.entity.hookable');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.entity.hookable');
 
     $services->set(DocumentTypeDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(DocumentTypeTranslationDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(DocumentBaseConfigDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(DocumentBaseConfigSalesChannelDefinition::class)
-        ->tag('shopware.entity.definition');
+        ->tag('shopwell.entity.definition');
 
     $services->set(DocumentTemplateRenderer::class)
         ->args([
@@ -174,7 +174,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(PdfRenderer::class)
         ->args([
-            param('shopware.dompdf.options'),
+            param('shopwell.dompdf.options'),
             service(DocumentTemplateRenderer::class),
             param('kernel.project_dir'),
             service(ExtensionDispatcher::class),
@@ -219,7 +219,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DocumentGenerator::class),
             service(DocumentReader::class),
             service('document.repository'),
-            service('shopware.rate_limiter'),
+            service('shopwell.rate_limiter'),
             service(GuestAuthenticator::class),
             tagged_iterator('document_type.renderer', 'key'),
         ]);
@@ -254,7 +254,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(InvoiceRenderer::class),
             service(ZugferdRenderer::class),
             service(ZugferdEmbeddedService::class),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
         ])
         ->tag('document.renderer');
 
@@ -289,7 +289,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(StornoRenderer::class),
             service(ZugferdCancellationInvoiceRenderer::class),
             service(ZugferdEmbeddedService::class),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
         ])
         ->tag('document.renderer');
 
@@ -298,7 +298,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CreditNoteRenderer::class),
             service(ZugferdCreditNoteRenderer::class),
             service(ZugferdEmbeddedService::class),
-            param('kernel.shopware_version'),
+            param('kernel.shopwell_version'),
         ])
         ->tag('document.renderer');
 
@@ -320,7 +320,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(Connection::class),
         ])
-        ->tag('shopware.sync.fk_resolver');
+        ->tag('shopwell.sync.fk_resolver');
 
     $services->set(DocumentBaseConfigValidator::class)
         ->args([

@@ -26,9 +26,9 @@ class McpToolsetRegistryTest extends TestCase
         $registry = $this->buildRegistry([
             McpToolsetRegistry::LIST_TOOLSETS_TOOL,
             McpToolsetRegistry::ENABLE_TOOLSET_TOOL,
-            'shopware-entity-search',
-            'shopware-entity-read',
-            'shopware-order-state',
+            'shopwell-entity-search',
+            'shopwell-entity-read',
+            'shopwell-order-state',
             'ungrouped-tool',
         ]);
 
@@ -38,9 +38,9 @@ class McpToolsetRegistryTest extends TestCase
             toolGroups: [
                 McpToolsetRegistry::LIST_TOOLSETS_TOOL => 'discovery',
                 McpToolsetRegistry::ENABLE_TOOLSET_TOOL => 'discovery',
-                'shopware-entity-search' => 'entity',
-                'shopware-entity-read' => 'entity',
-                'shopware-order-state' => 'order',
+                'shopwell-entity-search' => 'entity',
+                'shopwell-entity-read' => 'entity',
+                'shopwell-order-state' => 'order',
             ],
         ));
 
@@ -49,8 +49,8 @@ class McpToolsetRegistryTest extends TestCase
 
         // A tool without an explicit group uses its first name segment as an enable-able toolset.
         static::assertSame(['entity', 'order', 'ungrouped'], array_keys($toolsetsByName));
-        static::assertSame(['shopware-entity-read', 'shopware-entity-search'], $toolsetsByName['entity']['tools']);
-        static::assertSame(['shopware-order-state'], $toolsetsByName['order']['tools']);
+        static::assertSame(['shopwell-entity-read', 'shopwell-entity-search'], $toolsetsByName['entity']['tools']);
+        static::assertSame(['shopwell-order-state'], $toolsetsByName['order']['tools']);
         static::assertSame(['ungrouped-tool'], $toolsetsByName['ungrouped']['tools']);
         static::assertSame('Entity tools', $toolsetsByName['entity']['title']);
         static::assertSame('Ungrouped tools', $toolsetsByName['ungrouped']['title']);
@@ -61,7 +61,7 @@ class McpToolsetRegistryTest extends TestCase
     {
         $registry = $this->buildRegistry([
             McpToolsetRegistry::ENABLE_TOOLSET_TOOL,
-            'shopware-entity-search',
+            'shopwell-entity-search',
             'my-erp-sync-orders',
             'my-erp-read-stock',
         ]);
@@ -74,7 +74,7 @@ class McpToolsetRegistryTest extends TestCase
             ]),
             toolGroups: [
                 McpToolsetRegistry::ENABLE_TOOLSET_TOOL => 'discovery',
-                'shopware-entity-search' => 'entity',
+                'shopwell-entity-search' => 'entity',
             ],
         ));
 
@@ -92,7 +92,7 @@ class McpToolsetRegistryTest extends TestCase
         $registry = $this->buildRegistry([
             McpToolsetRegistry::LIST_TOOLSETS_TOOL,
             McpToolsetRegistry::ENABLE_TOOLSET_TOOL,
-            'shopware-entity-search',
+            'shopwell-entity-search',
         ]);
 
         $toolsetRegistry = new McpToolsetRegistry(new McpCapabilityCatalog(
@@ -101,7 +101,7 @@ class McpToolsetRegistryTest extends TestCase
             toolGroups: [
                 McpToolsetRegistry::LIST_TOOLSETS_TOOL => 'discovery',
                 McpToolsetRegistry::ENABLE_TOOLSET_TOOL => 'discovery',
-                'shopware-entity-search' => 'entity',
+                'shopwell-entity-search' => 'entity',
             ],
         ));
 
@@ -115,9 +115,9 @@ class McpToolsetRegistryTest extends TestCase
         $registry = $this->buildRegistry([
             McpToolsetRegistry::LIST_TOOLSETS_TOOL,
             McpToolsetRegistry::ENABLE_TOOLSET_TOOL,
-            'shopware-entity-search',
-            'shopware-entity-read',
-            'shopware-order-state',
+            'shopwell-entity-search',
+            'shopwell-entity-read',
+            'shopwell-order-state',
         ]);
 
         $toolsetRegistry = new McpToolsetRegistry(new McpCapabilityCatalog(
@@ -126,9 +126,9 @@ class McpToolsetRegistryTest extends TestCase
             toolGroups: [
                 McpToolsetRegistry::LIST_TOOLSETS_TOOL => 'discovery',
                 McpToolsetRegistry::ENABLE_TOOLSET_TOOL => 'discovery',
-                'shopware-entity-search' => 'entity',
-                'shopware-entity-read' => 'entity',
-                'shopware-order-state' => 'order',
+                'shopwell-entity-search' => 'entity',
+                'shopwell-entity-read' => 'entity',
+                'shopwell-order-state' => 'order',
             ],
         ));
 
@@ -136,17 +136,17 @@ class McpToolsetRegistryTest extends TestCase
 
         static::assertSame(
             [
-                'shopware-entity-read',
-                'shopware-entity-search',
+                'shopwell-entity-read',
+                'shopwell-entity-search',
             ],
             $toolsetRegistry->advertisedTools(['entity']),
         );
 
         static::assertSame(
             [
-                'shopware-entity-read',
-                'shopware-entity-search',
-                'shopware-order-state',
+                'shopwell-entity-read',
+                'shopwell-entity-search',
+                'shopwell-order-state',
             ],
             $toolsetRegistry->advertisedTools(['entity', 'order']),
         );
@@ -156,9 +156,9 @@ class McpToolsetRegistryTest extends TestCase
     {
         $registry = $this->buildRegistry([
             McpToolsetRegistry::ENABLE_TOOLSET_TOOL,
-            'shopware-entity-search',
-            'shopware-entity-read',
-            'shopware-order-state',
+            'shopwell-entity-search',
+            'shopwell-entity-read',
+            'shopwell-order-state',
         ]);
 
         $toolsetRegistry = new McpToolsetRegistry(
@@ -167,12 +167,12 @@ class McpToolsetRegistryTest extends TestCase
                 $this->stubPrivilegeProvider(),
                 toolGroups: [
                     McpToolsetRegistry::ENABLE_TOOLSET_TOOL => 'discovery',
-                    'shopware-entity-search' => 'entity',
-                    'shopware-entity-read' => 'entity',
-                    'shopware-order-state' => 'order',
+                    'shopwell-entity-search' => 'entity',
+                    'shopwell-entity-read' => 'entity',
+                    'shopwell-order-state' => 'order',
                 ],
             ),
-            $this->stubAllowlistProvider(['shopware-entity-search']),
+            $this->stubAllowlistProvider(['shopwell-entity-search']),
         );
 
         $toolsetsByName = array_column($toolsetRegistry->toolsets(), null, 'name');
@@ -180,7 +180,7 @@ class McpToolsetRegistryTest extends TestCase
         // Discovery stays inside the allowlist: only the allowed tool surfaces. The denied
         // "entity-read" and the entirely-denied "order" toolset never leak through list/enable.
         static::assertSame(['entity'], array_keys($toolsetsByName));
-        static::assertSame(['shopware-entity-search'], $toolsetsByName['entity']['tools']);
+        static::assertSame(['shopwell-entity-search'], $toolsetsByName['entity']['tools']);
         static::assertNull($toolsetRegistry->find('order'));
         static::assertSame([], $toolsetRegistry->advertisedTools(['order']));
     }
@@ -192,9 +192,9 @@ class McpToolsetRegistryTest extends TestCase
         $privilegeProvider->expects($this->never())->method('getAppToolPrivileges');
 
         $toolsetRegistry = new McpToolsetRegistry(new McpCapabilityCatalog(
-            $this->buildRegistry(['shopware-entity-search']),
+            $this->buildRegistry(['shopwell-entity-search']),
             $privilegeProvider,
-            toolGroups: ['shopware-entity-search' => 'entity'],
+            toolGroups: ['shopwell-entity-search' => 'entity'],
         ));
 
         static::assertSame([], $toolsetRegistry->advertisedToolsForNames([]));
@@ -216,8 +216,8 @@ class McpToolsetRegistryTest extends TestCase
      */
     public static function advertisedToolsForNamesCases(): \Generator
     {
-        $entity = 'shopware-entity-search';
-        $order = 'shopware-order-state';
+        $entity = 'shopwell-entity-search';
+        $order = 'shopwell-order-state';
 
         yield 'returns empty for no names' => [[], []];
         yield 'resolves known names' => [['entity', 'order'], [$entity, $order]];
@@ -249,8 +249,8 @@ class McpToolsetRegistryTest extends TestCase
     {
         $registry = $this->buildRegistry([
             McpToolsetRegistry::LIST_TOOLSETS_TOOL,
-            'shopware-entity-search',
-            'shopware-order-state',
+            'shopwell-entity-search',
+            'shopwell-order-state',
         ]);
 
         return new McpToolsetRegistry(new McpCapabilityCatalog(
@@ -258,8 +258,8 @@ class McpToolsetRegistryTest extends TestCase
             $this->stubPrivilegeProvider(),
             toolGroups: [
                 McpToolsetRegistry::LIST_TOOLSETS_TOOL => McpToolsetRegistry::DISCOVERY_GROUP,
-                'shopware-entity-search' => 'entity',
-                'shopware-order-state' => 'order',
+                'shopwell-entity-search' => 'entity',
+                'shopwell-order-state' => 'order',
             ],
         ));
     }

@@ -61,7 +61,7 @@
                     "Document Management"
                 ],
                 "summary": "Upload a file for a document",
-                "description": "Uploads a file for a document. This prevents the document from being dynamically generated and delivers the uploaded file instead, when the document is downloaded.\n\nNote:\n* The document is required to be `static`\n* A document can only have one media file\n\nThe are two methods of providing a file to this route:\n * Use a typical file upload and provide the file in the request\n * Fetch the file from an url. This only works if the `shopware.media.enable_url_upload_feature` variable is set to true in the shop environment.\nTo use file upload via url, the content type has to be `application\/json` and the parameter `url` has to be provided.",
+                "description": "Uploads a file for a document. This prevents the document from being dynamically generated and delivers the uploaded file instead, when the document is downloaded.\n\nNote:\n* The document is required to be `static`\n* A document can only have one media file\n\nThe are two methods of providing a file to this route:\n * Use a typical file upload and provide the file in the request\n * Fetch the file from an url. This only works if the `shopwell.media.enable_url_upload_feature` variable is set to true in the shop environment.\nTo use file upload via url, the content type has to be `application\/json` and the parameter `url` has to be provided.",
                 "operationId": "uploadToDocument",
                 "parameters": [
                     {

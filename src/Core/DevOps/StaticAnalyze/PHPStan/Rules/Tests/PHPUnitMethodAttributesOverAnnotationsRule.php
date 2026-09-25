@@ -63,7 +63,7 @@ class PHPUnitMethodAttributesOverAnnotationsRule implements Rule
         if (preg_match($pattern, $docComment->getText(), $matches)) {
             return [
                 RuleErrorBuilder::message('Please use PHPUnit attribute instead of annotation for: ' . $matches[1])
-                    ->identifier('shopware.phpunitAttributes')
+                    ->identifier('shopwell.phpunitAttributes')
                     ->build(),
             ];
         }

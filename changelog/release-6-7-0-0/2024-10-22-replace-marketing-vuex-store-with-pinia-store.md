@@ -2,7 +2,7 @@
 title: Replace "marketing" Vuex store with Pinia store
 issue: NEXT-38629
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com
+author_email: j.leifeld@shopwell.com
 author_github: @Jannis Leifeld
 ---
 # Administration
@@ -12,18 +12,18 @@ ___
 # Upgrade Information
 ## "marketing" Vuex store moved to Pinia
 
-The marketing store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopware.Store.get('marketing')`.
+The marketing store has been migrated from Vuex to Pinia. The store is now available as a Pinia store and can be accessed via `Shopwell.Store.get('marketing')`.
 
 ### Before:
 ```js
-Shopware.State.get('marketing');
+Shopwell.State.get('marketing');
 
-Shopware.State.commit('marketing/setCampaign', campaign);
+Shopwell.State.commit('marketing/setCampaign', campaign);
 ```
 
 ### After:
 ```js
-Shopware.Store.get('marketing');
+Shopwell.Store.get('marketing');
 
-Shopware.Store.get('marketing').setCampaign(campaign);
+Shopwell.Store.get('marketing').setCampaign(campaign);
 ```

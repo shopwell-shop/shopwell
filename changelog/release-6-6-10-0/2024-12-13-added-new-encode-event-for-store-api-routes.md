@@ -31,7 +31,7 @@ class MyListener
     {
         $response = $event->getResponse();
            
-        assert($response instanceof \Shopware\Core\System\SalesChannel\StoreApiResponse);
+        assert($response instanceof \Shopwell\Core\System\SalesChannel\StoreApiResponse);
     }
 }
 

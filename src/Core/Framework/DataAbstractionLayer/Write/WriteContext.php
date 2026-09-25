@@ -99,7 +99,7 @@ class WriteContext
 
         if (!$this->has($entity, $propertyName)) {
             if (Feature::isActive('v6.8.0.0')) {
-                /** @phpstan-ignore shopware.domainException (Will be fixed with next major) */
+                /** @phpstan-ignore shopwell.domainException (Will be fixed with next major) */
                 throw new \InvalidArgumentException(\sprintf('Unable to load %s: %s', $path, print_r($this->paths, true)));
             }
             throw DataAbstractionLayerException::unableToLoadPath($path, $this->paths);

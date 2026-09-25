@@ -2,7 +2,7 @@ import type { HtmlTagDescriptor, Plugin } from 'vite';
 
 const injectHtml: (injections: HtmlTagDescriptor[]) => Plugin = (injections) => {
     return {
-        name: 'shopware-vite-plugin-inject-html',
+        name: 'shopwell-vite-plugin-inject-html',
         transformIndexHtml() {
             return injections;
         },

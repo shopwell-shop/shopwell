@@ -6,4 +6,4 @@ author_email: code@joshua-behrens.de
 author_github: @JoshuaBehrens
 ---
 # Core
-* Changed usage of in-memory config in `\Shopware\Core\Framework\RateLimiter\RateLimiterFactory` to ensure multiple usages without breaking configuration
+* Changed usage of in-memory config in `\Shopwell\Core\Framework\RateLimiter\RateLimiterFactory` to ensure multiple usages without breaking configuration

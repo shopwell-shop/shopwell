@@ -2,7 +2,7 @@
 title: Media fastly proxy
 issue: NEXT-34343
 author: oskroblin Skroblin
-author_email: o.skroblin@shopware.com
+author_email: o.skroblin@shopwell.com
 ---
 
 # Core
@@ -13,11 +13,11 @@ author_email: o.skroblin@shopware.com
 ___
 # Upgrade Information
 ## Configure Fastly as media proxy
-When you are using Fastly as a media proxy, you should configure this inside shopware, to make sure that the media urls are purged correctly.
-Enabling Fastly as a media proxy can be done by setting the `shopware.cdn.fastly` configuration (for example with an env variable):
+When you are using Fastly as a media proxy, you should configure this inside shopwell, to make sure that the media urls are purged correctly.
+Enabling Fastly as a media proxy can be done by setting the `shopwell.cdn.fastly` configuration (for example with an env variable):
 
 ```yaml
-shopware:
+shopwell:
     fastly:
         api_key: '%env(FASTLY_API_KEY)%'
 ```

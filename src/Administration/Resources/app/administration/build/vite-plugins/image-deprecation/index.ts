@@ -20,7 +20,7 @@ export default function viteImageDeprecationPlugin(adminDir: string, deprecatedI
     const extensionsThatArePartOfDeprecation = new Set(deprecatedImages.map((file) => path.extname(file)));
 
     return {
-        name: 'shopware-vite-plugin-image-deprecation',
+        name: 'shopwell-vite-plugin-image-deprecation',
         enforce: 'pre',
         resolveId(source, importer) {
             // early check

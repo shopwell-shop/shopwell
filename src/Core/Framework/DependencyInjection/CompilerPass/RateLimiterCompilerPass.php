@@ -26,7 +26,7 @@ class RateLimiterCompilerPass implements CompilerPassInterface
     {
         $rateLimiter = $container->getDefinition(RateLimiter::class);
 
-        $rateLimiterConfig = $container->getParameter('shopware.api.rate_limiter');
+        $rateLimiterConfig = $container->getParameter('shopwell.api.rate_limiter');
 
         foreach ($rateLimiterConfig as $name => $config) {
             $this->setConfigDefaults($config);
@@ -45,7 +45,7 @@ class RateLimiterCompilerPass implements CompilerPassInterface
             $rateLimiter->addMethodCall('registerLimiterFactory', [$name, $def]);
         }
 
-        $container->setDefinition('shopware.rate_limiter', $rateLimiter);
+        $container->setDefinition('shopwell.rate_limiter', $rateLimiter);
     }
 
     /**

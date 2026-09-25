@@ -49,7 +49,7 @@ interface ComponentData {
 /**
  * @sw-package after-sales
  *
- * @private might get removed with any update (even minor!) as it likely gets replaced by shopware analytics
+ * @private might get removed with any update (even minor!) as it likely gets replaced by shopwell analytics
  */
 export default Shopwell.Component.wrapComponentConfig({
     template,
@@ -519,6 +519,6 @@ export default Shopwell.Component.wrapComponentConfig({
 });
 
 /**
- * @private might get removed with any update (even minor!) as it likely gets replaced by shopware analytics
+ * @private might get removed with any update (even minor!) as it likely gets replaced by shopwell analytics
  */
 export type { HistoryDateRange };

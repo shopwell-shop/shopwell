@@ -63,7 +63,7 @@ class AbstractClassUsageRule implements Rule
                         $parameter->getName(),
                         $class->getName()
                     ))
-                        ->identifier('shopware.decorationPattern')
+                        ->identifier('shopwell.decorationPattern')
                         ->build();
                 }
             }

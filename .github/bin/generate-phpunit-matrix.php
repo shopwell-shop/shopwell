@@ -26,7 +26,7 @@ if ($major) {
     // and once per in-flight major, so a major's release state is validated without the next major's changes active.
     echo \json_encode([
         'test' => $integrationTests,
-        'major' => shopware_major_lanes(),
+        'major' => shopwell_major_lanes(),
         'php' => ['8.2'],
         'db' => ['mysql:8.0'],
         'opensearch' => ['opensearchproject/opensearch:3'],

@@ -12,19 +12,19 @@ class CacheCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        $storage = $container->getParameter('shopware.cache.invalidation.delay_options.storage');
+        $storage = $container->getParameter('shopwell.cache.invalidation.delay_options.storage');
 
         switch ($storage) {
             case 'mysql':
-                $container->removeDefinition('shopware.cache.invalidator.storage.redis_adapter');
-                $container->removeDefinition('shopware.cache.invalidator.storage.redis');
+                $container->removeDefinition('shopwell.cache.invalidator.storage.redis_adapter');
+                $container->removeDefinition('shopwell.cache.invalidator.storage.redis');
                 break;
             case 'redis':
-                if ($container->getParameter('shopware.cache.invalidation.delay_options.connection') === null) {
-                    throw AdapterException::missingRequiredParameter('shopware.cache.invalidation.delay_options.connection');
+                if ($container->getParameter('shopwell.cache.invalidation.delay_options.connection') === null) {
+                    throw AdapterException::missingRequiredParameter('shopwell.cache.invalidation.delay_options.connection');
                 }
 
-                $container->removeDefinition('shopware.cache.invalidator.storage.mysql');
+                $container->removeDefinition('shopwell.cache.invalidator.storage.mysql');
                 break;
         }
     }

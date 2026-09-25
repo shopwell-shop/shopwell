@@ -78,7 +78,7 @@ export function extractHeadings(content: string, versionPrefix: string): string[
 
     for (const line of content.split('\n')) {
         // RELEASE_INFO quotes YAML and Markdown, so a fenced block carries lines like
-        // "# config/packages/shopware.yaml" and "### Example". Read as structure they cut a
+        // "# config/packages/shopwell.yaml" and "### Example". Read as structure they cut a
         // section short — every entry below is then never verified — or add an entry that does
         // not exist. Both fail silently, which is the worst way for this check to be wrong.
         const delimiter = FENCE_PATTERN.exec(line);

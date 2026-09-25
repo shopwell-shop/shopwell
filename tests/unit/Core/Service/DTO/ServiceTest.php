@@ -32,7 +32,7 @@ class ServiceTest extends TestCase
         $app->setUpdatedAt($updatedAt);
         $app->setRequestedPrivileges(['product:read', 'order:read']);
         $app->setAllowedHosts(['https://example.com', 'https://cdn.example.com']);
-        $app->setSourceConfig(['requirements' => ['shopware_account', 'service_consent']]);
+        $app->setSourceConfig(['requirements' => ['shopwell_account', 'service_consent']]);
 
         $aclRole = new AclRoleEntity();
         $aclRole->setPrivileges(['product:read', 'customer:read']);
@@ -54,7 +54,7 @@ class ServiceTest extends TestCase
         static::assertSame(['product:read', 'order:read', 'customer:read'], $service->getAllPrivileges());
         static::assertSame(State::PENDING_PERMISSIONS, $service->state);
         static::assertSame(['https://example.com', 'https://cdn.example.com'], $service->domains);
-        static::assertSame(['shopware_account', 'service_consent'], $service->requirements);
+        static::assertSame(['shopwell_account', 'service_consent'], $service->requirements);
     }
 
     public function testFromAppUsesCreatedAtWhenUpdatedAtIsMissing(): void

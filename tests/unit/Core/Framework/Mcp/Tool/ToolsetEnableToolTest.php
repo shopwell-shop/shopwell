@@ -31,7 +31,7 @@ class ToolsetEnableToolTest extends TestCase
                 'name' => 'entity',
                 'title' => 'Entity tools',
                 'description' => 'Entity',
-                'tools' => ['shopware-entity-search'],
+                'tools' => ['shopwell-entity-search'],
             ]);
 
         $storage = $this->createMock(McpToolsetSessionStorage::class);
@@ -84,7 +84,7 @@ class ToolsetEnableToolTest extends TestCase
             'name' => 'entity',
             'title' => 'Entity tools',
             'description' => 'Entity',
-            'tools' => ['shopware-entity-search'],
+            'tools' => ['shopwell-entity-search'],
         ]);
 
         $storage = $this->createMock(McpToolsetSessionStorage::class);

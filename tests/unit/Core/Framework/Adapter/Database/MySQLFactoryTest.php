@@ -32,7 +32,7 @@ class MySQLFactoryTest extends TestCase
     public function testReplicaConfigurationParsesDsnParameters(): void
     {
         $this->setEnvVars([
-            'DATABASE_URL' => 'mysql://user:pass@localhost:3306/shopware',
+            'DATABASE_URL' => 'mysql://user:pass@localhost:3306/shopwell',
             'DATABASE_REPLICA_0_URL' => 'mysql://replica_user:replica_pass@replica_host:3307/replica_db',
             'DATABASE_REPLICA_1_URL' => 'mysql://replica_user2:replica_pass2@replica_host2:3308/replica_db2',
         ]);
@@ -57,7 +57,7 @@ class MySQLFactoryTest extends TestCase
             'port' => 3306,
             'user' => 'user',
             'password' => 'pass',
-            'dbname' => 'shopware',
+            'dbname' => 'shopwell',
             'driver' => 'pdo_mysql',
             'charset' => 'utf8mb4',
             'driverOptions' => $params['driverOptions'],
@@ -93,7 +93,7 @@ class MySQLFactoryTest extends TestCase
     public function testReplicaConfigurationKeepsReplicaConnectionByDefault(): void
     {
         $this->setEnvVars([
-            'DATABASE_URL' => 'mysql://user:pass@localhost:3306/shopware',
+            'DATABASE_URL' => 'mysql://user:pass@localhost:3306/shopwell',
             'DATABASE_REPLICA_0_URL' => 'mysql://replica_user:replica_pass@replica_host:3307/replica_db',
         ]);
 
@@ -106,7 +106,7 @@ class MySQLFactoryTest extends TestCase
     public function testKeepReplicaCanBeDisabledViaDsn(): void
     {
         $this->setEnvVars([
-            'DATABASE_URL' => 'mysql://user:pass@localhost:3306/shopware?keepReplica=0',
+            'DATABASE_URL' => 'mysql://user:pass@localhost:3306/shopwell?keepReplica=0',
             'DATABASE_REPLICA_0_URL' => 'mysql://replica_user:replica_pass@replica_host:3307/replica_db',
         ]);
 
@@ -124,7 +124,7 @@ class MySQLFactoryTest extends TestCase
 
         $this->setEnvVars([
             'DATABASE_URL' => \sprintf(
-                'mysql://user:pass@localhost:3306/shopware?driverOptions[%d]=%d',
+                'mysql://user:pass@localhost:3306/shopwell?driverOptions[%d]=%d',
                 $customOption,
                 $customValue
             ),
@@ -155,7 +155,7 @@ class MySQLFactoryTest extends TestCase
 
         $this->setEnvVars([
             'DATABASE_URL' => \sprintf(
-                'mysql://user:pass@localhost:3306/shopware?driverOptions[%d]=%d',
+                'mysql://user:pass@localhost:3306/shopwell?driverOptions[%d]=%d',
                 $customOption,
                 $customValue
             ),
@@ -187,7 +187,7 @@ class MySQLFactoryTest extends TestCase
     public function testWrapperClassWithDriverOptions(): void
     {
         $this->setEnvVars([
-            'DATABASE_URL' => 'mysql://user:pass@localhost:3306/shopware?wrapperClass=Shopwell\Tests\Unit\Core\Framework\Adapter\Database\MyWrapper&driverOptions[x_foo_bar]=3&driverOptions[foo][bar]=true',
+            'DATABASE_URL' => 'mysql://user:pass@localhost:3306/shopwell?wrapperClass=Shopwell\Tests\Unit\Core\Framework\Adapter\Database\MyWrapper&driverOptions[x_foo_bar]=3&driverOptions[foo][bar]=true',
         ]);
 
         $connection = MySQLFactory::create();

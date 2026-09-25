@@ -126,13 +126,13 @@ class HookableValidatorTest extends TestCase
         return <<<XML
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
+          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
     <meta>
         <name>{$name}</name>
         <label>Webhook test</label>
         <description>Webhook test</description>
-        <author>shopware AG</author>
-        <copyright>(c) by shopware AG</copyright>
+        <author>Shopwell</author>
+        <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>
         <license>MIT</license>
     </meta>

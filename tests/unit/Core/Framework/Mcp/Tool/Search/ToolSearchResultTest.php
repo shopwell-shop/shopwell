@@ -18,7 +18,7 @@ class ToolSearchResultTest extends TestCase
     public function testStoresSearchResultData(): void
     {
         $tool = new Tool(
-            name: 'shopware-product-search',
+            name: 'shopwell-product-search',
             title: null,
             inputSchema: ['type' => 'object', 'properties' => [], 'required' => []],
             description: 'Search products',

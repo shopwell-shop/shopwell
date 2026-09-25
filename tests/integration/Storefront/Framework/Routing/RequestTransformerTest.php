@@ -44,7 +44,7 @@ class RequestTransformerTest extends TestCase
     protected function setUp(): void
     {
         /** @var list<string> $registeredApiPrefixes */
-        $registeredApiPrefixes = static::getContainer()->getParameter('shopware.routing.registered_api_prefixes');
+        $registeredApiPrefixes = static::getContainer()->getParameter('shopwell.routing.registered_api_prefixes');
 
         $this->requestTransformer = new RequestTransformer(
             new CoreRequestTransformer(),

@@ -7,13 +7,13 @@ tags: [test, structure, performance, flakiness]
 
 ## Context
 
-Since the beginning of the development of shopware 6 we've tried to test as much as possible. Most of the effort went
+Since the beginning of the development of shopwell 6 we've tried to test as much as possible. Most of the effort went
 into writing integration or end-to-end tests. This has led to two main issues
 
 ### 1. Performance
 
 E2E tests and integration tests to some degree are slow by nature because they perform a lot of steps to assert 
-required conditions. The e2e test suite has grown over the lifetime of shopware 6 to take more than 6 hours of real-time
+required conditions. The e2e test suite has grown over the lifetime of shopwell 6 to take more than 6 hours of real-time
 if executed in serial.
 
 ### 2. Flakiness 

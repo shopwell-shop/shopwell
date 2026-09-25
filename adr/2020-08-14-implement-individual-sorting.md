@@ -11,7 +11,7 @@ Shop owners should be able to define custom sorting options for product listings
 It should be possible to define a system default sorting option for product listings.
 `Top Results` will be the default on search pages and suggest route, which sorts products by `_score`.
 
-Currently, to define a custom sorting option, you need to define it as a service and tag it as `shopware.sales_channel.product_listing.sorting`.
+Currently, to define a custom sorting option, you need to define it as a service and tag it as `shopwell.sales_channel.product_listing.sorting`.
 This is somewhat tedious and makes it impossible to define individual sortings via the administration.
 
 ## Decision
@@ -66,11 +66,11 @@ Otherwise, you can subscribe to the `ProductListingCriteriaEvent` to add a `Prod
 ```php
 <?php
 
-namespace Shopware\Core\Content\Product\SalesChannel\Sorting\Example;
+namespace Shopwell\Core\Content\Product\SalesChannel\Sorting\Example;
 
-use Shopware\Core\Content\Product\Events\ProductListingCriteriaEvent;
-use Shopware\Core\Content\Product\SalesChannel\Sorting\ProductSortingCollection;
-use Shopware\Core\Content\Product\SalesChannel\Sorting\ProductSortingEntity;
+use Shopwell\Core\Content\Product\Events\ProductListingCriteriaEvent;
+use Shopwell\Core\Content\Product\SalesChannel\Sorting\ProductSortingCollection;
+use Shopwell\Core\Content\Product\SalesChannel\Sorting\ProductSortingEntity;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class ExampleListingSubscriber implements EventSubscriberInterface {

@@ -53,8 +53,8 @@ class CreateIntegrationCommand extends Command
             ],
         ], Context::createCLIContext());
 
-        $output->writeln('SHOPWARE_ACCESS_KEY_ID=' . $id);
-        $output->writeln('SHOPWARE_SECRET_ACCESS_KEY=' . $secret);
+        $output->writeln('SHOPWELL_ACCESS_KEY_ID=' . $id);
+        $output->writeln('SHOPWELL_SECRET_ACCESS_KEY=' . $secret);
 
         return self::SUCCESS;
     }

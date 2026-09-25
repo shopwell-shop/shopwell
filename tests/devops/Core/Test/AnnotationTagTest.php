@@ -229,26 +229,26 @@ class AnnotationTagTest extends TestCase
     {
         $envVersion = $_SERVER['VERSION'] ?? $_SERVER['TAG'] ?? '';
         if (\is_string($envVersion) && $envVersion !== '') {
-            $shopwareVersion = $envVersion;
-        } elseif (InstalledVersions::isInstalled('shopware/platform')) {
-            $shopwareVersion = InstalledVersions::getVersion('shopware/platform');
+            $shopwellVersion = $envVersion;
+        } elseif (InstalledVersions::isInstalled('shopwell/platform')) {
+            $shopwellVersion = InstalledVersions::getVersion('shopwell/platform');
         } else {
-            $shopwareVersion = InstalledVersions::getVersion('shopware/core');
+            $shopwellVersion = InstalledVersions::getVersion('shopwell/core');
         }
-        $shopwareVersion = ltrim((string) $shopwareVersion, 'v ');
+        $shopwellVersion = ltrim((string) $shopwellVersion, 'v ');
 
-        if (!preg_match('/^\d+\.\d+[.-].*$/', $shopwareVersion)) {
+        if (!preg_match('/^\d+\.\d+[.-].*$/', $shopwellVersion)) {
             // this will only check the syntax of the deprecated tags. The real test happens in the prod pipeline
 
             $matches = [];
-            preg_match('/(\d+\.\d+)\..*/', Kernel::SHOPWARE_FALLBACK_VERSION, $matches);
+            preg_match('/(\d+\.\d+)\..*/', Kernel::SHOPWELL_FALLBACK_VERSION, $matches);
             static::assertArrayHasKey(1, $matches);
 
-            // get major version from Kernel::SHOPWARE_FALLBACK_VERSION
-            $shopwareVersion = $matches[1] . '.0';
+            // get major version from Kernel::SHOPWELL_FALLBACK_VERSION
+            $shopwellVersion = $matches[1] . '.0';
         }
 
-        return $shopwareVersion;
+        return $shopwellVersion;
     }
 
     private function getManifestVersion(): string

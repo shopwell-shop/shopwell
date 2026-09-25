@@ -3,7 +3,7 @@ title: Remove timeout for composer watch:admin
 issue: NEXT-23097
 flag:
 author: Niklas Limberg
-author_email: n.limberg@shopware.com
+author_email: n.limberg@shopwell.com
 author_github: NiklasLimberg
 ---
 # Core

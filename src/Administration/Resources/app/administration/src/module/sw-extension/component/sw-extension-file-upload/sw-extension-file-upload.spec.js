@@ -51,7 +51,7 @@ function createFile(size = 44320, name = 'test-plugin.zip', type = 'application/
  */
 describe('src/module/sw-extension/component/sw-extension-file-upload', () => {
     beforeAll(() => {
-        Shopwell.Service().register('shopwareExtensionService', () => {
+        Shopwell.Service().register('shopwellExtensionService', () => {
             return {
                 updateExtensionData: updateExtensionDataSpy,
             };

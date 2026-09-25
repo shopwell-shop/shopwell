@@ -12,8 +12,8 @@ use Shopwell\Core\Framework\Util\Json;
  */
 #[Package('framework')]
 #[McpResource(
-    uri: 'shopware://entities',
-    name: 'shopware-entity-list',
+    uri: 'shopwell://entities',
+    name: 'shopwell-entity-list',
     description: 'List of all registered Shopwell entity names'
 )]
 class EntityListResource
@@ -39,7 +39,7 @@ class EntityListResource
         sort($entities);
 
         return [
-            'uri' => 'shopware://entities',
+            'uri' => 'shopwell://entities',
             'mimeType' => 'application/json',
             'text' => Json::encode($entities),
         ];

@@ -238,7 +238,7 @@ class EntityUpsertToolTest extends TestCase
 
         static::assertFalse($result['success']);
         static::assertStringContainsString('unknown_entity', $result['error']);
-        static::assertStringContainsString('shopware://entities', $result['error']);
+        static::assertStringContainsString('shopwell://entities', $result['error']);
     }
 
     #[TestDox('Every __invoke parameter carries a description into the SDK-generated input schema')]

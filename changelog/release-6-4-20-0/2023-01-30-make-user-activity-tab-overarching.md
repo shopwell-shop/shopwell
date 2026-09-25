@@ -2,13 +2,13 @@
 title: Make user activity tab overarching
 issue: NEXT-24983
 author: Sebastian Seggewiss
-author_email: s.seggewiss@shopware.com
+author_email: s.seggewiss@shopwell.com
 author_github: @seggewiss
 ---
 # Administration
 * Added `sw-inactivity-login`
 * Added `html2canvas` npm dependency
-* Changed `@shopware-ag/e2e-testsuite-platform` to version 7.0.2
+* Changed `@shopwell-ag/e2e-testsuite-platform` to version 7.0.2
 * Changed `user-activity.service.ts` to set cookie in favor of context value
 * Changed `context-store.ts` lastActivity to be deprecated
 * Changed `app-context.factory.js` to no longer set lastActivity initially

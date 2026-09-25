@@ -6,7 +6,7 @@ author_email: s.koenig@tinect.de
 author_github: @tinect
 ---
 # Storefront
-* Added style to mark active navigation `.navigation-flyout-link.active` in `skin/shopware/layout/_navigation-flyout.scss`
+* Added style to mark active navigation `.navigation-flyout-link.active` in `skin/shopwell/layout/_navigation-flyout.scss`
 * Added variable `activePath` in `layout/navigation/categories.html.twig` in block `layout_navigation_categories`
 * Added variable `activePath` in `layout/navigation/navigation.html.twig` in block `layout_main_navigation_menu_items`
 * Added check for activePath for every `navigation-flyout-link` in block `layout_navigation_categories_item_link` in `layout/navigation/categories.html.twig` to mark complete active path

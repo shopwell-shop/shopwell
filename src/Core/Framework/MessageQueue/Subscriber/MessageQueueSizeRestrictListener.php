@@ -12,7 +12,7 @@ use Symfony\Component\Messenger\Transport\Sync\SyncTransport;
 readonly class MessageQueueSizeRestrictListener
 {
     /**
-     * @deprecated tag:v6.8.0 - Use the configuration option `shopware.messenger.message_max_kib_size` instead.
+     * @deprecated tag:v6.8.0 - Use the configuration option `shopwell.messenger.message_max_kib_size` instead.
      * @see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html
      * Maximum message size is 262144 (1024 * 256) bytes
      */

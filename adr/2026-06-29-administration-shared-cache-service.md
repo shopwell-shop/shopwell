@@ -60,7 +60,7 @@ The shared cache does not replace normal entity loading:
 Read current-user config through `userConfigService`:
 
 ```javascript
-const response = await Shopware.Service('userConfigService').search([
+const response = await Shopwell.Service('userConfigService').search([
     'my-plugin.config-key',
 ]);
 
@@ -70,16 +70,16 @@ const value = response?.data?.['my-plugin.config-key'];
 Read reusable entity data through repository cache options:
 
 ```javascript
-const criteria = new Shopware.Data.Criteria(1, 500);
-criteria.addSorting(Shopware.Data.Criteria.sort('name', 'ASC', false));
+const criteria = new Shopwell.Data.Criteria(1, 500);
+criteria.addSorting(Shopwell.Data.Criteria.sort('name', 'ASC', false));
 
-const currencies = await Shopware.Service('repositoryFactory')
+const currencies = await Shopwell.Service('repositoryFactory')
     .create('currency')
-    .search(criteria, Shopware.Context.api, {
+    .search(criteria, Shopwell.Context.api, {
         cacheKey: [
             'shared-data',
             'currencies',
-            Shopware.Context.api.languageId ?? 'default',
+            Shopwell.Context.api.languageId ?? 'default',
         ],
         ttl: 5 * 60 * 1000,
     });
@@ -88,7 +88,7 @@ const currencies = await Shopware.Service('repositoryFactory')
 Read non-repository values through `cacheService.query(...)`:
 
 ```javascript
-const defaultTaxRateId = await Shopware.Service('cacheService').query({
+const defaultTaxRateId = await Shopwell.Service('cacheService').query({
     key: ['shared-data', 'default-tax-rate-id'],
     ttl: 5 * 60 * 1000,
     fn: async () => {
@@ -104,7 +104,7 @@ const defaultTaxRateId = await Shopware.Service('cacheService').query({
 Current-user config is written through `userConfigService.upsert(...)`:
 
 ```javascript
-await Shopware.Service('userConfigService').upsert({
+await Shopwell.Service('userConfigService').upsert({
     'my-plugin.config-key': value,
 });
 ```
@@ -114,9 +114,9 @@ await Shopware.Service('userConfigService').upsert({
 Shared entity data is updated through its owning repository or API service first. After a successful write, callers must invalidate the affected cache key prefix.
 
 ```javascript
-await taxRepository.save(tax, Shopware.Context.api);
+await taxRepository.save(tax, Shopwell.Context.api);
 
-Shopware.Service('cacheService').invalidateCaches({
+Shopwell.Service('cacheService').invalidateCaches({
     cacheKey: ['shared-data', 'taxes'],
 });
 ```
@@ -126,7 +126,7 @@ Shopware.Service('cacheService').invalidateCaches({
 Use `cacheService.invalidateCaches(...)` for prefix-based invalidation:
 
 ```javascript
-const cacheService = Shopware.Service('cacheService');
+const cacheService = Shopwell.Service('cacheService');
 
 cacheService.invalidateCaches({
     cacheKey: ['shared-data', 'currencies'],
@@ -142,8 +142,8 @@ Each cache namespace can be invalidated independently. For example, invalidating
 When a caller needs one immediate fresh read, it can bypass the current cache entry with `forceReload: true`:
 
 ```javascript
-const taxes = await taxRepository.search(criteria, Shopware.Context.api, {
-    cacheKey: ['shared-data', 'taxes', Shopware.Context.api.languageId ?? 'default'],
+const taxes = await taxRepository.search(criteria, Shopwell.Context.api, {
+    cacheKey: ['shared-data', 'taxes', Shopwell.Context.api.languageId ?? 'default'],
     // true bypasses the cached result for this read and stores the fresh response again
     forceReload: true,
     ttl: 5 * 60 * 1000,

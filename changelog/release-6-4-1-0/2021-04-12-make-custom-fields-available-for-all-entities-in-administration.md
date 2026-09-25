@@ -5,7 +5,7 @@ issue: NEXT-14368
 # Core
 * Added `custom_fields` field to these tables: `promotion_translation`, `product_review`, `event_action`, `salutation_translation`, `document_base_config`.
 * Added a new property `customFields` and its getter, setter in these entities: `promotion_translation`, `product_review`, `event_action`, `salutation_translation`, `document_base_config`.
-* Added `EntityCustomFieldsTrait` in `Shopware\Core\Framework\DataAbstractionLayer`.
+* Added `EntityCustomFieldsTrait` in `Shopwell\Core\Framework\DataAbstractionLayer`.
 ___
 # Administration
 * Changed `entityNameStore` variable in `src/app/service/custom-field.service.js` to add more available entities for assigning custom fields set.

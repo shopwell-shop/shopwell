@@ -41,7 +41,7 @@ test('Install a new Shopwell instance.', { tag: '@Install' }, async ({ InstallPa
     await page.getByLabel('Admin first name:').fill('Admin');
     await page.getByLabel('Admin last name:').fill('Admin');
     await page.getByLabel('Admin login name:').fill('admin');
-    await page.getByLabel('Admin password:').fill('shopware');
+    await page.getByLabel('Admin password:').fill('shopwell');
 
     await page.getByRole('button', { name: 'Next' }).click();
 

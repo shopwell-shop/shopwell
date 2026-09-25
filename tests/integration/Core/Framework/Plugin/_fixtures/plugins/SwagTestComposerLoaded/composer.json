@@ -2,11 +2,11 @@
     "name": "swag/composer-loaded",
     "description": "Test description",
     "version": "v1.0.1",
-    "type": "shopware-platform-plugin",
+    "type": "shopwell-platform-plugin",
     "license": "MIT",
     "authors": [
         {
-            "name": "shopware AG",
+            "name": "Shopwell",
             "role": "Manufacturer"
         },
         {
@@ -15,12 +15,12 @@
         }
     ],
     "require": {
-        "shopware/core": ">=6.0"
+        "shopwell/core": ">=6.0"
     },
     "extra": {
-        "shopware-plugin-class": "SwagTestComposerLoaded\\SwagTestComposerLoaded",
+        "shopwell-plugin-class": "SwagTestComposerLoaded\\SwagTestComposerLoaded",
         "plugin-icon": "src/Resources/public/plugin.png",
-        "copyright": "(c) by shopware AG",
+        "copyright": "(c) by Shopwell",
         "label": {
             "de-DE": "Deutscher Pluginname",
             "de-CH": "Schweizerdeutsch Pluginname",

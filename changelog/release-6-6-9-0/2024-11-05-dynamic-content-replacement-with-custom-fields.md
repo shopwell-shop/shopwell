@@ -2,7 +2,7 @@
 title: Dynamic content replacement with custom fields
 issue: NEXT-38481
 author: Alexandru Dumea
-author_email: a.dumea@shopware.com
+author_email: a.dumea@shopwell.com
 author_github: @Alexandru Dumea
 ---
 # Administration

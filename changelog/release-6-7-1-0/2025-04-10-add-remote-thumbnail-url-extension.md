@@ -5,4 +5,4 @@ author_email: vladislav.sultanov@netlogix.de
 author_github: @TheBreaken
 ---
 # Core
-* Added extension to `Shopware\Core\Content\Media\Core\Application\RemoteThumbnailLoader::getUrl` to manipulate the url before it is used in the thumbnail
+* Added extension to `Shopwell\Core\Content\Media\Core\Application\RemoteThumbnailLoader::getUrl` to manipulate the url before it is used in the thumbnail

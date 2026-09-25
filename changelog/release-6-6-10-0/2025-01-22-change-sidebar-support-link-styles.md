@@ -2,7 +2,7 @@
 title: Change sidebar support link styles
 issue: NEXT-39917
 author: Emre Imamoglu
-author_email: e.imamoglu@shopware.com
+author_email: e.imamoglu@shopwell.com
 author_github: @emreimamoglu
 ---
 # Administration

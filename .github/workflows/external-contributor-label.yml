@@ -20,8 +20,8 @@ jobs:
             const contribLabel = process.env.CONTRIBUTOR_LABEL;
             const allowedBotUsers = [
                 "BOT_kgDOCV3tAw", // octo-sts
-                "BOT_kgDODjoiJw", // shopware-octo-sts-app
-                "BOT_kgDODoqSag"  // shopware-octo-sts-app-2
+                "BOT_kgDODjoiJw", // shopwell-octo-sts-app
+                "BOT_kgDODoqSag"  // shopwell-octo-sts-app-2
             ];
 
             let hasWriteAccess = false;

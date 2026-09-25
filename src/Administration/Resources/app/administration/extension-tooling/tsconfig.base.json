@@ -24,8 +24,8 @@
             "@vue/*": ["../node_modules/@vue/*"],
             "src/*": ["../src/*"],
             "vuex": ["../node_modules/vuex/types/index.d.ts"],
-            "@shopware-ag/meteor-admin-sdk/es/*": ["../node_modules/@shopware-ag/meteor-admin-sdk/es/*"],
-            "@shopware-ag/meteor-component-library/dist/*": ["../node_modules/@shopware-ag/meteor-component-library/dist/*"]
+            "@shopwell-ag/meteor-admin-sdk/es/*": ["../node_modules/@shopwell-ag/meteor-admin-sdk/es/*"],
+            "@shopwell-ag/meteor-component-library/dist/*": ["../node_modules/@shopwell-ag/meteor-component-library/dist/*"]
         }
     }
 }

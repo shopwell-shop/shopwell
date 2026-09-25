@@ -6,5 +6,5 @@ author_email: benjamin.wittwer@a-k-f.de
 author_github: akf-bw
 ---
 # Core
-* Changed `Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent` by extending the constructor with SalesChannelContext
-* Changed `Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent` by adding `SalesChannelContextAware` & `CustomerGroupAware`
+* Changed `Shopwell\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent` by extending the constructor with SalesChannelContext
+* Changed `Shopwell\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent` by adding `SalesChannelContextAware` & `CustomerGroupAware`

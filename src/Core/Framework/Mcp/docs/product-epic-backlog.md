@@ -18,7 +18,7 @@ Planning reference for contributors and PMs. For the public docs see [developer.
 | **Merchant plugin** | All `merchant-*` tools in `SwagMcpMerchantAssistant` (done); core keeps primitives only |
 | **SwagMcpDevTools MVP** | Log streaming + search shipped (done); declared installable |
 | **Public docs** | First slice on developer.shopwell.cn shipped (done); in-repo kept as contributor reference |
-| **Official samples** | `McpHelloWorld` + `SwagMcpAdminUsers` moved to `shopware/*` org, polished, linked from docs |
+| **Official samples** | `McpHelloWorld` + `SwagMcpAdminUsers` moved to `shopwell/*` org, polished, linked from docs |
 
 ### V2 (post-SCD) — planned
 
@@ -42,7 +42,7 @@ Planning reference for contributors and PMs. For the public docs see [developer.
 | App registration (XML, persistence, HMAC execution) | **Done** | `AppMcpToolLoader` / `AppMcpToolExecutor` | M | — |
 | Auth: Admin API bearer + integration header | **Done** | `McpAuthenticationListener` | S | — |
 | Rate limiting | **Done** | `McpRateLimiter`; per-scope routes `RateLimiter::MCP_ADMIN_API` (OAuth-token key) and `RateLimiter::MCP_STORE_API` (sales-channel-token key, tighter). Per-tool limits + `Retry-After` header are open (see `AGENTS.md`) | S | — |
-| Per-installation allowlist | **Done** | `shopware.mcp.allowed_tools` + compiler pass | S | — |
+| Per-installation allowlist | **Done** | `shopwell.mcp.allowed_tools` + compiler pass | S | — |
 | Per-integration allowlist (Admin UI + API + runtime filter) | **Done** | `integration.mcp_allowlist`, `McpAllowlistProvider`, `sw-integration-mcp-allowlist` component | M–L | — |
 | Write safety (dry-run defaults) | **Done** | All write tools default `dryRun=true` | S | — |
 | Naming, conflict detection, error contracts | **Done** | Compiler pass conflict detection; `McpToolResponse` | S | — |
@@ -59,7 +59,7 @@ Planning reference for contributors and PMs. For the public docs see [developer.
 
 ## Workstream 2: SwagMcpDevTools
 
-Remote-instance developer introspection via `/api/_mcp`. Fills the gap that [ai-coding-tools](https://github.com/shopwareLabs/ai-coding-tools) (laptop-local) cannot cover. Tracking: [#16205](https://github.com/shopware/shopware/issues/16205).
+Remote-instance developer introspection via `/api/_mcp`. Fills the gap that [ai-coding-tools](https://github.com/shopwell-shopLabs/ai-coding-tools) (laptop-local) cannot cover. Tracking: [#16205](https://github.com/shopwell-shop/shopwell/issues/16205).
 
 | Item | Status | Notes | Effort | Horizon |
 |------|--------|-------|--------|---------|
@@ -88,7 +88,7 @@ Remote-instance developer introspection via `/api/_mcp`. Fills the gap that [ai-
 
 ## Workstream 4: Developer documentation
 
-First public slice shipped via `shopware/docs#2264`. In-repo `docs/` is now the contributor reference; canonical content is on developer.shopwell.cn.
+First public slice shipped via `shopwell/docs#2264`. In-repo `docs/` is now the contributor reference; canonical content is on developer.shopwell.cn.
 
 | Item | Status | Notes | Effort | Horizon |
 |------|--------|-------|--------|---------|
@@ -108,7 +108,7 @@ First public slice shipped via `shopware/docs#2264`. In-repo `docs/` is now the 
 |------|--------|-------|--------|---------|
 | `McpHelloWorld` app in-repo (`custom/apps/McpHelloWorld/`) | **Done** | Minimal app — manifest, server.js, 3 tools | S | — |
 | `SwagMcpAdminUsers` plugin in-repo | **Done** | ACL-aware plugin with 2 tools + 2 resources | S | — |
-| Move both to `shopware/*` org + polish + CI | **Open** | Canonical URLs; update all doc links after move | S–M | V1 |
+| Move both to `shopwell/*` org + polish + CI | **Open** | Canonical URLs; update all doc links after move | S–M | V1 |
 | Non-trivial example tool / richer prompts + resources | **Open** | Extend after org move | M | Later |
 
 ---
@@ -134,9 +134,9 @@ Shopwell uses **Streamable HTTP** at `/api/_mcp` via `symfony/mcp-bundle`. Sessi
 | Spec topic | Shopwell today | Gap / follow-up |
 |------------|----------------|-----------------|
 | **Tools** | Many in-process + app tools; `#[McpTool]`; `McpCapabilityDiscoveryTest` | No extra discovery metadata in V1; revisit if clients need more than allowlist + docs |
-| **Prompts** | `shopware-context` + app-backed prompts loader | Optional extra prompts; keep discovery test aligned |
-| **Resources** | 8 static resources + `shopware://tool-result/{id}` template (large-result delivery) | Templates/subscriptions if clients rely on them; ACL policy still open |
-| **Completion** | Unknown — likely partially handled by `symfony/mcp-bundle` | Spike: wire entity name / field / enum completions for `shopware-entity-search` |
+| **Prompts** | `shopwell-context` + app-backed prompts loader | Optional extra prompts; keep discovery test aligned |
+| **Resources** | 8 static resources + `shopwell://tool-result/{id}` template (large-result delivery) | Templates/subscriptions if clients rely on them; ACL policy still open |
+| **Completion** | Unknown — likely partially handled by `symfony/mcp-bundle` | Spike: wire entity name / field / enum completions for `shopwell-entity-search` |
 | **Logging** | `mcp` Monolog channel (debug/support); product metrics need OpenTelemetry path | Closed: SEP-2577 deprecated the MCP logging utility in mcp/sdk 0.8, so `logging/setLevel` and `notifications/message` are not on the table |
 | **Pagination** | Application-level (`_meta`, criteria `page`/`limit`) | Confirm if protocol-level `resources/list` cursors are needed |
 | **Client: Roots / Sampling / Elicitation** | N/A on server side | Document "N/A on `/api/_mcp`" in public docs |
@@ -158,19 +158,19 @@ Shopwell uses **Streamable HTTP** at `/api/_mcp` via `symfony/mcp-bundle`. Sessi
 - **`SwagMcpDevTools` MVP** — log streaming, log search, notifications tool (indexer/import-export events via SSE). Lives in `custom/bundles/SwagMcpDevTools/`.
 - **Merchant workflows out of core** — all 9 `merchant-*` tools in `custom/plugins/SwagMcpMerchantAssistant/`; zero merchant tools remain in `src/Core/`.
 - **Per-user MCP allowlist** — `user.mcp_allowlist`; bearer JWT re-enabled; Copilot `sw-app-user-id` intersection implemented. See [gaps-user-allowlist.md](gaps-user-allowlist.md).
-- **Public docs first cut** — shipped via `shopware/docs#2264`; in-repo `docs/` is now contributor reference only.
-- **Reference apps** — `custom/apps/McpHelloWorld/` and `custom/plugins/SwagMcpAdminUsers/` exist in-repo (org move to `shopware/*` still pending).
+- **Public docs first cut** — shipped via `shopwell/docs#2264`; in-repo `docs/` is now contributor reference only.
+- **Reference apps** — `custom/apps/McpHelloWorld/` and `custom/plugins/SwagMcpAdminUsers/` exist in-repo (org move to `shopwell/*` still pending).
 
 **Still open**
 
 - **Structured MCP observability** — only `mcp` Monolog channel today. No OpenTelemetry spans, no metrics emission on tool calls. Needed to prove adoption, detect zero-use tools, and judge quality.
-- **`shopware/*` org move for samples** — `McpHelloWorld` and `SwagMcpAdminUsers` are in-repo on this branch; need move + polish + canonical docs links.
+- **`shopwell/*` org move for samples** — `McpHelloWorld` and `SwagMcpAdminUsers` are in-repo on this branch; need move + polish + canonical docs links.
 - Optional ACL on resources (if security review demands it).
 - Optional discovery metadata (deferred; revisit only if allowlist + docs prove insufficient).
 
 **Future roadmap (needs PM ownership)**
 
-- **Store API MCP server** — **foundation implemented** (`StoreApiMcpServerController` at `/store-api/_mcp`, `sw-access-key` + `sw-context-token` auth, own capability registry, dedicated `mcp_store_api` rate-limit bucket, `shopware-store-api-context` tool; see [store-api-mcp.md](store-api-mcp.md)). Remaining PM-driven scope: the full buyer-journey tool set (browse, cart, checkout, account), customer-tier access control, and storefront discovery/session bridging so agents can act *as the shopper*.
+- **Store API MCP server** — **foundation implemented** (`StoreApiMcpServerController` at `/store-api/_mcp`, `sw-access-key` + `sw-context-token` auth, own capability registry, dedicated `mcp_store_api` rate-limit bucket, `shopwell-store-api-context` tool; see [store-api-mcp.md](store-api-mcp.md)). Remaining PM-driven scope: the full buyer-journey tool set (browse, cart, checkout, account), customer-tier access control, and storefront discovery/session bridging so agents can act *as the shopper*.
 - **WebMCP (browser-native, Storefront)** — W3C WebMachinelearning CG proposal (Aug 2025, Microsoft) for browser-native JS tools exposed to in-browser agents. Human-in-loop storefront workflows only; explicitly **not** for autonomous agents (that use case = Store API MCP). No browser ships it yet. See: https://github.com/webmachinelearning/webmcp
 
 ---
@@ -180,7 +180,7 @@ Shopwell uses **Streamable HTTP** at `/api/_mcp` via `symfony/mcp-bundle`. Sessi
 | Epic | Workstreams | Key open items |
 |------|-------------|----------------|
 | **A — MCP platform (core)** | WS1, Cross-cutting | Structured observability (GA blocker), empty allowlist default, feature flag lifecycle, ACL gaps |
-| **B — MCP extensions** | WS2 (V2 depth), WS3, WS5, WS6 | `shopware/*` org move for samples; SwagMcpDevTools V2 probes |
+| **B — MCP extensions** | WS2 (V2 depth), WS3, WS5, WS6 | `shopwell/*` org move for samples; SwagMcpDevTools V2 probes |
 | **C — MCP documentation** | WS4 | Extension guide polish, companion story, in-repo pointers after V1 docs stable |
 | **D — V2 roadmap** | — | Per-user allowlist, Store API MCP, analytics products, docs depth |
 

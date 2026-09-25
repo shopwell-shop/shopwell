@@ -4,7 +4,7 @@
     "allowJs": true,
     "baseUrl": "../../app/storefront",
     "paths": {
-      "shopware": ["src/shopware.ts"]
+      "shopwell": ["src/shopwell.ts"]
     },
     "typeRoots": ["../../app/storefront/node_modules/@types"]
   },

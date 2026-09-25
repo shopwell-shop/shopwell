@@ -235,8 +235,8 @@ class EntityDispatcherTest extends TestCase
             static::assertIsString($body);
 
             $payload = json_decode($body, true, flags: \JSON_THROW_ON_ERROR);
-            static::assertArrayHasKey('shopware_version', $payload);
-            static::assertSame('6.5.3.0', $payload['shopware_version']);
+            static::assertArrayHasKey('shopwell_version', $payload);
+            static::assertSame('6.5.3.0', $payload['shopwell_version']);
 
             return new MockResponse('', ['http_code' => 200]);
         });

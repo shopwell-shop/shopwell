@@ -5,10 +5,10 @@
 import { mount } from '@vue/test-utils';
 import { createActiveFeatureFlagsTest, createDeprecatedTest } from './jest-extensions';
 
-const pendingFeatureFlagsSymbol = Symbol.for('shopware.pendingActiveFeatureFlags');
+const pendingFeatureFlagsSymbol = Symbol.for('shopwell.pendingActiveFeatureFlags');
 
 const defaultActiveFeatureFlags =
-    (Reflect.get(globalThis, Symbol.for('shopware.defaultActiveFeatureFlags')) as string[] | undefined) ?? [];
+    (Reflect.get(globalThis, Symbol.for('shopwell.defaultActiveFeatureFlags')) as string[] | undefined) ?? [];
 
 function readPendingFeatureFlags(): string[] {
     const featureFlags: unknown = Reflect.get(globalThis, pendingFeatureFlagsSymbol);

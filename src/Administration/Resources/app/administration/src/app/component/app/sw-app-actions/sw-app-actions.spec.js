@@ -88,7 +88,7 @@ describe('sw-app-actions', () => {
         jest.spyOn(Shopwell.Service('userConfigService'), 'search').mockResolvedValue({ data: {} });
         jest.spyOn(Shopwell.Service('userConfigService'), 'upsert').mockResolvedValue();
 
-        Shopwell.Store.get('shopwareApps').selectedIds = [Shopwell.Utils.createId()];
+        Shopwell.Store.get('shopwellApps').selectedIds = [Shopwell.Utils.createId()];
 
         await router.push({ name: 'index' });
     });
@@ -103,7 +103,7 @@ describe('sw-app-actions', () => {
     it('creates an sw-app-action-button per action', async () => {
         wrapper = await createWrapper(router);
 
-        Shopwell.Store.get('shopwareApps').selectedIds = [Shopwell.Utils.createId()];
+        Shopwell.Store.get('shopwellApps').selectedIds = [Shopwell.Utils.createId()];
 
         router.push({ name: 'sw.product.detail' });
         await flushPromises();
@@ -120,12 +120,12 @@ describe('sw-app-actions', () => {
     });
 
     it('should not reset the selectedIds on creation when entity exists', async () => {
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual([expect.any(String)]);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual([expect.any(String)]);
 
         wrapper = await createWrapper(router);
         await flushPromises();
 
-        expect(Shopwell.Store.get('shopwareApps').selectedIds).toEqual([expect.any(String)]);
+        expect(Shopwell.Store.get('shopwellApps').selectedIds).toEqual([expect.any(String)]);
     });
 
     it('does not reload actions when only listing query parameters change', async () => {
@@ -192,7 +192,7 @@ describe('sw-app-actions', () => {
     it('calls appActionButtonService.runAction if triggered by context menu button', async () => {
         wrapper = await createWrapper(router);
 
-        Shopwell.Store.get('shopwareApps').selectedIds = [Shopwell.Utils.createId()];
+        Shopwell.Store.get('shopwellApps').selectedIds = [Shopwell.Utils.createId()];
 
         router.push({ name: 'sw.product.detail' });
         await flushPromises();
@@ -218,12 +218,12 @@ describe('sw-app-actions', () => {
         expect(runActionsMock.mock.calls).toHaveLength(2);
         expect(runActionsMock.mock.calls[0]).toEqual([
             actionButtonData[0].id,
-            { ids: Shopwell.Store.get('shopwareApps').selectedIds },
+            { ids: Shopwell.Store.get('shopwellApps').selectedIds },
         ]);
 
         expect(runActionsMock.mock.calls[1]).toEqual([
             actionButtonData[1].id,
-            { ids: Shopwell.Store.get('shopwareApps').selectedIds },
+            { ids: Shopwell.Store.get('shopwellApps').selectedIds },
         ]);
     });
 
@@ -231,7 +231,7 @@ describe('sw-app-actions', () => {
         wrapper = await createWrapper(router);
         wrapper.vm.createNotification = jest.fn();
 
-        Shopwell.Store.get('shopwareApps').selectedIds = [Shopwell.Utils.createId()];
+        Shopwell.Store.get('shopwellApps').selectedIds = [Shopwell.Utils.createId()];
 
         router.push({ name: 'sw.product.detail' });
         await flushPromises();
@@ -264,7 +264,7 @@ describe('sw-app-actions', () => {
         };
         wrapper = await createWrapper(router, openModalResponseData);
 
-        Shopwell.Store.get('shopwareApps').selectedIds = [Shopwell.Utils.createId()];
+        Shopwell.Store.get('shopwellApps').selectedIds = [Shopwell.Utils.createId()];
 
         router.push({ name: 'sw.product.detail' });
         await flushPromises();

@@ -26,7 +26,7 @@ class Migration1626442868AddGermanSalesChannelDescription extends MigrationStep
             SET sales_channel_type_translation.description = "Verkaufskanal mit HTML-Storefront"
             WHERE `language`.name = "Deutsch"
             AND sales_channel_type_translation.name = "Storefront"
-            AND sales_channel_type_translation.manufacturer = "shopware AG"
+            AND sales_channel_type_translation.manufacturer = "Shopwell"
             AND sales_channel_type_translation.description = "Sales channel mit HTML storefront"
         ');
 
@@ -36,7 +36,7 @@ class Migration1626442868AddGermanSalesChannelDescription extends MigrationStep
             ON `language`.id = sales_channel_type_translation.language_id
             SET sales_channel_type_translation.description = "Verkaufskanal mit API-only-Zugang"
             WHERE `language`.name = "Deutsch" AND sales_channel_type_translation.name = "Headless"
-            AND sales_channel_type_translation.manufacturer = "shopware AG"
+            AND sales_channel_type_translation.manufacturer = "Shopwell"
             AND sales_channel_type_translation.description = "API only sales channel"
         ');
     }

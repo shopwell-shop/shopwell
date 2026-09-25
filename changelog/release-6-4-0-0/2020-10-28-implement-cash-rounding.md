@@ -2,7 +2,7 @@
 title: Implement cash rounding
 issue: NEXT-10004
 author: Oliver Skroblin
-author_email: o.skroblin@shopware.com 
+author_email: o.skroblin@shopwell.com 
 author_github: Oliver Skroblin
 ---
 # Core
@@ -20,6 +20,6 @@ author_github: Oliver Skroblin
 * Changed `__construct` of all price definitions: `AbsolutePriceDefinition`, `PercentagePriceDefinition` and `QuantityPriceDefinition`, use `*Definition::create` instead
 * Removed `precision` parameter of price definition, a specific precision for each definition is no longer supported
 * Added `CartPrice::rawTotal` which contains the un-rounded total value
-* Removed `\Shopware\Core\Checkout\Cart\Price\ReferencePriceCalculator`
-* Removed `\Shopware\Core\Checkout\Cart\Tax\TaxRuleCalculator` use `TaxCalculator` instead
-* Deprecated `\Shopware\Core\System\Currency\CurrencyEntity::$decimalPrecision` use `itemRounding` or `totalRounding` instead
+* Removed `\Shopwell\Core\Checkout\Cart\Price\ReferencePriceCalculator`
+* Removed `\Shopwell\Core\Checkout\Cart\Tax\TaxRuleCalculator` use `TaxCalculator` instead
+* Deprecated `\Shopwell\Core\System\Currency\CurrencyEntity::$decimalPrecision` use `itemRounding` or `totalRounding` instead

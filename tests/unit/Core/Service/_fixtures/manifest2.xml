@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
+<manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
     <meta>
         <name>Serivce2</name>
         <label>Service 2</label>
@@ -16,7 +16,7 @@
     </setup>
 
     <webhooks>
-        <webhook name="shopwareUpdate" url="http://localhost:8001/service/lifecycle/report-update" event="shopware.updated"/>
+        <webhook name="shopwellUpdate" url="http://localhost:8001/service/lifecycle/report-update" event="shopwell.updated"/>
         <webhook name="OrderCreatedWebhook" url="http://localhost:8001/webhook" event="order.created"/>
     </webhooks>
 

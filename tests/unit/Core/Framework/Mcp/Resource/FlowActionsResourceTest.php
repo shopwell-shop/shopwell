@@ -36,7 +36,7 @@ class FlowActionsResourceTest extends TestCase
         $resource = new FlowActionsResource($collector, $contextProvider);
         $result = ($resource)();
 
-        static::assertSame('shopware://flow-actions', $result['uri']);
+        static::assertSame('shopwell://flow-actions', $result['uri']);
         static::assertSame('application/json', $result['mimeType']);
 
         $actions = json_decode($result['text'], true, 512, \JSON_THROW_ON_ERROR);

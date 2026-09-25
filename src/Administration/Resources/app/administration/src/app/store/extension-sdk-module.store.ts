@@ -2,7 +2,7 @@
  * @sw-package framework
  * @private
  */
-import type { smartBarButtonAdd } from '@shopware-ag/meteor-admin-sdk/es/ui/main-module/';
+import type { smartBarButtonAdd } from '@shopwell-ag/meteor-admin-sdk/es/ui/main-module/';
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export type ExtensionSdkModule = {

@@ -2,14 +2,14 @@
 title: Update admin dependencies
 issue: NEXT-24765
 author: Jannis Leifeld
-author_email: j.leifeld@shopware.com
+author_email: j.leifeld@shopwell.com
 author_github: Jannis Leifeld
 ---
 # Administration
 * Changed dependency `@babel/preset-typescript` to "7.21.0"
 * Changed dependency `@babel/runtime` to "7.21.0"
 * Changed dependency `@lhci/cli` to "0.11.0"
-* Changed dependency `@shopware-ag/admin-extension-sdk` to "3.0.4"
+* Changed dependency `@shopwell-ag/admin-extension-sdk` to "3.0.4"
 * Changed dependency `@types/node` to "18.15.10"
 * Changed dependency `@types/uuid` to "9.0.1"
 * Changed dependency `@typescript-eslint/eslint-plugin` to "5.57.0"

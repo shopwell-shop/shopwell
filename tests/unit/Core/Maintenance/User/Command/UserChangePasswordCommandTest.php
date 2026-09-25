@@ -22,8 +22,8 @@ use Symfony\Component\Validator\Validation;
 #[CoversClass(UserChangePasswordCommand::class)]
 class UserChangePasswordCommandTest extends TestCase
 {
-    private const TEST_USERNAME = 'shopware';
-    private const TEST_PASSWORD = 'shopwarePassword';
+    private const TEST_USERNAME = 'shopwell';
+    private const TEST_PASSWORD = 'shopwellPassword';
 
     public function testUnknownUser(): void
     {

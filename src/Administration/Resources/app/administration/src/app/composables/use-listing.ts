@@ -7,7 +7,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 import type { ComputedRef, Ref } from 'vue';
 import type { LocationQuery, RouteLocationNamedRaw } from 'vue-router';
-import type Criteria from '@shopware-ag/meteor-admin-sdk/es/data/Criteria';
+import type Criteria from '@shopwell-ag/meteor-admin-sdk/es/data/Criteria';
 
 /* The listing contract predates typing; several values cross untyped service boundaries */
 /* eslint-disable @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-return,@typescript-eslint/no-explicit-any */
@@ -392,7 +392,7 @@ export default function useListing(options: UseListingOptions): UseListingReturn
     });
 
     watch(selection, () => {
-        Shopwell.Store.get('shopwareApps').selectedIds = Object.keys(selection.value);
+        Shopwell.Store.get('shopwellApps').selectedIds = Object.keys(selection.value);
         Shopwell.Store.get('swBulkEdit').selectedIds = Object.keys(selection.value);
     });
 
@@ -437,7 +437,7 @@ export default function useListing(options: UseListingOptions): UseListingReturn
             return;
         }
 
-        Shopwell.Store.get('shopwareApps').selectedIds = [];
+        Shopwell.Store.get('shopwellApps').selectedIds = [];
         Shopwell.Store.get('swBulkEdit').selectedIds = [];
     });
 

@@ -2,7 +2,7 @@
 title: Fix customer address name field length mismatch
 issue: 5882
 author: Martin Bens
-author_email: m.bens@shopware.com
+author_email: m.bens@shopwell.com
 author_github: @SpiGAndromeda
 ---
 # Core

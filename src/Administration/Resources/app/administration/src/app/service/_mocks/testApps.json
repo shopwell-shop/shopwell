@@ -14,7 +14,7 @@
         },
         "parent": "sw-catalogue",
         "position": "50",
-        "source": "https:\/\/shopware.apps\/module1"
+        "source": "https:\/\/shopwell.apps\/module1"
       },
       {
         "name": "noPosition",
@@ -23,11 +23,11 @@
           "en-GB": "Module without position"
         },
         "parent": "sw.second.top.level",
-        "source": "https:\/\/shopware.apps\/"
+        "source": "https:\/\/shopwell.apps\/"
       }
     ],
     "mainModule": {
-         "source": "https://shopware.apps/login"
+         "source": "https://shopwell.apps/login"
     }
   },
   {
@@ -44,7 +44,7 @@
           "en-GB": "Default module"
         },
         "parent": "app-testAppB-structure",
-        "source": "https:\/\/shopware.apps\/",
+        "source": "https:\/\/shopwell.apps\/",
         "position": 50
       },
       {

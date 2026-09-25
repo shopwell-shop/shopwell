@@ -4,7 +4,7 @@ issue: NEXT-17454
 author: Nils Haberkamp
 ---
 # Core
-* Changed return type of `Shopware\Core\Content\ImportExport\Service\AbstractMappingService::getMappingFromTemplate` to `array` 
+* Changed return type of `Shopwell\Core\Content\ImportExport\Service\AbstractMappingService::getMappingFromTemplate` to `array` 
 ___
 # Administration
 * Added method `mergeMappings` to `src/module/sw-import-export/component/profile-wizard/sw-import-export-new-profile-wizard-mapping-page/index.js`

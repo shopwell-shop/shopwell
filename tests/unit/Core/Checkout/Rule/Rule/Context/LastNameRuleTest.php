@@ -20,12 +20,12 @@ class LastNameRuleTest extends TestCase
 {
     public function testExactMatch(): void
     {
-        $rule = (new LastNameRule())->assign(['lastName' => 'shopware']);
+        $rule = (new LastNameRule())->assign(['lastName' => 'shopwell']);
 
         $cart = new Cart('test');
 
         $customer = new CustomerEntity();
-        $customer->setLastName('shopware');
+        $customer->setLastName('shopwell');
 
         $context = static::createStub(SalesChannelContext::class);
 
@@ -40,12 +40,12 @@ class LastNameRuleTest extends TestCase
 
     public function testCaseInsensitive(): void
     {
-        $rule = (new LastNameRule())->assign(['lastName' => 'shopware']);
+        $rule = (new LastNameRule())->assign(['lastName' => 'shopwell']);
 
         $cart = new Cart('test');
 
         $customer = new CustomerEntity();
-        $customer->setLastName('ShopWare');
+        $customer->setLastName('Shopwell');
 
         $context = static::createStub(SalesChannelContext::class);
 

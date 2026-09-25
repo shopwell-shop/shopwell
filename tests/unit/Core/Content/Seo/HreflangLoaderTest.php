@@ -46,7 +46,7 @@ class HreflangLoaderTest extends TestCase
 
         $this->router
             ->method('generate')
-            ->willReturn('/shopware/public/detail/' . $productId);
+            ->willReturn('/shopwell/public/detail/' . $productId);
 
         $this->connection
             ->method('fetchAllAssociative')
@@ -66,7 +66,7 @@ class HreflangLoaderTest extends TestCase
             ['productId' => $productId],
             $salesChannelContext,
             false,
-            '/shopware/public'
+            '/shopwell/public'
         );
 
         $result = $this->loader->load($parameter);

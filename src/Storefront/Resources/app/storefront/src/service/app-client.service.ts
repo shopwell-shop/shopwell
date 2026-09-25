@@ -90,8 +90,8 @@ export default class AppClientService {
 
         return {
             headers: {
-                'shopware-app-token': data.token,
-                'shopware-app-shop-id': data.shopId,
+                'shopwell-app-token': data.token,
+                'shopwell-app-shop-id': data.shopId,
             },
             expires: data.expires,
         };

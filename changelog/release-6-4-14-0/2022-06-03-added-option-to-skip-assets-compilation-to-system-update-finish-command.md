@@ -6,6 +6,6 @@ author_email: andreas.allacher@massiveart.com
 author_github: @AndreasA
 ---
 # Core
-* Changed `Shopware\Storefront\Theme\Subscriber\UpdateSubscriber` to check if the state `Shopware\Core\Framework\Plugin\PluginLifecycleService::STATE_SKIP_ASSET_BUILDING` exists.
-* Changed `Shopware\Core\Maintenance\System\Command\SystemUpdateFinishCommand` to add a new command option `--skip-asset-build`.
-* Changed `Shopware\Core\Maintenance\System\Command\SystemUpdateFinishCommand` to add the state `Shopware\Core\Framework\Plugin\PluginLifecycleService::STATE_SKIP_ASSET_BUILDING` if the `--skip-asset-build` option has been provided.
+* Changed `Shopwell\Storefront\Theme\Subscriber\UpdateSubscriber` to check if the state `Shopwell\Core\Framework\Plugin\PluginLifecycleService::STATE_SKIP_ASSET_BUILDING` exists.
+* Changed `Shopwell\Core\Maintenance\System\Command\SystemUpdateFinishCommand` to add a new command option `--skip-asset-build`.
+* Changed `Shopwell\Core\Maintenance\System\Command\SystemUpdateFinishCommand` to add the state `Shopwell\Core\Framework\Plugin\PluginLifecycleService::STATE_SKIP_ASSET_BUILDING` if the `--skip-asset-build` option has been provided.

@@ -28,13 +28,13 @@ class ToolsetsListToolTest extends TestCase
                 'name' => 'entity',
                 'title' => 'Entity tools',
                 'description' => 'Entity',
-                'tools' => ['shopware-entity-search'],
+                'tools' => ['shopwell-entity-search'],
             ],
             [
                 'name' => 'order',
                 'title' => 'Order tools',
                 'description' => 'Order',
-                'tools' => ['shopware-order-state'],
+                'tools' => ['shopwell-order-state'],
             ],
         ]);
 
@@ -67,7 +67,7 @@ class ToolsetsListToolTest extends TestCase
                 'name' => 'entity',
                 'title' => 'Entity tools',
                 'description' => 'Entity',
-                'tools' => ['shopware-entity-search'],
+                'tools' => ['shopwell-entity-search'],
             ],
         ]);
 

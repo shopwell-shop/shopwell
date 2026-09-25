@@ -20,7 +20,7 @@ class RedisPrefixCompilerPass implements CompilerPassInterface
             $class = $definition->getClass();
 
             if ($class === RedisAdapter::class || $class === RedisTagAwareAdapter::class) {
-                $definition->replaceArgument(1, '%shopware.cache.redis_prefix%' . $definition->getArgument(1));
+                $definition->replaceArgument(1, '%shopwell.cache.redis_prefix%' . $definition->getArgument(1));
             }
         }
     }

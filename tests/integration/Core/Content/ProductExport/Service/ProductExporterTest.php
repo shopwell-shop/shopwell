@@ -52,7 +52,7 @@ class ProductExporterTest extends TestCase
         $this->repository = static::getContainer()->get('product_export.repository');
         $this->service = static::getContainer()->get(ProductExporter::class);
         $this->context = Context::createDefaultContext();
-        $this->fileSystem = static::getContainer()->get('shopware.filesystem.private');
+        $this->fileSystem = static::getContainer()->get('shopwell.filesystem.private');
 
         $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
         $this->salesChannelContext = $salesChannelContextFactory->create(Uuid::randomHex(), $this->getSalesChannelDomain()->getSalesChannelId());

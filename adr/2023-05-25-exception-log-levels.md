@@ -7,7 +7,7 @@ tags: [core, devops, observability]
 
 ## Context
 By default, every exception that is thrown in the PHP stack and not caught will be logged by the `symfony/monolog-bridge` on `error` level.
-But there are some cases where the exception is caused by clients accessing the API wrong (missing fields etc.) and throwing an `ShopwareHttpException` with an HTTP-Status-Code of 40x is our way of handling such situations and returning a correct HTTP-Status-Code to the client.
+But there are some cases where the exception is caused by clients accessing the API wrong (missing fields etc.) and throwing an `ShopwellHttpException` with an HTTP-Status-Code of 40x is our way of handling such situations and returning a correct HTTP-Status-Code to the client.
 So those cases are in fact no "errors" that need to be analyzed, but are expected given a malformed API request.
 Logging those cases as "errors" produces a lot of noise, which makes it harder to actually find errors in the logs.
 
@@ -27,6 +27,6 @@ Another solution could be to do the configuration of the log level directly in t
 We will add the `exceptions` configuration to the platform, that way the error logging in existing projects might change. But in general, we assume that this change is for the better.
 
 Additionally, we will need to extend on the default symfony configuration as that is not compatible with our new [domain exceptions](./2022-02-24-domain-exceptions.md) as there are multiple exception cases in one file/class. 
-Therefore, we will add a similar configuration option, that does not rely on the FQCN, but instead we will use the shopware specific `error code` from the shopware exception as that is unique to the exception case.
+Therefore, we will add a similar configuration option, that does not rely on the FQCN, but instead we will use the shopwell specific `error code` from the shopwell exception as that is unique to the exception case.
 
 On a side note, we should be able to get rid of most of the cloud-specific configuration for the exception logging mapping.

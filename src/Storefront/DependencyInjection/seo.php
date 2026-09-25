@@ -26,20 +26,20 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(ProductDefinition::class),
         ])
-        ->tag('shopware.seo_url.route');
+        ->tag('shopwell.seo_url.route');
 
     $services->set(NavigationPageSeoUrlRoute::class)
         ->args([
             service(CategoryDefinition::class),
             service(CategoryBreadcrumbBuilder::class),
         ])
-        ->tag('shopware.seo_url.route');
+        ->tag('shopwell.seo_url.route');
 
     $services->set(LandingPageSeoUrlRoute::class)
         ->args([
             service(LandingPageDefinition::class),
         ])
-        ->tag('shopware.seo_url.route');
+        ->tag('shopwell.seo_url.route');
 
     $services->set(SeoUrlUpdateListener::class)
         ->args([
@@ -51,7 +51,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(SeoUrlRouteRegistry::class),
         ])
-        ->tag('shopware.api.enum_provider');
+        ->tag('shopwell.api.enum_provider');
 
     $services->set(StorefrontCategoryUrlGenerator::class)
         ->decorate(CategoryUrlGenerator::class)

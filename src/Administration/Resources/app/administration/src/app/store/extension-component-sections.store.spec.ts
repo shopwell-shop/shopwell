@@ -1,4 +1,4 @@
-import type { uiComponentSectionRenderer } from '@shopware-ag/meteor-admin-sdk/es/ui/component-section';
+import type { uiComponentSectionRenderer } from '@shopwell-ag/meteor-admin-sdk/es/ui/component-section';
 import type { ExtensionComponentSectionsStore } from './extension-component-sections.store';
 
 describe('extension-component-sections.store', () => {

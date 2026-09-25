@@ -73,7 +73,7 @@ describe('scripts/extensionTooling/setup root projections', () => {
             'utf8',
         );
 
-        // The runtime config excludes specs; the generated .shopware/ spec
+        // The runtime config excludes specs; the generated .shopwell/ spec
         // program (spec-tsconfig.spec.ts) type-checks them with jest types.
         expect(scaffold).toContain('"**/*.spec.ts"');
         expect(scaffold).toContain('type-checks them separately with jest types');

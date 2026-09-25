@@ -8,15 +8,15 @@ tags: [core, profile, performance, datadog, metrics, monitoring]
 
 Observability is a key aspect of modern software development. It is essential to have the right tools in place to monitor and analyze runtime statistics of the application.
 
-Many tools and backends are available to enable telemetry and monitoring. The context of this ADR is to provide a streamlined and simple way to enable the integration of any observability tool into the Shopware platform.
+Many tools and backends are available to enable telemetry and monitoring. The context of this ADR is to provide a streamlined and simple way to enable the integration of any observability tool into the Shopwell platform.
 
 ## Decision
 
-To address the need for a unified way to track metrics and performance data, we will introduce a telemetry abstraction layer. This layer will provide a common interface for integrating different monitoring tools into the Shopware platform.
+To address the need for a unified way to track metrics and performance data, we will introduce a telemetry abstraction layer. This layer will provide a common interface for integrating different monitoring tools into the Shopwell platform.
 
 The telemetry abstraction layer will consist of the following components:
 
-### Shopware's abstraction layer
+### Shopwell's abstraction layer
 
 The abstraction layer will provide a common interface for telemetry integration. It will define the methods and data structures required to send telemetry data to the monitoring backend.
 
@@ -26,15 +26,15 @@ The telemetry abstraction layer will be integrated with the existing events subs
 
 ### Transport layer (integrations)
 
-Vendor specific implementation will not be part of the core. Those would be shipped as external libraries that implement the telemetry abstraction layer specification. The core will provide documentation on how to integrate these libraries into the Shopware platform.
+Vendor specific implementation will not be part of the core. Those would be shipped as external libraries that implement the telemetry abstraction layer specification. The core will provide documentation on how to integrate these libraries into the Shopwell platform.
 
 Each transport layer should at least be aware of the following metrics objects:
-- `Shopware\Core\Framework\Telemetry\Metrics\Metric\Counter`
-- `Shopware\Core\Framework\Telemetry\Metrics\Metric\Gauge`
-- `Shopware\Core\Framework\Telemetry\Metrics\Metric\Histogram`
-- `Shopware\Core\Framework\Telemetry\Metrics\Metric\UpDownCounter`
+- `Shopwell\Core\Framework\Telemetry\Metrics\Metric\Counter`
+- `Shopwell\Core\Framework\Telemetry\Metrics\Metric\Gauge`
+- `Shopwell\Core\Framework\Telemetry\Metrics\Metric\Histogram`
+- `Shopwell\Core\Framework\Telemetry\Metrics\Metric\UpDownCounter`
 
-Or more generally, should aim to cover all the metric types defined inside the `Shopware\Core\Framework\Telemetry\Metrics\Metric` namespace.
+Or more generally, should aim to cover all the metric types defined inside the `Shopwell\Core\Framework\Telemetry\Metrics\Metric` namespace.
 
 ### Implementation and Considerations
 
@@ -64,7 +64,7 @@ interface MetricInterface
 
 ## Consequences
 
-By implementing a telemetry abstraction layer, we provide a unified way to integrate monitoring tools into the Shopware platform. This approach simplifies the process of adding telemetry to the application and ensures consistency across different monitoring tools.
+By implementing a telemetry abstraction layer, we provide a unified way to integrate monitoring tools into the Shopwell platform. This approach simplifies the process of adding telemetry to the application and ensures consistency across different monitoring tools.
 
 
 ## Usage
