@@ -244,18 +244,6 @@
             }
         },
         {
-            "type": "vcs",
-            "url": "https://github.com/shopwell-shop/dev-tools.git"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/shopwell-shop/phpstan-shopwell.git"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/shopwell-shop/images-generator.git"
-        },
-        {
             "type": "composer",
             "url": "https://shopwell-shop.github.io/conflicts/"
         }

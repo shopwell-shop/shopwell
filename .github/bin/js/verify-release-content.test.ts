@@ -192,7 +192,7 @@ test('consoleReport renders warnings with a linked commit and keeps the OK line'
     );
 
     assert.match(report, /WARN: 1 of 2 entries need manual verification:/);
-    assert.match(report, /\? ### Feature A \[aaaa1111 \(https:\/\/github\.com\/shopwell\/shopwell\/commit\/aaaa11112222\)]/);
+    assert.match(report, /\? ### Feature A \[aaaa1111 \(https:\/\/github\.com\/shopwell-shop\/shopwell\/commit\/aaaa11112222\)]/);
     assert.match(report, /OK: 1 of 2 entries confirmed present\. 1 need manual verification/);
 });
 
@@ -220,7 +220,7 @@ test('markdownSummary renders the missing table with a linked commit and escaped
     );
 
     assert.match(markdown, /### ❌ Missing from this release branch/);
-    assert.match(markdown, /\| Feature \\\| A \| \[`aaaa1111`]\(https:\/\/github\.com\/shopwell\/shopwell\/commit\/aaaa11112222\) \|/);
+    assert.match(markdown, /\| Feature \\\| A \| \[`aaaa1111`]\(https:\/\/github\.com\/shopwell-shop\/shopwell\/commit\/aaaa11112222\) \|/);
 });
 
 test('markdownSummary escapes backslashes in a heading before the pipe', () => {
