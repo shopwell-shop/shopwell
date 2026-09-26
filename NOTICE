@@ -3,11 +3,28 @@ Copyright 2026 Shopwell
 
 This product includes software originally developed by Shopwell.
 
-The Shopwell platform code included in this product is licensed under
-the MIT License, Copyright (c) Shopwell. The full text of the upstream
-license is preserved in the file LICENSE.upstream-MIT, distributed
-alongside this NOTICE.
+Shopwell is an independent product and is not affiliated with, endorsed
+by, or sponsored by any other party. All third-party product names and
+trademarks remain the property of their respective owners.
 
-Shopwell is an independent product built on top of this code and is not
-affiliated with, endorsed by, or sponsored by Shopwell. All Shopwell
-trademarks and product names remain the property of Shopwell.
+The upstream platform code included in this product is licensed under
+the MIT License. The full text of the upstream license is preserved
+verbatim below.
+
+==========================================================================
+Upstream License — Shopwell Platform (MIT)
+==========================================================================
+Copyright 2019 shopware AG
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
