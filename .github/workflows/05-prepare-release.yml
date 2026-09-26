@@ -10,7 +10,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    if: github.repository == 'shopwell/shopwell'
+    if: github.repository == 'shopwell-shop/shopwell'
     env:
       SHOPWELL_ADMIN_SKIP_SOURCEMAP_GENERATION: "1"
       DATABASE_URL: mysql://root:root@127.0.0.1:3306/root
@@ -64,10 +64,10 @@ jobs:
 
   check-recipe:
     runs-on: ubuntu-24.04
-    if: github.repository == 'shopwell/shopwell' && github.ref_type == 'tag'
+    if: github.repository == 'shopwell-shop/shopwell' && github.ref_type == 'tag'
     env:
       GH_TOKEN: ${{ github.token }}
-      CHECK_REPOSITORY: "shopwell/recipes"
+      CHECK_REPOSITORY: "shopwell-shop/recipes"
       CHECK_WORKFLOW: "nightly.yml"
       CHECK_STATUS: "success"
     steps:
@@ -85,7 +85,7 @@ jobs:
     environment: ${{ format('manyrepos_{0}', github.ref_type) }}
     # we use this image to get an older git version, which does not suffer from a performance regression
     container: node:lts-alpine3.19
-    if: github.repository == 'shopwell/shopwell'
+    if: github.repository == 'shopwell-shop/shopwell'
     permissions:
       contents: read
       id-token: write
@@ -102,6 +102,7 @@ jobs:
       GIT_COMMITTER_EMAIL: "shopwellbot@shopwell.com"
       GIT_COMMITTER_NAME: "shopwellBot"
       DEBUG: ${{ github.event.act && '1' || '' }}
+      SHOPWELL_SPLIT_TOKEN: ${{ secrets.SHOPWELL_SPLIT_TOKEN }}
     steps:
       - name: install deps
         run: apk add git git-subtree bash composer
@@ -115,11 +116,12 @@ jobs:
         with:
           name: context
 
-      - uses: shopwell/octo-sts-action@main
-        id: sts-shopwell-split
-        with:
-          scope: shopwell
-          identity: ShopwellSplit
+      - name: Validate split repository token
+        run: |
+          if [ -z "${SHOPWELL_SPLIT_TOKEN}" ]; then
+            echo "SHOPWELL_SPLIT_TOKEN is required to publish split repositories" >&2
+            exit 1
+          fi
 
       - name: Is protected
         if: github.ref_protected
@@ -172,17 +174,17 @@ jobs:
       - name: Push
         if: github.ref_type == 'tag' || github.ref_protected
         run: |
-          bash .github/bin/split.bash push "${{ matrix.package }}" https://x-access-token:${{ steps.sts-shopwell-split.outputs.token }}@github.com/shopwell-shop "${{ github.ref_name }}"
+          bash .github/bin/split.bash push "${{ matrix.package }}" "https://x-access-token:${SHOPWELL_SPLIT_TOKEN}@github.com/shopwell-shop" "${{ github.ref_name }}"
 
       - name: Push temporary branch
         if: github.ref_type != 'tag' && !github.ref_protected && !env.ACT
         run: |
-          bash .github/bin/split.bash push "${{ matrix.package }}" https://x-access-token:${{ steps.sts-shopwell-split.outputs.token }}@github.com/shopwell-shop "tmp-${{ github.sha }}"
+          bash .github/bin/split.bash push "${{ matrix.package }}" "https://x-access-token:${SHOPWELL_SPLIT_TOKEN}@github.com/shopwell-shop" "tmp-${{ github.sha }}"
 
   draft-release-notes:
     needs: split
     runs-on: ubuntu-24.04
-    if: github.repository == 'shopwell/shopwell'
+    if: github.repository == 'shopwell-shop/shopwell'
     permissions:
       contents: write
     steps:
@@ -202,7 +204,7 @@ jobs:
   create-sbp-release:
     needs: split
     runs-on: ubuntu-24.04
-    if: github.repository == 'shopwell/shopwell'
+    if: github.repository == 'shopwell-shop/shopwell'
     strategy:
       matrix:
         sbp-environment: [STAGING, PRODUCTION]
@@ -223,7 +225,7 @@ jobs:
   update-milestones:
     needs: split
     runs-on: ubuntu-24.04
-    if: github.repository == 'shopwell/shopwell' && github.ref_type == 'tag'
+    if: github.repository == 'shopwell-shop/shopwell' && github.ref_type == 'tag'
     permissions:
       contents: read
       issues: write

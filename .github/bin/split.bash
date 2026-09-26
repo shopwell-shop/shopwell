@@ -159,7 +159,7 @@ tag() {
   local package; package="$(uppercase_first "${package_lower}")"
   local name; name="${2}"
 
-  git -C "${PLATFORM_DIR}/repos/${package_lower}" tag -m "Release ${name}" "${name}" -f
+  git -C "${PLATFORM_DIR}/repos/${package_lower}" tag -m "Release ${name}" "${name}"
 }
 
 # Pushes a split repository for a subpackage to it's remote.
@@ -181,22 +181,38 @@ push() {
   git -C "${PLATFORM_DIR}/repos/${package_lower}" fetch -q upstream
 
   if git -C "${PLATFORM_DIR}/repos/${package_lower}" show-ref --verify "refs/tags/${target_ref}" > /dev/null 2>&1 ; then
-    git -C "${PLATFORM_DIR}/repos/${package_lower}" push upstream "refs/tags/${target_ref}:refs/tags/${target_ref}" -f
+    git -C "${PLATFORM_DIR}/repos/${package_lower}" push upstream "refs/tags/${target_ref}:refs/tags/${target_ref}"
   else
-    git -C "${PLATFORM_DIR}/repos/${package_lower}" push upstream "refs/heads/${target_ref}:refs/heads/${target_ref}" -f
+    if git -C "${PLATFORM_DIR}/repos/${package_lower}" show-ref --verify "refs/remotes/upstream/${target_ref}" > /dev/null 2>&1 \
+      && ! git -C "${PLATFORM_DIR}/repos/${package_lower}" merge-base --is-ancestor "upstream/${target_ref}" "${target_ref}"; then
+      # Split branches are generated artifacts. Join the previous generated branch
+      # as a second parent so publication remains fast-forward without changing the tree.
+      git -C "${PLATFORM_DIR}/repos/${package_lower}" checkout "${target_ref}"
+      git -C "${PLATFORM_DIR}/repos/${package_lower}" merge --strategy=ours --allow-unrelated-histories \
+        -m "Join previous generated ${target_ref} branch" "upstream/${target_ref}"
+    fi
+    git -C "${PLATFORM_DIR}/repos/${package_lower}" push upstream "refs/heads/${target_ref}:refs/heads/${target_ref}"
   fi
+}
+
+portable_sed_in_place() {
+  local expression; expression="${1}"
+  local path; path="${2}"
+
+  sed -E -i.bak "${expression}" "${path}"
+  rm "${path}.bak"
 }
 
 # Removes certain asset-related entries from the admin .gitignore.
 include_admin_assets() {
-  sed -i -E '/[/]?public([/]?|.*)/d' "${PLATFORM_DIR}/repos/administration/Resources/.gitignore"
+  portable_sed_in_place '/[/]?public([/]?|.*)/d' "${PLATFORM_DIR}/repos/administration/Resources/.gitignore"
 }
 
 # Removes certain asset-related entries from the storefront .gitignore.
 include_storefront_assets() {
-  sed -i -E '/[/]?Resources[/]app[/]storefront[/]vendor([/]?|.*)/d' "${PLATFORM_DIR}/repos/storefront/.gitignore"
-  sed -i -E '/[/]?app[/]storefront[/]dist([/]?|.*)/d' "${PLATFORM_DIR}/repos/storefront/Resources/.gitignore"
-  sed -i -E '/[/]?public([/]?|.*)/d' "${PLATFORM_DIR}/repos/storefront/Resources/.gitignore"
+  portable_sed_in_place '/[/]?Resources[/]app[/]storefront[/]vendor([/]?|.*)/d' "${PLATFORM_DIR}/repos/storefront/.gitignore"
+  portable_sed_in_place '/[/]?app[/]storefront[/]dist([/]?|.*)/d' "${PLATFORM_DIR}/repos/storefront/Resources/.gitignore"
+  portable_sed_in_place '/[/]?public([/]?|.*)/d' "${PLATFORM_DIR}/repos/storefront/Resources/.gitignore"
 }
 
 include_assets() {
