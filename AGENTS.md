@@ -119,5 +119,11 @@ German snippets differ in register between the two UIs. The Administration addre
 - Runtime code and workflows must not depend on `shopware/*`, `shopwarelabs/*`,
   `@shopware-ag/*`, or their GitHub repositories. A `shopwell-shop/*` Action
   dependency must have a matching entry in the control registry.
+- Shopwell-owned npm and Composer dependencies must be published to a real registry
+  before use and must use a normal stable version constraint. Git URLs, `github:`,
+  GitHub archive/tarball URLs, commits, branches, Composer `dev-*`, `file:`, `link:`,
+  and `workspace:` are not releases and must not be committed as consumer dependencies.
+- A Git tag or successful publish workflow is not proof of release. Verify the exact
+  version through the npm/Composer registry API before marking related work ready.
 - If LICENSE, NOTICE, owned manifests, or upstream license inventory changes, update
   `../sync-upstream/config/repos.json` in the same task. A failed audit blocks completion.
