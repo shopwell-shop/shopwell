@@ -1,18 +1,17 @@
 Shopwell Platform
 Copyright 2026 Shopwell
 
-This product includes software originally developed by Shopwell.
+This Shopwell project is licensed under the Apache License 2.0; see LICENSE.
 
-Shopwell is an independent product and is not affiliated with, endorsed
-by, or sponsored by any other party. All third-party product names and
-trademarks remain the property of their respective owners.
+This product includes software originally developed by shopware AG.
+Upstream source: https://github.com/shopware/shopware
 
-The upstream platform code included in this product is licensed under
-the MIT License. The full text of the upstream license is preserved
-verbatim below.
+The upstream code is licensed under the MIT License. The same upstream
+license text is present in LICENSE and src/{Administration,Core,Elasticsearch,Storefront}/LICENSE.
+It is preserved once below because those upstream files are byte-identical.
 
 ==========================================================================
-Upstream License — Shopwell Platform (MIT)
+Upstream License — shopware/shopware (MIT)
 ==========================================================================
 Copyright 2019 shopware AG
 

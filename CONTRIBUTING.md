@@ -1,8 +1,8 @@
 # Get involved
 
-Shopwell is available under the MIT license.
+Shopwell is available under the Apache License 2.0.
 If you want to contribute code (features or bug fixes), you have to create a pull request and include valid license information.
-Contribute your code under the MIT license.
+Contribute your code under the Apache License 2.0.
 
 If you want more details about available licensing or the contribution agreements we offer, you can contact us at <contact@shopwell.com>.
 

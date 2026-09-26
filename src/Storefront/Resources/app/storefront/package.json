@@ -9,7 +9,7 @@
     "storefront",
     "sw"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "build:shopwell": "vite build --config vite.shopwell.config.mts",
     "build:components": "node build/vite/build-components.js",

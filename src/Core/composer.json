@@ -7,7 +7,7 @@
         "shop"
     ],
     "homepage": "http://www.shopwell.cn",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "autoload": {
         "files": [
             "Framework/Adapter/Doctrine/Patch/AbstractAsset.php",

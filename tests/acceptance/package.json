@@ -17,7 +17,7 @@
   },
   "keywords": [],
   "author": "Shopwell",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module",
   "devDependencies": {
     "@types/node": "20.6.5",
