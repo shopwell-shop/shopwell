@@ -114,6 +114,10 @@ German snippets differ in register between the two UIs. The Administration addre
   brand, shorten, delete, or move it into `LICENSE.upstream-*` files.
 - Dependency lock files keep truthful third-party license metadata.
 - Before commit, push, release, or sync completion, run:
-  `../sync-upstream/bin/syncctl audit-license shopware`.
+  `../sync-upstream/bin/syncctl audit-license shopware` and
+  `../sync-upstream/bin/syncctl audit-upstream-dependencies shopware`.
+- Runtime code and workflows must not depend on `shopware/*`, `shopwarelabs/*`,
+  `@shopware-ag/*`, or their GitHub repositories. A `shopwell-shop/*` Action
+  dependency must have a matching entry in the control registry.
 - If LICENSE, NOTICE, owned manifests, or upstream license inventory changes, update
   `../sync-upstream/config/repos.json` in the same task. A failed audit blocks completion.
