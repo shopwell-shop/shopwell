@@ -104,3 +104,16 @@ German snippets differ in register between the two UIs. The Administration addre
 | **Snippets**           | `composer translation:lint`   | Manual fix required                          |
 | **Prettier** (Admin)   | `composer format:admin`       | `composer format:admin:fix`                  |
 | **GitHub Actions**     | `composer lint:actions`       | `composer lint:actions:fix`                  |
+
+## Shopwell licensing guardrail
+
+- Shopwell-owned code and publishable subpackages use Apache License 2.0.
+- Project-owned package/composer manifests must declare `Apache-2.0`.
+- Registered project-owned `LICENSE` files contain the standard Apache-2.0 text.
+- Original upstream legal text is preserved verbatim in the root `NOTICE`; do not
+  brand, shorten, delete, or move it into `LICENSE.upstream-*` files.
+- Dependency lock files keep truthful third-party license metadata.
+- Before commit, push, release, or sync completion, run:
+  `../sync-upstream/bin/syncctl audit-license shopware`.
+- If LICENSE, NOTICE, owned manifests, or upstream license inventory changes, update
+  `../sync-upstream/config/repos.json` in the same task. A failed audit blocks completion.
