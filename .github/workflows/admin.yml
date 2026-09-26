@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Setup Shopwell
-        uses: shopwell/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@main
         with:
           install-admin: true
           shopwell-version: ${{ github.ref }}
@@ -83,7 +83,7 @@ jobs:
 
     steps:
       - name: Setup Shopwell
-        uses: shopwell/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@main
         with:
           shopwell-version: ${{ github.ref }}
           shopwell-repository: ${{ github.repository }}
@@ -129,7 +129,7 @@ jobs:
 
     steps:
       - name: Setup Shopwell
-        uses: shopwell/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@main
         with:
           shopwell-version: ${{ github.ref }}
           shopwell-repository: ${{ github.repository }}

@@ -223,7 +223,7 @@ jobs:
 
     steps:
       - name: Setup previous major version
-        uses: shopwell/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@main
         with:
           install: "false"
           shopwell-version: ${{ github.ref }}
@@ -295,7 +295,7 @@ jobs:
 
     steps:
       - name: Setup previous major version
-        uses: shopwell/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@main
         with:
           install: "false"
           shopwell-version: ${{ env.PREVIOUS_MAJOR_VERSION_BRANCH }}
@@ -386,7 +386,7 @@ jobs:
 
     steps:
       - name: Setup previous major version
-        uses: shopwell/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@main
         with:
           install: "false"
           shopwell-version: ${{ env.PREVIOUS_MAJOR_VERSION_BRANCH }}

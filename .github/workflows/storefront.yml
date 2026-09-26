@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Setup Shopwell
-        uses: shopwell/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@main
         with:
           mysql-version: skip
           npm-version: 11.8.0
@@ -70,7 +70,7 @@ jobs:
 
     steps:
       - name: Setup Shopwell
-        uses: shopwell/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@main
         with:
           mysql-version: skip
           shopwell-version: ${{ github.ref }}
@@ -141,7 +141,7 @@ jobs:
 
     steps:
       - name: Setup Shopwell
-        uses: shopwell/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@main
         with:
           mysql-version: skip
           npm-version: 11.8.0
@@ -178,7 +178,7 @@ jobs:
 
     steps:
       - name: Setup Shopwell
-        uses: shopwell/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@main
         with:
           mysql-version: skip
           npm-version: 11.8.0

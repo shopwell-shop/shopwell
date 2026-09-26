@@ -60,7 +60,7 @@ jobs:
             echo "ENABLE_SERVICES=0"
           } >> "$GITHUB_ENV"
       - name: Setup Shopwell
-        uses: shopwell/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@main
         with:
           env: prod
           mysql-version: "builtin"

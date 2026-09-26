@@ -57,7 +57,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Setup Shopwell
-        uses: shopwell/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@main
         with:
           install: true
           install-admin: true
