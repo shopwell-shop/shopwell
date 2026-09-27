@@ -2,6 +2,17 @@ name: Prepare release
 
 on:
   workflow_dispatch:
+    inputs:
+      skip_recipe_check:
+        description: "Skip the external recipe nightly gate for a bootstrap release"
+        required: false
+        default: false
+        type: boolean
+      release_version:
+        description: "Stable version to publish when dispatching from a branch"
+        required: false
+        default: ""
+        type: string
   workflow_call:
 
 permissions:
@@ -45,6 +56,9 @@ jobs:
 
       - name: build shopwell
         run: |
+          # Composer validates path repositories before lifecycle scripts run.
+          # Keep the optional plugin roots present for a clean checkout.
+          mkdir -p custom/plugins custom/static-plugins
           composer setup
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -64,7 +78,7 @@ jobs:
 
   check-recipe:
     runs-on: ubuntu-24.04
-    if: github.repository == 'shopwell-shop/shopwell' && github.ref_type == 'tag'
+    if: github.repository == 'shopwell-shop/shopwell' && (inputs.release_version != '' || github.ref_type == 'tag') && !inputs.skip_recipe_check
     env:
       GH_TOKEN: ${{ github.token }}
       CHECK_REPOSITORY: "shopwell-shop/recipes"
@@ -82,7 +96,7 @@ jobs:
   split:
     needs: build
     runs-on: ubuntu-24.04
-    environment: ${{ format('manyrepos_{0}', github.ref_type) }}
+    environment: ${{ format('manyrepos_{0}', inputs.release_version != '' && 'tag' || github.ref_type) }}
     # we use this image to get an older git version, which does not suffer from a performance regression
     container: node:lts-alpine3.19
     if: github.repository == 'shopwell-shop/shopwell'
@@ -142,17 +156,17 @@ jobs:
 
       - name: Require core version
         run: |
-          bash .github/bin/split.bash require_core_version "${{ matrix.package }}" "${{ github.ref_name }}" ${{ github.ref_type }}
+          bash .github/bin/split.bash require_core_version "${{ matrix.package }}" "${{ inputs.release_version || github.ref_name }}" tag
 
       - name: Commit assets
         if: matrix.package != 'core'
         run: |
-          bash .github/bin/split.bash commit "${{ matrix.package }}" "${{ github.ref_name }} (+ assets)"
+          bash .github/bin/split.bash commit "${{ matrix.package }}" "${{ inputs.release_version || github.ref_name }} (+ assets)"
 
       - name: Tag commit
-        if: github.ref_type == 'tag'
+        if: inputs.release_version != '' || github.ref_type == 'tag'
         run: |
-          bash .github/bin/split.bash tag "${{ matrix.package }}" "${{ github.ref_name }}"
+          bash .github/bin/split.bash tag "${{ matrix.package }}" "${{ inputs.release_version || github.ref_name }}"
 
       - name: Diff
         if: matrix.package != 'core'
@@ -162,22 +176,22 @@ jobs:
           git -C repos/${{ matrix.package }} diff @^.. | head -n 100
 
       - name: Create temporary branch
-        if: github.ref_type != 'tag' && !github.ref_protected
+        if: inputs.release_version == '' && github.ref_type != 'tag' && !github.ref_protected
         run: |
           bash .github/bin/split.bash branch "${{ matrix.package }}" "tmp-${{ github.sha }}"
 
       - name: Create named branch
-        if: github.ref_type != 'tag' && github.ref_protected
+        if: inputs.release_version == '' && github.ref_type != 'tag' && github.ref_protected
         run: |
           bash .github/bin/split.bash branch "${{ matrix.package }}" "${{ github.ref_name }}"
 
       - name: Push
-        if: github.ref_type == 'tag' || github.ref_protected
+        if: inputs.release_version != '' || github.ref_type == 'tag' || github.ref_protected
         run: |
-          bash .github/bin/split.bash push "${{ matrix.package }}" "https://x-access-token:${SHOPWELL_SPLIT_TOKEN}@github.com/shopwell-shop" "${{ github.ref_name }}"
+          bash .github/bin/split.bash push "${{ matrix.package }}" "https://x-access-token:${SHOPWELL_SPLIT_TOKEN}@github.com/shopwell-shop" "${{ inputs.release_version || github.ref_name }}"
 
       - name: Push temporary branch
-        if: github.ref_type != 'tag' && !github.ref_protected && !env.ACT
+        if: inputs.release_version == '' && github.ref_type != 'tag' && !github.ref_protected && !env.ACT
         run: |
           bash .github/bin/split.bash push "${{ matrix.package }}" "https://x-access-token:${SHOPWELL_SPLIT_TOKEN}@github.com/shopwell-shop" "tmp-${{ github.sha }}"
 
@@ -196,10 +210,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # set dry run if it's not a tag
-          DRY_RUN: ${{ github.ref_type != 'tag' && '1' || '' }}
+          DRY_RUN: ${{ inputs.release_version == '' && github.ref_type != 'tag' && '1' || '' }}
         run: |
           echo DRY_RUN: "${DRY_RUN}"
-          bash .github/bin/create_github_release.bash draft "${{ github.ref_name }}"
+          bash .github/bin/create_github_release.bash draft "${{ inputs.release_version || github.ref_name }}"
 
   create-sbp-release:
     needs: split
@@ -212,7 +226,7 @@ jobs:
       SBP_API_URL: ${{ secrets[format('SBP_API_URL_{0}', matrix.sbp-environment)] }}
       SBP_TOKEN: ${{ secrets[format('SBP_API_TOKEN_{0}', matrix.sbp-environment)] }}
       # set dry run if it's not a tag
-      DRY_RUN: ${{ github.ref_type != 'tag' && '1' || '' }}
+      DRY_RUN: ${{ inputs.release_version == '' && github.ref_type != 'tag' && '1' || '' }}
     continue-on-error: true
     steps:
       - name: Checkout
@@ -220,12 +234,12 @@ jobs:
       - name: Create sbp release
         run: |
           echo DRY_RUN: "${DRY_RUN}"
-          bash .github/bin/sbp_release.bash create "${{ github.ref_type == 'tag' && github.ref_name || 'v6.7.9999999.9999999-dev' }}"
+          bash .github/bin/sbp_release.bash create "${{ inputs.release_version || (github.ref_type == 'tag' && github.ref_name || 'v6.7.9999999.9999999-dev') }}"
 
   update-milestones:
     needs: split
     runs-on: ubuntu-24.04
-    if: github.repository == 'shopwell-shop/shopwell' && github.ref_type == 'tag'
+    if: github.repository == 'shopwell-shop/shopwell' && (inputs.release_version != '' || github.ref_type == 'tag')
     permissions:
       contents: read
       issues: write
@@ -237,7 +251,7 @@ jobs:
         run: npm ci --prefix .github/bin/js/
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.release_version || github.ref_name }}
           DRY_RUN: ${{ vars.UPDATE_MILESTONES_DRY_RUN || 'true' }}
         with:
           script: |
