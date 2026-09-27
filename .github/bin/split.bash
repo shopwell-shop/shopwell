@@ -181,6 +181,25 @@ push() {
   git -C "${PLATFORM_DIR}/repos/${package_lower}" fetch -q upstream
 
   if git -C "${PLATFORM_DIR}/repos/${package_lower}" show-ref --verify "refs/tags/${target_ref}" > /dev/null 2>&1 ; then
+    local remote_tag_ref; remote_tag_ref="refs/shopwell-remote-tags/${target_ref}"
+
+    if git -C "${PLATFORM_DIR}/repos/${package_lower}" ls-remote --exit-code --tags upstream "refs/tags/${target_ref}" > /dev/null 2>&1; then
+      git -C "${PLATFORM_DIR}/repos/${package_lower}" fetch -q upstream "refs/tags/${target_ref}:${remote_tag_ref}"
+
+      local local_tree; local_tree=$(git -C "${PLATFORM_DIR}/repos/${package_lower}" rev-parse "refs/tags/${target_ref}^{tree}")
+      local remote_tree; remote_tree=$(git -C "${PLATFORM_DIR}/repos/${package_lower}" rev-parse "${remote_tag_ref}^{tree}")
+
+      # Release tags are immutable. A retry may generate a different commit with
+      # the same files, but it must never replace published package contents.
+      if [ "${local_tree}" = "${remote_tree}" ]; then
+        printf "INFO: Tag %s already publishes the same %s tree; nothing to push.\n" "${target_ref}" "${package_lower}"
+        return 0
+      fi
+
+      printf "ERROR: Tag %s already exists for %s with different contents; refusing to overwrite it.\n" "${target_ref}" "${package_lower}" >&2
+      return 1
+    fi
+
     git -C "${PLATFORM_DIR}/repos/${package_lower}" push upstream "refs/tags/${target_ref}:refs/tags/${target_ref}"
   else
     if git -C "${PLATFORM_DIR}/repos/${package_lower}" show-ref --verify "refs/remotes/upstream/${target_ref}" > /dev/null 2>&1 \

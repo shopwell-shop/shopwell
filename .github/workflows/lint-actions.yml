@@ -11,6 +11,8 @@ on:
       - ".github/actionlint.yaml"
       - ".github/zizmor.yml"
       - ".github/bin/lint-actions.bash"
+      - ".github/bin/split.bash"
+      - ".github/bin/split.test.bash"
       - ".github/bin/js/**"
       - ".yamlfmt"
   workflow_dispatch:
@@ -73,3 +75,6 @@ jobs:
       # dependency-free unit tests for the automation modules under .github/bin/js
       - name: Test automation scripts
         run: cd .github/bin/js && node --test
+
+      - name: Test split publication
+        run: bash .github/bin/split.test.bash
