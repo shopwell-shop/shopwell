@@ -2,7 +2,7 @@
     "require-dev": {
         "shopwell/shopwell-rector": "0.5.13",
         "phpstan/phpstan": "2.2.5",
-        "rector/rector": "2.5.7"
+        "rector/rector": "^2.6.2"
     },
     "sort-packages": true
 }
