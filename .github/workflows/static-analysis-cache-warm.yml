@@ -24,7 +24,7 @@ jobs:
     name: "PHPStan cache warm"
     steps:
       - name: Setup Shopwell
-        uses: shopwell-shop/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@09547108e5c5cfdf4ec37646e018ac0b7a7c26ed
         with:
           shopwell-version: ${{ github.ref }}
           shopwell-repository: ${{ github.repository }}
@@ -60,7 +60,7 @@ jobs:
     name: "Rector cache warm"
     steps:
       - name: Setup Shopwell
-        uses: shopwell-shop/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@09547108e5c5cfdf4ec37646e018ac0b7a7c26ed
         with:
           shopwell-version: ${{ github.ref }}
           shopwell-repository: ${{ github.repository }}

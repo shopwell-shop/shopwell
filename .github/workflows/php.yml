@@ -62,7 +62,7 @@ jobs:
           working-directory: ""
 
       - name: Setup Shopwell
-        uses: shopwell-shop/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@09547108e5c5cfdf4ec37646e018ac0b7a7c26ed
         with:
           shopwell-version: ${{ github.ref }}
           shopwell-repository: ${{ github.repository }}
@@ -106,7 +106,7 @@ jobs:
     name: "PHPStan"
     steps:
       - name: Setup Shopwell
-        uses: shopwell-shop/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@09547108e5c5cfdf4ec37646e018ac0b7a7c26ed
         with:
           shopwell-version: ${{ github.ref }}
           shopwell-repository: ${{ github.repository }}
@@ -144,7 +144,7 @@ jobs:
     name: "Rector"
     steps:
       - name: Setup Shopwell
-        uses: shopwell-shop/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@09547108e5c5cfdf4ec37646e018ac0b7a7c26ed
         with:
           shopwell-version: ${{ github.ref }}
           shopwell-repository: ${{ github.repository }}
@@ -218,7 +218,7 @@ jobs:
       DATABASE_HOST: "127.0.0.1"
     steps:
       - name: Setup Shopwell
-        uses: shopwell-shop/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@09547108e5c5cfdf4ec37646e018ac0b7a7c26ed
         with:
           env: prod
           install: true
@@ -394,7 +394,7 @@ jobs:
     name: "PHP license check"
     steps:
       - name: Setup Shopwell
-        uses: shopwell-shop/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@09547108e5c5cfdf4ec37646e018ac0b7a7c26ed
         with:
           shopwell-version: ${{ github.ref }}
           shopwell-repository: ${{ github.repository }}
@@ -431,7 +431,7 @@ jobs:
     if: inputs.nightly == 'true'
     steps:
       - name: Setup Shopwell
-        uses: shopwell-shop/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@09547108e5c5cfdf4ec37646e018ac0b7a7c26ed
         with:
           shopwell-version: ${{ github.ref }}
           shopwell-repository: ${{ github.repository }}

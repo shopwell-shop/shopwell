@@ -147,9 +147,11 @@ the exception has to be narrow.
 - Prefer an established action or library over hand-rolled Bash or JavaScript.
 - Do not parse JSON, YAML, or Markdown in Bash. Use `jq`, or move the logic into
   a script (below).
-- Pin third-party actions to a commit hash with a version comment
-  (`uses: actions/checkout@9c091bb… # v7.0.0`). `shopwell/*` actions may use a
-  mutable ref such as `@main`.
+- Pin every external action, including `shopwell-shop/*`, to a full commit hash.
+  Third-party pins also carry a version comment
+  (`uses: actions/checkout@9c091bb… # v7.0.0`). After syncing a Shopwell action,
+  update its consumer pins explicitly; mutable refs such as `@main` are rejected
+  by the workflow security audit.
 
 ## Logic lives in a tested script
 

@@ -26,7 +26,7 @@ runs:
   using: composite
   steps:
     - name: Setup Shopwell
-      uses: shopwell-shop/setup-shopwell@main
+      uses: shopwell-shop/setup-shopwell@09547108e5c5cfdf4ec37646e018ac0b7a7c26ed
       with:
         php-version: ${{ inputs.php-version }}
         mysql-version: ${{ inputs.mysql-version }}

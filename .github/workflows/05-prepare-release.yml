@@ -19,9 +19,23 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  release-status:
     runs-on: ubuntu-24.04
     if: github.repository == 'shopwell-shop/shopwell'
+    outputs:
+      already-published: ${{ steps.publication.outputs.already-published }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check immutable release publications
+        id: publication
+        run: node .github/bin/js/check-release-publication.ts "${{ inputs.release_version }}"
+
+  build:
+    needs: release-status
+    runs-on: ubuntu-24.04
+    if: github.repository == 'shopwell-shop/shopwell' && needs.release-status.outputs.already-published != 'true'
     env:
       SHOPWELL_ADMIN_SKIP_SOURCEMAP_GENERATION: "1"
       DATABASE_URL: mysql://root:root@127.0.0.1:3306/root
@@ -77,8 +91,9 @@ jobs:
             !vendor-bin
 
   check-recipe:
+    needs: release-status
     runs-on: ubuntu-24.04
-    if: github.repository == 'shopwell-shop/shopwell' && (inputs.release_version != '' || github.ref_type == 'tag') && !inputs.skip_recipe_check
+    if: github.repository == 'shopwell-shop/shopwell' && needs.release-status.outputs.already-published != 'true' && (inputs.release_version != '' || github.ref_type == 'tag') && !inputs.skip_recipe_check
     env:
       GH_TOKEN: ${{ github.token }}
       CHECK_REPOSITORY: "shopwell-shop/recipes"

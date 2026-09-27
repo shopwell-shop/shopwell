@@ -226,7 +226,7 @@ jobs:
       - name: Create shopwell dirs
         run: mkdir -p old-shopwell new-shopwell
       - name: Setup new Shopwell
-        uses: shopwell-shop/setup-shopwell@main
+        uses: shopwell-shop/setup-shopwell@09547108e5c5cfdf4ec37646e018ac0b7a7c26ed
         env:
           COMPOSER_ROOT_VERSION: 6.7.9999999-dev
         with:

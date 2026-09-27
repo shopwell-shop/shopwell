@@ -115,7 +115,7 @@ runs:
         echo "ENABLE_SERVICES=0" >> $GITHUB_ENV
 
     - name: Setup Shopwell
-      uses: shopwell-shop/setup-shopwell@main
+      uses: shopwell-shop/setup-shopwell@09547108e5c5cfdf4ec37646e018ac0b7a7c26ed
       with:
         mysql-version: "builtin"
         npm-version: 11.8.0
