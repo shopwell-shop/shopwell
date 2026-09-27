@@ -1,6 +1,6 @@
 {
     "require-dev": {
-        "shopwell/shopwell-rector": "0.5.13",
+        "shopwell/shopwell-rector": "0.5.14",
         "phpstan/phpstan": "2.2.13",
         "rector/rector": "^2.6.2"
     },
