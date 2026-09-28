@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\Version;
+namespace Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition;
 
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\CalculatedPriceField;

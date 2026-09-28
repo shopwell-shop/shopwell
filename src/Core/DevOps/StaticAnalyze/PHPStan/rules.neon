@@ -5,6 +5,7 @@ rules:
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\RuleConditionHasRuleConfigRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoFlowStoreFunctionRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoUnserializeUsageRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoStripTagsRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoEnvironmentHelperInsideCompilerPassRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoFileExistsRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoSuperGlobalsInsideCompilerPassRule
@@ -35,6 +36,8 @@ rules:
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoAssertsOnObjectsRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoDependsWithDataProviderRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoExpectExceptionMessageRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoKernelInUnitTestsRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoKernelLifecycleManagerInUnitTestsRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoKernelBootInSetUpBeforeClassRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoMockBuilderConstructorBypassRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\PHPUnitClassAttributesOverAnnotationsRule

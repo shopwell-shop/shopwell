@@ -114,6 +114,7 @@ use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\Framework\Util\Backtrace\BacktraceCollector;
 use Shopwell\Core\Framework\Util\HtmlPurifierConfigProvider;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
+use Shopwell\Core\Framework\Validation\Constraint\NoHtmlValidator;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\Kernel;
 use Shopwell\Core\System\Currency\CurrencyFormatter;
@@ -856,6 +857,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(HtmlPurifierConfigProvider::class),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
+
+    $services->set(NoHtmlValidator::class)
+        ->args([
+            service(HtmlSanitizer::class),
+        ])
+        ->tag('validator.constraint_validator');
 
     $services->set(ExcludeExceptionHandler::class)
         ->decorate('monolog.handler.main', null, 0, ContainerInterface::IGNORE_ON_INVALID_REFERENCE)

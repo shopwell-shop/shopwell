@@ -8,7 +8,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
-use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Translations;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
@@ -34,7 +33,7 @@ class MeasurementDisplayUnitEntity extends EntityStruct
     #[ForeignKey(entity: 'measurement_system', api: true)]
     public string $measurementSystemId;
 
-    #[ManyToOne(entity: 'measurement_system', onDelete: OnDelete::CASCADE, api: true)]
+    #[ManyToOne(entity: 'measurement_system', api: true)]
     public ?MeasurementSystemEntity $measurementSystem = null;
 
     #[Field(type: FieldType::BOOL, api: true)]

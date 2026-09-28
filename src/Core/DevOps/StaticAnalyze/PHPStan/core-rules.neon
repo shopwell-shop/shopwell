@@ -1,10 +1,12 @@
 includes:
     - tagged-service-contracts.php
+    - store-api-route-extensions.neon
 
 parameters:
     shopwellTaggedServiceContractAdditionalTagContracts: []
 
 parametersSchema:
+    shopwellLegacyStoreApiRouteMethods: listOf(string())
     shopwellTaggedServiceContractTagContracts: arrayOf(anyOf(string(), listOf(string())), string())
     shopwellTaggedServiceContractAdditionalTagContracts: arrayOf(anyOf(string(), listOf(string())), string())
 
@@ -46,6 +48,13 @@ services:
         arguments:
             deprecationPatterns:
                 - @Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedServiceDecoratorPattern
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\StoreApiRouteExtensionRule
+        arguments:
+            legacyRouteMethods: %shopwellLegacyStoreApiRouteMethods%
         tags:
             - phpstan.rules.rule
 

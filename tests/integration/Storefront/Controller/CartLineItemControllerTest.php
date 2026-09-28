@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\Seo\StorefrontSalesChannelTestHelper;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Util\HtmlSanitizer;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
@@ -66,7 +67,7 @@ class CartLineItemControllerTest extends TestCase
             static::assertNotNull($cartLineItem);
         } else {
             static::assertArrayHasKey('danger', $flashBagEntries);
-            static::assertSame(static::getContainer()->get('translator')->trans('error.productNotFound', ['%number%' => \strip_tags($productNumber)]), $flashBagEntries['danger'][0]);
+            static::assertSame(static::getContainer()->get('translator')->trans('error.productNotFound', ['%number%' => static::getContainer()->get(HtmlSanitizer::class)->sanitize($productNumber, null, true)]), $flashBagEntries['danger'][0]);
             static::assertNull($cartLineItem);
         }
         static::assertSame(200, $response->getStatusCode());
@@ -120,7 +121,7 @@ class CartLineItemControllerTest extends TestCase
         } else {
             $flashes = $flashBag->get('danger');
             static::assertNotEmpty($flashes);
-            static::assertSame(static::getContainer()->get('translator')->trans('error.productNotFound', ['%number%' => \strip_tags($productNumber)]), $flashes[0]);
+            static::assertSame(static::getContainer()->get('translator')->trans('error.productNotFound', ['%number%' => static::getContainer()->get(HtmlSanitizer::class)->sanitize($productNumber, null, true)]), $flashes[0]);
             static::assertNull($cartLineItem);
         }
         static::assertSame(200, $response->getStatusCode());
@@ -192,7 +193,7 @@ class CartLineItemControllerTest extends TestCase
         $flashBagEntries = $this->getFlashBag()->all();
 
         static::assertArrayHasKey('danger', $flashBagEntries);
-        static::assertSame(static::getContainer()->get('translator')->trans('checkout.promotion-not-found', ['%code%' => \strip_tags('testCode')]), $flashBagEntries['danger'][0]);
+        static::assertSame(static::getContainer()->get('translator')->trans('checkout.promotion-not-found', ['%code%' => 'testCode']), $flashBagEntries['danger'][0]);
         static::assertCount(0, $cartService->getCart($contextToken, $salesChannelContext)->getLineItems());
     }
 

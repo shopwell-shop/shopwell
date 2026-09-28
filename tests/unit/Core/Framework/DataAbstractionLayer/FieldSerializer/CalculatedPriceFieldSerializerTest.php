@@ -19,16 +19,16 @@ use Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\CalculatedPrice
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommandQueue;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\DataStack\KeyValuePair;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteContext;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteParameterBag;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\DataAbstractionLayerFieldTestBehaviour;
-use Shopwell\Core\Framework\Test\TestCaseBase\CacheTestBehaviour;
-use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\CalculatedPriceFieldTestDefinition;
 use Shopwell\Core\Framework\Validation\WriteConstraintViolationException;
-use Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\Version\CalculatedPriceFieldTestDefinition;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticDefinitionInstanceRegistry;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Component\Validator\Validation;
 
 /**
  * @internal
@@ -37,10 +37,6 @@ use Symfony\Component\Validator\ConstraintViolationList;
 #[CoversClass(CalculatedPriceFieldSerializer::class)]
 class CalculatedPriceFieldSerializerTest extends TestCase
 {
-    use CacheTestBehaviour;
-    use DataAbstractionLayerFieldTestBehaviour;
-    use KernelTestBehaviour;
-
     private CalculatedPriceFieldSerializer $serializer;
 
     private CalculatedPriceField $field;
@@ -51,10 +47,16 @@ class CalculatedPriceFieldSerializerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->serializer = static::getContainer()->get(CalculatedPriceFieldSerializer::class);
+        $validator = Validation::createValidator();
+        $registry = new StaticDefinitionInstanceRegistry(
+            [CalculatedPriceFieldTestDefinition::class],
+            $validator,
+            static::createStub(EntityWriteGatewayInterface::class),
+        );
+        $this->serializer = new CalculatedPriceFieldSerializer($validator, $registry);
         $this->field = new CalculatedPriceField('calculatedPrice', 'calculatedPrice');
 
-        $definition = $this->registerDefinition(CalculatedPriceFieldTestDefinition::class);
+        $definition = $registry->get(CalculatedPriceFieldTestDefinition::class);
         $this->existence = new EntityExistence($definition->getEntityName(), [], false, false, false, []);
 
         $this->parameters = new WriteParameterBag(

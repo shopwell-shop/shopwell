@@ -7,6 +7,7 @@ use Shopwell\Core\Content\Test\TestNavigationSeoUrlRoute;
 use Shopwell\Core\Content\Test\TestProductSeoUrlRoute;
 use Shopwell\Core\Framework\Telemetry\Metrics\Config\TransportConfigProvider;
 use Shopwell\Core\Framework\Telemetry\Metrics\Transport\TransportCollection;
+use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\CalculatedPriceFieldTestDefinition;
 use Shopwell\Core\Framework\Test\Telemetry\Factory\TraceableTransportFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Tests\Integration\Core\Content\Seo\SalesChannel\FixturesPhp\StoreApiSeoResolverTestRoute;
@@ -18,7 +19,6 @@ use Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\fixture\Attri
 use Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\fixture\AttributeEntityWithInheritance;
 use Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\fixture\AttributeEntityWithSearchRanking;
 use Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\fixture\DummyHydrator;
-use Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\Version\CalculatedPriceFieldTestDefinition;
 use Shopwell\Tests\Unit\Core\Checkout\Cart\TaxProvider\_fixtures\TestConstantTaxRateProvider;
 use Shopwell\Tests\Unit\Core\Checkout\Cart\TaxProvider\_fixtures\TestEmptyTaxProvider;
 use Shopwell\Tests\Unit\Core\Checkout\Cart\TaxProvider\_fixtures\TestGenericExceptionTaxProvider;
