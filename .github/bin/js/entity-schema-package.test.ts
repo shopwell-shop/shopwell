@@ -9,6 +9,7 @@ import {
     entitySchemaPackageVersion,
     manifestProblems,
     releaseTagFromEnvironment,
+    tagProblems,
 } from './entity-schema-package.ts';
 
 const manifestFor = (version = '7.15.0'): Record<string, unknown> => ({
@@ -56,6 +57,20 @@ test('falls back to the GitHub ref name when the generator variable is absent', 
 
 test('fails rather than guessing when no tag is available', () => {
     assert.throws(() => releaseTagFromEnvironment({}), /cannot tell which release is being published/);
+});
+
+test('publishes a release tag pushed as a tag', () => {
+    assert.deepEqual(tagProblems('7.15.0', 'push'), []);
+});
+
+test('refuses a release candidate that a tag push would otherwise publish', () => {
+    assert.deepEqual(tagProblems('5.0.0-rc2', 'push'), [
+        '5.0.0-rc2 is a release candidate and a tag push publishes releases only; dispatch this workflow with the tag as its input to publish it on purpose',
+    ]);
+});
+
+test('publishes a release candidate the workflow was dispatched for', () => {
+    assert.deepEqual(tagProblems('5.0.0-rc2', 'workflow_dispatch'), []);
 });
 
 test('accepts the manifest the generator is expected to write', () => {

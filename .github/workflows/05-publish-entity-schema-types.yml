@@ -12,9 +12,11 @@ name: Publish entity schema types
 on:
   push:
     tags:
-      # Release tags only. A release candidate (v6.7.15.0-rc1) is deliberately not published to npm
-      # on push — dispatch it by hand when one is wanted.
-      - 'v6.[0-9]*.[0-9]*.[0-9]*.[0-9]*'
+      # The shape of a release tag, v6.<minor>.<patch>.<build>, so a tag of another shape does not
+      # start a job that can only fail. Whether a matching tag may be published is decided in the
+      # guard script below, which is unit tested and rejects release candidates; a tag pattern is the
+      # wrong place for that rule, and numbers in it are easy to get wrong.
+      - 'v6.[0-9]*.[0-9]*.[0-9]*'
   workflow_dispatch:
     inputs:
       release_version:
