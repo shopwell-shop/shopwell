@@ -216,6 +216,14 @@ The group order in the permissions grid of Settings > Users & permissions follow
 
 The order is the `parentOrder` computed of `sw-users-permissions-permissions-grid`, and label lookups go through its `parentLabel()` method; both can be overridden to place an extension's group.
 
+### Entity schema types are published to npm
+
+The TypeScript definitions describing the entity schema are published to npm as `@shopwell-ag/entity-schema-types`, so an extension can type against the schema of the Shopwell version it is built for instead of restating it:
+
+```bash
+npm install --save-dev @shopwell-ag/entity-schema-types
+```
+
 ## Storefront
 
 ### Checkout form data is kept in the session storage

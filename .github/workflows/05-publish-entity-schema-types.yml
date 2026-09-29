@@ -1,0 +1,83 @@
+name: Publish entity schema types
+# Publishes @shopwell-ag/entity-schema-types — the TypeScript definition of the entity schema — to
+# npm. Unlike the four split packages it has no repository of its own: this repository generates the
+# package from its own schema and publishes it in one step, which is also how it is done upstream.
+#
+# Authentication is npm trusted publishing (OIDC), so no long-lived npm token is stored. The
+# package's "Trusted publishing" settings must keep naming this workflow file, shopwell-shop/shopwell
+# and no environment: the OIDC token carries exactly those claims and a mismatch fails the upload.
+#
+# Rule and reasoning: .github/bin/js/entity-schema-package.ts
+
+on:
+  push:
+    tags:
+      # Release tags only. A release candidate (v6.7.15.0-rc1) is deliberately not published to npm
+      # on push — dispatch it by hand when one is wanted.
+      - 'v6.[0-9]*.[0-9]*.[0-9]*.[0-9]*'
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Release tag to publish, e.g. v6.7.15.0. Defaults to the dispatched ref."
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+  id-token: write # exchanged by npm for a short-lived publish token
+
+concurrency:
+  group: entity-schema-types-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-24.04
+    # sync.yml mirrors every workflow into shopwell-private, which has no trusted publisher; the
+    # package belongs to the public repository only.
+    if: github.repository == 'shopwell-shop/shopwell'
+    env:
+      # The generator is upstream code and reads the GitLab variable name, so the release tag is
+      # passed through under that name rather than forking the script for GitHub.
+      CI_COMMIT_TAG: ${{ inputs.release_version || github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.release_version || github.ref_name }}
+
+      - name: Setup Node
+        # Not lts/*: npm trusted publishing needs the npm CLI 11.5.1 or later, which ships from
+        # node 22.14 onwards.
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false # a release build must not restore a cached tree
+
+      - name: Derive the npm version
+        id: package
+        run: node .github/bin/js/entity-schema-package.ts derive
+
+      - name: Install Administration dependencies
+        if: steps.package.outputs.already_published != 'true'
+        run: npm --prefix src/Administration/Resources/app/administration ci
+
+      - name: Generate the package
+        if: steps.package.outputs.already_published != 'true'
+        run: npm --prefix src/Administration/Resources/app/administration run generate-entity-schema-package
+
+      # The generator exiting successfully is not evidence that it wrote a publishable package, so
+      # the artefact is asserted on its own rather than trusted.
+      - name: Verify the generated package
+        if: steps.package.outputs.already_published != 'true'
+        env:
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+        run: node .github/bin/js/entity-schema-package.ts verify
+
+      - name: Publish
+        if: steps.package.outputs.already_published != 'true'
+        working-directory: src/Administration/Resources/app/administration/entity-schema-types
+        run: npm publish
