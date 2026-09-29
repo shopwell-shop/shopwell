@@ -919,7 +919,7 @@ class CreditNoteRendererTest extends TestCase
                 'en-GB' => [
                     'name' => 'Net price customer group',
                 ],
-                'de-DE' => [
+                'zh-CN' => [
                     'name' => 'Nettopreis-Kundengruppe',
                 ],
             ],
@@ -940,7 +940,7 @@ class CreditNoteRendererTest extends TestCase
                 'en-GB' => [
                     'name' => 'Standard customer group',
                 ],
-                'de-DE' => [
+                'zh-CN' => [
                     'name' => 'Standard-Kundengruppe',
                 ],
             ],

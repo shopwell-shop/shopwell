@@ -21,8 +21,8 @@ class Migration1756296414UpdateSnippetSetBaseFiles extends MigrationStep
     {
         $sql = <<<'SQL'
             UPDATE `snippet_set`
-            SET base_file = REPLACE(REPLACE(`base_file`, 'de-DE', 'de'), 'en-GB', 'en')
-            WHERE `base_file` IN ('messages.de-DE', 'messages.en-GB')
+            SET base_file = REPLACE(REPLACE(`base_file`, 'zh-CN', 'zh'), 'en-GB', 'en')
+            WHERE `base_file` IN ('messages.zh-CN', 'messages.en-GB')
         SQL;
 
         $connection->executeStatement($sql);

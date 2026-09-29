@@ -72,10 +72,10 @@ describe('ASYNC app/adapter/view/vue.adapter.js', () => {
             });
         }
 
-        Shopwell.Store.get('system').locales = ['en-GB', 'de-DE'];
+        Shopwell.Store.get('system').locales = ['en-GB', 'zh-CN'];
 
         Shopwell.Store.get('session').setAdminLocaleState({
-            locales: ['en-GB', 'de-DE'],
+            locales: ['en-GB', 'zh-CN'],
             locale: 'en-GB',
             languageId: '12345678',
         });
@@ -925,10 +925,10 @@ describe('ASYNC app/adapter/view/vue.adapter.js', () => {
         });
 
         it('should update the i18n global locale to update the locale in UI when the locale in the session store changes', async () => {
-            const expectedLocale = 'de-DE';
+            const expectedLocale = 'zh-CN';
 
             Shopwell.Store.get('session').setAdminLocaleState({
-                locales: ['en-GB', 'de-DE'],
+                locales: ['en-GB', 'zh-CN'],
                 locale: expectedLocale,
                 languageId: '12345678',
             });

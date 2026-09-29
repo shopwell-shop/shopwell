@@ -44,8 +44,8 @@ class Migration1665267882RenameCountryVat extends MigrationStep
         if (($currentTranslations['en-GB'] ?? null) === 'Holy See') {
             $replacements['en-GB'] = 'Vatican City';
         }
-        if (($currentTranslations['de-DE'] ?? null) === 'Heiliger Stuhl') {
-            $replacements['de-DE'] = 'Staat Vatikanstadt';
+        if (($currentTranslations['zh-CN'] ?? null) === '教廷') {
+            $replacements['zh-CN'] = '梵蒂冈';
         }
         if ($replacements === []) {
             return;

@@ -224,10 +224,10 @@ describe('core/service/documentV2.service.ts', () => {
 
     it('resolves an app document type label from the locale map for the current admin locale', () => {
         const documentV2Service = new DocumentV2Service();
-        const getSpy = jest.spyOn(Shopwell.Store, 'get').mockReturnValue({ currentLocale: 'de-DE' });
+        const getSpy = jest.spyOn(Shopwell.Store, 'get').mockReturnValue({ currentLocale: 'zh-CN' });
 
-        expect(documentV2Service.getDocumentTypeLabel('swag_warranty', { 'en-GB': 'Warranty', 'de-DE': 'Garantie' })).toBe(
-            'Garantie',
+        expect(documentV2Service.getDocumentTypeLabel('swag_warranty', { 'en-GB': 'Warranty', 'zh-CN': '保修' })).toBe(
+            '保修',
         );
 
         getSpy.mockRestore();

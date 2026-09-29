@@ -10,7 +10,7 @@
     "extra": {
         "shopwell-plugin-class": "{{ namespace }}\\{{ className }}",
         "label": {
-            "de-DE": "Skeleton plugin",
+            "zh-CN": "骨架插件",
             "en-GB": "Skeleton plugin"
         }
     },

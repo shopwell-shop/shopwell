@@ -91,7 +91,7 @@ class ImportTranslationTraitTest extends TestCase
             [
                 'id' => Uuid::fromHexToBytes($ids->create('german')),
                 'name' => 'test',
-                'locale_id' => $this->getLocaleId('de-DE'),
+                'locale_id' => $this->getLocaleId('zh-CN'),
                 'translation_code_id' => Uuid::fromHexToBytes($ids->get('firstLocale')),
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             ],

@@ -60,8 +60,8 @@ class SalesChannelCreateStorefrontCommandTest extends TestCase
     public static function dataProviderTestExecuteCommandSuccess(): \Generator
     {
         yield 'should success with valid iso code' => [
-            'isoCode' => 'de_DE',
-            'isoCodeExpected' => 'de-DE',
+            'isoCode' => 'zh_CN',
+            'isoCodeExpected' => 'zh-CN',
         ];
 
         yield 'should success with invalid iso code' => [

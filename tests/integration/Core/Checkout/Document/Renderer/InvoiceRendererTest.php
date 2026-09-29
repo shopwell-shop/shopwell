@@ -89,7 +89,7 @@ class InvoiceRendererTest extends TestCase
 
         $this->salesChannelContext->setRuleIds([$priceRuleId]);
         $this->invoiceRenderer = static::getContainer()->get(InvoiceRenderer::class);
-        self::$deLanguageId = $this->getDeDeLanguageId();
+        self::$deLanguageId = $this->getZhCnLanguageId();
     }
 
     protected function tearDown(): void
@@ -314,11 +314,11 @@ class InvoiceRendererTest extends TestCase
 
                 static::assertNotFalse($formattedDate);
                 static::assertStringContainsString(
-                    \sprintf('Datum %s', $formattedDate),
+                    \sprintf('日期 %s', $formattedDate),
                     $rendered->getContent()
                 );
 
-                static::assertStringContainsString('<html lang="de-DE">', $rendered->getContent());
+                static::assertStringContainsString('<html lang="zh-CN">', $rendered->getContent());
                 static::assertStringContainsString('</html>', $rendered->getContent());
             },
         ];

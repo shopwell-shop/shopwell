@@ -25,15 +25,15 @@ class ElasticsearchFieldBuilderTest extends TestCase
 {
     public function testBuildTranslatedField(): void
     {
-        $deLanguageId = Uuid::randomHex();
+        $zhLanguageId = Uuid::randomHex();
         $enLanguageId = Uuid::randomHex();
         $enInheritedLanguageId = Uuid::randomHex();
 
         $languageLoader = new StaticLanguageLoader([
-            $deLanguageId => [
-                'id' => $deLanguageId,
+            $zhLanguageId => [
+                'id' => $zhLanguageId,
                 'parentId' => 'parentId',
-                'code' => 'de-DE',
+                'code' => 'zh-CN',
             ],
             $enLanguageId => [
                 'id' => $enLanguageId,
@@ -64,18 +64,17 @@ class ElasticsearchFieldBuilderTest extends TestCase
 
         $builder = new ElasticsearchFieldBuilder($languageLoader, $utils, [
             'en' => 'sw_english_analyzer',
-            'de' => 'sw_german_analyzer',
         ]);
 
         $result = $builder->translated(AbstractElasticsearchDefinition::SEARCH_FIELD);
 
         static::assertSame([
             'properties' => [
-                $deLanguageId => [
+                $zhLanguageId => [
                     'fields' => [
                         'search' => [
                             'type' => 'text',
-                            'analyzer' => 'sw_german_analyzer',
+                            'analyzer' => 'sw_whitespace_analyzer',
                         ],
                         'ngram' => [
                             'type' => 'text',
@@ -113,14 +112,14 @@ class ElasticsearchFieldBuilderTest extends TestCase
 
     public function testBuildTranslatedTechnicalField(): void
     {
-        $deLanguageId = Uuid::randomHex();
+        $zhLanguageId = Uuid::randomHex();
         $enLanguageId = Uuid::randomHex();
 
         $languageLoader = new StaticLanguageLoader([
-            $deLanguageId => [
-                'id' => $deLanguageId,
+            $zhLanguageId => [
+                'id' => $zhLanguageId,
                 'parentId' => 'parentId',
-                'code' => 'de-DE',
+                'code' => 'zh-CN',
             ],
             $enLanguageId => [
                 'id' => $enLanguageId,
@@ -142,19 +141,18 @@ class ElasticsearchFieldBuilderTest extends TestCase
 
         $builder = new ElasticsearchFieldBuilder($languageLoader, $utils, [
             'en' => 'sw_english_analyzer',
-            'de' => 'sw_german_analyzer',
         ]);
 
         $result = $builder->translated(AbstractElasticsearchDefinition::TECHNICAL_TERM_SEARCH_FIELD);
 
         static::assertSame([
             'properties' => [
-                $deLanguageId => [
+                $zhLanguageId => [
                     'fields' => [
                         'search' => [
                             'type' => 'text',
-                            'analyzer' => 'sw_german_technical_term_index_analyzer',
-                            'search_analyzer' => 'sw_german_technical_term_search_analyzer',
+                            'analyzer' => 'sw_whitespace_technical_term_index_analyzer',
+                            'search_analyzer' => 'sw_whitespace_technical_term_search_analyzer',
                         ],
                         'ngram' => [
                             'type' => 'text',
@@ -181,14 +179,14 @@ class ElasticsearchFieldBuilderTest extends TestCase
 
     public function testBuildTranslatedCustomFields(): void
     {
-        $deLanguageId = Uuid::randomHex();
+        $zhLanguageId = Uuid::randomHex();
         $enLanguageId = Uuid::randomHex();
 
         $languageLoader = new StaticLanguageLoader([
-            $deLanguageId => [
-                'id' => $deLanguageId,
+            $zhLanguageId => [
+                'id' => $zhLanguageId,
                 'parentId' => 'parentId',
-                'code' => 'de-DE',
+                'code' => 'zh-CN',
             ],
             $enLanguageId => [
                 'id' => $enLanguageId,
@@ -220,7 +218,7 @@ class ElasticsearchFieldBuilderTest extends TestCase
 
         static::assertSame([
             'properties' => [
-                $deLanguageId => [
+                $zhLanguageId => [
                     'type' => 'object',
                     'dynamic' => true,
                     'properties' => [

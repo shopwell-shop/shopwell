@@ -4,7 +4,7 @@
 
     <card>
         <title>Configuration</title>
-        <title lang="de-DE">Konfiguration</title>
+        <title lang="zh-CN">配置</title>
         <input-field type="int">
             <name>intField</name>
             <label>Test field with default value</label>

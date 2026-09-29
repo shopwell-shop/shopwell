@@ -1,0 +1,163 @@
+{
+  "sw-product-stream": {
+    "general": {
+      "mainMenuItemGeneral": "动态商品组",
+      "placeholderSearchBar": "搜索动态商品组…",
+      "descriptionTextModule": "在此管理动态商品组。",
+      "errorCategory": "\"{name}\" 为某个分类提供了商品分配，因此无法删除。| \"{name}\" 为 {count} 个分类提供了商品分配，因此无法删除。"
+    },
+    "acl": {
+      "conditionsAlertHeading": "权限不足",
+      "conditionsAlertDescription": "你没有足够的权限执行 \"条件\" 区域中的所有操作。"
+    },
+    "list": {
+      "textProductStreamOverview": "动态商品组",
+      "columnName": "名称",
+      "columnDescription": "描述",
+      "columnDateUpdated": "修改日期",
+      "columnStatus": "状态",
+      "titleSidebarItemRefresh": "刷新",
+      "buttonAddProductStream": "新建商品组",
+      "status": {
+        "valid": "有效",
+        "invalid": "无效"
+      },
+      "messageEmpty": "暂无动态商品组"
+    },
+    "filter": {
+      "placeholderFieldSelect": "选择属性 ...",
+      "placeholderOperatorSelect": "选择运算符 ...",
+      "valid": "仅显示有效的商品组",
+      "type": {
+        "equals": "等于",
+        "equalsAny": "其中一个",
+        "equalsAll": "其中全部",
+        "contains": "包含",
+        "greaterThan": "大于",
+        "lessThan": "小于",
+        "greaterThanEquals": "大于/等于",
+        "lessThanEquals": "小于等于",
+        "notEquals": "不等于",
+        "notEqualsAny": "其中都没有",
+        "notEqualsAll": "除...之外全部",
+        "notContains": "不包含",
+        "range": "介于",
+        "since": "起始时间",
+        "until": "时间至"
+      },
+      "timeUnits": {
+        "days": "天"
+      },
+      "values": {
+        "active": "启用",
+        "availableStock": "可用库存",
+        "ratingAverage": "平均评分",
+        "category": "分类",
+        "additionalText": "附加文本",
+        "allowNotification": "允许通知",
+        "customFields": "自定义字段",
+        "categories": "分类",
+        "categoriesRo": "分类",
+        "cheapestPrice": "价格",
+        "choose": "选择",
+        "coverId": "有封面图",
+        "createdAt": "创建日期",
+        "description": "描述",
+        "descriptionLong": "详细描述",
+        "ean": "GTIN/EAN",
+        "gross": "含税",
+        "group": "属性",
+        "height": "高度",
+        "isBlog": "是博客",
+        "isCloseout": "清仓中",
+        "keywords": "关键词",
+        "length": "长度",
+        "linked": "已关联",
+        "manufacturerId": "制造商",
+        "manufacturer": "制造商",
+        "manufacturerNumber": "制造商商品编号",
+        "markAsTopseller": "已突出显示",
+        "maxDeliveryTime": "最长配送时间",
+        "maxPurchase": "最大购买量",
+        "minDeliveryTime": "最短配送时间",
+        "minPurchase": "最小购买量",
+        "minStock": "最低库存",
+        "name": "名称",
+        "net": "不含税",
+        "option": "选项",
+        "packUnit": "包装单位",
+        "packUnitPlural": "包装单位复数",
+        "price": "价格",
+        "product": "商品",
+        "productNumber": "商品编号",
+        "purchasePrices": "采购价",
+        "purchaseUnit": "销售单位",
+        "referenceUnit": "基本单位",
+        "releaseDate": "发布日期",
+        "restockTime": "补货时长",
+        "sales": "销售",
+        "salesChannel": "销售渠道",
+        "shippingFree": "免运费",
+        "stock": "库存",
+        "tags": "标签",
+        "tax": "税",
+        "taxRate": "税率",
+        "unit": "单位",
+        "variations": "变体",
+        "visibilities": "可见性",
+        "visibility": "可见",
+        "visible": "可见",
+        "weight": "重量",
+        "width": "宽度",
+        "deliveryTime": "配送时间",
+        "configuratorSettings": "配置器设置",
+        "options": "变体规格",
+        "properties": "属性",
+        "property_group": "属性",
+        "property_group_option": "属性规格",
+        "product_manufacturer": "制造商",
+        "product_visibility": "销售渠道中的商品",
+        "percentage": "价格/划线价百分比",
+        "states": "商品状态",
+        "type": "商品类型",
+        "productStates": {
+          "physical": "实体商品",
+          "digital": "数字商品"
+        }
+      }
+    },
+    "detail": {
+      "titleCard": "信息",
+      "labelName": "名称",
+      "placeholderName": "输入标题…",
+      "labelDescription": "描述",
+      "placeholderDescription": "输入描述...",
+      "labelDisplayAsGroup": "将匹配的变体分组显示",
+      "helpTextDisplayAsGroup": "启用后，匹配的变体将按商品展示方式分组。要单独显示请停用。",
+      "textHeadline": "新建商品组",
+      "titleFilter": "条件",
+      "titleResult": "商品",
+      "messageSaveSuccess": "商品组 \"{name}\" 已成功保存。",
+      "messageSaveError": "商品组 \"{name}\" 无法保存。",
+      "productStreamIndexingWarning": {
+        "title": "动态商品组索引已禁用",
+        "message": "部分功能可能无法按预期工作：<ul><li>分类页面在 HTTP 缓存过期或手动清除前不会更新。</li><li>规则条件「项目位于动态商品组」将永不成立。</li></ul>",
+        "action": "详见我们的文档"
+      },
+      "buttonOpenPreview": "预览",
+      "deprecatedFilterWarning": "筛选 \"{label}\" 已弃用，将在 {version} 中移除。请改用 \"{replacement}\"。",
+      "deprecatedFilterWarningNoReplacement": "筛选 \"{label}\" 已弃用，将在 {version} 中移除。"
+    },
+    "previewModal": {
+      "title": "预览",
+      "empty": "未找到商品"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "product_stream": {
+        "label": "动态商品组"
+      }
+    }
+  }
+}

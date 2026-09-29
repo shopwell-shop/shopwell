@@ -17,11 +17,11 @@
         "shopwell-plugin-class": "SwagTestWithBundle\\SwagTestWithBundle",
         "copyright": "(c) by Shopwell",
         "label": {
-            "de-DE": "Deutscher Pluginname",
+            "zh-CN": "中文插件名称",
             "en-GB": "English plugin name"
         },
         "description": {
-            "de-DE": "Deutsche Beschreibung",
+            "zh-CN": "中文插件说明",
             "en-GB": "English description"
         }
     },

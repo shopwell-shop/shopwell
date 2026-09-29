@@ -160,12 +160,12 @@ final class DocumentTypeRegistryTest extends TestCase
     {
         $storage = static::createStub(AppFeatureStorage::class);
         $storage->method('forActiveApps')->willReturn([
-            $this->appFeature(new AppDocumentTypeConfig('swag_warranty', ['html'], ['en-GB' => 'Warranty', 'de-DE' => 'Garantie'], [])),
+            $this->appFeature(new AppDocumentTypeConfig('swag_warranty', ['html'], ['en-GB' => 'Warranty', 'zh-CN' => 'Garantie'], [])),
         ]);
 
         $registry = new DocumentTypeRegistry([new StaticDocumentType('invoice', ['html'])], $storage);
 
-        static::assertSame(['en-GB' => 'Warranty', 'de-DE' => 'Garantie'], $registry->getAppLabel('swag_warranty'));
+        static::assertSame(['en-GB' => 'Warranty', 'zh-CN' => 'Garantie'], $registry->getAppLabel('swag_warranty'));
         static::assertSame([], $registry->getAppLabel('invoice'));
         static::assertSame([], $registry->getAppLabel('does_not_exist'));
     }

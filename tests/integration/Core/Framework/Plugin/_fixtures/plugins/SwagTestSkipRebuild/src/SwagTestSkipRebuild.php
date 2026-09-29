@@ -22,7 +22,7 @@ class SwagTestSkipRebuild extends Plugin
 
     final public const PLUGIN_OLD_VERSION = '1.0.0';
 
-    final public const PLUGIN_GERMAN_LABEL = 'Deutscher Pluginname';
+    final public const PLUGIN_CHINESE_LABEL = '中文插件名称';
 
     final public const THROW_ERROR_ON_UPDATE = 'throw-error-on-update';
     final public const THROW_ERROR_ON_DEACTIVATE = 'throw-error-on-deactivate';

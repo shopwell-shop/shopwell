@@ -4,7 +4,7 @@
     <meta>
         <name>withoutDescription</name>
         <label>Swag App Test</label>
-        <label lang="de-DE">Swag App Test</label>
+        <label lang="zh-CN">Swag 应用测试</label>
         <author>Shopwell</author>
         <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>
@@ -23,7 +23,7 @@
             view="detail"
             url="https://swag-test.com/your-order">
             <label>View Order</label>
-            <label lang="de-DE">Zeige Bestellung</label>
+            <label lang="zh-CN">查看订单</label>
         </action-button>
         <action-button
             action="doStuffWithProducts"
@@ -34,7 +34,7 @@
         </action-button>
         <module name="first-module" source="https://test.com" parent="sw-catalogue" position="50">
             <label>My first own module</label>
-            <label lang="de-DE">Mein erstes eigenes Modul</label>
+            <label lang="zh-CN">我的第一个模块</label>
         </module>
     </admin>
     <permissions>

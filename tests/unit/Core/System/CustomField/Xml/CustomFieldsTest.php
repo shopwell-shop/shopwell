@@ -26,7 +26,7 @@ class CustomFieldsTest extends TestCase
         static::assertSame('custom_field_test', $customFieldSet->getName());
         static::assertSame([
             'en-GB' => 'Custom field test',
-            'de-DE' => 'Zusatzfeld Test',
+            'zh-CN' => '自定义字段测试',
         ], $customFieldSet->getLabel());
         static::assertSame(['product', 'customer'], $customFieldSet->getRelatedEntities());
         static::assertTrue($customFieldSet->getGlobal());

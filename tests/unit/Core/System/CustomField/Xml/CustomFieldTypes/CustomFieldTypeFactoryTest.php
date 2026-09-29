@@ -37,11 +37,11 @@ class CustomFieldTypeFactoryTest extends TestCase
         static::assertSame('bool_field', $field->getName());
         static::assertSame([
             'en-GB' => 'Test bool field',
-            'de-DE' => 'Test bool field',
+            'zh-CN' => '测试布尔字段',
         ], $field->getLabel());
         static::assertSame([
             'en-GB' => 'Help text',
-            'de-DE' => 'Help text',
+            'zh-CN' => '帮助文本',
         ], $field->getHelpText());
     }
 }

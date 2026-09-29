@@ -1,0 +1,138 @@
+{
+  "sw-first-run-wizard": {
+    "general": {
+      "mainMenuItemGeneral": "初始设置向导",
+      "buttonNext": "继续",
+      "buttonSkip": "跳过",
+      "buttonInstall": "安装",
+      "buttonActivate": "启用",
+      "buttonFinish": "完成",
+      "buttonConfigureLater": "稍后设置",
+      "pluginInstalled": "已安装"
+    },
+    "welcome": {
+      "modalTitle": "欢迎",
+      "headlineWelcome": "欢迎使用 Shopwell 6 后台",
+      "messageWelcome": "此设置向导将引导你完成重要设置，并提供实用的配置建议。"
+    },
+    "dataImport": {
+      "modalTitle": "Shopwell 6 快速上手",
+      "headlineDemoData": "使用演示数据",
+      "messageDemoData": "为商城填充演示数据并体验 Shopwell 6。演示数据仅可用于测试。",
+      "buttonInstallDemoData": "安装演示数据",
+      "headlineMigration": "迁移自有商城",
+      "messageMigration": "迁移向导可帮你将商城系统连接至 Shopwell 6 并迁移现有数据。",
+      "buttonInstallMigration": "安装迁移向导",
+      "loadingMessage": "正在安装扩展<br>可能需要一些时间 ..."
+    },
+    "mailerSelection": {
+      "headline": "邮件通信设置",
+      "modalTitle": "邮件发送设置",
+      "description": "与客户沟通是日常电商运营的关键。因此，应尽快完成邮件体系的搭建。",
+      "chooseSubline": "选择你偏好的邮件代理。",
+      "localOption": "使用本地邮件代理",
+      "localOptionHelptext": "该选项使用系统默认邮件程序（Sendmail）。请确保 Sendmail 可用，并在你的托管环境中已安装。",
+      "localOptionSubline": "(Sendmail)",
+      "smtpOption": "配置自有 SMTP 服务器",
+      "configurationNote": "所有邮件配置之后仍可编辑。"
+    },
+    "mailerSmtp": {
+      "headline": "SMTP 服务器"
+    },
+    "mailerLocal": {
+      "headline": "本地邮件代理"
+    },
+    "paypalInfo": {
+      "modalTitle": "设置 PayPal",
+      "headline": "现已预集成到 Shopwell，更轻松快捷地启用最受欢迎的支付方式*",
+      "paymethod": {
+        "paypal": "PayPal",
+        "debit": "银行扣款",
+        "creditcard": "信用卡",
+        "invoice": "发票"
+      },
+      "disclaimerLineOne": "* ECC 科隆：ECC 支付研究 第20卷，科隆，2016",
+      "disclaimerLineTwo": "** 以 PayPal 风险审核通过为前提"
+    },
+    "paypalInstall": {
+      "loadingMessage": "正在配置 PayPal<br>可能需要一会儿 ..."
+    },
+    "recommendedPlugins": {
+      "headline": "我们的推荐",
+      "modalTitle": "扩展",
+      "message": "这里为你精选了一些实用扩展。请先选择与你相关的地区，然后即可浏览不同分类。",
+      "availableInRegion": "在区域可用",
+      "category": "分类",
+      "topRecommendations": "全球推荐",
+      "otherRecommendations": "区域推荐"
+    },
+    "shopwellAccount": {
+      "headline": "Shopwell 账户 - 登录",
+      "passwordLabel": "密码",
+      "passwordPlaceholder": "输入密码…",
+      "emailAddressLabel": "邮箱地址",
+      "emailAddressPlaceholder": "输入你的邮箱地址…",
+      "modalTitle": "Shopwell 账户",
+      "message": "Shopwell 账户是你与 Shopwell 交互的中央平台。",
+      "registerAccountText": "还没有 Shopwell 账户？立即注册",
+      "registerAccountHere": "此处",
+      "registerAccountUrl": "https://account.shopwell.cn/register?lang=zh",
+      "forgotPasswordText": "忘记密码？",
+      "forgotPasswordUrl": "https://account.shopwell.cn/recovery?lang=zh"
+    },
+    "error": {
+      "messageLoginDataInvalid": "登录信息有误，请重试。"
+    },
+    "shopwellDomain": {
+      "headline": "验证你的域名",
+      "message": "你想将商城关联到哪个域名？请选择相应域名或新建一个。",
+      "labelCreateDomain": "创建新的店铺域名",
+      "testEnvironment": "测试环境"
+    },
+    "store": {
+      "modalTitle": "Shopwell Store",
+      "loadStatusCollect": "正在获取商城信息 ...",
+      "takeMinutes": "这可能需要几分钟。",
+      "alreadyActivated": "商城已成功启用。",
+      "enablingStore": "正在启用 Shopwell 商城 ... ",
+      "activationErrorTitle": "启用时出错",
+      "activationErrorDescription": "请联系管理员获取帮助。",
+      "headingOne": "轻松浏览和购买扩展 -",
+      "headingTwo": "直接在你的 Shopwell 店铺中完成。",
+      "description": "启用全新的 Shopwell 商店，即可获取大量实用扩展和现代主题，无需编程即可无缝集成到你的店铺中。"
+    },
+    "defaults": {
+      "modalTitle": "定义默认值"
+    },
+    "finish": {
+      "headlineAllDone": "恭喜！",
+      "message": "你的 Shopwell 6 {edition} 现已验证。",
+      "messageNotLicensed": "你的 Shopwell 6 已准备就绪。",
+      "headlineUsefulLinks": "实用链接",
+      "loadingMessage": "应用正在重启<br>可能需要一会儿 ...",
+      "documentationLabel": "文档",
+      "documentationUrl": "https://docs.shopwell.cn/zh",
+      "forumLabel": "论坛",
+      "forumUrl": "https://forum.shopwell.cn/",
+      "roadmapLabel": "路线图",
+      "roadmapUrl": "https://www.shopwell.cn/zh/roadmap/",
+      "modalTitle": "完成"
+    },
+    "stepItemTitle": {
+      "dataImport": "数据导入",
+      "mailer": "邮件发送设置",
+      "setupPaypal": "设置 PayPal",
+      "plugins": "扩展",
+      "shopwell": "Shopwell 账户",
+      "store": "Shopwell Store",
+      "defaults": "默认值"
+    }
+  },
+  "sw-privileges": {
+    "additional_permissions": {
+      "system": {
+        "frw": "初始设置向导"
+      }
+    }
+  }
+}

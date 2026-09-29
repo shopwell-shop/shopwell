@@ -75,7 +75,7 @@ SQL;
         $mailTemplateTypeId = Uuid::randomHex();
 
         $defaultLangId = $this->getLanguageIdByLocale($connection, 'en-GB');
-        $deLangId = $this->getLanguageIdByLocale($connection, 'de-DE');
+        $zhCnLangId = $this->getLanguageIdByLocale($connection, 'zh-CN');
 
         $connection->insert('mail_template_type', [
             'id' => Uuid::fromHexToBytes($mailTemplateTypeId),
@@ -84,7 +84,7 @@ SQL;
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
 
-        if ($defaultLangId !== $deLangId) {
+        if ($defaultLangId !== $zhCnLangId) {
             $connection->insert('mail_template_type_translation', [
                 'mail_template_type_id' => Uuid::fromHexToBytes($mailTemplateTypeId),
                 'language_id' => $defaultLangId,
@@ -102,11 +102,11 @@ SQL;
             ]);
         }
 
-        if ($deLangId) {
+        if ($zhCnLangId) {
             $connection->insert('mail_template_type_translation', [
                 'mail_template_type_id' => Uuid::fromHexToBytes($mailTemplateTypeId),
-                'language_id' => $deLangId,
-                'name' => 'Benutzer Passwort Wiederherstellung',
+                'language_id' => $zhCnLangId,
+                'name' => '客户密码找回',
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             ]);
         }
@@ -119,7 +119,7 @@ SQL;
         $mailTemplateId = Uuid::randomHex();
 
         $defaultLangId = $this->getLanguageIdByLocale($connection, 'en-GB');
-        $deLangId = $this->getLanguageIdByLocale($connection, 'de-DE');
+        $zhCnLangId = $this->getLanguageIdByLocale($connection, 'zh-CN');
 
         $connection->insert('mail_template', [
             'id' => Uuid::fromHexToBytes($mailTemplateId),
@@ -128,7 +128,7 @@ SQL;
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
 
-        if ($defaultLangId !== $deLangId) {
+        if ($defaultLangId !== $zhCnLangId) {
             $connection->insert('mail_template_translation', [
                 'mail_template_id' => Uuid::fromHexToBytes($mailTemplateId),
                 'language_id' => $defaultLangId,
@@ -154,15 +154,15 @@ SQL;
             ]);
         }
 
-        if ($deLangId) {
+        if ($zhCnLangId) {
             $connection->insert('mail_template_translation', [
                 'mail_template_id' => Uuid::fromHexToBytes($mailTemplateId),
-                'language_id' => $this->getLanguageIdByLocale($connection, 'de-DE'),
+                'language_id' => $this->getLanguageIdByLocale($connection, 'zh-CN'),
                 'sender_name' => '{{ shopName }}',
-                'subject' => 'Password Wiederherstellung',
+                'subject' => '密码找回',
                 'description' => '',
-                'content_html' => $this->getContentHtmlDe(),
-                'content_plain' => $this->getContentPlainDe(),
+                'content_html' => $this->getContentHtmlZhCn(),
+                'content_plain' => $this->getContentPlainZhCn(),
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             ]);
         }
@@ -238,43 +238,43 @@ MAIL;
 MAIL;
     }
 
-    private function getContentHtmlDe(): string
+    private function getContentHtmlZhCn(): string
     {
         return <<<MAIL
 <div style="font-family:arial; font-size:12px;">
     <p>
-        Hallo {{ customerRecovery.customer.firstName }} {{ customerRecovery.customer.lastName }},<br/>
+        您好 {{ customerRecovery.customer.firstName }} {{ customerRecovery.customer.lastName }},<br/>
         <br/>
-        Sie haben ein neues Passwort für Ihren {{ shopName }}-Account angefordert.
-        Klicken Sie auf folgenden Link, um Ihr Passwort zurückzusetzen:<br/>
+        您申请为 {{ shopName }} 账户重置密码。
+        请点击下方链接重置密码：<br/>
         <br/>
         <a href="{{ resetUrl }}">{{ resetUrl }}</a><br/>
         <br/>
-        Dieser Link ist für die nächsten 2 Stunden gültig.
-        Falls Sie Ihr Passwort nicht zurücksetzen möchten, ignorieren Sie diese E-Mail - es wird dann keine Änderung vorgenommen.<br/>
+        该链接仅在 2 小时内有效。
+        若您不想重置密码，请忽略本邮件，密码不会发生任何变更。<br/>
         <br/>
-        Mit freundlichen Grüßen
-        Ihr {{ shopName }}-Team
+        此致
+        {{ shopName }} 团队
     </p>
 </div>
 MAIL;
     }
 
-    private function getContentPlainDe(): string
+    private function getContentPlainZhCn(): string
     {
         return <<<MAIL
-        Hallo {{ customerRecovery.customer.firstName }} {{ customerRecovery.customer.lastName }},
+        您好 {{ customerRecovery.customer.firstName }} {{ customerRecovery.customer.lastName }},
 
-        Sie haben ein neues Passwort für Ihren {{ shopName }}-Account angefordert.
-        Klicken Sie auf folgenden Link, um Ihr Passwort zurückzusetzen:
+        您申请为 {{ shopName }} 账户重置密码。
+        请点击下方链接重置密码：
 
         {{ resetUrl }}
 
-        Dieser Link ist für die nächsten 2 Stunden gültig.
-        Falls Sie Ihr Passwort nicht zurücksetzen möchten, ignorieren Sie diese E-Mail - es wird dann keine Änderung vorgenommen.
+        该链接仅在 2 小时内有效。
+        若您不想重置密码，请忽略本邮件，密码不会发生任何变更。
 
-        Mit freundlichen Grüßen
-        Ihr {{ shopName }}-Team
+        此致
+        {{ shopName }} 团队
 MAIL;
     }
 }

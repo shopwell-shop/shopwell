@@ -78,7 +78,7 @@ class Migration1773225412AddZugferdEmbeddedCancellationInvoiceTest extends TestC
         static::assertSame(
             [
                 'ZUGFeRD Cancellation Invoice (embedded)',
-                'ZUGFeRD Stornorechnung (eingebettet)',
+                'ZUGFeRD 冲销发票（内嵌）',
             ],
             $translations,
         );

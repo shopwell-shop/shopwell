@@ -13,15 +13,15 @@ test(
         const product = await TestDataService.createBasicProduct();
 
         const salesChannelId = TestDataService.defaultSalesChannel.id;
-        const language = await getLanguageData(TestDataService.AdminApiClient, 'de-DE');
-        const snippetSetId = await getSnippetSetId(TestDataService.AdminApiClient, 'de-DE');
-        const germanDomainUrl = `${(process.env.APP_URL || 'http://localhost:8000').replace(/\/$/, '')}/de-DE/`;
+        const language = await getLanguageData(TestDataService.AdminApiClient, 'zh-CN');
+        const snippetSetId = await getSnippetSetId(TestDataService.AdminApiClient, 'zh-CN');
+        const zhCnDomainUrl = `${(process.env.APP_URL || 'http://localhost:8000').replace(/\/$/, '')}/zh-CN/`;
 
         await TestDataService.assignSalesChannelLanguage(salesChannelId, language.id);
         await TestDataService.createSalesChannelDomain({
             languageId: language.id,
             snippetSetId: snippetSetId,
-            url: germanDomainUrl,
+            url: zhCnDomainUrl,
         });
 
         await TestDataService.clearCaches();
@@ -34,9 +34,9 @@ test(
 
         await ShopCustomer.expects(async () => {
             await test.step('Customer can view languages menu', async () => {
-                await ShopCustomer.goesTo(germanDomainUrl);
-                await ShopCustomer.expects(languageDropdown).toContainText('Deutsch');
-                await ShopCustomer.expects(addToCartButton).toContainText('In den Warenkorb');
+                await ShopCustomer.goesTo(zhCnDomainUrl);
+                await ShopCustomer.expects(languageDropdown).toContainText('简体中文');
+                await ShopCustomer.expects(addToCartButton).toContainText('加入购物车');
             });
         }).toPass({
             intervals: [

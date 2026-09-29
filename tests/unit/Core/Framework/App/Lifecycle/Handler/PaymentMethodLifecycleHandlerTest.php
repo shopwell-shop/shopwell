@@ -74,12 +74,12 @@ class PaymentMethodLifecycleHandlerTest extends TestCase
         static::assertSame('https://payment.example.com/finalize', $paymentMethods[0]['appPaymentMethod']['finalizeUrl']);
 
         static::assertSame(
-            ['en-GB' => 'First Payment Method', 'de-DE' => 'Erste Zahlungsart'],
+            ['en-GB' => 'First Payment Method', 'zh-CN' => '第一种支付方式'],
             $paymentMethods[0]['name'],
             'A first time import must write the manifest names for every locale'
         );
         static::assertSame(
-            ['en-GB' => 'This is a simple description', 'de-DE' => 'Das ist eine einfache Beschreibung'],
+            ['en-GB' => 'This is a simple description', 'zh-CN' => '这是一个简单的描述'],
             $paymentMethods[0]['description']
         );
         static::assertSame(['en-GB' => 'Second Payment Method'], $paymentMethods[1]['name']);
@@ -96,7 +96,7 @@ class PaymentMethodLifecycleHandlerTest extends TestCase
             $this->buildExistingPaymentMethod(
                 $appId,
                 'paymentMethodOne',
-                ['en-GB' => 'Mastercard / Visa', 'de-DE' => 'Mastercard / Visa'],
+                ['en-GB' => 'Mastercard / Visa', 'zh-CN' => 'Mastercard / Visa'],
             ),
         ]));
 
@@ -113,7 +113,7 @@ class PaymentMethodLifecycleHandlerTest extends TestCase
         $appId = Uuid::randomHex();
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/_fixtures/manifest_payment_methods.xml');
 
-        // the shop was set up in English and got German later, so only the English translation exists
+        // the shop was set up in English and got a second language later, so only the English translation exists
         $this->paymentMethodRepository->addSearch(new PaymentMethodCollection([
             $this->buildExistingPaymentMethod(
                 $appId,
@@ -126,9 +126,9 @@ class PaymentMethodLifecycleHandlerTest extends TestCase
 
         $paymentMethods = $this->paymentMethodRepository->getPayloads(StaticEntityRepository::UPSERT);
 
-        static::assertSame(['de-DE' => 'Erste Zahlungsart'], $paymentMethods[0]['name']);
+        static::assertSame(['zh-CN' => '第一种支付方式'], $paymentMethods[0]['name']);
         static::assertSame(
-            ['de-DE' => 'Das ist eine einfache Beschreibung'],
+            ['zh-CN' => '这是一个简单的描述'],
             $paymentMethods[0]['description'],
             'The English translation already exists, so it belongs to the merchant'
         );
@@ -139,12 +139,12 @@ class PaymentMethodLifecycleHandlerTest extends TestCase
         $appId = Uuid::randomHex();
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/_fixtures/manifest_payment_methods.xml');
 
-        // the stub languages format as en-US while translating as en-GB and de-DE
+        // the stub languages format as en-US while translating as en-GB and zh-CN
         $this->paymentMethodRepository->addSearch(new PaymentMethodCollection([
             $this->buildExistingPaymentMethod(
                 $appId,
                 'paymentMethodOne',
-                ['en-GB' => 'Mastercard / Visa', 'de-DE' => 'Mastercard / Visa'],
+                ['en-GB' => 'Mastercard / Visa', 'zh-CN' => 'Mastercard / Visa'],
             ),
         ]));
 

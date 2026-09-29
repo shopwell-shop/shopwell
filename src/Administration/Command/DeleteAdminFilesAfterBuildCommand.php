@@ -53,10 +53,10 @@ class DeleteAdminFilesAfterBuildCommand extends Command
         $output->writeln('Deleting unnecessary files of the administration after the build process...');
         $progressBar = new ProgressBar($output, 100);
 
-        // Delete all module files except for de-DE.json and en-GB.json
+        // Delete all module files except for zh-CN.json and en-GB.json
         $finder = new Finder();
         $finder->in($adminDir . '/Resources/app/administration/src/module')
-            ->notName('de-DE.json')
+            ->notName('zh-CN.json')
             ->notName('en-GB.json')
             ->files();
 

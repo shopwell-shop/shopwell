@@ -24,11 +24,11 @@ class TranslationConfigTest extends TestCase
     public function testTranslationConfig(): void
     {
         $repositoryUrl = new Uri('http://localhost:8000');
-        $locales = ['en-GB', 'de-DE'];
+        $locales = ['en-GB', 'zh-CN'];
         $plugins = ['PluginA', 'PluginB'];
         $languages = new LanguageCollection([
             new Language('en-GB', 'English'),
-            new Language('de-DE', 'Deutsch'),
+            new Language('zh-CN', '简体中文'),
         ]);
 
         $excludedLocales = ['fr-FR', 'es-ES'];
@@ -90,16 +90,16 @@ class TranslationConfigTest extends TestCase
 
     public function testAssertLocalesAreConfiguredAcceptsKnownLocales(): void
     {
-        $config = $this->getConfig(['en-GB', 'de-DE']);
+        $config = $this->getConfig(['en-GB', 'zh-CN']);
 
-        $config->assertLocalesAreConfigured(['de-DE']);
+        $config->assertLocalesAreConfigured(['zh-CN']);
 
         $this->expectNotToPerformAssertions();
     }
 
     public function testAssertLocalesAreConfiguredThrowsWhenEmpty(): void
     {
-        $config = $this->getConfig(['en-GB', 'de-DE']);
+        $config = $this->getConfig(['en-GB', 'zh-CN']);
 
         $this->expectExceptionObject(SnippetException::noLocalesArgumentProvided());
 
@@ -108,11 +108,11 @@ class TranslationConfigTest extends TestCase
 
     public function testAssertLocalesAreConfiguredThrowsForUnknownLocales(): void
     {
-        $config = $this->getConfig(['en-GB', 'de-DE']);
+        $config = $this->getConfig(['en-GB', 'zh-CN']);
 
-        $this->expectExceptionObject(SnippetException::invalidLocalesProvided('fr-FR, es-ES', 'en-GB, de-DE'));
+        $this->expectExceptionObject(SnippetException::invalidLocalesProvided('fr-FR, es-ES', 'en-GB, zh-CN'));
 
-        $config->assertLocalesAreConfigured(['de-DE', 'fr-FR', 'es-ES']);
+        $config->assertLocalesAreConfigured(['zh-CN', 'fr-FR', 'es-ES']);
     }
 
     /**

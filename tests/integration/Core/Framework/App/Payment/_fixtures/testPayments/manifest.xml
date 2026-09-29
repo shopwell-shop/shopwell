@@ -4,9 +4,9 @@
     <meta>
         <name>testPayments</name>
         <label>Swag App Payments Test</label>
-        <label lang="de-DE">Swag App Payments Test</label>
+        <label lang="zh-CN">Swag 应用支付测试</label>
         <description>Test for App PaymentMethods</description>
-        <description lang="de-DE">Test für App PaymentMethods</description>
+        <description lang="zh-CN">应用支付方式测试</description>
         <author>Shopwell</author>
         <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>

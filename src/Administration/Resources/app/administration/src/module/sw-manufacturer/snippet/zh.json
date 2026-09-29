@@ -1,0 +1,39 @@
+{
+  "sw-manufacturer": {
+    "general": {
+      "mainMenuItemList": "制造商",
+      "descriptionTextModule": "品牌管理",
+      "mainMenuItemGeneral": "制造商",
+      "placeholderSearchBar": "搜索制造商…"
+    },
+    "list": {
+      "textManufacturerOverview": "制造商",
+      "textTotalManufacturer": "无制造商 | 一家制造商 | {count} 家制造商",
+      "messageEmpty": "暂无制造商",
+      "buttonAddManufacturer": "添加制造商",
+      "columnName": "制造商",
+      "columnLink": "网站"
+    },
+    "detail": {
+      "textHeadline": "新建制造商",
+      "textMediaSelection": "媒体选择",
+      "cardTitleManufacturerInfo": "制造商信息",
+      "labelName": "名称",
+      "labelDescription": "描述",
+      "labelLink": "网站",
+      "placeholderName": "输入制造商名称…",
+      "placeholderDescription": "输入制造商描述…",
+      "placeholderLink": "输入品牌网站 ...",
+      "messageSaveSuccess": "品牌 \"{name}\" 已成功保存。",
+      "labelLogo": "徽标",
+      "labelUseAsLogo": "用作徽标"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "product_manufacturer": {
+        "label": "制造商"
+      }
+    }
+  }
+}

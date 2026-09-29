@@ -56,7 +56,7 @@ class DocumentAppFeatureDefinitionTest extends TestCase
         $warranty = $configs[0];
         static::assertSame('swag_warranty', $warranty->getName());
         static::assertSame(['html', 'pdf'], $warranty->getFormats());
-        static::assertSame(['en-GB' => 'Warranty certificate', 'de-DE' => 'Garantieschein'], $warranty->getLabel());
+        static::assertSame(['en-GB' => 'Warranty certificate', 'zh-CN' => '保修单'], $warranty->getLabel());
         static::assertSame(
             [
                 'pageSize' => 'A4',
@@ -70,7 +70,7 @@ class DocumentAppFeatureDefinitionTest extends TestCase
 
         $certificate = $configs[1];
         static::assertSame('swag_certificate', $certificate->getName());
-        static::assertSame(['de-DE' => 'Zertifikat', 'en-GB' => 'Zertifikat'], $certificate->getLabel());
+        static::assertSame(['zh-CN' => 'Zertifikat', 'en-GB' => 'Zertifikat'], $certificate->getLabel());
         static::assertSame([], $certificate->getConfig());
     }
 
@@ -83,7 +83,7 @@ class DocumentAppFeatureDefinitionTest extends TestCase
 
         static::assertSame('swag_warranty', $warranty->getName());
         static::assertSame(
-            ['en-GB' => 'Warranty certificate', 'de-DE' => 'Garantieschein', 'fr-FR' => 'Warranty certificate'],
+            ['en-GB' => 'Warranty certificate', 'zh-CN' => '保修单', 'fr-FR' => 'Warranty certificate'],
             $warranty->getLabel()
         );
     }
@@ -100,7 +100,7 @@ class DocumentAppFeatureDefinitionTest extends TestCase
         $config = new AppDocumentTypeConfig(
             'swag_warranty',
             ['html', 'pdf'],
-            ['en-GB' => 'Warranty certificate', 'de-DE' => 'Garantieschein'],
+            ['en-GB' => 'Warranty certificate', 'zh-CN' => '保修单'],
             ['pageSize' => 'A4', 'itemsPerPage' => 10, 'displayHeader' => true]
         );
 
@@ -109,7 +109,7 @@ class DocumentAppFeatureDefinitionTest extends TestCase
         static::assertSame([
             'identifier' => 'swag_warranty',
             'formats' => ['html', 'pdf'],
-            'label' => ['en-GB' => 'Warranty certificate', 'de-DE' => 'Garantieschein'],
+            'label' => ['en-GB' => 'Warranty certificate', 'zh-CN' => '保修单'],
             'config' => ['pageSize' => 'A4', 'itemsPerPage' => 10, 'displayHeader' => true],
         ], $payload);
 
@@ -273,7 +273,7 @@ class DocumentAppFeatureDefinitionTest extends TestCase
                 <document-type>
                     <identifier>swag_warranty</identifier>
                     <label>Warranty certificate</label>
-                    <label lang="de-DE">Garantieschein</label>
+                    <label lang="zh-CN">保修单</label>
                     <formats>
                         <format>html</format>
                         <format>pdf</format>
@@ -288,7 +288,7 @@ class DocumentAppFeatureDefinitionTest extends TestCase
                 </document-type>
                 <document-type>
                     <identifier>swag_certificate</identifier>
-                    <label lang="de-DE">Zertifikat</label>
+                    <label lang="zh-CN">Zertifikat</label>
                     <formats>
                         <format>pdf</format>
                     </formats>

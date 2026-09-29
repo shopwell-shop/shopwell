@@ -19,7 +19,7 @@ class Migration1654839361ProductDownloadDelivery extends MigrationStep
     use ImportTranslationsTrait;
 
     final public const DELIVERY_TIME_NAME_EN = 'Instant download';
-    final public const DELIVERY_TIME_NAME_DE = 'Sofort verfügbar';
+    final public const DELIVERY_TIME_NAME_ZH_CN = '立即可下载';
 
     public function getCreationTimestamp(): int
     {
@@ -50,7 +50,7 @@ class Migration1654839361ProductDownloadDelivery extends MigrationStep
         $translation = new Translations(
             [
                 'delivery_time_id' => $downloadDeliveryTime,
-                'name' => self::DELIVERY_TIME_NAME_DE,
+                'name' => self::DELIVERY_TIME_NAME_ZH_CN,
             ],
             [
                 'delivery_time_id' => $downloadDeliveryTime,

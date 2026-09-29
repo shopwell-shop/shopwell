@@ -30,8 +30,8 @@ class Migration1607500561UpdateSignUpMailTemplateTranslation extends MigrationSt
             MailTemplateTypes::MAILTYPE_CUSTOMER_REGISTER,
             $this->getSignupPlainTemplateEn(),
             $this->getSignupHtmlTemplateEn(),
-            $this->getSignupPlainTemplateDe(),
-            $this->getSignupHtmlTemplateDe()
+            $this->getSignupPlainTemplateZhCn(),
+            $this->getSignupHtmlTemplateZhCn()
         );
 
         $this->updateMail($mailUpdate, $connection);
@@ -119,26 +119,26 @@ class Migration1607500561UpdateSignUpMailTemplateTranslation extends MigrationSt
         ';
     }
 
-    private function getSignupHtmlTemplateDe(): string
+    private function getSignupHtmlTemplateZhCn(): string
     {
         return '<div style="font-family:arial; font-size:12px;">
             <p>
-                {{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }},<br/>
+                {{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }}，<br/>
                 <br/>
-                vielen Dank für Ihre Anmeldung in unserem Shop.<br/>
-                Sie erhalten Zugriff über Ihre E-Mail-Adresse <strong>{{ customer.email }}</strong> und dem von Ihnen gewählten Kennwort.<br/>
-                Sie können Ihr Kennwort jederzeit nachträglich ändern.
+                感谢您注册我们的商城。<br/>
+                您可以使用邮箱 <strong>{{ customer.email }}</strong> 和您设置的密码登录。<br/>
+                您可以随时修改密码。
             </p>
         </div>';
     }
 
-    private function getSignupPlainTemplateDe(): string
+    private function getSignupPlainTemplateZhCn(): string
     {
-        return '{{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }},
+        return '{{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }}，
 
-                vielen Dank für Ihre Anmeldung in unserem Shop.
-                Sie erhalten Zugriff über Ihre E-Mail-Adresse {{ customer.email }} und dem von Ihnen gewählten Kennwort.
-                Sie können Ihr Kennwort jederzeit nachträglich ändern.
+                感谢您注册我们的商城。
+                您可以使用邮箱 {{ customer.email }} 和您设置的密码登录。
+                您可以随时修改密码。
 ';
     }
 }

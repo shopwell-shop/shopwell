@@ -1,0 +1,24 @@
+{
+  "sw-oauth-authorize": {
+    "general": {
+      "title": "授权应用",
+      "description": "授予应用访问此 Shopwell 商城的权限"
+    },
+    "consent": {
+      "title": "{clientName} 想要访问 {shopName}",
+      "loggedInAs": "登录身份：{username}",
+      "permissionTitle": "此应用将获得你的权限",
+      "permissionHint": "该应用可以你的名义访问数据并执行操作，权限与你的用户账户相同。如果你是管理员，则包括对店铺的完全访问权限。",
+      "trustHint": "仅当你信任此应用且是本人发起的请求时才允许访问。",
+      "redirectHint": "即将跳转到 {host}",
+      "approve": "允许访问",
+      "deny": "拒绝"
+    },
+    "error": {
+      "missingParameters": "授权请求不完整。请从应用中重新发起授权。",
+      "generic": "授权请求无法处理。"
+    },
+    "logoAltText": "Shopwell 徽标",
+    "loadingLabel": "加载中 ..."
+  }
+}

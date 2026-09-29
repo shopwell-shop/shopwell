@@ -12,8 +12,8 @@ class MailUpdate
         protected string $type,
         protected ?string $enPlain = null,
         protected ?string $enHtml = null,
-        protected ?string $dePlain = null,
-        protected ?string $deHtml = null
+        protected ?string $zhPlain = null,
+        protected ?string $zhHtml = null
     ) {
     }
 
@@ -23,7 +23,7 @@ class MailUpdate
         $path = __DIR__ . '/../Fixtures/mails/' . $directoryName;
 
         $this->enHtml = $filesystem->readFile($path . '/en-html.html.twig');
-        $this->deHtml = $filesystem->readFile($path . '/de-html.html.twig');
+        $this->zhHtml = $filesystem->readFile($path . '/zh-html.html.twig');
 
         if ($filesystem->exists($path . '/en-plain.txt.twig')) {
             $this->enPlain = $filesystem->readFile($path . '/en-plain.txt.twig');
@@ -31,10 +31,10 @@ class MailUpdate
             $this->enPlain = $filesystem->readFile($path . '/en-plain.html.twig');
         }
 
-        if ($filesystem->exists($path . '/de-plain.txt.twig')) {
-            $this->dePlain = $filesystem->readFile($path . '/de-plain.txt.twig');
+        if ($filesystem->exists($path . '/zh-plain.txt.twig')) {
+            $this->zhPlain = $filesystem->readFile($path . '/zh-plain.txt.twig');
         } else {
-            $this->dePlain = $filesystem->readFile($path . '/de-plain.html.twig');
+            $this->zhPlain = $filesystem->readFile($path . '/zh-plain.html.twig');
         }
     }
 
@@ -58,24 +58,24 @@ class MailUpdate
         $this->enHtml = $enHtml;
     }
 
-    public function getDePlain(): ?string
+    public function getZhPlain(): ?string
     {
-        return $this->dePlain;
+        return $this->zhPlain;
     }
 
-    public function setDePlain(?string $dePlain): void
+    public function setZhPlain(?string $zhPlain): void
     {
-        $this->dePlain = $dePlain;
+        $this->zhPlain = $zhPlain;
     }
 
-    public function getDeHtml(): ?string
+    public function getZhHtml(): ?string
     {
-        return $this->deHtml;
+        return $this->zhHtml;
     }
 
-    public function setDeHtml(?string $deHtml): void
+    public function setZhHtml(?string $zhHtml): void
     {
-        $this->deHtml = $deHtml;
+        $this->zhHtml = $zhHtml;
     }
 
     public function getType(): string

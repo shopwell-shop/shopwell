@@ -57,45 +57,45 @@ class Migration1580746806AddPaymentStates extends MigrationStep
         $stateInProgressId = Uuid::randomBytes();
         $stateFailedId = Uuid::randomBytes();
 
-        $germanId = $this->fetchLanguageId('de-DE', $connection);
+        $zhCnLangId = $this->fetchLanguageId('zh-CN', $connection);
 
         $defaultLangId = $this->fetchLanguageId('en-GB', $connection);
 
         $translationEN = [];
-        if ($defaultLangId !== $germanId) {
+        if ($defaultLangId !== $zhCnLangId) {
             $translationEN = ['language_id' => $defaultLangId, 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)];
         }
-        $translationDE = [];
-        if ($germanId) {
-            $translationDE = ['language_id' => $germanId, 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)];
+        $translationZhCn = [];
+        if ($zhCnLangId) {
+            $translationZhCn = ['language_id' => $zhCnLangId, 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)];
         }
 
         // states
         $connection->insert('state_machine_state', ['id' => $stateInProgressId, 'state_machine_id' => $stateMachineId, 'technical_name' => OrderTransactionStates::STATE_IN_PROGRESS, 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
 
-        if ($defaultLangId !== $germanId) {
+        if ($defaultLangId !== $zhCnLangId) {
             $connection->insert('state_machine_state_translation', array_merge($translationEN, ['state_machine_state_id' => $stateInProgressId, 'name' => 'In Progress']));
         }
 
-        if ($germanId) {
+        if ($zhCnLangId) {
             $connection->insert(
                 'state_machine_state_translation',
                 array_merge(
-                    $translationDE,
-                    ['state_machine_state_id' => $stateInProgressId, 'name' => 'In Bearbeitung']
+                    $translationZhCn,
+                    ['state_machine_state_id' => $stateInProgressId, 'name' => '处理中']
                 )
             );
         }
 
         $connection->insert('state_machine_state', ['id' => $stateFailedId, 'state_machine_id' => $stateMachineId, 'technical_name' => OrderTransactionStates::STATE_FAILED, 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
-        if ($defaultLangId !== $germanId) {
+        if ($defaultLangId !== $zhCnLangId) {
             $connection->insert('state_machine_state_translation', array_merge($translationEN, ['state_machine_state_id' => $stateFailedId, 'name' => 'Failed']));
         }
 
-        if ($germanId) {
+        if ($zhCnLangId) {
             $connection->insert(
                 'state_machine_state_translation',
-                array_merge($translationDE, ['state_machine_state_id' => $stateFailedId, 'name' => 'Fehlgeschlagen'])
+                array_merge($translationZhCn, ['state_machine_state_id' => $stateFailedId, 'name' => '已失败'])
             );
         }
 

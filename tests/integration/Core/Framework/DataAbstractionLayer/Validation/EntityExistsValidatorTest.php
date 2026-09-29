@@ -61,8 +61,8 @@ class EntityExistsValidatorTest extends TestCase
 
         $repository->create(
             [
-                ['id' => $id1, 'name' => 'Test 1', 'territory' => 'test', 'code' => 'de-DE-' . $id1],
-                ['id' => $id2, 'name' => 'Test 2', 'territory' => 'test', 'code' => 'de-DE-' . $id2],
+                ['id' => $id1, 'name' => 'Test 1', 'territory' => 'test', 'code' => 'zh-CN-' . $id1],
+                ['id' => $id2, 'name' => 'Test 2', 'territory' => 'test', 'code' => 'zh-CN-' . $id2],
             ],
             $context
         );
@@ -97,8 +97,8 @@ class EntityExistsValidatorTest extends TestCase
 
         $repository->create(
             [
-                ['id' => $id1, 'name' => 'Test 1', 'territory' => 'test', 'code' => 'de-DE-' . $id1],
-                ['id' => $id2, 'name' => 'Test 2', 'territory' => 'test', 'code' => 'de-DE-' . $id2],
+                ['id' => $id1, 'name' => 'Test 1', 'territory' => 'test', 'code' => 'zh-CN-' . $id1],
+                ['id' => $id2, 'name' => 'Test 2', 'territory' => 'test', 'code' => 'zh-CN-' . $id2],
             ],
             $context
         );

@@ -36,15 +36,15 @@ class Migration1781862820RepairRevocationRequestTranslations extends MigrationSt
         $merchantType = new MailTemplateTypeCreateStruct(
             MailTemplateTypes::MAILTYPE_REVOCATION_REQUEST_MERCHANT,
             'Revocation request received',
-            'Widerrufsantrag erhalten',
+            '已收到撤销申请',
         );
 
         $merchantTemplate = new MailTemplateCreateStruct(
             Migration1768545319RevocationRequestMailTemplate::MERCHANT_DIRECTORY,
             'Revocation request received',
-            'Widerrufsantrag erhalten',
+            '已收到撤销申请',
             'Received revocation request from customer',
-            'Widerrufsantrag vom Kunden erhalten',
+            '已收到客户的撤销申请',
             '{{ salesChannel.translated.name }}',
             '{{ salesChannel.translated.name }}',
         );
@@ -54,15 +54,15 @@ class Migration1781862820RepairRevocationRequestTranslations extends MigrationSt
         $customerType = new MailTemplateTypeCreateStruct(
             MailTemplateTypes::MAILTYPE_REVOCATION_REQUEST_CUSTOMER,
             'Revocation request requested',
-            'Widerrufsantrag gestellt',
+            '撤销申请已提交',
         );
 
         $customerTemplate = new MailTemplateCreateStruct(
             Migration1768545319RevocationRequestMailTemplate::CUSTOMER_DIRECTORY,
             'Revocation request sent',
-            'Widerrufsantrag gesendet',
+            '撤销申请已发送',
             'Confirmation receipt of customers revocation request',
-            'Empfangsbestätigung für Widerrufsantrag des Kunden',
+            '客户撤销申请的接收确认',
             '{{ salesChannel.translated.name }}',
             '{{ salesChannel.translated.name }}',
         );
@@ -100,18 +100,18 @@ class Migration1781862820RepairRevocationRequestTranslations extends MigrationSt
             ]);
         }
 
-        foreach ($this->getLanguageIdsWithDePrefix($connection) as $deLanguageByteId) {
-            $this->repairMailTemplateTypeTranslation($connection, $mailTemplateTypeByteId, $deLanguageByteId, $mailTemplateType->getDeName());
-            $this->repairMailTemplateTranslation($connection, $mailTemplateByteId, $deLanguageByteId, [
-                'sender_name' => $mailTemplate->getDeSenderName(),
-                'subject' => $mailTemplate->getDeSubject(),
-                'description' => $mailTemplate->getDeDescription(),
-                'content_html' => $mailTemplate->getDeHtml(),
-                'content_plain' => $mailTemplate->getDePlain(),
+        foreach ($this->getLanguageIdsWithZhPrefix($connection) as $zhCnLanguageByteId) {
+            $this->repairMailTemplateTypeTranslation($connection, $mailTemplateTypeByteId, $zhCnLanguageByteId, $mailTemplateType->getZhName());
+            $this->repairMailTemplateTranslation($connection, $mailTemplateByteId, $zhCnLanguageByteId, [
+                'sender_name' => $mailTemplate->getZhSenderName(),
+                'subject' => $mailTemplate->getZhSubject(),
+                'description' => $mailTemplate->getZhDescription(),
+                'content_html' => $mailTemplate->getZhHtml(),
+                'content_plain' => $mailTemplate->getZhPlain(),
             ]);
         }
 
-        foreach ($this->getLanguageIdsWithoutDePrefix($connection) as $enLanguageByteId) {
+        foreach ($this->getLanguageIdsWithoutZhPrefix($connection) as $enLanguageByteId) {
             $this->repairMailTemplateTypeTranslation($connection, $mailTemplateTypeByteId, $enLanguageByteId, $mailTemplateType->getEnName());
             $this->repairMailTemplateTranslation($connection, $mailTemplateByteId, $enLanguageByteId, [
                 'sender_name' => $mailTemplate->getEnSenderName(),
@@ -230,23 +230,23 @@ SQL,
 
     private function repairRevocationRequestCmsPage(Connection $connection): string
     {
-        $deLanguageByteIds = $this->getLanguageIdsWithDePrefix($connection);
-        $enLanguageByteIds = $this->getLanguageIdsWithoutDePrefix($connection);
+        $zhCnLanguageByteIds = $this->getLanguageIdsWithZhPrefix($connection);
+        $enLanguageByteIds = $this->getLanguageIdsWithoutZhPrefix($connection);
         $versionByteId = Uuid::fromHexToBytes(Defaults::LIVE_VERSION);
 
-        $cmsPageByteId = $this->createCmsPage($connection, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+        $cmsPageByteId = $this->createCmsPage($connection, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
         $cmsSectionByteId = $this->createCmsSection($connection, $cmsPageByteId, $versionByteId);
         $cmsBlockByteId = $this->createCmsBlock($connection, $cmsSectionByteId, $versionByteId);
-        $this->createCmsSlot($connection, $cmsBlockByteId, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+        $this->createCmsSlot($connection, $cmsBlockByteId, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
 
         return $cmsPageByteId;
     }
 
     /**
      * @param list<string> $enLanguageByteIds
-     * @param list<string> $deLanguageByteIds
+     * @param list<string> $zhCnLanguageByteIds
      */
-    private function createCmsPage(Connection $connection, string $versionByteId, array $enLanguageByteIds, array $deLanguageByteIds): string
+    private function createCmsPage(Connection $connection, string $versionByteId, array $enLanguageByteIds, array $zhCnLanguageByteIds): string
     {
         $cmsPageByteId = $this->getCmsPageId($connection, $versionByteId);
         if ($cmsPageByteId === null) {
@@ -261,7 +261,7 @@ SQL,
             ]);
         }
 
-        $this->repairCmsPageTranslations($connection, $cmsPageByteId, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+        $this->repairCmsPageTranslations($connection, $cmsPageByteId, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
 
         return $cmsPageByteId;
     }
@@ -331,9 +331,9 @@ SQL,
 
     /**
      * @param list<string> $enLanguageByteIds
-     * @param list<string> $deLanguageByteIds
+     * @param list<string> $zhCnLanguageByteIds
      */
-    private function createCmsSlot(Connection $connection, string $cmsBlockByteId, string $versionByteId, array $enLanguageByteIds, array $deLanguageByteIds): void
+    private function createCmsSlot(Connection $connection, string $cmsBlockByteId, string $versionByteId, array $enLanguageByteIds, array $zhCnLanguageByteIds): void
     {
         $cmsSlotByteId = $connection->fetchOne(
             'SELECT `id` FROM `cms_slot` WHERE `cms_block_id` = :cmsBlockId AND `cms_block_version_id` = :versionId AND `version_id` = :versionId LIMIT 1',
@@ -355,23 +355,23 @@ SQL,
             ]);
         }
 
-        foreach ([...$enLanguageByteIds, ...$deLanguageByteIds] as $languageByteId) {
+        foreach ([...$enLanguageByteIds, ...$zhCnLanguageByteIds] as $languageByteId) {
             $this->repairCmsSlotTranslation($connection, $cmsSlotByteId, $versionByteId, $languageByteId);
         }
     }
 
     /**
      * @param list<string> $enLanguageByteIds
-     * @param list<string> $deLanguageByteIds
+     * @param list<string> $zhCnLanguageByteIds
      */
-    private function repairCmsPageTranslations(Connection $connection, string $cmsPageByteId, string $versionByteId, array $enLanguageByteIds, array $deLanguageByteIds): void
+    private function repairCmsPageTranslations(Connection $connection, string $cmsPageByteId, string $versionByteId, array $enLanguageByteIds, array $zhCnLanguageByteIds): void
     {
         foreach ($enLanguageByteIds as $enLanguageByteId) {
             $this->repairCmsPageTranslation($connection, $cmsPageByteId, $versionByteId, $enLanguageByteId, Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['en_name']);
         }
 
-        foreach ($deLanguageByteIds as $deLanguageByteId) {
-            $this->repairCmsPageTranslation($connection, $cmsPageByteId, $versionByteId, $deLanguageByteId, Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['de_name']);
+        foreach ($zhCnLanguageByteIds as $zhCnLanguageByteId) {
+            $this->repairCmsPageTranslation($connection, $cmsPageByteId, $versionByteId, $zhCnLanguageByteId, Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['zh_name']);
         }
     }
 
@@ -450,11 +450,11 @@ INNER JOIN `cms_page_translation` AS `page_translation`
     ON `page_translation`.`cms_page_id` = `page`.`id`
     AND `page_translation`.`cms_page_version_id` = `page`.`version_id`
 WHERE `page`.`version_id` = :versionId
-    AND (`page_translation`.`name` = :enName OR `page_translation`.`name` = :deName)
+    AND (`page_translation`.`name` = :enName OR `page_translation`.`name` = :zhName)
 LIMIT 1
 SQL,
             [
-                'deName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['de_name'],
+                'zhName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['zh_name'],
                 'enName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['en_name'],
                 'versionId' => $versionByteId,
             ],
@@ -648,7 +648,7 @@ SQL,
     /**
      * @return list<string>
      */
-    private function getLanguageIdsWithDePrefix(Connection $connection): array
+    private function getLanguageIdsWithZhPrefix(Connection $connection): array
     {
         /** @var list<string> $languageIds */
         $languageIds = $connection->fetchFirstColumn(
@@ -656,7 +656,7 @@ SQL,
 SELECT `language`.`id`
 FROM `language`
 INNER JOIN `locale` ON `locale`.`id` = `language`.`locale_id`
-WHERE LOWER(`locale`.`code`) LIKE 'de-%'
+WHERE LOWER(`locale`.`code`) LIKE 'zh-%'
 ORDER BY `language`.`created_at` ASC, `language`.`id` ASC
 SQL
         );
@@ -667,7 +667,7 @@ SQL
     /**
      * @return list<string>
      */
-    private function getLanguageIdsWithoutDePrefix(Connection $connection): array
+    private function getLanguageIdsWithoutZhPrefix(Connection $connection): array
     {
         /** @var list<string> $languageIds */
         $languageIds = $connection->fetchFirstColumn(
@@ -675,7 +675,7 @@ SQL
 SELECT `language`.`id`
 FROM `language`
 INNER JOIN `locale` ON `locale`.`id` = `language`.`locale_id`
-WHERE LOWER(`locale`.`code`) NOT LIKE 'de-%'
+WHERE LOWER(`locale`.`code`) NOT LIKE 'zh-%'
 ORDER BY `language`.`created_at` ASC, `language`.`id` ASC
 SQL
         );

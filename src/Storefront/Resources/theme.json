@@ -3,7 +3,7 @@
   "author": "Shopwell",
   "description": {
     "en-GB": "Default theme of Shopwell 6",
-    "de-DE": "Standard Theme von Shopwell 6"
+    "zh-CN": "Shopwell 6 默认主题"
   },
   "previewMedia": "app/storefront/dist/assets/defaultThemePreview.jpg",
   "style": [

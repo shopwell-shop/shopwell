@@ -50,8 +50,8 @@ class DeleteAdminFilesAfterBuildCommandTest extends TestCase
     {
         $app = $this->adminDir . '/Resources/app/administration';
 
-        // module: only the de-DE and en-GB translations survive, emptied directories are pruned
-        $this->write($app . '/src/module/sw-example/snippet/de-DE.json');
+        // module: only the zh-CN and en-GB translations survive, emptied directories are pruned
+        $this->write($app . '/src/module/sw-example/snippet/zh-CN.json');
         $this->write($app . '/src/module/sw-example/snippet/en-GB.json');
         $this->write($app . '/src/module/sw-example/snippet/fr-FR.json');
         $this->write($app . '/src/module/sw-example/index.js');
@@ -69,7 +69,7 @@ class DeleteAdminFilesAfterBuildCommandTest extends TestCase
 
         $this->runCommand();
 
-        static::assertFileExists($app . '/src/module/sw-example/snippet/de-DE.json');
+        static::assertFileExists($app . '/src/module/sw-example/snippet/zh-CN.json');
         static::assertFileExists($app . '/src/module/sw-example/snippet/en-GB.json');
         static::assertFileDoesNotExist($app . '/src/module/sw-example/snippet/fr-FR.json');
         static::assertFileDoesNotExist($app . '/src/module/sw-example/index.js');

@@ -73,15 +73,15 @@ class Migration1786369207SeedAppProvidedDocumentTypeTest extends TestCase
         static::assertArrayHasKey(Defaults::LANGUAGE_SYSTEM, $namesByLanguageId);
         static::assertSame('App document', $namesByLanguageId[Defaults::LANGUAGE_SYSTEM]);
 
-        $germanLanguageId = $this->connection->fetchOne('
+        $zhCnLanguageId = $this->connection->fetchOne('
             SELECT LOWER(HEX(`language`.id))
             FROM `language`
             INNER JOIN `locale` ON `language`.`locale_id` = `locale`.`id` AND `locale`.`code` = :locale
-        ', ['locale' => 'de-DE']);
+        ', ['locale' => 'zh-CN']);
 
-        if ($germanLanguageId !== false) {
-            static::assertArrayHasKey($germanLanguageId, $namesByLanguageId);
-            static::assertSame('App-Dokument', $namesByLanguageId[$germanLanguageId]);
+        if ($zhCnLanguageId !== false) {
+            static::assertArrayHasKey($zhCnLanguageId, $namesByLanguageId);
+            static::assertSame('应用文档', $namesByLanguageId[$zhCnLanguageId]);
         }
     }
 }

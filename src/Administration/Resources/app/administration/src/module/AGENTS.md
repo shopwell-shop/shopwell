@@ -158,7 +158,7 @@ export default {
 
 ## Snippets (i18n)
 
-German (`de-DE`) Administration snippets use the informal "Du" (unlike the Storefront, which uses "Sie").
+Simplified Chinese (`zh-CN`) is the second built-in Administration language. Keep the wording concise and product-oriented, the way Chinese e-commerce backends phrase things — do not translate English word by word.
 
 ```json
 {

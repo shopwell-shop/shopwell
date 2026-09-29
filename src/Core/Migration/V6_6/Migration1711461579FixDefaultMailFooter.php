@@ -24,14 +24,16 @@ class Migration1711461579FixDefaultMailFooter extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $languages = $this->getLanguageIds($connection, 'de-DE');
+        $languages = $this->getLanguageIds($connection, 'zh-CN');
         if (!$languages) {
             return;
         }
 
+        // The default footer was originally shipped with a wrong character variant
+        // for the bank account label and has to be corrected for existing shops.
         $connection->executeStatement(
             'UPDATE mail_header_footer_translation
-            SET footer_plain = REPLACE(footer_plain, \'Addresse:\', \'Adresse:\')
+            SET footer_plain = REPLACE(footer_plain, \'银行帐户\', \'银行账户\')
             WHERE language_id IN (:ids)',
             ['ids' => Uuid::fromHexToBytesList($languages)],
             ['ids' => ArrayParameterType::BINARY]

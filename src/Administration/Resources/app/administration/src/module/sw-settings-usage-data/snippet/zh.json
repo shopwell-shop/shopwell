@@ -1,0 +1,77 @@
+{
+  "sw-settings-usage-data": {
+    "general": {
+      "mainMenuItemGeneral": "隐私设置",
+      "textHeadline": "隐私设置",
+      "description": "设置你的隐私偏好。"
+    },
+    "errors": {
+      "consent-update-error": "无法更新同意项 \"{consent}\""
+    },
+    "consent-modal": {
+      "title": "帮助我们改进 Shopwell",
+      "intro": "你的同意能帮助我们了解 Shopwell 的使用情况，以便持续改进。",
+      "share-store-data": "你的同意能帮助我们了解 Shopwell 的使用情况，以便持续改进。",
+      "share-user-data": "你的同意能帮助我们了解 Shopwell 的使用情况，以便持续改进。",
+      "promises": {
+        "gdpr-compliant": "符合 GDPR",
+        "securely-processed": "数据安全存储",
+        "no-third-party": "不向第三方传递数据"
+      },
+      "store-data": {
+        "title": "店铺数据",
+        "description": "来自你 Shopwell 环境的匿名数据（如 {order}、{diagnostic} 和 {store}）可帮助我们改进功能。所有数据概览和协议详情请见{data-use-details}。",
+        "emphasizes": {
+          "order": "订单",
+          "diagnostic": "诊断数据",
+          "store": "店铺数据"
+        },
+        "help-text": {
+          "order": "Shopwell 中的<strong>订单数据</strong>指客户在平台上所下订单的详细信息，包括订购的商品、数量、价格、来源、支付方式、配送等。我们分析这些数据以了解趋势和规律，从而改进功能并开发有助于提升业务成效的新服务。我们不会收集可用于识别单个客户身份的客户个人数据。",
+          "diagnostic": "Shopwell 中的<strong>诊断数据</strong>指与系统状态、错误和平台性能指标相关的信息，包括系统日志、错误信息、服务器响应时间等技术指标。分析这些数据有助于我们快速发现、处理并修复常见问题或安全漏洞，从而维护平台的稳定性。",
+          "store": "Shopwell 中的<strong>店铺数据</strong>指与你的在线店铺相关的全部信息，例如商品、报价、价格、图片、描述等，以及店铺设置的元数据（如主题和插件）。我们不会收集可用于识别后台用户或店铺前台访客身份的个人数据。借助聚合后的店铺数据，我们可以通过机器学习提供洞察，例如新兴市场趋势，帮助你相应调整商品或营销策略。"
+        },
+        "external-links": {
+          "data-use-details": {
+            "label": "此处",
+            "link": "https://www.shopwell.cn/de/rechtliches/data-use-details/"
+          }
+        },
+        "label-checkbox": "共享店铺数据（匿名）"
+      },
+      "user-data": {
+        "title": "使用数据",
+        "description": "我们使用你在后台操作中的个人{data}来持续改进易用性。详情请见我们的{privacy-policy}。",
+        "emphasizes": {
+          "data": "使用数据"
+        },
+        "help-text": {
+          "data": "Shopwell 中的<strong>使用数据</strong>指后台用户和店铺前台访客与我们平台交互的信息，包括与各 Shopwell 后台模块的交互、浏览的页面、访问时长、点击路径以及平台和店铺前台内的用户操作。通过分析使用数据，我们可以找出平台上被频繁访问或被忽略的区域，以衡量功能的使用情况，从而改进布局、设计和功能。"
+        },
+        "external-links": {
+          "privacy-policy": {
+            "label": "隐私政策",
+            "link": "https://www.shopwell.cn/de/datenschutz/website/"
+          }
+        },
+        "label-checkbox": "共享使用数据"
+      },
+      "opt-out-info": {
+        "snippet": "你可随时调整设置：商城数据在 {settings}，个人数据在 {profile}。",
+        "single-option-snippet": "你可以随时在 {link} 中修改偏好设置。",
+        "settings": "设置 – 隐私",
+        "profile": "你的资料 – 隐私偏好"
+      },
+      "actions": {
+        "share-all-data": "全部允许",
+        "share-nothing": "全部拒绝",
+        "save-preferences": "保存选择",
+        "give-consent": "同意",
+        "decline": "拒绝"
+      }
+    }
+  },
+  "sw-settings-usage-data-general": {
+    "tabHeadline": "通用"
+  }
+}

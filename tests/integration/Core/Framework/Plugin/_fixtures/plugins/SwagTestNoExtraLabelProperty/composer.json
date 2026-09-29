@@ -17,15 +17,15 @@
         "shopwell-plugin-class": "SwagTestNoExtraLabelProperty\\SwagTestNoExtraLabelProperty",
         "copyright": "(c) by Shopwell",
         "description": {
-            "de-DE": "Deutsche Beschreibung",
+            "zh-CN": "中文插件说明",
             "en-GB": "English description"
         },
         "manufacturerLink": {
-            "de-DE": "https://www.test.de/",
+            "zh-CN": "https://www.test.cn/",
             "en-GB": "https://www.test.com/"
         },
         "supportLink": {
-            "de-DE": "https://www.test.de/support",
+            "zh-CN": "https://www.test.cn/support",
             "en-GB": "https://www.test.com/support"
         }
     },

@@ -9,11 +9,11 @@ class TranslationWriteResult
 {
     /**
      * @param string[] $englishLanguages
-     * @param string[] $germanLanguages
+     * @param string[] $zhCnLanguages
      */
     public function __construct(
         private readonly array $englishLanguages,
-        private readonly array $germanLanguages
+        private readonly array $zhCnLanguages
     ) {
     }
 
@@ -28,9 +28,9 @@ class TranslationWriteResult
     /**
      * @return array<string>
      */
-    public function getGermanLanguages(): array
+    public function getZhCnLanguages(): array
     {
-        return $this->germanLanguages;
+        return $this->zhCnLanguages;
     }
 
     public function hasWrittenEnglishTranslations(): bool
@@ -38,8 +38,8 @@ class TranslationWriteResult
         return $this->englishLanguages !== [];
     }
 
-    public function hasWrittenGermanTranslations(): bool
+    public function hasWrittenZhCnTranslations(): bool
     {
-        return $this->getGermanLanguages() !== [];
+        return $this->getZhCnLanguages() !== [];
     }
 }

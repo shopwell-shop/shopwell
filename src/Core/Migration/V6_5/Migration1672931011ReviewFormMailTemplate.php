@@ -21,7 +21,7 @@ class Migration1672931011ReviewFormMailTemplate extends MigrationStep
     use ImportTranslationsTrait;
 
     private const LOCALE_EN_GB = 'en-GB';
-    private const LOCALE_DE_DE = 'de-DE';
+    private const LOCALE_ZH_CN = 'zh-CN';
 
     public function getCreationTimestamp(): int
     {
@@ -51,7 +51,7 @@ class Migration1672931011ReviewFormMailTemplate extends MigrationStep
             $translations = new Translations(
                 [
                     'mail_template_type_id' => $typeId,
-                    'name' => 'Produktbewertung',
+                    'name' => '商品评价',
                 ],
                 [
                     'mail_template_type_id' => $typeId,
@@ -76,9 +76,9 @@ class Migration1672931011ReviewFormMailTemplate extends MigrationStep
             [
                 'mail_template_id' => $templateId,
                 'sender_name' => '{{ salesChannel.name }}',
-                'subject' => 'Neue Produktbewertung',
-                'content_html' => $this->getMailTemplateContent(self::LOCALE_DE_DE, true),
-                'content_plain' => $this->getMailTemplateContent(self::LOCALE_DE_DE, false),
+                'subject' => '新的商品评价',
+                'content_html' => $this->getMailTemplateContent(self::LOCALE_ZH_CN, true),
+                'content_plain' => $this->getMailTemplateContent(self::LOCALE_ZH_CN, false),
             ],
             [
                 'mail_template_id' => $templateId,
@@ -98,17 +98,17 @@ class Migration1672931011ReviewFormMailTemplate extends MigrationStep
 
         $enHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/review_form/en-html.html.twig');
         $enPlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/review_form/en-plain.html.twig');
-        $deHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/review_form/de-html.html.twig');
-        $dePlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/review_form/de-plain.html.twig');
+        $zhHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/review_form/zh-html.html.twig');
+        $zhPlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/review_form/zh-plain.html.twig');
 
         $templateContentMapping = [
             self::LOCALE_EN_GB => [
                 'html' => $enHtml,
                 'plain' => $enPlain,
             ],
-            self::LOCALE_DE_DE => [
-                'html' => $deHtml,
-                'plain' => $dePlain,
+            self::LOCALE_ZH_CN => [
+                'html' => $zhHtml,
+                'plain' => $zhPlain,
             ],
         ];
 

@@ -41,7 +41,7 @@ class ContextGatewayCommandValidatorTest extends TestCase
         $commands->add(self::getCommand(RegisterCustomerCommand::class, ['data' => ['foo' => 'bar']]));
         $commands->add(self::getCommand(ChangeBillingAddressCommand::class, ['addressId' => '123']));
         $commands->add(self::getCommand(ChangeCurrencyCommand::class, ['iso' => 'EUR']));
-        $commands->add(self::getCommand(ChangeLanguageCommand::class, ['iso' => 'de_DE']));
+        $commands->add(self::getCommand(ChangeLanguageCommand::class, ['iso' => 'zh_CN']));
         $commands->add(self::getCommand(ChangePaymentMethodCommand::class, ['technicalName' => 'test_app_payment']));
         $commands->add(self::getCommand(ChangeShippingAddressCommand::class, ['addressId' => '123']));
         $commands->add(self::getCommand(ChangeShippingLocationCommand::class, ['countryIso' => 'DE', 'countryStateIso' => 'DE-BY']));

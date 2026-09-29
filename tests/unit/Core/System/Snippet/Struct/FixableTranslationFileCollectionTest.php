@@ -17,16 +17,16 @@ class FixableTranslationFileCollectionTest extends TestCase
 {
     public function testAddGroupsFilesByTheirAgnosticPath(): void
     {
-        $german = self::file('de-DE.json', 'de-DE', 'de');
-        $austrian = self::file('de-AT.json', 'de-AT', 'de');
+        $chinese = self::file('zh-CN.json', 'zh-CN', 'zh');
+        $singapore = self::file('zh-SG.json', 'zh-SG', 'zh');
 
         $collection = new FixableTranslationFileCollection();
-        $collection->add($german);
-        $collection->add($austrian);
+        $collection->add($chinese);
+        $collection->add($singapore);
 
         static::assertCount(2, $collection);
         static::assertSame(
-            ['path/to/file/storefront.de.json' => ['de-DE' => $german, 'de-AT' => $austrian]],
+            ['path/to/file/storefront.zh.json' => ['zh-CN' => $chinese, 'zh-SG' => $singapore]],
             $collection->getMapping()
         );
     }

@@ -91,7 +91,7 @@ class PropertyGroupSorterTest extends TestCase
         );
 
         $sorter = new PropertyGroupSorter();
-        $result = $sorter->sortUsingLocaleCode($options, 'de-DE');
+        $result = $sorter->sortUsingLocaleCode($options, 'zh-CN');
 
         $sortedGroup = $result->first();
         static::assertNotNull($sortedGroup);

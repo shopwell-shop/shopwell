@@ -24,12 +24,12 @@ class Migration1570621541UpdateDefaultMailTemplates extends MigrationStep
     {
         // implement update
         $defaultLangId = $this->fetchLanguageId('en-GB', $connection);
-        $deLangId = $this->fetchLanguageId('de-DE', $connection);
+        $zhCnLangId = $this->fetchLanguageId('zh-CN', $connection);
 
         // update order confirmation
         $templateId = $this->fetchSystemMailTemplateIdFromType($connection, MailTemplateTypes::MAILTYPE_ORDER_CONFIRM);
         if ($templateId !== null) {
-            if ($defaultLangId !== $deLangId) {
+            if ($defaultLangId !== $zhCnLangId) {
                 $this->updateMailTemplateTranslation(
                     $connection,
                     $templateId,
@@ -49,13 +49,13 @@ class Migration1570621541UpdateDefaultMailTemplates extends MigrationStep
                 );
             }
 
-            if ($deLangId) {
+            if ($zhCnLangId) {
                 $this->updateMailTemplateTranslation(
                     $connection,
                     $templateId,
-                    $deLangId,
-                    $this->getOrderConfirmationHtmlTemplateDe(),
-                    $this->getOrderConfirmationPlainTemplateDe()
+                    $zhCnLangId,
+                    $this->getOrderConfirmationHtmlTemplateZhCn(),
+                    $this->getOrderConfirmationPlainTemplateZhCn()
                 );
             }
         }
@@ -63,7 +63,7 @@ class Migration1570621541UpdateDefaultMailTemplates extends MigrationStep
         // update customer registration
         $templateId = $this->fetchSystemMailTemplateIdFromType($connection, MailTemplateTypes::MAILTYPE_CUSTOMER_REGISTER);
         if ($templateId !== null) {
-            if ($defaultLangId !== $deLangId) {
+            if ($defaultLangId !== $zhCnLangId) {
                 $this->updateMailTemplateTranslation(
                     $connection,
                     $templateId,
@@ -86,16 +86,16 @@ class Migration1570621541UpdateDefaultMailTemplates extends MigrationStep
             $this->updateMailTemplateTranslation(
                 $connection,
                 $templateId,
-                $deLangId,
-                $this->getRegistrationHtmlTemplateDe(),
-                $this->getRegistrationPlainTemplateDe()
+                $zhCnLangId,
+                $this->getRegistrationHtmlTemplateZhCn(),
+                $this->getRegistrationPlainTemplateZhCn()
             );
         }
 
         // update password change
         $templateId = $this->fetchSystemMailTemplateIdFromType($connection, MailTemplateTypes::MAILTYPE_PASSWORD_CHANGE);
         if ($templateId !== null) {
-            if ($defaultLangId !== $deLangId) {
+            if ($defaultLangId !== $zhCnLangId) {
                 $this->updateMailTemplateTranslation(
                     $connection,
                     $templateId,
@@ -118,16 +118,16 @@ class Migration1570621541UpdateDefaultMailTemplates extends MigrationStep
             $this->updateMailTemplateTranslation(
                 $connection,
                 $templateId,
-                $deLangId,
-                $this->getPasswordChangeHtmlTemplateDe(),
-                $this->getPasswordChangePlainTemplateDe()
+                $zhCnLangId,
+                $this->getPasswordChangeHtmlTemplateZhCn(),
+                $this->getPasswordChangePlainTemplateZhCn()
             );
         }
 
         // update newsletter register
         $templateId = $this->fetchSystemMailTemplateIdFromType($connection, 'newsletterRegister');
         if ($templateId !== null) {
-            if ($defaultLangId !== $deLangId) {
+            if ($defaultLangId !== $zhCnLangId) {
                 $this->updateMailTemplateTranslation(
                     $connection,
                     $templateId,
@@ -152,9 +152,9 @@ class Migration1570621541UpdateDefaultMailTemplates extends MigrationStep
             $this->updateMailTemplateTranslation(
                 $connection,
                 $templateId,
-                $deLangId,
-                $this->getRegisterTemplate_HTML_DE(),
-                $this->getRegisterTemplate_PLAIN_DE(),
+                $zhCnLangId,
+                $this->getRegisterTemplate_HTML_ZH_CN(),
+                $this->getRegisterTemplate_PLAIN_ZH_CN(),
                 '{{ salesChannel.translated.name }}'
             );
         }
@@ -162,7 +162,7 @@ class Migration1570621541UpdateDefaultMailTemplates extends MigrationStep
         // update newsletter opt in
         $templateId = $this->fetchSystemMailTemplateIdFromType($connection, 'newsletterDoubleOptIn');
         if ($templateId !== null) {
-            if ($defaultLangId !== $deLangId) {
+            if ($defaultLangId !== $zhCnLangId) {
                 $this->updateMailTemplateTranslation(
                     $connection,
                     $templateId,
@@ -187,9 +187,9 @@ class Migration1570621541UpdateDefaultMailTemplates extends MigrationStep
             $this->updateMailTemplateTranslation(
                 $connection,
                 $templateId,
-                $deLangId,
-                $this->getOptInTemplate_HTML_DE(),
-                $this->getOptInTemplate_PLAIN_DE(),
+                $zhCnLangId,
+                $this->getOptInTemplate_HTML_ZH_CN(),
+                $this->getOptInTemplate_PLAIN_ZH_CN(),
                 '{{ salesChannel.translated.name }}'
             );
         }
@@ -413,25 +413,25 @@ If you have any questions, do not hesitate to contact us.
 ';
     }
 
-    private function getOrderConfirmationHtmlTemplateDe(): string
+    private function getOrderConfirmationHtmlTemplateZhCn(): string
     {
         return '<div style="font-family:arial; font-size:12px;">
 
 {% set currencyIsoCode = order.currency.isoCode %}
-Hallo {{order.orderCustomer.salutation.translated.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br>
+您好 {{order.orderCustomer.salutation.translated.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br>
 <br>
-vielen Dank für Ihre Bestellung im {{ salesChannel.translated.name }} (Nummer: {{order.orderNumber}}) am {{ order.orderDateTime|date }}.<br>
+感谢您在 {{ salesChannel.translated.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。<br>
 <br>
-<strong>Informationen zu Ihrer Bestellung:</strong><br>
+<strong>订单信息：</strong><br>
 <br>
 
 <table width="80%" border="0" style="font-family:Arial, Helvetica, sans-serif; font-size:12px;">
     <tr>
         <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Pos.</strong></td>
-        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Bezeichnung</strong></td>
-        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Menge</strong></td>
-        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Preis</strong></td>
-        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Summe</strong></td>
+        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>商品名称</strong></td>
+        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>数量</strong></td>
+        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>单价</strong></td>
+        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>金额</strong></td>
     </tr>
 
     {% for lineItem in order.lineItems %}
@@ -439,7 +439,7 @@ vielen Dank für Ihre Bestellung im {{ salesChannel.translated.name }} (Nummer: 
         <td style="border-bottom:1px solid #cccccc;">{{ loop.index }} </td>
         <td style="border-bottom:1px solid #cccccc;">
           {{ lineItem.label|wordwrap(80) }}<br>
-          Artikel-Nr: {{ lineItem.payload.productNumber|wordwrap(80) }}
+          商品编号：{{ lineItem.payload.productNumber|wordwrap(80) }}
         </td>
         <td style="border-bottom:1px solid #cccccc;">{{ lineItem.quantity }}</td>
         <td style="border-bottom:1px solid #cccccc;">{{ lineItem.unitPrice|currency(currencyIsoCode) }}</td>
@@ -452,26 +452,26 @@ vielen Dank für Ihre Bestellung im {{ salesChannel.translated.name }} (Nummer: 
 <p>
     <br>
     <br>
-    Versandkosten: {{order.deliveries.first.shippingCosts.totalPrice|currency(currencyIsoCode) }}<br>
-    Gesamtkosten Netto: {{ order.amountNet|currency(currencyIsoCode) }}<br>
+    运费：{{order.deliveries.first.shippingCosts.totalPrice|currency(currencyIsoCode) }}<br>
+    净额合计：{{ order.amountNet|currency(currencyIsoCode) }}<br>
     {% if order.taxStatus is same as(\'net\') %}
         {% for calculatedTax in order.cartPrice.calculatedTaxes %}
-            zzgl. {{ calculatedTax.taxRate }}% MwSt. {{ calculatedTax.tax|currency(currencyIsoCode) }}<br>
+            另加 {{ calculatedTax.taxRate }}% 增值税 {{ calculatedTax.tax|currency(currencyIsoCode) }}<br>
         {% endfor %}
-        <strong>Gesamtkosten Brutto: {{ order.amountTotal|currency(currencyIsoCode) }}</strong><br>
+        <strong>总额合计：{{ order.amountTotal|currency(currencyIsoCode) }}</strong><br>
     {% endif %}
     <br>
 
-    <strong>Gewählte Zahlungsart:</strong> {{ order.transactions.first.paymentMethod.name }}<br>
+    <strong>支付方式：</strong> {{ order.transactions.first.paymentMethod.name }}<br>
     {{ order.transactions.first.paymentMethod.description }}<br>
     <br>
 
-    <strong>Gewählte Versandtart:</strong> {{ delivery.shippingMethod.name }}<br>
+    <strong>配送方式：</strong> {{ delivery.shippingMethod.name }}<br>
     {{ delivery.shippingMethod.description }}<br>
     <br>
 
     {% set billingAddress = order.addresses.get(order.billingAddressId) %}
-    <strong>Rechnungsaddresse:</strong><br>
+    <strong>账单地址：</strong><br>
     {{ billingAddress.company }}<br>
     {{ billingAddress.firstName }} {{ billingAddress.lastName }}<br>
     {{ billingAddress.street }} <br>
@@ -479,7 +479,7 @@ vielen Dank für Ihre Bestellung im {{ salesChannel.translated.name }} (Nummer: 
     {{ billingAddress.country.name }}<br>
     <br>
 
-    <strong>Lieferadresse:</strong><br>
+    <strong>收货地址：</strong><br>
     {{ delivery.shippingOrderAddress.company }}<br>
     {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}<br>
     {{ delivery.shippingOrderAddress.street }} <br>
@@ -487,58 +487,58 @@ vielen Dank für Ihre Bestellung im {{ salesChannel.translated.name }} (Nummer: 
     {{ delivery.shippingOrderAddress.country.name }}<br>
     <br>
     {% if billingAddress.vatId %}
-        Ihre Umsatzsteuer-ID: {{ billingAddress.vatId }}
-        Bei erfolgreicher Prüfung und sofern Sie aus dem EU-Ausland
-        bestellen, erhalten Sie Ihre Ware umsatzsteuerbefreit. <br>
+        您的增值税号：{{ billingAddress.vatId }}
+        验证通过且您从欧盟境外
+        下单，将免税发货。 <br>
     {% endif %}
 
-    Für Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.
+    如有疑问，欢迎随时联系我们。
 
 </p>
 <br>
 </div>';
     }
 
-    private function getOrderConfirmationPlainTemplateDe(): string
+    private function getOrderConfirmationPlainTemplateZhCn(): string
     {
         return '{% set currencyIsoCode = order.currency.isoCode %}
-Hallo {{order.orderCustomer.salutation.translated.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+您好 {{order.orderCustomer.salutation.translated.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-vielen Dank für Ihre Bestellung im {{ salesChannel.translated.name }} (Nummer: {{order.orderNumber}}) am {{ order.orderDateTime|date }}.
+感谢您在 {{ salesChannel.translated.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。
 
-Informationen zu Ihrer Bestellung:
+订单信息：
 
-Pos.   Artikel-Nr.			Beschreibung			Menge			Preis			Summe
+序号 商品编号			商品名称			数量			单价			金额
 {% for lineItem in order.lineItems %}
 {{ loop.index }}     {{ lineItem.payload.productNumber|wordwrap(80) }}				{{ lineItem.label|wordwrap(80) }}			{{ lineItem.quantity }}			{{ lineItem.unitPrice|currency(currencyIsoCode) }}			{{ lineItem.totalPrice|currency(currencyIsoCode) }}
 {% endfor %}
 
 {% set delivery =order.deliveries.first %}
 
-Versandtkosten: {{order.deliveries.first.shippingCosts.totalPrice|currency(currencyIsoCode) }}
-Gesamtkosten Netto: {{ order.amountNet|currency(currencyIsoCode) }}
+运费：{{order.deliveries.first.shippingCosts.totalPrice|currency(currencyIsoCode) }}
+净额合计：{{ order.amountNet|currency(currencyIsoCode) }}
 {% if order.taxStatus is same as(\'net\') %}
 	{% for calculatedTax in order.cartPrice.calculatedTaxes %}
-		zzgl. {{ calculatedTax.taxRate }}% MwSt. {{ calculatedTax.tax|currency(currencyIsoCode) }}
+		另加 {{ calculatedTax.taxRate }}% 增值税 {{ calculatedTax.tax|currency(currencyIsoCode) }}
 	{% endfor %}
-	Gesamtkosten Brutto: {{ order.amountTotal|currency(currencyIsoCode) }}
+	总额合计：{{ order.amountTotal|currency(currencyIsoCode) }}
 {% endif %}
 
-Gewählte Zahlungsart: {{ order.transactions.first.paymentMethod.name }}
+支付方式：{{ order.transactions.first.paymentMethod.name }}
 {{ order.transactions.first.paymentMethod.description }}
 
-Gewählte Versandtart: {{ delivery.shippingMethod.name }}
+配送方式：{{ delivery.shippingMethod.name }}
 {{ delivery.shippingMethod.description }}
 
 {% set billingAddress = order.addresses.get(order.billingAddressId) %}
-Rechnungsadresse:
+账单地址：
 {{ billingAddress.company }}
 {{ billingAddress.firstName }} {{ billingAddress.lastName }}
 {{ billingAddress.street }}
 {{ billingAddress.zipcode }} {{ billingAddress.city }}
 {{ billingAddress.country.name }}
 
-Lieferadresse:
+收货地址：
 {{ delivery.shippingOrderAddress.company }}
 {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}
 {{ delivery.shippingOrderAddress.street }}
@@ -546,12 +546,12 @@ Lieferadresse:
 {{ delivery.shippingOrderAddress.country.name }}
 
 {% if billingAddress.vatId %}
-Ihre Umsatzsteuer-ID: {{ billingAddress.vatId }}
-Bei erfolgreicher Prüfung und sofern Sie aus dem EU-Ausland
-bestellen, erhalten Sie Ihre Ware umsatzsteuerbefreit.
+您的增值税号：{{ billingAddress.vatId }}
+验证通过且您从欧盟境外
+下单，将免税发货。
 {% endif %}
 
-Für Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.
+如有疑问，欢迎随时联系我们。
 
 ';
     }
@@ -579,26 +579,26 @@ Für Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.
         ';
     }
 
-    private function getRegistrationHtmlTemplateDe(): string
+    private function getRegistrationHtmlTemplateZhCn(): string
     {
         return '<div style="font-family:arial; font-size:12px;">
             <p>
-                Hallo {{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }},<br/>
+                您好 {{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }}，<br/>
                 <br/>
-                vielen Dank für Ihre Anmeldung in unserem Shop.<br/>
-                Sie erhalten Zugriff über Ihre E-Mail-Adresse <strong>{{ customer.email }}</strong> und dem von Ihnen gewählten Kennwort.<br/>
-                Sie können Ihr Kennwort jederzeit nachträglich ändern.
+                感谢您注册我们的商城。<br/>
+                您可以使用邮箱 <strong>{{ customer.email }}</strong> 和您设置的密码登录。<br/>
+                您可以随时修改密码。
             </p>
         </div>';
     }
 
-    private function getRegistrationPlainTemplateDe(): string
+    private function getRegistrationPlainTemplateZhCn(): string
     {
-        return 'Hallo {{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }},
+        return '您好 {{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }}，
 
-                vielen Dank für Ihre Anmeldung in unserem Shop.
-                Sie erhalten Zugriff über Ihre E-Mail-Adresse {{ customer.email }} und dem von Ihnen gewählten Kennwort.
-                Sie können Ihr Kennwort jederzeit nachträglich ändern.
+                感谢您注册我们的商城。
+                您可以使用邮箱 {{ customer.email }} 和您设置的密码登录。
+                您可以随时修改密码。
 ';
     }
 
@@ -634,35 +634,35 @@ Für Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.
     ';
     }
 
-    private function getPasswordChangeHtmlTemplateDe(): string
+    private function getPasswordChangeHtmlTemplateZhCn(): string
     {
         return '<div style="font-family:arial; font-size:12px;">
     <p>
-        Hallo {{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }},<br/>
+        您好 {{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }}，<br/>
         <br/>
-        im Shop {{ salesChannel.translated.name }} wurde eine Anfrage gestellt, um Ihr Passwort zurück zu setzen.
-        Bitte bestätigen Sie den unten stehenden Link, um ein neues Passwort zu definieren.<br/>
+        有人请求在 {{ salesChannel.translated.name }} 商城重置您的密码。
+        请点击下方链接设置新密码。<br/>
         <br/>
-        <a href="{{ urlResetPassword }}">Passwort zurücksetzen</a><br/>
+        <a href="{{ urlResetPassword }}">重置密码</a><br/>
         <br/>
-        Dieser Link ist nur für die nächsten 2 Stunden gültig. Danach muss das Zurücksetzen des Passwortes erneut beantragt werden.
-        Falls Sie Ihr Passwort nicht zurücksetzen möchten, ignorieren Sie diese E-Mail - es wird dann keine Änderung vorgenommen.
+        该链接在 2 小时内有效，逾期需重新申请。
+        如果您不希望重置密码，请忽略此邮件，我们不会做任何修改。
     </p>
 </div>';
     }
 
-    private function getPasswordChangePlainTemplateDe(): string
+    private function getPasswordChangePlainTemplateZhCn(): string
     {
         return '
-        Hallo {{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }},
+        您好 {{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }}，
 
-        im Shop {{ salesChannel.translated.name }} wurde eine Anfrage gestellt, um Ihr Passwort zurück zu setzen.
-        Bitte bestätigen Sie den unten stehenden Link, um ein neues Passwort zu definieren.
+        有人请求在 {{ salesChannel.translated.name }} 商城重置您的密码。
+        请点击下方链接设置新密码。
 
-        Passwort zurücksetzen: {{ urlResetPassword }}
+        重置密码：{{ urlResetPassword }}
 
-        Dieser Link ist nur für die nächsten 2 Stunden gültig. Danach muss das Zurücksetzen des Passwortes erneut beantragt werden.
-        Falls Sie Ihr Passwort nicht zurücksetzen möchten, ignorieren Sie diese E-Mail - es wird dann keine Änderung vorgenommen.
+        该链接在 2 小时内有效，逾期需重新申请。
+        如果您不希望重置密码，请忽略此邮件，我们不会做任何修改。
 ';
     }
 
@@ -684,21 +684,21 @@ Für Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.
         ';
     }
 
-    private function getRegisterTemplate_HTML_DE(): string
+    private function getRegisterTemplate_HTML_ZH_CN(): string
     {
-        return '<h3>Hallo {{ newsletterRecipient.firstName }} {{ newsletterRecipient.lastName }}</h3>
-                <p>vielen Dank für Ihre Anmeldung.</p>
-                <p>Sie haben sich erfolgreich zu unserem Newsletter angemeldet.</p>
+        return '<h3>您好 {{ newsletterRecipient.firstName }} {{ newsletterRecipient.lastName }}</h3>
+                <p>感谢您的注册。</p>
+                <p>您已成功订阅我们的邮件通讯。</p>
         ';
     }
 
-    private function getRegisterTemplate_PLAIN_DE(): string
+    private function getRegisterTemplate_PLAIN_ZH_CN(): string
     {
-        return 'Hallo {{ newsletterRecipient.firstName }} {{ newsletterRecipient.lastName }}
+        return '您好 {{ newsletterRecipient.firstName }} {{ newsletterRecipient.lastName }}
 
-                vielen Dank für Ihre Anmeldung.
+                感谢您的注册。
 
-                Sie haben sich erfolgreich zu unserem Newsletter angemeldet.
+                您已成功订阅我们的邮件通讯。
         ';
     }
 
@@ -723,24 +723,24 @@ Für Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.
         ';
     }
 
-    private function getOptInTemplate_HTML_DE(): string
+    private function getOptInTemplate_HTML_ZH_CN(): string
     {
-        return '<h3>Hallo {{ newsletterRecipient.firstName }} {{ newsletterRecipient.lastName }}</h3>
-                <p>Schön, dass Sie sich für unseren Newsletter interessieren!</p>
-                <p>Um einem Missbrauch Ihrer E-Mail-Adresse vorzubeugen, haben wir Ihnen diese Bestätigungsmail gesendet. Bestätigen Sie, dass Sie den Newsletter regelmäßig erhalten wollen, indem Sie <a href="{{ url }}">hier</a> klicken.</p>
-                <p>Sollten Sie den Newsletter nicht angefordert haben, ignorieren Sie diese E-Mail.</p>
+        return '<h3>您好 {{ newsletterRecipient.firstName }} {{ newsletterRecipient.lastName }}</h3>
+                <p>感谢您关注我们的邮件通讯！</p>
+                <p>为防止您的邮箱地址被他人冒用，我们向您发送了这封确认邮件。请点击<a href="{{ url }}">此处</a>，确认您希望定期收到邮件通讯。</p>
+                <p>如果您并未订阅邮件通讯，请忽略此邮件。</p>
         ';
     }
 
-    private function getOptInTemplate_PLAIN_DE(): string
+    private function getOptInTemplate_PLAIN_ZH_CN(): string
     {
-        return 'Hallo {{ newsletterRecipient.firstName }} {{ newsletterRecipient.lastName }}
+        return '您好 {{ newsletterRecipient.firstName }} {{ newsletterRecipient.lastName }}
 
-                Schön, dass Sie sich für unseren Newsletter interessieren!
+                感谢您关注我们的邮件通讯！
 
-                Um einem Missbrauch Ihrer E-Mail-Adresse vorzubeugen, haben wir Ihnen diese Bestätigungsmail gesendet. Bestätigen Sie, dass Sie den Newsletter regelmäßig erhalten wollen, indem Sie auf den folgenden Link klicken: {{ url }}
+                为防止您的邮箱地址被他人冒用，我们向您发送了这封确认邮件。请点击以下链接，确认您希望定期收到邮件通讯：{{ url }}
 
-                Sollten Sie den Newsletter nicht angefordert haben, ignorieren Sie diese E-Mail.
+                如果您并未订阅邮件通讯，请忽略此邮件。
         ';
     }
 }

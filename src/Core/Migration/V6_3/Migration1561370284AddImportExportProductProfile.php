@@ -24,7 +24,7 @@ class Migration1561370284AddImportExportProductProfile extends MigrationStep
         $mapping = [];
 
         $fields = [
-            'name.de-DE',
+            'name.zh-CN',
             'name.en-GB',
             'stock',
             'manufacturer.id',

@@ -41,12 +41,12 @@ class Migration1619428555AddDefaultMailFooter extends MigrationStep
         $translations = new Translations(
             [
                 'mail_header_footer_id' => $id,
-                'name' => 'Standard-E-Mail-Fußzeile',
-                'description' => 'Standard-E-Mail-Fußzeile basierend auf den Stammdaten',
+                'name' => '默认邮件页脚',
+                'description' => '基于基础信息的默认邮件页脚',
                 'header_html' => null,
                 'header_plain' => null,
-                'footer_plain' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/defaultMailFooter/de-plain.twig'),
-                'footer_html' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/defaultMailFooter/de-html.twig'),
+                'footer_plain' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/defaultMailFooter/zh-plain.twig'),
+                'footer_html' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/defaultMailFooter/zh-html.twig'),
             ],
             [
                 'mail_header_footer_id' => $id,

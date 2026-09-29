@@ -110,7 +110,7 @@ function getExampleDomains() {
             id: '98432def39fc4624b33213a56b8c944f',
             url: 'http://secondExample.com',
             language: {
-                name: 'Deutsch',
+                name: '中文',
             },
             currency: {
                 name: 'Danish krone',
@@ -119,7 +119,7 @@ function getExampleDomains() {
                 },
             },
             snippetSet: {
-                name: 'BASE de-DE',
+                name: 'BASE zh-CN',
             },
             measurementUnits: {
                 system: 'metric',
@@ -130,7 +130,7 @@ function getExampleDomains() {
             id: '66804d24057f4d4fb683a7db3d3b3b15',
             url: 'http://firstExample.com',
             language: {
-                name: 'Deutsch',
+                name: '中文',
             },
             currency: {
                 name: 'Euro',
@@ -139,7 +139,7 @@ function getExampleDomains() {
                 },
             },
             snippetSet: {
-                name: 'BASE de-DE',
+                name: 'BASE zh-CN',
             },
             measurementUnits: {
                 system: 'metric',
@@ -335,7 +335,7 @@ describe('src/module/sw-sales-channel/component/sw-sales-channel-detail-domains'
             },
             {
                 id: 'language-2',
-                name: 'German',
+                name: '中文',
             },
         ]);
 
@@ -450,7 +450,7 @@ describe('src/module/sw-sales-channel/component/sw-sales-channel-detail-domains'
                 url: 'http://firstExample.com',
                 productExports: [],
                 language: {
-                    name: 'Deutsch',
+                    name: '中文',
                 },
                 currency: {
                     name: 'Euro',
@@ -462,7 +462,7 @@ describe('src/module/sw-sales-channel/component/sw-sales-channel-detail-domains'
                     system: 'metric',
                 },
                 snippetSet: {
-                    name: 'BASE de-DE',
+                    name: 'BASE zh-CN',
                 },
                 isNew: () => false,
             },
@@ -495,7 +495,7 @@ describe('src/module/sw-sales-channel/component/sw-sales-channel-detail-domains'
                 url: 'http://firstExample.com',
                 productExports: [{}],
                 language: {
-                    name: 'Deutsch',
+                    name: '中文',
                 },
                 currency: {
                     name: 'Euro',
@@ -507,7 +507,7 @@ describe('src/module/sw-sales-channel/component/sw-sales-channel-detail-domains'
                     system: 'metric',
                 },
                 snippetSet: {
-                    name: 'BASE de-DE',
+                    name: 'BASE zh-CN',
                 },
                 isNew: () => false,
             },
@@ -540,7 +540,7 @@ describe('src/module/sw-sales-channel/component/sw-sales-channel-detail-domains'
                 url: 'http://firstExample.com',
                 productExports: [{}],
                 language: {
-                    name: 'Deutsch',
+                    name: '中文',
                 },
                 currency: {
                     name: 'Euro',
@@ -552,7 +552,7 @@ describe('src/module/sw-sales-channel/component/sw-sales-channel-detail-domains'
                     system: 'metric',
                 },
                 snippetSet: {
-                    name: 'BASE de-DE',
+                    name: 'BASE zh-CN',
                 },
                 isNew: () => false,
             },

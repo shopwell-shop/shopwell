@@ -90,7 +90,7 @@ class StorefrontSeoUrlRepositoryTest extends TestCase
         $enId = Uuid::randomHex();
         $foreignKey = Uuid::randomHex();
 
-        $this->upsertLanguage($deLanguageId, 'de-DE-1');
+        $this->upsertLanguage($deLanguageId, 'zh-CN-1');
         $salesChannelContext = $this->createStorefrontSalesChannelContext(Uuid::randomHex(), 'test', $deLanguageId);
 
         $this->seoUrlRepository->create(

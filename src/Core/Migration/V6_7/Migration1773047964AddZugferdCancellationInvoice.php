@@ -45,7 +45,7 @@ class Migration1773047964AddZugferdCancellationInvoice extends MigrationStep
         ]);
 
         $translation = new Translations(
-            ['document_type_id' => $cancellationInvoiceId, 'name' => 'ZUGFeRD Stornorechnung'],
+            ['document_type_id' => $cancellationInvoiceId, 'name' => 'ZUGFeRD 冲销发票'],
             ['document_type_id' => $cancellationInvoiceId, 'name' => 'ZUGFeRD Cancellation Invoice']
         );
 

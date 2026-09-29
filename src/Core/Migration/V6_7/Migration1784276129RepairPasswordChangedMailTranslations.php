@@ -12,9 +12,9 @@ use Shopwell\Core\Framework\Migration\MigrationStep;
 #[Package('checkout')]
 class Migration1784276129RepairPasswordChangedMailTranslations extends MigrationStep
 {
-    private const WRONG_GERMAN_NAME = 'Kunden-Password geändert';
+    private const WRONG_NAME = '客户密码已更改';
 
-    private const CORRECT_GERMAN_NAME = 'Kunden-Passwort geändert';
+    private const CORRECT_NAME = '客户密码已修改';
 
     public function getCreationTimestamp(): int
     {
@@ -28,16 +28,16 @@ class Migration1784276129RepairPasswordChangedMailTranslations extends Migration
         $connection->executeStatement(
             'UPDATE `mail_template_type_translation` SET `name` = :correctName WHERE `name` = :wrongName',
             [
-                'wrongName' => self::WRONG_GERMAN_NAME,
-                'correctName' => self::CORRECT_GERMAN_NAME,
+                'wrongName' => self::WRONG_NAME,
+                'correctName' => self::CORRECT_NAME,
             ],
         );
 
         $connection->executeStatement(
             'UPDATE `mail_template_translation` SET `subject` = :correctSubject WHERE `subject` = :wrongSubject',
             [
-                'wrongSubject' => self::WRONG_GERMAN_NAME,
-                'correctSubject' => self::CORRECT_GERMAN_NAME,
+                'wrongSubject' => self::WRONG_NAME,
+                'correctSubject' => self::CORRECT_NAME,
             ],
         );
     }

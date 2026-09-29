@@ -79,28 +79,28 @@ describe('core/service/api/snippet.api.service.ts', () => {
         it('should register new locale if it does not exist', async () => {
             const { snippetApiService, clientMock } = createSnippetApiService();
 
-            // Verify de-DE locale does not exist before getSnippets
+            // Verify zh-CN locale does not exist before getSnippets
             const registryBefore = LocaleFactory.getLocaleRegistry();
-            expect(registryBefore.has('de-DE')).toBe(false);
+            expect(registryBefore.has('zh-CN')).toBe(false);
 
-            clientMock.onGet('/_admin/snippets?locale=de-DE').reply(200, {
-                'de-DE': {
+            clientMock.onGet('/_admin/snippets?locale=zh-CN').reply(200, {
+                'zh-CN': {
                     test: {
-                        key: 'Test Wert',
+                        key: '测试值',
                     },
                 },
             });
 
-            await snippetApiService.getSnippets(LocaleFactory, 'de-DE');
+            await snippetApiService.getSnippets(LocaleFactory, 'zh-CN');
 
-            // Verify de-DE locale exists after getSnippets
+            // Verify zh-CN locale exists after getSnippets
             const registry = LocaleFactory.getLocaleRegistry();
-            expect(registry.has('de-DE')).toBe(true);
+            expect(registry.has('zh-CN')).toBe(true);
 
-            const messages = registry.get('de-DE');
+            const messages = registry.get('zh-CN');
             expect(messages).toEqual({
                 test: {
-                    key: 'Test Wert',
+                    key: '测试值',
                 },
             });
         });
@@ -117,28 +117,28 @@ describe('core/service/api/snippet.api.service.ts', () => {
                 configurable: true,
             });
 
-            // Verify de-DE locale does not exist before getSnippets
+            // Verify zh-CN locale does not exist before getSnippets
             const registryBefore = LocaleFactory.getLocaleRegistry();
-            expect(registryBefore.has('de-DE')).toBe(false);
+            expect(registryBefore.has('zh-CN')).toBe(false);
 
-            clientMock.onGet('/_admin/snippets?locale=de-DE').reply(200, {
-                'de-DE': {
+            clientMock.onGet('/_admin/snippets?locale=zh-CN').reply(200, {
+                'zh-CN': {
                     test: {
-                        key: 'Test Wert',
+                        key: '测试值',
                     },
                 },
             });
 
-            await snippetApiService.getSnippets(LocaleFactory, 'de-DE');
+            await snippetApiService.getSnippets(LocaleFactory, 'zh-CN');
 
             // Should be called 2 times: service calls it twice
             expect(setLocaleMessageMock).toHaveBeenCalledTimes(2);
 
             // Verify empty message is called before full messages (reactivity pattern)
-            expect(setLocaleMessageMock).toHaveBeenNthCalledWith(1, 'de-DE', {});
-            expect(setLocaleMessageMock).toHaveBeenNthCalledWith(2, 'de-DE', {
+            expect(setLocaleMessageMock).toHaveBeenNthCalledWith(1, 'zh-CN', {});
+            expect(setLocaleMessageMock).toHaveBeenNthCalledWith(2, 'zh-CN', {
                 test: {
-                    key: 'Test Wert',
+                    key: '测试值',
                 },
             });
         });
@@ -250,14 +250,14 @@ describe('core/service/api/snippet.api.service.ts', () => {
             const { snippetApiService, clientMock } = createSnippetApiService();
 
             LocaleFactory.register('en-GB', {});
-            LocaleFactory.register('de-DE', {});
+            LocaleFactory.register('zh-CN', {});
 
             // Verify both locales are registered but empty before action
             const registryBefore = LocaleFactory.getLocaleRegistry();
             expect(registryBefore.has('en-GB')).toBe(true);
-            expect(registryBefore.has('de-DE')).toBe(true);
+            expect(registryBefore.has('zh-CN')).toBe(true);
             expect(registryBefore.get('en-GB')).toEqual({});
-            expect(registryBefore.get('de-DE')).toEqual({});
+            expect(registryBefore.get('zh-CN')).toEqual({});
 
             const setLocaleMessageMock = jest.fn();
             Object.defineProperty(Shopwell, 'Snippet', {
@@ -272,8 +272,8 @@ describe('core/service/api/snippet.api.service.ts', () => {
                 'en-GB': {
                     english: 'English text',
                 },
-                'de-DE': {
-                    german: 'Deutscher Text',
+                'zh-CN': {
+                    chinese: '中文文本',
                 },
             });
 
@@ -287,9 +287,9 @@ describe('core/service/api/snippet.api.service.ts', () => {
             expect(setLocaleMessageMock).toHaveBeenCalledWith('en-GB', {
                 english: 'English text',
             });
-            expect(setLocaleMessageMock).toHaveBeenCalledWith('de-DE', {});
-            expect(setLocaleMessageMock).toHaveBeenCalledWith('de-DE', {
-                german: 'Deutscher Text',
+            expect(setLocaleMessageMock).toHaveBeenCalledWith('zh-CN', {});
+            expect(setLocaleMessageMock).toHaveBeenCalledWith('zh-CN', {
+                chinese: '中文文本',
             });
         });
 
@@ -412,7 +412,7 @@ describe('core/service/api/snippet.api.service.ts', () => {
 
             clientMock.onGet('/_admin/locales').reply(200, {
                 'lang-id-1': 'en-GB',
-                'lang-id-2': 'de-DE',
+                'lang-id-2': 'zh-CN',
                 'lang-id-3': 'fr-FR',
             });
 
@@ -420,7 +420,7 @@ describe('core/service/api/snippet.api.service.ts', () => {
 
             expect(result).toEqual({
                 'lang-id-1': 'en-GB',
-                'lang-id-2': 'de-DE',
+                'lang-id-2': 'zh-CN',
                 'lang-id-3': 'fr-FR',
             });
         });

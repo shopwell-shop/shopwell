@@ -29,7 +29,7 @@ class McpResourceTest extends TestCase
         static::assertSame('application/json', $resource->getMimeType());
         static::assertSame([
             'en-GB' => 'Order Stats',
-            'de-DE' => 'Bestellungsstatistiken',
+            'zh-CN' => '订单统计',
         ], $resource->getLabel());
         static::assertSame(['en-GB' => 'Live order statistics'], $resource->getDescription());
     }
@@ -53,7 +53,7 @@ class McpResourceTest extends TestCase
             'uri' => 'app://my-resource',
             'url' => 'https://example.com/mcp/resource',
             'mimeType' => 'application/json',
-            'label' => ['en-GB' => 'My Resource', 'de-DE' => 'Meine Ressource'],
+            'label' => ['en-GB' => 'My Resource', 'zh-CN' => '我的资源'],
             'description' => ['en-GB' => 'Desc'],
         ]);
 
@@ -64,7 +64,7 @@ class McpResourceTest extends TestCase
         static::assertSame('https://example.com/mcp/resource', $data['url']);
         static::assertSame('application/json', $data['mimeType']);
         static::assertSame('My Resource', $data['label']['en-GB']);
-        static::assertSame('Meine Ressource', $data['label']['de-DE']);
+        static::assertSame('我的资源', $data['label']['zh-CN']);
     }
 
     public function testFromArraySetsProperties(): void

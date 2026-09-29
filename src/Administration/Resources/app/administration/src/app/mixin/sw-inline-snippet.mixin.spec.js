@@ -29,7 +29,7 @@ describe('src/app/mixin/sw-inline-snippet.mixin.ts', () => {
     let wrapper;
 
     beforeEach(async () => {
-        Shopwell.Context.app.fallbackLocale = 'de-DE';
+        Shopwell.Context.app.fallbackLocale = 'zh-CN';
         wrapper = await createWrapper();
 
         await flushPromises();
@@ -66,10 +66,10 @@ describe('src/app/mixin/sw-inline-snippet.mixin.ts', () => {
     it('should return correct fallback value with locale using the getInlineSnippet method without value', () => {
         const result = wrapper.vm.getInlineSnippet({
             'fr-FR': 'French',
-            'de-DE': 'German',
+            'zh-CN': '中文',
         });
 
-        expect(result).toBe('German');
+        expect(result).toBe('中文');
     });
 
     it('should return first value when no fallback is defined using the getInlineSnippet method without value', () => {

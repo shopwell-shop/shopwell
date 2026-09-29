@@ -59,12 +59,12 @@ class SystemConfigureShopCommandTest extends TestCase
     public function testChangesLocaleAndCurrencyNonInteractively(): void
     {
         $this->shopConfigurator->expects($this->once())->method('updateBasicInformation');
-        $this->shopConfigurator->expects($this->once())->method('setDefaultLanguage')->with('de-DE');
+        $this->shopConfigurator->expects($this->once())->method('setDefaultLanguage')->with('zh-CN');
         $this->shopConfigurator->expects($this->once())->method('setDefaultCurrency')->with('EUR');
         $this->cacheClearer->expects($this->once())->method('clear');
 
         static::assertSame(Command::SUCCESS, $this->commandTester->execute([
-            '--shop-locale' => 'de-DE',
+            '--shop-locale' => 'zh-CN',
             '--shop-currency' => 'EUR',
             '--no-interaction' => true,
         ]));
@@ -84,7 +84,7 @@ class SystemConfigureShopCommandTest extends TestCase
         $this->commandTester->setInputs(['no']);
 
         static::assertSame(Command::SUCCESS, $this->commandTester->execute([
-            '--shop-locale' => 'de-DE',
+            '--shop-locale' => 'zh-CN',
         ]));
         static::assertStringContainsString('Aborting due to user input', $this->commandTester->getDisplay());
     }

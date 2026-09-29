@@ -80,16 +80,16 @@ describe('marketing.store', () => {
             content: {
                 textColor: '#000000',
                 headline: {
-                    'de-DE': 'string (max 40 Zeichen)',
+                    'zh-CN': '字符串（最多 40 个字符）',
                     'en-GB': 'string (max 40 characters)',
                 },
                 description: {
-                    'de-DE': 'string (max 90 Zeichen)',
+                    'zh-CN': '字符串（最多 90 个字符）',
                     'en-GB': 'string (max 90 characters)',
                 },
                 cta: {
                     category: 'CategoryXY',
-                    'de-DE': 'string (max 40 Zeichen)',
+                    'zh-CN': '字符串（最多 40 个字符）',
                     'en-GB': 'string (max 40 characters)',
                 },
             },
@@ -122,16 +122,16 @@ describe('marketing.store', () => {
             content: {
                 textColor: '#000000',
                 headline: {
-                    'de-DE': 'string (max 40 Zeichen)',
+                    'zh-CN': '字符串（最多 40 个字符）',
                     'en-GB': 'string (max 40 characters)',
                 },
                 description: {
-                    'de-DE': 'string (max 90 Zeichen)',
+                    'zh-CN': '字符串（最多 90 个字符）',
                     'en-GB': 'string (max 90 characters)',
                 },
                 cta: {
                     category: 'CategoryXY',
-                    'de-DE': 'string (max 40 Zeichen)',
+                    'zh-CN': '字符串（最多 40 个字符）',
                     'en-GB': 'string (max 40 characters)',
                 },
             },

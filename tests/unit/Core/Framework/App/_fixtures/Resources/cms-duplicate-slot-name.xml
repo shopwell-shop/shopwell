@@ -6,7 +6,7 @@
             <category>text-image</category>
 
             <label>Block from app</label>
-            <label lang="de-DE">Block einer App</label>
+            <label lang="zh-CN">应用区块</label>
 
             <slots>
                 <slot name="left" type="form">

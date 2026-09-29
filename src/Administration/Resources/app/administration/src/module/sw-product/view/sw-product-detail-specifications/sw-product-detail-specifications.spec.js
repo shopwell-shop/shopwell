@@ -44,7 +44,7 @@ function createTranslatedCustomField({ name, type, customFieldType, inputType, l
             type: inputType,
             label: {
                 'en-GB': label,
-                'de-DE': label,
+                'zh-CN': label,
             },
         },
     };
@@ -79,7 +79,7 @@ function createCustomFieldSets(customFields) {
             config: {
                 label: {
                     'en-GB': 'Specifications',
-                    'de-DE': 'Spezifikationen',
+                    'zh-CN': '规格参数',
                 },
             },
             customFields,
@@ -102,7 +102,7 @@ function createProductEntity({ id = 'product-id', customFields = null, translate
 }
 
 async function withTranslatedLanguageContext(
-    { languageId = 'de-DE', systemLanguageId = 'en-GB', parentId = 'en-GB' } = {},
+    { languageId = 'zh-CN', systemLanguageId = 'en-GB', parentId = 'en-GB' } = {},
     callback,
 ) {
     const previousLanguageId = Shopwell.Context.api.languageId;
@@ -662,7 +662,7 @@ describe('src/module/sw-product/view/sw-product-detail-specifications', () => {
 
         await withTranslatedLanguageContext(
             {
-                languageId: 'de-DE',
+                languageId: 'zh-CN',
                 systemLanguageId: 'en-GB',
                 parentId: null,
             },

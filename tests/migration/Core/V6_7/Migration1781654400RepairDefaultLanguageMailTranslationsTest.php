@@ -42,12 +42,12 @@ class Migration1781654400RepairDefaultLanguageMailTranslationsTest extends TestC
     {
         $defaultLanguageId = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
 
-        // Simulate a system whose default language uses a foreign locale, with en-GB and de-DE as
+        // Simulate a system whose default language uses a foreign locale, with en-GB and zh-CN as
         // separate, non-default languages.
         $enGbLanguageId = $this->setUpForeignDefaultLanguage();
-        $deLanguageId = $this->getLanguageByteId('de-DE');
+        $zhCnLanguageId = $this->getLanguageByteId('zh-CN');
 
-        // Create a mail template + type that, like the buggy trait, only got en-GB and de-DE
+        // Create a mail template + type that, like the buggy trait, only got en-GB and zh-CN
         // translations but no translation for the system default language.
         $mailTemplateTypeId = Uuid::randomBytes();
         $this->connection->insert('mail_template_type', [
@@ -57,7 +57,7 @@ class Migration1781654400RepairDefaultLanguageMailTranslationsTest extends TestC
             'created_at' => $this->now(),
         ]);
         $this->insertTypeTranslation($mailTemplateTypeId, $enGbLanguageId, 'EN type name');
-        $this->insertTypeTranslation($mailTemplateTypeId, $deLanguageId, 'DE type name');
+        $this->insertTypeTranslation($mailTemplateTypeId, $zhCnLanguageId, 'ZH type name');
 
         $mailTemplateId = Uuid::randomBytes();
         $this->connection->insert('mail_template', [
@@ -67,7 +67,7 @@ class Migration1781654400RepairDefaultLanguageMailTranslationsTest extends TestC
             'created_at' => $this->now(),
         ]);
         $this->insertTemplateTranslation($mailTemplateId, $enGbLanguageId, 'EN');
-        $this->insertTemplateTranslation($mailTemplateId, $deLanguageId, 'DE');
+        $this->insertTemplateTranslation($mailTemplateId, $zhCnLanguageId, 'ZH');
 
         $migration = new Migration1781654400RepairDefaultLanguageMailTranslations();
         // Executed twice to ensure the migration is idempotent and does not create duplicates.
@@ -86,7 +86,7 @@ class Migration1781654400RepairDefaultLanguageMailTranslationsTest extends TestC
         static::assertSame('<p>EN html</p>', $defaultTemplate['content_html']);
         static::assertSame('EN plain', $defaultTemplate['content_plain']);
 
-        // The existing en-GB and de-DE translations stay untouched (no duplicates).
+        // The existing en-GB and zh-CN translations stay untouched (no duplicates).
         static::assertCount(3, $this->getTypeTranslations($mailTemplateTypeId));
         static::assertCount(3, $this->getTemplateTranslations($mailTemplateId));
     }

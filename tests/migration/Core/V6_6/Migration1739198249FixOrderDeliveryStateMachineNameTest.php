@@ -40,10 +40,10 @@ class Migration1739198249FixOrderDeliveryStateMachineNameTest extends TestCase
     {
         $this->executeMigration();
 
-        $germanIds = $this->getLanguageIds($this->connection, 'de-DE');
+        $zhCnIds = $this->getLanguageIds($this->connection, 'zh-CN');
         $englishIds = array_unique(array_diff(
             array_merge($this->getLanguageIds($this->connection, 'en-GB'), [Defaults::LANGUAGE_SYSTEM]),
-            $germanIds
+            $zhCnIds
         ));
 
         $stateMachineId = $this->connection->fetchOne('SELECT id FROM state_machine WHERE technical_name = :technicalName', ['technicalName' => OrderDeliveryStates::STATE_MACHINE]);
@@ -51,11 +51,11 @@ class Migration1739198249FixOrderDeliveryStateMachineNameTest extends TestCase
             static::markTestSkipped('No valid state machine found.');
         }
 
-        $germanNames = $this->connection->fetchFirstColumn(
+        $zhCnNames = $this->connection->fetchFirstColumn(
             'SELECT name FROM state_machine_translation WHERE state_machine_id = :stateMachineId AND language_id IN (:languageIds) AND updated_at IS NULL',
             [
                 'stateMachineId' => $stateMachineId,
-                'languageIds' => Uuid::fromHexToBytesList($germanIds),
+                'languageIds' => Uuid::fromHexToBytesList($zhCnIds),
             ],
             [
                 'stateMachineId' => ParameterType::BINARY,
@@ -63,8 +63,8 @@ class Migration1739198249FixOrderDeliveryStateMachineNameTest extends TestCase
             ]
         );
 
-        foreach ($germanNames as $germanName) {
-            static::assertSame('Versandstatus', $germanName);
+        foreach ($zhCnNames as $zhCnName) {
+            static::assertSame('配送状态', $zhCnName);
         }
 
         $englishNames = $this->connection->fetchFirstColumn(
@@ -97,10 +97,10 @@ class Migration1739198249FixOrderDeliveryStateMachineNameTest extends TestCase
 
     private function rollback(): void
     {
-        $germanIds = $this->getLanguageIds($this->connection, 'de-DE');
+        $zhCnIds = $this->getLanguageIds($this->connection, 'zh-CN');
         $englishIds = array_unique(array_diff(
             array_merge($this->getLanguageIds($this->connection, 'en-GB'), [Defaults::LANGUAGE_SYSTEM]),
-            $germanIds
+            $zhCnIds
         ));
 
         $stateMachineId = $this->connection->fetchOne('SELECT id FROM state_machine WHERE technical_name = :technicalName', ['technicalName' => OrderDeliveryStates::STATE_MACHINE]);
@@ -108,11 +108,11 @@ class Migration1739198249FixOrderDeliveryStateMachineNameTest extends TestCase
             static::markTestSkipped('No valid state machine found.');
         }
 
-        if ($germanIds !== []) {
+        if ($zhCnIds !== []) {
             $this->connection->executeStatement('UPDATE state_machine_translation SET name = :name WHERE state_machine_id = :stateMachineId AND language_id IN (:languageIds) AND updated_at IS NULL', [
-                'name' => 'Bestellstatus',
+                'name' => '订单状态',
                 'stateMachineId' => $stateMachineId,
-                'languageIds' => Uuid::fromHexToBytesList($germanIds),
+                'languageIds' => Uuid::fromHexToBytesList($zhCnIds),
             ], [
                 'name' => ParameterType::STRING,
                 'stateMachineId' => ParameterType::BINARY,

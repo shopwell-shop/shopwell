@@ -83,8 +83,8 @@ class AppLifecycleSubscriberTest extends TestCase
         $file1->method('getContents')->willReturn('{"test": "value"}');
 
         $file2 = static::createStub(SplFileInfo::class);
-        $file2->method('getFilenameWithoutExtension')->willReturn('de_DE');
-        $file2->method('getContents')->willReturn('{"test": "wert"}');
+        $file2->method('getFilenameWithoutExtension')->willReturn('zh_CN');
+        $file2->method('getContents')->willReturn('{"test": "值"}');
 
         $filesystem->method('findFiles')->willReturn([$file1, $file2]);
 
@@ -92,7 +92,7 @@ class AppLifecycleSubscriberTest extends TestCase
 
         $expectedSnippets = [
             'en_GB' => '{"test": "value"}',
-            'de_DE' => '{"test": "wert"}',
+            'zh_CN' => '{"test": "值"}',
         ];
 
         $persister = $this->createMock(AppAdministrationSnippetPersister::class);

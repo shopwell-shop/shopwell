@@ -287,17 +287,17 @@ describe('src/module/sw-settings-measurement/page/sw-settings-measurement', () =
 
         const initialMeasurementUnits = { ...wrapper.vm.measurementUnits };
 
-        const mockGermanMeasurementSystem = {
+        const mockZhCnMeasurementSystem = {
             'core.measurementUnits.system': 'metric',
             'core.measurementUnits.length': 'cm',
             'core.measurementUnits.weight': 'g',
         };
 
-        wrapper.vm.systemConfigApiService.getValues.mockResolvedValueOnce(mockGermanMeasurementSystem);
+        wrapper.vm.systemConfigApiService.getValues.mockResolvedValueOnce(mockZhCnMeasurementSystem);
 
-        await wrapper.vm.onChangeLanguage('de-DE');
+        await wrapper.vm.onChangeLanguage('zh-CN');
 
-        expect(setApiLanguageIdSpy).toHaveBeenCalledWith('de-DE');
+        expect(setApiLanguageIdSpy).toHaveBeenCalledWith('zh-CN');
         expect(wrapper.vm.measurementUnits).toEqual({
             system: 'metric',
             length: 'cm',

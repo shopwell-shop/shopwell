@@ -182,7 +182,7 @@ class StateMachineActionControllerTest extends TestCase
         $cartService = static::getContainer()->get(CartService::class);
 
         $options = [
-            SalesChannelContextService::LANGUAGE_ID => $this->getDeDeLanguageId(),
+            SalesChannelContextService::LANGUAGE_ID => $this->getZhCnLanguageId(),
             SalesChannelContextService::CUSTOMER_ID => $customerId,
             SalesChannelContextService::SHIPPING_METHOD_ID => $this->createShippingMethod(),
         ];
@@ -195,7 +195,7 @@ class StateMachineActionControllerTest extends TestCase
             'id' => $productId,
             'productNumber' => $productId,
             'name' => [
-                'de-DE' => 'test',
+                'zh-CN' => 'test',
                 'en-GB' => 'test',
             ],
             'active' => true,
@@ -209,7 +209,7 @@ class StateMachineActionControllerTest extends TestCase
             'tax' => ['id' => Uuid::randomHex(), 'name' => 'test', 'taxRate' => 18],
             'manufacturer' => [
                 'name' => [
-                    'de-DE' => 'test',
+                    'zh-CN' => 'test',
                     'en-GB' => 'test',
                 ],
             ],
@@ -235,7 +235,7 @@ class StateMachineActionControllerTest extends TestCase
         /** @var OrderEntity $order */
         $order = $orderRepository->search(new Criteria([$orderId]), $salesChannelContext->getContext())->getEntities()->first();
 
-        static::assertSame($order->getLanguageId(), $this->getDeDeLanguageId());
+        static::assertSame($order->getLanguageId(), $this->getZhCnLanguageId());
     }
 
     public function testOrderCartEn(): void
@@ -259,7 +259,7 @@ class StateMachineActionControllerTest extends TestCase
             'id' => $productId,
             'productNumber' => $productId,
             'name' => [
-                'de-DE' => 'test',
+                'zh-CN' => 'test',
                 'en-GB' => 'test',
             ],
             'stock' => 10,
@@ -273,7 +273,7 @@ class StateMachineActionControllerTest extends TestCase
             'tax' => ['id' => Uuid::randomHex(), 'name' => 'test', 'taxRate' => 18],
             'manufacturer' => [
                 'name' => [
-                    'de-DE' => 'test',
+                    'zh-CN' => 'test',
                     'en-GB' => 'test',
                 ],
             ],

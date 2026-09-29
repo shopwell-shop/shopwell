@@ -87,7 +87,7 @@ To add a new skill (interactive or unattended), follow the checklist in [`coding
 
 ## Snippets & Translations
 
-German snippets differ in register between the two UIs. The Administration addresses the user informally ("Du"), the Storefront formally ("Sie"). Keep each domain consistent when adding or editing `de` snippets.
+Simplified Chinese (`zh`) is the second built-in language next to English. Write snippets the way Chinese e-commerce UIs phrase things: concise, product-oriented, no word-by-word translation of the English source. Keep terminology consistent per domain (Administration vs. Storefront) when adding or editing `zh` snippets.
 
 ## File Linting
 

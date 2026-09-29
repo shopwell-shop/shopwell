@@ -26,15 +26,15 @@ class Migration1711461579FixDefaultMailFooterTest extends TestCase
 
     private Connection $connection;
 
-    private string $germanLanguageId;
+    private string $zhCnLanguageId;
 
     protected function setUp(): void
     {
         $this->migration = new Migration1711461579FixDefaultMailFooter();
         $this->connection = KernelLifecycleManager::getConnection();
-        $germanLanguageId = $this->fetchLanguageId($this->connection, 'de-DE');
-        static::assertIsString($germanLanguageId);
-        $this->germanLanguageId = $germanLanguageId;
+        $zhCnLanguageId = $this->fetchLanguageId($this->connection, 'zh-CN');
+        static::assertIsString($zhCnLanguageId);
+        $this->zhCnLanguageId = $zhCnLanguageId;
     }
 
     public function testGetCreationTimestamp(): void
@@ -59,9 +59,9 @@ class Migration1711461579FixDefaultMailFooterTest extends TestCase
 
         $this->connection->executeStatement(
             'UPDATE mail_header_footer_translation
-            SET footer_plain = REPLACE(footer_plain, \'Adresse:\', \'Addresse:\')
+            SET footer_plain = REPLACE(footer_plain, \'银行账户\', \'银行帐户\')
             WHERE language_id = :id',
-            ['id' => $this->germanLanguageId],
+            ['id' => $this->zhCnLanguageId],
             ['id' => ParameterType::BINARY]
         );
 
@@ -73,9 +73,9 @@ class Migration1711461579FixDefaultMailFooterTest extends TestCase
         return (bool) $this->connection->fetchOne(
             'SELECT 1
              FROM mail_header_footer_translation
-             WHERE footer_plain LIKE \'%Addresse:%\'
+             WHERE footer_plain LIKE \'%银行帐户%\'
                 AND language_id = :id;',
-            ['id' => $this->germanLanguageId],
+            ['id' => $this->zhCnLanguageId],
             ['id' => ParameterType::BINARY]
         );
     }

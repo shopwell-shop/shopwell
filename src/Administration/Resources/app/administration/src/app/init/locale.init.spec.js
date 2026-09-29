@@ -87,7 +87,7 @@ describe('src/app/init/locale.init.ts', () => {
     it('should register all locales for languages in the database', async () => {
         const expectedLocales = {
             id1: 'en-GB',
-            id2: 'de-DE',
+            id2: 'zh-CN',
             id3: 'fr-FR',
             id4: 'jp-JP',
         };
@@ -121,12 +121,12 @@ describe('src/app/init/locale.init.ts', () => {
 
         Shopwell.Service('snippetService').getLocales = () => {
             return Promise.resolve({
-                'system-language-id': 'de-DE',
+                'system-language-id': 'zh-CN',
             });
         };
 
         await initializeLocaleService();
 
-        expect(Shopwell.Application.getContainer('factory').locale.getLastKnownLocale()).toBe('de-DE');
+        expect(Shopwell.Application.getContainer('factory').locale.getLastKnownLocale()).toBe('zh-CN');
     });
 });

@@ -94,7 +94,7 @@ class ShopConfigurationControllerTest extends TestCase
             $this->translator,
             $translationConfig,
             [
-                'de' => ['id' => 'de-DE', 'label' => 'Deutsch'],
+                'zh' => ['id' => 'zh-CN', 'label' => '简体中文'],
                 'en-US' => ['id' => 'en-US', 'label' => 'English (US)'],
                 'en' => ['id' => 'en-GB', 'label' => 'English (UK)'],
                 'de-AT' => ['id' => 'de-AT', 'label' => 'Deutsch (Österreich)'],
@@ -127,6 +127,7 @@ class ShopConfigurationControllerTest extends TestCase
 
         $this->connection->method('fetchAllAssociative')
             ->willReturn([
+                ['iso3' => 'CHN', 'iso' => 'CN'],
                 ['iso3' => 'DEU', 'iso' => 'DE'],
                 ['iso3' => 'GBR', 'iso' => 'GB'],
                 ['iso3' => 'USA', 'iso' => 'US'],
@@ -144,20 +145,21 @@ class ShopConfigurationControllerTest extends TestCase
                 array_merge($this->getDefaultViewParams(), [
                     'error' => null,
                     'countryIsos' => [
+                        ['iso3' => 'CHN', 'default' => $expectedCountryIsoDefault === 'CHN', 'translated' => 'shopwell.installer.select_country_chn'],
                         ['iso3' => 'DEU', 'default' => $expectedCountryIsoDefault === 'DEU', 'translated' => 'shopwell.installer.select_country_deu'],
                         ['iso3' => 'GBR', 'default' => $expectedCountryIsoDefault === 'GBR', 'translated' => 'shopwell.installer.select_country_gbr'],
                         ['iso3' => 'USA', 'default' => $expectedCountryIsoDefault === 'USA', 'translated' => 'shopwell.installer.select_country_usa'],
                     ],
                     'currencyIsos' => ['EUR', 'USD', 'GBP'],
                     'languageIsos' => [
-                        'de' => ['id' => 'de-DE', 'label' => 'Deutsch'],
+                        'zh' => ['id' => 'zh-CN', 'label' => '简体中文'],
                         'en-US' => ['id' => 'en-US', 'label' => 'English (US)'],
                         'en' => ['id' => 'en-GB', 'label' => 'English (UK)'],
                         'de-AT' => ['id' => 'de-AT', 'label' => 'Deutsch (Österreich)'],
                         'de-CH' => ['id' => 'de-CH', 'label' => 'Deutsch (Schweiz)'],
                     ],
                     'allAvailableLanguages' => [
-                        'de-DE' => ['id' => 'de-DE', 'label' => 'Deutsch'],
+                        'zh' => ['id' => 'zh-CN', 'label' => '简体中文'],
                         'en-GB' => ['id' => 'en-GB', 'label' => 'English'],
                         'en-US' => ['id' => 'en-US', 'label' => 'English (US)'],
                     ],
@@ -205,7 +207,7 @@ class ShopConfigurationControllerTest extends TestCase
         $session->set(DatabaseConnectionInformation::class, $connectionInfo);
         $session->set(BlueGreenDeploymentService::ENV_NAME, true);
         $request->setSession($session);
-        $request->attributes->set('_locale', 'de');
+        $request->attributes->set('_locale', 'zh');
 
         $request->request->set('config_admin_email', 'test@test.com');
         $request->request->set('config_admin_username', 'admin');
@@ -213,7 +215,7 @@ class ShopConfigurationControllerTest extends TestCase
         $request->request->set('config_admin_lastName', 'last');
         $request->request->set('config_admin_password', 'shopwell');
 
-        $request->request->set('config_shop_language', 'de-DE');
+        $request->request->set('config_shop_language', 'zh-CN');
         $request->request->set('config_shop_currency', 'EUR');
         $request->request->set('config_shop_country', 'DEU');
         $request->request->set('config_shopName', 'shop');
@@ -228,7 +230,7 @@ class ShopConfigurationControllerTest extends TestCase
 
         $expectedShopInfo = [
             'name' => 'shop',
-            'locale' => 'de-DE',
+            'locale' => 'zh-CN',
             'currency' => 'EUR',
             'additionalCurrencies' => ['EUR', 'USD', 'GBP'],
             'country' => 'DEU',
@@ -279,7 +281,7 @@ class ShopConfigurationControllerTest extends TestCase
         $session->set(BlueGreenDeploymentService::ENV_NAME, true);
         $request->setMethod('POST');
         $request->setSession($session);
-        $request->attributes->set('_locale', 'de');
+        $request->attributes->set('_locale', 'zh');
 
         $this->setEnvVars([
             'HTTPS' => 'on',
@@ -289,6 +291,7 @@ class ShopConfigurationControllerTest extends TestCase
 
         $this->connection->method('fetchAllAssociative')
             ->willReturn([
+                ['iso3' => 'CHN', 'iso' => 'CN'],
                 ['iso3' => 'DEU', 'iso' => 'DE'],
                 ['iso3' => 'GBR', 'iso' => 'GB'],
                 ['iso3' => 'USA', 'iso' => 'US'],
@@ -312,26 +315,27 @@ class ShopConfigurationControllerTest extends TestCase
                 array_merge($this->getDefaultViewParams(), [
                     'error' => 'Test Exception',
                     'countryIsos' => [
-                        ['iso3' => 'DEU', 'default' => true, 'translated' => 'shopwell.installer.select_country_deu'],
+                        ['iso3' => 'CHN', 'default' => true, 'translated' => 'shopwell.installer.select_country_chn'],
+                        ['iso3' => 'DEU', 'default' => false, 'translated' => 'shopwell.installer.select_country_deu'],
                         ['iso3' => 'GBR', 'default' => false, 'translated' => 'shopwell.installer.select_country_gbr'],
                         ['iso3' => 'USA', 'default' => false, 'translated' => 'shopwell.installer.select_country_usa'],
                     ],
                     'currencyIsos' => ['EUR', 'USD', 'GBP'],
                     'languageIsos' => [
-                        'de' => ['id' => 'de-DE', 'label' => 'Deutsch'],
+                        'zh' => ['id' => 'zh-CN', 'label' => '简体中文'],
                         'en-US' => ['id' => 'en-US', 'label' => 'English (US)'],
                         'en' => ['id' => 'en-GB', 'label' => 'English (UK)'],
                         'de-AT' => ['id' => 'de-AT', 'label' => 'Deutsch (Österreich)'],
                         'de-CH' => ['id' => 'de-CH', 'label' => 'Deutsch (Schweiz)'],
                     ],
                     'allAvailableLanguages' => [
-                        'de-DE' => ['id' => 'de-DE', 'label' => 'Deutsch'],
+                        'zh' => ['id' => 'zh-CN', 'label' => '简体中文'],
                         'en-GB' => ['id' => 'en-GB', 'label' => 'English'],
                         'en-US' => ['id' => 'en-US', 'label' => 'English (US)'],
                     ],
                     'parameters' => [
-                        'config_shop_language' => 'de-DE',
-                        'config_shop_currency' => 'EUR',
+                        'config_shop_language' => 'zh-CN',
+                        'config_shop_currency' => 'CNY',
                     ],
                     'selectedLanguages' => [],
                 ])
@@ -350,7 +354,7 @@ class ShopConfigurationControllerTest extends TestCase
         $session->set(BlueGreenDeploymentService::ENV_NAME, true);
         $request->setMethod('POST');
         $request->setSession($session);
-        $request->attributes->set('_locale', 'de');
+        $request->attributes->set('_locale', 'zh');
 
         $this->setEnvVars([
             'HTTPS' => 'on',
@@ -410,7 +414,7 @@ class ShopConfigurationControllerTest extends TestCase
 
     public static function shopConfigurationPresetProvider(): \Generator
     {
-        yield ['de', 'de-DE', 'EUR', 'DEU'];
+        yield ['zh', 'zh-CN', 'CNY', 'CHN'];
         yield ['en-US', 'en-US', 'USD', 'USA'];
         yield ['en', 'en-GB', 'GBP', 'GBR'];
     }
@@ -421,7 +425,7 @@ class ShopConfigurationControllerTest extends TestCase
     private function getLanguageTranslations(): array
     {
         return [
-            'shopwell.installer.select_language_de-DE' => 'Deutsch',
+            'shopwell.installer.select_language_zh' => '简体中文',
             'shopwell.installer.select_language_en-GB' => 'English',
             'shopwell.installer.select_language_en-US' => 'English (US)',
         ];

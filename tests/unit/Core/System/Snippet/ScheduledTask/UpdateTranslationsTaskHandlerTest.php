@@ -30,7 +30,7 @@ class UpdateTranslationsTaskHandlerTest extends TestCase
     {
         $languages = new LanguageCollection([
             $this->language('fr-FR', 'id-1'),
-            $this->language('de-DE', 'id-2'),
+            $this->language('zh-CN', 'id-2'),
             // duplicate locale must be deduplicated, missing locale must be filtered out
             $this->language('fr-FR', 'id-3'),
             $this->language(null, 'id-4'),
@@ -51,7 +51,7 @@ class UpdateTranslationsTaskHandlerTest extends TestCase
         $updater = $this->createMock(TranslationUpdater::class);
         $updater->expects($this->once())
             ->method('updateInstalled')
-            ->with(static::isInstanceOf(Context::class), ['fr-FR', 'de-DE'])
+            ->with(static::isInstanceOf(Context::class), ['fr-FR', 'zh-CN'])
             ->willReturn(new TranslationUpdateResult());
 
         $this->handler($updater, $languageRepository)->run();

@@ -64,7 +64,7 @@ class GaranLabelDurationFormatterTest extends TestCase
      * The label is deliberately language neutral, which is why it carries a translation strip for
      * all 24 languages, and the decimal separator on it is a comma regardless of locale.
      */
-    #[TestWith(['de-DE'])]
+    #[TestWith(['zh-CN'])]
     #[TestWith(['en-US'])]
     #[TestWith(['fr-FR'])]
     public function testDecimalSeparatorIsACommaInEveryLocale(string $locale): void

@@ -11,11 +11,11 @@
                 <name>abc.cde.ccc</name>
                 <badge>abc</badge>
                 <label>First action app</label>
-                <label lang="de-DE">First action app DE</label>
+                <label lang="zh-CN">第一个动作应用</label>
                 <headline>Headline for action</headline>
-                <headline lang="de-DE">Überschrift für Aktion</headline>
+                <headline lang="zh-CN">动作标题</headline>
                 <description>First action app description</description>
-                <description lang="de-DE">First action app description DE</description>
+                <description lang="zh-CN">第一个动作应用说明</description>
                 <url>https://example.xyz</url>
                 <icon>resource/pencil</icon>
                 <sw-icon>sw-pencil</sw-icon>
@@ -36,29 +36,29 @@
                 <input-field>
                     <name>textField</name>
                     <label>To</label>
-                    <label lang="de-DE">To DE</label>
+                    <label lang="zh-CN">收件人</label>
                     <place-holder>Enter to...</place-holder>
-                    <place-holder lang="de-DE">Enter to DE...</place-holder>
+                    <place-holder lang="zh-CN">输入收件人...</place-holder>
                     <helpText>Help text</helpText>
-                    <helpText lang="de-DE">Help text DE</helpText>
+                    <helpText lang="zh-CN">帮助文本</helpText>
                     <required>true</required>
                     <defaultValue>Shopwell 6</defaultValue>
                 </input-field>
                 <input-field>
                     <name>textField</name>
                     <label>From</label>
-                    <label lang="de-DE">From</label>
+                    <label lang="zh-CN">发件人</label>
                     <place-holder>Enter from...</place-holder>
-                    <place-holder lang="de-DE">Enter from...</place-holder>
+                    <place-holder lang="zh-CN">输入发件人...</place-holder>
                     <required>true</required>
                     <defaultValue>Shopwell 6</defaultValue>
                 </input-field>
                 <input-field type="text">
                     <name>textField</name>
                     <label>Message</label>
-                    <label lang="de-DE">Message</label>
+                    <label lang="zh-CN">消息</label>
                     <place-holder>Enter message...</place-holder>
-                    <place-holder lang="de-DE">Enter message...</place-holder>
+                    <place-holder lang="zh-CN">输入消息...</place-holder>
                     <required>true</required>
                     <defaultValue>Hello</defaultValue>
                 </input-field>
@@ -67,11 +67,11 @@
                     <options>
                         <option value="smtp">
                             <label>English label</label>
-                            <label lang="de-DE">German label</label>
+                            <label lang="zh-CN">中文标签</label>
                         </option>
                         <option value="pop3">
                             <label>English label</label>
-                            <label lang="de-DE">German label</label>
+                            <label lang="zh-CN">中文标签</label>
                         </option>
                     </options>
                 </input-field>

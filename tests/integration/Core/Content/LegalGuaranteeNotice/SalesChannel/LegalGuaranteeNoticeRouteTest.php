@@ -22,7 +22,7 @@ class LegalGuaranteeNoticeRouteTest extends TestCase
     use IntegrationTestBehaviour;
     use SalesChannelApiTestBehaviour;
 
-    private const GERMAN_LANGUAGE_ID = '20354d7ae4fe47af8ff6187bc0dedede';
+    private const FRENCH_LANGUAGE_ID = '20354d7ae4fe47af8ff6187bc0dedede';
 
     private IdsCollection $ids;
 
@@ -31,28 +31,28 @@ class LegalGuaranteeNoticeRouteTest extends TestCase
         $this->ids = new IdsCollection();
 
         static::getContainer()->get('language.repository')->create([[
-            'id' => self::GERMAN_LANGUAGE_ID,
-            'name' => 'TestGerman',
+            'id' => self::FRENCH_LANGUAGE_ID,
+            'name' => 'TestFrench',
             'parentId' => Defaults::LANGUAGE_SYSTEM,
             'active' => true,
             'locale' => [
-                'id' => $this->ids->create('locale-de'),
-                'name' => 'TestGerman',
-                'territory' => 'TestGermany',
-                'code' => 'de-DE-test',
+                'id' => $this->ids->create('locale-fr'),
+                'name' => 'TestFrench',
+                'territory' => 'TestFrance',
+                'code' => 'fr-FR-test',
             ],
-            'translationCodeId' => $this->ids->get('locale-de'),
+            'translationCodeId' => $this->ids->get('locale-fr'),
         ]], Context::createDefaultContext());
     }
 
-    public function testNoticeIsRenderedInGermanForGermanSalesChannel(): void
+    public function testNoticeIsRenderedInFrenchForFrenchSalesChannel(): void
     {
         $browser = $this->createCustomSalesChannelBrowser([
             'id' => $this->ids->create('sales-channel'),
-            'languageId' => self::GERMAN_LANGUAGE_ID,
+            'languageId' => self::FRENCH_LANGUAGE_ID,
             'languages' => [
                 ['id' => Defaults::LANGUAGE_SYSTEM],
-                ['id' => self::GERMAN_LANGUAGE_ID],
+                ['id' => self::FRENCH_LANGUAGE_ID],
             ],
         ]);
 
@@ -63,7 +63,7 @@ class LegalGuaranteeNoticeRouteTest extends TestCase
         $response = json_decode((string) $browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
         static::assertIsString($response['svg']);
-        static::assertSame('https://europa.eu/youreurope/garantien', $response['link']);
+        static::assertSame('https://europa.eu/youreurope/garanties', $response['link']);
     }
 
     public function testNoticeIsNullWhenToggleIsDisabled(): void

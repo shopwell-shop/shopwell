@@ -1,0 +1,35 @@
+{
+  "sw-settings-units": {
+    "detail": {
+      "fieldLabels": {
+        "name": "商品单位名称",
+        "shortCode": "简称"
+      }
+    },
+    "general": {
+      "mainMenuItemGeneral": "商品单位",
+      "placeholderSearchBar": "搜索商品单位…",
+      "createNewUnit": "创建商品单位",
+      "disableAddNewUnitMessage": "新商品单位只能在系统默认语言中创建。"
+    },
+    "grid": {
+      "columnName": "商品单位",
+      "columnShortCode": "简称"
+    },
+    "empty-state": {
+      "title": "暂无商品单位",
+      "subline": "商品单位管理"
+    },
+    "notification": {
+      "successMessage": "商品单位已成功保存。",
+      "errorMessage": "商品单位无法保存。请检查所有字段是否已填写。"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "scale_unit": {
+        "label": "商品单位"
+      }
+    }
+  }
+}

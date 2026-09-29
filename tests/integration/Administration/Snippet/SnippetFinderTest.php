@@ -61,10 +61,10 @@ class SnippetFinderTest extends TestCase
 
     public function testValidSnippetMergeWithOnlySameLanguageFiles(): void
     {
-        $this->installPlatformSnippets('de-DE', 'caseSameLanguage/core/de.json');
-        $this->installPluginSnippets('de-DE', 'caseSameLanguage/plugin/de.json');
+        $this->installPlatformSnippets('zh-CN', 'caseSameLanguage/core/zh.json');
+        $this->installPluginSnippets('zh-CN', 'caseSameLanguage/plugin/zh.json');
 
-        $actual = $this->createSnippetFinder($this->createKernelWithActivePlugin())->findSnippets('de-DE');
+        $actual = $this->createSnippetFinder($this->createKernelWithActivePlugin())->findSnippets('zh-CN');
 
         $expected = [
             'test' => [
@@ -90,10 +90,10 @@ class SnippetFinderTest extends TestCase
 
     public function testValidSnippetMergeWithDifferentLanguageFiles(): void
     {
-        $this->installPlatformSnippets('de-DE', 'caseDifferentLanguages/core/de.json');
+        $this->installPlatformSnippets('zh-CN', 'caseDifferentLanguages/core/zh.json');
         $this->installPluginSnippets('en-GB', 'caseDifferentLanguages/plugin/en.json');
 
-        $actual = $this->createSnippetFinder($this->createKernelWithActivePlugin())->findSnippets('de-DE');
+        $actual = $this->createSnippetFinder($this->createKernelWithActivePlugin())->findSnippets('zh-CN');
 
         $expected = [
             'test' => [
@@ -114,31 +114,31 @@ class SnippetFinderTest extends TestCase
 
     public function testValidSnippetMergeWithMultipleLanguageFiles(): void
     {
-        $this->installPlatformSnippets('de-DE', 'caseMultipleSameAndDifferentLanguages/core/de.json');
-        $this->installPluginSnippets('de-DE', 'caseMultipleSameAndDifferentLanguages/plugin/de.json');
+        $this->installPlatformSnippets('zh-CN', 'caseMultipleSameAndDifferentLanguages/core/zh.json');
+        $this->installPluginSnippets('zh-CN', 'caseMultipleSameAndDifferentLanguages/plugin/zh.json');
         $this->installPlatformSnippets('en-GB', 'caseMultipleSameAndDifferentLanguages/core/en.json');
         $this->installPluginSnippets('en-GB', 'caseMultipleSameAndDifferentLanguages/plugin/en.json');
 
         $snippetFinder = $this->createSnippetFinder($this->createKernelWithActivePlugin());
 
-        $actualDe = $snippetFinder->findSnippets('de-DE');
+        $actualZh = $snippetFinder->findSnippets('zh-CN');
         $actualEn = $snippetFinder->findSnippets('en-GB');
 
-        $expectedDe = [
+        $expectedZh = [
             'test' => [
                 'uniqueNamespaceCore' => [
-                    'someLabel' => 'core de',
-                    'anotherLabel' => 'core de',
+                    'someLabel' => 'core zh',
+                    'anotherLabel' => 'core zh',
                 ],
                 'uniqueNamespacePlugin' => [
-                    'someLabel' => 'plugin de',
-                    'anotherLabel' => 'plugin de',
+                    'someLabel' => 'plugin zh',
+                    'anotherLabel' => 'plugin zh',
                 ],
                 'someSharedNamespace' => [
-                    'uniqueKeyCore' => 'core de',
-                    'uniqueKeyPlugin' => 'plugin de',
-                    'shouldBeOverwritten' => 'overwritten by plugin de',
-                    'shouldAlsoBeOverwritten' => 'also overwritten by plugin de',
+                    'uniqueKeyCore' => 'core zh',
+                    'uniqueKeyPlugin' => 'plugin zh',
+                    'shouldBeOverwritten' => 'overwritten by plugin zh',
+                    'shouldAlsoBeOverwritten' => 'also overwritten by plugin zh',
                 ],
             ],
         ];
@@ -162,7 +162,7 @@ class SnippetFinderTest extends TestCase
             ],
         ];
 
-        static::assertEquals($expectedDe, $actualDe);
+        static::assertEquals($expectedZh, $actualZh);
         static::assertEquals($expectedEn, $actualEn);
     }
 

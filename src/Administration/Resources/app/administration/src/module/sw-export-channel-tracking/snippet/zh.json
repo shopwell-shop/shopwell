@@ -1,0 +1,32 @@
+{
+  "sw-export-channel-tracking": {
+    "general": {
+      "mainMenuItemGeneral": "导出渠道追踪",
+      "descriptionTextModule": "向订单和客户列表添加导出渠道列和筛选。"
+    },
+    "extension": {
+      "sw-order-list": {
+        "list": {
+          "columnExportFeed": "导出渠道"
+        },
+        "filters": {
+          "exportFeedFilter": {
+            "label": "导出渠道",
+            "placeholder": "选择导出渠道 …"
+          }
+        }
+      },
+      "sw-customer-list": {
+        "list": {
+          "columnExportFeed": "导出渠道"
+        },
+        "filters": {
+          "exportFeedFilter": {
+            "label": "导出渠道",
+            "placeholder": "选择导出渠道 …"
+          }
+        }
+      }
+    }
+  }
+}

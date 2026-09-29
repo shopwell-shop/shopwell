@@ -150,7 +150,7 @@ describe('components/data-grid/sw-data-grid-settings', () => {
     describe('getColumnLabel', () => {
         const messages = {
             'en-GB': { 'sw-grid.column.name': 'Name (EN)' },
-            'de-DE': { 'sw-grid.column.name': 'Name (DE)' },
+            'zh-CN': { 'sw-grid.column.name': '名称 (ZH)' },
         };
 
         async function createSettingsWrapper({ locale, $te, $t } = {}) {
@@ -185,9 +185,9 @@ describe('components/data-grid/sw-data-grid-settings', () => {
         }
 
         it('returns the translated label when the snippet exists in the current locale', async () => {
-            const settings = await createSettingsWrapper({ locale: 'de-DE' });
+            const settings = await createSettingsWrapper({ locale: 'zh-CN' });
 
-            expect(settings.vm.getColumnLabel({ label: 'sw-grid.column.name' })).toBe('Name (DE)');
+            expect(settings.vm.getColumnLabel({ label: 'sw-grid.column.name' })).toBe('名称 (ZH)');
         });
 
         it('falls back to the fallback locale when the snippet is missing in the current locale', async () => {

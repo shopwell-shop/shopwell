@@ -1,0 +1,674 @@
+{
+  "sw-extension": {
+    "store": {
+      "tabs": {
+        "apps": "应用",
+        "themes": "主题"
+      },
+      "listing": {
+        "anyOption": "任意",
+        "sort": "排序"
+      }
+    },
+    "my-extensions": {
+      "listing": {
+        "initialSearchType": "扩展",
+        "placeholderSearchBar": "搜索扩展 ...",
+        "controls": {
+          "labelActiveStateSwitch": "隐藏未启用的扩展",
+          "filterOptions": {
+            "last-updated": "最近更新",
+            "name-asc": "名称 A - Z",
+            "name-desc": "名称 Z - A"
+          }
+        },
+        "version": "版本",
+        "update": "更新"
+      },
+      "bulk": {
+        "selectExtensionAria": "选择{name}",
+        "install": "安装",
+        "activate": "启用",
+        "deactivate": "禁用",
+        "update": "刷新",
+        "uninstall": "卸载",
+        "uninstallModal": {
+          "title": "卸载 {count} 个扩展|卸载 {count} 个扩展",
+          "description": "以下扩展将被卸载：",
+          "alert": "此操作无法撤销。",
+          "buttonLabel": "卸载",
+          "labelRemovePluginData": "同时移除每个所选扩展的所有数据",
+          "helpTextRemovePluginData": "注意：启用后，这些扩展创建的所有数据将被不可撤销地删除。"
+        },
+        "deactivationModal": {
+          "title": "停用 {count} 个扩展|停用 {count} 个扩展",
+          "description": "以下扩展按月收取订阅费用。停用它们不会取消订阅，费用仍会继续收取：",
+          "alert": "确定要停用所选扩展吗？",
+          "buttonLabel": "禁用"
+        },
+        "consent": {
+          "extensionLabel": "{count} 个扩展|{count} 个扩展",
+          "installTitle": "安装 {count} 个扩展|安装 {count} 个扩展",
+          "installDescription": "所选扩展请求以下权限：",
+          "installAction": "接受并安装",
+          "updateTitle": "更新 {count} 个扩展|更新 {count} 个扩展",
+          "updateDescription": "更新所选扩展需接受以下新权限：",
+          "updateAction": "接受并更新"
+        }
+      },
+      "account": {
+        "headline": "Shopwell 账户",
+        "isLoggedIn": "已成功连接 Shopwell 账户。请前往「应用」或「主题」页签，检查已购买的扩展是否列出。如果没有，请前往 Shopwell 账户确认已为扩展设置正确的域名。",
+        "login": "登录",
+        "logout": "退出登录",
+        "loginMessage": "登录 Shopwell 账户，访问你在 store.shopwell.cn 购买的扩展。",
+        "register": "立即注册，加入 Shopwell 社区！",
+        "registerNow": "立即注册",
+        "registerUrl": "https://account.shopwell.cn/register?lang=zh",
+        "mailLabel": "邮箱地址",
+        "mailPlaceholder": "输入你的邮箱地址…",
+        "passwordLabel": "密码",
+        "passwordPlaceholder": "输入密码…",
+        "recoveryUrl": "https://account.shopwell.cn/recovery?lang=zh",
+        "passwordForgot": "忘记密码？",
+        "loginNotificationMessage": "你已登录 Shopwell 账户。"
+      },
+      "tabs": {
+        "app": "应用",
+        "theme": "主题",
+        "recommendation": "推荐",
+        "shopwellAccount": "Shopwell 账户"
+      },
+      "fileUpload": {
+        "buttonFileUpload": "上传扩展",
+        "messageUploadSuccess": "扩展已上传。",
+        "descriptionWarningModal": "来自 Shopwell 商店之外的扩展未经我们审核，可能对你的店铺构成风险。建议尽可能使用 Shopwell 商店中的扩展。",
+        "textHideWarning": "不再显示"
+      }
+    },
+    "errors": {
+      "messageToTheShopwellDocumentation": "<a href=\"{documentationLink}\" target=\"_blank\">前往 Shopwell 文档</a>",
+      "messageGenericFailure": "操作未成功。",
+      "messageUploadFailureNotAZipFile": "上传的文件不是 ZIP 文件。",
+      "messageUploadFailureUnzipFailed": "ZIP 文件无法解压。",
+      "messageUploadFailureNoPluginFoundInZipFile": "在上传的 ZIP 文件中未找到扩展。",
+      "messageLoginDataInvalid": "登录信息不完整。",
+      "messageStoreLicenseDomainMissing": "要成功登录，请先在 \"设置/Shopwell 账户\" 中填写你的授权域名。",
+      "messageStoreNotAvailable": "Shopwell 商城无法访问。",
+      "messagePluginBaseClassNotFound": "无法加载扩展入口。请检查扩展的 composer.json 中的类自动加载配置。",
+      "messagePluginInstallationFailed": "扩展无法安装：\"{message}\"。",
+      "messagePluginUninstallationFailed": "扩展无法卸载：\"{message}\"。",
+      "messagePluginActivationFailed": "扩展无法启用：\"{message}\"。",
+      "messagePluginDeactivationFailed": "扩展无法停用：\"{message}\"。",
+      "messageDeactivationFailedDependencies": "扩展 \"{dependency}\" 无法停用，因为仍有其他扩展依赖它。请先停用以下扩展，再重新开始更新：{dependantNames}",
+      "messageDeactivationFailedThemeAssignment": "主题 \"{themeName}\" 无法停用。请移除以下主题分配：{assignments}",
+      "messagePluginUpdateFailed": "扩展无法更新：\"{message}\"。{pluginDeactivatedHint}",
+      "pluginDeactivatedHint": "扩展已停用。",
+      "messagePluginRequirementMismatch": "该扩展的技术要求与已安装的 Shopwell 版本不兼容。请联系厂商。",
+      "appIsNotCompatible": "扩展 \"{name}\" 与此 Shopwell 版本不兼容",
+      "appLicenseCouldNotBeVerified": {
+        "title": "该扩展的许可证无法校验",
+        "message": "请确认授权域名设置正确，并已使用该扩展授权所属的 Shopwell 账户登录。",
+        "actionSetLicenseDomain": "设置授权域名",
+        "actionLogin": "登录"
+      },
+      "storeSessionExpired": {
+        "title": "Shopwell 账户会话已过期",
+        "message": "请登录以访问已授权的扩展。",
+        "actionLabel": "登录"
+      }
+    },
+    "mainMenu": {
+      "mainMenuItemExtensionStore": "扩展",
+      "store": "商店",
+      "purchased": "我的扩展",
+      "support": "支持"
+    },
+    "sw-extension-app-module-error-page": {
+      "error": {
+        "heading": "页面未找到",
+        "description": "未找到所请求的页面。它可能已被移动或不再存在。"
+      }
+    }
+  },
+  "sw-extension-store": {
+    "landing-page": {
+      "enablingShopwellStore": "正在启用 Shopwell 商城 ...",
+      "takeMinutes": "这可能需要几分钟。",
+      "activationErrorTitle": "启用时发生错误。",
+      "activationErrorDescription": "请重试。如果仍不行，请联系管理员。",
+      "retryButton": "重试",
+      "activationSuccessTitle": "启用成功",
+      "activationSuccessDescription": "祝你在 Shopwell 商城浏览愉快。",
+      "label": "现已可用",
+      "activationDescriptionTitleFirst": "轻松发现和购买扩展 -",
+      "activationDescriptionTitleSecond": "直接在你的 Shopwell 店铺中完成。",
+      "activationDescriptionTitleDescription": "启用 Shopwell 商店，即可获取大量实用扩展和现代主题，无需编程即可无缝集成到你的店铺中。",
+      "activate": "启用"
+    },
+    "title": "商店",
+    "descriptionTextModule": "管理你的扩展",
+    "general": {
+      "labelPrice": "免费 | {price}/月 | {price}",
+      "labelDiscountedPrice": "免费 | <s>{price}</s> <strong>{discountedPrice}</strong>/月 | <s>{price}</s> <strong>{discountedPrice}</strong>"
+    },
+    "listing": {
+      "tabs": {
+        "themes": "主题"
+      },
+      "placeHolderCategories": "全部分类",
+      "placeholderRatings": "全部评价",
+      "sorting": {
+        "releaseDateAsc": "发布日期 最旧 - 最新",
+        "releaseDateDesc": "发布日期 最新 - 最旧",
+        "nameAsc": "名称 A - Z",
+        "nameDesc": "名称 Z - A",
+        "ratingAsc": "评分 最低 - 最高",
+        "ratingDesc": "评分 最高 - 最低"
+      }
+    },
+    "detail": {
+      "labelButtonAddExtension": "添加扩展",
+      "labelButtonAddTheme": "添加主题",
+      "labelButtonOpenExtension": "打开扩展",
+      "labelButtonOpenTheme": "打开主题",
+      "labelButtonInstallExtension": "安装扩展",
+      "labelButtonInstallTheme": "安装主题",
+      "labelBy": "来自",
+      "numberOfRatings": "{count} 条评价 | {count} 条评价",
+      "noRatings": "暂无评分",
+      "cardTitleInformation": "信息",
+      "labelButtonReadMore": "展开阅读",
+      "cardTitleDetails": "详情",
+      "details": {
+        "labelCategory": "分类 | 分类",
+        "labelVersion": "版本",
+        "labelUpdatedAt": "最近更新",
+        "labelLanguages": "语言",
+        "labelWebsite": "开发者网站",
+        "labelPrivacy": "隐私政策"
+      },
+      "cardTitleFAQ": "常见问题",
+      "cardTitleChangelog": "变更日志",
+      "labelButtonShowPermissions": "查看权限",
+      "labelDiscountInfo": "优惠于 {endDate} 到期",
+      "labelDiscountPeriod": "*首月 - | *前 {months} 个月 - "
+    },
+    "component": {
+      "sw-extension-meteor-page-context-item": {
+        "labelButtonMore": "更多"
+      },
+      "sw-extension-buy-modal": {
+        "title": "添加扩展",
+        "labelAcceptPermissions": "我了解此扩展需要额外权限",
+        "labelAcceptPrivacyExtensions": "我了解必须扩展我的隐私说明",
+        "buttonShowPrivacyExtensions": "查看详情",
+        "variantCard": {
+          "free": "使用免费版本",
+          "rent": "每月 {price} 租用",
+          "buy": "以 {price} 购买",
+          "hasTrialPhase": "含试用期"
+        },
+        "variantSummary": {
+          "labelVat": "另加增值税",
+          "labelPrice": "价格",
+          "renewal": "于 {renewalDate} 续期"
+        },
+        "purchaseButtonsLabels": {
+          "free": "免费添加该扩展",
+          "rent": "立即订阅此扩展",
+          "buy": "立即购买此扩展"
+        },
+        "successNotification": {
+          "titleSuccess": "扩展已成功添加！",
+          "subtitleSuccess": "现在可以试用你的新扩展了。",
+          "labelButtonBack": "返回详情页"
+        },
+        "alertCanNotBuy": {
+          "text": "你必须登录才能执行此操作"
+        }
+      },
+      "sw-extension-adding-failed": {
+        "titleFailure": "添加失败",
+        "textProblem": "添加扩展时出现问题。",
+        "installationFailed": {
+          "titleFailure": "安装失败",
+          "textProblem": "安装扩展时出现问题。我们会通知厂商。",
+          "notificationLicense": "请注意，此应用或主题的租用仍将保持有效。",
+          "textSupport": "如对授权有任何疑问，请联系 Shopwell Financial Services。邮箱 {0}，电话 {1}。",
+          "supportEmail": "financial.services{'@'}shopwell.cn",
+          "supportPhone": "+49 (0)2555 / 9288510"
+        }
+      },
+      "sw-extension-adding-success": {
+        "titleSuccess": "扩展已成功添加！",
+        "subtitleSuccess": "现在可以试用你的新扩展了。"
+      },
+      "sw-extension-ratings": {
+        "sw-review-reply": {
+          "labelCreationDate": "于 {creationDate} 回复"
+        },
+        "sw-extension-review-creation": {
+          "submitBtn": "提交"
+        },
+        "sw-extension-ratings-summary": {
+          "labelRating": "暂无评价 | {numberOfRatings} 条评价 | {numberOfRatings} 条评价"
+        },
+        "sw-extension-review": {
+          "labelLastChangeDate": "{author}, {lastChangeDate}",
+          "labelExtensionVersion": "版本: {extensionVersion}"
+        },
+        "sw-extension-ratings-card": {
+          "cardTitle": "评分和评价",
+          "labelMoreReviewsBtn": "查看更多评价",
+          "footerHeadline": "添加评价",
+          "labelNoReviews": "此扩展尚未收到任何评分或评价。"
+        },
+        "sw-extension-review-creation-inputs": {
+          "title": "评价扩展",
+          "labelHeadline": "标题",
+          "placeholderHeadline": "输入标题 ...",
+          "labelRating": "评分",
+          "labelText": "评论（可选）"
+        },
+        "sw-extension-rating-modal": {
+          "title": "撰写评价"
+        }
+      },
+      "sw-extension-card-base": {
+        "subscriptionLabel": "订阅：",
+        "inactiveLabel": "（已停用）",
+        "purchasedLabel": "已购买：",
+        "installedLabel": "已安装：",
+        "installExtensionLabel": "安装",
+        "labelAcceptAndInstall": "接受并安装",
+        "allowDisableTooltip": "该应用使用会影响你系统的自有数据结构，因此无法停用。",
+        "contextMenu": {
+          "getHelpLabel": "获取帮助",
+          "seeDetailsLabel": "查看详情",
+          "privacyAndSafetyLabel": "隐私与数据安全",
+          "cancelAndRemoveLabel": "取消并移除",
+          "uninstallLabel": "卸载",
+          "updateLabel": "更新到 {version}",
+          "rateLabel": "评价扩展",
+          "policyExtensions": "隐私补充说明",
+          "permissions": "查看权限",
+          "openExtension": "打开扩展"
+        }
+      },
+      "sw-extension-card-bought": {
+        "rentWillExpireAt": "租期于 {date} 到期",
+        "rentExpiredAt": "租期已于 {date} 到期",
+        "testPhaseWillExpireAt": "试用期于 {date} 到期",
+        "testPhaseExpiredAt": "试用期已于 {date} 到期"
+      },
+      "sw-extension-deactivation-modal": {
+        "deactivateExtensionLabel": "停用 \"{extensionName}\"",
+        "description": "扩展 \"{extensionName}\" 按月收取订阅费用。<br>停用该扩展<b>不会</b>取消订阅，费用仍会继续收取。",
+        "descriptionCancel": "如果想改为取消租用，可在上下文菜单的 \"{removeLabel}\" 项中操作。",
+        "alertDeactivate": "确定要停用该扩展吗？",
+        "deactivateLabel": "禁用"
+      },
+      "sw-extension-permissions-modal": {
+        "title": "{extensionLabel} 权限",
+        "titleNewPermissions": "新建 {extensionLabel} 权限",
+        "description": "{extensionLabel} 将获得以下组件的访问权限。点击组件旁的链接可查看实体详情。",
+        "descriptionNewPermissions": "{extensionLabel} 在此次更新中申请变更权限。继续更新前，请确认同意全部变更。",
+        "domainHint": "部分数据也会与其他域名共享。点击域名旁的链接查看详情。",
+        "textEntities": "查看权限",
+        "domains": "域名",
+        "showDomains": "显示域名",
+        "acceptAndUpdate": "接受并更新"
+      },
+      "sw-extension-domains-modal": {
+        "modalTitle": "{extensionLabel} - 域名",
+        "description": "部分数据会被传递给/传输给下列域名。",
+        "listTitle": "域名"
+      },
+      "sw-extension-privacy-policy-extensions-modal": {
+        "title": "{extensionLabel}：隐私补充说明",
+        "intro": "此应用会处理个人数据。厂商就隐私政策的调整给出以下提示："
+      },
+      "sw-extension-permissions-details-modal": {
+        "operationRead": "查看",
+        "operationCreate": "创建"
+      },
+      "sw-extension-my-extensions-listing": {
+        "apps": {
+          "noActivePlugins": "未找到已启用的应用。",
+          "titleEmptyState": "尚未安装应用",
+          "textEmptyState": "安装应用后，它们会在此列出。"
+        },
+        "themes": {
+          "noActivePlugins": "未找到已启用的主题。",
+          "titleEmptyState": "尚未安装主题",
+          "textEmptyState": "安装主题后，它们会在此列出。"
+        },
+        "btnOpenStore": "打开商城",
+        "alertExtensionManagement": {
+          "title": "扩展管理受限",
+          "description": "此安装已禁用扩展管理。只能修改扩展的设置。"
+        }
+      },
+      "sw-extension-removal-modal": {
+        "titleCancel": "取消并移除 \"{extensionName}\"",
+        "titleRemove": "移除 \"{extensionName}\"",
+        "description": "移除扩展后将无法再使用它。",
+        "alertCancel": "确定要取消并移除该扩展吗？",
+        "alertRemove": "确定要移除该扩展吗？",
+        "labelCancel": "取消并移除"
+      },
+      "sw-extension-uninstall-modal": {
+        "title": "卸载 \"{extensionName}\"",
+        "description": "卸载扩展后将无法再使用它。",
+        "alert": "确定要卸载该扩展吗？",
+        "buttonLabel": "卸载",
+        "labelRemovePluginData": "永久移除所有应用数据",
+        "helpTextRemovePluginData": "警告：该应用的所有数据将被永久移除，此操作不可撤销。"
+      },
+      "sw-extension-listing-card": {
+        "labelInstalled": "已安装",
+        "labelLicensed": "已购买"
+      },
+      "sw-extension-config": {
+        "messageSaveSuccess": "配置已保存。",
+        "imageDescription": "扩展 \"{extensionName}\" 的图标",
+        "labelBy": "来自"
+      }
+    }
+  },
+  "entityCategories": {
+    "admin_user": {
+      "title": "后台用户",
+      "entities": {
+        "integration": "集成",
+        "user": "用户",
+        "user_access_key": "访问密钥",
+        "user_recovery": "恢复"
+      }
+    },
+    "app": {
+      "title": "应用",
+      "entities": {
+        "app_template": "应用模板",
+        "app": "应用",
+        "app_translation": "应用翻译",
+        "app_action_button": "操作按钮",
+        "app_action_button_translation": "操作按钮翻译"
+      }
+    },
+    "category": {
+      "title": "分类",
+      "entities": {
+        "category": "分类",
+        "category_translation": "分类翻译",
+        "category_tag": "分类标签"
+      }
+    },
+    "cms": {
+      "title": "CMS",
+      "entities": {
+        "cms_block": "区块",
+        "cms_page": "页面 (布局)",
+        "cms_page_translation": "页面翻译",
+        "cms_section": "区域",
+        "cms_slot": "插槽",
+        "cms_slot_translation": "插槽翻译"
+      }
+    },
+    "customer": {
+      "title": "客户",
+      "entities": {
+        "customer": "客户",
+        "customer_address": "地址",
+        "customer_group": "客户组",
+        "customer_group_translation": "客户组翻译",
+        "customer_group_registration_sales_channels": "客户组注册的销售渠道",
+        "customer_recovery": "恢复",
+        "customer_tag": "标签"
+      }
+    },
+    "custom_fields": {
+      "title": "自定义字段",
+      "entities": {
+        "custom_field": "自定义字段",
+        "custom_field_set": "自定义字段集",
+        "custom_field_set_relation": "自定义字段集关联"
+      }
+    },
+    "documents": {
+      "title": "文档",
+      "entities": {
+        "document": "文档",
+        "document_base_config": "基本设置",
+        "document_base_config_sales_channel": "销售渠道基础设置",
+        "document_type": "类型",
+        "document_type_translation": "类型翻译"
+      }
+    },
+    "google_shopping": {
+      "title": "Google Shopping",
+      "entities": {
+        "swag_google_shopping_account": "账户",
+        "swag_google_shopping_ads_account": "Ads 账户",
+        "swag_google_shopping_list_ads_account": "列出 Ads 账户",
+        "swag_google_shopping_category": "分类",
+        "swag_google_shopping_merchant_account": "商家账户"
+      }
+    },
+    "import_export": {
+      "title": "导入/导出",
+      "entities": {
+        "import_export_file": "文件",
+        "import_export_log": "日志",
+        "import_export_profile": "配置",
+        "import_export_profile_translation": "配置翻译"
+      }
+    },
+    "mail_templates": {
+      "title": "邮件模板",
+      "entities": {
+        "mail_header_footer": "页眉和页脚",
+        "mail_header_footer_translation": "页眉页脚翻译",
+        "mail_template": "邮件模板",
+        "mail_template_translation": "邮件模板翻译",
+        "mail_template_media": "媒体",
+        "mail_template_type": "类型",
+        "mail_template_type_translation": "类型翻译"
+      }
+    },
+    "media": {
+      "title": "媒体",
+      "entities": {
+        "media": "媒体",
+        "media_translation": "媒体翻译",
+        "media_default_folder": "默认文件夹",
+        "media_folder": "文件夹",
+        "media_folder_configuration": "文件夹配置",
+        "media_folder_configuration_media_thumbnail_size": "文件夹配置缩略图尺寸",
+        "media_tag": "标签",
+        "media_thumbnail": "缩略图",
+        "media_thumbnail_size": "缩略图尺寸"
+      }
+    },
+    "newsletter": {
+      "title": "邮件订阅",
+      "entities": {
+        "newsletter_recipient": "收件人",
+        "newsletter_recipient_tag": "收件人标签"
+      }
+    },
+    "order": {
+      "title": "订单",
+      "entities": {
+        "order": "订单",
+        "order_address": "地址",
+        "order_customer": "客户",
+        "order_delivery": "配送",
+        "order_delivery_position": "配送明细",
+        "order_line_item": "订单项",
+        "order_tag": "标签",
+        "order_transaction": "交易"
+      }
+    },
+    "other": {
+      "title": "其他",
+      "entities": {
+        "acl_role": "ACL 角色",
+        "acl_user_role": "ACL 用户角色",
+        "dead_message": "死信消息",
+        "message_queue_stats": "消息队列统计",
+        "notification": "通知",
+        "plugin": "插件",
+        "scheduled_task": "计划任务"
+      }
+    },
+    "payment": {
+      "title": "支付",
+      "entities": {
+        "payment_method": "支付方式",
+        "payment_method_translation": "支付方式翻译"
+      }
+    },
+    "product": {
+      "title": "商品",
+      "entities": {
+        "product": "商品",
+        "product_category": "分类",
+        "product_category_tree": "分类树",
+        "product_configurator_setting": "商品配置器设置",
+        "product_cross_selling": "交叉销售",
+        "product_cross_selling_translation": "交叉销售翻译",
+        "product_cross_selling_assigned_products": "已关联的交叉销售商品",
+        "product_export": "商品导出",
+        "product_keyword_dictionary": "关键词词典",
+        "product_manufacturer": "制造商",
+        "product_manufacturer_translation": "品牌翻译",
+        "product_media": "媒体",
+        "product_option": "商品选项",
+        "product_price": "价格",
+        "product_property": "商品属性",
+        "product_review": "评价",
+        "product_search_keyword": "搜索关键词",
+        "product_stream": "商品组",
+        "product_tag": "标签",
+        "product_visibility": "可见性",
+        "product_sorting": "排序",
+        "product_translation": "商品翻译",
+        "product_feature_set": "功能集",
+        "product_feature_set_translation": "功能集翻译",
+        "product_custom_field_set": "自定义字段集"
+      }
+    },
+    "promotion": {
+      "title": "优惠活动",
+      "entities": {
+        "promotion": "优惠活动",
+        "promotion_translation": "优惠活动翻译",
+        "promotion_cart_rule": "购物车规则",
+        "promotion_discount": "折扣",
+        "promotion_discount_prices": "折扣价格",
+        "promotion_discount_rule": "折扣规则",
+        "promotion_individual_code": "促销代码",
+        "promotion_order_rule": "订单规则",
+        "promotion_persona_customer": "画像客户",
+        "promotion_persona_rule": "画像规则",
+        "promotion_sales_channel": "销售渠道",
+        "promotion_setgroup": "优惠活动套装组",
+        "promotion_setgroup_rule": "优惠活动套装组规则"
+      }
+    },
+    "rules": {
+      "title": "规则",
+      "entities": {
+        "rule": "规则",
+        "rule_condition": "规则条件"
+      }
+    },
+    "sales_channel": {
+      "title": "销售渠道",
+      "entities": {
+        "sales_channel": "销售渠道",
+        "sales_channel_analytics": "分析",
+        "sales_channel_country": "国家",
+        "sales_channel_currency": "货币",
+        "sales_channel_domain": "域名",
+        "sales_channel_language": "语言",
+        "sales_channel_payment_method": "支付方式",
+        "sales_channel_shipping_method": "配送方式",
+        "sales_channel_translation": "销售渠道翻译",
+        "sales_channel_type": "销售渠道类型",
+        "sales_channel_type_translation": "销售渠道类型翻译"
+      }
+    },
+    "settings": {
+      "title": "设置",
+      "entities": {
+        "country": "国家",
+        "country_state": "省/地区",
+        "currency": "货币",
+        "delivery_time": "配送时间",
+        "language": "语言",
+        "locale": "区域设置",
+        "locale_translation": "区域翻译",
+        "number_range": "编号范围",
+        "number_range_sales_channel": "销售渠道编号范围",
+        "number_range_state": "编号范围状态",
+        "number_range_type": "编号范围类型",
+        "salutation": "称谓",
+        "salutation_translation": "称呼翻译",
+        "seo_url": "SEO URL",
+        "seo_url_template": "SEO URL 模板",
+        "state_machine": "状态机",
+        "state_machine_history": "状态机历史",
+        "state_machine_state": "状态机状态",
+        "state_machine_state_translation": "状态机状态翻译",
+        "state_machine_transition": "状态机转换",
+        "state_machine_translation": "状态机翻译",
+        "system_config": "系统配置",
+        "tax": "税",
+        "tax_rule": "税规则",
+        "tax_rule_type": "税规则类型",
+        "unit": "商品单位",
+        "version": "版本"
+      }
+    },
+    "social_shopping": {
+      "title": "Social Shopping",
+      "entities": {
+        "swag_social_shopping_sales_channel": "销售渠道",
+        "swag_social_shopping_product_error": "商品错误"
+      }
+    },
+    "tag": {
+      "title": "标签",
+      "entities": {
+        "tag": "标签"
+      }
+    },
+    "theme": {
+      "title": "主题",
+      "entities": {
+        "theme": "主题",
+        "theme_translation": "主题翻译",
+        "theme_media": "媒体",
+        "theme_sales_channel": "销售渠道"
+      }
+    },
+    "additional_privileges": {
+      "title": "附加权限",
+      "entities": {
+        "api_feature_flag_toggle": "用于切换特性标志的 API",
+        "api_service_toggle": "用于切换服务的 API",
+        "api_service_list": "服务目录 API"
+      }
+    }
+  },
+  "sw-privileges": {
+    "additional_permissions": {
+      "system": {
+        "extension_store": "Shopwell Store"
+      }
+    }
+  }
+}

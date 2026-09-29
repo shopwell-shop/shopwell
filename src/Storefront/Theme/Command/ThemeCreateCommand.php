@@ -157,7 +157,7 @@ class ThemeCreateCommand extends Command
         }
 
         if ($withSnippets) {
-            $this->filesystem->dumpFile($directory . '/src/Resources/snippet/storefront.de-DE.json', $this->getSnippetTemplate());
+            $this->filesystem->dumpFile($directory . '/src/Resources/snippet/storefront.zh-CN.json', $this->getSnippetTemplate());
             $this->filesystem->dumpFile($directory . '/src/Resources/snippet/storefront.en-GB.json', $this->getSnippetTemplate());
         }
 
@@ -223,7 +223,7 @@ EOL;
   "extra": {
     "shopwell-plugin-class": "#namespace#\\\\#class#",
     "label": {
-      "de-DE": "Theme #namespace# plugin",
+      "zh-CN": "#namespace# 主题插件",
       "en-GB": "Theme #namespace# plugin"
     }
   }

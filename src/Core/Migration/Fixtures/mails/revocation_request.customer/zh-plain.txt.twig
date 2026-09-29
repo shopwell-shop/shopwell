@@ -1,0 +1,12 @@
+我们已收到您对合同编号 {{ revocationRequestFormData.contractNumber }} 的撤销申请。
+
+更多信息：
+名字：{{ revocationRequestFormData.firstName }}
+姓氏：{{ revocationRequestFormData.lastName }}
+邮箱：{{ revocationRequestFormData.email }}
+合同编号（订单号、订阅号等）：{{ revocationRequestFormData.contractNumber }}
+{% if revocationRequestFormData.comment %}
+备注：{{ revocationRequestFormData.comment }}
+{% endif %}
+
+表单已于 {{ revocationRequestFormData.submitTime|format_datetime('medium', 'short', locale='zh-CN') }} 提交。

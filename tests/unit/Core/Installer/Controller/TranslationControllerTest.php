@@ -53,7 +53,7 @@ class TranslationControllerTest extends TestCase
         $this->twig->expects($this->never())->method('render');
 
         $session = new Session(new MockArraySessionStorage());
-        $session->set('SELECTED_LANGUAGES', ['en-GB', 'de-DE']);
+        $session->set('SELECTED_LANGUAGES', ['en-GB', 'zh-CN']);
         $request = Request::create('/installer/translation/run', 'POST');
         $request->setSession($session);
 
@@ -101,7 +101,7 @@ class TranslationControllerTest extends TestCase
         $this->twig->expects($this->never())->method('render');
 
         $session = new Session(new MockArraySessionStorage());
-        $session->set('SELECTED_LANGUAGES', ['en-GB', 'de-DE', 'fr-FR']);
+        $session->set('SELECTED_LANGUAGES', ['en-GB', 'zh-CN', 'fr-FR']);
         $request = Request::create('/installer/translation/run', 'POST');
         $request->setSession($session);
 
@@ -110,7 +110,7 @@ class TranslationControllerTest extends TestCase
         static::assertSame(Response::HTTP_OK, $response->getStatusCode());
 
         static::assertTrue($session->has('SELECTED_LANGUAGES'));
-        static::assertSame(['en-GB', 'de-DE', 'fr-FR'], $session->get('SELECTED_LANGUAGES'));
+        static::assertSame(['en-GB', 'zh-CN', 'fr-FR'], $session->get('SELECTED_LANGUAGES'));
     }
 
     public function testRunWithEmptyLocales(): void

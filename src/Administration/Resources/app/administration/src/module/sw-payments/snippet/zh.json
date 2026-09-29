@@ -1,0 +1,22 @@
+{
+    "global": {
+        "sw-admin-menu": {
+            "navigation": {
+                "mainMenuItemShopwellPayments": "Shopwell Payments"
+            }
+        }
+    },
+    "sw-payments": {
+        "general": {
+            "mainMenuItemGeneral": "Shopwell Payments",
+            "description": "管理 Shopwell Payments。"
+        }
+    },
+    "sw-privileges": {
+        "permissions": {
+            "sw-payments": {
+                "label": "Shopwell Payments"
+            }
+        }
+    }
+}

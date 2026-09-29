@@ -1,0 +1,95 @@
+{
+  "global": {
+    "error-codes": {
+      "DUPLICATED_SNIPPET_KEY": "已存在 \"{key}\" 的文本模块。请选择其他名称。"
+    }
+  },
+  "sw-settings-snippet": {
+    "general": {
+      "mainMenuItemGeneral": "文本模块",
+      "description": "文本模块管理",
+      "copyName": "副本",
+      "errorBackRoutingMessage": "所请求的页面无法处理。你已被重定向返回。",
+      "placeholderSearchBarSets": "搜索文本模块集…",
+      "placeholderSearchBarSnippets": "搜索文本模块…",
+      "placeholderValue": "定义内容 ...",
+      "searchBarTitleSets": "文本模块集",
+      "searchBarTitleSnippets": "文本模块",
+      "errorBackRoutingTitle": "无效的页面请求"
+    },
+    "detail": {
+      "cardGeneralTitle": "信息",
+      "cardSnippetSetsTitle": "翻译",
+      "labelContent": "文本模块集：{name}",
+      "labelName": "名称",
+      "labelNamePlaceholder": "添加名称 ...",
+      "labelNamespace": "区域",
+      "labelNamespacePlaceholder": "选择区域",
+      "messageSaveError": "\"{key}\" 的文本模块无法保存。",
+      "messageSaveErrorNumericKey": "文本模块名称不能只由数字组成。",
+      "messageSaveSuccess": "\"{key}\" 的文本模块已成功保存。",
+      "textHeadline": "新建文本模块",
+      "labelOriginal": "原始："
+    },
+    "list": {
+      "identifier": "{setName} | 文本模块集对比",
+      "buttonAdd": "新建文本模块",
+      "buttonDelete": "删除 | 重置",
+      "buttonEmpty": "返回默认文本模块",
+      "columnKey": "名称",
+      "columnValue": "值",
+      "contextMenuDelete": "删除 | 重置",
+      "columnHeaderGridColumnTitleSet": "文本模块集",
+      "columnHeaderResetTo": "原始",
+      "checkboxDeleteAll": "删除所有文本模块集 | 重置所有文本模块集",
+      "emptyStateHeadLine": "暂无文本模块。",
+      "messageDeleteSuccess": "文本模块 \"{key}\" 已成功重置。",
+      "messageSaveError": "文本模块 \"{key}\" 无法保存。 | \"{key}\" 的文本模块无法保存。",
+      "messageSaveSuccess": "文本模块 \"{key}\" 已成功保存。 | \"{key}\" 的文本模块已成功保存。",
+      "textDeleteConfirm": "确定要删除 \"{key}\" 的文本模块吗？",
+      "textResetConfirm": "确定要重置该集合中的文本模块 \"{key}\" 吗？| 确定要重置所选集合中的文本模块 \"{key}\" 吗？",
+      "textSnippetList": "\"{setName}\" 的文本模块 | 文本模块",
+      "resetErrorMessage": "文本模块 \"{key}\" 无法重置。 | 文本模块 \"{key}\" 无法删除。",
+      "resetSuccessMessage": "文本模块 \"{key}\" 已重置为默认值。 | 文本模块 \"{key}\" 已删除。",
+      "titleSidebarCustomItems": "自定义文本模块",
+      "titleSidebarItemRefresh": "刷新",
+      "titleSidebarItemFilter": "筛选"
+    },
+    "setList": {
+      "cardTitle": "文本模块集",
+      "buttonAddSet": "添加文本模块集",
+      "buttonClone": "复制",
+      "buttonImport": "导入",
+      "newSnippetName": "# 新建文本模块集",
+      "cloneErrorMessage": "副本无法创建。",
+      "cloneSuccessMessage": "副本创建成功。",
+      "columnBaseFile": "基础文件",
+      "columnIso": "区域设置",
+      "columnChangedAt": "最后修改",
+      "columnName": "名称",
+      "deleteNoteErrorMessage": "文本模块集无法删除。",
+      "deleteNoteSuccessMessage": "文本模块集已成功删除。",
+      "inlineEditErrorMessage": "文本模块集无法保存 | \"{name}\" 的文本模块集无法保存。",
+      "inlineEditSuccessMessage": "文本模块集 \"{name}\" 已成功创建。",
+      "modalTitleClone": "复制文本模块集",
+      "notEditableNoteErrorMessage": "文本模块无法编辑。",
+      "placeholderName": "输入文本模块集名称 ...",
+      "placeholderBaseFile": "选择基础文件 ...",
+      "textDeleteConfirm": "确定要删除文本模块集 \"{name}\" 吗？"
+    },
+    "filter": {
+      "showOnlyEmpty": "仅显示空白文本模块",
+      "showOnlyCustom": "仅显示已修改的文本模块",
+      "showOnlyAdded": "仅显示已添加的文本模块",
+      "author": "作者",
+      "more": "更多筛选"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "snippet": {
+        "label": "文本模块"
+      }
+    }
+  }
+}

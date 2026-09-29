@@ -1,0 +1,10 @@
+{
+  "sw-settings-login-registration": {
+    "general": {
+      "mainMenuItemGeneral": "登录 & 注册",
+      "description": "可在此进行登录和注册设置。",
+      "textHeadline": "登录 & 注册",
+      "messageSaveSuccess": "配置已保存。"
+    }
+  }
+}

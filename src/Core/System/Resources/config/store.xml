@@ -3,24 +3,24 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Shopwell Account</title>
-        <title lang="de-DE">Shopwell Account</title>
+        <title lang="zh-CN">Shopwell 账户</title>
 
         <input-field>
             <name>licenseHost</name>
             <label>Licence domain</label>
-            <label lang="de-DE">Lizenzdomain</label>
+            <label lang="zh-CN">授权域名</label>
             <placeholder>Enter licence domain...</placeholder>
-            <placeholder lang="de-DE">Gib eine Lizenzdomain ein ...</placeholder>
+            <placeholder lang="zh-CN">请输入授权域名...</placeholder>
         </input-field>
 
         <input-field>
             <name>verificationHash</name>
             <label>Verification hash</label>
-            <label lang="de-DE">Verifikationsprüfsumme</label>
+            <label lang="zh-CN">验证哈希值</label>
             <helpText>This setting is part of the Shopwell shop verification process. It helps to verify ownership of the installation. If a sw-domain-hash.html file is present it will override this setting.</helpText>
-            <helpText lang="de-DE">Diese Einstellung wird im Verifikationsprozess Deines Shopwell-Shops benötigt und hilft, die Zugehörigkeit Deiner Installation zu identifizieren. Falls eine sw-domain-hash.html-Datei vorhanden ist, wird diese Einstellung überschrieben werden.</helpText>
+            <helpText lang="zh-CN">该设置用于 Shopwell 店铺验证流程，帮助确认该安装的归属。若存在 sw-domain-hash.html 文件，则以该文件为准。</helpText>
             <placeholder>Enter verification code...</placeholder>
-            <placeholder lang="de-DE">Gib den Verifikationscode ein ...</placeholder>
+            <placeholder lang="zh-CN">请输入验证码...</placeholder>
         </input-field>
     </card>
 </config>

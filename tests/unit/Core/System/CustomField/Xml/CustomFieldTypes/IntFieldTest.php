@@ -31,7 +31,7 @@ class IntFieldTest extends TestCase
         static::assertSame('test_int_field', $intField->getName());
         static::assertSame([
             'en-GB' => 'Test int field',
-            'de-DE' => 'Test Ganzzahlenfeld',
+            'zh-CN' => '测试整数字段',
         ], $intField->getLabel());
         static::assertSame(['en-GB' => 'This is an int field.'], $intField->getHelpText());
         static::assertSame(1, $intField->getPosition());
@@ -56,7 +56,7 @@ class IntFieldTest extends TestCase
             'config' => [
                 'label' => [
                     'en-GB' => 'Test int field',
-                    'de-DE' => 'Test Ganzzahlenfeld',
+                    'zh-CN' => '测试整数字段',
                 ],
                 'helpText' => [
                     'en-GB' => 'This is an int field.',

@@ -32,8 +32,8 @@ class SeoUrlUpdaterTest extends TestCase
 
     // Language codes
     private const DEFAULT = 'en-GB';
-    private const PARENT = 'de-DE';
-    private const CHILD = 'de-DE-1';
+    private const PARENT = 'zh-CN';
+    private const CHILD = 'zh-CN-1';
 
     private IdsCollection $ids;
 
@@ -55,7 +55,7 @@ class SeoUrlUpdaterTest extends TestCase
 
         // Get language ids
         $this->ids->set(self::DEFAULT, Defaults::LANGUAGE_SYSTEM);
-        $this->ids->set(self::PARENT, $this->getDeDeLanguageId());
+        $this->ids->set(self::PARENT, $this->getZhCnLanguageId());
         $this->ids->create(self::CHILD);
 
         $salesChannelOverride = [

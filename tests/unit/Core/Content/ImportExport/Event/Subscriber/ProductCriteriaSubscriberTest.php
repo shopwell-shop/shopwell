@@ -52,7 +52,7 @@ class ProductCriteriaSubscriberTest extends TestCase
             [],
         ];
         yield 'description mapped in a non-default language -> kept' => [
-            [['key' => 'translations.de-DE.description', 'mappedKey' => 'description']],
+            [['key' => 'translations.zh-CN.description', 'mappedKey' => 'description']],
             [],
         ];
     }

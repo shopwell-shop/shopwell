@@ -1,0 +1,64 @@
+{
+  "sw-login": {
+    "general": {
+      "mainMenuItemIndex": "登录",
+      "description": "Shopwell 登录",
+      "logoAlt": "Shopwell Logo",
+      "linkBackToLogin": "返回登录",
+      "loadingLabel": "加载中..."
+    },
+    "index": {
+      "headlineForm": "登录 Shopwell",
+      "labelUsername": "用户名",
+      "labelPassword": "密码",
+      "labelKeepLoggedIn": "保持登录",
+      "buttonLogin": "登录",
+      "buttonSsoLogin": "使用 Shopwell 账户",
+      "messageUnsupportedGrantType": "不支持此授权类型。",
+      "messageInvalidRequest": "请求无效。",
+      "messageInvalidClient": "客户端认证失败。",
+      "messageInvalidScope": "指定的 Scope 无效。",
+      "messageInvalidCredentials": "用户名或密码错误。",
+      "messageServerError": "认证服务器发生一般错误。",
+      "messageInvalidRefreshToken": "指定的 Refresh Token 无效。",
+      "messageAccessDenied": "访问被拒绝。",
+      "messageGeneralRequestError": "对 \"{url}\" 的请求失败。",
+      "messageGeneralError": "登录时发生错误，请重试。",
+      "messageAuthThrottled": "尝试次数过多。请等待 {seconds} 秒后再试。",
+      "forgottenPasswordLink": "忘记密码？",
+      "orContinueWith": "或使用以下方式继续"
+    },
+    "recovery": {
+      "info": {
+        "headline": "邮件已发送",
+        "info": "如果 {email} 关联了账户，你将很快收到重置密码的邮件。",
+        "emailFallback": "你的邮箱地址"
+      },
+      "recovery": {
+        "headline": "设置新密码",
+        "text": "为你的账户设置新密码。",
+        "newPasswordField": {
+          "label": "输入新密码"
+        },
+        "passwordConfirmField": {
+          "label": "重复新密码"
+        },
+        "submit": {
+          "label": "设置新密码"
+        }
+      },
+      "headline": "忘记密码？",
+      "text": "输入与账户关联的邮箱地址，我们将发送重置密码的链接。",
+      "email": {
+        "label": "邮箱地址"
+      },
+      "submit": "发送重置链接",
+      "messageLinkExpired": "此重置链接已过期或无效，请重新申请。"
+    }
+  },
+  "global": {
+    "sw-admin-menu": {
+      "textShopwellAdmin": "Shopwell 管理后台"
+    }
+  }
+}

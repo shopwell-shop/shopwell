@@ -34,12 +34,12 @@ class RequestTransformerTest extends TestCase
 {
     use IntegrationTestBehaviour;
 
-    final public const LOCALE_DE_DE_ISO = 'de-DE';
+    final public const LOCALE_ZH_CN_ISO = 'zh-CN';
     final public const LOCALE_EN_GB_ISO = 'en-GB';
 
     private RequestTransformer $requestTransformer;
 
-    private string $deLanguageId;
+    private string $zhLanguageId;
 
     protected function setUp(): void
     {
@@ -53,7 +53,7 @@ class RequestTransformerTest extends TestCase
             static::getContainer()->get(DomainLoader::class)
         );
 
-        $this->deLanguageId = $this->getDeDeLanguageId();
+        $this->zhLanguageId = $this->getZhCnLanguageId();
     }
 
     /**
@@ -66,7 +66,7 @@ class RequestTransformerTest extends TestCase
         $this->createSalesChannels($salesChannels);
 
         $snippetSetEN = $this->getSnippetSetIdForLocale(self::LOCALE_EN_GB_ISO);
-        $snippetSetDE = $this->getSnippetSetIdForLocale(self::LOCALE_DE_DE_ISO);
+        $snippetSetZH = $this->getSnippetSetIdForLocale(self::LOCALE_ZH_CN_ISO);
 
         foreach ($requests as $expectedRequest) {
             if ($expectedRequest->exception) {
@@ -79,8 +79,8 @@ class RequestTransformerTest extends TestCase
 
             $resolved = $this->requestTransformer->transform($request);
 
-            $expectedSnippetSetId = $expectedRequest->snippetLanguageCode === 'de-DE' ? $snippetSetDE : $snippetSetEN;
-            $expectedLanguageId = $expectedRequest->languageCode === 'de-DE' ? $this->deLanguageId : Defaults::LANGUAGE_SYSTEM;
+            $expectedSnippetSetId = $expectedRequest->snippetLanguageCode === 'zh-CN' ? $snippetSetZH : $snippetSetEN;
+            $expectedLanguageId = $expectedRequest->languageCode === 'zh-CN' ? $this->zhLanguageId : Defaults::LANGUAGE_SYSTEM;
 
             static::assertSame($expectedRequest->salesChannelId, $resolved->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID));
 
@@ -100,148 +100,148 @@ class RequestTransformerTest extends TestCase
      */
     public static function domainProvider(): iterable
     {
-        $germanId = Uuid::randomHex();
+        $chineseId = Uuid::randomHex();
         $englishId = Uuid::randomHex();
-        $gerUkId = Uuid::randomHex();
-        $gerUkId2 = Uuid::randomHex();
+        $cnUkId = Uuid::randomHex();
+        $cnUkId2 = Uuid::randomHex();
 
-        $gerDomainId = Uuid::randomHex();
+        $cnDomainId = Uuid::randomHex();
         $ukDomainId = Uuid::randomHex();
 
-        $gerDomainId2 = Uuid::randomHex();
+        $cnDomainId2 = Uuid::randomHex();
         $ukDomainId2 = Uuid::randomHex();
 
         yield 'single' => [
-            [self::getGermanSalesChannel($germanId, $gerDomainId, 'http://german.test')],
+            [self::getChineseSalesChannel($chineseId, $cnDomainId, 'http://chinese.test')],
             [
-                new ExpectedRequest('http://german.test', '', '/', $gerDomainId, $germanId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://german.test/', '', '/', $gerDomainId, $germanId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://german.test/foobar', '', '/foobar', $gerDomainId, $germanId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://german.test//foobar', '', '/foobar', $gerDomainId, $germanId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
+                new ExpectedRequest('http://chinese.test', '', '/', $cnDomainId, $chineseId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://chinese.test/', '', '/', $cnDomainId, $chineseId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://chinese.test/foobar', '', '/foobar', $cnDomainId, $chineseId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://chinese.test//foobar', '', '/foobar', $cnDomainId, $chineseId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
             ],
         ];
         yield 'two' => [
             [
-                self::getGermanSalesChannel($germanId, $gerDomainId, 'http://german.test'),
+                self::getChineseSalesChannel($chineseId, $cnDomainId, 'http://chinese.test'),
                 self::getEnglishSalesChannel($englishId, $ukDomainId, 'http://english.test'),
             ],
             [
-                new ExpectedRequest('http://german.test', '', '/', $gerDomainId, $germanId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://german.test/', '', '/', $gerDomainId, $germanId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://german.test/foobar', '', '/foobar', $gerDomainId, $germanId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
+                new ExpectedRequest('http://chinese.test', '', '/', $cnDomainId, $chineseId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://chinese.test/', '', '/', $cnDomainId, $chineseId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://chinese.test/foobar', '', '/foobar', $cnDomainId, $chineseId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
 
                 new ExpectedRequest('http://english.test', '', '/', $ukDomainId, $englishId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
                 new ExpectedRequest('http://english.test/', '', '/', $ukDomainId, $englishId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
                 new ExpectedRequest('http://english.test/foobar', '', '/foobar', $ukDomainId, $englishId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
 
                 new ExpectedRequest('http://english.test/navigation/1', '', '/navigation/1', $ukDomainId, $englishId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://german.test/navigation/1', '', '/navigation/1', $gerDomainId, $germanId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
+                new ExpectedRequest('http://chinese.test/navigation/1', '', '/navigation/1', $cnDomainId, $chineseId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
             ],
         ];
-        yield 'single-with-ger-and-uk-domain' => [
+        yield 'single-with-cn-and-uk-domain' => [
             [
-                self::getSalesChannelWithGerAndUkDomain($gerUkId, $gerDomainId, 'http://german.test', $ukDomainId, 'http://english.test'),
+                self::getSalesChannelWithCnAndUkDomain($cnUkId, $cnDomainId, 'http://chinese.test', $ukDomainId, 'http://english.test'),
             ],
             [
-                new ExpectedRequest('http://german.test', '', '/', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://german.test/', '', '/', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://german.test/foobar', '', '/foobar', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
+                new ExpectedRequest('http://chinese.test', '', '/', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://chinese.test/', '', '/', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://chinese.test/foobar', '', '/foobar', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
 
-                new ExpectedRequest('http://english.test', '', '/', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://english.test/', '', '/', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://english.test/foobar', '', '/foobar', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://english.test', '', '/', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://english.test/', '', '/', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://english.test/foobar', '', '/foobar', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
             ],
         ];
-        yield 'single-with-ger-and-uk-domain-with-port' => [
+        yield 'single-with-cn-and-uk-domain-with-port' => [
             [
-                self::getSalesChannelWithGerAndUkDomain($gerUkId, $gerDomainId, 'http://base.test:1337', $ukDomainId, 'http://base.test:31337'),
+                self::getSalesChannelWithCnAndUkDomain($cnUkId, $cnDomainId, 'http://base.test:1337', $ukDomainId, 'http://base.test:31337'),
             ],
             [
-                new ExpectedRequest('http://base.test:1337', '', '/', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://base.test:1337/', '', '/', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://base.test:1337/foobar', '', '/foobar', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
+                new ExpectedRequest('http://base.test:1337', '', '/', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://base.test:1337/', '', '/', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://base.test:1337/foobar', '', '/foobar', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
 
-                new ExpectedRequest('http://base.test:31337', '', '/', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://base.test:31337/', '', '/', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://base.test:31337/foobar', '', '/foobar', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://base.test:31337', '', '/', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://base.test:31337/', '', '/', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://base.test:31337/foobar', '', '/foobar', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
             ],
         ];
-        yield 'single-with-ger-and-uk-domain-with-same-port-different-path' => [
+        yield 'single-with-cn-and-uk-domain-with-same-port-different-path' => [
             [
-                self::getSalesChannelWithGerAndUkDomain($gerUkId, $gerDomainId, 'http://base.test:1337/foo', $ukDomainId, 'http://base.test:1337/bar'),
+                self::getSalesChannelWithCnAndUkDomain($cnUkId, $cnDomainId, 'http://base.test:1337/foo', $ukDomainId, 'http://base.test:1337/bar'),
             ],
             [
-                new ExpectedRequest('http://base.test:1337/foo', '/foo', '/', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://base.test:1337/foo/', '/foo', '/', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://base.test:1337/foo/foobar', '/foo', '/foobar', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
+                new ExpectedRequest('http://base.test:1337/foo', '/foo', '/', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://base.test:1337/foo/', '/foo', '/', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://base.test:1337/foo/foobar', '/foo', '/foobar', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
 
-                new ExpectedRequest('http://base.test:1337/bar', '/bar', '/', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://base.test:1337/bar/', '/bar', '/', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://base.test:1337/bar/foobar', '/bar', '/foobar', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://base.test:1337/bar', '/bar', '/', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://base.test:1337/bar/', '/bar', '/', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://base.test:1337/bar/foobar', '/bar', '/foobar', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
             ],
         ];
         yield 'two-domains-same-host-different-path' => [
             [
-                self::getSalesChannelWithGerAndUkDomain($gerUkId, $gerDomainId, 'http://saleschannel.test/de', $ukDomainId, 'http://saleschannel.test/en'),
+                self::getSalesChannelWithCnAndUkDomain($cnUkId, $cnDomainId, 'http://saleschannel.test/zh', $ukDomainId, 'http://saleschannel.test/en'),
             ],
             [
-                new ExpectedRequest('http://saleschannel.test/de', '/de', '/', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://saleschannel.test/de/', '/de', '/', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://saleschannel.test/de/foobar', '/de', '/foobar', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh', '/zh', '/', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh/', '/zh', '/', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh/foobar', '/zh', '/foobar', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
 
-                new ExpectedRequest('http://saleschannel.test/en', '/en', '/', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://saleschannel.test/en/', '/en', '/', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://saleschannel.test/en/foobar', '/en', '/foobar', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/en', '/en', '/', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/en/', '/en', '/', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/en/foobar', '/en', '/foobar', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
 
-                new ExpectedRequest('http://saleschannel.test/de/navigation/1', '/de', '/navigation/1', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://saleschannel.test/en/navigation/1', '/en', '/navigation/1', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh/navigation/1', '/zh', '/navigation/1', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://saleschannel.test/en/navigation/1', '/en', '/navigation/1', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
 
-                new ExpectedRequest('http://saleschannel.test/de/de/navigation/1', '/de', '/de/navigation/1', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://saleschannel.test/en/en/navigation/1', '/en', '/en/navigation/1', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh/zh/navigation/1', '/zh', '/zh/navigation/1', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://saleschannel.test/en/en/navigation/1', '/en', '/en/navigation/1', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
             ],
         ];
         yield 'two-scs-same-host-different-sub-path-unsorted' => [
             [
-                self::getSalesChannelWithGerAndUkDomain($gerUkId, $gerDomainId, 'http://saleschannel.test/de', $ukDomainId, 'http://saleschannel.test/en'),
-                self::getSalesChannelWithGerAndUkDomain($gerUkId2, $gerDomainId2, 'http://saleschannel.test/subdir/de', $ukDomainId2, 'http://saleschannel.test/subdir/en'),
+                self::getSalesChannelWithCnAndUkDomain($cnUkId, $cnDomainId, 'http://saleschannel.test/zh', $ukDomainId, 'http://saleschannel.test/en'),
+                self::getSalesChannelWithCnAndUkDomain($cnUkId2, $cnDomainId2, 'http://saleschannel.test/subdir/zh', $ukDomainId2, 'http://saleschannel.test/subdir/en'),
             ],
             [
-                new ExpectedRequest('http://saleschannel.test/de', '/de', '/', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://saleschannel.test/de/', '/de', '/', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://saleschannel.test/de/foobar', '/de', '/foobar', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh', '/zh', '/', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh/', '/zh', '/', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh/foobar', '/zh', '/foobar', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
 
-                new ExpectedRequest('http://saleschannel.test/subdir/en', '/subdir/en', '/', $ukDomainId2, $gerUkId2, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://saleschannel.test/subdir/en/', '/subdir/en', '/', $ukDomainId2, $gerUkId2, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://saleschannel.test/subdir/en/foobar', '/subdir/en', '/foobar', $ukDomainId2, $gerUkId2, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/subdir/en', '/subdir/en', '/', $ukDomainId2, $cnUkId2, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/subdir/en/', '/subdir/en', '/', $ukDomainId2, $cnUkId2, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/subdir/en/foobar', '/subdir/en', '/foobar', $ukDomainId2, $cnUkId2, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
 
-                new ExpectedRequest('http://saleschannel.test/en', '/en', '/', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://saleschannel.test/en/', '/en', '/', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://saleschannel.test/en/foobar', '/en', '/foobar', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/en', '/en', '/', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/en/', '/en', '/', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/en/foobar', '/en', '/foobar', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
 
-                new ExpectedRequest('http://saleschannel.test/de/navigation/1', '/de', '/navigation/1', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://saleschannel.test/subdir/en/navigation/1', '/subdir/en', '/navigation/1', $ukDomainId2, $gerUkId2, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh/navigation/1', '/zh', '/navigation/1', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://saleschannel.test/subdir/en/navigation/1', '/subdir/en', '/navigation/1', $ukDomainId2, $cnUkId2, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
 
-                new ExpectedRequest('http://saleschannel.test/de/de/navigation/1', '/de', '/de/navigation/1', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://saleschannel.test/subdir/en/en/navigation/1', '/subdir/en', '/en/navigation/1', $ukDomainId2, $gerUkId2, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh/zh/navigation/1', '/zh', '/zh/navigation/1', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://saleschannel.test/subdir/en/en/navigation/1', '/subdir/en', '/en/navigation/1', $ukDomainId2, $cnUkId2, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
             ],
         ];
         yield 'two-domains-same-host-extended-path' => [
             [
-                self::getSalesChannelWithGerAndUkDomain($gerUkId, $gerDomainId, 'http://saleschannel.test/de', $ukDomainId, 'http://saleschannel.test'),
+                self::getSalesChannelWithCnAndUkDomain($cnUkId, $cnDomainId, 'http://saleschannel.test/zh', $ukDomainId, 'http://saleschannel.test'),
             ],
             [
-                new ExpectedRequest('http://saleschannel.test/de', '/de', '/', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://saleschannel.test/de/', '/de', '/', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://saleschannel.test/de/foobar', '/de', '/foobar', $gerDomainId, $gerUkId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh', '/zh', '/', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh/', '/zh', '/', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://saleschannel.test/zh/foobar', '/zh', '/foobar', $cnDomainId, $cnUkId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
 
-                new ExpectedRequest('http://saleschannel.test', '', '/', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://saleschannel.test/', '', '/', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
-                new ExpectedRequest('http://saleschannel.test/foobar', '', '/foobar', $ukDomainId, $gerUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test', '', '/', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/', '', '/', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
+                new ExpectedRequest('http://saleschannel.test/foobar', '', '/foobar', $ukDomainId, $cnUkId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
             ],
         ];
         yield 'inactive' => [
             [
-                self::getInactiveSalesChannel($germanId, $gerDomainId, 'http://inactive.test'),
+                self::getInactiveSalesChannel($chineseId, $cnDomainId, 'http://inactive.test'),
             ],
             [
                 new ExpectedRequest('http://inactive.test', null, null, null, null, null, null, null, null, null, SalesChannelMappingException::class),
@@ -251,13 +251,13 @@ class RequestTransformerTest extends TestCase
         ];
         yield 'punycode' => [
             [
-                self::getGermanSalesChannel($germanId, $gerDomainId, 'http://würmer.test'),
+                self::getChineseSalesChannel($chineseId, $cnDomainId, 'http://中文.test'),
                 self::getEnglishSalesChannel($englishId, $ukDomainId, 'http://xn--shpwre-eua5l.test'),
             ],
             [
-                new ExpectedRequest('http://xn--wrmer-kva.test', '', '/', $gerDomainId, $germanId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://xn--wrmer-kva.test/', '', '/', $gerDomainId, $germanId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
-                new ExpectedRequest('http://xn--wrmer-kva.test/foobar', '', '/foobar', $gerDomainId, $germanId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, 'de-DE', self::LOCALE_DE_DE_ISO),
+                new ExpectedRequest('http://xn--fiq228c.test', '', '/', $cnDomainId, $chineseId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://xn--fiq228c.test/', '', '/', $cnDomainId, $chineseId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
+                new ExpectedRequest('http://xn--fiq228c.test/foobar', '', '/foobar', $cnDomainId, $chineseId, true, self::LOCALE_ZH_CN_ISO, Defaults::CURRENCY, 'zh-CN', self::LOCALE_ZH_CN_ISO),
                 new ExpectedRequest('http://xn--shpwre-eua5l.test', '', '/', $ukDomainId, $englishId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
                 new ExpectedRequest('http://xn--shpwre-eua5l.test/', '', '/', $ukDomainId, $englishId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
                 new ExpectedRequest('http://xn--shpwre-eua5l.test/foobar', '', '/foobar', $ukDomainId, $englishId, true, self::LOCALE_EN_GB_ISO, Defaults::CURRENCY, Defaults::LANGUAGE_SYSTEM, self::LOCALE_EN_GB_ISO),
@@ -268,12 +268,12 @@ class RequestTransformerTest extends TestCase
     #[DataProvider('seoRedirectProvider')]
     public function testRedirectLinksUsesSalesChannelPath(string $baseUrl, string $virtualUrl, string $resolvedUrl): void
     {
-        $gerUkId = Uuid::randomHex();
+        $cnUkId = Uuid::randomHex();
 
-        $gerDomainId = Uuid::randomHex();
+        $cnDomainId = Uuid::randomHex();
         $ukDomainId = Uuid::randomHex();
 
-        $salesChannels = $this->getSalesChannelWithGerAndUkDomain($gerUkId, $gerDomainId, 'http://base.test' . $virtualUrl, $ukDomainId, 'http://base.test/public/en');
+        $salesChannels = $this->getSalesChannelWithCnAndUkDomain($cnUkId, $cnDomainId, 'http://base.test' . $virtualUrl, $ukDomainId, 'http://base.test/public/en');
 
         $this->createSalesChannels([$salesChannels]);
 
@@ -282,8 +282,8 @@ class RequestTransformerTest extends TestCase
             'seo_url',
             [
                 'id' => Uuid::randomBytes(),
-                'language_id' => Uuid::fromHexToBytes($this->deLanguageId),
-                'sales_channel_id' => Uuid::fromHexToBytes($gerUkId),
+                'language_id' => Uuid::fromHexToBytes($this->zhLanguageId),
+                'sales_channel_id' => Uuid::fromHexToBytes($cnUkId),
                 'foreign_key' => Uuid::randomBytes(),
                 'route_name' => 'test',
                 'path_info' => '/detail/87a78cf58f114d5587ae23c140825694',
@@ -308,7 +308,7 @@ class RequestTransformerTest extends TestCase
         $domainId = Uuid::randomHex();
 
         $this->createSalesChannels([
-            self::getGermanSalesChannel($salesChannelId, $domainId, 'http://base.test'),
+            self::getChineseSalesChannel($salesChannelId, $domainId, 'http://base.test'),
         ]);
 
         $con = static::getContainer()->get(Connection::class);
@@ -316,7 +316,7 @@ class RequestTransformerTest extends TestCase
             'seo_url',
             [
                 'id' => Uuid::randomBytes(),
-                'language_id' => Uuid::fromHexToBytes($this->deLanguageId),
+                'language_id' => Uuid::fromHexToBytes($this->zhLanguageId),
                 'sales_channel_id' => Uuid::fromHexToBytes($salesChannelId),
                 'foreign_key' => Uuid::randomBytes(),
                 'route_name' => ProductPageSeoUrlRoute::ROUTE_NAME,
@@ -346,7 +346,7 @@ class RequestTransformerTest extends TestCase
         $domainId = Uuid::randomHex();
 
         $this->createSalesChannels([
-            self::getGermanSalesChannel($salesChannelId, $domainId, 'http://base.test'),
+            self::getChineseSalesChannel($salesChannelId, $domainId, 'http://base.test'),
         ]);
 
         $con = static::getContainer()->get(Connection::class);
@@ -354,7 +354,7 @@ class RequestTransformerTest extends TestCase
             'seo_url',
             [
                 'id' => Uuid::randomBytes(),
-                'language_id' => Uuid::fromHexToBytes($this->deLanguageId),
+                'language_id' => Uuid::fromHexToBytes($this->zhLanguageId),
                 'sales_channel_id' => Uuid::fromHexToBytes($salesChannelId),
                 'foreign_key' => Uuid::randomBytes(),
                 'route_name' => ProductPageSeoUrlRoute::ROUTE_NAME,
@@ -383,20 +383,20 @@ class RequestTransformerTest extends TestCase
     {
         yield 'Use with base url' => [
             '/public', // baseUrl
-            '/public/de', // Virtual URL
-            '/public/de/Test', // Resolved seo url
+            '/public/zh', // Virtual URL
+            '/public/zh/Test', // Resolved seo url
         ];
 
         yield 'Use with base url in subfolder' => [
             '/sw6/public', // baseUrl
-            '/sw6/public/de', // Virtual URL
-            '/sw6/public/de/Test', // Resolved seo url
+            '/sw6/public/zh', // Virtual URL
+            '/sw6/public/zh/Test', // Resolved seo url
         ];
 
         yield 'With Virtual url' => [
             '', // baseUrl
-            '/de', // Virtual URL
-            '/de/Test', // Resolved seo url
+            '/zh', // Virtual URL
+            '/zh/Test', // Resolved seo url
         ];
 
         yield 'Without virtual URL' => [
@@ -433,22 +433,22 @@ class RequestTransformerTest extends TestCase
     /**
      * @return SalesChannel
      */
-    private static function getGermanSalesChannel(string $salesChannelId, string $domainId, string $url): array
+    private static function getChineseSalesChannel(string $salesChannelId, string $domainId, string $url): array
     {
         return [
             'id' => $salesChannelId,
-            'name' => 'german',
+            'name' => 'chinese',
             'active' => true,
             'languages' => [
-                ['id' => 'de-DE'],
+                ['id' => 'zh-CN'],
             ],
             'domains' => [
                 [
                     'id' => $domainId,
                     'url' => $url,
-                    'languageId' => 'de-DE',
+                    'languageId' => 'zh-CN',
                     'currencyId' => Defaults::CURRENCY,
-                    'snippetSetId' => self::LOCALE_DE_DE_ISO,
+                    'snippetSetId' => self::LOCALE_ZH_CN_ISO,
                 ],
             ],
         ];
@@ -457,10 +457,10 @@ class RequestTransformerTest extends TestCase
     /**
      * @return SalesChannel
      */
-    private static function getSalesChannelWithGerAndUkDomain(
+    private static function getSalesChannelWithCnAndUkDomain(
         string $salesChannelId,
-        string $gerDomainId,
-        string $gerUrl,
+        string $cnDomainId,
+        string $cnUrl,
         string $ukDomainId,
         string $ukUrl
     ): array {
@@ -470,15 +470,15 @@ class RequestTransformerTest extends TestCase
             'active' => true,
             'languages' => [
                 ['id' => Defaults::LANGUAGE_SYSTEM],
-                ['id' => self::LOCALE_DE_DE_ISO],
+                ['id' => self::LOCALE_ZH_CN_ISO],
             ],
             'domains' => [
                 [
-                    'id' => $gerDomainId,
-                    'url' => $gerUrl,
-                    'languageId' => self::LOCALE_DE_DE_ISO,
+                    'id' => $cnDomainId,
+                    'url' => $cnUrl,
+                    'languageId' => self::LOCALE_ZH_CN_ISO,
                     'currencyId' => Defaults::CURRENCY,
-                    'snippetSetId' => self::LOCALE_DE_DE_ISO,
+                    'snippetSetId' => self::LOCALE_ZH_CN_ISO,
                 ],
                 [
                     'id' => $ukDomainId,
@@ -501,15 +501,15 @@ class RequestTransformerTest extends TestCase
             'name' => 'inactive sales channel',
             'active' => false,
             'languages' => [
-                ['id' => self::LOCALE_DE_DE_ISO],
+                ['id' => self::LOCALE_ZH_CN_ISO],
             ],
             'domains' => [
                 [
                     'id' => $domainId,
                     'url' => $url,
-                    'languageId' => self::LOCALE_DE_DE_ISO,
+                    'languageId' => self::LOCALE_ZH_CN_ISO,
                     'currencyId' => Defaults::CURRENCY,
-                    'snippetSetId' => self::LOCALE_DE_DE_ISO,
+                    'snippetSetId' => self::LOCALE_ZH_CN_ISO,
                 ],
             ],
         ];
@@ -521,9 +521,9 @@ class RequestTransformerTest extends TestCase
     private function createSalesChannels(array $salesChannels): EntityWrittenContainerEvent
     {
         $snippetSetEN = $this->getSnippetSetIdForLocale(self::LOCALE_EN_GB_ISO);
-        $snippetSetDE = $this->getSnippetSetIdForLocale(self::LOCALE_DE_DE_ISO);
+        $snippetSetZH = $this->getSnippetSetIdForLocale(self::LOCALE_ZH_CN_ISO);
 
-        $salesChannels = array_map(function ($salesChannelData) use ($snippetSetDE, $snippetSetEN) {
+        $salesChannels = array_map(function ($salesChannelData) use ($snippetSetZH, $snippetSetEN) {
             $defaults = [
                 'typeId' => Defaults::SALES_CHANNEL_TYPE_STOREFRONT,
                 'accessKey' => AccessKeyHelper::generateAccessKey('sales-channel'),
@@ -548,8 +548,8 @@ class RequestTransformerTest extends TestCase
             ];
 
             foreach ($salesChannelData['languages'] as &$language) {
-                if ($language['id'] === self::LOCALE_DE_DE_ISO) {
-                    $language['id'] = $this->deLanguageId;
+                if ($language['id'] === self::LOCALE_ZH_CN_ISO) {
+                    $language['id'] = $this->zhLanguageId;
                 }
 
                 if ($language['id'] === self::LOCALE_EN_GB_ISO) {
@@ -558,8 +558,8 @@ class RequestTransformerTest extends TestCase
             }
 
             foreach ($salesChannelData['domains'] as &$domain) {
-                if ($domain['languageId'] === self::LOCALE_DE_DE_ISO) {
-                    $domain['languageId'] = $this->deLanguageId;
+                if ($domain['languageId'] === self::LOCALE_ZH_CN_ISO) {
+                    $domain['languageId'] = $this->zhLanguageId;
                 }
 
                 if ($domain['languageId'] === self::LOCALE_EN_GB_ISO) {
@@ -570,8 +570,8 @@ class RequestTransformerTest extends TestCase
                     $domain['snippetSetId'] = $snippetSetEN;
                 }
 
-                if ($domain['snippetSetId'] === self::LOCALE_DE_DE_ISO) {
-                    $domain['snippetSetId'] = $snippetSetDE;
+                if ($domain['snippetSetId'] === self::LOCALE_ZH_CN_ISO) {
+                    $domain['snippetSetId'] = $snippetSetZH;
                 }
             }
 

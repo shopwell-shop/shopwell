@@ -1,0 +1,24 @@
+<div style="font-family:arial; font-size:12px;">
+    <p>
+        刚刚{% if reviewFormData.id is defined %}修改{% else %}提交{% endif %}了一条商品评价。<br/>
+        <br/>
+        {% if reviewFormData.name is defined %}
+            姓名：{{ reviewFormData.name }}{% if reviewFormData.lastName is defined %} {{ reviewFormData.lastName }}{% endif %}
+            <br/>
+        {% endif %}
+        {% if reviewFormData.email is defined %}
+            邮箱：{{ reviewFormData.email }}<br/>
+            <br>
+        {% endif %}
+        {% if product.translated.name is defined %}
+            商品：{{ product.translated.name }}<br/>
+            <br>
+        {% endif %}
+        评分：{{ reviewFormData.points }}<br/>
+        <br/>
+        标题：{{ reviewFormData.title }}<br/>
+        <br/>
+        内容：<br/>
+        {{ reviewFormData.content|nl2br }}<br/>
+    </p>
+</div>

@@ -3,14 +3,14 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>OpenAI Product Export</title>
-        <title lang="de-DE">OpenAI Produkt-Export</title>
+        <title lang="zh-CN">OpenAI 商品导出</title>
 
         <input-field type="url">
             <name>returnPolicyUrl</name>
             <label>Return policy URL</label>
-            <label lang="de-DE">URL zur Rückgaberichtlinie</label>
+            <label lang="zh-CN">退货政策链接</label>
             <placeholder>Enter URL...</placeholder>
-            <placeholder lang="de-DE">URL eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入链接...</placeholder>
             <required>true</required>
         </input-field>
 
@@ -18,66 +18,66 @@
             <name>variantColor</name>
             <entity>property_group</entity>
             <label>Variant color mapping</label>
-            <label lang="de-DE">Zuweisung für Variantenfarbe</label>
+            <label lang="zh-CN">变体颜色映射</label>
             <placeholder>Select variant properties...</placeholder>
-            <placeholder lang="de-DE">Varianten-Eigenschaften auswählen ...</placeholder>
+            <placeholder lang="zh-CN">选择变体属性...</placeholder>
             <helpText>The first matching property is always used. We recommend using only one of these properties at a time for variant generation.</helpText>
-            <helpText lang="de-DE">Es wird immer die erste passende Eigenschaft verwendet. Es ist empfehlenswert, immer nur eine dieser Eigenschaften gleichzeitig zur Variantengenerierung zu verwenden.</helpText>
+            <helpText lang="zh-CN">始终使用第一个匹配的属性。建议每次只用一个属性来生成变体。</helpText>
         </component>
 
         <component name="sw-entity-multi-id-select">
             <name>variantSize</name>
             <entity>property_group</entity>
             <label>Variant size mapping</label>
-            <label lang="de-DE">Zuweisung für Variantengrößen</label>
+            <label lang="zh-CN">变体尺寸映射</label>
             <placeholder>Select variant properties...</placeholder>
-            <placeholder lang="de-DE">Varianten-Eigenschaften auswählen ...</placeholder>
+            <placeholder lang="zh-CN">选择变体属性...</placeholder>
             <helpText>The first matching property is always used. We recommend using only one of these properties at a time for variant generation.</helpText>
-            <helpText lang="de-DE">Es wird immer die erste passende Eigenschaft verwendet. Es ist empfehlenswert, immer nur eine dieser Eigenschaften gleichzeitig zur Variantengenerierung zu verwenden.</helpText>
+            <helpText lang="zh-CN">始终使用第一个匹配的属性。建议每次只用一个属性来生成变体。</helpText>
         </component>
 
         <component name="sw-entity-multi-id-select">
             <name>variantSizeSystem</name>
             <entity>property_group</entity>
             <label>Variant size system mapping</label>
-            <label lang="de-DE">Zuweisung für Variantengrößensystem</label>
+            <label lang="zh-CN">变体尺码体系映射</label>
             <placeholder>Select variant properties...</placeholder>
-            <placeholder lang="de-DE">Varianten-Eigenschaften auswählen ...</placeholder>
+            <placeholder lang="zh-CN">选择变体属性...</placeholder>
             <helpText>The first matching property is always used. We recommend using only one of these properties at a time for variant generation.</helpText>
-            <helpText lang="de-DE">Es wird immer die erste passende Eigenschaft verwendet. Es ist empfehlenswert, immer nur eine dieser Eigenschaften gleichzeitig zur Variantengenerierung zu verwenden.</helpText>
+            <helpText lang="zh-CN">始终使用第一个匹配的属性。建议每次只用一个属性来生成变体。</helpText>
         </component>
 
         <component name="sw-entity-multi-id-select">
             <name>variantGender</name>
             <entity>property_group</entity>
             <label>Variant gender mapping</label>
-            <label lang="de-DE">Zuweisung für Variantengeschlecht</label>
+            <label lang="zh-CN">变体性别映射</label>
             <placeholder>Select variant properties...</placeholder>
-            <placeholder lang="de-DE">Varianten-Eigenschaften auswählen ...</placeholder>
+            <placeholder lang="zh-CN">选择变体属性...</placeholder>
             <helpText>The first matching property is always used. We recommend using only one of these properties at a time for variant generation.</helpText>
-            <helpText lang="de-DE">Es wird immer die erste passende Eigenschaft verwendet. Es ist empfehlenswert, immer nur eine dieser Eigenschaften gleichzeitig zur Variantengenerierung zu verwenden.</helpText>
+            <helpText lang="zh-CN">始终使用第一个匹配的属性。建议每次只用一个属性来生成变体。</helpText>
         </component>
 
         <component name="sw-entity-multi-id-select">
             <name>variantMaterial</name>
             <entity>property_group</entity>
             <label>Variant material mapping</label>
-            <label lang="de-DE">Zuweisung für Variantenmaterial</label>
+            <label lang="zh-CN">变体材质映射</label>
             <placeholder>Select variant properties...</placeholder>
-            <placeholder lang="de-DE">Varianten-Eigenschaften auswählen ...</placeholder>
+            <placeholder lang="zh-CN">选择变体属性...</placeholder>
             <helpText>The first matching property is always used. We recommend using only one of these properties at a time for variant generation.</helpText>
-            <helpText lang="de-DE">Es wird immer die erste passende Eigenschaft verwendet. Es ist empfehlenswert, immer nur eine dieser Eigenschaften gleichzeitig zur Variantengenerierung zu verwenden.</helpText>
+            <helpText lang="zh-CN">始终使用第一个匹配的属性。建议每次只用一个属性来生成变体。</helpText>
         </component>
 
         <component name="sw-entity-multi-id-select">
             <name>variantCustom</name>
             <entity>property_group</entity>
             <label>Custom variant mappings</label>
-            <label lang="de-DE">Custom-Varianten-Zuweisung</label>
+            <label lang="zh-CN">自定义变体映射</label>
             <placeholder>Select variant properties...</placeholder>
-            <placeholder lang="de-DE">Varianten-Eigenschaften auswählen ...</placeholder>
+            <placeholder lang="zh-CN">选择变体属性...</placeholder>
             <helpText>The first three matching properties are always used. Property groups already assigned to specific variant mappings (for example color or size) are automatically excluded.</helpText>
-            <helpText lang="de-DE">Es werden immer die ersten drei passenden Eigenschaften verwendet. Eigenschaftsgruppen, die bereits einem spezifischen Varianten-Mapping (z. B. Farbe oder Größe) zugeordnet sind, werden automatisch ausgeschlossen.</helpText>
+            <helpText lang="zh-CN">始终使用前三个匹配的属性。已分配给特定变体映射（例如颜色、尺寸）的属性组会自动排除。</helpText>
         </component>
     </card>
 </config>

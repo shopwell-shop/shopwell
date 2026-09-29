@@ -5,9 +5,9 @@
     <meta>
         <name>ExampleOneService</name>
         <label>Example One</label>
-        <label lang="de-DE">Beispiel Eins</label>
+        <label lang="zh-CN">示例一</label>
         <description>Example service for the service lifecycle test</description>
-        <description lang="de-DE">Beispiel-Service für den Service-Lifecycle-Test</description>
+        <description lang="zh-CN">服务生命周期测试的示例服务</description>
         <author>Example AG</author>
         <copyright>(c) by Example AG</copyright>
         <version>1.0.0</version>

@@ -1,0 +1,64 @@
+{
+  "sw-settings-cache": {
+    "general": {
+      "mainMenuItemGeneral": "缓存与索引"
+    },
+    "toolbar": {
+      "environment": "环境",
+      "environmentDev": "开发",
+      "environmentProd": "生产环境",
+      "httpCache": "HTTP 缓存",
+      "httpCacheOff": "关",
+      "httpCacheOn": "开",
+      "cacheAdapter": "缓存适配器"
+    },
+    "section": {
+      "clearCachesHeadline": "清除缓存",
+      "clearCachesText": "立即同步清除所有适配器的缓存数据。",
+      "clearCachesButton": "清除缓存",
+      "indexesHeadline": "索引",
+      "indexesText": "所有索引将异步更新，进度可在通知中查看。包括商品和分类索引以及 SEO URL 等。",
+      "indexesButton": "更新索引",
+      "indexingModeLabel": "方式",
+      "indexingModeOptionSkipLabel": "更新除所选外的全部",
+      "indexingModeOptionOnlyLabel": "仅更新所选",
+      "indexesSkipSelectLabel": "要跳过的索引器和/或更新器",
+      "indexesOnlySelectLabel": "索引器和/或更新器",
+      "indexesSkipSelectPlaceholder": "选择要跳过的索引器和/或更新器",
+      "indexesOnlySelectPlaceholder": "选择索引器和/或更新器",
+      "clearDataCachesHeadline": "刷新缓存",
+      "clearDataCachesText": "仅选择性清除近期有变更的缓存数据。使用此选项可让你的更改立即生效，无需等待自动缓存刷新，也无需一次性清除全部缓存。",
+      "clearDataCachesButton": "刷新缓存"
+    },
+    "notifications": {
+      "clearCache": {
+        "started": "正在清除缓存。",
+        "success": "缓存已清除。",
+        "error": "无法清除缓存。"
+      },
+      "clearDataCache": {
+        "started": "正在清除数据缓存。",
+        "success": "所有待处理的更改已生效。",
+        "error": "无法清除缓存。"
+      },
+      "index": {
+        "started": "正在重建索引。",
+        "success": "所有索引已重建。"
+      }
+    },
+    "modal": {
+      "title": "清除缓存",
+      "message": "确定要清除所有缓存吗？",
+      "actions": {
+        "clear": "清空"
+      }
+    }
+  },
+  "sw-privileges": {
+    "additional_permissions": {
+      "system": {
+        "clear_cache": "清除缓存"
+      }
+    }
+  }
+}

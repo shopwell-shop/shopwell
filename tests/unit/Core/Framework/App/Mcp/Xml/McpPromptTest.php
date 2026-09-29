@@ -27,11 +27,11 @@ class McpPromptTest extends TestCase
         static::assertSame('https://app.example.com/mcp/prompt/order-context', $prompt->getUrl());
         static::assertSame([
             'en-GB' => 'Order Context',
-            'de-DE' => 'Bestellungskontext',
+            'zh-CN' => '订单上下文',
         ], $prompt->getLabel());
         static::assertSame([
             'en-GB' => 'Context for order management',
-            'de-DE' => 'Kontext für die Bestellungsverwaltung',
+            'zh-CN' => '订单管理上下文',
         ], $prompt->getDescription());
     }
 
@@ -52,7 +52,7 @@ class McpPromptTest extends TestCase
         $prompt = McpPrompt::fromArray([
             'name' => 'my-prompt',
             'url' => 'https://example.com/mcp/prompt',
-            'label' => ['en-GB' => 'My Prompt', 'de-DE' => 'Mein Prompt'],
+            'label' => ['en-GB' => 'My Prompt', 'zh-CN' => '我的提示词'],
             'description' => ['en-GB' => 'Desc'],
         ]);
 
@@ -61,7 +61,7 @@ class McpPromptTest extends TestCase
         static::assertSame('my-prompt', $data['name']);
         static::assertSame('https://example.com/mcp/prompt', $data['url']);
         static::assertSame('My Prompt', $data['label']['en-GB']);
-        static::assertSame('Mein Prompt', $data['label']['de-DE']);
+        static::assertSame('我的提示词', $data['label']['zh-CN']);
         static::assertSame('Desc', $data['description']['en-GB']);
     }
 

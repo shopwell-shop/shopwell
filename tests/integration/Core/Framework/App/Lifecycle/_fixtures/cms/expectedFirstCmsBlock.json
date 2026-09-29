@@ -1,7 +1,7 @@
 {
   "name": "my-first-block",
   "label": {
-    "de-DE": "Erster Block einer App",
+    "zh-CN": "应用的第一个区块",
     "en-GB": "First block from app"
   },
   "slots": {

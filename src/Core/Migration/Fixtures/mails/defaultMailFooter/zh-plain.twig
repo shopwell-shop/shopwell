@@ -1,0 +1,7 @@
+
+
+        地址：
+        {{ config('core.basicInformation.address')|striptags('<br>')|replace({"<br>":"\n"}) }}
+
+        银行账户：
+        {{ config('core.basicInformation.bankAccount')|striptags('<br>')|replace({"<br>":"\n"}) }}

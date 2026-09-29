@@ -1,0 +1,14 @@
+刚刚{% if reviewFormData.id is defined %}修改{% else %}提交{% endif %}了一条商品评价。
+
+{% if reviewFormData.name is defined %}姓名：{{ reviewFormData.name }}{% if reviewFormData.lastName is defined %} {{ reviewFormData.lastName }}{% endif %}{% endif %}
+
+{% if reviewFormData.email is defined %}邮箱：{{ reviewFormData.email }}{% endif %}
+
+{% if product.translated.name is defined %}商品：{{ product.translated.name }}{% endif %}
+
+评分：{{ reviewFormData.points }}
+
+标题：{{ reviewFormData.title }}
+
+内容：
+{{ reviewFormData.content }}

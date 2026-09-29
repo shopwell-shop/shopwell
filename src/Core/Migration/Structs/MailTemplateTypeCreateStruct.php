@@ -25,7 +25,7 @@ class MailTemplateTypeCreateStruct
     public function __construct(
         protected string $technicalName,
         protected string $enName,
-        protected string $deName,
+        protected string $zhName,
         protected array $availableEntities = [],
     ) {
     }
@@ -40,9 +40,9 @@ class MailTemplateTypeCreateStruct
         return $this->enName;
     }
 
-    public function getDeName(): string
+    public function getZhName(): string
     {
-        return $this->deName;
+        return $this->zhName;
     }
 
     /**

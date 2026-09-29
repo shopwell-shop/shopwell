@@ -17,7 +17,7 @@ Shopwell.Module.register('sw-export-channel-tracking', {
     routeMiddleware: (next) => next(),
 
     snippets: {
-        'de-DE': () => import('./snippet/de.json'),
+        'zh-CN': () => import('./snippet/zh.json'),
         'en-GB': () => import('./snippet/en.json'),
     },
 });

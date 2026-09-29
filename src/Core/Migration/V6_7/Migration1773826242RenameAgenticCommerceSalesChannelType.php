@@ -51,9 +51,9 @@ class Migration1773826242RenameAgenticCommerceSalesChannelType extends Migration
             [
                 'name' => 'Agentic Commerce',
                 'manufacturer' => 'Shopwell',
-                'description' => 'Verkaufskanal für Agentic-Commerce-Plattformen',
+                'description' => '面向 Agentic 商务平台的销售渠道',
                 'salesChannelTypeId' => $salesChannelTypeId,
-                'localeCode' => 'de-DE',
+                'localeCode' => 'zh-CN',
             ],
         );
     }

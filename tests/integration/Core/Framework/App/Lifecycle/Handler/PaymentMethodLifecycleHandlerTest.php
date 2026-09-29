@@ -129,12 +129,12 @@ class PaymentMethodLifecycleHandlerTest extends TestCase
         $this->handler->install(new AppPersistContext($manifest, $app, $context, $appFilesystem, 'en-GB'));
 
         static::assertSame(
-            ['de-DE' => 'Die App-Zahlungsart', 'en-GB' => 'The app payment method'],
+            ['en-GB' => 'The app payment method', 'zh-CN' => '应用支付方式'],
             $this->getTranslatedNames(),
             'The manifest names should be imported on install'
         );
         static::assertSame(
-            ['de-DE' => 'Das ist eine Beschreibung', 'en-GB' => 'This is a description'],
+            ['en-GB' => 'This is a description', 'zh-CN' => '这是一个描述'],
             $this->getTranslatedDescriptions()
         );
 
@@ -149,19 +149,19 @@ class PaymentMethodLifecycleHandlerTest extends TestCase
             'id' => $paymentMethodId,
             'translations' => [
                 'en-GB' => ['name' => 'Mastercard / Visa', 'description' => 'Pay by card'],
-                'de-DE' => ['name' => 'Mastercard / Visa', 'description' => 'Mit Karte bezahlen'],
+                'zh-CN' => ['name' => 'Mastercard / Visa', 'description' => '刷卡支付'],
             ],
         ]], $context);
 
         $this->handler->update(new AppPersistContext($manifest, $app, $context, $appFilesystem, 'en-GB'));
 
         static::assertSame(
-            ['de-DE' => 'Mastercard / Visa', 'en-GB' => 'Mastercard / Visa'],
+            ['en-GB' => 'Mastercard / Visa', 'zh-CN' => 'Mastercard / Visa'],
             $this->getTranslatedNames(),
             'An app update must not reset the merchant customized name'
         );
         static::assertSame(
-            ['de-DE' => 'Mit Karte bezahlen', 'en-GB' => 'Pay by card'],
+            ['en-GB' => 'Pay by card', 'zh-CN' => '刷卡支付'],
             $this->getTranslatedDescriptions(),
             'An app update must not reset the merchant customized description'
         );
@@ -177,7 +177,7 @@ class PaymentMethodLifecycleHandlerTest extends TestCase
         $this->handler->install(new AppPersistContext($manifest, $app, $context, $appFilesystem, 'en-GB'));
 
         static::assertSame(
-            ['de-DE' => 'Die App-Zahlungsart', 'en-GB' => 'The app payment method'],
+            ['en-GB' => 'The app payment method', 'zh-CN' => '应用支付方式'],
             $this->getTranslatedNames(),
             'The first install must import the manifest names, otherwise the assertions below pass vacuously'
         );
@@ -188,7 +188,7 @@ class PaymentMethodLifecycleHandlerTest extends TestCase
             'id' => $paymentMethodId,
             'translations' => [
                 'en-GB' => ['name' => 'Mastercard / Visa', 'description' => 'Pay by card'],
-                'de-DE' => ['name' => 'Mastercard / Visa', 'description' => 'Mit Karte bezahlen'],
+                'zh-CN' => ['name' => 'Mastercard / Visa', 'description' => '刷卡支付'],
             ],
         ]], $context);
 
@@ -202,12 +202,12 @@ class PaymentMethodLifecycleHandlerTest extends TestCase
         $this->handler->install(new AppPersistContext($manifest, $reinstalledApp, $context, $appFilesystem, 'en-GB'));
 
         static::assertSame(
-            ['de-DE' => 'Mastercard / Visa', 'en-GB' => 'Mastercard / Visa'],
+            ['en-GB' => 'Mastercard / Visa', 'zh-CN' => 'Mastercard / Visa'],
             $this->getTranslatedNames(),
             'Reinstalling keeps the merchant texts, just like it keeps a replaced icon'
         );
         static::assertSame(
-            ['de-DE' => 'Mit Karte bezahlen', 'en-GB' => 'Pay by card'],
+            ['en-GB' => 'Pay by card', 'zh-CN' => '刷卡支付'],
             $this->getTranslatedDescriptions()
         );
         static::assertSame($reinstalledApp->getId(), $this->getLinkedAppId(), 'Reinstalling should relink the payment method to the new app');
@@ -232,19 +232,19 @@ class PaymentMethodLifecycleHandlerTest extends TestCase
         // a language the shop gained after the install has no translation for this payment method yet
         $this->paymentMethodTranslationRepository->delete([[
             'paymentMethodId' => $paymentMethodId,
-            'languageId' => $this->getLanguageId('de-DE', $context),
+            'languageId' => $this->getLanguageId('zh-CN', $context),
         ]], $context);
         static::assertSame(['en-GB' => 'Mastercard / Visa'], $this->getTranslatedNames());
 
         $this->handler->update(new AppPersistContext($manifest, $app, $context, $appFilesystem, 'en-GB'));
 
         static::assertSame(
-            ['de-DE' => 'Die App-Zahlungsart', 'en-GB' => 'Mastercard / Visa'],
+            ['en-GB' => 'Mastercard / Visa', 'zh-CN' => '应用支付方式'],
             $this->getTranslatedNames(),
             'The untranslated language gets the manifest name while the customized one is kept'
         );
         static::assertSame(
-            ['de-DE' => 'Das ist eine Beschreibung', 'en-GB' => 'Pay by card'],
+            ['en-GB' => 'Pay by card', 'zh-CN' => '这是一个描述'],
             $this->getTranslatedDescriptions()
         );
     }

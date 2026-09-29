@@ -111,7 +111,7 @@ describe('src/app/service/menu.service', () => {
 
         it('respects the current locale for apps', async () => {
             Shopwell.Context.app.fallbackLocale = 'en-GB';
-            Shopwell.Store.get('session').currentLocale = 'de-DE';
+            Shopwell.Store.get('session').currentLocale = 'zh-CN';
 
             const navigation = menuService.getNavigationFromApps(testApps);
             expect(navigation).toEqual([
@@ -119,28 +119,28 @@ describe('src/app/service/menu.service', () => {
                     id: 'app-testAppA-standardModule',
                     label: {
                         translated: true,
-                        label: 'Standardmodul',
+                        label: '标准模块',
                     },
                 }),
                 expect.objectContaining({
                     id: 'app-testAppA-noPosition',
                     label: {
                         translated: true,
-                        label: 'Modul ohne Position',
+                        label: '无位置模块',
                     },
                 }),
                 expect.objectContaining({
                     id: 'app-testAppB-default',
                     label: {
                         translated: true,
-                        label: 'Standard Modul',
+                        label: '标准模块',
                     },
                 }),
                 expect.objectContaining({
                     id: 'app-testAppB-structure',
                     label: {
                         translated: true,
-                        label: 'Struktur Modul',
+                        label: '结构模块',
                     },
                 }),
             ]);

@@ -4,9 +4,9 @@
     <meta>
         <name>swagUnitTestShippingMethodPersister</name>
         <label>Swag unit test shipping method persister</label>
-        <label lang="de-DE">Swag Unit Test Versandart Persister</label>
+        <label lang="zh-CN">Swag 单元测试配送方式持久化</label>
         <description>Test for install a shipping methods</description>
-        <description lang="de-DE">Test für die Installation einer Versandart</description>
+        <description lang="zh-CN">配送方式安装测试</description>
         <author>Shopwell</author>
         <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>
@@ -17,9 +17,9 @@
         <shipping-method>
             <identifier>shippingMethodOne</identifier>
             <name>First Shipping Method</name>
-            <name lang="de-DE">Erste Versandart</name>
+            <name lang="zh-CN">第一种配送方式</name>
             <description>This is a simple description</description>
-            <description lang="de-DE">Das ist eine einfache Beschreibung</description>
+            <description lang="zh-CN">这是一个简单的描述</description>
             <active>false</active>
             <icon>icons/TestIcon.png</icon>
             <delivery-time>
@@ -33,9 +33,9 @@
         <shipping-method>
             <identifier>shippingMethodTwo</identifier>
             <name>Second Shipping Method</name>
-            <name lang="de-DE">Zweite Versandart</name>
+            <name lang="zh-CN">第二种配送方式</name>
             <description>This is another simple description</description>
-            <description lang="de-DE">Das ist eine andere einfache Beschreibung</description>
+            <description lang="zh-CN">这是另一个简单的描述</description>
             <active>false</active>
             <delivery-time>
                 <id>4b00146bdc8b4175b12d3fc36ec114c9</id>

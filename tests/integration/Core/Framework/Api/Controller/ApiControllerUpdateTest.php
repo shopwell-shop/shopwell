@@ -101,7 +101,7 @@ class ApiControllerUpdateTest extends TestCase
 
         static::assertSame(Response::HTTP_NO_CONTENT, $client->getResponse()->getStatusCode());
 
-        $client->setServerParameter('HTTP_sw-language-id', $this->getDeDeLanguageId());
+        $client->setServerParameter('HTTP_sw-language-id', $this->getZhCnLanguageId());
 
         $client->jsonRequest('PATCH', '/api/' . $entityName . '/' . $id, [
             'id' => $id,

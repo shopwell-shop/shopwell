@@ -1,0 +1,5 @@
+{{ nameOfInviter }} 邀请您加入 Shopwell 商店 {{ storeName }}。
+
+如需访问该商店，请使用邮箱 {{ invitedEmailAddress }} 登录或注册。
+
+{{ signupUrl }}

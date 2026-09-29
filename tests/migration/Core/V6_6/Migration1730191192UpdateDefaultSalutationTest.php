@@ -73,6 +73,6 @@ class Migration1730191192UpdateDefaultSalutationTest extends TestCase
         );
 
         static::assertSame('Dear', $salutationLetters['en-GB']);
-        static::assertSame('Guten Tag', $salutationLetters['de-DE']);
+        static::assertSame('您好', $salutationLetters['zh-CN']);
     }
 }

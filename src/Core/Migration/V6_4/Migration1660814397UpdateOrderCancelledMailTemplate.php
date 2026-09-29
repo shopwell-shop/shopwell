@@ -31,8 +31,8 @@ class Migration1660814397UpdateOrderCancelledMailTemplate extends MigrationStep
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_STATE_CANCELLED,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order.state.cancelled/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order.state.cancelled/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order.state.cancelled/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order.state.cancelled/de-html.html.twig')
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order.state.cancelled/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order.state.cancelled/zh-html.html.twig')
         );
 
         $this->updateMail($update, $connection);

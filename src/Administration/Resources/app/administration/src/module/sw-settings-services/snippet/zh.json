@@ -1,0 +1,73 @@
+{
+  "sw-settings-services": {
+    "general": {
+      "title": "Shopwell Services",
+      "description": "管理你的 Shopwell 实例中可用的 Services。",
+      "activate": "启用",
+      "deactivate": "停用"
+    },
+    "exception": {
+      "service-list": "加载 Services 出错"
+    },
+    "sw-settings-services-hero": {
+      "title": "用 Shopwell Services 让你的商店保持领先",
+      "intro": "Services 是为你的 Shopwell 商店提供特定功能的云端扩展。与传统软件组件不同，Services 独立于核心产品运行，无需修改核心即可启用或更新。这让我们能快速响应新需求，同时保持主系统稳定精简。",
+      "bullet-point-integrated": "无缝集成，自动更新",
+      "bullet-point-flexible": "高度灵活，独立于 Shopwell 核心",
+      "bullet-point-transparent": "数据使用透明且需你的授权",
+      "bullet-point-scalable": "可扩展且可靠，支持 AI 和机器学习等复杂工作流",
+      "give-feedback": "提供反馈",
+      "learn-more": "了解更多"
+    },
+    "index": {
+      "available-services": "可用 Services",
+      "services-are-disabled": "Shopwell Services 已停用",
+      "services-are-disabled-cta": "你目前无法使用任何 Shopwell Services，包括先进的 AI 工具等。启用 Shopwell Services 即可使用所有现有及未来的 Services。",
+      "services-are-disabled-button-label": "启用 Services",
+      "services-enabled": "Services 已启用",
+      "services-scheduled": "Services 已计划安装并启用，稍候片刻即可完成。",
+      "label-documentation-link": "文档",
+      "label-tos-link": "服务条款",
+      "installing-services-title": "正在安装 Shopwell Services",
+      "installing-services-description": "这可能需要一点时间。安装完成后会通知你。期间你可以正常使用 Shopwell 管理后台。"
+    },
+    "service-card": {
+      "status-active": "已启用",
+      "status-awaiting-permissions": "等待授权",
+      "status-inactive": "未启用",
+      "updated-at-label": "最后更新：{updatedAt}",
+      "version": "版本：{version}",
+      "cannot-remove-or-deactivate": "无法移除或停用",
+      "deactivate-modal": {
+        "warning": "确定要停用 \"{serviceName}\" 吗？",
+        "consequences": "停用后你将立即失去对该 Service 及相关流程的访问。"
+      },
+      "permissions": "查看权限"
+    },
+    "grant-permissions": {
+      "title": "释放 Shopwell Services 的全部潜力",
+      "description": "为发挥全部能力，部分 Shopwell Services 需要访问你商店的关键区域（如商品信息或订单数据）的权限。这些权限与 Shopwell 扩展所使用的权限一致。每个 Service 只访问其运行所需的权限，你的数据始终被审慎处理。",
+      "label-button-grant-permissions": "授予权限",
+      "label-link-more-information": "更多信息"
+    },
+    "revoke-permissions-modal": {
+      "title": "撤销权限",
+      "p-1": "确定要撤销这些权限吗？",
+      "p-2": "这只会撤销使用通用 Services 授权的 Services 的权限。这些 Services 可能会被停用并失去相关功能。",
+      "p-3": "以下 Services 已关联 Shopwell 账户，将保留其所需权限：",
+      "label-button-revoke-permissions": "撤销权限"
+    },
+    "deactivate-modal": {
+      "title": "停用 Shopwell Services",
+      "p-1": "确定要停用 Shopwell Services 吗？",
+      "p-2": "这只会停用使用通用 Services 授权的 Services。已关联 Shopwell 账户的 Services 保持启用。",
+      "p-3": "以下 Services 已关联 Shopwell 账户，将保持启用：",
+      "label-feedback-link": "提供反馈"
+    },
+    "dashboard-banner": {
+      "title": "探索 Shopwell Services",
+      "description": "用我们的云端 Services 升级你的 Shopwell 体验，它们与后台无缝集成，自动更新，功能前沿。由 Shopwell 打造，助你把生意做大。",
+      "label-button-explore": "立即探索"
+    }
+  }
+}

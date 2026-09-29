@@ -146,12 +146,12 @@ class SalesChannelSnippetLoaderTest extends TestCase
 
         $catalogues = [
             'pl-PL' => new MessageCatalogue('pl-PL', ['messages' => ['checkout.cart.title' => 'Koszyk']]),
-            'de-DE' => new MessageCatalogue('de-DE', ['messages' => ['checkout.cart.title' => 'Warenkorb']]),
+            'zh-CN' => new MessageCatalogue('zh-CN', ['messages' => ['checkout.cart.title' => '购物车']]),
         ];
 
         $loader = $this->createLoader(
             $catalogues,
-            locales: [$firstLanguageId => 'pl-PL', $secondLanguageId => 'de-DE'],
+            locales: [$firstLanguageId => 'pl-PL', $secondLanguageId => 'zh-CN'],
             languageRepository: $this->createLanguageRepository([$languageIds])
         );
 
@@ -162,7 +162,7 @@ class SalesChannelSnippetLoaderTest extends TestCase
         static::assertSame($firstLanguageId, $results[0]->languageId);
         static::assertSame('pl-PL', $results[0]->locale);
         static::assertSame($secondLanguageId, $results[1]->languageId);
-        static::assertSame('de-DE', $results[1]->locale);
+        static::assertSame('zh-CN', $results[1]->locale);
     }
 
     public function testResetsTranslatorStateBetweenLanguagesSharingOneLocale(): void
@@ -180,7 +180,7 @@ class SalesChannelSnippetLoaderTest extends TestCase
         $translator->method('getSnippetSetId')->willReturn($this->snippetSetId);
 
         $languageLocaleProvider = static::createStub(LanguageLocaleCodeProvider::class);
-        $languageLocaleProvider->method('getLocaleForLanguageId')->willReturn('de-DE');
+        $languageLocaleProvider->method('getLocaleForLanguageId')->willReturn('zh-CN');
 
         $loader = new SalesChannelSnippetLoader(
             $translator,

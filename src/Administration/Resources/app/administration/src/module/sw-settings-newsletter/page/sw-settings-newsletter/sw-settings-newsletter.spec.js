@@ -98,7 +98,7 @@ function createConfig() {
         {
             title: {
                 'en-GB': 'Newsletter configuration',
-                'de-DE': 'Newsletter-Konfiguration',
+                'zh-CN': '新闻订阅配置',
             },
             name: null,
             elements: [
@@ -109,7 +109,7 @@ function createConfig() {
                     config: {
                         label: {
                             'en-GB': 'Subscription URL',
-                            'de-DE': 'Anmelde-URL',
+                            'zh-CN': '订阅链接',
                         },
                         placeholder: {
                             'en-GB': '/newsletter-subscribe?em=%%HASHEDEMAIL%%&hash=%%SUBSCRIBEHASH%%',
@@ -117,8 +117,8 @@ function createConfig() {
                         helpText: {
                             'en-GB':
                                 'URL to confirm the subscription to the newsletter.<br/>Available placeholders: <br/>%%HASHEDEMAIL%%<br/>%%SUBSCRIBEHASH%%',
-                            'de-DE':
-                                'URL um die Newsletter-Anmeldung zu bestätigen.<br/>Verfügbare Platzhalter: <br/>%%HASHEDEMAIL%%<br/>%%SUBSCRIBEHASH%%',
+                            'zh-CN':
+                                '确认新闻订阅的链接。<br/>可用占位符：<br/>%%HASHEDEMAIL%%<br/>%%SUBSCRIBEHASH%%',
                         },
                     },
                 },
@@ -129,7 +129,7 @@ function createConfig() {
                         label: { 'en-GB': 'Double opt-in' },
                         helpText: {
                             'en-GB': 'Use double opt-in for newsletter subscriptions.',
-                            'de-DE': 'Nutze das Double-Opt-In-Verfahren für Newsletter-Anmeldungen.',
+                            'zh-CN': '新闻订阅使用双重确认（Double-Opt-In）流程。',
                         },
                     },
                 },

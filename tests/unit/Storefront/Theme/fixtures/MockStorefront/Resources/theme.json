@@ -3,7 +3,7 @@
   "author": "Shopwell",
   "description": {
     "en-GB": "Default theme of Shopwell 6",
-    "de-DE": "Standard Theme von Shopwell 6"
+    "zh-CN": "Shopwell 6 \u9ed8\u8ba4\u4e3b\u9898"
   },
   "previewMedia": "app/storefront/dist/assets/defaultThemePreview.jpg",
   "style": [
@@ -36,37 +36,37 @@
       "themeColors": {
         "label": {
           "en-GB": "Theme colours",
-          "de-DE": "Theme-Farben"
+          "zh-CN": "\u4e3b\u9898\u914d\u8272"
         }
       },
       "typography": {
         "label": {
           "en-GB": "Typography",
-          "de-DE": "Typografie"
+          "zh-CN": "\u6392\u7248"
         }
       },
       "eCommerce": {
         "label": {
           "en-GB": "E-Commerce",
-          "de-DE": "E-Commerce"
+          "zh-CN": "\u7535\u5546"
         }
       },
       "statusColors": {
         "label": {
           "en-GB": "Status messages",
-          "de-DE": "Status-Ausgaben"
+          "zh-CN": "\u72b6\u6001\u63d0\u793a"
         }
       },
       "media": {
         "label": {
           "en-GB": "Media",
-          "de-DE": "Medien"
+          "zh-CN": "\u5a92\u4f53"
         }
       },
       "unordered": {
         "label": {
           "en-GB": "Misc",
-          "de-DE": "Sonstige"
+          "zh-CN": "\u5176\u4ed6"
         }
       }
     },
@@ -74,7 +74,7 @@
       "sw-color-brand-primary": {
         "label": {
           "en-GB": "Primary colour",
-          "de-DE": "Primärfarbe"
+          "zh-CN": "\u4e3b\u8272"
         },
         "type": "color",
         "value": "#008490",
@@ -85,7 +85,7 @@
       "sw-color-brand-secondary": {
         "label": {
           "en-GB": "Secondary colour",
-          "de-DE": "Sekundärfarbe"
+          "zh-CN": "\u8f85\u52a9\u8272"
         },
         "type": "color",
         "value": "#526e7f",
@@ -96,7 +96,7 @@
       "sw-border-color": {
         "label": {
           "en-GB": "Border",
-          "de-DE": "Rahmen"
+          "zh-CN": "\u8fb9\u6846"
         },
         "type": "color",
         "value": "#bcc1c7",
@@ -107,7 +107,7 @@
       "sw-background-color": {
         "label": {
           "en-GB": "Background",
-          "de-DE": "Hintergrund"
+          "zh-CN": "\u80cc\u666f"
         },
         "type": "color",
         "value": "#fff",
@@ -118,7 +118,7 @@
       "sw-color-success": {
         "label": {
           "en-GB": "Success",
-          "de-DE": "Erfolg"
+          "zh-CN": "\u6210\u529f"
         },
         "type": "color",
         "value": "#3cc261",
@@ -129,7 +129,7 @@
       "sw-color-info": {
         "label": {
           "en-GB": "Information",
-          "de-DE": "Information"
+          "zh-CN": "\u4fe1\u606f"
         },
         "type": "color",
         "value": "#26b6cf",
@@ -140,7 +140,7 @@
       "sw-color-warning": {
         "label": {
           "en-GB": "Notice",
-          "de-DE": "Hinweis"
+          "zh-CN": "\u63d0\u9192"
         },
         "type": "color",
         "value": "#ffbd5d",
@@ -151,7 +151,7 @@
       "sw-color-danger": {
         "label": {
           "en-GB": "Error",
-          "de-DE": "Fehler"
+          "zh-CN": "\u9519\u8bef"
         },
         "type": "color",
         "value": "#e52427",
@@ -162,7 +162,7 @@
       "sw-font-family-base": {
         "label": {
           "en-GB": "Fonttype text",
-          "de-DE": "Schriftart Text"
+          "zh-CN": "\u6b63\u6587\u5b57\u4f53"
         },
         "type": "fontFamily",
         "value": "'Inter', sans-serif",
@@ -173,7 +173,7 @@
       "sw-text-color": {
         "label": {
           "en-GB": "Text colour",
-          "de-DE": "Textfarbe"
+          "zh-CN": "\u6587\u5b57\u989c\u8272"
         },
         "type": "color",
         "value": "#4a545b",
@@ -184,7 +184,7 @@
       "sw-font-family-headline": {
         "label": {
           "en-GB": "Fonttype headline",
-          "de-DE": "Schriftart Überschrift"
+          "zh-CN": "\u6807\u9898\u5b57\u4f53"
         },
         "type": "fontFamily",
         "value": "'Inter', sans-serif",
@@ -195,7 +195,7 @@
       "sw-headline-color": {
         "label": {
           "en-GB": "Headline colour",
-          "de-DE": "Überschriftfarbe"
+          "zh-CN": "\u6807\u9898\u989c\u8272"
         },
         "type": "color",
         "value": "#4a545b",
@@ -206,7 +206,7 @@
       "sw-color-price": {
         "label": {
           "en-GB": "Price",
-          "de-DE": "Preis"
+          "zh-CN": "\u4ef7\u683c"
         },
         "type": "color",
         "value": "#4a545b",
@@ -217,7 +217,7 @@
       "sw-color-buy-button": {
         "label": {
           "en-GB": "Buy button",
-          "de-DE": "Kaufen-Button"
+          "zh-CN": "\u8d2d\u4e70\u6309\u94ae"
         },
         "type": "color",
         "value": "#008490",
@@ -228,7 +228,7 @@
       "sw-color-buy-button-text": {
         "label": {
           "en-GB": "Buy button text",
-          "de-DE": "Kaufen-Button Text"
+          "zh-CN": "\u8d2d\u4e70\u6309\u94ae\u6587\u5b57"
         },
         "type": "color",
         "value": "#fff",
@@ -239,11 +239,11 @@
       "sw-logo-desktop": {
         "label": {
           "en-GB": "Desktop",
-          "de-DE": "Desktop"
+          "zh-CN": "\u684c\u9762\u7aef"
         },
         "helpText": {
           "en-GB": "Displayed for viewports of above 991px",
-          "de-DE": "Wird über einem Viewport von 991px angezeigt"
+          "zh-CN": "\u5bbd\u5ea6\u5927\u4e8e 991px \u65f6\u663e\u793a"
         },
         "type": "media",
         "value": "app/storefront/dist/assets/logo/demostore-logo.png",
@@ -254,11 +254,11 @@
       "sw-logo-tablet": {
         "label": {
           "en-GB": "Tablet",
-          "de-DE": "Tablet"
+          "zh-CN": "\u5e73\u677f\u7aef"
         },
         "helpText": {
           "en-GB": "Displayed between a viewport of 767px to 991px",
-          "de-DE": "Wird zwischen einem viewport von 767px bis 991px angezeigt"
+          "zh-CN": "\u5bbd\u5ea6\u5728 767px \u81f3 991px \u4e4b\u95f4\u65f6\u663e\u793a"
         },
         "type": "media",
         "value": "app/storefront/dist/assets/logo/demostore-logo.png",
@@ -269,11 +269,11 @@
       "sw-logo-mobile": {
         "label": {
           "en-GB": "Mobile",
-          "de-DE": "Mobil"
+          "zh-CN": "\u79fb\u52a8\u7aef"
         },
         "helpText": {
           "en-GB": "Displayed up to a viewport of 767px",
-          "de-DE": "Wird bis zu einem Viewport von 767px angezeigt"
+          "zh-CN": "\u5bbd\u5ea6\u5c0f\u4e8e 767px \u65f6\u663e\u793a"
         },
         "type": "media",
         "value": "app/storefront/dist/assets/logo/demostore-logo.png",
@@ -284,7 +284,7 @@
       "sw-logo-share": {
         "label": {
           "en-GB": "App & share icon",
-          "de-DE": "App- & Share-Icon"
+          "zh-CN": "App \u4e0e\u5206\u4eab\u56fe\u6807"
         },
         "type": "media",
         "value": "",
@@ -295,7 +295,7 @@
       "sw-logo-favicon": {
         "label": {
           "en-GB": "Favicon",
-          "de-DE": "Favicon"
+          "zh-CN": "\u7f51\u7ad9\u56fe\u6807"
         },
         "type": "media",
         "value": "app/storefront/dist/assets/logo/favicon.png",

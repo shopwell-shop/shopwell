@@ -13,7 +13,7 @@ use Shopwell\Core\Migration\Traits\CreateMailTemplateTrait;
  * Repairs mail templates and mail template types that are missing a translation for the system
  * default language.
  *
- * On systems whose default language uses a locale other than en-GB or de-DE, the
+ * On systems whose default language uses a locale other than en-GB or zh-CN, the
  * {@see CreateMailTemplateTrait} used to write the english content
  * only to a separate en-GB language and never to the system default language. The translation for
  * the default language is therefore missing.

@@ -20,14 +20,14 @@ class Migration1599134496FixImportExportProfilesForGermanLanguage extends Migrat
 
     public function update(Connection $connection): void
     {
-        $germanLanguageId = $connection->fetchOne('
+        $zhCnLanguageId = $connection->fetchOne('
             SELECT lang.id
             FROM language lang
             INNER JOIN locale loc ON lang.locale_id = loc.id
-            AND loc.code = \'de-DE\';
+            AND loc.code = \'zh-CN\';
         ');
 
-        if (!$germanLanguageId) {
+        if (!$zhCnLanguageId) {
             return;
         }
 
@@ -49,10 +49,10 @@ SQL;
         $englishData = $connection->fetchAllAssociative($sql, [
             'languageId' => $englishLanguageId,
         ]);
-        $germanData = $connection->fetchAllAssociative($sql, [
-            'languageId' => $germanLanguageId,
+        $zhCnData = $connection->fetchAllAssociative($sql, [
+            'languageId' => $zhCnLanguageId,
         ]);
-        $germanTranslations = $this->getGermanTranslationData();
+        $zhCnTranslations = $this->getZhCnTranslationData();
 
         $insertSql = <<<'SQL'
             INSERT INTO import_export_profile_translation (`import_export_profile_id`, `language_id`, `label`, `created_at`)
@@ -61,14 +61,14 @@ SQL;
 
         $stmt = $connection->prepare($insertSql);
         foreach ($englishData as $data) {
-            if ($this->checkIfInGermanData($data, $germanData)) {
+            if ($this->checkIfInZhCnData($data, $zhCnData)) {
                 continue;
             }
 
             StatementHelper::executeStatement($stmt, [
                 'import_export_profile_id' => $data['import_export_profile_id'],
-                'language_id' => $germanLanguageId,
-                'label' => $germanTranslations[$data['label']],
+                'language_id' => $zhCnLanguageId,
+                'label' => $zhCnTranslations[$data['label']],
                 'created_at' => $data['created_at'],
             ]);
         }
@@ -81,26 +81,26 @@ SQL;
     /**
      * @return array<string, string>
      */
-    private function getGermanTranslationData(): array
+    private function getZhCnTranslationData(): array
     {
         return [
-            'Default category' => 'Standardprofil Kategorie',
-            'Default media' => 'Standardprofil Medien',
-            'Default variant configuration settings' => 'Standardprofil Variantenkonfiguration',
-            'Default newsletter recipient' => 'Standardprofil Newsletter-Empfänger',
-            'Default properties' => 'Standardprofil Eigenschaften',
-            'Default product' => 'Standardprofil Produkt',
+            'Default category' => '标准配置 - 分类',
+            'Default media' => '标准配置 - 媒体',
+            'Default variant configuration settings' => '标准配置 - 变体配置',
+            'Default newsletter recipient' => '标准配置 - 邮件通讯收件人',
+            'Default properties' => '标准配置 - 属性',
+            'Default product' => '标准配置 - 商品',
         ];
     }
 
     /**
      * @param array<string, mixed> $englishRow
-     * @param array<array<string, mixed>> $germanData
+     * @param array<array<string, mixed>> $zhCnData
      */
-    private function checkIfInGermanData(array $englishRow, array $germanData): bool
+    private function checkIfInZhCnData(array $englishRow, array $zhCnData): bool
     {
-        $germanProfileIds = array_column($germanData, 'import_export_profile_id');
+        $zhCnProfileIds = array_column($zhCnData, 'import_export_profile_id');
 
-        return \in_array($englishRow['import_export_profile_id'], $germanProfileIds, true);
+        return \in_array($englishRow['import_export_profile_id'], $zhCnProfileIds, true);
     }
 }

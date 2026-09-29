@@ -16,9 +16,9 @@ class ChangeLanguageCommandTest extends TestCase
 {
     public function testCommand(): void
     {
-        $command = ChangeLanguageCommand::createFromPayload(['iso' => 'de-DE']);
+        $command = ChangeLanguageCommand::createFromPayload(['iso' => 'zh-CN']);
 
         static::assertSame('context_change-language', $command::getDefaultKeyName());
-        static::assertSame('de-DE', $command->iso);
+        static::assertSame('zh-CN', $command->iso);
     }
 }

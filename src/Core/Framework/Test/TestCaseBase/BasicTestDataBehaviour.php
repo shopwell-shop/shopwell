@@ -28,13 +28,13 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 trait BasicTestDataBehaviour
 {
-    public function getDeDeLanguageId(): string
+    public function getZhCnLanguageId(): string
     {
         /** @var EntityRepository<LanguageCollection> $repository */
         $repository = static::getContainer()->get('language.repository');
 
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('language.translationCode.code', 'de-DE'));
+        $criteria->addFilter(new EqualsFilter('language.translationCode.code', 'zh-CN'));
 
         $id = $repository->searchIds($criteria, Context::createDefaultContext())->firstId();
         \assert($id !== null);

@@ -91,11 +91,11 @@ INNER JOIN `cms_page_translation` AS `page_translation`
     ON `page_translation`.`cms_page_id` = `page`.`id`
     AND `page_translation`.`cms_page_version_id` = `page`.`version_id`
 WHERE `page`.`version_id` = :versionId
-    AND (`page_translation`.`name` = :enName OR `page_translation`.`name` = :deName)
+    AND (`page_translation`.`name` = :enName OR `page_translation`.`name` = :zhName)
 LIMIT 1
 SQL,
             [
-                'deName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['de_name'],
+                'zhName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['zh_name'],
                 'enName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['en_name'],
                 'versionId' => Uuid::fromHexToBytes(Defaults::LIVE_VERSION),
             ],
@@ -205,27 +205,27 @@ SQL,
 
     private function fixMigration(Connection $connection): void
     {
-        $deLanguageByteIds = $this->getLanguageIdsWithDePrefix($connection);
-        $enLanguageByteIds = $this->getLanguageIdsWithoutDePrefix($connection);
+        $zhCnLanguageByteIds = $this->getLanguageIdsWithZhPrefix($connection);
+        $enLanguageByteIds = $this->getLanguageIdsWithoutZhPrefix($connection);
         $versionByteId = Uuid::fromHexToBytes(Defaults::LIVE_VERSION);
 
-        $cmsPageByteId = $this->createCmsPage($connection, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+        $cmsPageByteId = $this->createCmsPage($connection, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
         $cmsSectionByteId = $this->createCmsSection($connection, $cmsPageByteId, $versionByteId);
         $cmsBlockByteId = $this->createCmsBlock($connection, $cmsSectionByteId, $versionByteId);
-        $this->createCmsSlot($connection, $cmsBlockByteId, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+        $this->createCmsSlot($connection, $cmsBlockByteId, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
     }
 
     /**
      * @return list<string>
      */
-    private function getLanguageIdsWithDePrefix(Connection $connection): array
+    private function getLanguageIdsWithZhPrefix(Connection $connection): array
     {
         $languageIds = $connection->fetchFirstColumn(
             <<<'SQL'
 SELECT `language`.`id`
 FROM `language`
 INNER JOIN `locale` ON `locale`.`id` = `language`.`locale_id`
-WHERE LOWER(`locale`.`code`) LIKE 'de-%'
+WHERE LOWER(`locale`.`code`) LIKE 'zh-%'
 ORDER BY `language`.`created_at` ASC, `language`.`id` ASC
 SQL
         );
@@ -245,14 +245,14 @@ SQL
     /**
      * @return list<string>
      */
-    private function getLanguageIdsWithoutDePrefix(Connection $connection): array
+    private function getLanguageIdsWithoutZhPrefix(Connection $connection): array
     {
         $languageIds = $connection->fetchFirstColumn(
             <<<'SQL'
 SELECT `language`.`id`
 FROM `language`
 INNER JOIN `locale` ON `locale`.`id` = `language`.`locale_id`
-WHERE LOWER(`locale`.`code`) NOT LIKE 'de-%'
+WHERE LOWER(`locale`.`code`) NOT LIKE 'zh-%'
 ORDER BY `language`.`created_at` ASC, `language`.`id` ASC
 SQL
         );
@@ -271,13 +271,13 @@ SQL
 
     /**
      * @param list<string> $enLanguageByteIds
-     * @param list<string> $deLanguageByteIds
+     * @param list<string> $zhCnLanguageByteIds
      */
-    private function createCmsPage(Connection $connection, string $versionByteId, array $enLanguageByteIds, array $deLanguageByteIds): string
+    private function createCmsPage(Connection $connection, string $versionByteId, array $enLanguageByteIds, array $zhCnLanguageByteIds): string
     {
         $cmsPageByteId = $this->getCmsPageId($connection, $versionByteId);
         if ($cmsPageByteId !== null) {
-            $this->createCmsPageTranslations($connection, $cmsPageByteId, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+            $this->createCmsPageTranslations($connection, $cmsPageByteId, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
 
             return $cmsPageByteId;
         }
@@ -295,23 +295,23 @@ SQL
             ]
         );
 
-        $this->createCmsPageTranslations($connection, $cmsPageByteId, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+        $this->createCmsPageTranslations($connection, $cmsPageByteId, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
 
         return $cmsPageByteId;
     }
 
     /**
      * @param list<string> $enLanguageByteIds
-     * @param list<string> $deLanguageByteIds
+     * @param list<string> $zhCnLanguageByteIds
      */
-    private function createCmsPageTranslations(Connection $connection, string $cmsPageByteId, string $versionByteId, array $enLanguageByteIds, array $deLanguageByteIds): void
+    private function createCmsPageTranslations(Connection $connection, string $cmsPageByteId, string $versionByteId, array $enLanguageByteIds, array $zhCnLanguageByteIds): void
     {
         foreach ($enLanguageByteIds as $enLanguageByteId) {
             $this->createCmsPageTranslation($connection, $cmsPageByteId, $versionByteId, $enLanguageByteId, Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['en_name']);
         }
 
-        foreach ($deLanguageByteIds as $deLanguageByteId) {
-            $this->createCmsPageTranslation($connection, $cmsPageByteId, $versionByteId, $deLanguageByteId, Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['de_name']);
+        foreach ($zhCnLanguageByteIds as $zhCnLanguageByteId) {
+            $this->createCmsPageTranslation($connection, $cmsPageByteId, $versionByteId, $zhCnLanguageByteId, Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['zh_name']);
         }
     }
 
@@ -390,18 +390,18 @@ SQL
 
     /**
      * @param list<string> $enLanguageByteIds
-     * @param list<string> $deLanguageByteIds
+     * @param list<string> $zhCnLanguageByteIds
      */
     private function createCmsSlot(
         Connection $connection,
         string $cmsBlockByteId,
         string $versionByteId,
         array $enLanguageByteIds,
-        array $deLanguageByteIds
+        array $zhCnLanguageByteIds
     ): void {
         $cmsSlotByteId = $this->getCmsSlotId($connection, $cmsBlockByteId, $versionByteId);
         if ($cmsSlotByteId !== null) {
-            $this->createCmsSlotTranslations($connection, $cmsSlotByteId, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+            $this->createCmsSlotTranslations($connection, $cmsSlotByteId, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
 
             return;
         }
@@ -421,21 +421,21 @@ SQL
             ]
         );
 
-        $this->createCmsSlotTranslations($connection, $cmsSlotByteId, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+        $this->createCmsSlotTranslations($connection, $cmsSlotByteId, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
     }
 
     /**
      * @param list<string> $enLanguageByteIds
-     * @param list<string> $deLanguageByteIds
+     * @param list<string> $zhCnLanguageByteIds
      */
-    private function createCmsSlotTranslations(Connection $connection, string $cmsSlotByteId, string $versionByteId, array $enLanguageByteIds, array $deLanguageByteIds): void
+    private function createCmsSlotTranslations(Connection $connection, string $cmsSlotByteId, string $versionByteId, array $enLanguageByteIds, array $zhCnLanguageByteIds): void
     {
         foreach ($enLanguageByteIds as $enLanguageByteId) {
             $this->createCmsSlotTranslation($connection, $cmsSlotByteId, $versionByteId, $enLanguageByteId);
         }
 
-        foreach ($deLanguageByteIds as $deLanguageByteId) {
-            $this->createCmsSlotTranslation($connection, $cmsSlotByteId, $versionByteId, $deLanguageByteId);
+        foreach ($zhCnLanguageByteIds as $zhCnLanguageByteId) {
+            $this->createCmsSlotTranslation($connection, $cmsSlotByteId, $versionByteId, $zhCnLanguageByteId);
         }
     }
 
@@ -474,13 +474,13 @@ FROM `cms_page` AS `page`
 INNER JOIN `cms_page_translation` AS `page_translation` ON `page`.`id` = `page_translation`.`cms_page_id`
     AND `page`.`version_id` = `page_translation`.`cms_page_version_id`
 WHERE `page`.`version_id` = :versionId
-    AND (`page_translation`.`name` = :enName OR `page_translation`.`name` = :deName)
+    AND (`page_translation`.`name` = :enName OR `page_translation`.`name` = :zhName)
 SQL;
 
         $cmsPageByteId = $connection->executeQuery(
             $sql,
             [
-                'deName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['de_name'],
+                'zhName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['zh_name'],
                 'enName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['en_name'],
                 'versionId' => $versionByteId,
             ]

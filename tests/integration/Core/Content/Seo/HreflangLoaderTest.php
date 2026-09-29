@@ -132,7 +132,7 @@ class HreflangLoaderTest extends TestCase
                 'hreflangUseOnlyLocale' => false,
                 'languageId' => $first->getId(),
                 'salesChannelId' => $this->salesChannelContext->getSalesChannelId(),
-                'snippetSetId' => $this->getSnippetSetIdForLocale('de-DE'),
+                'snippetSetId' => $this->getSnippetSetIdForLocale('zh-CN'),
                 'currencyId' => Defaults::CURRENCY,
             ],
             [
@@ -207,7 +207,7 @@ class HreflangLoaderTest extends TestCase
                 'hreflangUseOnlyLocale' => false,
                 'languageId' => $first->getId(),
                 'salesChannelId' => $this->salesChannelContext->getSalesChannelId(),
-                'snippetSetId' => $this->getSnippetSetIdForLocale('de-DE'),
+                'snippetSetId' => $this->getSnippetSetIdForLocale('zh-CN'),
                 'currencyId' => Defaults::CURRENCY,
             ],
             [
@@ -288,7 +288,7 @@ class HreflangLoaderTest extends TestCase
                 'hreflangUseOnlyLocale' => true,
                 'languageId' => $first->getId(),
                 'salesChannelId' => $this->salesChannelContext->getSalesChannelId(),
-                'snippetSetId' => $this->getSnippetSetIdForLocale('de-DE'),
+                'snippetSetId' => $this->getSnippetSetIdForLocale('zh-CN'),
                 'currencyId' => Defaults::CURRENCY,
             ],
             [
@@ -358,7 +358,7 @@ class HreflangLoaderTest extends TestCase
                 'hreflangUseOnlyLocale' => false,
                 'languageId' => $first->getId(),
                 'salesChannelId' => $this->salesChannelContext->getSalesChannelId(),
-                'snippetSetId' => $this->getSnippetSetIdForLocale('de-DE'),
+                'snippetSetId' => $this->getSnippetSetIdForLocale('zh-CN'),
                 'currencyId' => Defaults::CURRENCY,
             ],
             [
@@ -412,7 +412,7 @@ class HreflangLoaderTest extends TestCase
                 'hreflangUseOnlyLocale' => false,
                 'languageId' => $first->getId(),
                 'salesChannelId' => $this->salesChannelContext->getSalesChannelId(),
-                'snippetSetId' => $this->getSnippetSetIdForLocale('de-DE'),
+                'snippetSetId' => $this->getSnippetSetIdForLocale('zh-CN'),
                 'currencyId' => Defaults::CURRENCY,
             ],
             [

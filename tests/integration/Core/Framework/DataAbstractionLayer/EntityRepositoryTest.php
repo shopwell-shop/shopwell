@@ -431,7 +431,7 @@ class EntityRepositoryTest extends TestCase
 
         $event = $repository->create(
             [
-                ['id' => $id, 'name' => 'Test', 'territory' => 'test', 'code' => 'de-DE-' . $id],
+                ['id' => $id, 'name' => 'Test', 'territory' => 'test', 'code' => 'zh-CN-' . $id],
             ],
             $context
         );
@@ -497,7 +497,7 @@ class EntityRepositoryTest extends TestCase
 
         $repository->create(
             [
-                ['id' => $id, 'name' => 'Test', 'territory' => 'test', 'code' => 'de-DE-' . $id],
+                ['id' => $id, 'name' => 'Test', 'territory' => 'test', 'code' => 'zh-CN-' . $id],
             ],
             $context
         );
@@ -513,7 +513,7 @@ class EntityRepositoryTest extends TestCase
 
         $repository->create(
             [
-                ['id' => $id, 'name' => 'Test', 'territory' => 'test', 'code' => 'de-DE-' . $id],
+                ['id' => $id, 'name' => 'Test', 'territory' => 'test', 'code' => 'zh-CN-' . $id],
             ],
             $context
         );
@@ -548,7 +548,7 @@ class EntityRepositoryTest extends TestCase
 
         $repository->create(
             [
-                ['id' => $id, 'name' => 'Test', 'territory' => 'test', 'code' => 'de-DE-' . $id],
+                ['id' => $id, 'name' => 'Test', 'territory' => 'test', 'code' => 'zh-CN-' . $id],
             ],
             $context
         );

@@ -34,11 +34,11 @@
         "value": "app/storefront/dist/assets/test.jpg",
         "label": {
           "en-GB": "test label",
-          "de-DE": "Test label"
+          "zh-CN": "测试标签"
         },
         "helpText": {
           "en-GB": "test help",
-          "de-DE": "Test Hilfe"
+          "zh-CN": "测试帮助"
         }
       }
     }

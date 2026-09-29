@@ -16,7 +16,7 @@ plugins: [
     'SwagSocialShopping',
 ]
 
-excluded-locales: ['de-DE', 'en-GB']
+excluded-locales: ['zh-CN', 'en-GB']
 
 pseudo-locales: ['ach-UG']
 

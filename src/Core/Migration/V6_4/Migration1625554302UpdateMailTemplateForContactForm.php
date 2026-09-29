@@ -31,8 +31,8 @@ class Migration1625554302UpdateMailTemplateForContactForm extends MigrationStep
             MailTemplateTypes::MAILTYPE_CONTACT_FORM,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/contact_form/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/contact_form/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/contact_form/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/contact_form/de-html.html.twig')
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/contact_form/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/contact_form/zh-html.html.twig')
         );
 
         $this->updateMail($update, $connection);

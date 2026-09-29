@@ -488,7 +488,7 @@ class AdministrationControllerTest extends TestCase
     #[DataProvider('excludedTerms')]
     public function testResetExcludedSearchTerm(
         ?string $sourceLanguage,
-        string|false $deLanguageId,
+        string|false $zhLanguageId,
         string|false $enLanguageId,
         Context $context
     ): void {
@@ -497,7 +497,7 @@ class AdministrationControllerTest extends TestCase
 
         $connection = $this->createMock(Connection::class);
         $connection->method('fetchOne')
-            ->willReturnOnConsecutiveCalls($searchConfigId, $deLanguageId, $enLanguageId);
+            ->willReturnOnConsecutiveCalls($searchConfigId, $zhLanguageId, $enLanguageId);
 
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         if ($sourceLanguage === null) {
@@ -627,10 +627,10 @@ class AdministrationControllerTest extends TestCase
     {
         $controller = $this->createAdministrationController();
 
-        $response = $controller->snippets(new Request(query: ['locale' => 'de-DE']));
+        $response = $controller->snippets(new Request(query: ['locale' => 'zh-CN']));
 
         static::assertNotFalse($response->getContent());
-        static::assertJsonStringEqualsJsonString('{"de-DE":[],"en-GB":[]}', $response->getContent());
+        static::assertJsonStringEqualsJsonString('{"zh-CN":[],"en-GB":[]}', $response->getContent());
     }
 
     public function testGetUnauthenticatedSnippetsWithoutAuthentication(): void
@@ -649,7 +649,7 @@ class AdministrationControllerTest extends TestCase
     public function testGetAllActivatedLanguagesLocales(): void
     {
         $expectedLocales = [
-            $this->ids->create('de-DE') => 'de-DE',
+            $this->ids->create('zh-CN') => 'zh-CN',
             $this->ids->create('en-GB') => 'en-GB',
             $this->ids->create('jp-JP') => 'jp-JP',
         ];
@@ -707,8 +707,8 @@ class AdministrationControllerTest extends TestCase
             new Context(new SystemSource(), [], Defaults::CURRENCY, [$languageId]),
         ];
 
-        yield 'german excluded terms' => [
-            'de',
+        yield 'chinese excluded terms' => [
+            'zh',
             Uuid::fromHexToBytes($languageId),
             false,
             new Context(new SystemSource(), [], Defaults::CURRENCY, [$languageId]),
@@ -818,7 +818,7 @@ class AdministrationControllerTest extends TestCase
      */
     private function getExcludedTerms(?string $language): array
     {
-        if (!\in_array($language, ['de', 'en'], true)) {
+        if (!\in_array($language, ['zh', 'en'], true)) {
             return [];
         }
 

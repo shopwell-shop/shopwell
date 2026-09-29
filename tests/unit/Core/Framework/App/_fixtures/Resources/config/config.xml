@@ -4,17 +4,17 @@
 
     <card>
         <title>Basic Configuration</title>
-        <title lang="de-DE">Grundeinstellungen</title>
+        <title lang="zh-CN">基础设置</title>
 
         <input-field>
             <name>email</name>
             <copyable>true</copyable>
             <label>eMail address</label>
-            <label lang="de-DE">E-Mail Adresse</label>
+            <label lang="zh-CN">邮箱地址</label>
             <placeholder>you@example.com</placeholder>
-            <placeholder lang="de-DE">du@beispiel.de</placeholder>
+            <placeholder lang="zh-CN">you@example.com</placeholder>
             <helpText>Please fill in your personal eMail address</helpText>
-            <helpText lang="de-DE">Bitte trage deine persönliche E-Mail-Adresse ein</helpText>
+            <helpText lang="zh-CN">请输入你的个人邮箱地址</helpText>
         </input-field>
     </card>
 </config>

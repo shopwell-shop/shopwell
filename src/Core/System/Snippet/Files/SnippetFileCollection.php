@@ -14,9 +14,12 @@ use Shopwell\Core\System\Snippet\SnippetPatterns;
 class SnippetFileCollection extends Collection
 {
     /**
+     * Maps a country-agnostic language code to its canonical locale, used as fallback
+     * when a regional variant (e.g. "en-AU", "zh-SG") has no snippet files of its own.
+     *
      * @var array<string, string>
      */
-    private const CANONICAL_LANGUAGE_MAP = ['en' => 'en-GB'];
+    private const CANONICAL_LANGUAGE_MAP = ['en' => 'en-GB', 'zh' => 'zh-CN'];
 
     /**
      * @var array<string, bool>|null
@@ -120,10 +123,10 @@ class SnippetFileCollection extends Collection
     /**
      * Returns snippet files for the given locale with a canonical-locale fallback.
      *
-     * Bare-language files (e.g. "de") are intentionally excluded here; they are loaded separately via the
+     * Bare-language files (e.g. "zh") are intentionally excluded here; they are loaded separately via the
      * {@see SnippetService::getStorefrontSnippets()} fallback-locale mechanism.
      *
-     * For locales without a region part (e.g. "de"), the result is identical to {@see getSnippetFilesByIso()}.
+     * For locales without a region part (e.g. "zh"), the result is identical to {@see getSnippetFilesByIso()}.
      *
      * @return list<AbstractSnippetFile>
      */

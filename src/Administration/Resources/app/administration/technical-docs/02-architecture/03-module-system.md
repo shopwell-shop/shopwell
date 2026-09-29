@@ -271,7 +271,7 @@ Modules provide localized strings for their interface:
 ```javascript
 // Snippet registration (typically in separate files)
 snippets: {
-    'de-DE': {
+    'zh-CN': {
         'sw-product': {
             'general': {
                 'mainMenuItemGeneral': 'Produkte',
@@ -454,7 +454,7 @@ sw-[module-name]/
 ├── mixin/                         # Shared component logic
 │   └── [module].mixin.js
 ├── snippet/                       # Translations
-│   ├── de-DE.json
+│   ├── zh-CN.json
 │   ├── en-GB.json
 │   └── ...
 ├── index.js                       # Module registration entry point

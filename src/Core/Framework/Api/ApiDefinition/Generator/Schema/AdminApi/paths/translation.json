@@ -28,7 +28,7 @@
                                                 "type": "object",
                                                 "properties": {
                                                     "locale": {
-                                                        "description": "The locale code, for example `de-DE`.",
+                                                        "description": "The locale code, for example `zh-CN`.",
                                                         "type": "string"
                                                     },
                                                     "name": {
@@ -123,7 +123,7 @@
                                 "type": "object",
                                 "properties": {
                                     "locales": {
-                                        "description": "Locale codes to install, for example `[\"de-DE\", \"fr-FR\"]`. Required unless `all` is true.",
+                                        "description": "Locale codes to install, for example `[\"zh-CN\", \"fr-FR\"]`. Required unless `all` is true.",
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -236,7 +236,7 @@
                     {
                         "name": "locale",
                         "in": "path",
-                        "description": "The locale code to uninstall, for example `de-DE`.",
+                        "description": "The locale code to uninstall, for example `zh-CN`.",
                         "required": true,
                         "schema": {
                             "type": "string"

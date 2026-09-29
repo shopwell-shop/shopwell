@@ -8,11 +8,11 @@ use Shopwell\Core\Framework\Log\Package;
 class Translations
 {
     /**
-     * @param array<string, string|null> $german
+     * @param array<string, string|null> $zhCn
      * @param array<string, string|null> $english
      */
     public function __construct(
-        protected array $german,
+        protected array $zhCn,
         protected array $english
     ) {
     }
@@ -20,9 +20,9 @@ class Translations
     /**
      * @return array<string, string|null>
      */
-    public function getGerman(): array
+    public function getZhCn(): array
     {
-        return $this->german;
+        return $this->zhCn;
     }
 
     /**

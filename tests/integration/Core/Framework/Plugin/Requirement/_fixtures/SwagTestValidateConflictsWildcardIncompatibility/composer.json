@@ -18,7 +18,7 @@
         "shopwell-plugin-class": "SwagTestValidateConflictsWildcardIncompatibility\\SwagTestValidateConflictsWildcardIncompatibility",
         "copyright": "(c) by Shopwell",
         "label": {
-            "de-DE": "Test für Konflikte-Handling",
+            "zh-CN": "冲突处理测试",
             "en-GB": "Test for conflict handling"
         }
     }

@@ -5,7 +5,7 @@
         <name>invalidManifestName</name>
         <label>Swag App Test</label>
         <label lang="fr-FR">Swag App Test</label>
-        <description lang="de-DE">Test für das App System</description>
+        <description lang="zh-CN">应用系统测试</description>
         <author>Shopwell</author>
         <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>

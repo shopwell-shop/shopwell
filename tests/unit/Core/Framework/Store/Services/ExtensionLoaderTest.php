@@ -241,14 +241,14 @@ class ExtensionLoaderTest extends TestCase
         $extensions = $this->createLoader(
             appLoader: $appLoader,
             sourceResolver: new StaticSourceResolver(['LocalApp' => new StaticFilesystem(['icon.png' => 'icon-binary'])]),
-            locale: 'de-DE',
+            locale: 'zh-CN',
         )->loadFromAppCollection(Context::createDefaultContext(), new AppCollection());
 
         $extension = $extensions->get('LocalApp');
         static::assertNotNull($extension);
         // translation for the requested locale wins
-        static::assertSame('LocalApp Bezeichnung', $extension->getLabel());
-        // no de-DE translation, so the fallback translation is used
+        static::assertSame('本地应用标签', $extension->getLabel());
+        // no zh-CN description, so the fallback translation is used
         static::assertSame('LocalApp description', $extension->getDescription());
         // no translation at all
         static::assertNull($extension->getPrivacyPolicyExtension());

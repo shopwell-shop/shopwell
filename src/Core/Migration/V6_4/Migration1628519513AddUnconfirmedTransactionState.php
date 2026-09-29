@@ -95,8 +95,8 @@ class Migration1628519513AddUnconfirmedTransactionState extends MigrationStep
         if (($enGbId = $this->getLanguageId('en-GB', $connection)) !== null) {
             $languages[$enGbId] = 'Unconfirmed';
         }
-        if (($deDeId = $this->getLanguageId('de-DE', $connection)) !== null) {
-            $languages[$deDeId] = 'Unbestätigt';
+        if (($zhCnId = $this->getLanguageId('zh-CN', $connection)) !== null) {
+            $languages[$zhCnId] = '未确认';
         }
 
         foreach ($languages as $languageId => $name) {

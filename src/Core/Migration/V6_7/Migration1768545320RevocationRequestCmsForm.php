@@ -16,7 +16,7 @@ class Migration1768545320RevocationRequestCmsForm extends MigrationStep
 {
     public const CMS_PAGE_TRANSLATIONS = [
         'en_name' => 'Default shop page layout with revocation request form',
-        'de_name' => 'Standard Shopseiten-Layout mit Formular für Widerrufsanträge',
+        'zh_name' => '含撤销申请表单的标准商店页面布局',
     ];
 
     public const CMS_SLOT_TYPE = 'revocationRequest';
@@ -30,25 +30,25 @@ class Migration1768545320RevocationRequestCmsForm extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $deLanguageByteIds = $this->getLanguageIdsByLocalePrefix($connection, 'de');
-        $enLanguageByteIds = $this->getLanguageIdsByLocalePrefix($connection, 'de', true);
+        $zhCnLanguageByteIds = $this->getLanguageIdsByLocalePrefix($connection, 'zh');
+        $enLanguageByteIds = $this->getLanguageIdsByLocalePrefix($connection, 'zh', true);
         $versionByteId = Uuid::fromHexToBytes(Defaults::LIVE_VERSION);
 
-        $cmsPageByteId = $this->createCmsPage($connection, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+        $cmsPageByteId = $this->createCmsPage($connection, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
         $cmsSectionByteId = $this->createCmsSection($connection, $cmsPageByteId, $versionByteId);
         $cmsBlockByteId = $this->createCmsBlock($connection, $cmsSectionByteId, $versionByteId);
-        $this->createCmsSlot($connection, $cmsBlockByteId, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+        $this->createCmsSlot($connection, $cmsBlockByteId, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
     }
 
     /**
      * @param list<string> $enLanguageByteIds
-     * @param list<string> $deLanguageByteIds
+     * @param list<string> $zhCnLanguageByteIds
      */
-    private function createCmsPage(Connection $connection, string $versionByteId, array $enLanguageByteIds, array $deLanguageByteIds): string
+    private function createCmsPage(Connection $connection, string $versionByteId, array $enLanguageByteIds, array $zhCnLanguageByteIds): string
     {
         $cmsPageByteId = $this->getCmsPageId($connection, $versionByteId);
         if ($cmsPageByteId !== null) {
-            $this->createCmsPageTranslations($connection, $cmsPageByteId, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+            $this->createCmsPageTranslations($connection, $cmsPageByteId, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
 
             return $cmsPageByteId;
         }
@@ -66,23 +66,23 @@ class Migration1768545320RevocationRequestCmsForm extends MigrationStep
             ]
         );
 
-        $this->createCmsPageTranslations($connection, $cmsPageByteId, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+        $this->createCmsPageTranslations($connection, $cmsPageByteId, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
 
         return $cmsPageByteId;
     }
 
     /**
      * @param list<string> $enLanguageByteIds
-     * @param list<string> $deLanguageByteIds
+     * @param list<string> $zhCnLanguageByteIds
      */
-    private function createCmsPageTranslations(Connection $connection, string $cmsPageByteId, string $versionByteId, array $enLanguageByteIds, array $deLanguageByteIds): void
+    private function createCmsPageTranslations(Connection $connection, string $cmsPageByteId, string $versionByteId, array $enLanguageByteIds, array $zhCnLanguageByteIds): void
     {
         foreach ($enLanguageByteIds as $enLanguageByteId) {
             $this->createCmsPageTranslation($connection, $cmsPageByteId, $versionByteId, $enLanguageByteId, self::CMS_PAGE_TRANSLATIONS['en_name']);
         }
 
-        foreach ($deLanguageByteIds as $deLanguageByteId) {
-            $this->createCmsPageTranslation($connection, $cmsPageByteId, $versionByteId, $deLanguageByteId, self::CMS_PAGE_TRANSLATIONS['de_name']);
+        foreach ($zhCnLanguageByteIds as $zhCnLanguageByteId) {
+            $this->createCmsPageTranslation($connection, $cmsPageByteId, $versionByteId, $zhCnLanguageByteId, self::CMS_PAGE_TRANSLATIONS['zh_name']);
         }
     }
 
@@ -161,18 +161,18 @@ class Migration1768545320RevocationRequestCmsForm extends MigrationStep
 
     /**
      * @param list<string> $enLanguageByteIds
-     * @param list<string> $deLanguageByteIds
+     * @param list<string> $zhCnLanguageByteIds
      */
     private function createCmsSlot(
         Connection $connection,
         string $cmsBlockByteId,
         string $versionByteId,
         array $enLanguageByteIds,
-        array $deLanguageByteIds
+        array $zhCnLanguageByteIds
     ): void {
         $cmsSlotByteId = $this->getCmsSlotId($connection, $cmsBlockByteId, $versionByteId);
         if ($cmsSlotByteId !== null) {
-            $this->createCmsSlotTranslations($connection, $cmsSlotByteId, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+            $this->createCmsSlotTranslations($connection, $cmsSlotByteId, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
 
             return;
         }
@@ -192,21 +192,21 @@ class Migration1768545320RevocationRequestCmsForm extends MigrationStep
             ]
         );
 
-        $this->createCmsSlotTranslations($connection, $cmsSlotByteId, $versionByteId, $enLanguageByteIds, $deLanguageByteIds);
+        $this->createCmsSlotTranslations($connection, $cmsSlotByteId, $versionByteId, $enLanguageByteIds, $zhCnLanguageByteIds);
     }
 
     /**
      * @param list<string> $enLanguageByteIds
-     * @param list<string> $deLanguageByteIds
+     * @param list<string> $zhCnLanguageByteIds
      */
-    private function createCmsSlotTranslations(Connection $connection, string $cmsSlotByteId, string $versionByteId, array $enLanguageByteIds, array $deLanguageByteIds): void
+    private function createCmsSlotTranslations(Connection $connection, string $cmsSlotByteId, string $versionByteId, array $enLanguageByteIds, array $zhCnLanguageByteIds): void
     {
         foreach ($enLanguageByteIds as $enLanguageByteId) {
             $this->createCmsSlotTranslation($connection, $cmsSlotByteId, $versionByteId, $enLanguageByteId);
         }
 
-        foreach ($deLanguageByteIds as $deLanguageByteId) {
-            $this->createCmsSlotTranslation($connection, $cmsSlotByteId, $versionByteId, $deLanguageByteId);
+        foreach ($zhCnLanguageByteIds as $zhCnLanguageByteId) {
+            $this->createCmsSlotTranslation($connection, $cmsSlotByteId, $versionByteId, $zhCnLanguageByteId);
         }
     }
 
@@ -245,13 +245,13 @@ FROM `cms_page` AS `page`
 INNER JOIN `cms_page_translation` AS `page_translation` ON `page`.`id` = `page_translation`.`cms_page_id`
     AND `page`.`version_id` = `page_translation`.`cms_page_version_id`
 WHERE `page`.`version_id` = :versionId
-    AND (`page_translation`.`name` = :enName OR `page_translation`.`name` = :deName)
+    AND (`page_translation`.`name` = :enName OR `page_translation`.`name` = :zhName)
 SQL;
 
         $cmsPageByteId = $connection->executeQuery(
             $sql,
             [
-                'deName' => self::CMS_PAGE_TRANSLATIONS['de_name'],
+                'zhName' => self::CMS_PAGE_TRANSLATIONS['zh_name'],
                 'enName' => self::CMS_PAGE_TRANSLATIONS['en_name'],
                 'versionId' => $versionByteId,
             ]

@@ -78,7 +78,7 @@ class HeaderPageletLoaderTest extends TestCase
             ],
             'expectedOrder' => ['Alang', 'Blang', 'Dlang', 'Xlang'],
         ];
-        yield 'German fallback languages keep expected order' => [
+        yield 'Chinese fallback languages keep expected order' => [
             'languages' => [
                 ['name' => 'Русский'],
                 ['name' => 'हिन्दी'],
@@ -189,7 +189,7 @@ class HeaderPageletLoaderTest extends TestCase
                 'name' => $name,
                 'locale' => [
                     'id' => $localeId,
-                    'code' => 'de-DE-' . $localeId,
+                    'code' => 'zh-CN-' . $localeId,
                     'name' => 'test name',
                     'territory' => 'test territory',
                 ],

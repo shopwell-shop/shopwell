@@ -33,16 +33,16 @@ class LanguageLoaderTest extends TestCase
             [
                 'array_key' => '018dcf1d5c3d701f96a2894079f6e79f',
                 'id' => '018dcf1d5c3d701f96a2894079f6e79f',
-                'code' => 'de-DE',
+                'code' => 'zh-CN',
                 'parentId' => 'parentId',
-                'parentCode' => 'de-DE',
+                'parentCode' => 'zh-CN',
             ],
             [
                 'array_key' => '018de49f23ea7db5b3afb5181b5a12a1',
                 'id' => '018de49f23ea7db5b3afb5181b5a12a1',
                 'code' => 'en-GB',
                 'parentId' => 'parentId',
-                'parentCode' => 'de-DE',
+                'parentCode' => 'zh-CN',
             ],
         ];
         $connection = $this->getConnectionMockObject($languages);

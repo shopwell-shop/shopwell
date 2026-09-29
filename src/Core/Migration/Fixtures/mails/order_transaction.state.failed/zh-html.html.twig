@@ -1,0 +1,9 @@
+<div style="font-family:arial; font-size:12px;">
+    <p>
+        {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br/>
+        <br/>
+        您在 {{ salesChannel.translated.name }}（订单号：{{ order.orderNumber }}）的订单支付失败。<br/>
+        <br/>
+        请检查您的支付信息，或在客户账户中选择其他支付方式。
+    </p>
+</div>

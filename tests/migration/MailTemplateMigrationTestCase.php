@@ -21,7 +21,7 @@ abstract class MailTemplateMigrationTestCase extends TestCase
     use UpdateMailTrait;
 
     public const LANGUAGE_NAME_EN = 'English';
-    public const LANGUAGE_NAME_DE = 'Deutsch';
+    public const LANGUAGE_NAME_ZH = '简体中文';
 
     protected Connection $connection;
 
@@ -43,18 +43,18 @@ abstract class MailTemplateMigrationTestCase extends TestCase
             $expected->setEnHtml($fileSystem->readFile((string) $expected->getEnHtml()));
         }
 
-        if ($fileSystem->exists((string) $expected->getDePlain())) {
-            $expected->setDePlain($fileSystem->readFile((string) $expected->getDePlain()));
+        if ($fileSystem->exists((string) $expected->getZhPlain())) {
+            $expected->setZhPlain($fileSystem->readFile((string) $expected->getZhPlain()));
         }
 
-        if ($fileSystem->exists((string) $expected->getDeHtml())) {
-            $expected->setDeHtml($fileSystem->readFile((string) $expected->getDeHtml()));
+        if ($fileSystem->exists((string) $expected->getZhHtml())) {
+            $expected->setZhHtml($fileSystem->readFile((string) $expected->getZhHtml()));
         }
 
         static::assertSame($expected->getEnPlain(), $current->getEnPlain());
         static::assertSame($expected->getEnHtml(), $current->getEnHtml());
-        static::assertSame($expected->getDePlain(), $current->getDePlain());
-        static::assertSame($expected->getDeHtml(), $current->getDeHtml());
+        static::assertSame($expected->getZhPlain(), $current->getZhPlain());
+        static::assertSame($expected->getZhHtml(), $current->getZhHtml());
     }
 
     public function getMailTemplateTranslations(string $mailTemplateTypeTechnicalName): MailTemplateTranslationResult
@@ -74,7 +74,7 @@ abstract class MailTemplateMigrationTestCase extends TestCase
 
     protected function getTranslations(string $mailTemplateId): Translations
     {
-        $languages = $this->connection->fetchAllKeyValue('SELECT `name`, `id` FROM `language` WHERE `name` IN ("Deutsch", "English")');
+        $languages = $this->connection->fetchAllKeyValue('SELECT `name`, `id` FROM `language` WHERE `name` IN ("简体中文", "English")');
 
         $translationArray = $this->connection->fetchAllAssociativeIndexed(
             'SELECT `language_id`, `content_html`, `content_plain`  FROM `mail_template_translation` WHERE `mail_template_id` = :mailTemplateId',
@@ -90,9 +90,9 @@ abstract class MailTemplateMigrationTestCase extends TestCase
                 $translations->setEnHtml($translationArray[$languageId]['content_html']);
             }
 
-            if ($languageName === self::LANGUAGE_NAME_DE) {
-                $translations->setDePlain($translationArray[$languageId]['content_plain']);
-                $translations->setDeHtml($translationArray[$languageId]['content_html']);
+            if ($languageName === self::LANGUAGE_NAME_ZH) {
+                $translations->setZhPlain($translationArray[$languageId]['content_plain']);
+                $translations->setZhHtml($translationArray[$languageId]['content_html']);
             }
         }
 

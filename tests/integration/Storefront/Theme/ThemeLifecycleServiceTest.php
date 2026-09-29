@@ -345,7 +345,7 @@ class ThemeLifecycleServiceTest extends TestCase
     public function testItSkipsTranslationsIfLanguageIsNotAvailable(): void
     {
         $bundle = $this->getThemeConfigWithLabels();
-        $this->deleteLanguageForLocale('de-DE');
+        $this->deleteLanguageForLocale('zh-CN');
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
@@ -363,7 +363,7 @@ class ThemeLifecycleServiceTest extends TestCase
     public function testItUsesEnglishTranslationsAsFallbackIfDefaultLanguageIsNotProvided(): void
     {
         $bundle = $this->getThemeConfigWithLabels();
-        $this->changeDefaultLanguageLocale('de-DE-1');
+        $this->changeDefaultLanguageLocale('zh-CN-1');
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
@@ -371,7 +371,7 @@ class ThemeLifecycleServiceTest extends TestCase
 
         static::assertInstanceOf(ThemeTranslationCollection::class, $theme->getTranslations());
         static::assertCount(2, $theme->getTranslations());
-        $translation = $this->getTranslationByLocale('de-DE-1', $theme->getTranslations());
+        $translation = $this->getTranslationByLocale('zh-CN-1', $theme->getTranslations());
         static::assertSame([
             'fields.sw-image' => 'test label',
         ], Feature::silent('v6.8.0.0', fn () => $translation->getLabels()));
@@ -379,13 +379,13 @@ class ThemeLifecycleServiceTest extends TestCase
             'fields.sw-image' => 'test help',
         ], Feature::silent('v6.8.0.0', fn () => $translation->getHelpTexts()));
 
-        $germanTranslation = $this->getTranslationByLocale('de-DE', $theme->getTranslations());
+        $chineseTranslation = $this->getTranslationByLocale('zh-CN', $theme->getTranslations());
         static::assertSame([
-            'fields.sw-image' => 'Test label',
-        ], Feature::silent('v6.8.0.0', fn () => $germanTranslation->getLabels()));
+            'fields.sw-image' => '测试标签',
+        ], Feature::silent('v6.8.0.0', fn () => $chineseTranslation->getLabels()));
         static::assertSame([
-            'fields.sw-image' => 'Test Hilfe',
-        ], Feature::silent('v6.8.0.0', fn () => $germanTranslation->getHelpTexts()));
+            'fields.sw-image' => '测试帮助',
+        ], Feature::silent('v6.8.0.0', fn () => $chineseTranslation->getHelpTexts()));
     }
 
     public function testItRemovesAThemeCorrectly(): void
@@ -553,7 +553,7 @@ class ThemeLifecycleServiceTest extends TestCase
         $config['fields']['shopwellLogoPink'] = [
             'label' => [
                 'en-GB' => 'shopwell_logo_pink',
-                'de-DE' => 'shopwell_logo_pink',
+                'zh-CN' => 'shopwell_logo_pink',
             ],
             'type' => 'media',
             'value' => 'app/storefront/src/assets/image/shopwell_logo_pink.svg',
@@ -568,7 +568,7 @@ class ThemeLifecycleServiceTest extends TestCase
         $config['fields']['shopwellLogoPink'] = [
             'label' => [
                 'en-GB' => 'shopwell_logo_pink',
-                'de-DE' => 'shopwell_logo_pink',
+                'zh-CN' => 'shopwell_logo_pink',
             ],
             'type' => 'media',
             'value' => 'app/storefront/src/assets/image/shopwell_logo_pink2.svg',
@@ -583,7 +583,7 @@ class ThemeLifecycleServiceTest extends TestCase
         $config['fields']['shopwellLogoPink'] = [
             'label' => [
                 'en-GB' => 'shopwell_logo_pink',
-                'de-DE' => 'shopwell_logo_pink',
+                'zh-CN' => 'shopwell_logo_pink',
             ],
             'type' => 'media',
         ];

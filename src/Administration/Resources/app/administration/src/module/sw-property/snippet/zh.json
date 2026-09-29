@@ -1,0 +1,69 @@
+{
+  "sw-property": {
+    "general": {
+      "placeholderSearchBar": "搜索所有属性...",
+      "mainMenuItemGeneral": "属性",
+      "descriptionTextModule": "属性管理。"
+    },
+    "list": {
+      "textProperties": "属性",
+      "buttonAddProperty": "新建属性",
+      "columnName": "属性",
+      "columnOptions": "属性选项",
+      "columnFilterable": "在商品筛选中显示",
+      "titleSidebarItemRefresh": "刷新",
+      "messageEmpty": "暂无属性",
+      "columnDescription": "描述",
+      "textDeleteConfirm": "确定要删除属性 \"{name}\" 吗？",
+      "errorDelete": "该属性仍被商品使用，无法删除。"
+    },
+    "detail": {
+      "mediaDisplayType": "图片",
+      "textDisplayType": "文本",
+      "selectDisplayType": "下拉",
+      "colorDisplayType": "颜色",
+      "numericSortingType": "按数值",
+      "alphanumericSortingType": "按字母数字",
+      "positionSortingType": "自定义",
+      "cardTitleGroupInfo": "基本信息",
+      "labelName": "名称",
+      "placeholderName": "输入名称...",
+      "labelFilterable": "在商品列表的商品筛选中显示",
+      "labelvisibleOnProductDetailPage": "在商品详情页显示",
+      "labelDisplayType": "选项的展示方式",
+      "labelSortingType": "排序",
+      "labelOptionName": "名称",
+      "labelOptionColor": "颜色",
+      "labelOptionMedia": "图片",
+      "labelPosition": "位置",
+      "placeholderPosition": "输入此组的位置...",
+      "placeholderOptionName": "输入名称...",
+      "labelOptionPosition": "位置",
+      "placeholderOptionPosition": "输入此选项的位置...",
+      "addMediaCaption": "使用图片",
+      "contextMenuOptionView": "编辑",
+      "textHeadline": "新建属性",
+      "labelDescription": "描述",
+      "placeholderDescription": "输入描述...",
+      "placeholderOptionSearch": "搜索属性选项...",
+      "cardTitle": "属性选项",
+      "addOption": "添加选项",
+      "addOptionNotPossible": "属性选项只能在默认语言下添加",
+      "contextMenuOptionResetDelete": "恢复",
+      "textOptionHeadline": "新建选项",
+      "messageSaveSuccess": "属性 \"{name}\" 已保存。",
+      "messageSaveError": "属性 \"{name}\" 保存失败",
+      "messageOptionsEmpty": "暂无属性选项",
+      "messageOptionsEmptySubline": "在此添加属性。",
+      "optionEmptyStateSubline": "先完善基本信息并保存属性，然后添加各个选项。",
+      "labelMediaUpload": "默认图片"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "property": {
+        "label": "属性"
+      }
+    }
+  }
+}

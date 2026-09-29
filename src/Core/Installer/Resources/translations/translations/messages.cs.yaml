@@ -29,6 +29,8 @@ shopwell.installer:
     select_language_el-GR: Řečtina
     select_language_en-US: Angličtina (Spojené státy)
     select_language_en-GB: Angličtina (Spojené království)
+    select_language_zh: Čínština (Čína)
+    select_language_zh-CN: Čínština (Čína)
     select_language_es-ES: Španělština
     select_language_fi-FI: Finština
     select_language_fr-FR: Francouzština
@@ -138,6 +140,7 @@ shopwell.installer:
     configuration_admin_currency_dkk: 'Dánská koruna'
     configuration_admin_currency_nok: 'Norská koruna'
     configuration_admin_currency_czk: 'Koruna česká'
+    configuration_admin_currency_cny: 'Čínský jüan'
     configuration_admin_username: 'Přihlašovací jméno správce:'
     configuration_admin_mail: 'E-mailová adresa správce:'
     configuration_admin_firstName: 'Jméno správce:'

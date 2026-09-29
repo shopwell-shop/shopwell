@@ -27,7 +27,7 @@ class ShopConfigurationServiceTest extends TestCase
 
         $service->updateShop([
             'name' => 'test-shop',
-            'locale' => 'de-DE',
+            'locale' => 'zh-CN',
             'currency' => 'USD',
             'additionalCurrencies' => ['EUR', 'CHF'],
             'country' => 'DEU',
@@ -39,7 +39,7 @@ class ShopConfigurationServiceTest extends TestCase
         ], $connection);
 
         // assert that system language was updated
-        static::assertSame('Deutsch', $connection->fetchOne('SELECT `name` from `language` WHERE `id` = ?', [Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM)]));
+        static::assertSame('简体中文', $connection->fetchOne('SELECT `name` from `language` WHERE `id` = ?', [Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM)]));
         // assert that default currency was updated
         static::assertSame('USD', $connection->fetchOne('SELECT `iso_code` from `currency` WHERE `id` = ?', [Uuid::fromHexToBytes(Defaults::CURRENCY)]));
 

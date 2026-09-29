@@ -211,7 +211,7 @@ class ExtensionLoaderTest extends TestCase
 
         $firstExtension = $extensions->first();
         static::assertNotNull($firstExtension);
-        static::assertSame(['German', 'British English'], $firstExtension->getLanguages());
+        static::assertSame(['British English', 'Chinese'], $firstExtension->getLanguages());
         static::assertSame($installedApp->getUpdatedAt(), $firstExtension->getUpdatedAt());
         static::assertEquals(new PermissionCollection([
             PermissionStruct::fromArray(['entity' => 'product', 'operation' => 'create']),

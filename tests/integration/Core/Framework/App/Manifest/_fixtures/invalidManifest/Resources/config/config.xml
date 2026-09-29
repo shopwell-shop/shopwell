@@ -4,13 +4,13 @@
 
     <card>
         <title>Basic configuration</title>
-        <title lang="de-DE">Grundeinstellungen</title>
+        <title lang="zh-CN">基础设置</title>
         <name>TestCard</name>
         <input-field>
             <name>email</name>
             <copyable>true</copyable>
             <label>eMail</label>
-            <label lang="de-DE">E-Mail</label>
+            <label lang="zh-CN">电子邮箱</label>
             <defaultValue>no-reply@shopwell.cn</defaultValue>
         </input-field>
         <component name="test">

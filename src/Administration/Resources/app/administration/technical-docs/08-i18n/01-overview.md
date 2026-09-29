@@ -20,7 +20,7 @@ Translation files are organized in the following structure:
 ```
 src/app/snippet/
 ├── en.json     # English (default)
-├── de.json     # German
+├── zh.json     # Simplified Chinese
 └── ...         # Additional languages
 ```
 
@@ -36,7 +36,7 @@ const localeFactory = Shopwell.Application.getContainer('factory').locale;
 const snippetService = Shopwell.Service('snippetService');
 
 // Register default locales
-localeFactory.register('de-DE', {});
+localeFactory.register('zh-CN', {});
 localeFactory.register('en-GB', {});
 
 // Load dynamic snippets
@@ -147,7 +147,7 @@ const localeHelper = Shopwell.Service('localeHelper');
 await localeHelper.setLocaleWithId(localeId);
 
 // Switch by locale code
-await localeHelper.setLocaleWithCode('de-DE');
+await localeHelper.setLocaleWithCode('zh-CN');
 ```
 
 ### Switching Process

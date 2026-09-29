@@ -367,7 +367,7 @@ class ProductListRouteTest extends TestCase
                     'localeId' => $this->getLocaleIdOfSystemLanguage(),
                     'active' => true,
                     'translationCode' => [
-                        'code' => 'de-DE-' . Uuid::randomHex(),
+                        'code' => 'zh-CN-' . Uuid::randomHex(),
                         'name' => 'Test locale',
                         'territory' => 'test',
                     ],

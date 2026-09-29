@@ -143,7 +143,7 @@ class CustomFieldLifecycleHandlerTest extends TestCase
 
         static::assertEquals([
             'label' => [
-                'de-DE' => 'Zusatzfeld Test',
+                'zh-CN' => '自定义字段测试',
                 'en-GB' => 'Custom field test',
             ],
             'translated' => true,

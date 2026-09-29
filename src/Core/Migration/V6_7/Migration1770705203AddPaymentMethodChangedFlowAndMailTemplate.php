@@ -44,15 +44,15 @@ class Migration1770705203AddPaymentMethodChangedFlowAndMailTemplate extends Migr
         $mailTemplateType = new MailTemplateTypeCreateStruct(
             MailTemplateTypes::MAILTYPE_ORDER_PAYMENT_METHOD_CHANGED,
             'Payment method changed',
-            'Zahlungsart geändert',
+            '支付方式已修改',
         );
 
         $mailTemplate = new MailTemplateCreateStruct(
             MailTemplateTypes::MAILTYPE_ORDER_PAYMENT_METHOD_CHANGED,
             'Payment method changed',
-            'Zahlungsart geändert',
+            '支付方式已修改',
             'Confirmation of payment method change',
-            'Bestätigung der Änderung der Zahlungsmethode',
+            '支付方式修改确认',
             '{{ salesChannel.translated.name }}',
             '{{ salesChannel.translated.name }}',
         );

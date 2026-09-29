@@ -3,105 +3,105 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Cart</title>
-        <title lang="de-DE">Warenkorb</title>
+        <title lang="zh-CN">购物车</title>
 
         <input-field type="int">
             <name>maxQuantity</name>
             <label>Maximum quantity</label>
-            <label lang="de-DE">Maximale Auswahlmenge</label>
+            <label lang="zh-CN">最大数量</label>
         </input-field>
 
         <input-field type="bool">
             <name>showDeliveryTime</name>
             <label>Show delivery time in cart</label>
-            <label lang="de-DE">Lieferzeit im Warenkorb anzeigen</label>
+            <label lang="zh-CN">在购物车中显示配送时间</label>
         </input-field>
 
         <input-field type="bool">
             <name>openOffcanvasAfterAddToCart</name>
             <defaultValue>true</defaultValue>
             <label>Open offcanvas cart after adding a product</label>
-            <label lang="de-DE">Offcanvas-Warenkorb nach dem Hinzufügen eines Produkts öffnen</label>
+            <label lang="zh-CN">加入商品后打开侧边购物车</label>
             <helpText>When enabled, the offcanvas cart will automatically open after adding a product. When disabled, only a success message will be displayed. Disable this if customers tend to add many products to their shopping cart.</helpText>
-            <helpText lang="de-DE">Wenn aktiviert, wird der Offcanvas-Warenkorb automatisch geöffnet, nachdem ein Produkt hinzugefügt wurde. Wenn deaktiviert, wird nur eine Erfolgsmeldung angezeigt. Deaktivieren Sie dies, wenn Kunden tendenziell viele Produkte dem Warenkorb hinzufügen.</helpText>
+            <helpText lang="zh-CN">开启后，加入商品会自动打开侧边购物车；关闭后只显示成功提示。如果顾客习惯一次加入多件商品，建议关闭。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>enableOrderRefunds</name>
             <label>Allow customers to cancel orders</label>
-            <label lang="de-DE">Kunden dürfen Bestellungen stornieren</label>
+            <label lang="zh-CN">允许顾客取消订单</label>
             <helpText>Allows customers to cancel their own orders in the account area, as long as the order status is still "Open". Cancelling sets the order status to "Cancelled"; the selected payment method and all applied promotions are lost.</helpText>
-            <helpText lang="de-DE">Erlaubt Kunden, ihre Bestellungen im Kundenkonto selbst zu stornieren, solange der Bestellstatus noch "Offen" ist. Bei einer Stornierung wird der Bestellstatus auf "Abgebrochen" gesetzt; die gewählte Zahlungsart und alle enthaltenen Rabatte und Aktionen gehen verloren.</helpText>
+            <helpText lang="zh-CN">允许顾客在账户中心自行取消订单，前提是订单状态仍为「未处理」。取消后订单状态变为「已取消」；所选支付方式与已应用的促销都会失效。</helpText>
         </input-field>
 
         <input-field type="int">
             <name>paymentFinalizeTransactionTime</name>
             <defaultValue>30</defaultValue>
             <label>Time in minutes for a customer to finalize a transaction</label>
-            <label lang="de-DE">Zeit in Minuten, die ein Kunde Zeit hat eine Transaktion abzuschließen</label>
+            <label lang="zh-CN">顾客完成支付交易的时限（分钟）</label>
         </input-field>
 
         <input-field type="int">
             <name>lineItemAddLimit</name>
             <defaultValue>0</defaultValue>
             <label>Maximum addable products to cart per minute through API</label>
-            <label lang="de-DE">Maximal hinzufügbare Produkte pro Minute in den Warenkorb durch die API</label>
+            <label lang="zh-CN">通过 API 每分钟最多可加入购物车的商品数</label>
         </input-field>
 
         <input-field type="bool">
             <name>showSubtotal</name>
             <label>Show subtotal column</label>
-            <label lang="de-DE">Summenspalte anzeigen</label>
+            <label lang="zh-CN">显示小计列</label>
         </input-field>
 
         <input-field type="bool">
             <name>columnTaxInsteadUnitPrice</name>
             <label>Order confirm page: tax column instead of unit price</label>
-            <label lang="de-DE">Bestellbestätigung: Steuerspalte anstatt Stückpreis</label>
+            <label lang="zh-CN">订单确认页：以税额列替代单价列</label>
         </input-field>
     </card>
 
     <card>
         <title>Checkout</title>
-        <title lang="de-DE">Bestellabschluss</title>
+        <title lang="zh-CN">结算</title>
 
         <input-field type="bool">
             <name>showTosCheckbox</name>
             <flag>v6.8.0.0</flag>
             <label>Customers are required to agree to the terms and conditions</label>
-            <label lang="de-DE">Eine Zustimmung der AGB durch den Kunden ist erforderlich</label>
+            <label lang="zh-CN">顾客必须同意服务条款</label>
         </input-field>
 
         <input-field type="bool">
             <name>showCustomerComment</name>
             <label>Show comment field on checkout confirm page</label>
-            <label lang="de-DE">Kommentarfeld auf der Bestellabschlussseite anzeigen</label>
+            <label lang="zh-CN">在结算确认页显示备注栏</label>
         </input-field>
 
         <input-field type="bool">
             <name>logoutGuestAfterCheckout</name>
             <label>Automatically log out guest customers after order completion</label>
-            <label lang="de-DE">Gastkunden nach dem Bestellabschluss automatisch ausloggen</label>
+            <label lang="zh-CN">下单完成后自动退出游客账号</label>
         </input-field>
 
         <input-field type="bool">
             <name>showLegalGuaranteeNotice</name>
             <defaultValue>true</defaultValue>
             <label>Show legal guarantee notice on checkout page</label>
-            <label lang="de-DE">Gewährleistungshinweis auf Bestellabschlussseite anzeigen</label>
+            <label lang="zh-CN">在结算页显示法定质保提示</label>
             <helpText>Displays the EU-harmonised legal guarantee notice in the customer's storefront language.</helpText>
-            <helpText lang="de-DE">Zeigt den EU-weit harmonisierten Gewährleistungshinweis in der Storefront-Sprache des Kunden an.</helpText>
+            <helpText lang="zh-CN">以顾客的店铺前台语言显示欧盟统一口径的法定质保提示。</helpText>
         </input-field>
     </card>
 
     <card>
         <title>Wishlist</title>
-        <title lang="de-DE">Merkzettel</title>
+        <title lang="zh-CN">心愿单</title>
 
         <input-field type="bool">
             <name>wishlistEnabled</name>
             <label>Activate wishlist</label>
-            <label lang="de-DE">Merkzettel aktivieren</label>
+            <label lang="zh-CN">启用心愿单</label>
         </input-field>
 
     </card>

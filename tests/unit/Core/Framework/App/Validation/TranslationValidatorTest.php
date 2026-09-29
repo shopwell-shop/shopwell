@@ -36,6 +36,6 @@ class TranslationValidatorTest extends TestCase
 
         $violations = $this->translationValidator->validate($manifest, null);
         static::assertSame('Missing translations for "Metadata":
-- label: de-DE, fr-FR', $violations->first()?->getMessage());
+- label: zh-CN, fr-FR', $violations->first()?->getMessage());
     }
 }

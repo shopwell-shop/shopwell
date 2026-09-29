@@ -11,9 +11,9 @@ class Translations
 
     private ?string $enHtml = null;
 
-    private ?string $dePlain = null;
+    private ?string $zhPlain = null;
 
-    private ?string $deHtml = null;
+    private ?string $zhHtml = null;
 
     public function getEnPlain(): ?string
     {
@@ -25,14 +25,14 @@ class Translations
         return $this->enHtml;
     }
 
-    public function getDePlain(): ?string
+    public function getZhPlain(): ?string
     {
-        return $this->dePlain;
+        return $this->zhPlain;
     }
 
-    public function getDeHtml(): ?string
+    public function getZhHtml(): ?string
     {
-        return $this->deHtml;
+        return $this->zhHtml;
     }
 
     public function setEnPlain(string $enPlain): void
@@ -45,13 +45,13 @@ class Translations
         $this->enHtml = $enHtml;
     }
 
-    public function setDePlain(string $dePlain): void
+    public function setZhPlain(string $zhPlain): void
     {
-        $this->dePlain = $dePlain;
+        $this->zhPlain = $zhPlain;
     }
 
-    public function setDeHtml(string $deHtml): void
+    public function setZhHtml(string $zhHtml): void
     {
-        $this->deHtml = $deHtml;
+        $this->zhHtml = $zhHtml;
     }
 }

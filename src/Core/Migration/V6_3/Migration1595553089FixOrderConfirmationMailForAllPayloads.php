@@ -21,7 +21,7 @@ class Migration1595553089FixOrderConfirmationMailForAllPayloads extends Migratio
     public function update(Connection $connection): void
     {
         $enLangId = $this->fetchLanguageId('en-GB', $connection);
-        $deLangId = $this->fetchLanguageId('de-DE', $connection);
+        $zhCnLangId = $this->fetchLanguageId('zh-CN', $connection);
 
         $mailTemplateContent = require __DIR__ . '/../Fixtures/MailTemplateContent.php';
 
@@ -30,11 +30,11 @@ class Migration1595553089FixOrderConfirmationMailForAllPayloads extends Migratio
             MailTemplateTypes::MAILTYPE_ORDER_CONFIRM,
             $connection,
             $enLangId,
-            $deLangId,
+            $zhCnLangId,
             $mailTemplateContent['OrderConfirmation']['en-GB']['html'],
             $mailTemplateContent['OrderConfirmation']['en-GB']['plain'],
-            $mailTemplateContent['OrderConfirmation']['de-DE']['html'],
-            $mailTemplateContent['OrderConfirmation']['de-DE']['plain']
+            $mailTemplateContent['OrderConfirmation']['zh-CN']['html'],
+            $mailTemplateContent['OrderConfirmation']['zh-CN']['plain']
         );
     }
 
@@ -59,11 +59,11 @@ class Migration1595553089FixOrderConfirmationMailForAllPayloads extends Migratio
         string $mailTemplateType,
         Connection $connection,
         ?string $enLangId,
-        ?string $deLangId,
+        ?string $zhCnLangId,
         string $getHtmlTemplateEn,
         string $getPlainTemplateEn,
-        string $getHtmlTemplateDe,
-        string $getPlainTemplateDe
+        string $getHtmlTemplateZhCn,
+        string $getPlainTemplateZhCn
     ): void {
         $templateId = $this->fetchSystemMailTemplateIdFromType($connection, $mailTemplateType);
 
@@ -87,9 +87,9 @@ class Migration1595553089FixOrderConfirmationMailForAllPayloads extends Migratio
             $this->updateMailTemplateTranslation(
                 $connection,
                 $templateId,
-                $deLangId,
-                $getHtmlTemplateDe,
-                $getPlainTemplateDe
+                $zhCnLangId,
+                $getHtmlTemplateZhCn,
+                $getPlainTemplateZhCn
             );
         }
     }

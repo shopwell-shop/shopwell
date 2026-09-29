@@ -60,38 +60,38 @@ class EntitySearcherTest extends TestCase
         $ids = new IdsCollection();
         $this->createCategory(
             defaultTranslation: 'Category 1',
-            deDeTranslation: null,
+            zhCnTranslation: null,
             ids: $ids,
         );
         $this->createCategory(
             defaultTranslation: 'Category 2',
-            deDeTranslation: 'Kategorie 2',
+            zhCnTranslation: '分类 2',
             ids: $ids,
         );
         $productId1 = $this->createProduct(
             productNumber: 'product-1',
-            deDeTranslation: 'Deutscher Name',
-            defaultTranslation: 'German name',
+            zhCnTranslation: '中文名称',
+            defaultTranslation: 'English name',
             categories: ['Category 1'],
             ids: $ids,
         );
         $this->createProduct(
             productNumber: 'product-2',
-            deDeTranslation: 'Deutsches Produkt',
-            defaultTranslation: 'German product',
+            zhCnTranslation: '中文产品',
+            defaultTranslation: 'English product',
             categories: ['Category 2'],
             ids: $ids,
         );
 
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('name', 'Deutscher Name'));
+        $criteria->addFilter(new EqualsFilter('name', '中文名称'));
         $criteria->addFilter(new EqualsFilter('categories.name', 'Category 1'));
 
         $productIds = $this->entitySearcher->search(
             static::getContainer()->get(ProductDefinition::class),
             $criteria,
             self::createLocalizedContext([
-                $this->getDeDeLanguageId(),
+                $this->getZhCnLanguageId(),
                 Defaults::LANGUAGE_SYSTEM,
             ]),
         );
@@ -104,36 +104,36 @@ class EntitySearcherTest extends TestCase
         $ids = new IdsCollection();
         $this->createCategory(
             defaultTranslation: 'category-1',
-            deDeTranslation: 'Kategorie 1',
+            zhCnTranslation: '分类 1',
             ids: $ids,
         );
         $this->createCategory(
             defaultTranslation: 'category-2',
-            deDeTranslation: 'Kategorie 2',
+            zhCnTranslation: '分类 2',
             ids: $ids,
         );
         $productId1 = $this->createProduct(
             productNumber: 'product-1',
-            deDeTranslation: 'Deutscher Name',
+            zhCnTranslation: '中文名称',
             categories: ['category-1'],
             ids: $ids,
         );
         $this->createProduct(
             productNumber: 'product-2',
-            deDeTranslation: 'Deutsches Produkt',
+            zhCnTranslation: '中文产品',
             categories: ['category-2'],
             ids: $ids,
         );
 
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('name', 'Deutscher Name'));
-        $criteria->addFilter(new EqualsFilter('categories.name', 'Kategorie 1'));
+        $criteria->addFilter(new EqualsFilter('name', '中文名称'));
+        $criteria->addFilter(new EqualsFilter('categories.name', '分类 1'));
 
         $productIds = $this->entitySearcher->search(
             static::getContainer()->get(ProductDefinition::class),
             $criteria,
             self::createLocalizedContext([
-                $this->getDeDeLanguageId(),
+                $this->getZhCnLanguageId(),
                 Defaults::LANGUAGE_SYSTEM,
             ]),
         );
@@ -146,33 +146,33 @@ class EntitySearcherTest extends TestCase
         $ids = new IdsCollection();
         $productId1 = $this->createProduct(
             productNumber: 'product-1',
-            deDeTranslation: 'Parent: Deutscher Name',
+            zhCnTranslation: 'Parent: 中文名称',
             defaultTranslation: 'Parent: Fallback name',
             ids: $ids,
         );
         $productId2 = $this->createProduct(
             productNumber: 'product-2',
-            deDeTranslation: 'Deutscher Name',
+            zhCnTranslation: '中文名称',
             parentProductNumber: 'product-1',
             ids: $ids,
         );
-        // The following product should not be matched because its deDeTranslation takes precedence over the parent's
+        // The following product should not be matched because its zhCnTranslation takes precedence over the parent's
         $this->createProduct(
             productNumber: 'product-3',
-            deDeTranslation: 'Deutsches Produkt',
-            defaultTranslation: 'German product',
+            zhCnTranslation: '中文产品',
+            defaultTranslation: 'English product',
             parentProductNumber: 'product-1',
             ids: $ids,
         );
 
         $criteria = new Criteria();
-        $criteria->addFilter(new ContainsFilter('name', 'Deutscher Name'));
+        $criteria->addFilter(new ContainsFilter('name', '中文名称'));
 
         $productIds = $this->entitySearcher->search(
             static::getContainer()->get(ProductDefinition::class),
             $criteria,
             self::createLocalizedContext([
-                $this->getDeDeLanguageId(),
+                $this->getZhCnLanguageId(),
                 Defaults::LANGUAGE_SYSTEM,
             ]),
         );
@@ -190,23 +190,23 @@ class EntitySearcherTest extends TestCase
     {
         $productId1 = $this->createProduct(
             productNumber: 'product-1',
-            deDeTranslation: null,
-            defaultTranslation: 'German name',
+            zhCnTranslation: null,
+            defaultTranslation: 'English name',
         );
         $this->createProduct(
             productNumber: 'product-2',
-            deDeTranslation: 'Deutsches Produkt',
-            defaultTranslation: 'German product',
+            zhCnTranslation: '中文产品',
+            defaultTranslation: 'English product',
         );
 
         $criteria = new Criteria();
-        $criteria->setTerm('German name');
+        $criteria->setTerm('English name');
 
         $productIds = $this->entitySearcher->search(
             static::getContainer()->get(ProductDefinition::class),
             $criteria,
             self::createLocalizedContext([
-                $this->getDeDeLanguageId(),
+                $this->getZhCnLanguageId(),
                 Defaults::LANGUAGE_SYSTEM,
             ]),
         );
@@ -218,23 +218,23 @@ class EntitySearcherTest extends TestCase
     {
         $productId1 = $this->createProduct(
             productNumber: 'product-1',
-            deDeTranslation: 'Deutscher Name',
-            defaultTranslation: 'German name',
+            zhCnTranslation: '中文名称',
+            defaultTranslation: 'English name',
         );
         $this->createProduct(
             productNumber: 'product-2',
-            deDeTranslation: 'Deutsches Produkt',
-            defaultTranslation: 'German product',
+            zhCnTranslation: '中文产品',
+            defaultTranslation: 'English product',
         );
 
         $criteria = new Criteria();
-        $criteria->setTerm('Deutscher Name');
+        $criteria->setTerm('中文名称');
 
         $productIds = $this->entitySearcher->search(
             static::getContainer()->get(ProductDefinition::class),
             $criteria,
             self::createLocalizedContext([
-                $this->getDeDeLanguageId(),
+                $this->getZhCnLanguageId(),
                 Defaults::LANGUAGE_SYSTEM,
             ]),
         );
@@ -246,23 +246,23 @@ class EntitySearcherTest extends TestCase
     {
         $productId1 = $this->createProduct(
             productNumber: 'product-1',
-            deDeTranslation: null,
-            defaultTranslation: 'German name',
+            zhCnTranslation: null,
+            defaultTranslation: 'English name',
         );
         $this->createProduct(
             productNumber: 'product-2',
-            deDeTranslation: 'Deutsches Produkt',
-            defaultTranslation: 'German product',
+            zhCnTranslation: '中文产品',
+            defaultTranslation: 'English product',
         );
 
         $criteria = new Criteria();
-        $criteria->addQuery(new ScoreQuery(new EqualsFilter('name', 'German name'), score: 100));
+        $criteria->addQuery(new ScoreQuery(new EqualsFilter('name', 'English name'), score: 100));
 
         $productIds = $this->entitySearcher->search(
             static::getContainer()->get(ProductDefinition::class),
             $criteria,
             self::createLocalizedContext([
-                $this->getDeDeLanguageId(),
+                $this->getZhCnLanguageId(),
                 Defaults::LANGUAGE_SYSTEM,
             ]),
         );
@@ -274,23 +274,23 @@ class EntitySearcherTest extends TestCase
     {
         $productId1 = $this->createProduct(
             productNumber: 'product-1',
-            deDeTranslation: 'Deutscher Name',
-            defaultTranslation: 'German name',
+            zhCnTranslation: '中文名称',
+            defaultTranslation: 'English name',
         );
         $this->createProduct(
             productNumber: 'product-2',
-            deDeTranslation: 'Deutsches Produkt',
-            defaultTranslation: 'German product',
+            zhCnTranslation: '中文产品',
+            defaultTranslation: 'English product',
         );
 
         $criteria = new Criteria();
-        $criteria->addQuery(new ScoreQuery(new EqualsFilter('name', 'Deutscher Name'), score: 100));
+        $criteria->addQuery(new ScoreQuery(new EqualsFilter('name', '中文名称'), score: 100));
 
         $productIds = $this->entitySearcher->search(
             static::getContainer()->get(ProductDefinition::class),
             $criteria,
             self::createLocalizedContext([
-                $this->getDeDeLanguageId(),
+                $this->getZhCnLanguageId(),
                 Defaults::LANGUAGE_SYSTEM,
             ]),
         );
@@ -302,13 +302,13 @@ class EntitySearcherTest extends TestCase
     {
         $ids = new IdsCollection();
         $productBuilder1 = $this->buildProduct(
-            deDeTranslation: 'Deutscher Name',
+            zhCnTranslation: '中文名称',
             productNumber: 'product-1',
             ids: $ids,
         );
-        $productBuilder1->translation($this->getDeDeLanguageId(), 'keywords', 'Schlagwort');
+        $productBuilder1->translation($this->getZhCnLanguageId(), 'keywords', '搜索词');
         $productBuilder2 = $this->buildProduct(
-            deDeTranslation: 'Deutsches Produkt',
+            zhCnTranslation: '中文产品',
             productNumber: 'product-2',
             ids: $ids,
         );
@@ -322,14 +322,14 @@ class EntitySearcherTest extends TestCase
         $productId1 = $ids->get('product-1');
 
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('keywords', 'Schlagwort'));
-        $criteria->addQuery(new ScoreQuery(new ContainsFilter('name', 'Deutsch'), score: 100));
+        $criteria->addFilter(new EqualsFilter('keywords', '搜索词'));
+        $criteria->addQuery(new ScoreQuery(new ContainsFilter('name', '中文'), score: 100));
 
         $productIds = $this->entitySearcher->search(
             static::getContainer()->get(ProductDefinition::class),
             $criteria,
             self::createLocalizedContext([
-                $this->getDeDeLanguageId(),
+                $this->getZhCnLanguageId(),
                 Defaults::LANGUAGE_SYSTEM,
             ]),
         );
@@ -480,7 +480,7 @@ class EntitySearcherTest extends TestCase
      */
     private function createProduct(
         string $productNumber,
-        ?string $deDeTranslation,
+        ?string $zhCnTranslation,
         ?string $defaultTranslation = null,
         array $categories = [],
         ?string $parentProductNumber = null,
@@ -488,7 +488,7 @@ class EntitySearcherTest extends TestCase
     ): string {
         $ids ??= new IdsCollection();
         $productBuilder = $this->buildProduct(
-            deDeTranslation: $deDeTranslation,
+            zhCnTranslation: $zhCnTranslation,
             defaultTranslation: $defaultTranslation,
             productNumber: $productNumber,
             parentProductNumber: $parentProductNumber,
@@ -505,7 +505,7 @@ class EntitySearcherTest extends TestCase
     }
 
     private function buildProduct(
-        ?string $deDeTranslation = null,
+        ?string $zhCnTranslation = null,
         ?string $defaultTranslation = null,
         string $productNumber = 'product-1',
         ?string $parentProductNumber = null,
@@ -514,8 +514,8 @@ class EntitySearcherTest extends TestCase
         $ids ??= new IdsCollection();
         $productBuilder = new ProductBuilder($ids, $productNumber);
         $productBuilder->price(100);
-        if ($deDeTranslation !== null) {
-            $productBuilder->translation($this->getDeDeLanguageId(), 'name', $deDeTranslation);
+        if ($zhCnTranslation !== null) {
+            $productBuilder->translation($this->getZhCnLanguageId(), 'name', $zhCnTranslation);
         }
         if ($defaultTranslation !== null) {
             $productBuilder->translation(Defaults::LANGUAGE_SYSTEM, 'name', $defaultTranslation);
@@ -529,15 +529,15 @@ class EntitySearcherTest extends TestCase
 
     private function createCategory(
         string $defaultTranslation,
-        ?string $deDeTranslation,
+        ?string $zhCnTranslation,
         ?IdsCollection $ids = null
     ): string {
         $ids ??= new IdsCollection();
         // Category does not have a name filed but only translations, hence the default translation must be passed to
         // the builder as the name
         $categoryBuilder = new CategoryBuilder($ids, categoryName: $defaultTranslation);
-        if ($deDeTranslation !== null) {
-            $categoryBuilder->translation($this->getDeDeLanguageId(), 'name', $deDeTranslation);
+        if ($zhCnTranslation !== null) {
+            $categoryBuilder->translation($this->getZhCnLanguageId(), 'name', $zhCnTranslation);
         }
 
         static::getContainer()->get('category.repository')->create(

@@ -3,22 +3,22 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Product</title>
-        <title lang="de-DE">Produkt</title>
+        <title lang="zh-CN">商品</title>
 
         <input-field type="bool">
             <name>allowBuyInListing</name>
             <label>Display buy buttons in listings</label>
-            <label lang="de-DE">Kaufen-Buttons in Produktlistings anzeigen</label>
+            <label lang="zh-CN">在商品列表中显示购买按钮</label>
             <helpText>In product listings, buy buttons are displayed beneath every product. Deactivate to display detail buttons only.</helpText>
-            <helpText lang="de-DE">In Produktlisten wird der Kaufen-Button unter jedem Produkt angezeigt. Deaktivieren, um nur den Detail-Button anzuzeigen.</helpText>
+            <helpText lang="zh-CN">在商品列表中，每件商品下方都会显示购买按钮。关闭后仅显示详情按钮。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>autoplayVideoInListing</name>
             <label>Autoplay videos in product listings</label>
-            <label lang="de-DE">Videos in Produkt-Listings</label>
+            <label lang="zh-CN">在商品列表中自动播放视频</label>
             <helpText>Videos in product listings that are configured as product media covers are played automatically. Deactivate to display the first frame of video only.</helpText>
-            <helpText lang="de-DE">Videos in Produkt-Listings, die als Cover von Produktmedien konfiguriert sind, werden automatisch abgespielt. Wenn deaktiviert, wird nur der erste Frame des Videos angezeigt.</helpText>
+            <helpText lang="zh-CN">商品列表中配置为商品媒体主图的视频会自动播放。关闭后仅显示视频第一帧。</helpText>
             <defaultValue>false</defaultValue>
         </input-field>
 
@@ -26,102 +26,102 @@
             <name>buildBreadcrumbByReferrerCategory</name>
             <flag>BREADCRUMB_REWORK</flag>
             <label>Build breadcrumb based on referrer category</label>
-            <label lang="de-DE">Breadcrumb anhand der Referrer-Kategorie aufbauen</label>
+            <label lang="zh-CN">根据来源分类生成面包屑导航</label>
             <helpText>Build the product breadcrumb based on the linking category if available.</helpText>
-            <helpText lang="de-DE">Produkt-Breadcrumb basierend auf der verlinkenden Kategorie aufbauen, falls verfügbar.</helpText>
+            <helpText lang="zh-CN">若可用，则根据链接来源的分类生成商品面包屑导航。</helpText>
             <defaultValue>false</defaultValue>
         </input-field>
 
         <input-field type="bool">
             <name>partialDataLoading</name>
             <label>Load reduced product data in listings</label>
-            <label lang="de-DE">Reduzierte Produktdaten in Listings laden</label>
+            <label lang="zh-CN">在列表中加载精简商品数据</label>
             <helpText>Product listings only load the data required by the default product boxes, including a shortened description. This reduces database load and memory usage for products with large descriptions. Only enable this if your theme and extensions work with the reduced product data in listings.</helpText>
-            <helpText lang="de-DE">Produktlistings laden nur die Daten, die die Standard-Produktboxen benötigen, inklusive einer gekürzten Beschreibung. Das reduziert Datenbanklast und Speicherverbrauch bei Produkten mit umfangreichen Beschreibungen. Nur aktivieren, wenn Theme und Erweiterungen mit den reduzierten Produktdaten in Listings funktionieren.</helpText>
+            <helpText lang="zh-CN">商品列表仅加载默认商品卡片所需的数据（含截断后的描述）。这能降低描述冗长的商品所带来的数据库负载与内存占用。只有当您的主题与扩展能兼容列表中的精简商品数据时才启用。</helpText>
             <defaultValue>false</defaultValue>
         </input-field>
 
         <input-field type="bool">
             <name>hideCloseoutProductsWhenOutOfStock</name>
             <label>Hide products after clearance</label>
-            <label lang="de-DE">Produkte nach Abverkaufende ausblenden</label>
+            <label lang="zh-CN">清仓结束后隐藏商品</label>
             <helpText>Products marked as on "clearance sale" are hidden, as soon as their stock depletes back to 0.</helpText>
-            <helpText lang="de-DE">Produkte die mit "Abverkauf" markiert sind, werden nicht mehr angezeigt, sobald ihr Lagerbestand 0 erreicht.</helpText>
+            <helpText lang="zh-CN">标记为「清仓」的商品，在库存降回 0 之后即不再显示。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>showVariantOptionInSearchSuggestionResult</name>
             <label>Show variant options in the search suggestion results</label>
-            <label lang="de-DE">Anzeige von Variantenoptionen in den Suchvorschlägen</label>
+            <label lang="zh-CN">在搜索建议中显示变体选项</label>
             <helpText>Allow the variant options to be displayed underneath the product name in the search suggestion results.</helpText>
-            <helpText lang="de-DE">Erlauben Sie die Anzeige der Variantenoptionen unterhalb des Produktnamens in den Suchvorschlägen.</helpText>
+            <helpText lang="zh-CN">允许在搜索建议结果的商品名称下方显示变体选项。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>findBestVariant</name>
             <label>Preview best matching variant in search results and filtered listings</label>
-            <label lang="de-DE">Am besten passende Variante in Suchergebnissen und gefilterten Listen anzeigen</label>
+            <label lang="zh-CN">在搜索结果与筛选列表中预览最匹配的变体</label>
             <helpText>Activate to ignore the product's "Storefront presentation &gt; Product Listing" configuration in search results and filtered listings. The best matching product variant is shown instead. Deactivate to respect the configured main variant or parent product.</helpText>
-            <helpText lang="de-DE">Wenn aktiviert, wird die Einstellung des Produkts unter "Storefront-Darstellung &gt; Produktliste" in Suchergebnissen und gefilterten Listen ignoriert. Stattdessen wird die am besten passende Produktvariante angezeigt. Wenn deaktiviert, wird die konfigurierte Hauptvariante oder das Elternprodukt verwendet.</helpText>
+            <helpText lang="zh-CN">启用后，搜索结果与筛选列表会忽略商品的「前台展示 &gt; 商品列表」设置，改为显示最匹配的商品变体。关闭后则遵循已配置的主变体或父商品。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>showReview</name>
             <label>Show reviews</label>
-            <label lang="de-DE">Bewertungen anzeigen</label>
+            <label lang="zh-CN">显示评价</label>
             <helpText>Activate to show reviews</helpText>
-            <helpText lang="de-DE">Aktivieren um Bewertungen anzuzeigen</helpText>
+            <helpText lang="zh-CN">启用后显示评价</helpText>
         </input-field>
 
         <input-field type="int">
             <name>reviewsPerPage</name>
             <defaultValue>10</defaultValue>
             <label>Number of reviews per page</label>
-            <label lang="de-DE">Anzahl der Bewertungen pro Seite</label>
+            <label lang="zh-CN">每页评价数</label>
             <helpText>The number of reviews displayed on a product page in the storefront.</helpText>
-            <helpText lang="de-DE">Die Anzahl der Bewertungen die auf einer Produktseite in der Storefront angezeigt werden.</helpText>
+            <helpText lang="zh-CN">店铺前台的商品页中显示的评价条数。</helpText>
             <min>1</min>
         </input-field>
 
         <input-field type="bool">
             <name>disableEmptyFilterOptions</name>
             <label>Disable filter options without results</label>
-            <label lang="de-DE">Filteroptionen ohne Ergebnisse deaktivieren</label>
+            <label lang="zh-CN">禁用无结果的筛选项</label>
             <helpText>Filter options are deactivated and cannot be clicked if they provide no results</helpText>
-            <helpText lang="de-DE">Filteroptionen sind deaktiviert und können nicht angeklickt werden, wenn sie keine Ergebnisse liefern</helpText>
+            <helpText lang="zh-CN">筛选项若没有任何结果，将被禁用且无法点击</helpText>
         </input-field>
 
         <input-field type="int">
             <name>markAsNew</name>
             <label>Mark products as 'new', for ? days</label>
-            <label lang="de-DE">Markiert Produkte als 'neu' markieren, für ? Tage</label>
+            <label lang="zh-CN">将商品标记为「新品」，持续 ? 天</label>
             <helpText>Products are marked as new, if their release date does not date back past the set number of days.</helpText>
-            <helpText lang="de-DE">Produkte werden als neu markiert, wenn ihr Erscheinungsdatum nicht länger als die angegebene Anzahl an Tagen zurückliegt.</helpText>
+            <helpText lang="zh-CN">若商品的发布日期距今不超过设定天数，则标记为新品。</helpText>
         </input-field>
 
         <input-field type="int">
             <name>productsPerPage</name>
             <label>Number of products per page</label>
-            <label lang="de-DE">Anzahl der Produkte pro Seite</label>
+            <label lang="zh-CN">每页商品数</label>
             <helpText>The number of products displayed on a search page or in a product list per page in the storefront.</helpText>
-            <helpText lang="de-DE">Die Anzahl der Produkte die auf einer Suchseite oder in einer Produktliste je Seite in der Storefront angezeigt werden.</helpText>
+            <helpText lang="zh-CN">店铺前台的搜索页或商品列表中每页显示的商品数量。</helpText>
             <min>1</min>
         </input-field>
 
         <input-field type="text">
             <name>beforeListPriceSnippetKey</name>
             <label>Snippet key for content before list prices</label>
-            <label lang="de-DE">Snippet-Key für Inhalt vor Streichpreisen</label>
+            <label lang="zh-CN">划线价前方内容的文案键</label>
             <helpText>The content of this translation snippet is displayed before every list price in the Storefront. Leave empty to display nothing.</helpText>
-            <helpText lang="de-DE">Der Inhalt dieses Übersetzungs-Snippets wird in der Storefront vor jedem Streichpreis angezeigt. Leer lassen, um nichts anzuzeigen.</helpText>
+            <helpText lang="zh-CN">该翻译文案的内容会显示在店铺前台每个划线价之前。留空则不显示任何内容。</helpText>
         </input-field>
 
         <input-field type="text">
             <name>afterListPriceSnippetKey</name>
             <label>Snippet key for content after list prices</label>
-            <label lang="de-DE">Snippet-Key für Inhalt nach Streichpreisen</label>
+            <label lang="zh-CN">划线价后方内容的文案键</label>
             <helpText>The content of this translation snippet is displayed after every list price in the Storefront. Leave empty to display nothing.</helpText>
-            <helpText lang="de-DE">Der Inhalt dieses Übersetzungs-Snippets wird in der Storefront nach jedem Streichpreis angezeigt. Leer lassen, um nichts anzuzeigen.</helpText>
+            <helpText lang="zh-CN">该翻译文案的内容会显示在店铺前台每个划线价之后。留空则不显示任何内容。</helpText>
         </input-field>
     </card>
 </config>

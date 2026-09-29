@@ -134,7 +134,7 @@ class LintTranslationFilesCommandTest extends TestCase
     public static function faultyFixturesDataProvider(): \Generator
     {
         $adminValid = ['be-BE' => 'be'];
-        $storefrontValid = ['de-DE' => 'de'];
+        $storefrontValid = ['zh-CN' => 'zh'];
         $adminFaulty = ['jp-JP' => 'jp', 'nl-BE' => 'nl', 'nl-NL' => 'nl'];
         $storefrontFaulty = ['fr-BE' => 'fr', 'fr-FR' => 'fr', 'it-IT' => 'it'];
 
@@ -524,7 +524,7 @@ class LintTranslationFilesCommandTest extends TestCase
     private function createValidFiles(string $basePath): array
     {
         return $this->createFilesFromList([
-            'de-DE.json', 'de.json', 'en-GB.json', 'en.json',
+            'zh-CN.json', 'zh.json', 'en-GB.json', 'en.json',
             'storefront.fr-FR.json', 'storefront.fr.json',
             'storefront.nl-NL.json', 'storefront.nl.json',
         ], $basePath);
@@ -537,7 +537,7 @@ class LintTranslationFilesCommandTest extends TestCase
     {
         return $this->createFilesFromList([
             'be-BE.json', 'be.json', 'jp-JP.json', 'nl-BE.json', 'nl-NL.json',
-            'storefront.de-DE.json', 'storefront.de.json',
+            'storefront.zh-CN.json', 'storefront.zh.json',
             'storefront.fr-BE.json', 'storefront.fr-FR.json', 'storefront.it-IT.json',
         ], $basePath);
     }

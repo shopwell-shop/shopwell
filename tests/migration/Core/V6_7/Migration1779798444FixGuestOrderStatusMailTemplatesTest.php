@@ -61,8 +61,8 @@ class Migration1779798444FixGuestOrderStatusMailTemplatesTest extends MailTempla
 
             static::assertSame($expected->getEnPlain(), $translation->translations->getEnPlain(), $mailTemplateType . ': en plain');
             static::assertSame($expected->getEnHtml(), $translation->translations->getEnHtml(), $mailTemplateType . ': en html');
-            static::assertSame($expected->getDePlain(), $translation->translations->getDePlain(), $mailTemplateType . ': de plain');
-            static::assertSame($expected->getDeHtml(), $translation->translations->getDeHtml(), $mailTemplateType . ': de html');
+            static::assertSame($expected->getZhPlain(), $translation->translations->getZhPlain(), $mailTemplateType . ': de plain');
+            static::assertSame($expected->getZhHtml(), $translation->translations->getZhHtml(), $mailTemplateType . ': de html');
         }
     }
 

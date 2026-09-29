@@ -164,8 +164,8 @@ export default class DatePickerPlugin extends Plugin {
         let timeFormat;
 
         switch (localeIndex) {
-            case 'de':
-                dateFormat = 'd. F Y';
+            case 'zh':
+                dateFormat = 'Y年n月j日';
                 timeFormat = 'H:i';
                 break;
             case 'en':

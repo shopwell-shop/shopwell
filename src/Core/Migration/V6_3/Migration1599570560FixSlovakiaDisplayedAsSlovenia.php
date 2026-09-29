@@ -21,7 +21,7 @@ class Migration1599570560FixSlovakiaDisplayedAsSlovenia extends MigrationStep
     public function update(Connection $connection): void
     {
         $languageEN = null;
-        $languageDE = null;
+        $languageZhCn = null;
         $countryIdSlovakia = null;
 
         try {
@@ -32,10 +32,10 @@ class Migration1599570560FixSlovakiaDisplayedAsSlovenia extends MigrationStep
         }
 
         try {
-            $languageDE = $connection->fetchOne('SELECT language.id FROM language INNER JOIN locale
-            ON language.translation_code_id = locale.id AND locale.code = \'de-DE\'');
+            $languageZhCn = $connection->fetchOne('SELECT language.id FROM language INNER JOIN locale
+            ON language.translation_code_id = locale.id AND locale.code = \'zh-CN\'');
         } catch (\Exception) {
-            // German language not found, no need to update the snippet
+            // Chinese language not found, no need to update the snippet
         }
 
         try {
@@ -62,15 +62,15 @@ class Migration1599570560FixSlovakiaDisplayedAsSlovenia extends MigrationStep
                 }
             }
 
-            if ($languageDE) {
+            if ($languageZhCn) {
                 try {
                     $connection->update(
                         'country_translation',
-                        ['name' => 'Slowakei', 'updated_at' => $currentDateTime],
+                        ['name' => '斯洛伐克', 'updated_at' => $currentDateTime],
                         [
                             'country_id' => $countryIdSlovakia,
-                            'language_id' => $languageDE,
-                            'name' => 'Slowenien',
+                            'language_id' => $languageZhCn,
+                            'name' => '斯洛文尼亚',
                         ]
                     );
                 } catch (\Exception) {

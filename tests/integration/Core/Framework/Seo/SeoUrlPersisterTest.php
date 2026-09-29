@@ -253,7 +253,7 @@ class SeoUrlPersisterTest extends TestCase
     public function testSameSeoPathDifferentLanguage(): void
     {
         $defaultContext = Context::createDefaultContext();
-        $deContext = new Context($defaultContext->getSource(), [], $defaultContext->getCurrencyId(), [$this->getDeDeLanguageId()]);
+        $deContext = new Context($defaultContext->getSource(), [], $defaultContext->getCurrencyId(), [$this->getZhCnLanguageId()]);
 
         $fk = Uuid::randomHex();
         $seoUrlUpdates = [
@@ -904,7 +904,7 @@ class SeoUrlPersisterTest extends TestCase
                 'id' => $this->ids->create('locale-de'),
                 'name' => 'TestGerman',
                 'territory' => 'TestGermany',
-                'code' => 'de-DE-test',
+                'code' => 'zh-CN-test',
             ],
             'active' => true,
             'translationCodeId' => $this->ids->get('locale-de'),

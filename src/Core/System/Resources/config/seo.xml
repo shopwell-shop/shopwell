@@ -3,14 +3,14 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Settings</title>
-        <title lang="de-DE">Einstellungen</title>
+        <title lang="zh-CN">设置</title>
 
         <input-field type="bool">
             <name>redirectToCanonicalUrl</name>
             <label>Instead of setting canonical URLs, redirect to the most recent URL via HTTP 301.</label>
-            <label lang="de-DE">Statt canonical URLs zu verwenden, per HTTP 301 auf die aktuellste URL umleiten</label>
+            <label lang="zh-CN">不使用 canonical URL，改为通过 HTTP 301 跳转到最新 URL</label>
             <helpText>This option affects all entities whose name can change. If deactivated, one of the possible URLs is tagged as canonical. If activated, redirects to the most recent URL are performed directly via HTTP 301.</helpText>
-            <helpText lang="de-DE">Diese Option betrifft alle Entitäten, deren Name sich ändern kann. Wenn deaktiviert, wird eine der möglichen URLs als canonical markiert. Wenn aktiviert, wird direkt über HTTP 301 auf die aktuellste URL weitergeleitet.</helpText>
+            <helpText lang="zh-CN">该选项影响所有名称可能变化的实体。关闭时，把其中一个可用 URL 标记为 canonical；开启时直接通过 HTTP 301 跳转到最新 URL。</helpText>
         </input-field>
     </card>
 </config>

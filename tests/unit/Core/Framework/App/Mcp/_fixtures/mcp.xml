@@ -3,9 +3,9 @@
     <mcp-tools>
         <mcp-tool name="sync-orders" url="https://app.example.com/mcp/sync">
             <label>Sync Orders</label>
-            <label lang="de-DE">Bestellungen synchronisieren</label>
+            <label lang="zh-CN">同步订单</label>
             <description>Synchronize orders from external ERP</description>
-            <description lang="de-DE">Bestellungen vom externen ERP synchronisieren</description>
+            <description lang="zh-CN">从外部 ERP 同步订单</description>
             <input-schema>
                 <property name="since" type="string" description="ISO 8601 date" required="true"/>
                 <property name="limit" type="integer" description="Max number of orders"/>
@@ -23,9 +23,9 @@
     <mcp-prompts>
         <mcp-prompt name="order-context" url="https://app.example.com/mcp/prompt/order-context">
             <label>Order Context</label>
-            <label lang="de-DE">Bestellungskontext</label>
+            <label lang="zh-CN">订单上下文</label>
             <description>Context for order management</description>
-            <description lang="de-DE">Kontext für die Bestellungsverwaltung</description>
+            <description lang="zh-CN">订单管理上下文</description>
         </mcp-prompt>
         <mcp-prompt name="product-context" url="https://app.example.com/mcp/prompt/product-context">
             <label>Product Context</label>
@@ -34,7 +34,7 @@
     <mcp-resources>
         <mcp-resource name="order-stats" uri="app-example://order-stats" url="https://app.example.com/mcp/resource/order-stats" mime-type="application/json">
             <label>Order Stats</label>
-            <label lang="de-DE">Bestellungsstatistiken</label>
+            <label lang="zh-CN">订单统计</label>
             <description>Live order statistics</description>
         </mcp-resource>
         <mcp-resource name="product-list" uri="app-example://product-list" url="https://app.example.com/mcp/resource/product-list" mime-type="application/json">

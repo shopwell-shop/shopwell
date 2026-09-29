@@ -309,7 +309,7 @@ describe('core/factory/module.factory.js', () => {
         register('sw-foo', {
             entity: 'foo',
             snippets: {
-                'de-DE': {
+                'zh-CN': {
                     global: {
                         snippets: {
                             foo: 'foo',
@@ -328,7 +328,7 @@ describe('core/factory/module.factory.js', () => {
             entity: 'bar',
 
             snippets: {
-                'de-DE': {
+                'zh-CN': {
                     global: {
                         snippets: {
                             bar: 'bar',
@@ -347,7 +347,7 @@ describe('core/factory/module.factory.js', () => {
             entity: 'bar2',
 
             snippets: {
-                'de-DE': {
+                'zh-CN': {
                     global: {
                         snippets: {
                             foo: 'no foo',
@@ -366,7 +366,7 @@ describe('core/factory/module.factory.js', () => {
 
         const moduleFactory = Application.getContainer('factory').module;
         expect(moduleFactory.getModuleSnippets()).toEqual({
-            'de-DE': {
+            'zh-CN': {
                 global: {
                     snippets: {
                         foo: 'no foo',

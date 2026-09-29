@@ -20,7 +20,7 @@ class Migration1657173907DownloadMailTemplate extends MigrationStep
 {
     use UpdateMailTrait;
 
-    private const GERMAN_LANGUAGE_NAME = 'Deutsch';
+    private const ZH_CN_LANGUAGE_NAME = '简体中文';
 
     private const ENGLISH_LANGUAGE_NAME = 'English';
 
@@ -50,8 +50,8 @@ class Migration1657173907DownloadMailTemplate extends MigrationStep
             MailTemplateTypes::MAILTYPE_DOWNLOADS_DELIVERY,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/downloads_delivery/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/downloads_delivery/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/downloads_delivery/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/downloads_delivery/de-html.html.twig')
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/downloads_delivery/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/downloads_delivery/zh-html.html.twig')
         );
 
         $this->updateMail($update, $connection);
@@ -65,8 +65,8 @@ class Migration1657173907DownloadMailTemplate extends MigrationStep
             MailTemplateTypes::MAILTYPE_ORDER_CONFIRM,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/de-html.html.twig')
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/zh-html.html.twig')
         );
 
         $this->updateMail($update, $connection);
@@ -75,8 +75,8 @@ class Migration1657173907DownloadMailTemplate extends MigrationStep
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_PAID,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.paid/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.paid/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.paid/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.paid/de-html.html.twig')
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.paid/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.paid/zh-html.html.twig')
         );
 
         $this->updateMail($update, $connection);
@@ -85,8 +85,8 @@ class Migration1657173907DownloadMailTemplate extends MigrationStep
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_CANCELLED,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.cancelled/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.cancelled/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.cancelled/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.cancelled/de-html.html.twig')
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.cancelled/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.cancelled/zh-html.html.twig')
         );
 
         $this->updateMail($update, $connection);
@@ -132,9 +132,9 @@ class Migration1657173907DownloadMailTemplate extends MigrationStep
         $defaultLanguageId = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
 
         $englishLanguageId = $this->fetchLanguageIdByName(self::ENGLISH_LANGUAGE_NAME, $connection);
-        $germanLanguageId = $this->fetchLanguageIdByName(self::GERMAN_LANGUAGE_NAME, $connection);
+        $zhCnLanguageId = $this->fetchLanguageIdByName(self::ZH_CN_LANGUAGE_NAME, $connection);
 
-        if (!\in_array($defaultLanguageId, [$englishLanguageId, $germanLanguageId], true)) {
+        if (!\in_array($defaultLanguageId, [$englishLanguageId, $zhCnLanguageId], true)) {
             $connection->insert(
                 'mail_template_type_translation',
                 [
@@ -158,13 +158,13 @@ class Migration1657173907DownloadMailTemplate extends MigrationStep
             );
         }
 
-        if ($germanLanguageId) {
+        if ($zhCnLanguageId) {
             $connection->insert(
                 'mail_template_type_translation',
                 [
                     'mail_template_type_id' => $templateTypeId,
-                    'language_id' => $germanLanguageId,
-                    'name' => 'Versand digitaler Produkte',
+                    'language_id' => $zhCnLanguageId,
+                    'name' => '数字商品发货',
                     'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 ]
             );
@@ -189,9 +189,9 @@ class Migration1657173907DownloadMailTemplate extends MigrationStep
         $defaultLanguageId = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
 
         $englishLanguageId = $this->fetchLanguageIdByName(self::ENGLISH_LANGUAGE_NAME, $connection);
-        $germanLanguageId = $this->fetchLanguageIdByName(self::GERMAN_LANGUAGE_NAME, $connection);
+        $zhCnLanguageId = $this->fetchLanguageIdByName(self::ZH_CN_LANGUAGE_NAME, $connection);
 
-        if (!\in_array($defaultLanguageId, [$englishLanguageId, $germanLanguageId], true)) {
+        if (!\in_array($defaultLanguageId, [$englishLanguageId, $zhCnLanguageId], true)) {
             $connection->insert(
                 'mail_template_translation',
                 [
@@ -223,18 +223,18 @@ class Migration1657173907DownloadMailTemplate extends MigrationStep
             );
         }
 
-        if ($germanLanguageId) {
+        if ($zhCnLanguageId) {
             $connection->insert(
                 'mail_template_translation',
                 [
-                    'subject' => 'Ihre Dateien von {{ salesChannel.name }} stehen bereit',
-                    'description' => 'Shopwell Default Template',
+                    'subject' => '您在 {{ salesChannel.name }} 的文件已准备就绪',
+                    'description' => 'Shopwell 基础模板',
                     'sender_name' => '{{ salesChannel.name }}',
                     'content_html' => '',
                     'content_plain' => '',
                     'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                     'mail_template_id' => $templateId,
-                    'language_id' => $germanLanguageId,
+                    'language_id' => $zhCnLanguageId,
                 ]
             );
         }

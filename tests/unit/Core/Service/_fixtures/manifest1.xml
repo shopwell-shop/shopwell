@@ -32,7 +32,7 @@
                 parent="some-parent-module"
                 source="https://example.com/module-feature-2">
             <label>Example Module 1</label>
-            <label lang="de-DE">Beispielmodul 1</label>
+            <label lang="zh-CN">示例模块 1</label>
         </module>
     </admin>
 </manifest>

@@ -106,7 +106,7 @@ class Migration1570459127AddCmsSidebarLayout extends MigrationStep
     private function addDefaultLayoutWithSidebar(Connection $connection): void
     {
         $languageEn = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
-        $languageDe = $this->getDeDeId($connection);
+        $languageDe = $this->getZhCnId($connection);
         $versionId = Uuid::fromHexToBytes(Defaults::LIVE_VERSION);
 
         // cms page
@@ -287,14 +287,14 @@ class Migration1570459127AddCmsSidebarLayout extends MigrationStep
         }
     }
 
-    private function getDeDeId(Connection $connection): ?string
+    private function getZhCnId(Connection $connection): ?string
     {
         $result = $connection->fetchOne(
             '
             SELECT lang.id
             FROM language lang
             INNER JOIN locale loc ON lang.translation_code_id = loc.id
-            AND loc.code = "de-DE"'
+            AND loc.code = "zh-CN"'
         );
 
         if ($result === false || Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM) === $result) {

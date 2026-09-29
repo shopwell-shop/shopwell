@@ -231,7 +231,7 @@ class OrderServiceTest extends TestCase
         static::assertFalse($eventDidRun, 'The mail.sent Event did run');
     }
 
-    public function testOrderDeliveryStateTransitionSendsMailDe(): void
+    public function testOrderDeliveryStateTransitionSendsMailZh(): void
     {
         if (!static::getContainer()->has(AccountOrderController::class)) {
             // ToDo: NEXT-16882 - Reactivate tests again
@@ -245,7 +245,7 @@ class OrderServiceTest extends TestCase
             TestDefaults::SALES_CHANNEL,
             [
                 SalesChannelContextService::CUSTOMER_ID => $this->createCustomer('Jon', 'De'),
-                SalesChannelContextService::LANGUAGE_ID => $this->getDeDeLanguageId(),
+                SalesChannelContextService::LANGUAGE_ID => $this->getZhCnLanguageId(),
             ]
         );
         $orderId = $this->performOrder();
@@ -266,7 +266,7 @@ class OrderServiceTest extends TestCase
         $orderDeliveryId = $delivery->getId();
 
         $domain = 'http://shopwell.' . Uuid::randomHex();
-        $this->setDomainForSalesChannel($domain, $this->getDeDeLanguageId());
+        $this->setDomainForSalesChannel($domain, $this->getZhCnLanguageId());
 
         $dispatcher = static::getContainer()->get('event_dispatcher');
 
@@ -294,7 +294,7 @@ class OrderServiceTest extends TestCase
         static::assertNotNull($innerEvent);
         $textHtml = $innerEvent->getContents()['text/html'];
         static::assertIsString($textHtml);
-        static::assertStringContainsString('Die Bestellung hat jetzt den Lieferstatus: Abgebrochen.', $textHtml);
+        static::assertStringContainsString('订单当前的配送状态：已取消。', $textHtml);
         static::assertStringContainsString($url, $textHtml);
 
         static::assertTrue($eventDidRun, 'The mail.sent Event did not run');

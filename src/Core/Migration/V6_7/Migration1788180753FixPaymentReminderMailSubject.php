@@ -28,7 +28,7 @@ class Migration1788180753FixPaymentReminderMailSubject extends MigrationStep
             new MailSubjectUpdate(
                 MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_REMINDED,
                 'Payment reminder for your order with {{ salesChannel.translated.name }}',
-                'Zahlungserinnerung für Ihre Bestellung bei {{ salesChannel.translated.name }}',
+                '您在 {{ salesChannel.translated.name }} 的订单付款提醒',
             ),
             $connection
         );

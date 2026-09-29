@@ -25,18 +25,18 @@ class ElasticsearchFieldMapperTest extends TestCase
 {
     public function testMapTranslatedField(): void
     {
-        $items = [['name' => 'foo', 'languageId' => 'de-DE'], ['name' => null, 'languageId' => 'en-GB']];
-        $fallbackItems = [['name' => 'foo-baz', 'languageId' => 'de-DE'], ['name' => 'bar', 'languageId' => 'en-GB'], ['name' => 'baz'], ['name' => 'foo VI', 'languageId' => 'vi-VN']];
+        $items = [['name' => 'foo', 'languageId' => 'zh-CN'], ['name' => null, 'languageId' => 'en-GB']];
+        $fallbackItems = [['name' => 'foo-baz', 'languageId' => 'zh-CN'], ['name' => 'bar', 'languageId' => 'en-GB'], ['name' => 'baz'], ['name' => 'foo VI', 'languageId' => 'vi-VN']];
         $fieldValue = ElasticsearchFieldMapper::translated('name', $items, $fallbackItems);
 
-        static::assertEquals(['de-DE' => 'foo', 'en-GB' => 'bar', 'vi-VN' => 'foo VI', Defaults::LANGUAGE_SYSTEM => 'baz'], $fieldValue);
+        static::assertEquals(['zh-CN' => 'foo', 'en-GB' => 'bar', 'vi-VN' => 'foo VI', Defaults::LANGUAGE_SYSTEM => 'baz'], $fieldValue);
     }
 
     public function testMapToManyAssociations(): void
     {
         $items = [
             ['id' => 'fooId', 'name' => 'foo in EN', 'languageId' => 'en-GB'],
-            ['id' => 'fooId', 'name' => 'foo in DE', 'languageId' => 'de-DE'],
+            ['id' => 'fooId', 'name' => 'foo in ZH', 'languageId' => 'zh-CN'],
             ['id' => 'barId', 'name' => 'bar', 'description' => 'bar description', 'languageId' => 'en-GB'],
         ];
 
@@ -48,7 +48,7 @@ class ElasticsearchFieldMapperTest extends TestCase
                 '_count' => 1,
                 'name' => [
                     'en-GB' => 'foo in EN',
-                    'de-DE' => 'foo in DE',
+                    'zh-CN' => 'foo in ZH',
                 ],
                 'description' => [
                     'en-GB' => null,

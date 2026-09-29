@@ -85,7 +85,7 @@ describe('module/sw-settings-shopwell-updates/page/sw-settings-shopwell-updates-
     });
 
     it('deactivate extensions success forwards the admin locale to the recovery tool', async () => {
-        useSession().currentLocale.value = 'de-DE';
+        useSession().currentLocale.value = 'zh-CN';
 
         wrapper.vm.updateService.deactivateExtensions = () => {
             return Promise.resolve({
@@ -100,7 +100,7 @@ describe('module/sw-settings-shopwell-updates/page/sw-settings-shopwell-updates-
         await wrapper.vm.deactivateExtensions(0);
 
         expect(redirectSpy).toHaveBeenCalledWith(
-            `${Shopwell.Context.api.basePath}/shopwell-installer.phar.php?language=de-DE`,
+            `${Shopwell.Context.api.basePath}/shopwell-installer.phar.php?language=zh-CN`,
         );
     });
 

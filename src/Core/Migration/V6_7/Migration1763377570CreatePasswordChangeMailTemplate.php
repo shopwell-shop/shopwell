@@ -20,7 +20,7 @@ class Migration1763377570CreatePasswordChangeMailTemplate extends MigrationStep
 {
     use UpdateMailTrait;
 
-    private const GERMAN_LANGUAGE_ISO = 'de-DE';
+    private const ZH_CN_LANGUAGE_ISO = 'zh-CN';
 
     private const ENGLISH_LANGUAGE_ISO = 'en-GB';
 
@@ -65,9 +65,9 @@ class Migration1763377570CreatePasswordChangeMailTemplate extends MigrationStep
         $defaultLanguageId = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
 
         $englishLanguageId = $this->fetchLanguageIdByIso(self::ENGLISH_LANGUAGE_ISO, $connection);
-        $germanLanguageId = $this->fetchLanguageIdByIso(self::GERMAN_LANGUAGE_ISO, $connection);
+        $zhCnLanguageId = $this->fetchLanguageIdByIso(self::ZH_CN_LANGUAGE_ISO, $connection);
 
-        if (!\in_array($defaultLanguageId, [$englishLanguageId, $germanLanguageId], true)) {
+        if (!\in_array($defaultLanguageId, [$englishLanguageId, $zhCnLanguageId], true)) {
             $connection->insert(
                 'mail_template_type_translation',
                 [
@@ -91,13 +91,13 @@ class Migration1763377570CreatePasswordChangeMailTemplate extends MigrationStep
             );
         }
 
-        if ($germanLanguageId) {
+        if ($zhCnLanguageId) {
             $connection->insert(
                 'mail_template_type_translation',
                 [
                     'mail_template_type_id' => $templateTypeId,
-                    'language_id' => $germanLanguageId,
-                    'name' => 'Kunden-Passwort geändert',
+                    'language_id' => $zhCnLanguageId,
+                    'name' => '客户密码已修改',
                     'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 ]
             );
@@ -128,9 +128,9 @@ class Migration1763377570CreatePasswordChangeMailTemplate extends MigrationStep
         $defaultLanguageId = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
 
         $englishLanguageId = $this->fetchLanguageIdByIso(self::ENGLISH_LANGUAGE_ISO, $connection);
-        $germanLanguageId = $this->fetchLanguageIdByIso(self::GERMAN_LANGUAGE_ISO, $connection);
+        $zhCnLanguageId = $this->fetchLanguageIdByIso(self::ZH_CN_LANGUAGE_ISO, $connection);
 
-        if (!\in_array($defaultLanguageId, [$englishLanguageId, $germanLanguageId], true)) {
+        if (!\in_array($defaultLanguageId, [$englishLanguageId, $zhCnLanguageId], true)) {
             $connection->insert(
                 'mail_template_translation',
                 [
@@ -160,17 +160,17 @@ class Migration1763377570CreatePasswordChangeMailTemplate extends MigrationStep
             );
         }
 
-        if ($germanLanguageId) {
+        if ($zhCnLanguageId) {
             $connection->insert(
                 'mail_template_translation',
                 [
-                    'subject' => 'Kunden-Passwort geändert',
+                    'subject' => '客户密码已修改',
                     'sender_name' => '{{ salesChannel.name }}',
                     'content_html' => '',
                     'content_plain' => '',
                     'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                     'mail_template_id' => $templateId,
-                    'language_id' => $germanLanguageId,
+                    'language_id' => $zhCnLanguageId,
                 ]
             );
         }
@@ -204,8 +204,8 @@ class Migration1763377570CreatePasswordChangeMailTemplate extends MigrationStep
         $update = new MailUpdate(CustomerPasswordChangedEvent::EVENT_NAME);
         $update->setEnPlain($filesystem->readFile(__DIR__ . '/../Fixtures/mails/customer.password.changed/en-plain.html.twig'));
         $update->setEnHtml($filesystem->readFile(__DIR__ . '/../Fixtures/mails/customer.password.changed/en-html.html.twig'));
-        $update->setDePlain($filesystem->readFile(__DIR__ . '/../Fixtures/mails/customer.password.changed/de-plain.html.twig'));
-        $update->setDeHtml($filesystem->readFile(__DIR__ . '/../Fixtures/mails/customer.password.changed/de-html.html.twig'));
+        $update->setZhPlain($filesystem->readFile(__DIR__ . '/../Fixtures/mails/customer.password.changed/zh-plain.html.twig'));
+        $update->setZhHtml($filesystem->readFile(__DIR__ . '/../Fixtures/mails/customer.password.changed/zh-html.html.twig'));
 
         $this->updateMail($update, $connection);
     }

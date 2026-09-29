@@ -530,8 +530,8 @@ class ProductSearchRouteTest extends TestCase
     public function testProductSearch(string $productNumber, array $searchTerms, ?string $languageId): void
     {
         $ids = self::$ids;
-        if ($languageId === 'de-DE') {
-            $languageId = $this->getDeDeLanguageId();
+        if ($languageId === 'zh-CN') {
+            $languageId = $this->getZhCnLanguageId();
         }
 
         $searchRoute = static::getContainer()->get(ProductSearchRoute::class);
@@ -597,7 +597,7 @@ class ProductSearchRouteTest extends TestCase
                     'Lorem ipsum' => true, // full name
                     'manufacturer' => true, // manufacturer
                     'dolor sit amet' => false, // full name but different language
-                    'Hersteller' => false, // manufacturer but different language
+                    '制造商' => false, // manufacturer but different language
                 ],
                 null,
             ],
@@ -609,11 +609,11 @@ class ProductSearchRouteTest extends TestCase
                     'sit' => true, // part of name
                     'amet' => true, // part of name
                     'dolor sit amet' => true, // full name
-                    'Hersteller' => true, // manufacturer
+                    '制造商' => true, // manufacturer
                     'Lorem ipsum' => false, // full name but different language
                     'manufacturer' => false, // manufacturer but different language
                 ],
-                'de-DE',
+                'zh-CN',
             ],
             'test it finds product by fallback translations' => [
                 '1002',
@@ -623,7 +623,7 @@ class ProductSearchRouteTest extends TestCase
                     'literature' => true, // part of name
                     'latin literature' => true, // full name
                 ],
-                'de-DE',
+                'zh-CN',
             ],
             'test it finds variant product' => [
                 '1000',
@@ -634,7 +634,7 @@ class ProductSearchRouteTest extends TestCase
                     'Lorem ipsum' => true, // full name
                     'manufacturer' => true, // manufacturer
                     'dolor sit amet' => false, // full name but different language
-                    'Hersteller' => false, // manufacturer but different language
+                    '制造商' => false, // manufacturer but different language
                     'consectetur adipiscing' => false, // full name but of parent language
                     'Suspendisse in' => false, // full name but of parent & different language
                     'varius' => false, // manufacturer but of parent
@@ -650,7 +650,7 @@ class ProductSearchRouteTest extends TestCase
                     'sit' => true, // part of name
                     'amet' => true, // part of name
                     'dolor sit amet' => true, // full name
-                    'Hersteller' => true, // manufacturer
+                    '制造商' => true, // manufacturer
                     'Lorem ipsum' => false, // full name but different language
                     'manufacturer' => false, // manufacturer but different language
                     'consectetur adipiscing' => false, // full name but of parent language
@@ -658,7 +658,7 @@ class ProductSearchRouteTest extends TestCase
                     'varius' => false, // manufacturer but of parent
                     'Vestibulum' => false, // manufacturer but of parent & different language
                 ],
-                'de-DE',
+                'zh-CN',
             ],
             'test it finds variant product by parent translation' => [
                 '1001.1',
@@ -671,7 +671,7 @@ class ProductSearchRouteTest extends TestCase
                     'consectetur adipiscing' => false, // full name but of parent language
                     'varius' => false, // manufacturer but of parent & different language
                 ],
-                'de-DE',
+                'zh-CN',
             ],
             'test it finds variant product with inherited data' => [
                 '1001.1',
@@ -836,7 +836,7 @@ class ProductSearchRouteTest extends TestCase
         self::$browser = $this->createCustomSalesChannelBrowser([
             'id' => $ids->create('sales-channel'),
             'navigationCategoryId' => $ids->get('category'),
-            'languages' => [['id' => Defaults::LANGUAGE_SYSTEM], ['id' => $this->getDeDeLanguageId()]],
+            'languages' => [['id' => Defaults::LANGUAGE_SYSTEM], ['id' => $this->getZhCnLanguageId()]],
         ]);
 
         $this->createGermanSalesChannelDomain($ids);
@@ -953,17 +953,17 @@ class ProductSearchRouteTest extends TestCase
             (new ProductBuilder($ids, '1000'))
                 ->price(10)
                 ->name('Lorem ipsum')
-                ->translation($this->getDeDeLanguageId(), 'name', 'dolor sit amet')
+                ->translation($this->getZhCnLanguageId(), 'name', 'dolor sit amet')
                 ->visibility($ids->get('sales-channel'))
-                ->manufacturer('manufacturer', [$this->getDeDeLanguageId() => ['name' => 'Hersteller']])
+                ->manufacturer('manufacturer', [$this->getZhCnLanguageId() => ['name' => '制造商']])
                 ->build(),
 
             (new ProductBuilder($ids, '1001'))
                 ->name('consectetur adipiscing')
-                ->translation($this->getDeDeLanguageId(), 'name', 'Suspendisse in')
+                ->translation($this->getZhCnLanguageId(), 'name', 'Suspendisse in')
                 ->price(5)
                 ->visibility($ids->get('sales-channel'))
-                ->manufacturer('varius', [$this->getDeDeLanguageId() => ['name' => 'Vestibulum']])
+                ->manufacturer('varius', [$this->getZhCnLanguageId() => ['name' => 'Vestibulum']])
                 ->variant(
                     (new ProductBuilder($ids, '1001.1'))
                         ->price(10)
@@ -1094,12 +1094,12 @@ class ProductSearchRouteTest extends TestCase
     {
         static::getContainer()->get('language.repository')->upsert([
             [
-                'id' => $this->getDeDeLanguageId(),
+                'id' => $this->getZhCnLanguageId(),
                 'salesChannelDomains' => [
                     [
                         'salesChannelId' => $ids->get('sales-channel'),
                         'currencyId' => Defaults::CURRENCY,
-                        'snippetSetId' => $this->getSnippetSetIdForLocale('de-DE'),
+                        'snippetSetId' => $this->getSnippetSetIdForLocale('zh-CN'),
                         'url' => $_SERVER['APP_URL'] . '/de',
                     ],
                 ],

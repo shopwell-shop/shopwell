@@ -162,16 +162,16 @@ class PluginServiceTest extends TestCase
         static::assertSame('https://www.test.nl/support', $plugin->getTranslated()['supportLink']);
     }
 
-    public function testRefreshPluginsWithGermanContext(): void
+    public function testRefreshPluginsWithChineseContext(): void
     {
-        $context = new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->getDeDeLanguageId()]);
+        $context = new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->getZhCnLanguageId()]);
 
         $this->pluginService->refreshPlugins($context, new NullIO());
 
         $plugin = $this->fetchSwagTestPluginEntity($context);
 
         $this->assertPluginMetaInformation($plugin);
-        $this->assertGermanPlugin($plugin);
+        $this->assertChinesePlugin($plugin);
     }
 
     public function testRefreshPluginsExistingWithPluginUpdate(): void
@@ -257,14 +257,14 @@ class PluginServiceTest extends TestCase
         static::assertSame(SwagTestNoDefaultLang::PLUGIN_VERSION, $plugin->getVersion());
     }
 
-    private function assertGermanPlugin(PluginEntity $plugin): void
+    private function assertChinesePlugin(PluginEntity $plugin): void
     {
         static::assertSame(SwagTestPlugin::class, $plugin->getBaseClass());
-        static::assertSame(SwagTestPlugin::PLUGIN_GERMAN_LABEL, $plugin->getLabel());
+        static::assertSame(SwagTestPlugin::PLUGIN_CHINESE_LABEL, $plugin->getLabel());
         static::assertSame(SwagTestPlugin::PLUGIN_VERSION, $plugin->getVersion());
-        static::assertSame('Deutsche Beschreibung', $plugin->getDescription());
-        static::assertSame('https://www.test.de/', $plugin->getManufacturerLink());
-        static::assertSame('https://www.test.de/support', $plugin->getSupportLink());
+        static::assertSame('中文插件说明', $plugin->getDescription());
+        static::assertSame('https://www.test.cn/', $plugin->getManufacturerLink());
+        static::assertSame('https://www.test.cn/support', $plugin->getSupportLink());
     }
 
     private function assertPluginMetaInformation(PluginEntity $plugin): void

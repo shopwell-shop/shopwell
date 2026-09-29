@@ -18,9 +18,9 @@ class LintedTranslationFileStructTest extends TestCase
 {
     public function testGetDomainCollectionTreatsCustomDomainsAsStorefront(): void
     {
-        $storefront = self::file('de-DE.json', 'storefront');
-        $custom = self::file('de-DE.json', 'swag-cms-extensions');
-        $messages = self::file('de-DE.base.json', 'messages');
+        $storefront = self::file('zh-CN.json', 'storefront');
+        $custom = self::file('zh-CN.json', 'swag-cms-extensions');
+        $messages = self::file('zh-CN.base.json', 'messages');
 
         $struct = new LintedTranslationFileStruct(new TranslationFileCollection([$storefront, $custom, $messages]));
 
@@ -36,8 +36,8 @@ class LintedTranslationFileStructTest extends TestCase
 
     public function testCompleteAndSpecificCollectionsReturnTheConstructorArguments(): void
     {
-        $complete = new TranslationFileCollection([self::file('de-DE.json', 'storefront')]);
-        $specific = new TranslationFileCollection([self::file('de-AT.json', 'storefront')]);
+        $complete = new TranslationFileCollection([self::file('zh-CN.json', 'storefront')]);
+        $specific = new TranslationFileCollection([self::file('zh-SG.json', 'storefront')]);
 
         $struct = new LintedTranslationFileStruct($complete, $specific);
 
@@ -49,7 +49,7 @@ class LintedTranslationFileStructTest extends TestCase
     {
         $struct = new LintedTranslationFileStruct();
 
-        $fixable = self::file('de.json', 'storefront');
+        $fixable = self::file('zh.json', 'storefront');
         $fixed = self::file('en.json', 'storefront');
 
         $struct->addFixableFile($fixable);
@@ -65,8 +65,8 @@ class LintedTranslationFileStructTest extends TestCase
             filename: $filename,
             path: 'path/to/file',
             domain: $domain,
-            locale: 'de-DE',
-            language: 'de',
+            locale: 'zh-CN',
+            language: 'zh',
         );
     }
 }

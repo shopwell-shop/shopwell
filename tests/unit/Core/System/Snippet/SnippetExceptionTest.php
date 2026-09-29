@@ -83,13 +83,13 @@ class SnippetExceptionTest extends TestCase
     public function testInvalidLocalesProvided(): void
     {
         $locales = 'foo-bar';
-        $all = 'de-DE,en-GB';
+        $all = 'zh-CN,en-GB';
 
         $exception = SnippetException::invalidLocalesProvided($locales, $all);
 
         static::assertSame(Response::HTTP_BAD_REQUEST, $exception->getStatusCode());
         static::assertSame(SnippetException::SNIPPET_INVALID_LOCALES_PROVIDED, $exception->getErrorCode());
-        static::assertSame('Invalid locale codes: "foo-bar". Available codes: "de-DE,en-GB"', $exception->getMessage());
+        static::assertSame('Invalid locale codes: "foo-bar". Available codes: "zh-CN,en-GB"', $exception->getMessage());
     }
 
     public function testTranslationConfigurationDirectoryDoesNotExist(): void

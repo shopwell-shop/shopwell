@@ -1,0 +1,120 @@
+{
+  "sw-settings-language": {
+    "general": {
+      "mainMenuItemGeneral": "语言",
+      "placeholderSearchBar": "搜索语言…"
+    },
+    "addModal": {
+      "title": "添加语言",
+      "labelLanguage": "语言",
+      "placeholderLanguage": "选择语言...",
+      "translationsAvailable": "此语言有可用翻译。",
+      "translationsIncomplete": "该语言可能仍缺少部分翻译。",
+      "docsHint": "Shopwell 中翻译的工作方式：",
+      "docsLinkLabel": "了解更多",
+      "docsUrl": "https://docs.shopwell.cn/zh/shopwell-6-zh/tutorials-and-faq/translations",
+      "extensionStoreHint": "没找到合适的语言？在 {extensionStoreLink} 中浏览可用语言",
+      "extensionStoreLink": "扩展商店",
+      "createCustomLanguage": "新建自定义语言",
+      "buttonAdd": "添加语言",
+      "messageAddSuccess": "语言已添加。",
+      "messageAddError": "语言无法添加。",
+      "messageTranslationsLoadError": "可用翻译无法加载。",
+      "messageLanguagesLoadError": "现有语言无法加载。"
+    },
+    "list": {
+      "textHeadline": "语言",
+      "deleteModalTitle": "删除语言？",
+      "deleteModalIntro": "确定要删除以下语言吗？此操作无法撤销：",
+      "deleteFilesNoteLabel": "提示：",
+      "deleteFilesNote": "此操作只删除后台中的语言实体和文本模块，不会删除文件系统中的文本模块文件。是否也要删除这些文件？",
+      "deleteTranslationFiles": "同时从文件系统中删除文本模块文件",
+      "deleteTranslationFilesError": "无法从文件系统中删除文本模块文件。",
+      "deleteError": "语言无法删除。",
+      "columnName": "名称",
+      "columnActive": "启用",
+      "columnLocaleName": "区域设置",
+      "columnIsoCode": "ISO 代码",
+      "columnSalesChannels": "销售渠道",
+      "columnSnippetStatus": "文本模块更新",
+      "salesChannelCount": "{count} 销售渠道 | {count} 销售渠道",
+      "snippetStatus": {
+        "updateAvailable": "有更新可用",
+        "updating": "正在更新 ..."
+      },
+      "buttonUpdateAllSnippets": "更新全部文本模块",
+      "contextMenuUpdateSnippets": "更新文本模块",
+      "buttonUpdateSelectedSnippets": "更新选中的文本模块",
+      "updateSnippetsProgress": "文本模块正在更新 ({processed}/{total})",
+      "updateSnippetsSuccess": "文本模块已更新。",
+      "updateSnippetsError": "文本模块无法更新。",
+      "snippetStatusLoadError": "文本模块更新无法加载。",
+      "columnInherit": "继承自",
+      "columnDefault": "默认",
+      "defaultLabel": "默认",
+      "buttonAddLanguage": "新建语言",
+      "messageDeleteSuccess": "语言 \"{name}\" 已成功删除。",
+      "titleSidebarItemRefresh": "刷新",
+      "manageSnippets": "管理文本模块",
+      "cardTitle": "语言",
+      "cardSubtitle": "语言可分配给销售渠道域名，用于翻译分类、商品、体验世界等内容。"
+    },
+    "detail": {
+      "textHeadline": "新建语言",
+      "titleCard": "设置",
+      "messageSaveSuccess": "语言 \"{name}\" 已成功保存。",
+      "messageSaveError": "语言无法保存。",
+      "messageLoadError": "语言无法加载。",
+      "labelName": "名称",
+      "labelActive": "启用",
+      "labelLocale": "区域设置",
+      "labelParent": "继承自",
+      "labelIsoCode": "ISO 代码",
+      "placeholderName": "输入名称 ...",
+      "placeholderPleaseSelect": "请选择...",
+      "tooltipLanguageNotChoosable": "只能从本身未继承的语言继承。",
+      "tooltipInheritanceNotPossible": "系统默认语言不能继承其他语言。",
+      "textAlertChangeParent": "更改继承语言可能导致翻译不一致。",
+      "textIsoCodeIsInUse": "该 ISO 代码已被使用。",
+      "textLanguageHasParent": "该语言已继承自另一语言。",
+      "tooltipActive": "在后台翻译内容和配置销售渠道时将该语言显示为选项。停用不会影响店铺前台的可用性。",
+      "createdBannerTitle": "{name} 已成功添加",
+      "createdBannerText": "启用该语言，然后将其分配给销售渠道，使其对客户可用。",
+      "salesChannels": {
+        "title": "销售渠道",
+        "activateHint": "启用该语言，然后将其分配给销售渠道，使其对客户可用。",
+        "assignHint": "将语言分配给销售渠道，使其对客户可用。",
+        "assignedIntro": "该语言已分配给以下销售渠道：",
+        "openSettings": "打开销售渠道设置",
+        "showAll": "显示全部",
+        "showLess": "收起"
+      },
+      "snippetUpdates": {
+        "title": "文本模块更新",
+        "upToDate": "文本模块已是最新。",
+        "updateAvailable": "有新的更新可用。",
+        "updating": "文本模块正在更新。",
+        "builtIn": "内置文本模块会随 Shopwell 更新而更新。",
+        "notAvailable": "此语言没有可用更新。",
+        "notAvailableHelpText": "手动或通过第三方扩展添加的语言可能以不同方式更新，甚至不更新。",
+        "notLinked": "Shopwell 支持该语言，但尚未与翻译系统关联。",
+        "linking": "正在关联语言。",
+        "updateButton": "刷新",
+        "updatingButton": "正在更新 ...",
+        "linkButton": "关联语言",
+        "linkingButton": "正在关联 ...",
+        "updateError": "该语言的文本模块无法更新。",
+        "statusLoadError": "文本模块的更新状态无法加载。",
+        "autoUpdate": "自动更新",
+        "autoUpdateHelpText": "自动保持该语言的文本模块为最新。"
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "language": {
+        "label": "语言"
+      }
+    }
+  }
+}

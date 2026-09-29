@@ -3,9 +3,9 @@
     <meta>
         <name>test</name>
         <label>Swag App Test</label>
-        <label lang="de-DE">Swag App Test</label>
+        <label lang="zh-CN">Swag 应用测试</label>
         <description>Test for App System</description>
-        <description lang="de-DE">Test für das App System</description>
+        <description lang="zh-CN">应用系统测试</description>
         <author>Shopwell</author>
         <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>
@@ -16,13 +16,13 @@
         <shipping-method>
             <identifier>swagFirstShippingMethod</identifier>
             <name>first Shipping Method</name>
-            <name lang="de-DE">erste Versandmethode</name>
+            <name lang="zh-CN">第一种配送方式</name>
             <description>This is a simple description</description>
-            <description lang="de-DE">Das ist eine einfache Beschreibung</description>
+            <description lang="zh-CN">这是一个简单的描述</description>
             <icon>icons/TestIcon.png</icon>
             <position>3</position>
             <tracking-url>https://www.mytrackingurl.com</tracking-url>
-            <tracking-url lang="de-DE">https://de.mytrackingurl.com</tracking-url>
+            <tracking-url lang="zh-CN">https://zh.mytrackingurl.com</tracking-url>
             <delivery-time>
                 <id>4b00146bdc8b4175b12d3fc36ec114c8</id>
                 <name>Short delivery time 1-2 days</name>

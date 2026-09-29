@@ -53,7 +53,7 @@ class PaymentDistinguishableNameSubscriberTest extends TestCase
                     'id' => $creditCardPaymentId = Uuid::randomHex(),
                     'name' => [
                         'en-GB' => 'Credit card',
-                        'de-DE' => 'Kreditkarte',
+                        'zh-CN' => '信用卡',
                     ],
                     'technicalName' => 'payment_creditcard',
                     'active' => true,
@@ -62,7 +62,7 @@ class PaymentDistinguishableNameSubscriberTest extends TestCase
                     'id' => $invoicePaymentByShopwellPluginId = Uuid::randomHex(),
                     'name' => [
                         'en-GB' => 'Invoice',
-                        'de-DE' => 'Rechnungskauf',
+                        'zh-CN' => '发票支付',
                     ],
                     'technicalName' => 'payment_invoice1',
                     'active' => true,
@@ -73,7 +73,7 @@ class PaymentDistinguishableNameSubscriberTest extends TestCase
                         'version' => '1.0.0',
                         'label' => [
                             'en-GB' => 'Shopwell (English)',
-                            'de-DE' => 'Shopwell (Deutsch)',
+                            'zh-CN' => 'Shopwell (中文)',
                         ],
                     ],
                 ],
@@ -81,7 +81,7 @@ class PaymentDistinguishableNameSubscriberTest extends TestCase
                     'id' => $invoicePaymentByPluginId = Uuid::randomHex(),
                     'name' => [
                         'en-GB' => 'Invoice',
-                        'de-DE' => 'Rechnung',
+                        'zh-CN' => '发票',
                     ],
                     'technicalName' => 'payment_invoice2',
                     'active' => true,
@@ -92,7 +92,7 @@ class PaymentDistinguishableNameSubscriberTest extends TestCase
                         'version' => '1.0.0',
                         'label' => [
                             'en-GB' => 'Plugin (English)',
-                            'de-DE' => 'Plugin (Deutsch)',
+                            'zh-CN' => 'Plugin (中文)',
                         ],
                     ],
                 ],
@@ -100,7 +100,7 @@ class PaymentDistinguishableNameSubscriberTest extends TestCase
                     'id' => $invoicePaymentByAppId = Uuid::randomHex(),
                     'name' => [
                         'en-GB' => 'Invoice',
-                        'de-DE' => 'Rechnung',
+                        'zh-CN' => '发票',
                     ],
                     'technicalName' => 'payment_invoice3',
                     'active' => true,
@@ -155,32 +155,32 @@ class PaymentDistinguishableNameSubscriberTest extends TestCase
 
         static::assertSame($paidInAdvance->getTranslation('name'), $paidInAdvance->getTranslation('distinguishableName'));
 
-        $germanContext = new Context(
+        $zhCnContext = new Context(
             new SystemSource(),
             [],
             Defaults::CURRENCY,
-            [$this->getDeDeLanguageId(), Defaults::LANGUAGE_SYSTEM]
+            [$this->getZhCnLanguageId(), Defaults::LANGUAGE_SYSTEM]
         );
 
         /** @var PaymentMethodCollection $payments */
         $payments = $paymentRepository
-            ->search(new Criteria(), $germanContext)
+            ->search(new Criteria(), $zhCnContext)
             ->getEntities();
 
         $creditCardPayment = $payments->get($creditCardPaymentId);
         static::assertNotNull($creditCardPayment);
-        static::assertSame('Kreditkarte', $creditCardPayment->getDistinguishableName());
+        static::assertSame('信用卡', $creditCardPayment->getDistinguishableName());
 
         /** @var PaymentMethodEntity $invoicePaymentByShopwellPlugin */
         $invoicePaymentByShopwellPlugin = $payments->get($invoicePaymentByShopwellPluginId);
-        static::assertSame('Rechnungskauf | Shopwell (Deutsch)', $invoicePaymentByShopwellPlugin->getDistinguishableName());
+        static::assertSame('发票支付 | Shopwell (中文)', $invoicePaymentByShopwellPlugin->getDistinguishableName());
 
         /** @var PaymentMethodEntity $invoicePaymentByPlugin */
         $invoicePaymentByPlugin = $payments->get($invoicePaymentByPluginId);
-        static::assertSame('Rechnung | Plugin (Deutsch)', $invoicePaymentByPlugin->getDistinguishableName());
+        static::assertSame('发票 | Plugin (中文)', $invoicePaymentByPlugin->getDistinguishableName());
 
         /** @var PaymentMethodEntity $invoicePaymentByApp */
         $invoicePaymentByApp = $payments->get($invoicePaymentByAppId);
-        static::assertSame('Rechnung | App', $invoicePaymentByApp->getDistinguishableName());
+        static::assertSame('发票 | App', $invoicePaymentByApp->getDistinguishableName());
     }
 }

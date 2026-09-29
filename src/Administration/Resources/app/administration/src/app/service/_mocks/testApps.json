@@ -2,14 +2,14 @@
   {
     "name": "testAppA",
     "label": {
-      "de-DE": "test App A deutsch",
+      "zh-CN": "测试 App A",
       "en-GB": "test App A english"
     },
     "modules": [
       {
         "name": "standardModule",
         "label": {
-          "de-DE": "Standardmodul",
+          "zh-CN": "标准模块",
           "en-GB": "Standard module"
         },
         "parent": "sw-catalogue",
@@ -19,7 +19,7 @@
       {
         "name": "noPosition",
         "label": {
-          "de-DE": "Modul ohne Position",
+          "zh-CN": "无位置模块",
           "en-GB": "Module without position"
         },
         "parent": "sw.second.top.level",
@@ -33,14 +33,14 @@
   {
     "name": "testAppB",
     "label": {
-      "de-DE": "test App B deutsch",
+      "zh-CN": "测试 App B",
       "en-GB": "test App B english"
     },
     "modules": [
       {
         "name": "default",
         "label": {
-          "de-DE": "Standard Modul",
+          "zh-CN": "标准模块",
           "en-GB": "Default module"
         },
         "parent": "app-testAppB-structure",
@@ -50,7 +50,7 @@
       {
         "name": "structure",
         "label": {
-          "de-DE": "Struktur Modul",
+          "zh-CN": "结构模块",
           "en-GB": "Structure module"
         },
         "parent": "sw.first.top.level",

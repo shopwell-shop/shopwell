@@ -30,8 +30,8 @@ class Migration1636014089UpdateOrderConfirmationMailTemplates extends MigrationS
             'order_confirmation_mail',
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/de-html.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/zh-html.html.twig'),
         );
 
         $this->updateMail($update, $connection);

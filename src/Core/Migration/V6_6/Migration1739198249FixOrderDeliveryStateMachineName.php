@@ -21,7 +21,7 @@ class Migration1739198249FixOrderDeliveryStateMachineName extends MigrationStep
     use ImportTranslationsTrait;
 
     private const LOCALE_EN_GB = 'en-GB';
-    private const LOCALE_DE_DE = 'de-DE';
+    private const LOCALE_ZH_CN = 'zh-CN';
 
     public function getCreationTimestamp(): int
     {
@@ -30,10 +30,10 @@ class Migration1739198249FixOrderDeliveryStateMachineName extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $germanIds = $this->getLanguageIds($connection, self::LOCALE_DE_DE);
+        $zhCnLangIds = $this->getLanguageIds($connection, self::LOCALE_ZH_CN);
         $englishIds = array_unique(array_diff(
             array_merge($this->getLanguageIds($connection, self::LOCALE_EN_GB), [Defaults::LANGUAGE_SYSTEM]),
-            $germanIds
+            $zhCnLangIds
         ));
 
         $stateMachineId = $connection->fetchOne('SELECT id FROM state_machine WHERE technical_name = :technicalName', ['technicalName' => OrderDeliveryStates::STATE_MACHINE]);
@@ -41,11 +41,11 @@ class Migration1739198249FixOrderDeliveryStateMachineName extends MigrationStep
             return;
         }
 
-        if ($germanIds !== []) {
+        if ($zhCnLangIds !== []) {
             $connection->executeStatement('UPDATE state_machine_translation SET name = :name WHERE state_machine_id = :stateMachineId AND language_id IN (:languageIds) AND updated_at IS NULL', [
-                'name' => 'Versandstatus',
+                'name' => '配送状态',
                 'stateMachineId' => $stateMachineId,
-                'languageIds' => Uuid::fromHexToBytesList($germanIds),
+                'languageIds' => Uuid::fromHexToBytesList($zhCnLangIds),
             ], [
                 'name' => ParameterType::STRING,
                 'stateMachineId' => ParameterType::BINARY,

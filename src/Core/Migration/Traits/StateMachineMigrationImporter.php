@@ -32,7 +32,7 @@ class StateMachineMigrationImporter
 
         return new StateMachineMigration(
             $stateMachineMigration->getTechnicalName(),
-            $stateMachineMigration->getDe(),
+            $stateMachineMigration->getZhCn(),
             $stateMachineMigration->getEn(),
             $states,
             $transitions,
@@ -69,7 +69,7 @@ class StateMachineMigrationImporter
         $this->importTranslation(
             StateMachineTranslationDefinition::ENTITY_NAME,
             new Translations(
-                ['state_machine_id' => $id, 'name' => $stateMachineMigration->getDe()],
+                ['state_machine_id' => $id, 'name' => $stateMachineMigration->getZhCn()],
                 ['state_machine_id' => $id, 'name' => $stateMachineMigration->getEn()]
             ),
             $this->connection
@@ -92,12 +92,12 @@ class StateMachineMigrationImporter
                 throw MigrationException::migrationError('Please provide "technicalName" to all states');
             }
 
-            if (!\array_key_exists('de', $state) || !\array_key_exists('en', $state)) {
-                throw MigrationException::migrationError('Please provide "de" and "en" translations to all states');
+            if (!\array_key_exists('zh', $state) || !\array_key_exists('en', $state)) {
+                throw MigrationException::migrationError('Please provide "zh" and "en" translations to all states');
             }
 
             $technicalName = $state['technicalName'];
-            $de = $state['de'];
+            $zhCn = $state['zh'];
             $en = $state['en'];
 
             $id = $this->getStateMachineStateIdByName($stateMachineId, $technicalName);
@@ -122,7 +122,7 @@ class StateMachineMigrationImporter
             $this->importTranslation(
                 StateMachineStateTranslationDefinition::ENTITY_NAME,
                 new Translations(
-                    ['state_machine_state_id' => $id, 'name' => $de],
+                    ['state_machine_state_id' => $id, 'name' => $zhCn],
                     ['state_machine_state_id' => $id, 'name' => $en]
                 ),
                 $this->connection

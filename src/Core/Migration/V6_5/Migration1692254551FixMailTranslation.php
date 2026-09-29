@@ -31,8 +31,8 @@ class Migration1692254551FixMailTranslation extends MigrationStep
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_AUTHORIZED,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.authorized/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.authorized/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.authorized/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.authorized/de-html.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.authorized/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.authorized/zh-html.html.twig'),
         );
         $this->updateMail($updateAuthorizedMail, $connection);
 
@@ -40,8 +40,8 @@ class Migration1692254551FixMailTranslation extends MigrationStep
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_CHARGEBACK,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.chargeback/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.chargeback/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.chargeback/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.chargeback/de-html.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.chargeback/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.chargeback/zh-html.html.twig'),
         );
         $this->updateMail($updateChargebackMail, $connection);
 
@@ -49,8 +49,8 @@ class Migration1692254551FixMailTranslation extends MigrationStep
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_UNCONFIRMED,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.unconfirmed/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.unconfirmed/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.unconfirmed/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.unconfirmed/de-html.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.unconfirmed/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.unconfirmed/zh-html.html.twig'),
         );
         $this->updateMail($updateUnconfirmedMail, $connection);
     }

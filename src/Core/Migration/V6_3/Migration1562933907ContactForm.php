@@ -43,9 +43,9 @@ class Migration1562933907ContactForm extends MigrationStep
         );
 
         $defaultLangId = $this->getLanguageIdByLocale($connection, 'en-GB');
-        $deLangId = $this->getLanguageIdByLocale($connection, 'de-DE');
+        $zhCnLangId = $this->getLanguageIdByLocale($connection, 'zh-CN');
 
-        if ($defaultLangId !== $deLangId) {
+        if ($defaultLangId !== $zhCnLangId) {
             $connection->insert(
                 'mail_template_type_translation',
                 [
@@ -69,13 +69,13 @@ class Migration1562933907ContactForm extends MigrationStep
             );
         }
 
-        if ($deLangId) {
+        if ($zhCnLangId) {
             $connection->insert(
                 'mail_template_type_translation',
                 [
                     'mail_template_type_id' => $mailTemplateTypeId,
                     'name' => $contactFormEmailTemplate['nameDe'],
-                    'language_id' => $deLangId,
+                    'language_id' => $zhCnLangId,
                     'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 ]
             );

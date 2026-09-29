@@ -22,18 +22,18 @@ class Migration1589379060AddVariantCharacteristicsToEmailTemplates extends Migra
     {
         // implement update
         $enLangId = $this->fetchLanguageId('en-GB', $connection);
-        $deLangId = $this->fetchLanguageId('de-DE', $connection);
+        $zhCnLangId = $this->fetchLanguageId('zh-CN', $connection);
 
         // update email templates
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_ORDER_CONFIRM,
             $connection,
             $enLangId,
-            $deLangId,
+            $zhCnLangId,
             $this->getOrderConfirmationHtmlTemplateEn(),
             $this->getOrderConfirmationPlainTemplateEn(),
-            $this->getOrderConfirmationHTMLTemplateDe(),
-            $this->getOrderConfirmationPlainTemplateDe()
+            $this->getOrderConfirmationHTMLTemplateZhCn(),
+            $this->getOrderConfirmationPlainTemplateZhCn()
         );
     }
 
@@ -46,11 +46,11 @@ class Migration1589379060AddVariantCharacteristicsToEmailTemplates extends Migra
         string $mailTemplateType,
         Connection $connection,
         ?string $enLangId,
-        ?string $deLangId,
+        ?string $zhCnLangId,
         string $getHtmlTemplateEn,
         string $getPlainTemplateEn,
-        string $getHtmlTemplateDe,
-        string $getPlainTemplateDe
+        string $getHtmlTemplateZhCn,
+        string $getPlainTemplateZhCn
     ): void {
         $templateId = $this->fetchSystemMailTemplateIdFromType($connection, $mailTemplateType);
         if ($templateId === null) {
@@ -66,13 +66,13 @@ class Migration1589379060AddVariantCharacteristicsToEmailTemplates extends Migra
                 $getPlainTemplateEn
             );
         }
-        if ($deLangId !== null) {
+        if ($zhCnLangId !== null) {
             $this->updateMailTemplateTranslation(
                 $connection,
                 $templateId,
-                $deLangId,
-                $getHtmlTemplateDe,
-                $getPlainTemplateDe
+                $zhCnLangId,
+                $getHtmlTemplateZhCn,
+                $getPlainTemplateZhCn
             );
         }
     }
@@ -293,25 +293,25 @@ If you have any questions, do not hesitate to contact us.
 However, in case you have purchased without a registration or a customer account, you do not have this option.';
     }
 
-    private function getOrderConfirmationHTMLTemplateDe(): string
+    private function getOrderConfirmationHTMLTemplateZhCn(): string
     {
         return '<div style="font-family:arial; font-size:12px;">
 
 {% set currencyIsoCode = order.currency.isoCode %}
-Hallo {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br>
+您好 {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br>
 <br>
-vielen Dank für Ihre Bestellung im {{ salesChannel.name }} (Nummer: {{order.orderNumber}}) am {{ order.orderDateTime|date }}.<br>
+感谢您在 {{ salesChannel.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。<br>
 <br>
-<strong>Informationen zu Ihrer Bestellung:</strong><br>
+<strong>订单信息：</strong><br>
 <br>
 
 <table width="80%" border="0" style="font-family:Arial, Helvetica, sans-serif; font-size:12px;">
     <tr>
         <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Pos.</strong></td>
-        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Bezeichnung</strong></td>
-        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Menge</strong></td>
-        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Preis</strong></td>
-        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Summe</strong></td>
+        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>商品名称</strong></td>
+        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>数量</strong></td>
+        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>单价</strong></td>
+        <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>金额</strong></td>
     </tr>s
 
     {% for lineItem in order.lineItems %}
@@ -328,7 +328,7 @@ vielen Dank für Ihre Bestellung im {{ salesChannel.name }} (Nummer: {{order.ord
                 {% endfor %}
                 <br/>
             {% endif %}
-          {% if lineItem.payload.productNumber is defined %}Artikel-Nr: {{ lineItem.payload.productNumber|u.wordwrap(80) }}{% endif %}
+          {% if lineItem.payload.productNumber is defined %}商品编号：{{ lineItem.payload.productNumber|u.wordwrap(80) }}{% endif %}
         </td>
         <td style="border-bottom:1px solid #cccccc;">{{ lineItem.quantity }}</td>
         <td style="border-bottom:1px solid #cccccc;">{{ lineItem.unitPrice|currency(currencyIsoCode) }}</td>
@@ -341,24 +341,24 @@ vielen Dank für Ihre Bestellung im {{ salesChannel.name }} (Nummer: {{order.ord
 <p>
     <br>
     <br>
-    Versandkosten: {{order.deliveries.first.shippingCosts.totalPrice|currency(currencyIsoCode) }}<br>
-    Gesamtkosten Netto: {{ order.amountNet|currency(currencyIsoCode) }}<br>
+    运费：{{order.deliveries.first.shippingCosts.totalPrice|currency(currencyIsoCode) }}<br>
+    净额合计：{{ order.amountNet|currency(currencyIsoCode) }}<br>
         {% for calculatedTax in order.price.calculatedTaxes %}
-            {% if order.taxStatus is same as(\'net\') %}zzgl.{% else %}inkl.{% endif %} {{ calculatedTax.taxRate }}% MwSt. {{ calculatedTax.tax|currency(currencyIsoCode) }}<br>
+            {% if order.taxStatus is same as(\'net\') %}另加{% else %}含{% endif %} {{ calculatedTax.taxRate }}% 增值税 {{ calculatedTax.tax|currency(currencyIsoCode) }}<br>
         {% endfor %}
-    <strong>Gesamtkosten Brutto: {{ order.amountTotal|currency(currencyIsoCode) }}</strong><br>
+    <strong>总额合计：{{ order.amountTotal|currency(currencyIsoCode) }}</strong><br>
     <br>
 
-    <strong>Gewählte Zahlungsart:</strong> {{ order.transactions.first.paymentMethod.name }}<br>
+    <strong>支付方式：</strong> {{ order.transactions.first.paymentMethod.name }}<br>
     {{ order.transactions.first.paymentMethod.description }}<br>
     <br>
 
-    <strong>Gewählte Versandart:</strong> {{ delivery.shippingMethod.name }}<br>
+    <strong>配送方式：</strong> {{ delivery.shippingMethod.name }}<br>
     {{ delivery.shippingMethod.description }}<br>
     <br>
 
     {% set billingAddress = order.addresses.get(order.billingAddressId) %}
-    <strong>Rechnungsadresse:</strong><br>
+    <strong>账单地址：</strong><br>
     {{ billingAddress.company }}<br>
     {{ billingAddress.firstName }} {{ billingAddress.lastName }}<br>
     {{ billingAddress.street }} <br>
@@ -366,7 +366,7 @@ vielen Dank für Ihre Bestellung im {{ salesChannel.name }} (Nummer: {{order.ord
     {{ billingAddress.country.name }}<br>
     <br>
 
-    <strong>Lieferadresse:</strong><br>
+    <strong>收货地址：</strong><br>
     {{ delivery.shippingOrderAddress.company }}<br>
     {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}<br>
     {{ delivery.shippingOrderAddress.street }} <br>
@@ -374,59 +374,59 @@ vielen Dank für Ihre Bestellung im {{ salesChannel.name }} (Nummer: {{order.ord
     {{ delivery.shippingOrderAddress.country.name }}<br>
     <br>
     {% if billingAddress.vatId %}
-        Ihre Umsatzsteuer-ID: {{ billingAddress.vatId }}
-        Bei erfolgreicher Prüfung und sofern Sie aus dem EU-Ausland
-        bestellen, erhalten Sie Ihre Ware umsatzsteuerbefreit. <br>
+        您的增值税号：{{ billingAddress.vatId }}
+        验证通过且您从欧盟境外
+        下单，将免税发货。 <br>
     {% endif %}
     <br/>
-    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ path(\'frontend.account.edit-order.page\', { \'orderId\': order.id}) }}
+    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ path(\'frontend.account.edit-order.page\', { \'orderId\': order.id}) }}
     </br>
-    Für Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.
+    如有疑问，欢迎随时联系我们。
 
 </p>
 <br>
 </div>';
     }
 
-    private function getOrderConfirmationPlainTemplateDe(): string
+    private function getOrderConfirmationPlainTemplateZhCn(): string
     {
         return '{% set currencyIsoCode = order.currency.isoCode %}
-Hallo {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+您好 {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-vielen Dank für Ihre Bestellung im {{ salesChannel.name }} (Nummer: {{order.orderNumber}}) am {{ order.orderDateTime|date }}.
+感谢您在 {{ salesChannel.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。
 
-Informationen zu Ihrer Bestellung:
+订单信息：
 
-Pos.   Artikel-Nr.			Beschreibung			Menge			Preis			Summe
+序号 商品编号			商品名称			数量			单价			金额
 {% for lineItem in order.lineItems %}
 {{ loop.index }}      {% if lineItem.payload.productNumber is defined %}{{ lineItem.payload.productNumber|u.wordwrap(80) }}{% endif %}				{{ lineItem.label|u.wordwrap(80) }}{% if lineItem.payload.options|length >= 1 %}, {% for option in lineItem.payload.options %}{{ option.group }}: {{ option.option }}{% if lineItem.payload.options|last != option %}{{ " | " }}{% endif %}{% endfor %}{% endif %}				{{ lineItem.quantity }}			{{ lineItem.unitPrice|currency(currencyIsoCode) }}			{{ lineItem.totalPrice|currency(currencyIsoCode) }}
 {% endfor %}
 
 {% set delivery = order.deliveries.first %}
 
-Versandkosten: {{order.deliveries.first.shippingCosts.totalPrice|currency(currencyIsoCode) }}
-Gesamtkosten Netto: {{ order.amountNet|currency(currencyIsoCode) }}
+运费：{{order.deliveries.first.shippingCosts.totalPrice|currency(currencyIsoCode) }}
+净额合计：{{ order.amountNet|currency(currencyIsoCode) }}
     {% for calculatedTax in order.price.calculatedTaxes %}
-        {% if order.taxStatus is same as(\'net\') %}zzgl.{% else %}inkl.{% endif %} {{ calculatedTax.taxRate }}% MwSt. {{ calculatedTax.tax|currency(currencyIsoCode) }}
+        {% if order.taxStatus is same as(\'net\') %}另加{% else %}含{% endif %} {{ calculatedTax.taxRate }}% 增值税 {{ calculatedTax.tax|currency(currencyIsoCode) }}
     {% endfor %}
-Gesamtkosten Brutto: {{ order.amountTotal|currency(currencyIsoCode) }}
+总额合计：{{ order.amountTotal|currency(currencyIsoCode) }}
 
 
-Gewählte Zahlungsart: {{ order.transactions.first.paymentMethod.name }}
+支付方式：{{ order.transactions.first.paymentMethod.name }}
 {{ order.transactions.first.paymentMethod.description }}
 
-Gewählte Versandart: {{ delivery.shippingMethod.name }}
+配送方式：{{ delivery.shippingMethod.name }}
 {{ delivery.shippingMethod.description }}
 
 {% set billingAddress = order.addresses.get(order.billingAddressId) %}
-Rechnungsadresse:
+账单地址：
 {{ billingAddress.company }}
 {{ billingAddress.firstName }} {{ billingAddress.lastName }}
 {{ billingAddress.street }}
 {{ billingAddress.zipcode }} {{ billingAddress.city }}
 {{ billingAddress.country.name }}
 
-Lieferadresse:
+收货地址：
 {{ delivery.shippingOrderAddress.company }}
 {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}
 {{ delivery.shippingOrderAddress.street }}
@@ -434,12 +434,12 @@ Lieferadresse:
 {{ delivery.shippingOrderAddress.country.name }}
 
 {% if billingAddress.vatId %}
-Ihre Umsatzsteuer-ID: {{ billingAddress.vatId }}
-Bei erfolgreicher Prüfung und sofern Sie aus dem EU-Ausland
-bestellen, erhalten Sie Ihre Ware umsatzsteuerbefreit.
+您的增值税号：{{ billingAddress.vatId }}
+验证通过且您从欧盟境外
+下单，将免税发货。
 {% endif %}
 
-Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ path(\'frontend.account.edit-order.page\', { \'orderId\': order.id}) }}
-Für Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.';
+您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ path(\'frontend.account.edit-order.page\', { \'orderId\': order.id}) }}
+如有疑问，欢迎随时联系我们。';
     }
 }

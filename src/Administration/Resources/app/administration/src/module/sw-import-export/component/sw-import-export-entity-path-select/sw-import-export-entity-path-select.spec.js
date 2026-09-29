@@ -372,7 +372,7 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
         await flushPromises();
 
         await wrapper.setProps({
-            languages: [{ locale: { code: 'en-GB' } }, { locale: { code: 'de-DE' } }, { locale: { code: 'DEFAULT' } }],
+            languages: [{ locale: { code: 'en-GB' } }, { locale: { code: 'zh-CN' } }, { locale: { code: 'DEFAULT' } }],
         });
 
         const actual = wrapper.vm.getTranslationProperties('', mockProperties);
@@ -391,16 +391,16 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
                 value: 'translations.en-GB.description',
             },
             {
-                label: 'translations.de-DE.metaDescription',
-                value: 'translations.de-DE.metaDescription',
+                label: 'translations.zh-CN.metaDescription',
+                value: 'translations.zh-CN.metaDescription',
             },
             {
-                label: 'translations.de-DE.keywords',
-                value: 'translations.de-DE.keywords',
+                label: 'translations.zh-CN.keywords',
+                value: 'translations.zh-CN.keywords',
             },
             {
-                label: 'translations.de-DE.description',
-                value: 'translations.de-DE.description',
+                label: 'translations.zh-CN.description',
+                value: 'translations.zh-CN.description',
             },
             {
                 label: 'translations.DEFAULT.metaDescription',
@@ -425,7 +425,7 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
 
         await wrapper.setProps({
             value: 'cover.media.',
-            languages: [{ locale: { code: 'en-GB' } }, { locale: { code: 'de-DE' } }, { locale: { code: 'DEFAULT' } }],
+            languages: [{ locale: { code: 'en-GB' } }, { locale: { code: 'zh-CN' } }, { locale: { code: 'DEFAULT' } }],
         });
 
         const actual = wrapper.vm.visibleResults;
@@ -441,8 +441,8 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
                 value: 'cover.media.translations.DEFAULT.title',
             },
             {
-                label: 'cover.media.translations.de-DE.title',
-                value: 'cover.media.translations.de-DE.title',
+                label: 'cover.media.translations.zh-CN.title',
+                value: 'cover.media.translations.zh-CN.title',
             },
             {
                 label: 'cover.media.translations.en-GB.title',
@@ -458,7 +458,7 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
 
         await wrapper.setProps({
             value: 'parent.parent.translations.name',
-            languages: [{ locale: { code: 'en-GB' } }, { locale: { code: 'de-DE' } }, { locale: { code: 'DEFAULT' } }],
+            languages: [{ locale: { code: 'en-GB' } }, { locale: { code: 'zh-CN' } }, { locale: { code: 'DEFAULT' } }],
         });
 
         const actual = wrapper.vm.visibleResults;
@@ -469,8 +469,8 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
                 value: 'parent.parent.translations.en-GB.name',
             },
             {
-                label: 'parent.parent.translations.de-DE.name',
-                value: 'parent.parent.translations.de-DE.name',
+                label: 'parent.parent.translations.zh-CN.name',
+                value: 'parent.parent.translations.zh-CN.name',
             },
             {
                 label: 'parent.parent.translations.DEFAULT.name',

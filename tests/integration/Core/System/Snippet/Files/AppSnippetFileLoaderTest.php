@@ -80,14 +80,14 @@ class AppSnippetFileLoaderTest extends TestCase
 
         static::assertCount(2, $collection);
 
-        $snippetFile = $collection->getSnippetFilesByIso('de')[0];
-        static::assertSame('storefront.de', $snippetFile->getName());
+        $snippetFile = $collection->getSnippetFilesByIso('zh')[0];
+        static::assertSame('storefront.zh', $snippetFile->getName());
         static::assertStringStartsWith($this->mirrorDirectory . '/', $snippetFile->getPath());
         static::assertFileEquals(
-            __DIR__ . '/_fixtures/Apps/AppWithSnippets/Resources/snippet/storefront.de.json',
+            __DIR__ . '/_fixtures/Apps/AppWithSnippets/Resources/snippet/storefront.zh.json',
             $snippetFile->getPath()
         );
-        static::assertSame('de', $snippetFile->getIso());
+        static::assertSame('zh', $snippetFile->getIso());
         static::assertSame('Shopwell', $snippetFile->getAuthor());
         static::assertFalse($snippetFile->isBase());
 
@@ -124,14 +124,14 @@ class AppSnippetFileLoaderTest extends TestCase
 
         static::assertCount(2, $collection);
 
-        $snippetFile = $collection->getSnippetFilesByIso('de')[0];
-        static::assertSame('storefront.de', $snippetFile->getName());
+        $snippetFile = $collection->getSnippetFilesByIso('zh')[0];
+        static::assertSame('storefront.zh', $snippetFile->getName());
         static::assertStringStartsWith($this->mirrorDirectory . '/', $snippetFile->getPath());
         static::assertFileEquals(
-            __DIR__ . '/_fixtures/Apps/AppWithBaseSnippets/Resources/snippet/storefront.de.base.json',
+            __DIR__ . '/_fixtures/Apps/AppWithBaseSnippets/Resources/snippet/storefront.zh.base.json',
             $snippetFile->getPath()
         );
-        static::assertSame('de', $snippetFile->getIso());
+        static::assertSame('zh', $snippetFile->getIso());
         static::assertSame('Shopwell', $snippetFile->getAuthor());
         static::assertTrue($snippetFile->isBase());
 

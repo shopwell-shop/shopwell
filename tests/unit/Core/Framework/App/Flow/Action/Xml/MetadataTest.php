@@ -21,11 +21,11 @@ class MetadataTest extends TestCase
     <name>mail.send</name>
     <badge>app</badge>
     <label>Send mail</label>
-    <label lang="de-DE">Mail senden</label>
+    <label lang="zh-CN">发送邮件</label>
     <headline>Mail</headline>
-    <headline lang="de-DE">Mail DE</headline>
+    <headline lang="zh-CN">邮件 ZH</headline>
     <description>Send mail to customer</description>
-    <description lang="de-DE">Mail an Kunden senden</description>
+    <description lang="zh-CN">向客户发送邮件</description>
     <url>https://example.com/flow-action</url>
     <icon>resource/mail</icon>
     <sw-icon>sw-mail</sw-icon>
@@ -39,11 +39,11 @@ XML));
             [
                 'label' => [
                     'en-GB' => 'Send mail',
-                    'de-DE' => 'Mail senden',
+                    'zh-CN' => '发送邮件',
                 ],
                 'description' => [
                     'en-GB' => 'Send mail to customer',
-                    'de-DE' => 'Mail an Kunden senden',
+                    'zh-CN' => '向客户发送邮件',
                 ],
                 'name' => 'mail.send',
                 'url' => 'https://example.com/flow-action',
@@ -52,7 +52,7 @@ XML));
                 'swIcon' => 'sw-mail',
                 'headline' => [
                     'en-GB' => 'Mail',
-                    'de-DE' => 'Mail DE',
+                    'zh-CN' => '邮件 ZH',
                 ],
                 'delayable' => true,
                 'badge' => 'app',

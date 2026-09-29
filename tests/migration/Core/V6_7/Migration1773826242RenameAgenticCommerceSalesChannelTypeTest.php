@@ -77,8 +77,8 @@ class Migration1773826242RenameAgenticCommerceSalesChannelTypeTest extends TestC
             static::assertSame('Agentic Commerce', $translation['name']);
             static::assertSame('Shopwell', $translation['manufacturer']);
 
-            if ($translation['code'] === 'de-DE') {
-                static::assertSame('Verkaufskanal für Agentic-Commerce-Plattformen', $translation['description']);
+            if ($translation['code'] === 'zh-CN') {
+                static::assertSame('面向 Agentic 商务平台的销售渠道', $translation['description']);
 
                 continue;
             }

@@ -3,7 +3,7 @@
     {
       "name": "my-first-block",
       "label": {
-        "de-DE": "Erster Block einer App",
+        "zh-CN": "应用的第一个区块",
         "en-GB": "First block from app"
       },
       "slots": {
@@ -63,7 +63,7 @@
     {
       "name": "my-second-block",
       "label": {
-        "de-DE": "Zweiter Block einer App",
+        "zh-CN": "应用的第二个区块",
         "en-GB": "Second block from app"
       },
       "slots": {

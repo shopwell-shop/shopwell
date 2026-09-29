@@ -27,11 +27,11 @@ class McpToolTest extends TestCase
         static::assertSame('https://app.example.com/mcp/sync', $tool->getUrl());
         static::assertSame([
             'en-GB' => 'Sync Orders',
-            'de-DE' => 'Bestellungen synchronisieren',
+            'zh-CN' => '同步订单',
         ], $tool->getLabel());
         static::assertSame([
             'en-GB' => 'Synchronize orders from external ERP',
-            'de-DE' => 'Bestellungen vom externen ERP synchronisieren',
+            'zh-CN' => '从外部 ERP 同步订单',
         ], $tool->getDescription());
     }
 
@@ -86,7 +86,7 @@ class McpToolTest extends TestCase
         $tool = McpTool::fromArray([
             'name' => 'my-tool',
             'url' => 'https://example.com/mcp',
-            'label' => ['en-GB' => 'My Tool', 'de-DE' => 'Mein Werkzeug'],
+            'label' => ['en-GB' => 'My Tool', 'zh-CN' => '我的工具'],
             'description' => ['en-GB' => 'Desc'],
         ]);
 
@@ -95,7 +95,7 @@ class McpToolTest extends TestCase
         static::assertSame('my-tool', $data['name']);
         static::assertSame('https://example.com/mcp', $data['url']);
         static::assertSame('My Tool', $data['label']['en-GB']);
-        static::assertSame('Mein Werkzeug', $data['label']['de-DE']);
+        static::assertSame('我的工具', $data['label']['zh-CN']);
         static::assertSame('Desc', $data['description']['en-GB']);
     }
 

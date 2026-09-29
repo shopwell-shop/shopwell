@@ -102,7 +102,7 @@ class Migration1768545320RevocationRequestCmsFormTest extends TestCase
         }
     }
 
-    public function testUpdateSkipsDuplicateTranslationsWhenGermanUsesSystemLanguage(): void
+    public function testUpdateSkipsDuplicateTranslationsWhenChineseUsesSystemLanguage(): void
     {
         $this->connection->beginTransaction();
 
@@ -112,19 +112,19 @@ class Migration1768545320RevocationRequestCmsFormTest extends TestCase
             $systemLocaleByteId = $this->getLocaleIdByLanguageId(Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM));
 
             $enLocaleByteId = $this->getLocaleIdByCode('en-GB');
-            $deLocaleByteId = $this->getLocaleIdByCode('de-DE');
+            $zhCnLocaleByteId = $this->getLocaleIdByCode('zh-CN');
 
             static::assertIsString($enLocaleByteId);
-            static::assertIsString($deLocaleByteId);
+            static::assertIsString($zhCnLocaleByteId);
 
             // ensure en-GB locale is not there
             $this->updateLocaleCode($enLocaleByteId, 'old-en-GB');
 
-            if ($systemLocaleByteId !== $deLocaleByteId) {
-                // ensure de-DE locale is not there
-                $this->updateLocaleCode($deLocaleByteId, 'old-de-DE');
-                // ensure system locale is de-DE
-                $this->updateLocaleCode($systemLocaleByteId, 'de-DE');
+            if ($systemLocaleByteId !== $zhCnLocaleByteId) {
+                // ensure the zh-CN locale is not there
+                $this->updateLocaleCode($zhCnLocaleByteId, 'old-zh-CN');
+                // ensure system locale is zh-CN
+                $this->updateLocaleCode($systemLocaleByteId, 'zh-CN');
             }
 
             $migration = new Migration1768545320RevocationRequestCmsForm();
@@ -150,9 +150,9 @@ class Migration1768545320RevocationRequestCmsFormTest extends TestCase
 
         try {
             $this->deletePageSectionBlockAndSlot();
-            $deChLanguageByteId = $this->createLanguage('de-CH');
+            $zhHkLanguageByteId = $this->createLanguage('zh-HK');
             $enUsLanguageByteId = $this->createLanguage('en-US');
-            $frChLanguageByteId = $this->createLanguage('fr-CH', 'de-LI');
+            $frChLanguageByteId = $this->createLanguage('fr-CH', 'fr-LI');
 
             $migration = new Migration1768545320RevocationRequestCmsForm();
             $migration->update($this->connection);
@@ -163,8 +163,8 @@ class Migration1768545320RevocationRequestCmsFormTest extends TestCase
             static::assertIsArray($pageTranslations);
             $this->assertTranslationsForAllLanguages($pageTranslations);
 
-            $deChPageTranslation = $this->findTranslationByLanguageId($deChLanguageByteId, $pageTranslations);
-            static::assertSame(Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['de_name'], $deChPageTranslation['name']);
+            $zhHkPageTranslation = $this->findTranslationByLanguageId($zhHkLanguageByteId, $pageTranslations);
+            static::assertSame(Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['zh_name'], $zhHkPageTranslation['name']);
 
             $enUsPageTranslation = $this->findTranslationByLanguageId($enUsLanguageByteId, $pageTranslations);
             static::assertSame(Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['en_name'], $enUsPageTranslation['name']);
@@ -179,7 +179,7 @@ class Migration1768545320RevocationRequestCmsFormTest extends TestCase
             static::assertIsArray($slotTranslations);
             $this->assertTranslationsForAllLanguages($slotTranslations);
 
-            $this->findTranslationByLanguageId($deChLanguageByteId, $slotTranslations);
+            $this->findTranslationByLanguageId($zhHkLanguageByteId, $slotTranslations);
             $this->findTranslationByLanguageId($enUsLanguageByteId, $slotTranslations);
             $this->findTranslationByLanguageId($frChLanguageByteId, $slotTranslations);
         } finally {

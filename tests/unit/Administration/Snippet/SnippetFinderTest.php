@@ -317,7 +317,7 @@ class SnippetFinderTest extends TestCase
             new LanguageDtoCollection([new LanguageDto('es-ES', 'Español')]),
             new PluginMappingCollection(),
             new Uri('http://localhost:8000/metadata.json'),
-            ['de-DE'],
+            ['zh-CN'],
         );
         $loader = $this->getTranslationLoader($config);
 
@@ -342,7 +342,7 @@ class SnippetFinderTest extends TestCase
             new LanguageDtoCollection([new LanguageDto('es-ES', 'Español')]),
             new PluginMappingCollection(),
             new Uri('http://localhost:8000/metadata.json'),
-            ['de-DE'],
+            ['zh-CN'],
         );
         $loader = $this->getTranslationLoader($config);
         $this->createSnippetFixtures($this->filesystem, $loader);
@@ -372,7 +372,7 @@ class SnippetFinderTest extends TestCase
             new LanguageDtoCollection([new LanguageDto('es-ES', 'Español')]),
             new PluginMappingCollection(),
             new Uri('http://localhost:8000/metadata.json'),
-            ['de-DE'],
+            ['zh-CN'],
         );
         $loader = $this->getTranslationLoader($config);
         $this->createSnippetFixtures($this->filesystem, $loader);
@@ -412,7 +412,7 @@ class SnippetFinderTest extends TestCase
             new LanguageDtoCollection([new LanguageDto('es-ES', 'Español')]),
             new PluginMappingCollection(),
             new Uri('http://localhost:8000/metadata.json'),
-            ['de-DE'],
+            ['zh-CN'],
         );
         $loader = $this->getTranslationLoader($config);
         $this->createSnippetFixtures($this->filesystem, $loader);
@@ -449,7 +449,7 @@ class SnippetFinderTest extends TestCase
             new LanguageDtoCollection([new LanguageDto('es-ES', 'Español')]),
             new PluginMappingCollection(),
             new Uri('http://localhost:8000/metadata.json'),
-            ['de-DE'],
+            ['zh-CN'],
         );
         $loader = $this->getTranslationLoader($config);
         $this->createSnippetFixtures($this->filesystem, $loader);
@@ -540,7 +540,7 @@ class SnippetFinderTest extends TestCase
             new LanguageDtoCollection([new LanguageDto('en-GB', 'English (UK')]),
             new PluginMappingCollection(),
             new Uri('http://localhost:8000/metadata.json'),
-            ['de-DE'],
+            ['zh-CN'],
         );
 
         $kernelMock = $kernel ?? $this->getKernelMock();

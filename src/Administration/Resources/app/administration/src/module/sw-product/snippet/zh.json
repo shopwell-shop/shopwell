@@ -1,0 +1,591 @@
+{
+  "sw-product": {
+    "type": {
+      "physical": "实体商品",
+      "digital": "数字商品"
+    },
+    "visibility": {
+      "textHeadline": "按销售渠道设置可见性",
+      "placeholderVisibility": "分配销售渠道 ...",
+      "columnSalesChannel": "销售渠道",
+      "columnAll": "可见",
+      "columnSearchOnly": "在商品列表中隐藏",
+      "columnLinkOnly": "在商品列表和搜索中隐藏",
+      "visibilityModalDescription": "使用「在商品列表中隐藏」选项后，商品将在概览列表、商品滑块和关联商品中隐藏。使用「在商品列表和搜索中隐藏」后，商品也不会再通过搜索显示。隐藏的商品仍可通过 URL 访问。",
+      "linkAdvancedVisibility": "设置所选销售渠道的可见性",
+      "labelVisibility": "可见性",
+      "bodyVisibility": "添加需要展示该商品的销售渠道。你也可以通过下方链接进一步设置商品在各店铺前台销售渠道中的可见性。",
+      "errorMessage": "销售渠道的默认配置无法加载。"
+    },
+    "general": {
+      "mainMenuItemGeneral": "商品",
+      "mainMenuItemList": "商品",
+      "mainMenuItemOverview": "概览",
+      "mainMenuItemAdd": "新建商品",
+      "descriptionTextModule": "商品管理",
+      "placeholderSearchBar": "搜索商品…",
+      "inheritanceModuleName": "此商品",
+      "backToParent": "返回变体总览",
+      "backToGeneralOverview": "返回总览",
+      "cloneSuffix": "变体",
+      "cloneNotice": "商品变体正在复制。如果该过程被中断，可能无法完整复制全部变体。此时你可以在新商品中重新生成变体。",
+      "cloneTitle": "复制变体",
+      "tooltipModeSettings": "模式设置",
+      "textAdvancedMode": "高级模式"
+    },
+    "basicForm": {
+      "labelTitle": "名称",
+      "labelDescription": "描述",
+      "hintCoverImageDescription": "描述开头请用一两句话说明封面图中展示的商品。这有助于提升无障碍体验和商品列表中的展示效果。",
+      "labelProductNumber": "商品编号",
+      "labelManufacturer": "制造商",
+      "labelManufacturerCreation": "制造商",
+      "placeholderName": "输入商品名称…",
+      "placeholderDescriptionLong": "输入商品描述…",
+      "placeholderId": "输入商品编号…",
+      "placeholderManufacturer": "输入商品制造商…",
+      "productNumberHelpText": {
+        "label": "商品编号有助于识别和管理商品。为此，建议为商品编号采用统一的结构。你可以在 {link} 中定义商品编号模板。",
+        "linkText": "设置"
+      },
+      "highlightHelpText": {
+        "label": "推荐商品会在所有商品列表中带有彩色标签并显示「推荐」字样。你可以在{themeLink}设置中通过「提示」选项修改标签颜色，也可以编辑对应的{snippetLink}来修改标签文字。",
+        "themeLinkText": "主题",
+        "snippetLinkText": "文本模块"
+      }
+    },
+    "categoryForm": {
+      "labelCategory": "分类",
+      "placeholderCategory": "选择分类…",
+      "placeholderTags": "输入标签 ...",
+      "labelSearchKeyword": "搜索关键词",
+      "placeholderSearchKeywords": "输入能检索到这些商品的关键词 ...",
+      "textAddSearchKeyword": "点击此处添加关键词",
+      "textEnterValidSearchKeyword": "可搜索关键词",
+      "helpTextSearchKeyword": "店面中的商品也可通过这些词找到。",
+      "helpTextTags": "标签仅供内部使用。它们可用于商品分组、应用规则，或作为自定义搜索词。",
+      "categoriesTitle": "分类和标签",
+      "descriptionCategories": "添加分类后，商品即可通过店铺前台主菜单或 API 连接被找到。请确保你所选的分类在对应销售渠道中可用且处于启用状态。",
+      "descriptionTags": "标签可帮助你更快找到商品，便于商品分组，还可配合规则构建器实现任务自动化。"
+    },
+    "priceForm": {
+      "labelTaxRate": "税率",
+      "labelPurchasePriceGross": "采购价（含税）",
+      "labelPurchasePriceNet": "采购价（不含税）",
+      "labelUnit": "商品单位",
+      "labelPurchaseUnit": "销售单位",
+      "labelReferenceUnit": "基本单位",
+      "labelPackUnit": "包装单位",
+      "labelPackUnitPlural": "包装单位（复数）",
+      "placeholderTaxRate": "选择税率 ...",
+      "placeholderPurchasePriceGross": "输入采购价 ...",
+      "placeholderPriceGross": "输入含税价格 ...",
+      "placeholderPriceNet": "输入不含税价格 ...",
+      "placeholderPurchaseUnit": "输入销售单位 ...",
+      "placeholderReferenceUnit": "输入基本单位 ...",
+      "placeholderPackUnit": "输入包装单位 ...",
+      "placeholderPackUnitPlural": "输入包装单位（复数） ...",
+      "optionLitre": "升",
+      "optionKilogram": "千克",
+      "optionMetre": "米",
+      "taxRateHelpText": {
+        "label": "调整适用的增值税税率。大多数国家已预置一个标准增值税税率和最多两个优惠税率。如果你已启用税务服务商，此处设置的税率可能被覆盖。你可以在 {link} 中查看具体税率，也可调整税率、新增税率并分配国家。",
+        "linkText": "设置"
+      }
+    },
+    "seoForm": {
+      "labelMetaTitle": "Meta 标题",
+      "labelMetaDescription": "Meta 描述",
+      "labelKeywords": "关键词",
+      "labelCanonicalUrlMode": "为所有变体使用相同的规范 URL。",
+      "placeholderMetaTitle": "输入 Meta 标题…",
+      "labelCanonicalProduct": "规范 URL 的变体",
+      "placeholderMetaDescription": "输入 Meta 描述…",
+      "placeholderKeywords": "输入一个或多个关键词...",
+      "placeholderCanonicalProduct": "选择变体 ...",
+      "helpTextMetaTitle": "Meta 标题是最重要的 SEO 元素，且每个页面都应唯一。长度请控制在 56 个字符以内，关键词最好放在最前面。",
+      "helpTextMetaDescription": "Meta 描述用于向客户确认他们来对了地方，能吸引点击、建立信任并引导行动。长度请控制在 155 个字符以内，Shopwell 允许的最大长度为 255 个字符。",
+      "helpTextKeywords": "可在此选填 3 到 5 个关键词，用于检索你的商品。",
+      "titleOpenGraph": "Open Graph",
+      "labelOpenGraphTitle": "OG 标题",
+      "labelOpenGraphDescription": "OG 描述",
+      "labelOpenGraphImage": "OG 图片",
+      "placeholderOpenGraphTitle": "输入 Open Graph 标题 ...",
+      "placeholderOpenGraphDescription": "输入 Open Graph 描述 ...",
+      "helpTextOpenGraphTitle": "Open Graph 标题用于在社交媒体上分享商品时显示。留空时将使用 Meta 标题作为替代。",
+      "helpTextOpenGraphDescription": "Open Graph 描述用于在社交媒体分享商品时显示。若为空，则回退使用 Meta 描述。"
+    },
+    "settingsForm": {
+      "labelCreatedAt": "创建日期",
+      "labelReleaseDate": "发布日期",
+      "labelWidth": "宽度",
+      "labelHeight": "高度",
+      "labelLength": "长度",
+      "labelWeight": "重量",
+      "labelMinPurchase": "最小购买量",
+      "labelMaxPurchase": "最大购买量",
+      "labelEan": "GTIN/EAN",
+      "labelManufacturerNumber": "制造商商品编号",
+      "labelGuaranteeDescription": "该标识代表以年表示的商业耐久性保证。该保证由生产商免费提供，覆盖全部商品且期限超过两年。",
+      "labelGuaranteeMonths": "厂商保修时长（月）",
+      "helpTextGuaranteeMonths": "介于 30 到 600，步长为 6。",
+      "labelGuaranteeConfirmed": "在店面显示标签",
+      "helpTextGuaranteeConfirmed": "只有在设置了有效的保修期、制造商和制造商商品编号后，才会显示保修标签。",
+      "labelStock": "库存",
+      "labelActive": "启用",
+      "labelShippingFree": "免运费",
+      "labelMarkAsTopseller": "标记商品为推荐",
+      "labelIsCloseout": "清仓",
+      "isCloseoutHelpText": "无法补货。",
+      "labelDeliveryTime": "配送时间",
+      "labelRestockTime": "补货时间（天）",
+      "placeholderDeliveryTime": "输入配送时间 ...",
+      "placeholderCreatedAt": "输入创建日期…",
+      "placeholderReleaseDate": "输入起始日期…",
+      "placeholderWidth": "例如 500 ...",
+      "placeholderHeight": "例如 200 ...",
+      "placeholderLength": "例如 100 ...",
+      "placeholderWeight": "例如 0.4 ...",
+      "placeholderTime": "例如 31 ...",
+      "placeholderStock": "输入库存 ...",
+      "placeholderMinPurchase": "最小购买量 ...",
+      "placeholderMaxPurchase": "最大购买量 ...",
+      "placeholderPurchaseSteps": "输入购买步长 ...",
+      "placeholderRestockTime": "输入补货天数 ...",
+      "placeholderEan": "输入 GTIN/EAN ...",
+      "placeholderManufacturerNumber": "输入商品编号 ...",
+      "placeholderGuaranteeMonths": "例如 30、36 或 42 个月…",
+      "noticeGuaranteeRequirements": "只有在填写以下信息后，标签才会在店面显示：",
+      "noticeGuaranteeRequirementMonths": "{label}：{minimum} 到 {maximum} 个月，步长为 {step}。",
+      "noticeGuaranteeRequirementManufacturer": "{label}：位于卡片 “{card}”。",
+      "noticeGuaranteeRequirementManufacturerNumber": "{label}：位于卡片 “{card}”。",
+      "labelAvailableStock": "可用库存",
+      "labelPurchaseSteps": "购买步长"
+    },
+    "measurementForm": {
+      "description": "以你偏好的单位输入商品尺寸。Shopwell 会按 {link} 为客户换算。",
+      "linkText": "销售渠道设置"
+    },
+    "packagingForm": {
+      "description": "设置客户在店面中看到的销售单位和包装详情。",
+      "labelProductUnit": "商品单位",
+      "placeholderSellingUnit": "例如 6 ...",
+      "placeholderProductUnit": "选择商品单位...",
+      "placeholderBasicUnit": "例如 1 ...",
+      "placeholderPackagingUnit": "例如 瓶 ...",
+      "placeholderPackagingUnitPlural": "例如 瓶 ...",
+      "helpTextBasicUnit": "计算商品单位价格所必需。需输入的基本值取决于所选的计量单位。<ul><li>单位价格 =（商品价格 × 基本单位）/ 销售单位。</li></ul>当销售单位与基本单位的值相同时，不显示单位价格。",
+      "helpTextPackUnit": "包装类型：如瓶子、箱子、罐子 ...",
+      "helpTextPackUnitPlural": "包装类型（复数）：如瓶子、箱子、罐子 ...",
+      "helpTextSellingUnit": "计算商品单位价格所必需。需输入的值取决于所选的计量单位。<ul><li>单位价格 =（商品价格 × 基本单位）/ 销售单位。</li></ul>当销售单位与基本单位的值相同时，不显示单位价格。"
+    },
+    "detailBase": {
+      "cardTitleDeliverabilityInfo": "可配送性",
+      "cardTitleProductInfo": "基本信息",
+      "cardTitleAssignment": "分配",
+      "cardTitlePrices": "价格",
+      "cardTitleSettings": "标识",
+      "cardTitleGuarantee": "保修（GARAN 标识）",
+      "cardTitlePackaging": "尺寸与包装",
+      "linkAdvancedPrices": "高级价格视图",
+      "linkMaintainCurrencyPrices": "货币相关价格",
+      "cardTitleReviews": "评价",
+      "cardTitleMedia": "媒体",
+      "cardSubtitleMedia": "将文件添加到商品的媒体库。",
+      "labelContextMenuAddToProduct": "添加到商品",
+      "cardTitleSeo": "SEO",
+      "cardTitleVisibilityStructure": "可见性结构",
+      "cardTitleDownloads": "文件",
+      "cardSubtitleDownloads": "将文件添加到你的数字商品。",
+      "downloadsLabel": "文件上传",
+      "downloadsContextMenuDownloadFile": "下载文件",
+      "manageStockLabel": "管理库存",
+      "manageStockTooltip": "若不管理库存，该数字商品可用于无限次交易。"
+    },
+    "specifications": {
+      "cardTitleMeasurement": "商品尺寸",
+      "cardTitleSellingPackaging": "销售与包装",
+      "cardTitleEssentialCharacteristics": "基本特征",
+      "cardTitleCustomFields": "自定义字段",
+      "cardTitleProperties": "属性",
+      "cardTitleCustomProduct": "自定义商品",
+      "cardTitleDownloads": "文件"
+    },
+    "seo": {
+      "cardTitleSeo": "SEO"
+    },
+    "reviews": {
+      "cardTitleReviews": "评价"
+    },
+    "reviewForm": {
+      "labelStatus": "已审核",
+      "labelCreatedAt": "创建于",
+      "labelPoints": "星级",
+      "labelTitle": "标题",
+      "modal": {
+        "confirmTitle": "删除评价",
+        "confirmText": "确定要删除该评价吗？"
+      },
+      "messageEmptyTitle": "商品尚未评价",
+      "messageEmptySubline": "改为查看其他商品的评价。",
+      "emptyStateButton": "前往评价"
+    },
+    "prices": {
+      "cardTitlePriceRule": "新建价格规则",
+      "placeholderRule": "请选择...",
+      "placeholderQuantityEnd": "不限 ...",
+      "buttonPriceRuleDelete": "删除价格规则",
+      "buttonPriceRuleDuplicate": "复制价格规则",
+      "buttonPriceRuleCurrencyAdd": "添加货币",
+      "buttonAddAdditionalPriceRule": "添加价格层级",
+      "buttonAddAdditionalPriceRuleGroup": "添加价格规则",
+      "textCurrencyDefault": "（默认）",
+      "textPriceRuleForCurrency": "货币价格规则",
+      "columnQuantityStart": "数量从 ...",
+      "columnQuantityEnd": "至 ...",
+      "columnPrice": "价格（含税 / 不含税）",
+      "settingShowListPrices": "显示划线价",
+      "toolbarLabel": "规则"
+    },
+    "list": {
+      "textProductOverview": "商品",
+      "buttonAddProduct": "新建商品",
+      "buttonAddDownloadableProduct": "新建数字商品",
+      "columnName": "名称",
+      "columnProductNumber": "商品编号",
+      "columnManufacturer": "制造商",
+      "columnActive": "启用",
+      "columnPrice": "价格",
+      "columnInStock": "有货",
+      "columnAvailableStock": "可用",
+      "columnCreatedAt": "添加时间",
+      "columnUpdatedAt": "更新于",
+      "columnReleaseDate": "发布日期",
+      "columnVisibilities": "销售渠道",
+      "columnCategories": "分类",
+      "columnTags": "标签",
+      "columnActions": "操作",
+      "columnMedia": "媒体",
+      "columnSales": "销售",
+      "columnDownloadsTooltip": "数字商品必须至少有一个文件。",
+      "contextMenuShowVariants": "查看变体",
+      "variantIndicatorTooltip": "此商品包含变体。",
+      "variantModalTitle": "\"{productName}\" 的变体",
+      "openMainProduct": "打开 \"{productName}\"",
+      "variantModalInlineEditProductNamePlaceholder": "输入变体名称…",
+      "variantModalInlineEditStockPlaceholder": "输入库存…",
+      "variantGridEmptyStateSubline": "未找到变体",
+      "multipleVariantsDeleteModalText": "确定要删除 {amount} 个变体吗？",
+      "multipleVariantsDeleteModalSubline": "这可能需要几秒钟。",
+      "notificationVariantDeleteSuccess": "\"{variantName}\" 已成功删除。 | 已成功删除 {amount} 个变体。",
+      "notificationVariantDeleteError": "删除 \"{variantName}\" 时出错。 | 删除多个变体时出错。",
+      "notificationVariantDeleteErrorCanonicalUrl": "\"{variantName}\" 无法删除，因为它被用作规范 URL 模板。| 变体无法删除，因为其中一个被用作规范 URL 模板。",
+      "notificationVariantSaveSuccess": "\"{variantName}\" 已成功保存。",
+      "variantDeleteModalTitle": "删除变体",
+      "variantDeleteModalText": "确定要删除变体 \"{variantName}\" 吗？",
+      "messageEmpty": "暂无商品",
+      "textDeleteConfirm": "确定要删除商品 \"{name}\" 吗？ | 确定要删除这 {count} 个商品吗？",
+      "titleSidebarItemRefresh": "刷新",
+      "messageSaveSuccess": "商品 \"{name}\" 已成功保存。"
+    },
+    "detail": {
+      "textHeadline": "新建商品",
+      "buttonSaveDuplicate": "保存并复制",
+      "buttonSaveAndNew": "保存并新建",
+      "tabGeneral": "通用",
+      "tabSpecifications": "规格",
+      "tabAdvancedPrices": "高级价格",
+      "tabProperties": "分配属性",
+      "tabVariation": "变体",
+      "tabLayout": "布局",
+      "tabSeo": "SEO",
+      "tabCrossSelling": "关联商品",
+      "tabReviews": "评价",
+      "messageSaveSuccess": "商品 \"{name}\" 已成功保存。",
+      "messageUploadSuccess": "{total} 个文件中的 {count} 个保存成功。",
+      "messageSaveWarning": "未做任何修改。",
+      "messageProductNotFound": "未找到该商品。它可能已被删除。",
+      "errorMinMaxPurchase": "商品无法保存，最小订购量超过了最大订购量。"
+    },
+    "mediaForm": {
+      "errorNoImage": "\"{file}\" 不是图片。",
+      "errorMediaItemDuplicated": "媒体文件 \"{fileName}\" 已被使用。",
+      "coverSubline": "封面",
+      "spatialSubline": "3D",
+      "arSubline": "AR"
+    },
+    "advancedPrices": {
+      "deletionNotPossibleMessage": "必须至少保留一个价格层级。或尝试删除整个价格规则。",
+      "newRuleWarning": "要创建新的定价规则，请先选择一条条件规则。",
+      "advancedPricesNotExisting": "尚未设置高级价格。",
+      "columnFrom": "数量从 ...",
+      "columnTo": "至 ...",
+      "columnType": "类型",
+      "selectRule": "选择条件规则...",
+      "advancedPricesInherited": "此商品继承了父商品的价格。",
+      "linkAdvancedPricesOfParent": "显示主商品的价格",
+      "inheritSwitchLabel": "使用主商品的高级价格",
+      "advancedPricesNotInherited": "现在可为该变体使用自定义价格规则。",
+      "advancedListPricePriceLabel": "价格",
+      "advancedListPriceLabel": "划线价",
+      "advancedPriceDisabledTooltip": "第一个价格层级的起始值必须为 1。",
+      "labelRegulationPrice": "最低价格（最近 30 天）",
+      "ruleAlreadyUsed": "该规则已被用于某个价格规则。"
+    },
+    "properties": {
+      "cardTitleProperties": "属性",
+      "emptyStateNoOptionsTitle": "没有属性规格。",
+      "emptyStateNoOptionsDescription": "你必须先创建属性及其变体，才能在此分配。",
+      "emptyStateNoSelectedOptionsTitle": "未选择属性规格",
+      "emptyStateNoSelectedOptionsDescription": "请从搜索结果中选择变体。",
+      "propertiesInherited": "此商品继承了父商品的属性。",
+      "linkPropertiesOfParent": "显示主商品的属性",
+      "inheritSwitchLabel": "使用主商品的属性",
+      "propertiesNotInherited": "现在可为该变体使用自定义属性。",
+      "propertiesNotExisting": "此商品尚未分配任何属性。",
+      "cardTitle": "属性",
+      "buttonAddProperty": "配置属性",
+      "buttonAddProperties": "配置属性",
+      "titleEmptyState": "未分配属性",
+      "descriptionEmptyState": "在此管理属性。",
+      "titleEmptyStateList": "未找到属性",
+      "columnProperty": "属性",
+      "columnValue": "属性规格",
+      "placeholderSearchAddedProperties": "搜索已添加的属性 ...",
+      "addPropertiesModal": {
+        "title": "添加属性",
+        "titleEmptyState": "尚未创建属性。",
+        "descriptionEmptyState": "你必须先创建属性及其变体，才能在此分配。"
+      }
+    },
+    "variations": {
+      "generatedListColumnDownload": "文件",
+      "emptyStateTitle": "暂无变体",
+      "emptyStateDescription": "商品变体管理",
+      "emptyStatePropertyTitle": "暂无属性",
+      "emptyStatePropertyButton": "创建属性",
+      "emptyStatePropertyDescription": "请先创建属性，以便用于变体生成。",
+      "emptyStateButton": "生成变体",
+      "generateVariationsButton": "保存变体",
+      "nextModalButton": "继续",
+      "deleteVariationsButton": "删除全部变体",
+      "configuratorCardTitle": "生成变体",
+      "generatedVariationCardTitle": "变体",
+      "variationCard": {
+        "tabs": {
+          "allProducts": "全部变体",
+          "physicalProducts": "实体商品变体",
+          "digitalProducts": "数字商品变体"
+        }
+      },
+      "progressTypeOf": "从",
+      "progressTypeDeleted": "已删除",
+      "progressTypeGenerated": "已生成",
+      "progressTypeCalculated": "已计算",
+      "progressTypeVariation": "变体",
+      "generatedFilterList": "筛选列表",
+      "generatedListColumnVariation": "变体",
+      "generatedListColumnPrice": "价格（含税 / 不含税）",
+      "generatedListColumnProductNumber": "商品编号",
+      "generatedListColumnMedia": "媒体",
+      "generatedListColumnActive": "启用",
+      "generatedListColumnStock": "库存",
+      "generatedListColumnContentProductState": {
+        "is-download": "数字商品"
+      },
+      "generatedListDeleteModalMessage": "确定要删除该变体吗？",
+      "generatedListDeleteModalMessagePlural": "确定要删除这些变体吗？",
+      "generatedListMessageSaveSuccess": "变体已保存。",
+      "generatedListMessageSaveError": "变体无法保存。",
+      "generatedListMessageDeleteErrorCanonicalUrl": "该变体无法删除，因为它被用作规范 URL 模板。",
+      "generatedListMessageDeleteSuccess": "变体已删除。",
+      "generatedListMessageDeleteError": "发生意外错误。请刷新页面后重试。",
+      "generatedListMessageGenerateError": "发生意外错误。请刷新页面后重试。",
+      "overview": {
+        "filterReset": "重置",
+        "filter": "筛选",
+        "generateVariants": "生成变体",
+        "storefrontDelivery": "店铺前台展示"
+      },
+      "configuratorModal": {
+        "title": "生成变体",
+        "uploadAllButton": "为所有数字变体上传文件",
+        "uploadCardDescription": "所有数字变体至少需要一个文件才能保存。",
+        "uploadCardSearchPlaceholder": "搜索变体 ...",
+        "uploadInfoBoxHeader": "以下操作将按当前配置执行：",
+        "uploadInfoBoxCount": "{count} 个变体 | {count} 个变体 | {count} 个变体",
+        "uploadInfoBoxCreateLabel": "正在创建， | 正在创建， | 正在创建，",
+        "uploadInfoBoxDeleteLabel": "将被删除。 | 将被删除。 | 将被删除。",
+        "selectOptions": "规格选择",
+        "selectOptionsExplanation": "选择用于生成变体的属性规格。",
+        "selectRestrictionsExplanation": "选择要在变体生成中排除的属性规格。",
+        "selectPricesExplanation": "为属性规格或货币定义加价/折扣。",
+        "priceSurcharges": "价格加价/折扣",
+        "resetSurcharges": "删除加价/折扣",
+        "defineRestrictions": "规格排除",
+        "priceOptions": "规格",
+        "restrictedCombinations": "已排除的属性规格",
+        "searchRestrictions": "搜索已排除的变体 ...",
+        "addNewRestriction": "排除变体",
+        "singleRestrictionSeperation": "和",
+        "isOneFrom": "是以下之一",
+        "searchPlaceholder": "搜索变体 ...",
+        "singleRestrictionAddTitle": "排除变体",
+        "surchargeNotice": "修改加价/折扣不会影响已生成的变体。如需调整已生成变体的价格，请前往变体详情页操作。",
+        "digitalVariantSwitch": "将所有变体设为数字商品",
+        "removeAllButton": "从所有变体移除",
+        "addVariantsOnly": "仅添加变体"
+      },
+      "deliveryModal": {
+        "modalHeadline": "店面中的变体展示",
+        "order": "显示顺序",
+        "orderExplanation": "通过拖放更改变体属性的显示顺序",
+        "media": "媒体",
+        "mediaExplanation": "在此可为店铺中的属性选项设置替代媒体。这些媒体在店铺前台会优先于属性已分配的媒体。",
+        "mediaOptions": "变体",
+        "listing": "商品列表",
+        "listingExplanation": "选择两种展示模式之一：仅展示单个商品，或根据关联的属性值展开为多个独立变体。",
+        "listingLabelModeSingle": "显示单个商品",
+        "listingLabelModeDisplayParent": "主商品",
+        "listingLabelMainVariant": "变体",
+        "listingExplanationModeSingle": "选择在列表中显示并在商品详情页默认选中的变体。",
+        "listingExplanationModeMainProduct": "选择在商品详情页默认选中的变体。",
+        "listingLabelModeExpanded": "在商品列表中展开属性",
+        "listingPlaceholderSelectMainVariant": "选择变体 ..."
+      }
+    },
+    "layout": {
+      "title": "布局分配",
+      "subtitle": "你可以通过分配自定义布局来调整商品详情页。若此处未分配自定义布局，将使用商品详情页的默认布局。",
+      "textNoConfig": "当前选中的布局没有可编辑元素。",
+      "textContentInfo": "标准商品区块会自动填充商品数据，因此此处不列出这些内容。"
+    },
+    "crossselling": {
+      "cardTitleCrossSelling": "关联商品",
+      "buttonAddCrossSelling": "添加关联商品",
+      "newCrossSellingTitle": "新建关联商品",
+      "buttonAddCrossSellingLanguageWarning": "只能使用默认语言创建新的关联商品",
+      "inputCrossSellingTitle": "标题",
+      "inputCrossSellingActive": "启用",
+      "inputCrossSellingType": "类型",
+      "inputCrossSellingPosition": "位置",
+      "inputCrossSellingSorting": "排序",
+      "inputCrossSellingProductStream": "商品组",
+      "inputCrossSellingProductList": "商品分配",
+      "inputCrossSellingProductListPlaceholder": "搜索并分配商品...",
+      "inputCrossSellingTitlePlaceholder": "输入名称…",
+      "inputCrossSellingPositionPlaceholder": "选择位置 ...",
+      "inputCrossSellingProductStreamPlaceholder": "选择商品组 ...",
+      "inputCrossSellingLimit": "最大商品数量",
+      "popularitySortingType": "热度",
+      "priceAscendingSortingType": "价格，升序",
+      "priceDescendingSortingType": "价格，降序",
+      "nameSortingType": "名称",
+      "releaseDateAscendingSortingType": "发布日期，升序",
+      "releaseDateDescendingSortingType": "发布日期，降序",
+      "productStreamType": "动态商品组",
+      "productListType": "手动分配",
+      "deleteConfirmTitle": "删除关联商品",
+      "deleteConfirmText": "确定要删除该关联商品配置吗？",
+      "linkOpenStreamPreview": "打开预览",
+      "emptyStateDescription": "此商品尚无关联商品配置。",
+      "inheritedEmptyStateDescription": "此商品继承了父商品的关联商品。",
+      "notInheritedEmptyStateDescription": "现在可为该变体使用自定义关联商品配置。",
+      "assignEmptyStateTitle": "未分配商品",
+      "assignPlaceholder": "搜索商品 ...",
+      "linkCrossSellingsOfParent": "显示主商品的关联商品",
+      "inheritSwitchLabel": "使用主商品的关联商品",
+      "buttonRestoreCrossSellingInheritance": "恢复继承",
+      "restoreInheritanceConfirmTitle": "恢复关联商品继承",
+      "restoreInheritanceConfirmText": "确定要恢复关联商品继承吗？此变体的所有关联商品配置都将被删除。",
+      "restoreInheritanceButtonRestore": "恢复继承"
+    },
+    "featureSets": {
+      "cardTitle": "基本特征",
+      "descriptionBody": "通过功能特征，你可以在购物车和结账页显示重要的商品详情。",
+      "configInformation": "为 {0} 创建模板，然后为此商品选择一个。",
+      "linkFeatureSetsConfig": "基本特征",
+      "templateSelectFieldLabel": "模板",
+      "templateSelectFieldPlaceholder": "选择模板 ..."
+    },
+    "layoutAssignment": {
+      "title": "默认值",
+      "subtitle": "商品页",
+      "textAssignLayout": "分配布局",
+      "textChangeLayout": "修改布局",
+      "textCreateNewLayout": "新建布局",
+      "textEditInDesigner": "在设计器中编辑"
+    },
+    "filters": {
+      "fromPlaceholder": "输入起始值 ...",
+      "toPlaceholder": "输入结束值 ...",
+      "productNumberFilter": {
+        "label": "商品编号",
+        "placeholder": "输入商品编号…"
+      },
+      "activeFilter": {
+        "label": "启用",
+        "placeholder": "选择状态 ..."
+      },
+      "imagesFilter": {
+        "label": "图片",
+        "placeholder": "选择图片状态 ...",
+        "textHasCriteria": "至少有一个商品图片关联",
+        "textNoCriteria": "未关联商品图片"
+      },
+      "releaseDateFilter": {
+        "label": "发布日期"
+      },
+      "stockFilter": {
+        "label": "库存"
+      },
+      "priceFilter": {
+        "label": "价格"
+      },
+      "manufacturerFilter": {
+        "label": "制造商",
+        "placeholder": "选择制造商…"
+      },
+      "salesChannelsFilter": {
+        "label": "销售渠道",
+        "placeholder": "选择销售渠道..."
+      },
+      "categoriesFilter": {
+        "label": "分类",
+        "placeholder": "选择分类..."
+      },
+      "salesFilter": {
+        "label": "销售"
+      },
+      "tagsFilter": {
+        "label": "标签",
+        "placeholder": "选择标签..."
+      },
+      "productStatesFilter": {
+        "label": "商品状态",
+        "placeholder": "选择商品状态...",
+        "options": {
+          "physical": "实体商品",
+          "digital": "数字商品"
+        },
+        "deprecationWarning": "商品状态筛选已弃用，将在 v6.8 移除。请改用商品类型筛选。"
+      },
+      "productTypeFilter": {
+        "label": "商品类型",
+        "placeholder": "选择商品类型..."
+      },
+      "messageEmptyTitle": "未找到内容",
+      "messageEmptySubline": "修改筛选条件以查看结果。"
+    },
+    "notification": {
+      "notificationSaveErrorProductNoAlreadyExists": "商品编号 \"{productNo}\" 已被占用。"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "product": {
+        "label": "商品"
+      }
+    }
+  }
+}

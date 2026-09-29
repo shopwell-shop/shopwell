@@ -39,23 +39,23 @@ class Migration1607581276AddProductSearchConfigurationDefaults extends Migration
     private function createSearchConfigDefaultData(Connection $connection): void
     {
         $enLanguageId = $this->fetchLanguageIdByName('en-GB', $connection);
-        $deLanguageId = $this->fetchLanguageIdByName('de-DE', $connection);
+        $zhCnLanguageId = $this->fetchLanguageIdByName('zh-CN', $connection);
 
         $searchConfigEnId = $connection->fetchOne('SELECT id FROM product_search_config WHERE language_id = :language_id', ['language_id' => $enLanguageId])
             ?: Uuid::randomBytes();
 
-        $searchConfigDeId = $connection->fetchOne('SELECT id FROM product_search_config WHERE language_id = :language_id', ['language_id' => $deLanguageId])
+        $searchConfigZhCnId = $connection->fetchOne('SELECT id FROM product_search_config WHERE language_id = :language_id', ['language_id' => $zhCnLanguageId])
             ?: Uuid::randomBytes();
 
         $enStopwords = require __DIR__ . '/../Fixtures/stopwords/en.php';
-        $deStopwords = require __DIR__ . '/../Fixtures/stopwords/de.php';
+        $zhStopwords = require __DIR__ . '/../Fixtures/stopwords/zh.php';
 
         $translations = new Translations(
             [
-                'id' => $searchConfigDeId,
+                'id' => $searchConfigZhCnId,
                 'and_logic' => '1',
                 'min_search_length' => '2',
-                'excluded_terms' => json_encode($deStopwords, \JSON_THROW_ON_ERROR),
+                'excluded_terms' => json_encode($zhStopwords, \JSON_THROW_ON_ERROR),
             ],
             [
                 'id' => $searchConfigEnId,
@@ -74,8 +74,8 @@ class Migration1607581276AddProductSearchConfigurationDefaults extends Migration
             $defaultSearchData = $this->getConfigFieldDefaultData($searchConfigEnId, $createdAt);
         }
 
-        if ($writeResult->hasWrittenGermanTranslations()) {
-            $defaultSearchData = [...$defaultSearchData, ...$this->getConfigFieldDefaultData($searchConfigDeId, $createdAt)];
+        if ($writeResult->hasWrittenZhCnTranslations()) {
+            $defaultSearchData = [...$defaultSearchData, ...$this->getConfigFieldDefaultData($searchConfigZhCnId, $createdAt)];
         }
 
         $queue = new MultiInsertQueryQueue($connection, 250);

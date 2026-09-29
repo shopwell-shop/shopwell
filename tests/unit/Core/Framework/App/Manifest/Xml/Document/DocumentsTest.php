@@ -27,7 +27,7 @@ class DocumentsTest extends TestCase
         $warranty = $documentTypes[0];
         static::assertSame('swag_warranty', $warranty['identifier']);
         static::assertSame(
-            ['en-GB' => 'Warranty certificate', 'de-DE' => 'Garantieschein'],
+            ['en-GB' => 'Warranty certificate', 'zh-CN' => '保修单'],
             $warranty['label']
         );
         static::assertSame(['html', 'pdf'], $warranty['formats']);
@@ -101,7 +101,7 @@ class DocumentsTest extends TestCase
                     <document-type>
                         <identifier>swag_warranty</identifier>
                         <label>Warranty certificate</label>
-                        <label lang="de-DE">Garantieschein</label>
+                        <label lang="zh-CN">保修单</label>
                         <formats>
                             <format>html</format>
                             <format>pdf</format>

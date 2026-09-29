@@ -282,14 +282,14 @@ describe('module/sw-login/view/sw-login-login/sw-login-login.spec.js', () => {
         });
 
         useSystem().locales.value = [];
-        useSystem().registerAdminLocale('de-DE');
-        Shopwell.Application.getContainer('factory').locale.setSystemFallbackLocale('de-DE');
+        useSystem().registerAdminLocale('zh-CN');
+        Shopwell.Application.getContainer('factory').locale.setSystemFallbackLocale('zh-CN');
 
         const setAdminLocaleSpy = jest.spyOn(Shopwell.Store.get('session'), 'setAdminLocale');
 
         await createWrapper(true);
 
-        expect(setAdminLocaleSpy).toHaveBeenCalledWith('de-DE');
+        expect(setAdminLocaleSpy).toHaveBeenCalledWith('zh-CN');
     });
 
     it('should redirect for SSO login', async () => {

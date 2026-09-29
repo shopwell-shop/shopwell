@@ -43,9 +43,9 @@ class InstallerTest extends TestCase
 
         $preselection = $this->container->getParameter('shopwell.installer.configurationPreselection');
         static::assertIsArray($preselection);
-        static::assertArrayHasKey('de', $preselection);
-        $germanPreselection = $preselection['de'];
-        static::assertArrayHasKey('currency', $germanPreselection);
+        static::assertArrayHasKey('zh', $preselection);
+        $chinesePreselection = $preselection['zh'];
+        static::assertArrayHasKey('currency', $chinesePreselection);
         $this->preselection = $preselection;
 
         $currencies = $this->container->getParameter('shopwell.installer.supportedCurrencies');
@@ -57,10 +57,10 @@ class InstallerTest extends TestCase
 
         $supportedLanguages = $this->container->getParameter('shopwell.installer.supportedLanguages');
         static::assertIsArray($supportedLanguages);
-        static::assertArrayHasKey('de', $supportedLanguages);
-        $germanLanguage = $supportedLanguages['de'];
-        static::assertArrayHasKey('id', $germanLanguage);
-        static::assertArrayHasKey('label', $germanLanguage);
+        static::assertArrayHasKey('zh', $supportedLanguages);
+        $chineseLanguage = $supportedLanguages['zh'];
+        static::assertArrayHasKey('id', $chineseLanguage);
+        static::assertArrayHasKey('label', $chineseLanguage);
         $this->supportedLanguages = $supportedLanguages;
     }
 
@@ -70,7 +70,7 @@ class InstallerTest extends TestCase
             [
                 'cs' => ['id' => 'cs-CZ', 'label' => 'Čeština'],
                 'da-DK' => ['id' => 'da-DK', 'label' => 'Dansk'],
-                'de' => ['id' => 'de-DE', 'label' => 'Deutsch'],
+                'zh' => ['id' => 'zh-CN', 'label' => '简体中文'],
                 'en-US' => ['id' => 'en-US', 'label' => 'English (US)'],
                 'en' => ['id' => 'en-GB', 'label' => 'English (UK)'],
                 'es-ES' => ['id' => 'es-ES', 'label' => 'Español'],
@@ -99,6 +99,7 @@ class InstallerTest extends TestCase
                 'DKK' => 'DKK',
                 'NOK' => 'NOK',
                 'CZK' => 'CZK',
+                'CNY' => 'CNY',
             ],
             $this->currencies
         );
@@ -110,7 +111,7 @@ class InstallerTest extends TestCase
             [
                 'cs' => ['currency' => 'CZK'],
                 'da-DK' => ['currency' => 'DKK'],
-                'de' => ['currency' => 'EUR'],
+                'zh' => ['currency' => 'CNY'],
                 'en-US' => ['currency' => 'USD'],
                 'en' => ['currency' => 'GBP'],
                 'es-ES' => ['currency' => 'EUR'],

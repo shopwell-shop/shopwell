@@ -70,8 +70,8 @@ class Migration1624967118updateMailTemplatesWithOptionalSalutation extends Migra
             $mailTypeDirectory,
             $filesystem->readFile(\sprintf('%s/../Fixtures/mails/%s/en-plain.html.twig', __DIR__, $mailTypeDirectory)),
             $filesystem->readFile(\sprintf('%s/../Fixtures/mails/%s/en-html.html.twig', __DIR__, $mailTypeDirectory)),
-            $filesystem->readFile(\sprintf('%s/../Fixtures/mails/%s/de-plain.html.twig', __DIR__, $mailTypeDirectory)),
-            $filesystem->readFile(\sprintf('%s/../Fixtures/mails/%s/de-html.html.twig', __DIR__, $mailTypeDirectory))
+            $filesystem->readFile(\sprintf('%s/../Fixtures/mails/%s/zh-plain.html.twig', __DIR__, $mailTypeDirectory)),
+            $filesystem->readFile(\sprintf('%s/../Fixtures/mails/%s/zh-html.html.twig', __DIR__, $mailTypeDirectory))
         ), self::MAIL_TYPE_DIRS);
     }
 

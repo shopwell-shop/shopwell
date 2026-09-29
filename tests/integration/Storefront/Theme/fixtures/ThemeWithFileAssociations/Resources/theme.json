@@ -29,11 +29,11 @@
       "shopwellLogo": {
         "label": {
           "en-GB": "Shopwell Logo",
-          "de-DE": "Shopwell Logo"
+          "zh-CN": "Shopwell 标志"
         },
         "helpText": {
           "en-GB": "this is the shopwell logo",
-          "de-DE": "this is the shopwell Logo"
+          "zh-CN": "这是 Shopwell 标志"
         },
         "type": "media",
         "value": "app/storefront/src/assets/image/shopwell_logo.svg",

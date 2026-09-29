@@ -38,8 +38,8 @@ class Migration1757057005MailTemplate extends MigrationStep
 
         $mailData->setEnPlain($filesystem->readFile(__DIR__ . '/assets/sso_user_invitation_mail.en-GB.txt'));
         $mailData->setEnHtml($filesystem->readFile(__DIR__ . '/assets/sso_user_invitation_mail.en-GB.html.twig'));
-        $mailData->setDePlain($filesystem->readFile(__DIR__ . '/assets/sso_user_invitation_mail.de-DE.txt'));
-        $mailData->setDeHtml($filesystem->readFile(__DIR__ . '/assets/sso_user_invitation_mail.de-DE.html.twig'));
+        $mailData->setZhPlain($filesystem->readFile(__DIR__ . '/assets/sso_user_invitation_mail.zh-CN.txt'));
+        $mailData->setZhHtml($filesystem->readFile(__DIR__ . '/assets/sso_user_invitation_mail.zh-CN.html.twig'));
 
         return $mailData;
     }

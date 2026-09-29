@@ -51,9 +51,9 @@ async function createWrapper(privileges = [], languageId = null, stubTranslation
                                         },
                                         {
                                             id: '018d36e6165371a4b145cd683bf65869',
-                                            code: 'de-DE',
-                                            name: 'German',
-                                            territory: 'Germany',
+                                            code: 'zh-CN',
+                                            name: '中文',
+                                            territory: '中国',
                                         },
                                         {
                                             id: '018d36e6165671b788b4811b31fdb2be',
@@ -100,7 +100,7 @@ async function createWrapper(privileges = [], languageId = null, stubTranslation
                         items: [],
                     }),
                     getMeta: jest.fn().mockResolvedValue({
-                        builtInLocales: ['de-DE', 'en-GB'],
+                        builtInLocales: ['zh-CN', 'en-GB'],
                     }),
                     install: jest.fn().mockResolvedValue(undefined),
                 },
@@ -290,8 +290,8 @@ describe('module/sw-settings-language/page/sw-settings-language-detail', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        wrapper.vm.builtInLocales = ['de-DE', 'en-GB'];
-        wrapper.vm.language = { locale: { code: 'de-DE' } };
+        wrapper.vm.builtInLocales = ['zh-CN', 'en-GB'];
+        wrapper.vm.language = { locale: { code: 'zh-CN' } };
         expect(wrapper.vm.snippetUpdateState).toBe('builtIn');
 
         wrapper.vm.language = { locale: { code: 'fr-FR' } };
@@ -384,7 +384,7 @@ describe('module/sw-settings-language/page/sw-settings-language-detail', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        wrapper.vm.language = { isNew: () => true, locale: { code: 'de-DE' } };
+        wrapper.vm.language = { isNew: () => true, locale: { code: 'zh-CN' } };
         await flushPromises();
 
         expect(wrapper.vm.isNewLanguage).toBe(true);

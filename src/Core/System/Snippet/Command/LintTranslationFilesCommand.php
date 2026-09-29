@@ -20,7 +20,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[Package('discovery')]
 #[AsCommand(
     name: 'translation:lint-filenames',
-    description: 'Ensures translations have a country-agnostic translation file as a base, to provide country-agnostic language layer support (e.g. de.json for de-DE.json).
+    description: 'Ensures translations have a country-agnostic translation file as a base, to provide country-agnostic language layer support (e.g. zh.json for zh-CN.json).
     For more information, see our documentation: https://developer.shopwell.cn/docs/concepts/translations/fallback-language-selection.html#migration-and-linting-via-command',
 )]
 class LintTranslationFilesCommand extends Command
@@ -137,7 +137,7 @@ class LintTranslationFilesCommand extends Command
 
         $io->error(<<<'CLI'
         Every country-specific translation file must have a corresponding agnostic file.
-        Example: `messages.de-DE.json` requires `messages.de.json`.
+        Example: `messages.zh-CN.json` requires `messages.zh.json`.
 
         For more information, see our documentation:
         https://developer.shopwell.cn/docs/concepts/translations/fallback-language-selection.html

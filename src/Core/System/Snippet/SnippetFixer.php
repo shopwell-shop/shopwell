@@ -47,7 +47,7 @@ class SnippetFixer
     private function fixMissingSnippets(MissingSnippetCollection $missingSnippetCollection): void
     {
         foreach ($missingSnippetCollection->getIterator() as $missingSnippetStruct) {
-            // Replace e.g. en-GB to de-DE and en_GB to de_DE
+            // Replace e.g. en-GB to zh-CN and en_GB to zh_CN
             $newPath = str_replace(
                 [
                     $missingSnippetStruct->getAvailableISO(),

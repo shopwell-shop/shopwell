@@ -37,7 +37,7 @@ class LocaleProviderTest extends TestCase
     public function testGetLocaleFromContextReturnsLocaleFromUser(): void
     {
         $userId = Uuid::randomHex();
-        $userLocale = 'de-DE-1';
+        $userLocale = 'zh-CN-1';
 
         $this->userRepository->create([[
             'id' => $userId,

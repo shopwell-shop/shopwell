@@ -1,0 +1,10 @@
+{
+  "sw-settings-cart": {
+    "general": {
+      "mainMenuItemGeneral": "购物车",
+      "textHeadline": "购物车",
+      "description": "购物车设置管理",
+      "messageSaveSuccess": "配置已成功保存。"
+    }
+  }
+}

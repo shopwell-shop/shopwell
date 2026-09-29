@@ -84,14 +84,14 @@ class ShopConfiguratorTest extends TestCase
 
     public function testSwitchLanguageWithExistingLanguage(): void
     {
-        $this->shopConfigurator->setDefaultLanguage('de-DE');
+        $this->shopConfigurator->setDefaultLanguage('zh-CN');
 
         $lang = $this->langRepo->search(new Criteria([Defaults::LANGUAGE_SYSTEM]), Context::createDefaultContext())
             ->getEntities()
             ->first();
 
         static::assertNotNull($lang);
-        static::assertSame('Deutsch', $lang->getName());
+        static::assertSame('简体中文', $lang->getName());
     }
 
     public function testSwitchDefaultCurrencyWithNewCurrency(): void

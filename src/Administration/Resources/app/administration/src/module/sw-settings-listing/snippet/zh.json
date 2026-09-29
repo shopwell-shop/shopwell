@@ -1,0 +1,105 @@
+{
+  "sw-settings-listing": {
+    "general": {
+      "mainMenuItemGeneral": "商品",
+      "textHeadline": "商品",
+      "description": "管理商品的展示方式。",
+      "messageSaveSuccess": "配置已保存。",
+      "messageSaveError": "配置删除失败。\"{message}\"",
+      "messageSaveDefaultValuesEmpty": "必须设置默认值",
+      "labelDefaultSorting": "默认排序",
+      "labelDefaultSearchResultSorting": "搜索结果默认排序",
+      "placeholderDefaultSorting": "选择默认排序...",
+      "placeholderDefaultSearchResultSorting": "选择搜索结果默认排序...",
+      "productSortingCriteriaGrid": {
+        "header": {
+          "name": "名称",
+          "order": "顺序",
+          "priority": "优先级"
+        },
+        "options": {
+          "criteriaAlreadyUsed": "排序条件 \"{criteriaName}\" 已被使用。",
+          "customFieldCriteriaNotNull": "请选择一个有效的自定义字段。",
+          "label": {
+            "product": {
+              "name": "商品名称",
+              "ratingAverage": "商品评分",
+              "productNumber": "商品编号",
+              "releaseDate": "发布日期",
+              "stock": "库存",
+              "listingPrices": "商品列表价格",
+              "cheapestPrice": "商品最低价",
+              "price": "默认价格",
+              "sales": "销量",
+              "createdAt": "创建日期",
+              "available": "有货"
+            },
+            "customField": "自定义字段",
+            "_score": "相关度"
+          }
+        }
+      }
+    },
+    "index": {
+      "defaultSalesChannel": {
+        "title": "默认销售渠道",
+        "description": "选择新建商品自动分配到的默认销售渠道。",
+        "linkAdvancedVisibility": "设置所选销售渠道的可见性"
+      },
+      "productSorting": {
+        "title": "排序选项",
+        "addButton": "添加选项",
+        "messageDeleteError": "删除排序选项时发生错误。",
+        "emptyState": {
+          "title": "未找到选项",
+          "subline": "添加选项"
+        },
+        "grid": {
+          "header": {
+            "name": "名称",
+            "criteria": "条件",
+            "priority": "优先级"
+          },
+          "deleteTooltip": {
+            "locked": "此排序选项已锁定，因此无法删除。",
+            "default": "此排序选项是默认排序，因此无法删除。"
+          }
+        }
+      },
+      "deleteModal": {
+        "title": "删除排序选项",
+        "description": "确定要删除此排序选项吗？"
+      }
+    },
+    "create": {
+      "smartBarTitle": "新建商品排序"
+    },
+    "base": {
+      "smartBarTitle": "编辑商品排序",
+      "lockedInfo": "此排序选项已锁定，因此只能编辑翻译字段。",
+      "general": {
+        "title": "常规",
+        "labelName": "名称",
+        "placeholderName": "输入名称...",
+        "labelTechnicalName": "技术名称",
+        "placeholderTechnicalName": "输入技术名称...",
+        "helpTextTechnicalName": "技术名称用于标识商品排序，必须唯一。",
+        "labelActive": "启用"
+      },
+      "notification": {
+        "saveSuccess": "排序选项 \"{sortingOptionName}\" 已保存。",
+        "saveError": "排序选项 \"{sortingOptionName}\" 保存失败。",
+        "saveErrorAlreadyExists": "排序选项 \"{sortingOptionName}\" 已存在。"
+      },
+      "criteria": {
+        "title": "排序条件",
+        "selectPlaceholder": "搜索并添加条件...",
+        "emptyStateSubline": "此排序选项还没有任何条件"
+      },
+      "delete": {
+        "modalTitle": "删除条件",
+        "modalDescription": "确定要删除此条件吗？"
+      }
+    }
+  }
+}

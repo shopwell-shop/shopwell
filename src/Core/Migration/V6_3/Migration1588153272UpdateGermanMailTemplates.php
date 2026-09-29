@@ -21,9 +21,9 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     public function update(Connection $connection): void
     {
         // implement update
-        $deLangId = $this->fetchLanguageId('de-DE', $connection);
+        $zhCnLangId = $this->fetchLanguageId('zh-CN', $connection);
 
-        if ($deLangId === null) {
+        if ($zhCnLangId === null) {
             return;
         }
 
@@ -31,140 +31,140 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_ORDER_CONFIRM,
             $connection,
-            $deLangId,
-            $this->getOrderConfirmationHTMLTemplateDe(),
-            $this->getOrderConfirmationPlainTemplateDe()
+            $zhCnLangId,
+            $this->getOrderConfirmationHTMLTemplateZhCn(),
+            $this->getOrderConfirmationPlainTemplateZhCn()
         );
 
         // update delivery email templates
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_DELIVERY_STATE_CANCELLED,
             $connection,
-            $deLangId,
-            $this->getDeliveryCancellationHtmlTemplateDe(),
-            $this->getDeliveryCancellationPlainTemplateDe()
+            $zhCnLangId,
+            $this->getDeliveryCancellationHtmlTemplateZhCn(),
+            $this->getDeliveryCancellationPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_DELIVERY_STATE_RETURNED,
             $connection,
-            $deLangId,
-            $this->getDeliveryReturnedHtmlTemplateDe(),
-            $this->getDeliveryReturnedPlainTemplateDe()
+            $zhCnLangId,
+            $this->getDeliveryReturnedHtmlTemplateZhCn(),
+            $this->getDeliveryReturnedPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_DELIVERY_STATE_SHIPPED_PARTIALLY,
             $connection,
-            $deLangId,
-            $this->getDeliveryShippedPartiallyHtmlTemplateDe(),
-            $this->getDeliveryShippedPartiallyPlainTemplateDe()
+            $zhCnLangId,
+            $this->getDeliveryShippedPartiallyHtmlTemplateZhCn(),
+            $this->getDeliveryShippedPartiallyPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_DELIVERY_STATE_SHIPPED,
             $connection,
-            $deLangId,
-            $this->getDeliveryShippedHTMLTemplateDe(),
-            $this->getDeliveryShippedPlainTemplateDe()
+            $zhCnLangId,
+            $this->getDeliveryShippedHTMLTemplateZhCn(),
+            $this->getDeliveryShippedPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_DELIVERY_STATE_RETURNED_PARTIALLY,
             $connection,
-            $deLangId,
-            $this->getDeliveryReturnedPartiallyHTMLTemplateDe(),
-            $this->getDeliveryReturnedPartiallyPlainTemplateDe()
+            $zhCnLangId,
+            $this->getDeliveryReturnedPartiallyHTMLTemplateZhCn(),
+            $this->getDeliveryReturnedPartiallyPlainTemplateZhCn()
         );
 
         // update order state email template
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_STATE_CANCELLED,
             $connection,
-            $deLangId,
-            $this->getOrderStateCancelledHTMLTemplateDe(),
-            $this->getOrderStateCancelledPlainTemplateDe()
+            $zhCnLangId,
+            $this->getOrderStateCancelledHTMLTemplateZhCn(),
+            $this->getOrderStateCancelledPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_STATE_OPEN,
             $connection,
-            $deLangId,
-            $this->getOrderStateOpenHTMLTemplateDe(),
-            $this->getOrderStateOpenPlainTemplateDe()
+            $zhCnLangId,
+            $this->getOrderStateOpenHTMLTemplateZhCn(),
+            $this->getOrderStateOpenPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_STATE_IN_PROGRESS,
             $connection,
-            $deLangId,
-            $this->getOrderStateProgressHTMLTemplateDe(),
-            $this->getOrderStateProgressPlainTemplateDe()
+            $zhCnLangId,
+            $this->getOrderStateProgressHTMLTemplateZhCn(),
+            $this->getOrderStateProgressPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_STATE_COMPLETED,
             $connection,
-            $deLangId,
-            $this->getOrderStateCompletedHTMLTemplateDe(),
-            $this->getOrderStateCompletedPlainTemplateDe()
+            $zhCnLangId,
+            $this->getOrderStateCompletedHTMLTemplateZhCn(),
+            $this->getOrderStateCompletedPlainTemplateZhCn()
         );
 
         // update payment email template
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_REFUNDED_PARTIALLY,
             $connection,
-            $deLangId,
-            $this->getPaymentRefundPartiallyHTMLTemplateDe(),
-            $this->getPaymentRefundPartiallyPlainTemplateDe()
+            $zhCnLangId,
+            $this->getPaymentRefundPartiallyHTMLTemplateZhCn(),
+            $this->getPaymentRefundPartiallyPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_REMINDED,
             $connection,
-            $deLangId,
-            $this->getPaymentRemindedHTMLTemplateDe(),
-            $this->getPaymentRemindedPlainTemplateDe()
+            $zhCnLangId,
+            $this->getPaymentRemindedHTMLTemplateZhCn(),
+            $this->getPaymentRemindedPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_OPEN,
             $connection,
-            $deLangId,
-            $this->getPaymentOpenHTMLTemplateDe(),
-            $this->getPaymentOpenPlainTemplateDe()
+            $zhCnLangId,
+            $this->getPaymentOpenHTMLTemplateZhCn(),
+            $this->getPaymentOpenPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_PAID,
             $connection,
-            $deLangId,
-            $this->getPaymentPaidHTMLTemplateDe(),
-            $this->getPaymentPaidPlainTemplateDe()
+            $zhCnLangId,
+            $this->getPaymentPaidHTMLTemplateZhCn(),
+            $this->getPaymentPaidPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_CANCELLED,
             $connection,
-            $deLangId,
-            $this->getPaymentCancelledHTMLTemplateDe(),
-            $this->getPaymentCancelledPlainTemplateDe()
+            $zhCnLangId,
+            $this->getPaymentCancelledHTMLTemplateZhCn(),
+            $this->getPaymentCancelledPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_REFUNDED,
             $connection,
-            $deLangId,
-            $this->getPaymentRefundedHTMLTemplateDe(),
-            $this->getPaymentRefundedPlainTemplateDe()
+            $zhCnLangId,
+            $this->getPaymentRefundedHTMLTemplateZhCn(),
+            $this->getPaymentRefundedPlainTemplateZhCn()
         );
 
         $this->updateMailTemplate(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_PAID_PARTIALLY,
             $connection,
-            $deLangId,
-            $this->getPaymentPaidPartiallyHTMLTemplateDe(),
-            $this->getPaymentPaidPartiallyPlainTemplateDe()
+            $zhCnLangId,
+            $this->getPaymentPaidPartiallyHTMLTemplateZhCn(),
+            $this->getPaymentPaidPartiallyPlainTemplateZhCn()
         );
     }
 
@@ -188,9 +188,9 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function updateMailTemplate(
         string $mailTemplateType,
         Connection $connection,
-        string $deLangId,
-        string $getHtmlTemplateDe,
-        string $getPlainTemplateDe
+        string $zhCnLangId,
+        string $getHtmlTemplateZhCn,
+        string $getPlainTemplateZhCn
     ): void {
         $templateId = $this->fetchSystemMailTemplateIdFromType($connection, $mailTemplateType);
 
@@ -205,9 +205,9 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             $this->updateMailTemplateTranslation(
                 $connection,
                 $templateId,
-                $deLangId,
-                $getHtmlTemplateDe,
-                $getPlainTemplateDe
+                $zhCnLangId,
+                $getHtmlTemplateZhCn,
+                $getPlainTemplateZhCn
             );
         }
     }
@@ -284,26 +284,26 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
         $connection->executeStatement($sqlString, $sqlParams);
     }
 
-    private function getOrderConfirmationHTMLTemplateDe(): string
+    private function getOrderConfirmationHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
 
             {% set currencyIsoCode = order.currency.isoCode %}
-            Hallo {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br>
+            您好 {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br>
             <br>
-            vielen Dank für Ihre Bestellung im {{ salesChannel.name }} (Nummer: {{order.orderNumber}}) am {{ order.orderDateTime|date }}.<br>
+            感谢您在 {{ salesChannel.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。<br>
             <br>
-            <strong>Informationen zu Ihrer Bestellung:</strong><br>
+            <strong>订单信息：</strong><br>
             <br>
 
             <table width="80%" border="0" style="font-family:Arial, Helvetica, sans-serif; font-size:12px;">
                 <tr>
                     <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Pos.</strong></td>
-                    <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Bezeichnung</strong></td>
-                    <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Menge</strong></td>
-                    <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Preis</strong></td>
-                    <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>Summe</strong></td>
+                    <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>商品名称</strong></td>
+                    <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>数量</strong></td>
+                    <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>单价</strong></td>
+                    <td bgcolor="#F7F7F2" style="border-bottom:1px solid #cccccc;"><strong>金额</strong></td>
                 </tr>
 
                 {% for lineItem in order.lineItems %}
@@ -311,7 +311,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                     <td style="border-bottom:1px solid #cccccc;">{{ loop.index }} </td>
                     <td style="border-bottom:1px solid #cccccc;">
                       {{ lineItem.label|u.wordwrap(80) }}<br>
-                      {% if lineItem.payload.productNumber is defined %}Artikel-Nr: {{ lineItem.payload.productNumber|u.wordwrap(80) }}{% endif %}
+                      {% if lineItem.payload.productNumber is defined %}商品编号：{{ lineItem.payload.productNumber|u.wordwrap(80) }}{% endif %}
                     </td>
                     <td style="border-bottom:1px solid #cccccc;">{{ lineItem.quantity }}</td>
                     <td style="border-bottom:1px solid #cccccc;">{{ lineItem.unitPrice|currency(currencyIsoCode) }}</td>
@@ -324,24 +324,24 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <p>
                 <br>
                 <br>
-                Versandkosten: {{order.deliveries.first.shippingCosts.totalPrice|currency(currencyIsoCode) }}<br>
-                Gesamtkosten Netto: {{ order.amountNet|currency(currencyIsoCode) }}<br>
+                运费：{{order.deliveries.first.shippingCosts.totalPrice|currency(currencyIsoCode) }}<br>
+                净额合计：{{ order.amountNet|currency(currencyIsoCode) }}<br>
                     {% for calculatedTax in order.price.calculatedTaxes %}
-                        {% if order.taxStatus is same as(\'net\') %}zzgl.{% else %}inkl.{% endif %} {{ calculatedTax.taxRate }}% MwSt. {{ calculatedTax.tax|currency(currencyIsoCode) }}<br>
+                        {% if order.taxStatus is same as(\'net\') %}另加{% else %}含{% endif %} {{ calculatedTax.taxRate }}% 增值税 {{ calculatedTax.tax|currency(currencyIsoCode) }}<br>
                     {% endfor %}
-                <strong>Gesamtkosten Brutto: {{ order.amountTotal|currency(currencyIsoCode) }}</strong><br>
+                <strong>总额合计：{{ order.amountTotal|currency(currencyIsoCode) }}</strong><br>
                 <br>
 
-                <strong>Gewählte Zahlungsart:</strong> {{ order.transactions.first.paymentMethod.name }}<br>
+                <strong>支付方式：</strong> {{ order.transactions.first.paymentMethod.name }}<br>
                 {{ order.transactions.first.paymentMethod.description }}<br>
                 <br>
 
-                <strong>Gewählte Versandart:</strong> {{ delivery.shippingMethod.name }}<br>
+                <strong>配送方式：</strong> {{ delivery.shippingMethod.name }}<br>
                 {{ delivery.shippingMethod.description }}<br>
                 <br>
 
                 {% set billingAddress = order.addresses.get(order.billingAddressId) %}
-                <strong>Rechnungsadresse:</strong><br>
+                <strong>账单地址：</strong><br>
                 {{ billingAddress.company }}<br>
                 {{ billingAddress.firstName }} {{ billingAddress.lastName }}<br>
                 {{ billingAddress.street }} <br>
@@ -349,7 +349,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 {{ billingAddress.country.name }}<br>
                 <br>
 
-                <strong>Lieferadresse:</strong><br>
+                <strong>收货地址：</strong><br>
                 {{ delivery.shippingOrderAddress.company }}<br>
                 {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}<br>
                 {{ delivery.shippingOrderAddress.street }} <br>
@@ -357,14 +357,14 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 {{ delivery.shippingOrderAddress.country.name }}<br>
                 <br>
                 {% if billingAddress.vatId %}
-                    Ihre Umsatzsteuer-ID: {{ billingAddress.vatId }}
-                    Bei erfolgreicher Prüfung und sofern Sie aus dem EU-Ausland
-                    bestellen, erhalten Sie Ihre Ware umsatzsteuerbefreit. <br>
+                    您的增值税号：{{ billingAddress.vatId }}
+                    验证通过且您从欧盟境外
+                    下单，将免税发货。 <br>
                 {% endif %}
                 <br/>
-                Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                 </br>
-                Für Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.
+                如有疑问，欢迎随时联系我们。
 
             </p>
             <br>
@@ -372,46 +372,46 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
         ';
     }
 
-    private function getOrderConfirmationPlainTemplateDe(): string
+    private function getOrderConfirmationPlainTemplateZhCn(): string
     {
         return '
         {% set currencyIsoCode = order.currency.isoCode %}
-        Hallo {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        您好 {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        vielen Dank für Ihre Bestellung im {{ salesChannel.name }} (Nummer: {{order.orderNumber}}) am {{ order.orderDateTime|date }}.
+        感谢您在 {{ salesChannel.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。
 
-        Informationen zu Ihrer Bestellung:
+        订单信息：
 
-        Pos.   Artikel-Nr.			Beschreibung			Menge			Preis			Summe
+        序号 商品编号			商品名称			数量			单价			金额
         {% for lineItem in order.lineItems %}
         {{ loop.index }}     {% if lineItem.payload.productNumber is defined %}{{ lineItem.payload.productNumber|u.wordwrap(80) }}{% endif %}				{{ lineItem.label|u.wordwrap(80) }}			{{ lineItem.quantity }}			{{ lineItem.unitPrice|currency(currencyIsoCode) }}			{{ lineItem.totalPrice|currency(currencyIsoCode) }}
         {% endfor %}
 
         {% set delivery = order.deliveries.first %}
 
-        Versandkosten: {{order.deliveries.first.shippingCosts.totalPrice|currency(currencyIsoCode) }}
-        Gesamtkosten Netto: {{ order.amountNet|currency(currencyIsoCode) }}
+        运费：{{order.deliveries.first.shippingCosts.totalPrice|currency(currencyIsoCode) }}
+        净额合计：{{ order.amountNet|currency(currencyIsoCode) }}
             {% for calculatedTax in order.price.calculatedTaxes %}
-                {% if order.taxStatus is same as(\'net\') %}zzgl.{% else %}inkl.{% endif %} {{ calculatedTax.taxRate }}% MwSt. {{ calculatedTax.tax|currency(currencyIsoCode) }}
+                {% if order.taxStatus is same as(\'net\') %}另加{% else %}含{% endif %} {{ calculatedTax.taxRate }}% 增值税 {{ calculatedTax.tax|currency(currencyIsoCode) }}
             {% endfor %}
-        Gesamtkosten Brutto: {{ order.amountTotal|currency(currencyIsoCode) }}
+        总额合计：{{ order.amountTotal|currency(currencyIsoCode) }}
 
 
-        Gewählte Zahlungsart: {{ order.transactions.first.paymentMethod.name }}
+        支付方式：{{ order.transactions.first.paymentMethod.name }}
         {{ order.transactions.first.paymentMethod.description }}
 
-        Gewählte Versandart: {{ delivery.shippingMethod.name }}
+        配送方式：{{ delivery.shippingMethod.name }}
         {{ delivery.shippingMethod.description }}
 
         {% set billingAddress = order.addresses.get(order.billingAddressId) %}
-        Rechnungsadresse:
+        账单地址：
         {{ billingAddress.company }}
         {{ billingAddress.firstName }} {{ billingAddress.lastName }}
         {{ billingAddress.street }}
         {{ billingAddress.zipcode }} {{ billingAddress.city }}
         {{ billingAddress.country.name }}
 
-        Lieferadresse:
+        收货地址：
         {{ delivery.shippingOrderAddress.company }}
         {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}
         {{ delivery.shippingOrderAddress.street }}
@@ -419,16 +419,16 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
         {{ delivery.shippingOrderAddress.country.name }}
 
         {% if billingAddress.vatId %}
-        Ihre Umsatzsteuer-ID: {{ billingAddress.vatId }}
-        Bei erfolgreicher Prüfung und sofern Sie aus dem EU-Ausland
-        bestellen, erhalten Sie Ihre Ware umsatzsteuerbefreit.
+        您的增值税号：{{ billingAddress.vatId }}
+        验证通过且您从欧盟境外
+        下单，将免税发货。
         {% endif %}
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Für Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        如有疑问，欢迎随时联系我们。';
     }
 
-    private function getDeliveryCancellationHtmlTemplateDe(): string
+    private function getDeliveryCancellationHtmlTemplateZhCn(): string
     {
         return '
         <div style="font-family:arial; font-size:12px;">
@@ -436,29 +436,29 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
            <p>
                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                <br/>
-               der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-               <strong>Die Bestellung hat jetzt den Zahlungsstatus: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
+               您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
+               <strong>支付状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
                <br/>
-               Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+               您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                </br>
-               Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+               若您未注册、未开通客户账户即下单，则无法使用该功能。
            </p>
         </div>';
     }
 
-    private function getDeliveryCancellationPlainTemplateDe(): string
+    private function getDeliveryCancellationPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Zahlungsstatus: {{order.deliveries.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
+        支付状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getDeliveryReturnedHtmlTemplateDe(): string
+    private function getDeliveryReturnedHtmlTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -466,29 +466,29 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
+                    <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>';
     }
 
-    private function getDeliveryReturnedPlainTemplateDe(): string
+    private function getDeliveryReturnedPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
+        订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getDeliveryShippedPartiallyHtmlTemplateDe(): string
+    private function getDeliveryShippedPartiallyHtmlTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -496,29 +496,29 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Lieferstatys für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
+                    <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>';
     }
 
-    private function getDeliveryShippedPartiallyPlainTemplateDe(): string
+    private function getDeliveryShippedPartiallyPlainTemplateZhCn(): string
     {
         return '
             {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
+        订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getDeliveryShippedHTMLTemplateDe(): string
+    private function getDeliveryShippedHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -526,30 +526,30 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
+                    <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getDeliveryShippedPlainTemplateDe(): string
+    private function getDeliveryShippedPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
+        订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getDeliveryReturnedPartiallyHTMLTemplateDe(): string
+    private function getDeliveryReturnedPartiallyHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -557,30 +557,30 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
+                    <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getDeliveryReturnedPartiallyPlainTemplateDe(): string
+    private function getDeliveryReturnedPartiallyPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
+        订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getOrderStateCancelledHTMLTemplateDe(): string
+    private function getOrderStateCancelledHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -588,30 +588,30 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
+                    <strong>订单状态最新状态：{{order.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getOrderStateCancelledPlainTemplateDe(): string
+    private function getOrderStateCancelledPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Bestellstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新!
+        订单状态最新状态：{{order.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getOrderStateOpenHTMLTemplateDe(): string
+    private function getOrderStateOpenHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -619,30 +619,30 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Bestellstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新.<br/>
+                    <strong>订单状态最新状态：{{order.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getOrderStateOpenPlainTemplateDe(): string
+    private function getOrderStateOpenPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Bestellstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新!
+        订单状态最新状态：{{order.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getOrderStateProgressHTMLTemplateDe(): string
+    private function getOrderStateProgressHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -650,30 +650,30 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Bestellstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新.<br/>
+                    <strong>订单状态最新状态：{{order.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getOrderStateProgressPlainTemplateDe(): string
+    private function getOrderStateProgressPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Bestellstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新!
+        订单状态最新状态：{{order.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getOrderStateCompletedHTMLTemplateDe(): string
+    private function getOrderStateCompletedHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -681,30 +681,30 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Bestellstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新.<br/>
+                    <strong>订单状态最新状态：{{order.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getOrderStateCompletedPlainTemplateDe(): string
+    private function getOrderStateCompletedPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Bestellstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新!
+        订单状态最新状态：{{order.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getPaymentRefundPartiallyHTMLTemplateDe(): string
+    private function getPaymentRefundPartiallyHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -712,30 +712,30 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新.<br/>
+                    <strong>支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getPaymentRefundPartiallyPlainTemplateDe(): string
+    private function getPaymentRefundPartiallyPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新!
+        支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getPaymentRemindedHTMLTemplateDe(): string
+    private function getPaymentRemindedHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -743,30 +743,30 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新.<br/>
+                    <strong>支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getPaymentRemindedPlainTemplateDe(): string
+    private function getPaymentRemindedPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新!
+        支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getPaymentOpenHTMLTemplateDe(): string
+    private function getPaymentOpenHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -774,30 +774,30 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新.<br/>
+                    <strong>支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getPaymentOpenPlainTemplateDe(): string
+    private function getPaymentOpenPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新!
+        支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getPaymentPaidHTMLTemplateDe(): string
+    private function getPaymentPaidHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -805,30 +805,30 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新.<br/>
+                    <strong>支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getPaymentPaidPlainTemplateDe(): string
+    private function getPaymentPaidPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新!
+        支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getPaymentCancelledHTMLTemplateDe(): string
+    private function getPaymentCancelledHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -836,30 +836,30 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                    <br/>
-                   der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                   <strong>Die Bestellung hat jetzt den Zahlungsstatus: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
+                   您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
+                   <strong>支付状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
                    <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getPaymentCancelledPlainTemplateDe(): string
+    private function getPaymentCancelledPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
+        支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getPaymentRefundedHTMLTemplateDe(): string
+    private function getPaymentRefundedHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -867,30 +867,30 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新.<br/>
+                    <strong>支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getPaymentRefundedPlainTemplateDe(): string
+    private function getPaymentRefundedPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新!
+        支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
-    private function getPaymentPaidPartiallyHTMLTemplateDe(): string
+    private function getPaymentPaidPartiallyHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -898,26 +898,26 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新.<br/>
+                    <strong>支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
                     </br>
-                    Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getPaymentPaidPartiallyPlainTemplateDe(): string
+    private function getPaymentPaidPartiallyPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新!
+        支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen: {{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态：{{ rawUrl(\'frontend.account.edit-order.page\', { \'orderId\': order.id}, salesChannel.domains|first.url) }}
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 }

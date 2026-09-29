@@ -48,17 +48,17 @@ class CreateMailTemplateTraitTest extends TestCase
             $this->targetDirectory . '/en-html.html.twig',
             $this->targetDirectory . '/en-plain.html.twig',
             $this->targetDirectory . '/en-plain.txt.twig',
-            $this->targetDirectory . '/de-html.html.twig',
-            $this->targetDirectory . '/de-plain.html.twig',
-            $this->targetDirectory . '/de-plain.txt.twig',
+            $this->targetDirectory . '/zh-html.html.twig',
+            $this->targetDirectory . '/zh-plain.html.twig',
+            $this->targetDirectory . '/zh-plain.txt.twig',
         ]);
 
         $this->filesystem->appendToFile($this->targetDirectory . '/en-html.html.twig', '<h1>en-html.html.twig content</h1>');
         $this->filesystem->appendToFile($this->targetDirectory . '/en-plain.html.twig', 'en-plain.html.twig content');
         $this->filesystem->appendToFile($this->targetDirectory . '/en-plain.txt.twig', 'en-plain.txt.twig content');
-        $this->filesystem->appendToFile($this->targetDirectory . '/de-html.html.twig', '<h1>de-html.html.twig content</h1>');
-        $this->filesystem->appendToFile($this->targetDirectory . '/de-plain.html.twig', 'de-plain.html.twig content');
-        $this->filesystem->appendToFile($this->targetDirectory . '/de-plain.txt.twig', 'de-plain.txt.twig content');
+        $this->filesystem->appendToFile($this->targetDirectory . '/zh-html.html.twig', '<h1>zh-html.html.twig content</h1>');
+        $this->filesystem->appendToFile($this->targetDirectory . '/zh-plain.html.twig', 'zh-plain.html.twig content');
+        $this->filesystem->appendToFile($this->targetDirectory . '/zh-plain.txt.twig', 'zh-plain.txt.twig content');
     }
 
     protected function tearDown(): void
@@ -69,21 +69,21 @@ class CreateMailTemplateTraitTest extends TestCase
     public function testCreateMail(): void
     {
         $enLanguageByteId = $this->getLanguageByteId('en-GB');
-        $deLanguageByteId = $this->getLanguageByteId('de-DE');
+        $zhCnLanguageByteId = $this->getLanguageByteId('zh-CN');
 
         // create new mail template
         $mailTemplateType = new MailTemplateTypeCreateStruct(
             self::TEST_TECHNICAL_NAME,
             'EN test name',
-            'DE Test Name',
+            '中文测试名称',
         );
 
         $mailTemplate = new MailTemplateCreateStruct(
             $this->testDirectoryName,
             'EN test name',
-            'DE Test Name',
+            '中文测试名称',
             'Test description',
-            'Test Beschreibung',
+            '测试描述',
             '{{ salesChannel.name }}',
             '{{ salesChannel.name }}',
         );
@@ -103,9 +103,9 @@ class CreateMailTemplateTraitTest extends TestCase
         $enTypeTranslation = $this->findTranslationByLanguageId($enLanguageByteId, $mailTemplateTypeTranslations);
         static::assertArrayHasKey('name', $enTypeTranslation);
         static::assertSame($mailTemplateType->getEnName(), $enTypeTranslation['name']);
-        $deTypeTranslation = $this->findTranslationByLanguageId($deLanguageByteId, $mailTemplateTypeTranslations);
-        static::assertArrayHasKey('name', $deTypeTranslation);
-        static::assertSame($mailTemplateType->getDeName(), $deTypeTranslation['name']);
+        $zhCnTypeTranslation = $this->findTranslationByLanguageId($zhCnLanguageByteId, $mailTemplateTypeTranslations);
+        static::assertArrayHasKey('name', $zhCnTypeTranslation);
+        static::assertSame($mailTemplateType->getZhName(), $zhCnTypeTranslation['name']);
 
         $mailTemplates = $this->getMailTemplates($mailTemplateTypes[0]['id']);
         static::assertCount(1, $mailTemplates);
@@ -126,43 +126,43 @@ class CreateMailTemplateTraitTest extends TestCase
         static::assertSame($mailTemplate->getEnHtml(), $enMailTranslation['content_html']);
         static::assertSame($this->filesystem->readFile($this->targetDirectory . '/en-plain.txt.twig'), $enMailTranslation['content_plain']);
 
-        $deMailTranslation = $this->findTranslationByLanguageId($deLanguageByteId, $mailTemplateTranslations);
-        static::assertArrayHasKey('sender_name', $deMailTranslation);
-        static::assertArrayHasKey('subject', $deMailTranslation);
-        static::assertArrayHasKey('description', $deMailTranslation);
-        static::assertArrayHasKey('content_html', $deMailTranslation);
-        static::assertArrayHasKey('content_plain', $deMailTranslation);
+        $zhCnMailTranslation = $this->findTranslationByLanguageId($zhCnLanguageByteId, $mailTemplateTranslations);
+        static::assertArrayHasKey('sender_name', $zhCnMailTranslation);
+        static::assertArrayHasKey('subject', $zhCnMailTranslation);
+        static::assertArrayHasKey('description', $zhCnMailTranslation);
+        static::assertArrayHasKey('content_html', $zhCnMailTranslation);
+        static::assertArrayHasKey('content_plain', $zhCnMailTranslation);
 
-        static::assertSame($mailTemplate->getDeSenderName(), $deMailTranslation['sender_name']);
-        static::assertSame($mailTemplate->getDeSubject(), $deMailTranslation['subject']);
-        static::assertSame($mailTemplate->getDeDescription(), $deMailTranslation['description']);
-        static::assertSame($mailTemplate->getDeHtml(), $deMailTranslation['content_html']);
-        static::assertSame($this->filesystem->readFile($this->targetDirectory . '/de-plain.txt.twig'), $deMailTranslation['content_plain']);
+        static::assertSame($mailTemplate->getZhSenderName(), $zhCnMailTranslation['sender_name']);
+        static::assertSame($mailTemplate->getZhSubject(), $zhCnMailTranslation['subject']);
+        static::assertSame($mailTemplate->getZhDescription(), $zhCnMailTranslation['description']);
+        static::assertSame($mailTemplate->getZhHtml(), $zhCnMailTranslation['content_html']);
+        static::assertSame($this->filesystem->readFile($this->targetDirectory . '/zh-plain.txt.twig'), $zhCnMailTranslation['content_plain']);
     }
 
     public function testCreateMailWithoutTxtFiles(): void
     {
         $this->filesystem->remove([
             $this->targetDirectory . '/en-plain.txt.twig',
-            $this->targetDirectory . '/de-plain.txt.twig',
+            $this->targetDirectory . '/zh-plain.txt.twig',
         ]);
 
         $enLanguageByteId = $this->getLanguageByteId('en-GB');
-        $deLanguageByteId = $this->getLanguageByteId('de-DE');
+        $zhCnLanguageByteId = $this->getLanguageByteId('zh-CN');
 
         // create new mail template
         $mailTemplateType = new MailTemplateTypeCreateStruct(
             self::TEST_TECHNICAL_NAME,
             'EN test name',
-            'DE Test Name',
+            '中文测试名称',
         );
 
         $mailTemplate = new MailTemplateCreateStruct(
             $this->testDirectoryName,
             'EN test name',
-            'DE Test Name',
+            '中文测试名称',
             'Test description',
-            'Test Beschreibung',
+            '测试描述',
             '{{ salesChannel.name }}',
             '{{ salesChannel.name }}',
         );
@@ -192,38 +192,38 @@ class CreateMailTemplateTraitTest extends TestCase
         static::assertSame($mailTemplate->getEnHtml(), $enMailTranslation['content_html']);
         static::assertSame($this->filesystem->readFile($this->targetDirectory . '/en-plain.html.twig'), $enMailTranslation['content_plain']);
 
-        $deMailTranslation = $this->findTranslationByLanguageId($deLanguageByteId, $mailTemplateTranslations);
-        static::assertArrayHasKey('sender_name', $deMailTranslation);
-        static::assertArrayHasKey('subject', $deMailTranslation);
-        static::assertArrayHasKey('description', $deMailTranslation);
-        static::assertArrayHasKey('content_html', $deMailTranslation);
-        static::assertArrayHasKey('content_plain', $deMailTranslation);
+        $zhCnMailTranslation = $this->findTranslationByLanguageId($zhCnLanguageByteId, $mailTemplateTranslations);
+        static::assertArrayHasKey('sender_name', $zhCnMailTranslation);
+        static::assertArrayHasKey('subject', $zhCnMailTranslation);
+        static::assertArrayHasKey('description', $zhCnMailTranslation);
+        static::assertArrayHasKey('content_html', $zhCnMailTranslation);
+        static::assertArrayHasKey('content_plain', $zhCnMailTranslation);
 
-        static::assertSame($mailTemplate->getDeSenderName(), $deMailTranslation['sender_name']);
-        static::assertSame($mailTemplate->getDeSubject(), $deMailTranslation['subject']);
-        static::assertSame($mailTemplate->getDeDescription(), $deMailTranslation['description']);
-        static::assertSame($mailTemplate->getDeHtml(), $deMailTranslation['content_html']);
-        static::assertSame($this->filesystem->readFile($this->targetDirectory . '/de-plain.html.twig'), $deMailTranslation['content_plain']);
+        static::assertSame($mailTemplate->getZhSenderName(), $zhCnMailTranslation['sender_name']);
+        static::assertSame($mailTemplate->getZhSubject(), $zhCnMailTranslation['subject']);
+        static::assertSame($mailTemplate->getZhDescription(), $zhCnMailTranslation['description']);
+        static::assertSame($mailTemplate->getZhHtml(), $zhCnMailTranslation['content_html']);
+        static::assertSame($this->filesystem->readFile($this->targetDirectory . '/zh-plain.html.twig'), $zhCnMailTranslation['content_plain']);
     }
 
     public function testCreateMailUsesLanguageLocalePrefixForRegionalLanguages(): void
     {
-        $deChLanguageByteId = $this->createLanguage('de-CH');
+        $zhHkLanguageByteId = $this->createLanguage('zh-HK');
         $enUsLanguageByteId = $this->createLanguage('en-US');
-        $frChLanguageByteId = $this->createLanguage('fr-CH', 'de-LI');
+        $frChLanguageByteId = $this->createLanguage('fr-CH', 'fr-LI');
 
         $mailTemplateType = new MailTemplateTypeCreateStruct(
             self::TEST_TECHNICAL_NAME,
             'EN test name',
-            'DE Test Name',
+            '中文测试名称',
         );
 
         $mailTemplate = new MailTemplateCreateStruct(
             $this->testDirectoryName,
             'EN test name',
-            'DE Test Name',
+            '中文测试名称',
             'Test description',
-            'Test Beschreibung',
+            '测试描述',
             '{{ salesChannel.name }}',
             '{{ salesChannel.name }}',
         );
@@ -237,8 +237,8 @@ class CreateMailTemplateTraitTest extends TestCase
         $mailTemplateTypeTranslations = $mailTemplateTypes[0]['translations'];
         $this->assertTranslationsForAllLanguages($mailTemplateTypeTranslations);
 
-        $deChTypeTranslation = $this->findTranslationByLanguageId($deChLanguageByteId, $mailTemplateTypeTranslations);
-        static::assertSame($mailTemplateType->getDeName(), $deChTypeTranslation['name']);
+        $zhHkTypeTranslation = $this->findTranslationByLanguageId($zhHkLanguageByteId, $mailTemplateTypeTranslations);
+        static::assertSame($mailTemplateType->getZhName(), $zhHkTypeTranslation['name']);
 
         $enUsTypeTranslation = $this->findTranslationByLanguageId($enUsLanguageByteId, $mailTemplateTypeTranslations);
         static::assertSame($mailTemplateType->getEnName(), $enUsTypeTranslation['name']);
@@ -252,9 +252,9 @@ class CreateMailTemplateTraitTest extends TestCase
         $mailTemplateTranslations = $mailTemplates[0]['translations'];
         $this->assertTranslationsForAllLanguages($mailTemplateTranslations);
 
-        $deChMailTranslation = $this->findTranslationByLanguageId($deChLanguageByteId, $mailTemplateTranslations);
-        static::assertSame($mailTemplate->getDeSubject(), $deChMailTranslation['subject']);
-        static::assertSame($mailTemplate->getDeHtml(), $deChMailTranslation['content_html']);
+        $zhHkMailTranslation = $this->findTranslationByLanguageId($zhHkLanguageByteId, $mailTemplateTranslations);
+        static::assertSame($mailTemplate->getZhSubject(), $zhHkMailTranslation['subject']);
+        static::assertSame($mailTemplate->getZhHtml(), $zhHkMailTranslation['content_html']);
 
         $enUsMailTranslation = $this->findTranslationByLanguageId($enUsLanguageByteId, $mailTemplateTranslations);
         static::assertSame($mailTemplate->getEnSubject(), $enUsMailTranslation['subject']);
@@ -267,8 +267,8 @@ class CreateMailTemplateTraitTest extends TestCase
 
     /**
      * The system default language ({@see Defaults::LANGUAGE_SYSTEM}) does not necessarily use the
-     * en-* or de-* locale. When Shopwell is installed with a different default language, en-GB and
-     * de-DE can still exist as separate, non-default languages.
+     * en-* or zh-* locale. When Shopwell is installed with a different default language, en-GB and
+     * zh-CN can still exist as separate, non-default languages.
      *
      * In that case the mail template and its type must still provide a translation for the system
      * default language, otherwise the mail can no longer be rendered for the default sales channel.
@@ -281,7 +281,7 @@ class CreateMailTemplateTraitTest extends TestCase
         $enGbLocaleId = $this->connection->fetchOne('SELECT `id` FROM `locale` WHERE `code` = :code', ['code' => 'en-GB']);
         static::assertIsString($enGbLocaleId);
 
-        // Switch the system default language to a locale that is neither en-* nor de-*.
+        // Switch the system default language to a locale that is neither en-* nor zh-*.
         $this->connection->update(
             'language',
             [
@@ -305,21 +305,21 @@ class CreateMailTemplateTraitTest extends TestCase
             ]
         );
 
-        // de-DE already exists as a separate, non-default language
-        $deLanguageId = $this->getLanguageByteId('de-DE');
+        // zh-CN already exists as a separate, non-default language
+        $zhCnLanguageId = $this->getLanguageByteId('zh-CN');
 
         $mailTemplateType = new MailTemplateTypeCreateStruct(
             self::TEST_TECHNICAL_NAME,
             'EN test name',
-            'DE Test Name',
+            '中文测试名称',
         );
 
         $mailTemplate = new MailTemplateCreateStruct(
             $this->testDirectoryName,
             'EN test name',
-            'DE Test Name',
+            '中文测试名称',
             'Test description',
-            'Test Beschreibung',
+            '测试描述',
             '{{ salesChannel.name }}',
             '{{ salesChannel.name }}',
         );
@@ -334,11 +334,11 @@ class CreateMailTemplateTraitTest extends TestCase
         $defaultTypeTranslation = $this->findTranslationByLanguageId($defaultLanguageId, $typeTranslations);
         static::assertSame($mailTemplateType->getEnName(), $defaultTypeTranslation['name']);
 
-        // The separate en-GB and de-DE languages must keep their respective translations
+        // The separate en-GB and zh-CN languages must keep their respective translations
         $enTypeTranslation = $this->findTranslationByLanguageId($enGbLanguageId, $typeTranslations);
         static::assertSame($mailTemplateType->getEnName(), $enTypeTranslation['name']);
-        $deTypeTranslation = $this->findTranslationByLanguageId($deLanguageId, $typeTranslations);
-        static::assertSame($mailTemplateType->getDeName(), $deTypeTranslation['name']);
+        $zhCnTypeTranslation = $this->findTranslationByLanguageId($zhCnLanguageId, $typeTranslations);
+        static::assertSame($mailTemplateType->getZhName(), $zhCnTypeTranslation['name']);
 
         $mailTemplates = $this->getMailTemplates($mailTemplateTypes[0]['id']);
         static::assertCount(1, $mailTemplates);
@@ -350,8 +350,8 @@ class CreateMailTemplateTraitTest extends TestCase
 
         $enMailTranslation = $this->findTranslationByLanguageId($enGbLanguageId, $templateTranslations);
         static::assertSame($mailTemplate->getEnSubject(), $enMailTranslation['subject']);
-        $deMailTranslation = $this->findTranslationByLanguageId($deLanguageId, $templateTranslations);
-        static::assertSame($mailTemplate->getDeSubject(), $deMailTranslation['subject']);
+        $zhCnMailTranslation = $this->findTranslationByLanguageId($zhCnLanguageId, $templateTranslations);
+        static::assertSame($mailTemplate->getZhSubject(), $zhCnMailTranslation['subject']);
     }
 
     private function getLanguageByteId(string $locale): string

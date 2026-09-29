@@ -236,13 +236,13 @@ class SnippetServiceTest extends TestCase
 
         yield 'fallback snippets, catalogue messages are overridden by localized snippets' => [
             'expected' => [
-                'catalogue_key' => 'Catalogue DE',
-                'title' => 'Storefront DE',
+                'catalogue_key' => 'Catalogue ZH',
+                'title' => 'Storefront ZH',
             ],
-            'catalogueLocale' => 'de',
+            'catalogueLocale' => 'zh',
             'catalogueMessages' => [
-                'catalogue_key' => 'Catalogue DE',
-                'title' => 'Catalogue title DE',
+                'catalogue_key' => 'Catalogue ZH',
+                'title' => 'Catalogue title ZH',
             ],
             'fallbackLocale' => 'en',
         ];
@@ -250,14 +250,14 @@ class SnippetServiceTest extends TestCase
         yield 'fallback snippets, catalogue message, localized snippets are overridden by database snippets' => [
             'expected' => [
                 'title' => 'Database title',
-                'catalogue_key' => 'Catalogue DE',
+                'catalogue_key' => 'Catalogue ZH',
             ],
-            'catalogueLocale' => 'de-DE',
+            'catalogueLocale' => 'zh-CN',
             'catalogueMessages' => [
-                'catalogue_key' => 'Catalogue DE',
+                'catalogue_key' => 'Catalogue ZH',
                 'title' => 'Catalogue title',
             ],
-            'fallbackLocale' => 'de',
+            'fallbackLocale' => 'zh',
             'salesChannelId' => null,
             'usedTheme' => null,
             'databaseSnippets' => [
@@ -267,11 +267,11 @@ class SnippetServiceTest extends TestCase
 
         yield 'with sales channel id without theme' => [
             'expected' => [
-                'title' => 'Storefront DE',
+                'title' => 'Storefront ZH',
             ],
-            'catalogueLocale' => 'de-DE',
+            'catalogueLocale' => 'zh-CN',
             'catalogueMessages' => [],
-            'fallbackLocale' => 'de',
+            'fallbackLocale' => 'zh',
             'salesChannelId' => Uuid::randomHex(),
             'usedTheme' => null,
             'databaseSnippets' => [],
@@ -279,11 +279,11 @@ class SnippetServiceTest extends TestCase
 
         yield 'with sales channel id and theme' => [
             'expected' => [
-                'title' => 'SwagTheme DE',
+                'title' => 'SwagTheme ZH',
             ],
-            'catalogueLocale' => 'de-DE',
+            'catalogueLocale' => 'zh-CN',
             'catalogueMessages' => [],
-            'fallbackLocale' => 'de',
+            'fallbackLocale' => 'zh',
             'salesChannelId' => Uuid::randomHex(),
             'usedTheme' => 'SwagTheme',
         ];
@@ -291,14 +291,14 @@ class SnippetServiceTest extends TestCase
         yield 'theme snippets are overridden by database snippets' => [
             'expected' => [
                 'title' => 'Database title',
-                'catalogue_key' => 'Catalogue DE',
+                'catalogue_key' => 'Catalogue ZH',
             ],
-            'catalogueLocale' => 'de-DE',
+            'catalogueLocale' => 'zh-CN',
             'catalogueMessages' => [
-                'catalogue_key' => 'Catalogue DE',
+                'catalogue_key' => 'Catalogue ZH',
                 'title' => 'Catalogue title',
             ],
-            'fallbackLocale' => 'de',
+            'fallbackLocale' => 'zh',
             'salesChannelId' => Uuid::randomHex(),
             'usedTheme' => 'SwagTheme',
             'databaseSnippets' => [
@@ -318,7 +318,7 @@ class SnippetServiceTest extends TestCase
             'country.es-AR',
             'country.fr-CA',
             'agnostic.zh',
-            'country.zh-Hans-CN',
+            'country.zh-SG',
         ];
 
         $baseIso = \explode('-', $iso, 2)[0];
@@ -415,14 +415,30 @@ class SnippetServiceTest extends TestCase
                 'baseOnly' => 'Agnostic ES',
             ],
         ];
+
+        yield 'agnostic locale zh without country' => [
+            'iso' => 'zh',
+            'expectedSnippets' => [
+                'title' => 'Agnostic ZH',
+                'baseOnly' => 'Agnostic ZH',
+            ],
+        ];
+
+        yield 'zh-SG iso loads exact locale and bare language as base' => [
+            'iso' => 'zh-SG',
+            'expectedSnippets' => [
+                'title' => 'Country zh-SG',
+                'baseOnly' => 'Agnostic ZH',
+            ],
+        ];
     }
 
     public function testGetStorefrontSnippetsUsesRegionalFallbackForExtensionSnippets(): void
     {
-        // Extension only provides de-DE snippets, not de-AT
-        $this->snippetCollection->add(new MockSnippetFile('extension.de-DE', 'de-DE'));
+        // Extension only provides zh-CN snippets, not zh-SG
+        $this->snippetCollection->add(new MockSnippetFile('extension.zh-CN', 'zh-CN'));
 
-        $this->connection->expects($this->once())->method('fetchOne')->willReturn('de-AT');
+        $this->connection->expects($this->once())->method('fetchOne')->willReturn('zh-SG');
 
         $dispatcher = new EventDispatcher();
         $dispatcher->addListener(SnippetsThemeResolveEvent::class, static function (SnippetsThemeResolveEvent $event): void {
@@ -430,25 +446,25 @@ class SnippetServiceTest extends TestCase
             $event->setUnusedThemes([]);
         });
 
-        $catalogue = new MessageCatalogue('de-AT', []);
+        $catalogue = new MessageCatalogue('zh-SG', []);
         $snippetService = $this->createSnippetService($dispatcher);
         $snippets = $snippetService->getStorefrontSnippets($catalogue, Uuid::randomHex(), null, null);
 
         static::assertArrayHasKey('extension.button', $snippets);
-        static::assertSame('Jetzt kaufen', $snippets['extension.button']);
+        static::assertSame('立即购买', $snippets['extension.button']);
     }
 
     public function testGetListUsesRegionalFallbackForExtensionSnippets(): void
     {
-        // Extension only provides de-DE snippets, not de-AT
+        // Extension only provides zh-CN snippets, not zh-SG
         $snippetCollection = new SnippetFileCollection();
-        $snippetCollection->add(new MockSnippetFile('extension.de-DE', 'de-DE'));
+        $snippetCollection->add(new MockSnippetFile('extension.zh-CN', 'zh-CN'));
 
         $snippetSet = new SnippetSetEntity();
         $snippetSet->setId(Uuid::randomHex());
-        $snippetSet->setIso('de-AT');
-        $snippetSet->setName('Deutsch (Österreich)');
-        $snippetSet->setBaseFile('extension.de-DE.json');
+        $snippetSet->setIso('zh-SG');
+        $snippetSet->setName('简体中文 (新加坡)');
+        $snippetSet->setBaseFile('extension.zh-CN.json');
 
         $snippetSetCollection = new SnippetSetCollection();
         $snippetSetCollection->add($snippetSet);
@@ -469,14 +485,14 @@ class SnippetServiceTest extends TestCase
 
         static::assertSame(1, $result['total']);
         static::assertArrayHasKey('extension.button', $result['data']);
-        static::assertSame('Jetzt kaufen', $result['data']['extension.button'][0]['value']);
+        static::assertSame('立即购买', $result['data']['extension.button'][0]['value']);
     }
 
     private function addThemes(): void
     {
-        $this->snippetCollection->add(new MockSnippetFile('storefront.de', 'de', '{}', true, 'Storefront'));
+        $this->snippetCollection->add(new MockSnippetFile('storefront.zh', 'zh', '{}', true, 'Storefront'));
         $this->snippetCollection->add(new MockSnippetFile('storefront.en', 'en', '{}', true, 'Storefront'));
-        $this->snippetCollection->add(new MockSnippetFile('swagtheme.de', 'de', '{}', true, 'SwagTheme'));
+        $this->snippetCollection->add(new MockSnippetFile('swagtheme.zh', 'zh', '{}', true, 'SwagTheme'));
         $this->snippetCollection->add(new MockSnippetFile('swagtheme.en', 'en', '{}', true, 'SwagTheme'));
     }
 

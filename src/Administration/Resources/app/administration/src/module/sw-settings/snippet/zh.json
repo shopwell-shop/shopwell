@@ -1,0 +1,38 @@
+{
+  "sw-settings": {
+    "general": {
+      "mainMenuItemGeneral": "设置"
+    },
+    "index": {
+      "title": "设置",
+      "tabShop": "店铺",
+      "tabSystem": "系统",
+      "tabGeneral": "通用",
+      "tabLocalization": "区域",
+      "tabCustomer": "客户",
+      "tabCommerce": "商务",
+      "tabContent": "内容",
+      "tabAutomation": "自动化",
+      "tabPlugins": "扩展",
+      "textSettingRenameBanner": "设置 <b>计量单位</b> 已更名为 <b>商品单位</b>。",
+      "search": {
+        "placeholder": "搜索设置 ...",
+        "noResultsHeadline": "未找到结果",
+        "noResultsDescription": "未找到任何设置。请尝试使用其他搜索词。"
+      }
+    },
+    "system-config": {
+      "labelSalesChannelSelect": "销售渠道",
+      "inherited": "已继承",
+      "compileNotice": "此配置包含可在主题中使用的字段。要使更改生效，请重新编译主题。",
+      "scssHelpText": "SCSS 变量名："
+    }
+  },
+  "sw-privileges": {
+    "additional_permissions": {
+      "system": {
+        "system_config": "基础设置"
+      }
+    }
+  }
+}

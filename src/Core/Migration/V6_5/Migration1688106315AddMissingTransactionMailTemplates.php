@@ -26,7 +26,7 @@ class Migration1688106315AddMissingTransactionMailTemplates extends MigrationSte
 
     public const UNCONFIRMED_TYPE = 'order_transaction.state.unconfirmed';
 
-    private const GERMAN_LANGUAGE_NAME = 'Deutsch';
+    private const ZH_CN_LANGUAGE_NAME = '简体中文';
 
     private const ENGLISH_LANGUAGE_NAME = 'English';
 
@@ -49,8 +49,8 @@ class Migration1688106315AddMissingTransactionMailTemplates extends MigrationSte
                     'availableEntities' => '{"order":"order","previousState":"state_machine_state","newState":"state_machine_state","salesChannel":"sales_channel","editOrderUrl":null}',
                 ],
                 'template' => [
-                    'htmlDe' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.authorized/de-html.html.twig'),
-                    'plainDe' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.authorized/de-plain.html.twig'),
+                    'htmlZh' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.authorized/zh-html.html.twig'),
+                    'plainZh' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.authorized/zh-plain.html.twig'),
                     'htmlEn' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.authorized/en-html.html.twig'),
                     'plainEn' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.authorized/en-plain.html.twig'),
                 ],
@@ -58,12 +58,12 @@ class Migration1688106315AddMissingTransactionMailTemplates extends MigrationSte
                     'en' => [
                         'name' => 'Enter payment state: Authorized',
                         'subject' => 'The order at {{ salesChannel.name }} was authorized',
-                        'description' => 'Shopwell Basis Template',
+                        'description' => 'Shopwell Default Template',
                     ],
-                    'de' => [
-                        'name' => 'Eintritt Zahlungsstatus: Autorisiert',
-                        'subject' => 'Die Bestellung bei {{ salesChannel.name }} wurde autorisiert',
-                        'description' => 'Shopwell Basis Template',
+                    'zh' => [
+                        'name' => '进入支付状态：已授权',
+                        'subject' => '您在 {{ salesChannel.name }} 的订单已授权',
+                        'description' => 'Shopwell 基础模板',
                     ],
                 ],
             ],
@@ -73,8 +73,8 @@ class Migration1688106315AddMissingTransactionMailTemplates extends MigrationSte
                     'availableEntities' => '{"order":"order","previousState":"state_machine_state","newState":"state_machine_state","salesChannel":"sales_channel","editOrderUrl":null}',
                 ],
                 'template' => [
-                    'htmlDe' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.chargeback/de-html.html.twig'),
-                    'plainDe' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.chargeback/de-plain.html.twig'),
+                    'htmlZh' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.chargeback/zh-html.html.twig'),
+                    'plainZh' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.chargeback/zh-plain.html.twig'),
                     'htmlEn' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.chargeback/en-html.html.twig'),
                     'plainEn' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.chargeback/en-plain.html.twig'),
                 ],
@@ -82,12 +82,12 @@ class Migration1688106315AddMissingTransactionMailTemplates extends MigrationSte
                     'en' => [
                         'name' => 'Enter payment state: Chargeback',
                         'subject' => 'Chargeback for your order with {{ salesChannel.name }}',
-                        'description' => 'Shopwell Basis Template',
+                        'description' => 'Shopwell Default Template',
                     ],
-                    'de' => [
-                        'name' => 'Eintritt Zahlungsstatus: Rückbuchung',
-                        'subject' => 'Rückbuchung für Ihre Bestellung bei {{ salesChannel.name }}',
-                        'description' => 'Shopwell Basis Template',
+                    'zh' => [
+                        'name' => '进入支付状态：拒付',
+                        'subject' => '您在 {{ salesChannel.name }} 的订单发生拒付',
+                        'description' => 'Shopwell 基础模板',
                     ],
                 ],
             ],
@@ -97,8 +97,8 @@ class Migration1688106315AddMissingTransactionMailTemplates extends MigrationSte
                     'availableEntities' => '{"order":"order","previousState":"state_machine_state","newState":"state_machine_state","salesChannel":"sales_channel","editOrderUrl":null}',
                 ],
                 'template' => [
-                    'htmlDe' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.unconfirmed/de-html.html.twig'),
-                    'plainDe' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.unconfirmed/de-plain.html.twig'),
+                    'htmlZh' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.unconfirmed/zh-html.html.twig'),
+                    'plainZh' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.unconfirmed/zh-plain.html.twig'),
                     'htmlEn' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.unconfirmed/en-html.html.twig'),
                     'plainEn' => $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.unconfirmed/en-plain.html.twig'),
                 ],
@@ -106,12 +106,12 @@ class Migration1688106315AddMissingTransactionMailTemplates extends MigrationSte
                     'en' => [
                         'name' => 'Enter payment state: Unconfirmed',
                         'subject' => 'Your order with {{ salesChannel.name }} is unconfirmed',
-                        'description' => 'Shopwell Basis Template',
+                        'description' => 'Shopwell Default Template',
                     ],
-                    'de' => [
-                        'name' => 'Ihre Bestellung bei {{ salesChannel.name }} ist unbestätigt',
+                    'zh' => [
+                        'name' => '您在 {{ salesChannel.name }} 的订单未确认',
                         'subject' => '',
-                        'description' => 'Shopwell Basis Template',
+                        'description' => 'Shopwell 基础模板',
                     ],
                 ],
             ],
@@ -171,9 +171,9 @@ class Migration1688106315AddMissingTransactionMailTemplates extends MigrationSte
         $defaultLanguageId = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
 
         $englishLanguageId = $this->fetchLanguageIdByName(self::ENGLISH_LANGUAGE_NAME, $connection);
-        $germanLanguageId = $this->fetchLanguageIdByName(self::GERMAN_LANGUAGE_NAME, $connection);
+        $zhCnLanguageId = $this->fetchLanguageIdByName(self::ZH_CN_LANGUAGE_NAME, $connection);
 
-        if (!\in_array($defaultLanguageId, [$englishLanguageId, $germanLanguageId], true)) {
+        if (!\in_array($defaultLanguageId, [$englishLanguageId, $zhCnLanguageId], true)) {
             $connection->insert(
                 'mail_template_type_translation',
                 [
@@ -197,13 +197,13 @@ class Migration1688106315AddMissingTransactionMailTemplates extends MigrationSte
             );
         }
 
-        if ($germanLanguageId) {
+        if ($zhCnLanguageId) {
             $connection->insert(
                 'mail_template_type_translation',
                 [
                     'mail_template_type_id' => $templateTypeId,
-                    'language_id' => $germanLanguageId,
-                    'name' => $mail['translations']['de']['name'],
+                    'language_id' => $zhCnLanguageId,
+                    'name' => $mail['translations']['zh']['name'],
                     'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 ]
             );
@@ -233,9 +233,9 @@ class Migration1688106315AddMissingTransactionMailTemplates extends MigrationSte
         $defaultLanguageId = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
 
         $englishLanguageId = $this->fetchLanguageIdByName(self::ENGLISH_LANGUAGE_NAME, $connection);
-        $germanLanguageId = $this->fetchLanguageIdByName(self::GERMAN_LANGUAGE_NAME, $connection);
+        $zhCnLanguageId = $this->fetchLanguageIdByName(self::ZH_CN_LANGUAGE_NAME, $connection);
 
-        if (!\in_array($defaultLanguageId, [$englishLanguageId, $germanLanguageId], true)) {
+        if (!\in_array($defaultLanguageId, [$englishLanguageId, $zhCnLanguageId], true)) {
             $connection->insert(
                 'mail_template_translation',
                 [
@@ -267,18 +267,18 @@ class Migration1688106315AddMissingTransactionMailTemplates extends MigrationSte
             );
         }
 
-        if ($germanLanguageId) {
+        if ($zhCnLanguageId) {
             $connection->insert(
                 'mail_template_translation',
                 [
-                    'subject' => $mail['translations']['de']['subject'],
-                    'description' => $mail['translations']['de']['description'],
+                    'subject' => $mail['translations']['zh']['subject'],
+                    'description' => $mail['translations']['zh']['description'],
                     'sender_name' => '{{ salesChannel.name }}',
                     'content_html' => '',
                     'content_plain' => '',
                     'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                     'mail_template_id' => $templateId,
-                    'language_id' => $germanLanguageId,
+                    'language_id' => $zhCnLanguageId,
                 ]
             );
         }
@@ -293,7 +293,7 @@ class Migration1688106315AddMissingTransactionMailTemplates extends MigrationSte
             $typeName,
             $mail['template']['plainEn'],
             $mail['template']['htmlEn'],
-            $mail['template']['plainDe'],
+            $mail['template']['plainZh'],
             $mail['template']['htmlEn'],
         );
 

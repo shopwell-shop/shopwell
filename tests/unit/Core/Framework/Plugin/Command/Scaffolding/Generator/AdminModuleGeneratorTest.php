@@ -111,7 +111,7 @@ class AdminModuleGeneratorTest extends TestCase
                 'src/Resources/app/administration/src/module/swag-example/index.js',
                 'src/Resources/app/administration/src/main.js',
                 'src/Resources/app/administration/src/snippet/en.json',
-                'src/Resources/app/administration/src/snippet/de.json',
+                'src/Resources/app/administration/src/snippet/zh.json',
             ],
         ];
     }

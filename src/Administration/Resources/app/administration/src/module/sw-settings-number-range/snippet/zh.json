@@ -1,0 +1,60 @@
+{
+  "sw-settings-number-range": {
+    "general": {
+      "mainMenuItemGeneral": "编号范围",
+      "placeholderSearchBar": "搜索编号范围 ...",
+      "infoGlobalType": "类型 \"{typeName}\" 的编号范围只能有一个。对 \"{typeName}\" 类型编号范围的修改必须在此进行，并将全局影响所有销售渠道。",
+      "infoGlobalTypeTitle": "全局编号范围类型 \"{typeName}\"",
+      "infoGlobal": "全局编号范围的类型无法修改。但你可以在概览中为大多数类型创建适用于特定销售渠道的编号范围。",
+      "infoGlobalTitle": "全局编号范围 \"{name}\"",
+      "infoSalesChannelBound": "要更改编号范围类型，必须先移除所有现有的销售渠道分配。"
+    },
+    "list": {
+      "textHeadline": "编号范围",
+      "messageEmpty": "暂无编号范围",
+      "textDeleteConfirm": "确定要删除编号范围 \"{name}\" 吗？",
+      "columnName": "名称",
+      "columnUsedIn": "类型",
+      "columnAssignment": "分配",
+      "buttonAddNumberRange": "添加编号范围",
+      "messageDeleteSuccess": "编号范围 \"{name}\" 已成功删除。",
+      "global": "全局"
+    },
+    "detail": {
+      "textHeadline": "新建编号范围",
+      "configCard": "设置",
+      "assignmentCard": "分配",
+      "messageSaveSuccess": "编号范围 \"{name}\" 已成功保存。",
+      "messageSaveError": "编号范围 \"{name}\" 未能保存。",
+      "labelName": "名称",
+      "labelDescription": "描述",
+      "labelPrefix": "前缀",
+      "labelSuffix": "后缀",
+      "labelPattern": "格式",
+      "labelStart": "起始编号",
+      "labelCurrentNumber": "当前编号",
+      "labelPreview": "预览",
+      "labelAdvanced": "高级模式",
+      "labelType": "类型",
+      "labelSalesChannel": "销售渠道",
+      "placeholderName": "输入名称 ...",
+      "placeholderDescription": "输入描述 ...",
+      "placeholderPrefix": "输入前缀 ...",
+      "placeholderSuffix": "输入后缀 ...",
+      "placeholderPattern": "输入格式 ... \"prefix_{n}_suffix\"",
+      "placeholderStart": "输入起始编号 ...",
+      "placeholderPleaseSelect": "请选择...",
+      "placeholderSimpleModeImpossible": "高级模式已启用",
+      "helpTextAdvancedField": "高级格式定义：<br/>{'{prefix}_{n}_{suffix}'}<br/><li>'n' 对应定义的起始编号</li><li>（'_' 为任意分隔符）</li><br/>使用 'date'（PHP 参数）：<br/><li>{'{date}'}：国际日期格式（YYYY-MM-DD）</li><li>{'{date_dmy}'}：自定义日期格式（DD-MM-YY）</li>",
+      "errorPatternNeededMessage": "未定义格式。请至少指定一个起始值。",
+      "infoStartDecrementMessage": "仅当起始编号大于当前编号时，起始编号的修改才会生效。"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "number_ranges": {
+        "label": "编号范围"
+      }
+    }
+  }
+}

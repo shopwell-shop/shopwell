@@ -25,7 +25,7 @@ class MailContentTest extends TestCase
     ];
 
     private const DEFAULT_LANGUAGE_CODES = [
-        'de-DE',
+        'zh-CN',
         'en-GB',
     ];
 

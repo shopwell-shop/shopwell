@@ -67,7 +67,7 @@ class ModuleLoaderTest extends TestCase
                     [
                         'label' => [
                             'en-GB' => 'first App',
-                            'de-DE' => 'Erste App',
+                            'zh-CN' => 'Erste App',
                         ],
                         'name' => 'first-module',
                         'parent' => 'sw-catalogue',
@@ -221,7 +221,7 @@ class ModuleLoaderTest extends TestCase
                 [
                     'label' => [
                         'en-GB' => 'first App',
-                        'de-DE' => 'Erste App',
+                        'zh-CN' => 'Erste App',
                     ],
                     'source' => 'https://first.app.com',
                     'name' => 'first-module',

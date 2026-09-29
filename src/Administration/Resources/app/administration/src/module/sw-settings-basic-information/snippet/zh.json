@@ -1,0 +1,30 @@
+{
+  "sw-settings-basic-information": {
+    "general": {
+      "mainMenuItemGeneral": "主数据",
+      "description": "可在此进行主数据设置。",
+      "textHeadline": "主数据",
+      "messageSaveSuccess": "配置已成功保存。"
+    },
+    "captcha": {
+      "label": {
+        "honeypot": "蜜罐",
+        "basicCaptcha": "简单 CAPTCHA",
+        "googleReCaptchaV2": "Google reCAPTCHA v2",
+        "googleReCaptchaV2SiteKey": "Google reCAPTCHA v2 网站密钥",
+        "googleReCaptchaV2SecretKey": "Google reCAPTCHA v2 密钥",
+        "googleReCaptchaV2Invisible": "隐形 Google reCAPTCHA v2",
+        "googleReCaptchaV3": "Google reCAPTCHA v3",
+        "googleReCaptchaV3SiteKey": "Google reCAPTCHA v3 网站密钥",
+        "googleReCaptchaV3SecretKey": "Google reCAPTCHA v3 密钥",
+        "googleReCaptchaV3ThresholdScore": "Google reCAPTCHA v3 阈值分数",
+        "googleReCaptchaV2CheckboxDescription": "「我不是机器人」复选框要求用户勾选以确认其非机器人。用户可能直接通过（无需 CAPTCHA 验证），也可能被要求确认自己是真人。该方案接入最简单，只需两行 HTML 即可渲染该复选框。",
+        "googleReCaptchaV2InvisibleDescription": "隐形 reCAPTCHA 徽标不要求用户勾选复选框，而是在用户点击页面中已有按钮时触发，或通过 JavaScript API 调用触发。接入时需要在 reCAPTCHA 验证完成后提供 JavaScript 回调。默认情况下，只有非常可疑的请求才会要求完成 CAPTCHA。你可以在「高级设置」中的页面安全设置里修改该行为。",
+        "googleReCaptchaV3Description": "reCAPTCHA v3 可在无需用户操作的情况下验证交互是否合法。它是一个纯 JavaScript API，会返回评分，使你能够针对页面采取相应措施：例如要求额外的身份验证、提交人工审核，或限制抓取内容的机器人。",
+        "googleReCaptchaV3DescriptionThresholdScore": "reCAPTCHA v3 会为每次请求返回评分，且不会打扰用户。评分基于用户与页面的交互计算，使你能够针对页面采取合适的处理措施。阈值评分范围为 0.0 到 1.0。"
+      },
+      "basicCaptchaNoticeTitle": "提示",
+      "basicCaptchaNotice": "Basic Captcha 方案不符合无障碍要求。建议使用无需用户交互的方案。"
+    }
+  }
+}

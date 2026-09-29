@@ -92,7 +92,7 @@ class ThemeCreateCommandTest extends TestCase
         static::assertStringContainsString('Creating theme structure under', $result);
 
         static::assertFileExists($expectedDirectory . 'Resources/config/config.xml');
-        static::assertFileExists($expectedDirectory . 'Resources/snippet/storefront.de-DE.json');
+        static::assertFileExists($expectedDirectory . 'Resources/snippet/storefront.zh-CN.json');
         static::assertFileExists($expectedDirectory . 'Resources/snippet/storefront.en-GB.json');
 
         $scssBase = $expectedDirectory . 'Resources/app/storefront/src/scss/';
@@ -133,7 +133,7 @@ class ThemeCreateCommandTest extends TestCase
         $commandTester = $this->getCommandTester();
         $commandTester->execute(['theme-name' => self::THEME_NAME, '--with-snippets' => true]);
 
-        static::assertFileExists($expectedDirectory . 'Resources/snippet/storefront.de-DE.json');
+        static::assertFileExists($expectedDirectory . 'Resources/snippet/storefront.zh-CN.json');
         static::assertFileExists($expectedDirectory . 'Resources/snippet/storefront.en-GB.json');
         static::assertDirectoryDoesNotExist($expectedDirectory . 'Resources/config');
         static::assertDirectoryDoesNotExist($expectedDirectory . 'Resources/app/storefront/src/scss/abstracts');

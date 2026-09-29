@@ -7,7 +7,7 @@ use Shopwell\Core\Framework\Log\Package;
 /**
  * @internal
  *
- * @phpstan-type State array{id?: string, technicalName: string, de?: string, en?: string}
+ * @phpstan-type State array{id?: string, technicalName: string, zh?: string, en?: string}
  * @phpstan-type Transition array{id?: string, actionName: string, fromStateId?: string, from?: string, toStateId?: string, to?: string}
  */
 #[Package('framework')]
@@ -19,7 +19,7 @@ readonly class StateMachineMigration
      */
     public function __construct(
         private string $technicalName,
-        private string $de,
+        private string $zhCn,
         private string $en,
         private array $states = [],
         private array $transitions = [],
@@ -28,11 +28,11 @@ readonly class StateMachineMigration
     }
 
     /**
-     * @return array{technicalName: string, de: string, en: string}
+     * @return array{technicalName: string, zh: string, en: string}
      */
-    public static function state(string $technicalName, string $de, string $en): array
+    public static function state(string $technicalName, string $zhCn, string $en): array
     {
-        return ['technicalName' => $technicalName, 'de' => $de, 'en' => $en];
+        return ['technicalName' => $technicalName, 'zh' => $zhCn, 'en' => $en];
     }
 
     /**
@@ -48,9 +48,9 @@ readonly class StateMachineMigration
         return $this->technicalName;
     }
 
-    public function getDe(): string
+    public function getZhCn(): string
     {
-        return $this->de;
+        return $this->zhCn;
     }
 
     public function getEn(): string

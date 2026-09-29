@@ -13,9 +13,9 @@ describe('src/module/sw-export-channel-tracking', () => {
         expect(module).toBeTruthy();
     });
 
-    it('should have snippets for en-GB and de-DE', () => {
+    it('should have snippets for en-GB and zh-CN', () => {
         const module = Module.getModuleRegistry().get('sw-export-channel-tracking');
         expect(typeof module.manifest.snippets?.['en-GB']).toBe('function');
-        expect(typeof module.manifest.snippets?.['de-DE']).toBe('function');
+        expect(typeof module.manifest.snippets?.['zh-CN']).toBe('function');
     });
 });

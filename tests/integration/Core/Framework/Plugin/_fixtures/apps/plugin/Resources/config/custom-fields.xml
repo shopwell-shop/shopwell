@@ -4,7 +4,7 @@
     <custom-field-set>
         <name>custom_field_test</name>
         <label>Custom field test</label>
-        <label lang="de-DE">Zusatzfeld Test</label>
+        <label lang="zh-CN">自定义字段测试</label>
         <related-entities>
             <product/>
             <customer/>

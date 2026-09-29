@@ -42,9 +42,9 @@ class Migration1781862820RepairRevocationRequestTranslationsTest extends TestCas
             $this->deleteRevocationCmsPages();
             $this->deleteRevocationMailTemplates();
 
-            $deChLanguageByteId = $this->createLanguage('de-CH');
+            $zhHkLanguageByteId = $this->createLanguage('zh-HK');
             $enUsLanguageByteId = $this->createLanguage('en-US');
-            $frChLanguageByteId = $this->createLanguage('fr-CH', 'de-LI');
+            $frChLanguageByteId = $this->createLanguage('fr-CH', 'fr-LI');
 
             $migration = new Migration1781862820RepairRevocationRequestTranslations();
             $migration->update($this->connection);
@@ -52,8 +52,8 @@ class Migration1781862820RepairRevocationRequestTranslationsTest extends TestCas
 
             $this->assertMailTemplateTranslation(
                 MailTemplateTypes::MAILTYPE_REVOCATION_REQUEST_MERCHANT,
-                $deChLanguageByteId,
-                'Widerrufsantrag erhalten'
+                $zhHkLanguageByteId,
+                '已收到撤销申请'
             );
             $this->assertMailTemplateTranslation(
                 MailTemplateTypes::MAILTYPE_REVOCATION_REQUEST_MERCHANT,
@@ -68,8 +68,8 @@ class Migration1781862820RepairRevocationRequestTranslationsTest extends TestCas
 
             $this->assertMailTemplateTranslation(
                 MailTemplateTypes::MAILTYPE_REVOCATION_REQUEST_CUSTOMER,
-                $deChLanguageByteId,
-                'Widerrufsantrag gesendet'
+                $zhHkLanguageByteId,
+                '撤销申请已发送'
             );
             $this->assertMailTemplateTranslation(
                 MailTemplateTypes::MAILTYPE_REVOCATION_REQUEST_CUSTOMER,
@@ -80,15 +80,15 @@ class Migration1781862820RepairRevocationRequestTranslationsTest extends TestCas
             $cmsPageByteId = $this->getRevocationCmsPageId();
             static::assertIsString($cmsPageByteId);
 
-            $deChPageTranslationName = $this->getCmsPageTranslationName($cmsPageByteId, $deChLanguageByteId);
-            static::assertSame(Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['de_name'], $deChPageTranslationName);
+            $zhHkPageTranslationName = $this->getCmsPageTranslationName($cmsPageByteId, $zhHkLanguageByteId);
+            static::assertSame(Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['zh_name'], $zhHkPageTranslationName);
 
             $frChPageTranslationName = $this->getCmsPageTranslationName($cmsPageByteId, $frChLanguageByteId);
             static::assertSame(Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['en_name'], $frChPageTranslationName);
 
             $cmsSlotByteId = $this->getRevocationCmsSlotId();
             static::assertIsString($cmsSlotByteId);
-            static::assertSame(1, $this->countCmsSlotTranslations($cmsSlotByteId, $deChLanguageByteId));
+            static::assertSame(1, $this->countCmsSlotTranslations($cmsSlotByteId, $zhHkLanguageByteId));
             static::assertSame(1, $this->countCmsSlotTranslations($cmsSlotByteId, $frChLanguageByteId));
 
             $configuredPageId = $this->getGlobalRevocationPageConfigValue();
@@ -119,10 +119,10 @@ FROM `cms_page` AS `page`
 INNER JOIN `cms_page_translation` AS `page_translation`
     ON `page_translation`.`cms_page_id` = `page`.`id`
     AND `page_translation`.`cms_page_version_id` = `page`.`version_id`
-WHERE `page_translation`.`name` = :enName OR `page_translation`.`name` = :deName
+WHERE `page_translation`.`name` = :enName OR `page_translation`.`name` = :zhName
 SQL,
             [
-                'deName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['de_name'],
+                'zhName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['zh_name'],
                 'enName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['en_name'],
             ]
         );

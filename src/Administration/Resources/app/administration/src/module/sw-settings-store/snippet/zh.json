@@ -1,0 +1,15 @@
+{
+  "sw-settings-store": {
+    "general": {
+      "mainMenuItemGeneral": "Shopwell Account",
+      "textHeadline": "Shopwell Account",
+      "description": "可在此进行 Shopwell 账户设置。",
+      "messageSaveSuccess": "你的 Shopwell 账户数据已成功保存。"
+    },
+    "detail": {
+      "titleCard": "设置",
+      "labelHost": "授权域名",
+      "placeholderHost": "在此填写 Shopwell 账户中登记的授权域名（商城域名）。"
+    }
+  }
+}

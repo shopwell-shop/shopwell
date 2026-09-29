@@ -33,7 +33,7 @@ class LandingPageRouteTest extends TestCase
 
     private const LANGUAGE_IDS = [
         'en' => '2fbb5fe2e29a4d70aa5854ce7ce3e20b',
-        'de' => '0f4ac850f69643cfb03d8d6ea5dc2647',
+        'zh' => '0f4ac850f69643cfb03d8d6ea5dc2647',
     ];
 
     private KernelBrowser $browser;
@@ -141,13 +141,13 @@ class LandingPageRouteTest extends TestCase
 
         $this->browser = $this->createCustomSalesChannelBrowser([
             'id' => $this->ids->get('sales-channel'),
-            'languageId' => self::LANGUAGE_IDS['de'],
+            'languageId' => self::LANGUAGE_IDS['zh'],
             'languages' => [
                 ['id' => self::LANGUAGE_IDS['en']],
-                ['id' => self::LANGUAGE_IDS['de']],
+                ['id' => self::LANGUAGE_IDS['zh']],
             ],
             'domains' => [[
-                'languageId' => self::LANGUAGE_IDS['de'],
+                'languageId' => self::LANGUAGE_IDS['zh'],
                 'currencyId' => Defaults::CURRENCY,
                 'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
                 'url' => 'http://localhost/de-test',
@@ -159,7 +159,7 @@ class LandingPageRouteTest extends TestCase
         $salesChannelContext = static::getContainer()->get(SalesChannelContextFactory::class)->create(
             $contextResponse['token'],
             $this->ids->get('sales-channel'),
-            [SalesChannelContextService::LANGUAGE_ID => self::LANGUAGE_IDS['de']],
+            [SalesChannelContextService::LANGUAGE_ID => self::LANGUAGE_IDS['zh']],
         );
 
         $response = static::getContainer()->get(LandingPageRoute::class)->load(
@@ -240,10 +240,10 @@ class LandingPageRouteTest extends TestCase
                 'translationCodeId' => $this->getLocaleId('en-GB'),
             ],
             [
-                'id' => self::LANGUAGE_IDS['de'],
-                'name' => 'German',
-                'localeId' => $this->getLocaleId('de-DE'),
-                'translationCodeId' => $this->getLocaleId('de-DE'),
+                'id' => self::LANGUAGE_IDS['zh'],
+                'name' => 'Chinese',
+                'localeId' => $this->getLocaleId('zh-CN'),
+                'translationCodeId' => $this->getLocaleId('zh-CN'),
                 'parentId' => self::LANGUAGE_IDS['en'],
             ],
         ], Context::createDefaultContext());

@@ -1,0 +1,101 @@
+{
+  "sw-settings-tag": {
+    "general": {
+      "mainMenuItemGeneral": "标签",
+      "placeholderSearchBar": "搜索标签..."
+    },
+    "list": {
+      "textHeadline": "标签",
+      "textDeleteConfirm": "确定要删除标签 \"{name}\" 吗？",
+      "columnName": "标签",
+      "columnConnections": "关联",
+      "buttonAddTag": "新建标签",
+      "contextMenuEdit": "编辑标签",
+      "contextMenuDuplicate": "复制标签",
+      "contextMenuDelete": "删除标签",
+      "messageDeleteSuccess": "标签 \"{name}\" 已删除。",
+      "titleEmptyStateList": "暂无标签",
+      "searchPlaceholder": "搜索标签...",
+      "filter": "筛选",
+      "filterAssignemnt": "按已关联实体筛选",
+      "placeholderFilterAssignemnt": "搜索关联...",
+      "filterEmpty": "只显示未关联的标签",
+      "filterDuplicate": "只显示重复项",
+      "resetFilters": "重置筛选",
+      "bulkMerge": "合并",
+      "bulkMergeTitle": "合并标签",
+      "bulkMergeMessage": "确定要将标签",
+      "bulkMergeMessageAnd": "和",
+      "bulkMergeMessageFinal": "合并吗？",
+      "bulkMergeName": "新标签",
+      "bulkMerging": "正在合并标签",
+      "bulkMergeNotice": "请等待合并完成，这可能需要一段时间。如果关闭浏览器标签页或提前中止，部分更改将不会被应用，已有标签保持不变。你可以随时重新执行合并。",
+      "bulkMergeNoUndoNotice": "此操作无法撤销。",
+      "bulkMergeTimeNotice": "根据关联数量，此过程可能需要较长时间。",
+      "bulkMergeInto": "到",
+      "placeholderTagName": "输入标签名称...",
+      "assignments": {
+        "header": {
+          "products": "商品关联",
+          "media": "媒体关联",
+          "categories": "分类关联",
+          "customers": "客户关联",
+          "orders": "订单关联",
+          "shippingMethods": "配送方式关联",
+          "newsletterRecipients": "邮件订阅者关联",
+          "landingPages": "落地页关联",
+          "rules": "规则关联"
+        },
+        "content": {
+          "products": "商品",
+          "media": "媒体",
+          "categories": "分类",
+          "customers": "客户",
+          "orders": "订单",
+          "shippingMethods": "配送方式",
+          "newsletterRecipients": "邮件订阅者",
+          "landingPages": "落地页",
+          "rules": "规则"
+        },
+        "filter": {
+          "products": "商品",
+          "media": "媒体",
+          "categories": "分类",
+          "customers": "客户",
+          "orders": "订单",
+          "shippingMethods": "配送方式",
+          "newsletterRecipients": "邮件订阅者",
+          "landingPages": "落地页",
+          "rules": "规则"
+        }
+      }
+    },
+    "detail": {
+      "editTitle": "编辑 \"{name}\"",
+      "generalTab": "常规",
+      "assignmentsTab": "关联",
+      "assignments": {
+        "searchPlaceholder": "搜索实体...",
+        "assignments": "已关联",
+        "selected": "已关联的实体",
+        "showSelected": "隐藏未关联的实体",
+        "products": "商品",
+        "media": "媒体",
+        "categories": "分类",
+        "customers": "客户",
+        "orders": "订单",
+        "shippingMethods": "配送方式",
+        "newsletterRecipients": "邮件订阅者",
+        "landingPages": "落地页",
+        "rules": "规则"
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "tag": {
+        "label": "标签"
+      }
+    }
+  }
+}

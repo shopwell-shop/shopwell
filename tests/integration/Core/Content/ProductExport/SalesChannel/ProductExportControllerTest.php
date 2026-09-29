@@ -139,23 +139,23 @@ class ProductExportControllerTest extends TestCase
         static::assertSame(ProductExportEntity::ENCODING_UTF8, $client->getResponse()->getCharset());
 
         // Switch to DE
-        $deSalesChannelId = Uuid::randomHex();
-        $deSalesChannelDomainId = Uuid::randomHex();
+        $zhSalesChannelId = Uuid::randomHex();
+        $zhSalesChannelDomainId = Uuid::randomHex();
 
         $client = $this->createSalesChannelBrowser(null, false, [
-            'id' => $deSalesChannelId,
-            'languageId' => $this->getDeDeLanguageId(),
+            'id' => $zhSalesChannelId,
+            'languageId' => $this->getZhCnLanguageId(),
             'languages' => [
                 [
-                    'id' => $this->getDeDeLanguageId(),
+                    'id' => $this->getZhCnLanguageId(),
                 ],
             ],
             'domains' => [
                 [
-                    'id' => $deSalesChannelDomainId,
-                    'languageId' => $this->getDeDeLanguageId(),
+                    'id' => $zhSalesChannelDomainId,
+                    'languageId' => $this->getZhCnLanguageId(),
                     'currencyId' => Defaults::CURRENCY,
-                    'snippetSetId' => $this->getSnippetSetIdForLocale('de-DE'),
+                    'snippetSetId' => $this->getSnippetSetIdForLocale('zh-CN'),
                     'url' => 'http://example.com/de',
                 ],
             ],
@@ -163,11 +163,11 @@ class ProductExportControllerTest extends TestCase
 
         static::getContainer()->get(Translator::class)->reset();
 
-        $themeService->assignTheme($themeId, $deSalesChannelId, $context);
+        $themeService->assignTheme($themeId, $zhSalesChannelId, $context);
         $productExportDe = $this->createCsvExport(
             ProductExportEntity::ENCODING_UTF8,
-            $deSalesChannelId,
-            $deSalesChannelDomainId
+            $zhSalesChannelId,
+            $zhSalesChannelDomainId
         );
 
         $client->request('GET', \sprintf('/store-api/product-export/%s/%s', $productExportDe->getAccessKey(), $productExportDe->getFileName()));
@@ -175,7 +175,7 @@ class ProductExportControllerTest extends TestCase
         $csvRows = explode(\PHP_EOL, (string) $client->getResponse()->getContent());
         static::assertNotNull($client->getResponse()->headers->get('Last-Modified'));
         static::assertCount(4, $csvRows);
-        static::assertSame('SwagTheme DE Test', $csvRows[1]);
+        static::assertSame('SwagTheme ZH Test', $csvRows[1]);
     }
 
     public function testIsoCsvExport(): void

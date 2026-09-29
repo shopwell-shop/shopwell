@@ -39,9 +39,9 @@ class Migration1566460168UpdateTexts extends MigrationStep
 
         $connection->executeStatement('
             UPDATE `payment_method_translation`
-            SET `description` = \'Sie zahlen einfach und bequem auf Rechnung. Shopwell bietet z.B. auch die Möglichkeit, Rechnungen automatisiert erst ab der 2. Bestellung für Kunden zur Verfügung zu stellen, um Zahlungsausfälle zu vermeiden.\'
-            WHERE `description` = \'Sie zahlen einfach und bequem auf Rechnung. Shopwell bietet z.B. auch die Möglichkeit, Rechnung automatisiert erst ab der 2. Bestellung für Kunden zur Verfügung zu stellen, um Zahlungsausfälle zu vermeiden.\'
-            AND `name` = \'Rechnung\';
+            SET `description` = \'您可方便地使用发票付款。Shopwell 也可设置从第 2 笔订单起开放发票付款，以降低坏账风险。\'
+            WHERE `description` = \'您可方便地使用发票付款。Shopwell 也可设置从第 2 单起开放发票付款，以降低坏账风险。\'
+            AND `name` = \'发票\';
         ');
     }
 
@@ -56,9 +56,9 @@ class Migration1566460168UpdateTexts extends MigrationStep
 
         $connection->executeStatement('
             UPDATE `payment_method_translation`
-            SET `description` = \'Zahlung bei Erhalt der Ware.\'
+            SET `description` = \'收到商品时付款。\'
             WHERE `description` = \'\'
-            AND `name` = \'Nachnahme\';
+            AND `name` = \'货到付款\';
         ');
     }
 
@@ -73,9 +73,9 @@ class Migration1566460168UpdateTexts extends MigrationStep
 
         $connection->executeStatement('
             UPDATE `payment_method_translation`
-            SET `description` = \'Vorab autorisierte Zahlungsvereinbarung, Zahlungen werden direkt vom zu belastenden Konto abgebucht.\'
-            WHERE `description` = \'Zusatztext\'
-            AND `name` = \'Lastschrift\';
+            SET `description` = \'预先授权的付款协议，款项将直接从您的账户扣划。\'
+            WHERE `description` = \'补充说明\'
+            AND `name` = \'银行代扣\';
         ');
     }
 }

@@ -49,7 +49,7 @@ class Migration1786369207SeedAppProvidedDocumentType extends MigrationStep
         ]);
 
         $translations = new Translations(
-            ['document_type_id' => $typeId, 'name' => 'App-Dokument'],
+            ['document_type_id' => $typeId, 'name' => '应用文档'],
             ['document_type_id' => $typeId, 'name' => 'App document'],
         );
 

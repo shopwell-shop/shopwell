@@ -10,7 +10,7 @@ use Shopwell\Core\System\Snippet\Command\Util\CountryAgnosticFileLinter;
  * @description Contains a collection of {@see TranslationFile}s, which are content to be fixed by {@see CountryAgnosticFileLinter::fixFilenames()}
  *  Files in {@see self::getMapping()} are mapped to their agnostic filepath, which is missing.
  *
- * @example "path/to/file/de.json" maps to the TranslationFiles of "de-DE.json" and "de-AT.json" in the same directory, if "de.json" is missing.
+ * @example "path/to/file/en.json" maps to the TranslationFiles of "en-GB.json" and "en-US.json" in the same directory, if "en.json" is missing.
  *
  * @extends Collection<TranslationFile>
  */

@@ -1,0 +1,124 @@
+{
+  "sw-settings-search": {
+    "general": {
+      "mainMenuItemGeneral": "搜索",
+      "textHeadline": "搜索设置"
+    },
+    "page": {
+      "generalTab": "通用",
+      "liveSearchTab": "实时搜索"
+    },
+    "generalTab": {
+      "labelSearchBehaviour": "搜索行为",
+      "textTitleSearchBehaviour": "选择输入的搜索词需要多严格地匹配。",
+      "labelSearchAndCondition": "精确搜索 (AND)",
+      "textSearchAndConditionExplain": "仅显示与所有输入搜索词匹配的结果。",
+      "labelSearchOrCondition": "宽泛搜索（或）",
+      "textSearchOrConditionExplain": "显示与任一输入搜索词匹配的结果。",
+      "labelMinimalSearchTerm": "最小搜索词长度",
+      "labelExcludedSearchTerms": "已排除的搜索词",
+      "textEmptyStateExcludedSearchTerms": "尚未排除搜索词",
+      "textEmptyStateExcludedSearchTermsDescription": "排除搜索词，使其不再计入销售渠道的搜索结果。",
+      "buttonAddExcludedSearch": "排除搜索词",
+      "textPlaceholderTermsFilter": "搜索已排除的搜索词 ...",
+      "buttonAddExcludedSearchTerms": "排除搜索词",
+      "labelExcludedSearchTermsNoResults": "未找到搜索结果",
+      "labelExcludedSearchTermsNoResultsDescription": "调整搜索以找到你要找的内容。",
+      "labelSearchableContent": "可搜索内容",
+      "textDescriptionSearchableContent": "所有可搜索内容见下表。如需自定义销售渠道中的搜索结果，你可以将内容完全排除在搜索之外，或按需调整各元素的排序。排序越高的元素「搜索值」越高，在搜索结果中显示越靠前。",
+      "buttonResetDefault": "恢复默认值",
+      "linkExample": "查看示例",
+      "buttonAddContent": "添加可搜索内容",
+      "labelGeneralTab": "通用",
+      "labelCustomFieldsTab": "自定义字段",
+      "textEmptyStateSearchableContent": "尚未添加可搜索内容",
+      "textEmptyStateSearchableContentDescription": "添加可搜索内容，以控制销售渠道搜索中能被检索到的内容。",
+      "titleExampleModal": "搜索排序示例",
+      "textColumnSearchTerm": "已排除的搜索词",
+      "modal": {
+        "textExplain": "以下是搜索「牛仔裤」一词的三个示例排序结果。可搜索项包括商品标题（排序得分：100）、商品描述（排序得分：50）和商品标签（排序得分：20）。",
+        "textTitle": "标题",
+        "textSuperJeans": "超级牛仔裤",
+        "textDescription": "描述",
+        "textFancyJeans": "彩色牛仔裤",
+        "textTag": "标签",
+        "textJeans": "牛仔裤",
+        "textTotal": "总计",
+        "textProductRankedFirstScore": "排名第一的商品在所有可搜索项中均有命中，因此总排名得分为 170。",
+        "textFancyPants": "彩色裤子",
+        "textProductRankedSecondScore": "排名第二的商品在商品名称和商品标签中均有命中，因此总排名得分为 120。",
+        "textSuperPants": "超级裤子",
+        "textProductRankedThirdScore": "排名第三的商品仅在商品标签中命中一次，因此总排名得分为 20。"
+      },
+      "labelSearchIndex": "搜索索引",
+      "buttonRebuildSearchIndex": "重建搜索索引",
+      "textWarningOpenTab": "请勿关闭此窗口。",
+      "textRebuildSearchIndexDescription": "重建搜索索引需要一些时间。期间请保持此窗口打开，以确保索引重建成功。完成后会收到通知。",
+      "textRebuildingSearchIndex": "重新创建搜索索引",
+      "textLastedBuild": "最近构建：",
+      "textSearchNotIndexedYet": "搜索尚未建立索引。",
+      "list": {
+        "columnSearchable": "可搜索",
+        "columnRankingPoints": "排名得分",
+        "columnContent": "内容",
+        "columnSplitKeywords": "拆分搜索词",
+        "textResetRanking": "重置排名分数"
+      },
+      "configFields": {
+        "name": "商品名称",
+        "parentName": "上级名称",
+        "description": "商品描述",
+        "productNumber": "商品编号",
+        "manufacturerNumber": "制造商编号",
+        "ean": "GTIN/EAN",
+        "customSearchKeywords": "自定义搜索词",
+        "manufacturerName": "制造商名称",
+        "manufacturerCustomFields": "制造商自定义字段",
+        "categoriesName": "分类名称",
+        "categoriesCustomFields": "分类自定义字段",
+        "tagsName": "商品标签",
+        "metaTitle": "商品 Meta 标题",
+        "metaDescription": "商品 Meta 描述",
+        "propertiesValue": "属性规格",
+        "variantValue": "变体值"
+      }
+    },
+    "notification": {
+      "saveSuccess": "配置已保存。",
+      "excludedTermRequired": "排除的搜索词不能为空。",
+      "excludedTermAlreadyExists": "该搜索词已被排除。",
+      "updateExcludedTermSuccess": "已更新排除的搜索词。",
+      "createExcludedTermSuccess": "已创建排除的搜索词。",
+      "deleteExcludedTermSuccess": "已移除排除的搜索词。",
+      "saveError": "保存配置时发生错误。",
+      "resetToDefaultExcludedTermSuccess": "排除的搜索词已重置为默认。",
+      "resetToDefaultExcludedTermError": "重置已排除搜索词时发生错误。",
+      "index": {
+        "started": "创建商品索引。",
+        "success": "商品索引已建立。"
+      },
+      "loadError": "加载配置时发生错误。",
+      "notSupportedLanguageError": "所选语言在所选销售渠道中不可用"
+    },
+    "liveSearchTab": {
+      "titleCard": "销售渠道实时搜索",
+      "textDescription": "在此测试你的自定义搜索设置。",
+      "labelSalesChannelSelect": "销售渠道",
+      "textPlaceholderSalesChannel": "选择销售渠道...",
+      "textPlaceholderSorting": "选择排序...",
+      "linkRebuildSearchIndex": "重建搜索索引",
+      "labelName": "搜索结果",
+      "labelScore": "排名得分",
+      "textNoResult": "未找到结果",
+      "textNoResultDescription": "请尝试使用其他搜索词。"
+    },
+    "textLeaveConfirm": "你已修改此页面。若未保存就离开，更改将会丢失。"
+  },
+  "sw-privileges": {
+    "permissions": {
+      "product_search_config": {
+        "label": "搜索"
+      }
+    }
+  }
+}

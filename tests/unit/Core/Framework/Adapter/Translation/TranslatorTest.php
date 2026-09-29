@@ -196,11 +196,11 @@ class TranslatorTest extends TestCase
     {
         $decorated = $this->createMock(SymfonyTranslator::class);
         $decorated->method('getLocale')->willReturn('en_GB');
-        $decorated->method('getFallbackLocales')->willReturn(['de-DE', 'en-GB', 'en']);
+        $decorated->method('getFallbackLocales')->willReturn(['zh-CN', 'en-GB', 'en']);
 
         $decorated->expects($this->once())
             ->method('setFallbackLocales')
-            ->with(['de_DE', 'en_GB', 'en']);
+            ->with(['zh_CN', 'en_GB', 'en']);
 
         $decorated->expects($this->once())
             ->method('setLocale')
@@ -279,7 +279,7 @@ class TranslatorTest extends TestCase
         yield 'with locale and request snippet set id but no matched db record' => [
             'dbSnippetSetIds' => [],
             'expectedSnippetSetId' => $expectedSnippetSetId,
-            'locale' => 'de-DE',
+            'locale' => 'zh-CN',
             'requestSnippetSetId' => $expectedSnippetSetId,
         ];
 
@@ -288,7 +288,7 @@ class TranslatorTest extends TestCase
                 $foundSnippetSetId,
             ],
             'expectedSnippetSetId' => $foundSnippetSetId,
-            'locale' => 'de-DE',
+            'locale' => 'zh-CN',
             'requestSnippetSetId' => $expectedSnippetSetId,
         ];
 
@@ -298,7 +298,7 @@ class TranslatorTest extends TestCase
                 Uuid::randomHex(),
             ],
             'expectedSnippetSetId' => $foundSnippetSetId,
-            'locale' => 'de-DE',
+            'locale' => 'zh-CN',
             'requestSnippetSetId' => $expectedSnippetSetId,
         ];
 
@@ -309,7 +309,7 @@ class TranslatorTest extends TestCase
                 Uuid::randomHex(),
             ],
             'expectedSnippetSetId' => $expectedSnippetSetId,
-            'locale' => 'de-DE',
+            'locale' => 'zh-CN',
             'requestSnippetSetId' => $expectedSnippetSetId,
         ];
     }

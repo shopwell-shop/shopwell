@@ -78,7 +78,7 @@ class Migration1773047964AddZugferdCancellationInvoiceTest extends TestCase
         static::assertSame(
             [
                 'ZUGFeRD Cancellation Invoice',
-                'ZUGFeRD Stornorechnung',
+                'ZUGFeRD 冲销发票',
             ],
             $translations,
         );

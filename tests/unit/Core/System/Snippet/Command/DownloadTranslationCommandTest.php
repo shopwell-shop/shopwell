@@ -36,14 +36,14 @@ class DownloadTranslationCommandTest extends TestCase
         $this->translationLoader->expects($this->exactly(2))
             ->method('download')
             ->with(static::callback(
-                static fn (string $locale): bool => \in_array($locale, ['de-DE', 'es-ES'], true)
+                static fn (string $locale): bool => \in_array($locale, ['zh-CN', 'es-ES'], true)
             ));
 
         $tester = new CommandTester(new DownloadTranslationCommand(
             $this->translationLoader,
             new TranslationConfig(
                 new Uri('http://localhost:8000'),
-                ['de-DE', 'es-ES'],
+                ['zh-CN', 'es-ES'],
                 [],
                 new LanguageCollection(),
                 new PluginMappingCollection(),

@@ -385,7 +385,7 @@ function createTranslatedEntity({ id = 'product-id', customFields = null, transl
 }
 
 async function withTranslatedLanguageContext(
-    { languageId = 'de-DE', systemLanguageId = 'en-GB', parentId = 'en-GB' } = {},
+    { languageId = 'zh-CN', systemLanguageId = 'en-GB', parentId = 'en-GB' } = {},
     callback,
 ) {
     const previousLanguageId = Shopwell.Context.api.languageId;
@@ -2778,7 +2778,7 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
                         config: {
                             label: {
                                 'en-GB': 'Set 1 Label GB',
-                                'de-DE': 'Set 1 Label DE',
+                                'zh-CN': 'Set 1 Label ZH',
                             },
                         },
                         customFields: [

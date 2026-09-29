@@ -166,7 +166,7 @@ describe('core/factory/locale.factory.ts', () => {
         });
 
         it('should properly merge messages across multiple extend calls', () => {
-            LocaleFactory.register('de-DE', {
+            LocaleFactory.register('zh-CN', {
                 plugin1: {
                     key1: 'value1',
                 },
@@ -174,14 +174,14 @@ describe('core/factory/locale.factory.ts', () => {
 
             // Verify state after registration
             let registry = LocaleFactory.getLocaleRegistry();
-            let messages = registry.get('de-DE');
+            let messages = registry.get('zh-CN');
             expect(messages).toEqual({
                 plugin1: {
                     key1: 'value1',
                 },
             });
 
-            LocaleFactory.extend('de-DE', {
+            LocaleFactory.extend('zh-CN', {
                 plugin2: {
                     key2: 'value2',
                 },
@@ -189,7 +189,7 @@ describe('core/factory/locale.factory.ts', () => {
 
             // Verify state after first extend
             registry = LocaleFactory.getLocaleRegistry();
-            messages = registry.get('de-DE');
+            messages = registry.get('zh-CN');
             expect(messages).toEqual({
                 plugin1: {
                     key1: 'value1',
@@ -199,7 +199,7 @@ describe('core/factory/locale.factory.ts', () => {
                 },
             });
 
-            LocaleFactory.extend('de-DE', {
+            LocaleFactory.extend('zh-CN', {
                 plugin3: {
                     key3: 'value3',
                 },
@@ -207,7 +207,7 @@ describe('core/factory/locale.factory.ts', () => {
 
             // Verify final state after second extend
             registry = LocaleFactory.getLocaleRegistry();
-            messages = registry.get('de-DE');
+            messages = registry.get('zh-CN');
 
             expect(messages).toEqual({
                 plugin1: {
@@ -417,7 +417,7 @@ describe('core/factory/locale.factory.ts', () => {
 
     describe('getLastKnownLocale', () => {
         it('should prefer the stored locale over the browser locale', () => {
-            LocaleFactory.setSystemFallbackLocale('de-DE');
+            LocaleFactory.setSystemFallbackLocale('zh-CN');
 
             window.localStorage.setItem('sw-admin-locale', 'fr-FR');
 
@@ -425,21 +425,21 @@ describe('core/factory/locale.factory.ts', () => {
         });
 
         it('should prefer the browser locale when it is registered', () => {
-            setBrowserLanguages('de-DE');
+            setBrowserLanguages('zh-CN');
 
             LocaleFactory.setSystemFallbackLocale('fr-FR');
             LocaleFactory.register('en-GB', {});
-            LocaleFactory.register('de-DE', {});
+            LocaleFactory.register('zh-CN', {});
 
-            expect(LocaleFactory.getLastKnownLocale()).toBe('de-DE');
+            expect(LocaleFactory.getLastKnownLocale()).toBe('zh-CN');
         });
 
         it('should fall back to english when the browser locale is not registered', () => {
             setBrowserLanguages('es-ES');
 
-            LocaleFactory.setSystemFallbackLocale('de-DE');
+            LocaleFactory.setSystemFallbackLocale('zh-CN');
             LocaleFactory.register('en-GB', {});
-            LocaleFactory.register('de-DE', {});
+            LocaleFactory.register('zh-CN', {});
 
             expect(LocaleFactory.getLastKnownLocale()).toBe('en-GB');
         });
@@ -447,10 +447,10 @@ describe('core/factory/locale.factory.ts', () => {
         it('should fall back to the system locale when neither browser nor english are registered', () => {
             setBrowserLanguages('es-ES');
 
-            LocaleFactory.setSystemFallbackLocale('de-DE');
-            LocaleFactory.register('de-DE', {});
+            LocaleFactory.setSystemFallbackLocale('zh-CN');
+            LocaleFactory.register('zh-CN', {});
 
-            expect(LocaleFactory.getLastKnownLocale()).toBe('de-DE');
+            expect(LocaleFactory.getLastKnownLocale()).toBe('zh-CN');
         });
     });
 });

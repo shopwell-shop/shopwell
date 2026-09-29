@@ -51,9 +51,9 @@ async function createWrapper(systemLanguageIso = '', translations = [], customOp
                                             id: uuid.get('en-GB'),
                                         },
                                         {
-                                            name: 'Base de-DE',
-                                            iso: 'de-DE',
-                                            id: uuid.get('de-DE'),
+                                            name: 'Base zh-CN',
+                                            iso: 'zh-CN',
+                                            id: uuid.get('zh-CN'),
                                         },
                                         ...mockLanguages,
                                     ]),
@@ -103,7 +103,7 @@ function createEntityCollection(entities = []) {
 
 describe('src/app/component/form/sw-snippet-field', () => {
     it('should show admin language translation of snippet field', async () => {
-        Shopwell.Store.get('session').currentLocale = 'de-DE';
+        Shopwell.Store.get('session').currentLocale = 'zh-CN';
 
         const wrapper = await createWrapper('en-GB', [
             {
@@ -118,22 +118,22 @@ describe('src/app/component/form/sw-snippet-field', () => {
             {
                 author: 'testUser',
                 id: null,
-                value: 'deutsch',
+                value: '中文值',
                 origin: null,
-                resetTo: 'deutsch',
+                resetTo: '中文值',
                 translationKey: 'test.snippet',
-                setId: uuid.get('de-DE'),
+                setId: uuid.get('zh-CN'),
             },
         ]);
 
         await flushPromises();
 
         const textField = wrapper.find('input');
-        expect(textField.element.value).toBe('deutsch');
+        expect(textField.element.value).toBe('中文值');
     });
 
     it("should show all admin languages' translations of snippet field, even with more than 25 languages", async () => {
-        Shopwell.Store.get('session').currentLocale = 'de-DE';
+        Shopwell.Store.get('session').currentLocale = 'zh-CN';
 
         const enGB = {
             author: 'testUser',
@@ -147,9 +147,9 @@ describe('src/app/component/form/sw-snippet-field', () => {
 
         const deDE = {
             ...enGB,
-            value: 'deutsch',
-            resetTo: 'deutsch',
-            setId: uuid.get('de-DE'),
+            value: '中文值',
+            resetTo: '中文值',
+            setId: uuid.get('zh-CN'),
         };
 
         const mockLanguages = new Array(30).reduce((accumulator, _, index) => {
@@ -172,7 +172,7 @@ describe('src/app/component/form/sw-snippet-field', () => {
     it('should show system default language translation of snippet field', async () => {
         Shopwell.Store.get('session').currentLocale = 'nl-NL';
 
-        const wrapper = await createWrapper('de-DE', [
+        const wrapper = await createWrapper('zh-CN', [
             {
                 author: 'testUser',
                 id: null,
@@ -185,18 +185,18 @@ describe('src/app/component/form/sw-snippet-field', () => {
             {
                 author: 'testUser',
                 id: null,
-                value: 'deutsch',
+                value: '中文值',
                 origin: null,
-                resetTo: 'deutsch',
+                resetTo: '中文值',
                 translationKey: 'test.snippet',
-                setId: uuid.get('de-DE'),
+                setId: uuid.get('zh-CN'),
             },
         ]);
 
         await flushPromises();
 
         const textField = wrapper.find('input');
-        expect(textField.element.value).toBe('deutsch');
+        expect(textField.element.value).toBe('中文值');
     });
 
     it('should show en-GB language translation of snippet field', async () => {
@@ -215,11 +215,11 @@ describe('src/app/component/form/sw-snippet-field', () => {
             {
                 author: 'testUser',
                 id: null,
-                value: 'deutsch',
+                value: '中文值',
                 origin: null,
-                resetTo: 'deutsch',
+                resetTo: '中文值',
                 translationKey: 'test.snippet',
-                setId: uuid.get('de-DE'),
+                setId: uuid.get('zh-CN'),
             },
         ]);
 

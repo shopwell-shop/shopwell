@@ -35,9 +35,9 @@ class InstallerRedirectHelperTest extends TestCase
             'expected' => '?language=en-GB',
         ];
 
-        yield 'valid language: de-DE' => [
-            'queryString' => 'language=de-DE',
-            'expected' => '?language=de-DE',
+        yield 'valid language: zh-CN' => [
+            'queryString' => 'language=zh-CN',
+            'expected' => '?language=zh-CN',
         ];
 
         yield 'valid language: two-letter code only' => [
@@ -101,8 +101,8 @@ class InstallerRedirectHelperTest extends TestCase
         ];
 
         yield 'both valid parameters are sorted' => [
-            'queryString' => 'language=de-DE&ext_steps=1',
-            'expected' => '?ext_steps=1&language=de-DE',
+            'queryString' => 'language=zh-CN&ext_steps=1',
+            'expected' => '?ext_steps=1&language=zh-CN',
         ];
 
         yield 'both valid parameters (reverse order)' => [
@@ -136,7 +136,7 @@ class InstallerRedirectHelperTest extends TestCase
         ];
 
         yield 'language as array takes first value' => [
-            'queryString' => 'language[]=en-GB&language[]=de-DE',
+            'queryString' => 'language[]=en-GB&language[]=zh-CN',
             'expected' => '?language=en-GB',
         ];
 

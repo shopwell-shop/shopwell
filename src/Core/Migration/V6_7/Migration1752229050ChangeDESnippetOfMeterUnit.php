@@ -21,9 +21,9 @@ class Migration1752229050ChangeDESnippetOfMeterUnit extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $deLanguageId = $this->getDeDeId($connection);
+        $zhCnLanguageId = $this->getZhCnId($connection);
 
-        if (!$deLanguageId) {
+        if (!$zhCnLanguageId) {
             return;
         }
 
@@ -39,20 +39,20 @@ class Migration1752229050ChangeDESnippetOfMeterUnit extends MigrationStep
             UPDATE `measurement_display_unit_translation` SET `name` = :name
             WHERE `measurement_display_unit_id` = :unitId AND `language_id` = :languageId AND `updated_at` IS NULL
         ', [
-            'name' => 'Meter',
+            'name' => '米',
             'unitId' => $meterUnitId,
-            'languageId' => $deLanguageId,
+            'languageId' => $zhCnLanguageId,
         ]);
     }
 
-    private function getDeDeId(Connection $connection): ?string
+    private function getZhCnId(Connection $connection): ?string
     {
         $result = $connection->fetchOne(
             '
             SELECT lang.id
             FROM language lang
             INNER JOIN locale loc ON lang.translation_code_id = loc.id
-            AND loc.code = "de-DE"'
+            AND loc.code = "zh-CN"'
         );
 
         if ($result === false || Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM) === $result) {

@@ -334,8 +334,8 @@ class CountryAgnosticFileLinterTest extends TestCase
         $mockFiles[] = $this->createMockFile('nl-NL.json', $basePath);
 
         // Storefront files (base path)
-        $mockFiles[] = $this->createMockFile('storefront.de-DE.json', $basePath);
-        $mockFiles[] = $this->createMockFile('storefront.de.json', $basePath);
+        $mockFiles[] = $this->createMockFile('storefront.zh-CN.json', $basePath);
+        $mockFiles[] = $this->createMockFile('storefront.zh.json', $basePath);
         $mockFiles[] = $this->createMockFile('storefront.fr-BE.json', $basePath);
         $mockFiles[] = $this->createMockFile('storefront.fr-FR.json', $basePath);
         $mockFiles[] = $this->createMockFile('storefront.it-IT.json', $basePath);

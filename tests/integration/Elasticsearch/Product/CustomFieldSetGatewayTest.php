@@ -35,7 +35,7 @@ class CustomFieldSetGatewayTest extends TestCase
                 'config' => [
                     'label' => [
                         'en-GB' => 'English custom field set label',
-                        'de-DE' => 'German custom field set label',
+                        'zh-CN' => 'Chinese custom field set label',
                     ],
                 ],
                 'relations' => [
@@ -69,7 +69,7 @@ class CustomFieldSetGatewayTest extends TestCase
                 'config' => [
                     'label' => [
                         'en-GB' => 'English custom field set label',
-                        'de-DE' => 'German custom field set label',
+                        'zh-CN' => 'Chinese custom field set label',
                     ],
                 ],
                 'relations' => [

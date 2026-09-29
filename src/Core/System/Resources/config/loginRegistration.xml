@@ -3,164 +3,164 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Log-in / sign-up</title>
-        <title lang="de-DE">Anmeldung / Registrierung</title>
+        <title lang="zh-CN">登录 / 注册</title>
 
         <input-field type="int">
             <name>passwordMinLength</name>
             <label>Minimum password length on customer sign-up</label>
-            <label lang="de-DE">Passwort-Mindestlänge für Kunden-Registrierung</label>
+            <label lang="zh-CN">客户注册时的密码最小长度</label>
         </input-field>
 
         <input-field type="bool">
             <name>createCustomerAccountDefault</name>
             <label>Create customer account by default</label>
-            <label lang="de-DE">Standardmäßig ein Kundenkonto anlegen</label>
+            <label lang="zh-CN">默认创建客户账号</label>
             <helpText>If this setting is inactive, no customer account is created on the checkout page. The user then makes a purchase as a guest in the default setting.</helpText>
-            <helpText lang="de-DE">Wenn diese Einstellung inaktiv ist, wird auf der Checkoutseite kein Kundenkonto erstellt. Der Nutzer kauft dann im Standard als Gast ein.</helpText>
+            <helpText lang="zh-CN">该设置关闭时，结算页不会创建客户账号，用户默认以游客身份下单。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>customerIpAddressesNotAnonymously</name>
             <label>Save customer IP addresses as plain text</label>
-            <label lang="de-DE">Kunden-IP-Adressen als Klartext speichern</label>
+            <label lang="zh-CN">以明文保存客户 IP 地址</label>
         </input-field>
 
         <input-field type="bool">
             <name>showSalutation</name>
             <label>Show salutation</label>
-            <label lang="de-DE">Anrede anzeigen</label>
+            <label lang="zh-CN">显示称谓</label>
         </input-field>
 
         <input-field type="bool">
             <name>showTitleField</name>
             <label>Show title</label>
-            <label lang="de-DE">Titel anzeigen</label>
+            <label lang="zh-CN">显示头衔</label>
         </input-field>
 
         <input-field type="bool">
             <name>requireEmailConfirmation</name>
             <label>Email address must be entered twice</label>
-            <label lang="de-DE">E-Mail-Adresse muss zweimal eingegeben werden</label>
+            <label lang="zh-CN">邮箱地址需重复输入</label>
             <helpText>Email address has to be filled in twice to avoid errors.</helpText>
-            <helpText lang="de-DE">Die E-Mail-Adresse wird zweimal abgefragt, um Fehler bei der Eingabe zu vermeiden.</helpText>
+            <helpText lang="zh-CN">邮箱地址需填写两次，以避免输入错误。</helpText>
             <hint>global.accessibility.optionWarning</hint>
         </input-field>
 
         <input-field type="bool">
             <name>doubleOptInRegistration</name>
             <label>Double opt-in on sign-up</label>
-            <label lang="de-DE">Double-Opt-In für Registrierungen</label>
+            <label lang="zh-CN">注册时启用双重确认</label>
             <helpText>Double opt-in for new customers.</helpText>
-            <helpText lang="de-DE">Aktiviert Double-Opt-In bei der Neukunden-Registrierung.</helpText>
+            <helpText lang="zh-CN">新客户注册时启用双重确认。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>doubleOptInGuestOrder</name>
             <label>Double opt-in on guest orders</label>
-            <label lang="de-DE">Double-Opt-In bei Gast-Bestellungen</label>
+            <label lang="zh-CN">游客下单时启用双重确认</label>
             <helpText>Activates double opt-in for guest orders.</helpText>
-            <helpText lang="de-DE">Aktiviert Double-Opt-In für Gast-Bestellungen.</helpText>
+            <helpText lang="zh-CN">为游客订单启用双重确认。</helpText>
         </input-field>
 
         <input-field type="int">
             <name>doubleOptInResendInterval</name>
             <label>Resend double opt-in email after (hours)</label>
-            <label lang="de-DE">Double-Opt-In-E-Mail erneut senden nach (Stunden)</label>
+            <label lang="zh-CN">重新发送双重确认邮件的间隔（小时）</label>
             <helpText>If a customer attempts to log in without completing double opt-in, the confirmation email is resent automatically if it was sent more than this many hours ago. Set to 0 to disable auto-resend.</helpText>
-            <helpText lang="de-DE">Falls ein Kunde versucht sich anzumelden, ohne das Double-Opt-In abzuschließen, wird die Bestätigungs-E-Mail erneut gesendet, wenn sie vor mehr als dieser Anzahl an Stunden gesendet wurde. Auf 0 setzen, um das automatische Erneut-Senden zu deaktivieren.</helpText>
+            <helpText lang="zh-CN">若客户在未完成双重确认的情况下尝试登录，且确认邮件距上次发送已超过该小时数，则自动重新发送。设为 0 可关闭自动重发。</helpText>
             <defaultValue>24</defaultValue>
         </input-field>
 
         <input-field type="text">
             <name>confirmationUrl</name>
             <label>Confirmation URL for double opt-in on sign-up</label>
-            <label lang="de-DE">Bestätigungs-URL für Double-Opt-In-Registrierung</label>
+            <label lang="zh-CN">注册双重确认的确认链接</label>
             <placeholder><![CDATA[/registration/confirm?em=%%HASHEDEMAIL%%&hash=%%SUBSCRIBEHASH%%]]></placeholder>
             <helpText><![CDATA[Double opt-in URL for guest orders.<br/>Available placeholders: <br/>%%HASHEDEMAIL%%<br/>%%SUBSCRIBEHASH%%]]></helpText>
-            <helpText lang="de-DE"><![CDATA[Double-Opt-In-URL für Gast-Bestellungen.<br/>Verfügbare Platzhalter: <br/>%%HASHEDEMAIL%%<br/>%%SUBSCRIBEHASH%%]]></helpText>
+            <helpText lang="zh-CN"><![CDATA[游客订单的双重确认 URL。<br/>可用占位符：<br/>%%HASHEDEMAIL%%<br/>%%SUBSCRIBEHASH%%]]></helpText>
         </input-field>
 
         <input-field type="bool">
             <name>requirePasswordConfirmation</name>
             <label>Password must be entered twice</label>
-            <label lang="de-DE">Passwort muss zweimal eingegeben werden</label>
+            <label lang="zh-CN">密码需重复输入</label>
             <helpText>Password has to be filled in twice to avoid input errors.</helpText>
-            <helpText lang="de-DE">Passwort wird zweimal abgefragt, um Fehler bei der Eingabe zu vermeiden.</helpText>
+            <helpText lang="zh-CN">密码需填写两次，以避免输入错误。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>showPhoneNumberField</name>
             <label>Show phone number</label>
-            <label lang="de-DE">Telefonnummer anzeigen</label>
+            <label lang="zh-CN">显示电话号码</label>
         </input-field>
 
         <input-field type="bool">
             <name>phoneNumberFieldRequired</name>
             <label>Phone number field required</label>
-            <label lang="de-DE">Telefonnummer ist Pflichtfeld</label>
+            <label lang="zh-CN">电话号码为必填项</label>
         </input-field>
 
         <input-field type="bool">
             <name>showBirthdayField</name>
             <label>Show birthday field</label>
-            <label lang="de-DE">Geburtstag anzeigen</label>
+            <label lang="zh-CN">显示生日字段</label>
         </input-field>
 
         <input-field type="bool">
             <name>birthdayFieldRequired</name>
             <label>Birthday field required</label>
-            <label lang="de-DE">Geburtstag ist Pflichtfeld</label>
+            <label lang="zh-CN">生日字段为必填项</label>
         </input-field>
 
         <input-field type="bool">
             <name>showAccountTypeSelection</name>
             <label>Show selection between company and customer account</label>
-            <label lang="de-DE">Auswahl zwischen Geschäfts- und Kundenkonto anzeigen</label>
+            <label lang="zh-CN">显示企业账号与个人账号的选择</label>
         </input-field>
 
         <input-field type="bool">
             <name>showAdditionalAddressField1</name>
             <label>Show additional address field 1</label>
-            <label lang="de-DE">Adresszusatzzeile 1 anzeigen</label>
+            <label lang="zh-CN">显示地址补充行 1</label>
         </input-field>
 
         <input-field type="bool">
             <name>additionalAddressField1Required</name>
             <label>Additional address 1 field required</label>
-            <label lang="de-DE">Adresszusatzzeile 1 ist Pflichtfeld</label>
+            <label lang="zh-CN">地址补充行 1 为必填项</label>
         </input-field>
 
         <input-field type="bool">
             <name>showAdditionalAddressField2</name>
             <label>Show additional address field 2</label>
-            <label lang="de-DE">Adresszusatzzeile 2 anzeigen</label>
+            <label lang="zh-CN">显示地址补充行 2</label>
         </input-field>
 
         <input-field type="bool">
             <name>additionalAddressField2Required</name>
             <label>Additional address 2 field required</label>
-            <label lang="de-DE">Adresszusatzzeile 2 ist Pflichtfeld</label>
+            <label lang="zh-CN">地址补充行 2 为必填项</label>
         </input-field>
 
         <input-field type="single-select">
             <name>addressInputFieldArrangement</name>
             <label>Arrangement of address fields City, ZIP and State</label>
-            <label lang="de-DE">Anordnung der Adressfelder Stadt, PLZ und Bundesland</label>
+            <label lang="zh-CN">城市、邮编与省份字段的排列顺序</label>
             <options>
                 <option>
                     <id>city-zip-state</id>
                     <name>City - ZIP - State</name>
-                    <name lang="de-DE">Stadt - PLZ - Bundesland</name>
+                    <name lang="zh-CN">城市 - 邮编 - 省份</name>
                 </option>
                 <option>
                     <id>zip-city-state</id>
                     <name>ZIP - City - State</name>
-                    <name lang="de-DE">PLZ - Stadt - Bundesland</name>
+                    <name lang="zh-CN">邮编 - 城市 - 省份</name>
                 </option>
                 <option>
                     <id>city-state-zip</id>
                     <name>City - State - ZIP</name>
-                    <name lang="de-DE">Stadt - Bundesland - PLZ</name>
+                    <name lang="zh-CN">城市 - 省份 - 邮编</name>
                 </option>
             </options>
         </input-field>
@@ -168,47 +168,47 @@
         <input-field type="bool">
             <name>invalidateSessionOnLogOut</name>
             <label>Clear and delete cart on log-out</label>
-            <label lang="de-DE">Warenkorb bei Abmeldung löschen</label>
+            <label lang="zh-CN">退出登录时清空并删除购物车</label>
             <helpText>If activated, the cart won't be saved and can't be restored after logout.</helpText>
-            <helpText lang="de-DE">Wenn die Einstellung aktiviert ist, wird der Warenkorb nicht gespeichert und kann nach der Abmeldung nicht wiederhergestellt werden.</helpText>
+            <helpText lang="zh-CN">开启后，购物车不会被保存，退出登录后也无法恢复。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>allowCustomerDeletion</name>
             <label>Allow customer deletion</label>
-            <label lang="de-DE">Löschen von Kunden zulassen</label>
+            <label lang="zh-CN">允许删除客户</label>
         </input-field>
 
         <input-field type="int">
             <name>unusedGuestCustomerLifetime</name>
             <label>Expiry time of guest customer accounts</label>
-            <label lang="de-DE">Zeit, nach der Gastkundenaccounts ablaufen</label>
+            <label lang="zh-CN">游客客户账号的过期时间</label>
             <helpText>Time in seconds. Zero disables automatic deletion.</helpText>
-            <helpText lang="de-DE">Zeit in Sekunden. Null verhindert das automatische Löschen.</helpText>
+            <helpText lang="zh-CN">单位为秒。填 0 则不自动删除。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>requireDataProtectionCheckbox</name>
             <label>The privacy policy must be acknowledged via a checkbox</label>
-            <label lang="de-DE">Datenschutzbestimmungen müssen über eine Checkbox bestätigen werden</label>
+            <label lang="zh-CN">必须勾选确认隐私政策</label>
         </input-field>
 
         <input-field type="text">
             <name>pwdRecoverUrl</name>
             <label>Password recovery URL</label>
-            <label lang="de-DE">Passwort-Wiederherstellungs-URL</label>
+            <label lang="zh-CN">密码找回链接</label>
             <placeholder><![CDATA[/account/recover/password?hash=%%RECOVERHASH%%]]></placeholder>
             <helpText><![CDATA[Available placeholders: <br/>%%RECOVERHASH%%]]></helpText>
-            <helpText lang="de-DE"><![CDATA[Verfügbare Platzhalter: <br/>%%RECOVERHASH%%]]></helpText>
+            <helpText lang="zh-CN"><![CDATA[可用占位符：<br/>%%RECOVERHASH%%]]></helpText>
         </input-field>
 
         <input-field type="text">
             <name>doubleOptInDomain</name>
             <label>Double opt-in domain</label>
-            <label lang="de-DE">Double-Opt-In-Domain</label>
+            <label lang="zh-CN">双重确认域名</label>
             <placeholder><![CDATA[https://localhost]]></placeholder>
             <helpText>Leave empty to use this Sales Channel's domain.</helpText>
-            <helpText lang="de-DE">Leer lassen, um die Domain des Verkaufskanals zu verwenden.</helpText>
+            <helpText lang="zh-CN">留空则使用该销售渠道的域名。</helpText>
         </input-field>
     </card>
 </config>

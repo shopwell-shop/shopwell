@@ -4,9 +4,9 @@
     <meta>
         <name>SwagApp</name>
         <label>Swag App Test</label>
-        <label lang="de-DE">Swag App Test</label>
+        <label lang="zh-CN">Swag 应用测试</label>
         <description>test</description>
-        <description lang="de-DE">test</description>
+        <description lang="zh-CN">test</description>
         <author>Shopwell</author>
         <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>

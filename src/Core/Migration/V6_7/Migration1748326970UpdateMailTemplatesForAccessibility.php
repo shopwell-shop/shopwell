@@ -31,8 +31,8 @@ class Migration1748326970UpdateMailTemplatesForAccessibility extends MigrationSt
             MailTemplateTypes::MAILTYPE_ORDER_CONFIRM,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/de-html.html.twig')
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_confirmation_mail/zh-html.html.twig')
         );
         $this->updateMail($update, $connection);
 
@@ -40,8 +40,8 @@ class Migration1748326970UpdateMailTemplatesForAccessibility extends MigrationSt
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_PAID,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.paid/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.paid/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.paid/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.paid/de-html.html.twig')
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.paid/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.paid/zh-html.html.twig')
         );
         $this->updateMail($update, $connection);
 
@@ -49,8 +49,8 @@ class Migration1748326970UpdateMailTemplatesForAccessibility extends MigrationSt
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_CANCELLED,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.cancelled/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.cancelled/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.cancelled/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.cancelled/de-html.html.twig')
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.cancelled/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/order_transaction.state.cancelled/zh-html.html.twig')
         );
         $this->updateMail($update, $connection);
     }

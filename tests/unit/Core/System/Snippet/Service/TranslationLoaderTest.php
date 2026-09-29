@@ -238,7 +238,7 @@ class TranslationLoaderTest extends TestCase
     {
         $loader = $this->getTranslationLoader();
         static::assertSame('', $loader->getLocalePath('_not-a-locale_'));
-        static::assertSame('/translation/locale/de-DE', $loader->getLocalePath('de-DE'));
+        static::assertSame('/translation/locale/zh-CN', $loader->getLocalePath('zh-CN'));
     }
 
     /**
@@ -251,7 +251,7 @@ class TranslationLoaderTest extends TestCase
 
         $existingPlugin = new TestPlugin(true, '');
         $existingPlugin->setName('SwagPublisher');
-        $this->flysystem->createDirectory($loader->getLocalePath('de-DE') . '/Plugins/SwagPublisher');
+        $this->flysystem->createDirectory($loader->getLocalePath('zh-CN') . '/Plugins/SwagPublisher');
 
         $noLocaleBasePathPlugin = new TestPlugin(true, '');
         $noLocaleBasePathPlugin->setName('NoLocaleBasePathExists');
@@ -266,9 +266,9 @@ class TranslationLoaderTest extends TestCase
 
         $existingPlugin = new TestPlugin(true, '');
         $existingPlugin->setName('SwagPublisher');
-        $this->flysystem->createDirectory($loader->getLocalePath('de-DE') . '/Plugins/SwagPublisher');
+        $this->flysystem->createDirectory($loader->getLocalePath('zh-CN') . '/Plugins/SwagPublisher');
 
-        static::assertTrue($loader->pluginTranslationExistsForLocale($existingPlugin, 'de-DE'));
+        static::assertTrue($loader->pluginTranslationExistsForLocale($existingPlugin, 'zh-CN'));
         static::assertFalse($loader->pluginTranslationExistsForLocale($existingPlugin, 'en-GB'));
     }
 
@@ -341,13 +341,13 @@ class TranslationLoaderTest extends TestCase
         $mappedNamePlugin = new TestPlugin(true, '');
         $mappedNamePlugin->setName('SwagPaypal');
 
-        $this->flysystem->createDirectory($loader->getLocalePath('de-DE') . '/Plugins/SwagPaypal');
-        static::assertFalse($loader->pluginTranslationExistsForLocale($mappedNamePlugin, 'de-DE'));
+        $this->flysystem->createDirectory($loader->getLocalePath('zh-CN') . '/Plugins/SwagPaypal');
+        static::assertFalse($loader->pluginTranslationExistsForLocale($mappedNamePlugin, 'zh-CN'));
 
         // the negative result is memoized, so the loader must be reset to observe the newly installed translation
-        $this->flysystem->createDirectory($loader->getLocalePath('de-DE') . '/Plugins/MappedName');
+        $this->flysystem->createDirectory($loader->getLocalePath('zh-CN') . '/Plugins/MappedName');
         $loader->reset();
-        static::assertTrue($loader->pluginTranslationExistsForLocale($mappedNamePlugin, 'de-DE'));
+        static::assertTrue($loader->pluginTranslationExistsForLocale($mappedNamePlugin, 'zh-CN'));
     }
 
     public function testPluginTranslationExistsForLocaleMemoizesPositiveResult(): void
@@ -357,18 +357,18 @@ class TranslationLoaderTest extends TestCase
         $existingPlugin = new TestPlugin(true, '');
         $existingPlugin->setName('SwagPublisher');
 
-        $pluginPath = $loader->getLocalePath('de-DE') . '/Plugins/SwagPublisher';
+        $pluginPath = $loader->getLocalePath('zh-CN') . '/Plugins/SwagPublisher';
         $this->flysystem->createDirectory($pluginPath);
 
-        static::assertTrue($loader->pluginTranslationExistsForLocale($existingPlugin, 'de-DE'));
+        static::assertTrue($loader->pluginTranslationExistsForLocale($existingPlugin, 'zh-CN'));
 
         // the directory is removed on the filesystem, but the memoized result must be reused without a new remote check
         $this->flysystem->deleteDirectory($pluginPath);
-        static::assertTrue($loader->pluginTranslationExistsForLocale($existingPlugin, 'de-DE'));
+        static::assertTrue($loader->pluginTranslationExistsForLocale($existingPlugin, 'zh-CN'));
 
         // reset() drops the memoized lookup so the next call reflects the current filesystem state again
         $loader->reset();
-        static::assertFalse($loader->pluginTranslationExistsForLocale($existingPlugin, 'de-DE'));
+        static::assertFalse($loader->pluginTranslationExistsForLocale($existingPlugin, 'zh-CN'));
     }
 
     public function testPluginTranslationExistsForLocaleMemoizesNegativeResult(): void
@@ -378,17 +378,17 @@ class TranslationLoaderTest extends TestCase
         $existingPlugin = new TestPlugin(true, '');
         $existingPlugin->setName('SwagPublisher');
 
-        $pluginPath = $loader->getLocalePath('de-DE') . '/Plugins/SwagPublisher';
+        $pluginPath = $loader->getLocalePath('zh-CN') . '/Plugins/SwagPublisher';
 
-        static::assertFalse($loader->pluginTranslationExistsForLocale($existingPlugin, 'de-DE'));
+        static::assertFalse($loader->pluginTranslationExistsForLocale($existingPlugin, 'zh-CN'));
 
         // the directory is created on the filesystem, but the memoized negative result must be reused without a new check
         $this->flysystem->createDirectory($pluginPath);
-        static::assertFalse($loader->pluginTranslationExistsForLocale($existingPlugin, 'de-DE'));
+        static::assertFalse($loader->pluginTranslationExistsForLocale($existingPlugin, 'zh-CN'));
 
         // reset() drops the memoized lookup so the next call reflects the current filesystem state again
         $loader->reset();
-        static::assertTrue($loader->pluginTranslationExistsForLocale($existingPlugin, 'de-DE'));
+        static::assertTrue($loader->pluginTranslationExistsForLocale($existingPlugin, 'zh-CN'));
     }
 
     public function testLoadCreatesLanguageWithActiveFalseWhenSkipped(): void

@@ -168,7 +168,7 @@ export function md5(value: string): string {
  * Formats a number of bytes to a string with a unit
  */
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
-export function fileSize(bytes: number, locale = 'de-DE'): string {
+export function fileSize(bytes: number, locale = 'zh-CN'): string {
     const denominator = 1024;
     const units = [
         'B',
@@ -203,7 +203,7 @@ export function toISODate(dateObj: Date, useTime = true): string {
 
 /**
  * Formats a BCP 47 locale code as "Native language (UI language, region in UI language)",
- * e.g. `fr-FR` rendered for a German UI becomes "Français (Französisch, Frankreich)".
+ * e.g. `fr-FR` rendered for a `zh-CN` UI becomes "法语 (法语, 法国)".
  * Falls back to the raw code when the browser cannot resolve it.
  */
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations

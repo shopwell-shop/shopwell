@@ -1197,7 +1197,7 @@ class AppManagerTest extends TestCase
             [
                 'name' => 'first-module',
                 'label' => [
-                    'de-DE' => 'Mein erstes eigenes Modul',
+                    'zh-CN' => '我的第一个模块',
                     'en-GB' => 'My first own module',
                 ],
                 'parent' => 'sw-test-structure-module',
@@ -1206,7 +1206,7 @@ class AppManagerTest extends TestCase
             ], [
                 'name' => 'structure-module',
                 'label' => [
-                    'de-DE' => 'Mein Menüeintrag für Module',
+                    'zh-CN' => '我的模块菜单项',
                     'en-GB' => 'My menu entry for modules',
                 ],
                 'parent' => 'sw-catalogue',
@@ -1523,18 +1523,18 @@ class AppManagerTest extends TestCase
                     'name' => 'text',
                     'type' => 'text',
                     'label' => [
-                        'de-DE' => 'Text DE',
+                        'zh-CN' => '文本',
                         'en-GB' => 'Text',
                     ],
                     'options' => [],
                     'helpText' => [
-                        'de-DE' => 'Help DE',
+                        'zh-CN' => '帮助',
                         'en-GB' => 'Help Text',
                     ],
                     'required' => true,
                     'extensions' => [],
                     'placeHolder' => [
-                        'de-DE' => 'Enter Text DE...',
+                        'zh-CN' => '输入文本...',
                         'en-GB' => 'Enter Text...',
                     ],
                     'defaultValue' => 'Hello',
@@ -1574,7 +1574,7 @@ class AppManagerTest extends TestCase
             ])->fetchAllAssociativeIndexed();
 
         static::assertContains('The headline App Flow Action', \array_keys($headlines));
-        static::assertContains('Die Überschrift App Flow Action', \array_keys($headlines));
+        static::assertContains('App 流程动作标题', \array_keys($headlines));
     }
 
     private function assertDefaultHosts(AppEntity $app): void

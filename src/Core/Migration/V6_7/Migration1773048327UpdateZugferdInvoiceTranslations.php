@@ -27,11 +27,11 @@ class Migration1773048327UpdateZugferdInvoiceTranslations extends MigrationStep
     {
         $types = [
             ZugferdRenderer::TYPE => [
-                'de' => ['name' => 'ZUGFeRD Rechnung'],
+                'zh' => ['name' => 'ZUGFeRD 发票'],
                 'en' => ['name' => 'ZUGFeRD Invoice'],
             ],
             ZugferdEmbeddedRenderer::TYPE => [
-                'de' => ['name' => 'ZUGFeRD Rechnung (eingebettet)'],
+                'zh' => ['name' => 'ZUGFeRD 发票（内嵌）'],
                 'en' => ['name' => 'ZUGFeRD Invoice (embedded)'],
             ],
         ];
@@ -56,7 +56,7 @@ class Migration1773048327UpdateZugferdInvoiceTranslations extends MigrationStep
         }
 
         $translation = new Translations(
-            array_merge(['document_type_id' => $typeId], $translations['de']),
+            array_merge(['document_type_id' => $typeId], $translations['zh']),
             array_merge(['document_type_id' => $typeId], $translations['en'])
         );
 

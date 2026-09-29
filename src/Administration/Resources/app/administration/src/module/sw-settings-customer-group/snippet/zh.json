@@ -1,0 +1,64 @@
+{
+  "sw-settings-customer-group": {
+    "general": {
+      "mainMenuItemGeneral": "客户组",
+      "buttonCreate": "新建客户组",
+      "placeholderSearchBar": "搜索所有客户组..."
+    },
+    "list": {
+      "columnName": "名称",
+      "columnDisplayGross": "税额显示"
+    },
+    "detail": {
+      "cardTitle": "客户组",
+      "fieldNameLabel": "名称",
+      "fieldDisplayGrossLabel": "税额显示",
+      "fieldDisplayGrossValues": "含税 | 不含税",
+      "placeholderName": "输入名称...",
+      "placeholderNewCustomerGroup": "新建客户组",
+      "notificationErrorMessage": "保存客户组时出错。",
+      "registrationForm": "自定义注册表单"
+    },
+    "registration": {
+      "formTitle": "注册表单",
+      "placeholderTitle": "输入标题...",
+      "placeholderIntroduction": "输入简介...",
+      "placeholderSeoMetaDescription": "输入 SEO Meta 描述...",
+      "title": "标题",
+      "introduction": "简介",
+      "onlyCompaniesCanRegister": "仅限企业注册",
+      "onlyCompaniesCanRegisterHelpText": "添加公司名称、税号和部门字段。",
+      "seoMetaDescription": "SEO Meta 描述",
+      "linkUrlsTitle": "URL",
+      "linkUrlDescription": "点击右侧按钮，生成将申请表单关联到各销售渠道的 URL。",
+      "linkUrlButton": "生成 URL",
+      "technicalUrl": "技术 URL",
+      "technicalUrlHelpText": "技术 URL 可在分类模块中作为\"自定义链接\"使用，语言会自动选择。",
+      "availabilitySalesChannel": "可用销售渠道",
+      "infoText": "顾客可通过此表单注册。只有当你在客户模块中接受申请后，客户才会被分配到该客户组。表单可用以下字段自定义。",
+      "seoUrlLabel": "{salesChannelName} URL（{languageName}）",
+      "domainBanner": "SEO URL 会按每个销售渠道配置的域名分别列出。"
+    },
+    "modal": {
+      "seoUrl": {
+        "title": "URL 设置",
+        "salesChannel": "销售渠道",
+        "urlSuffix": "URL 后缀",
+        "exampleUrl": "URL 示例",
+        "generate": "生成"
+      }
+    },
+    "notification": {
+      "errorMessageCannotDeleteCustomerGroup": "该客户组仍被销售渠道和/或客户使用，因此无法删除。",
+      "errorUnableToCreateSeoUrls": "无法生成 URL",
+      "successfulGeneratedSeoUrls": "URL 已生成"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "customer_groups": {
+        "label": "客户组"
+      }
+    }
+  }
+}

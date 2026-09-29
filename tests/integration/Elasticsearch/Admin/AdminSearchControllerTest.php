@@ -189,7 +189,7 @@ class AdminSearchControllerTest extends TestCase
             [
                 'id' => $ids->get('promotion-6'),
                 'name' => [
-                    'de-DE' => '12345',
+                    'zh-CN' => '12345',
                     'en-GB' => '56789',
                 ],
                 'active' => true,

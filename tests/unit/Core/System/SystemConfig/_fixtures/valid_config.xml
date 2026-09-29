@@ -3,16 +3,16 @@
 
     <card>
         <title>Basic configuration</title>
-        <title lang="de-DE">Grundeinstellungen</title>
+        <title lang="zh-CN">基础设置</title>
         <subtitle>Basic configuration subtitle</subtitle>
-        <subtitle lang="de-DE">Grundkonfiguration Untertitel</subtitle>
+        <subtitle lang="zh-CN">基础配置副标题</subtitle>
         <input-field>
             <name>email</name>
             <copyable>true</copyable>
             <label>eMail</label>
-            <label lang="de-DE">E-Mail</label>
+            <label lang="zh-CN">电子邮箱</label>
             <placeholder>Enter your eMail address</placeholder>
-            <placeholder lang="de-DE">Bitte gib deine E-Mail Adresse ein</placeholder>
+            <placeholder lang="zh-CN">请输入你的邮箱地址</placeholder>
             <defaultValue>42</defaultValue>
         </input-field>
 
@@ -59,9 +59,9 @@
                 </option>
             </options>
             <label>Mailing protocol</label>
-            <label lang="de-DE">E-Mail Versand Protokoll</label>
+            <label lang="zh-CN">邮件发送协议</label>
             <placeholder>Choose your preferred transfer method</placeholder>
-            <placeholder lang="de-DE">Bitte wähle dein bevorzugtes Versand Protokoll</placeholder>
+            <placeholder lang="zh-CN">请选择你偏好的发送协议</placeholder>
             <defaultValue>smtp</defaultValue>
         </input-field>
 
@@ -87,12 +87,12 @@
                 <option>
                     <id>smtp</id>
                     <name>English smtp</name>
-                    <name lang="de-DE">German smtp</name>
+                    <name lang="zh-CN">中文 smtp</name>
                 </option>
                 <option>
                     <id>pop3</id>
                     <name>English pop3</name>
-                    <name lang="de-DE">German pop3</name>
+                    <name lang="zh-CN">中文 pop3</name>
                 </option>
             </options>
             <defaultValue>pop3</defaultValue>

@@ -15,7 +15,7 @@
     "extra": {
         "shopwell-plugin-class": "SwagTestWithoutConfig\\SwagTestWithoutConfig",
         "label": {
-            "de-DE": "Deutscher Pluginname",
+            "zh-CN": "中文插件名称",
             "en-GB": "English plugin name"
         }
     },

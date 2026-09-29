@@ -4,14 +4,14 @@
     <custom-field-set>
         <name>swag_example_set</name>
         <label>Example custom field set</label>
-        <label lang="de-DE">Beispiel-Zusatzfeld-Set</label>
+        <label lang="zh-CN">示例自定义字段集</label>
         <related-entities>
             <product/>
         </related-entities>
         <fields>
             <int name="swag_example_size">
                 <label>Size</label>
-                <label lang="de-DE">Größe</label>
+                <label lang="zh-CN">尺寸</label>
                 <position>1</position>
             </int>
         </fields>

@@ -17,8 +17,8 @@ plugin-mapping:
 languages:
     - name: 'Dansk'
       locale: 'da-DK'
-    - name: 'Deutsch'
-      locale: 'de-DE'
+    - name: '简体中文'
+      locale: 'zh-CN'
     - name: 'English (UK)'
       locale: 'en-GB'
     - name: 'English (US)'

@@ -36,7 +36,7 @@ class ShippingMethodTest extends TestCase
                 'identifier' => 'swagFirstShippingMethod',
                 'name' => [
                     'en-GB' => 'First shipping method',
-                    'de-DE' => 'Erste Versandmethode',
+                    'zh-CN' => '第一种配送方式',
                 ],
             ],
             [
@@ -107,17 +107,17 @@ class ShippingMethodTest extends TestCase
         $name = $result['name'];
         static::assertIsArray($name);
         static::assertArrayHasKey('en-GB', $name);
-        static::assertArrayHasKey('de-DE', $name);
+        static::assertArrayHasKey('zh-CN', $name);
         static::assertSame('First shipping method', $name['en-GB']);
-        static::assertSame('Erste Versandmethode', $name['de-DE']);
+        static::assertSame('第一种配送方式', $name['zh-CN']);
 
         static::assertArrayHasKey('description', $result);
         $description = $result['description'];
         static::assertIsArray($description);
         static::assertArrayHasKey('en-GB', $description);
-        static::assertArrayHasKey('de-DE', $description);
+        static::assertArrayHasKey('zh-CN', $description);
         static::assertSame('This is a simple description', $description['en-GB']);
-        static::assertSame('Das ist eine einfache Beschreibung', $description['de-DE']);
+        static::assertSame('这是一个简单的描述', $description['zh-CN']);
 
         static::assertArrayHasKey('appShippingMethod', $result);
         $appShippingMethod = $result['appShippingMethod'];
@@ -146,9 +146,9 @@ class ShippingMethodTest extends TestCase
 
         $descriptions = $shippingMethod->getDescription();
         static::assertArrayHasKey('en-GB', $descriptions);
-        static::assertArrayHasKey('de-DE', $descriptions);
+        static::assertArrayHasKey('zh-CN', $descriptions);
         static::assertSame('This is a simple description', $descriptions['en-GB']);
-        static::assertSame('Das ist eine einfache Beschreibung', $descriptions['de-DE']);
+        static::assertSame('这是一个简单的描述', $descriptions['zh-CN']);
     }
 
     public function testGetName(): void
@@ -168,9 +168,9 @@ class ShippingMethodTest extends TestCase
 
         $names = $shippingMethod->getName();
         static::assertArrayHasKey('en-GB', $names);
-        static::assertArrayHasKey('de-DE', $names);
+        static::assertArrayHasKey('zh-CN', $names);
         static::assertSame('First shipping method', $names['en-GB']);
-        static::assertSame('Erste Versandmethode', $names['de-DE']);
+        static::assertSame('第一种配送方式', $names['zh-CN']);
     }
 
     public function testGetIcon(): void
@@ -225,7 +225,7 @@ class ShippingMethodTest extends TestCase
 
         $expectedValues = [
             'en-GB' => 'https://www.mytrackingurl.com',
-            'de-DE' => 'https://de.mytrackingurl.com',
+            'zh-CN' => 'https://zh.mytrackingurl.com',
         ];
 
         static::assertSame($expectedValues, $shippingMethod->getTrackingUrl());

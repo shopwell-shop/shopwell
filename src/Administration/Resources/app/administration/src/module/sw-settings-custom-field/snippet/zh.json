@@ -1,0 +1,127 @@
+{
+  "sw-settings-custom-field": {
+    "general": {
+      "description": "在此管理自定义字段。",
+      "mainMenuItemGeneral": "自定义字段",
+      "placeholderSearchBar": "搜索全部自定义字段…",
+      "tooltipTechnicalName": "技术名称必须唯一，之后无法更改。",
+      "tooltipType": "类型之后无法更改。"
+    },
+    "error": {
+      "CUSTOM_FIELD_NAME_INVALID": "无效的字段名称：只能包含字母、数字或下划线，且必须以字母或下划线开头。"
+    },
+    "set": {
+      "list": {
+        "textHeadline": "自定义字段",
+        "textDeleteConfirm": "确定要删除字段集 \"{name}\" 吗？",
+        "buttonAdd": "新建字段集",
+        "columnName": "标签",
+        "messageDeleteSuccess": "字段集 \"{name}\" 已成功删除。",
+        "messageEmpty": "暂无自定义字段",
+        "helpTextGlobalSet": "此字段集是全局的，无法修改。"
+      },
+      "detail": {
+        "labelTechnicalName": "技术名称",
+        "labelPosition": "排序位置",
+        "textHeadline": "自定义字段集",
+        "titleCardInformation": "字段集信息",
+        "labelName": "字段集名称",
+        "placeholderName": "输入名称 ...",
+        "labelCheckboxTranslated": "在所有后台语言中维护标签",
+        "messageSaveSuccess": "字段集 \"{name}\" 已成功保存。",
+        "messageCustomFieldsEmpty": "暂无自定义字段",
+        "addCustomField": "新建自定义字段",
+        "labelEntities": "用于",
+        "placeholderEntities": "添加用途 ...",
+        "messageNameNotUnique": "技术名称已存在。",
+        "entityTypeRequired": "请选择对象类型。",
+        "emptyStateDescription": "在添加自定义字段前请先保存该字段集。"
+      }
+    },
+    "customField": {
+      "detail": {
+        "titleNewCustomField": "新建自定义字段",
+        "titleEditCustomField": "编辑自定义字段",
+        "buttonEditApply": "应用更改",
+        "labelCustomFieldType": "类型",
+        "placeholderCustomFieldType": "选择 ...",
+        "labelTechnicalName": "技术名称",
+        "labelLabel": "标签",
+        "buttonAddOption": "添加选项",
+        "labelDeleteOption": "删除",
+        "labelOption": "选项 {count}:",
+        "labelPlaceholder": "占位符",
+        "labelMax": "最大值",
+        "labelMin": "最小值",
+        "labelStep": "步长",
+        "labelFloat": "浮点数字段",
+        "labelInt": "整数字段",
+        "labelNumberType": "数字类型",
+        "labelDatetime": "日期/时间字段",
+        "labelDate": "日期",
+        "labelTime": "时间",
+        "labelDateType": "类型",
+        "labelHelpText": "帮助文本",
+        "labelTimeForm": "24 小时时间格式",
+        "labelCustomFieldPosition": "排序位置",
+        "labelMultiSelect": "多选",
+        "helpTextMultiSelect": "创建自定义字段后无法再更改多选选项。",
+        "labelEntityTypeSelect": "对象类型",
+        "helpTextEntitySelect": "创建自定义字段后对象类型无法再更改。",
+        "tooltipCustomFieldPosition": "在详情页显示自定义字段的排序位置。",
+        "infoText": "创建自定义字段时，会在你的所有文本模块集中同时生成对应的文本模块。该文本模块名称为 \"customFields.{name}\"。",
+        "labelAllowCustomerWrite": "可通过 Store API 修改",
+        "tooltipAllowCustomerWrite": "启用后，Store API 可以修改该字段。这可用于在店铺前台新增字段时存储自定义数据，例如注册表单中的新字段。",
+        "labelAllowCartExpose": "在购物车中可用",
+        "tooltipAllowCartExpose": "启用后，该自定义字段将可用于购物车项目的载荷数据。这是首次在规则构建器或自定义模板中使用该自定义字段的前提条件。",
+        "tooltipCartExposeDisabled": "该设置当前无法修改，因为此自定义字段正被规则构建器中的一个或多个条件使用。",
+        "labelStoreApiAware": "在 Store API 中可见",
+        "tooltipStoreApiAware": "启用后，该字段将在 Store API 中可见。可停用该选项，使自定义数据仅内部存储，不通过 Store API 提供。",
+        "labelAllowSearchable": "纳入搜索",
+        "tooltipAllowSearchable": "启用后，该自定义字段将被索引，可用于搜索配置。如果该字段不需要用于搜索，建议停用以减小索引体积并提升搜索性能。",
+        "bannerSearchableEnabled": "若字段的搜索状态发生变化，建议重新建立索引，以确保搜索结果准确。"
+      },
+      "list": {
+        "labelCustomFieldLabel": "标签",
+        "labelCustomFieldType": "类型",
+        "labelCustomFieldPosition": "排序位置",
+        "contextMenuCustomFieldResetDelete": "恢复",
+        "contextMenuCustomFieldView": "编辑",
+        "titleDeleteAction": "删除自定义字段 | 删除自定义字段",
+        "textDeleteActionConfirmation": "确定要删除此自定义字段吗？| 确定要删除这 {count} 个自定义字段吗？"
+      },
+      "entity": {
+        "product": "商品",
+        "category": "分类",
+        "shippingMethod": "配送方式",
+        "paymentMethod": "支付方式",
+        "country": "国家",
+        "customer": "客户",
+        "salesChannel": "销售渠道",
+        "manufacturer": "制造商",
+        "dynamicProductGroup": "动态商品组",
+        "shoppingExperienceLayout": "购物体验布局"
+      }
+    },
+    "types": {
+      "select": "选择字段",
+      "entity": "对象选择",
+      "text": "文本字段",
+      "number": "数字字段",
+      "media": "媒体字段",
+      "date": "日期/时间字段",
+      "checkbox": "复选框",
+      "switch": "启用开关",
+      "textEditor": "富文本编辑器",
+      "colorpicker": "颜色选择器",
+      "price": "价格字段"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "custom_field": {
+        "label": "自定义字段"
+      }
+    }
+  }
+}

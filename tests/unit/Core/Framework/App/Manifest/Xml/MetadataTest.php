@@ -36,11 +36,11 @@ class MetadataTest extends TestCase
 
         static::assertSame([
             'en-GB' => 'Swag App Test',
-            'de-DE' => 'Swag App Test',
+            'zh-CN' => 'Swag 应用测试',
         ], $metaData->getLabel());
         static::assertSame([
             'en-GB' => 'Test for App System',
-            'de-DE' => 'Test für das App System',
+            'zh-CN' => '应用系统测试',
         ], $metaData->getDescription());
         static::assertSame([
             'en-GB' => 'Following personal information will be processed on Shopwell\'s servers:
@@ -48,11 +48,11 @@ class MetadataTest extends TestCase
 - Name
 - Billing address
 - Order value',
-            'de-DE' => 'Folgende Nutzerdaten werden auf Servern der Shopwell verarbeitet:
+            'zh-CN' => '以下用户数据将在 Shopwell 的服务器上处理：
 
-- Name
-- Rechnungsadresse
-- Bestellwert',
+- 姓名
+- 账单地址
+- 订单金额',
         ], $metaData->getPrivacyPolicyExtensions());
     }
 
@@ -64,7 +64,7 @@ class MetadataTest extends TestCase
 
         static::assertSame([
             'en-GB' => 'Swag App Test',
-            'de-DE' => 'Swag App Test',
+            'zh-CN' => 'Swag 应用测试',
         ], $metaData->getLabel());
         static::assertSame([], $metaData->getDescription());
 
@@ -79,7 +79,7 @@ class MetadataTest extends TestCase
 
         static::assertInstanceOf(MissingTranslationError::class, $error);
         static::assertSame('Missing translations for "Metadata":
-- label: de-DE, fr-FR', $error->getMessage());
+- label: zh-CN, fr-FR', $error->getMessage());
     }
 
     public function testValidateTranslationsReturnsNull(): void

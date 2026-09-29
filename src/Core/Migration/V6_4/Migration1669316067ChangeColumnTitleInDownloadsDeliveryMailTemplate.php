@@ -31,8 +31,8 @@ class Migration1669316067ChangeColumnTitleInDownloadsDeliveryMailTemplate extend
             MailTemplateTypes::MAILTYPE_DOWNLOADS_DELIVERY,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/downloads_delivery/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/downloads_delivery/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/downloads_delivery/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/downloads_delivery/de-html.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/downloads_delivery/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/downloads_delivery/zh-html.html.twig'),
         );
         $this->updateMail($updateDownloadsDeliveryMailTemplate, $connection);
     }

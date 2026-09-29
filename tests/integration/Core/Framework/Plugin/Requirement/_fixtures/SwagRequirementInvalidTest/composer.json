@@ -18,7 +18,7 @@
         "shopwell-plugin-class": "SwagRequirement\\SwagRequirement",
         "copyright": "(c) by Shopwell",
         "label": {
-            "de-DE": "Test für Requirement Validator",
+            "zh-CN": "依赖校验测试",
             "en-GB": "Test for requirement validator"
         }
     }

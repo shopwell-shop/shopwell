@@ -11,7 +11,7 @@
   "extra": {
     "shopwell-plugin-class": "ExamplePluginForTesting\\ExamplePluginForTesting",
     "label": {
-      "de-DE": "Skeleton plugin",
+      "zh-CN": "骨架插件",
       "en-GB": "Skeleton plugin"
     }
   }

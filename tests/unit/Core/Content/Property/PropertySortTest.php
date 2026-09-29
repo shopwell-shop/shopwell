@@ -135,7 +135,7 @@ class PropertySortTest extends TestCase
     public function testAlphaNumericSortingMixedCases(): void
     {
         $propertyGroups = $this->getPropertyGroupAlphaNumericMixedCases();
-        $propertyGroups->sortByConfig('de-DE');
+        $propertyGroups->sortByConfig('zh-CN');
         $propertyGroup = $propertyGroups->first();
         static::assertNotNull($propertyGroup);
         $propertyOptionsArray = json_decode(json_encode($propertyGroup->getOptions(), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR);
@@ -149,7 +149,7 @@ class PropertySortTest extends TestCase
     public function testAlphaNumericSortingMixedCasesPositionFirst(): void
     {
         $propertyGroups = $this->getPropertyGroupAlphaNumericMixedCasesPositionFirst();
-        $propertyGroups->sortByConfig('de-DE');
+        $propertyGroups->sortByConfig('zh-CN');
         $propertyGroup = $propertyGroups->first();
         static::assertNotNull($propertyGroup);
         $propertyOptionsArray = json_decode(json_encode($propertyGroup->getOptions(), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR);
@@ -163,7 +163,7 @@ class PropertySortTest extends TestCase
     public function testPositionSortingWithAlphanumericTiebreaker(): void
     {
         $propertyGroups = $this->getPropertyGroupPositionWithTiedPositions();
-        $propertyGroups->sortByConfig('de-DE');
+        $propertyGroups->sortByConfig('zh-CN');
         $propertyGroup = $propertyGroups->first();
         static::assertNotNull($propertyGroup);
         $propertyOptionsArray = json_decode(json_encode($propertyGroup->getOptions(), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR);
@@ -177,7 +177,7 @@ class PropertySortTest extends TestCase
     public function testPositionSortingAllSamePositionFallsBackToAlphanumeric(): void
     {
         $propertyGroups = $this->getPropertyGroupPositionAllSame();
-        $propertyGroups->sortByConfig('de-DE');
+        $propertyGroups->sortByConfig('zh-CN');
         $propertyGroup = $propertyGroups->first();
         static::assertNotNull($propertyGroup);
         $propertyOptionsArray = json_decode(json_encode($propertyGroup->getOptions(), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR);
@@ -191,7 +191,7 @@ class PropertySortTest extends TestCase
     public function testPositionSortingWithEmptyNamesAndNullPositions(): void
     {
         $propertyGroups = $this->getPropertyGroupPositionWithEmptyNames();
-        $propertyGroups->sortByConfig('de-DE');
+        $propertyGroups->sortByConfig('zh-CN');
         $propertyGroup = $propertyGroups->first();
         static::assertNotNull($propertyGroup);
         $propertyOptionsArray = json_decode(json_encode($propertyGroup->getOptions(), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR);

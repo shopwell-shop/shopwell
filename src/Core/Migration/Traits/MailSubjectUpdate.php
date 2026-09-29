@@ -10,7 +10,7 @@ class MailSubjectUpdate
     public function __construct(
         protected string $type,
         protected ?string $enSubject = null,
-        protected ?string $deSubject = null
+        protected ?string $zhSubject = null
     ) {
     }
 
@@ -19,9 +19,9 @@ class MailSubjectUpdate
         return $this->type;
     }
 
-    public function getDeSubject(): ?string
+    public function getZhSubject(): ?string
     {
-        return $this->deSubject;
+        return $this->zhSubject;
     }
 
     public function getEnSubject(): ?string

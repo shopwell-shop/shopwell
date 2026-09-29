@@ -88,7 +88,7 @@ class SystemLanguageChangedSubscriberTest extends TestCase
         self::assertSnippetExistsForAppAndLocale($snippetsAfter, $appThree->getId(), $previousLocale['id']);
     }
 
-    public function testDoesNoUpdateSnippetsAfterSystemLanguageChangedFromEnGbToDeDe(): void
+    public function testDoesNoUpdateSnippetsAfterSystemLanguageChangedFromEnGbToZhCn(): void
     {
         $previousSystemLocale = $this->getCurrentSystemLocale();
         static::assertSame('en-GB', $previousSystemLocale['code']);
@@ -103,10 +103,10 @@ class SystemLanguageChangedSubscriberTest extends TestCase
         self::assertSnippetExistsForAppAndLocale($snippetsBefore, $appOne->getId(), $previousSystemLocale['id']);
         self::assertSnippetExistsForAppAndLocale($snippetsBefore, $appThree->getId(), $previousSystemLocale['id']);
 
-        $this->getContainer()->get(ShopConfigurator::class)->setDefaultLanguage('de-DE');
+        $this->getContainer()->get(ShopConfigurator::class)->setDefaultLanguage('zh-CN');
 
         $newSystemLocale = $this->getCurrentSystemLocale();
-        static::assertSame('de-DE', $newSystemLocale['code']);
+        static::assertSame('zh-CN', $newSystemLocale['code']);
 
         $snippetsAfter = $this->snippetRepository->search(new Criteria(), $this->context)->getEntities();
         static::assertCount(2, $snippetsAfter);
@@ -172,7 +172,7 @@ class SystemLanguageChangedSubscriberTest extends TestCase
                 'label' => [
                     'en-GB' => 'Test App',
                     'en-US' => 'Test App',
-                    'de-DE' => 'Test App',
+                    'zh-CN' => 'Test App',
                 ],
                 'path' => 'path',
                 'version' => '1.0.0',

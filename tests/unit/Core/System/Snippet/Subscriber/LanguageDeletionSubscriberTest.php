@@ -32,14 +32,14 @@ class LanguageDeletionSubscriberTest extends TestCase
     public function testRemovesTheMetadataOfDeletedLanguagesOnSuccess(): void
     {
         $connection = static::createStub(Connection::class);
-        $connection->method('fetchFirstColumn')->willReturn(['de-DE', 'fr-FR']);
+        $connection->method('fetchFirstColumn')->willReturn(['zh-CN', 'fr-FR']);
 
         $matcher = $this->exactly(2);
         $metadataStore = $this->createMock(TranslationMetadataStore::class);
         $metadataStore->expects($matcher)
             ->method('remove')
             ->willReturnCallback(function (string $locale) use ($matcher): void {
-                $expected = ['de-DE', 'fr-FR'];
+                $expected = ['zh-CN', 'fr-FR'];
                 static::assertSame($expected[$matcher->numberOfInvocations() - 1], $locale);
             });
 

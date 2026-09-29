@@ -31,7 +31,7 @@ class FloatFieldTest extends TestCase
         static::assertSame('test_float_field', $floatField->getName());
         static::assertSame([
             'en-GB' => 'Test float field',
-            'de-DE' => 'Test Kommazahlenfeld',
+            'zh-CN' => '测试小数字段',
         ], $floatField->getLabel());
         static::assertSame(['en-GB' => 'This is a float field.'], $floatField->getHelpText());
         static::assertSame(2, $floatField->getPosition());
@@ -56,7 +56,7 @@ class FloatFieldTest extends TestCase
             'config' => [
                 'label' => [
                     'en-GB' => 'Test float field',
-                    'de-DE' => 'Test Kommazahlenfeld',
+                    'zh-CN' => '测试小数字段',
                 ],
                 'helpText' => [
                     'en-GB' => 'This is a float field.',

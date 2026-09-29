@@ -191,7 +191,7 @@ class ConfigurationTest extends TestCase
             [
                 'translation' => [
                     'plugins' => ['PluginA', 'PluginB'],
-                    'excluded_locales' => ['de-DE'],
+                    'excluded_locales' => ['zh-CN'],
                 ],
             ],
             [

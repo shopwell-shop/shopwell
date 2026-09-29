@@ -20,7 +20,7 @@ class SnippetValidatorTest extends TestCase
     {
         $snippetFileHandler = static::createStub(SnippetFileHandler::class);
 
-        $firstPath = 'storefront.de.json';
+        $firstPath = 'storefront.zh.json';
         $secondPath = 'storefront.en.json';
         $snippetFileHandler->method('findAdministrationSnippetFiles')
             ->willReturn([$firstPath]);
@@ -30,7 +30,7 @@ class SnippetValidatorTest extends TestCase
         $snippetFileHandler->method('openJsonFile')
             ->willReturnCallback(static function ($path) use ($firstPath) {
                 if ($path === $firstPath) {
-                    return ['german' => 'exampleGerman'];
+                    return ['chinese' => 'exampleChinese'];
                 }
 
                 return ['english' => 'exampleEnglish'];
@@ -42,12 +42,12 @@ class SnippetValidatorTest extends TestCase
         static::assertCount(2, $missingSnippets);
 
         $missingSnippetEnGB = $missingSnippets[1];
-        static::assertSame('german', $missingSnippetEnGB->getKeyPath());
-        static::assertSame('exampleGerman', $missingSnippetEnGB->getAvailableTranslation());
+        static::assertSame('chinese', $missingSnippetEnGB->getKeyPath());
+        static::assertSame('exampleChinese', $missingSnippetEnGB->getAvailableTranslation());
 
-        $missingSnippetdeDE = $missingSnippets[0];
-        static::assertSame('english', $missingSnippetdeDE->getKeyPath());
-        static::assertSame('exampleEnglish', $missingSnippetdeDE->getAvailableTranslation());
+        $missingSnippetZhCn = $missingSnippets[0];
+        static::assertSame('english', $missingSnippetZhCn->getKeyPath());
+        static::assertSame('exampleEnglish', $missingSnippetZhCn->getAvailableTranslation());
 
         $invalidPluralization = $invalidData->invalidPluralization;
         static::assertCount(0, $invalidPluralization);
@@ -57,7 +57,7 @@ class SnippetValidatorTest extends TestCase
     {
         $snippetFileHandler = static::createStub(SnippetFileHandler::class);
 
-        $firstPath = 'storefront.de.json';
+        $firstPath = 'storefront.zh.json';
         $secondPath = 'storefront.en.json';
         $snippetFileHandler->method('findAdministrationSnippetFiles')
             ->willReturn([$firstPath]);

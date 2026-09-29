@@ -291,8 +291,8 @@ class AntiJoinSearchTest extends TestCase
     public function testTranslatedField(): void
     {
         $onlyGreenId = Uuid::randomHex();
-        $greenGruenId = Uuid::randomHex();
-        $ids = [$onlyGreenId, $greenGruenId];
+        $greenZhId = Uuid::randomHex();
+        $ids = [$onlyGreenId, $greenZhId];
 
         $products = [
             [
@@ -309,14 +309,14 @@ class AntiJoinSearchTest extends TestCase
                 'tax' => ['name' => 'test', 'taxRate' => 15],
             ],
             [
-                'id' => $greenGruenId,
-                'productNumber' => $greenGruenId,
+                'id' => $greenZhId,
+                'productNumber' => $greenZhId,
                 'translations' => [
                     'en-GB' => [
                         'name' => 'green',
                     ],
-                    'de-DE' => [
-                        'name' => 'grün',
+                    'zh-CN' => [
+                        'name' => '绿色',
                     ],
                 ],
                 'stock' => 10,
@@ -339,41 +339,41 @@ class AntiJoinSearchTest extends TestCase
         static::assertIsArray($ids);
         static::assertEmpty($ids);
 
-        $rawDeContext = new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->getDeDeLanguageId(), Defaults::LANGUAGE_SYSTEM]);
+        $rawDeContext = new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->getZhCnLanguageId(), Defaults::LANGUAGE_SYSTEM]);
         $criteria = (new Criteria())->addFilter($notGreenFilter);
 
         $ids = $productRepository->searchIds($criteria, $rawDeContext)->getIds();
         static::assertIsArray($ids);
-        static::assertContains($greenGruenId, $ids);
+        static::assertContains($greenZhId, $ids);
         static::assertCount(1, $ids);
 
-        $deContext = new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->getDeDeLanguageId(), Defaults::LANGUAGE_SYSTEM], Defaults::LIVE_VERSION, 1.0, true);
+        $deContext = new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->getZhCnLanguageId(), Defaults::LANGUAGE_SYSTEM], Defaults::LIVE_VERSION, 1.0, true);
         $criteria = (new Criteria($ids))->addFilter($notGreenFilter);
 
         $ids = $productRepository->searchIds($criteria, $deContext)->getIds();
         static::assertIsArray($ids);
-        static::assertContains($greenGruenId, $ids);
+        static::assertContains($greenZhId, $ids);
         static::assertCount(1, $ids);
 
-        $notGruenFilter = new NotFilter('AND', [new EqualsFilter('product.name', 'grün')]);
+        $notGreenZhFilter = new NotFilter('AND', [new EqualsFilter('product.name', '绿色')]);
 
         $enGbContext = Context::createDefaultContext();
-        $criteria = (new Criteria($ids))->addFilter($notGruenFilter);
+        $criteria = (new Criteria($ids))->addFilter($notGreenZhFilter);
 
         $ids = $productRepository->searchIds($criteria, $enGbContext)->getIds();
         static::assertIsArray($ids);
-        static::assertContains($greenGruenId, $ids);
+        static::assertContains($greenZhId, $ids);
         static::assertCount(1, $ids);
 
-        $rawDeContext = new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->getDeDeLanguageId(), Defaults::LANGUAGE_SYSTEM]);
-        $criteria = (new Criteria($ids))->addFilter($notGruenFilter);
+        $rawDeContext = new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->getZhCnLanguageId(), Defaults::LANGUAGE_SYSTEM]);
+        $criteria = (new Criteria($ids))->addFilter($notGreenZhFilter);
 
         $ids = $productRepository->searchIds($criteria, $rawDeContext)->getIds();
         static::assertIsArray($ids);
         static::assertEmpty($ids);
 
-        $deContext = new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->getDeDeLanguageId(), Defaults::LANGUAGE_SYSTEM], Defaults::LIVE_VERSION, 1.0, true);
-        $criteria = (new Criteria())->addFilter($notGruenFilter);
+        $deContext = new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->getZhCnLanguageId(), Defaults::LANGUAGE_SYSTEM], Defaults::LIVE_VERSION, 1.0, true);
+        $criteria = (new Criteria())->addFilter($notGreenZhFilter);
 
         $ids = $productRepository->searchIds($criteria, $deContext)->getIds();
         static::assertIsArray($ids);

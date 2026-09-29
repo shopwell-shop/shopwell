@@ -1,0 +1,20 @@
+{
+  "sales-channel-theme": {
+    "title": "主题分配",
+    "changeTheme": "修改主题",
+    "changeThemeEmpty": "分配主题",
+    "createTheme": "新建主题",
+    "editContent": "编辑主题",
+    "defaultTitle": "未分配主题",
+    "defaultAuthor": "作者",
+    "pendingAssignment": {
+      "description": "\"{pendingThemeName}\" 正在后台编译，完成后会自动替换 \"{liveThemeName}\"。",
+      "descriptionNoLiveTheme": "\"{pendingThemeName}\" 正在后台编译，准备就绪后会自动应用。"
+    },
+    "modal": {
+      "modalTitleChange": "切换主题",
+      "textChangeTheme": "确定要切换主题吗？这可能会改变商城的外观。",
+      "buttonChange": "切换主题"
+    }
+  }
+}

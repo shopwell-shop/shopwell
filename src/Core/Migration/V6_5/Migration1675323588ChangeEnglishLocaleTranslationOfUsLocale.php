@@ -47,8 +47,8 @@ class Migration1675323588ChangeEnglishLocaleTranslationOfUsLocale extends Migrat
             );
         }
 
-        $deLangId = $this->fetchLanguageId('de-DE', $connection);
-        if ($deLangId) {
+        $zhCnLangId = $this->fetchLanguageId('zh-CN', $connection);
+        if ($zhCnLangId) {
             $connection->executeStatement(
                 'UPDATE locale_translation
             SET name = :newName
@@ -56,9 +56,9 @@ class Migration1675323588ChangeEnglishLocaleTranslationOfUsLocale extends Migrat
             AND name = :oldName',
                 [
                     'locale_id' => $usLocaleId,
-                    'language_id' => $deLangId,
-                    'oldName' => 'Englisch',
-                    'newName' => 'Englisch (US)',
+                    'language_id' => $zhCnLangId,
+                    'oldName' => '英语',
+                    'newName' => '英语（美国）',
                 ]
             );
         }

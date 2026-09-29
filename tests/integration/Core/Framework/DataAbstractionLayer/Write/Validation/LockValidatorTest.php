@@ -230,19 +230,19 @@ EOF;
 
         try {
             $data = ['id' => $data['id'], 'description' => 'bar', 'name' => 'Ware'];
-            $this->entityWriter->update($this->testDefinition, [$data], $this->getWriteContext($this->getDeDeLanguageId()));
+            $this->entityWriter->update($this->testDefinition, [$data], $this->getWriteContext($this->getZhCnLanguageId()));
         } catch (WriteException $exception) {
         }
 
         $this->assertLockException($exception);
 
         $data = ['id' => $data['id'], 'name' => 'Ware'];
-        $r = $this->entityWriter->update($this->testDefinition, [$data], $this->getWriteContext($this->getDeDeLanguageId()));
+        $r = $this->entityWriter->update($this->testDefinition, [$data], $this->getWriteContext($this->getZhCnLanguageId()));
         static::assertCount(2, $r);
 
         $name = $this->connection->fetchOne('SELECT `name` FROM `_test_lock_translation` WHERE `_test_lock_id` = :id AND `language_id` = :languageId', [
             'id' => Uuid::fromHexToBytes($data['id']),
-            'languageId' => Uuid::fromHexToBytes($this->getDeDeLanguageId()),
+            'languageId' => Uuid::fromHexToBytes($this->getZhCnLanguageId()),
         ]);
 
         static::assertSame('Ware', $name);

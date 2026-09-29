@@ -17,7 +17,7 @@ use Symfony\Component\Filesystem\Filesystem;
 #[Package('framework')]
 class Migration1744203319MailTemplate extends MigrationStep
 {
-    private const GERMAN_KEY = 'Deutsch';
+    private const ZH_CN_KEY = '简体中文';
     private const ENGLISH_KEY = 'English';
 
     protected string $assetFolder = __DIR__ . '/assets/';
@@ -29,7 +29,7 @@ class Migration1744203319MailTemplate extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $languages = $connection->fetchAllKeyValue('SELECT `name`, `id` FROM `language` WHERE `name` IN ("Deutsch", "English")');
+        $languages = $connection->fetchAllKeyValue('SELECT `name`, `id` FROM `language` WHERE `name` IN ("简体中文", "English")');
 
         $mailTemplateTypeId = $this->getMailTemplateTypeId($connection);
         $this->createMailTemplateType($connection, $mailTemplateTypeId);
@@ -72,11 +72,11 @@ class Migration1744203319MailTemplate extends MigrationStep
             ];
         }
 
-        if (\array_key_exists(self::GERMAN_KEY, $languages)) {
+        if (\array_key_exists(self::ZH_CN_KEY, $languages)) {
             $translations[] = [
                 'mail_template_type_id' => $mailTemplateTypeId,
-                'language_id' => $languages[self::GERMAN_KEY],
-                'name' => 'Sso Benutzer einladung',
+                'language_id' => $languages[self::ZH_CN_KEY],
+                'name' => 'Sso 用户邀请',
                 'created_at' => $createdAt,
             ];
         }
@@ -116,8 +116,8 @@ class Migration1744203319MailTemplate extends MigrationStep
             $translationContent = [
                 'html_en' => $fs->readFile($this->assetFolder . 'sso_user_invitation_mail.en-GB.html.twig'),
                 'text_en' => $fs->readFile($this->assetFolder . 'sso_user_invitation_mail.en-GB.txt'),
-                'html_de' => $fs->readFile($this->assetFolder . 'sso_user_invitation_mail.de-DE.html.twig'),
-                'text_de' => $fs->readFile($this->assetFolder . 'sso_user_invitation_mail.de-DE.txt'),
+                'html_zh' => $fs->readFile($this->assetFolder . 'sso_user_invitation_mail.zh-CN.html.twig'),
+                'text_zh' => $fs->readFile($this->assetFolder . 'sso_user_invitation_mail.zh-CN.txt'),
             ];
         } catch (IOException $e) {
             throw MigrationException::migrationError('Could not access mail template asset folder: ' . $e->getMessage());
@@ -137,15 +137,15 @@ class Migration1744203319MailTemplate extends MigrationStep
             ];
         }
 
-        if (\array_key_exists(self::GERMAN_KEY, $languages)) {
+        if (\array_key_exists(self::ZH_CN_KEY, $languages)) {
             $translations[] = [
                 'mail_template_id' => $mailTemplateId,
-                'language_id' => $languages[self::GERMAN_KEY],
+                'language_id' => $languages[self::ZH_CN_KEY],
                 'sender_name' => 'Admin',
-                'subject' => '{{ nameOfInviter }} hat dich eingeladen, {{ storeName }} beizutreten',
-                'description' => 'Shopwell Sso Admin Einladung',
-                'content_html' => $translationContent['html_de'],
-                'content_plain' => $translationContent['text_de'],
+                'subject' => '{{ nameOfInviter }} 邀请您加入 {{ storeName }}',
+                'description' => 'Shopwell Sso 管理员邀请',
+                'content_html' => $translationContent['html_zh'],
+                'content_plain' => $translationContent['text_zh'],
                 'created_at' => $createdAt,
             ];
         }

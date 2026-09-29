@@ -100,7 +100,7 @@ class ContextGatewayCommandExecutorTest extends TestCase
         $commands = new ContextGatewayCommandCollection();
         $commands->add(ChangeBillingAddressCommand::createFromPayload(['addressId' => 'billingAddressId']));
         $commands->add(ChangeCurrencyCommand::createFromPayload(['iso' => 'EUR']));
-        $commands->add(ChangeLanguageCommand::createFromPayload(['iso' => 'de-DE']));
+        $commands->add(ChangeLanguageCommand::createFromPayload(['iso' => 'zh-CN']));
         $commands->add(ChangePaymentMethodCommand::createFromPayload(['technicalName' => 'app_test_payment']));
         $commands->add(ChangeShippingAddressCommand::createFromPayload(['addressId' => 'shippingAddressId']));
         $commands->add(ChangeShippingLocationCommand::createFromPayload(['countryIso' => 'DE', 'countryStateIso' => 'DE-BY']));
@@ -110,7 +110,7 @@ class ContextGatewayCommandExecutorTest extends TestCase
         $expectedContextParameters = new RequestDataBag([
             'billingAddress' => 'billingAddressId',
             'currencyId' => 'EUR',
-            'languageId' => 'de-DE',
+            'languageId' => 'zh-CN',
             'paymentMethod' => 'app_test_payment',
             'shippingAddress' => 'shippingAddressId',
             'countryId' => 'DE',

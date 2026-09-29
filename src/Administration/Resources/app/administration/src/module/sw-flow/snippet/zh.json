@@ -1,0 +1,382 @@
+{
+  "sw-flow": {
+    "labelDescription": {
+      "labelEntity": "实体",
+      "labelTag": "标签"
+    },
+    "general": {
+      "mainMenuItemGeneral": "流程构建器",
+      "descriptionTextModule": "流程构建器",
+      "placeholderSearchBar": "搜索流程 ...",
+      "tabMyFlows": "我的流程",
+      "tabFlowTemplates": "流程模板"
+    },
+    "list": {
+      "textHeadline": "流程构建器",
+      "buttonAddFlow": "添加流程",
+      "labelColumnActive": "启用",
+      "labelColumnName": "名称",
+      "labelColumnTrigger": "触发器",
+      "labelColumnDescription": "描述",
+      "warningDeleteText": "删除此流程后，该触发器将不再执行任何操作。",
+      "confirmText": "确定要删除此流程吗？",
+      "emptyStateTitle": "暂无流程",
+      "emptyStateSubTitle": "当商城发生事件时（如下单后发邮件），流程会自动执行操作。",
+      "unknownTrigger": "未知触发器"
+    },
+    "template": {
+      "create": "从模板创建新流程"
+    },
+    "detail": {
+      "textHeadline": "新建流程",
+      "labelGeneralCard": "基本信息",
+      "labelLogCard": "事件日志",
+      "labelGeneralInformationName": "名称",
+      "placeholderGeneralInformationName": "输入名称 ...",
+      "labelGeneralInformationDescription": "描述",
+      "placeholderGeneralInformationDescription": "输入描述 ...",
+      "labelGeneralInformationPriority": "优先级",
+      "labelGeneralInformationActive": "启用",
+      "trigger": {
+        "name": "触发器",
+        "placeholder": "选择事件...",
+        "title": "定义触发器",
+        "helpText": "触发器是流程的起点，并与特定事件绑定。在触发器之后，你可以继续添加条件并定义操作。可用的操作取决于所选事件。",
+        "textNoEvent": "未找到事件",
+        "textHint": "该事件目前无法用作触发器，因为没有可用操作。",
+        "unknownTriggerPlaceholder": "未知触发器"
+      },
+      "sequence": {
+        "selectorTitle": "添加条件或操作",
+        "selectorHelpTextTrueCondition": "当左侧表达式为 \"真\" 时，将执行这些操作。",
+        "selectorHelpTextFalseCondition": " 当上方表达式为 \"假\" 时，将执行这些操作。",
+        "selectorHelpText": "条件可进一步细分流程的初始触发器，结果可能为「真」或「假」。<br/><br/>操作连接在触发器或条件的「真」「假」分支上，可用于发送邮件、创建文档或添加标签。",
+        "selectorTitleAddSequence": "添加序列",
+        "selectorHelpTextAddSequence": "流程由单个触发器启动，但可包含多个序列。<br/><br/>序列会依次执行。你可以在任意阶段通过添加「停止」操作来彻底结束流程。",
+        "selectorIfCondition": "添加条件 (如果)",
+        "selectorThenAction": "添加操作 (则)",
+        "conditionTitle": "条件",
+        "conditionDescription": "（如果）",
+        "conditionExplainsTitle": "创建条件",
+        "conditionExplainsDescription": "条件由规则组成。你可以选择已有规则，或新建规则来定义条件。",
+        "actionTitle": "操作",
+        "actionDescription": "（那么）",
+        "contextButton": {
+          "deleteCondition": "删除条件",
+          "deleteActionContainer": "删除全部操作"
+        },
+        "labelTrue": "真",
+        "labelFalse": "假",
+        "noActions": "未添加操作",
+        "noRule": "尚未定义规则"
+      },
+      "warningText": "该流程使用了因版本变更、扩展停用/卸载或更新而不可用的操作。流程触发时，不可用的操作不会执行。"
+    },
+    "page": {
+      "tabGeneral": "通用",
+      "tabFlow": "流程"
+    },
+    "flowNotification": {
+      "emptyFields": {
+        "general": "请填写所有必填字段。",
+        "sequences": "保存前请选择规则或操作。"
+      },
+      "messageDeleteSuccess": "流程已删除。",
+      "messageDeleteError": "流程无法删除。",
+      "messageSaveError": "流程无法保存。",
+      "messageWarningSave": "流程模板无法编辑。",
+      "messageError": "发生错误。",
+      "messageRequiredEventName": "保存前请选择触发事件。",
+      "messageDuplicateSuccess": "流程已复制。",
+      "messageDuplicateError": "流程无法复制。",
+      "messageCreateSuccess": "流程已创建。",
+      "messageUpdateTemplateSuccess": "流程模板已更新。",
+      "messageCreateError": "流程无法创建。",
+      "messageUnknownTriggerWarning": "该流程已停用，因为它使用了不再可用的触发器。这通常是因为版本已变更，或提供该触发器的扩展已停用或被卸载。",
+      "textIntroduce": "尝试以下一种解决方案，使触发器重新可用：",
+      "textGuide1": "安装提供该触发器的扩展",
+      "textGuide2": "重新启用提供该触发器的扩展",
+      "textGuide3": "选择合适的版本"
+    },
+    "actions": {
+      "addTag": "分配标签",
+      "generateDocument": "生成文档",
+      "removeTag": "移除标签",
+      "mailSend": "发送邮件",
+      "grantDownloadAccess": "设置下载权限",
+      "setOrderState": "分配状态",
+      "stopFlow": "停止流程",
+      "changeCustomerGroup": "分配客户组",
+      "changeCustomerStatus": "分配账户状态",
+      "changeCustomFieldContent": "分配自定义字段",
+      "addAffiliateAndCampaignCode": "分配推广代码和活动代码",
+      "textStopFlowDescription": "后续操作或序列将不会执行。",
+      "labelDescription": "描述: {description}",
+      "contextButton": {
+        "editAction": "编辑操作",
+        "deleteAction": "删除操作",
+        "moveUpAction": "上移",
+        "moveDownAction": "下移"
+      },
+      "addAction": "添加操作",
+      "labelTo": "实体: {entity}",
+      "labelTag": "标签: {tagNames}",
+      "labelTemplate": "模板：{template}",
+      "labelCustomFieldSet": "自定义字段集: {customFieldSet}",
+      "labelCustomField": "自定义字段: {customField}",
+      "labelCustomFieldOption": "模式: {customFieldOption}",
+      "placeholderSelectAction": "选择操作...",
+      "labelAffiliateCode": "推广代码: {affiliateCode}",
+      "labelCampaignCode": "活动代码: {campaignCode}",
+      "tooltipActionDisabled": "该操作由已停用或已删除的扩展提供。请启用或重新安装该扩展后再使用此操作。",
+      "group": {
+        "tag": "标签",
+        "customer": "客户",
+        "general": "通用",
+        "order": "订单"
+      },
+      "unknownLabel": "未知操作",
+      "warningText": "此操作由已停用或已卸载的扩展提供。",
+      "downloadAccessLabel": {
+        "granted": "已授予",
+        "revoked": "已撤销"
+      }
+    },
+    "rule": {
+      "addRule": "添加规则",
+      "createNewRule": "创建新规则",
+      "contextButton": {
+        "editRule": "编辑规则",
+        "changeRule": "修改规则",
+        "deleteRule": "删除规则"
+      },
+      "placeholderSelectRule": "选择规则…"
+    },
+    "modals": {
+      "buttonAddAction": "添加操作",
+      "buttonSaveAction": "保存操作",
+      "rule": {
+        "labelAddNewRule": "添加新规则",
+        "labelEditRule": "编辑规则",
+        "tabRule": "条件",
+        "tabDetail": "通用",
+        "buttonAddRule": "保存并应用",
+        "labelName": "名称",
+        "placeholderName": "输入规则名称 ...",
+        "labelPriority": "优先级",
+        "placeholderPriority": "设置优先级 ...",
+        "labelDescription": "描述",
+        "placeholderDescription": "输入规则描述 ...",
+        "labelType": "类型",
+        "placeholderType": "选择规则类型...",
+        "deprecatedConditionWarning": "条件 \"{label}\" 已弃用，将在 {version} 中移除。请改用 \"{replacement}\"。",
+        "deprecatedConditionWarningNoReplacement": "条件 \"{label}\" 已弃用，将在 {version} 中移除。",
+        "placeholderDelayType": "选择延迟..."
+      },
+      "tag": {
+        "labelAddTag": "分配标签",
+        "labelRemoveTag": "移除标签",
+        "labelToField": "实体",
+        "placeholderToField": "选择实体...",
+        "labelTagsField": "标签",
+        "placeholderTagsField": "输入/选择标签..."
+      },
+      "status": {
+        "titleSetStatus": "分配状态",
+        "labelOrderStatus": "订单状态",
+        "labelPaymentStatus": "支付状态",
+        "labelDeliveryStatus": "配送状态",
+        "placeholderOrderStatus": "选择订单状态 ...",
+        "placeholderPaymentStatus": "选择支付状态 ...",
+        "placeholderDeliveryStatus": "选择配送状态 ...",
+        "messageNoStatusError": "必须至少选择一个状态",
+        "forceTransition": "强制状态流转",
+        "forceTransitionHelpText": "执行状态变更时不考虑起始点或常规转换路径（状态机）。",
+        "transitionWarning": {
+          "message": "使用状态流转时请谨慎，因为状态流转无效时可能导致流程执行失败。可启用「强制状态流转」选项来避免此类问题。"
+        }
+      },
+      "document": {
+        "titleCreateDocument": "生成文档",
+        "labelDocumentType": "文档",
+        "placeholderDocumentType": "选择文档...",
+        "labelDocumentTypeSingle": "文档类型",
+        "placeholderDocumentTypeSingle": "选择文档类型...",
+        "labelFileFormats": "文件格式",
+        "placeholderFileFormats": "选择文件格式..."
+      },
+      "downloadAccess": {
+        "titleSetDownloadAccess": "设置下载权限",
+        "labelValueField": "权限",
+        "placeholderValueField": "选择操作...",
+        "options": {
+          "grant": "授予",
+          "revoke": "撤销"
+        }
+      },
+      "customerGroup": {
+        "titleChangeCustomerGroup": "分配客户组",
+        "labelCustomerGroup": "客户组",
+        "placeholderCustomerGroup": "选择客户组..."
+      },
+      "customerStatus": {
+        "titleChangeCustomerStatus": "分配账户状态",
+        "labelCustomerStatus": "账户状态",
+        "placeholderCustomerStatus": "选择账户状态...",
+        "active": "启用",
+        "inactive": "未启用"
+      },
+      "mail": {
+        "columnRecipientName": "收件人名称",
+        "columnRecipientMail": "收件人邮箱地址",
+        "placeholderRecipientEmailAddress": "输入邮箱地址 ...",
+        "placeholderRecipientName": "输入名称 ...",
+        "fieldMailTemplateDetailLink": "打开邮件模板",
+        "titleSendMail": "发送邮件",
+        "labelEmailTemplate": "模板",
+        "placeholderEmailTemplate": "选择邮件模板...",
+        "titleNewEmailTemplate": "新建邮件模板",
+        "tabGeneral": "通用",
+        "tabMailText": "邮件正文",
+        "labelMailType": "类型",
+        "placeholderMailType": "选择类型...",
+        "labelSubject": "主题",
+        "labelSenderName": "发件人",
+        "placeholderSubject": "输入主题 ...",
+        "placeholderSenderName": "输入发件人名称 ...",
+        "labelDescription": "描述",
+        "placeholderDescription": "输入描述 ...",
+        "labelContentPlain": "纯文本",
+        "labelContentHtml": "HTML",
+        "placeholderPlain": "输入纯文本内容 ...",
+        "placeholderHtml": "输入 HTML 内容 ...",
+        "buttonAddMailTemplate": "添加邮件模板",
+        "labelDefault": "默认",
+        "labelCustomer": "客户",
+        "labelAdmin": "管理员",
+        "labelCustom": "用户自定义",
+        "labelContactFormMail": "咨询人",
+        "labelRevocationRequestFormMail": "咨询人",
+        "labelRecipient": "收件人",
+        "placeholderRecipient": "选择邮件收件人...",
+        "useDifferentReplyToLabel": "发件人",
+        "labelReplyTo": "自定义发件人地址",
+        "placeholderReplyTo": "输入邮箱地址 ...",
+        "tooltipDifferentReplyTo": "邮件默认从店铺经营者的邮箱地址发送。你可以在<a href=\"{settingsLink}\">设置</a>中修改店铺经营者的邮箱地址。",
+        "labelLatestDocuments": "附件",
+        "placeholderLatestDocuments": "选择文档...",
+        "documentDescription": "如果所选文档不存在，则无法附加和发送。请确保在执行此操作前，已通过前置操作生成这些文档。"
+      },
+      "setEntityCustomField": {
+        "labelToField": "实体",
+        "placeholderToField": "选择实体...",
+        "title": "分配自定义字段",
+        "customFieldSet": "自定义字段集",
+        "customFieldSetPlaceHolder": "选择自定义字段集...",
+        "customField": "自定义字段",
+        "customFieldPlaceHolder": "选择自定义字段...",
+        "requiredMessageError": "\"{item}\" 不能为空！",
+        "customFieldOption": "模式",
+        "prefixFieldName": "内容: ",
+        "options": {
+          "overwrite": "覆盖",
+          "notOverwrite": "不覆盖",
+          "clear": "清空"
+        }
+      },
+      "affiliateAndCampaignCode": {
+        "labelEntity": "实体",
+        "placeholderEntity": "选择实体...",
+        "title": "分配推广代码和活动代码",
+        "labelAffiliateCode": "推广代码",
+        "placeholderAffiliateCode": "输入推广代码 ...",
+        "labelCampaignCode": "活动代码",
+        "placeholderCampaignCode": "输入活动代码 ...",
+        "overwrite": "覆盖"
+      },
+      "confirmation": {
+        "textConfirmChangeTrigger": "确定要更改触发器吗？<br>确认后整个流程将被重置。"
+      }
+    },
+    "leavePageModal": {
+      "description": "存在未保存的更改。是否仍要离开页面？",
+      "confirmButton": "离开页面"
+    },
+    "triggers": {
+      "checkout": "结账",
+      "customer": "客户",
+      "before": "之前",
+      "order": "订单",
+      "paymentMethod": "支付方式",
+      "contactForm": "联系表单",
+      "reviewForm": "商品评价",
+      "revocationRequestMerchant": "收到撤销申请",
+      "revocationRequestCustomer": "已发送撤销申请",
+      "group": "组",
+      "recovery": "恢复",
+      "registration": "注册",
+      "mail": "邮件",
+      "after": "之后",
+      "create": "创建",
+      "newsletter": "邮件订阅",
+      "productExport": "商品导出",
+      "stateEnter": "进入状态",
+      "state": "状态",
+      "orderDelivery": "订单配送",
+      "orderTransaction": "订单交易",
+      "orderTransactionCapture": "订单交易收款",
+      "orderTransactionCaptureRefund": "订单交易收款退款",
+      "stateLeave": "离开状态",
+      "user": "用户",
+      "login": "登录",
+      "logout": "退出登录",
+      "register": "注册",
+      "changedPaymentMethod": "支付方式已修改",
+      "deleted": "已删除",
+      "doubleOptInGuestOrder": "游客订单双重确认",
+      "doubleOptInRegistration": "注册双重确认",
+      "guestRegister": "访客已注册",
+      "placed": "已下单",
+      "send": "发送",
+      "accepted": "已接受",
+      "declined": "已拒绝",
+      "request": "申请",
+      "message": "消息",
+      "sent": "已发送",
+      "unsubscribe": "退订",
+      "log": "日志",
+      "cancelled": "已取消",
+      "completed": "已完成",
+      "inProgress": "处理中",
+      "open": "未处理",
+      "returned": "已退货",
+      "returnedPartially": "部分退货",
+      "shipped": "已发货",
+      "shippedPartially": "部分发货",
+      "authorized": "已授权",
+      "chargeback": "退回款项",
+      "failed": "失败",
+      "paid": "已支付",
+      "paidPartially": "部分支付",
+      "refunded": "已退款",
+      "refundedPartially": "部分退款",
+      "reminded": "已催付",
+      "unconfirmed": "未确认",
+      "pending": "待处理",
+      "changed": "已修改",
+      "update": "更新",
+      "password": "密码",
+      "confirm": "确认",
+      "document": "文档",
+      "generation": "生成",
+      "revocationRequest": "撤销申请"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "flow": {
+        "label": "流程构建器"
+      }
+    }
+  }
+}

@@ -48,7 +48,7 @@ class Migration1609140710AddCmsPdpLayout extends MigrationStep
         $pageTranslations = new Translations(
             [
                 'cms_page_id' => $page['id'],
-                'name' => 'Standard Produktseite-Layout',
+                'name' => '标准商品详情页布局',
             ],
             [
                 'cms_page_id' => $page['id'],

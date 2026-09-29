@@ -3,60 +3,58 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Basic information</title>
-        <title lang="de-DE">Stammdaten</title>
+        <title lang="zh-CN">基本信息</title>
 
         <input-field>
             <name>shopName</name>
             <label>Shop name</label>
-            <label lang="de-DE">Shopname</label>
+            <label lang="zh-CN">店铺名称</label>
             <placeholder>Enter a shop name...</placeholder>
-            <placeholder lang="de-DE">Gib den Shopnamen ein ...</placeholder>
+            <placeholder lang="zh-CN">请输入店铺名称...</placeholder>
         </input-field>
 
         <input-field>
             <name>email</name>
             <label>Shop owner's email address</label>
-            <label lang="de-DE">Shopbetreiber-E-Mail-Adresse</label>
+            <label lang="zh-CN">店主邮箱地址</label>
             <placeholder>Enter email address...</placeholder>
-            <placeholder lang="de-DE">E-Mail-Adresse eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入邮箱地址...</placeholder>
         </input-field>
 
         <input-field>
             <name>metaAuthor</name>
             <label>Meta Author</label>
-            <label lang="de-DE">Meta-Author</label>
+            <label lang="zh-CN">Meta 作者</label>
             <placeholder>Enter author's name...</placeholder>
-            <placeholder lang="de-DE">Author-Namen eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入作者名称...</placeholder>
             <helpText>Enter the name that will appear as the author of the website in search results or on social
                 media. This name will be used by default for all pages on the website.
             </helpText>
-            <helpText lang="de-DE">Hier kannst du den Namen eintragen, der als Verfasser der Webseite in den
-                Suchergebnissen oder in sozialen Netzwerken angezeigt wird. Dieser Name wird standardmäßig für alle
-                Seiten der Webseite verwendet.</helpText>
+            <helpText lang="zh-CN">填写的名称会作为网站作者显示在搜索结果或社交媒体中。该名称默认用于网站的所有页面。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>familyFriendly</name>
             <label>Family friendly shop</label>
-            <label lang="de-DE">Familienfreundlicher Shop</label>
+            <label lang="zh-CN">亲子友好型店铺</label>
             <helpText>Sets meta tag "isFamilyFriendly" for search engines</helpText>
-            <helpText lang="de-DE">Setzt den Metatag "isFamilyFriendly" für Suchmaschinen</helpText>
+            <helpText lang="zh-CN">为搜索引擎设置 "isFamilyFriendly" 元标记</helpText>
         </input-field>
 
         <input-field type="text-editor">
             <name>address</name>
             <label>Shop owner's address</label>
-            <label lang="de-DE">Shopbetreiber-Adresse</label>
+            <label lang="zh-CN">店主地址</label>
             <placeholder>Enter address...</placeholder>
-            <placeholder lang="de-DE">Adresse eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入地址...</placeholder>
         </input-field>
 
         <input-field type="text-editor">
             <name>bankAccount</name>
             <label>Shop owner's banking information</label>
-            <label lang="de-DE">Shopbetreiber-Bankinformationen</label>
+            <label lang="zh-CN">店主银行信息</label>
             <placeholder>Enter banking information...</placeholder>
-            <placeholder lang="de-DE">Bankinformationen eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入银行信息...</placeholder>
         </input-field>
     </card>
 
@@ -64,166 +62,166 @@
         <name>companyInformation</name>
         <flag>DOCUMENT_GENERATION_REWORK</flag>
         <title>Company information</title>
-        <title lang="de-DE">Unternehmensinformationen</title>
+        <title lang="zh-CN">企业信息</title>
         <subtitle>This company information is used for generated documents and appears on document templates where applicable.</subtitle>
-        <subtitle lang="de-DE">Diese Unternehmensinformationen werden für generierte Dokumente verwendet und erscheinen, wo zutreffend, in Dokumentvorlagen.</subtitle>
+        <subtitle lang="zh-CN">该企业信息用于生成单据，并在适用时显示在单据模板中。</subtitle>
 
         <component name="sw-system-config-media-upload">
             <name>companyLogoId</name>
             <label>Company logo</label>
-            <label lang="de-DE">Firmenlogo</label>
+            <label lang="zh-CN">企业 Logo</label>
         </component>
 
         <input-field>
             <name>companyName</name>
             <label>Company Name</label>
-            <label lang="de-DE">Geschäftsname</label>
+            <label lang="zh-CN">企业名称</label>
             <placeholder>Enter company name...</placeholder>
-            <placeholder lang="de-DE">Geschäftsname eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入企业名称...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyEmail</name>
             <label>Email address</label>
-            <label lang="de-DE">E-Mail-Adresse</label>
+            <label lang="zh-CN">邮箱地址</label>
             <placeholder>Enter email address...</placeholder>
-            <placeholder lang="de-DE">E-Mail-Adresse eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入邮箱地址...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyPhone</name>
             <label>Phone number</label>
-            <label lang="de-DE">Telefon</label>
+            <label lang="zh-CN">电话号码</label>
             <placeholder>Enter phone number...</placeholder>
-            <placeholder lang="de-DE">Telefonnummer eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入电话号码...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyStreet</name>
             <label>Street</label>
-            <label lang="de-DE">Straße</label>
+            <label lang="zh-CN">街道</label>
             <placeholder>Enter street...</placeholder>
-            <placeholder lang="de-DE">Straße eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入街道...</placeholder>
         </input-field>
 
         <component name="sw-entity-single-select">
             <name>companyCountryId</name>
             <entity>country</entity>
             <label>Country</label>
-            <label lang="de-DE">Land</label>
+            <label lang="zh-CN">国家/地区</label>
             <placeholder>Select a country...</placeholder>
-            <placeholder lang="de-DE">Land auswählen ...</placeholder>
+            <placeholder lang="zh-CN">选择国家/地区...</placeholder>
         </component>
 
         <input-field>
             <name>companyZipcode</name>
             <label>Postal code</label>
-            <label lang="de-DE">Postleitzahl</label>
+            <label lang="zh-CN">邮政编码</label>
             <placeholder>Enter postal code...</placeholder>
-            <placeholder lang="de-DE">Postleitzahl eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入邮政编码...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyCity</name>
             <label>City</label>
-            <label lang="de-DE">Stadt</label>
+            <label lang="zh-CN">城市</label>
             <placeholder>Enter city...</placeholder>
-            <placeholder lang="de-DE">Stadt eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入城市...</placeholder>
         </input-field>
 
         <input-field type="url">
             <name>companyUrl</name>
             <label>Website</label>
-            <label lang="de-DE">Webseite</label>
+            <label lang="zh-CN">网站</label>
             <placeholder>Enter website...</placeholder>
-            <placeholder lang="de-DE">Webseite eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入网站...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyTaxNumber</name>
             <label>Tax number</label>
-            <label lang="de-DE">Steuernummer</label>
+            <label lang="zh-CN">税号</label>
             <placeholder>Enter tax number...</placeholder>
-            <placeholder lang="de-DE">Steuernummer eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入税号...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyTaxOffice</name>
             <label>Tax office</label>
-            <label lang="de-DE">Finanzamt</label>
+            <label lang="zh-CN">税务机关</label>
             <placeholder>Enter tax office...</placeholder>
-            <placeholder lang="de-DE">Finanzamt eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入税务机关...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyVatId</name>
             <label>VAT-ID</label>
-            <label lang="de-DE">USt-Id</label>
+            <label lang="zh-CN">增值税号</label>
             <placeholder>Enter VAT-ID...</placeholder>
-            <placeholder lang="de-DE">USt-Id eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入增值税号...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyBankName</name>
             <label>Bank</label>
-            <label lang="de-DE">Bank</label>
+            <label lang="zh-CN">开户银行</label>
             <placeholder>Enter bank name...</placeholder>
-            <placeholder lang="de-DE">Bankname eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入银行名称...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyBankIban</name>
             <label>IBAN</label>
-            <label lang="de-DE">IBAN</label>
+            <label lang="zh-CN">IBAN</label>
             <placeholder>Enter IBAN...</placeholder>
-            <placeholder lang="de-DE">IBAN eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入 IBAN...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyBankBic</name>
             <label>BIC</label>
-            <label lang="de-DE">BIC</label>
+            <label lang="zh-CN">BIC</label>
             <placeholder>Enter BIC...</placeholder>
-            <placeholder lang="de-DE">BIC eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入 BIC...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyPlaceOfJurisdiction</name>
             <label>Commercial register (incl. court &amp; number)</label>
-            <label lang="de-DE">Gerichtsstand / Handelsregister-Nr.</label>
+            <label lang="zh-CN">商业登记（含登记机关与编号）</label>
             <placeholder>Enter place of jurisdiction...</placeholder>
-            <placeholder lang="de-DE">Gerichtsstand eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入管辖地...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyPlaceOfFulfillment</name>
             <label>Place of fulfillment</label>
-            <label lang="de-DE">Erfüllungsort</label>
+            <label lang="zh-CN">履行地</label>
             <placeholder>Enter place of fulfillment...</placeholder>
-            <placeholder lang="de-DE">Erfüllungsort eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入履行地...</placeholder>
         </input-field>
 
         <input-field>
             <name>companyExecutiveDirector</name>
             <label>Business executive</label>
-            <label lang="de-DE">Geschäftsführer</label>
+            <label lang="zh-CN">企业负责人</label>
             <placeholder>Enter business executive...</placeholder>
-            <placeholder lang="de-DE">Geschäftsführer eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入企业负责人...</placeholder>
         </input-field>
     </card>
 
     <card>
         <title>Shop pages</title>
-        <title lang="de-DE">Shopseiten</title>
+        <title lang="zh-CN">商城页面</title>
 
         <component name="sw-cms-page-select">
             <name>tosPage</name>
             <entity>cms_page</entity>
             <pageType>page</pageType>
             <label>Layout for GTC pages</label>
-            <label lang="de-DE">Shopseiten-Layout für AGB-Seiten</label>
+            <label lang="zh-CN">服务条款页面的布局</label>
             <placeholder>Assign layout...</placeholder>
-            <placeholder lang="de-DE">Layout zuweisen ...</placeholder>
+            <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
         <component name="sw-cms-page-select">
@@ -231,9 +229,9 @@
             <entity>cms_page</entity>
             <pageType>page</pageType>
             <label>Layout for revocation notices</label>
-            <label lang="de-DE">Shopseiten-Layout für Widerrufsbelehrungen</label>
+            <label lang="zh-CN">撤销说明页面的布局</label>
             <placeholder>Assign layout...</placeholder>
-            <placeholder lang="de-DE">Layout zuweisen ...</placeholder>
+            <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
         <component name="sw-cms-page-select">
@@ -241,9 +239,9 @@
             <entity>cms_page</entity>
             <pageType>page</pageType>
             <label>Layout for payment and shipping information</label>
-            <label lang="de-DE">Shopseiten-Layout für Versand- und Zahlungsarten</label>
+            <label lang="zh-CN">支付与配送信息页面的布局</label>
             <placeholder>Assign layout...</placeholder>
-            <placeholder lang="de-DE">Layout zuweisen ...</placeholder>
+            <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
         <component name="sw-cms-page-select">
@@ -251,9 +249,9 @@
             <entity>cms_page</entity>
             <pageType>page</pageType>
             <label>Layout for privacy pages</label>
-            <label lang="de-DE">Shopseiten-Layout für Datenschutz-Seiten</label>
+            <label lang="zh-CN">隐私政策页面的布局</label>
             <placeholder>Assign layout...</placeholder>
-            <placeholder lang="de-DE">Layout zuweisen ...</placeholder>
+            <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
         <component name="sw-cms-page-select">
@@ -261,9 +259,9 @@
             <entity>cms_page</entity>
             <pageType>page</pageType>
             <label>Layout for an imprint</label>
-            <label lang="de-DE">Shopseiten-Layout für ein Impressum</label>
+            <label lang="zh-CN">法律声明页面的布局</label>
             <placeholder>Select layout</placeholder>
-            <placeholder lang="de-DE">Layout auswählen</placeholder>
+            <placeholder lang="zh-CN">选择布局</placeholder>
         </component>
 
         <component name="sw-cms-page-select">
@@ -271,9 +269,9 @@
             <entity>cms_page</entity>
             <pageType>page</pageType>
             <label>Layout for 404 pages</label>
-            <label lang="de-DE">Shopseiten-Layout für 404-Seiten</label>
+            <label lang="zh-CN">404 页面的布局</label>
             <placeholder>Assign layout...</placeholder>
-            <placeholder lang="de-DE">Layout zuweisen ...</placeholder>
+            <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
         <component name="sw-cms-page-select">
@@ -281,9 +279,9 @@
             <entity>cms_page</entity>
             <pageType>page</pageType>
             <label>Shop page layout for maintenance pages</label>
-            <label lang="de-DE">Shopseiten-Layout für Wartungsseiten</label>
+            <label lang="zh-CN">维护页面的商城页面布局</label>
             <placeholder>Select layout</placeholder>
-            <placeholder lang="de-DE">Layout auswählen</placeholder>
+            <placeholder lang="zh-CN">选择布局</placeholder>
         </component>
 
         <component name="sw-cms-page-select">
@@ -291,9 +289,9 @@
             <entity>cms_page</entity>
             <pageType>page</pageType>
             <label>Shop page layout for contact pages</label>
-            <label lang="de-DE">Shopseiten-Layout für Kontaktseiten</label>
+            <label lang="zh-CN">联系页面的商城页面布局</label>
             <placeholder>Assign layout...</placeholder>
-            <placeholder lang="de-DE">Layout zuweisen ...</placeholder>
+            <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
         <component name="sw-cms-page-select">
@@ -301,11 +299,11 @@
             <entity>cms_page</entity>
             <pageType>page</pageType>
             <label>Shop page layout for revocation request</label>
-            <label lang="de-DE">Shopseiten-Layout für Widerrufsantrag Seite</label>
+            <label lang="zh-CN">撤销申请页面的商城页面布局</label>
             <placeholder>Assign layout...</placeholder>
-            <placeholder lang="de-DE">Layout zuweisen ...</placeholder>
+            <placeholder lang="zh-CN">分配布局...</placeholder>
             <helpText>To make the page accessible, you must activate the option "Show Revoke a contract button in footer"</helpText>
-            <helpText lang="de-DE">Um die Seite erreichbar zu machen, musst du den Punkt "Button Vertrag widerrufen im Footer anzeigen" aktivieren.</helpText>
+            <helpText lang="zh-CN">要让该页面可访问，需先启用「在页脚显示『撤销合同』按钮」选项。</helpText>
         </component>
 
         <component name="sw-cms-page-select">
@@ -313,95 +311,95 @@
             <entity>cms_page</entity>
             <pageType>page</pageType>
             <label>Shop page layout for newsletter pages</label>
-            <label lang="de-DE">Shopseiten-Layout für Newsletterseiten</label>
+            <label lang="zh-CN">邮件订阅页面的商城页面布局</label>
             <placeholder>Assign layout...</placeholder>
-            <placeholder lang="de-DE">Layout zuweisen ...</placeholder>
+            <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
     </card>
 
     <card>
         <title>Legal and compliance</title>
-        <title lang="de-DE">Recht und Datenschutz</title>
+        <title lang="zh-CN">法律与合规</title>
 
         <input-field type="bool">
             <name>useDefaultCookieConsent</name>
             <label>Use default cookie notification</label>
-            <label lang="de-DE">Standard-Cookie-Hinweis verwenden</label>
+            <label lang="zh-CN">使用默认 Cookie 提示</label>
             <helpText>Deactivate the default cookie notification only if you are using an alternative third-party solution.</helpText>
-            <helpText lang="de-DE">Du solltest den Standard-Cookie-Hinweis hier nur deaktivieren, wenn Du eine alternative Drittanbieterlösung verwendest.</helpText>
+            <helpText lang="zh-CN">仅在使用第三方替代方案时才需要关闭默认 Cookie 提示。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>acceptAllCookies</name>
             <label>Show "Accept all cookies" button</label>
-            <label lang="de-DE">"Alle Cookies akzeptieren"-Button anzeigen</label>
+            <label lang="zh-CN">显示「接受全部 Cookie」按钮</label>
             <helpText>Shows a button which allows users to accept all cookies in the storefront</helpText>
-            <helpText lang="de-DE">Zeigt einen Button an, der es Nutzern erlaubt alle Cookies in der Storefront zu akzeptieren</helpText>
+            <helpText lang="zh-CN">显示一个按钮，让用户可在店铺前台接受全部 Cookie</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>firstNameFieldRequired</name>
             <label>First name in contact forms required</label>
-            <label lang="de-DE">Vorname in Kontaktformularen als Pflichtfeld behandeln</label>
+            <label lang="zh-CN">联系表单中名字为必填项</label>
             <helpText>If active, the field "first name" has to be filled in, in order to submit a contact form.</helpText>
-            <helpText lang="de-DE">Wenn aktiv, muss das Feld "Vorname" ausgefüllt werden, um ein Kontaktformular absenden zu können.</helpText>
+            <helpText lang="zh-CN">开启后，必须填写「名字」字段才能提交联系表单。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>lastNameFieldRequired</name>
             <label>Last name in contact forms required</label>
-            <label lang="de-DE">Nachname in Kontaktformularen als Pflichtfeld behandeln</label>
+            <label lang="zh-CN">联系表单中姓氏为必填项</label>
             <helpText>If active, the field "last name" has to be filled in, in order to submit a contact form.</helpText>
-            <helpText lang="de-DE">Wenn aktiv, muss das Feld "Nachname" ausgefüllt werden, um ein Kontaktformular absenden zu können.</helpText>
+            <helpText lang="zh-CN">开启后，必须填写「姓氏」字段才能提交联系表单。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>phoneNumberFieldRequired</name>
             <label>Phone number in contact forms required</label>
-            <label lang="de-DE">Telefonummer in Kontaktformularen als Pflichtfeld behandeln</label>
+            <label lang="zh-CN">联系表单中电话号码为必填项</label>
             <helpText>If active, the field "phone number" has to be filled in, in order to submit a contact form.</helpText>
-            <helpText lang="de-DE">Wenn aktiv, muss das Feld "Telefonnummer" ausgefüllt werden, um ein Kontaktformular absenden zu können.</helpText>
+            <helpText lang="zh-CN">开启后，必须填写「电话号码」字段才能提交联系表单。</helpText>
         </input-field>
 
         <input-field type="bool">
             <name>showRevocationButton</name>
             <label>Show "Revoke a contract" button in footer</label>
-            <label lang="de-DE">Button "Vertrag widerrufen" im Footer anzeigen</label>
+            <label lang="zh-CN">在页脚显示「撤销合同」按钮</label>
             <helpText>If active, the button "Revoke a contract" is shown in the page footer. To show the button properly, it's also necessary to select a "Shop page layout for revocation request".</helpText>
-            <helpText lang="de-DE">Wenn aktiv, wird der Button „Vertrag widerrufen“ in der Fußzeile der Seite angezeigt. Damit der Button korrekt angezeigt wird, muss außerdem ein "Shopseiten-Layout für Widerrufsantrag Seite" ausgewählt werden.</helpText>
+            <helpText lang="zh-CN">开启后，页面页脚会显示「撤销合同」按钮。为使按钮正确显示，还需选择一项「撤销申请页面的商城页面布局」。</helpText>
         </input-field>
     </card>
 
     <card>
         <title>Rules for robots.txt</title>
-        <title lang="de-DE">Regeln für robots.txt </title>
+        <title lang="zh-CN">robots.txt 规则</title>
         <input-field type="bool">
             <name>robotsDisableDefaults</name>
             <label>Disable default robots.txt rules</label>
-            <label lang="de-DE">Standard-Regeln für robots.txt deaktivieren</label>
+            <label lang="zh-CN">禁用默认 robots.txt 规则</label>
             <helpText>If set, Shopwell's standard built-in robots.txt rules such as "User-agent: *", "Allow: /", "Disallow: /*?", etc. will not be included in your robots.txt. However, your own custom rules from the configuration below will still be included.</helpText>
-            <helpText lang="de-DE">Wenn diese Option gesetzt ist, werden die standardmäßig in Shopwell enthaltenen robots.txt-Regeln wie "User-agent: *", "Allow: /", "Disallow: /*?" usw. nicht in deiner robots.txt ausgegeben. Deine eigenen benutzerdefinierten Regeln aus der weiter unten folgenden Konfiguration werden jedoch weiterhin ausgegeben.</helpText>
+            <helpText lang="zh-CN">启用后，Shopwell 内置的标准 robots.txt 规则（如 "User-agent: *"、"Allow: /"、"Disallow: /*?" 等）将不再写入你的 robots.txt；但下方配置中你自定义的规则仍会写入。</helpText>
         </input-field>
         <input-field type="textarea">
             <name>robotsRules</name>
             <label>Domain specific robots.txt rules</label>
-            <label lang="de-DE">Domain spezifische robots.txt Regeln</label>
+            <label lang="zh-CN">按域名设置的 robots.txt 规则</label>
             <helpText>Define robots.txt rules. Supports User-agent blocks (applied globally across all domains) and Allow/Disallow rules (applied to this domain path). Example: "User-agent: Googlebot&amp;#10;Crawl-delay: 10&amp;#10;Disallow: /private/"</helpText>
-            <helpText lang="de-DE">Definiere hier die Regeln für deine robots.txt. Du kannst User-agent-Blöcke (global für alle Domains) und Allow/Disallow-Regeln (für diesen Domain-Pfad) verwenden. Beispiel: "User-agent: Googlebot&amp;#10;Crawl-delay: 10&amp;#10;Disallow: /private/"</helpText>
+            <helpText lang="zh-CN">在此定义 robots.txt 规则。支持 User-agent 块（对所有域名全局生效）与 Allow/Disallow 规则（作用于该域名路径）。示例："User-agent: Googlebot&amp;#10;Crawl-delay: 10&amp;#10;Disallow: /private/"</helpText>
         </input-field>
     </card>
 
     <card>
         <title>CAPTCHA</title>
-        <title lang="de-DE">CAPTCHA</title>
+        <title lang="zh-CN">验证码</title>
 
         <component name="sw-settings-captcha-select-v2">
             <name>activeCaptchasV2</name>
             <label>Active CAPTCHAS</label>
-            <label lang="de-DE">Aktive CAPTCHAS</label>
+            <label lang="zh-CN">已启用的验证码</label>
             <placeholder>None</placeholder>
-            <placeholder lang="de-DE">Keine</placeholder>
+            <placeholder lang="zh-CN">无</placeholder>
         </component>
     </card>
 
@@ -410,12 +408,12 @@
         <input-field type="text">
             <name>metaRobots</name>
             <label>Robots Meta Tag</label>
-            <label lang="de-DE">Robots Meta Tag</label>
+            <label lang="zh-CN">robots 元标记</label>
             <helpText>This option affects the default content attribute of the "robots" meta tag. CMS pages can override this value. Some pages like the cart will always set "noindex,follow".</helpText>
-            <helpText lang="de-DE">Diese Option betrifft den Standardwert des "robots" Meta Tag. CMS Seiten können diesen Wert überschreiben. Einige Seiten, wie der Warenkorb, nutzen immer "noindex,follow".</helpText>
+            <helpText lang="zh-CN">该选项影响 "robots" 元标记的默认 content 值。CMS 页面可覆盖该值。购物车等部分页面始终使用 "noindex,follow"。</helpText>
             <defaultValue>index,follow</defaultValue>
             <placeholder>index,follow</placeholder>
-            <placeholder lang="de-DE">index,follow</placeholder>
+            <placeholder lang="zh-CN">index,follow</placeholder>
         </input-field>
     </card>
 

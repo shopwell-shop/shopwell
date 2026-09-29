@@ -1,0 +1,123 @@
+{
+  "sw-settings-country": {
+    "page": {
+      "generalTab": "设置",
+      "stateTab": "省/地区",
+      "addressHandlingTab": "地址处理"
+    },
+    "general": {
+      "mainMenuItemGeneral": "国家",
+      "placeholderSearchBar": "搜索国家 ...",
+      "actions": {
+        "newSnippet": "添加新文本模块",
+        "createBefore": "在上方新建行",
+        "createAfter": "在下方新建行",
+        "moveTop": "将行移至顶部",
+        "moveBottom": "将行移至底部"
+      }
+    },
+    "list": {
+      "textHeadline": "国家",
+      "textDeleteConfirm": "确定要删除国家 \"{name}\" 吗？",
+      "columnName": "名称",
+      "columnPosition": "项目",
+      "columnIso": "ISO2",
+      "columnIso3": "ISO3",
+      "columnActive": "启用",
+      "buttonAddCountry": "添加国家",
+      "messageDeleteSuccess": "国家 \"{name}\" 已成功删除。"
+    },
+    "detail": {
+      "textHeadline": "新建国家",
+      "titleCard": "通用",
+      "messageSaveSuccess": "国家/地区 \"{name}\" 已成功保存。",
+      "messageSaveError": "国家/地区 \"{name}\" 无法保存。",
+      "labelName": "名称",
+      "labelPosition": "项目",
+      "labelIso": "ISO2",
+      "labelIso3": "ISO3",
+      "labelActive": "启用",
+      "labelShippingAvailable": "配送",
+      "labelTaxFree": "免税（B2C）",
+      "labelCompanyTaxFree": "免税（B2B）",
+      "helpTextCompanyTaxFree": "要免税处理 B2B 交易，相应客户账户必须拥有有效的增值税 ID。",
+      "labelCheckVatIdFormat": "检查增值税 ID 格式",
+      "helpTextCheckVatIdFormat": "检查欧盟增值税 ID 的格式。",
+      "labelForceStateInRegistration": "国家/地区为必填字段",
+      "labelDisplayStateInRegistration": "显示省/地区",
+      "placeholderName": "输入名称 ...",
+      "placeholderPosition": "1",
+      "placeholderStateSearch": "搜索省/地区 ...",
+      "placeholderIso": "输入两位 ISO 代码 ...",
+      "placeholderIso3": "输入三位 ISO 代码 ...",
+      "buttonAddCountryState": "添加省/地区",
+      "editAction": "编辑",
+      "columnStateNameLabel": "名称",
+      "columnStateShortCodeLabel": "ISO",
+      "taxFreeFrom": "免税起征额",
+      "baseCurrency": "基准货币",
+      "taxFreeFromHelpText": "当购物车总额大于 \"免税起征额\" 时，整个购物车免税。",
+      "labelVatIdRequired": "增值税 ID 为必填字段",
+      "labelIsEu": "欧盟成员国",
+      "helpTextIsEu": "开启以启用欧盟内配送的显示。",
+      "helpTextLabelVatIdRequired": "请注意 \"设置 > 登录/注册\" 下的全局开关。",
+      "titleOptions": "选项",
+      "currencyDependentValues": "货币相关值",
+      "labelPostalCodeRequired": "邮政编码为必填字段",
+      "labelCheckPostalCodePattern": "邮政编码校验",
+      "labelCheckAdvancedPostalCodePattern": "高级校验规则",
+      "placeholderAdvancedPostalCodePattern": "输入邮政编码格式…",
+      "helpTextAdvancedPostalCodePattern": "可用格式：<ul><li>^\\d&#123;5&#125;$ - 恰好 5 位数字，例如 12345</li><li>^(\\d&#123;4&#125;)\\s*([A-Z]&#123;2&#125;)$ - 恰好 4 位数字加 2 个字母，例如 1234 AB</li></ul>",
+      "labelCheckDefaultAddressFormat": "自定义地址格式",
+      "labelAddressFormatPlain": "格式",
+      "titleFormatting": "地址格式",
+      "helpTextCheckPostalCodePattern": "允许对选定国家进行邮政编码校验",
+      "previewTitle": "预览",
+      "labelCustomer": "客户",
+      "placeholderSelectCustomer": "选择客户 ...",
+      "buttonResetMarkup": "重置地址格式",
+      "newSnippetModalTitle": "插入值",
+      "buttonInsertSnippet": "插入值",
+      "placeholderSearchSnippet": "搜索文本模块 ..."
+    }
+  },
+  "sw-country-state-detail": {
+    "titleNew": "新建省/地区",
+    "titleEdit": "编辑省/地区",
+    "labelName": "名称",
+    "labelPosition": "项目",
+    "labelShortCode": "ISO",
+    "tooltipPosition": "确定在列表输出中省/地区的排序位置。",
+    "createNewStateError": "无法用当前所选语言新建地区。请先用系统默认语言创建地区。",
+    "emptyTitle": "暂无地区",
+    "emptySubline": "添加地区"
+  },
+  "sw-privileges": {
+    "permissions": {
+      "country": {
+        "label": "国家"
+      }
+    }
+  },
+  "sw-custom-snippet": {
+    "address": {
+      "countryState": "省/州",
+      "salutation": "称谓",
+      "country": "国家",
+      "zipcode": "邮政编码",
+      "lastName": "姓氏",
+      "firstName": "名字",
+      "street": "街道",
+      "city": "城市",
+      "company": "公司",
+      "phoneNumber": "电话号码",
+      "department": "部门",
+      "title": "头衔"
+    },
+    "symbol": {
+      "tilde": "~",
+      "dash": "-",
+      "comma": ","
+    }
+  }
+}

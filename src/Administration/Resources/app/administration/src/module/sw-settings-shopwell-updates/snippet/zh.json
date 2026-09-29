@@ -1,0 +1,102 @@
+{
+  "sw-settings-shopwell-updates": {
+    "general": {
+      "menuTitle": "Shopwell 更新",
+      "title": "Shopwell 更新"
+    },
+    "cards": {
+      "requirements": "系统要求",
+      "extensions": "扩展兼容性",
+      "updating": "正在更新 ..."
+    },
+    "versionCard": {
+      "title": "Shopwell 版本",
+      "badgeUpdateAvailable": "有更新可用",
+      "badgeUpToDate": "已是最新",
+      "badgeCheckFailed": "更新检查失败",
+      "retryCheck": "重试",
+      "currentVersionLabel": "已安装版本：",
+      "newVersionLabel": "新版本：",
+      "changelogLink": "查看更新日志",
+      "methodsHeadline": "立即更新",
+      "cliRecommendedBadge": "推荐",
+      "methodDivider": "或继续使用",
+      "webInstallerTitle": "使用 Web 安装程序",
+      "webInstallerDescription": "直接在浏览器中执行引导式更新。",
+      "upToDateTitle": "您已是最新版本",
+      "upToDateDescription": "Shopwell {version} 是最新版本。"
+    },
+    "notifications": {
+      "checkFailed": "更新检查失败。",
+      "updateStarted": "更新已开始。",
+      "updateStopped": "更新已停止。",
+      "downloadFailed": "下载失败。",
+      "unpackFailed": "解压失败。",
+      "deactivationFailed": "禁用扩展失败",
+      "alreadyUpToDate": "你已是最新版本。"
+    },
+    "infos": {
+      "backupCheckboxLabel": "我已创建数据备份，现要执行更新。",
+      "startUpdate": "开始更新",
+      "autoUpdateDisabled": "自动更新已禁用（shopwell.auto_update.enabled）。请使用 Shopwell CLI 刷新。",
+      "clusterSetupDisabled": "集群模式（shopwell.deployment.cluster_setup）下无法通过后台更新。请使用 Shopwell CLI 更新。",
+      "progress": {
+        "download": "正在下载更新文件 ...",
+        "deactivate": "正在禁用扩展 ...",
+        "unpack": "正在解压更新文件 ..."
+      }
+    },
+    "license": {
+      "bannerTitle": "没有有效的 Shopwell 订阅",
+      "bannerMessage": "未检测到有效的 Shopwell 订阅，无法执行自动更新。你可以随时通过 <a target=\"_blank\" href=\"https://account.shopwell.cn\">Shopwell 账户</a>购买订阅。"
+    },
+    "extensions": {
+      "columns": {
+        "name": "扩展",
+        "available": "兼容性"
+      },
+      "actions": {
+        "openMyExtensions": "前往我的扩展",
+        "deactivateAll": "停用全部扩展。",
+        "deactivateIncompatible": "停用不兼容的扩展。",
+        "deactivateNone": "我已知悉潜在风险，仍希望在未停用不兼容扩展的情况下更新。我明白 Shopwell 无法保证不兼容更新后系统的可用性。",
+        "recommended": "（推荐）"
+      },
+      "emptyStateHeadline": "无兼容性问题",
+      "emptyStateDescription": "所有已安装扩展都与此更新兼容。",
+      "extensionNotInStore": "该扩展在商店中不可用。请联系扩展厂商。",
+      "extensionWillBeDeactivatedHint": "（在更新过程中禁用）"
+    },
+    "updateModal": {
+      "actions": {
+        "install": "安装",
+        "goToUpdate": "立即更新"
+      },
+      "messageIncompatible": "部分已安装的扩展与最新的 Shopwell 版本不兼容。如果现在继续更新，可能出现未知问题并严重损害你的系统。我们可以在更新过程中自动停用不兼容的扩展，以确保系统的持续可用。相应更新这些扩展后，你可以手动重新启用它们。",
+      "messageNotInStore": "存在未能通过兼容性检测的扩展。如需更多信息，请联系扩展作者。此时强烈建议在继续前创建数据备份。",
+      "messageOkay": "所有前提条件均已满足。请确保已创建最新的数据备份。",
+      "messageUpdateCheck": "当前安装的 Shopwell 版本可更新到 {version}。你想怎么做？",
+      "backupLabel": "是的，我已创建备份。"
+    },
+    "methodModal": {
+      "title": "更新 Shopwell",
+      "subtitle": "更新前建议先备份数据。",
+      "cliTitle": "使用 Shopwell CLI",
+      "cliDescription": "Shopwell CLI 提供更多控制和可重复的部署。",
+      "cliInstallHint": "安装 Shopwell CLI 并执行：",
+      "cliInstallLink": "安装 Shopwell CLI",
+      "actions": {
+        "continue": "继续"
+      }
+    }
+  },
+  "sw-privileges": {
+    "additional_permissions": {
+      "system": {
+        "core_update": "执行更新",
+        "plugin_maintain": "管理扩展",
+        "plugin_upload": "上传扩展"
+      }
+    }
+  }
+}

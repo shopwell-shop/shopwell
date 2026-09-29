@@ -46,7 +46,7 @@ class TranslationConfigLoaderTest extends TestCase
             'https://raw.githubusercontent.com/shopwell/translations/main/translations',
             $config->repositoryUrl->__toString()
         );
-        static::assertSame(['de-DE', 'en-GB'], $config->excludedLocales);
+        static::assertSame(['zh-CN', 'en-GB'], $config->excludedLocales);
     }
 
     public function testConfigOverridesApplyAgainstShippedDefaults(): void

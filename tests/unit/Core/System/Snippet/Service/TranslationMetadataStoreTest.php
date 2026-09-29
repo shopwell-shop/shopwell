@@ -51,7 +51,7 @@ class TranslationMetadataStoreTest extends TestCase
             ]),
             new PluginMappingCollection(),
             new Uri('http://localhost:8000/metadata.json'),
-            ['de-DE'],
+            ['zh-CN'],
         );
     }
 
@@ -316,7 +316,7 @@ class TranslationMetadataStoreTest extends TestCase
             ]),
             new PluginMappingCollection(),
             new Uri('http://localhost:8000/metadata.json'),
-            ['de-DE'],
+            ['zh-CN'],
             null,
             null,
             ['ach-UG'],

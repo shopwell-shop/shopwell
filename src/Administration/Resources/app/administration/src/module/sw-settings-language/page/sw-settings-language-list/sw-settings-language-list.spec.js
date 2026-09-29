@@ -16,7 +16,7 @@ async function createWrapper(privileges = [], customStubs = {}) {
                     name: 'English',
                 },
                 {
-                    name: 'German',
+                    name: '中文',
                 },
                 {
                     name: 'Vietnamese',
@@ -55,7 +55,7 @@ async function createWrapper(privileges = [], customStubs = {}) {
                     translationService: {
                         getList: jest.fn().mockResolvedValue({ total: 0, items: [] }),
                         getMeta: jest.fn().mockResolvedValue({
-                            builtInLocales: ['de-DE', 'en-GB'],
+                            builtInLocales: ['zh-CN', 'en-GB'],
                         }),
                         update: jest.fn().mockResolvedValue(),
                         install: jest.fn().mockResolvedValue(),
@@ -433,7 +433,7 @@ describe('module/sw-settings-language/page/sw-settings-language-list', () => {
         };
 
         // Shopwell default languages are never checked for snippet updates
-        expect(wrapper.vm.getSnippetStatus({ locale: { code: 'de-DE' } })).toBeNull();
+        expect(wrapper.vm.getSnippetStatus({ locale: { code: 'zh-CN' } })).toBeNull();
         expect(wrapper.vm.getSnippetStatus({ locale: { code: 'en-GB' } })).toBeNull();
         // up-to-date and custom locales no longer render a badge
         expect(wrapper.vm.getSnippetStatus({ locale: { code: 'es-ES' } })).toBeNull();
@@ -530,12 +530,12 @@ describe('module/sw-settings-language/page/sw-settings-language-list', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        // stale in-memory state still lists de-DE as updatable
+        // stale in-memory state still lists zh-CN as updatable
         wrapper.vm.translationMetadata = {
-            'de-DE': { locale: 'de-DE', updateAvailable: true },
+            'zh-CN': { locale: 'zh-CN', updateAvailable: true },
         };
 
-        // the current server state no longer reports de-DE (the language was deleted in the meantime)
+        // the current server state no longer reports zh-CN (the language was deleted in the meantime)
         wrapper.vm.translationService.getList.mockResolvedValueOnce({ items: [] });
 
         await wrapper.vm.onUpdateAllSnippets();
@@ -607,7 +607,7 @@ describe('module/sw-settings-language/page/sw-settings-language-list', () => {
             a: { locale: { code: 'fr-FR' } },
             b: { locale: { code: 'es-ES' } },
             c: { locale: { code: 'it-IT' } },
-            d: { locale: { code: 'de-DE' } },
+            d: { locale: { code: 'zh-CN' } },
         };
 
         expect(wrapper.vm.selectedUpdatableLocales).toEqual(['fr-FR', 'es-ES']);

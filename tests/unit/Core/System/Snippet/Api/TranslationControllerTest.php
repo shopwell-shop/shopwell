@@ -45,7 +45,7 @@ class TranslationControllerTest extends TestCase
             ]),
             new PluginMappingCollection(),
             new Uri('http://localhost:8000/metadata.json'),
-            ['de-DE', 'en-GB'],
+            ['zh-CN', 'en-GB'],
             new Uri('https://translate.shopwell.cn'),
             'sw-settings-language.addModal.docsUrl',
             ['ach-UG'],
@@ -75,7 +75,7 @@ class TranslationControllerTest extends TestCase
     {
         $content = $this->decode($this->createController()->meta());
 
-        static::assertSame(['de-DE', 'en-GB'], $content['builtInLocales']);
+        static::assertSame(['zh-CN', 'en-GB'], $content['builtInLocales']);
         static::assertSame('https://translate.shopwell.cn', $content['communityTranslationsUrl']);
         static::assertSame('sw-settings-language.addModal.docsUrl', $content['documentationUrlSnippetKey']);
         static::assertSame(90, $content['completenessThreshold']);

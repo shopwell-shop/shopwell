@@ -129,7 +129,7 @@ class AppAdministrationSnippetPersisterTest extends TestCase
         $localeRepository = new StaticEntityRepository([
             new LocaleCollection([
                 (new LocaleEntity())->assign(['id' => 'en-GB', 'code' => 'en-GB']),
-                (new LocaleEntity())->assign(['id' => 'de-DE', 'code' => 'de-DE']),
+                (new LocaleEntity())->assign(['id' => 'zh-CN', 'code' => 'zh-CN']),
             ]),
         ]);
 
@@ -226,7 +226,7 @@ class AppAdministrationSnippetPersisterTest extends TestCase
                         'id' => 'snippetToDelete',
                         'value' => \json_encode(['my' => 'deleted'], \JSON_THROW_ON_ERROR),
                         'appId' => 'appId',
-                        'localeId' => 'de-DE',
+                        'localeId' => 'zh-CN',
                     ],
                 ],
                 [
@@ -247,8 +247,8 @@ class AppAdministrationSnippetPersisterTest extends TestCase
                     'code' => 'en-GB',
                 ],
                 [
-                    'id' => 'de-DE',
-                    'code' => 'de-DE',
+                    'id' => 'zh-CN',
+                    'code' => 'zh-CN',
                 ],
             ],
             self::getAppEntity('appId'),
@@ -305,7 +305,7 @@ class AppAdministrationSnippetPersisterTest extends TestCase
 
         yield 'Test it throws an exception when no en-GB is defined' => [
             [
-                'de-DE' => \json_encode(['myCustomSnippetName' => 'newTranslation'], \JSON_THROW_ON_ERROR),
+                'zh-CN' => \json_encode(['myCustomSnippetName' => 'newTranslation'], \JSON_THROW_ON_ERROR),
             ],
             SnippetException::defaultLanguageNotGiven('en-GB'),
         ];

@@ -73,7 +73,7 @@ export const actionButtonData = [
         app: 'TestApp',
         icon: 'someBase64Icon',
         label: {
-            'de-DE': 'Product hinzufügen',
+            'zh-CN': '添加商品',
             'en-GB': 'Add product',
         },
         url: 'http://test-url/actions/product/add',
@@ -84,7 +84,7 @@ export const actionButtonData = [
         app: 'TestApp',
         icon: 'someBase64Icon',
         label: {
-            'de-DE': 'Product umbenennen',
+            'zh-CN': '重命名商品',
             'en-GB': 'Rename product',
         },
         url: 'http://test-url/actions/product/rename',

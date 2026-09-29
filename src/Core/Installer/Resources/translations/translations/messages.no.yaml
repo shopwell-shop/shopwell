@@ -29,6 +29,8 @@ shopwell.installer:
     select_language_el-GR: Gresk
     select_language_en-US: Engelsk (USA)
     select_language_en-GB: Engelsk (Storbritannia)
+    select_language_zh: Kinesisk (Kina)
+    select_language_zh-CN: Kinesisk (Kina)
     select_language_es-ES: Spansk
     select_language_fi-FI: Finsk
     select_language_fr-FR: Fransk
@@ -143,6 +145,7 @@ shopwell.installer:
     configuration_admin_currency_dkk: 'Danske kroner'
     configuration_admin_currency_nok: 'Norske kroner'
     configuration_admin_currency_czk: 'Tjekkiske kroner'
+    configuration_admin_currency_cny: 'Kinesisk yuan'
     configuration_admin_username: 'Admin brukernavn:'
     configuration_admin_mail: 'Admin email:'
     configuration_admin_firstName: 'Admin fornavn:'

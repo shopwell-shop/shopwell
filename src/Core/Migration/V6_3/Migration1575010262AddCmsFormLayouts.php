@@ -16,8 +16,8 @@ class Migration1575010262AddCmsFormLayouts extends MigrationStep
 {
     private const CONTACT = 'contact';
     private const NEWSLETTER = 'newsletter';
-    private const CONTACT_DE = 'Kontakt';
-    private const NEWSLETTER_DE = 'Newsletter';
+    private const CONTACT_ZH = '联系表单';
+    private const NEWSLETTER_ZH = '邮件通讯';
 
     public function getCreationTimestamp(): int
     {
@@ -26,19 +26,19 @@ class Migration1575010262AddCmsFormLayouts extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $this->addDefaultContactFormLayout($connection, self::CONTACT, self::CONTACT_DE);
-        $this->addDefaultContactFormLayout($connection, self::NEWSLETTER, self::NEWSLETTER_DE);
+        $this->addDefaultContactFormLayout($connection, self::CONTACT, self::CONTACT_ZH);
+        $this->addDefaultContactFormLayout($connection, self::NEWSLETTER, self::NEWSLETTER_ZH);
     }
 
     public function updateDestructive(Connection $connection): void
     {
     }
 
-    private function addDefaultContactFormLayout(Connection $connection, string $formType, string $formTypeDe): void
+    private function addDefaultContactFormLayout(Connection $connection, string $formType, string $formTypeZh): void
     {
         $slotTranslations = [];
         $languageEn = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
-        $languageDe = $this->getLanguageDeId($connection);
+        $languageZhCn = $this->getLanguageZhCnId($connection);
         $versionId = Uuid::fromHexToBytes(Defaults::LIVE_VERSION);
 
         // cms page
@@ -54,17 +54,17 @@ class Migration1575010262AddCmsFormLayouts extends MigrationStep
             'name' => 'Default shop page layout with ' . $formType . ' form',
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ];
-        $pageDeu = [
+        $pageZhCn = [
             'cms_page_id' => $page['id'],
-            'language_id' => $languageDe,
-            'name' => 'Standard Shopseiten-Layout mit ' . $formTypeDe . 'formular',
+            'language_id' => $languageZhCn,
+            'name' => '含' . $formTypeZh . '的标准商店页面布局',
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ];
 
         $connection->insert('cms_page', $page);
         $connection->insert('cms_page_translation', $pageEng);
-        if ($languageDe) {
-            $connection->insert('cms_page_translation', $pageDeu);
+        if ($languageZhCn) {
+            $connection->insert('cms_page_translation', $pageZhCn);
         }
 
         $section = [
@@ -122,8 +122,8 @@ class Migration1575010262AddCmsFormLayouts extends MigrationStep
         $slotTranslationData['language_id'] = $languageEn;
         $slotTranslations[] = $slotTranslationData;
 
-        if ($languageDe !== null) {
-            $slotTranslationData['language_id'] = $languageDe;
+        if ($languageZhCn !== null) {
+            $slotTranslationData['language_id'] = $languageZhCn;
             $slotTranslations[] = $slotTranslationData;
         }
 
@@ -134,14 +134,14 @@ class Migration1575010262AddCmsFormLayouts extends MigrationStep
         }
     }
 
-    private function getLanguageDeId(Connection $connection): ?string
+    private function getLanguageZhCnId(Connection $connection): ?string
     {
         $result = $connection->fetchOne(
             '
             SELECT lang.id
             FROM language lang
             INNER JOIN locale loc ON lang.translation_code_id = loc.id
-            AND loc.code = "de-DE"'
+            AND loc.code = "zh-CN"'
         );
 
         if ($result === false || Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM) === $result) {

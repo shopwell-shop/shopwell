@@ -24,11 +24,11 @@ async function createWrapper() {
                 {
                     author: 'testUser',
                     id: null,
-                    value: 'deutsch',
+                    value: '中文值',
                     origin: null,
-                    resetTo: 'deutsch',
+                    resetTo: '中文值',
                     translationKey: 'test.snippet',
-                    setId: 'de-DE-MOCK-ID',
+                    setId: 'zh-CN-MOCK-ID',
                 },
             ],
             snippetSets: createEntityCollection([
@@ -38,9 +38,9 @@ async function createWrapper() {
                     id: 'en-GB-MOCK-ID',
                 },
                 {
-                    name: 'Base de-DE',
-                    iso: 'de-DE',
-                    id: 'de-DE-MOCK-ID',
+                    name: 'Base zh-CN',
+                    iso: 'zh-CN',
+                    id: 'zh-CN-MOCK-ID',
                 },
             ]),
         },

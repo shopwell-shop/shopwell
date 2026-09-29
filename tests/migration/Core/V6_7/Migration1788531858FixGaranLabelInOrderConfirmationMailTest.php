@@ -36,8 +36,8 @@ class Migration1788531858FixGaranLabelInOrderConfirmationMailTest extends MailTe
 
         static::assertSame($expected->getEnPlain(), $translations->getEnPlain());
         static::assertSame($expected->getEnHtml(), $translations->getEnHtml());
-        static::assertSame($expected->getDePlain(), $translations->getDePlain());
-        static::assertSame($expected->getDeHtml(), $translations->getDeHtml());
+        static::assertSame($expected->getZhPlain(), $translations->getZhPlain());
+        static::assertSame($expected->getZhHtml(), $translations->getZhHtml());
     }
 
     public function testMigratedTemplateRendersTheGaranLabelWithFixedDimensionsInsideTheProductCell(): void
@@ -48,7 +48,7 @@ class Migration1788531858FixGaranLabelInOrderConfirmationMailTest extends MailTe
 
         $translations = $this->getMailTemplateTranslations(MailTemplateTypes::MAILTYPE_ORDER_CONFIRM)->translations;
 
-        foreach (['en' => $translations->getEnHtml(), 'de' => $translations->getDeHtml()] as $language => $html) {
+        foreach (['en' => $translations->getEnHtml(), 'zh' => $translations->getZhHtml()] as $language => $html) {
             static::assertIsString($html);
             static::assertStringContainsString(
                 '<img src="{{ garanLabel.cid }}" width="195" height="30"',

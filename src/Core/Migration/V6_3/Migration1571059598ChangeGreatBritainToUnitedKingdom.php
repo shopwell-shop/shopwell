@@ -32,13 +32,13 @@ class Migration1571059598ChangeGreatBritainToUnitedKingdom extends MigrationStep
 
         $connection->executeStatement('
             UPDATE `country_translation`
-            SET `name` = "Vereinigtes Königreich"
-            WHERE `name` = "Großbritannien" AND (
+            SET `name` = "英国"
+            WHERE `name` = "大不列颠" AND (
                 SELECT `locale`.`code`
                 FROM `language`
                 INNER JOIN `locale` ON `language`.`locale_id` = `locale`.`id`
                 WHERE `language`.`id` = `country_translation`.`language_id`
-            ) = "de-DE"
+            ) = "zh-CN"
         ');
     }
 

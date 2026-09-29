@@ -29,11 +29,11 @@ class Migration1730790665ElectronicInvoice extends MigrationStep
     {
         $types = [
             ZugferdRenderer::TYPE => [
-                'de' => ['name' => 'Rechnung: ZUGFeRD E-Rechnung'],
+                'zh' => ['name' => '发票：ZUGFeRD 电子发票'],
                 'en' => ['name' => 'Invoice: ZUGFeRD E-invoice'],
             ],
             ZugferdEmbeddedRenderer::TYPE => [
-                'de' => ['name' => 'Rechnung: PDF mit eingebetteter ZUGFeRD E-Rechnung'],
+                'zh' => ['name' => '发票：内嵌 ZUGFeRD 电子发票的 PDF'],
                 'en' => ['name' => 'Invoice: PDF with embedded ZUGFeRD E-invoice'],
             ],
         ];
@@ -63,7 +63,7 @@ class Migration1730790665ElectronicInvoice extends MigrationStep
         $connection->insert('document_type', ['id' => $typeId, 'technical_name' => $technicalName, 'created_at' => $createdAt]);
 
         $translation = new Translations(
-            array_merge(['document_type_id' => $typeId], $translations['de']),
+            array_merge(['document_type_id' => $typeId], $translations['zh']),
             array_merge(['document_type_id' => $typeId], $translations['en'])
         );
 

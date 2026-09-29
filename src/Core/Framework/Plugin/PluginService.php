@@ -230,11 +230,11 @@ class PluginService
          * {
          *     "shopwell-plugin-class":"Swag\\MyDemoData\\MyDemoData",
          *     "label":{
-         *         "de-DE":"Label für das Plugin MyDemoData",
+         *         "zh-CN":"MyDemoData 插件标签",
          *         "en-GB":"Label for the plugin MyDemoData"
          *     },
          *     "description":{
-         *         "de-DE":"Beschreibung für das Plugin MyDemoData",
+         *         "zh-CN":"MyDemoData 插件说明",
          *         "en-GB":"Description for the plugin MyDemoData"
          *     }
          * }

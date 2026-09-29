@@ -1,0 +1,62 @@
+{
+  "sw-settings-mailer": {
+    "general": {
+      "mainMenuItemGeneral": "邮件服务",
+      "textHeadline": "邮件服务",
+      "helpText": "更多信息请参阅 {documentation}",
+      "docsLabel": "文档",
+      "docsLink": "https://docs.shopwell.cn/zh/shopwell-6-zh/settings/mailer"
+    },
+    "mailer-configuration": {
+      "card-title": "邮件服务配置",
+      "agent": "首选邮件代理",
+      "local-agent": "本地邮件代理",
+      "local-helptext": "使用系统的默认邮件服务（Sendmail）。请确保 Sendmail 在你的主机环境中可用且工作正常。",
+      "smtp-server": "SMTP 服务器",
+      "smtp-server-oauth": "带 OAuth 2 的 SMTP 服务器",
+      "env-file": "使用环境配置"
+    },
+    "first-configuration": {
+      "headline": "设置邮件通信",
+      "description": "与客户的邮件沟通是电商运营的关键环节，建议尽快完成邮件系统配置。"
+    },
+    "sendmail": {
+      "sync": "同步发送邮件",
+      "async": "异步发送邮件"
+    },
+    "card-smtp": {
+      "host": "主机",
+      "host-placeholder": "输入主机名...",
+      "port": "端口",
+      "port-placeholder": "输入端口号...",
+      "username": "用户名",
+      "username-placeholder": "输入用户名...",
+      "password": "密码",
+      "password-placeholder": "输入密码...",
+      "oauth-url": "OAuth URL",
+      "oauth-url-placeholder": "输入 OAuth URL...",
+      "oauth-scope": "OAuth Scope",
+      "oauth-scope-placeholder": "输入 OAuth Scope...",
+      "oauth-client-id": "Client ID",
+      "oauth-client-id-placeholder": "输入 Client ID...",
+      "oauth-client-secret": "Client Secret",
+      "oauth-client-secret-placeholder": "输入 Client Secret...",
+      "encryption": "加密方式",
+      "encryption-placeholder": "选择加密方式...",
+      "sender-address": "发件人地址",
+      "sender-address-placeholder": "输入你有权访问的邮箱地址...",
+      "delivery-address": "收件人地址",
+      "delivery-address-placeholder": "输入用于测试的邮箱地址...",
+      "delivery-address-helptext": "所有外发邮件也会发送到此地址。此功能仅用于测试。",
+      "disable-delivery": "停用邮件发送",
+      "error": {
+        "notificationMessage": "输入的 SMTP 配置似乎有误。"
+      }
+    },
+    "encryption": {
+      "no-encryption": "不加密",
+      "ssl": "SSL",
+      "tls": "TLS"
+    }
+  }
+}

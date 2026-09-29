@@ -1,0 +1,85 @@
+{
+  "sw-integration": {
+    "general": {
+      "mainMenuItemIndex": "集成",
+      "headlineIntegrations": "集成",
+      "buttonCreateIntegration": "新建集成",
+      "heroHeadlineIntegrations": "管理集成",
+      "heroDescriptionIntegrations": "Shopwell 提供强大的 API，可将其他系统和应用无缝集成到你的流程中。其他系统要与 Shopwell 通信，需要相应的安全密钥进行认证。你可以为每个应用单独创建访问凭证，从而追踪哪个应用执行了哪些更改。"
+    },
+    "list": {
+      "contextMenuEdit": "编辑集成",
+      "contextMenuEditMcp": "编辑 MCP 白名单",
+      "messageEmpty": "暂无集成",
+      "sublineEmpty": "集成管理。",
+      "permissions": "角色",
+      "writeAccess": "写入",
+      "readAccess": "读取",
+      "integrationName": "集成",
+      "labelManagedByApp": "由应用管理"
+    },
+    "mcp": {
+      "cardTitle": "MCP 白名单",
+      "modalTitle": "MCP 白名单",
+      "infoText": "选择此集成可以使用的 MCP 功能，未选中的都会被阻止。注意：工具还需要所分配角色中的相应实体权限。",
+      "adminBanner": "此用户是管理员，无论下方选择如何，所有 MCP 功能均可访问。",
+      "noSelectionBanner": "未选择任何功能，目前通过 MCP 无法访问任何内容。请选择所需的工具、资源和提示词。",
+      "allCapabilitiesLabel": "全部功能",
+      "allTypeLabel": "全部",
+      "toolsSection": "工具",
+      "resourcesSection": "资源",
+      "promptsSection": "提示词",
+      "toolsGuidance": "工具会执行操作并可能产生副作用（写入、删除）。请将访问限制在集成真正需要的范围内。",
+      "resourcesGuidance": "资源提供只读的参考数据（实体列表、状态机、销售渠道）。请加以限制，避免不必要地暴露敏感业务数据。",
+      "promptsGuidance": "提示词是决定 AI 上下文的系统指令。不需要的提示词会浪费上下文窗口，还可能让 AI 混乱。",
+      "noCapabilitiesHeadline": "未找到功能",
+      "noCapabilitiesDescription": "当前没有注册任何 MCP 工具、资源或提示词。",
+      "dep": "依赖",
+      "dependencyOf": "此工具被自动选中，因为另一个已选工具依赖它。",
+      "missingDeps": "依赖未选中：{deps}",
+      "requiresLabel": "需要",
+      "requiresTooltip": "启用此工具也会启用：{deps}",
+      "staleEntries": "部分已保存的条目已不可用：{entries}。运行时将忽略它们。",
+      "privilegesLabel": "需要：",
+      "coverageWarning": "{count} 个工具需要所分配角色中缺少的 ACL 权限。",
+      "missingPrivilegesList": "缺失：{privileges}",
+      "missingPrivilegesTooltip": "缺失的权限：{privileges}",
+      "expandAll": "全部展开",
+      "collapseAll": "全部收起",
+      "deniedTypeWarning": "此集成未启用任何{types}。",
+      "missingCapabilitySuggestions": "同一模块中还有 {count} 个资源或提示词不在白名单中："
+    },
+    "detail": {
+      "detailModalTitle": "新建集成",
+      "detailModalTitleEdit": "编辑：",
+      "confirmDelete": "确定要删除此集成吗？",
+      "buttonApply": "保存集成",
+      "buttonApplyEdit": "保存更改",
+      "buttonCreateNewApiKeys": "重新生成 API 访问密钥",
+      "hintCreateNewApiKeys": "重新生成 API 访问密钥后，需要更新所有相关脚本和/或应用。",
+      "labelFieldLabel": "名称",
+      "idFieldLabel": "访问 ID",
+      "secretFieldLabel": "安全密钥",
+      "secretHelpText": "访问 ID 和安全密钥在保存后才生效。请立即记下安全密钥，保存后出于安全考虑不再显示。",
+      "permissions": "权限",
+      "readAccessFieldLabel": "读取（默认）",
+      "writeAccessFieldLabel": "写入（可选）",
+      "messageSaveSuccess": "集成已保存。",
+      "messageSaveError": "集成保存失败。",
+      "messageCreateNewError": "集成创建失败。"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "integration": {
+        "label": "集成"
+      }
+    },
+    "additional_permissions": {
+      "integration_mcp": {
+        "label": "集成",
+        "editor": "编辑 MCP 白名单"
+      }
+    }
+  }
+}

@@ -48,7 +48,7 @@ const { types } = Shopwell.Utils;
  *         options: [
  *             { value: 'option1', label: { 'en-GB': 'One' } },
  *             { value: 'option2', label: 'Two' },
- *             { value: 'option3', label: { 'en-GB': 'Three', 'de-DE': 'Drei' } }
+ *             { value: 'option3', label: { 'en-GB': 'Three', 'zh-CN': '三' } }
  *         ]
  *     }">
  * </sw-form-field-renderer>
@@ -62,7 +62,7 @@ const { types } = Shopwell.Utils;
  *         options: [
  *             { value: 'option1', label: { 'en-GB': 'One' } },
  *             { value: 'option2', label: 'Two' },
- *             { value: 'option3', label: { 'en-GB': 'Three', 'de-DE': 'Drei' } }
+ *             { value: 'option3', label: { 'en-GB': 'Three', 'zh-CN': '三' } }
  *         ]
  *     }">
  * </sw-form-field-renderer>

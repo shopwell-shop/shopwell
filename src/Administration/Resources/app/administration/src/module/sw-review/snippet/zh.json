@@ -1,0 +1,81 @@
+{
+  "sw-review": {
+    "general": {
+      "mainMenuItemList": "评价",
+      "mainMenuItemGeneral": "评价",
+      "placeholderSearchBar": "搜索评价…",
+      "descriptionTextModule": "评价管理"
+    },
+    "list": {
+      "textReviewOverview": "评价",
+      "columnProduct": "商品",
+      "columnPoints": "星级",
+      "columnUser": "客户",
+      "columnStatus": "已审核",
+      "columnCreatedAt": "创建于",
+      "columnComment": "已评论",
+      "columnTitle": "标题",
+      "placeholderSearchBar": "搜索评价…",
+      "messageEmpty": "暂无评价",
+      "messageEmptySubline": "在此管理评价",
+      "titleSidebarItemRefresh": "刷新"
+    },
+    "filters": {
+      "salesChannelFilter": {
+        "label": "销售渠道",
+        "placeholder": "按销售渠道筛选…"
+      },
+      "statusFilter": {
+        "label": "已审核"
+      },
+      "languageFilter": {
+        "label": "语言",
+        "placeholder": "按语言筛选…"
+      },
+      "customerFilter": {
+        "label": "客户",
+        "placeholder": "按客户筛选…"
+      },
+      "productFilter": {
+        "label": "商品",
+        "placeholder": "按商品筛选…"
+      },
+      "pointsFilter": {
+        "label": "评分（星级）"
+      }
+    },
+    "detail": {
+      "textHeadline": "评价",
+      "cardTitleReviewInfo": "评价",
+      "cardTitleReviewProperties": "属性",
+      "labelTitle": "标题",
+      "labelPoints": "星级",
+      "labelUser": "客户",
+      "labelSalesChannel": "销售渠道",
+      "labelCreatedAt": "创建于",
+      "labelProduct": "商品",
+      "labelEmail": "邮箱地址",
+      "labelLanguage": "语言",
+      "labelPositive": "好评",
+      "labelNegative": "差评",
+      "labelStatus": "已审核",
+      "labelContent": "内容",
+      "labelComment": "评论",
+      "labelCustomer": "客户",
+      "titleCardComment": "评论",
+      "placeholderComment": "输入评论 ...",
+      "review1PointRatingText": "不满意",
+      "review2PointRatingText": "一般",
+      "review3PointRatingText": "好",
+      "review4PointRatingText": "很好",
+      "review5PointRatingText": "极佳"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "review": {
+        "label": "评价"
+      }
+    }
+  }
+}

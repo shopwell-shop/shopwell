@@ -38,8 +38,8 @@ class Migration1790078381EmbedGaranLabelInOrderConfirmationMailTest extends Mail
 
         static::assertSame($expected->getEnPlain(), $translations->getEnPlain());
         static::assertSame($expected->getEnHtml(), $translations->getEnHtml());
-        static::assertSame($expected->getDePlain(), $translations->getDePlain());
-        static::assertSame($expected->getDeHtml(), $translations->getDeHtml());
+        static::assertSame($expected->getZhPlain(), $translations->getZhPlain());
+        static::assertSame($expected->getZhHtml(), $translations->getZhHtml());
     }
 
     public function testMigratedTemplateEmbedsTheLabelAsInlineImageAndNamesTheDuration(): void
@@ -50,7 +50,7 @@ class Migration1790078381EmbedGaranLabelInOrderConfirmationMailTest extends Mail
 
         $translations = $this->getMailTemplateTranslations(MailTemplateTypes::MAILTYPE_ORDER_CONFIRM)->translations;
 
-        foreach (['en' => $translations->getEnHtml(), 'de' => $translations->getDeHtml()] as $language => $html) {
+        foreach (['en' => $translations->getEnHtml(), 'zh' => $translations->getZhHtml()] as $language => $html) {
             static::assertIsString($html);
             static::assertStringContainsString('sw_garan_label_mail', $html, $language . ': the mail references the label via cid');
             static::assertStringNotContainsString('sw_garan_label_nested_uri', $html, $language);
@@ -63,7 +63,7 @@ class Migration1790078381EmbedGaranLabelInOrderConfirmationMailTest extends Mail
             );
         }
 
-        foreach (['en' => $translations->getEnPlain(), 'de' => $translations->getDePlain()] as $language => $plain) {
+        foreach (['en' => $translations->getEnPlain(), 'zh' => $translations->getZhPlain()] as $language => $plain) {
             static::assertIsString($plain);
             static::assertStringContainsString('sw_garan_label_mail', $plain, $language . ': the plain text mail has to name the guarantee as well');
             static::assertStringContainsString('{{ garanLabel.duration', $plain, $language);
@@ -79,7 +79,7 @@ class Migration1790078381EmbedGaranLabelInOrderConfirmationMailTest extends Mail
         $translations = $this->getMailTemplateTranslations(MailTemplateTypes::MAILTYPE_ORDER_CONFIRM)->translations;
 
         static::assertSame(self::DATA_URI_HTML, $translations->getEnHtml());
-        static::assertSame(self::DATA_URI_HTML, $translations->getDeHtml());
+        static::assertSame(self::DATA_URI_HTML, $translations->getZhHtml());
     }
 
     private function givenTheStoredTemplateUsesTheDataUri(bool $editedByMerchant): void

@@ -380,7 +380,7 @@ EOF;
                 'technicalName' => $this->stateMachineName,
                 'translations' => [
                     'en-GB' => ['name' => 'Order state'],
-                    'de-DE' => ['name' => 'Bestellungsstatus'],
+                    'zh-CN' => ['name' => '订单状态'],
                 ],
                 'states' => [
                     ['id' => $this->openId, 'technicalName' => OrderDeliveryStates::STATE_OPEN, 'name' => OrderDeliveryStates::STATE_OPEN],

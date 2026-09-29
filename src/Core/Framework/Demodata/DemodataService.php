@@ -78,7 +78,7 @@ class DemodataService
 
     private function getFaker(): Generator
     {
-        $faker = Factory::create('de-DE');
+        $faker = Factory::create('zh-CN');
         $faker->addProvider(new Commerce($faker));
 
         return $faker;

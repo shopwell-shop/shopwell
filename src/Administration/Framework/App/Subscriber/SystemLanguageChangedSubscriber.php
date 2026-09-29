@@ -42,12 +42,12 @@ readonly class SystemLanguageChangedSubscriber implements EventSubscriberInterfa
     public function onSystemLanguageChanged(SystemLanguageChangeEvent $event): void
     {
         /**
-         * If the system language is changed from "en-GB" to "de-DE", the languages are swapped, keeping the IDs.
+         * If the system language is changed from "en-GB" to "zh-CN", the languages are swapped, keeping the IDs.
          * Thus, snippets do not need to be updated in this case.
          *
          * @see ShopConfigurator::setDefaultLanguage()
          */
-        if ($event->previousLocaleCode === 'en-GB' && $event->newLocaleCode === 'de-DE') {
+        if ($event->previousLocaleCode === 'en-GB' && $event->newLocaleCode === 'zh-CN') {
             return;
         }
 

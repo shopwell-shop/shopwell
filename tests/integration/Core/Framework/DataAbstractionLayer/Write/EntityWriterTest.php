@@ -614,7 +614,7 @@ class EntityWriterTest extends TestCase
 
         $localeId = Uuid::randomHex();
         static::getContainer()->get('locale.repository')->upsert([
-            ['id' => $localeId, 'name' => 'test', 'territory' => 'tmp', 'code' => 'de-DE-' . Uuid::randomHex()],
+            ['id' => $localeId, 'name' => 'test', 'territory' => 'tmp', 'code' => 'zh-CN-' . Uuid::randomHex()],
         ], Context::createDefaultContext());
 
         static::getContainer()->get('language.repository')->upsert([
@@ -625,7 +625,7 @@ class EntityWriterTest extends TestCase
                 'localeVersionId' => Defaults::LIVE_VERSION,
                 'active' => true,
                 'translationCode' => [
-                    'code' => 'de-DE-' . Uuid::randomHex(),
+                    'code' => 'zh-CN-' . Uuid::randomHex(),
                     'name' => 'test name',
                     'territory' => 'test territory',
                 ],
@@ -757,7 +757,7 @@ class EntityWriterTest extends TestCase
             $context->getSource(),
             $context->getRuleIds(),
             $context->getCurrencyId(),
-            [$this->getDeDeLanguageId(), Defaults::LANGUAGE_SYSTEM]
+            [$this->getZhCnLanguageId(), Defaults::LANGUAGE_SYSTEM]
         );
 
         $mediaRepo->create([

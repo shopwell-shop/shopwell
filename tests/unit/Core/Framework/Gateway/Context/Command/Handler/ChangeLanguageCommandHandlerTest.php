@@ -23,12 +23,12 @@ class ChangeLanguageCommandHandlerTest extends TestCase
 {
     public function testHandle(): void
     {
-        $command = ChangeLanguageCommand::createFromPayload(['iso' => 'de-DE']);
+        $command = ChangeLanguageCommand::createFromPayload(['iso' => 'zh-CN']);
         $context = Generator::generateSalesChannelContext();
         $parameters = [];
 
         $expectedCriteria = new Criteria();
-        $expectedCriteria->addFilter(new EqualsFilter('locale.code', 'de-DE'));
+        $expectedCriteria->addFilter(new EqualsFilter('locale.code', 'zh-CN'));
 
         $languageResult = new IdSearchResult(
             1,
@@ -52,12 +52,12 @@ class ChangeLanguageCommandHandlerTest extends TestCase
 
     public function testHandleWithLanguageNotFound(): void
     {
-        $command = ChangeLanguageCommand::createFromPayload(['iso' => 'de-DE']);
+        $command = ChangeLanguageCommand::createFromPayload(['iso' => 'zh-CN']);
         $context = Generator::generateSalesChannelContext();
         $parameters = [];
 
         $expectedCriteria = new Criteria();
-        $expectedCriteria->addFilter(new EqualsFilter('locale.code', 'de-DE'));
+        $expectedCriteria->addFilter(new EqualsFilter('locale.code', 'zh-CN'));
 
         $languageResult = new IdSearchResult(
             0,
@@ -73,7 +73,7 @@ class ChangeLanguageCommandHandlerTest extends TestCase
             ->with(static::equalTo($expectedCriteria), $context->getContext())
             ->willReturn($languageResult);
 
-        $this->expectExceptionObject(GatewayException::handlerException('Language with iso code {{ isoCode }} not found', ['isoCode' => 'de-DE']));
+        $this->expectExceptionObject(GatewayException::handlerException('Language with iso code {{ isoCode }} not found', ['isoCode' => 'zh-CN']));
 
         $handler = new ChangeLanguageCommandHandler($languageRepo);
 

@@ -1,0 +1,905 @@
+{
+  "sw-cms": {
+    "general": {
+      "placeholderSearchBar": "搜索布局 ...",
+      "mainMenuItemGeneral": "购物体验",
+      "moduleTitle": "购物体验",
+      "greeting": "布局",
+      "switchLayoutListMode": "切换网格/列表视图",
+      "createNewLayout": "新建布局",
+      "deleteDisabledToolTip": "该布局仍至少分配给一个分类。",
+      "deleteDisabledProductToolTip": "该布局仍至少分配给一个商品。",
+      "deleteDisabledLandingPageToolTip": "该布局仍至少分配给一个落地页。",
+      "disabledAddingBlocksToolTip": "区块只能在系统默认语言中添加。",
+      "privacyNotice": "我已阅读并同意<a href=\"%privacyUrl%\">隐私政策</a>，并已阅读并同意<a href=\"%tosUrl%\">通用条款</a>。"
+    },
+    "inherit": {
+      "tooltip": "此字段在基础布局中不存在，无法继承。",
+      "formBanner": "该布局包含继承字段。只要继承状态处于启用状态，内容就会被继承。点击链接图标可解除字段继承，再次点击图标即可恢复继承状态。",
+      "unlinkNotice": "部分字段的继承已取消。",
+      "unlinkAllButton": "重置所有字段。",
+      "unlinkAllConfirmText": "确定要重置所有字段吗？将永久删除所有被覆盖的内容。",
+      "unlinkFieldConfirmText": "确定要重置此字段吗？将永久删除被覆盖的内容。",
+      "unlinkAllTitle": "重置所有字段",
+      "unlinkFieldTitle": "重置字段"
+    },
+    "sorting": {
+      "labelSort": "排序方式：",
+      "labelSortByNameAsc": "名称，升序",
+      "labelSortByNameDesc": "名称，降序",
+      "labelSortByCreatedAsc": "创建日期，升序",
+      "labelSortByCreatedDsc": "创建日期，降序",
+      "labelSortByUpdatedAsc": "修改日期，升序",
+      "labelSortByUpdatedDsc": "修改日期，降序",
+      "labelSortByAllPages": "全部类型"
+    },
+    "list": {
+      "gridHeaderName": "名称",
+      "gridHeaderType": "类型",
+      "gridHeaderAssignment": "已分配的分类",
+      "gridHeaderAssignments": "已分配",
+      "gridHeaderAssignedPages": "已分配的页面",
+      "gridHeaderCreated": "创建时间",
+      "gridHeaderUpdated": "修改日期"
+    },
+    "section": {
+      "fallBackSectionName": "区块",
+      "positionLeft": "内容，左",
+      "positionRight": "内容，右",
+      "fullWidth": "全宽",
+      "sidebar": "侧边栏",
+      "isSidebar": "布局区块 - 侧边栏",
+      "isDefault": "布局区块 - 默认",
+      "layoutSection": "布局区块",
+      "sectionEmptyState": "此区块为空。请添加区块和元素。"
+    },
+    "sidebar": {
+      "contentMenu": {
+        "moveUp": "上移",
+        "moveDown": "下移",
+        "generalSettings": "通用",
+        "settings": "设置",
+        "layoutSettings": "布局",
+        "visibilitySettings": "可见性",
+        "visibilityMobile": "移动端",
+        "visibilityTablet": "平板端",
+        "visibilityDesktop": "桌面端",
+        "visibilityBlockTextButton": "收起区块 | 展开区块",
+        "visibilitySectionTextButton": "收起区块 | 展开区块",
+        "visibilityLabelCheckboxGroup": "显示设备"
+      },
+      "layoutAssignment": {
+        "headline": "管理此布局的显示位置",
+        "infoText": "你可以为店铺中的多个分类使用布局。在此可查看哪些分类已使用该布局，或将其分配给其他分类。",
+        "actionAssignLayout": "分配布局"
+      },
+      "layoutSetAsDefault": {
+        "headline": "默认布局",
+        "actionSetAsDefaultLayout": "用作默认布局"
+      }
+    },
+    "create": {
+      "notification": {
+        "assignToEntityError": "布局分配失败"
+      }
+    },
+    "createWizard": {
+      "choosePageTypeTitle": "你想设计什么类型的页面？",
+      "choosePageTypeHelpText": "不同的布局类型有助于你更快找到已有布局。如果改变主意，可随时在布局设置中修改布局类型。",
+      "chooseSectionTitle": "你想从哪个区块开始？",
+      "chooseSectionHelpText": "区块将你的工作区划分为多个区域，便于自由创作。你可以将区块自由组合，并随时移除或移动。",
+      "chooseNameTitle": "你的布局要如何命名？",
+      "createLayout": "创建布局"
+    },
+    "detail": {
+      "alert": {
+        "titleTranslations": "翻译当前不可用！",
+        "contentTranslations": "布局目前只能在系统默认语言中编辑。"
+      },
+      "helpText": {
+        "cssClassField": "你可以添加一个或多个以空格分隔的 CSS 类"
+      },
+      "label": {
+        "pageName": "布局名称",
+        "pageNamePlaceholder": "输入布局名称 ...",
+        "pageEntity": "自定义实体",
+        "pageEntityPlaceholder": "选择自定义实体...",
+        "pageCssClass": "CSS 类",
+        "pageTypeSelection": "布局类型",
+        "pageType": {
+          "landingpage": "落地页",
+          "page": "商城页面",
+          "productList": "分类页",
+          "productDetail": "商品页",
+          "customEntityDetail": "内容布局",
+          "customEntityList": "内容列表页"
+        },
+        "demoEntity": "预览实体",
+        "blockCategorySelection": "区块分类",
+        "blockCategoryFavorite": "收藏",
+        "blockCategoryText": "文本",
+        "blockCategoryTextImage": "文本与图片",
+        "blockCategorySidebar": "侧边栏",
+        "blockCategoryImage": "图片",
+        "blockCategoryCommerce": "商务",
+        "blockCategoryVideo": "视频",
+        "blockCategoryForm": "表单",
+        "blockCategoryApp": "应用",
+        "blockCategoryHtml": "HTML",
+        "buttonElementSettingsConfirm": "完成",
+        "blockNameField": "区块名称",
+        "blockNameFieldPlaceholder": "输入名称…",
+        "blockSizingField": "尺寸模式",
+        "blockSizingOptionBoxed": "居中内容",
+        "blockSizingOptionFull": "全宽",
+        "backgroundColorField": "颜色",
+        "backgroundColorLabel": "背景颜色",
+        "backgroundMediaField": "图片",
+        "backgroundMediaLabel": "背景图片",
+        "backgroundMediaMode": "图片模式",
+        "backgroundMediaModeContain": "包含",
+        "backgroundMediaModeCover": "填充",
+        "backgroundMediaModeAuto": "自动",
+        "sizingField": "尺寸模式",
+        "cssClassField": "CSS 类",
+        "sectionNameField": "区块名称",
+        "blockTopMarginField": "上边距",
+        "blockRightMarginField": "右边距",
+        "blockBottomMarginField": "下边距",
+        "blockLeftMarginField": "左边距",
+        "sizingOptionBoxed": "居中内容",
+        "sizingOptionFull": "全宽",
+        "buttonMappingAction": "数据映射",
+        "buttonMappingRemoveAction": "移除数据映射",
+        "mappingPreview": "字段映射到：",
+        "mappingEmptyPreview": "抱歉，此数据映射没有预览数据。",
+        "addBlocks": "通过拖放添加区块",
+        "labelNavigation": "导航",
+        "lockedNotification": "该布局已锁定，无法调整。如果你希望将这个默认模板调整为符合自身需求，只需复制该布局，然后修改副本即可。",
+        "headlineEmptyState": "创意空间",
+        "claimEmptyState": "通过选择区块来搭建新布局。先选择区块类型，再将区块拖放到任意区块中，然后填入你的内容。",
+        "defaultLayout": "默认布局",
+        "blockFavoriteEmptyState": "点击区块中的心形图标将其标记为收藏，可在此找到。",
+        "visibilityParagraph": "在所选设备上隐藏"
+      },
+      "notification": {
+        "pageInvalid": "出现了一些错误。请检查编辑器中的列表。",
+        "errorCollectionText": "由于以下错误无法保存：",
+        "warningCollectionText": "此布局缺少以下推荐元素：",
+        "messageMissingFields": "部分必填字段未填写。",
+        "messageMissingBlockFields": "部分区块配置不完整。",
+        "messageMissingProductListing": "此分类页不包含商品列表区块。",
+        "messageMissingSections": "此布局不包含任何区块。",
+        "messageRedundantElements": "存在只允许出现一次的区块。（{names}）",
+        "messageMissingBlocks": "无法保存空白页面。请先添加一个区块。",
+        "messageMissingElements": "需要配置。请配置布局中的全部元素。"
+      },
+      "placeholder": {
+        "demoEntity": "选择要预览的数据集 ..."
+      },
+      "sidebar": {
+        "titlePageSettings": "设置",
+        "headerPageSettings": "基本信息",
+        "titleBlockOverview": "区块",
+        "titleBlockSettings": "区块设置",
+        "headerBlockSettings": "区块：",
+        "titleNavigator": "导航器",
+        "titleSectionSettings": "区块设置",
+        "titleLayoutAssignment": "布局分配",
+        "confirmTextNavigator": "进入区块导航器将保存当前页面。确定要继续吗？",
+        "confirmReminderNavigator": "不再询问",
+        "mobile": "移动端侧边栏行为",
+        "mobileOptionHidden": "不显示",
+        "mobileOptionWrap": "换行"
+      },
+      "title": {
+        "elementSettingsModal": "元素设置",
+        "elementChangeModal": "替换元素",
+        "blockFavoriteEmptyState": "暂无收藏区块"
+      },
+      "tooltip": {
+        "blockNameField": "为每个区块单独命名且唯一，以便清晰掌握工作进度。",
+        "sectionNameField": "为每个区块单独命名且唯一，以便清晰掌握工作进度。",
+        "cannotSelectProductPageLayout": "无法更改商品页的布局类型。"
+      }
+    },
+    "elements": {
+      "general": {
+        "config": {
+          "label": {
+            "verticalAlign": "垂直对齐",
+            "alignment": "对齐",
+            "verticalAlignTop": "顶部",
+            "verticalAlignCenter": "居中",
+            "verticalAlignBottom": "底部",
+            "displayMode": "显示模式",
+            "displayModeStandard": "原始",
+            "displayModeCover": "裁剪",
+            "displayModeStretch": "缩放",
+            "displayModeContain": "固定高度",
+            "autoSlide": "自动切换",
+            "autoplayTimeout": "延迟",
+            "speed": "动画时长",
+            "horizontalAlign": "水平对齐",
+            "horizontalAlignLeft": "左",
+            "horizontalAlignCenter": "居中",
+            "horizontalAlignRight": "右"
+          },
+          "helpText": {
+            "autoplayTimeout": "单张图片的显示时长（毫秒）。",
+            "speed": "切换动画时长（毫秒）。",
+            "displayMode": "<ul><li><strong>原始：</strong>内容保持原始分辨率，或缩小到 CMS 页面的当前宽度。</li><li><strong>缩放：</strong>内容在无高度限制的情况下缩放到 CMS 页面的宽度。</li><li><strong>裁剪：</strong>内容缩放到 CMS 页面的当前宽度，垂直方向超出部分将按配置的最大高度裁剪。</li></ul>"
+          },
+          "caption": {
+            "mediaUpload": "上传图片"
+          },
+          "tab": {
+            "content": "内容",
+            "settings": "设置",
+            "options": "选项"
+          },
+          "infoText": {
+            "autoSlideTitle": "无障碍性方面的顾虑",
+            "autoSlide": "启用该功能可能导致你的店铺前台部分内容对残障用户不可访问，从而可能违反你所在司法辖区适用的无障碍法规（例如《欧洲无障碍法案》）。继续操作即表示你知悉该风险并承担全部责任。",
+            "listingElement": "此元素的商品数据通过分类分配自动填充，内容仅为大致预览。"
+          }
+        },
+        "switch": {
+          "groups": {
+            "all": "全部元素",
+            "favorites": "收藏的元素"
+          }
+        }
+      },
+      "image": {
+        "label": "图片",
+        "config": {
+          "label": {
+            "ariaLabel": "链接描述",
+            "minHeight": "最小高度",
+            "isDecorative": "标记为纯装饰性",
+            "useFetchPriorityOnFirstItem": "优先加载首张图片",
+            "linkNewTab": "在新标签页打开链接",
+            "linkTo": "链接目标",
+            "fetchPriorityHigh": "高加载优先级"
+          },
+          "helpText": {
+            "ariaLabel": "屏幕阅读器读取链接时会朗读此文本。",
+            "minHeight": "输入最小高度。纯数字会按像素处理，例如 \"200\" 会变成 \"200px\"。",
+            "fetchPriorityHigh": "当该图片是页面中的第一张图片时启用此选项。此时会为该图片添加 'fetchpriority=\"high\"' 属性，告知浏览器以更高优先级加载，有助于改善最大内容绘制（LCP）。",
+            "useFetchPriorityOnFirstItem": "启用该选项后，首张图片将以更高优先级加载，可提升页面在浏览器中的渲染速度。",
+            "isDecorative": "启用该选项后，屏幕阅读器不会读出图片信息，即 \"alt\" 和 \"title\" 标签将保持为空。"
+          },
+          "placeholder": {
+            "enterMinHeight": "输入最小高度 ...",
+            "enterUrl": "输入 URL ..."
+          }
+        }
+      },
+      "imageGallery": {
+        "label": "图库",
+        "config": {
+          "label": {
+            "navigationPreview": "预览导航",
+            "navigationPreviewPositionLeft": "左",
+            "navigationPreviewPositionUnderneath": "下方",
+            "zoom": "缩放",
+            "fullscreen": "全屏图库",
+            "keepAspectRatioOnZoom": "缩放时保持页面比例",
+            "magnifierOverGallery": "在图库上显示放大镜",
+            "magnifierOverGalleryHelpText": "将放大镜显示在图库上方而非旁边。"
+          },
+          "helpText": {
+            "displayMode": "<ul><li><strong>原始：</strong>内容保持原始分辨率，或缩小到滑块的高度。</li><li><strong>固定高度：</strong>内容保持原始分辨率，或缩小到配置的高度。</li><li><strong>裁剪：</strong>内容缩放到 CMS 页面的当前宽度，垂直方向超出部分将按配置的高度裁剪。</li></ul>"
+          }
+        }
+      },
+      "imageSlider": {
+        "label": "图片轮播",
+        "config": {
+          "label": {
+            "sliderItems": "图片",
+            "navigationArrows": "箭头导航",
+            "navigationPositionNone": "无",
+            "navigationPositionInside": "内侧",
+            "navigationPositionOutside": "外侧",
+            "navigationDots": "圆点导航"
+          },
+          "helpText": {
+            "displayMode": "<ul><li><strong>原始：</strong>内容在无高度限制的情况下缩放到 CMS 页面的宽度，滑块高度动态调整。</li><li><strong>固定高度：</strong>内容在无高度限制的情况下缩放到 CMS 页面的宽度，滑块保持最高元素的高度。</li><li><strong>裁剪：</strong>内容缩放到 CMS 页面的当前宽度，垂直方向超出部分将按配置的高度裁剪。</li></ul>"
+          }
+        }
+      },
+      "productBox": {
+        "label": "商品框",
+        "component": {
+          "label": {
+            "actionBuy": "加入购物车",
+            "badgeTopseller": "热销商品",
+            "badgeNew": "新品",
+            "priceUnitContent": "内容："
+          }
+        },
+        "config": {
+          "label": {
+            "selection": "商品",
+            "layoutType": "布局类型",
+            "layoutTypeStandard": "标准",
+            "layoutTypeImage": "大图",
+            "layoutTypeMinimal": "极简内容",
+            "headlineLevel": "商品框的标题级别",
+            "headlineLevelHelp": "为该商品列表中的商品卡片标题选择标题级别。若选择「无标题」，则不应用标题级别。",
+            "headlineLevelOption": "标题 {level}",
+            "headlineLevelDefaultOption": "标题 2（推荐默认）",
+            "headlineLevelEmptyOption": "无标题（不推荐）"
+          },
+          "placeholder": {
+            "selection": "选择商品 ..."
+          }
+        }
+      },
+      "productListing": {
+        "label": "商品列表",
+        "config": {
+          "tab": {
+            "sorting": "排序",
+            "filter": "筛选"
+          },
+          "sorting": {
+            "labelShowSorting": "显示商品排序",
+            "labelUseCustomSortings": "使用自定义排序",
+            "labelDefaultSorting": "默认排序",
+            "labelProductSortings": "商品排序",
+            "placeholderDefaultProductSorting": "选择默认排序 ...",
+            "placeHolderProductSortings": "添加或移除商品排序",
+            "helpTextUseCustomSortings": "你可以为商品列表定义自定义排序。要为该列表创建独立排序，请启用此开关。",
+            "helpTextDefaultSorting": "未指定其他排序时列表的默认排序。",
+            "gridHeaderName": "名称",
+            "gridHeaderFields": "条件",
+            "gridHeaderPriority": "优先级",
+            "deleteModal": {
+              "heading": "正在删除 \"{productSortingName}\"。",
+              "body": "确定要移除排序选项 \"{productSortingName}\" 吗？"
+            },
+            "defaultSortingInUse": "此商品排序已被选为默认排序。",
+            "defaultSortingCantBeDisabled": "此排序为默认排序。必须保持启用，以免影响商品列表。"
+          },
+          "filter": {
+            "infoText": "请确保布局中添加了筛选区块，此设置才会生效。",
+            "labelFilterByManufacturer": "按制造商筛选",
+            "labelFilterByRating": "按评分筛选",
+            "labelFilterByPrice": "按价格筛选",
+            "labelFilterForFreeShipping": "筛选免运费",
+            "labelUseFilterByProperties": "配置可筛选的商品属性",
+            "helpTextUseFilterByProperties": "停用时，此布局将显示所有现有属性的筛选。",
+            "descriptionTextUseFilterByProperties": "设为不可筛选的属性不会在此显示。你可以在<a href=\"#/sw/property/index\" target=\"_blank\">属性模块</a>中修改。",
+            "gridHeaderStatus": "状态",
+            "gridHeaderName": "名称",
+            "gridEmptyStateLabel": "未找到属性",
+            "gridEmptyStateHint": "尝试使用其他搜索词"
+          }
+        }
+      },
+      "productHeading": {
+        "logo": {
+          "label": "制造商 Logo"
+        },
+        "name": {
+          "label": "商品名称"
+        }
+      },
+      "productSlider": {
+        "label": "商品轮播",
+        "config": {
+          "label": {
+            "title": "轮播标题",
+            "selection": "商品",
+            "navigation": "导航",
+            "border": "边框",
+            "minWidth": "最小宽度",
+            "navigationArrows": "箭头导航",
+            "navigationPositionNone": "无",
+            "navigationPositionInside": "内侧",
+            "navigationPositionOutside": "外侧",
+            "productAssignmentType": "商品分配",
+            "productStreamSorting": "排序",
+            "productStreamLimit": "最大商品数量",
+            "productStreamChoice": "动态商品组"
+          },
+          "placeholder": {
+            "title": "轮播标题",
+            "selection": "选择商品",
+            "minWidth": "最小宽度",
+            "productStreamChoice": "选择动态商品组 ...",
+            "productStreamSorting": "选择排序 ..."
+          },
+          "helpText": {
+            "minWidth": "以所需单位输入最小宽度。例如：200px",
+            "displayMode": "<ul><li><strong>原始：</strong>内容缩放到商品卡片的宽度或高度，始终完整放入指定区域，且不会放大。</li><li><strong>固定高度：</strong>内容缩放到商品卡片的宽度或高度，始终完整放入指定区域，可被放大。</li><li><strong>裁剪：</strong>内容缩放到商品卡片的宽度或高度，超出部分将被裁剪。</li></ul>"
+          },
+          "productAssignmentTypeOptions": {
+            "manual": "手动分配",
+            "productStream": "动态商品组"
+          },
+          "productStreamSortingOptions": {
+            "nameAsc": "名称升序",
+            "nameDesc": "名称降序",
+            "priceAsc": "价格升序",
+            "priceDesc": "价格降序",
+            "creationDateAsc": "创建日期升序",
+            "creationDateDesc": "创建日期降序",
+            "releaseDateAsc": "发布日期升序",
+            "releaseDateDesc": "发布日期降序",
+            "random": "随机"
+          },
+          "textProductStreamPreviewLink": "预览动态商品组",
+          "textProductStreamPerformanceHint": "请注意：动态商品组可能对性能产生明显影响，具体取决于商品组筛选的复杂度和页面中滑块元素的数量。"
+        }
+      },
+      "sidebarCategoryNavigation": {
+        "label": "分类导航",
+        "infoText": {
+          "navigationElement": "此元素的商品数据通过分类分配自动填充，内容仅为大致预览。"
+        },
+        "component": {
+          "label": {
+            "navigation": "导航"
+          }
+        },
+        "preview": {
+          "label": {
+            "navigation": "导航"
+          }
+        }
+      },
+      "sidebarFilter": {
+        "label": "商品筛选",
+        "infoText": {
+          "filterElement": "显示的筛选可通过列表元素配置。"
+        }
+      },
+      "text": {
+        "label": "文本",
+        "config": {
+          "label": {
+            "content": "文本"
+          }
+        }
+      },
+      "video": {
+        "label": "视频",
+        "config": {
+          "label": {
+            "ariaLabel": "屏幕阅读器标题",
+            "minHeight": "最小高度",
+            "autoPlay": "自动播放",
+            "loop": "循环播放",
+            "muted": "静音播放",
+            "showControls": "显示控件",
+            "showCover": "仅确认后加载",
+            "playsInline": "在 iOS 设备上内联播放"
+          },
+          "helpText": {
+            "ariaLabel": "该文本会被屏幕阅读器朗读，应简要说明视频的内容或用途。留空时将改用媒体模块中配置的标题或替代文本。",
+            "minHeight": "以所需单位输入最小高度。例如：200px",
+            "autoPlay": "许多浏览器仅在视频静音时才允许自动播放。<br>开启自动播放时设置封面没有意义，因为视频会立即开始播放，无需确认。",
+            "showCover": "在用户点击加载视频前，显示媒体选择中配置的封面。",
+            "playsInline": "未启用此选项时，iOS 常以全屏打开视频。启用后可保持内联播放。"
+          },
+          "placeholder": {
+            "ariaLabel": "输入屏幕阅读器标题 ...",
+            "minHeight": "输入最小高度 ..."
+          }
+        }
+      },
+      "vimeoVideo": {
+        "label": "Vimeo 视频",
+        "config": {
+          "label": {
+            "videoId": "视频链接",
+            "autoPlay": "自动播放",
+            "loop": "循环播放",
+            "showControls": "显示控件",
+            "controlsColor": "修改控件颜色",
+            "byLine": "显示视频创作者名称",
+            "showPortrait": "显示视频创作者的头像",
+            "showTitle": "显示视频标题",
+            "advancedPrivacy": "增强隐私模式",
+            "start": "视频开始时间",
+            "end": "视频结束时间",
+            "needsConfirmation": "仅确认后加载",
+            "previewImage": "预览图片",
+            "videoTitle": "视频标题"
+          },
+          "placeholder": {
+            "videoId": "输入视频链接 ...",
+            "videoTitle": "输入描述性标题…"
+          },
+          "helpText": {
+            "autoPlay": "注意，某些浏览器会阻止视频自动播放。",
+            "advancedPrivacy": "启用隐私增强模式后，视频平台不会在访客播放视频前存储其相关信息。"
+          }
+        }
+      },
+      "youtubeVideo": {
+        "label": "YouTube 视频"
+      },
+      "form": {
+        "label": "表单",
+        "config": {
+          "label": {
+            "receiverEmail": "收件人邮箱",
+            "title": "标题",
+            "type": "表单类型",
+            "typeContact": "联系表单",
+            "typeNewsletter": "邮件订阅",
+            "typeRevocationRequest": "撤销申请",
+            "confirmationText": "确认文本"
+          },
+          "placeholder": {
+            "type": "选择表单类型 ..."
+          }
+        },
+        "element": {
+          "label": {
+            "action": "操作*",
+            "email": "邮箱地址*",
+            "firstName": "名字*",
+            "lastName": "姓氏*",
+            "message": "您的留言*",
+            "newsletterSubmit": "继续",
+            "phone": "电话号码*",
+            "privacy": "隐私政策*",
+            "salutation": "称谓*",
+            "salutationUndisclosed": "不愿透露",
+            "subject": "主题*",
+            "subscribeToNewsletter": "订阅邮件",
+            "contractNumber": "合同编号（订单号、订阅号 ...）*",
+            "comment": "备注"
+          },
+          "placeholder": {
+            "firstName": "张三",
+            "lastName": "李四",
+            "email": "john{'@'}doe.com",
+            "phone": "+4920 3920173",
+            "subject": "示例主题",
+            "message": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum.",
+            "contractNumber": "SW123456789",
+            "comment": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum."
+          },
+          "helpText": {
+            "requiredFields": "带星号 (*) 标记的字段为必填字段。"
+          },
+          "newsletter": {
+            "label": {
+              "firstName": "名字",
+              "lastName": "姓氏",
+              "salutation": "称谓"
+            }
+          }
+        },
+        "preview": {
+          "label": {
+            "form": "表单",
+            "send": "发送"
+          }
+        }
+      },
+      "buyBox": {
+        "label": "购买框",
+        "infoText": {
+          "tooltipSettingDisabled": "此元素的商品数据会自动从该布局关联的商品中加载。当前内容仅为示例预览。"
+        },
+        "config": {
+          "label": {
+            "selection": "商品"
+          },
+          "placeholder": {
+            "selection": "选择商品 ..."
+          }
+        },
+        "component": {
+          "label": {
+            "actionBuy": "加入购物车",
+            "taxInfo": "价格含税，另加运费",
+            "deliveryShippingFree": "免运费",
+            "deliveryTime": "立即可用，配送时间 {name}",
+            "variants": "变体",
+            "productNumber": "商品编号："
+          }
+        }
+      },
+      "productDescriptionReviews": {
+        "label": "商品描述与评价",
+        "infoText": {
+          "descriptionAndReviewsElement": "此元素的商品数据会自动从该布局关联的商品中加载。当前内容仅为示例预览。"
+        },
+        "component": {
+          "label": {
+            "descriptionAndReviews": "商品描述与评价"
+          }
+        },
+        "preview": {
+          "label": {
+            "descriptionAndReviews": "商品描述与评价",
+            "description": "描述",
+            "reviews": "评价"
+          }
+        }
+      },
+      "crossSelling": {
+        "label": "关联商品",
+        "preview": {
+          "label": {
+            "crossSellingTitle": "关联商品标题"
+          }
+        },
+        "config": {
+          "label": {
+            "selection": "商品",
+            "minWidth": "最小宽度"
+          },
+          "placeholder": {
+            "selection": "选择商品...",
+            "minWidth": "输入最小宽度 ..."
+          },
+          "infoText": {
+            "productDetailElement": "此元素的商品数据会自动从该布局关联的商品中加载。当前内容仅为示例预览。"
+          }
+        }
+      },
+      "productName": {
+        "label": "商品名称"
+      },
+      "categoryName": {
+        "label": "分类名称"
+      },
+      "html": {
+        "label": "HTML",
+        "labelContent": "内容",
+        "config": {
+          "warning": "未过滤的 HTML 代码可能带来安全风险。请仅插入来自可信来源的 HTML 代码，并在发布前测试更改。"
+        }
+      }
+    },
+    "blocks": {
+      "commerce": {
+        "categoryHeading": {
+          "label": "分类名称"
+        },
+        "productHeading": {
+          "label": "商品名称与制造商 Logo"
+        },
+        "productListing": {
+          "label": "商品列表"
+        },
+        "productSlider": {
+          "label": "商品轮播"
+        },
+        "productThreeColumn": {
+          "label": "三列，商品框"
+        },
+        "productDescriptionReviews": {
+          "label": "商品描述与评价",
+          "preview": {
+            "label": {
+              "description": "描述",
+              "reviews": "评价"
+            }
+          }
+        },
+        "galleryBuyBox": {
+          "label": "图库和购买框"
+        },
+        "crossSelling": {
+          "label": "关联商品"
+        }
+      },
+      "image": {
+        "image": {
+          "label": "图片，居中"
+        },
+        "imageBubbleRow": {
+          "label": "三列，圆角"
+        },
+        "imageCover": {
+          "label": "图片，拉伸"
+        },
+        "imageFourColumn": {
+          "label": "四列，居中"
+        },
+        "imageGallery": {
+          "label": "图库"
+        },
+        "imageHighlightRow": {
+          "label": "三列，带背景"
+        },
+        "imageSimpleGrid": {
+          "label": "图片网格"
+        },
+        "imageSlider": {
+          "label": "图片轮播"
+        },
+        "imageThreeColumn": {
+          "label": "三列，居中"
+        },
+        "imageThreeCover": {
+          "label": "三列，拉伸"
+        },
+        "imageTwoColumn": {
+          "label": "两列，居中"
+        }
+      },
+      "sidebar": {
+        "categoryNavigation": {
+          "label": "分类导航",
+          "preview": {
+            "label": {
+              "navigation": "导航"
+            }
+          }
+        },
+        "sidebarFilter": {
+          "label": "商品筛选"
+        }
+      },
+      "text": {
+        "text": {
+          "label": "文本"
+        },
+        "textHero": {
+          "label": "文本横幅"
+        },
+        "textTeaser": {
+          "label": "引导文本"
+        },
+        "textTeaserSection": {
+          "label": "两列，引导文本"
+        },
+        "textThreeColumn": {
+          "label": "三列，文本"
+        },
+        "textTwoColumn": {
+          "label": "两列，文本"
+        }
+      },
+      "textImage": {
+        "centerText": {
+          "label": "三列，图片与文本"
+        },
+        "imageText": {
+          "label": "两列，居中图片与文本"
+        },
+        "imageTextBubble": {
+          "label": "三列，带说明文字的圆角图片"
+        },
+        "imageTextCover": {
+          "label": "两列，拉伸图片与文本"
+        },
+        "imageTextGallery": {
+          "label": "三列，图片文本卡片"
+        },
+        "imageTextRow": {
+          "label": "三列，带说明文字的图片"
+        },
+        "textOnImage": {
+          "label": "主视觉图"
+        }
+      },
+      "video": {
+        "video": {
+          "label": "视频"
+        },
+        "vimeoVideo": {
+          "label": "Vimeo 视频"
+        },
+        "youtubeVideo": {
+          "label": "YouTube 视频"
+        }
+      },
+      "form": {
+        "form": {
+          "label": "表单"
+        }
+      },
+      "html": {
+        "html": {
+          "label": "HTML"
+        }
+      },
+      "blockDisableState": "该区块在任何设备上均不可见。你可以编辑该区块，但更改不会在你的店铺中显示。请在「购物体验」模块中编辑该布局以修改区块可见性。"
+    },
+    "components": {
+      "setDefaultLayoutModal": {
+        "title": "分配默认布局",
+        "infoText": "请注意，当前分配到默认布局的所有商品都将改为分配该布局，且新建商品会自动分配该布局。确定要将该布局用作默认布局吗？| 请注意，当前分配到默认布局的所有分类都将改为分配该布局，且新建分类会自动分配该布局。确定要将该布局用作默认布局吗？"
+      },
+      "cmsLayoutModal": {
+        "actionConfirm": "应用布局",
+        "modalTitle": "选择布局",
+        "headline": "落地页 / 商品列表页"
+      },
+      "cmsLayoutAssignmentModal": {
+        "infoText": "将布局分配给已启用的分类后，才会在商城中显示。",
+        "infoTextShopPages": "此布局既可用于分类，也可用于条款、法律声明、错误页等商城页面。",
+        "infoTextProductDetailPages": "只有将布局分配给启用的商品后，它才会在商城中显示。",
+        "labelCategories": "分类",
+        "placeholderCategories": "选择分类 ...",
+        "placeholderLandingPages": "选择落地页 ...",
+        "labelSalesChannel": "销售渠道",
+        "placeholderSalesChannel": "选择销售渠道...",
+        "resetOptionSalesChannel": "所有销售渠道",
+        "helpTextSalesChannel": "分配给特定销售渠道的布局会覆盖 \"所有销售渠道\" 中的布局分配。",
+        "labelShopPages": "商城页面",
+        "confirmChangesTextCategories": "你已移除分类的布局分配。确认后，这些分类将不再分配布局。",
+        "confirmChangesTextCategoriesAssignedLayouts": "部分所选分类已分配布局。继续操作后，原有分配将被当前布局替换。",
+        "confirmChangesTextProducts": "你已移除商品的布局分配。确认后，这些商品将不再分配布局。",
+        "confirmChangesTextProductsAssignedLayouts": "部分所选商品已分配布局。继续操作后，原有分配将被当前布局替换。",
+        "confirmChangesTextShopPages": "你已移除店铺页面的布局分配。确认后，这些店铺页面将不再分配布局。",
+        "confirmChangesTextLandingPages": "你已移除落地页的布局分配。确认后，这些落地页将不再分配布局。",
+        "confirmChangesTextLandingPagesAssignedLayouts": "部分所选落地页已分配布局。继续操作后，原有分配将被当前布局替换。",
+        "confirmChangesText": "是否应用你的更改？",
+        "confirmChangesTitle": "确认布局分配",
+        "shopPagesLoadError": "商城页面无法加载",
+        "shopPagesSaveError": "商城页面无法保存",
+        "tabCategories": "分类",
+        "tabShopPages": "商城页面",
+        "tabLandingPages": "落地页",
+        "shopPages": {
+          "tosPage": "条款页面",
+          "revocationPage": "撤销说明",
+          "shippingPaymentInfoPage": "支付与配送信息",
+          "privacyPage": "隐私政策页面",
+          "imprintPage": "法律声明",
+          "404Page": "404 页面",
+          "maintenancePage": "维护页面",
+          "contactPage": "联系表单",
+          "revocationRequestPage": "撤销申请表",
+          "newsletterPage": "邮件订阅页面"
+        },
+        "products": {
+          "productAssignmentHeadline": "商品分配",
+          "productAssignmentPlaceholder": "搜索并分配商品...",
+          "productAssignmentLabel": "商品",
+          "productAssignmentEmptyStateDescription": "未分配商品",
+          "productStreamAssignmentEmptyStateDescription": "未分配动态商品组",
+          "columnNameLabel": "名称",
+          "columnManufacturerLabel": "制造商"
+        }
+      },
+      "cmsMissingElementModal": {
+        "headline": "缺失的元素",
+        "title": "此商品详情页缺少元素 <span>{element}</span>。| 此商品详情页缺少元素 <span>{element}</span>。",
+        "subtitle": "访问此页面的客户可能无法获取所有重要的商品信息。",
+        "paragraph": "是否仍要保存该布局？",
+        "buttonSave": "保存布局"
+      },
+      "cmsListItem": {
+        "emptyText": "未分配布局",
+        "rename": "重命名",
+        "view": "预览",
+        "addPreviewImage": "添加预览",
+        "setAsDefaultProductList": "设为分类页默认",
+        "setAsDefaultProductDetail": "设为商品页默认",
+        "defaultLayout": "默认布局",
+        "defaultLayoutProductList": "默认布局 - 分类页",
+        "defaultLayoutProductDetail": "默认布局 - 商品页",
+        "removePreviewImage": "移除预览",
+        "notificationDeleteErrorMessage": "该布局仍至少分配给一个分类。",
+        "modal": {
+          "renameModalTitle": "重命名布局",
+          "textRenameConfirm": "为 \"{pageName}\" 选择新名称：",
+          "textDeleteConfirm": "确定要删除布局 \"{pageName}\" 吗？",
+          "buttonRename": "重命名"
+        }
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "cms": {
+        "label": "购物体验"
+      }
+    }
+  }
+}

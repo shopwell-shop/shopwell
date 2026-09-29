@@ -213,19 +213,19 @@ class SalesChannelCmsPageLoaderTest extends TestCase
             [
                 'languages' => [
                     ['id' => Defaults::LANGUAGE_SYSTEM],
-                    ['id' => $this->getDeDeLanguageId()],
+                    ['id' => $this->getZhCnLanguageId()],
                 ],
                 'domains' => [
                     [
-                        'languageId' => $this->getDeDeLanguageId(),
+                        'languageId' => $this->getZhCnLanguageId(),
                         'currencyId' => Defaults::CURRENCY,
-                        'snippetSetId' => $this->getSnippetSetIdForLocale('de-DE'),
+                        'snippetSetId' => $this->getSnippetSetIdForLocale('zh-CN'),
                         'url' => 'http://localhost/de',
                     ],
                 ],
             ],
             [
-                SalesChannelContextService::LANGUAGE_ID => $this->getDeDeLanguageId(),
+                SalesChannelContextService::LANGUAGE_ID => $this->getZhCnLanguageId(),
             ]
         );
 
@@ -244,19 +244,19 @@ class SalesChannelCmsPageLoaderTest extends TestCase
             [
                 'languages' => [
                     ['id' => Defaults::LANGUAGE_SYSTEM],
-                    ['id' => $this->getDeDeLanguageId()],
+                    ['id' => $this->getZhCnLanguageId()],
                 ],
                 'domains' => [
                     [
-                        'languageId' => $this->getDeDeLanguageId(),
+                        'languageId' => $this->getZhCnLanguageId(),
                         'currencyId' => Defaults::CURRENCY,
-                        'snippetSetId' => $this->getSnippetSetIdForLocale('de-DE'),
+                        'snippetSetId' => $this->getSnippetSetIdForLocale('zh-CN'),
                         'url' => 'http://localhost/de',
                     ],
                 ],
             ],
             [
-                SalesChannelContextService::LANGUAGE_ID => $this->getDeDeLanguageId(),
+                SalesChannelContextService::LANGUAGE_ID => $this->getZhCnLanguageId(),
             ]
         );
 

@@ -17,12 +17,12 @@ class LanguageCollectionTest extends TestCase
 {
     public function testElementsAreKeyedByLocale(): void
     {
-        $german = new Language('de-DE', 'Deutsch');
+        $chinese = new Language('zh-CN', '简体中文');
         $english = new Language('en-GB', 'English');
 
-        $collection = new LanguageCollection([$german, $english]);
+        $collection = new LanguageCollection([$chinese, $english]);
 
-        static::assertSame($german, $collection->get('de-DE'));
+        static::assertSame($chinese, $collection->get('zh-CN'));
         static::assertSame($english, $collection->get('en-GB'));
     }
 

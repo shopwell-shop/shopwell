@@ -603,12 +603,12 @@ class MailTemplateServiceTest extends TestCase
         $this->mailDataProvider->expects($this->once())->method('getTemplateData')->willReturn([]);
         $this->mailDataSimulator->expects($this->never())->method('getTemplateData');
 
-        $this->languageLocaleProvider->method('getLocaleForLanguageId')->willReturn('de-DE');
+        $this->languageLocaleProvider->method('getLocaleForLanguageId')->willReturn('zh-CN');
 
         $translator = $this->createMock(AbstractTranslator::class);
         $translator->expects($this->once())
             ->method('injectSettings')
-            ->with('sales-channel-id', Defaults::LANGUAGE_SYSTEM, 'de-DE', $context)
+            ->with('sales-channel-id', Defaults::LANGUAGE_SYSTEM, 'zh-CN', $context)
             ->willReturnCallback(static function () use (&$calls): void {
                 $calls[] = 'inject';
             });
@@ -658,12 +658,12 @@ class MailTemplateServiceTest extends TestCase
         $this->mailDataSimulator->expects($this->once())->method('getTemplateData')->willReturn([]);
         $this->mailDataProvider->expects($this->never())->method('getTemplateData');
 
-        $this->languageLocaleProvider->method('getLocaleForLanguageId')->willReturn('de-DE');
+        $this->languageLocaleProvider->method('getLocaleForLanguageId')->willReturn('zh-CN');
 
         $translator = $this->createMock(AbstractTranslator::class);
         $translator->expects($this->once())
             ->method('injectSettings')
-            ->with('sales-channel-id', Defaults::LANGUAGE_SYSTEM, 'de-DE', $context)
+            ->with('sales-channel-id', Defaults::LANGUAGE_SYSTEM, 'zh-CN', $context)
             ->willReturnCallback(static function () use (&$calls): void {
                 $calls[] = 'inject';
             });

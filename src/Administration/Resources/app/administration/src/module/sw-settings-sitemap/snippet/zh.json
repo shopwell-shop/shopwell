@@ -1,0 +1,10 @@
+{
+  "sw-settings-sitemap": {
+    "general": {
+      "mainMenuItemGeneral": "站点地图",
+      "description": "可在此进行站点地图设置。",
+      "textHeadline": "站点地图",
+      "messageSaveSuccess": "配置已成功保存。"
+    }
+  }
+}

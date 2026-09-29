@@ -1,0 +1,458 @@
+{
+  "global": {
+    "error-codes": {
+      "DUPLICATED_PRODUCT_EXPORT_FILE_NAME": "该文件名已被使用。请选择其他名称。"
+    }
+  },
+  "sw-sales-channel": {
+    "general": {
+      "titleMenuItems": "销售渠道",
+      "tooltipOpenStorefront": "打开店面",
+      "titleMenuMoreItems": "查看全部",
+      "manageSalesChannels": "管理销售渠道",
+      "addSalesChannel": "添加销售渠道"
+    },
+    "list": {
+      "title": "销售渠道",
+      "subTitle": "通过销售渠道，可借助社交媒体、店面、市场或线下向客户销售商品。",
+      "placeholderSearchBar": "搜索销售渠道…",
+      "buttonAddSalesChannel": "新建销售渠道",
+      "emptyStateHeadline": "暂无销售渠道",
+      "emptyStateDescription": "创建首个销售渠道，以便通过店面、市场或社交媒体销售。",
+      "columnName": "销售渠道",
+      "columnType": "类型",
+      "columnStatus": "状态",
+      "columnCreatedAt": "创建于",
+      "columnFavourite": "我的收藏",
+      "status": {
+        "maintenance": "维护中",
+        "online": "在线",
+        "offline": "离线"
+      },
+      "productsLabel": "商品",
+      "productsCount": "商品 | 商品 | 商品"
+    },
+    "modal": {
+      "title": "新建销售渠道",
+      "buttonAddChannel": "新建销售渠道",
+      "titleDetailPrefix": "{name} - 详情",
+      "buttonShowDetails": "详情",
+      "titleDescription": "信息",
+      "messageAgenticCommerce": "要创建智能体商务销售渠道，请先从 Shopwell 商店安装 Agentic Commerce 扩展。",
+      "messageNoProductStreams": "要创建商品对比或 Agentic Commerce 销售渠道，需先创建动态商品组。"
+    },
+    "detail": {
+      "messageSaveSuccess": "销售渠道 \"{name}\" 已成功保存。",
+      "messageSaveError": "销售渠道 \"{name}\" 无法保存。请检查你的输入。",
+      "messageActivateWithoutThemeError": "销售渠道 \"{name}\" 尚无法启用。已启用的销售渠道必须分配主题。",
+      "messageMeasurementUnitsSetError": "商品尺寸的系统配置无法加载。",
+      "activateDisable": "销售渠道需先保存并分配主题，然后才能启用。",
+      "buttonCreateNewApiKeys": "重新生成 API 凭证",
+      "tabBase": "通用",
+      "tabTheme": "主题",
+      "tabAnalytics": "分析",
+      "tabProductComparison": "模板",
+      "tabProducts": "商品",
+      "tabAgenticFiles": "Agentic 文件",
+      "titleProductComparisonTemplate": "模板",
+      "titleProductComparisonPreview": "预览",
+      "titleProductComparisonPreviewErrors": "生成时出错",
+      "labelAccessKeyField": "API 访问密钥",
+      "messageAPIError": "API 密钥无法生成。",
+      "titleGeneralSettings": "基本设置",
+      "labelInputName": "名称",
+      "labelInputActive": "启用",
+      "labelInputShippingMethods": "配送方式",
+      "labelInputPaymentMethods": "支付方式",
+      "labelInputCountries": "国家",
+      "labelBusinessTimeZone": "公司时区",
+      "helpTextBusinessTimeZone": "该销售渠道的文档中输出日期或时间时使用的时区。留空则不覆盖营业时区。",
+      "countryMultiSelectHelpText": "如果未显示全部可用国家，请输入具体名称以选择该国。国家可在「设置/国家」中编辑和新建。",
+      "helpTextTaxCalculation": {
+        "label": "启用税务服务商后，这些设置可能会被覆盖。你可以在 {link} 中查看。",
+        "linkText": "设置"
+      },
+      "labelInputTaxCalculation": "计税方式",
+      "labelOptionTaxVertical": "垂直",
+      "labelOptionTaxHorizontal": "水平",
+      "labelInputCurrencies": "货币",
+      "labelInputLanguages": "语言",
+      "labelInputUrl": "URL",
+      "labelInputCategories": "分类",
+      "titleOptionsCard": "选项",
+      "labelInputDefaultShippingMethod": "默认配送方式",
+      "labelInputDefaultPaymentMethod": "默认支付方式",
+      "labelInputDefaultCountry": "默认国家",
+      "labelInputDefaultCurrency": "默认货币",
+      "labelInputDefaultLanguage": "默认语言",
+      "tooltipDisabledShippingMethod": "必须启用此配送方式才能将其选为默认配送方式。",
+      "tooltipDisabledPaymentMethod": "必须启用此支付方式才能将其选为默认支付方式。",
+      "tooltipDisabledCountry": "必须启用此国家才能将其选为默认国家。",
+      "warningDisabledCountries": "国家 <b>{name}</b> 未启用。 | 国家 <b>{name}</b> 和 <b>{addition}</b> 未启用。",
+      "warningDisabledPaymentMethod": "分配给该销售渠道的部分支付方式当前不可用。请检查这些支付方式的<a href=\"{paymentSettingsLink}\">设置</a>：<br/> <b>{separatedList}</b>",
+      "warningDisabledShippingMethod": "配送方式 <b>{name}</b> 未启用。 | 配送方式 <b>{name}</b> 和 <b>{addition}</b> 未启用。",
+      "warningDisabledAddition": "另有 {amount} 个",
+      "warningUnservedLanguage": "语言 <b>{list}</b> 未分配域名。若要在销售渠道中使用该语言，请先创建相应的域名。| 语言 <b>{list}</b> 未分配任何域名。若要在销售渠道中使用这些语言，请先创建相应的域名。",
+      "textDeleteInfo": "注意：此操作将永久删除该销售渠道！删除后，该销售渠道将不再出现在 Shopwell 后台中，也无法恢复。但现有订单会保留，已发布的产品目录也不会因此改变。",
+      "buttonDelete": "删除销售渠道",
+      "deleteModalTitle": "删除销售渠道",
+      "textConfirmDelete": "确定要删除该销售渠道吗？",
+      "textHeadline": "新建销售渠道",
+      "placeholderName": "输入销售渠道名称 ...",
+      "placeholderInputCategories": "添加分类 ...",
+      "titleDomains": "域名",
+      "titleDomainItem": "域名 {index}",
+      "labelInputCurrency": "货币",
+      "labelInputLanguage": "语言",
+      "labelInputSnippet": "文本模块集",
+      "labelIsExternalStorefront": "外部店铺前台",
+      "helpTextIsExternalStorefront": "仅为指向外部店铺的域名生成 SEO URL。每种语言下，单个销售渠道只能设置一个外部店铺。",
+      "buttonDeleteDomain": "删除域名",
+      "messageDeleteDomainError": "域名 \"{url}\" 无法删除，因为它关联了现有的商品导出。",
+      "foreignKeyDelete": "该销售渠道无法删除，因为它仍被 {assignment} 使用。",
+      "buttonAddDomain": "添加域名",
+      "deleteDomainModalTitle": "删除域名",
+      "textConfirmDeleteDomain": "确定要删除此域名吗？销售渠道将无法再通过 \"{url}\" 访问",
+      "customerGroup": "客户组",
+      "favouriteLabel": "将销售渠道标记为收藏",
+      "navigation": "导航",
+      "navigationCategoryId": "主导航入口",
+      "navigationCategoryDepth": "主导航层级",
+      "navigationCategoryHelpText": "此入口点无法选择 \"自定义链接\" 或 \"结构分类\" 类型的分类。",
+      "footerCategory": "页脚导航入口",
+      "serviceCategory": "页脚服务导航入口",
+      "titleOptionsApiKey": "API 访问",
+      "textDeleteSalesChannelWarning": "移除此销售渠道的操作无法撤销。",
+      "buttonCopyApiKeyButton": "复制 API 密钥",
+      "titleStatus": "状态",
+      "titleGeneralInformation": "基本信息",
+      "titleAccount": "账户",
+      "titleDeleteSalesChannel": "删除销售渠道",
+      "titleProductSync": "商品同步",
+      "titleSyncedProducts": "已同步商品",
+      "titleCategoryMapping": "分类映射",
+      "titleTemplate": "模板",
+      "titleDomainHeadline": "创建域名 URL",
+      "buttonEditDomain": "编辑域名",
+      "titleCreateDomain": "新建域名",
+      "titleEditDomain": "编辑域名 \"{name}\"",
+      "textDomainDescription": "每种所选语言都需要在对应销售渠道中有独立的域名。你也可以在此为该销售渠道添加更多自定义域名。",
+      "textApiAccessDescription": "如需获取 API 访问权限，你需要使用下方显示的 API 访问 ID。重新生成会覆盖旧的 API 访问 ID，并终止所有现有的访问路由。<strong>此操作无法撤销。</strong>",
+      "textActiveDescription": "禁用销售渠道会使其对访客和 API 连接不可访问。",
+      "columnDomainUrl": "URL",
+      "columnDomainLanguage": "语言",
+      "columnDomainSnippetSet": "文本模块集",
+      "maintenanceModeTitle": "维护模式",
+      "maintenanceModeDescription": "维护模式下，销售渠道对访客不可见。白名单中的 IP 仍可访问该销售渠道，这样你就能安全地处理销售渠道数据，同时让客户和访客看到维护模式页面。",
+      "labelMaintenanceActive": "维护模式",
+      "ipAddressAllowlistHelpText": "将 IP 地址加入允许列表，即可实现选择性访问店铺。可按需添加 IPv4 和 IPv6 地址。",
+      "basicinformationLink": "修改默认维护页面布局",
+      "ipAddressAllowlist": "IP 地址白名单",
+      "columnDomainCurrency": "货币",
+      "columnDomainUnitSystem": "单位制",
+      "products": {
+        "titleEmptyState": "暂无商品",
+        "titleEmptyStateTable": "未找到匹配的商品",
+        "buttonAddProducts": "{productCount} 添加商品 | {productCount} 添加商品 | {productCount} 添加商品",
+        "columnProductName": "商品名称",
+        "columnActive": "启用",
+        "columnProductNumber": "商品编号",
+        "inheritVariantNotRemovableTooltip": "此变体从其主商品继承销售渠道分配。"
+      },
+      "productComparison": {
+        "inputHeaderLabel": "页眉",
+        "inputBodyLabel": "商品行",
+        "inputFooterLabel": "页脚",
+        "feedLabelLabel": "Google Feed 标签",
+        "feedLabelHelpText": "可选的 Feed 标签，用于在 Google Merchant Center 中按同一数据源对商品分组。允许大写字母（A–Z）、数字（0–9）、连字符（-）和下划线（_），最多 20 个字符。",
+        "buttonTestLabel": "测试模板",
+        "buttonPreviewLabel": "生成预览",
+        "settings": "商品导出",
+        "fileName": "文件名",
+        "placeholderFileName": "shopwell.csv",
+        "lastGenerationLabel": "上次生成时间： ",
+        "notYetGenerated": "此导出尚未生成。",
+        "encoding": "字符编码",
+        "placeholderSelectEncoding": "选择字符编码 ...",
+        "fileFormat": "文件格式",
+        "placeholderSelectFileFormat": "选择文件格式 ...",
+        "accessKey": "访问密钥",
+        "accessUrl": "导出 URL",
+        "buttonCreateNewAccessKey": "重新生成访问密钥",
+        "productStream": "动态商品组",
+        "fileFormatLabels": {
+          "csv": "CSV",
+          "xml": "XML"
+        },
+        "includeVariants": "将变体导出为独立商品",
+        "interval": "生成间隔",
+        "generateByCronjob": "通过调度器生成",
+        "notificationMessageValidateSuccessful": "未发生错误。",
+        "intervalLabels": {
+          "0": "实时",
+          "120": "2 分钟",
+          "300": "5 分钟",
+          "600": "10 分钟",
+          "900": "15 分钟",
+          "1800": "30 分钟",
+          "3600": "1 小时",
+          "7200": "2 小时",
+          "14400": "4 小时",
+          "28800": "8 小时",
+          "43200": "12 小时",
+          "86400": "1 天",
+          "172800": "2 天",
+          "259200": "3 天",
+          "345600": "4 天",
+          "432000": "5 天",
+          "518400": "6 天",
+          "604800": "1 周"
+        },
+        "storefront": "销售渠道",
+        "storefrontDomain": "域名",
+        "storefrontDomainHelpText": "对于无头（Headless）销售渠道，此处只能选择标记为外部店铺的域名。请在销售渠道的域名设置中将域名标记为外部店铺。",
+        "storefrontDomainLanguage": {
+          "label": "语言",
+          "help": "基于店面域名自动选择"
+        },
+        "storefrontDomainCurrency": {
+          "label": "货币"
+        },
+        "storefrontSalesChannelCustomerGroup": {
+          "label": "客户组",
+          "help": "基于店面销售渠道自动选择"
+        },
+        "messageAccessKeyChanged": "访问密钥和修改后的导出 URL 在保存后才会生效。",
+        "templates": {
+          "label": "模板",
+          "placeholderSelectTemplate": "选择模板 ...",
+          "template-label": {
+            "billiger-de": "billiger.de (CSV)",
+            "idealo": "idealo.de (CSV)",
+            "google-product-search-de": "Google 购物（XML）"
+          },
+          "modal-title": "应用模板",
+          "modal-message": "应用模板后，该销售渠道中的现有数据将被覆盖。设置和模板页签都会随之调整。",
+          "modal-confirm": "应用模板",
+          "message": {
+            "template-applied-message": "已应用模板数据。请保存销售渠道以永久应用更改。"
+          }
+        },
+        "cliCommand": "用于创建商品导出的 CLI 命令"
+      },
+      "agenticCommerce": {
+        "tabIntegration": "集成",
+        "deprecationBanner": {
+          "title": "Agentic Commerce 将转为扩展",
+          "message": "内置的智能体商务功能将在 Shopwell 6.8 中移除。你的销售渠道目前仍可继续使用。请安装 \"Agentic Commerce\" 扩展，以免服务中断。",
+          "installPlugin": "安装扩展"
+        },
+        "openAiSettingsTitle": "OpenAI 设置",
+        "googleSettingsTitle": "Google 设置",
+        "buttonResetTemplate": "重置为默认",
+        "resetTemplateSuccess": "模板已重置为默认。请保存以应用更改。",
+        "errorLoadingTemplate": "默认模板无法加载。",
+        "templates": {
+          "template-label": {
+            "open-ai": "OpenAI (JSONL)",
+            "google": "Google 购物（XML）"
+          }
+        },
+        "integration": {
+          "stepByStepTitle": "分步指南",
+          "feedUrlLabel": "导出 URL",
+          "providers": {
+            "open-ai": {
+              "cardTitle": "OpenAI 连接",
+              "introduction": {
+                "title": "指南：设置并连接",
+                "description": "此销售渠道会生成 JSONL 商品 Feed，使商品能出现在 ChatGPT 搜索结果中。为此，你需要申请成为商家并将 Feed URL 提供给 OpenAI。其余内容会在下方的分步指南中说明。"
+              },
+              "stepByStep": "<li>在 <a href=\"https://chatgpt.com/merchants/\" target=\"_blank\" rel=\"noopener noreferrer\">chatgpt.com/merchants</a> 申请成为商家</li><li>复制导出 URL（见下方），并按<a href=\"https://developers.openai.com/commerce/product-feeds\" target=\"_blank\" rel=\"noopener noreferrer\">商品 Feed 文档</a>将其提供给 OpenAI</li><li>确保导出 URL 可公开访问</li>"
+            },
+            "google": {
+              "cardTitle": "Google Merchant Center 连接",
+              "introduction": {
+                "title": "指南：设置并连接",
+                "description": "此销售渠道会生成兼容 Google Merchant Center 的 XML 商品 Feed，使商品能出现在 Google 购物和 AI 购物界面中。请在 Merchant Center 的「设置 &rsaquo; 数据源」中将下方导出 URL 添加为定期抓取文件。"
+              },
+              "stepByStep": "<li>在 <a href=\"https://merchants.google.com\" target=\"_blank\" rel=\"noopener noreferrer\">merchants.google.com</a> 创建 Merchant Center 账户并验证你的在线店铺 URL</li><li>在 Merchant Center 中打开<em>设置 &rsaquo; 数据源</em>，点击<em>添加商品来源</em></li><li>选择<em>文件</em>，然后选择<em>添加从 URL 的定期抓取</em>，并将导出 URL（见下方）粘贴为文件 URL</li><li>确保导出 URL 可公开访问（无需身份验证）</li><li>查看<a href=\"https://support.google.com/merchants/answer/7052112\" target=\"_blank\" rel=\"noopener noreferrer\">Google 商品数据规范</a>，并按需调整属性</li>"
+            }
+          }
+        }
+      },
+      "agenticFiles": {
+        "cardTitle": "Agentic 文件",
+        "description": "管理为该销售渠道公开提供的 AI 可读文件，例如 llms.txt、agents.md 和 ai-catalog.json。它们能让助手快速了解你的店铺，并给出使用公开内容的指引。",
+        "columnFileName": "文件",
+        "columnEnabled": "状态",
+        "columnDescription": "描述",
+        "emptyState": "未找到智能体文件",
+        "messageLoadError": "Agentic 文件无法加载。",
+        "actionEnable": "启用",
+        "actionDisable": "禁用",
+        "enabledState": {
+          "enabled": "已启用",
+          "disabled": "已禁用",
+          "custom": "已自定义"
+        },
+        "detail": {
+          "backToList": "返回 Agentic 文件",
+          "previewTitle": "生成的预览",
+          "previewDescription": "当前正为此销售渠道输出此内容，包括已保存的调整。",
+          "templatesTitle": "内容来源",
+          "templatesDescription": "显示哪些模板参与了文件生成，以及模板是否已被自定义。当自定义说明不够用时，高级用户可以覆盖单个模板。",
+          "showContentSources": "显示来源",
+          "hideContentSources": "隐藏来源",
+          "customNotesTitle": "自定义说明",
+          "customNotesDescription": "在此文件末尾添加自定义说明，而不替换 Shopwell 或扩展的默认内容。",
+          "customNotesPlaceholder": "为 AI 智能体添加附加说明 ...",
+          "labelPublicPath": "公开路径",
+          "labelContentType": "内容类型",
+          "actionPreviewPublicPath": "预览",
+          "actionEnablePublicPathPreview": "请先启用此文件，以便以预览方式打开公开路径。",
+          "columnTemplate": "模板",
+          "columnSourceRole": "角色",
+          "actionEditOverride": "编辑覆盖",
+          "overrideModalTitle": "编辑 {source}",
+          "overrideModalDescription": "调整该模板为此销售渠道提供的内容。修改会保存为自定义，可随时恢复为模板默认内容。",
+          "overrideModalFieldLabel": "内容",
+          "overrideModalReset": "重置为默认",
+          "overrideModalApply": "应用覆盖",
+          "roleBase": "基础模板",
+          "roleExtension": "扩展",
+          "previewEmpty": "未生成预览。",
+          "emptyState": "未找到 Agentic 文件",
+          "messagePreviewError": "预览无法生成。"
+        },
+        "descriptions": {
+          "agentic": {
+            "well-known-ai-catalog-json": "用于智能体资源发现的机器可读目录。它帮助兼容客户端找到该销售渠道中可用的 AI 资源，例如已启用的 Shopwell MCP 服务。",
+            "llms-txt": "面向 AI 助手和检索工具的 Markdown 索引。它概述该销售渠道提供的内容，并指向最重要的公开页面，使智能体无需抓取每个页面即可了解店铺。它是对 robots.txt 和站点地图的补充，但不保证所有 AI 服务都会使用。",
+            "agents-md": "面向智能体客户端的上下文与操作指引。用于说明智能体应如何与该销售渠道交互、应优先使用哪些公开资源，以及哪些操作需要用户明确确认（例如结账或账户变更）。"
+          }
+        }
+      },
+      "productExport": {
+        "tabInsights": "统计",
+        "insights": {
+          "orderCardHeadline": "促成的订单",
+          "customerCardHeadline": "促成的客户",
+          "turnoverCardHeadline": "引荐营业额",
+          "numbers": "计数",
+          "totalTurnover": "营业额",
+          "summary": "金额",
+          "dateRanges": {
+            "180Days": "最近 180 天",
+            "30Days": "最近 30 天",
+            "14Days": "最近 14 天",
+            "7Days": "最近 7 天",
+            "24Hours": "最近 24 小时",
+            "yesterday": "昨天"
+          }
+        }
+      },
+      "hreflang": {
+        "title": "Hreflang",
+        "titleCard": "Hreflang 集成",
+        "titleDescription": "hreflang 元标签用于将内容唯一对应到某种语言。Google 会在搜索结果中明确显示对应的语言。",
+        "enableCheckbox": "启用 hreflang",
+        "defaultDomain": "Hreflang 的默认域名",
+        "domainSettings": {
+          "label": "Hreflang 本地化",
+          "byIso": "按 ISO 标准本地化",
+          "byIsoHelpText": "本地化通过精确的 ISO 代码进行。除语言外，还会输出目标国家。",
+          "byAbbreviation": "按语言本地化",
+          "byAbbreviationHelpText": "本地化仅通过语言进行。此处会通过输出语言覆盖多个目标国家"
+        }
+      },
+      "analytics": {
+        "cardTitle": "Google Analytics",
+        "headline": "Google Analytics 集成",
+        "description": "借助 Google Analytics，你可以收集和分析店铺数据。使用该功能需要 Google Analytics 账户。如果还没有账户，可以在此注册：<a href=\"https://analytics.google.com/\" target=\"_blank\">Google Analytics</a>。注册后会获得跟踪 ID，在此填入即可启用集成。",
+        "fields": {
+          "trackingId": {
+            "label": "跟踪 ID",
+            "placeHolder": "输入跟踪 ID ...",
+            "helpText": "登录 Google Analytics 账户后，你会获得形如 `G-XXXXXXXXXX` 的跟踪 ID。如需使用 Google 跟踪代码管理器，请使用以 `GTM-` 开头的 ID，店铺前台会自动引入 Google 跟踪代码管理器脚本：`https://www.googletagmanager.com/gtm.js?id=...`。否则将使用 `https://www.googletagmanager.com/gtag/js?id=...`。"
+          },
+          "active": {
+            "label": "启用 Google Analytics"
+          },
+          "trackOrders": {
+            "label": "跟踪订单"
+          },
+          "anonymizeIp": {
+            "label": "IP 匿名化"
+          },
+          "trackOffcanvasCart": {
+            "label": "跟踪侧边购物车",
+            "helpText": "启用后，打开侧边购物车时也会触发 'view_cart' 事件，而不限于购物车页面。适用于精细的漏斗分析，但可能虚增购物车浏览数据。"
+          },
+          "enhancedConversions": {
+            "label": "增强型转化",
+            "helpText": "启用后，客户邮箱地址的 SHA256 哈希值会随购买事件发送，以支持 Google Ads 增强型转化。这有助于找回因浏览器 Cookie 限制或跨设备行为而丢失的转化归因。"
+          }
+        },
+        "tracking": {
+          "cardTitle": "追踪",
+          "description": "配置要采集并发送到 Google Analytics 的电商交互。"
+        }
+      },
+      "titleShippingPayment": "支付与配送",
+      "labelTaxCalculation": "计税方式",
+      "descriptionTaxCalculation": "修改该设置可能导致与外部支付服务商的对账问题。\n在做出修改前，请先了解你所用支付服务商如何计算增值税。",
+      "taxCalculation": {
+        "verticalName": "按列（纵向）计算",
+        "verticalDescription": "增值税总额按订单合计计算。结账流程中不显示各项目的增值税占比。",
+        "horizontalName": "按行（横向）计算",
+        "horizontalDescription": "增值税按每个购物车项目单独计算。结账时会显示各购物车项目的增值税占比。增值税总额由各项目的增值税占比汇总得出。"
+      },
+      "productAssignmentModal": {
+        "title": "添加商品",
+        "singleProducts": "选择商品",
+        "singleProductsEmptyState": "未找到更多商品",
+        "categories": {
+          "title": "选择分类",
+          "textInfo": "此处的分配不是动态的，仅反映当前的商品状态。之后分类中商品构成的变化不会影响该分配。",
+          "textSearch": "搜索分类 ...",
+          "emptySearchResults": "未找到分类"
+        },
+        "dynamicProductGroups": {
+          "title": "选择商品组",
+          "infoText": "此处的分配不是动态的，仅反映当前的商品状态。之后动态商品组的商品构成变化不会影响该分配。",
+          "columnName": "名称",
+          "searchFieldPlaceholder": "搜索动态商品组…",
+          "titleNoProductStreamsMatching": "未找到匹配的动态商品组",
+          "titleNoProductStreamsAvailable": "没有可用的动态商品组"
+        }
+      },
+      "measurementSystem": {
+        "labelDefaultUnitSystem": "默认单位制",
+        "labelDefaultLengthUnit": "默认长度单位",
+        "labelDefaultWeightUnit": "默认重量单位",
+        "labelUnitSystem": "单位制",
+        "labelLengthUnit": "长度单位",
+        "labelWeightUnit": "重量单位"
+      }
+    },
+    "sw-sales-channel-defaults-select": {
+      "messageError": "该值由域名 \"{url}\" 使用。"
+    },
+    "agenticCommerceTracking": {
+      "cardTitle": "跟踪代码",
+      "description": "配置将嵌入该渠道 Feed 商品 URL 中的推广代码和活动代码。这些代码用于识别通过该智能体商务渠道引流的订单和客户。",
+      "affiliateCodeLabel": "推广代码",
+      "affiliateCodePlaceholder": "输入推广代码 …",
+      "campaignCodeLabel": "活动代码",
+      "campaignCodePlaceholder": "输入活动代码 …"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "sales_channel": {
+        "label": "销售渠道"
+      }
+    }
+  }
+}

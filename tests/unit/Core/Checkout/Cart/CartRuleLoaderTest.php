@@ -202,7 +202,7 @@ class CartRuleLoaderTest extends TestCase
 
         $salesChannelContext = Generator::generateSalesChannelContext(
             customer: $customer,
-            languageInfo: new LanguageInfo('German', 'de-DE'),
+            languageInfo: new LanguageInfo('Chinese', 'zh-CN'),
             country: $country,
         );
 
@@ -240,7 +240,7 @@ class CartRuleLoaderTest extends TestCase
                     '%reason%' => $reason,
                 ], $parameters);
 
-                return 'Die Versandart "Standard" ist für Ihren aktuellen Warenkorb gesperrt.';
+                return '配送方式“Standard”已对您当前的购物车禁用。';
             });
 
         $cartRuleLoader = new CartRuleLoader(
@@ -259,7 +259,7 @@ class CartRuleLoaderTest extends TestCase
         $result = $cartRuleLoader->loadByCart($salesChannelContext, $cart, new CartBehavior());
 
         static::assertSame(
-            'Die Versandart "Standard" ist für Ihren aktuellen Warenkorb gesperrt.',
+            '配送方式“Standard”已对您当前的购物车禁用。',
             $result->getCart()->getErrors()->first()?->getTranslatedMessage(),
         );
     }

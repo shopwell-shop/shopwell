@@ -1,0 +1,1844 @@
+{
+  "global": {
+    "error-codes": {
+      "FRAMEWORK__MISSING_PRIVILEGE_ERROR": "缺少权限。",
+      "FRAMEWORK__DELETE_RESTRICTED": "删除失败。",
+      "c1051bb4-d103-4f74-8988-acbcafc7fdc3": "此字段不能为空。",
+      "PARENT_MUST_NOT_BE_EMPTY": "继承字段不能为空。",
+      "INVALID_MEDIA_URL": "请输入有效的 URL 以下载文件。",
+      "CONTENT__MISSING_RULE_TYPE_EXCEPTION": "你必须为此规则选择类型。",
+      "CONTENT__INVALID_CATEGORY_TYPE_AS_ENTRY_POINT": "分类被设为入口点时无法选择此类型。",
+      "SHOPWELL_INVALID_IP": "请输入有效的 IP 地址。",
+      "SHOPWELL_INVALID_IP_CIDR": "请输入有效的 IP 地址或带 CIDR 掩码的 IP 地址。",
+      "INVALID_URL": "请输入有效的 URL。",
+      "INVALID_MAIL": "请输入有效的邮箱地址。",
+      "FRAMEWORK__RATE_LIMIT_EXCEEDED": "请求过于频繁。请等待 {seconds} 秒后重试。",
+      "FRAMEWORK__ROUTE_BLOCKED_MESSAGE": "URL {path} 与现有路由 {blockedSegment} 冲突，无法使用。",
+      "DUPLICATED_URL": "该 URL 已被使用。请选择其他域名。",
+      "DUPLICATED_NAME": "该名称已被使用。",
+      "CONTENT__MEDIA_EMPTY_FILE": "请输入有效的文件名。",
+      "CONTENT__INVALID_CUSTOM_ENTITY_FIELD_TYPE": "数据类型无法渲染。请联系管理员。",
+      "FRAMEWORK__API_SALES_CHANNEL_MAINTENANCE_MODE": "所选销售渠道处于维护模式，且你的 IP 地址不在允许列表中。请关闭维护模式，或将你的 IP 地址加入允许列表。",
+      "THEME__INVALID_SCSS_VAR": "SCSS 值 \"{value}\" 对类型 \"{type}\" 无效。",
+      "DOCUMENT_BASE_CONFIG_INVALID_PAYMENT_DUE_DATE": "付款期限必须是相对日期，例如 \"+14 days\"。",
+      "INVALID_GARAN_GUARANTEE_MONTHS": "保修时长须为空，或为 30 到 600 个月之间的半年数，例如 30、36 或 42。"
+    },
+    "default": {
+      "add": "添加",
+      "apply": "应用",
+      "cancel": "取消",
+      "delete": "删除",
+      "remove": "移除",
+      "edit": "编辑",
+      "duplicate": "复制",
+      "copy": "副本",
+      "error": "错误",
+      "warning": "警告",
+      "save": "保存",
+      "success": "成功",
+      "info": "信息",
+      "yes": "是",
+      "no": "否",
+      "confirm": "确认",
+      "view": "查看",
+      "ascending": "升序",
+      "descending": "降序",
+      "xTimesIn": "{n} 个",
+      "open": "打开",
+      "close": "关闭",
+      "from": "从",
+      "to": "至",
+      "bulkEdit": "批量修改",
+      "back": "返回",
+      "discard": "放弃",
+      "submit": "提交",
+      "attention": "警告",
+      "configure": "配置"
+    },
+    "notification": {
+      "notificationSaveErrorMessage": "保存实体 \"{entityName}\" 时发生错误。",
+      "notificationSaveErrorMessageRequiredFieldsInvalid": "请填写所有必填字段。",
+      "notificationSaveErrorMessageRequiredField": "此为必填字段。",
+      "unspecifiedSaveErrorMessage": "发生错误。",
+      "notificationSaveSuccessMessage": "实体 \"{entityName}\" 已成功保存。",
+      "messageDeleteSuccess": "\"{name}\" 已删除。",
+      "messageDeleteFailed": "实体 \"{entityName}\" 用于以下模块： ",
+      "noTitle": "未定义标题",
+      "noMessage": "未定义消息",
+      "notificationLoadingDataErrorMessage": "数据加载出错"
+    },
+    "sw-desktop": {
+      "stagingBarText": "商城处于预览模式。",
+      "theme": {
+        "changed": "外观已更改为 \"{theme}\"",
+        "saveError": "无法切换外观"
+      }
+    },
+    "theme": {
+      "names": {
+        "light": "浅色",
+        "dark": "深色",
+        "system": "系统"
+      }
+    },
+    "sw-skip-link": {
+      "label": "跳过导航"
+    },
+    "notification-center": {
+      "title": "通知",
+      "triggerAriaLabel": "通知",
+      "optionsAriaLabel": "通知选项",
+      "emptyText": "您已是最新版本",
+      "emptyDescription": "新通知会显示在这里。",
+      "ringBellLabel": "响铃通知",
+      "deleteModal": {
+        "title": "删除通知",
+        "textConfirm": "确定要删除所有通知吗？"
+      },
+      "worker-listener": {
+        "thumbnailGeneration": {
+          "title": "正在生成预览图",
+          "message": "无剩余图片。| 还剩一张图片…| 剩余 {n} 张图片…",
+          "messageSuccess": "预览图已生成。"
+        },
+        "esIndexing": {
+          "message": "Elasticsearch 已建立索引。| 仍有剩余…| 剩余 {n} 个…",
+          "messageSuccess": "Elasticsearch 已建立索引。"
+        },
+        "dalIndexing": {
+          "message": "所有数据将被索引。 | 仍有数据待索引 ...",
+          "messageSuccess": "数据已建立索引。"
+        },
+        "productStream": {
+          "title": "动态商品组索引",
+          "message": "动态商品组已建立索引。| 还剩一个动态商品组…| 约剩 {n} 个动态商品组…",
+          "messageSuccess": "动态商品组已建立索引。"
+        },
+        "category": {
+          "title": "分类索引",
+          "message": "分类已建立索引。| 还剩一个分类…| 约剩 {n} 个分类…",
+          "messageSuccess": "分类已建立索引。"
+        },
+        "media": {
+          "title": "媒体索引",
+          "message": "媒体已建立索引。| 还剩一个媒体文件…| 约剩 {n} 个媒体文件…",
+          "messageSuccess": "媒体已建立索引。"
+        },
+        "salesChannel": {
+          "title": "销售渠道索引",
+          "message": "销售渠道已建立索引。| 还剩一个销售渠道…| 约剩 {n} 个销售渠道…",
+          "messageSuccess": "销售渠道已建立索引。"
+        },
+        "rule": {
+          "title": "索引规则",
+          "message": "规则已建立索引。| 还剩一条规则…| 约剩 {n} 条规则…",
+          "messageSuccess": "规则已建立索引。"
+        },
+        "product": {
+          "title": "商品索引",
+          "message": "商品已建立索引。| 还剩一个商品…| 约剩 {n} 个商品…",
+          "messageSuccess": "商品已建立索引。"
+        },
+        "promotion": {
+          "title": "促销活动索引",
+          "message": "促销已建立索引。| 还剩一个促销…| 约剩 {n} 个促销…",
+          "messageSuccess": "促销活动已建立索引。"
+        },
+        "importExport": {
+          "title": "导入/导出",
+          "message": "正在导入/导出数据。",
+          "messageSuccess": "全部导入/导出已完成。"
+        },
+        "flow": {
+          "title": "信息/成功",
+          "message": "流程正在索引。",
+          "messageSuccess": "流程已建立索引。"
+        },
+        "newsletterRecipient": {
+          "title": "信息/成功",
+          "message": "正在为邮件订阅者建立索引。",
+          "messageSuccess": "邮件订阅者已建立索引。"
+        }
+      },
+      "plugin-updates-listener": {
+        "updatesAvailableTitle": "有更新可用。",
+        "updatesAvailableMessage": "部分扩展有可用更新。"
+      },
+      "shopwell-updates-listener": {
+        "updatesAvailableTitle": "新的 Shopwell 版本 {version} 可用",
+        "updatesAvailableMessage": "启动自动更新程序以开始安装。",
+        "updateNow": "打开更新"
+      }
+    },
+    "sw-admin-menu": {
+      "linkLogout": "退出登录",
+      "linkMinimizeMenu": "收起菜单",
+      "linkExpandMenu": "展开菜单",
+      "linkCloseMenu": "关闭菜单",
+      "textShopwellAdmin": "Shopwell 后台",
+      "textProjectName": "后台",
+      "textVersion": "版本：",
+      "administrator": "管理员",
+      "navigation": {
+        "label": "主导航",
+        "mainMenuItemProducts": "商品",
+        "mainMenuItemContent": "内容",
+        "mainMenuItemMarketing": "营销",
+        "mainMenuItemAutomation": "自动化"
+      }
+    },
+    "entity-components": {
+      "deleteMessage": "确定要删除该条目吗？ | 确定要删除这 {count} 个条目吗？",
+      "deleteTitle": "删除条目",
+      "placeholderToManyAssociationCard": "搜索关联…",
+      "labelRemoveAssociation": "移除关联",
+      "productStreamPreview": {
+        "emptyMessageNoStream": "未选择动态商品组",
+        "emptyMessageNoProducts": "未找到商品",
+        "emptyMessageNoSearchResults": "未找到 \"{term}\" 的商品"
+      }
+    },
+    "accessibility": {
+      "optionWarning": "出于无障碍考虑，不建议启用此选项。"
+    },
+    "sw-field": {
+      "notification": {
+        "notificationCopySuccessMessage": "文本已复制到剪贴板。",
+        "notificationCopyFailureMessage": "无法将文本复制到剪贴板。请确认你通过安全连接（HTTPS）访问后台，然后重试。"
+      },
+      "titleShowPassword": "显示密码",
+      "titleHidePassword": "隐藏密码",
+      "tooltipRestoreInheritance": "恢复继承",
+      "tooltipRemoveInheritance": "移除继承",
+      "ariaLinkInheritance": "关联继承",
+      "ariaUnlinkInheritance": "解除继承"
+    },
+    "sw-field-copyable": {
+      "tooltip": {
+        "wasCopied": "已复制到剪贴板。",
+        "canCopy": "复制到剪贴板。"
+      }
+    },
+    "sw-file-input": {
+      "buttonChoose": "选择文件",
+      "notification": {
+        "invalidFileType": {
+          "message": "所选文件\"{name}\"的格式不支持。请使用以下格式之一：{supportedTypes}。"
+        },
+        "invalidFileExtension": {
+          "message": "所选文件 \"{name}\" 的文件扩展名不受支持。请使用以下扩展名之一：{supportedExtensions}。"
+        },
+        "invalidFileSize": {
+          "message": "所选文件\"{name}\"过大，无法上传。最大文件大小为{limit}。"
+        }
+      },
+      "caption": "将文件拖到此处上传"
+    },
+    "sw-gtc-checkbox": {
+      "label": "我接受",
+      "link": "通用条款。",
+      "url": "https://www.shopwell.cn/zh/gtc"
+    },
+    "sw-price-field": {
+      "labelPriceGross": "价格（含税）",
+      "labelPriceNet": "价格（不含税）",
+      "toggleLinkedCurrency": "切换含税价与不含税价的关联"
+    },
+    "sw-list-price-field": {
+      "labelListPriceGross": "划线价（含税）",
+      "helpTextListPriceGross": "划线价用于标示降价商品。划线价以原价呈现，显示为红色并带有删除线。实际售价则显示在其旁边，使用默认文字颜色。",
+      "labelListPriceNet": "划线价（不含税）",
+      "labelRegulationPriceGross": "最低价格（最近 30 天，含税）",
+      "helpTextRegulationPriceGross": "如果你希望在欧盟境内的店铺中宣传降价，则必须填写该字段。这些信息应便于欧盟客户核查。因此，在标注降价时，除当前价格的降幅外，还必须注明降价前 30 天内商品的最低价格。这是第 98/6/EC 号指令第 6a 条的规定。",
+      "labelRegulationPriceNet": "最低价格（最近 30 天，不含税）"
+    },
+    "sw-text-editor": {
+      "labelTextLength": "{count} 个字符 | {count} 个字符"
+    },
+    "sw-code-editor": {
+      "sanitizeInfo": "潜在危险代码会被清理并自动从编辑器中移除。",
+      "sanitizedHint": "你的部分输入已被清理。请检查你的内容。"
+    },
+    "sw-tag-field": {
+      "title": "标签",
+      "listItemAdd": "添加 \"{term}\"",
+      "placeholder": "搜索标签 ..."
+    },
+    "sw-snippet-field": {
+      "tooltip": "编辑并翻译此文本模块"
+    },
+    "sw-snippet-field-edit-modal": {
+      "title": "文本模块",
+      "labelName": "名称"
+    },
+    "sw-data-grid": {
+      "tooltipListSettings": "列表设置",
+      "labelSettingsCompactMode": "使用紧凑模式",
+      "labelSettingsPreviewImages": "显示预览图",
+      "labelColumnHide": "隐藏列",
+      "labelSelectionCount": "已选择：",
+      "labelDeSelectAll": "全部取消选择",
+      "maximumSelectionExceed": "已选择最大数量的条目",
+      "columnsActions": "操作列",
+      "actionsMenu": "打开操作菜单",
+      "labelSelectAll": "全选",
+      "labelSelected": "已选择"
+    },
+    "sw-pagination": {
+      "labelItemsPerPage": "每页条目数：",
+      "previousPage": "前往上一页",
+      "nextPage": "前往下一页",
+      "page": "跳转到第 {page} 页"
+    },
+    "sw-text-preview": {
+      "showMoreButton": "显示更多"
+    },
+    "sw-time-ago": {
+      "justNow": "刚刚",
+      "minutesAgo": "1 分钟前 | {minutesAgo} 分钟前",
+      "aboutNow": "即将推出",
+      "minutesFromNow": "1 分钟后 | {minutesFromNow} 分钟后"
+    },
+    "sw-media-field": {
+      "labelToggleSearchExisting": "搜索媒体 ...",
+      "labelToggleUploadNew": "上传新媒体",
+      "labelUnlink": "取消关联"
+    },
+    "sw-media-folder-item": {
+      "labelContextMenuRename": "重命名",
+      "labelContextMenuMove": "移动",
+      "labelContextMenuShowMedia": "显示媒体",
+      "labelContextMenuShowSettings": "设置",
+      "labelContextMenuDissolve": "解析",
+      "notification": {
+        "errorBlankItemName": {
+          "message": "文件夹无法保存。请添加文件夹名称。"
+        },
+        "renamingError": {
+          "message": "保存文件夹时发生错误。"
+        },
+        "errorInvalidItemName": {
+          "message": "文件夹无法保存。请输入有效的文件夹名称。"
+        }
+      }
+    },
+    "sw-media-media-item": {
+      "labelContextMenuCopyLink": "复制链接",
+      "labelContextMenuReplace": "替换",
+      "labelContextMenuRename": "重命名",
+      "labelContextMenuDetail": "信息",
+      "labelContextMenuMove": "移动",
+      "labelContextMenuSetCover": "设为封面",
+      "labelContextMenuRemoveCover": "移除封面",
+      "notification": {
+        "errorBlankItemName": {
+          "message": "媒体无法重命名。请添加文件名。"
+        },
+        "renamingSuccess": {
+          "message": "媒体重命名成功。"
+        },
+        "renamingError": {
+          "message": "保存文件出错。"
+        },
+        "fileNameTooLong": {
+          "message": "指定的文件名过长。最大长度为 {length} 个字符。"
+        },
+        "settingsSuccess": {
+          "message": "设置保存成功。"
+        },
+        "coverSaveSuccess": {
+          "message": "封面已保存。"
+        },
+        "coverRemoveSuccess": {
+          "message": "封面图已移除。"
+        },
+        "coverSelectionInvalid": {
+          "message": "请选择一张图片作为封面。"
+        },
+        "coverSaveError": {
+          "message": "封面图片无法保存。"
+        },
+        "downloadError": {
+          "message": "下载文件出错。"
+        }
+      },
+      "labelUploading": "正在上传 ..."
+    },
+    "sw-media-modal-delete": {
+      "titleModal": {
+        "media": "删除媒体",
+        "folder": "删除文件夹",
+        "mediaAndFolder": "删除文件夹和媒体"
+      },
+      "deleteMessage": {
+        "media": "确定要删除文件 \"{name}\" 吗？ | 确定要删除这 {count} 个文件吗？",
+        "folder": "确定要删除文件夹 \"{name}\" 吗？<br>其中的所有子文件夹和媒体文件也会被删除。| 确定要删除这 {count} 个文件夹吗？<br>其中的所有子文件夹和媒体文件也会被删除。",
+        "mediaAndFolder": "确定要删除 {mediaCount} 个媒体文件和 {folderCount} 个文件夹吗？<br>其中的所有子文件夹和文件也会一并删除。"
+      },
+      "mediaQuickInfoMessage": "此媒体文件当前被以下使用",
+      "mediaInUsagesMessage": "以下媒体文件当前仍在使用",
+      "notification": {
+        "errorSingle": {
+          "message": {
+            "media": "删除文件 \"{name}\" 时出错。",
+            "folder": "删除文件夹 \"{name}\" 时出错。"
+          }
+        },
+        "successOverall": {
+          "message": {
+            "media": "无文件删除成功。| 一个文件删除成功。| {count} / {total} 个文件删除成功。",
+            "folder": "无文件夹删除成功。| 一个文件夹删除成功。| {count} / {total} 个文件夹删除成功。",
+            "mediaAndFolder": "无文件或文件夹删除成功。| 一个文件或文件夹删除成功。| {count} / {total} 个文件或文件夹删除成功。"
+          }
+        },
+        "errorOverall": {
+          "message": {
+            "media": "文件无法删除。",
+            "folder": "文件夹无法删除。",
+            "mediaAndFolder": "文件和文件夹无法删除。"
+          }
+        }
+      }
+    },
+    "sw-media-modal-folder-dissolve": {
+      "dissolveMessage": "确定要解析 \"{folderName}\" 吗？ | 确定要解析这 {count} 个文件夹吗？",
+      "buttonDissolve": "解析",
+      "notification": {
+        "successSingle": {
+          "message": "文件夹 \"{folderName}\" 已成功解析。"
+        },
+        "errorSingle": {
+          "message": "解析 \"{folderName}\" 时出错。"
+        },
+        "successOverall": {
+          "message": "文件夹已成功解析。"
+        },
+        "errorOverall": {
+          "message": "文件夹无法解析。"
+        }
+      }
+    },
+    "sw-duplicated-media": {
+      "titleModal": "文件已存在",
+      "description": "已存在名为 \"{fileName}\" 的文件。",
+      "buttonReplace": "替换文件",
+      "buttonRename": "重命名文件",
+      "buttonSkip": "跳过文件",
+      "labelSaveSelection": "记住选择并应用到另外 {count} 个。",
+      "labelOptionReplace": "上传并替换",
+      "labelOptionRename": "上传并重命名",
+      "labelOptionSkip": "跳过文件",
+      "labelOldFile": "已有文件",
+      "labelNewFile": "待上传文件"
+    },
+    "sw-duplicated-media-v2": {
+      "titleModal": "文件已存在",
+      "description": "已存在名为 \"{fileName}\" 的文件。",
+      "buttonReplace": "替换文件",
+      "buttonRename": "重命名文件",
+      "buttonKeep": "使用文件",
+      "buttonSkip": "跳过文件",
+      "labelSaveSelection": "记住选择并应用到另外 {count} 个",
+      "labelOptionReplace": "上传并替换",
+      "labelOptionRename": "上传并重命名",
+      "labelOptionKeep": "使用现有文件",
+      "labelOptionSkip": "跳过文件",
+      "labelOldFile": "已有文件",
+      "labelNewFile": "待上传文件"
+    },
+    "sw-media-modal-move": {
+      "titleModal": "移动 \"{mediaName}\" | 移动 {count} 个对象",
+      "buttonMove": "移动",
+      "notification": {
+        "successSingle": {
+          "message": "\"{mediaName}\" 移动成功。"
+        },
+        "errorSingle": {
+          "message": "\"{mediaName}\" 无法移动。"
+        },
+        "successOverall": {
+          "message": "对象移动成功。"
+        },
+        "errorOverall": {
+          "message": "对象无法移动。"
+        },
+        "errorFetchNavigation": {
+          "message": "文件夹导航无法加载。"
+        }
+      }
+    },
+    "sw-media-modal-replace": {
+      "titleModal": "替换媒体",
+      "buttonUpload": "上传",
+      "buttonReplace": "替换",
+      "warningFileExtension": "新文件的扩展名不同（{extension}）。搜索引擎可能需要重新索引。"
+    },
+    "sw-media-preview": {
+      "fallbackVideoTagSupport": "您的浏览器不支持此 video 标签",
+      "fallbackAudioTagSupport": "您的浏览器不支持此 audio 标签",
+      "textNoMedia": "无可用媒体"
+    },
+    "sw-media-preview-v2": {
+      "fallbackVideoTagSupport": "您的浏览器不支持此 video 标签",
+      "fallbackAudioTagSupport": "您的浏览器不支持此 audio 标签",
+      "textNoMedia": "无可用媒体",
+      "warningUnsupportedFormat": "格式 \"{format}\" 可能并非在所有浏览器中都受支持。"
+    },
+    "sw-media-upload": {
+      "buttonFileUpload": "上传文件",
+      "buttonUrlUpload": "通过 URL 上传",
+      "buttonSwitchToFileUpload": "从你的电脑上传文件",
+      "buttonSwitchToUrlUpload": "从 URL 上传文件",
+      "buttonOpenMedia": "打开媒体",
+      "snackbar": {
+        "message": "正在上传文件 | 正在上传文件 ({processed}/{total})",
+        "errorMessage": "文件上传失败。 | 部分文件上传失败。"
+      },
+      "notification": {
+        "success": {
+          "message": "无文件保存成功。| 一个文件保存成功。| {count} / {total} 个文件保存成功。"
+        },
+        "assigned": {
+          "message": "媒体文件已关联。"
+        },
+        "failure": {
+          "message": "上传文件出错。"
+        },
+        "illegalFilename": {
+          "message": "文件名\"{fileName}\"包含无效特殊字符。"
+        },
+        "illegalFileUrl": {
+          "title": "无效的 URL",
+          "message": "不允许通过本地 URL 上传。"
+        },
+        "illegalFileType": {
+          "message": "文件 \"{name}\" 无法上传。不支持该文件类型。"
+        },
+        "requestCanceled": {
+          "message": "上传已取消。"
+        },
+        "payloadTooLarge": {
+          "message": "文件过大。请减小文件大小或检查服务器配置。"
+        },
+        "transportError": {
+          "message": "由于连接问题或服务器超时，上传失败。请检查网络连接或服务器限制。"
+        }
+      },
+      "caption": "将文件拖到此处上传"
+    },
+    "sw-media-upload-v2": {
+      "switchMode": "切换上传模式",
+      "buttonFileUpload": "上传文件",
+      "buttonFilesUpload": "上传文件",
+      "buttonUrlUpload": "通过 URL 上传",
+      "buttonSwitchToFileUpload": "从你的电脑上传文件",
+      "buttonSwitchToUrlUpload": "从 URL 上传文件",
+      "buttonOpenMedia": "打开媒体",
+      "notification": {
+        "success": {
+          "title": "媒体上传",
+          "message": "无文件保存成功。| 一个文件保存成功。| {count} / {total} 个文件保存成功。"
+        },
+        "failure": {
+          "message": "上传文件出错。"
+        },
+        "illegalFilename": {
+          "title": "无效的文件名",
+          "message": "文件名\"{fileName}\"包含无效特殊字符。"
+        },
+        "invalidFileType": {
+          "message": "所选文件\"{name}\"的格式不支持。请使用以下格式之一：{supportedTypes}。"
+        },
+        "invalidFileSize": {
+          "message": "所选文件\"{name}\"过大，无法上传。最大文件大小为{limit}。"
+        },
+        "invalidUrl": {
+          "message": "输入的 URL 无效。"
+        }
+      },
+      "caption": "将文件拖到此处上传"
+    },
+    "sw-media-url-form": {
+      "title": "通过 URL 上传文件",
+      "upload": "上传",
+      "example": "https://www.example.com",
+      "labelFileExtension": "文件扩展名",
+      "missingFileExtension": "在指定 URL 中未找到文件扩展名。请输入文件扩展名。"
+    },
+    "sw-media-modal-folder-settings": {
+      "labelSettings": "设置",
+      "labelSystem": "系统文件夹",
+      "labelThumbnails": "缩略图",
+      "labelFolderName": "名称",
+      "labelInheritSettings": "继承上级文件夹的设置",
+      "labelGenerateThumbnails": "为此文件夹生成缩略图",
+      "labelThumbnailQuality": "缩略图质量",
+      "labelThumbnailSize": "缩略图尺寸",
+      "labelKeepProportions": "保持页面比例",
+      "notification": {
+        "success": {
+          "message": "设置保存成功。"
+        },
+        "error": {
+          "message": "保存设置时发生错误。",
+          "messageThumbnailSizeExisted": "缩略图尺寸已存在。"
+        }
+      },
+      "labelDefaultFolder": "默认媒体存储位置：",
+      "placeholderDefaultFolder": "选择实体...",
+      "tooltipCanNotDeleteThumbnailSize": "缩略图尺寸无法删除，因为它正被使用。"
+    },
+    "sw-media-add-thumbnail-form": {
+      "labelMaximumSize": "最大尺寸"
+    },
+    "sw-sidebar-media-item": {
+      "title": "媒体",
+      "placeholderSearch": "搜索...",
+      "labelLoadMore": "加载更多"
+    },
+    "sw-select": {
+      "messageNoResults": "未找到\"{term}\"的相关结果。"
+    },
+    "sw-select-base": {
+      "buttonClear": "删除全部元素"
+    },
+    "sw-select-result-list": {
+      "messageNoResults": "未找到结果。"
+    },
+    "sw-single-select": {
+      "messageNoResults": "未找到\"{term}\"的相关结果。",
+      "valuePlaceholder": "请选择...",
+      "labelEntity": "元素",
+      "labelEntityAdd": "新建 {entity} \"{term}\"",
+      "labelEntityAddedSuccess": "\"{entity}\"（名称 \"{term}\"）已成功创建。"
+    },
+    "sw-meteor-single-select": {
+      "messageNoResults": "未找到\"{term}\"的相关结果。",
+      "valuePlaceholder": "请选择..."
+    },
+    "sw-multi-select": {
+      "messageNoResults": "未找到\"{term}\"的相关结果。"
+    },
+    "sw-multi-tag-select": {
+      "enterValidData": "输入有效值 ...",
+      "addData": "添加条目"
+    },
+    "sw-multi-tag-ip-select": {
+      "enterValidIp": "请输入有效的 IPv4 或 IPv6 地址",
+      "addIpAddress": "添加 IP 地址",
+      "knownIps": {
+        "you": "你",
+        "youIPv6Block56": "你和其他人 (同一地点)",
+        "youIPv6Block64": "你和其他人 (家庭网络)"
+      }
+    },
+    "sw-entity-advanced-selection-modal": {
+      "link": "使用高级选择",
+      "title": "高级选择：{entity}",
+      "searchPlaceholder": "搜索...",
+      "filter": "筛选",
+      "resetFilters": "重置筛选",
+      "applySelection": "应用选择",
+      "entity": {
+        "product": "商品",
+        "rule": "规则"
+      }
+    },
+    "sw-entity-multi-select": {
+      "messageNoResults": "未找到\"{term}\"的相关结果。"
+    },
+    "sw-entity-many-to-many-select": {
+      "messageNoResults": "未找到\"{term}\"的相关结果。"
+    },
+    "sw-search-bar": {
+      "ariaLabelCloseSearch": "关闭搜索",
+      "ariaLabelOpenSearch": "打开搜索",
+      "messageNoResults": "未找到\"{term}\"的相关结果。",
+      "messageNoTypeResults": "未找到匹配的类型。",
+      "placeholderSearchField": "搜索商品、客户、订单 ...",
+      "placeholderTypeSearchField": "搜索 \"{entity}\"…",
+      "placeholderShortcutInfo": "提示：按 \"f\" 键可快速打开搜索。",
+      "placeholderSearchShortcutInfo": "<strong>提示：</strong>按 <span>f</span> 可从任意位置打开搜索。",
+      "placeholderESSearchShortcutInfo": "<strong>提示：</strong>如需获得更精确的结果，可以使用 Elasticsearch 的<a href=\"https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-simple-query-string-query.html#simple-query-string-syntax\" target=\"_blank\">简单查询语法</a>。",
+      "moduleFiltersHeadline": "模块筛选",
+      "placeholderFilterShortcutInfo": "在搜索中输入 <span>#products</span> 以设置模块筛选。",
+      "searchTypeAll": "全部",
+      "moduleFilter": "模块筛选",
+      "messageNoResultsV2": "未找到与 \"{term}\" 完全匹配的结果。",
+      "messageNoResultsDetailV2": "尝试其他关键词，或检查你的搜索配置。",
+      "addNew": "添加新项"
+    },
+    "sw-search-bar-item": {
+      "typeLabelCustomer": "客户",
+      "typeLabelProduct": "商品",
+      "typeLabelOrder": "订单",
+      "typeLabelMedia": "媒体",
+      "typeLabelCategory": "分类",
+      "typeLabelCms": "CMS",
+      "typeLabelModule": "模块",
+      "typeLabelAction": "操作",
+      "addNewEntity": "添加新 {entity}",
+      "shortcuts": {
+        "product": "G P | A P",
+        "category": "G C | &nbsp;",
+        "customers": "G U | A U",
+        "property": "G P R | A P R",
+        "manufacturer": "G M | A M",
+        "settings-rule": "G S R | A R",
+        "sales-channel": "&nbsp; | A S",
+        "cms": "G E | A E",
+        "dashboard": "G H | &nbsp;",
+        "product-stream": "G D | &nbsp;",
+        "order": "G O | &nbsp;",
+        "media": "G M E | &nbsp;",
+        "promotion-v2": "G P O | &nbsp;",
+        "settings": "G S | &nbsp;",
+        "newsletter-recipient": "G N | &nbsp;",
+        "settings-snippet": "G S | &nbsp;",
+        "settings-payment": "G S P | &nbsp;",
+        "settings-shipping": "G S S | &nbsp;"
+      }
+    },
+    "sw-search-more-results": {
+      "labelShowResultsInModule": "在模块中显示结果（{count}）",
+      "labelShowResultsInModuleV2": "在 {entityNameLower} 中显示全部匹配结果…"
+    },
+    "sw-tagged-field": {
+      "text-default-placeholder": "按回车键插入该值。"
+    },
+    "sw-condition": {
+      "operator": {
+        "placeholder": "选择运算符...",
+        "lowerThanEquals": "小于/等于 | 小于/等于",
+        "equals": "等于 | 等于",
+        "greaterThanEquals": "大于/等于 | 大于/等于",
+        "lowerThan": "小于 | 小于",
+        "greaterThan": "大于 | 大于",
+        "notEquals": "不等于 | 不等于",
+        "isOneOf": "是其中之一 | 是其中之一",
+        "isNoneOf": "不属于其中任何一个 | 不属于其中任何一个",
+        "gross": "含税",
+        "net": "不含税",
+        "empty": "为空 | 为空",
+        "between": "介于 | 介于"
+      },
+      "field": {
+        "amount": "金额",
+        "operator": "运算符",
+        "type": "条件",
+        "count": "数量",
+        "quantity": "数量",
+        "isNet": "不含税 / 含税",
+        "isNumeric": "比较模式",
+        "toDate": "至",
+        "toTime": "至",
+        "useTime": "时间模式",
+        "timezone": "时区",
+        "categoryIds": "分类",
+        "identifiers": "选择",
+        "zipCodes": "邮政编码",
+        "selectedField": "自定义字段",
+        "selectedFieldSet": "自定义字段集",
+        "renderedField": "自定义字段",
+        "renderedFieldValue": "值",
+        "isAlwaysValid": "始终有效"
+      },
+      "cartLineItemWithQuantity": {
+        "id": "商品"
+      },
+      "errors": {
+        "prefix": "无效的值：",
+        "andMore": "另有 {count} 个"
+      },
+      "placeholderErrorMessage": "占位符无法保存。",
+      "dataErrorMessage": "并非所有必填字段都已填写。",
+      "condition": {
+        "dateRangeRule": {
+          "label": "日期范围",
+          "useTime": "使用时间"
+        },
+        "placeholder": "搜索条件…",
+        "orderCountRule": "已完成订单数量",
+        "salesChannelRule": "销售渠道",
+        "currencyRule": "货币",
+        "languageRule": "语言",
+        "customerIsActiveRule": "客户已启用",
+        "billingCountryRule": "账单地址：国家",
+        "billingCityRule": "账单地址：城市",
+        "billingStreetRule": "账单地址: 街道",
+        "billingStateRule": "账单地址：省/州",
+        "billingZipCodeRule": "账单地址：邮政编码",
+        "customerGroupRule": "客户组",
+        "customerRequestedGroupRule": "申请的客户组",
+        "customerTagRule": "带标签的客户",
+        "customerNumberRule": "客户编号",
+        "differentAddressesRule": "收货地址不同的客户",
+        "emailRule": {
+          "label": "客户邮箱地址",
+          "placeholder": "输入唯一邮箱地址，或使用 \"*\" 作为通配符 ..."
+        },
+        "lastNameRule": "客户姓氏",
+        "isCompanyRule": "企业客户",
+        "cartTaxDisplay": {
+          "label": "税费显示",
+          "gross": "含税",
+          "net": "不含税"
+        },
+        "isGuestRule": "访客下单",
+        "isNewsletterRecipient": "客户是邮件订阅者",
+        "daysSinceLastOrderRule": "距上次完成订单的天数",
+        "shippingCountryRule": "收货地址：国家",
+        "shippingCityRule": "收货地址：城市",
+        "shippingStreetRule": "收货地址: 街道",
+        "shippingStateRule": "收货地址：省/州",
+        "shippingZipCodeRule": "收货地址：邮政编码",
+        "customerLoggedInRule": "已登录的客户",
+        "customerAgeRule": "客户年龄",
+        "customerDaysSinceLastLogin": "距上次登录时长",
+        "customerDaysSinceFirstLogin": "距首次登录时长",
+        "customerAffiliateCodeRule": "推广代码（客户）",
+        "customerCampaignCodeRule": "活动代码（客户）",
+        "orderAffiliateCodeRule": "推广代码（订单）",
+        "orderCampaignCodeRule": "活动代码（订单）",
+        "cartAmountRule": "购物车合计（含配送）",
+        "cartPositionPrice": "项目金额（不含配送）",
+        "goodsCountRule": "不同商品数量",
+        "goodsPriceRule": "商品行项小计（不含折扣/附加费）",
+        "cartTotalPurchasePrice": "进货价金额",
+        "lineItemOfTypeRule": {
+          "label": "项目类型",
+          "product": "商品",
+          "discount_surcharge": "折扣 / 附加费"
+        },
+        "lineItemRule": "购物车中的商品",
+        "lineItemsInCartCountRule": "不同项目数量",
+        "promotionsInCartCountRule": "折扣数量",
+        "lineItemUnitPriceRule": "项目单价",
+        "lineItemTotalPriceRule": "项目总额（数量 × 价格）",
+        "lineItemWithQuantityRule": "带数量的项目",
+        "lineItemPerItemQuantityRule": "每件项目的数量",
+        "orderTagRule": "带标签的订单",
+        "orderTrackingCodeRule": "包裹单号",
+        "orderDeliveryStatusRule": "配送状态",
+        "orderCreatedByAdminRule": "管理员创建的订单",
+        "adminSalesChannelSourceRule": "可用于后台",
+        "orderTransactionStatusRule": "支付状态",
+        "orderStatusRule": "订单状态",
+        "orderCustomFieldRule": "带自定义字段的订单",
+        "orderDocumentTypeRule": "带单据的订单",
+        "orderDocumentTypeSentRule": "带已发送单据的订单",
+        "withTime": "含时间查询",
+        "withoutTime": "不含时间戳",
+        "and": "和",
+        "or": "或",
+        "field": {
+          "valuePlaceholder": "输入值…"
+        },
+        "placeholder-warning": "选择条件 ...",
+        "not-found": {
+          "label": "未找到该条件",
+          "error-message": "未找到条件类型 {type}。该条件包含字段：{fields} | 未找到条件类型 {type}。这些条件包含字段：{fields}"
+        },
+        "lineItemCondition": {
+          "any": "至少一个",
+          "all": "全部"
+        },
+        "AddAndCondition": "添加 AND 条件",
+        "AddOrCondition": "添加 OR 条件",
+        "AddSubCondition": "添加子条件",
+        "deleteConditions": "删除容器",
+        "deleteAllConditions": "删除全部条件",
+        "createBefore": "在此之前创建",
+        "createAfter": "在此之后创建",
+        "hasDeliveryFreeItemRule": "项目免运费",
+        "timeRangeRule": "时间范围",
+        "weightOfCartRule": "所有商品的合计重量",
+        "volumeOfCartRule": "所有商品的合计体积",
+        "cartShippingCost": "运费",
+        "dayOfWeekRule": "星期",
+        "lineItemTagRule": "带标签的项目",
+        "alwaysValidRule": "始终有效",
+        "lineItemPropertyRule": "带变体或属性规格的项目",
+        "lineItemNoveltyRule": "新品",
+        "lineItemCustomFieldRule": "带自定义字段的项目",
+        "lineItemIsNewRule": "标记为 \"新\" 的商品",
+        "lineItemOfManufacturerRule": "带品牌的项目",
+        "lineItemPurchasePriceRule": "带进货价的项目",
+        "lineItemCreationDateRule": "带创建日期的项目",
+        "lineItemReleaseDateRule": "带发布日期的项目",
+        "lineItemClearanceSale": "清仓商品",
+        "lineItemPromotedRule": "项目已突出显示",
+        "lineItemInCategoryRule": "项目位于分类",
+        "categoryWithProductStreamTooltip": "此分类中的商品由动态商品组分配。请使用「项目位于动态商品组」条件来动态访问这些商品。",
+        "lineItemInProductStreamRule": "项目位于动态商品组",
+        "lineItemTaxationRule": "带税率的项目",
+        "lineItemDimensionWidthRule": "带宽度的项目",
+        "lineItemDimensionHeightRule": "带高度的项目",
+        "lineItemDimensionLengthRule": "带长度的项目",
+        "lineItemDimensionWeightRule": "带重量的项目",
+        "lineItemDimensionVolumeRule": "带体积的项目",
+        "lineItemListPriceRule": "带划线价的项目",
+        "lineItemListPriceRatioRule": "带价格/划线价比例的项目",
+        "lineItemActualStockRule": "带库存的项目",
+        "lineItemStockRule": "有可用库存的项目",
+        "lineItemProductStates": "带商品状态的项目",
+        "lineItemProductType": "带商品类型的项目",
+        "numberOfReviews": "已审核评价数量",
+        "paymentMethodRule": "已使用的支付方式",
+        "shippingMethodRule": "已使用的配送方式",
+        "lineItemGoodsTotalRule": "商品总量 (件)",
+        "orderTotalAmountRule": "所有已完成订单的合计金额",
+        "promotionValueRule": "所有折扣的合计",
+        "promotionCodeOfType": "带促销代码类型的促销活动",
+        "promotionCodeOfTypeRule": {
+          "global": "无",
+          "fixed": "固定",
+          "individual": "独立"
+        },
+        "promotionLineItemRule": "促销活动",
+        "lineItemCustomField": {
+          "field": {
+            "fieldSetSelect": {
+              "placeholder": "选择字段集 ..."
+            },
+            "customFieldSelect": {
+              "placeholder": "选择自定义字段 ...",
+              "tooltip": "该自定义字段目前在购物车中不可用。你可以在其<a href=\"{customFieldSettingsLink}\" target=\"_blank\">设置</a>中为购物车启用。"
+            }
+          }
+        },
+        "customerCustomFieldRule": "带自定义字段的客户",
+        "zipCodeWildcardPlaceholder": "使用 \"*\" 作为通配符 ...",
+        "customerBirthdayRule": "客户生日",
+        "customerCreatedByAdminRule": "管理员创建的客户",
+        "customerSalutationRule": "客户称谓",
+        "lineItemPropertyValueRule": "带属性规格的项目",
+        "lineItemVariantValueRule": "带变体规格的项目"
+      }
+    },
+    "sw-condition-generic": {
+      "dayOfWeek": {
+        "dayOfWeek": {
+          "options": {
+            "1": "星期一",
+            "2": "星期二",
+            "3": "星期三",
+            "4": "星期四",
+            "5": "星期五",
+            "6": "星期六",
+            "7": "星期日"
+          }
+        }
+      },
+      "cartLineItemOfType": {
+        "lineItemType": {
+          "options": {
+            "product": "商品",
+            "promotion": "折扣 / 附加费"
+          }
+        }
+      },
+      "cartTaxDisplay": {
+        "taxDisplay": {
+          "options": {
+            "gross": "含税",
+            "net": "不含税"
+          }
+        }
+      },
+      "cartTotalPurchasePrice": {
+        "type": {
+          "options": {
+            "gross": "含税",
+            "net": "不含税"
+          }
+        }
+      },
+      "cartLineItemPurchasePrice": {
+        "type": {
+          "options": {
+            "gross": "含税",
+            "net": "不含税"
+          }
+        }
+      },
+      "promotionCodeOfType": {
+        "promotionCodeType": {
+          "options": {
+            "global": "无",
+            "fixed": "固定",
+            "individual": "独立"
+          }
+        }
+      },
+      "cartLineItemProductStates": {
+        "productState": {
+          "options": {
+            "is-download": "数字商品",
+            "is-physical": "实体商品"
+          }
+        }
+      },
+      "cartLineItemProductType": {
+        "productType": {
+          "options": {
+            "digital": "数字商品",
+            "physical": "实体商品"
+          }
+        }
+      },
+      "units": {
+        "dimension": "mm",
+        "weight": "kg",
+        "volume": "mm³",
+        "age": "年",
+        "kg": "千克",
+        "g": "克",
+        "mg": "毫克",
+        "oz": "盎司",
+        "lb": "磅",
+        "m": "米",
+        "cm": "厘米",
+        "mm": "毫米",
+        "km": "千米",
+        "in": "英寸",
+        "ft": "英尺",
+        "mi": "英里",
+        "hr": "小时",
+        "yr": "年",
+        "mth": "月",
+        "wk": "周",
+        "d": "天",
+        "min": "分钟",
+        "m3": "立方米",
+        "cm3": "立方厘米",
+        "mm3": "立方毫米",
+        "in3": "立方英寸",
+        "ft3": "立方英尺",
+        "short": {
+          "hr": "h",
+          "yr": "yr",
+          "mth": "mth",
+          "wk": "wk",
+          "d": "d",
+          "min": "min",
+          "kg": "kg",
+          "g": "g",
+          "mg": "mg",
+          "oz": "oz",
+          "lb": "lb",
+          "m": "m",
+          "cm": "cm",
+          "mm": "mm",
+          "km": "km",
+          "in": "in",
+          "ft": "ft",
+          "mi": "mi",
+          "m3": "m³",
+          "cm3": "cm³",
+          "mm3": "mm³",
+          "in3": "in³",
+          "ft3": "ft³"
+        }
+      }
+    },
+    "sw-product-image": {
+      "context": {
+        "buttonAsCover": "用作封面",
+        "buttonPreviewImage": "预览图片"
+      }
+    },
+    "sw-simple-search-field": {
+      "defaultPlaceholder": "搜索 ..."
+    },
+    "sw-tabs-item": {
+      "tooltipTabHasErrors": "此页面包含错误。",
+      "tooltipTabHasWarnings": "此页面包含警告。"
+    },
+    "entities": {
+      "all": "全部",
+      "custom_field": "自定义字段 | 自定义字段",
+      "cart": "购物车 | 购物车",
+      "category": "分类 | 分类",
+      "cms_page": "布局 | 布局",
+      "document": "单据 | 单据",
+      "property": "属性 | 属性",
+      "country": "国家 | 国家",
+      "currency": "货币 | 货币",
+      "customer": "客户 | 客户",
+      "customer_address": "地址 | 地址",
+      "customer_group": "客户组 | 客户组",
+      "extension": "扩展 | 扩展",
+      "integration": "集成 | 集成",
+      "language": "语言 | 语言",
+      "mail_header_footer": "邮件页眉页脚",
+      "mail_template": "邮件模板 | 邮件模板",
+      "media": "媒体 | 媒体",
+      "media_default_folder": "默认文件夹",
+      "media_folder": "文件夹",
+      "media_thumbnail": "缩略图 | 缩略图",
+      "media_thumbnail_size": "缩略图尺寸 | 缩略图尺寸",
+      "newsletter_recipient": "邮件订阅者",
+      "number_range": "编号范围 | 编号范围",
+      "order": "订单 | 订单",
+      "order_address": "地址 | 地址",
+      "order_delivery": "配送 | 配送",
+      "order_line_item": "订单项 | 订单项",
+      "order_state": "订单状态 | 订单状态",
+      "order_transaction": "交易 | 交易",
+      "order_transaction_state": "支付状态 | 支付状态",
+      "payment_method": "支付方式 | 支付方式",
+      "privacy": "隐私政策",
+      "plugin_manager": "插件",
+      "product": "商品 | 商品",
+      "product_manufacturer": "制造商 | 制造商",
+      "product_media": "商品媒体 | 商品媒体",
+      "product_price": "商品价格 | 商品价格",
+      "product_stream": "商品组 | 商品组",
+      "product_review": "评价 | 评价",
+      "product_variation": "变体 | 变体",
+      "promotion": "促销 | 促销",
+      "promotion_order_rule": "订单规则 | 订单规则",
+      "promotion_cart_rule": "购物车规则 | 购物车规则",
+      "promotion_persona_rule": "促销人群 | 促销人群",
+      "rule": "规则 | 规则",
+      "rule_condition": "条件 | 条件",
+      "sales_channel": "销售渠道 | 销售渠道",
+      "sales_channel_type": "销售渠道类型 | 销售渠道类型",
+      "salutation": "称谓 | 称谓",
+      "seo_url": "SEO URL | SEO URL",
+      "shipping_method": "配送方式 | 配送方式",
+      "snippet": "文本模块 | 文本模块",
+      "tag": "标签 | 标签",
+      "tax": "税",
+      "tax_rule": "税规则 | 税规则",
+      "theme": "主题 | 主题",
+      "unit": "计量单位 | 计量单位",
+      "user": "用户",
+      "landing_page": "落地页 | 落地页",
+      "delivery_time": "配送时间 | 配送时间",
+      "import_export_profile": "导入/导出配置 | 导入/导出配置",
+      "feature_set": "模板 | 模板",
+      "property_group": "属性组 | 属性组",
+      "property_group_option": "属性组选项 | 属性组选项",
+      "document_base_config": "单据基本设置 | 单据基本设置",
+      "product_feature_set": "新建模板 | 新建模板",
+      "custom-field-set": "自定义字段集",
+      "store_settings": "商品排序",
+      "flow": "流程 | 流程",
+      "flow_template": "流程模板 | 流程模板",
+      "module": "模块",
+      "frequently_used": "常用",
+      "recently_searched": "最近搜索",
+      "flow_sequence": "流程"
+    },
+    "day-of-week": {
+      "monday": "星期一",
+      "tuesday": "星期二",
+      "wednesday": "星期三",
+      "thursday": "星期四",
+      "friday": "星期五",
+      "saturday": "星期六",
+      "sunday": "星期日"
+    },
+    "businessEvents": {
+      "checkout_customer_before_login": "客户已提交登录请求",
+      "checkout_customer_changed-payment-method": "客户修改支付方式",
+      "checkout_customer_deleted": "客户账户已删除",
+      "checkout_customer_double_opt_in_guest_order": "访客账户已通过双重确认注册",
+      "checkout_customer_double_opt_in_registration": "客户账户已通过双重确认注册",
+      "checkout_customer_guest_register": "游客账户已注册",
+      "checkout_customer_login": "客户登录",
+      "checkout_customer_logout": "客户退出登录",
+      "checkout_customer_register": "客户账户已注册",
+      "checkout_order_placed": "订单已收到",
+      "checkout_order_payment_method_changed": "订单的支付方式已修改",
+      "contact_form_send": "联系表单已发送",
+      "review_form_send": "评价表单已发送",
+      "customer_group_registration_accepted": "客户组注册申请已通过",
+      "customer_group_registration_declined": "客户组注册申请已拒绝",
+      "customer_recovery_request": "客户申请新密码",
+      "customer_password_changed": "客户密码已修改",
+      "revocation_request_sent": "撤销表单已发送",
+      "mail_after_create_message": "邮件已生成",
+      "mail_before_send": "邮件发送中",
+      "mail_sent": "邮件已发送",
+      "newsletter_confirm": "已确认订阅新闻邮件",
+      "newsletter_register": "邮件订阅注册成功",
+      "newsletter_unsubscribe": "已取消订阅邮件",
+      "newsletter_update": "邮件订阅已更新",
+      "product_export_log": "商品导出已完成",
+      "state_enter_order_state_cancelled": "订单进入已取消状态",
+      "state_enter_order_state_completed": "订单进入已完成状态",
+      "state_enter_order_state_in_progress": "订单进入处理中状态",
+      "state_enter_order_state_open": "订单进入待处理状态",
+      "state_enter_order_delivery_state_cancelled": "配送进入已取消状态",
+      "state_enter_order_delivery_state_open": "配送进入待处理状态",
+      "state_enter_order_delivery_state_returned": "配送达到状态 已退回",
+      "state_enter_order_delivery_state_returned_partially": "配送达到状态 部分退回",
+      "state_enter_order_delivery_state_shipped": "配送进入已发货状态",
+      "state_enter_order_delivery_state_shipped_partially": "配送进入部分发货状态",
+      "state_enter_order_transaction_state_authorized": "支付进入已授权状态",
+      "state_enter_order_transaction_state_cancelled": "支付进入已取消状态",
+      "state_enter_order_transaction_state_chargeback": "支付进入已退款状态",
+      "state_enter_order_transaction_state_failed": "支付进入失败状态",
+      "state_enter_order_transaction_state_in_progress": "支付进入处理中状态",
+      "state_enter_order_transaction_state_open": "支付进入未处理状态",
+      "state_enter_order_transaction_state_paid": "支付进入已付款状态",
+      "state_enter_order_transaction_state_paid_partially": "支付进入部分付款状态",
+      "state_enter_order_transaction_state_refunded": "支付进入已退款状态",
+      "state_enter_order_transaction_state_refunded_partially": "支付进入部分退款状态",
+      "state_enter_order_transaction_state_reminded": "支付进入已发送提醒状态",
+      "state_enter_order_transaction_state_unconfirmed": "支付达到状态 未确认",
+      "state_leave_order_state_cancelled": "订单离开状态 已取消",
+      "state_leave_order_state_completed": "订单离开状态 已完成",
+      "state_leave_order_state_in_progress": "订单离开状态 处理中",
+      "state_leave_order_state_open": "订单离开状态 待处理",
+      "state_leave_order_delivery_state_cancelled": "配送离开状态 已取消",
+      "state_leave_order_delivery_state_open": "配送离开状态 待处理",
+      "state_leave_order_delivery_state_returned": "配送离开状态 已退回",
+      "state_leave_order_delivery_state_returned_partially": "配送离开状态 部分退回",
+      "state_leave_order_delivery_state_shipped": "配送离开状态 已发货",
+      "state_leave_order_delivery_state_shipped_partially": "配送离开状态 部分发货",
+      "state_leave_order_transaction_state_authorized": "支付离开状态 已授权",
+      "state_leave_order_transaction_state_cancelled": "支付离开状态 已取消",
+      "state_leave_order_transaction_state_chargeback": "支付离开已退款状态",
+      "state_leave_order_transaction_state_failed": "支付离开状态 失败",
+      "state_leave_order_transaction_state_in_progress": "支付离开状态 处理中",
+      "state_leave_order_transaction_state_open": "支付离开状态 待处理",
+      "state_leave_order_transaction_state_paid": "支付离开状态 已付款",
+      "state_leave_order_transaction_state_paid_partially": "支付离开状态 部分付款",
+      "state_leave_order_transaction_state_refunded": "支付离开已退款状态",
+      "state_leave_order_transaction_state_refunded_partially": "支付离开状态 部分退款",
+      "state_leave_order_transaction_state_reminded": "支付离开状态 已发送提醒",
+      "state_leave_order_transaction_state_unconfirmed": "支付离开状态 未确认",
+      "user_recovery_request": "用户已提交密码重置申请"
+    },
+    "tax-rates": {
+      "Standard rate": "标准税率",
+      "Reduced rate": "优惠税率",
+      "Reduced rate 2": "大幅优惠税率"
+    },
+    "sw-bulk-edit-modal": {
+      "startBulkEdit": "开始批量修改",
+      "bulkEditModalTitle": "批量修改 - 已选 {count} 个元素 | 批量修改 - 已选 {count} 个元素"
+    },
+    "sw-search-preferences-modal": {
+      "title": "搜索设置",
+      "description": "仅所选元素会出现在搜索结果中。如需详细设置，<span id='sw-search-preferences-modal-link'>打开搜索设置 &#8594;</span>",
+      "columnActive": "启用",
+      "columnModuleName": "模块名称"
+    },
+    "sw-help-center": {
+      "title": "支持",
+      "documentation": {
+        "headline": "需要帮助吗？",
+        "linkText": "查看文档",
+        "linkUrl": "https://docs.shopwell.cn/zh/shopwell-6-zh"
+      },
+      "support": {
+        "headline": "我们随时为你服务！",
+        "paragraph": "在文档中没找到有用信息？请联系 Shopwell 支持，我们会帮你解决。",
+        "linkText": "创建支持请求",
+        "linkUrl": "https://account.shopwell.cn/shops/support"
+      }
+    },
+    "sw-page": {
+      "backButton": "返回"
+    }
+  },
+  "mt-text-editor-toolbar-button-link": {
+    "label": "链接"
+  },
+  "sw-text-editor-toolbar-button-link": {
+    "modalTitle": "插入或编辑链接",
+    "linkTo": "链接到",
+    "linkUrl": "URL",
+    "linkPhone": "电话号码",
+    "linkPhonePrefix": "tel:",
+    "linkDetail": "商品",
+    "linkEmail": "邮箱地址",
+    "linkEmailPlaceholder": "输入邮箱地址 ...",
+    "detailPlaceholder": "选择商品...",
+    "categoryPlaceholder": "选择分类...",
+    "displayAsButton": "显示为按钮",
+    "openInNewTab": "在新标签页打开",
+    "applyLink": "插入链接",
+    "linkType": "链接类型",
+    "removeLink": "移除链接",
+    "linkOptions": {
+      "link": "URL",
+      "product": "商品",
+      "category": "分类",
+      "media": "文件",
+      "email": "邮箱地址",
+      "phoneNumber": "电话号码"
+    },
+    "buttonVariantPrimary": "主要",
+    "buttonVariantSecondary": "次要",
+    "buttonVariantPrimarySmall": "主要（小）",
+    "buttonVariantSecondarySmall": "次要（小）"
+  },
+  "sw-text-editor-toolbar-button-cms-data-mapping": {
+    "label": "插入变量"
+  },
+  "sw-text-editor-toolbar": {
+    "link": {
+      "openInNewTab": "在新标签页打开链接",
+      "displayAsButton": "以按钮形式显示链接",
+      "buttonVariant": "按钮类型",
+      "buttonVariantPrimary": "主要",
+      "buttonVariantSecondary": "次要",
+      "buttonVariantPrimarySmall": "主要（小）",
+      "buttonVariantSecondarySmall": "次要（小）",
+      "linkTo": "链接到",
+      "placeholder": "输入 URL ...",
+      "labelUrl": "URL",
+      "labelType": "链接类型",
+      "labelLink": "链接",
+      "labelProduct": "商品",
+      "labelCategory": "分类",
+      "labelMedia": "文件",
+      "labelEmail": "邮箱地址",
+      "labelPhoneNumber": "电话号码",
+      "placeholderPhoneNumber": "输入电话号码 ...",
+      "placeholderEmail": "输入邮箱地址 ...",
+      "placeholderProduct": "选择商品...",
+      "placeholderCategory": "选择分类..."
+    },
+    "table": {
+      "addHeading": "添加表头",
+      "cols": "列",
+      "rows": "行",
+      "editInfo": "表格可以后续扩展。"
+    },
+    "title": {
+      "format": "格式",
+      "paragraph": "段落",
+      "h1": "标题 1",
+      "h2": "标题 2",
+      "h3": "标题 3",
+      "h4": "标题 4",
+      "h5": "标题 5",
+      "h6": "标题 6",
+      "blockquote": "引用",
+      "text-color": "文字颜色",
+      "bold": "加粗",
+      "data-mapping": "插入变量",
+      "italic": "斜体",
+      "underline": "下划线",
+      "strikethrough": "删除线",
+      "superscript": "上标",
+      "subscript": "下标",
+      "textAlign": "文字对齐",
+      "alignLeft": "左对齐",
+      "alignCenter": "居中对齐",
+      "alignRight": "右对齐",
+      "justify": "两端对齐",
+      "insert-unordered-list": "添加无序列表",
+      "insert-ordered-list": "添加有序列表",
+      "link": "链接",
+      "undo": "撤销",
+      "redo": "重做",
+      "insert-table": "添加表格",
+      "code-switch": "切换编辑模式"
+    }
+  },
+  "sw-tree": {
+    "general": {
+      "placeholderSearch": "搜索 ...",
+      "treeHeadSelected": "已选 {count}",
+      "treeHeadline": "树形结构",
+      "buttonCreate": "创建元素",
+      "actions": {
+        "createSub": "新建子元素",
+        "createBefore": "在上方新建元素",
+        "createAfter": "在下方新建元素",
+        "actionsDisabledInLanguage": "元素只能在系统默认语言中创建。"
+      }
+    },
+    "modal": {
+      "textDeleteConfirm": "确定要删除元素 \"{name}\" 吗？",
+      "textDeleteMultipleConfirm": "确定要删除选中的 \"{count}\" 个元素吗？",
+      "textDeleteChildrenConfirm": "所有下级分类也将被删除。"
+    }
+  },
+  "sw-tree-item": {
+    "toggleTreeItem": "展开/收起树节点 \"{name}\"",
+    "toggleItem": "展开/收起 \"{name}\" 复选框 ",
+    "childrenLabel": "\"{name}\" 的子元素"
+  },
+  "sw-sidebar-collapse": {
+    "collapseIndicator": "隐藏侧边栏"
+  },
+  "sw-category-tree-field": {
+    "emptySearchResults": "未找到分类"
+  },
+  "sw-error": {
+    "general": {
+      "messagePlaceholder": "发生错误。页面无法加载。"
+    }
+  },
+  "sw-property-search": {
+    "placeholderSearch": "搜索变体 ...",
+    "selected": "已选 {count} 个规格 | 已选 {count} 个变体",
+    "noPropertiesFound": "未找到属性值",
+    "noPropertiesFoundDescription": "尝试使用其他搜索词。"
+  },
+  "sw-property-assignment": {
+    "columnGroup": "属性",
+    "columnOptions": "变体",
+    "messageEmptyTitle": "暂无属性",
+    "messageEmptySubline": "要创建组，请前往属性模块。"
+  },
+  "sw-language-info": {
+    "infoTextChildLanguage": "\"{entityDescription}\" 在语言 <span>\"{language}\"</span> 中的显示。该语言继承自",
+    "infoTextRootLanguage": "\"{entityDescription}\" 在语言 <span>\"{language}\"</span> 中的显示。回退为系统默认语言。",
+    "infoTextNewEntity": "\"{entityDescription}\" 以系统默认语言显示。新增数据请始终使用系统默认语言维护。"
+  },
+  "sw-language-switch": {
+    "messageModalUnsavedChanges": "当前语言还有未保存的更改。是否立即保存？",
+    "titleModalUnsavedChanges": "未保存的修改",
+    "titleModalButtonRevertUnsavedChanges": "放弃修改"
+  },
+  "sw-inheritance-warning": {
+    "infoTextInheritedField": "{moduleName} 包含继承字段。只要继承状态处于启用状态，内容就会被继承。点击链接图标可解除字段继承，再次点击图标即可恢复继承状态。"
+  },
+  "sw-license-violation": {
+    "title": "扩展警告",
+    "reload": "重新加载",
+    "alertText": "你的安装中至少有一个扩展存在授权违规。请为该扩展续订订阅，或购买/租赁该扩展（取决于违规类型），以解决授权违规并避免法律后果。\n如果不再使用该扩展，请将其彻底删除。若未采取上述任何措施，Shopwell 保留就授权违规收取罚金的权利。",
+    "deletePlugin": "完全移除扩展",
+    "messageDeleteConfirm": "确定要完全删除扩展 \"{pluginName}\" 吗？",
+    "checkboxMessage": "我已阅读警告并了解可能的后果。",
+    "closeModal": "关闭警告",
+    "ignorePlugin": "永久忽略",
+    "successfullyDeleted": "扩展已删除",
+    "alreadyRemoved": "扩展已被移除",
+    "table": {
+      "plugin": "扩展"
+    }
+  },
+  "sw-sales-channel-switch": {
+    "messageModalUnsavedChanges": "此销售渠道还有未保存的更改。是否立即保存？",
+    "placeholderSelect": "搜索...",
+    "titleModalUnsavedChanges": "未保存的修改",
+    "titleModalButtonRevertUnsavedChanges": "放弃修改",
+    "labelDefaultOption": "所有销售渠道"
+  },
+  "sw-config-form-renderer": {
+    "placeholder": "请填写 \"{name}\" ...",
+    "option": "语言 \"{locale}\" 未设置标签 ...",
+    "configLoadErrorMessage": "加载配置时发生错误： | 加载配置时发生了错误："
+  },
+  "locale": {
+    "de-DE": "德语",
+    "en-GB": "英语（英国）",
+    "bg-BG": "保加利亚语",
+    "bs-BA": "波斯尼亚语",
+    "cs-CZ": "捷克语",
+    "da-DK": "丹麦语",
+    "el-GR": "希腊语",
+    "en-US": "英语（美国）",
+    "es-ES": "西班牙语",
+    "fi-FI": "芬兰语",
+    "fr-FR": "法语",
+    "hi-IN": "印地语",
+    "hr-HR": "克罗地亚语",
+    "hu-HU": "匈牙利语",
+    "id-ID": "印度尼西亚语",
+    "it-IT": "意大利语",
+    "ko-KR": "韩语",
+    "lv-LV": "拉脱维亚语",
+    "nl-NL": "荷兰语",
+    "nn-NO": "挪威语",
+    "pl-PL": "波兰语",
+    "pt-PT": "葡萄牙语",
+    "ro-RO": "罗马尼亚语",
+    "ru-RU": "俄语",
+    "sk-SK": "斯洛伐克语",
+    "sl-SI": "斯洛文尼亚语",
+    "sr-RS": "塞尔维亚语",
+    "sv-SE": "瑞典语",
+    "tr-TR": "土耳其语",
+    "uk-UA": "乌克兰语",
+    "vi-VN": "越南语"
+  },
+  "sw-image-slider": {
+    "imageAlt": "图片 {index} / {total}"
+  },
+  "sw-confirm-modal": {
+    "defaultText": "确定要继续吗？"
+  },
+  "sw-rule-modal": {
+    "modalTitleNew": "创建新的全局规则",
+    "labelDescription": "描述",
+    "placeholderDescription": "为此规则设置描述 ...",
+    "labelName": "名称",
+    "placeholderName": "为此规则设置名称 ...",
+    "labelPriority": "优先级",
+    "placeholderPriority": "为此规则设置优先级 ...",
+    "messageSaveSuccess": "规则 \"{name}\" 已成功保存。",
+    "ruleCard": "条件",
+    "messageSaveError": "保存规则时发生错误",
+    "modalTitleModify": "修改全局规则"
+  },
+  "sw-select-rule-create": {
+    "addNewRule": "创建新规则…"
+  },
+  "sw-shortcut-overview": {
+    "title": "快捷键",
+    "iconTooltip": "按 `{key}` 键打开快捷键概览",
+    "modalTitle": "快捷键",
+    "sectionGeneralShortcuts": "常用快捷键",
+    "sectionAddingItems": "添加元素",
+    "sectionNavigation": "导航",
+    "sectionAccessibility": "无障碍",
+    "disableShortcuts": "禁用快捷键",
+    "function": "功能",
+    "keyboardShortcut": "快捷键",
+    "functionAddProduct": "添加商品",
+    "keyboardShortcutAddProduct": "A P",
+    "functionAddCategory": "添加分类",
+    "keyboardShortcutAddCategory": "A C",
+    "functionAddShoppingExperienceLayout": "添加购物体验布局",
+    "keyboardShortcutAddShoppingExperienceLayout": "A E",
+    "functionAddCustomer": "添加客户",
+    "keyboardShortcutAddCustomer": "A U",
+    "functionAddProperties": "添加属性",
+    "keyboardShortcutAddProperties": "A P R",
+    "functionAddManufacturer": "添加品牌",
+    "keyboardShortcutAddManufacturer": "A M",
+    "functionAddRule": "添加规则",
+    "keyboardShortcutAddRule": "A R",
+    "functionAddSaleschannel": "添加销售渠道",
+    "keyboardShortcutAddSaleschannel": "A S",
+    "functionGoToDashboard": "打开仪表盘",
+    "keyboardShortcutGoToDashboard": "G H",
+    "functionGoToProducts": "打开商品",
+    "keyboardShortcutGoToProducts": "G P",
+    "functionGoToCategories": "打开分类",
+    "keyboardShortcutGoToCategories": "G C",
+    "functionGoToDynamicProductGroups": "打开动态商品组",
+    "keyboardShortcutGoToDynamicProductGroups": "G D",
+    "functionGoToProperties": "打开属性",
+    "keyboardShortcutGoToProperties": "G P R",
+    "functionGoToManufacturers": "打开品牌",
+    "keyboardShortcutGoToManufacturers": "G M",
+    "functionGoToOrders": "打开订单",
+    "keyboardShortcutGoToOrders": "G O",
+    "functionGoToCustomers": "打开客户",
+    "keyboardShortcutGoToCustomers": "G U",
+    "functionGoToShoppingExperience": "打开购物体验",
+    "keyboardShortcutGoToShoppingExperience": "G E",
+    "functionGoToMedia": "打开媒体",
+    "keyboardShortcutGoToMedia": "G M E",
+    "functionGoToPromotion": "打开促销活动",
+    "keyboardShortcutGoToPromotion": "G P O",
+    "functionGoToNewsletterRecipients": "打开邮件订阅者",
+    "keyboardShortcutGoToNewsletterRecipients": "G N",
+    "functionGoToSettingsListing": "打开设置",
+    "keyboardShortcutGoToSettingsListing": "G S",
+    "functionGoToSnippets": "打开文本模块",
+    "keyboardShortcutGoToSnippets": "G S N",
+    "functionGoToPayment": "打开支付方式",
+    "keyboardShortcutGoToPayment": "G S P",
+    "functionGoToShipping": "打开配送方式",
+    "keyboardShortcutGoToShipping": "G S S",
+    "functionGoToRuleBuilder": "打开规则构建器",
+    "keyboardShortcutGoToRuleBuilder": "G S R",
+    "functionGoToPlugins": "打开我的扩展",
+    "keyboardShortcutGoToPlugins": "G A",
+    "functionAccessibilitySkipToContent": "跳过导航",
+    "keyboardShortcutAccessibilitySkipToContent": "Tab Enter",
+    "functionAccessibilityMoveFocusForward": "切换到下一个可聚焦元素",
+    "keyboardShortcutAccessibilityMoveFocusForward": "Tab",
+    "functionAccessibilityMoveFocusBackward": "切换到上一个可聚焦元素",
+    "keyboardShortcutAccessibilityMoveFocusBackward": "Shift-Tab",
+    "functionAccessibilityCloseDialog": "关闭对话框",
+    "keyboardShortcutAccessibilityCloseDialog": "Esc",
+    "functionSpecialShortcutFocusSearch": "聚焦搜索",
+    "keyboardShortcutSpecialShortcutFocusSearch": "f",
+    "functionSpecialShortcutOpenFilters": "打开筛选",
+    "keyboardShortcutSpecialShortcutOpenFilters": "O F",
+    "functionSpecialShortcutToggleNavigation": "展开/收起导航",
+    "keyboardShortcutSpecialShortcutToggleNavigation": "S",
+    "functionSpecialShortcutCycleTheme": "修改外观",
+    "keyboardShortcutSpecialShortcutCycleTheme": "C T",
+    "functionSpecialShortcutShortcutListing": "快捷键",
+    "keyboardShortcutSpecialShortcutShortcutListing": "Shift-?",
+    "functionSpecialShortcutSaveDetailView": "保存当前视图",
+    "keyboardShortcutSpecialShortcutSaveDetailViewWindows": "Alt-S",
+    "keyboardShortcutSpecialShortcutSaveDetailViewMac": "Control-S",
+    "keyboardShortcutSpecialShortcutSaveDetailViewLinux": "Alt-S",
+    "functionSpecialShortcutCancelDetailView": "取消当前详情视图",
+    "keyboardShortcutSpecialShortcutCancelDetailView": "Esc",
+    "functionSpecialShortcutClearCache": "清空缓存",
+    "keyboardShortcutSpecialShortcutClearCacheWindows": "Alt-C",
+    "keyboardShortcutSpecialShortcutClearCacheMac": "Control-C",
+    "keyboardShortcutSpecialShortcutClearCacheLinux": "Alt-C"
+  },
+  "sw-discard-changes-modal": {
+    "title": "放弃未保存的修改？",
+    "message": "存在未保存的更改。是否离开页面并放弃更改？",
+    "actions": {
+      "discard": "放弃修改",
+      "keepEditing": "继续编辑"
+    }
+  },
+  "sw-maintain-currencies-modal": {
+    "title": "维护货币",
+    "columnPrice": "价格（含税 / 不含税）",
+    "columnListPriceHeader": "划线价（含税 / 不含税）",
+    "columnReferencePriceHeader": "最低价格（最近 30 天，含税 / 不含税）"
+  },
+  "sw-privileges": {
+    "tooltip": {
+      "warning": "你没有所需的权限。"
+    },
+    "error": {
+      "description": "你缺少执行此操作所需的权限，请向管理员申请。所需权限为："
+    }
+  },
+  "sw-custom-field-set-renderer": {
+    "labelCustomFieldSetSelectSwitch": "选择自定义字段集",
+    "placeholderCustomFieldSetSelect": "选择自定义字段集 ...",
+    "labelCustomFieldSetSelect": "自定义字段集",
+    "messagePluginSets": "插件自定义字段集 (无法移除)"
+  },
+  "sw-rating-stars": {
+    "ratingTooltipText": "{max} 星中的 {actual} 星"
+  },
+  "sw-app": {
+    "component": {
+      "sw-app-actions": {
+        "messageErrorFetchButtons": "应用操作加载出错。",
+        "closeWindow": "关闭窗口",
+        "iframeModalConfirmMessage": "确定要关闭 \"{title}\" 吗？",
+        "iframeModalConfirmMessageDescription": "请确保所有进程已完成。",
+        "dontAskMeAgain": "不再询问我"
+      },
+      "sw-app-shop-id-change-modal": {
+        "title": "建议更改商城 ID",
+        "description": {
+          "explanation": "检测到你的系统和环境发生变更，可能意味着店铺标识已变化。在你选择某一选项之前，将不会与应用进行通信，以避免店铺识别问题或数据损坏。",
+          "shopId": {
+            "title": "什么是商城 ID？",
+            "explanation": "店铺 ID 是 Shopwell 应用系统的一部分。已注册你店铺的应用会用其唯一标识你的店铺。因此，店铺 ID 必须保持唯一，不能在不同店铺之间共用，即使是同一店铺的不同环境（例如预发布或测试副本）也不可共用。"
+          }
+        },
+        "affectedApps": "以下应用受影响：",
+        "detectedChanges": "检测到以下更改：",
+        "success": "商城 ID 更新成功。",
+        "error": "商城 ID 更新失败。",
+        "oldValue": "旧值",
+        "newValue": "新值",
+        "remindMeLater": "稍后提醒",
+        "selectAnOption": "请仔细阅读可用选项，选择最适合你场景的一项：",
+        "fingerprints": {
+          "app_url": {
+            "label": "APP_URL 环境变量",
+            "description": "应用使用 APP_URL 连接你商城的 Admin API。"
+          },
+          "installation_path": {
+            "label": "安装路径"
+          },
+          "sales_channel_domain_urls": {
+            "label": "销售渠道域名",
+            "description": "当现有域名被修改、删除或新增域名时，销售渠道域名的校验和会发生变化。"
+          }
+        },
+        "strategies": {
+          "move-shop-permanently": {
+            "description": "如果你已将店铺永久迁移到其他基础设施或新环境，通常应选择此选项。Shopwell 会使用相同的店铺 ID 通知应用（即重新向应用服务器注册），应用保持安装状态。你的店铺将继续以原店铺身份标识。这意味着新实例会覆盖原安装的应用数据。",
+            "name": "保留商城 ID"
+          },
+          "reinstall-apps": {
+            "description": "如果你复制了店铺（例如生产环境店铺的预发布或测试环境），且希望在该副本中继续使用这些应用，通常应选择此选项。Shopwell 会重新安装应用，并使用新的店铺 ID 重新向应用服务器注册。你的店铺将以新店铺身份标识。",
+            "name": "生成新的商城 ID"
+          },
+          "uninstall-apps": {
+            "name": "卸载应用",
+            "description": "如果你复制了店铺（例如生产环境店铺的预发布或测试环境），且不希望在该副本中使用这些应用，通常应选择此选项。Shopwell 会直接删除应用，不通知应用服务器，并生成新的店铺 ID，你的店铺将以新店铺身份标识。"
+          }
+        }
+      },
+      "sw-app-wrong-app-url-modal": {
+        "title": "APP_URL 配置错误",
+        "explanationHeader": "连接你的扩展时出错。",
+        "explanation": "由于系统配置错误，扩展无法连接到你的商城。",
+        "textDetails": "技术详情：APP_URL 配置有误。",
+        "labelLearnMoreButton": "了解更多",
+        "linkToDocsArticle": "https://docs.shopwell.cn/zh/shopwell-6-zh/tutorials-and-faq/notes-to-the-APP-URL"
+      }
+    }
+  },
+  "sw-wizard": {
+    "finishButton": "完成",
+    "nextButton": "继续"
+  },
+  "sw-base-filter": {
+    "resetButton": "重置"
+  },
+  "sw-boolean-filter": {
+    "placeholder": "全部",
+    "active": "启用",
+    "inactive": "未启用"
+  },
+  "sw-date-filter": {
+    "selectTimeframe": {
+      "placeholder": "选择时间范围"
+    }
+  },
+  "sw-existence-filter": {
+    "placeholder": "全部",
+    "noCriteria": "无 {criteriaName}",
+    "hasCriteria": "具有 {criteriaName}"
+  },
+  "sw-filter-panel": {
+    "titleSidebarItemFilter": "筛选"
+  },
+  "sw-sidebar-filter-panel": {
+    "resetButton": "全部重置"
+  },
+  "sw-empty-state": {
+    "messageNoResultTitle": "未找到内容",
+    "messageNoResultSublineSimple": "修改筛选条件或搜索词以查找结果。",
+    "messageNoResultSubline": "编辑筛选或搜索词以找到结果。另请检查搜索配置。",
+    "messageNoResultSublineBefore": "编辑你的筛选或搜索词以找到结果。另请检查",
+    "messageNoResultSublineLink": "配置",
+    "messageNoResultLink": "前往搜索设置",
+    "messageNoResultSublineAfter": "你的搜索。"
+  },
+  "sw-restricted-rules": {
+    "restrictedAssignment": {
+      "general": "此规则使用的条件不允许分配给 {relation}。",
+      "productPrices": "定价规则",
+      "shippingMethodPrices": "定价规则",
+      "shippingMethodPriceCalculations": "运费计算规则",
+      "shippingMethods": "配送方式可用规则",
+      "paymentMethods": "支付方式可用规则",
+      "flowSequences": "流程构建器规则",
+      "personaPromotions": "客户规则|客户规则",
+      "orderPromotions": "订单规则|订单规则",
+      "cartPromotions": "购物车规则|购物车规则",
+      "promotionDiscounts": "商品规则|商品规则",
+      "promotionSetGroups": "商品规则|商品规则",
+      "notEqualsViolationTooltip": "此规则使用的条件会阻止分配给 {entityLabel}。这些条件是：{conditions}。",
+      "equalsAnyViolationTooltip": "要分配给 {entityLabel}，此规则必须使用以下至少一个条件：{conditions}。"
+    },
+    "restrictedConditions": {
+      "restrictedConditionTooltip": "该规则已分配给：<br/><br/>{assignments}<br/><br/>在此场景下无法使用该条件。",
+      "relation": {
+        "flowTrigger": "带触发器的流程：{assignments}",
+        "promotion": "促销活动作为 {assignments}",
+        "productPrices": "商品作为 {assignments}",
+        "shippingMethods": "配送方式作为 {assignments}",
+        "shippingMethodPrices": "配送方式作为 {assignments}",
+        "paymentMethods": "支付方式作为 {assignments}"
+      }
+    },
+    "and": "和",
+    "or": "或"
+  },
+  "sw-ai-copilot-warning": {
+    "text": "AI 回答可能不准确或具有误导性。"
+  },
+  "sw-in-app-purchase-checkout": {
+    "exsTitle": "启用 Shopwell 扩展商店"
+  },
+  "sidebar": {
+    "ariaLabelButtonClose": "关闭侧边栏",
+    "ariaLabelButtonOpen": "打开侧边栏",
+    "ariaLabelButtonCollapse": "最小化侧边栏"
+  },
+  "help-center": {
+    "sidebar": {
+      "title": "帮助",
+      "ariaLabelButtonOpen": "打开帮助",
+      "ariaLabelButtonClose": "关闭帮助",
+      "ariaLabelButtonShortcut": "打开快捷键概览",
+      "support": {
+        "title": "支持",
+        "documentation": {
+          "text": "文档",
+          "href": "https://docs.shopwell.cn/zh"
+        },
+        "createSupportRequest": {
+          "text": "创建支持请求",
+          "href": "https://account.shopwell.cn/"
+        }
+      }
+    }
+  },
+  "sw-datepicker": {
+    "date": {
+      "placeholder": "选择日期..."
+    },
+    "time": {
+      "placeholder": "选择时间..."
+    },
+    "datetime": {
+      "placeholder": "选择日期和时间..."
+    }
+  },
+  "sw-context-button": {
+    "ariaLabel": "打开上下文菜单"
+  },
+  "sw-vector-field": {
+    "lock-uniform-scale": "锁定等比缩放",
+    "unlock-uniform-scale": "解锁等比缩放"
+  },
+  "sw-model-editor": {
+    "titleModal": "模型编辑器",
+    "open-model-editor-tooltip": "打开模型编辑器",
+    "edit-options": {
+      "move-tooltip": "移动对象",
+      "rotate-tooltip": "旋转对象",
+      "scale-tooltip": "缩放对象"
+    },
+    "properties": {
+      "transformation": {
+        "label": "变换",
+        "position": {
+          "label": "位置"
+        },
+        "rotation": {
+          "label": "旋转"
+        },
+        "scale": {
+          "label": "缩放"
+        }
+      }
+    }
+  },
+  "sw-request-consent-modal": {
+    "title": "需要授权",
+    "message": "扩展 {appName} 请求你同意以下事项：{consentName}",
+    "readMore": "更多信息请见：",
+    "acceptButton": "同意",
+    "declineButton": "拒绝",
+    "updateFailed": "刷新你的同意状态时出错。将保留你之前的决定（如有）。"
+  },
+  "sw-ui-shell-update-2026-modal": {
+    "title": "为你的后台带来全新外观",
+    "nextButton": "继续",
+    "finishButton": "完成",
+    "seenSaveError": "你的选择无法保存。此对话框可能会再次显示。",
+    "pages": {
+      "adminNavigation": {
+        "headline": "更清晰、更易浏览的导航",
+        "description": "随着 Shopwell 后台不断发展，功能和导航项也越来越多。因此我们重新设计了导航，提供更好的概览、更清晰的选中状态、更流畅的子菜单动画、更好的可读性，以及更完善的键盘操作体验。"
+      },
+      "darkMode": {
+        "headline": "深色外观",
+        "badge": "实验性",
+        "description": "后台现提供深色界面，以提升可访问性并契合你的个人喜好。",
+        "profileSettingsLink": "你的个人资料设置",
+        "themeSelectLabel": "外观",
+        "themeSelectHint": "你可随时在 {profileSettingsLink} 中修改此设置。",
+        "themeSaveError": "外观无法保存。"
+      }
+    }
+  }
+}

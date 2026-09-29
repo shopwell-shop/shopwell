@@ -61,41 +61,41 @@ class SearchKeywordUpdaterTest extends TestCase
     /**
      * @param array<mixed> $productData
      * @param string[] $englishKeywords
-     * @param string[] $germanKeywords
+     * @param string[] $chineseKeywords
      * @param string[] $additionalDictionaries
      */
     #[DataProvider('productKeywordProvider')]
-    public function testItUpdatesKeywordsAndDictionary(array $productData, IdsCollection $ids, array $englishKeywords, array $germanKeywords, array $additionalDictionaries = []): void
+    public function testItUpdatesKeywordsAndDictionary(array $productData, IdsCollection $ids, array $englishKeywords, array $chineseKeywords, array $additionalDictionaries = []): void
     {
         $this->productRepository->create([$productData], Context::createDefaultContext());
 
         $this->assertKeywords($ids->get('1000'), Defaults::LANGUAGE_SYSTEM, $englishKeywords);
-        $this->assertKeywords($ids->get('1000'), $this->getDeDeLanguageId(), $germanKeywords);
+        $this->assertKeywords($ids->get('1000'), $this->getZhCnLanguageId(), $chineseKeywords);
 
         $expectedDictionary = array_merge($englishKeywords, $additionalDictionaries);
         sort($expectedDictionary);
         $this->assertDictionary(Defaults::LANGUAGE_SYSTEM, $expectedDictionary);
-        $expectedDictionary = array_merge($germanKeywords, $additionalDictionaries);
+        $expectedDictionary = array_merge($chineseKeywords, $additionalDictionaries);
         sort($expectedDictionary);
-        $this->assertDictionary($this->getDeDeLanguageId(), $expectedDictionary);
+        $this->assertDictionary($this->getZhCnLanguageId(), $expectedDictionary);
     }
 
     /**
      * @param array<mixed> $productData
      * @param string[] $englishKeywords
-     * @param string[] $germanKeywords
+     * @param string[] $chineseKeywords
      * @param string[] $additionalDictionaries
      */
     #[DataProvider('productKeywordProvider')]
-    public function testItUpdatesKeywordsForAvailableLanguagesOnly(array $productData, IdsCollection $ids, array $englishKeywords, array $germanKeywords, array $additionalDictionaries = []): void
+    public function testItUpdatesKeywordsForAvailableLanguagesOnly(array $productData, IdsCollection $ids, array $englishKeywords, array $chineseKeywords, array $additionalDictionaries = []): void
     {
         $context = Context::createDefaultContext();
 
         /** @var Criteria<array<string, string>> $criteria */
         $criteria = new Criteria();
 
-        // Delete sales channel de-DE language associations to ensure only default language is used to create keywords.
-        $criteria->addFilter(new EqualsFilter('languageId', $this->getDeDeLanguageId()));
+        // Delete sales channel zh-CN language associations to ensure only default language is used to create keywords.
+        $criteria->addFilter(new EqualsFilter('languageId', $this->getZhCnLanguageId()));
 
         $salesChannelLanguageIds = $this->salesChannelLanguageRepository->searchIds($criteria, $context)->getIds();
         $this->salesChannelLanguageRepository->delete($salesChannelLanguageIds, $context);
@@ -108,8 +108,8 @@ class SearchKeywordUpdaterTest extends TestCase
         sort($expectedDictionary);
         $this->assertDictionary(Defaults::LANGUAGE_SYSTEM, $expectedDictionary);
 
-        $this->assertLanguageHasNoKeywords($this->getDeDeLanguageId());
-        $this->assertLanguageHasNoDictionary($this->getDeDeLanguageId());
+        $this->assertLanguageHasNoKeywords($this->getZhCnLanguageId());
+        $this->assertLanguageHasNoDictionary($this->getZhCnLanguageId());
     }
 
     public function testCustomFields(): void
@@ -276,7 +276,7 @@ class SearchKeywordUpdaterTest extends TestCase
                 (new ProductBuilder($ids, '1000'))
                     ->price(10)
                     ->name('Test product')
-                    ->translation($ids->get('language'), 'name', 'Test produkt')
+                    ->translation($ids->get('language'), 'name', 'Producto de prueba')
                     ->build(),
             ],
             Context::createDefaultContext()
@@ -296,8 +296,8 @@ class SearchKeywordUpdaterTest extends TestCase
     }
 
     /**
-     * Regression test for #13330: a sales channel language (de-CH) that inherits from a parent
-     * language (de-DE) which is itself not assigned to any sales channel. Products that only have a
+     * Regression test for #13330: a sales channel language (zh-SG) that inherits from a parent
+     * language (zh-CN) which is itself not assigned to any sales channel. Products that only have a
      * translation in the parent language were missing from product_search_keyword for the inheriting
      * language, so they could not be found in the storefront search.
      */
@@ -305,35 +305,35 @@ class SearchKeywordUpdaterTest extends TestCase
     {
         $ids = new IdsCollection();
         $context = Context::createDefaultContext();
-        $deDeId = $this->getDeDeLanguageId();
+        $zhCnId = $this->getZhCnLanguageId();
 
         $analyzer = static::getContainer()->get(ProductSearchKeywordAnalyzer::class);
         static::assertInstanceOf(ProductSearchKeywordAnalyzer::class, $analyzer);
 
-        // Create de-CH inheriting from de-DE
+        // Create zh-SG inheriting from zh-CN
         $languageRepository = static::getContainer()->get('language.repository');
         static::assertInstanceOf(EntityRepository::class, $languageRepository);
         $languageRepository->create([
             [
-                'id' => $ids->get('de-CH'),
-                'name' => 'German (Switzerland)',
-                'localeId' => $this->getLocaleIdByIsoCode('de-CH'),
-                'parentId' => $deDeId,
+                'id' => $ids->get('zh-SG'),
+                'name' => '简体中文 (新加坡)',
+                'localeId' => $this->getLocaleIdByIsoCode('zh-SG'),
+                'parentId' => $zhCnId,
                 'active' => true,
             ],
         ], $context);
 
-        // Make de-CH a sales channel language and remove de-DE from sales channels, so the parent
-        // language (de-DE) is never indexed on its own and cannot provide carried-over keywords.
+        // Make zh-SG a sales channel language and remove zh-CN from sales channels, so the parent
+        // language (zh-CN) is never indexed on its own and cannot provide carried-over keywords.
         $this->salesChannelLanguageRepository->create([
-            ['salesChannelId' => TestDefaults::SALES_CHANNEL, 'languageId' => $ids->get('de-CH')],
+            ['salesChannelId' => TestDefaults::SALES_CHANNEL, 'languageId' => $ids->get('zh-SG')],
         ], $context);
 
-        /** @var Criteria<array<string, string>> $deDeSalesChannelLanguageCriteria */
-        $deDeSalesChannelLanguageCriteria = new Criteria();
-        $deDeSalesChannelLanguageCriteria->addFilter(new EqualsFilter('languageId', $deDeId));
-        $deDeSalesChannelLanguageIds = $this->salesChannelLanguageRepository->searchIds($deDeSalesChannelLanguageCriteria, $context)->getIds();
-        $this->salesChannelLanguageRepository->delete($deDeSalesChannelLanguageIds, $context);
+        /** @var Criteria<array<string, string>> $zhCnSalesChannelLanguageCriteria */
+        $zhCnSalesChannelLanguageCriteria = new Criteria();
+        $zhCnSalesChannelLanguageCriteria->addFilter(new EqualsFilter('languageId', $zhCnId));
+        $zhCnSalesChannelLanguageIds = $this->salesChannelLanguageRepository->searchIds($zhCnSalesChannelLanguageCriteria, $context)->getIds();
+        $this->salesChannelLanguageRepository->delete($zhCnSalesChannelLanguageIds, $context);
 
         // Only search the plain translated product fields. This removes the association based
         // "manufacturerId IS NULL" branch in buildCriteria() (added for a different edge case), so the
@@ -342,13 +342,13 @@ class SearchKeywordUpdaterTest extends TestCase
             'UPDATE product_search_config_field SET searchable = 0 WHERE field = \'manufacturer.name\''
         );
 
-        // Product only has a de-DE translation besides the required system default name. Indexing is
+        // Product only has a zh-CN translation besides the required system default name. Indexing is
         // left enabled so the product is fully indexed, which the inheritance-aware fetch relies on.
         $this->productRepository->create([
             (new ProductBuilder($ids, '1000'))
                 ->price(10)
                 ->name('Test product')
-                ->translation($deDeId, 'name', 'Test produkt')
+                ->translation($zhCnId, 'name', '测试 产品')
                 ->build(),
         ], $context);
 
@@ -362,12 +362,12 @@ class SearchKeywordUpdaterTest extends TestCase
         $searchKeywordUpdater->reset();
         $searchKeywordUpdater->update([$ids->get('1000')], Context::createDefaultContext());
 
-        // de-CH inherits the de-DE translation, so its keywords must be derived from "Test produkt".
-        $this->assertKeywords($ids->get('1000'), $ids->get('de-CH'), [
+        // zh-SG inherits the zh-CN translation, so its keywords must be derived from "测试 产品".
+        $this->assertKeywords($ids->get('1000'), $ids->get('zh-SG'), [
             '1000', // productNumber
-            'produkt', // part of inherited de-DE name
-            'test', // part of inherited de-DE name
-            'test produkt', // inherited de-DE name
+            '产品', // part of inherited zh-CN name
+            '测试', // part of inherited zh-CN name
+            '测试 产品', // inherited zh-CN name
         ]);
     }
 
@@ -382,7 +382,7 @@ class SearchKeywordUpdaterTest extends TestCase
             (new ProductBuilder($idsCollection, '1000'))
                 ->price(10)
                 ->name('Test product')
-                ->translation('de-DE', 'name', 'Test produkt')
+                ->translation('zh-CN', 'name', '测试 产品')
                 ->build(),
             $idsCollection,
             [
@@ -393,9 +393,9 @@ class SearchKeywordUpdaterTest extends TestCase
             ],
             [
                 '1000', // productNumber
-                'produkt', // part of name
-                'test', // part of name
-                'test produkt', // product name
+                '产品', // part of name
+                '测试', // part of name
+                '测试 产品', // product name
             ],
         ];
         yield 'missing translation falls back to parent language keywords' => [
@@ -421,7 +421,7 @@ class SearchKeywordUpdaterTest extends TestCase
             (new ProductBuilder($idsCollection, '1000'))
                 ->price(10)
                 ->name('Test product')
-                ->manufacturer('manufacturer', ['de-DE' => ['name' => 'Hersteller']])
+                ->manufacturer('manufacturer', ['zh-CN' => ['name' => '制造商']])
                 ->build(),
             $idsCollection,
             [
@@ -433,16 +433,16 @@ class SearchKeywordUpdaterTest extends TestCase
             ],
             [
                 '1000', // productNumber
-                'Hersteller', // manufacturer name
                 'product', // part of name
                 'test', // part of name
                 'test product', // product name
+                '制造商', // manufacturer name
             ],
         ];
         yield 'variant inherits translated product name from parent' => [
             (new ProductBuilder($idsCollection, '1001'))
                 ->name('Test product')
-                ->translation('de-DE', 'name', 'Test produkt')
+                ->translation('zh-CN', 'name', '测试 产品')
                 ->price(5)
                 ->variant(
                     (new ProductBuilder($idsCollection, '1000'))
@@ -460,16 +460,16 @@ class SearchKeywordUpdaterTest extends TestCase
             ],
             [
                 '1000', // productNumber
-                'produkt', // part of name
-                'test', // part of name
-                'test produkt', // product name
+                '产品', // part of name
+                '测试', // part of name
+                '测试 产品', // product name
             ],
             ['1001'],
         ];
         yield 'variant inherits translated manufacturer name from parent' => [
             (new ProductBuilder($idsCollection, '1001'))
                 ->name('Test product')
-                ->manufacturer('manufacturer', ['de-DE' => ['name' => 'Hersteller']])
+                ->manufacturer('manufacturer', ['zh-CN' => ['name' => '制造商']])
                 ->price(5)
                 ->variant(
                     (new ProductBuilder($idsCollection, '1000'))
@@ -488,10 +488,10 @@ class SearchKeywordUpdaterTest extends TestCase
             ],
             [
                 '1000', // productNumber
-                'Hersteller', // manufacturer name
                 'product', // part of name
                 'test', // part of name
                 'test product', // product name
+                '制造商', // manufacturer name
             ],
             ['1001'],
         ];

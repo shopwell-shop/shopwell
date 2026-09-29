@@ -31,33 +31,33 @@ class Migration1578042218DefaultPages extends MigrationStep
         $pages = [
             [
                 'key' => 'core.basicInformation.shippingPaymentInfoPage',
-                'de' => 'Versand und Zahlung',
+                'zh' => '配送与支付',
                 'en' => 'Payment / Shipping',
             ],
             [
                 'key' => 'core.basicInformation.tosPage',
-                'de' => 'AGB',
+                'zh' => '服务条款',
                 'en' => 'Terms of service',
             ],
             [
                 'key' => 'core.basicInformation.revocationPage',
-                'de' => 'Widerrufsbelehrungen',
+                'zh' => '撤销权说明',
                 'en' => 'Right of rescission',
             ],
             [
                 'key' => 'core.basicInformation.privacyPage',
-                'de' => 'Datenschutz',
+                'zh' => '隐私政策',
                 'en' => 'Privacy',
             ],
             [
                 'key' => 'core.basicInformation.imprintPage',
-                'de' => 'Impressum',
+                'zh' => '法律声明',
                 'en' => 'Imprint',
             ],
         ];
 
         foreach ($pages as $page) {
-            $id = $this->createEmptyPage($page['en'], $page['de'], $connection);
+            $id = $this->createEmptyPage($page['en'], $page['zh'], $connection);
 
             $connection->insert('system_config', [
                 'id' => Uuid::randomBytes(),
@@ -72,7 +72,7 @@ class Migration1578042218DefaultPages extends MigrationStep
     {
     }
 
-    private function createEmptyPage(string $titleEn, string $titleDe, Connection $connection): string
+    private function createEmptyPage(string $titleEn, string $titleZh, Connection $connection): string
     {
         $id = Uuid::randomBytes();
         $sectionId = Uuid::randomBytes();
@@ -80,7 +80,7 @@ class Migration1578042218DefaultPages extends MigrationStep
         $slotId = Uuid::randomBytes();
         $versionId = $connection->fetchOne('SELECT version_id FROM cms_slot LIMIT 1');
         $languageIdDefault = $this->getLanguageIdByLocale($connection, 'en-GB');
-        $languageIdDe = $this->getLanguageIdByLocale($connection, 'de-DE');
+        $languageIdZhCn = $this->getLanguageIdByLocale($connection, 'zh-CN');
 
         $connection->insert('cms_page', [
             'id' => $id,
@@ -92,7 +92,7 @@ class Migration1578042218DefaultPages extends MigrationStep
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
 
-        if ($languageIdDefault !== $languageIdDe) {
+        if ($languageIdDefault !== $languageIdZhCn) {
             $connection->insert('cms_page_translation', [
                 'cms_page_id' => $id,
                 'language_id' => $languageIdDefault,
@@ -102,11 +102,11 @@ class Migration1578042218DefaultPages extends MigrationStep
             ]);
         }
 
-        if ($languageIdDe) {
+        if ($languageIdZhCn) {
             $connection->insert('cms_page_translation', [
                 'cms_page_id' => $id,
-                'language_id' => $languageIdDe,
-                'name' => $titleDe,
+                'language_id' => $languageIdZhCn,
+                'name' => $titleZh,
                 'custom_fields' => null,
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             ]);
@@ -160,9 +160,9 @@ class Migration1578042218DefaultPages extends MigrationStep
             ],
         ];
 
-        $contentDe = [
+        $contentZhCn = [
             'content' => [
-                'value' => \sprintf('<h2>%s</h2><hr><p>%s</p>', $titleDe, 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.'),
+                'value' => \sprintf('<h2>%s</h2><hr><p>%s</p>', $titleZh, 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.'),
                 'source' => 'static',
             ],
             'verticalAlign' => [
@@ -171,7 +171,7 @@ class Migration1578042218DefaultPages extends MigrationStep
             ],
         ];
 
-        if ($languageIdDefault !== $languageIdDe) {
+        if ($languageIdDefault !== $languageIdZhCn) {
             $connection->insert('cms_slot_translation', [
                 'cms_slot_id' => $slotId,
                 'cms_slot_version_id' => $versionId,
@@ -181,12 +181,12 @@ class Migration1578042218DefaultPages extends MigrationStep
             ]);
         }
 
-        if ($languageIdDe) {
+        if ($languageIdZhCn) {
             $connection->insert('cms_slot_translation', [
                 'cms_slot_id' => $slotId,
                 'cms_slot_version_id' => $versionId,
-                'language_id' => $languageIdDe,
-                'config' => json_encode($contentDe),
+                'language_id' => $languageIdZhCn,
+                'config' => json_encode($contentZhCn),
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             ]);
         }

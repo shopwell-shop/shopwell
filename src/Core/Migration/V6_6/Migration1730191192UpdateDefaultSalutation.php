@@ -31,7 +31,7 @@ class Migration1730191192UpdateDefaultSalutation extends MigrationStep
         }
 
         $this->updateSalutationForLanguage($connection, $salutationId, 'en-GB', 'Dear');
-        $this->updateSalutationForLanguage($connection, $salutationId, 'de-DE', 'Guten Tag');
+        $this->updateSalutationForLanguage($connection, $salutationId, 'zh-CN', '您好');
     }
 
     private function updateSalutationForLanguage(Connection $connection, string $salutationId, string $locale, string $letterName): void

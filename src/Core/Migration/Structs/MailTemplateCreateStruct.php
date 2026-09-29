@@ -15,25 +15,25 @@ class MailTemplateCreateStruct
 
     protected string $enPlain;
 
-    protected string $deHtml;
+    protected string $zhHtml;
 
-    protected string $dePlain;
+    protected string $zhPlain;
 
     public function __construct(
         protected string $mailTemplateFixtureDirectoryName,
         protected string $enSubject,
-        protected string $deSubject,
+        protected string $zhSubject,
         protected string $enDescription,
-        protected string $deDescription,
+        protected string $zhDescription,
         protected string $enSenderName,
-        protected string $deSenderName,
+        protected string $zhSenderName,
         protected bool $isSystemDefault = true,
     ) {
         $filesystem = new Filesystem();
         $path = __DIR__ . '/../Fixtures/mails/' . $this->mailTemplateFixtureDirectoryName;
 
         $this->enHtml = $filesystem->readFile($path . '/en-html.html.twig');
-        $this->deHtml = $filesystem->readFile($path . '/de-html.html.twig');
+        $this->zhHtml = $filesystem->readFile($path . '/zh-html.html.twig');
 
         if ($filesystem->exists($path . '/en-plain.txt.twig')) {
             $this->enPlain = $filesystem->readFile($path . '/en-plain.txt.twig');
@@ -41,10 +41,10 @@ class MailTemplateCreateStruct
             $this->enPlain = $filesystem->readFile($path . '/en-plain.html.twig');
         }
 
-        if ($filesystem->exists($path . '/de-plain.txt.twig')) {
-            $this->dePlain = $filesystem->readFile($path . '/de-plain.txt.twig');
+        if ($filesystem->exists($path . '/zh-plain.txt.twig')) {
+            $this->zhPlain = $filesystem->readFile($path . '/zh-plain.txt.twig');
         } else {
-            $this->dePlain = $filesystem->readFile($path . '/de-plain.html.twig');
+            $this->zhPlain = $filesystem->readFile($path . '/zh-plain.html.twig');
         }
     }
 
@@ -58,14 +58,14 @@ class MailTemplateCreateStruct
         return $this->enPlain;
     }
 
-    public function getDeHtml(): string
+    public function getZhHtml(): string
     {
-        return $this->deHtml;
+        return $this->zhHtml;
     }
 
-    public function getDePlain(): string
+    public function getZhPlain(): string
     {
-        return $this->dePlain;
+        return $this->zhPlain;
     }
 
     public function getEnSubject(): string
@@ -73,9 +73,9 @@ class MailTemplateCreateStruct
         return $this->enSubject;
     }
 
-    public function getDeSubject(): string
+    public function getZhSubject(): string
     {
-        return $this->deSubject;
+        return $this->zhSubject;
     }
 
     public function getEnDescription(): string
@@ -83,9 +83,9 @@ class MailTemplateCreateStruct
         return $this->enDescription;
     }
 
-    public function getDeDescription(): string
+    public function getZhDescription(): string
     {
-        return $this->deDescription;
+        return $this->zhDescription;
     }
 
     public function getEnSenderName(): string
@@ -93,9 +93,9 @@ class MailTemplateCreateStruct
         return $this->enSenderName;
     }
 
-    public function getDeSenderName(): string
+    public function getZhSenderName(): string
     {
-        return $this->deSenderName;
+        return $this->zhSenderName;
     }
 
     public function isSystemDefault(): bool

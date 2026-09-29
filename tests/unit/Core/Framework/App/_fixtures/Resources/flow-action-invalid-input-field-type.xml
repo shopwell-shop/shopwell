@@ -5,9 +5,9 @@
             <meta>
                 <name>abc.cde.ccc</name>
                 <label>First action app</label>
-                <label lang="de-DE">First action app DE</label>
+                <label lang="zh-CN">第一个动作应用</label>
                 <description>First action app description</description>
-                <description lang="de-DE">First action app description DE</description>
+                <description lang="zh-CN">第一个动作应用说明</description>
                 <url>https://example.xyz</url>
             </meta>
             <headers>
@@ -23,9 +23,9 @@
                 <input-field type="shopwell">
                     <name>shopwell</name>
                     <label>To</label>
-                    <label lang="de-DE">To DE</label>
+                    <label lang="zh-CN">收件人</label>
                     <place-holder>Enter to...</place-holder>
-                    <place-holder lang="de-DE">Enter to DE...</place-holder>
+                    <place-holder lang="zh-CN">输入收件人...</place-holder>
                     <required>true</required>
                     <editable>false</editable>
                     <defaultValue>Shopwell 6</defaultValue>

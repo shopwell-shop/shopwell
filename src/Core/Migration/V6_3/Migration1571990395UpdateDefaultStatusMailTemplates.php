@@ -17,7 +17,7 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
 {
     private ?string $defaultLangId = null;
 
-    private ?string $deLangId = null;
+    private ?string $zhCnLangId = null;
 
     public function getCreationTimestamp(): int
     {
@@ -34,10 +34,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is partially delivered',
-            $this->getOrderStatusUpdateHtmlTemplateDe(),
-            $this->getOrderStatusUpdatePlainTemplateDe(),
+            $this->getOrderStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Bestellung bei {{ salesChannel.name }} wurde teilweise ausgeliefert'
+            '您在 {{ salesChannel.name }} 的订单已部分发货'
         );
 
         // update DELIVERY_STATE_RETURNED_PARTIALLY
@@ -48,10 +48,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is partially returned',
-            $this->getOrderStatusUpdateHtmlTemplateDe(),
-            $this->getOrderStatusUpdatePlainTemplateDe(),
+            $this->getOrderStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Bestellung bei {{ salesChannel.name }} wurde teilweise retourniert'
+            '您在 {{ salesChannel.name }} 的订单已部分退货'
         );
 
         // update DELIVERY_STATE_RETURNED
@@ -62,10 +62,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is returned',
-            $this->getOrderStatusUpdateHtmlTemplateDe(),
-            $this->getOrderStatusUpdatePlainTemplateDe(),
+            $this->getOrderStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Bestellung bei {{ salesChannel.name }} wurde retourniert'
+            '您在 {{ salesChannel.name }} 的订单已退货'
         );
 
         // update DELIVERY_STATE_CANCELLED
@@ -76,10 +76,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is cancelled',
-            $this->getOrderStatusUpdateHtmlTemplateDe(),
-            $this->getOrderStatusUpdatePlainTemplateDe(),
+            $this->getOrderStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Stornierung der Bestellung bei {{ salesChannel.name }}'
+            '您在 {{ salesChannel.name }} 的订单已取消'
         );
 
         // update DELIVERY_STATE_SHIPPED
@@ -90,10 +90,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is delivered',
-            $this->getOrderStatusUpdateHtmlTemplateDe(),
-            $this->getOrderStatusUpdatePlainTemplateDe(),
+            $this->getOrderStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Bestellung bei {{ salesChannel.name }} wurde ausgeliefert'
+            '您在 {{ salesChannel.name }} 的订单已发货'
         );
 
         // update ORDER_STATE_OPEN
@@ -104,10 +104,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is open',
-            $this->getOrderStatusUpdateHtmlTemplateDe(),
-            $this->getOrderStatusUpdatePlainTemplateDe(),
+            $this->getOrderStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Bestellung bei {{ salesChannel.name }} ist offen'
+            '您在 {{ salesChannel.name }} 的订单待处理'
         );
 
         // update ORDER_STATE_IN_PROGRESS
@@ -118,10 +118,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is in process',
-            $this->getOrderStatusUpdateHtmlTemplateDe(),
-            $this->getOrderStatusUpdatePlainTemplateDe(),
+            $this->getOrderStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Bestellung bei {{ salesChannel.name }} ist in Bearbeitung'
+            '您在 {{ salesChannel.name }} 的订单处理中'
         );
 
         // update ORDER_STATE_COMPLETED
@@ -132,10 +132,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is completed',
-            $this->getOrderStatusUpdateHtmlTemplateDe(),
-            $this->getOrderStatusUpdatePlainTemplateDe(),
+            $this->getOrderStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Bestellung bei {{ salesChannel.name }} ist komplett abgeschlossen'
+            '您在 {{ salesChannel.name }} 的订单已完成'
         );
 
         // update ORDER_STATE_CANCELLED
@@ -146,10 +146,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is cancelled',
-            $this->getOrderStatusUpdateHtmlTemplateDe(),
-            $this->getOrderStatusUpdatePlainTemplateDe(),
+            $this->getOrderStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Stornierung der Bestellung bei {{ salesChannel.name }}'
+            '您在 {{ salesChannel.name }} 的订单已取消'
         );
 
         // update TRANSACTION_STATE_REFUNDED_PARTIALLY
@@ -160,10 +160,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderTransactionStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is partially refunded',
-            $this->getOrderTransactionStatusUpdateHtmlTemplateDe(),
-            $this->getOrderTransactionStatusUpdatePlainTemplateDe(),
+            $this->getOrderTransactionStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderTransactionStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Bestellung bei {{ salesChannel.name }} wurde teilweise erstattet'
+            '您在 {{ salesChannel.name }} 的订单已部分退款'
         );
 
         // update TRANSACTION_STATE_REMINDED
@@ -174,10 +174,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderTransactionStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Reminder for your order with {{ salesChannel.name }}',
-            $this->getOrderTransactionStatusUpdateHtmlTemplateDe(),
-            $this->getOrderTransactionStatusUpdatePlainTemplateDe(),
+            $this->getOrderTransactionStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderTransactionStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Zahlungserinnerung für die Bestellung bei {{ salesChannel.name }}'
+            '您在 {{ salesChannel.name }} 的订单付款提醒'
         );
 
         // update TRANSACTION_STATE_OPEN
@@ -188,10 +188,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderTransactionStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }}',
-            $this->getOrderTransactionStatusUpdateHtmlTemplateDe(),
-            $this->getOrderTransactionStatusUpdatePlainTemplateDe(),
+            $this->getOrderTransactionStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderTransactionStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Deine Bestellung bei {{ salesChannel.name }}'
+            '您在 {{ salesChannel.name }} 的订单'
         );
 
         // update TRANSACTION_STATE_PAID
@@ -202,10 +202,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderTransactionStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is completly paid',
-            $this->getOrderTransactionStatusUpdateHtmlTemplateDe(),
-            $this->getOrderTransactionStatusUpdatePlainTemplateDe(),
+            $this->getOrderTransactionStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderTransactionStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Deine Bestellung bei {{ salesChannel.name }} wurde komplett bezahlt'
+            '您在 {{ salesChannel.name }} 的订单已付清'
         );
 
         // update TRANSACTION_STATE_CANCELLED
@@ -216,10 +216,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderTransactionStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'The payment for your order with {{ salesChannel.name }} is cancelled',
-            $this->getOrderTransactionStatusUpdateHtmlTemplateDe(),
-            $this->getOrderTransactionStatusUpdatePlainTemplateDe(),
+            $this->getOrderTransactionStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderTransactionStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Die Zahlung für ihre Bestellung bei {{ salesChannel.name }} wurde storniert'
+            '您在 {{ salesChannel.name }} 的订单付款已取消'
         );
 
         // update TRANSACTION_STATE_REFUNDED
@@ -230,10 +230,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderTransactionStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is refunded',
-            $this->getOrderTransactionStatusUpdateHtmlTemplateDe(),
-            $this->getOrderTransactionStatusUpdatePlainTemplateDe(),
+            $this->getOrderTransactionStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderTransactionStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Bestellung bei {{ salesChannel.name }} wurde erstattet'
+            '您在 {{ salesChannel.name }} 的订单已退款'
         );
 
         // update TRANSACTION_STATE_PAID_PARTIALLY
@@ -244,10 +244,10 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             $this->getOrderTransactionStatusUpdatePlainTemplateEn(),
             '{{ salesChannel.name }}',
             'Your order with {{ salesChannel.name }} is partially paid',
-            $this->getOrderTransactionStatusUpdateHtmlTemplateDe(),
-            $this->getOrderTransactionStatusUpdatePlainTemplateDe(),
+            $this->getOrderTransactionStatusUpdateHtmlTemplateZhCn(),
+            $this->getOrderTransactionStatusUpdatePlainTemplateZhCn(),
             '{{ salesChannel.name }}',
-            'Deine Bestellung bei {{ salesChannel.name }} wurde teilweise bezahlt'
+            '您在 {{ salesChannel.name }} 的订单已部分付款'
         );
     }
 
@@ -290,16 +290,16 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
         string $contentPlainEn,
         string $senderNameEn,
         string $subjectEn,
-        string $contentHtmlDe,
-        string $contentPlainDe,
-        string $senderNameDe,
-        string $subjectDe
+        string $contentHtmlZhCn,
+        string $contentPlainZhCn,
+        string $senderNameZhCn,
+        string $subjectZhCn
     ): void {
         if (!$this->defaultLangId) {
             $this->defaultLangId = $this->fetchLanguageId('en-GB', $connection);
         }
-        if (!$this->deLangId) {
-            $this->deLangId = $this->fetchLanguageId('de-DE', $connection);
+        if (!$this->zhCnLangId) {
+            $this->zhCnLangId = $this->fetchLanguageId('zh-CN', $connection);
         }
 
         $templateTypeId = $connection->executeQuery(
@@ -315,7 +315,7 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
         )->fetchOne();
 
         $descriptionEn = 'Shopwell Default Template';
-        $descriptionDe = 'Shopwell Basis Template';
+        $descriptionZhCn = 'Shopwell 基础模板';
 
         $newTemplateId = false;
 
@@ -337,7 +337,7 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             );
         }
 
-        if ($this->defaultLangId !== $this->deLangId) {
+        if ($this->defaultLangId !== $this->zhCnLangId) {
             $sqlString = '';
             $sqlParams = [
                 'templateId' => $templateId,
@@ -380,34 +380,34 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
             }
         }
 
-        if ($this->deLangId) {
+        if ($this->zhCnLangId) {
             $sqlString = '';
             $sqlParams = [
                 'templateId' => $templateId,
-                'langId' => $this->deLangId,
+                'langId' => $this->zhCnLangId,
             ];
 
             $sqlString .= '`content_html` = :contentHtml ';
-            $sqlParams['contentHtml'] = $contentHtmlDe;
+            $sqlParams['contentHtml'] = $contentHtmlZhCn;
 
             $sqlString .= ', `content_plain` = :contentPlain ';
-            $sqlParams['contentPlain'] = $contentPlainDe;
+            $sqlParams['contentPlain'] = $contentPlainZhCn;
 
             $sqlString .= ', `sender_name` = :senderName ';
-            $sqlParams['senderName'] = $senderNameDe;
+            $sqlParams['senderName'] = $senderNameZhCn;
 
             $sqlString .= ', `subject` = :subject ';
-            $sqlParams['subject'] = $subjectDe;
+            $sqlParams['subject'] = $subjectZhCn;
 
             $sqlString .= ', `description` = :description ';
-            $sqlParams['description'] = $descriptionDe;
+            $sqlParams['description'] = $descriptionZhCn;
 
             $templateTranslationDeId = $connection->executeQuery(
                 'SELECT `mail_template_id` from `mail_template_translation`
                     WHERE `mail_template_id` = :templateId AND language_id = :languageId',
                 [
                     'templateId' => $templateId,
-                    'languageId' => $this->deLangId,
+                    'languageId' => $this->zhCnLangId,
                 ]
             )->fetchOne();
 
@@ -416,12 +416,12 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
                     'mail_template_translation',
                     [
                         'mail_template_id' => $newTemplateId ?: $templateId,
-                        'language_id' => $this->deLangId,
-                        'subject' => $subjectDe,
+                        'language_id' => $this->zhCnLangId,
+                        'subject' => $subjectZhCn,
                         'sender_name' => '{{ salesChannel.name }}',
-                        'description' => $descriptionDe,
-                        'content_html' => $contentHtmlDe,
-                        'content_plain' => $contentPlainDe,
+                        'description' => $descriptionZhCn,
+                        'content_html' => $contentHtmlZhCn,
+                        'content_plain' => $contentPlainZhCn,
                         'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                     ]
                 );
@@ -464,7 +464,7 @@ EOT;
 EOT;
     }
 
-    private function getOrderStatusUpdateHtmlTemplateDe(): string
+    private function getOrderStatusUpdateHtmlTemplateZhCn(): string
     {
         return <<<EOT
         <div style="font-family:arial; font-size:12px;">
@@ -472,26 +472,26 @@ EOT;
             <p>
                 {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                 <br/>
-                der Bestellstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} has changed.<br/>
-                <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.stateMachineState.name}}.</strong><br/>
+                您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新。<br/>
+                <strong>订单最新状态：{{order.stateMachineState.name}}。</strong><br/>
                 <br/>
-                Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen. Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。若您未注册、未开通客户账户即下单，则无法使用该功能。
             </p>
         </div>
 EOT;
     }
 
-    private function getOrderStatusUpdatePlainTemplateDe(): string
+    private function getOrderStatusUpdatePlainTemplateZhCn(): string
     {
         return <<<EOT
 
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Bestellstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新。
+        订单最新状态：{{order.stateMachineState.name}}。
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen.
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。
+        若您未注册、未开通客户账户即下单，则无法使用该功能。
 EOT;
     }
 
@@ -526,7 +526,7 @@ EOT;
 EOT;
     }
 
-    private function getOrderTransactionStatusUpdateHtmlTemplateDe(): string
+    private function getOrderTransactionStatusUpdateHtmlTemplateZhCn(): string
     {
         return <<<EOT
         <div style="font-family:arial; font-size:12px;">
@@ -534,26 +534,26 @@ EOT;
             <p>
                 {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                 <br/>
-                der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} has changed.<br/>
-                <strong>Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
+                您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新。<br/>
+                <strong>支付最新状态：{{order.transactions.first.stateMachineState.name}}。</strong><br/>
                 <br/>
-                Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen. Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。若您未注册、未开通客户账户即下单，则无法使用该功能。
             </p>
         </div>
 EOT;
     }
 
-    private function getOrderTransactionStatusUpdatePlainTemplateDe(): string
+    private function getOrderTransactionStatusUpdatePlainTemplateZhCn(): string
     {
         return <<<EOT
 
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Zahlungsstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Zahlungsstatus: {{order.transactions.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新。
+        支付最新状态：{{order.transactions.first.stateMachineState.name}}。
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen.
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。
+        若您未注册、未开通客户账户即下单，则无法使用该功能。
 EOT;
     }
 }

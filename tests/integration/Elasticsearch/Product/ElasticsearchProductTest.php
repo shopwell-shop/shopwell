@@ -3045,7 +3045,7 @@ class ElasticsearchProductTest extends TestCase
                 'config' => [
                     'label' => [
                         'en-GB' => 'English custom field set label',
-                        'de-DE' => 'German custom field set label',
+                        'zh-CN' => 'Chinese custom field set label',
                     ],
                 ],
                 'relations' => [
@@ -3103,7 +3103,7 @@ class ElasticsearchProductTest extends TestCase
                     'parentId' => $parentId,
                     'active' => true,
                     'translationCode' => [
-                        'code' => 'de-DE-' . Uuid::randomHex(),
+                        'code' => 'zh-CN-' . Uuid::randomHex(),
                         'name' => 'Test locale',
                         'territory' => 'test',
                     ],

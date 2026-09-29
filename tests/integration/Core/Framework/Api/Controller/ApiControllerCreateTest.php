@@ -659,12 +659,12 @@ class ApiControllerCreateTest extends TestCase
                 'id' => $parentId,
                 'name' => 'Parent Language',
                 'locale' => [
-                    'code' => 'de-DE-' . Uuid::randomHex(),
+                    'code' => 'zh-CN-' . Uuid::randomHex(),
                     'name' => 'test name',
                     'territory' => 'test territory',
                 ],
                 'translationCode' => [
-                    'code' => 'de-DE-' . Uuid::randomHex(),
+                    'code' => 'zh-CN-' . Uuid::randomHex(),
                     'name' => 'test name',
                     'territory' => 'test territory',
                 ],

@@ -3,14 +3,14 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Customer scope</title>
-        <title lang="de-DE">Kunden-Zuweisung</title>
+        <title lang="zh-CN">客户范围</title>
 
         <input-field type="bool">
             <name>isCustomerBoundToSalesChannel</name>
             <label>Bind customers to Sales Channel</label>
-            <label lang="de-DE">Kunden an Verkaufskanal binden</label>
+            <label lang="zh-CN">将客户绑定到销售渠道</label>
             <helpText>If activated, customers can sign up separately for each Sales Channel. Existing customers are not affected by this setting.</helpText>
-            <helpText lang="de-DE">Wenn die Einstellung aktiviert ist, können sich Kunden separat in jedem Verkaufskanal registrieren. Bestehende Kunden sind von dieser Einstellung nicht betroffen.</helpText>
+            <helpText lang="zh-CN">开启后，客户可在每个销售渠道中分别注册；已有客户不受此设置影响。</helpText>
         </input-field>
     </card>
 </config>

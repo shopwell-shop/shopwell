@@ -774,7 +774,7 @@ class AttributeEntityIntegrationTest extends TestCase
             'htmlString' => '<p class="text-size-lg">Awesome string with <strong>HTML</strong>!</p>',
             'transString' => [
                 'en-GB' => 'transString',
-                'de-DE' => 'transString-de',
+                'zh-CN' => 'transString-de',
             ],
         ];
 
@@ -799,7 +799,7 @@ class AttributeEntityIntegrationTest extends TestCase
             $context->getSource(),
             $context->getRuleIds(),
             $context->getCurrencyId(),
-            [$this->getDeDeLanguageId(), Defaults::LANGUAGE_SYSTEM],
+            [$this->getZhCnLanguageId(), Defaults::LANGUAGE_SYSTEM],
         );
         $search = $this->repository('attribute_entity')
             ->search($criteria, $languageContext);

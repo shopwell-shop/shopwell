@@ -22,20 +22,20 @@
     "plugin-icon": "src/Resources/public/plugin.png",
     "copyright": "(c) by Shopwell",
     "label": {
-      "de-DE": "Deutscher Pluginname",
-      "de-CH": "Schweizerdeutsch Pluginname",
+      "zh-CN": "中文插件名称",
+      "zh-SG": "新加坡中文插件名称",
       "en-GB": "English plugin name"
     },
     "description": {
-      "de-DE": "Deutsche Beschreibung",
+      "zh-CN": "中文插件说明",
       "en-GB": "English description"
     },
     "manufacturerLink": {
-      "de-DE": "https://www.example.com/de/",
+      "zh-CN": "https://www.example.com/zh/",
       "en-GB": "https://www.example.com/"
     },
     "supportLink": {
-      "de-DE": "https://www.example.com/de/support",
+      "zh-CN": "https://www.example.com/zh/support",
       "en-GB": "https://www.example.com/support"
     }
   },

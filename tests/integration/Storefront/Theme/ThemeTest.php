@@ -90,8 +90,8 @@ class ThemeTest extends TestCase
                         'en-GB' => [
                             'sw-color-brand-primary' => 'Primary colour',
                         ],
-                        'de-DE' => [
-                            'sw-color-brand-primary' => 'Primärfarbe',
+                        'zh-CN' => [
+                            'sw-color-brand-primary' => '品牌主色',
                         ],
                     ],
                 ],
@@ -392,7 +392,7 @@ class ThemeTest extends TestCase
                 'newBlock' => [
                     'label' => [
                         'en-GB' => 'New Block',
-                        'de-DE' => 'Neuer Block',
+                        'zh-CN' => '新区块',
                     ],
                 ],
             ],
@@ -428,7 +428,7 @@ class ThemeTest extends TestCase
 
         $themeInheritedConfig['blocks']['newBlock']['label'] = [
             'en-GB' => 'New Block',
-            'de-DE' => 'Neuer Block',
+            'zh-CN' => '新区块',
         ];
 
         foreach ($themeInheritedConfig['fields'] as $key => $field) {
@@ -989,7 +989,7 @@ class ThemeTest extends TestCase
                 'multi' => [
                     'label' => [
                         'en-GB' => 'Multi',
-                        'de-DE' => 'Multi',
+                        'zh-CN' => 'Multi',
                     ],
                     'scss' => false,
                     'type' => 'text',
@@ -1004,21 +1004,21 @@ class ThemeTest extends TestCase
                                 'value' => 'bottom',
                                 'label' => [
                                     'en-GB' => 'bottom',
-                                    'de-DE' => 'unten',
+                                    'zh-CN' => '底部',
                                 ],
                             ],
                             1 => [
                                 'value' => 'top',
                                 'label' => [
                                     'en-GB' => 'top',
-                                    'de-DE' => 'oben',
+                                    'zh-CN' => '顶部',
                                 ],
                             ],
                             2 => [
                                 'value' => 'middle',
                                 'label' => [
                                     'en-GB' => 'middle',
-                                    'de-DE' => 'mittel',
+                                    'zh-CN' => '中部',
                                 ],
                             ],
                         ],

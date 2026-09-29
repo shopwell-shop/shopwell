@@ -1,0 +1,49 @@
+{
+  "sw-settings-state-machine": {
+    "general": {
+      "mainMenuItemGeneral": "状态管理"
+    },
+    "list": {
+      "grid": {
+        "columnName": "名称",
+        "columnTechnicalName": "技术名称"
+      }
+    },
+    "detail": {
+      "stateMachineCardTitle": "状态机",
+      "fieldLabels": {
+        "name": "名称",
+        "technicalName": "技术名称"
+      }
+    },
+    "notification": {
+      "successMessage": "状态机已保存。",
+      "errorMessage": "状态机无法保存。请填写所有必填字段。"
+    },
+    "state": {
+      "list": {
+        "stateMachineStateCardTitle": "状态",
+        "grid": {
+          "columnName": "名称",
+          "columnTechnicalName": "技术名称"
+        }
+      },
+      "detail": {
+        "stateMachineStateCardTitle": "状态机状态",
+        "labelName": "名称",
+        "labelTechnicalName": "技术名称"
+      },
+      "notification": {
+        "successMessage": "状态机状态已保存。",
+        "errorMessage": "状态机状态无法保存。请填写所有必填字段。"
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "state_machine": {
+        "label": "状态机"
+      }
+    }
+  }
+}

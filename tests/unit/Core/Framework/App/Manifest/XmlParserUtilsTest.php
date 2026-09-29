@@ -116,18 +116,18 @@ class XmlParserUtilsTest extends TestCase
         $labelEn = $document->createElement('label', 'EnglishLabel');
         $labelEn->setAttribute('lang', 'en-GB');
 
-        $nameDe = $document->createElement('name', 'GermanName');
-        $nameDe->setAttribute('lang', 'de-DE');
+        $nameZh = $document->createElement('name', 'ChineseName');
+        $nameZh->setAttribute('lang', 'zh-CN');
 
-        $labelDe = $document->createElement('label', 'GermanLabel');
-        $labelDe->setAttribute('lang', 'de-DE');
+        $labelZh = $document->createElement('label', 'ChineseLabel');
+        $labelZh->setAttribute('lang', 'zh-CN');
 
         $version = $document->createElement('version', '1.5');
 
         $element->appendChild($nameEn);
         $element->appendChild($labelEn);
-        $element->appendChild($nameDe);
-        $element->appendChild($labelDe);
+        $element->appendChild($nameZh);
+        $element->appendChild($labelZh);
         $element->appendChild($version);
 
         $result = XmlParserUtils::parseChildrenAndTranslate($element, ['name', 'label']);
@@ -135,11 +135,11 @@ class XmlParserUtilsTest extends TestCase
         $expectedResult = [
             'name' => [
                 'en-GB' => 'EnglishName',
-                'de-DE' => 'GermanName',
+                'zh-CN' => 'ChineseName',
             ],
             'label' => [
                 'en-GB' => 'EnglishLabel',
-                'de-DE' => 'GermanLabel',
+                'zh-CN' => 'ChineseLabel',
             ],
             'version' => '1.5',
         ];
@@ -155,9 +155,9 @@ class XmlParserUtilsTest extends TestCase
         $en = $element->appendChild(new \DOMElement('name', 'EnglishName'));
         $en->setAttribute('lang', 'en-GB');
 
-        /** @var \DOMElement $de */
-        $de = $element->appendChild(new \DOMElement('name', 'GermanName'));
-        $de->setAttribute('lang', 'de-DE');
+        /** @var \DOMElement $zh */
+        $zh = $element->appendChild(new \DOMElement('name', 'ChineseName'));
+        $zh->setAttribute('lang', 'zh-CN');
 
         $result = XmlParserUtils::mapTranslatedTag($en, []);
 
@@ -170,7 +170,7 @@ class XmlParserUtilsTest extends TestCase
             $result
         );
 
-        $result = XmlParserUtils::mapTranslatedTag($de, [
+        $result = XmlParserUtils::mapTranslatedTag($zh, [
             'name' => [
                 'en-GB' => 'EnglishName',
             ],
@@ -180,7 +180,7 @@ class XmlParserUtilsTest extends TestCase
             [
                 'name' => [
                     'en-GB' => 'EnglishName',
-                    'de-DE' => 'GermanName',
+                    'zh-CN' => 'ChineseName',
                 ],
             ],
             $result

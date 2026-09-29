@@ -1,0 +1,30 @@
+<div style="font-family:arial; font-size:12px;">
+
+    {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br>
+    <br>
+    本邮件附件中是订单号为 {{ order.orderNumber }} 的送货单。<br>
+    <br>
+    如有疑问，欢迎随时联系我们。
+    <br><br>
+
+    {% if a11yDocuments %}
+        以下为您提供无障碍文档的 HTML 版本：<br><br>
+
+        {% for a11y in a11yDocuments %}
+            {% set documentLink = rawUrl(
+                'frontend.account.order.single.document.a11y',
+                {
+                    documentId: a11y.documentId,
+                    deepLinkCode: a11y.deepLinkCode,
+                    fileType: a11y.fileExtension,
+                },
+                salesChannel.domains|first.url
+            )%}
+
+            - <a href="{{ documentLink }}" target="_blank">{{ documentLink }}</a> <br>
+        {% endfor %}<br>
+
+        出于数据保护原因，查看 HTML 版本需要登录。<br><br>
+        若为游客下单，可使用您的邮箱地址和账单地址的邮政编码。<br>
+    {% endif %}
+</div>

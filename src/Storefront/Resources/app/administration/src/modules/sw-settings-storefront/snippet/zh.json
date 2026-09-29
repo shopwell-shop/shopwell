@@ -1,0 +1,25 @@
+{
+  "sw-settings-storefront": {
+    "general": {
+      "mainMenuItemGeneral": "店铺前台",
+      "textHeadline": "店铺前台",
+      "description": "店面设置",
+      "helpText": "更多信息请查看 <a target=\"_blank\" href=\"https://docs.shopwell.cn/zh/shopwell-6-zh\">文档</a>"
+    },
+    "configuration": {
+      "cardTitle": "店铺前台配置",
+      "iconCache": "启用图标缓存",
+      "iconCacheToolTip": "设置店面图标是否只输出一次，后续使用仅作引用。",
+      "theme": {
+        "cardTitle": "主题配置",
+        "async": "在后台执行主题编译",
+        "asyncTooltip": "确定主题编译是通过消息队列还是直接进行。"
+      },
+      "speculationRules": {
+        "title": "预渲染规则 API（实验性）",
+        "description": "以“适中”模式为店面启用预渲染。注意，这可能会影响你的分析数据。"
+      }
+    },
+    "helpText": "更多信息请查看 <a target=\"_blank\" href=\"https://docs.shopwell.cn/zh/shopwell-6-zh\">文档</a>"
+  }
+}

@@ -59,7 +59,7 @@ class SystemInstallCommandTest extends TestCase
         $result = $systemInstallCmd->run(new ArrayInput([
             '--shop-name' => 'Storefront',
             '--shop-email' => 'admin@gmail.com',
-            '--shop-locale' => 'de-DE',
+            '--shop-locale' => 'zh-CN',
             '--shop-currency' => 'USD',
             '--basic-setup' => true,
             '--no-assign-theme' => true,

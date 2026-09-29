@@ -134,7 +134,7 @@
                                        id="lang_{{ locale|lower|replace({'-': '_'}) }}"
                                        name="selected_languages[]"
                                        value="{{ locale }}"
-                                       {% if locale in ['en-GB','de-DE'] %}checked disabled data-default-locales{% elseif locale in selectedLanguages %}checked{% endif %}
+                                       {% if locale in ['en-GB','zh-CN'] %}checked disabled data-default-locales{% elseif locale in selectedLanguages %}checked{% endif %}
                                        onclick="event.target.classList.add('toggled')" />
                                 <label for="lang_{{ locale|lower|replace({'-': '_'}) }}">
                                     {{ language.label }}

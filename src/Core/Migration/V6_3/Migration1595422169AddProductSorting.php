@@ -47,7 +47,7 @@ class Migration1595422169AddProductSorting extends MigrationStep
             $connection->insert(ProductSortingDefinition::ENTITY_NAME, $sorting);
 
             $translations = new Translations(
-                ['product_sorting_id' => $sorting['id'], 'label' => $translations['de-DE']],
+                ['product_sorting_id' => $sorting['id'], 'label' => $translations['zh-CN']],
                 ['product_sorting_id' => $sorting['id'], 'label' => $translations['en-GB']]
             );
 
@@ -103,7 +103,7 @@ class Migration1595422169AddProductSorting extends MigrationStep
     }
 
     /**
-     * @return list<array{id: string, url_key: string, priority: int, active: int, locked: int, fields: string, created_at: string, translations: array{de-DE: string, en-GB: string}}>
+     * @return list<array{id: string, url_key: string, priority: int, active: int, locked: int, fields: string, created_at: string, translations: array{zh-CN: string, en-GB: string}}>
      */
     private function getDefaultSortings(): array
     {
@@ -117,7 +117,7 @@ class Migration1595422169AddProductSorting extends MigrationStep
                 'fields' => json_encode([['field' => 'product.name', 'order' => 'asc', 'priority' => 1, 'naturalSorting' => 0]], \JSON_THROW_ON_ERROR),
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 'translations' => [
-                    'de-DE' => 'Name A-Z',
+                    'zh-CN' => '名称 A-Z',
                     'en-GB' => 'Name A-Z',
                 ],
             ],
@@ -130,7 +130,7 @@ class Migration1595422169AddProductSorting extends MigrationStep
                 'fields' => json_encode([['field' => 'product.name', 'order' => 'desc', 'priority' => 1, 'naturalSorting' => 0]], \JSON_THROW_ON_ERROR),
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 'translations' => [
-                    'de-DE' => 'Name Z-A',
+                    'zh-CN' => '名称 Z-A',
                     'en-GB' => 'Name Z-A',
                 ],
             ],
@@ -143,7 +143,7 @@ class Migration1595422169AddProductSorting extends MigrationStep
                 'fields' => json_encode([['field' => 'product.listingPrices', 'order' => 'asc', 'priority' => 1, 'naturalSorting' => 0]], \JSON_THROW_ON_ERROR),
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 'translations' => [
-                    'de-DE' => 'Preis aufsteigend',
+                    'zh-CN' => '价格从低到高',
                     'en-GB' => 'Price ascending',
                 ],
             ],
@@ -156,7 +156,7 @@ class Migration1595422169AddProductSorting extends MigrationStep
                 'fields' => json_encode([['field' => 'product.listingPrices', 'order' => 'desc', 'priority' => 1, 'naturalSorting' => 0]], \JSON_THROW_ON_ERROR),
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 'translations' => [
-                    'de-DE' => 'Preis absteigend',
+                    'zh-CN' => '价格从高到低',
                     'en-GB' => 'Price descending',
                 ],
             ],
@@ -169,7 +169,7 @@ class Migration1595422169AddProductSorting extends MigrationStep
                 'fields' => json_encode([['field' => '_score', 'order' => 'desc', 'priority' => 1, 'naturalSorting' => 0]], \JSON_THROW_ON_ERROR),
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 'translations' => [
-                    'de-DE' => 'Beste Ergebnisse',
+                    'zh-CN' => '综合排序',
                     'en-GB' => 'Top results',
                 ],
             ],

@@ -39,7 +39,7 @@ class Migration1701688920FixDownloadLinkMailTest extends TestCase
         $migration = new Migration1701688920FixDownloadLinkMail();
         $migration->update($connection);
 
-        $deLangId = $this->fetchLanguageId($connection, 'de-DE');
+        $deLangId = $this->fetchLanguageId($connection, 'zh-CN');
         $enLangId = $this->fetchLanguageId($connection, 'en-GB');
         static::assertNotNull($deLangId);
         static::assertNotNull($enLangId);
@@ -49,8 +49,8 @@ class Migration1701688920FixDownloadLinkMailTest extends TestCase
                 $connection,
                 MailTemplateTypes::MAILTYPE_DOWNLOADS_DELIVERY
             ),
-            'htmlDe' => (string) file_get_contents(__DIR__ . '/../../../../src/Core/Migration/Fixtures/mails/downloads_delivery/de-html.html.twig'),
-            'plainDe' => (string) file_get_contents(__DIR__ . '/../../../../src/Core/Migration/Fixtures/mails/downloads_delivery/de-plain.html.twig'),
+            'htmlDe' => (string) file_get_contents(__DIR__ . '/../../../../src/Core/Migration/Fixtures/mails/downloads_delivery/zh-html.html.twig'),
+            'plainDe' => (string) file_get_contents(__DIR__ . '/../../../../src/Core/Migration/Fixtures/mails/downloads_delivery/zh-plain.html.twig'),
             'htmlEn' => (string) file_get_contents(__DIR__ . '/../../../../src/Core/Migration/Fixtures/mails/downloads_delivery/en-html.html.twig'),
             'plainEn' => (string) file_get_contents(__DIR__ . '/../../../../src/Core/Migration/Fixtures/mails/downloads_delivery/en-plain.html.twig'),
         ];

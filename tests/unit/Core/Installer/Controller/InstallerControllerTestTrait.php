@@ -111,7 +111,7 @@ trait InstallerControllerTestTrait
     private function getSupportedLanguages(): array
     {
         return [
-            'de' => ['id' => 'de-DE', 'label' => 'Deutsch'],
+            'zh' => ['id' => 'zh-CN', 'label' => '简体中文'],
             'en-US' => ['id' => 'en-US', 'label' => 'English (US)'],
             'en' => ['id' => 'en-GB', 'label' => 'English (UK)'],
         ];
@@ -123,7 +123,7 @@ trait InstallerControllerTestTrait
     private function getSupportedPreselection(): array
     {
         return [
-            'de' => ['currency' => 'EUR'],
+            'zh' => ['currency' => 'CNY'],
             'en-US' => ['currency' => 'USD'],
             'en' => ['currency' => 'GBP'],
         ];

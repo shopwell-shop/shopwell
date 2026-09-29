@@ -7,6 +7,19 @@ use PHPUnit\TextUI\Configuration\SourceFilter;
 
 require __DIR__ . '/TestBootstrapper.php';
 
+/*
+ * Some PHP builds (observed on PHP 8.5 with ICU 78) report an EMPTY default locale from
+ * locale_get_default(). Symfony Intl then tries to read a resource bundle named ".php" and
+ * fails on every locale lookup (Locales::exists(), NumberFormatter creation, ...). Fall back
+ * to "en" only when the runtime cannot determine any default locale at all.
+ *
+ * Static analysis sees a non-empty string here, which is exactly the case this guard covers.
+ */
+// @phpstan-ignore-next-line
+if (\function_exists('locale_get_default') && locale_get_default() === '') {
+    locale_set_default('en');
+}
+
 (new TestBootstrapper())
     ->setPlatformEmbedded(false)
     ->setEnableCommercial()

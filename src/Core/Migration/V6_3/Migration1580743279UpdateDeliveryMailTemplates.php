@@ -22,7 +22,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
     {
         // implement update
         $enLangId = $this->fetchLanguageId('en-GB', $connection);
-        $deLangId = $this->fetchLanguageId('de-DE', $connection);
+        $zhCnLangId = $this->fetchLanguageId('zh-CN', $connection);
 
         // update order confirmation
         $templateId = $this->fetchSystemMailTemplateIdFromType($connection, MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_DELIVERY_STATE_CANCELLED);
@@ -38,9 +38,9 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             $this->updateMailTemplateTranslation(
                 $connection,
                 $templateId,
-                $deLangId,
-                $this->getDeliveryCancellationHtmlTemplateDe(),
-                $this->getDeliveryCancellationPlainTemplateDe()
+                $zhCnLangId,
+                $this->getDeliveryCancellationHtmlTemplateZhCn(),
+                $this->getDeliveryCancellationPlainTemplateZhCn()
             );
         }
 
@@ -57,9 +57,9 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             $this->updateMailTemplateTranslation(
                 $connection,
                 $templateId,
-                $deLangId,
-                $this->getDeliveryReturnedHtmlTemplateDe(),
-                $this->getDeliveryReturnedPlainTemplateDe()
+                $zhCnLangId,
+                $this->getDeliveryReturnedHtmlTemplateZhCn(),
+                $this->getDeliveryReturnedPlainTemplateZhCn()
             );
         }
 
@@ -76,9 +76,9 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             $this->updateMailTemplateTranslation(
                 $connection,
                 $templateId,
-                $deLangId,
-                $this->getDeliveryShippedPartiallyHtmlTemplateDe(),
-                $this->getDeliveryShippedPartiallyPlainTemplateDe()
+                $zhCnLangId,
+                $this->getDeliveryShippedPartiallyHtmlTemplateZhCn(),
+                $this->getDeliveryShippedPartiallyPlainTemplateZhCn()
             );
         }
 
@@ -95,9 +95,9 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             $this->updateMailTemplateTranslation(
                 $connection,
                 $templateId,
-                $deLangId,
-                $this->getDeliveryShippedHTMLTemplateDe(),
-                $this->getDeliveryShippedPlainTemplateDe()
+                $zhCnLangId,
+                $this->getDeliveryShippedHTMLTemplateZhCn(),
+                $this->getDeliveryShippedPlainTemplateZhCn()
             );
         }
 
@@ -114,9 +114,9 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             $this->updateMailTemplateTranslation(
                 $connection,
                 $templateId,
-                $deLangId,
-                $this->getDeliveryReturnedPartiallyHTMLTemplateDe(),
-                $this->getDeliveryReturnedPartiallyPlainTemplateDe()
+                $zhCnLangId,
+                $this->getDeliveryReturnedPartiallyHTMLTemplateZhCn(),
+                $this->getDeliveryReturnedPartiallyPlainTemplateZhCn()
             );
         }
     }
@@ -220,7 +220,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             But in case you have purchased without a registration or a customer account, you do not have this option.';
     }
 
-    private function getDeliveryCancellationHtmlTemplateDe(): string
+    private function getDeliveryCancellationHtmlTemplateZhCn(): string
     {
         return '
         <div style="font-family:arial; font-size:12px;">
@@ -228,24 +228,24 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
            <p>
                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                <br/>
-               der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-               <strong>Die Bestellung hat jetzt den Zahlungsstatus: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
+               您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
+               <strong>支付状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
                <br/>
-               Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen. Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+               您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。若您未注册、未开通客户账户即下单，则无法使用该功能。
            </p>
         </div>';
     }
 
-    private function getDeliveryCancellationPlainTemplateDe(): string
+    private function getDeliveryCancellationPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Zahlungsstatus: {{order.deliveries.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
+        支付状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen.
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
     private function getDeliveryReturnedHtmlTemplateEn(): string
@@ -277,7 +277,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             But in case you have purchased without a registration or a customer account, you do not have this option.';
     }
 
-    private function getDeliveryReturnedHtmlTemplateDe(): string
+    private function getDeliveryReturnedHtmlTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -285,24 +285,24 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
+                    <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen. Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>';
     }
 
-    private function getDeliveryReturnedPlainTemplateDe(): string
+    private function getDeliveryReturnedPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
+        订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen.
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
     private function getDeliveryShippedPartiallyHtmlTemplateEn(): string
@@ -334,7 +334,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
         But in case you have purchased without a registration or a customer account, you do not have this option.';
     }
 
-    private function getDeliveryShippedPartiallyHtmlTemplateDe(): string
+    private function getDeliveryShippedPartiallyHtmlTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -342,24 +342,24 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Lieferstatys für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
+                    <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen. Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>';
     }
 
-    private function getDeliveryShippedPartiallyPlainTemplateDe(): string
+    private function getDeliveryShippedPartiallyPlainTemplateZhCn(): string
     {
         return '
             {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
+        订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen.
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
     private function getDeliveryShippedHtmlTemplateEn(): string
@@ -391,7 +391,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
         But in case you have purchased without a registration or a customer account, you do not have this option.';
     }
 
-    private function getDeliveryShippedHTMLTemplateDe(): string
+    private function getDeliveryShippedHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -399,25 +399,25 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
+                    <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen. Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getDeliveryShippedPlainTemplateDe(): string
+    private function getDeliveryShippedPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
+        订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen.
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 
     private function getDeliveryReturnedPartiallyHtmlTemplateEn(): string
@@ -449,7 +449,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
         But in case you have purchased without a registration or a customer account, you do not have this option.';
     }
 
-    private function getDeliveryReturnedPartiallyHTMLTemplateDe(): string
+    private function getDeliveryReturnedPartiallyHTMLTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
@@ -457,24 +457,24 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
                 <p>
                     {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
                     <br/>
-                    der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert.<br/>
-                    <strong>Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
+                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
+                    <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
                     <br/>
-                    Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen. Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.
+                    您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。若您未注册、未开通客户账户即下单，则无法使用该功能。
                 </p>
             </div>
         ';
     }
 
-    private function getDeliveryReturnedPartiallyPlainTemplateDe(): string
+    private function getDeliveryReturnedPartiallyPlainTemplateZhCn(): string
     {
         return '
         {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
 
-        der Lieferstatus für Ihre Bestellung bei {{ salesChannel.name }} (Number: {{order.orderNumber}}) vom {{ order.orderDateTime|date }} hat sich geändert!
-        Die Bestellung hat jetzt den Bestellstatus: {{order.deliveries.first.stateMachineState.name}}.
+        您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
+        订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
 
-        Den aktuellen Status Ihrer Bestellung können Sie auch jederzeit auf unserer Webseite im  Bereich "Mein Konto" - "Meine Bestellungen" abrufen.
-        Sollten Sie allerdings den Kauf ohne Registrierung, also ohne Anlage eines Kundenkontos, gewählt haben, steht Ihnen diese Möglichkeit nicht zur Verfügung.';
+        您可随时在网站的「我的账户」-「我的订单」查看订单当前状态。
+        若您未注册、未开通客户账户即下单，则无法使用该功能。';
     }
 }

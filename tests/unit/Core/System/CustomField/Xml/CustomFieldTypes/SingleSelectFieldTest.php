@@ -39,7 +39,7 @@ class SingleSelectFieldTest extends TestCase
         static::assertSame([
             'first' => [
                 'en-GB' => 'First',
-                'de-DE' => 'Erster',
+                'zh-CN' => '第一项',
             ],
             'second' => [
                 'en-GB' => 'Second',
@@ -73,7 +73,7 @@ class SingleSelectFieldTest extends TestCase
                     [
                         'label' => [
                             'en-GB' => 'First',
-                            'de-DE' => 'Erster',
+                            'zh-CN' => '第一项',
                         ],
                         'value' => 'first',
                     ],

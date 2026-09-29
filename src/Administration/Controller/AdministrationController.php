@@ -277,12 +277,12 @@ class AdministrationController extends AbstractController
             throw RoutingException::languageNotFound($context->getLanguageId());
         }
 
-        $deLanguageId = $this->fetchLanguageIdByName('de-DE', $this->connection);
+        $zhCnLanguageId = $this->fetchLanguageIdByName('zh-CN', $this->connection);
         $enLanguageId = $this->fetchLanguageIdByName('en-GB', $this->connection);
 
         switch ($context->getLanguageId()) {
-            case $deLanguageId:
-                $defaultExcludedTerm = require $this->shopwellCoreDir . '/Migration/Fixtures/stopwords/de.php';
+            case $zhCnLanguageId:
+                $defaultExcludedTerm = require $this->shopwellCoreDir . '/Migration/Fixtures/stopwords/zh.php';
 
                 break;
             case $enLanguageId:

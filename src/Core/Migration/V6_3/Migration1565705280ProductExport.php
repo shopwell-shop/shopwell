@@ -67,7 +67,7 @@ class Migration1565705280ProductExport extends MigrationStep
         $salesChannelTypeId = Uuid::fromHexToBytes('ed535e5722134ac1aa6524f73e26881b');
 
         $languageEN = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
-        $languageDE = $this->getDeDeLanguageId($connection);
+        $languageZhCn = $this->getZhCnLanguageId($connection);
 
         $connection->insert(
             'sales_channel_type',
@@ -92,16 +92,16 @@ class Migration1565705280ProductExport extends MigrationStep
             'sales_channel_type_translation',
             [
                 'sales_channel_type_id' => $salesChannelTypeId,
-                'language_id' => $languageDE,
-                'name' => 'Produktvergleich',
+                'language_id' => $languageZhCn,
+                'name' => '商品对比',
                 'manufacturer' => 'Shopwell',
-                'description' => 'Verkaufskanal für Produktvergleichsportale',
+                'description' => '面向商品对比平台的销售渠道',
                 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             ]
         );
     }
 
-    private function getDeDeLanguageId(Connection $connection): string
+    private function getZhCnLanguageId(Connection $connection): string
     {
         return (string) $connection->fetchOne(
             'SELECT id FROM language WHERE id != :default',

@@ -1,0 +1,10 @@
+{
+  "sw-settings-newsletter": {
+    "general": {
+      "mainMenuItemGeneral": "邮件订阅",
+      "description": "可在此进行新闻邮件设置。",
+      "textHeadline": "邮件订阅",
+      "messageSaveSuccess": "配置已保存。"
+    }
+  }
+}

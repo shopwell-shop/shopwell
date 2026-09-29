@@ -1026,7 +1026,7 @@ class LanguageValidatorTest extends TestCase
         if (!isset($lang['translationCode']) && !isset($lang['translationCodeId'])) {
             $id = Uuid::randomHex();
             $lang['translationCode'] = [
-                'code' => 'de-DE-' . $id,
+                'code' => 'zh-CN-' . $id,
                 'name' => 'test translation code ' . $id,
                 'territory' => 'test translation territory ' . $id,
             ];
@@ -1034,7 +1034,7 @@ class LanguageValidatorTest extends TestCase
         if (isset($lang['parent']) && !isset($lang['parent']['translationCode']) && !isset($lang['parent']['translationCodeId'])) {
             $id = Uuid::randomHex();
             $lang['parent']['translationCode'] = [
-                'code' => 'de-DE-' . $id,
+                'code' => 'zh-CN-' . $id,
                 'name' => 'test translation code parent ' . $id,
                 'territory' => 'test translation territory ' . $id,
             ];

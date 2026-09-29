@@ -24,7 +24,7 @@ class MetadataCollectionTest extends TestCase
                 'progress' => 80,
             ]),
             MetadataEntry::create([
-                'locale' => 'de-DE',
+                'locale' => 'zh-CN',
                 'updatedAt' => '2024-01-02T12:00:00+00:00',
                 'progress' => 90,
             ]),
@@ -50,19 +50,19 @@ class MetadataCollectionTest extends TestCase
 
         // Newer timestamp, should update
         $localCollection->addIfRequired(MetadataEntry::create([
-            'locale' => 'de-DE',
+            'locale' => 'zh-CN',
             'updatedAt' => '2024-01-03T12:00:00+00:00',
             'progress' => 95,
         ]));
 
         static::assertCount(2, $localCollection);
-        $de = $localCollection->get('de-DE');
+        $zh = $localCollection->get('zh-CN');
 
-        static::assertInstanceOf(MetadataEntry::class, $de);
-        static::assertSame(95, $de->progress);
-        static::assertSame('de-DE', $de->locale);
-        static::assertTrue($de->isUpdateRequired);
-        $this->assertTimestamp('2024-01-03T12:00:00+00:00', $de->updatedAt);
+        static::assertInstanceOf(MetadataEntry::class, $zh);
+        static::assertSame(95, $zh->progress);
+        static::assertSame('zh-CN', $zh->locale);
+        static::assertTrue($zh->isUpdateRequired);
+        $this->assertTimestamp('2024-01-03T12:00:00+00:00', $zh->updatedAt);
 
         // New locale, should add
         $localCollection->addIfRequired(MetadataEntry::create([
@@ -90,7 +90,7 @@ class MetadataCollectionTest extends TestCase
                 'progress' => 80,
             ]),
             MetadataEntry::create([
-                'locale' => 'de-DE',
+                'locale' => 'zh-CN',
                 'updatedAt' => '2024-01-02T12:00:00.000+00:00',
                 'progress' => 90,
             ]),
@@ -102,8 +102,8 @@ class MetadataCollectionTest extends TestCase
                 'updatedAt' => '2024-01-01T12:00:00.000+00:00',
                 'progress' => 80,
             ],
-            'de-DE' => [
-                'locale' => 'de-DE',
+            'zh-CN' => [
+                'locale' => 'zh-CN',
                 'updatedAt' => '2024-01-02T12:00:00.000+00:00',
                 'progress' => 90,
             ],
@@ -120,19 +120,19 @@ class MetadataCollectionTest extends TestCase
             'progress' => 80,
         ]);
 
-        $de = MetadataEntry::create([
-            'locale' => 'de-DE',
+        $zh = MetadataEntry::create([
+            'locale' => 'zh-CN',
             'updatedAt' => '2024-01-02T12:00:00+00:00',
             'progress' => 90,
         ]);
 
-        $de->markForUpdate();
+        $zh->markForUpdate();
 
-        $collection = new MetadataCollection([$gb, $de]);
+        $collection = new MetadataCollection([$gb, $zh]);
 
         $locales = $collection->getLocalesRequiringUpdate();
         static::assertCount(1, $locales);
-        static::assertSame(['de-DE'], $locales);
+        static::assertSame(['zh-CN'], $locales);
     }
 
     public function testConstructorIndexesByLocales(): void
@@ -144,7 +144,7 @@ class MetadataCollectionTest extends TestCase
                 'progress' => 80,
             ]),
             MetadataEntry::create([
-                'locale' => 'de-DE',
+                'locale' => 'zh-CN',
                 'updatedAt' => '2024-01-02T12:00:00+00:00',
                 'progress' => 90,
             ]),
@@ -153,7 +153,7 @@ class MetadataCollectionTest extends TestCase
         $collection = new MetadataCollection($elements);
         $keys = array_keys($collection->getElements());
         static::assertCount(2, $keys);
-        static::assertSame(['en-GB', 'de-DE'], $keys);
+        static::assertSame(['en-GB', 'zh-CN'], $keys);
     }
 
     public function testAddIndexesByLocale(): void

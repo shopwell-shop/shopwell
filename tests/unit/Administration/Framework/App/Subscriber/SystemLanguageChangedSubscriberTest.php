@@ -85,7 +85,7 @@ class SystemLanguageChangedSubscriberTest extends TestCase
             new SystemLanguageChangeEvent(
                 'previous-language-id',
                 'fr-DE',
-                'de-DE'
+                'zh-CN'
             )
         );
     }
@@ -94,7 +94,7 @@ class SystemLanguageChangedSubscriberTest extends TestCase
     {
         $localeRepository = new StaticEntityRepository([
             new LocaleCollection([$previousLocale = $this->createLocale('en-GB')]),
-            new LocaleCollection([$newLocale = $this->createLocale('de-DE')]),
+            new LocaleCollection([$newLocale = $this->createLocale('zh-CN')]),
         ]);
 
         $snippetRepository = new StaticEntityRepository([new AppAdministrationSnippetCollection([

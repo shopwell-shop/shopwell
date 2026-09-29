@@ -11,11 +11,11 @@ function getSnippets() {
                 {
                     author: 'Shopwell',
                     id: null,
-                    origin: 'Neue Adresse hinzufügen',
-                    resetTo: 'Neue Adresse hinzufügen',
+                    origin: '新增地址',
+                    resetTo: '新增地址',
                     setId: 'a2f95068665e4498ae98a2318a7963df',
                     translationKey: 'account.addressCreateBtn',
-                    value: 'Neue Adresse hinzufügen',
+                    value: '新增地址',
                 },
                 {
                     author: 'Shopwell',
@@ -39,10 +39,10 @@ function getSnippets() {
 function getSnippetSets() {
     const data = [
         {
-            baseFile: 'messages.de-DE',
+            baseFile: 'messages.zh-CN',
             id: 'a2f95068665e4498ae98a2318a7963df',
-            iso: 'de-DE',
-            name: 'BASE de-DE',
+            iso: 'zh-CN',
+            name: 'BASE zh-CN',
         },
     ];
 

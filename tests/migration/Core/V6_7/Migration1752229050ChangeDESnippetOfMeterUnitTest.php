@@ -43,13 +43,13 @@ class Migration1752229050ChangeDESnippetOfMeterUnitTest extends TestCase
         static::assertSame(1752229050, (new Migration1752229050ChangeDESnippetOfMeterUnit())->getCreationTimestamp());
     }
 
-    public function testMigrationUpdatesGermanTranslation(): void
+    public function testMigrationUpdatesChineseTranslation(): void
     {
-        $deLanguageId = $this->getDeLanguageId();
+        $zhCnLanguageId = $this->getZhCnLanguageId();
         $meterUnitId = $this->getMeterUnitId();
 
-        if (!$deLanguageId || !$meterUnitId) {
-            static::markTestSkipped('German language or meter unit not found');
+        if (!$zhCnLanguageId || !$meterUnitId) {
+            static::markTestSkipped('Chinese language or meter unit not found');
         }
 
         $this->connection->executeStatement('
@@ -57,9 +57,9 @@ class Migration1752229050ChangeDESnippetOfMeterUnitTest extends TestCase
             SET `name` = :name, `updated_at` = NULL
             WHERE `measurement_display_unit_id` = :unitId AND `language_id` = :languageId
         ', [
-            'name' => 'Zähler',
+            'name' => '仪表',
             'unitId' => $meterUnitId,
-            'languageId' => $deLanguageId,
+            'languageId' => $zhCnLanguageId,
         ]);
 
         $translationBefore = $this->connection->fetchOne('
@@ -67,10 +67,10 @@ class Migration1752229050ChangeDESnippetOfMeterUnitTest extends TestCase
             WHERE `measurement_display_unit_id` = :unitId AND `language_id` = :languageId
         ', [
             'unitId' => $meterUnitId,
-            'languageId' => $deLanguageId,
+            'languageId' => $zhCnLanguageId,
         ]);
 
-        static::assertSame('Zähler', $translationBefore);
+        static::assertSame('仪表', $translationBefore);
 
         $migration = new Migration1752229050ChangeDESnippetOfMeterUnit();
         $migration->update($this->connection);
@@ -82,30 +82,30 @@ class Migration1752229050ChangeDESnippetOfMeterUnitTest extends TestCase
             WHERE `measurement_display_unit_id` = :unitId AND `language_id` = :languageId
         ', [
             'unitId' => $meterUnitId,
-            'languageId' => $deLanguageId,
+            'languageId' => $zhCnLanguageId,
         ]);
 
-        static::assertSame('Meter', $translationAfter);
+        static::assertSame('米', $translationAfter);
     }
 
     public function testMigrationDoesNotUpdateModifiedTranslation(): void
     {
-        $deLanguageId = $this->getDeLanguageId();
+        $zhCnLanguageId = $this->getZhCnLanguageId();
         $meterUnitId = $this->getMeterUnitId();
 
-        if (!$deLanguageId || !$meterUnitId) {
-            static::markTestSkipped('German language or meter unit not found');
+        if (!$zhCnLanguageId || !$meterUnitId) {
+            static::markTestSkipped('Chinese language or meter unit not found');
         }
 
-        // Set a different German translation with updated_at (simulating manual modification)
+        // Set a different Chinese translation with updated_at (simulating manual modification)
         $this->connection->executeStatement('
             UPDATE `measurement_display_unit_translation`
             SET `name` = :name, `updated_at` = :updatedAt
             WHERE `measurement_display_unit_id` = :unitId AND `language_id` = :languageId
         ', [
-            'name' => 'Manuell bearbeitet',
+            'name' => '手动修改',
             'unitId' => $meterUnitId,
-            'languageId' => $deLanguageId,
+            'languageId' => $zhCnLanguageId,
             'updatedAt' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
 
@@ -117,19 +117,19 @@ class Migration1752229050ChangeDESnippetOfMeterUnitTest extends TestCase
             WHERE `measurement_display_unit_id` = :unitId AND `language_id` = :languageId
         ', [
             'unitId' => $meterUnitId,
-            'languageId' => $deLanguageId,
+            'languageId' => $zhCnLanguageId,
         ]);
 
-        static::assertSame('Manuell bearbeitet', $translationAfter);
+        static::assertSame('手动修改', $translationAfter);
     }
 
-    private function getDeLanguageId(): ?string
+    private function getZhCnLanguageId(): ?string
     {
         $result = $this->connection->fetchOne('
             SELECT lang.id
             FROM language lang
             INNER JOIN locale loc ON lang.translation_code_id = loc.id
-            AND loc.code = "de-DE"
+            AND loc.code = "zh-CN"
         ');
 
         if ($result === false || Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM) === $result) {

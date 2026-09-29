@@ -63,7 +63,7 @@ class EntityReaderTest extends TestCase
     public function testReadLoadsTranslationsAssociations(): void
     {
         $productId = $this->createProduct(
-            deDeTranslation: 'Deutscher Name',
+            zhCnTranslation: '中文名称',
             defaultTranslation: null,
         );
 
@@ -80,14 +80,14 @@ class EntityReaderTest extends TestCase
         $translations = $products->get($productId)?->getTranslations();
         static::assertNotNull($translations);
         static::assertCount(2, $translations);
-        $deDeTranslation = $translations->filterByLanguageId($this->getDeDeLanguageId())->first();
-        static::assertSame('Deutscher Name', $deDeTranslation?->get('name'));
+        $zhCnTranslation = $translations->filterByLanguageId($this->getZhCnLanguageId())->first();
+        static::assertSame('中文名称', $zhCnTranslation?->get('name'));
     }
 
     public function testReadLoadsTranslationsAssociationsWithCriteriaFields(): void
     {
         $productId = $this->createProduct(
-            deDeTranslation: 'Deutscher Name',
+            zhCnTranslation: '中文名称',
             defaultTranslation: null,
         );
 
@@ -104,16 +104,16 @@ class EntityReaderTest extends TestCase
         $translations = $products->get($productId)?->get('translations');
         static::assertInstanceOf(EntityCollection::class, $translations);
         static::assertCount(2, $translations);
-        $deDeTranslation = $translations
-            ->filter(fn (Entity $entity) => $entity->get('languageId') === $this->getDeDeLanguageId())
+        $zhCnTranslation = $translations
+            ->filter(fn (Entity $entity) => $entity->get('languageId') === $this->getZhCnLanguageId())
             ->first();
-        static::assertSame('Deutscher Name', $deDeTranslation?->get('name'));
+        static::assertSame('中文名称', $zhCnTranslation?->get('name'));
     }
 
     public function testReadLoadsTranslatedFieldsInCorrectLanguage(): void
     {
         $productId = $this->createProduct(
-            deDeTranslation: 'Deutscher Name',
+            zhCnTranslation: '中文名称',
             defaultTranslation: 'Default Name',
         );
 
@@ -121,20 +121,20 @@ class EntityReaderTest extends TestCase
             static::getContainer()->get(ProductDefinition::class),
             new Criteria(),
             self::createLocalizedContext([
-                $this->getDeDeLanguageId(),
+                $this->getZhCnLanguageId(),
                 Defaults::LANGUAGE_SYSTEM,
             ]),
         );
 
         static::assertInstanceOf(ProductCollection::class, $products);
         $translatedFields = $products->get($productId)?->get('translated');
-        static::assertSame('Deutscher Name', $translatedFields['name']);
+        static::assertSame('中文名称', $translatedFields['name']);
     }
 
     public function testReadLoadsTranslatedFieldsInCorrectLanguageWithCriteriaFields(): void
     {
         $productId = $this->createProduct(
-            deDeTranslation: 'Deutscher Name',
+            zhCnTranslation: '中文名称',
             defaultTranslation: 'Default name',
         );
 
@@ -146,7 +146,7 @@ class EntityReaderTest extends TestCase
             static::getContainer()->get(ProductDefinition::class),
             $criteria,
             self::createLocalizedContext([
-                $this->getDeDeLanguageId(),
+                $this->getZhCnLanguageId(),
                 Defaults::LANGUAGE_SYSTEM,
             ]),
         );
@@ -154,13 +154,13 @@ class EntityReaderTest extends TestCase
         $translatedFields = $products->get($productId)?->get('translated');
         static::assertNotNull($translatedFields);
         static::assertCount(1, $translatedFields);
-        static::assertSame('Deutscher Name', $translatedFields['name']);
+        static::assertSame('中文名称', $translatedFields['name']);
     }
 
     public function testReadLoadsTranslatedFieldsByApplyingLanguageOverrides(): void
     {
         $productId = $this->createProduct(
-            deDeTranslation: null,
+            zhCnTranslation: null,
             defaultTranslation: 'Fallback name',
         );
 
@@ -172,7 +172,7 @@ class EntityReaderTest extends TestCase
             static::getContainer()->get(ProductDefinition::class),
             $criteria,
             self::createLocalizedContext([
-                $this->getDeDeLanguageId(),
+                $this->getZhCnLanguageId(),
                 Defaults::LANGUAGE_SYSTEM,
             ]),
         );
@@ -187,13 +187,13 @@ class EntityReaderTest extends TestCase
     {
         $ids = new IdsCollection();
         $this->createProduct(
-            deDeTranslation: 'Parent: Deutscher Name',
+            zhCnTranslation: 'Parent: 中文名称',
             defaultTranslation: 'Parent: Fallback name',
             productNumber: 'parent-product',
             ids: $ids,
         );
         $productId = $this->createProduct(
-            deDeTranslation: 'Deutscher Name',
+            zhCnTranslation: '中文名称',
             defaultTranslation: 'Fallback name',
             parentProductNumber: 'parent-product',
             ids: $ids,
@@ -204,7 +204,7 @@ class EntityReaderTest extends TestCase
         $criteria->addFields(['name']);
 
         $context = self::createLocalizedContext([
-            $this->getDeDeLanguageId(),
+            $this->getZhCnLanguageId(),
             Defaults::LANGUAGE_SYSTEM,
         ]);
         $context->setConsiderInheritance(true);
@@ -218,20 +218,20 @@ class EntityReaderTest extends TestCase
         $translatedFields = $products->get($productId)?->get('translated');
         static::assertNotNull($translatedFields);
         static::assertCount(1, $translatedFields);
-        static::assertSame('Deutscher Name', $translatedFields['name']);
+        static::assertSame('中文名称', $translatedFields['name']);
     }
 
     public function testReadLoadsTranslatedFieldsByApplyingInheritanceAndLanguageOverridesUsingParentTranslationAsFallback(): void
     {
         $ids = new IdsCollection();
         $this->createProduct(
-            deDeTranslation: 'Parent: Deutscher Name',
+            zhCnTranslation: 'Parent: 中文名称',
             defaultTranslation: 'Parent: Fallback name',
             productNumber: 'parent-product',
             ids: $ids,
         );
         $productId = $this->createProduct(
-            deDeTranslation: null,
+            zhCnTranslation: null,
             defaultTranslation: 'Fallback name',
             parentProductNumber: 'parent-product',
             ids: $ids,
@@ -242,7 +242,7 @@ class EntityReaderTest extends TestCase
         $criteria->addFields(['name']);
 
         $context = self::createLocalizedContext([
-            $this->getDeDeLanguageId(),
+            $this->getZhCnLanguageId(),
             Defaults::LANGUAGE_SYSTEM,
         ]);
         $context->setConsiderInheritance(true);
@@ -256,7 +256,7 @@ class EntityReaderTest extends TestCase
         $translatedFields = $products->get($productId)?->get('translated');
         static::assertNotNull($translatedFields);
         static::assertCount(1, $translatedFields);
-        static::assertSame('Parent: Deutscher Name', $translatedFields['name']);
+        static::assertSame('Parent: 中文名称', $translatedFields['name']);
     }
 
     public function testAssociationWithOrderBy(): void
@@ -296,7 +296,7 @@ class EntityReaderTest extends TestCase
     }
 
     private function createProduct(
-        ?string $deDeTranslation,
+        ?string $zhCnTranslation,
         ?string $defaultTranslation,
         string $productNumber = 'product-1',
         ?string $parentProductNumber = null,
@@ -305,8 +305,8 @@ class EntityReaderTest extends TestCase
         $ids ??= new IdsCollection();
         $productBuilder = new ProductBuilder($ids, $productNumber);
         $productBuilder->price(100);
-        if ($deDeTranslation !== null) {
-            $productBuilder->translation($this->getDeDeLanguageId(), 'name', $deDeTranslation);
+        if ($zhCnTranslation !== null) {
+            $productBuilder->translation($this->getZhCnLanguageId(), 'name', $zhCnTranslation);
         }
         if ($defaultTranslation !== null) {
             $productBuilder->translation(Defaults::LANGUAGE_SYSTEM, 'name', $defaultTranslation);

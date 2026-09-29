@@ -102,7 +102,7 @@ class CustomerFlowEventsSubscriberTest extends TestCase
         $restorer = $this->createMock(SalesChannelContextRestorer::class);
         $restorer->expects($this->once())
             ->method('restoreByCustomer')
-            ->willThrowException(SalesChannelException::providedLanguageNotAvailable('de-DE', ['en-GB']));
+            ->willThrowException(SalesChannelException::providedLanguageNotAvailable('zh-CN', ['en-GB']));
 
         $dispatcher = $this->createMock(EventDispatcherInterface::class);
         $dispatcher->expects($this->never())->method('dispatch');

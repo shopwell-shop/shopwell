@@ -23,7 +23,7 @@ class BlockTest extends TestCase
         static::assertSame(
             [
                 'en-GB' => 'Teaser block',
-                'de-DE' => 'Teaser Block',
+                'zh-CN' => 'Teaser Block',
             ],
             $block->getLabel()
         );
@@ -44,7 +44,7 @@ class BlockTest extends TestCase
                 'category' => 'text-image',
                 'label' => [
                     'en-GB' => 'Teaser block',
-                    'de-DE' => 'Teaser Block',
+                    'zh-CN' => 'Teaser Block',
                 ],
                 'slots' => $slots,
                 'defaultConfig' => $defaultConfig,
@@ -61,14 +61,14 @@ class BlockTest extends TestCase
                 'name' => 'teaser-block',
                 'label' => [
                     'en-GB' => 'Teaser block',
-                    'de-DE' => 'Teaser Block',
+                    'zh-CN' => 'Teaser Block',
                 ],
                 'block' => [
                     'name' => 'teaser-block',
                     'category' => 'text-image',
                     'label' => [
                         'en-GB' => 'Teaser block',
-                        'de-DE' => 'Teaser Block',
+                        'zh-CN' => 'Teaser Block',
                     ],
                     'slots' => [
                         'left' => [
@@ -117,7 +117,7 @@ class BlockTest extends TestCase
     <name>teaser-block</name>
     <category>text-image</category>
     <label>Teaser block</label>
-    <label lang="de-DE">Teaser Block</label>
+    <label lang="zh-CN">Teaser Block</label>
     <slots>
         <slot name="left" type="image">
             <config>

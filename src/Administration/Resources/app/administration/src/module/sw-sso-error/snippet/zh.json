@@ -1,0 +1,18 @@
+{
+  "global": {
+    "sw-sso-error": {
+      "general": {
+        "title": "SSO 错误",
+        "description": "Shopwell 登录错误"
+      },
+      "error-card": {
+        "title": "无权访问此商店",
+        "text": "登录成功，但你无权访问此 Shopwell 店铺。",
+        "button": "使用其他账户登录",
+        "loggedInAsPrefix": "登录身份：",
+        "logoAltText": "Shopwell 徽标",
+        "loadingLabel": "加载中 ..."
+      }
+    }
+  }
+}

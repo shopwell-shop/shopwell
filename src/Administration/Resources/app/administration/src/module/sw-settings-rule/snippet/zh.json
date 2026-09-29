@@ -1,0 +1,178 @@
+{
+  "sw-settings-rule": {
+    "error-codes": {
+      "INVALID_DATE_RANGE": "无效的日期范围：开始日期必须早于结束日期。"
+    },
+    "general": {
+      "mainMenuItemGeneral": "规则构建器",
+      "placeholderSearchBar": "搜索全部规则…",
+      "descriptionTextModule": "规则管理"
+    },
+    "filter": {
+      "conditionFilter": {
+        "label": "条件",
+        "placeholder": "选择条件…"
+      },
+      "groupFilter": {
+        "label": "条件类型",
+        "placeholder": "选择类型..."
+      },
+      "assignmentFilter": {
+        "label": "分配",
+        "placeholder": "选择分配...",
+        "values": {
+          "cartPromotions": "优惠活动购物车规则",
+          "orderPromotions": "优惠活动订单规则",
+          "personaPromotions": "优惠活动客户规则",
+          "promotionSetGroups": "优惠活动套装组规则",
+          "promotionDiscounts": "优惠活动商品折扣规则",
+          "flowSequences": "流程",
+          "paymentMethods": "支付方式",
+          "productPrices": "商品价格规则",
+          "shippingMethodPriceCalculations": "配送方式价格矩阵",
+          "shippingMethodPrices": "配送方式价格规则",
+          "shippingMethods": "配送方式可用性规则"
+        }
+      },
+      "tagFilter": {
+        "label": "标签",
+        "placeholder": "选择标签..."
+      }
+    },
+    "list": {
+      "columnTaxProviders": "税务服务商分配",
+      "columnWarehouseGroup": "仓库组分配",
+      "textHeadline": "规则构建器",
+      "buttonAddRule": "创建规则",
+      "columnName": "规则",
+      "columnDescription": "描述",
+      "columnDateCreated": "创建日期",
+      "columnDateUpdated": "最后修改",
+      "columnPriority": "优先级",
+      "columnStatus": "状态",
+      "columnTags": "标签",
+      "columnCartPromotions": "优惠活动购物车规则分配",
+      "columnOrderPromotions": "优惠活动订单规则分配",
+      "columnPersonaPromotions": "优惠活动客户规则分配",
+      "columnPromotionSetGroups": "优惠活动套装组规则分配",
+      "columnPromotionDiscounts": "优惠活动商品折扣规则分配",
+      "columnFlowSequences": "流程分配",
+      "columnPaymentMethods": "支付方式分配",
+      "columnProductPrices": "商品价格分配",
+      "columnShippingMethodPriceCalculations": "配送方式价格矩阵分配",
+      "columnShippingMethodPrices": "配送方式价格分配",
+      "columnShippingMethods": "配送方式可用性分配",
+      "titleSidebarItemRefresh": "刷新",
+      "valid": "有效",
+      "invalid": "无效",
+      "messageEmpty": "暂无规则",
+      "assignments": {
+        "taxProviders": "税务服务商 | 税务服务商",
+        "warehouseGroup": "仓库组 | 仓库组",
+        "cartPromotions": "优惠活动购物车规则 | 优惠活动购物车规则",
+        "orderPromotions": "优惠活动订单规则 | 优惠活动订单规则",
+        "personaPromotions": "优惠活动客户规则 | 优惠活动客户规则",
+        "promotionSetGroups": "优惠活动套装组规则 | 优惠活动套装组规则",
+        "promotionDiscounts": "优惠活动商品折扣规则 | 优惠活动商品折扣规则",
+        "flowSequences": "流程 | 流程",
+        "paymentMethods": "支付方式 | 支付方式",
+        "productPrices": "商品价格 | 商品价格",
+        "shippingMethodPriceCalculations": "配送方式价格矩阵 | 配送方式价格矩阵",
+        "shippingMethodPrices": "配送方式价格 | 配送方式价格",
+        "shippingMethods": "配送方式 | 配送方式"
+      }
+    },
+    "detail": {
+      "textHeadline": "新建规则",
+      "titleCard": "通用",
+      "labelName": "名称",
+      "labelDescription": "描述",
+      "labelPriority": "优先级",
+      "labelType": "类型",
+      "placeholderName": "为此规则设置名称 ...",
+      "placeholderDescription": "为此规则设置描述 ...",
+      "placeholderPriority": "为此规则设置优先级 ...",
+      "placeholderTags": "输入标签 ...",
+      "placeholderType": "输入类型 ...",
+      "messageSaveSuccess": "规则 \"{name}\" 已成功保存。",
+      "ruleCard": "条件",
+      "messageSaveError": "保存规则时发生错误",
+      "productStreamIndexingWarning": {
+        "title": "动态商品组索引已禁用",
+        "message": "条件「项目位于动态商品组」永远不会成立。",
+        "action": "详见我们的文档"
+      },
+      "deprecatedConditionWarning": "条件 \"{label}\" 已弃用，将在 {version} 中移除。请改用 \"{replacement}\"。",
+      "deprecatedConditionWarningNoReplacement": "条件 \"{label}\" 已弃用，将在 {version} 中移除。",
+      "flowOnlyConditionsWarning": "该规则中的以下条件需要流程上下文：{conditions}。在流程之外（例如配送方式、支付方式或优惠活动分配中），它们始终会被判定为「false」。",
+      "tabGeneral": "通用",
+      "tabAssignments": "分配",
+      "buttonAddAssignment": "添加分配",
+      "associations": {
+        "shippingMethods": "配送方式",
+        "promotions": "优惠活动",
+        "products": "商品价格规则",
+        "shippingMethodPrices": "配送方式价格规则",
+        "paymentMethods": "支付方式",
+        "promotionCustomerRules": "优惠活动客户规则",
+        "promotionOrderRules": "优惠活动订单规则",
+        "promotionCartRules": "优惠活动购物车规则",
+        "promotionDiscountRules": "优惠活动商品折扣规则",
+        "promotionGroupRules": "优惠活动套装组规则",
+        "shippingMethodAvailabilityRule": "配送方式可用性规则",
+        "flows": "流程构建器",
+        "taxProviders": "税务服务商",
+        "columns": {
+          "name": "名称",
+          "manufacturer": "制造商",
+          "description": "描述",
+          "taxCalculation": "计税方式",
+          "active": "启用",
+          "extension": "扩展",
+          "position": "排序位置",
+          "validFrom": "生效日期",
+          "validTo": "有效期至",
+          "flow": "流程",
+          "trigger": "触发器"
+        }
+      },
+      "typeHasNoAssociations": "未分配任何规则",
+      "hasNoAssociations": "此规则未被使用",
+      "associationsLoadingError": "规则的分配无法加载。",
+      "textModalDelete": "确定要移除该分配吗？",
+      "textModalBulkDelete": "确定要移除该分配吗？ | 确定要移除这 {count} 个分配吗？",
+      "titleModalDelete": "删除分配",
+      "types": {
+        "shipping": "配送方式",
+        "payment": "支付方式",
+        "price": "价格",
+        "flowBuilder": "流程构建器"
+      },
+      "groups": {
+        "general": "通用",
+        "cart": "购物车",
+        "items": "购物车中的商品",
+        "customers": "客户",
+        "promotions": "营销与优惠活动",
+        "flow": "流程构建器",
+        "orders": "订单",
+        "misc": "其他"
+      },
+      "textUnsavedConditions": "此规则有未保存的更改。请保存后再添加分配。"
+    },
+    "conditionFilter": {
+      "infoText": "使用筛选定义哪些项目必须满足此条件。"
+    },
+    "conditionModal": {
+      "modalTitle": "筛选",
+      "messageSaveError": "保存筛选时发生错误。"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "rule": {
+        "label": "规则构建器"
+      }
+    }
+  }
+}

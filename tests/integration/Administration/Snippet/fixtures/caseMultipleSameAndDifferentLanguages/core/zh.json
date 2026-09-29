@@ -1,0 +1,13 @@
+{
+    "test": {
+        "uniqueNamespaceCore": {
+            "someLabel": "core zh",
+            "anotherLabel": "core zh"
+        },
+        "someSharedNamespace": {
+            "uniqueKeyCore": "core zh",
+            "shouldBeOverwritten": "nobody should ever see this",
+            "shouldAlsoBeOverwritten": "nobody should ever see this either"
+        }
+    }
+}

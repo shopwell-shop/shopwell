@@ -1,0 +1,124 @@
+{
+  "sw-settings-shipping": {
+    "general": {
+      "mainMenuItemGeneral": "配送",
+      "placeholderSearchBar": "搜索全部配送方式…",
+      "descriptionTextModule": "配送方式管理"
+    },
+    "list": {
+      "textHeadline": "配送",
+      "buttonAddShippingMethod": "新建配送方式",
+      "columnName": "名称",
+      "columnDescription": "描述",
+      "columnActive": "启用",
+      "columnPosition": "排序位置",
+      "messageEmpty": "暂无配送方式",
+      "textDeleteConfirm": "确定要删除配送方式 \"{name}\" 吗？",
+      "titleSidebarItemRefresh": "刷新",
+      "messageSaveSuccess": "配送方式 \"{name}\" 已成功保存。",
+      "messageSaveError": "配送方式 \"{name}\" 无法保存。",
+      "messageDeleteError": "配送方式 \"{name}\" 无法删除。",
+      "messageDeleteSuccess": "配送方式 \"{name}\" 已成功删除。",
+      "columnTaxType": "计税方式",
+      "columnTaxRate": "税率",
+      "placeholderTaxType": "选择税率类型 ..."
+    },
+    "detail": {
+      "textHeadline": "新建配送方式",
+      "titleCard": "设置",
+      "messageSaveSuccess": "配送方式 \"{name}\" 已成功保存。",
+      "messageSaveError": "配送方式 \"{name}\" 无法保存。",
+      "labelName": "名称",
+      "labelTechnicalName": "技术名称",
+      "labelDescription": "描述",
+      "labelActive": "启用",
+      "labelPosition": "排序位置",
+      "labelDeliveryTime": "配送时间",
+      "placeholderDeliveryTime": "搜索配送时间 ...",
+      "placeholderName": "输入名称 ...",
+      "placeholderTechnicalName": "输入技术名称…",
+      "placeholderPosition": "输入排序位置 ...",
+      "placeholderDescription": "输入描述 ...",
+      "labelSetRules": "选择规则",
+      "labelBasicInfo": "基本信息",
+      "topRule": "可用性规则",
+      "placeholderTopRule": "搜索或创建可用性规则 ...",
+      "labelLogoUpload": "上传徽标",
+      "labelTrackingUrl": "追踪 URL",
+      "placeholderTrackingUrl": "在此输入追踪 URL…",
+      "helpTextTrackingUrl": "在此输入配送服务商的追踪 URL，并在实际包裹单号的位置使用 \"%s\" 作为占位符。包裹单号会从各订单中自动填入。",
+      "helpTextTechnicalName": "技术名称用于唯一标识配送方式。后续修改技术名称可能导致依赖该名称的配送集成失效。",
+      "tax": {
+        "fieldName": "计税方式",
+        "labelTaxType": "计税类型",
+        "labelTaxRate": "税率",
+        "placeholderTaxType": "选择税率类型 ...",
+        "placeholderTaxRate": "选择税率 ...",
+        "helpText": "选择运费的税额计算方式：<ul style='margin-left: 15px'><li>自动 - 基于购物车中包含的所有税率计算</li><li>最高 - 基于购物车中包含的最高税率计算</li><li>固定 - 基于手动选择的税率计算</li></ul>"
+      }
+    },
+    "constants": {
+      "weight": "重量",
+      "price": "价格",
+      "lineItemCount": "商品数量"
+    },
+    "priceMatrix": {
+      "titleCard": "价格矩阵",
+      "noRestriction": "无限制",
+      "addNewRule": "添加新规则",
+      "addNewShippingPrice": "添加新价格规则",
+      "duplicateMatrixContextLabel": "复制价格矩阵",
+      "deleteMatrixContextLabel": "删除价格矩阵",
+      "contextMenuDeletePrice": "删除价格规则",
+      "selectProperty": "选择购物车属性 ...",
+      "useRules": "构建规则",
+      "emptyText": "价格矩阵要基于预定义的购物车属性还是自定义规则？请选择：",
+      "chooseCustomRule": "选择自定义规则",
+      "calculationLineItemCount": "商品数量",
+      "calculationPrice": "购物车金额",
+      "calculationWeight": "重量",
+      "calculationVolume": "体积",
+      "columnQuantityStart": "数量 ...",
+      "columnQuantityEnd": "至 ...",
+      "columnWeightStart": "重量从 ...",
+      "columnWeightEnd": "至 ...",
+      "columnPriceStart": "购物车金额从 ...",
+      "columnPriceEnd": "至 ...",
+      "columnVolumeStart": "体积从 ...",
+      "columnVolumeEnd": "至 ...",
+      "columnPrice": "价格",
+      "columnCalculationRule": "规则",
+      "buttonAddAdditionalPriceMatrix": "添加价格矩阵",
+      "any": "∞",
+      "textDeleteConfirm": "确定要删除价格矩阵 \"{name}\" 吗？ | 确定要删除价格矩阵吗？",
+      "deletionNotPossibleMessage": "必须至少保留一个价格梯度。或者尝试删除整个价格规则。",
+      "labelGrossNet": "(含税 / 不含税)",
+      "ruleAlreadyUsedOrRestricted": "该规则已被使用，或包含无法应用于高级价格的条件。",
+      "ruleAlreadyUsedInMatrix": "该规则已在此价格矩阵中使用。",
+      "textOr": "或",
+      "chooseOrCreateRule": "选择或创建规则",
+      "unrestrictedRuleAlreadyExistsMessage": "已存在一个无限制的价格矩阵。",
+      "newMatrixAlreadyExists": "已存在一个新的价格矩阵，但未分配规则。",
+      "newMatrixAlertMessage": "要保存此价格矩阵，必须分配一个规则。",
+      "buttonLoadAllPrices": "加载全部价格"
+    },
+    "sidebar": {
+      "labelUseAsLogo": "用作徽标"
+    },
+    "shippingPriceModal": {
+      "modalTitle": "添加配送价格规则"
+    },
+    "shippingCostOptions": {
+      "auto": "自动",
+      "highest": "最高费率",
+      "fixed": "固定税率"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "shipping": {
+        "label": "配送"
+      }
+    }
+  }
+}

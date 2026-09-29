@@ -65,7 +65,7 @@ class CustomFieldSubscriberTest extends TestCase
             $createdSet = [
                 'id' => Uuid::randomHex(),
                 'name' => 'Set ' . $set,
-                'baseFile' => 'de-DE',
+                'baseFile' => 'zh-CN',
                 'iso' => $set,
             ];
             $this->snippetSetRepository->create([$createdSet], $this->context);
@@ -122,7 +122,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label',
+                                    'zh-CN' => 'DE - Label',
                                     'en-GB' => 'EN - Label',
                                 ],
                             ],
@@ -131,7 +131,7 @@ class CustomFieldSubscriberTest extends TestCase
                 ],
             ],
             'expectedSnippets' => [
-                'de-DE' => [
+                'zh-CN' => [
                     'customFields.CustomField_1' => 'DE - Label',
                 ],
 
@@ -157,7 +157,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label',
+                                    'zh-CN' => 'DE - Label',
                                     'en-GB' => 'EN - Label',
                                 ],
                             ],
@@ -166,7 +166,7 @@ class CustomFieldSubscriberTest extends TestCase
                 ],
             ],
             'expectedSnippets' => [
-                'de-DE' => [
+                'zh-CN' => [
                     'customFields.CustomField_1' => 'DE - Label',
                 ],
 
@@ -195,7 +195,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label',
+                                    'zh-CN' => 'DE - Label',
                                     'en-GB' => 'EN - Label',
                                     'fr-FR' => 'FR - Label',
                                 ],
@@ -205,7 +205,7 @@ class CustomFieldSubscriberTest extends TestCase
                 ],
             ],
             'expectedSnippets' => [
-                'de-DE' => [
+                'zh-CN' => [
                     'customFields.CustomField_1' => 'DE - Label',
                 ],
 
@@ -218,7 +218,7 @@ class CustomFieldSubscriberTest extends TestCase
 
         yield 'Multiple SnippetSets for one iso code' => [
             'snippetSets' => [
-                'de-DE',
+                'zh-CN',
                 'en-GB',
             ],
             'customFieldSets' => [
@@ -232,7 +232,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label',
+                                    'zh-CN' => 'DE - Label',
                                     'en-GB' => 'EN - Label',
                                     'fr-FR' => 'FR - Label',
                                 ],
@@ -242,7 +242,7 @@ class CustomFieldSubscriberTest extends TestCase
                 ],
             ],
             'expectedSnippets' => [
-                'de-DE' => [
+                'zh-CN' => [
                     'customFields.CustomField_1' => 'DE - Label',
                 ],
 
@@ -255,7 +255,7 @@ class CustomFieldSubscriberTest extends TestCase
 
         yield 'Create CustomField without label' => [
             'snippetSets' => [
-                'de-DE',
+                'zh-CN',
                 'en-GB',
                 'fr-FR',
             ],
@@ -279,7 +279,7 @@ class CustomFieldSubscriberTest extends TestCase
 
         yield 'One SnippetSet is not available with multiple SnippetSets for one iso code' => [
             'snippetSets' => [
-                'de-DE',
+                'zh-CN',
                 'en-GB',
                 'fr-FR',
             ],
@@ -302,7 +302,7 @@ class CustomFieldSubscriberTest extends TestCase
                 ],
             ],
             'expectedSnippets' => [
-                'de-DE' => [
+                'zh-CN' => [
                     'customFields.CustomField_1' => 'CustomField_1',
                 ],
 
@@ -319,7 +319,7 @@ class CustomFieldSubscriberTest extends TestCase
 
         yield 'Add multiple CustomFields with different iso code labels' => [
             'snippetSets' => [
-                'de-DE',
+                'zh-CN',
                 'en-GB',
                 'fr-FR',
             ],
@@ -368,7 +368,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label',
+                                    'zh-CN' => 'DE - Label',
                                 ],
                             ],
                         ],
@@ -393,7 +393,7 @@ class CustomFieldSubscriberTest extends TestCase
                 ],
             ],
             'expectedSnippets' => [
-                'de-DE' => [
+                'zh-CN' => [
                     'customFields.CustomField_1' => 'CustomField_1',
                     'customFields.CustomField_2' => 'CustomField_2',
                     'customFields.CustomField_3' => 'DE - Label',
@@ -419,7 +419,7 @@ class CustomFieldSubscriberTest extends TestCase
 
         yield 'Update one CustomField' => [
             'snippetSets' => [
-                'de-DE',
+                'zh-CN',
                 'en-GB',
             ],
             'customFieldSets' => [
@@ -433,7 +433,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label - 1',
+                                    'zh-CN' => 'DE - Label - 1',
                                 ],
                             ],
                         ],
@@ -447,7 +447,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'id' => $customField,
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label - 2',
+                                    'zh-CN' => 'DE - Label - 2',
                                 ],
                             ],
                         ],
@@ -461,7 +461,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'id' => $customField,
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label - 3',
+                                    'zh-CN' => 'DE - Label - 3',
                                 ],
                             ],
                         ],
@@ -475,7 +475,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'id' => $customField,
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label - 4',
+                                    'zh-CN' => 'DE - Label - 4',
                                 ],
                             ],
                         ],
@@ -483,7 +483,7 @@ class CustomFieldSubscriberTest extends TestCase
                 ],
             ],
             'expectedSnippets' => [
-                'de-DE' => [
+                'zh-CN' => [
                     'customFields.CustomField_1' => 'DE - Label - 1',
                 ],
 
@@ -512,7 +512,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label - 1',
+                                    'zh-CN' => 'DE - Label - 1',
                                 ],
                             ],
                         ],
@@ -529,7 +529,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label - 2',
+                                    'zh-CN' => 'DE - Label - 2',
                                 ],
                             ],
                         ],
@@ -546,7 +546,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label - 3',
+                                    'zh-CN' => 'DE - Label - 3',
                                 ],
                             ],
                         ],
@@ -563,7 +563,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label - 4',
+                                    'zh-CN' => 'DE - Label - 4',
                                 ],
                             ],
                         ],
@@ -571,7 +571,7 @@ class CustomFieldSubscriberTest extends TestCase
                 ],
             ],
             'expectedSnippets' => [
-                'de-DE' => [
+                'zh-CN' => [
                     'customFields.CustomField_1' => 'DE - Label - 1',
                     'customFields.CustomField_2' => 'DE - Label - 2',
                     'customFields.CustomField_3' => 'DE - Label - 3',
@@ -590,7 +590,7 @@ class CustomFieldSubscriberTest extends TestCase
 
         yield 'Add multiple CustomFields with one iso code label and multiple SnippetSets for one iso code' => [
             'snippetSets' => [
-                'de-DE',
+                'zh-CN',
             ],
             'customFieldSets' => [
                 [
@@ -603,7 +603,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label - 1',
+                                    'zh-CN' => 'DE - Label - 1',
                                 ],
                             ],
                         ],
@@ -620,7 +620,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label - 2',
+                                    'zh-CN' => 'DE - Label - 2',
                                 ],
                             ],
                         ],
@@ -637,7 +637,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label - 3',
+                                    'zh-CN' => 'DE - Label - 3',
                                 ],
                             ],
                         ],
@@ -654,7 +654,7 @@ class CustomFieldSubscriberTest extends TestCase
                             'type' => 'text',
                             'config' => [
                                 'label' => [
-                                    'de-DE' => 'DE - Label - 4',
+                                    'zh-CN' => 'DE - Label - 4',
                                 ],
                             ],
                         ],
@@ -662,7 +662,7 @@ class CustomFieldSubscriberTest extends TestCase
                 ],
             ],
             'expectedSnippets' => [
-                'de-DE' => [
+                'zh-CN' => [
                     'customFields.CustomField_1' => 'DE - Label - 1',
                     'customFields.CustomField_2' => 'DE - Label - 2',
                     'customFields.CustomField_3' => 'DE - Label - 3',
@@ -694,7 +694,7 @@ class CustomFieldSubscriberTest extends TestCase
                     'type' => 'text',
                     'config' => [
                         'label' => [
-                            'de-DE' => 'DE - Label 1',
+                            'zh-CN' => 'DE - Label 1',
                             'en-GB' => 'EN - Label 1',
                         ],
                     ],
@@ -705,7 +705,7 @@ class CustomFieldSubscriberTest extends TestCase
                     'type' => 'text',
                     'config' => [
                         'label' => [
-                            'de-DE' => 'DE - Label 2',
+                            'zh-CN' => 'DE - Label 2',
                             'en-GB' => 'EN - Label 2',
                         ],
                     ],
@@ -739,7 +739,7 @@ class CustomFieldSubscriberTest extends TestCase
             'type' => 'text',
             'config' => [
                 'label' => [
-                    'de-DE' => 'DE - Label 1',
+                    'zh-CN' => 'DE - Label 1',
                     'en-GB' => 'EN - Label 1',
                 ],
             ],

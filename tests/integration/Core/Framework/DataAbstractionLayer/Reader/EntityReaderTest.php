@@ -95,7 +95,7 @@ class EntityReaderTest extends TestCase
      */
     private EntityRepository $languageRepository;
 
-    private string $deLanguageId;
+    private string $zhLanguageId;
 
     protected function setUp(): void
     {
@@ -105,7 +105,7 @@ class EntityReaderTest extends TestCase
         $this->categoryRepository = static::getContainer()->get('category.repository');
         $this->languageRepository = static::getContainer()->get('language.repository');
         $this->customerRepository = static::getContainer()->get('customer.repository');
-        $this->deLanguageId = $this->getDeDeLanguageId();
+        $this->zhLanguageId = $this->getZhCnLanguageId();
 
         $this->registerDefinition(NonIdFieldNamePrimaryKeyTestDefinition::class);
         $this->registerDefinition(ConsistsOfManyToManyDefinition::class);
@@ -249,7 +249,7 @@ class EntityReaderTest extends TestCase
                         'routeName' => 'frontend.category.page',
                         'seoPathInfo' => '/test',
                         'pathInfo' => '/test',
-                        'languageId' => $this->deLanguageId,
+                        'languageId' => $this->zhLanguageId,
                     ],
                 ],
             ],
@@ -395,7 +395,7 @@ class EntityReaderTest extends TestCase
             Defaults::CURRENCY,
             [
                 Defaults::LANGUAGE_SYSTEM,
-                $this->deLanguageId,
+                $this->zhLanguageId,
             ]
         );
 
@@ -414,7 +414,7 @@ class EntityReaderTest extends TestCase
             [],
             Defaults::CURRENCY,
             [
-                $this->deLanguageId,
+                $this->zhLanguageId,
                 Defaults::LANGUAGE_SYSTEM,
             ]
         );
@@ -434,7 +434,7 @@ class EntityReaderTest extends TestCase
             [],
             Defaults::CURRENCY,
             [
-                $this->deLanguageId,
+                $this->zhLanguageId,
             ]
         );
 
@@ -476,7 +476,7 @@ class EntityReaderTest extends TestCase
             'tax' => ['taxRate' => 13, 'name' => 'green'],
             'translations' => [
                 Defaults::LANGUAGE_SYSTEM => ['name' => 'EN'],
-                $this->deLanguageId => ['name' => 'DE'],
+                $this->zhLanguageId => ['name' => '中文'],
                 $subLanguageId => ['description' => 'test'],
             ],
         ];
@@ -527,7 +527,7 @@ class EntityReaderTest extends TestCase
             'tax' => ['taxRate' => 13, 'name' => 'green'],
             'translations' => [
                 Defaults::LANGUAGE_SYSTEM => ['name' => 'EN'],
-                $this->deLanguageId => ['name' => 'DE'],
+                $this->zhLanguageId => ['name' => '中文'],
                 $subLanguageId => ['description' => 'test'],
             ],
         ];
@@ -2401,8 +2401,8 @@ class EntityReaderTest extends TestCase
                 'id' => $id,
                 'name' => 'system',
                 'translations' => [
-                    'de-DE' => [
-                        'name' => 'deutsch',
+                    'zh-CN' => [
+                        'name' => '中文',
                     ],
                 ],
             ],
@@ -2422,9 +2422,9 @@ class EntityReaderTest extends TestCase
         static::assertNotNull($catTranslations);
         static::assertCount(2, $catTranslations);
 
-        $transDe = $catTranslations->filterByLanguageId($this->deLanguageId)->first();
-        static::assertInstanceOf(CategoryTranslationEntity::class, $transDe);
-        static::assertSame('deutsch', $transDe->getName());
+        $transZh = $catTranslations->filterByLanguageId($this->zhLanguageId)->first();
+        static::assertInstanceOf(CategoryTranslationEntity::class, $transZh);
+        static::assertSame('中文', $transZh->getName());
 
         $transSystem = $catTranslations->filterByLanguageId(Defaults::LANGUAGE_SYSTEM)->first();
         static::assertInstanceOf(CategoryTranslationEntity::class, $transSystem);
@@ -2636,8 +2636,8 @@ class EntityReaderTest extends TestCase
                 'id' => $id,
                 'name' => 'system',
                 'translations' => [
-                    'de-DE' => [
-                        'name' => 'deutsch',
+                    'zh-CN' => [
+                        'name' => '中文',
                     ],
                 ],
             ],

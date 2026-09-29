@@ -1,0 +1,25 @@
+{
+  "sw-settings-message-stats": {
+    "general": {
+      "mainMenuItemGeneral": "消息队列统计",
+      "descriptionTextModule": "显示消息队列系统中已处理消息的统计",
+      "statsCardTitle": "概览",
+      "description": "该视图可详细查看 Shopwell 消息队列的性能。系统会记录每条已处理消息在队列中的停留时长。这些统计基于滑动时间窗口，你可以在系统设置中调整。",
+      "totalMessages": "已处理消息",
+      "totalMessagesHelp": "在指定时间范围内成功处理的消息数量。",
+      "averageTime": "队列中的平均等待时间",
+      "averageTimeHelp": "消息在队列中等待处理的平均耗时（秒）。有助于发现延迟或瓶颈。",
+      "processingWindow": "处理时间窗口",
+      "processingWindowHelp": "显示当前统计中包含的最早消息的时间。例如，统计窗口设为 1 小时，但处理仅在 5 分钟前开始，则会显示这一更短的时长。",
+      "refreshButton": "刷新数据",
+      "errorTitle": "统计数据加载出错",
+      "emptyStateTitle": "无可用统计",
+      "emptyStateSubline": "尚未收集到消息队列统计信息。",
+      "type": "类型",
+      "count": "数量",
+      "seconds": "s",
+      "statsDisabledTitle": "消息队列统计已禁用",
+      "statsDisabledContent": "如需启用消息队列统计，请在 shopwell.yaml 配置文件中将 \"shopwell.messenger.stats.enabled\" 设为 true，并重启工作进程。"
+    }
+  }
+}

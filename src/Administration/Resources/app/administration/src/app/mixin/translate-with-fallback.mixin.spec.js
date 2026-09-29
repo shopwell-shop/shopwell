@@ -6,7 +6,7 @@ import { mount } from '@vue/test-utils';
 
 const messages = {
     'en-GB': { 'sw-grid.column.name': 'Name (EN)' },
-    'de-DE': { 'sw-grid.column.name': 'Name (DE)' },
+    'zh-CN': { 'sw-grid.column.name': '名称 (ZH)' },
 };
 
 async function createWrapper({ locale, $te, $t } = {}) {
@@ -32,9 +32,9 @@ describe('src/app/mixin/translate-with-fallback.mixin.ts', () => {
     });
 
     it('returns the translated value when the snippet exists in the current locale', async () => {
-        const wrapper = await createWrapper({ locale: 'de-DE' });
+        const wrapper = await createWrapper({ locale: 'zh-CN' });
 
-        expect(wrapper.vm.tWithFallback('sw-grid.column.name')).toBe('Name (DE)');
+        expect(wrapper.vm.tWithFallback('sw-grid.column.name')).toBe('名称 (ZH)');
     });
 
     it('falls back to the fallback locale when the snippet is missing in the current locale', async () => {

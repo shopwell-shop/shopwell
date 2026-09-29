@@ -54,7 +54,7 @@ class Migration1625831469AddImportExportCrossSellingProfile extends MigrationSte
         $translations = new Translations(
             [
                 'import_export_profile_id' => $id,
-                'label' => 'Standardprofil Cross-Selling',
+                'label' => '标准配置 - 交叉销售',
             ],
             [
                 'import_export_profile_id' => $id,

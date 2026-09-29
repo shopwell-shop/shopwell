@@ -46,11 +46,11 @@ describe('src/core/service/utils/format.utils.js', () => {
             expect(date('2000-06-18T08:30:00.000+00:00')).toBe('June 18, 2000 at 8:30 AM');
         });
 
-        it('should convert the date correctly with timezone UTC in de-DE', async () => {
-            setLocale('de-DE');
+        it('should convert the date correctly with timezone UTC in zh-CN', async () => {
+            setLocale('zh-CN');
             setTimeZone('UTC');
 
-            expect(date('2000-06-18T08:30:00.000+00:00')).toBe('18. Juni 2000 um 08:30');
+            expect(date('2000-06-18T08:30:00.000+00:00')).toBe('2000年6月18日 08:30');
         });
 
         it('should convert the date correctly with timezone America/New_York in en-GB', async () => {
@@ -67,22 +67,22 @@ describe('src/core/service/utils/format.utils.js', () => {
             expect(date('2000-06-18T08:30:00.000+00:00')).toBe('June 18, 2000 at 4:30 AM');
         });
 
-        it('should convert the date correctly with timezone America/New_York in de-DE', async () => {
-            setLocale('de-DE');
+        it('should convert the date correctly with timezone America/New_York in zh-CN', async () => {
+            setLocale('zh-CN');
             setTimeZone('America/New_York');
 
-            expect(date('2000-06-18T08:30:00.000+00:00')).toBe('18. Juni 2000 um 04:30');
+            expect(date('2000-06-18T08:30:00.000+00:00')).toBe('2000年6月18日 04:30');
         });
 
-        it('should not convert the date correctly with timezone America/New_York in de-DE', async () => {
-            setLocale('de-DE');
+        it('should not convert the date correctly with timezone America/New_York in zh-CN', async () => {
+            setLocale('zh-CN');
             setTimeZone('America/New_York');
 
             expect(
                 date('2000-06-18T08:30:00.000+00:00', {
                     skipTimezoneConversion: true,
                 }),
-            ).toBe('18. Juni 2000 um 08:30');
+            ).toBe('2000年6月18日 08:30');
         });
     });
 
@@ -141,12 +141,12 @@ describe('src/core/service/utils/format.utils.js', () => {
 
         it('should use a different fallback language', async () => {
             Shopwell.Store.get('session').setAdminLocaleState({
-                locales: ['de-DE'],
-                locale: 'de-DE',
+                locales: ['zh-CN'],
+                locale: 'zh-CN',
                 languageId: '2fbb5fe2e29a4d70aa5854ce7ce3e20b',
             });
 
-            expect(currencyFilter(42, 'EUR', 0)).toBe('42 €');
+            expect(currencyFilter(42, 'EUR', 0)).toBe('€42');
 
             Shopwell.Store.get('session').setAdminLocaleState({
                 locales: ['en-GB'],
@@ -211,26 +211,26 @@ describe('src/core/service/utils/format.utils.js', () => {
         });
 
         it('renders the native name with language and region in the UI language', async () => {
-            setUiLocale('de-DE');
+            setUiLocale('zh-CN');
 
-            expect(localeName('fr-FR')).toBe('Français (Französisch, Frankreich)');
-            expect(localeName('en-GB')).toBe('English (Englisch, Vereinigtes Königreich)');
+            expect(localeName('fr-FR')).toBe('Français (法语, 法国)');
+            expect(localeName('en-GB')).toBe('English (英语, 英国)');
         });
 
         it('follows the UI language of the session', async () => {
             setUiLocale('en-GB');
 
-            expect(localeName('de-DE')).toBe('Deutsch (German, Germany)');
+            expect(localeName('zh-CN')).toBe('中文 (Chinese, China)');
         });
 
         it('prefers an explicitly given UI locale', async () => {
-            setUiLocale('de-DE');
+            setUiLocale('zh-CN');
 
-            expect(localeName('de-DE', 'fr-FR')).toBe('Deutsch (allemand, Allemagne)');
+            expect(localeName('zh-CN', 'fr-FR')).toBe('中文 (chinois, Chine)');
         });
 
         it('omits the region part for codes without a region', async () => {
-            expect(localeName('de', 'en-GB')).toBe('Deutsch (German)');
+            expect(localeName('zh', 'en-GB')).toBe('中文 (Chinese)');
         });
 
         it('falls back to the raw code when it is not a valid locale', async () => {

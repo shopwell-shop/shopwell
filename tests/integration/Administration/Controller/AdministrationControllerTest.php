@@ -43,14 +43,14 @@ class AdministrationControllerTest extends TestCase
 
     public function testSnippetRoute(): void
     {
-        $this->getBrowser()->request('GET', '/api/_admin/snippets?locale=de-DE');
+        $this->getBrowser()->request('GET', '/api/_admin/snippets?locale=zh-CN');
         static::assertSame(200, $this->getBrowser()->getResponse()->getStatusCode());
         $content = $this->getBrowser()->getResponse()->getContent();
         static::assertNotFalse($content);
 
         $response = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
         static::assertIsArray($response);
-        static::assertArrayHasKey('de-DE', $response);
+        static::assertArrayHasKey('zh-CN', $response);
         static::assertArrayHasKey('en-GB', $response);
     }
 

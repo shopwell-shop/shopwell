@@ -15,9 +15,9 @@
         <payment-method>
             <identifier>paymentMethodOne</identifier>
             <name>First Payment Method</name>
-            <name lang="de-DE">Erste Zahlungsart</name>
+            <name lang="zh-CN">第一种支付方式</name>
             <description>This is a simple description</description>
-            <description lang="de-DE">Das ist eine einfache Beschreibung</description>
+            <description lang="zh-CN">这是一个简单的描述</description>
             <pay-url>https://payment.example.com/pay</pay-url>
             <finalize-url>https://payment.example.com/finalize</finalize-url>
         </payment-method>

@@ -68,10 +68,10 @@ describe('src/app/component/form/sw-datepicker', () => {
     });
 
     it('should use the admin locale', async () => {
-        Shopwell.Store.get('session').currentLocale = 'de-DE';
+        Shopwell.Store.get('session').currentLocale = 'zh-CN';
         wrapper = await createWrapper();
 
-        expect(wrapper.vm.$data.flatpickrInstance.config.locale).toBe('de');
+        expect(wrapper.vm.$data.flatpickrInstance.config.locale).toBe('zh');
 
         Shopwell.Store.get('session').currentLocale = 'en-GB';
         await flushPromises();

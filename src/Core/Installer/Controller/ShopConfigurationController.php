@@ -73,7 +73,7 @@ class ShopConfigurationController extends InstallerController
 
             // Always include the selected shop language
             $shopLanguage = (string) $request->request->get('config_shop_language');
-            if (!\in_array($shopLanguage, $selectedLanguages, true) && !\in_array($shopLanguage, ['de-DE', 'en-GB'], true)) {
+            if (!\in_array($shopLanguage, $selectedLanguages, true) && !\in_array($shopLanguage, ['zh-CN', 'en-GB'], true)) {
                 $selectedLanguages[] = $shopLanguage;
             }
 
@@ -195,9 +195,9 @@ class ShopConfigurationController extends InstallerController
     {
         // Always include default languages for the UI
         $languages = [
-            'de-DE' => [
-                'id' => 'de-DE',
-                'label' => $this->translator->trans('shopwell.installer.select_language_de-DE'),
+            'zh' => [
+                'id' => 'zh-CN',
+                'label' => $this->translator->trans('shopwell.installer.select_language_zh'),
             ],
             'en-GB' => [
                 'id' => 'en-GB',

@@ -40,15 +40,15 @@ class SnippetRouteTest extends TestCase
         static::assertNotNull($enGbSnippetSetId);
         $this->enGbSnippetSetId = $enGbSnippetSetId;
 
-        $deDeSnippetSetId = $this->getSnippetSetIdForLocale('de-DE');
-        static::assertNotNull($deDeSnippetSetId);
+        $zhCnSnippetSetId = $this->getSnippetSetIdForLocale('zh-CN');
+        static::assertNotNull($zhCnSnippetSetId);
 
         $this->browser = $this->createCustomSalesChannelBrowser([
             'id' => $this->ids->create('sales-channel'),
             'languageId' => Defaults::LANGUAGE_SYSTEM,
             'languages' => [
                 ['id' => Defaults::LANGUAGE_SYSTEM],
-                ['id' => $this->getDeDeLanguageId()],
+                ['id' => $this->getZhCnLanguageId()],
             ],
             'domains' => [
                 [
@@ -58,10 +58,10 @@ class SnippetRouteTest extends TestCase
                     'url' => 'http://example.com',
                 ],
                 [
-                    'languageId' => $this->getDeDeLanguageId(),
+                    'languageId' => $this->getZhCnLanguageId(),
                     'currencyId' => Defaults::CURRENCY,
-                    'snippetSetId' => $deDeSnippetSetId,
-                    'url' => 'http://example.com/de',
+                    'snippetSetId' => $zhCnSnippetSetId,
+                    'url' => 'http://example.com/zh',
                 ],
             ],
         ]);
@@ -139,7 +139,7 @@ class SnippetRouteTest extends TestCase
 
     public function testMultipleLanguagesReturnOneSetPerLanguage(): void
     {
-        $languageIds = implode(',', [Defaults::LANGUAGE_SYSTEM, $this->getDeDeLanguageId()]);
+        $languageIds = implode(',', [Defaults::LANGUAGE_SYSTEM, $this->getZhCnLanguageId()]);
 
         $this->browser->request('GET', '/store-api/snippet?languageIds=' . $languageIds);
 
@@ -150,7 +150,7 @@ class SnippetRouteTest extends TestCase
 
         $locales = array_column($response['sets'], 'locale', 'languageId');
         static::assertSame('en-GB', $locales[Defaults::LANGUAGE_SYSTEM]);
-        static::assertSame('de-DE', $locales[$this->getDeDeLanguageId()]);
+        static::assertSame('zh-CN', $locales[$this->getZhCnLanguageId()]);
 
         foreach ($response['sets'] as $set) {
             static::assertSame('snippet_set_result', $set['apiAlias']);
@@ -161,30 +161,30 @@ class SnippetRouteTest extends TestCase
     public function testLanguagesSharingOneLocaleResolveTheirOwnSnippetSets(): void
     {
         $context = Context::createDefaultContext();
-        $deDeLanguageId = $this->getDeDeLanguageId();
+        $zhCnLanguageId = $this->getZhCnLanguageId();
 
-        $deDeSnippetSetId = $this->getSnippetSetIdForLocale('de-DE');
-        static::assertNotNull($deDeSnippetSetId);
+        $zhCnSnippetSetId = $this->getSnippetSetIdForLocale('zh-CN');
+        static::assertNotNull($zhCnSnippetSetId);
 
-        // a child language without an own translation code inherits the parent's locale (de-DE)
+        // a child language without an own translation code inherits the parent's locale (zh-CN)
         $informalLanguageId = Uuid::randomHex();
         static::getContainer()->get('language.repository')->create([
             [
                 'id' => $informalLanguageId,
-                'name' => 'German (informal)',
-                'parentId' => $deDeLanguageId,
-                'localeId' => $this->getLocaleIdByCode('de-DE'),
+                'name' => '简体中文（非正式）',
+                'parentId' => $zhCnLanguageId,
+                'localeId' => $this->getLocaleIdByCode('zh-CN'),
             ],
         ], $context);
 
-        // an own snippet set for the informal variant, same iso as the default de-DE set
+        // an own snippet set for the informal variant, same iso as the default zh-CN set
         $informalSnippetSetId = Uuid::randomHex();
         static::getContainer()->get('snippet_set.repository')->create([
             [
                 'id' => $informalSnippetSetId,
-                'name' => 'German (informal)',
-                'baseFile' => 'messages.de-DE',
-                'iso' => 'de-DE',
+                'name' => '简体中文（非正式）',
+                'baseFile' => 'messages.zh-CN',
+                'iso' => 'zh-CN',
             ],
         ], $context);
 
@@ -194,7 +194,7 @@ class SnippetRouteTest extends TestCase
                 'translationKey' => 'myShared.locale.key',
                 'value' => 'Formal value',
                 'author' => 'testAuthor',
-                'setId' => $deDeSnippetSetId,
+                'setId' => $zhCnSnippetSetId,
             ],
             [
                 'id' => Uuid::randomHex(),
@@ -210,7 +210,7 @@ class SnippetRouteTest extends TestCase
             'languageId' => Defaults::LANGUAGE_SYSTEM,
             'languages' => [
                 ['id' => Defaults::LANGUAGE_SYSTEM],
-                ['id' => $deDeLanguageId],
+                ['id' => $zhCnLanguageId],
                 ['id' => $informalLanguageId],
             ],
             'domains' => [
@@ -221,23 +221,23 @@ class SnippetRouteTest extends TestCase
                     'url' => 'http://shared-locale.example.com',
                 ],
                 [
-                    'languageId' => $deDeLanguageId,
+                    'languageId' => $zhCnLanguageId,
                     'currencyId' => Defaults::CURRENCY,
-                    'snippetSetId' => $deDeSnippetSetId,
-                    'url' => 'http://shared-locale.example.com/de',
+                    'snippetSetId' => $zhCnSnippetSetId,
+                    'url' => 'http://shared-locale.example.com/zh',
                 ],
                 [
                     'languageId' => $informalLanguageId,
                     'currencyId' => Defaults::CURRENCY,
                     'snippetSetId' => $informalSnippetSetId,
-                    'url' => 'http://shared-locale.example.com/de-informal',
+                    'url' => 'http://shared-locale.example.com/zh-informal',
                 ],
             ],
         ]);
 
         $browser->request(
             'GET',
-            '/store-api/snippet?languageIds=' . implode(',', [$deDeLanguageId, $informalLanguageId])
+            '/store-api/snippet?languageIds=' . implode(',', [$zhCnLanguageId, $informalLanguageId])
         );
 
         $content = $browser->getResponse()->getContent();
@@ -247,12 +247,12 @@ class SnippetRouteTest extends TestCase
         static::assertCount(2, $response['sets']);
         $setsByLanguage = array_column($response['sets'], null, 'languageId');
 
-        // both languages resolve to locale de-DE, but each must keep its own snippet set and overrides
-        static::assertSame('de-DE', $setsByLanguage[$deDeLanguageId]['locale']);
-        static::assertSame('de-DE', $setsByLanguage[$informalLanguageId]['locale']);
-        static::assertSame($deDeSnippetSetId, $setsByLanguage[$deDeLanguageId]['snippetSetId']);
+        // both languages resolve to locale zh-CN, but each must keep its own snippet set and overrides
+        static::assertSame('zh-CN', $setsByLanguage[$zhCnLanguageId]['locale']);
+        static::assertSame('zh-CN', $setsByLanguage[$informalLanguageId]['locale']);
+        static::assertSame($zhCnSnippetSetId, $setsByLanguage[$zhCnLanguageId]['snippetSetId']);
         static::assertSame($informalSnippetSetId, $setsByLanguage[$informalLanguageId]['snippetSetId']);
-        static::assertSame('Formal value', $setsByLanguage[$deDeLanguageId]['snippets']['myShared.locale.key']);
+        static::assertSame('Formal value', $setsByLanguage[$zhCnLanguageId]['snippets']['myShared.locale.key']);
         static::assertSame('Informal value', $setsByLanguage[$informalLanguageId]['snippets']['myShared.locale.key']);
     }
 

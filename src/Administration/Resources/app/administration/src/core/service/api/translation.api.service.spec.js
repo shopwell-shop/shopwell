@@ -23,7 +23,7 @@ describe('translationApiService', () => {
 
     it('requests the translation list', async () => {
         const { translationApiService, clientMock } = createTranslationApiService();
-        const payload = { total: 1, items: [{ locale: 'de-DE', name: 'German', progress: 100 }] };
+        const payload = { total: 1, items: [{ locale: 'zh-CN', name: '中文', progress: 100 }] };
 
         clientMock.onGet('/api/_action/translation/list').reply(200, payload);
 
@@ -37,13 +37,13 @@ describe('translationApiService', () => {
 
         clientMock
             .onPost('/api/_action/translation/install', {
-                locales: ['de-DE'],
+                locales: ['zh-CN'],
                 all: false,
                 activate: true,
             })
             .reply(200, { success: true });
 
-        const result = await translationApiService.install({ locales: ['de-DE'] });
+        const result = await translationApiService.install({ locales: ['zh-CN'] });
 
         expect(result).toEqual({ success: true });
     });
@@ -77,11 +77,11 @@ describe('translationApiService', () => {
     it('deletes the translation of a single locale', async () => {
         const { translationApiService, clientMock } = createTranslationApiService();
 
-        clientMock.onDelete('/api/_action/translation/de-DE').reply(204);
+        clientMock.onDelete('/api/_action/translation/zh-CN').reply(204);
 
-        await translationApiService.deleteTranslation('de-DE');
+        await translationApiService.deleteTranslation('zh-CN');
 
         expect(clientMock.history.delete).toHaveLength(1);
-        expect(clientMock.history.delete[0].url).toBe('/_action/translation/de-DE');
+        expect(clientMock.history.delete[0].url).toBe('/_action/translation/zh-CN');
     });
 });

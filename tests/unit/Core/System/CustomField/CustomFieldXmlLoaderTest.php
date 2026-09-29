@@ -23,7 +23,7 @@ class CustomFieldXmlLoaderTest extends TestCase
 
         $firstSet = $sets[0];
         static::assertSame('test_set', $firstSet->getName());
-        static::assertSame(['en-GB' => 'Test Set', 'de-DE' => 'Test-Set'], $firstSet->getLabel());
+        static::assertSame(['en-GB' => 'Test Set', 'zh-CN' => '测试集'], $firstSet->getLabel());
         static::assertSame(['product', 'customer'], $firstSet->getRelatedEntities());
         static::assertFalse($firstSet->getGlobal());
         static::assertCount(2, $firstSet->getFields());

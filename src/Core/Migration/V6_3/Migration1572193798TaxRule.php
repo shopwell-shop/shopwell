@@ -90,21 +90,21 @@ class Migration1572193798TaxRule extends MigrationStep
     private function addTaxRuleTypes(Connection $connection): void
     {
         $languageIdEn = $this->getLocaleId($connection, 'en-GB');
-        $languageIdDe = $this->getLocaleId($connection, 'de-DE');
+        $languageIdZhCn = $this->getLocaleId($connection, 'zh-CN');
         $languageSystem = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
 
-        $dataDe = [
+        $dataZhCn = [
             ZipCodeRuleTypeFilter::TECHNICAL_NAME => [
-                'type_name' => 'Postleitzahl',
+                'type_name' => '邮政编码',
             ],
             ZipCodeRangeRuleTypeFilter::TECHNICAL_NAME => [
-                'type_name' => 'Postleitzahl Bereich',
+                'type_name' => '邮政编码范围',
             ],
             IndividualStatesRuleTypeFilter::TECHNICAL_NAME => [
-                'type_name' => 'Individuelle Bundesländer',
+                'type_name' => '指定州/省',
             ],
             EntireCountryRuleTypeFilter::TECHNICAL_NAME => [
-                'type_name' => 'Gesamte Land',
+                'type_name' => '全部国家',
             ],
         ];
 
@@ -140,12 +140,12 @@ class Migration1572193798TaxRule extends MigrationStep
             ];
             $connection->insert(TaxRuleTypeDefinition::ENTITY_NAME, $typeData);
 
-            if (!\in_array($languageSystem, [$languageIdDe, $languageIdEn], true)) {
+            if (!\in_array($languageSystem, [$languageIdZhCn, $languageIdEn], true)) {
                 $this->insertTranslation($connection, $dataEn[$technicalName], $typeId, $languageSystem);
             }
 
             $this->insertTranslation($connection, $dataEn[$technicalName], $typeId, $languageIdEn);
-            $this->insertTranslation($connection, $dataDe[$technicalName], $typeId, $languageIdDe);
+            $this->insertTranslation($connection, $dataZhCn[$technicalName], $typeId, $languageIdZhCn);
         }
     }
 

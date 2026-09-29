@@ -17,7 +17,7 @@
         "shopwell-plugin-class": "Swag\\Test",
         "label": {
             "en-GB": "Test plugin",
-            "de-DE": "Test plugin"
+            "zh-CN": "测试插件"
         }
     }
 }

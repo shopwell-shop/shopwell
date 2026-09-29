@@ -16,9 +16,9 @@ class TranslationUpdateResultTest extends TestCase
 {
     public function testExposesUpdatedAndSkippedLocales(): void
     {
-        $result = new TranslationUpdateResult(['de-DE', 'es-ES'], ['en-GB']);
+        $result = new TranslationUpdateResult(['zh-CN', 'es-ES'], ['en-GB']);
 
-        static::assertSame(['de-DE', 'es-ES'], $result->updated);
+        static::assertSame(['zh-CN', 'es-ES'], $result->updated);
         static::assertSame(['en-GB'], $result->skipped);
     }
 

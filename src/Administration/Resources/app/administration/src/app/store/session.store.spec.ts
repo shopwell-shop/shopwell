@@ -68,12 +68,12 @@ describe('src/app/state/session.store.js', () => {
         Shopwell.Service = jest.fn().mockImplementation(() => ({
             isLoggedIn: jest.fn().mockReturnValue(false),
         }));
-        useSystem().locales.value = ['en-GB', 'de-DE'];
+        useSystem().locales.value = ['en-GB', 'zh-CN'];
 
         sessionStore.languageId = '123';
         sessionStore.currentLocale = 'en-GB';
 
-        await sessionStore.setAdminLocale('de-DE');
+        await sessionStore.setAdminLocale('zh-CN');
 
         expect(sessionStore.languageId).toBe('');
     });

@@ -124,7 +124,7 @@ class DocumentTemplateRendererTest extends TestCase
     {
         $locale = new LocaleEntity();
         $locale->setId(Uuid::randomHex());
-        $locale->setCode('de-DE');
+        $locale->setCode('zh-CN');
 
         $lang = new LanguageEntity();
         $lang->setId(Uuid::randomHex());

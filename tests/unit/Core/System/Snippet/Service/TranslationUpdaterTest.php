@@ -21,12 +21,12 @@ class TranslationUpdaterTest extends TestCase
 {
     public function testUpdateInstalledLoadsLocalesRequiringUpdateAndSaves(): void
     {
-        $metadata = $this->metadataCollection(['de-DE' => true, 'es-ES' => false]);
+        $metadata = $this->metadataCollection(['zh-CN' => true, 'es-ES' => false]);
 
         $loader = $this->createMock(AbstractTranslationLoader::class);
         $loader->expects($this->once())
             ->method('load')
-            ->with('de-DE', static::isInstanceOf(Context::class));
+            ->with('zh-CN', static::isInstanceOf(Context::class));
 
         $store = $this->createMock(TranslationMetadataStore::class);
         $store->method('getLocalMetadata')->willReturn($metadata);
@@ -35,13 +35,13 @@ class TranslationUpdaterTest extends TestCase
 
         $result = (new TranslationUpdater($loader, $store))->updateInstalled(Context::createCLIContext());
 
-        static::assertSame(['de-DE'], $result->updated);
+        static::assertSame(['zh-CN'], $result->updated);
         static::assertSame(['es-ES'], $result->skipped);
     }
 
     public function testUpdateInstalledSkipsLoadAndSaveWhenNothingRequiresUpdate(): void
     {
-        $metadata = $this->metadataCollection(['de-DE' => false, 'es-ES' => false]);
+        $metadata = $this->metadataCollection(['zh-CN' => false, 'es-ES' => false]);
 
         $loader = $this->createMock(AbstractTranslationLoader::class);
         $loader->expects($this->never())->method('load');
@@ -54,15 +54,15 @@ class TranslationUpdaterTest extends TestCase
         $result = (new TranslationUpdater($loader, $store))->updateInstalled(Context::createCLIContext());
 
         static::assertSame([], $result->updated);
-        static::assertSame(['de-DE', 'es-ES'], $result->skipped);
+        static::assertSame(['zh-CN', 'es-ES'], $result->skipped);
     }
 
     public function testUpdateInstalledRefreshesAllInstalledLocales(): void
     {
-        $metadata = $this->metadataCollection(['de-DE' => true]);
+        $metadata = $this->metadataCollection(['zh-CN' => true]);
 
         $loader = $this->createMock(AbstractTranslationLoader::class);
-        $loader->expects($this->once())->method('load')->with('de-DE');
+        $loader->expects($this->once())->method('load')->with('zh-CN');
 
         $store = $this->createMock(TranslationMetadataStore::class);
         $store->method('getLocalMetadata')->willReturn($metadata);
@@ -71,31 +71,31 @@ class TranslationUpdaterTest extends TestCase
 
         $result = (new TranslationUpdater($loader, $store))->updateInstalled(Context::createCLIContext());
 
-        static::assertSame(['de-DE'], $result->updated);
+        static::assertSame(['zh-CN'], $result->updated);
     }
 
     public function testUpdateInstalledRestrictsRefreshToGivenLocales(): void
     {
-        $installed = $this->metadataCollection(['de-DE' => false, 'es-ES' => false]);
-        $updated = $this->metadataCollection(['de-DE' => true, 'es-ES' => false]);
+        $installed = $this->metadataCollection(['zh-CN' => false, 'es-ES' => false]);
+        $updated = $this->metadataCollection(['zh-CN' => true, 'es-ES' => false]);
 
         $loader = $this->createMock(AbstractTranslationLoader::class);
-        $loader->expects($this->once())->method('load')->with('de-DE');
+        $loader->expects($this->once())->method('load')->with('zh-CN');
 
         $store = $this->createMock(TranslationMetadataStore::class);
         $store->method('getLocalMetadata')->willReturn($installed);
-        $store->expects($this->once())->method('getUpdatedLocalMetadata')->with(['de-DE'])->willReturn($updated);
+        $store->expects($this->once())->method('getUpdatedLocalMetadata')->with(['zh-CN'])->willReturn($updated);
         $store->expects($this->once())->method('save')->with($updated);
 
-        $result = (new TranslationUpdater($loader, $store))->updateInstalled(Context::createCLIContext(), ['de-DE']);
+        $result = (new TranslationUpdater($loader, $store))->updateInstalled(Context::createCLIContext(), ['zh-CN']);
 
-        static::assertSame(['de-DE'], $result->updated);
+        static::assertSame(['zh-CN'], $result->updated);
         static::assertSame(['es-ES'], $result->skipped);
     }
 
     public function testUpdateInstalledDoesNothingWhenGivenLocalesAreNotInstalled(): void
     {
-        $installed = $this->metadataCollection(['de-DE' => false]);
+        $installed = $this->metadataCollection(['zh-CN' => false]);
 
         $loader = $this->createMock(AbstractTranslationLoader::class);
         $loader->expects($this->never())->method('load');
@@ -129,17 +129,17 @@ class TranslationUpdaterTest extends TestCase
 
     public function testPlanInstallPartitionsTheRequestedLocales(): void
     {
-        $metadata = $this->metadataCollection(['de-DE' => true, 'es-ES' => false, 'it-IT' => false]);
+        $metadata = $this->metadataCollection(['zh-CN' => true, 'es-ES' => false, 'it-IT' => false]);
 
         $loader = static::createStub(AbstractTranslationLoader::class);
         $loader->method('hasTranslationFiles')
             ->willReturnCallback(static fn (string $locale) => \in_array($locale, ['es-ES', 'fr-FR'], true));
 
         $plan = (new TranslationUpdater($loader, static::createStub(TranslationMetadataStore::class)))
-            ->planInstall(['de-DE', 'es-ES', 'fr-FR', 'nl-NL', 'it-IT'], $metadata);
+            ->planInstall(['zh-CN', 'es-ES', 'fr-FR', 'nl-NL', 'it-IT'], $metadata);
 
-        // de-DE has something newer, it-IT is current but has lost its files
-        static::assertSame(['de-DE', 'it-IT'], $plan->localesToDownload);
+        // zh-CN has something newer, it-IT is current but has lost its files
+        static::assertSame(['zh-CN', 'it-IT'], $plan->localesToDownload);
         // es-ES is current and present, fr-FR has files without a metadata entry
         static::assertSame(['es-ES', 'fr-FR'], $plan->localesToLink);
         // nl-NL is neither offered nor present
@@ -153,9 +153,9 @@ class TranslationUpdaterTest extends TestCase
         $loader->method('hasTranslationFiles')->willReturn(false);
 
         $plan = (new TranslationUpdater($loader, static::createStub(TranslationMetadataStore::class)))
-            ->planInstall(['de-DE', 'es-ES'], new MetadataCollection());
+            ->planInstall(['zh-CN', 'es-ES'], new MetadataCollection());
 
-        static::assertSame(['de-DE', 'es-ES'], $plan->unavailableLocales);
+        static::assertSame(['zh-CN', 'es-ES'], $plan->unavailableLocales);
         static::assertTrue($plan->nothingCanBeInstalled());
     }
 
@@ -169,20 +169,20 @@ class TranslationUpdaterTest extends TestCase
         $store->expects($this->never())->method('getUpdatedLocalMetadata');
         $store->expects($this->never())->method('getLocalMetadata');
 
-        $plan = (new TranslationUpdater($loader, $store))->planOfflineInstall(['de-DE', 'es-ES']);
+        $plan = (new TranslationUpdater($loader, $store))->planOfflineInstall(['zh-CN', 'es-ES']);
 
         static::assertSame([], $plan->localesToDownload);
         static::assertSame(['es-ES'], $plan->localesToLink);
-        static::assertSame(['de-DE'], $plan->unavailableLocales);
+        static::assertSame(['zh-CN'], $plan->unavailableLocales);
     }
 
     public function testInstallDownloadsThenLinksAndLeavesPersistingToTheCaller(): void
     {
-        $metadata = $this->metadataCollection(['de-DE' => true, 'es-ES' => false]);
+        $metadata = $this->metadataCollection(['zh-CN' => true, 'es-ES' => false]);
 
         $loader = $this->createMock(AbstractTranslationLoader::class);
         $loader->method('hasTranslationFiles')->willReturn(true);
-        $loader->expects($this->once())->method('download')->with('de-DE');
+        $loader->expects($this->once())->method('download')->with('zh-CN');
 
         $linked = [];
         $loader->expects($this->exactly(2))
@@ -196,16 +196,16 @@ class TranslationUpdaterTest extends TestCase
         $store->expects($this->never())->method('save');
 
         $updater = new TranslationUpdater($loader, $store);
-        $result = $updater->install($updater->planInstall(['de-DE', 'es-ES'], $metadata), Context::createCLIContext());
+        $result = $updater->install($updater->planInstall(['zh-CN', 'es-ES'], $metadata), Context::createCLIContext());
 
-        static::assertSame(['de-DE', 'es-ES'], $linked);
-        static::assertSame(['de-DE'], $result->updated);
+        static::assertSame(['zh-CN', 'es-ES'], $linked);
+        static::assertSame(['zh-CN'], $result->updated);
         static::assertSame(['es-ES'], $result->skipped);
     }
 
     public function testInstallReportsEveryLocaleToTheProgressCallback(): void
     {
-        $metadata = $this->metadataCollection(['de-DE' => true, 'es-ES' => false]);
+        $metadata = $this->metadataCollection(['zh-CN' => true, 'es-ES' => false]);
 
         $loader = static::createStub(AbstractTranslationLoader::class);
         $loader->method('hasTranslationFiles')->willReturn(true);
@@ -214,7 +214,7 @@ class TranslationUpdaterTest extends TestCase
 
         $reported = [];
         $updater->install(
-            $updater->planInstall(['de-DE', 'es-ES'], $metadata),
+            $updater->planInstall(['zh-CN', 'es-ES'], $metadata),
             Context::createCLIContext(),
             true,
             static function (string $locale) use (&$reported): void {
@@ -222,19 +222,19 @@ class TranslationUpdaterTest extends TestCase
             },
         );
 
-        static::assertSame(['de-DE', 'es-ES'], $reported);
+        static::assertSame(['zh-CN', 'es-ES'], $reported);
     }
 
     public function testInstallPassesActivateFalseToTheLoader(): void
     {
-        $metadata = $this->metadataCollection(['de-DE' => false]);
+        $metadata = $this->metadataCollection(['zh-CN' => false]);
 
         $loader = $this->createMock(AbstractTranslationLoader::class);
         $loader->method('hasTranslationFiles')->willReturn(true);
-        $loader->expects($this->once())->method('link')->with('de-DE', static::isInstanceOf(Context::class), false);
+        $loader->expects($this->once())->method('link')->with('zh-CN', static::isInstanceOf(Context::class), false);
 
         $updater = new TranslationUpdater($loader, static::createStub(TranslationMetadataStore::class));
-        $updater->install($updater->planInstall(['de-DE'], $metadata), Context::createCLIContext(), false);
+        $updater->install($updater->planInstall(['zh-CN'], $metadata), Context::createCLIContext(), false);
     }
 
     /**

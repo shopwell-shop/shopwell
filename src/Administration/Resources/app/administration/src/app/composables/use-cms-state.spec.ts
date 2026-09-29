@@ -124,19 +124,19 @@ describe('src/app/composables/use-cms-state', () => {
 
     it('reads the slot config of the current language off the content entity', () => {
         stubShopwell({
-            languageId: 'de-DE',
+            languageId: 'zh-CN',
             swCategoryDetail: { category: { id: 'category-1', slotConfig: { slot: { value: 'current' } } } },
         });
         route.name = 'sw.category.detail';
         const { getSlotConfigForLanguage } = useCmsState();
 
-        expect(getSlotConfigForLanguage('de-DE')).toEqual({ slot: { value: 'current' } });
+        expect(getSlotConfigForLanguage('zh-CN')).toEqual({ slot: { value: 'current' } });
         expect(getSlotConfigForLanguage(null)).toBeNull();
     });
 
     it('reads the slot config of another language off its translation', () => {
         stubShopwell({
-            languageId: 'de-DE',
+            languageId: 'zh-CN',
             swCategoryDetail: {
                 category: {
                     id: 'category-1',
@@ -153,7 +153,7 @@ describe('src/app/composables/use-cms-state', () => {
 
     it('merges the inherited slot config field-by-field so a partial override keeps parent fields', () => {
         stubShopwell({
-            languageId: 'de-DE',
+            languageId: 'zh-CN',
             parentLanguageId: 'en-GB',
             swCategoryDetail: {
                 category: {

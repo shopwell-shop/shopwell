@@ -59,17 +59,17 @@ class Migration1675247112ChangeCountryNamingConvention extends MigrationStep
             SELECT language.id
             FROM language
             JOIN locale ON locale.id = language.locale_id
-            WHERE locale.code = 'de-DE'
+            WHERE locale.code = 'zh-CN'
         SQL;
 
-        $deLanguageId = $connection->fetchOne($getDeLanguageSql);
+        $zhCnLanguageId = $connection->fetchOne($getDeLanguageSql);
 
-        if ($deLanguageId) {
+        if ($zhCnLanguageId) {
             $connection->update('country_translation', [
                 'name' => 'Vereinigte Staaten von Amerika',
                 'updated_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             ], [
-                'language_id' => $deLanguageId,
+                'language_id' => $zhCnLanguageId,
                 'name' => 'USA',
                 'country_id' => $countryId,
             ]);

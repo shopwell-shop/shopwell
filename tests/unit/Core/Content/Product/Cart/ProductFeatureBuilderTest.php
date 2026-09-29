@@ -213,12 +213,12 @@ class ProductFeatureBuilderTest extends TestCase
     {
         $features = $this->buildCustomFieldFeatures([
             'en-GB' => 'Material',
-            'de-DE' => 'Werkstoff',
+            'zh-CN' => '材质',
         ]);
 
         static::assertSame([
             [
-                'label' => 'Werkstoff',
+                'label' => '材质',
                 'value' => [
                     'id' => 'custom-field-id',
                     'type' => CustomFieldTypes::TEXT,
@@ -239,7 +239,7 @@ class ProductFeatureBuilderTest extends TestCase
     {
         $features = $this->buildCustomFieldFeatures($labels, self::CHILD_LANGUAGE_CHAIN);
 
-        static::assertSame('Werkstoff', $features[0]['label']);
+        static::assertSame('材质', $features[0]['label']);
     }
 
     /**
@@ -267,36 +267,36 @@ class ProductFeatureBuilderTest extends TestCase
     public function testSelectCustomFieldExposesTheLabelsOfTheSelectedOptions(): void
     {
         $features = $this->buildCustomFieldFeatures(
-            ['de-DE' => 'Werkstoff'],
+            ['zh-CN' => '材质'],
             content: ['oak', 'pine', 'unknown'],
             type: CustomFieldTypes::SELECT,
             config: [
                 'options' => [
-                    ['value' => 'oak', 'label' => ['en-GB' => 'Oak', 'de-DE' => 'Eiche']],
+                    ['value' => 'oak', 'label' => ['en-GB' => 'Oak', 'zh-CN' => '橡木']],
                     ['value' => 'pine', 'label' => ['en-GB' => 'Pine']],
                 ],
             ]
         );
 
-        static::assertSame(['Eiche', 'Pine', 'unknown'], $features[0]['value']['display']);
+        static::assertSame(['橡木', 'Pine', 'unknown'], $features[0]['value']['display']);
     }
 
     public function testSingleSelectCustomFieldExposesOneLabel(): void
     {
         $features = $this->buildCustomFieldFeatures(
-            ['de-DE' => 'Werkstoff'],
+            ['zh-CN' => '材质'],
             content: 'oak',
             type: CustomFieldTypes::SELECT,
-            config: ['options' => [['value' => 'oak', 'label' => ['de-DE' => 'Eiche']]]]
+            config: ['options' => [['value' => 'oak', 'label' => ['zh-CN' => '橡木']]]]
         );
 
-        static::assertSame(['Eiche'], $features[0]['value']['display']);
+        static::assertSame(['橡木'], $features[0]['value']['display']);
     }
 
     public function testEntityCustomFieldExposesTheNamesOfTheReferencedEntities(): void
     {
         $features = $this->buildCustomFieldFeatures(
-            ['de-DE' => 'Werkstoff'],
+            ['zh-CN' => '材质'],
             content: [self::FIRST_ENTITY_ID, self::SECOND_ENTITY_ID, Uuid::randomHex()],
             type: CustomFieldTypes::ENTITY,
             config: ['entity' => 'product'],
@@ -312,7 +312,7 @@ class ProductFeatureBuilderTest extends TestCase
     public function testEntityCustomFieldJoinsMultipleLabelProperties(): void
     {
         $features = $this->buildCustomFieldFeatures(
-            ['de-DE' => 'Werkstoff'],
+            ['zh-CN' => '材质'],
             content: self::FIRST_ENTITY_ID,
             type: CustomFieldTypes::SELECT,
             config: ['entity' => 'customer', 'labelProperty' => ['firstName', 'lastName']],
@@ -329,7 +329,7 @@ class ProductFeatureBuilderTest extends TestCase
             ->willThrowException(new EntityRepositoryNotFoundException('lorem_ipsum'));
 
         $features = $this->buildCustomFieldFeatures(
-            ['de-DE' => 'Werkstoff'],
+            ['zh-CN' => '材质'],
             content: self::FIRST_ENTITY_ID,
             type: CustomFieldTypes::ENTITY,
             config: ['entity' => 'lorem_ipsum']
@@ -341,7 +341,7 @@ class ProductFeatureBuilderTest extends TestCase
     public function testPriceCustomFieldIsResolvedForTheCurrencyOfTheContext(): void
     {
         $features = $this->buildCustomFieldFeatures(
-            ['de-DE' => 'Aufpreis'],
+            ['zh-CN' => '加价'],
             content: [
                 ['currencyId' => Defaults::CURRENCY, 'net' => 10.0, 'gross' => 11.9, 'linked' => true],
                 ['currencyId' => self::CURRENCY_ID, 'net' => 20.0, 'gross' => 23.8, 'linked' => true],
@@ -359,7 +359,7 @@ class ProductFeatureBuilderTest extends TestCase
         $context->setTaxState(CartPrice::TAX_STATE_NET);
 
         $features = $this->buildCustomFieldFeatures(
-            ['de-DE' => 'Aufpreis'],
+            ['zh-CN' => '加价'],
             content: [['currencyId' => Defaults::CURRENCY, 'net' => 10.0, 'gross' => 11.9, 'linked' => true]],
             type: CustomFieldTypes::PRICE,
             context: $context
@@ -371,7 +371,7 @@ class ProductFeatureBuilderTest extends TestCase
     public function testPriceCustomFieldFallsBackToTheDefaultCurrencyTimesItsFactor(): void
     {
         $features = $this->buildCustomFieldFeatures(
-            ['de-DE' => 'Aufpreis'],
+            ['zh-CN' => '加价'],
             content: [['currencyId' => Defaults::CURRENCY, 'net' => 10.0, 'gross' => 11.0, 'linked' => true]],
             type: CustomFieldTypes::PRICE,
             context: $this->createSalesChannelContext(currencyId: self::CURRENCY_ID, currencyFactor: 1.5)
@@ -383,7 +383,7 @@ class ProductFeatureBuilderTest extends TestCase
     public function testPriceCustomFieldIsSkippedWithoutAMatchingCurrency(): void
     {
         $features = $this->buildCustomFieldFeatures(
-            ['de-DE' => 'Aufpreis'],
+            ['zh-CN' => '加价'],
             content: [],
             type: CustomFieldTypes::PRICE
         );
@@ -396,8 +396,8 @@ class ProductFeatureBuilderTest extends TestCase
      */
     public static function parentLanguageLabelProvider(): iterable
     {
-        yield 'no label for the child language' => [['en-GB' => 'Material', 'de-DE' => 'Werkstoff']];
-        yield 'empty label for the child language' => [['en-GB' => 'Material', 'de-DE' => 'Werkstoff', 'de-AT' => '']];
+        yield 'no label for the child language' => [['en-GB' => 'Material', 'zh-CN' => '材质']];
+        yield 'empty label for the child language' => [['en-GB' => 'Material', 'zh-CN' => '材质', 'zh-TW' => '']];
     }
 
     /**
@@ -406,7 +406,7 @@ class ProductFeatureBuilderTest extends TestCase
     public static function missingLabelProvider(): iterable
     {
         yield 'no label for the context language' => [['en-GB' => 'Material']];
-        yield 'empty label for the context language' => [['en-GB' => 'Material', 'de-DE' => '']];
+        yield 'empty label for the context language' => [['en-GB' => 'Material', 'zh-CN' => '']];
     }
 
     /**
@@ -421,7 +421,7 @@ class ProductFeatureBuilderTest extends TestCase
 
     /**
      * Builds the features of a line item referencing a product with a single custom field feature.
-     * The context defaults to the `de-DE` language chain; the system language is `en-GB` throughout.
+     * The context defaults to the `zh-CN` language chain; the system language is `en-GB` throughout.
      *
      * @param array<string, string> $labels
      * @param non-empty-list<string> $languageIdChain
@@ -440,8 +440,8 @@ class ProductFeatureBuilderTest extends TestCase
         ?SalesChannelContext $context = null
     ): array {
         $this->languageLocaleProvider->method('getLocaleForLanguageId')->willReturnMap([
-            [self::CHILD_LANGUAGE_ID, 'de-AT'],
-            [self::LANGUAGE_ID, 'de-DE'],
+            [self::CHILD_LANGUAGE_ID, 'zh-TW'],
+            [self::LANGUAGE_ID, 'zh-CN'],
             [Defaults::LANGUAGE_SYSTEM, 'en-GB'],
         ]);
 

@@ -21,9 +21,9 @@ class Migration1580808849AddGermanContactFormTranslation extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $deLangId = $this->getGermanLanguageId($connection);
+        $zhCnLangId = $this->getZhCnLanguageId($connection);
 
-        if ($deLangId === null) {
+        if ($zhCnLangId === null) {
             return;
         }
 
@@ -33,15 +33,15 @@ class Migration1580808849AddGermanContactFormTranslation extends MigrationStep
             return;
         }
 
-        $germanTranslation = $connection->fetchOne(
+        $zhCnTranslation = $connection->fetchOne(
             'SELECT `mail_template_id` FROM `mail_template_translation` WHERE `mail_template_id` = :mail_template_id AND `language_id` = :language_id LIMIT 1',
             [
                 'mail_template_id' => $contactTemplateId,
-                'language_id' => $deLangId,
+                'language_id' => $zhCnLangId,
             ]
         );
 
-        if ($germanTranslation) {
+        if ($zhCnTranslation) {
             return;
         }
 
@@ -49,12 +49,12 @@ class Migration1580808849AddGermanContactFormTranslation extends MigrationStep
             'mail_template_translation',
             [
                 'mail_template_id' => $contactTemplateId,
-                'language_id' => $deLangId,
+                'language_id' => $zhCnLangId,
                 'sender_name' => '{{ salesChannel.name }}',
-                'subject' => 'Kontaktanfrage erhalten - {{ salesChannel.name }}',
-                'description' => 'Kontaktanfrage erhalten',
-                'content_html' => $this->getContactFormHtmlTemplateDe(),
-                'content_plain' => $this->getContactFormPlainTemplateDe(),
+                'subject' => '收到联系表单咨询 - {{ salesChannel.name }}',
+                'description' => '收到联系表单咨询',
+                'content_html' => $this->getContactFormHtmlTemplateZhCn(),
+                'content_plain' => $this->getContactFormPlainTemplateZhCn(),
                 'created_at' => date(Defaults::STORAGE_DATE_TIME_FORMAT),
             ]
         );
@@ -65,10 +65,12 @@ class Migration1580808849AddGermanContactFormTranslation extends MigrationStep
         // nth
     }
 
-    private function getGermanLanguageId(Connection $connection): ?string
+    private function getZhCnLanguageId(Connection $connection): ?string
     {
         $result = $connection->fetchOne('
-            SELECT `id` FROM `language` WHERE LOWER(`name`) = \'deutsch\'
+            SELECT `language`.`id` FROM `language`
+            INNER JOIN `locale` ON `locale`.`id` = `language`.`locale_id`
+            WHERE `locale`.`code` = \'zh-CN\'
         ');
 
         return $result === false ? null : (string) $result;
@@ -91,33 +93,33 @@ SQL;
         return $result === false ? null : (string) $result;
     }
 
-    private function getContactFormHtmlTemplateDe(): string
+    private function getContactFormHtmlTemplateZhCn(): string
     {
         return '<div style="font-family:arial; font-size:12px;">
     <p>
-        Folgende Nachricht wurde von {{ contactFormData.firstName }} {{ contactFormData.lastName }} an Sie via Kontakt-Formular gesendet.<br/>
+        {{ contactFormData.firstName }} {{ contactFormData.lastName }} 通过联系表单给您发送了以下消息。<br/>
         <br/>
-        Kontakt E-Mail: {{ contactFormData.email }}<br/>
+        联系邮箱：{{ contactFormData.email }}<br/>
         <br>
-        Telefonnummer: {{ contactFormData.phone }}<br/>
+        电话号码：{{ contactFormData.phone }}<br/>
         <br/>
-        Betreff: {{ contactFormData.subject }}<br/>
+        主题：{{ contactFormData.subject }}<br/>
         <br/>
-        Message: {{ contactFormData.comment }}<br/>
+        消息：{{ contactFormData.comment }}<br/>
     </p>
 </div>';
     }
 
-    private function getContactFormPlainTemplateDe(): string
+    private function getContactFormPlainTemplateZhCn(): string
     {
-        return 'Folgende Nachricht wurde von {{ contactFormData.firstName }} {{ contactFormData.lastName }} an Sie via Kontakt-Formular gesendet.
+        return '{{ contactFormData.firstName }} {{ contactFormData.lastName }} 通过联系表单给您发送了以下消息。
 
-Kontakt E-Mail: {{ contactFormData.email }}
+联系邮箱：{{ contactFormData.email }}
 
-Telefonnummer: {{ contactFormData.phone }}
+电话号码：{{ contactFormData.phone }}
 
-Betreff: {{ contactFormData.subject }}
+主题：{{ contactFormData.subject }}
 
-Nachricht: {{ contactFormData.comment }}';
+消息：{{ contactFormData.comment }}';
     }
 }

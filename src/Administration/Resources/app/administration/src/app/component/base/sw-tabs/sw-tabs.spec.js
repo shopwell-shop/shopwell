@@ -97,19 +97,19 @@ describe('src/app/component/base/sw-tabs', () => {
             'plain text',
             'Label {{ locale }}',
             'Label en-GB',
-            'Label de-DE',
+            'Label zh-CN',
         ],
         [
             'an element',
             '<span>Label {{ locale }}</span>',
             'en-GB',
-            'de-DE',
+            'zh-CN',
         ],
         [
             'nothing',
             '',
             'en-GB',
-            'de-DE',
+            'zh-CN',
         ],
     ])('should resolve the labels of v-for tab items whose slot holds %s', async (_, slotContent, first, second) => {
         const wrapper = await createWrapper({
@@ -135,7 +135,7 @@ describe('src/app/component/base/sw-tabs', () => {
             slots: {
                 default: `
                     <sw-tabs-item
-                        v-for="locale in ['en-GB', 'de-DE']"
+                        v-for="locale in ['en-GB', 'zh-CN']"
                         :key="locale"
                         :name="locale"
                     >${slotContent}</sw-tabs-item>
@@ -147,7 +147,7 @@ describe('src/app/component/base/sw-tabs', () => {
         // tab never renders unlabeled.
         expect(wrapper.vm.itemsBackwardCompatible).toEqual([
             expect.objectContaining({ name: 'en-GB', label: first }),
-            expect.objectContaining({ name: 'de-DE', label: second }),
+            expect.objectContaining({ name: 'zh-CN', label: second }),
         ]);
     });
 });

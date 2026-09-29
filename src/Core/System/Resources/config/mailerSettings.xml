@@ -3,7 +3,7 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Mailer settings</title>
-        <title lang="de-DE">Mailer-Einstellungen</title>
+        <title lang="zh-CN">邮件发送设置</title>
 
         <input-field type="single-select">
             <name>emailAgent</name>
@@ -11,48 +11,48 @@
                 <option>
                     <id>local</id>
                     <name>Local email agent</name>
-                    <name lang="de-DE">Lokaler Email-Agent</name>
+                    <name lang="zh-CN">本地邮件代理</name>
                 </option>
                 <option>
                     <id>smtp</id>
                     <name>SMTP server</name>
-                    <name lang="de-DE">SMTP-Server</name>
+                    <name lang="zh-CN">SMTP 服务器</name>
                 </option>
             </options>
             <label>Authentication</label>
-            <label lang="de-DE">Authentifizierung</label>
+            <label lang="zh-CN">认证方式</label>
         </input-field>
 
         <input-field>
             <name>host</name>
             <label>Host</label>
-            <label lang="de-DE">Host</label>
+            <label lang="zh-CN">主机</label>
             <placeholder>Fill in host name...</placeholder>
-            <placeholder lang="de-DE">Host-Namen eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入主机名...</placeholder>
         </input-field>
 
         <input-field>
             <name>port</name>
             <label>Port</label>
-            <label lang="de-DE">Port</label>
+            <label lang="zh-CN">端口</label>
             <placeholder>Fill in port number...</placeholder>
-            <placeholder lang="de-DE">Port-Nummer eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入端口号...</placeholder>
         </input-field>
 
         <input-field>
             <name>username</name>
             <label>Username</label>
-            <label lang="de-DE">Benutzername</label>
+            <label lang="zh-CN">用户名</label>
             <placeholder>Fill in username...</placeholder>
-            <placeholder lang="de-DE">Benutzernamen eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入用户名...</placeholder>
         </input-field>
 
         <input-field>
             <name>password</name>
             <label>Password</label>
-            <label lang="de-DE">Passwort</label>
+            <label lang="zh-CN">密码</label>
             <placeholder>Fill in password...</placeholder>
-            <placeholder lang="de-DE">Passwort eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入密码...</placeholder>
         </input-field>
 
         <input-field type="single-select">
@@ -61,21 +61,21 @@
                 <option>
                     <id>none</id>
                     <name>No encryption</name>
-                    <name lang="de-DE">Keine Verschlüsselung</name>
+                    <name lang="zh-CN">不加密</name>
                 </option>
                 <option>
                     <id>ssl</id>
                     <name>SSL encryption</name>
-                    <name lang="de-DE">SSL-Verschlüsselung</name>
+                    <name lang="zh-CN">SSL 加密</name>
                 </option>
                 <option>
                     <id>tsl</id>
                     <name>TLS encryption</name>
-                    <name lang="de-DE">TLS-Verschlüsselung</name>
+                    <name lang="zh-CN">TLS 加密</name>
                 </option>
             </options>
             <label>Encryption</label>
-            <label lang="de-DE">Encryption</label>
+            <label lang="zh-CN">加密方式</label>
         </input-field>
 
         <input-field type="single-select">
@@ -84,48 +84,48 @@
                 <option>
                     <id>null</id>
                     <name>No authentication</name>
-                    <name lang="de-DE">Keine Authentifizierung</name>
+                    <name lang="zh-CN">不认证</name>
                 </option>
                 <option>
                     <id>plain</id>
                     <name>Plain authentication</name>
-                    <name lang="de-DE">Einfache Authentifizierung</name>
+                    <name lang="zh-CN">PLAIN 认证</name>
                 </option>
                 <option>
                     <id>login</id>
                     <name>Login authentication</name>
-                    <name lang="de-DE">Login-Authentifizierung</name>
+                    <name lang="zh-CN">LOGIN 认证</name>
                 </option>
                 <option>
                     <id>cram-md5</id>
                     <name>Cram-MD5 authentication</name>
-                    <name lang="de-DE">Cram-MD5 Authentifizierung</name>
+                    <name lang="zh-CN">CRAM-MD5 认证</name>
                 </option>
             </options>
             <label>Authentication</label>
-            <label lang="de-DE">Authentifizierung</label>
+            <label lang="zh-CN">认证方式</label>
         </input-field>
 
         <input-field>
             <name>senderAddress</name>
             <label>Sender address</label>
-            <label lang="de-DE">Absender-Adresse</label>
+            <label lang="zh-CN">发件人地址</label>
             <placeholder>Fill in a valid email address...</placeholder>
-            <placeholder lang="de-DE">Eine valide Email-Adresse eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入有效的邮箱地址...</placeholder>
         </input-field>
 
         <input-field>
             <name>deliveryAddress</name>
             <label>Delivery address</label>
-            <label lang="de-DE">Delivery address</label>
+            <label lang="zh-CN">收件人地址</label>
             <placeholder>Fill in a valid email address...</placeholder>
-            <placeholder lang="de-DE">Eine valide Email-Adresse eingeben ...</placeholder>
+            <placeholder lang="zh-CN">请输入有效的邮箱地址...</placeholder>
         </input-field>
 
         <input-field type="bool">
             <name>disableDelivery</name>
             <label>Disable email delivery (temporarily)</label>
-            <label lang="de-DE">E-Mail-Versand (temporär) deaktivieren</label>
+            <label lang="zh-CN">暂时停发邮件</label>
         </input-field>
     </card>
 </config>

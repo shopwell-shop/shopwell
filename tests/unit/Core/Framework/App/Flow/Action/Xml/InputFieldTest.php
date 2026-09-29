@@ -20,11 +20,11 @@ class InputFieldTest extends TestCase
 <input-field>
     <name>message</name>
     <label>Message</label>
-    <label lang="de-DE">Nachricht</label>
+    <label lang="zh-CN">消息</label>
     <place-holder>Enter message...</place-holder>
-    <place-holder lang="de-DE">Nachricht eingeben...</place-holder>
+    <place-holder lang="zh-CN">请输入消息...</place-holder>
     <helpText>Visible to customers</helpText>
-    <helpText lang="de-DE">Fuer Kunden sichtbar</helpText>
+    <helpText lang="zh-CN">客户可见</helpText>
     <required>true</required>
     <defaultValue>Hello</defaultValue>
 </input-field>
@@ -34,21 +34,21 @@ XML));
         static::assertSame(
             [
                 'en-GB' => 'Message',
-                'de-DE' => 'Nachricht',
+                'zh-CN' => '消息',
             ],
             $inputField->getLabel()
         );
         static::assertSame(
             [
                 'en-GB' => 'Enter message...',
-                'de-DE' => 'Nachricht eingeben...',
+                'zh-CN' => '请输入消息...',
             ],
             $inputField->getPlaceHolder()
         );
         static::assertSame(
             [
                 'en-GB' => 'Visible to customers',
-                'de-DE' => 'Fuer Kunden sichtbar',
+                'zh-CN' => '客户可见',
             ],
             $inputField->getHelpText()
         );
@@ -66,7 +66,7 @@ XML));
     <options>
         <option value="smtp">
             <label>SMTP</label>
-            <label lang="de-DE">SMTP DE</label>
+            <label lang="zh-CN">SMTP ZH</label>
         </option>
         <option value="pop3">
             <label>POP3</label>
@@ -83,7 +83,7 @@ XML));
                     'value' => 'smtp',
                     'label' => [
                         'en-GB' => 'SMTP',
-                        'de-DE' => 'SMTP DE',
+                        'zh-CN' => 'SMTP ZH',
                     ],
                 ],
                 [

@@ -32,7 +32,7 @@ async function createWrapper(privileges = [], set = { _isNew: true }) {
                         messages: {
                             value: {
                                 'en-GB': {},
-                                'de-DE': {},
+                                'zh-CN': {},
                                 en: {},
                                 de: {},
                             },
@@ -89,7 +89,7 @@ describe('src/module/sw-settings-custom-field/component/sw-custom-field-set-deta
         await flushPromises();
 
         // short aliases (en, de) leak into vue-i18n messages but must not become editable tabs
-        expect(wrapper.vm.locales).toEqual(['en-GB', 'de-DE']);
+        expect(wrapper.vm.locales).toEqual(['en-GB', 'zh-CN']);
     });
 
     it('cannot edit fields', async () => {

@@ -47,7 +47,7 @@ class TranslationTest extends TestCase
             [
                 'name' => 'not translated',
                 'translations' => [
-                    $this->getDeDeLanguageId() => ['name' => 'german'],
+                    $this->getZhCnLanguageId() => ['name' => 'chinese'],
                 ],
             ]
         );
@@ -264,7 +264,7 @@ class TranslationTest extends TestCase
                 ],
             ],
             [
-                'code' => 'de-DE-3',
+                'code' => 'zh-CN-3',
                 'translations' => [
                     Defaults::LANGUAGE_SYSTEM => ['name' => 'default', 'territory' => 'translated by default'],
                     $langId => [
@@ -297,7 +297,7 @@ class TranslationTest extends TestCase
                 ],
             ],
             [
-                'code' => 'de-DE-3',
+                'code' => 'zh-CN-3',
                 'translations' => [
                     Defaults::LANGUAGE_SYSTEM => ['name' => 'default', 'territory' => 'translated by default'],
                     $langId => [
@@ -321,7 +321,7 @@ class TranslationTest extends TestCase
 
         $notTranslated = [
             'id' => $id,
-            'code' => 'de-DE-3',
+            'code' => 'zh-CN-3',
             'name' => 'not translated',
             'territory' => 'not translated',
         ];
@@ -662,7 +662,7 @@ class TranslationTest extends TestCase
                 'name' => 'test language ' . $fallbackId,
                 'locale' => [
                     'id' => $fallbackLocaleId,
-                    'code' => 'de-DE-1',
+                    'code' => 'zh-CN-1',
                     'name' => 'Test locale ' . $fallbackLocaleId,
                     'territory' => 'Test territory ' . $fallbackLocaleId,
                 ],
@@ -680,7 +680,7 @@ class TranslationTest extends TestCase
             'parentId' => $fallbackId,
             'locale' => [
                 'id' => $localeId,
-                'code' => 'de-DE-2',
+                'code' => 'zh-CN-2',
                 'name' => 'Test locale ' . $localeId,
                 'territory' => 'Test territory ' . $localeId,
             ],

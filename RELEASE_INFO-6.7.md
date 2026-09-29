@@ -2,6 +2,20 @@
 
 ## Core
 
+### Shipped default languages are `en-GB` and `zh-CN`
+
+Shopwell ships `en-GB` and Simplified Chinese (`zh-CN`) as its default languages. German (`de-DE`) is no longer one of the shipped default languages.
+
+The translation assets that were previously shipped for German now exist for Chinese:
+
+* Storefront snippet set: `src/Storefront/Resources/snippet/storefront.zh.json`
+* Administration snippet set: `src/Administration/Resources/app/administration/src/app/snippet/zh.json`
+* Installer translations: `src/Core/Installer/Resources/translations/translations/messages.zh.yaml`
+
+New installations therefore create a `zh-CN` language, a `zh` snippet set with `messages.zh` as its base file, and the `CHN` country row. The installer lists `zh-CN` both as an installer UI language and as a selectable system default language, and preselects `CNY` as its currency. `bin/console theme:create --with-snippets` now scaffolds `storefront.zh-CN.json` next to `storefront.en-GB.json`, and the storefront date picker renders the Chinese date format for `zh`.
+
+Extensions that relied on a `de-DE` snippet set being present out of the box must ship their German snippets as a plugin- or theme-provided snippet file themselves.
+
 ### `JsonField` supports typed properties with additional extension data
 
 `JsonField` accepts the new `allowAdditionalProperties: true` constructor argument. Use it for a JSON field with stable, mapped properties whose types should be validated while extension-owned keys must remain writable:
@@ -1248,7 +1262,7 @@ shopwell:
         plugins:
             - 'MyPlugin'
         excluded_locales:
-            - 'de-DE'
+            - 'zh-CN'
             - 'en-GB'
         pseudo_locales:
             - 'ach-UG'
@@ -1256,8 +1270,8 @@ shopwell:
             - plugin: 'MyPlugin'
               name: 'MySnippetName'
         languages:
-            - name: 'Deutsch'
-              locale: 'de-DE'
+            - name: '中文'
+              locale: 'zh-CN'
 ```
 
 List options (`plugins`, `excluded_locales`, `pseudo_locales`, `plugin_mapping`, `languages`) replace the shipped default entirely rather than merging; provide the full list you want. Setting a list to `[]` clears the shipped default. Decorating `AbstractTranslationConfigLoader` continues to work; a decorator that fully replaces `load()` bypasses these config overrides.
@@ -1634,7 +1648,7 @@ Each theme compilation writes its CSS/JS into a new seeded directory under `publ
 The cleanup logic is now provided by the reusable `Shopwell\Storefront\Theme\UnusedThemeDirectoryDeleter` service, which the commands and the scheduled task all use. The scheduled task remains unchanged as a fallback.
 ### `theme:create` gains `--full` and granular scaffold flags
 
-`bin/console theme:create` accepts new options to scaffold more than the default skeleton: `--with-config` generates `src/Resources/config/config.xml`, `--with-snippets` generates storefront snippet files (`src/Resources/snippet/storefront.{de-DE,en-GB}.json`), and `--with-scss` generates a starter SCSS 7-1 folder structure (`abstracts/`, `base/`, `components/`, `layout/`, `pages/`) referenced from `base.scss`. `--full` is shorthand for all three combined. Default `theme:create` output (without any of these flags) is unchanged. The generated `composer.json` also now sets a real package name (`custom/<theme-name>` instead of a hardcoded placeholder) and pins `shopwell/core`.
+`bin/console theme:create` accepts new options to scaffold more than the default skeleton: `--with-config` generates `src/Resources/config/config.xml`, `--with-snippets` generates storefront snippet files (`src/Resources/snippet/storefront.{zh-CN,en-GB}.json`), and `--with-scss` generates a starter SCSS 7-1 folder structure (`abstracts/`, `base/`, `components/`, `layout/`, `pages/`) referenced from `base.scss`. `--full` is shorthand for all three combined. Default `theme:create` output (without any of these flags) is unchanged. The generated `composer.json` also now sets a real package name (`custom/<theme-name>` instead of a hardcoded placeholder) and pins `shopwell/core`.
 
 ### `PluginManager.override()` now works for async plugins
 
@@ -1679,7 +1693,7 @@ Extension builds now set `output.uniqueName` to their technical name, which give
 
 ### The "Top results" sorting label is translatable
 
-`score` is a locked product sorting, so its label could not be edited in Settings > Products > Sorting and only ever existed for `en-GB` and `de-DE`. Every other language fell back to one of those two.
+`score` is a locked product sorting, so its label could not be edited in Settings > Products > Sorting and only ever existed for `en-GB` and `zh-CN`. Every other language fell back to one of those two.
 
 `@Storefront/storefront/component/sorting.html.twig` now renders the `filter.sortByScore` snippet for the `score` sorting instead of its database label, so it can be translated for any language through snippet management or a theme snippet file. All other sortings keep rendering the label configured in the administration.
 
@@ -1995,7 +2009,7 @@ The XML format is the same one already used by apps in the manifest:
     <custom-field-set>
         <name>my_plugin_fields</name>
         <label>My Fields</label>
-        <label lang="de-DE">Meine Felder</label>
+        <label lang="zh-CN">我的字段</label>
         <related-entities>
             <product/>
         </related-entities>

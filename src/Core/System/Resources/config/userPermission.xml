@@ -3,12 +3,12 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Configuration</title>
-        <title lang="de-DE">Konfiguration</title>
+        <title lang="zh-CN">配置</title>
 
         <input-field type="int">
             <name>passwordMinLength</name>
             <label>Minimum password length (log-in)</label>
-            <label lang="de-DE">Passwort-Mindestlänge (Registrierung)</label>
+            <label lang="zh-CN">密码最小长度（登录）</label>
         </input-field>
     </card>
 

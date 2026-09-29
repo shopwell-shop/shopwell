@@ -1,0 +1,286 @@
+{
+  "sw-users-permissions": {
+    "general": {
+      "label": "用户与权限"
+    },
+    "permissions": {},
+    "sso": {
+      "inviteButtonLabel": "邀请用户",
+      "invitationNotYetAccepted": "该用户尚未接受你的邀请。接受后，缺失信息会自动补全。",
+      "error": {
+        "cannotInviteUser": "用户无法邀请。"
+      },
+      "user-listing": {
+        "status-label": {
+          "invited": "已邀请",
+          "active": "已激活",
+          "inactive": "已停用"
+        }
+      },
+      "user-detail": {
+        "cards-title": {
+          "information": "信息",
+          "userinterface": "用户界面",
+          "rolesAndPermission": "角色与用户权限"
+        }
+      },
+      "modal": {
+        "title": "向用户发送邀请",
+        "labelEmail": "邮箱",
+        "placeholderEmail": "输入邮箱…",
+        "labelLanguage": "用户界面语言",
+        "placeholderLanguage": "选择语言...",
+        "labelButtonInvite": "邀请用户",
+        "accountPermissionHint": "请确保该用户在 Shopwell 账户中也属于你的公司，以便其无限制使用本店铺的后台。"
+      }
+    },
+    "roles": {
+      "general": {
+        "labelCreateNewRole": "创建角色",
+        "cardLabel": "角色"
+      },
+      "role-grid": {
+        "labelName": "名称",
+        "labelDescription": "描述",
+        "messageEmptyTitle": "暂无角色",
+        "messageEmptySubline": "创建角色以管理用户权限。",
+        "titleModalDelete": "删除角色",
+        "textModalDelete": "确定要删除角色 \"{name}\" 吗？",
+        "notification": {
+          "deleteSuccess": {
+            "message": "角色 \"{name}\" 已删除。"
+          },
+          "deleteError": {
+            "message": "角色 \"{name}\" 无法删除。"
+          }
+        }
+      },
+      "detail": {
+        "role": "角色",
+        "basicInformation": "基本信息",
+        "labelName": "名称",
+        "labelDescription": "描述",
+        "permissions": "权限"
+      },
+      "grid": {
+        "title": "权限",
+        "disabledCheckboxMessage": "要停用此选项，你必须先停用其他活动选项。",
+        "tooltipParentRole": "{parent} 的所有 {role} 权限",
+        "tooltipParentAll": "{parent} ({roles}) 的所有权限",
+        "tooltipEntityAll": "{entity} ({roles}) 的所有权限"
+      },
+      "additional-permissions": {
+        "title": "附加权限"
+      },
+      "detailed-additional-permissions": {
+        "title": "附加权限"
+      },
+      "detailed-grid": {
+        "coveredByGeneralMessage": "已通过 \"常规\" 标签页授予。"
+      },
+      "view": {
+        "detailed": {
+          "alertText": "在此可详细配置权限。所有已禁用的复选框均为在「常规」页签中已授予的权限，不可修改。如果系统中使用了会新增数据集但未授予相应权限的扩展，则需要在此进行配置。"
+        }
+      },
+      "tabs": {
+        "general": "通用",
+        "detailed": "详细权限"
+      },
+      "mcpHint": {
+        "text": "该角色已分配给 {count} 个启用 MCP 的集成。 ",
+        "linkText": "查看 MCP 工具要求"
+      },
+      "mcpModal": {
+        "title": "MCP 工具要求",
+        "description": "使用该角色的集成允许以下工具。",
+        "legendLabel": "图例：",
+        "legendGranted": "已分配",
+        "legendGrantedHint": "该角色已分配此权限。",
+        "legendMissing": "缺失",
+        "legendMissingHint": "该角色尚未分配此权限。",
+        "legendDynamic": "动态",
+        "legendDynamicHint": "此权限取决于运行时传入的实体参数。",
+        "noToolsHeadline": "未找到工具",
+        "noToolsDescription": "使用该角色的集成目前不允许任何工具。",
+        "dynamicPrivilegeHint": "此权限取决于运行时传入的实体参数。",
+        "viewByPermission": "按权限",
+        "viewByTool": "按工具",
+        "grantAllMissing": "授予全部缺失权限",
+        "grant": "授予",
+        "saveReminder": "权限已预选。保存角色以应用。"
+      }
+    },
+    "users": {
+      "general": {
+        "mainMenuItemGeneral": "用户与权限",
+        "placeholderSearchBar": "搜索用户 ...",
+        "labelUserList": "用户与权限",
+        "labelCreateNewUser": "创建用户",
+        "cardLabel": "用户"
+      },
+      "user-grid": {
+        "labelUsername": "用户名",
+        "labelFirstName": "名字",
+        "labelLastName": "姓氏",
+        "labelRoles": "角色",
+        "labelEmail": "邮箱地址",
+        "status": "状态",
+        "titleModalDelete": "删除用户",
+        "textModalDelete": "确定要删除用户 \"{name}\" 吗？",
+        "notification": {
+          "deleteSuccess": {
+            "message": "用户 \"{name}\" 已删除。"
+          },
+          "deleteError": {
+            "message": "用户 \"{name}\" 无法删除。"
+          },
+          "deleteUserLoggedInError": {
+            "message": "用户不能删除自己。"
+          }
+        }
+      },
+      "user-detail": {
+        "labelCard": "信息",
+        "labelIntegrationsCard": "集成",
+        "labelRolesPermissionsCard": "角色与权限",
+        "labelFirstName": "名字",
+        "labelLastName": "姓氏",
+        "labelEmail": "邮箱地址",
+        "errorEmailUsed": "该邮箱地址已被使用。",
+        "errorUsernameUsed": "该用户名已被使用。",
+        "labelUsername": "用户名",
+        "labelPassword": "密码",
+        "labelProfilePicture": "头像",
+        "labelUserInterface": "用户界面",
+        "labelLanguage": "语言",
+        "labelLanguagePlaceholder": "选择语言...",
+        "labelChangePassword": "修改密码",
+        "labelActive": "启用",
+        "labelAdministrator": "管理员",
+        "labelTimezone": "时区",
+        "labelJobTitle": "职位",
+        "labelRoles": "角色",
+        "labelNewPassword": "新密码",
+        "labelNewUser": "新用户",
+        "placeholderNewPassword": "输入新密码 ...",
+        "placeholderNewPasswordConfirm": "确认新密码 ...",
+        "labelButtonChangePassword": "修改",
+        "writeAccess": "写入",
+        "readAccess": "读取",
+        "contextMenuEdit": "编辑集成",
+        "textChangePassword": "点击 '修改' 会直接保存密码。",
+        "addAccessKey": "创建访问密钥",
+        "noAccessKeysTitle": "暂无访问密钥",
+        "noAccessKeysSubline": "在此创建访问密钥",
+        "labelAccessKey": "访问密钥",
+        "labelPermissions": "权限",
+        "disabledRoleSelectWarning": "角色仅对没有管理员权限的用户可用。",
+        "passwordConfirmation": {
+          "titleConfirmPasswordModal": "确认密码",
+          "labelConfirmPassword": "密码",
+          "placeholderConfirmPassword": "输入当前密码 ...",
+          "notificationPasswordErrorMessage": "请输入正确的当前密码。"
+        },
+        "modal": {
+          "detailModalTitle": "创建集成",
+          "confirmDelete": "确定要删除该集成吗？",
+          "buttonApply": "保存集成",
+          "buttonApplyEdit": "保存修改",
+          "buttonCreateNewApiKeys": "重新生成 API 凭证",
+          "hintCreateNewApiKeys": "重新生成 API 凭证需要更新所有相关脚本或应用。",
+          "labelFieldLabel": "名称",
+          "idFieldLabel": "访问密钥 ID",
+          "secretFieldLabel": "安全密钥",
+          "secretHelpText": "请立即复制你的安全密钥！出于安全考虑，保存后不再显示。",
+          "messageSaveSuccess": "集成已保存。",
+          "messageSaveError": "集成无法保存。",
+          "messageCreateNewError": "集成无法创建。"
+        },
+        "mcpAllowlistTitle": "MCP 工具白名单",
+        "mcpAllowlistSaveError": "MCP 白名单无法保存。",
+        "notification": {
+          "saveError": {
+            "message": "用户 \"{name}\" 无法保存。"
+          },
+          "saveSuccess": {
+            "message": "用户 \"{name}\" 已保存。"
+          },
+          "themeSaveError": {
+            "message": "设计设置无法保存。"
+          },
+          "invalidEmailErrorMessage": "请输入有效的邮箱地址。",
+          "duplicateEmailErrorMessage": "该邮箱地址已被使用。"
+        }
+      }
+    }
+  },
+  "sw-privileges": {
+    "roles": {
+      "all": "全部",
+      "viewer": "查看",
+      "editor": "编辑",
+      "creator": "创建",
+      "deleter": "删除"
+    },
+    "permissionType": {
+      "read": "读取",
+      "update": "写入",
+      "create": "创建",
+      "delete": "删除"
+    },
+    "permissions": {
+      "parents": {
+        "content": "内容",
+        "customers": "客户",
+        "marketing": "营销",
+        "other": "其他",
+        "orders": "订单",
+        "products": "商品",
+        "settings": "设置"
+      },
+      "users_and_permissions": {
+        "label": "用户与权限"
+      },
+      "routes": {
+        "label": "路由"
+      }
+    },
+    "additional_permissions": {
+      "system": {
+        "label": "设置"
+      },
+      "user": {
+        "label": "用户"
+      },
+      "marketing": {
+        "label": "营销"
+      },
+      "orders": {
+        "label": "订单"
+      },
+      "routes": {
+        "label": "路由",
+        "api_action_access-key_integration": "重新生成 API 凭证",
+        "api_acl_privileges_get": "读取全部 ACL 权限",
+        "api_acl_privileges_route_get": "读取 ACL 端点权限",
+        "api_action_cache_info": "读取缓存信息",
+        "api_action_cache_index": "触发索引器",
+        "api_action_cache_delete": "清除缓存",
+        "api_action_cache_cleanup": "清理缓存",
+        "api_action_container-cache_delete": "清除容器缓存",
+        "api_info_me": "读取自己的 API 用户信息",
+        "api_info_ping": "续期 API 令牌",
+        "system:clear:cache": "清空缓存",
+        "api_proxy_switch-customer": "以客户身份操作",
+        "api_proxy_imitate-customer": "模拟客户登录",
+        "api_feature_flag_toggle": "展开/收起功能开关"
+      },
+      "app": {
+        "label": "应用",
+        "all": "全部",
+        "disabledCheckboxMessage": "要停用此选项，你必须先停用 '全部' 选项。"
+      }
+    }
+  }
+}

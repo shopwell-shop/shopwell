@@ -1,0 +1,80 @@
+{
+  "sw-settings-payment": {
+    "general": {
+      "mainMenuItemGeneral": "支付方式",
+      "placeholderSearchBar": "搜索所有支付方式..."
+    },
+    "overview": {
+      "openSortingModalButton": "修改下单流程中的显示顺序",
+      "editDetails": "编辑详情",
+      "activeToggle": "启用",
+      "missingEditorPermission": "你没有编辑支付方式所需的权限",
+      "notification": {
+        "activationSuccess": "{name} 已启用。",
+        "deactivationSuccess": "{name} 已停用。",
+        "activationError": "{name} 无法启用。",
+        "deactivationError": "{name} 无法停用。"
+      }
+    },
+    "sorting-modal": {
+      "modalTitle": "下单流程中的显示顺序",
+      "subTitle": "拖拽调整支付方式在下单流程中的显示顺序。",
+      "saveSuccessful": "支付方式顺序已更新。",
+      "errorMessage": "刷新支付方式顺序时发生错误。"
+    },
+    "list": {
+      "textHeadline": "支付方式",
+      "textDeleteConfirm": "确定要删除支付方式 \"{name}\" 吗？",
+      "columnName": "名称",
+      "columnDescription": "描述",
+      "columnActive": "启用",
+      "columnPosition": "位置",
+      "columnExtension": "扩展",
+      "buttonAddPaymentMethod": "新建支付方式",
+      "messageDeleteSuccess": "支付方式 \"{name}\" 已删除。",
+      "pluginDeleteTitleText": "来自插件的支付方式无法删除。"
+    },
+    "detail": {
+      "textHeadline": "新建支付方式",
+      "titleCard": "支付方式",
+      "messageSaveSuccess": "支付方式 \"{name}\" 已保存。",
+      "messageSaveError": "支付方式 \"{name}\" 保存失败。",
+      "labelName": "名称",
+      "labelTechnicalName": "技术名称",
+      "labelPosition": "位置",
+      "labelActive": "启用",
+      "labelAfterOrderEnabled": "允许在订单完成后更换支付方式",
+      "labelDescription": "描述",
+      "labelLogoUpload": "徽标",
+      "sidebar": {
+        "labelUseAsLogo": "用作 Logo"
+      },
+      "topRule": "可用性规则",
+      "placeholderName": "输入名称...",
+      "placeholderTechnicalName": "输入技术名称...",
+      "placeholderPosition": "输入位置...",
+      "placeholderDescription": "输入描述...",
+      "placeholderAvailabilityRule": "选择可用性规则...",
+      "helpTextTechnicalName": "技术名称用于唯一标识支付方式。事后修改技术名称可能导致依赖该名称的支付集成失效。",
+      "hintTextTechnicalNameIsProvided": "技术名称由 {name} 提供。",
+      "delete": {
+        "textHeadline": "删除支付方式",
+        "textAlert": "此支付方式正被规则、销售渠道或订单使用，因此无法删除。",
+        "textButton": "删除支付方式",
+        "modal": {
+          "textConfirmation": "确定要删除此支付方式吗？"
+        }
+      }
+    }
+  },
+  "sw-plugin-box": {
+    "buttonPluginSettings": "扩展设置"
+  },
+  "sw-privileges": {
+    "permissions": {
+      "payment": {
+        "label": "支付方式"
+      }
+    }
+  }
+}

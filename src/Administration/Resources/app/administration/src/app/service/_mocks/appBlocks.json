@@ -5,7 +5,7 @@
             "category": "text-image",
             "label": {
                 "en-GB": "First block from app",
-                "de-DE": "Erster Block einer App"
+                "zh-CN": "第一个 App 区块"
             },
             "slots": {
                 "left": {
@@ -59,7 +59,7 @@
             "category": "text-image",
             "label": {
                 "en-GB": "Second block from app",
-                "de-DE": "Zweiter Block einer App"
+                "zh-CN": "第二个 App 区块"
             },
             "slots": {
                 "left": {

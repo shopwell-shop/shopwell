@@ -1,0 +1,121 @@
+{
+  "sw-media": {
+    "general": {
+      "mainMenuItemGeneral": "媒体",
+      "descriptionTextModule": "媒体文件管理",
+      "placeholderSearchBar": "搜索当前文件夹 ...",
+      "notification": {
+        "urlCopied": {
+          "message": "URL 已复制到剪贴板。"
+        }
+      }
+    },
+    "sidebar": {
+      "labelHeadlineMultiple": "已选 {count} 个文件",
+      "labelNoMediaSelected": "未选择媒体",
+      "actions": {
+        "copyLink": "复制链接",
+        "delete": "删除",
+        "dissolve": "解析",
+        "download": "下载",
+        "move": "移动",
+        "replace": "替换",
+        "settings": "设置",
+        "ar": "启用 AR 视图",
+        "arHelpText": "在店铺前台展示时启用 AR 功能。你可以在 <a href=\"{settingsLink}\">3D 设置</a>中修改默认值。",
+        "arPlacement": "AR 放置方式",
+        "arPlacementHelpText": "选择对象是放置在地面等水平表面，还是墙面等垂直表面。",
+        "horizontal": "水平",
+        "vertical": "垂直",
+        "setCover": "设为封面",
+        "removeCover": "移除封面"
+      },
+      "sections": {
+        "actions": "操作",
+        "configuration": "配置",
+        "preview": "预览",
+        "metadata": "元数据",
+        "usage": "用于",
+        "selectedFiles": "已选文件"
+      },
+      "infoMissingFile": {
+        "titleMissingFile": "文件未找到",
+        "descriptionMissingFile": "未找到该文件。你可以上传新文件或删除它。"
+      },
+      "metadata": {
+        "name": "名称",
+        "fileType": "文件类型",
+        "altText": "替代文本",
+        "title": "标题",
+        "mimeType": "MIME 类型",
+        "fileSize": "大小",
+        "createdAt": "上传于",
+        "width": "宽度",
+        "height": "高度",
+        "totalSize": "合计"
+      },
+      "usage": {
+        "tooltipFoundInProducts": "在商品中找到",
+        "tooltipFoundInLandingPages": "在落地页中找到",
+        "tooltipFoundInCategories": "在分类中找到",
+        "tooltipFoundInManufacturers": "在制造商中找到",
+        "tooltipFoundInMailTemplate": "在邮件模板中找到",
+        "tooltipFoundInDocument": "在文档中找到",
+        "tooltipFoundInUser": "在用户中找到",
+        "tooltipFoundInPayment": "在支付方式中找到",
+        "tooltipFoundShipping": "在配送方式中找到",
+        "tooltipFoundLayout": "在购物体验中找到",
+        "titleMediaNotUsed": "媒体未使用",
+        "labelMediaNotUsed": "该媒体当前未被使用。"
+      }
+    },
+    "index": {
+      "buttonCreateFolder": "添加新文件夹",
+      "rootFolderName": "媒体"
+    },
+    "mediaLibrary": {
+      "labelButtonLoadMore": "加载更多",
+      "labelButtonLoadAll": "加载全部",
+      "titleEmptyState": "暂无媒体文件",
+      "descriptionEmptyState": "媒体管理"
+    },
+    "sorting": {
+      "labelSort": "排序方式：",
+      "labelSortByNameAsc": "名称, A-Z",
+      "labelSortByNameDsc": "名称, Z-A",
+      "labelSortBySizeAsc": "大小升序",
+      "labelSortBySizeDsc": "大小降序",
+      "labelSortByCreatedAsc": "创建日期，升序",
+      "labelSortByCreatedDsc": "创建日期，降序"
+    },
+    "presentation": {
+      "labelPresentation": "显示方式：",
+      "labelPresentationSmall": "小图预览",
+      "labelPresentationMedium": "中图预览",
+      "labelPresentationLarge": "大图预览",
+      "labelPresentationList": "列表"
+    },
+    "sw-media-modal": {
+      "titleModal": "选择媒体",
+      "labelTabItemLibrary": "媒体库",
+      "labelTabItemUpload": "上传文件",
+      "labelButtonSaveSelection": "添加媒体"
+    },
+    "sw-media-modal-v2": {
+      "titleModal": "选择媒体",
+      "labelTabItemLibrary": "媒体库",
+      "labelTabItemUpload": "上传文件",
+      "labelButtonSaveSelection": "添加媒体"
+    },
+    "sw-media-save-modal": {
+      "titleModal": "保存到媒体"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "media": {
+        "label": "媒体"
+      }
+    }
+  }
+}

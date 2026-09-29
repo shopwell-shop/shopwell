@@ -26,7 +26,7 @@ class MailCreationState
     /**
      * @var list<string>
      */
-    protected array $germanLanguageByteIds = [];
+    protected array $chineseLanguageByteIds = [];
 
     public function getMailTemplateTypeByteId(): ?string
     {
@@ -87,17 +87,17 @@ class MailCreationState
     /**
      * @return list<string>
      */
-    public function getGermanLanguageByteIds(): array
+    public function getChineseLanguageByteIds(): array
     {
-        return $this->germanLanguageByteIds;
+        return $this->chineseLanguageByteIds;
     }
 
     /**
-     * @param list<string> $germanLanguageByteIds
+     * @param list<string> $chineseLanguageByteIds
      */
-    public function setGermanLanguageByteIds(array $germanLanguageByteIds): void
+    public function setChineseLanguageByteIds(array $chineseLanguageByteIds): void
     {
-        $this->germanLanguageByteIds = $this->uniqueLanguageByteIds($germanLanguageByteIds);
+        $this->chineseLanguageByteIds = $this->uniqueLanguageByteIds($chineseLanguageByteIds);
     }
 
     /**

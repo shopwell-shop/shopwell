@@ -48,7 +48,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $parameters->set('shopwell.installer.supportedLanguages', [
         'cs' => ['id' => 'cs-CZ', 'label' => 'Čeština'],
         'da-DK' => ['id' => 'da-DK', 'label' => 'Dansk'],
-        'de' => ['id' => 'de-DE', 'label' => 'Deutsch'],
+        'zh' => ['id' => 'zh-CN', 'label' => '简体中文'],
         'en-US' => ['id' => 'en-US', 'label' => 'English (US)'],
         'en' => ['id' => 'en-GB', 'label' => 'English (UK)'],
         'es-ES' => ['id' => 'es-ES', 'label' => 'Español'],
@@ -71,12 +71,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         'DKK' => 'DKK',
         'NOK' => 'NOK',
         'CZK' => 'CZK',
+        'CNY' => 'CNY',
     ]);
 
     $parameters->set('shopwell.installer.configurationPreselection', [
         'cs' => ['currency' => 'CZK'],
         'da-DK' => ['currency' => 'DKK'],
-        'de' => ['currency' => 'EUR'],
+        'zh' => ['currency' => 'CNY'],
         'en-US' => ['currency' => 'USD'],
         'en' => ['currency' => 'GBP'],
         'es-ES' => ['currency' => 'EUR'],
@@ -90,7 +91,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     ]);
 
     $parameters->set('shopwell.installer.tosUrls', [
-        'de' => 'https://api.shopwell.cn/gtc/de_DE.html',
+        'zh' => 'https://api.shopwell.cn/gtc/zh_CN.html',
         'en' => 'https://api.shopwell.cn/gtc/en_GB.html',
     ]);
 

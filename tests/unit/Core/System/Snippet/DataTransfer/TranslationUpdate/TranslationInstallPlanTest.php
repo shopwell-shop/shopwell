@@ -16,19 +16,19 @@ class TranslationInstallPlanTest extends TestCase
 {
     public function testNothingCanBeInstalledWhenEveryLocaleIsUnavailable(): void
     {
-        static::assertTrue((new TranslationInstallPlan(unavailableLocales: ['de-DE']))->nothingCanBeInstalled());
+        static::assertTrue((new TranslationInstallPlan(unavailableLocales: ['zh-CN']))->nothingCanBeInstalled());
     }
 
     public function testSomethingCanBeInstalledWhenALocaleCanBeDownloaded(): void
     {
-        $plan = new TranslationInstallPlan(localesToDownload: ['de-DE'], unavailableLocales: ['es-ES']);
+        $plan = new TranslationInstallPlan(localesToDownload: ['zh-CN'], unavailableLocales: ['es-ES']);
 
         static::assertFalse($plan->nothingCanBeInstalled());
     }
 
     public function testSomethingCanBeInstalledWhenALocaleCanBeLinked(): void
     {
-        $plan = new TranslationInstallPlan(localesToLink: ['de-DE'], unavailableLocales: ['es-ES']);
+        $plan = new TranslationInstallPlan(localesToLink: ['zh-CN'], unavailableLocales: ['es-ES']);
 
         static::assertFalse($plan->nothingCanBeInstalled());
     }

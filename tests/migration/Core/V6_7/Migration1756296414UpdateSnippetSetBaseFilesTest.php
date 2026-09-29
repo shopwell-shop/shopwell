@@ -42,8 +42,8 @@ class Migration1756296414UpdateSnippetSetBaseFilesTest extends TestCase
             $result = $connection->fetchAllAssociative($sql);
 
             static::assertCount(2, $result);
-            static::assertNotContains('messages.de-DE', array_column($result, 'base_file'));
-            static::assertContains('messages.de', array_column($result, 'base_file'));
+            static::assertNotContains('messages.zh-CN', array_column($result, 'base_file'));
+            static::assertContains('messages.zh', array_column($result, 'base_file'));
             static::assertNotContains('messages.en-GB', array_column($result, 'base_file'));
             static::assertContains('messages.en', array_column($result, 'base_file'));
         }
@@ -53,8 +53,8 @@ class Migration1756296414UpdateSnippetSetBaseFilesTest extends TestCase
     {
         $revertStatement = <<<'SQL'
             UPDATE `snippet_set`
-            SET base_file = REPLACE(REPLACE(`base_file`, 'de', 'de-DE'), 'en', 'en-GB')
-            WHERE `base_file` IN ('messages.de', 'messages.en')
+            SET base_file = REPLACE(REPLACE(`base_file`, 'zh', 'zh-CN'), 'en', 'en-GB')
+            WHERE `base_file` IN ('messages.zh', 'messages.en')
         SQL;
 
         $connection->executeStatement($revertStatement);

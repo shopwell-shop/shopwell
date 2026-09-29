@@ -512,12 +512,12 @@ class MailServiceTest extends TestCase
         $this->mailFactory->expects($this->once())->method('create')->willReturn($this->createEmail());
 
         $languageLocaleCodeProvider = static::createStub(LanguageLocaleCodeProvider::class);
-        $languageLocaleCodeProvider->method('getLocaleForLanguageId')->willReturn('de-DE');
+        $languageLocaleCodeProvider->method('getLocaleForLanguageId')->willReturn('zh-CN');
 
         $translator = $this->createMock(AbstractTranslator::class);
         $translator->expects($this->once())
             ->method('injectSettings')
-            ->with($salesChannelId, Defaults::LANGUAGE_SYSTEM, 'de-DE', $context)
+            ->with($salesChannelId, Defaults::LANGUAGE_SYSTEM, 'zh-CN', $context)
             ->willReturnCallback(static function () use (&$calls): void {
                 $calls[] = 'inject';
             });

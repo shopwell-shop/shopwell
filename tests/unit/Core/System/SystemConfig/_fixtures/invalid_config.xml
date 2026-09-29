@@ -5,18 +5,18 @@
         <sw-field>
             <name>email</name>
             <label>eMail</label>
-            <label lang="de_DE">E-Mail</label>
+            <label lang="zh_CN">电子邮箱</label>
             <placeholder>Enter your eMail address</placeholder>
-            <placeholder lang="de_DE">Bitte gib deine E-Mail Adresse ein</placeholder>
+            <placeholder lang="zh_CN">请输入你的邮箱地址</placeholder>
             <copyable>true</copyable>
         </sw-field>
 
         <sw-field type="single-select">
             <name>mailMethod</name>
             <label>Mailing protocol</label>
-            <label lang="de_DE">E-Mail Versand Protokoll</label>
+            <label lang="zh_CN">邮件发送协议</label>
             <placeholder>Choose your preferred transfer method</placeholder>
-            <placeholder lang="de_DE">Bitte wähle dein bevorzugtes Versand Protokoll</placeholder>
+            <placeholder lang="zh_CN">请选择你偏好的发送协议</placeholder>
             <options>
                 <option>
                     <id>smtp</id>

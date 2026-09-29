@@ -1,0 +1,13 @@
+{
+    "test": {
+        "uniqueNamespacePlugin": {
+            "someLabel": "plugin zh",
+            "anotherLabel": "plugin zh"
+        },
+        "someSharedNamespace": {
+            "uniqueKeyPlugin": "plugin zh",
+            "shouldBeOverwritten": "overwritten by plugin zh",
+            "shouldAlsoBeOverwritten": "also overwritten by plugin zh"
+        }
+    }
+}

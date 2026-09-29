@@ -111,12 +111,12 @@ class ContextController extends StorefrontController
          * http://localhost/development/public/de
          * http://localhost/development/public/en
          * http://localhost/development/public/fr
-         * http://localhost/development/public/de-DE
+         * http://localhost/development/public/zh-CN
          *
          * http://localhost:8080
          * http://localhost:8080/en
          * http://localhost:8080/fr
-         * http://localhost:8080/de-DE
+         * http://localhost:8080/zh-CN
          */
         $parsedUrl = parse_url($newTokenResponse->getRedirectUrl());
 

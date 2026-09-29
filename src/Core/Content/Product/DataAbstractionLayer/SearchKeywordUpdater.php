@@ -236,7 +236,7 @@ class SearchKeywordUpdater implements ResetInterface
 
         // Filter for products that have translations anywhere in the language inheritance chain
         // (current language, its parent and the system default). A sales channel language may
-        // inherit from a parent language that is not itself indexed (e.g. de-CH inheriting de-DE),
+        // inherit from a parent language that is not itself indexed (e.g. en-US inheriting en-GB),
         // in which case the carried-over keywords of the parent language are not available and the
         // product must be fetched here so its inherited translation can be indexed.
         $filters = [

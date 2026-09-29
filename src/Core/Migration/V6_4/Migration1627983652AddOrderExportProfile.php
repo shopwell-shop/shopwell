@@ -70,7 +70,7 @@ class Migration1627983652AddOrderExportProfile extends MigrationStep
         $translations = new Translations(
             [
                 'import_export_profile_id' => $id,
-                'label' => 'Standardprofil Bestellungen',
+                'label' => '标准配置 - 订单',
             ],
             [
                 'import_export_profile_id' => $id,

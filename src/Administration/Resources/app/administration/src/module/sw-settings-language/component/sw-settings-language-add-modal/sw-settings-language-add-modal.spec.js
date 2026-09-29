@@ -22,7 +22,7 @@ async function createWrapper(existingLanguages = []) {
     });
 
     const getMeta = jest.fn().mockResolvedValue({
-        builtInLocales: ['de-DE', 'en-GB'],
+        builtInLocales: ['zh-CN', 'en-GB'],
         communityTranslationsUrl: 'https://translate.shopwell.cn',
         documentationUrlSnippetKey: 'sw-settings-language.addModal.docsUrl',
         completenessThreshold: 90,

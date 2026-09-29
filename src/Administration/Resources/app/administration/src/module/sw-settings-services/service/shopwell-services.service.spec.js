@@ -7,7 +7,7 @@ import SystemConfigApiService from '../../../core/service/api/system-config.api.
 describe('src/module/sw-settings-services/service/shopwell-services-service.ts', () => {
     it.each([
         [undefined, 'en-US', 'en-US'],
-        ['de-DE', 'en-US', 'de-DE'],
+        ['zh-CN', 'en-US', 'zh-CN'],
     ])(
         'loads installed services using the correct language',
         async (sessionLanguage, apiContextLanguage, expectedLanguage) => {

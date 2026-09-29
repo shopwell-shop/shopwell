@@ -419,9 +419,9 @@ abstract class AbstractImportExportTestCase extends TestCase
                 Defaults::LANGUAGE_SYSTEM => [
                     'name' => 'Default name',
                 ],
-                'de-DE' => [
-                    'name' => 'German',
-                    'description' => 'Beschreibung',
+                'zh-CN' => [
+                    'name' => '中文名称',
+                    'description' => '中文描述',
                 ],
             ],
             'visibilities' => [

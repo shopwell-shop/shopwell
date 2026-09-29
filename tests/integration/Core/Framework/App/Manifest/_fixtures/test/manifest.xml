@@ -4,9 +4,9 @@
     <meta>
         <name>test</name>
         <label>Swag App Test</label>
-        <label lang="de-DE">Swag App Test</label>
+        <label lang="zh-CN">Swag 应用测试</label>
         <description>Test for App System</description>
-        <description lang="de-DE">Test für das App System</description>
+        <description lang="zh-CN">应用系统测试</description>
         <author>Shopwell</author>
         <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>
@@ -20,12 +20,12 @@ Following personal information will be processed on Shopwell's servers:
 - Billing address
 - Order value
         </privacyPolicyExtensions>
-        <privacyPolicyExtensions lang="de-DE">
-Folgende Nutzerdaten werden auf Servern der Shopwell verarbeitet:
+        <privacyPolicyExtensions lang="zh-CN">
+以下用户数据将在 Shopwell 的服务器上处理：
 
 - Name
-- Rechnungsadresse
-- Bestellwert
+- 账单地址
+- 订单金额
         </privacyPolicyExtensions>
     </meta>
     <setup>
@@ -39,7 +39,7 @@ Folgende Nutzerdaten werden auf Servern der Shopwell verarbeitet:
             view="detail"
             url="https://swag-test.com/your-order">
             <label>View Order</label>
-            <label lang="de-DE">Zeige Bestellung</label>
+            <label lang="zh-CN">查看订单</label>
         </action-button>
         <action-button
             action="doStuffWithProducts"
@@ -47,15 +47,15 @@ Folgende Nutzerdaten werden auf Servern der Shopwell verarbeitet:
             view="list"
             url="https://swag-test.com/do-stuff">
             <label>Do Stuff</label>
-            <label lang="de-DE">Mache Dinge</label>
+            <label lang="zh-CN">执行操作</label>
         </action-button>
         <module name="first-module" source="https://test.com" parent="sw-test-structure-module" position="10">
             <label>My first own module</label>
-            <label lang="de-DE">Mein erstes eigenes Modul</label>
+            <label lang="zh-CN">我的第一个模块</label>
         </module>
         <module name="structure-module" parent="sw-catalogue" position="50">
             <label>My menu entry for modules</label>
-            <label lang="de-DE">Mein Menüeintrag für Module</label>
+            <label lang="zh-CN">我的模块菜单项</label>
         </module>
         <main-module source="https://main-module"/>
         <base-app-url>https://base-url.com</base-app-url>
@@ -106,9 +106,9 @@ Folgende Nutzerdaten werden auf Servern der Shopwell verarbeitet:
         <payment-method>
             <identifier>myMethod</identifier>
             <name>The app payment method</name>
-            <name lang="de-DE">Die App Zahlungsmethode</name>
+            <name lang="zh-CN">应用支付方式</name>
             <description>This is a description</description>
-            <description lang="de-DE">Die Zahlungsmethoden-Beschreibung</description>
+            <description lang="zh-CN">支付方式说明</description>
             <pay-url>https://payment.app/payment/process</pay-url>
             <finalize-url>https://payment.app/payment/finalize</finalize-url>
             <validate-url>https://payment.app/payment/validate</validate-url>
@@ -169,7 +169,7 @@ Folgende Nutzerdaten werden auf Servern der Shopwell verarbeitet:
         <shipping-method>
             <identifier>swagFirstShippingMethod</identifier>
             <name>first Shipping Method</name>
-            <name lang="de-DE">erste Versandmethode</name>
+            <name lang="zh-CN">第一种配送方式</name>
             <delivery-time>
                 <id>4b00146bdc8b4175b12d3fc36ec114c8</id>
                 <name>Short delivery time 1-2 days</name>

@@ -40,7 +40,7 @@ class InstallTranslationCommandTest extends TestCase
         $this->metadataStore = $this->createMock(TranslationMetadataStore::class);
         $this->config = new TranslationConfig(
             new Uri('http://localhost:8000'),
-            ['en-GB', 'es-ES', 'de-DE'],
+            ['en-GB', 'es-ES', 'zh-CN'],
             [],
             new LanguageCollection(),
             new PluginMappingCollection(),
@@ -128,12 +128,12 @@ class InstallTranslationCommandTest extends TestCase
     {
         $this->config = new TranslationConfig(
             new Uri('http://localhost:8000'),
-            ['en-GB', 'es-ES', 'de-DE'],
+            ['en-GB', 'es-ES', 'zh-CN'],
             [],
             new LanguageCollection([
                 new Language('en-GB', 'English'),
                 new Language('es-ES', 'Español'),
-                new Language('de-DE', 'Deutsch'),
+                new Language('zh-CN', '简体中文'),
             ]),
             new PluginMappingCollection(),
             new Uri('http://localhost:8000/metadata.json'),
@@ -142,7 +142,7 @@ class InstallTranslationCommandTest extends TestCase
 
         $collection = new MetadataCollection([
             MetadataEntry::create([
-                'locale' => 'de-DE',
+                'locale' => 'zh-CN',
                 'updatedAt' => '2024-01-01T00:00:00+00:00',
                 'progress' => 100,
             ]),
@@ -152,7 +152,7 @@ class InstallTranslationCommandTest extends TestCase
                 'progress' => 100,
             ]),
         ]);
-        $collection->get('de-DE')?->markForUpdate();
+        $collection->get('zh-CN')?->markForUpdate();
         $collection->get('es-ES')?->markForUpdate();
 
         $this->initMetadataLoader($collection);
@@ -160,12 +160,12 @@ class InstallTranslationCommandTest extends TestCase
         $this->translationLoader->expects($this->exactly(2))
             ->method('download')
             ->willReturnCallback(static function (string $locale): void {
-                static::assertContains($locale, ['de-DE', 'es-ES']);
+                static::assertContains($locale, ['zh-CN', 'es-ES']);
             });
         $this->translationLoader->expects($this->exactly(2))->method('link');
 
         $tester = new CommandTester($this->getCommand());
-        $tester->setInputs(['de-DE,es-ES']);
+        $tester->setInputs(['zh-CN,es-ES']);
 
         $tester->execute([], ['interactive' => true]);
         $tester->assertCommandIsSuccessful();
@@ -240,7 +240,7 @@ class InstallTranslationCommandTest extends TestCase
                 'progress' => 100,
             ]),
             MetadataEntry::create([
-                'locale' => 'de-DE',
+                'locale' => 'zh-CN',
                 'updatedAt' => '2024-01-01T00:00:00+00:00',
                 'progress' => 100,
             ]),
@@ -267,13 +267,13 @@ class InstallTranslationCommandTest extends TestCase
         $command = $this->getCommand();
         $tester = new CommandTester($command);
 
-        $tester->execute(['--locales' => 'en-GB,es-ES,de-DE']);
+        $tester->execute(['--locales' => 'en-GB,es-ES,zh-CN']);
         $tester->assertCommandIsSuccessful();
 
-        static::assertSame(['es-ES', 'en-GB', 'de-DE'], $linked);
+        static::assertSame(['es-ES', 'en-GB', 'zh-CN'], $linked);
 
         $output = $tester->getDisplay();
-        static::assertStringContainsString('The following locales are installed from their existing translation files, without downloading: en-GB, de-DE', $output);
+        static::assertStringContainsString('The following locales are installed from their existing translation files, without downloading: en-GB, zh-CN', $output);
         static::assertStringContainsString('Saving translation metadata...', $output);
         static::assertStringContainsString('Translation metadata saved successfully.', $output);
     }
@@ -323,10 +323,10 @@ class InstallTranslationCommandTest extends TestCase
             });
 
         $tester = new CommandTester($this->getCommand());
-        $tester->execute(['--locales' => 'en-GB,de-DE', '--offline' => true]);
+        $tester->execute(['--locales' => 'en-GB,zh-CN', '--offline' => true]);
         $tester->assertCommandIsSuccessful();
 
-        static::assertSame(['en-GB', 'de-DE'], $linked);
+        static::assertSame(['en-GB', 'zh-CN'], $linked);
     }
 
     public function testCommandOutputsErrorIfMetadataCannotBeWritten(): void
@@ -487,8 +487,8 @@ class InstallTranslationCommandTest extends TestCase
 
         $tester = new CommandTester($this->getCommand());
 
-        $this->expectExceptionObject(SnippetException::translationsUnavailable(['en-GB', 'de-DE']));
-        $tester->execute(['--locales' => 'en-GB,de-DE']);
+        $this->expectExceptionObject(SnippetException::translationsUnavailable(['en-GB', 'zh-CN']));
+        $tester->execute(['--locales' => 'en-GB,zh-CN']);
     }
 
     public function testOfflineInstallFailsWithEveryMissingLocaleBeforeLinkingAnything(): void
@@ -502,8 +502,8 @@ class InstallTranslationCommandTest extends TestCase
 
         $tester = new CommandTester($this->getCommand());
 
-        $this->expectExceptionObject(SnippetException::translationsUnavailable(['en-GB', 'de-DE']));
-        $tester->execute(['--locales' => 'en-GB,de-DE', '--offline' => true]);
+        $this->expectExceptionObject(SnippetException::translationsUnavailable(['en-GB', 'zh-CN']));
+        $tester->execute(['--locales' => 'en-GB,zh-CN', '--offline' => true]);
     }
 
     public function testOfflineInstallLinksNothingWhenOneLocaleIsMissing(): void
@@ -517,8 +517,8 @@ class InstallTranslationCommandTest extends TestCase
 
         $tester = new CommandTester($this->getCommand());
 
-        $this->expectExceptionObject(SnippetException::translationsUnavailable(['de-DE']));
-        $tester->execute(['--locales' => 'en-GB,de-DE', '--offline' => true]);
+        $this->expectExceptionObject(SnippetException::translationsUnavailable(['zh-CN']));
+        $tester->execute(['--locales' => 'en-GB,zh-CN', '--offline' => true]);
     }
 
     public function testOfflineInstallWithAllLinksEveryConfiguredLocale(): void
@@ -539,7 +539,7 @@ class InstallTranslationCommandTest extends TestCase
         $tester->execute(['--all' => true, '--offline' => true]);
         $tester->assertCommandIsSuccessful();
 
-        static::assertSame(['en-GB', 'es-ES', 'de-DE'], $linked);
+        static::assertSame(['en-GB', 'es-ES', 'zh-CN'], $linked);
     }
 
     public function testOfflineInstallWithAllSkipsLocalesWithoutFiles(): void
@@ -560,7 +560,7 @@ class InstallTranslationCommandTest extends TestCase
         $tester->execute(['--all' => true, '--offline' => true]);
         $tester->assertCommandIsSuccessful();
 
-        static::assertSame(['en-GB', 'de-DE'], $linked);
+        static::assertSame(['en-GB', 'zh-CN'], $linked);
         static::assertStringContainsString('No translation files are present for the following locales, they will not be installed: es-ES', $tester->getDisplay());
     }
 
@@ -573,7 +573,7 @@ class InstallTranslationCommandTest extends TestCase
 
         $tester = new CommandTester($this->getCommand());
 
-        $this->expectExceptionObject(SnippetException::translationsUnavailable(['en-GB', 'es-ES', 'de-DE']));
+        $this->expectExceptionObject(SnippetException::translationsUnavailable(['en-GB', 'es-ES', 'zh-CN']));
         $tester->execute(['--all' => true, '--offline' => true]);
     }
 

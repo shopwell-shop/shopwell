@@ -5,7 +5,7 @@
         <name>LocalApp</name>
         <!-- label is translated for the requested locale -->
         <label>LocalApp label</label>
-        <label lang="de-DE">LocalApp Bezeichnung</label>
+        <label lang="zh-CN">本地应用标签</label>
         <!-- description is only translated for the fallback locale -->
         <description>LocalApp description</description>
         <author>Shopwell</author>

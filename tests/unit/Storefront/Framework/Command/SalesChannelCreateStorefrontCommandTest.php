@@ -176,7 +176,7 @@ class SalesChannelCreateStorefrontCommandTest extends TestCase
 
         yield 'with valid isoCode' => [
             'snippetSetId' => null,
-            'isoCode' => 'de-DE',
+            'isoCode' => 'zh-CN',
             'idsSearchResult' => [
                 new IdSearchResult(1, ['snippetSetId' => ['primaryKey' => 'snippetSetId', 'data' => []]], new Criteria(), Context::createDefaultContext()),
             ],

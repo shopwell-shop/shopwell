@@ -445,7 +445,7 @@ class RecalculationServiceTest extends TestCase
     {
         // create order
         $cart = $this->generateDemoCart();
-        $orderId = $this->persistCart($cart, $this->getDeDeLanguageId())['orderId'];
+        $orderId = $this->persistCart($cart, $this->getZhCnLanguageId())['orderId'];
 
         // create version of order
         $versionId = $this->createVersionedOrder($orderId);
@@ -469,7 +469,7 @@ class RecalculationServiceTest extends TestCase
         $order = $this->orderRepository->search(new Criteria([$orderId]), $versionContext)->getEntities()->get($orderId);
         static::assertNotNull($order);
 
-        static::assertSame($this->getDeDeLanguageId(), $order->getLanguageId());
+        static::assertSame($this->getZhCnLanguageId(), $order->getLanguageId());
     }
 
     public function testRecalculateLiveVersionIsNotAllowed(): void

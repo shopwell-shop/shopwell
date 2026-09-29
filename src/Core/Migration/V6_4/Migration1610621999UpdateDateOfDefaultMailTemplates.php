@@ -85,8 +85,8 @@ class Migration1610621999UpdateDateOfDefaultMailTemplates extends MigrationStep
             $type,
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/' . $type . '/en-plain.html.twig'),
             $filesystem->readFile(__DIR__ . '/../Fixtures/mails/' . $type . '/en-html.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/' . $type . '/de-plain.html.twig'),
-            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/' . $type . '/de-html.html.twig')
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/' . $type . '/zh-plain.html.twig'),
+            $filesystem->readFile(__DIR__ . '/../Fixtures/mails/' . $type . '/zh-html.html.twig')
         );
 
         $this->updateMail($update, $connection);

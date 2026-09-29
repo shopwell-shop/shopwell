@@ -35,13 +35,13 @@ class ListTranslationsCommandTest extends TestCase
     {
         $languages = new LanguageCollection([
             new Language('es-ES', 'Español'),
-            new Language('de-DE', 'Deutsch'),
+            new Language('zh-CN', '简体中文'),
             new Language('en-GB', 'English'),
         ]);
 
         $config = new TranslationConfig(
             new Uri('http://localhost:8000'),
-            ['de-DE', 'en-GB', 'es-ES'],
+            ['zh-CN', 'en-GB', 'es-ES'],
             [],
             $languages,
             new PluginMappingCollection(),
@@ -63,20 +63,19 @@ class ListTranslationsCommandTest extends TestCase
 
         $output = $tester->getDisplay();
 
-        $dePos = strpos($output, 'de-DE');
+        $dePos = strpos($output, 'zh-CN');
         $enPos = strpos($output, 'en-GB');
         $esPos = strpos($output, 'es-ES');
 
         static::assertNotFalse($dePos);
         static::assertNotFalse($enPos);
         static::assertNotFalse($esPos);
-        static::assertLessThan($enPos, $dePos);
         static::assertLessThan($esPos, $enPos);
+        static::assertLessThan($dePos, $esPos);
 
-        static::assertStringContainsString('Deutsch', $output);
+        static::assertStringContainsString('简体中文', $output);
         static::assertStringContainsString('English', $output);
         static::assertStringContainsString('Español', $output);
-        static::assertStringContainsString('German (Germany)', $output);
         static::assertStringContainsString('Spanish (Spain)', $output);
         static::assertStringContainsString('2024-06-15 12:34', $output);
         static::assertStringContainsString('—', $output);

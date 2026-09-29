@@ -4,9 +4,9 @@
     <meta>
         <name>withAllowedHosts</name>
         <label>Swag App Test with allowed hosts</label>
-        <label lang="de-DE">Swag App Test mit eingetragenen Endpunkten</label>
+        <label lang="zh-CN">已登记端点的 Swag 应用测试</label>
         <description>test</description>
-        <description lang="de-DE">test</description>
+        <description lang="zh-CN">test</description>
         <author>Shopwell</author>
         <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>

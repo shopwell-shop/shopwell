@@ -19,7 +19,7 @@ Apps declare tools in `Resources/mcp.xml`:
     <mcp-tools>
         <mcp-tool name="sync-orders" url="https://app.example.com/mcp/sync-orders">
             <label>Sync Orders</label>
-            <label lang="de-DE">Bestellungen synchronisieren</label>
+            <label lang="zh-CN">同步订单</label>
             <input-schema>
                 <property name="since" type="string" description="ISO date" required="true"/>
             </input-schema>

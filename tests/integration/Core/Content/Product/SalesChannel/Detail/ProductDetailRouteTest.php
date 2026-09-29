@@ -666,7 +666,7 @@ class ProductDetailRouteTest extends TestCase
                 'id' => $this->ids->create('locale-de'),
                 'name' => 'TestGerman',
                 'territory' => 'TestGermany',
-                'code' => 'de-DE-test',
+                'code' => 'zh-CN-test',
             ],
             'translationCodeId' => $this->ids->get('locale-de'),
         ]], $context);

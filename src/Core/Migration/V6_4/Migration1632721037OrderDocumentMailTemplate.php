@@ -21,7 +21,7 @@ class Migration1632721037OrderDocumentMailTemplate extends MigrationStep
     use ImportTranslationsTrait;
 
     private const LOCALE_EN_GB = 'en-GB';
-    private const LOCALE_DE_DE = 'de-DE';
+    private const LOCALE_ZH_CN = 'zh-CN';
 
     public function getCreationTimestamp(): int
     {
@@ -35,25 +35,25 @@ class Migration1632721037OrderDocumentMailTemplate extends MigrationStep
                 'typeId' => Uuid::randomBytes(),
                 'templateId' => Uuid::randomBytes(),
                 'name' => 'Invoice',
-                'nameDe' => 'Rechnung',
+                'nameZh' => '发票',
             ],
             MailTemplateTypes::MAILTYPE_DOCUMENT_DELIVERY_NOTE => [
                 'typeId' => Uuid::randomBytes(),
                 'templateId' => Uuid::randomBytes(),
                 'name' => 'Delivery note',
-                'nameDe' => 'Versandbenachrichtigung',
+                'nameZh' => '发货通知',
             ],
             MailTemplateTypes::MAILTYPE_DOCUMENT_CREDIT_NOTE => [
                 'typeId' => Uuid::randomBytes(),
                 'templateId' => Uuid::randomBytes(),
                 'name' => 'Credit note',
-                'nameDe' => 'Gutschrift',
+                'nameZh' => '贷项通知单',
             ],
             MailTemplateTypes::MAILTYPE_DOCUMENT_CANCELLATION_INVOICE => [
                 'typeId' => Uuid::randomBytes(),
                 'templateId' => Uuid::randomBytes(),
                 'name' => 'Cancellation invoice',
-                'nameDe' => 'Stornorechnung',
+                'nameZh' => '冲销发票',
             ],
         ];
 
@@ -76,7 +76,7 @@ class Migration1632721037OrderDocumentMailTemplate extends MigrationStep
                 $translations = new Translations(
                     [
                         'mail_template_type_id' => $values['typeId'],
-                        'name' => $values['nameDe'],
+                        'name' => $values['nameZh'],
                     ],
                     [
                         'mail_template_type_id' => $values['typeId'],
@@ -101,9 +101,9 @@ class Migration1632721037OrderDocumentMailTemplate extends MigrationStep
                 [
                     'mail_template_id' => $values['templateId'],
                     'sender_name' => '{{ salesChannel.name }}',
-                    'subject' => 'Neues Dokument für Ihre Bestellung',
-                    'content_html' => $this->getMailTemplateContent($technicalName, self::LOCALE_DE_DE, true),
-                    'content_plain' => $this->getMailTemplateContent($technicalName, self::LOCALE_DE_DE, false),
+                    'subject' => '您的订单有新文档',
+                    'content_html' => $this->getMailTemplateContent($technicalName, self::LOCALE_ZH_CN, true),
+                    'content_plain' => $this->getMailTemplateContent($technicalName, self::LOCALE_ZH_CN, false),
                 ],
                 [
                     'mail_template_id' => $values['templateId'],
@@ -128,20 +128,20 @@ class Migration1632721037OrderDocumentMailTemplate extends MigrationStep
 
         $invoiceEnHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/invoice_mail/en-html.html.twig');
         $invoiceEnPlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/invoice_mail/en-plain.html.twig');
-        $invoiceDeHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/invoice_mail/de-html.html.twig');
-        $invoiceDePlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/invoice_mail/de-plain.html.twig');
+        $invoiceZhHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/invoice_mail/zh-html.html.twig');
+        $invoiceZhPlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/invoice_mail/zh-plain.html.twig');
         $deliveryNoteEnHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/delivery_mail/en-html.html.twig');
         $deliveryNoteEnPlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/delivery_mail/en-plain.html.twig');
-        $deliveryNoteDeHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/delivery_mail/de-html.html.twig');
-        $deliveryNoteDePlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/delivery_mail/de-plain.html.twig');
+        $deliveryNoteZhHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/delivery_mail/zh-html.html.twig');
+        $deliveryNoteZhPlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/delivery_mail/zh-plain.html.twig');
         $creditNoteEnHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/credit_note_mail/en-html.html.twig');
         $creditNoteEnPlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/credit_note_mail/en-plain.html.twig');
-        $creditNoteDeHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/credit_note_mail/de-html.html.twig');
-        $creditNoteDePlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/credit_note_mail/de-plain.html.twig');
+        $creditNoteZhHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/credit_note_mail/zh-html.html.twig');
+        $creditNoteZhPlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/credit_note_mail/zh-plain.html.twig');
         $cancellationInvoiceEnHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/cancellation_mail/en-html.html.twig');
         $cancellationInvoiceEnPlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/cancellation_mail/en-plain.html.twig');
-        $cancellationInvoiceDeHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/cancellation_mail/de-html.html.twig');
-        $cancellationInvoiceDePlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/cancellation_mail/de-plain.html.twig');
+        $cancellationInvoiceZhHtml = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/cancellation_mail/zh-html.html.twig');
+        $cancellationInvoiceZhPlain = $filesystem->readFile(__DIR__ . '/../Fixtures/mails/cancellation_mail/zh-plain.html.twig');
 
         $templateContentMapping = [
             MailTemplateTypes::MAILTYPE_DOCUMENT_INVOICE => [
@@ -149,9 +149,9 @@ class Migration1632721037OrderDocumentMailTemplate extends MigrationStep
                     'html' => $invoiceEnHtml,
                     'plain' => $invoiceEnPlain,
                 ],
-                self::LOCALE_DE_DE => [
-                    'html' => $invoiceDeHtml,
-                    'plain' => $invoiceDePlain,
+                self::LOCALE_ZH_CN => [
+                    'html' => $invoiceZhHtml,
+                    'plain' => $invoiceZhPlain,
                 ],
             ],
             MailTemplateTypes::MAILTYPE_DOCUMENT_DELIVERY_NOTE => [
@@ -159,9 +159,9 @@ class Migration1632721037OrderDocumentMailTemplate extends MigrationStep
                     'html' => $deliveryNoteEnHtml,
                     'plain' => $deliveryNoteEnPlain,
                 ],
-                self::LOCALE_DE_DE => [
-                    'html' => $deliveryNoteDeHtml,
-                    'plain' => $deliveryNoteDePlain,
+                self::LOCALE_ZH_CN => [
+                    'html' => $deliveryNoteZhHtml,
+                    'plain' => $deliveryNoteZhPlain,
                 ],
             ],
             MailTemplateTypes::MAILTYPE_DOCUMENT_CREDIT_NOTE => [
@@ -169,9 +169,9 @@ class Migration1632721037OrderDocumentMailTemplate extends MigrationStep
                     'html' => $creditNoteEnHtml,
                     'plain' => $creditNoteEnPlain,
                 ],
-                self::LOCALE_DE_DE => [
-                    'html' => $creditNoteDeHtml,
-                    'plain' => $creditNoteDePlain,
+                self::LOCALE_ZH_CN => [
+                    'html' => $creditNoteZhHtml,
+                    'plain' => $creditNoteZhPlain,
                 ],
             ],
             MailTemplateTypes::MAILTYPE_DOCUMENT_CANCELLATION_INVOICE => [
@@ -179,9 +179,9 @@ class Migration1632721037OrderDocumentMailTemplate extends MigrationStep
                     'html' => $cancellationInvoiceEnHtml,
                     'plain' => $cancellationInvoiceEnPlain,
                 ],
-                self::LOCALE_DE_DE => [
-                    'html' => $cancellationInvoiceDeHtml,
-                    'plain' => $cancellationInvoiceDePlain,
+                self::LOCALE_ZH_CN => [
+                    'html' => $cancellationInvoiceZhHtml,
+                    'plain' => $cancellationInvoiceZhPlain,
                 ],
             ],
         ];

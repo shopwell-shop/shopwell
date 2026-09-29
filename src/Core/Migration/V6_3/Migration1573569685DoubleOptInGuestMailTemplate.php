@@ -17,7 +17,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 #[Package('framework')]
 class Migration1573569685DoubleOptInGuestMailTemplate extends MigrationStep
 {
-    private const GERMAN_LANGUAGE_NAME = 'Deutsch';
+    private const ZH_CN_LANGUAGE_NAME = '简体中文';
 
     private const ENGLISH_LANGUAGE_NAME = 'English';
 
@@ -68,9 +68,9 @@ class Migration1573569685DoubleOptInGuestMailTemplate extends MigrationStep
         $defaultLanguageId = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
 
         $englishLanguageId = $this->fetchLanguageIdByName(self::ENGLISH_LANGUAGE_NAME, $connection);
-        $germanLanguageId = $this->fetchLanguageIdByName(self::GERMAN_LANGUAGE_NAME, $connection);
+        $zhCnLanguageId = $this->fetchLanguageIdByName(self::ZH_CN_LANGUAGE_NAME, $connection);
 
-        if (!\in_array($defaultLanguageId, [$englishLanguageId, $germanLanguageId], true)) {
+        if (!\in_array($defaultLanguageId, [$englishLanguageId, $zhCnLanguageId], true)) {
             $connection->insert(
                 'mail_template_type_translation',
                 [
@@ -94,13 +94,13 @@ class Migration1573569685DoubleOptInGuestMailTemplate extends MigrationStep
             );
         }
 
-        if ($germanLanguageId) {
+        if ($zhCnLanguageId) {
             $connection->insert(
                 'mail_template_type_translation',
                 [
                     'mail_template_type_id' => $templateTypeId,
-                    'language_id' => $germanLanguageId,
-                    'name' => 'Double-Opt-In-Gast-Bestellung',
+                    'language_id' => $zhCnLanguageId,
+                    'name' => '双重确认访客下单',
                     'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 ]
             );
@@ -122,9 +122,9 @@ class Migration1573569685DoubleOptInGuestMailTemplate extends MigrationStep
         $defaultLanguageId = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
 
         $englishLanguageId = $this->fetchLanguageIdByName(self::ENGLISH_LANGUAGE_NAME, $connection);
-        $germanLanguageId = $this->fetchLanguageIdByName(self::GERMAN_LANGUAGE_NAME, $connection);
+        $zhCnLanguageId = $this->fetchLanguageIdByName(self::ZH_CN_LANGUAGE_NAME, $connection);
 
-        if (!\in_array($defaultLanguageId, [$englishLanguageId, $germanLanguageId], true)) {
+        if (!\in_array($defaultLanguageId, [$englishLanguageId, $zhCnLanguageId], true)) {
             $connection->insert(
                 'mail_template_translation',
                 [
@@ -156,18 +156,18 @@ class Migration1573569685DoubleOptInGuestMailTemplate extends MigrationStep
             );
         }
 
-        if ($germanLanguageId) {
+        if ($zhCnLanguageId) {
             $connection->insert(
                 'mail_template_translation',
                 [
-                    'subject' => 'Bitte bestätigen Sie Ihre E-Mail-Adresse bei {{ salesChannel.name }}',
-                    'description' => 'Anmeldebestätigung bei Gastbestellungen',
+                    'subject' => '请确认您在 {{ salesChannel.name }} 的邮箱地址',
+                    'description' => '访客下单的注册确认',
                     'sender_name' => '{{ salesChannel.name }}',
-                    'content_html' => $this->getHtmlTemplateDe(),
-                    'content_plain' => $this->getPlainTemplateDe(),
+                    'content_html' => $this->getHtmlTemplateZhCn(),
+                    'content_plain' => $this->getPlainTemplateZhCn(),
                     'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                     'mail_template_id' => $templateId,
-                    'language_id' => $germanLanguageId,
+                    'language_id' => $zhCnLanguageId,
                 ]
             );
         }
@@ -189,35 +189,35 @@ class Migration1573569685DoubleOptInGuestMailTemplate extends MigrationStep
         );
     }
 
-    private function getHtmlTemplateDe(): string
+    private function getHtmlTemplateZhCn(): string
     {
         return '
             <div style="font-family:arial; font-size:12px;">
                 <p>
-                    Hallo {{ customer.salutation.displayName }} {{ customer.lastName }},<br/>
+                    您好 {{ customer.salutation.displayName }} {{ customer.lastName }}，<br/>
                     <br/>
-                    Bitte bestätigen Sie Ihre E-Mail-Adresse über den nachfolgenden Link:<br/>
+                    请点击下方链接确认您的邮箱地址：<br/>
                     <br/>
-                    <a href="{{ confirmUrl }}">E-Mail bestätigen</a><br/>
+                    <a href="{{ confirmUrl }}">确认邮箱</a><br/>
                     <br/>
-                    Nach der Bestätigung werden Sie in den Bestellabschluss geleitet, dort können Sie Ihre Bestellung nochmals überprüfen und abschließen.<br/>
-                    Durch diese Bestätigung erklären Sie sich ebenso damit einverstanden, dass wir Ihnen im Rahmen der Vertragserfüllung weitere E-Mails senden dürfen.
+                    确认后您将进入结算流程，可再次核对并完成订单。<br/>
+                    点击确认即表示您同意我们在履行合同过程中向您发送其他邮件。
                 </p>
             </div>
         ';
     }
 
-    private function getPlainTemplateDe(): string
+    private function getPlainTemplateZhCn(): string
     {
         return '
-            Hallo {{ customer.salutation.displayName }} {{ customer.lastName }},
+            您好 {{ customer.salutation.displayName }} {{ customer.lastName }}，
 
-            Bitte bestätigen Sie Ihre E-Mail-Adresse über den nachfolgenden Link:
+            请点击下方链接确认您的邮箱地址：
 
             {{ confirmUrl }}
 
-            Nach der Bestätigung werden Sie in den Bestellabschluss geleitet, dort können Sie Ihre Bestellung nochmals überprüfen und abschließen.
-            Durch diese Bestätigung erklären Sie sich ebenso damit einverstanden, dass wir Ihnen im Rahmen der Vertragserfüllung weitere E-Mails senden dürfen.
+            确认后您将进入结算流程，可再次核对并完成订单。
+            点击确认即表示您同意我们在履行合同过程中向您发送其他邮件。
         ';
     }
 

@@ -6,7 +6,7 @@ import { mount } from '@vue/test-utils';
 
 describe('src/app/component/meteor-wrapper/mt-datepicker', () => {
     beforeAll(() => {
-        Shopwell.Store.get('system').registerAdminLocale('de-DE');
+        Shopwell.Store.get('system').registerAdminLocale('zh-CN');
         Shopwell.Store.get('system').registerAdminLocale('en-GB');
     });
 
@@ -17,7 +17,7 @@ describe('src/app/component/meteor-wrapper/mt-datepicker', () => {
             timeZone: 'Europe/Berlin',
         });
 
-        Shopwell.Store.get('session').setAdminLocale('de-DE');
+        Shopwell.Store.get('session').setAdminLocale('zh-CN');
     });
 
     it('should use the user timeZone', async () => {
@@ -26,15 +26,15 @@ describe('src/app/component/meteor-wrapper/mt-datepicker', () => {
         expect(wrapper.find('[data-testid="time-zone-hint"]').text()).toBe('Europe/Berlin');
     });
 
-    it('should use the user locale (de)', async () => {
+    it('should use the user locale (zh)', async () => {
         const wrapper = mount(await wrapTestComponent('mt-datepicker', { sync: true }));
 
         // Click on input to open datepicker
         await wrapper.find('[data-test-id="dp-input"]').trigger('click');
         await flushPromises();
 
-        // Expect german locale to be used
-        expect(document.body.textContent).toContain('MoDiMiDoFrSaSo');
+        // Expect chinese locale to be used
+        expect(document.body.textContent).toContain('一二三四五六日');
     });
 
     it('should use the user locale (en)', async () => {
@@ -51,7 +51,7 @@ describe('src/app/component/meteor-wrapper/mt-datepicker', () => {
         expect(document.body.textContent).toContain('MoTuWeThFrSaSu');
     });
 
-    it('should use custom format based on currentLocale (de)', async () => {
+    it('should use custom format based on currentLocale (zh)', async () => {
         const wrapper = mount(await wrapTestComponent('mt-datepicker', { sync: true }), {
             props: {
                 modelValue: '2023-10-01T00:00:00+02:00',
@@ -61,8 +61,8 @@ describe('src/app/component/meteor-wrapper/mt-datepicker', () => {
         // Click on input to open datepicker
         await wrapper.find('[data-test-id="dp-input"]').trigger('click');
 
-        // Expect german locale to be used
-        expect(wrapper.find('[data-test-id="dp-input"]').element.value).toBe('01.10.2023, 00:00');
+        // Expect chinese locale to be used
+        expect(wrapper.find('[data-test-id="dp-input"]').element.value).toBe('2023/10/01 00:00');
     });
 
     it('should use custom format based on currentLocale (en)', async () => {

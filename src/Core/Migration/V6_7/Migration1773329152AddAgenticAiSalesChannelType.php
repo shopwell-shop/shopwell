@@ -58,13 +58,13 @@ class Migration1773329152AddAgenticAiSalesChannelType extends MigrationStep
                 ];
             }
 
-            $germanLanguageId = $defaultLanguageIds['de-DE'] ?? null;
+            $zhCnLanguageId = $defaultLanguageIds['zh-CN'] ?? null;
 
-            if ($germanLanguageId !== null && $germanLanguageId !== $systemLanguageId) {
-                $translations[$germanLanguageId] = [
+            if ($zhCnLanguageId !== null && $zhCnLanguageId !== $systemLanguageId) {
+                $translations[$zhCnLanguageId] = [
                     'name' => 'Agentic Commerce',
                     'manufacturer' => 'Shopwell',
-                    'description' => 'Verkaufskanal für Agentic-Commerce-Plattformen',
+                    'description' => '面向 Agentic 商务平台的销售渠道',
                 ];
             }
 
@@ -91,7 +91,7 @@ class Migration1773329152AddAgenticAiSalesChannelType extends MigrationStep
             FROM language
             INNER JOIN locale
                 ON language.locale_id = locale.id
-            WHERE locale.code = 'de-DE' OR locale.code = 'en-GB'
+            WHERE locale.code = 'zh-CN' OR locale.code = 'en-GB'
         SQL;
 
         return $connection->fetchAllKeyValue($sql);

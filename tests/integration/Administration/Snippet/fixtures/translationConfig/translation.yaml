@@ -3,7 +3,7 @@ metadata-url: https://raw.githubusercontent.com/shopwell/translations/main/crowd
 
 locales:
     - en-GB
-    - de-DE
+    - zh-CN
     - es-ES
 
 plugins:
@@ -13,8 +13,8 @@ plugins:
 languages:
     - locale: en-GB
       name: English (UK)
-    - locale: de-DE
-      name: Deutsch
+    - locale: zh-CN
+      name: 简体中文
     - locale: es-ES
       name: Español
 

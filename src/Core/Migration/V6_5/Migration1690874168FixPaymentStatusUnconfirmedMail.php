@@ -15,7 +15,7 @@ class Migration1690874168FixPaymentStatusUnconfirmedMail extends MigrationStep
 {
     use UpdateMailTrait;
 
-    private const GERMAN_LANGUAGE_NAME = 'Deutsch';
+    private const ZH_CN_LANGUAGE_NAME = '简体中文';
 
     public function getCreationTimestamp(): int
     {
@@ -29,7 +29,7 @@ class Migration1690874168FixPaymentStatusUnconfirmedMail extends MigrationStep
 
         $languageId = $connection->fetchOne(
             'SELECT id FROM `language` WHERE `name` = :name',
-            ['name' => self::GERMAN_LANGUAGE_NAME]
+            ['name' => self::ZH_CN_LANGUAGE_NAME]
         );
 
         if (!\is_string($languageId)) {
@@ -44,7 +44,7 @@ class Migration1690874168FixPaymentStatusUnconfirmedMail extends MigrationStep
     {
         $connection->update(
             'mail_template_translation',
-            ['subject' => 'Ihre Bestellung bei {{ salesChannel.name }} ist unbestätigt'],
+            ['subject' => '您在 {{ salesChannel.name }} 的订单未确认'],
             ['mail_template_id' => $templateId, 'language_id' => $languageId],
         );
     }
@@ -53,7 +53,7 @@ class Migration1690874168FixPaymentStatusUnconfirmedMail extends MigrationStep
     {
         $connection->update(
             'mail_template_type_translation',
-            ['name' => 'Eintritt Zahlungsstatus: Unbestätigt'],
+            ['name' => '进入支付状态：未确认'],
             ['mail_template_type_id' => $templateTypeId, 'language_id' => $languageId],
         );
     }

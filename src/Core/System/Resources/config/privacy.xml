@@ -3,6 +3,6 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Privacy</title>
-        <title lang="de-DE">Datenschutz</title>
+        <title lang="zh-CN">隐私</title>
     </card>
 </config>

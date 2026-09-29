@@ -4,9 +4,9 @@
     <meta>
         <name>swagIntegrationTestDocumentWarrantyApp</name>
         <label>Swag integration test document warranty app</label>
-        <label lang="de-DE">Swag Integrationstest Dokument Garantie-App</label>
+        <label lang="zh-CN">Swag 集成测试保修单应用</label>
         <description>Fixture app registering the swag_warranty app-provided document type for integration tests</description>
-        <description lang="de-DE">Fixture-App, die den App-Dokumententyp swag_warranty für Integrationstests registriert</description>
+        <description lang="zh-CN">用于集成测试、注册应用单据类型 swag_warranty 的夹具应用</description>
         <author>Shopwell</author>
         <copyright>(c) by Shopwell</copyright>
         <version>1.0.0</version>
@@ -17,7 +17,7 @@
         <document-type>
             <identifier>swag_warranty</identifier>
             <label>Warranty certificate</label>
-            <label lang="de-DE">Garantieschein</label>
+            <label lang="zh-CN">保修单</label>
             <formats>
                 <format>html</format>
                 <format>pdf</format>

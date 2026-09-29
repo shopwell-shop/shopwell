@@ -31,15 +31,15 @@ class Migration1768545319RevocationRequestMailTemplate extends MigrationStep
         $merchantTypeStruct = new MailTemplateTypeCreateStruct(
             MailTemplateTypes::MAILTYPE_REVOCATION_REQUEST_MERCHANT,
             'Revocation request received',
-            'Widerrufsantrag erhalten',
+            '已收到撤销申请',
         );
 
         $merchantTemplate = new MailTemplateCreateStruct(
             self::MERCHANT_DIRECTORY,
             'Revocation request received',
-            'Widerrufsantrag erhalten',
+            '已收到撤销申请',
             'Received revocation request from customer',
-            'Widerrufsantrag vom Kunden erhalten',
+            '已收到客户的撤销申请',
             '{{ salesChannel.translated.name }}',
             '{{ salesChannel.translated.name }}',
         );
@@ -49,15 +49,15 @@ class Migration1768545319RevocationRequestMailTemplate extends MigrationStep
         $customerType = new MailTemplateTypeCreateStruct(
             MailTemplateTypes::MAILTYPE_REVOCATION_REQUEST_CUSTOMER,
             'Revocation request requested',
-            'Widerrufsantrag gestellt',
+            '撤销申请已提交',
         );
 
         $customerTemplate = new MailTemplateCreateStruct(
             self::CUSTOMER_DIRECTORY,
             'Revocation request sent',
-            'Widerrufsantrag gesendet',
+            '撤销申请已发送',
             'Confirmation receipt of customers revocation request',
-            'Empfangsbestätigung für Widerrufsantrag des Kunden',
+            '客户撤销申请的接收确认',
             '{{ salesChannel.translated.name }}',
             '{{ salesChannel.translated.name }}',
         );

@@ -17,19 +17,19 @@ trait UpdateMailTrait
     {
         $this->updateEnMail($connection, $update);
 
-        $this->updateDeMail($connection, $update);
+        $this->updateZhMail($connection, $update);
     }
 
     final protected function updateMailSubject(MailSubjectUpdate $update, Connection $connection): void
     {
         $this->updateEnMailSubject($connection, $update);
 
-        $this->updateDeMailSubject($connection, $update);
+        $this->updateZhMailSubject($connection, $update);
     }
 
-    private function updateDeMail(Connection $connection, MailUpdate $update): void
+    private function updateZhMail(Connection $connection, MailUpdate $update): void
     {
-        $languages = $this->getLanguageIds($connection, 'de-DE');
+        $languages = $this->getLanguageIds($connection, 'zh-CN');
         if (!$languages) {
             return;
         }
@@ -48,8 +48,8 @@ trait UpdateMailTrait
                 [
                     'language_id' => $translation['language_id'],
                     'template' => $translation['mail_template_id'],
-                    'html' => $update->getDeHtml(),
-                    'plain' => $update->getDePlain(),
+                    'html' => $update->getZhHtml(),
+                    'plain' => $update->getZhPlain(),
                 ]
             );
         }
@@ -112,9 +112,9 @@ trait UpdateMailTrait
         }
     }
 
-    private function updateDeMailSubject(Connection $connection, MailSubjectUpdate $update): void
+    private function updateZhMailSubject(Connection $connection, MailSubjectUpdate $update): void
     {
-        $languages = $this->getLanguageIds($connection, 'de-DE');
+        $languages = $this->getLanguageIds($connection, 'zh-CN');
         if (!$languages) {
             return;
         }
@@ -133,7 +133,7 @@ trait UpdateMailTrait
                 [
                     'language_id' => $translation['language_id'],
                     'template' => $translation['mail_template_id'],
-                    'subject' => $update->getDeSubject(),
+                    'subject' => $update->getZhSubject(),
                 ]
             );
         }

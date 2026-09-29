@@ -28,7 +28,7 @@
                     "locale": {
                         "type": "string",
                         "pattern": "^[a-z]{2}(?:[_-][A-Z][a-z]{3})?(?:[_-](?:[A-Z]{2}|\\d{3}))?$",
-                        "description": "Locale of the resolved snippet set, e.g. `de-DE`."
+                        "description": "Locale of the resolved snippet set, e.g. `zh-CN`."
                     },
                     "fallbackLocale": {
                         "type": [

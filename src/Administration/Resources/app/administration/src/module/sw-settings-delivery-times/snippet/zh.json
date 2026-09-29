@@ -1,0 +1,49 @@
+{
+  "global": {
+    "error-codes": {
+      "DELIVERY_TIME_MIN_INVALID": "最小值不应大于最大值。"
+    }
+  },
+  "sw-settings-delivery-time": {
+    "general": {
+      "mainMenuItemGeneral": "配送时间",
+      "description": "用于管理配送时间的设置模块",
+      "buttonCreate": "新建配送时间",
+      "placeholder": "搜索全部配送时间…"
+    },
+    "list": {
+      "textHeadline": "配送时间",
+      "columnName": "名称",
+      "columnUnit": "单位",
+      "columnMin": "最小值",
+      "columnMax": "最大值",
+      "columnUnit_hour": "小时",
+      "columnUnit_day": "天",
+      "columnUnit_week": "周",
+      "columnUnit_month": "月",
+      "columnUnit_year": "年",
+      "errorLoad": "配送时间无法加载。"
+    },
+    "detail": {
+      "textHeadlineNew": "新建配送时间",
+      "labelName": "名称",
+      "labelUnit": "单位",
+      "labelMin": "最小值",
+      "labelMax": "最大值",
+      "selectionUnitHour": "小时",
+      "selectionUnitDay": "天",
+      "selectionUnitWeek": "周",
+      "selectionUnitMonth": "月",
+      "selectionUnitYear": "年",
+      "errorLoad": "配送时间无法加载。",
+      "errorSave": "配送时间无法保存。"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "delivery_times": {
+        "label": "配送时间"
+      }
+    }
+  }
+}

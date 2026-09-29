@@ -83,7 +83,7 @@ class ValidateSnippetsCommandTest extends TestCase
         $display = $commandTester->getDisplay();
         static::assertStringContainsString('Invalid snippets found!', $display);
         static::assertStringContainsString('checkout.finish', $display);
-        static::assertStringContainsString('de-DE', $display);
+        static::assertStringContainsString('zh', $display);
     }
 
     #[TestDox('The fix wizard asks for the missing translation and passes it to the fixer')]
@@ -106,20 +106,20 @@ class ValidateSnippetsCommandTest extends TestCase
     }
 
     /**
-     * One english snippet file with a translation the german file is missing.
+     * One english snippet file with a translation the chinese file is missing.
      *
      * @return array{0: SnippetFileCollection, 1: array<string, array<string, mixed>>}
      */
     private function createIncompleteSnippetSetup(): array
     {
         $collection = new SnippetFileCollection([
-            $this->createSnippetFile('en-GB', '/snippets/storefront.en-GB.json'),
-            $this->createSnippetFile('de-DE', '/snippets/storefront.de-DE.json'),
+            $this->createSnippetFile('en', '/snippets/storefront.en.json'),
+            $this->createSnippetFile('zh', '/snippets/storefront.zh.json'),
         ]);
 
         $jsonByPath = [
-            '/snippets/storefront.en-GB.json' => ['checkout' => ['finish' => 'Checkout']],
-            '/snippets/storefront.de-DE.json' => [],
+            '/snippets/storefront.en.json' => ['checkout' => ['finish' => 'Checkout']],
+            '/snippets/storefront.zh.json' => [],
         ];
 
         return [$collection, $jsonByPath];

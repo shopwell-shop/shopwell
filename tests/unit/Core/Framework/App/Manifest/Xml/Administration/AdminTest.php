@@ -32,7 +32,7 @@ class AdminTest extends TestCase
         static::assertSame('https://swag-test.com/your-order', $firstActionButton->getUrl());
         static::assertSame([
             'en-GB' => 'View Order',
-            'de-DE' => 'Zeige Bestellung',
+            'zh-CN' => '查看订单',
         ], $firstActionButton->getLabel());
 
         $secondActionButton = $admin->getActionButtons()[1];
@@ -42,7 +42,7 @@ class AdminTest extends TestCase
         static::assertSame('https://swag-test.com/do-stuff', $secondActionButton->getUrl());
         static::assertSame([
             'en-GB' => 'Do Stuff',
-            'de-DE' => 'Mache Dinge',
+            'zh-CN' => '执行操作',
         ], $secondActionButton->getLabel());
 
         $firstModule = $admin->getModules()[0];
@@ -50,7 +50,7 @@ class AdminTest extends TestCase
         static::assertSame('first-module', $firstModule->getName());
         static::assertSame([
             'en-GB' => 'My first own module',
-            'de-DE' => 'Mein erstes eigenes Modul',
+            'zh-CN' => '我的第一个模块',
         ], $firstModule->getLabel());
         static::assertSame('sw-test-structure-module', $firstModule->getParent());
         static::assertSame(10, $firstModule->getPosition());
@@ -60,7 +60,7 @@ class AdminTest extends TestCase
         static::assertSame('structure-module', $secondModule->getName());
         static::assertSame([
             'en-GB' => 'My menu entry for modules',
-            'de-DE' => 'Mein Menüeintrag für Module',
+            'zh-CN' => '我的模块菜单项',
         ], $secondModule->getLabel());
         static::assertSame('sw-catalogue', $secondModule->getParent());
         static::assertSame(50, $secondModule->getPosition());

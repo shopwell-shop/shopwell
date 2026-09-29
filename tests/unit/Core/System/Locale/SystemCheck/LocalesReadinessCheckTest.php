@@ -28,7 +28,7 @@ class LocalesReadinessCheckTest extends TestCase
                 new LocaleCollection([
                     (new LocaleEntity())->assign([
                         'id' => 'locale-1',
-                        'code' => 'de-DE',
+                        'code' => 'zh-CN',
                     ]),
                     (new LocaleEntity())->assign([
                         'id' => 'locale-2',

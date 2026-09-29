@@ -63,7 +63,7 @@ class LocaleValidatorTest extends TestCase
                 new InsertCommand(
                     $localeDefinition,
                     [
-                        'code' => 'de-DE',
+                        'code' => 'zh-CN',
                     ],
                     ['id' => Uuid::randomBytes()],
                     static::createStub(EntityExistence::class),

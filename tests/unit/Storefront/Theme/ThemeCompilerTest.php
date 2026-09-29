@@ -353,13 +353,13 @@ PHP_EOL,
                     'themeColors' => [
                         'label' => [
                             'en-GB' => 'Theme colours',
-                            'de-DE' => 'Theme-Farben',
+                            'zh-CN' => '主题配色',
                         ],
                     ],
                     'typography' => [
                         'label' => [
                             'en-GB' => 'Typography',
-                            'de-DE' => 'Typografie',
+                            'zh-CN' => '排版',
                         ],
                     ],
                 ],

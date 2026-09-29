@@ -52,7 +52,7 @@ class Migration1636449347AddImportExportAdvancedPricesProfile extends MigrationS
         $translations = new Translations(
             [
                 'import_export_profile_id' => $id,
-                'label' => 'Standardprofil Erweiterte Preise',
+                'label' => '标准配置 - 高级价格',
             ],
             [
                 'import_export_profile_id' => $id,

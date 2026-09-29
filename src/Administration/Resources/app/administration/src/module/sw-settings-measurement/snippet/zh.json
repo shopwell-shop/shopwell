@@ -1,0 +1,30 @@
+{
+  "sw-settings-measurement": {
+    "general": {
+      "mainMenuItemGeneral": "计量单位系统",
+      "description": "用于修改默认计量单位的模块。",
+      "textHeadline": "计量单位系统"
+    },
+    "defaultUnits": {
+      "title": "默认单位",
+      "description": "设置新销售渠道默认使用的计量单位。客户看到的单位可在 {link} 中定义。",
+      "linkText": "销售渠道设置",
+      "config": {
+        "type": "单位制",
+        "lengthUnit": "长度单位",
+        "weightUnit": "重量单位"
+      }
+    },
+    "notification": {
+      "saveMeasurementSuccess": "计量单位系统设置已保存",
+      "saveMeasurementError": "保存计量单位系统设置时发生错误"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "measurement": {
+        "label": "计量单位系统"
+      }
+    }
+  }
+}

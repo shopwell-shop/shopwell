@@ -215,7 +215,7 @@ describe('src/module/sw-product/view/sw-product-detail-layout', () => {
             },
             translations: [
                 {
-                    languageId: 'de-DE',
+                    languageId: 'zh-CN',
                     slotConfig: {
                         staleSlotId: {
                             content: {

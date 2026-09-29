@@ -18,13 +18,13 @@ function stubShopwell(currentLocale: string, fallbackLocale: string): void {
 
 describe('src/app/composables/use-inline-snippet', () => {
     beforeEach(() => {
-        stubShopwell('de-DE', 'en-GB');
+        stubShopwell('zh-CN', 'en-GB');
     });
 
     it('returns the value for the current locale when present', () => {
         const { getInlineSnippet } = useInlineSnippet();
 
-        expect(getInlineSnippet({ 'de-DE': 'Hallo', 'en-GB': 'Hello' })).toBe('Hallo');
+        expect(getInlineSnippet({ 'zh-CN': '你好', 'en-GB': 'Hello' })).toBe('你好');
     });
 
     it('falls back to the fallback locale when the current locale is missing', () => {

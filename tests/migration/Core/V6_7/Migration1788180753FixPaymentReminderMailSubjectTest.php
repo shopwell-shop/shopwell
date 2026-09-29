@@ -19,7 +19,7 @@ class Migration1788180753FixPaymentReminderMailSubjectTest extends MailTemplateM
 {
     public function testMigrationUpdatesPaymentReminderMailSubject(): void
     {
-        $this->prepareDefaultMailTemplateSubject('New document for your order', 'Neues Dokument für Ihre Bestellung');
+        $this->prepareDefaultMailTemplateSubject('New document for your order', '您的订单有新文档');
 
         $migration = new Migration1788180753FixPaymentReminderMailSubject();
         $migration->update($this->connection);
@@ -28,36 +28,36 @@ class Migration1788180753FixPaymentReminderMailSubjectTest extends MailTemplateM
         $subjects = $this->getPaymentReminderMailTemplateSubjects();
 
         static::assertSame('Payment reminder for your order with {{ salesChannel.translated.name }}', $subjects['en']);
-        static::assertSame('Zahlungserinnerung für Ihre Bestellung bei {{ salesChannel.translated.name }}', $subjects['de']);
+        static::assertSame('您在 {{ salesChannel.translated.name }} 的订单付款提醒', $subjects['zh']);
     }
 
     public function testMigrationDoesNotOverwriteCustomizedPaymentReminderMailSubject(): void
     {
-        $this->prepareCustomizedMailTemplateSubject('Custom EN subject', 'Individueller DE Betreff');
+        $this->prepareCustomizedMailTemplateSubject('Custom EN subject', '自定义中文主题');
 
         (new Migration1788180753FixPaymentReminderMailSubject())->update($this->connection);
 
         $subjects = $this->getPaymentReminderMailTemplateSubjects();
 
         static::assertSame('Custom EN subject', $subjects['en']);
-        static::assertSame('Individueller DE Betreff', $subjects['de']);
+        static::assertSame('自定义中文主题', $subjects['zh']);
     }
 
-    private function prepareDefaultMailTemplateSubject(string $enSubject, string $deSubject): void
+    private function prepareDefaultMailTemplateSubject(string $enSubject, string $zhSubject): void
     {
-        $this->prepareMailTemplateSubject($enSubject, $deSubject, null, null);
+        $this->prepareMailTemplateSubject($enSubject, $zhSubject, null, null);
     }
 
-    private function prepareCustomizedMailTemplateSubject(string $enSubject, string $deSubject): void
+    private function prepareCustomizedMailTemplateSubject(string $enSubject, string $zhSubject): void
     {
         $updatedAt = (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
 
-        $this->prepareMailTemplateSubject($enSubject, $deSubject, $updatedAt, $updatedAt);
+        $this->prepareMailTemplateSubject($enSubject, $zhSubject, $updatedAt, $updatedAt);
     }
 
     private function prepareMailTemplateSubject(
         string $enSubject,
-        string $deSubject,
+        string $zhSubject,
         ?string $templateUpdatedAt,
         ?string $translationUpdatedAt
     ): void {
@@ -77,7 +77,7 @@ class Migration1788180753FixPaymentReminderMailSubjectTest extends MailTemplateM
             UPDATE `mail_template_translation`
             SET `subject` = CASE
                     WHEN `language_id` = :enLanguageId THEN :enSubject
-                    WHEN `language_id` = :deLanguageId THEN :deSubject
+                    WHEN `language_id` = :zhLanguageId THEN :zhSubject
                     ELSE `subject`
                 END,
                 `updated_at` = :updatedAt
@@ -87,15 +87,15 @@ class Migration1788180753FixPaymentReminderMailSubjectTest extends MailTemplateM
                 'mailTemplateId' => $mailTemplateId,
                 'enLanguageId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
                 'enSubject' => $enSubject,
-                'deLanguageId' => Uuid::fromHexToBytes($this->getLanguageId('de-DE')),
-                'deSubject' => $deSubject,
+                'zhLanguageId' => Uuid::fromHexToBytes($this->getLanguageId('zh-CN')),
+                'zhSubject' => $zhSubject,
                 'updatedAt' => $translationUpdatedAt,
             ],
         );
     }
 
     /**
-     * @return array{en: string, de: string}
+     * @return array{en: string, zh: string}
      */
     private function getPaymentReminderMailTemplateSubjects(): array
     {
@@ -107,18 +107,18 @@ class Migration1788180753FixPaymentReminderMailSubjectTest extends MailTemplateM
             SELECT LOWER(HEX(`language_id`)), `subject`
             FROM `mail_template_translation`
             WHERE `mail_template_id` = :mailTemplateId
-                AND `language_id` IN (:enLanguageId, :deLanguageId)
+                AND `language_id` IN (:enLanguageId, :zhLanguageId)
             ',
             [
                 'mailTemplateId' => $mailTemplateId,
                 'enLanguageId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
-                'deLanguageId' => Uuid::fromHexToBytes($this->getLanguageId('de-DE')),
+                'zhLanguageId' => Uuid::fromHexToBytes($this->getLanguageId('zh-CN')),
             ],
         );
 
         return [
             'en' => $subjects[Defaults::LANGUAGE_SYSTEM],
-            'de' => $subjects[$this->getLanguageId('de-DE')],
+            'zh' => $subjects[$this->getLanguageId('zh-CN')],
         ];
     }
 

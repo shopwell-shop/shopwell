@@ -4,12 +4,12 @@ import { mount } from '@vue/test-utils';
  * @sw-package framework
  */
 
-const de = 'de-DE';
+const zh = 'zh-CN';
 const en = 'en-GB';
 
 const config = {
     label: {
-        [de]: 'DeutschLabel',
+        [zh]: '中文标签',
         [en]: 'EnglishLabel',
     },
     translated: true,
@@ -22,7 +22,7 @@ const intl = {
 };
 
 const defaultProps = {
-    locales: [en, de],
+    locales: [en, zh],
     config,
     propertyNames: {
         label1: 'label1',
@@ -138,7 +138,7 @@ describe('src/module/sw-settings-custom-field/component/sw-custom-field-translat
         expect(wrapper.findAll('.sw-custom-field-translated-labels__translated-content-field')).toHaveLength(2);
         expect(
             wrapper.findAllComponents('.sw-custom-field-translated-labels__translated-content-field')[0].props('label'),
-        ).toBe('label1 (locale.de-DE)');
+        ).toBe('label1 (locale.zh-CN)');
     });
 
     it.activeFeatureFlags(['v6.8.0.0'])('should render multiple locales with meteor tabs', async () => {
@@ -157,8 +157,8 @@ describe('src/module/sw-settings-custom-field/component/sw-custom-field-translat
                 name: en,
             },
             {
-                label: 'locale.de-DE',
-                name: de,
+                label: 'locale.zh-CN',
+                name: zh,
             },
         ]);
         expect(wrapper.findAll('.sw-custom-field-translated-labels__translated-content-field')).toHaveLength(2);
@@ -173,14 +173,14 @@ describe('src/module/sw-settings-custom-field/component/sw-custom-field-translat
 
         const tabs = wrapper.getComponent({ name: 'mt-tabs' });
 
-        await tabs.vm.$emit('new-item-active', de);
+        await tabs.vm.$emit('new-item-active', zh);
         await wrapper.vm.$nextTick();
 
-        expect(wrapper.vm.activeTab).toBe(de);
+        expect(wrapper.vm.activeTab).toBe(zh);
         expect(wrapper.findAll('.sw-custom-field-translated-labels__translated-content-field')).toHaveLength(2);
         expect(
             wrapper.findAllComponents('.sw-custom-field-translated-labels__translated-content-field')[0].props('label'),
-        ).toBe('label1 (locale.de-DE)');
+        ).toBe('label1 (locale.zh-CN)');
     });
 
     it('should update multiple locales with tabs', async () => {
@@ -202,7 +202,7 @@ describe('src/module/sw-settings-custom-field/component/sw-custom-field-translat
         await flushPromises();
 
         await wrapper.setProps({
-            locales: [de],
+            locales: [zh],
             propertyNames: {
                 test: 'label1',
             },

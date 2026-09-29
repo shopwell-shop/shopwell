@@ -29,11 +29,11 @@ class Migration1773317656AddZugferdCreditNote extends MigrationStep
     {
         $types = [
             ZugferdCreditNoteRenderer::TYPE => [
-                'de' => ['name' => 'ZUGFeRD Gutschrift'],
+                'zh' => ['name' => 'ZUGFeRD 贷项通知单'],
                 'en' => ['name' => 'ZUGFeRD Credit Note'],
             ],
             ZugferdEmbeddedCreditNoteRenderer::TYPE => [
-                'de' => ['name' => 'ZUGFeRD Gutschrift (eingebettet)'],
+                'zh' => ['name' => 'ZUGFeRD 贷项通知单（内嵌）'],
                 'en' => ['name' => 'ZUGFeRD Credit Note (embedded)'],
             ],
         ];
@@ -63,7 +63,7 @@ class Migration1773317656AddZugferdCreditNote extends MigrationStep
         $connection->insert('document_type', ['id' => $typeId, 'technical_name' => $technicalName, 'created_at' => $createdAt]);
 
         $translation = new Translations(
-            \array_merge(['document_type_id' => $typeId], $translations['de']),
+            \array_merge(['document_type_id' => $typeId], $translations['zh']),
             \array_merge(['document_type_id' => $typeId], $translations['en'])
         );
 

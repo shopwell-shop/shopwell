@@ -1,0 +1,72 @@
+{
+  "sw-settings-product-feature-sets": {
+    "general": {
+      "mainMenuItemGeneral": "基本特征",
+      "placeholderSearchBar": "搜索模板 ...",
+      "searchType": "基本特征"
+    },
+    "list": {
+      "textHeadline": "基本特征",
+      "textDeleteConfirm": "确定要删除功能特征 \"{name}\" 吗？",
+      "columnValues": "值",
+      "columnTemplate": "模板",
+      "columnDescription": "描述",
+      "buttonAddEssentialCharacteristics": "新建",
+      "messageDeleteSuccess": "功能特征 \"{name}\" 已删除。"
+    },
+    "detail": {
+      "textHeadline": "新建模板",
+      "titleCard": "基本信息",
+      "titleCardValues": "值",
+      "messageSaveSuccess": "特征模板 \"{name}\" 已保存。",
+      "messageSaveError": "功能特征无法保存。",
+      "labelName": "名称",
+      "labelDescription": "描述",
+      "labelValues": "值",
+      "placeholderName": "输入模板名称…",
+      "placeholderDescription": "输入描述...",
+      "notificationErrorMessage": "功能特征无法保存。",
+      "labelCreateNew": "添加值"
+    },
+    "valuesCard": {
+      "emptyStateTitle": "暂无值",
+      "createStateDescription": "添加值以定义适合你商品品类的功能特征。",
+      "labelCreateNew": "添加字段",
+      "cardTitle": "值",
+      "labelValue": "值",
+      "labelType": "类型",
+      "labelPosition": "项目",
+      "emptyStateDescription": "添加值以定义适合你商品品类的功能特征。"
+    },
+    "modal": {
+      "textPropertyLabel": "属性",
+      "textCustomFieldLabel": "自定义字段",
+      "textProductInfoLabel": "商品信息",
+      "textReferencePriceLabel": "基础价格",
+      "labelTitlePageOne": "选择要添加到模板的字段类型。",
+      "labelTitleModal": "添加值",
+      "labelName": "名称",
+      "buttonNext": "继续",
+      "label": {
+        "property": "属性",
+        "width": "宽度",
+        "height": "高度",
+        "length": "长度",
+        "weight": "重量",
+        "releaseDate": "发布日期",
+        "description": "描述",
+        "manufacturerNumber": "制造商编号",
+        "ean": "GTIN/EAN",
+        "referencePrice": "基础价格",
+        "packUnit": "包装单位"
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "product_feature_sets": {
+        "label": "基本特征"
+      }
+    }
+  }
+}

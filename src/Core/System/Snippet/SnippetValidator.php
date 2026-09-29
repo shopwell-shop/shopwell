@@ -105,9 +105,9 @@ readonly class SnippetValidator implements SnippetValidatorInterface
         /**
          * @deprecated tag:v6.8.0 - Validation of legacy snippet locales will be removed
          */
-        $legacyMissingSnippets = $this->findMissingSnippets($snippetFileMappings, ['en-GB', 'de-DE']);
+        $legacyMissingSnippets = $this->findMissingSnippets($snippetFileMappings, ['en-GB', 'zh-CN']);
 
-        $missingSnippets = $this->findMissingSnippets($snippetFileMappings, ['en', 'de']);
+        $missingSnippets = $this->findMissingSnippets($snippetFileMappings, ['en', 'zh']);
 
         return new SnippetValidationStruct(
             new MissingSnippetCollection(array_merge($missingSnippets->getElements(), $legacyMissingSnippets->getElements())),

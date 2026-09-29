@@ -1,0 +1,42 @@
+{
+  "global": {
+    "error-codes": {
+      "DUPLICATED_SALUTATION_KEY": "该技术名称已被使用。请选择其他名称。"
+    }
+  },
+  "sw-settings-salutation": {
+    "general": {
+      "mainMenuItemGeneral": "称谓",
+      "buttonCreate": "添加称谓",
+      "placeholderSearchBar": "搜索称谓 ..."
+    },
+    "list": {
+      "columnSalutationKey": "技术名称",
+      "columnDisplayName": "称谓",
+      "columnLetterName": "信函称谓",
+      "columnPosition": "项目"
+    },
+    "detail": {
+      "cardTitle": "称谓",
+      "fieldPositionLabel": "项目",
+      "fieldPositionPlaceholder": "选择项目 ...",
+      "fieldPositionTooltip": "设置选择字段中的显示顺序；较小的数字显示在上方。",
+      "fieldDisplayNameLabel": "称谓",
+      "fieldDisplayNamePlaceholder": "请输入称呼…",
+      "fieldLetterNameLabel": "信函称谓",
+      "fieldLetterNamePlaceholder": "请输入信函称呼…",
+      "fieldSalutationKeyTooltip": "唯一的技术名称，用于在邮件模板等中引用称呼。",
+      "fieldSalutationKeyLabel": "技术名称",
+      "fieldSalutationKeyPlaceholder": "请输入技术名称…",
+      "placeholderNewSalutation": "新建称谓…",
+      "notificationErrorMessage": "保存称呼时发生错误。"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "salutation": {
+        "label": "称谓"
+      }
+    }
+  }
+}

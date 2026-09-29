@@ -34,7 +34,7 @@ class Migration1786967900AddFailedPaymentMailTemplateAndFlow extends MigrationSt
         $mailTemplateType = new MailTemplateTypeCreateStruct(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_FAILED,
             'Enter payment state: Failed',
-            'Eintritt Zahlungsstatus: Fehlgeschlagen',
+            '进入支付状态：已失败',
             [
                 'order' => 'order',
                 'previousState' => 'state_machine_state',
@@ -46,9 +46,9 @@ class Migration1786967900AddFailedPaymentMailTemplateAndFlow extends MigrationSt
         $mailTemplate = new MailTemplateCreateStruct(
             MailTemplateTypes::MAILTYPE_STATE_ENTER_ORDER_TRANSACTION_STATE_FAILED,
             'The payment for your order has failed',
-            'Die Zahlung für Ihre Bestellung ist fehlgeschlagen',
+            '您的订单支付失败',
             'Payment status changed to failed',
-            'Der Zahlungsstatus hat sich auf fehlgeschlagen geändert',
+            '支付状态已变更为失败',
             '{{ salesChannel.translated.name }}',
             '{{ salesChannel.translated.name }}',
         );

@@ -1,0 +1,113 @@
+{% set currencyIsoCode = order.currency.isoCode %}
+您好 {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }}，
+
+我们已于 {{ order.orderDateTime|format_datetime('medium', 'short', locale='zh-CN') }} 收到您的订单。
+
+订单号：{{ order.orderNumber }}
+
+使用 {{ order.transactions.first.paymentMethod.translated.name }} 的支付流程尚未完成。您可以通过以下 URL 继续支付：{{ rawUrl('frontend.account.order.single.page', { 'deepLinkCode': order.deepLinkCode }, salesChannel.domains|first.url) }}
+
+订单信息：
+
+{% for lineItem in order.lineItems %}
+序号 {{ loop.index }}
+---------------------
+{% if lineItem.payload.productNumber is defined %}
+商品编号 {{ lineItem.payload.productNumber|u.wordwrap(80) }}，
+{% endif %}
+{% if nestedItem.cover is defined and nestedItem.cover is not null %}
+商品图片 {{ lineItem.cover.alt }}，
+{% endif %}
+商品名称 {{ lineItem.label|u.wordwrap(80) }}，
+{% if lineItem.payload.options is defined and lineItem.payload.options|length >= 1 %}
+{% for option in lineItem.payload.options %}
+{{ option.group }}: {{ option.option }}{{ ", " }}
+{% endfor %}
+{% endif %}
+{% if lineItem.payload.features is defined and lineItem.payload.features|length >= 1 %}
+{% set referencePriceFeatures = lineItem.payload.features|filter(feature => feature.type == 'referencePrice') %}
+{% if referencePriceFeatures|length >= 1 %}
+{% set referencePriceFeature = referencePriceFeatures|first %}
+{{ referencePriceFeature.value.purchaseUnit }} {{ referencePriceFeature.value.unitName }}({{ referencePriceFeature.value.price|currency(currencyIsoCode) }} 每 {{ referencePriceFeature.value.referenceUnit }} {{ referencePriceFeature.value.unitName }})，
+{% endif %}
+{% endif %}
+数量 {{ lineItem.quantity }}，
+单价 {{ lineItem.unitPrice|currency(currencyIsoCode) }}，
+小计 {{ lineItem.totalPrice|currency(currencyIsoCode) }}，
+
+{% endfor %}
+{% set delivery = order.deliveries.first %}
+{% set displayRounded = order.totalRounding.interval != 0.01 or order.totalRounding.decimals != order.itemRounding.decimals %}
+{% set decimals = order.totalRounding.decimals %}
+{% set total = order.price.totalPrice %}
+{% if displayRounded %}
+    {% set total = order.price.rawTotal %}
+    {% set decimals = order.itemRounding.decimals %}
+{% endif %}
+{% for shippingCost in order.deliveries %}
+运费：{{ shippingCost.shippingCosts.totalPrice|currency(currencyIsoCode) }}
+{% endfor %}
+净额合计：{{ order.amountNet|currency(currencyIsoCode) }}
+{% for calculatedTax in order.price.calculatedTaxes %}
+{% if order.taxStatus is same as('net') %}另加{% else %}含{% endif %} {{ calculatedTax.taxRate }}% 增值税 {{ calculatedTax.tax|currency(currencyIsoCode) }}
+{% endfor %}
+总额合计：{{ total|currency(currencyIsoCode,decimals=decimals) }}
+{% if displayRounded %}
+舍入后总额合计：{{ order.price.totalPrice|currency(currencyIsoCode,decimals=order.totalRounding.decimals) }}
+{% endif %}
+
+{% if order.transactions is defined and order.transactions is not empty %}
+所选支付方式：{{ order.transactions.first.paymentMethod.translated.name }}
+{{ order.transactions.first.paymentMethod.translated.description }}
+{% endif %}
+
+{% if delivery %}
+所选配送方式：{{ delivery.shippingMethod.translated.name }}
+{{ delivery.shippingMethod.translated.description }}
+{% endif %}
+{% set billingAddress = order.addresses.get(order.billingAddressId) %}
+账单地址：
+{{ billingAddress.company }}
+{{ billingAddress.firstName }} {{ billingAddress.lastName }}
+{{ billingAddress.street }}
+{{ billingAddress.zipcode }} {{ billingAddress.city }}
+{{ billingAddress.country.translated.name }}
+
+{% if delivery %}
+收货地址：
+{{ delivery.shippingOrderAddress.company }}
+{{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}
+{{ delivery.shippingOrderAddress.street }}
+{{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}
+{{ delivery.shippingOrderAddress.country.translated.name }}
+{% endif %}
+
+{% if order.orderCustomer.vatIds %}
+您的增值税号：{{ order.orderCustomer.vatIds|first }}
+审核通过后，且若您从欧盟境外
+下单，则您的商品将免征增值税。
+
+{% endif %}
+您也可以随时在我们的网站「我的账户」-「我的订单」中查询订单当前状态：{{ rawUrl('frontend.account.order.single.page', { 'deepLinkCode': order.deepLinkCode }, salesChannel.domains|first.url) }}
+若为游客下单，可通过该链接使用您的邮箱地址和账单地址的邮政编码查询状态。
+如有疑问，欢迎随时联系我们。
+
+{% if a11yDocuments is defined and a11yDocuments is not empty %}
+以下为您提供无障碍文档的 HTML 版本：
+
+{% for a11y in a11yDocuments %}
+{% set documentLink = rawUrl(
+    'frontend.account.order.single.document.a11y',
+    {
+        documentId: a11y.documentId,
+        deepLinkCode: a11y.deepLinkCode,
+        fileType: a11y.fileExtension,
+    },
+    salesChannel.domains|first.url
+)%}
+- {{ documentLink }}
+{% endfor %}
+
+出于数据保护原因，查看 HTML 版本需要登录。
+若为游客下单，可使用您的邮箱地址和账单地址的邮政编码。
+{% endif %}

@@ -28,21 +28,21 @@ class LocaleCodeFkResolverTest extends TestCase
             ->method('fetchAllKeyValue')
             ->willReturn([
                 'en-GB' => 'engb000000000000000000000000001',
-                'de-DE' => 'dede000000000000000000000000002',
+                'zh-CN' => 'zhzh000000000000000000000000002',
             ]);
 
         $resolver = new LocaleCodeFkResolver($connection);
 
         $references = [
             new FkReference('ops/0/localeId', 'locale', 'code', 'en-GB', false),
-            new FkReference('ops/1/localeId', 'locale', 'code', 'de-DE', false),
+            new FkReference('ops/1/localeId', 'locale', 'code', 'zh-CN', false),
             new FkReference('ops/2/localeId', 'locale', 'code', 'xx-XX', false),
         ];
 
         $result = $resolver->resolve($references);
 
         static::assertSame('engb000000000000000000000000001', $result[0]->resolved);
-        static::assertSame('dede000000000000000000000000002', $result[1]->resolved);
+        static::assertSame('zhzh000000000000000000000000002', $result[1]->resolved);
         static::assertNull($result[2]->resolved);
     }
 
@@ -53,25 +53,25 @@ class LocaleCodeFkResolverTest extends TestCase
             ->method('fetchAllKeyValue')
             ->with(
                 static::anything(),
-                ['codes' => ['en-GB', 'de-DE']],
+                ['codes' => ['en-GB', 'zh-CN']],
                 static::anything()
             )
             ->willReturn([
                 'en-GB' => 'engb000000000000000000000000001',
-                'de-DE' => 'dede000000000000000000000000002',
+                'zh-CN' => 'zhzh000000000000000000000000002',
             ]);
 
         $resolver = new LocaleCodeFkResolver($connection);
 
         $references = [
             new FkReference('ops/0/localeId', 'locale', 'code', 'en_GB', false),
-            new FkReference('ops/1/localeId', 'locale', 'code', 'de_DE', false),
+            new FkReference('ops/1/localeId', 'locale', 'code', 'zh_CN', false),
         ];
 
         $result = $resolver->resolve($references);
 
         static::assertSame('engb000000000000000000000000001', $result[0]->resolved);
-        static::assertSame('dede000000000000000000000000002', $result[1]->resolved);
+        static::assertSame('zhzh000000000000000000000000002', $result[1]->resolved);
     }
 
     public function testResolveWithEmptyInputDoesNotQuery(): void

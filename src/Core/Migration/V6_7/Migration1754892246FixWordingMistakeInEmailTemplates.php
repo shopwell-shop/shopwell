@@ -58,8 +58,8 @@ class Migration1754892246FixWordingMistakeInEmailTemplates extends MigrationStep
             $update = new MailUpdate($mailTypeDirectory);
             $update->setEnPlain($filesystem->readFile(\sprintf('%s/../Fixtures/mails/%s/en-plain.html.twig', __DIR__, $mailTypeDirectory)));
             $update->setEnHtml($filesystem->readFile(\sprintf('%s/../Fixtures/mails/%s/en-html.html.twig', __DIR__, $mailTypeDirectory)));
-            $update->setDePlain($filesystem->readFile(\sprintf('%s/../Fixtures/mails/%s/de-plain.html.twig', __DIR__, $mailTypeDirectory)));
-            $update->setDeHtml($filesystem->readFile(\sprintf('%s/../Fixtures/mails/%s/de-html.html.twig', __DIR__, $mailTypeDirectory)));
+            $update->setZhPlain($filesystem->readFile(\sprintf('%s/../Fixtures/mails/%s/zh-plain.html.twig', __DIR__, $mailTypeDirectory)));
+            $update->setZhHtml($filesystem->readFile(\sprintf('%s/../Fixtures/mails/%s/zh-html.html.twig', __DIR__, $mailTypeDirectory)));
             $this->updateMail($update, $connection);
         }
     }

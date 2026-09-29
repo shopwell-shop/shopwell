@@ -16,19 +16,19 @@ trait CreateMailTemplateTrait
         MailTemplateTypeCreateStruct $mailTemplateType,
         MailTemplateCreateStruct $mailTemplate,
     ): void {
-        $germanLanguageByteIds = $this->getLanguageByteIdsByLocalePrefix($connection, 'de');
+        $chineseLanguageByteIds = $this->getLanguageByteIdsByLocalePrefix($connection, 'zh');
 
         // The system default language must always be filled. It is therefore added to the english
-        // language ids (and removed again if it actually is a german language), so its translation is
+        // language ids (and removed again if it actually is a chinese language), so its translation is
         // never skipped, regardless of which locale the default language uses.
         $englishLanguageByteIds = array_values(array_unique(array_diff(
-            array_merge($this->getLanguageByteIdsByLocalePrefix($connection, 'de', true), [Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM)]),
-            $germanLanguageByteIds
+            array_merge($this->getLanguageByteIdsByLocalePrefix($connection, 'zh', true), [Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM)]),
+            $chineseLanguageByteIds
         )));
 
         $mailCreationState = new MailCreationState();
         $mailCreationState->setEnglishLanguageByteIds($englishLanguageByteIds);
-        $mailCreationState->setGermanLanguageByteIds($germanLanguageByteIds);
+        $mailCreationState->setChineseLanguageByteIds($chineseLanguageByteIds);
 
         $this->createMailTemplateType($connection, $mailTemplateType, $mailCreationState);
         $this->createMailTemplate($connection, $mailTemplate, $mailCreationState);
@@ -75,7 +75,7 @@ trait CreateMailTemplateTrait
             );
         }
 
-        foreach ($mailCreationState->getGermanLanguageByteIds() as $languageByteId) {
+        foreach ($mailCreationState->getChineseLanguageByteIds() as $languageByteId) {
             if ($this->hasTemplateTypeTranslation($connection, $mailTemplateTypeByteId, $languageByteId)) {
                 continue;
             }
@@ -84,7 +84,7 @@ trait CreateMailTemplateTrait
                 'mail_template_type_translation',
                 [
                     'mail_template_type_id' => $mailCreationState->getMailTemplateTypeByteId(),
-                    'name' => $mailTemplateType->getDeName(),
+                    'name' => $mailTemplateType->getZhName(),
                     'language_id' => $languageByteId,
                     'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 ]
@@ -137,7 +137,7 @@ trait CreateMailTemplateTrait
             );
         }
 
-        foreach ($mailCreationState->getGermanLanguageByteIds() as $languageByteId) {
+        foreach ($mailCreationState->getChineseLanguageByteIds() as $languageByteId) {
             if ($this->hasMailTemplateTranslation($connection, $mailTemplateByteId, $languageByteId)) {
                 continue;
             }
@@ -147,11 +147,11 @@ trait CreateMailTemplateTrait
                 [
                     'mail_template_id' => $mailCreationState->getMailTemplateByteId(),
                     'language_id' => $languageByteId,
-                    'sender_name' => $mailCreateStruct->getDeSenderName(),
-                    'subject' => $mailCreateStruct->getDeSubject(),
-                    'description' => $mailCreateStruct->getDeDescription(),
-                    'content_html' => $mailCreateStruct->getDeHtml(),
-                    'content_plain' => $mailCreateStruct->getDePlain(),
+                    'sender_name' => $mailCreateStruct->getZhSenderName(),
+                    'subject' => $mailCreateStruct->getZhSubject(),
+                    'description' => $mailCreateStruct->getZhDescription(),
+                    'content_html' => $mailCreateStruct->getZhHtml(),
+                    'content_plain' => $mailCreateStruct->getZhPlain(),
                     'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 ]
             );

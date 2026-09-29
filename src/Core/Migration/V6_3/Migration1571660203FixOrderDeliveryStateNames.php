@@ -22,10 +22,10 @@ class Migration1571660203FixOrderDeliveryStateNames extends MigrationStep
     public function update(Connection $connection): void
     {
         $defaultLangId = $this->getLanguageIdByLocale($connection, 'en-GB');
-        $deLangId = $this->getLanguageIdByLocale($connection, 'de-DE');
+        $zhCnLangId = $this->getLanguageIdByLocale($connection, 'zh-CN');
 
         foreach ($this->getMailTemplatesMapping() as $technicalName => $mailTemplate) {
-            if ($defaultLangId !== $deLangId) {
+            if ($defaultLangId !== $zhCnLangId) {
                 $sql = <<<'SQL'
                 UPDATE `mail_template_type_translation` SET `name` = :name
                     WHERE `mail_template_type_id` = (SELECT `id` FROM `mail_template_type` WHERE `technical_name` = :technicalName)
@@ -45,14 +45,14 @@ SQL;
                 $connection->executeStatement($sql, ['name' => $mailTemplate['name'], 'technicalName' => $technicalName, 'lang' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM)]);
             }
 
-            if ($deLangId) {
+            if ($zhCnLangId) {
                 $sql = <<<'SQL'
                 UPDATE `mail_template_type_translation` SET `name` = :name
                     WHERE `mail_template_type_id` = (SELECT `id` FROM `mail_template_type` WHERE `technical_name` = :technicalName)
                       AND `language_id` = :lang
 SQL;
 
-                $connection->executeStatement($sql, ['name' => $mailTemplate['nameDe'], 'technicalName' => $technicalName, 'lang' => $deLangId]);
+                $connection->executeStatement($sql, ['name' => $mailTemplate['nameZh'], 'technicalName' => $technicalName, 'lang' => $zhCnLangId]);
             }
         }
     }
@@ -63,30 +63,30 @@ SQL;
     }
 
     /**
-     * @return array<string, array{name: string, nameDe: string}>
+     * @return array<string, array{name: string, nameZh: string}>
      */
     private function getMailTemplatesMapping(): array
     {
         return [
             'state_enter.order_delivery.state.returned_partially' => [
                 'name' => 'Enter delivery state: Open',
-                'nameDe' => 'Eintritt Lieferstatus: Offen',
+                'nameZh' => '进入配送状态：待处理',
             ],
             'state_enter.order_delivery.state.shipped_partially' => [
                 'name' => 'Enter delivery state: Shipped (partially)',
-                'nameDe' => 'Eintritt Lieferstatus: Teilweise versandt',
+                'nameZh' => '进入配送状态：部分发货',
             ],
             'state_enter.order_delivery.state.returned' => [
                 'name' => 'Enter delivery state: Returned',
-                'nameDe' => 'Eintritt Lieferstatus: Retour',
+                'nameZh' => '进入配送状态：退货',
             ],
             'state_enter.order_delivery.state.shipped' => [
                 'name' => 'Enter delivery state: Shipped',
-                'nameDe' => 'Eintritt Lieferstatus: Versandt',
+                'nameZh' => '进入配送状态：已发货',
             ],
             'state_enter.order_delivery.state.cancelled' => [
                 'name' => 'Enter delivery state: Cancelled',
-                'nameDe' => 'Eintritt Lieferstatus: Abgebrochen',
+                'nameZh' => '进入配送状态：已取消',
             ],
         ];
     }

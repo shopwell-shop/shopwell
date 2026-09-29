@@ -311,7 +311,7 @@ class SnippetService
      *
      * For each locale (e.g., "de-AT"), files are loaded in ascending priority order:
      * 1. Country agnostic language files (e.g. "de") as the lowest-priority base
-     * 2. Canonical-locale files (e.g. "de-DE") to pick up plugin files registered for the canonical variant
+     * 2. Canonical-locale files (e.g. "zh-CN") to pick up plugin files registered for the canonical variant
      * 3. Exact-locale files (e.g. "de-AT") as the highest-priority override
      *
      * For locales without a region (e.g. "de"), only the exact files are returned.

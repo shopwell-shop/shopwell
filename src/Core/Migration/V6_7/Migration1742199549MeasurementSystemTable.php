@@ -78,7 +78,7 @@ class Migration1742199549MeasurementSystemTable extends MigrationStep
             $this->importTranslation(
                 'measurement_system_translation',
                 new Translations(
-                    ['measurement_system_id' => $metricId, 'name' => 'Metrisches System'],
+                    ['measurement_system_id' => $metricId, 'name' => '公制'],
                     ['measurement_system_id' => $metricId, 'name' => 'Metric system']
                 ),
                 $connection
@@ -99,7 +99,7 @@ class Migration1742199549MeasurementSystemTable extends MigrationStep
             $this->importTranslation(
                 'measurement_system_translation',
                 new Translations(
-                    ['measurement_system_id' => $imperialId, 'name' => 'Angloamerikanisches Maßsystem'],
+                    ['measurement_system_id' => $imperialId, 'name' => '英美度量制'],
                     ['measurement_system_id' => $imperialId, 'name' => 'Imperial system']
                 ),
                 $connection

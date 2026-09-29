@@ -28,7 +28,7 @@ class Migration1789983699AddProcessTransitionFromUnconfirmed extends MigrationSt
         $this->import(
             new StateMachineMigration(
                 OrderTransactionStates::STATE_MACHINE,
-                'Zahlungsstatus',
+                '支付状态',
                 'Payment state',
                 [],
                 [
