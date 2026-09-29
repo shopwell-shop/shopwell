@@ -15,6 +15,11 @@ async function main() {
     const folderPackagePath = path.join(__dirname, '../../entity-schema-types');
     const definitionFileName = 'entity-schema-definition.d.ts';
     const packageVersion = gitCommitTag.replace('v6.', '');
+    // The package is published to npm on its own, so it has to carry the license
+    // and the upstream attribution of the repository it is generated from. Both
+    // live in the repository root, seven levels above this script.
+    const repositoryRoot = path.join(__dirname, '../../../../../../../');
+    const legalFileNames = ['LICENSE', 'NOTICE'];
 
     // Delete package folder if exists
     if (fs.existsSync(folderPackagePath)) {
@@ -30,9 +35,15 @@ async function main() {
         name: packageName,
         version: packageVersion,
         description: 'TypeScript definition file for the corresponding entity schema',
-        license: 'MIT',
+        license: 'Apache-2.0',
         types: definitionFileName,
+        files: [definitionFileName, ...legalFileNames],
     }, null, 4));
+
+    // Copy the license and the upstream attribution into the published package
+    for (const legalFileName of legalFileNames) {
+        fs.copyFileSync(path.join(repositoryRoot, legalFileName), path.join(folderPackagePath, legalFileName));
+    }
 
     // @ts-ignore
     converter.convert(entitySchema, path.join(folderPackagePath, definitionFileName));
