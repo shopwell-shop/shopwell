@@ -4,10 +4,12 @@ import entitySchema from "../../test/_mocks_/entity-schema.json";
 import { EntitySchemaConverter } from "./entity-schema-converter";
 
 async function main() {
-    const gitCommitTag = process.env.CI_COMMIT_TAG;
+    // CI_COMMIT_TAG is the variable GitLab provides upstream; GitHub Actions provides
+    // GITHUB_REF_NAME. Both end up as the release tag, e.g. v6.7.15.0.
+    const gitCommitTag = process.env.CI_COMMIT_TAG ?? process.env.GITHUB_REF_NAME;
 
     if (!gitCommitTag || typeof gitCommitTag !== 'string') {
-        throw new Error('No git commit tag found. Please set the CI_COMMIT_TAG environment variable.');
+        throw new Error('No git commit tag found. Please set the CI_COMMIT_TAG or GITHUB_REF_NAME environment variable.');
     }
 
     const converter = new EntitySchemaConverter();
@@ -37,6 +39,16 @@ async function main() {
         description: 'TypeScript definition file for the corresponding entity schema',
         license: 'Apache-2.0',
         types: definitionFileName,
+        // npm derives provenance from the publishing workflow and rejects the upload when this
+        // does not name that repository.
+        repository: {
+            type: 'git',
+            url: 'git+https://github.com/shopwell-shop/shopwell.git',
+        },
+        // Scoped packages default to restricted access; this one is public.
+        publishConfig: {
+            access: 'public',
+        },
         files: [definitionFileName, ...legalFileNames],
     }, null, 4));
 
