@@ -3,7 +3,6 @@
 namespace Shopwell\Core\Content\Product;
 
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
@@ -26,10 +25,6 @@ class ProductMaxPurchaseCalculator extends AbstractProductMaxPurchaseCalculator
 
     public function calculate(Entity $product, SalesChannelContext $context): int
     {
-        if ($this->isDigitalProduct($product)) {
-            return 1;
-        }
-
         $fallback = $this->systemConfigService->getInt(
             'core.cart.maxQuantity',
             $context->getSalesChannelId()
@@ -48,21 +43,5 @@ class ProductMaxPurchaseCalculator extends AbstractProductMaxPurchaseCalculator
         $max = \floor(($max - $min) / $steps) * $steps + $min;
 
         return (int) \max($max, 0);
-    }
-
-    private function isDigitalProduct(Entity $product): bool
-    {
-        if ($product->get('type') === ProductDefinition::TYPE_DIGITAL) {
-            return true;
-        }
-
-        // v6.7 fallback: type backfill is deferred to updateDestructive (#16282), so also accept the legacy IS_DOWNLOAD state.
-        if (Feature::isActive('v6.8.0.0')) {
-            return false;
-        }
-
-        $states = $product->get('states');
-
-        return \is_array($states) && \in_array(State::IS_DOWNLOAD, $states, true);
     }
 }

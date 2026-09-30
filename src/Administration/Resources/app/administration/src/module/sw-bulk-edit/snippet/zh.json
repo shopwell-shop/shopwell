@@ -151,6 +151,19 @@
           "placeholderReleaseDate": "输入发布日期..."
         }
       },
+      "guarantee": {
+        "cardTitle": "质保（GARAN 标签）",
+        "guaranteeMonths": {
+          "changeLabel": "修改：制造商质保期限",
+          "helpText": "请输入 30 到 600 个月之间的数值，步长为 6 个月。",
+          "placeholder": "例如 30、36 或 42 个月..."
+        },
+        "guaranteeConfirmed": {
+          "changeLabel": "修改：在店面显示标签",
+          "label": "在店面显示标签",
+          "helpText": "只有在填写有效的质保期限、制造商和制造商产品编号时，才会显示质保标签。"
+        }
+      },
       "seo": {
         "cardTitle": "SEO",
         "metaTitle": {

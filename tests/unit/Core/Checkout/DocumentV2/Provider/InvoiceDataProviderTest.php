@@ -34,7 +34,6 @@ use Shopwell\Core\Framework\App\Feature\AppFeatureStorage;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\TaxFreeConfig;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Country\CountryCollection;
@@ -42,6 +41,7 @@ use Shopwell\Core\System\Country\CountryDefinition;
 use Shopwell\Core\System\Country\CountryEntity;
 use Shopwell\Core\System\Currency\CurrencyEntity;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
@@ -201,12 +201,9 @@ class InvoiceDataProviderTest extends TestCase
         $provider->provideRenderingData(new ProviderInput($order, $request), Context::createDefaultContext());
     }
 
+    #[DisabledFeatures(['v6.8.0.0'])]
     public function testProvideRenderingDataResolvesDeliveryDateFromDeliveriesWhenV68IsInactive(): void
     {
-        if (Feature::isActive('v6.8.0.0')) {
-            static::markTestSkipped('v6.7 fallback branch is only exercised when v6.8.0.0 is inactive.');
-        }
-
         $provider = $this->createProvider();
         $order = self::createOrder(
             country: self::createCountry(companyTaxEnabled: true, isEu: true),

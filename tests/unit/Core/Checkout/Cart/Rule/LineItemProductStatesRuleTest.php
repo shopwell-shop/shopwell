@@ -13,26 +13,26 @@ use Shopwell\Core\Checkout\Cart\Rule\LineItemProductStatesRule;
 use Shopwell\Core\Checkout\Cart\Rule\LineItemScope;
 use Shopwell\Core\Checkout\CheckoutRuleScope;
 use Shopwell\Core\Content\Product\State;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\Rule;
 use Shopwell\Core\Framework\Rule\RuleConfig;
 use Shopwell\Core\Framework\Rule\RuleConstraints;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 
 /**
  * @internal
  */
 #[Package('fundamentals@after-sales')]
 #[CoversClass(LineItemProductStatesRule::class)]
+#[DisabledFeatures(['v6.8.0.0'])]
 class LineItemProductStatesRuleTest extends TestCase
 {
     private LineItemProductStatesRule $rule;
 
     protected function setUp(): void
     {
-        Feature::skipTestIfActive('v6.8.0.0', $this);
         $this->rule = new LineItemProductStatesRule();
     }
 
@@ -58,7 +58,7 @@ class LineItemProductStatesRuleTest extends TestCase
     {
         $config = $this->rule->getConfig();
         $expected = (new RuleConfig())
-            ->operatorSet(RuleConfig::OPERATOR_SET_STRING)
+            ->operatorSet(RuleConfig::OPERATOR_SET_STRING, false, true)
             ->selectField('productState', [
                 State::IS_PHYSICAL,
                 State::IS_DOWNLOAD,

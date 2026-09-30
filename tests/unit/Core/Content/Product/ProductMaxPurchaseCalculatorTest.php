@@ -7,12 +7,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\ProductMaxPurchaseCalculator;
-use Shopwell\Core\Content\Product\State;
 use Shopwell\Core\Framework\DataAbstractionLayer\PartialEntity;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
-use Shopwell\Core\Test\Annotation\DisabledFeatures;
 
 /**
  * @internal
@@ -92,58 +90,27 @@ class ProductMaxPurchaseCalculatorTest extends TestCase
             2,
         ];
 
-        yield 'digital product caps max at 1 regardless of configured maxPurchase' => [
+        yield 'digital product without maxPurchase falls back to system config like other products' => [
+            [
+                'type' => ProductDefinition::TYPE_DIGITAL,
+            ],
+            10,
+        ];
+
+        yield 'digital product with maxPurchase 1 is limited to one unit' => [
+            [
+                'type' => ProductDefinition::TYPE_DIGITAL,
+                'maxPurchase' => 1,
+            ],
+            1,
+        ];
+
+        yield 'digital product allows a configured maxPurchase above 1' => [
             [
                 'type' => ProductDefinition::TYPE_DIGITAL,
                 'maxPurchase' => 5,
             ],
-            1,
-        ];
-
-        yield 'digital product caps max at 1 even when maxPurchase is null' => [
-            [
-                'type' => ProductDefinition::TYPE_DIGITAL,
-            ],
-            1,
-        ];
-
-        yield 'non-digital product with null maxPurchase falls back to system config' => [
-            [
-                'type' => ProductDefinition::TYPE_PHYSICAL,
-            ],
-            10,
-        ];
-    }
-
-    #[DisabledFeatures(['v6.8.0.0'])]
-    public function testLegacyDownloadStateCapsMaxAtOneWhile68IsInactive(): void
-    {
-        $entity = new PartialEntity();
-        $entity->assign([
-            'maxPurchase' => 5,
-            'states' => [State::IS_DOWNLOAD],
-        ]);
-
-        static::assertSame(
-            1,
-            $this->service->calculate($entity, static::createStub(SalesChannelContext::class)),
-            'legacy IS_DOWNLOAD state must cap quantity to 1 while v6.8.0.0 is inactive'
-        );
-    }
-
-    #[DisabledFeatures(['v6.8.0.0'])]
-    public function testNonDigitalProductWithoutDownloadStateSkipsLegacyFallbackWhile68IsInactive(): void
-    {
-        $entity = new PartialEntity();
-        $entity->assign([
-            'maxPurchase' => 5,
-            'states' => ['some-other-state'],
-        ]);
-
-        static::assertSame(
             5,
-            $this->service->calculate($entity, static::createStub(SalesChannelContext::class)),
-            'non-download product must not be capped by the legacy state check'
-        );
+        ];
     }
 }

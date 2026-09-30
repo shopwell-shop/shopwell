@@ -4,7 +4,6 @@ namespace Shopwell\Tests\DevOps\Core\DevOps\StaticAnalyse\PHPStan\Rules;
 
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\AclValidPermissionsHelper;
 use Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\AclValidPermissionsInRouteAttributesRule;
 use Shopwell\Core\Framework\Log\Package;
@@ -29,7 +28,6 @@ class AclValidPermissionsInRouteAttributesRuleTest extends RuleTestCase
         self::$rule = null;
     }
 
-    #[RunInSeparateProcess]
     public function testRule(): void
     {
         // route attribute in controller
