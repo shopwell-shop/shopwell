@@ -9,12 +9,14 @@ use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\CustomerException;
 use Shopwell\Core\Checkout\Customer\Event\CustomerAccountRecoverRequestEvent;
 use Shopwell\Core\Checkout\Customer\Event\PasswordRecoveryUrlEvent;
+use Shopwell\Core\Checkout\Customer\Extension\SendPasswordRecoveryMailRouteExtension;
 use Shopwell\Core\Checkout\Customer\Service\EmailIdnConverter;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
@@ -58,7 +60,8 @@ class SendPasswordRecoveryMailRoute extends AbstractSendPasswordRecoveryMailRout
         private readonly DataValidator $validator,
         private readonly SystemConfigService $systemConfigService,
         private readonly RequestStack $requestStack,
-        private readonly RateLimiter $rateLimiter
+        private readonly RateLimiter $rateLimiter,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -69,6 +72,15 @@ class SendPasswordRecoveryMailRoute extends AbstractSendPasswordRecoveryMailRout
 
     #[Route(path: '/store-api/account/recovery-password', name: 'store-api.account.recovery.send.mail', methods: ['POST'])]
     public function sendRecoveryMail(RequestDataBag $data, SalesChannelContext $context, bool $validateStorefrontUrl = true): SuccessResponse
+    {
+        return $this->extensions->publish(
+            name: SendPasswordRecoveryMailRouteExtension::NAME,
+            extension: new SendPasswordRecoveryMailRouteExtension($data, $context, $validateStorefrontUrl),
+            function: $this->_sendRecoveryMail(...),
+        );
+    }
+
+    private function _sendRecoveryMail(RequestDataBag $data, SalesChannelContext $context, bool $validateStorefrontUrl): SuccessResponse
     {
         EmailIdnConverter::encodeDataBag($data);
 

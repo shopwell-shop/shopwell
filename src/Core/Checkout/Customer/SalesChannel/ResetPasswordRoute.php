@@ -7,10 +7,12 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryC
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryEntity;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerException;
+use Shopwell\Core\Checkout\Customer\Extension\ResetPasswordRouteExtension;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
@@ -51,6 +53,7 @@ class ResetPasswordRoute extends AbstractResetPasswordRoute
         private readonly RateLimiter $rateLimiter,
         private readonly DataValidationFactoryInterface $passwordValidationFactory,
         private readonly ClockInterface $clock,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -61,6 +64,15 @@ class ResetPasswordRoute extends AbstractResetPasswordRoute
 
     #[Route(path: '/store-api/account/recovery-password-confirm', name: 'store-api.account.recovery.password', methods: ['POST'])]
     public function resetPassword(RequestDataBag $data, SalesChannelContext $context): SuccessResponse
+    {
+        return $this->extensions->publish(
+            name: ResetPasswordRouteExtension::NAME,
+            extension: new ResetPasswordRouteExtension($data, $context),
+            function: $this->_resetPassword(...),
+        );
+    }
+
+    private function _resetPassword(RequestDataBag $data, SalesChannelContext $context): SuccessResponse
     {
         $this->validateResetPassword($data, $context);
 

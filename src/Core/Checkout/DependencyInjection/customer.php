@@ -90,6 +90,7 @@ use Shopwell\Core\Content\Product\SalesChannel\ProductCloseoutFilterFactory;
 use Shopwell\Core\Framework\Api\Serializer\JsonEntityEncoder;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ManyToManyIdFieldUpdater;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
@@ -150,6 +151,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CartRestorer::class),
             service(DoubleOptInService::class),
             service(ClockInterface::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(DoubleOptInService::class)
@@ -309,6 +311,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SystemConfigService::class),
             service(RequestStack::class),
             service('shopwell.rate_limiter'),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(ResetPasswordRoute::class)
@@ -322,6 +325,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('shopwell.rate_limiter'),
             service(PasswordValidationFactory::class),
             service(ClockInterface::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(CustomerRecoveryIsExpiredRoute::class)
@@ -331,9 +335,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(DataValidator::class),
             service(ClockInterface::class),
-            service(SystemConfigService::class),
-            service(RequestStack::class),
-            service('shopwell.rate_limiter'),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(ChangeCustomerProfileRoute::class)
@@ -416,6 +418,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DoubleOptInService::class),
             service(CustomerNewsletterSalesChannelsUpdater::class),
             service(ClockInterface::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(RegisterConfirmRoute::class)

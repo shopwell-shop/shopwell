@@ -9,18 +9,22 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryC
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryEntity;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Extension\SendPasswordRecoveryMailRouteExtension;
 use Shopwell\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SalesChannel\SuccessResponse;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Generator;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -138,7 +142,8 @@ class SendPasswordRecoveryMailRouteTest extends TestCase
             $this->validator,
             $this->systemConfigService,
             $this->requestStack,
-            $this->rateLimiter
+            $this->rateLimiter,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $this->context->getSalesChannel()->setTranslated(['name' => 'FooBar']);
@@ -163,7 +168,8 @@ class SendPasswordRecoveryMailRouteTest extends TestCase
             $this->validator,
             $this->systemConfigService,
             $this->requestStack,
-            $this->rateLimiter
+            $this->rateLimiter,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $data = new RequestDataBag();
@@ -173,5 +179,32 @@ class SendPasswordRecoveryMailRouteTest extends TestCase
 
         static::assertArrayHasKey('success', $response);
         static::assertTrue($response['success']);
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $data = new RequestDataBag();
+        $response = new SuccessResponse();
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('send-password-recovery-mail-route.send-recovery-mail.pre', function (SendPasswordRecoveryMailRouteExtension $extension) use ($data, $response): void {
+            static::assertSame(['data' => $data, 'context' => $this->context, 'validateStorefrontUrl' => true], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new SendPasswordRecoveryMailRoute(
+            $this->customerRepository,
+            $this->customerRecoveryRepository,
+            $this->eventDispatcher,
+            $this->validator,
+            $this->systemConfigService,
+            $this->requestStack,
+            $this->rateLimiter,
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->sendRecoveryMail($data, $this->context, true));
     }
 }

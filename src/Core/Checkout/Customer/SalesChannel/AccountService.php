@@ -14,6 +14,7 @@ use Shopwell\Core\Checkout\Customer\Exception\BadCredentialsException;
 use Shopwell\Core\Checkout\Customer\Exception\CustomerNotFoundByIdException;
 use Shopwell\Core\Checkout\Customer\Exception\CustomerNotFoundException;
 use Shopwell\Core\Checkout\Customer\Exception\CustomerOptinNotCompletedException;
+use Shopwell\Core\Checkout\Customer\Extension\LoginByCredentialsExtension;
 use Shopwell\Core\Checkout\Customer\Password\LegacyPasswordVerifier;
 use Shopwell\Core\Checkout\Customer\Service\DoubleOptInService;
 use Shopwell\Core\Framework\Context;
@@ -21,6 +22,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteException;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Exception\InvalidUuidException;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -54,6 +56,7 @@ class AccountService
         private readonly CartRestorer $restorer,
         private readonly DoubleOptInService $doubleOptInService,
         private readonly ClockInterface $clock,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -104,16 +107,11 @@ class AccountService
      */
     public function loginByCredentials(string $email, #[\SensitiveParameter] string $password, SalesChannelContext $context): string
     {
-        if ($email === '' || $password === '') {
-            throw CustomerException::badCredentials();
-        }
-
-        $event = new CustomerBeforeLoginEvent($context, $email);
-        $this->eventDispatcher->dispatch($event);
-
-        $customer = $this->getCustomerByLogin($email, $password, $context);
-
-        return $this->loginByCustomer($customer, $context);
+        return $this->extensions->publish(
+            name: LoginByCredentialsExtension::NAME,
+            extension: new LoginByCredentialsExtension($email, $password, $context),
+            function: $this->_loginByCredentials(...),
+        );
     }
 
     /**
@@ -182,6 +180,20 @@ class AccountService
         }
 
         return $customer;
+    }
+
+    private function _loginByCredentials(string $email, #[\SensitiveParameter] string $password, SalesChannelContext $context): string
+    {
+        if ($email === '' || $password === '') {
+            throw CustomerException::badCredentials();
+        }
+
+        $event = new CustomerBeforeLoginEvent($context, $email);
+        $this->eventDispatcher->dispatch($event);
+
+        $customer = $this->getCustomerByLogin($email, $password, $context);
+
+        return $this->loginByCustomer($customer, $context);
     }
 
     private function isCustomerConfirmed(CustomerEntity $customer): bool
