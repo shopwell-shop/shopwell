@@ -84,18 +84,6 @@ readonly class SnippetValidator implements SnippetValidatorInterface
         return $this->validateFiles($files, $directory);
     }
 
-    protected function getAllFiles(): SnippetFileCollection
-    {
-        $snippetFiles = $this->loadedSnippetFiles->filter(static function (AbstractSnippetFile $snippetFile) {
-            return $snippetFile instanceof GenericSnippetFile;
-        });
-
-        $this->hydrateFiles($this->snippetFileHandler->findAdministrationSnippetFiles(), $snippetFiles);
-        $this->hydrateFiles($this->snippetFileHandler->findStorefrontSnippetFiles(), $snippetFiles);
-
-        return $snippetFiles;
-    }
-
     private function validateFiles(SnippetFileCollection $files, string $rootDir): SnippetValidationStruct
     {
         $invalidPluralization = new InvalidPluralizationCollection();
