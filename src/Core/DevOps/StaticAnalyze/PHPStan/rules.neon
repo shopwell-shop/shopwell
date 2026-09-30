@@ -40,6 +40,7 @@ rules:
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoKernelLifecycleManagerInUnitTestsRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoKernelBootInSetUpBeforeClassRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoMockBuilderConstructorBypassRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoUnreachableAssertionAfterExpectExceptionRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\PHPUnitClassAttributesOverAnnotationsRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\PHPUnitMethodAttributesOverAnnotationsRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoNativeTimeFunctionRule
