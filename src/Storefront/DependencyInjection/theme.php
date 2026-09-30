@@ -14,7 +14,7 @@ use Shopwell\Core\Framework\App\Source\SourceResolver;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\Notification\NotificationService;
 use Shopwell\Core\Framework\Plugin\KernelPluginLoader\KernelPluginLoader;
-use Shopwell\Core\System\SystemConfig\Service\ConfigurationService;
+use Shopwell\Core\System\SystemConfig\Service\SystemConfigDefinitionService;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Storefront\Theme\AbstractThemePathBuilder;
 use Shopwell\Storefront\Theme\Aggregate\ThemeChildDefinition;
@@ -436,7 +436,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ThemeCompilerEnrichScssVarSubscriber::class)
         ->args([
-            service(ConfigurationService::class),
+            service(SystemConfigDefinitionService::class),
             service(StorefrontPluginRegistry::class),
         ])
         ->tag('kernel.event_subscriber');

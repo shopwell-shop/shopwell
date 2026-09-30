@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\System\SystemConfig\Api\SystemConfigController;
 use Shopwell\Core\System\SystemConfig\Service\ConfigurationService;
+use Shopwell\Core\System\SystemConfig\Service\SystemConfigDefinitionService;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\System\SystemConfig\Validation\SystemConfigValidator;
 use Symfony\Component\HttpFoundation\Request;
@@ -49,6 +50,7 @@ class SystemConfigControllerTest extends TestCase
     {
         return new SystemConfigController(
             static::getContainer()->get(ConfigurationService::class),
+            static::getContainer()->get(SystemConfigDefinitionService::class),
             static::getContainer()->get(SystemConfigService::class),
             static::getContainer()->get(SystemConfigValidator::class)
         );
