@@ -298,6 +298,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SeoResolver::class),
             param('shopwell.routing.registered_api_prefixes'),
             service(DomainLoader::class),
+            param('shopwell.routing.api_context_route_prefixes'),
         ]);
 
     $services->set(Router::class)
