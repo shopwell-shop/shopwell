@@ -17,7 +17,7 @@ jobs:
       - id: sts
         if: ${{ !github.event.act }}
         continue-on-error: true
-        uses: shopwell/octo-sts-action@main
+        uses: shopwell-shop/octo-sts-action@main
         with:
           scope: shopwell
           identity: Reminder

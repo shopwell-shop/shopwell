@@ -131,7 +131,7 @@ jobs:
         run: npm install -g npm@11.8.0
 
       - name: Install dependencies
-        uses: shopwell/github-actions/npm-ci-retry@main
+        uses: shopwell-shop/github-actions/npm-ci-retry@main
         with:
           working-directory: tests/acceptance
 
@@ -190,7 +190,7 @@ jobs:
     steps:
       - name: Generate versions
         id: versions
-        uses: shopwell/github-actions/versions@main
+        uses: shopwell-shop/github-actions/versions@main
         with:
           github-token: ${{ github.token }}
 
@@ -250,7 +250,7 @@ jobs:
             ${{ runner.os }}-storefront-
 
       - name: Install storefront dependencies
-        uses: shopwell/github-actions/npm-ci-retry@main
+        uses: shopwell-shop/github-actions/npm-ci-retry@main
         with:
           working-directory: new-shopwell
           command: composer run npm:storefront ci
@@ -307,12 +307,12 @@ jobs:
 
       # ~/.npm is cached earlier in this job, so prefer-offline reuses tarballs.
       - name: Install dependencies
-        uses: shopwell/github-actions/npm-ci-retry@main
+        uses: shopwell-shop/github-actions/npm-ci-retry@main
         with:
           working-directory: new-shopwell/tests/acceptance
 
       - name: Install Playwright Browsers
-        uses: shopwell/github-actions/npm-ci-retry@main
+        uses: shopwell-shop/github-actions/npm-ci-retry@main
         with:
           working-directory: new-shopwell/tests/acceptance
           command: sudo apt-get update --allow-releaseinfo-change && npx playwright install --with-deps chromium

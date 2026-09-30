@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger preview environment
-        uses: shopwell/github-actions/saas-preview-environment@main
+        uses: shopwell-shop/github-actions/saas-preview-environment@main
         with:
           action: create
 
@@ -38,6 +38,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger preview environment
-        uses: shopwell/github-actions/preview-environment@main
+        uses: shopwell-shop/github-actions/preview-environment@main
         with:
           action: archive

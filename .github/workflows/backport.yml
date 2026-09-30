@@ -32,7 +32,7 @@ jobs:
       owner: ${{ steps.issue.outputs.owner }}
       repository: ${{ steps.issue.outputs.repository }}
     steps:
-      - uses: shopwell/octo-sts-action@main
+      - uses: shopwell-shop/octo-sts-action@main
         id: sts-shopwell-backport
         if: ${{ !github.event.act }}
         with:
@@ -86,7 +86,7 @@ jobs:
       ) && needs.find-linked-issue.outputs.id
     needs: [find-linked-issue]
     steps:
-      - uses: shopwell/octo-sts-action@main
+      - uses: shopwell-shop/octo-sts-action@main
         id: sts-shopwell-backport
         if: ${{ !github.event.act }}
         with:
@@ -219,7 +219,7 @@ jobs:
         target-branch: ${{ fromJSON(needs.parse-labels.outputs.target-branches) }}
       fail-fast: true
     steps:
-      - uses: shopwell/octo-sts-action@main
+      - uses: shopwell-shop/octo-sts-action@main
         id: sts-shopwell-backport
         if: ${{ !github.event.act }}
         with:

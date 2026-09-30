@@ -12,10 +12,16 @@ below).
 | File | Purpose |
 | --- | --- |
 | `tsconfig.base.json` | Strict TypeScript preset for extension code (ESNext, Bundler resolution, `noEmit`). Resolves `vue`, `@vue/*`, and `src/*` into the installed Administration. |
-| `admin-types.d.ts` | The one type surface: imports the live `global.types.ts`, the generated `entity-schema-definition.d.ts`, and `html-shim.d.ts`. Injected into every extension program via `files`. |
+| `admin-types.d.ts` | The one type surface: imports the live `global.types.ts`, the generated `entity-schema-definition.d.ts`, `html-shim.d.ts`, and `shopwell-virtual-modules.d.ts`. Injected into every extension program via `files`. |
 | `eslint.mjs` | Parameterized flat-config factory `shopwellAdminExtension(options)`. All plugins resolve from the Administration's `node_modules`. |
 | `legacy-twig.mjs` | Lint preset for legacy `.html.twig` component templates (Twig-Vue processor). |
 | `host-modules.json` | Declares the bare modules the Administration host provides to extensions at runtime. v1: `vue` only — the Vite externals plugin replaces exactly the bare `vue` import. If a module is added there, it must be added here and to `tsconfig.base.json` `paths` in the same change. |
+
+The `shopwell:*` modules (`shopwell:utils`, `shopwell:data`, `shopwell:mixins`, `shopwell:stores`) are
+not host modules. A Vite plugin generates them from the global `Shopwell` object, and
+`admin-types.d.ts` provides their declarations. Run `composer admin:generate-shopwell-modules` after a
+source contract changes. Do not add these modules to this table. See
+[`shopwell:*` Modules](../technical-docs/05-global-object/04-virtual-modules.md).
 
 ## How extensions use it
 

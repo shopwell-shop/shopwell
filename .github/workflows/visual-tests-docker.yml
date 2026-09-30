@@ -181,7 +181,7 @@ jobs:
 
       - name: Create token for PR
         if: ${{ inputs.update-snapshots }}
-        uses: shopwell/octo-sts-action@main
+        uses: shopwell-shop/octo-sts-action@main
         id: create-pr-token
         with:
           scope: shopwell

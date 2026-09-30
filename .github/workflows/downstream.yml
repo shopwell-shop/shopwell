@@ -42,12 +42,12 @@ jobs:
     steps:
       - id: sts
         continue-on-error: true
-        uses: shopwell/octo-sts-action@main
+        uses: shopwell-shop/octo-sts-action@main
         with:
           scope: shopwell
           identity: ShopwellDownstream
       - name: Rufus
-        uses: shopwell/github-actions/downstream@main
+        uses: shopwell-shop/github-actions/downstream@main
         if: steps.sts.outputs.token
         env:
           NEW_LOGIC: 1
@@ -73,12 +73,12 @@ jobs:
     steps:
       - id: sts
         continue-on-error: true
-        uses: shopwell/octo-sts-action@main
+        uses: shopwell-shop/octo-sts-action@main
         with:
           scope: shopwell
           identity: ShopwellDownstream
       - name: Commercial
-        uses: shopwell/github-actions/downstream@main
+        uses: shopwell-shop/github-actions/downstream@main
         if: steps.sts.outputs.token
         env:
           NEW_LOGIC: 1
@@ -106,7 +106,7 @@ jobs:
     steps:
       - id: sts
         continue-on-error: true
-        uses: shopwell/octo-sts-action@main
+        uses: shopwell-shop/octo-sts-action@main
         with:
           scope: shopwell
           identity: ShopwellDownstream
