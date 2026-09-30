@@ -123,7 +123,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('shopwell.jwt_config'),
             service(Connection::class),
             service(ClockInterface::class),
-        ]);
+        ])
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     $services->set(PaymentTokenRegisteredValidator::class)
         ->args([
@@ -159,7 +160,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(OrderTransactionStateHandler::class),
         ])
-        ->tag('shopwell.payment.method');
+        ->tag('shopwell.payment.method')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     $services->set(CashPayment::class)
         ->args([

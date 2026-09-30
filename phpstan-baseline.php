@@ -554,12 +554,6 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Framework/Demodata/Generator/FlowGenerator.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopwell.domainException',
-    'count' => 2,
-    'path' => __DIR__ . '/src/Core/Framework/DependencyInjection/CompilerPass/FeatureFlagCompilerPass.php',
-];
-$ignoreErrors[] = [
     'rawMessage' => 'Method Shopwell\\Core\\Framework\\DependencyInjection\\FrameworkExtension::addShopwellConfig() has parameter $options with no value type specified in iterable type array.',
     'identifier' => 'missingType.iterableValue',
     'count' => 1,

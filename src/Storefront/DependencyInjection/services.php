@@ -630,7 +630,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(GenericPageLoader::class),
             service('event_dispatcher'),
             service(OrderRoute::class),
-        ]);
+        ])
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     $services->set(AccountEditOrderPageLoader::class)
         ->args([
@@ -743,7 +744,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     // @deprecated tag:v6.8.0 Will be removed
     $services->set(CookieProviderInterface::class, CookieProvider::class)
-        ->deprecate('shopwell/storefront', '6.7.3.0', 'The %service_id% service will be removed in v6.8.0.0. Use the CookieGroupCollectEvent instead to introduce cookies.');
+        ->deprecate('shopwell/storefront', '6.7.3.0', 'The %service_id% service will be removed in v6.8.0.0. Use the CookieGroupCollectEvent instead to introduce cookies.')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     // @deprecated tag:v6.8.0 Will be removed
     $services->set(AppCookieProvider::class)
@@ -751,7 +753,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('.inner'),
         ])
-        ->deprecate('shopwell/storefront', '6.7.3.0', 'The %service_id% service will be removed in v6.8.0.0 without replacement');
+        ->deprecate('shopwell/storefront', '6.7.3.0', 'The %service_id% service will be removed in v6.8.0.0 without replacement')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     $services->set(ResponseHeaderListener::class)
         ->tag('kernel.event_subscriber');

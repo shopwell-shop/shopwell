@@ -168,7 +168,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(LineItemListPriceRule::class)->tag('shopwell.rule.definition');
     $services->set(LineItemListPriceRatioRule::class)->tag('shopwell.rule.definition');
     $services->set(LineItemCustomFieldRule::class)->tag('shopwell.rule.definition');
-    $services->set(LineItemStockRule::class)->tag('shopwell.rule.definition');
+    $services->set(LineItemStockRule::class)
+        ->tag('shopwell.rule.definition')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
     $services->set(LineItemActualStockRule::class)->tag('shopwell.rule.definition');
     $services->set(PaymentMethodRule::class)->tag('shopwell.rule.definition');
     $services->set(ShippingMethodRule::class)->tag('shopwell.rule.definition');
@@ -177,7 +179,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CustomerCustomFieldRule::class)->tag('shopwell.rule.definition');
     $services->set(CustomerBirthdayRule::class)->tag('shopwell.rule.definition');
     $services->set(CustomerCreatedByAdminRule::class)->tag('shopwell.rule.definition');
-    $services->set(LineItemProductStatesRule::class)->tag('shopwell.rule.definition');
+    $services->set(LineItemProductStatesRule::class)
+        ->tag('shopwell.rule.definition')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     $services->set(LineItemProductTypeRule::class)
         ->args([

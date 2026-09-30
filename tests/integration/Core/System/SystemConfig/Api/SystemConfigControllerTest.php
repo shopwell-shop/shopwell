@@ -4,13 +4,12 @@ namespace Shopwell\Tests\Integration\Core\System\SystemConfig\Api;
 
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\System\SystemConfig\Api\SystemConfigController;
 use Shopwell\Core\System\SystemConfig\Service\ConfigurationService;
-use Shopwell\Core\System\SystemConfig\Service\SystemConfigDefinitionService;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
-use Shopwell\Core\System\SystemConfig\Validation\SystemConfigValidator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -22,6 +21,12 @@ class SystemConfigControllerTest extends TestCase
 {
     use KernelTestBehaviour;
 
+    public function testDeprecatedServiceIsAbsentInMajorMode(): void
+    {
+        static::assertSame(!Feature::isActive('v6.8.0.0'), static::getContainer()->has(ConfigurationService::class));
+        static::assertInstanceOf(SystemConfigController::class, static::getContainer()->get(SystemConfigController::class));
+    }
+
     public function testBatchSaveConfigurationPersistsNestedConfigKeys(): void
     {
         $key = 'core.basicInformation.foo.bar.baz';
@@ -30,7 +35,7 @@ class SystemConfigControllerTest extends TestCase
         $systemConfigService->delete($key);
 
         try {
-            $response = $this->createController()->batchSaveConfiguration(
+            $response = static::getContainer()->get(SystemConfigController::class)->batchSaveConfiguration(
                 new Request([], [
                     'null' => [
                         $key => 'test-value',
@@ -44,15 +49,5 @@ class SystemConfigControllerTest extends TestCase
         } finally {
             $systemConfigService->delete($key);
         }
-    }
-
-    private function createController(): SystemConfigController
-    {
-        return new SystemConfigController(
-            static::getContainer()->get(ConfigurationService::class),
-            static::getContainer()->get(SystemConfigDefinitionService::class),
-            static::getContainer()->get(SystemConfigService::class),
-            static::getContainer()->get(SystemConfigValidator::class)
-        );
     }
 }

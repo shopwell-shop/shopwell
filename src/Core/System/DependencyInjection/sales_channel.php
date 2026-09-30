@@ -337,7 +337,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(SalesChannelContextSwitcher::class)
         ->args([
             service(ContextSwitchRoute::class),
-        ]);
+        ])
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     $services->set(ContextSwitchRoute::class)
         ->public()
@@ -503,7 +504,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('shopwell.context.gateway.command');
 
     $services->set(SalesChannelMaintenanceIpAllowlistSyncSubscriber::class)
-        ->tag('kernel.event_subscriber');
+        ->tag('kernel.event_subscriber')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     // Telemetry: shared sales_channel_type label resolver (cart calculation, order placed metrics)
     $services->set(SalesChannelTypeResolver::class);

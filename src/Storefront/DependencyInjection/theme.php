@@ -198,7 +198,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(ResolvedConfigLoader::class),
         ])
-        ->deprecate('shopwell/core', '6.8.0', 'tag:v6.8.0 - The %service_id% service will be removed in v6.8.0.0 without replacement');
+        ->deprecate('shopwell/core', '6.8.0', 'tag:v6.8.0 - The %service_id% service will be removed in v6.8.0.0 without replacement')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     $services->set(ThemeConfigCacheInvalidator::class)
         ->args([
@@ -263,7 +264,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('shopwell.filesystem.theme'),
             service(AbstractThemePathBuilder::class),
         ])
-        ->tag('messenger.message_handler');
+        ->tag('messenger.message_handler')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     $services->set(CompileThemeHandler::class)
         ->args([

@@ -5,6 +5,22 @@
         <service id="decorated.service" class="Shopwell\Core\DevOps\MyFakeNamespace\DecoratedService"/>
         <service id="Shopwell\Core\DevOps\MyFakeNamespace\DeprecatedDecorator" class="Shopwell\Core\DevOps\MyFakeNamespace\DeprecatedDecorator">
             <tag name="container.decorator" id="decorated.service"/>
+            <tag name="shopwell.inactiveFeature" flag="v6.9.0.0"/>
+        </service>
+        <service id="Shopwell\Core\DevOps\MyFakeNamespace\TaggedDeprecatedClass" class="Shopwell\Core\DevOps\MyFakeNamespace\TaggedDeprecatedClass">
+            <tag name="shopwell.inactiveFeature" flag="v6.8.0.0"/>
+        </service>
+        <service id="Shopwell\Core\DevOps\MyFakeNamespace\DeprecatedTwigExtension" class="Shopwell\Core\DevOps\MyFakeNamespace\DeprecatedTwigExtension">
+            <tag name="twig.extension"/>
+            <tag name="shopwell.inactiveFeature" flag="v6.8.0.0"/>
+        </service>
+        <service id="Shopwell\Core\DevOps\MyFakeNamespace\WrongVersionTwigExtension" class="Shopwell\Core\DevOps\MyFakeNamespace\WrongVersionTwigExtension">
+            <tag name="twig.extension"/>
+            <tag name="shopwell.inactiveFeature" flag="v6.9.0.0"/>
+        </service>
+        <service id="Shopwell\Core\DevOps\MyFakeNamespace\CoveredTwigExtension" class="Shopwell\Core\DevOps\MyFakeNamespace\CoveredTwigExtension">
+            <tag name="twig.extension"/>
+            <tag name="shopwell.inactiveFeature" flag="v6.8.0.0"/>
         </service>
     </services>
 </container>

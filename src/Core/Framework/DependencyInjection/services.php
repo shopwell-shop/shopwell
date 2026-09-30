@@ -30,6 +30,7 @@ use Shopwell\Core\Framework\Adapter\Twig\AppTemplateIterator;
 use Shopwell\Core\Framework\Adapter\Twig\BackwardCompatibleIntlExtension;
 use Shopwell\Core\Framework\Adapter\Twig\EntityTemplateLoader;
 use Shopwell\Core\Framework\Adapter\Twig\Extension\ComparisonExtension;
+use Shopwell\Core\Framework\Adapter\Twig\Extension\CompatTwigExtension;
 use Shopwell\Core\Framework\Adapter\Twig\Extension\ConfigExtension;
 use Shopwell\Core\Framework\Adapter\Twig\Extension\FeatureFlagExtension;
 use Shopwell\Core\Framework\Adapter\Twig\Extension\InAppPurchaseExtension;
@@ -664,6 +665,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('twig.extension.intl'),
         ])
+        ->tag('twig.extension')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
+
+    $services->set(CompatTwigExtension::class)
         ->tag('twig.extension');
 
     $services->set(SecurityExtension::class)
@@ -942,7 +947,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service('cache.http'),
-            service(CacheStateValidator::class),
+            service(CacheStateValidator::class)->nullOnInvalid(),
             service('event_dispatcher'),
             service(HttpCacheKeyGenerator::class),
             service(MaintenanceModeResolver::class),
@@ -963,7 +968,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CacheStateValidator::class)
         ->args([
             param('shopwell.cache.invalidation.http_cache'),
-        ]);
+        ])
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     $services->set(BacktraceCollector::class);
 
