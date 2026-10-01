@@ -15,7 +15,7 @@ describe('src/app/filter/truncate.filter.ts', () => {
     [
         [['Hello World, welcome to Shopwware.', 10], 'Hello W...'],
         [['Hello World, welcome to Shopwware.', 20], 'Hello World, welc...'],
-        [['Hello World, welcome to <h1>Shopwell</h1> guys.', 33], 'Hello World, welcome to Shopwa...'],
+        [['Hello World, welcome to <h1>Shopwell</h1> guys.', 33], 'Hello World, welcome to Shopwe...'],
         [
             [
                 'Hello World, welcome to <h1>Shopwell</h1> guys.',
@@ -23,7 +23,7 @@ describe('src/app/filter/truncate.filter.ts', () => {
                 true,
                 '***',
             ],
-            'Hello World, welcome to Shopwa***',
+            'Hello World, welcome to Shopwe***',
         ],
         [['Hello World, welcome to <h1>Shopwell</h1> guys.', 33, false], 'Hello World, welcome to <h1>Sh...'],
         [

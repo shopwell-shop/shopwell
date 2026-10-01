@@ -5,7 +5,13 @@
             "sw-privileges.permissionType": "Resolved through the runtime-composed key `sw-privileges.permissionType.` + type, same as sw-privileges.roles.",
             "sw-settings-logging.list": "Log level labels are resolved dynamically via `sw-settings-logging.list.level${level}`.",
             "sw-media.sidebar.actions.delete": "Reachable through the dynamic quick-action key `sw-media.sidebar.actions.${option.id}`, so the entry has to stay even though some call sites reference it statically.",
-            "sw-theme": "Theme configuration field labels (`sw-theme.…label`) are auto-constructed from the theme config structure, not authored as reusable UI strings, so they keep their own labels."
+            "sw-theme": "Theme configuration field labels (`sw-theme.…label`) are auto-constructed from the theme config structure, not authored as reusable UI strings, so they keep their own labels.",
+            "sw-extension-store.component.sw-extension-ratings.sw-extension-review-creation.submitBtn": "The upstream German value differs from global.default.submit, while the Simplified Chinese localization intentionally uses the same wording. Preserve the dedicated upstream key contract.",
+            "sw-extension-store.component.sw-extension-permissions-details-modal.operationRead": "The upstream German value differs from global.default.view, while the Simplified Chinese localization intentionally uses the same wording. Preserve the dedicated upstream key contract.",
+            "sw-property.detail.contextMenuOptionView": "The upstream German value differs from global.default.edit, while the Simplified Chinese localization intentionally uses the same wording. Preserve the dedicated upstream key contract.",
+            "sw-settings-country.detail.editAction": "The upstream German value differs from global.default.edit, while the Simplified Chinese localization intentionally uses the same wording. Preserve the dedicated upstream key contract.",
+            "sw-settings-custom-field.customField.detail.labelDeleteOption": "The upstream German value differs from global.default.delete, while the Simplified Chinese localization intentionally uses the same wording. Preserve the dedicated upstream key contract.",
+            "sw-settings-custom-field.customField.list.contextMenuCustomFieldView": "The upstream German value differs from global.default.edit, while the Simplified Chinese localization intentionally uses the same wording. Preserve the dedicated upstream key contract."
         },
         "storefront": {}
     },

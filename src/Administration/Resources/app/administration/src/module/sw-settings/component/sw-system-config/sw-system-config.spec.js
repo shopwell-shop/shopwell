@@ -330,8 +330,8 @@ function createConfig() {
                 domValueCheck: (field, domValue) => {
                     expect(field.find('input').element.value).toBe(domValue);
                 },
-                afterValue: 'https://www.shopwell.cn',
-                afterValueDom: 'www.shopwell.cn',
+                afterValue: 'https://docs.shopwell.cn',
+                afterValueDom: 'docs.shopwell.cn',
                 childValue: 'https://www.child.shopwell.cn',
                 childValueDom: 'www.child.shopwell.cn',
                 changeValueFunction: async (field, afterValue) => {
