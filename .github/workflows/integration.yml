@@ -31,8 +31,7 @@ jobs:
   phpunit-matrix:
     needs:
       - markdown-only-changes
-    # Enable only after Shopwell has a real 6.6.x product branch.
-    if: ${{ vars.SHOPWELL_HAS_66_BRANCH == 'true' }}
+    if: ${{ needs.markdown-only-changes.outputs.docs_only != 'true' }}
     runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.generate-matrix.outputs.matrix }}
@@ -271,7 +270,8 @@ jobs:
     name: "PHP blue green 6.6 -> 6.7 -> 6.6"
     needs:
       - markdown-only-changes
-    if: ${{ needs.markdown-only-changes.outputs.docs_only != 'true' }}
+    # Enable only after Shopwell has a real 6.6.x product branch.
+    if: ${{ vars.SHOPWELL_HAS_66_BRANCH == 'true' }}
     runs-on: ubuntu-24.04
     env:
       APP_ENV: test
