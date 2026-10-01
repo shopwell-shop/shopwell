@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
     FEATURE_REGISTRY_PATH,
+    diffForPullFiles,
     evaluateMajorLabels,
     globToRegExp,
     labelNamesFor,
@@ -329,6 +330,17 @@ test('an empty diff matches nothing', () => {
         behaviour: false,
         cleanup: false,
     });
+});
+
+test('diffForPullFiles preserves paths and available patches from paginated API results', () => {
+    assert.equal(
+        diffForPullFiles([
+            { filename: 'UPGRADE-6.8.md', patch: '@@ -0,0 +1 @@\n+## Upgrade' },
+            { filename: 'assets/logo.png' },
+        ]),
+        'diff --git a/UPGRADE-6.8.md b/UPGRADE-6.8.md\n@@ -0,0 +1 @@\n+## Upgrade\n' +
+            'diff --git a/assets/logo.png b/assets/logo.png\n',
+    );
 });
 
 test('labelNamesFor emits only the earned labels', () => {

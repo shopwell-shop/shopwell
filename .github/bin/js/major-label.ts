@@ -65,15 +65,24 @@ type PullRequestContext = PullRequestDetectionContext & {
     };
 };
 
+type PullRequestFile = {
+    filename: string;
+    patch?: string;
+};
+
 type GitHubRestClient = {
+    paginate(
+        method: GitHubRestClient['rest']['pulls']['listFiles'],
+        options: { owner: string; repo: string; pull_number: number; per_page: number },
+    ): Promise<PullRequestFile[]>;
     rest: {
         pulls: {
-            get(options: {
+            listFiles(options: {
                 owner: string;
                 repo: string;
                 pull_number: number;
-                mediaType: { format: 'diff' };
-            }): Promise<{ data: unknown }>;
+                per_page: number;
+            }): Promise<{ data: PullRequestFile[] }>;
         };
         issues: {
             addLabels(options: {
@@ -271,6 +280,13 @@ export function labelsForDiff(options: {
     );
 }
 
+/** Rebuild enough unified diff context from the paginated files API for path and line-marker detection. */
+export function diffForPullFiles(files: PullRequestFile[]): string {
+    return files
+        .map(({ filename, patch }) => `diff --git a/${filename} b/${filename}\n${patch ?? ''}`)
+        .join('\n');
+}
+
 // All run conditions live here so they are unit-testable instead of an untestable YAML expression.
 export function shouldDetect(context: PullRequestDetectionContext): boolean {
     if (context.eventName !== 'pull_request_target') {
@@ -308,15 +324,17 @@ export async function detectMajorLabels(
         return [];
     }
 
-    const { data: diff } = await github.rest.pulls.get({
+    // pulls.get with the diff media type returns 406 once a PR exceeds GitHub's
+    // 300-file diff limit. listFiles is paginated and still exposes each text patch.
+    const files = await github.paginate(github.rest.pulls.listFiles, {
         owner: context.repo.owner,
         repo: context.repo.repo,
         pull_number: context.payload.pull_request.number,
-        mediaType: { format: 'diff' },
+        per_page: 100,
     });
 
     const majorPaths = parseMajorPaths(readFile(MAJOR_PATHS_PATH));
-    const wanted = labelsForDiff({ diff: String(diff), flags, majorPaths });
+    const wanted = labelsForDiff({ diff: diffForPullFiles(files), flags, majorPaths });
     const missing = missingLabels(context, wanted);
 
     core.info(
