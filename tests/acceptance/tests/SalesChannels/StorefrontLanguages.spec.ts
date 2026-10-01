@@ -1,5 +1,4 @@
 import { formatPrice, getLanguageData, getSnippetSetId, test } from '@fixtures/AcceptanceTest';
-import { satisfies } from 'compare-versions';
 
 test(
     'Shop customers should be able to view products in different languages.',
@@ -9,13 +8,14 @@ test(
             '@Storefront',
         ],
     },
-    async ({ ShopCustomer, TestDataService, StorefrontHeader, StorefrontHome, InstanceMeta }) => {
+    async ({ ShopCustomer, TestDataService, StorefrontHome }, testInfo) => {
         const product = await TestDataService.createBasicProduct();
 
         const salesChannelId = TestDataService.defaultSalesChannel.id;
         const language = await getLanguageData(TestDataService.AdminApiClient, 'zh-CN');
+        const englishLanguage = await getLanguageData(TestDataService.AdminApiClient, 'en-GB');
         const snippetSetId = await getSnippetSetId(TestDataService.AdminApiClient, 'zh-CN');
-        const zhCnDomainUrl = `${(process.env.APP_URL || 'http://localhost:8000').replace(/\/$/, '')}/zh-CN/`;
+        const zhCnDomainUrl = `${(process.env.APP_URL || 'http://localhost:8000').replace(/\/$/, '')}/zh-CN-${testInfo.repeatEachIndex}-${testInfo.workerIndex}/`;
 
         await TestDataService.assignSalesChannelLanguage(salesChannelId, language.id);
         await TestDataService.createSalesChannelDomain({
@@ -47,22 +47,8 @@ test(
 
         await test.step('Customer can select a different language', async () => {
             await ShopCustomer.presses(languageDropdown);
-            // Select English by name because the Chinese default changes the language list order.
-            // The label differs between supported platform versions.
-
-            // eslint-disable-next-line playwright/no-conditional-in-test
-            if (satisfies(InstanceMeta.version, '<6.7') && !InstanceMeta.features['ACCESSIBILITY_TWEAKS']) {
-                await StorefrontHeader.page
-                    .locator('.top-bar-language')
-                    .getByRole('list')
-                    .getByText(/^English(?: \(United Kingdom\))?$/)
-                    .click();
-            } else {
-                const englishListItem = StorefrontHome.page.locator('li.top-bar-list-item').filter({
-                    hasText: /^English(?: \(United Kingdom\))?$/,
-                });
-                await ShopCustomer.presses(englishListItem.locator('button.dropdown-item'));
-            }
+            const englishLanguageButton = StorefrontHome.page.locator(`button.dropdown-item[value="${englishLanguage.id}"]`);
+            await ShopCustomer.presses(englishLanguageButton);
 
             await ShopCustomer.expects(languageDropdown).toContainText('English');
             await ShopCustomer.expects(addToCartButton).toContainText('Add to shopping cart');

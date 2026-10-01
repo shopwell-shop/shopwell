@@ -301,7 +301,7 @@ jobs:
       - name: Install historical Administration dependencies
         uses: shopwell-shop/github-actions/npm-ci-retry@eb1996603ef58244d59e0ce6aeb2cb5af2fc4d66
         with:
-          working-directory: old-shopwell/src/Administration/Resources/app/administration
+          working-directory: old-shopwell/vendor/shopwell/administration/Resources/app/administration
 
       - name: Build historical Administration
         working-directory: old-shopwell
