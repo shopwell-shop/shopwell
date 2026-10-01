@@ -118,7 +118,7 @@ class SystemConfigDefinitionServiceTest extends TestCase
         array_unshift($config[0]['cards'], [
             'title' => [
                 'en-GB' => 'Advanced configuration',
-                'de-DE' => 'Grundeinstellungen',
+                'zh-CN' => '基础设置',
             ],
             'name' => null,
             'elements' => [],
@@ -159,7 +159,7 @@ class SystemConfigDefinitionServiceTest extends TestCase
                     [
                         'title' => [
                             'en-GB' => 'Basic configuration',
-                            'de-DE' => 'Grundeinstellungen',
+                            'zh-CN' => '基础设置',
                         ],
                         'name' => null,
                         'elements' => [
@@ -171,11 +171,11 @@ class SystemConfigDefinitionServiceTest extends TestCase
                                     'copyable' => true,
                                     'label' => [
                                         'en-GB' => 'eMail',
-                                        'de-DE' => 'E-Mail',
+                                        'zh-CN' => '电子邮箱',
                                     ],
                                     'placeholder' => [
                                         'en-GB' => 'Enter your eMail address',
-                                        'de-DE' => 'Bitte gib deine E-Mail Adresse ein',
+                                        'zh-CN' => '请输入你的邮箱地址',
                                     ],
                                 ],
                             ],
@@ -229,7 +229,7 @@ class SystemConfigDefinitionServiceTest extends TestCase
                     [
                         'title' => [
                             'en-GB' => 'Basic configuration',
-                            'de-DE' => 'Grundeinstellungen',
+                            'zh-CN' => '基础设置',
                         ],
                         'name' => null,
                         'elements' => [
@@ -240,11 +240,11 @@ class SystemConfigDefinitionServiceTest extends TestCase
                                     'copyable' => true,
                                     'label' => [
                                         'en-GB' => 'eMail',
-                                        'de-DE' => 'E-Mail',
+                                        'zh-CN' => '电子邮箱',
                                     ],
                                     'placeholder' => [
                                         'en-GB' => 'Enter your eMail address',
-                                        'de-DE' => 'Bitte gib deine E-Mail Adresse ein',
+                                        'zh-CN' => '请输入你的邮箱地址',
                                     ],
                                 ],
                             ],
@@ -287,7 +287,7 @@ class SystemConfigDefinitionServiceTest extends TestCase
                     [
                         'title' => [
                             'en-GB' => 'Basic configuration',
-                            'de-DE' => 'Grundeinstellungen',
+                            'zh-CN' => '基础设置',
                         ],
                         'elements' => [
                             [
@@ -297,11 +297,11 @@ class SystemConfigDefinitionServiceTest extends TestCase
                                     'copyable' => true,
                                     'label' => [
                                         'en-GB' => 'eMail',
-                                        'de-DE' => 'E-Mail',
+                                        'zh-CN' => '电子邮箱',
                                     ],
                                     'placeholder' => [
                                         'en-GB' => 'Enter your eMail address',
-                                        'de-DE' => 'Bitte gib deine E-Mail Adresse ein',
+                                        'zh-CN' => '请输入你的邮箱地址',
                                     ],
                                 ],
                             ],
@@ -405,11 +405,11 @@ class SystemConfigDefinitionServiceTest extends TestCase
                                     'copyable' => true,
                                     'label' => [
                                         'en-GB' => 'eMail',
-                                        'de-DE' => 'E-Mail',
+                                        'zh-CN' => '电子邮箱',
                                     ],
                                     'placeholder' => [
                                         'en-GB' => 'Enter your eMail address',
-                                        'de-DE' => 'Bitte gib deine E-Mail Adresse ein',
+                                        'zh-CN' => '请输入你的邮箱地址',
                                     ],
                                 ],
                                 'text'
@@ -438,11 +438,11 @@ class SystemConfigDefinitionServiceTest extends TestCase
                                     ],
                                     'label' => [
                                         'en-GB' => 'Mailing protocol',
-                                        'de-DE' => 'E-Mail Versand Protokoll',
+                                        'zh-CN' => '邮件发送协议',
                                     ],
                                     'placeholder' => [
                                         'en-GB' => 'Choose your preferred transfer method',
-                                        'de-DE' => 'Bitte wähle dein bevorzugtes Versand Protokoll',
+                                        'zh-CN' => '请选择你偏好的发送协议',
                                     ],
                                     'flag' => 'FEATURE_NEXT_102',
                                 ],
@@ -451,7 +451,7 @@ class SystemConfigDefinitionServiceTest extends TestCase
                         ],
                         [
                             'en-GB' => 'Basic configuration',
-                            'de-DE' => 'Grundeinstellungen',
+                            'zh-CN' => '基础设置',
                         ],
                         null,
                         null,
@@ -475,7 +475,7 @@ class SystemConfigDefinitionServiceTest extends TestCase
                     [
                         'title' => [
                             'en-GB' => 'Basic configuration',
-                            'de-DE' => 'Grundeinstellungen',
+                            'zh-CN' => '基础设置',
                         ],
                         'name' => null,
                         'elements' => [
@@ -485,11 +485,11 @@ class SystemConfigDefinitionServiceTest extends TestCase
                                 'copyable' => true,
                                 'label' => [
                                     'en-GB' => 'eMail',
-                                    'de-DE' => 'E-Mail',
+                                    'zh-CN' => '电子邮箱',
                                 ],
                                 'placeholder' => [
                                     'en-GB' => 'Enter your eMail address',
-                                    'de-DE' => 'Bitte gib deine E-Mail Adresse ein',
+                                    'zh-CN' => '请输入你的邮箱地址',
                                 ],
                             ],
                             [
@@ -515,11 +515,11 @@ class SystemConfigDefinitionServiceTest extends TestCase
                                 ],
                                 'label' => [
                                     'en-GB' => 'Mailing protocol',
-                                    'de-DE' => 'E-Mail Versand Protokoll',
+                                    'zh-CN' => '邮件发送协议',
                                 ],
                                 'placeholder' => [
                                     'en-GB' => 'Choose your preferred transfer method',
-                                    'de-DE' => 'Bitte wähle dein bevorzugtes Versand Protokoll',
+                                    'zh-CN' => '请选择你偏好的发送协议',
                                 ],
                                 'flag' => 'FEATURE_NEXT_102',
                             ],
