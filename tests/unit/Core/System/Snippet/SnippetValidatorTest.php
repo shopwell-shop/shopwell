@@ -57,13 +57,13 @@ class SnippetValidatorTest extends TestCase
     {
         $snippetFileHandler = static::createStub(SnippetFileHandler::class);
 
-        $germanPath = 'storefront.de.json';
+        $chinesePath = 'storefront.zh.json';
         $englishPath = 'storefront.en.json';
         $snippetFileHandler->method('findStorefrontSnippetFiles')
-            ->willReturn([$germanPath, $englishPath]);
+            ->willReturn([$chinesePath, $englishPath]);
 
         $snippetFileHandler->method('openJsonFile')
-            ->willReturnCallback(static fn (string $path) => $path === $germanPath
+            ->willReturnCallback(static fn (string $path) => $path === $chinesePath
                 ? ['columnOptional' => '']
                 : ['columnOptional' => 'Optional']);
 
@@ -73,7 +73,7 @@ class SnippetValidatorTest extends TestCase
         static::assertCount(1, $missingSnippets);
         $missingSnippet = $missingSnippets[0];
         static::assertSame('columnOptional', $missingSnippet->getKeyPath());
-        static::assertSame('de', $missingSnippet->getMissingForISO());
+        static::assertSame('zh', $missingSnippet->getMissingForISO());
         static::assertSame('en', $missingSnippet->getAvailableISO());
         static::assertSame('Optional', $missingSnippet->getAvailableTranslation());
         static::assertSame($englishPath, $missingSnippet->getFilePath());
@@ -83,11 +83,11 @@ class SnippetValidatorTest extends TestCase
     {
         $snippetFileHandler = static::createStub(SnippetFileHandler::class);
 
-        $germanPath = 'storefront.de.json';
+        $chinesePath = 'storefront.zh.json';
         $englishPath = 'storefront.en.json';
         $configPath = '/project/' . SnippetFileHandler::VALIDATION_CONFIG;
         $snippetFileHandler->method('findStorefrontSnippetFiles')
-            ->willReturn([$germanPath, $englishPath]);
+            ->willReturn([$chinesePath, $englishPath]);
         $snippetFileHandler->method('exists')
             ->willReturnCallback(static fn (string $path) => $path === $configPath);
 
@@ -96,16 +96,16 @@ class SnippetValidatorTest extends TestCase
                 $configPath => [
                     'emptyTranslations' => [
                         'storefront' => [
-                            'help.videoUrl' => 'The video exists in German only',
+                            'help.videoUrl' => '视频仅提供中文翻译',
                             'help.namespace' => 'Every key below stays empty in English',
                         ],
                     ],
                 ],
-                $germanPath => [
+                $chinesePath => [
                     'help' => [
                         'videoUrl' => 'https://example.com/video',
-                        'namespace' => ['nested' => 'Verschachtelt'],
-                        'notAllowed' => 'Nicht erlaubt',
+                        'namespace' => ['nested' => '嵌套翻译'],
+                        'notAllowed' => '不允许为空',
                     ],
                 ],
                 default => [
@@ -129,22 +129,22 @@ class SnippetValidatorTest extends TestCase
     {
         $snippetFileHandler = static::createStub(SnippetFileHandler::class);
 
-        $adminGermanPath = '/project/src/Resources/app/administration/src/snippet/de.json';
+        $adminChinesePath = '/project/src/Resources/app/administration/src/snippet/zh.json';
         $adminEnglishPath = '/project/src/Resources/app/administration/src/snippet/en.json';
-        $storefrontGermanPath = '/project/src/Resources/snippet/storefront.de.json';
+        $storefrontChinesePath = '/project/src/Resources/snippet/storefront.zh.json';
         $storefrontEnglishPath = '/project/src/Resources/snippet/storefront.en.json';
         $configPath = '/project/' . SnippetFileHandler::VALIDATION_CONFIG;
         $snippetFileHandler->method('findAdministrationSnippetFiles')
-            ->willReturn([$adminGermanPath, $adminEnglishPath]);
+            ->willReturn([$adminChinesePath, $adminEnglishPath]);
         $snippetFileHandler->method('findStorefrontSnippetFiles')
-            ->willReturn([$storefrontGermanPath, $storefrontEnglishPath]);
+            ->willReturn([$storefrontChinesePath, $storefrontEnglishPath]);
         $snippetFileHandler->method('exists')
             ->willReturnCallback(static fn (string $path) => $path === $configPath);
 
         $snippetFileHandler->method('openJsonFile')
             ->willReturnCallback(static fn (string $path) => match ($path) {
-                $configPath => ['emptyTranslations' => ['administration' => ['help.videoUrl' => 'The video exists in German only']]],
-                $adminGermanPath, $storefrontGermanPath => ['help' => ['videoUrl' => 'https://example.com/video']],
+                $configPath => ['emptyTranslations' => ['administration' => ['help.videoUrl' => '视频仅提供中文翻译']]],
+                $adminChinesePath, $storefrontChinesePath => ['help' => ['videoUrl' => 'https://example.com/video']],
                 default => ['help' => ['videoUrl' => '']],
             });
 
@@ -154,27 +154,27 @@ class SnippetValidatorTest extends TestCase
         static::assertCount(1, $missingSnippets);
         static::assertSame('help.videoUrl', $missingSnippets[0]->getKeyPath());
         static::assertSame('en', $missingSnippets[0]->getMissingForISO());
-        static::assertSame('/src/Resources/snippet/storefront.de.json', $missingSnippets[0]->getFilePath());
+        static::assertSame('/src/Resources/snippet/storefront.zh.json', $missingSnippets[0]->getFilePath());
     }
 
     public function testSameKeyInBothDomainsIsValidatedPerDomain(): void
     {
         $snippetFileHandler = static::createStub(SnippetFileHandler::class);
 
-        $adminGermanPath = 'de.json';
+        $adminChinesePath = 'zh.json';
         $adminEnglishPath = 'en.json';
-        $storefrontGermanPath = 'storefront.de.json';
+        $storefrontChinesePath = 'storefront.zh.json';
         $storefrontEnglishPath = 'storefront.en.json';
         $snippetFileHandler->method('findAdministrationSnippetFiles')
-            ->willReturn([$adminGermanPath, $adminEnglishPath]);
+            ->willReturn([$adminChinesePath, $adminEnglishPath]);
         $snippetFileHandler->method('findStorefrontSnippetFiles')
-            ->willReturn([$storefrontGermanPath, $storefrontEnglishPath]);
+            ->willReturn([$storefrontChinesePath, $storefrontEnglishPath]);
 
         $snippetFileHandler->method('openJsonFile')
             ->willReturnCallback(static fn (string $path) => match ($path) {
-                $adminGermanPath => ['shared' => 'Admin', 'adminOnly' => 'Nur Admin'],
+                $adminChinesePath => ['shared' => '管理员', 'adminOnly' => '仅管理员'],
                 $adminEnglishPath => ['shared' => 'Admin'],
-                $storefrontGermanPath => ['shared' => 'Storefront'],
+                $storefrontChinesePath => ['shared' => '店面'],
                 default => ['shared' => 'Storefront', 'storefrontOnly' => 'Storefront only'],
             });
 
@@ -184,9 +184,9 @@ class SnippetValidatorTest extends TestCase
         static::assertCount(2, $missingSnippets);
         static::assertSame('adminOnly', $missingSnippets[0]->getKeyPath());
         static::assertSame('en', $missingSnippets[0]->getMissingForISO());
-        static::assertSame($adminGermanPath, $missingSnippets[0]->getFilePath());
+        static::assertSame($adminChinesePath, $missingSnippets[0]->getFilePath());
         static::assertSame('storefrontOnly', $missingSnippets[1]->getKeyPath());
-        static::assertSame('de', $missingSnippets[1]->getMissingForISO());
+        static::assertSame('zh', $missingSnippets[1]->getMissingForISO());
         static::assertSame($storefrontEnglishPath, $missingSnippets[1]->getFilePath());
     }
 
@@ -195,27 +195,27 @@ class SnippetValidatorTest extends TestCase
         $snippetFileHandler = static::createStub(SnippetFileHandler::class);
 
         $extension = '/extensions/sample';
-        $germanPath = $extension . '/src/Resources/app/administration/src/snippet/de.json';
+        $chinesePath = $extension . '/src/Resources/app/administration/src/snippet/zh.json';
         $englishPath = $extension . '/src/Resources/app/administration/src/snippet/en.json';
         $configPath = $extension . '/' . SnippetFileHandler::VALIDATION_CONFIG;
 
         $snippetFileHandler->method('findAdministrationSnippetFilesBelow')
-            ->willReturnCallback(static fn (string $directory) => $directory === $extension ? [$germanPath, $englishPath] : []);
+            ->willReturnCallback(static fn (string $directory) => $directory === $extension ? [$chinesePath, $englishPath] : []);
         $snippetFileHandler->method('exists')
             ->willReturnCallback(static fn (string $path) => $path === $configPath);
         $snippetFileHandler->method('openJsonFile')
             ->willReturnCallback(static fn (string $path) => match ($path) {
                 $configPath => ['emptyTranslations' => ['administration' => ['sample.allowedEmpty' => 'Intentionally empty']]],
-                $germanPath => ['sample' => ['allowedEmpty' => '', 'missingInGerman' => '']],
-                default => ['sample' => ['allowedEmpty' => 'Allowed', 'missingInGerman' => 'Only English']],
+                $chinesePath => ['sample' => ['allowedEmpty' => '', 'missingInChinese' => '']],
+                default => ['sample' => ['allowedEmpty' => 'Allowed', 'missingInChinese' => 'Only English']],
             });
 
         $snippetValidator = new SnippetValidator(new SnippetFileCollection(), $snippetFileHandler, '/project');
         $missingSnippets = $snippetValidator->getDirValidation($extension)->missingSnippets->getElements();
 
         static::assertCount(1, $missingSnippets);
-        static::assertSame('sample.missingInGerman', $missingSnippets[0]->getKeyPath());
-        static::assertSame('de', $missingSnippets[0]->getMissingForISO());
+        static::assertSame('sample.missingInChinese', $missingSnippets[0]->getKeyPath());
+        static::assertSame('zh', $missingSnippets[0]->getMissingForISO());
         static::assertSame('/src/Resources/app/administration/src/snippet/en.json', $missingSnippets[0]->getFilePath());
     }
 
@@ -224,7 +224,7 @@ class SnippetValidatorTest extends TestCase
         $snippetFileHandler = static::createStub(SnippetFileHandler::class);
 
         $snippetFileHandler->method('findStorefrontSnippetFiles')
-            ->willReturn(['storefront.de.json', 'storefront.en.json']);
+            ->willReturn(['storefront.zh.json', 'storefront.en.json']);
 
         $snippetFileHandler->method('openJsonFile')
             ->willReturnCallback(static fn () => ['intentionallyEmpty' => '']);

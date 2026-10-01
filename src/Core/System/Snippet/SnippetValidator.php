@@ -134,6 +134,16 @@ readonly class SnippetValidator implements SnippetValidatorInterface
         return new SnippetValidationStruct(new MissingSnippetCollection($missingSnippets), $invalidPluralization);
     }
 
+    /**
+     * Administration files are named `<locale>.json`, everything else (`<domain>.<locale>.json`) belongs to the Storefront.
+     */
+    private function getDomain(AbstractSnippetFile $snippetFile): string
+    {
+        return preg_match(SnippetPatterns::ADMIN_SNIPPET_FILE_PATTERN, $snippetFile->getName())
+            ? self::DOMAIN_ADMINISTRATION
+            : self::DOMAIN_STOREFRONT;
+    }
+
     protected function getAllFiles(): SnippetFileCollection
     {
         $snippetFiles = $this->loadedSnippetFiles->filter(static function (AbstractSnippetFile $snippetFile) {
