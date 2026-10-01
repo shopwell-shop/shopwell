@@ -274,6 +274,12 @@ jobs:
         run: |
           echo "PROJECT_ROOT=${{ github.workspace }}/old-shopwell" >> "$GITHUB_ENV"
 
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: lts/*
+      - name: Install npm
+        run: npm install -g npm@11.8.0
+
       - name: Require shopwell
         working-directory: old-shopwell
         run: |
@@ -289,6 +295,18 @@ jobs:
           sed -i -e "s/shopwell.store.frw: '1'/shopwell.store.frw: '0'"/ config/services.yaml
           bin/console system:install --basic-setup --skip-first-run-wizard --drop-database --create-database
 
+      # The first two Shopwell platform releases predate the split-package asset
+      # guard and lack compiled Administration resources. Rebuild those immutable
+      # historical sources so this job tests the update path rather than a blank UI.
+      - name: Install historical Administration dependencies
+        uses: shopwell-shop/github-actions/npm-ci-retry@eb1996603ef58244d59e0ce6aeb2cb5af2fc4d66
+        with:
+          working-directory: old-shopwell/src/Administration/Resources/app/administration
+
+      - name: Build historical Administration
+        working-directory: old-shopwell
+        run: composer run build:js:admin
+
       - name: Download latest WebInstaller
         run: |
           curl -L https://github.com/shopwell-shop/web-installer/releases/latest/download/shopwell-installer.phar.php -o old-shopwell/public/shopwell-installer.phar.php
@@ -296,12 +314,6 @@ jobs:
       - name: Start web server
         working-directory: old-shopwell
         run: symfony server:start -d
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: lts/*
-      - name: Install npm
-        run: npm install -g npm@11.8.0
 
       # ~/.npm is cached earlier in this job, so prefer-offline reuses tarballs.
       - name: Install dependencies

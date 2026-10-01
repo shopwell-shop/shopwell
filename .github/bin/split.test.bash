@@ -50,4 +50,45 @@ if [ "${current_tree}" != "${published_tree}" ]; then
   exit 1
 fi
 
+# Asset directories are ignored in the monorepo but are release artifacts in
+# the split packages. Force-add them so the immutable package tag contains the
+# same runtime files that check_assets validated.
+admin_repo="${PLATFORM_DIR}/repos/administration"
+mkdir -p "${admin_repo}/Resources/public/administration/assets"
+git -C "${admin_repo}" init -q -b trunk
+git -C "${admin_repo}" config user.email "test@shopwell.com"
+git -C "${admin_repo}" config user.name "Shopwell Test"
+printf '%s\n' 'public/' > "${admin_repo}/Resources/.gitignore"
+printf '%s\n' 'console.log("admin");' > "${admin_repo}/Resources/public/administration/assets/app.js"
+printf '%s\n' 'body {}' > "${admin_repo}/Resources/public/administration/assets/app.css"
+git -C "${admin_repo}" add Resources/.gitignore
+git -C "${admin_repo}" commit -q -m "Initial administration package"
+include_admin_assets
+
+git -C "${admin_repo}" diff --cached --name-only | grep -qx 'Resources/public/administration/assets/app.js'
+git -C "${admin_repo}" diff --cached --name-only | grep -qx 'Resources/public/administration/assets/app.css'
+
+storefront_repo="${PLATFORM_DIR}/repos/storefront"
+mkdir -p \
+  "${storefront_repo}/Resources/app/storefront/dist/storefront" \
+  "${storefront_repo}/Resources/app/storefront/vendor/bootstrap" \
+  "${storefront_repo}/Resources/public/administration/assets"
+git -C "${storefront_repo}" init -q -b trunk
+git -C "${storefront_repo}" config user.email "test@shopwell.com"
+git -C "${storefront_repo}" config user.name "Shopwell Test"
+printf '%s\n' 'Resources/app/storefront/vendor/' > "${storefront_repo}/.gitignore"
+printf '%s\n' 'app/storefront/dist/' 'public/' > "${storefront_repo}/Resources/.gitignore"
+printf '%s\n' 'console.log("storefront");' > "${storefront_repo}/Resources/app/storefront/dist/storefront/storefront.js"
+printf '%s\n' '{}' > "${storefront_repo}/Resources/app/storefront/vendor/bootstrap/package.json"
+printf '%s\n' 'console.log("storefront-admin");' > "${storefront_repo}/Resources/public/administration/assets/app.js"
+printf '%s\n' 'body {}' > "${storefront_repo}/Resources/public/administration/assets/app.css"
+git -C "${storefront_repo}" add .gitignore Resources/.gitignore
+git -C "${storefront_repo}" commit -q -m "Initial storefront package"
+include_storefront_assets
+
+git -C "${storefront_repo}" diff --cached --name-only | grep -qx 'Resources/app/storefront/dist/storefront/storefront.js'
+git -C "${storefront_repo}" diff --cached --name-only | grep -qx 'Resources/app/storefront/vendor/bootstrap/package.json'
+git -C "${storefront_repo}" diff --cached --name-only | grep -qx 'Resources/public/administration/assets/app.js'
+git -C "${storefront_repo}" diff --cached --name-only | grep -qx 'Resources/public/administration/assets/app.css'
+
 echo "split tag publication tests passed"

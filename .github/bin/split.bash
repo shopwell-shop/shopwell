@@ -225,6 +225,7 @@ portable_sed_in_place() {
 # Removes certain asset-related entries from the admin .gitignore.
 include_admin_assets() {
   portable_sed_in_place '/[/]?public([/]?|.*)/d' "${PLATFORM_DIR}/repos/administration/Resources/.gitignore"
+  git -C "${PLATFORM_DIR}/repos/administration" add -f Resources/public
 }
 
 # Removes certain asset-related entries from the storefront .gitignore.
@@ -232,6 +233,10 @@ include_storefront_assets() {
   portable_sed_in_place '/[/]?Resources[/]app[/]storefront[/]vendor([/]?|.*)/d' "${PLATFORM_DIR}/repos/storefront/.gitignore"
   portable_sed_in_place '/[/]?app[/]storefront[/]dist([/]?|.*)/d' "${PLATFORM_DIR}/repos/storefront/Resources/.gitignore"
   portable_sed_in_place '/[/]?public([/]?|.*)/d' "${PLATFORM_DIR}/repos/storefront/Resources/.gitignore"
+  git -C "${PLATFORM_DIR}/repos/storefront" add -f \
+    Resources/app/storefront/dist \
+    Resources/app/storefront/vendor \
+    Resources/public
 }
 
 include_assets() {
