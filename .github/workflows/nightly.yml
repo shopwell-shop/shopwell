@@ -154,7 +154,8 @@ jobs:
   # we need this for our LTS, because gh only runs scheduled for the default branch
   nightly-other-branches:
     runs-on: ubuntu-24.04
-    if: github.repository == 'shopwell/shopwell' && github.ref == 'refs/heads/trunk'
+    # Enable only after Shopwell has a real 6.6.x product branch.
+    if: ${{ vars.SHOPWELL_HAS_66_BRANCH == 'true' }}
     permissions:
       id-token: write
     strategy:
