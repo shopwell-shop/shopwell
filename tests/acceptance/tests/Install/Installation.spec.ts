@@ -30,7 +30,7 @@ test('Install a new Shopwell instance.', { tag: '@Install' }, async ({ InstallPa
 
     await page
         .locator('#shop-configuration div')
-        .filter({ hasText: 'Almost done. You just need to make some few basic settings in your shop, Shopwar' })
+        .filter({ hasText: 'Almost done. You just need to make some few basic settings in your shop, Shopwel' })
         .click();
 
     await page.getByLabel('Shop email address:').fill('mustermann@example.com');
