@@ -205,8 +205,6 @@ jobs:
       fail-fast: false
       matrix:
         update:
-          - version: ${{ needs.tested-update-versions.outputs.lts-latest-version }}
-            type: lts-latest
           - version: ${{ needs.tested-update-versions.outputs.first-version }}
             type: first
           - version: ${{ needs.tested-update-versions.outputs.latest-version }}
