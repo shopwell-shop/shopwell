@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: shopwell-shop/octo-sts-action@main
+      - uses: shopwell-shop/octo-sts-action@6744974c0294b8b84b77c71cff7d5f347ca77b33
         id: sts-shopwell-private
         with:
           scope: shopwell

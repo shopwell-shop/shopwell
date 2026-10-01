@@ -25,7 +25,7 @@ jobs:
       # pointing at it can never name different versions.
       - name: Get versions
         id: versions
-        uses: shopwell-shop/github-actions/versions@main
+        uses: shopwell-shop/github-actions/versions@eb1996603ef58244d59e0ce6aeb2cb5af2fc4d66
         with:
           github-token: ${{ github.token }}
 

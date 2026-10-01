@@ -44,7 +44,7 @@ jobs:
       - name: Invalidate CloudFront
         run: aws cloudfront create-invalidation --distribution-id ECVXLYHJ64DVV --paths "/changelog/*"
 
-      - uses: shopwell-shop/octo-sts-action@main
+      - uses: shopwell-shop/octo-sts-action@6744974c0294b8b84b77c71cff7d5f347ca77b33
         if: github.event.action == 'published'
         id: sts-store-api-reference
         with:
@@ -63,7 +63,7 @@ jobs:
           https://api.github.com/repos/shopwell/store-api-reference/actions/workflows/manual_versioning.yml/dispatches \
           -d '{"ref": "latest", "inputs": {"shopwell_version": "${{ github.event.release.tag_name }}"}}'
 
-      - uses: shopwell-shop/octo-sts-action@main
+      - uses: shopwell-shop/octo-sts-action@6744974c0294b8b84b77c71cff7d5f347ca77b33
         if: github.event.action == 'published'
         id: sts-admin-api-reference
         with:
@@ -82,7 +82,7 @@ jobs:
           https://api.github.com/repos/shopwell/admin-api-reference/actions/workflows/manual_versioning.yml/dispatches \
           -d '{"ref": "latest", "inputs": {"shopwell_version": "${{ github.event.release.tag_name }}"}}'
 
-      - uses: shopwell-shop/octo-sts-action@main
+      - uses: shopwell-shop/octo-sts-action@6744974c0294b8b84b77c71cff7d5f347ca77b33
         if: github.event.action == 'published'
         id: sts-production
         with:

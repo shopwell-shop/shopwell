@@ -45,7 +45,7 @@ jobs:
       - id: sts-major
         if: steps.detect-major.outputs.labels != ''
         continue-on-error: true
-        uses: shopwell-shop/octo-sts-action@main
+        uses: shopwell-shop/octo-sts-action@6744974c0294b8b84b77c71cff7d5f347ca77b33
         with:
           scope: shopwell
           identity: CreatePR
@@ -92,7 +92,7 @@ jobs:
       - id: sts
         if: ${{ !github.event.act }}
         continue-on-error: true
-        uses: shopwell-shop/octo-sts-action@main
+        uses: shopwell-shop/octo-sts-action@6744974c0294b8b84b77c71cff7d5f347ca77b33
         with:
           scope: shopwell
           identity: ReadCollaborators
@@ -147,7 +147,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: sts
         continue-on-error: true
-        uses: shopwell-shop/octo-sts-action@main
+        uses: shopwell-shop/octo-sts-action@6744974c0294b8b84b77c71cff7d5f347ca77b33
         with:
           scope: shopwell
           identity: ManageProjects
@@ -214,7 +214,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: sts
         continue-on-error: true
-        uses: shopwell-shop/octo-sts-action@main
+        uses: shopwell-shop/octo-sts-action@6744974c0294b8b84b77c71cff7d5f347ca77b33
         with:
           scope: shopwell
           identity: ManageProjects

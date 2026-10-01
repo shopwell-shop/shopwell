@@ -84,9 +84,9 @@ test('reports a version that does not match the release tag', () => {
 });
 
 test('reports a repository npm trusted publishing would reject', () => {
-    const problems = manifestProblems({ ...manifestFor(), repository: { url: 'git+https://github.com/shopwell-shop/shopwell.git' } }, '7.15.0');
+    const problems = manifestProblems({ ...manifestFor(), repository: { url: 'git+https://example.invalid/wrong/repository.git' } }, '7.15.0');
 
-    assert.deepEqual(problems, [`repository.url is "git+https://github.com/shopwell-shop/shopwell.git", expected ${JSON.stringify(REPOSITORY_URL)}`]);
+    assert.deepEqual(problems, [`repository.url is "git+https://example.invalid/wrong/repository.git", expected ${JSON.stringify(REPOSITORY_URL)}`]);
 });
 
 test('reports a scoped package left at the restricted default', () => {
@@ -96,8 +96,8 @@ test('reports a scoped package left at the restricted default', () => {
 });
 
 test('reports a package name that would publish to the wrong scope', () => {
-    assert.deepEqual(manifestProblems({ ...manifestFor(), name: '@shopwell-ag/entity-schema-types' }, '7.15.0'), [
-        `name is "@shopwell-ag/entity-schema-types", expected ${JSON.stringify(PACKAGE_NAME)}`,
+    assert.deepEqual(manifestProblems({ ...manifestFor(), name: '@invalid-scope/entity-schema-types' }, '7.15.0'), [
+        `name is "@invalid-scope/entity-schema-types", expected ${JSON.stringify(PACKAGE_NAME)}`,
     ]);
 });
 
