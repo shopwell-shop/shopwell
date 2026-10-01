@@ -51,7 +51,7 @@ test(
                             installed: false,
                             active: false,
                             manufacturer: 'Shopwell',
-                            isCategoryLead: false,
+                            isCategoryLead: true,
                             type: 'plugin',
                         },
                     ],
