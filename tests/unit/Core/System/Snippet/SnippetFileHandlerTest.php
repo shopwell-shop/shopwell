@@ -23,15 +23,15 @@ class SnippetFileHandlerTest extends TestCase
 
         static::assertSame(
             [
-                $bundle . '/app/administration/src/module/sample/snippet/de.json',
                 $bundle . '/app/administration/src/module/sample/snippet/en.json',
+                $bundle . '/app/administration/src/module/sample/snippet/zh.json',
             ],
             $handler->findAdministrationSnippetFilesBelow($extension),
         );
         static::assertSame(
             [
-                $bundle . '/snippet/storefront.de.json',
                 $bundle . '/snippet/storefront.en.json',
+                $bundle . '/snippet/storefront.zh.json',
             ],
             $handler->findStorefrontSnippetFilesBelow($extension),
         );
@@ -44,8 +44,8 @@ class SnippetFileHandlerTest extends TestCase
 
         static::assertSame(
             [
-                $app . '/Resources/app/administration/snippet/de.json',
                 $app . '/Resources/app/administration/snippet/en.json',
+                $app . '/Resources/app/administration/snippet/zh.json',
             ],
             $handler->findAdministrationSnippetFilesBelow($app),
         );
