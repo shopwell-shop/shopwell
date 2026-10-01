@@ -47,7 +47,7 @@ test(
 
         await test.step('Customer can select a different language', async () => {
             await ShopCustomer.presses(languageDropdown);
-            const englishLanguageButton = StorefrontHome.page.locator(`button.dropdown-item[value="${englishLanguage.id}"]`);
+            const englishLanguageButton = StorefrontHome.page.locator(`#top-bar-${englishLanguage.id}`);
             await ShopCustomer.presses(englishLanguageButton);
 
             await ShopCustomer.expects(languageDropdown).toContainText('English');
