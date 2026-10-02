@@ -25,6 +25,26 @@ An empty array blocks a type. There is no value meaning "everything" for a princ
 
 Both routes now also require the matching entity privilege, `user:update` and `integration:update` respectively, and answer `403` without it. `users_and_permissions.editor` already grants `user:update`; a custom role carrying only the action privilege has to be extended.
 
+## Shared document classes moved to `DocumentV2`
+
+The legacy document classes that document generation v2 keeps moved from `Shopwell\Core\Checkout\Document` into `Shopwell\Core\Checkout\DocumentV2`, keeping their class names. `RenderedDocument` also moved into the `Struct` sub-namespace. The previous class names and service IDs keep working as aliases until Shopwell 6.9. Replace them with the canonical names before upgrading to 6.9.
+
+| Previous (`Shopwell\Core\Checkout\Document\`) | Canonical (`Shopwell\Core\Checkout\DocumentV2\`) |
+|---|---|
+| `DocumentEntity` | `DocumentEntity` |
+| `DocumentDefinition` | `DocumentDefinition` |
+| `DocumentCollection` | `DocumentCollection` |
+| `Aggregate\DocumentBaseConfig\DocumentBaseConfigEntity` | `Aggregate\DocumentBaseConfig\DocumentBaseConfigEntity` |
+| `Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition` | `Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition` |
+| `Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection` | `Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection` |
+| `Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelEntity` | `Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelEntity` |
+| `Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition` | `Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition` |
+| `Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelCollection` | `Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelCollection` |
+| `Renderer\RenderedDocument` | `Struct\RenderedDocument` |
+| `SalesChannel\AbstractDocumentRoute` | `SalesChannel\AbstractDocumentRoute` |
+| `SalesChannel\DocumentRoute` | `SalesChannel\DocumentRoute` |
+| `Service\ReferenceInvoiceLoader` | `Service\ReferenceInvoiceLoader` |
+
 # 6.7.15.0
 
 ## Document generation v1 marked for replacement
@@ -103,23 +123,7 @@ The `document_type` and `document_type_translation` entities are deprecated with
 
 ### Relocated classes
 
-The following classes survive v1 and move into the `Shopwell\Core\Checkout\DocumentV2` namespace with Shopwell 6.9, keeping their class names.
-
-| Current location | Location from 6.9 |
-|---|---|
-| `DocumentEntity` | `DocumentV2\DocumentEntity` |
-| `DocumentDefinition` | `DocumentV2\DocumentDefinition` |
-| `DocumentCollection` | `DocumentV2\DocumentCollection` |
-| `Aggregate\DocumentBaseConfig\DocumentBaseConfigEntity` | `DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigEntity` |
-| `Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition` | `DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition` |
-| `Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection` | `DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection` |
-| `Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelEntity` | `DocumentV2\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelEntity` |
-| `Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition` | `DocumentV2\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition` |
-| `Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelCollection` | `DocumentV2\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelCollection` |
-| `Renderer\RenderedDocument` | `DocumentV2\Struct\RenderedDocument` |
-| `SalesChannel\AbstractDocumentRoute` | `DocumentV2\SalesChannel\AbstractDocumentRoute` |
-| `SalesChannel\DocumentRoute` | `DocumentV2\SalesChannel\DocumentRoute` |
-| `Service\ReferenceInvoiceLoader` | `DocumentV2\Service\ReferenceInvoiceLoader` |
+The classes that survive v1 moved into the `Shopwell\Core\Checkout\DocumentV2` namespace with Shopwell 6.7.16.0. See "Shared document classes moved to `DocumentV2`" in the 6.7.16.0 section.
 
 ## Document generation v2 experimental public surface
 
@@ -624,7 +628,7 @@ SHOPWELL_SKIP_WEBINSTALLER=enabled
 This allows Shopwell to run without requiring write access to create the `install.lock` file in the project root or the `.htaccess` file in the public directory.
 
 # Country-agnostic language layer is now implemented
-With this release, we have fully implemented the country-agnostic language layer as described in the [ADR](https://developer.shopwell.com/docs/resources/references/adr/2025-09-01-adding-a-country-agnostic-language-layer.html). Therefore, a new best practice has been established for providing translations in Shopwell. We recommend to rename your translation files to use the country-agnostic language codes (e.g., `en` instead of `en-GB`). This change will also require to rename the `base_file` column in the `snippet_set` table accordingly. Although its use is not recommended, the old, specific snippet naming (e.g., `en-GB`) will continue to work for backward compatibility.
+With this release, we have fully implemented the country-agnostic language layer as described in the [ADR](https://developer.shopwell.cn/docs/resources/references/adr/2025-09-01-adding-a-country-agnostic-language-layer.html). Therefore, a new best practice has been established for providing translations in Shopwell. We recommend to rename your translation files to use the country-agnostic language codes (e.g., `en` instead of `en-GB`). This change will also require to rename the `base_file` column in the `snippet_set` table accordingly. Although its use is not recommended, the old, specific snippet naming (e.g., `en-GB`) will continue to work for backward compatibility.
 
 ## Snippet Validation command
 The command `snippets:validate` has been renamed to `translation:validate`. Please refrain from using the old command name as it will be removed in the next major version.
@@ -849,7 +853,7 @@ All existing orders will be updated with a migration so that they also have the 
 
 A constructed snippet key was introduced in Shopwell 6.7 and will be required starting 6.8.
 This affects `label` and `helpText` properties in the `theme.json`, which are used in the theme manager.
-To provide translations for theme configuration, [creating administration snippets as usual](https://developer.shopwell.com/resources/admin-extension-sdk/faq/#how-can-i-use-snippets-to-translate-my-app)
+To provide translations for theme configuration, [creating administration snippets as usual](https://developer.shopwell.cn/resources/admin-extension-sdk/faq/#how-can-i-use-snippets-to-translate-my-app)
 will be mandatory.
 
 The snippet keys to be used are constructed as follows.
@@ -983,7 +987,7 @@ This means that when your plugins depends on a custom `webpack.config.js` file, 
 **More information about how to upgrade will be available soon.**
 
 Additionally, this means that you will need to distribute a separate plugin version starting for 6.7, when you extend the administration to distribute the correct build files.
-For more information please take a look at the [docs](https://developer.shopwell.com/docs/guides/plugins/plugins/administration/system-updates/vite.html).
+For more information please take a look at the [docs](https://developer.shopwell.cn/docs/guides/plugins/plugins/administration/system-updates/vite.html).
 
 # Making all administration components async
 We are making all administration components async by default with this PR: https://github.com/shopwell-shop/shopwell/pull/9129. This means that all components will be loaded asynchronously and not synchronously.
@@ -1068,7 +1072,7 @@ If you are still using Vuex, please update your code accordingly:
     mapActions -> mapVuexActions
 ```
 
-For more information refer to the [docs](https://developer.shopwell.com/docs/resources/references/adr/2024-06-17-replace-vuex-with-pinia.html#replace-vuex-with-pinia).
+For more information refer to the [docs](https://developer.shopwell.cn/docs/resources/references/adr/2024-06-17-replace-vuex-with-pinia.html#replace-vuex-with-pinia).
 
 ## vue-i18n v10 Update
 We have updated `vue-i18n` to version 10, which introduces a significant change by removing the `tc` function. In Shopwell, `$tc` remains available on Vue components, but it now internally references the `t` function from `vue-i18n`.
@@ -3664,7 +3668,7 @@ const paramsObj = Object.fromEntries(new URLSearchParams(window.location.search)
 ## Added new functions and tokens to complete the Twig integration
 New functions: `sw_block`, `sw_source`, `sw_include` and new tokens: `sw_use`, `sw_embed`, `sw_from` and `sw_import`.
 
-You can find further details on the use on the documentation page [Shopwell's twig functions](https://developer.shopwell.com/docs/resources/references/storefront-reference/twig-function-reference.html).
+You can find further details on the use on the documentation page [Shopwell's twig functions](https://developer.shopwell.cn/docs/resources/references/storefront-reference/twig-function-reference.html).
 
 </details>
 
@@ -3700,7 +3704,7 @@ We made some changes in the configuration and setup, which might affect your pro
 The XKeys module is now required for Varnish. If you are using Varnish, you need to ensure that the XKeys module is installed and enabled.
 Storing the cache tags for varnish inside redis is not possible anymore, as that solution let to serious scaling issues where the redis tag storage become the bottleneck.
 
-For more information take a look inside the [docs](https://developer.shopwell.com/docs/guides/hosting/infrastructure/reverse-http-cache.html#configure-varnish).
+For more information take a look inside the [docs](https://developer.shopwell.cn/docs/guides/hosting/infrastructure/reverse-http-cache.html#configure-varnish).
 
 This means that the following configuration keys are no longer available:
 * `shopwell.http_cache.reverse_proxy.use_varnish_xkey`
@@ -3738,7 +3742,7 @@ $bundles = [
 ];
 ```
 
-When you use a [symfony flex setup](https://developer.shopwell.com/docs/guides/installation/template.html#symfony-flex) it should pick up the change automatically and apply [that change](https://github.com/shopwell-shop/recipes/blob/main/shopwell/core/6.7/manifest.json#L34) during the shopwell update.
+When you use a [symfony flex setup](https://developer.shopwell.cn/docs/guides/installation/template.html#symfony-flex) it should pick up the change automatically and apply [that change](https://github.com/shopwell-shop/recipes/blob/main/shopwell/core/6.7/manifest.json#L34) during the shopwell update.
 
 ## Search server now provides OpenSearch/Elasticsearch shards and replicas
 

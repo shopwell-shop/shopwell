@@ -52,6 +52,7 @@ use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelType\SalesChannelTyp
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelTypeTranslation\SalesChannelTypeTranslationDefinition;
 use Shopwell\Core\System\SalesChannel\Api\StoreApiResponseListener;
 use Shopwell\Core\System\SalesChannel\Api\StructEncoder;
+use Shopwell\Core\System\SalesChannel\Capability\SalesChannelTypeCapabilityRegistry;
 use Shopwell\Core\System\SalesChannel\Context\BaseSalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\CachedBaseSalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory;
@@ -419,8 +420,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(SalesChannelValidator::class)
         ->args([
             service(Connection::class),
+            service(SalesChannelTypeCapabilityRegistry::class),
         ])
         ->tag('kernel.event_subscriber');
+
+    $services->set(SalesChannelTypeCapabilityRegistry::class)
+        ->args([
+            tagged_iterator('shopwell.sales_channel.type_capabilities'),
+        ]);
 
     $services->set(SalesChannelTypeValidator::class)
         ->tag('kernel.event_subscriber');

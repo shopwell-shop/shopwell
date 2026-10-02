@@ -3,8 +3,8 @@
 namespace Shopwell\Core\Checkout\DocumentV2\Service;
 
 use Psr\Clock\ClockInterface;
-use Shopwell\Core\Checkout\Document\DocumentCollection;
-use Shopwell\Core\Checkout\Document\DocumentEntity;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Framework\Log\Package;
 
 /**

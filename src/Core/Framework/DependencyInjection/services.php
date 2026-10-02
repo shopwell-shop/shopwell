@@ -72,6 +72,7 @@ use Shopwell\Core\Framework\Log\Monolog\ExcludeExceptionHandler;
 use Shopwell\Core\Framework\Log\Monolog\ExcludeFlowEventHandler;
 use Shopwell\Core\Framework\Log\ScheduledTask\LogCleanupTask;
 use Shopwell\Core\Framework\Log\ScheduledTask\LogCleanupTaskHandler;
+use Shopwell\Core\Framework\Log\SystemActivitySubscriber;
 use Shopwell\Core\Framework\Migration\Command\CreateMigrationCommand;
 use Shopwell\Core\Framework\Migration\Command\MigrationCommand;
 use Shopwell\Core\Framework\Migration\Command\MigrationDestructiveCommand;
@@ -198,17 +199,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $parameters->set('shopwell.http.cache.default_ttl', env('SHOPWELL_HTTP_DEFAULT_TTL')->default('shopwell_http_cache_default_ttl_default'));
 
     $containerConfigurator->extension('monolog', [
-        'channels' => ['business_events'],
+        'channels' => ['business_events', 'system_activity'],
         'handlers' => [
             'business_event_handler_buffer' => [
                 'type' => 'buffer',
                 'handler' => 'business_event_handler',
-                'channels' => ['business_events'],
+                'channels' => ['business_events', 'system_activity'],
             ],
             'business_event_handler' => [
                 'type' => 'service',
                 'id' => DoctrineSQLHandler::class,
-                'channels' => ['business_events'],
+                'channels' => ['business_events', 'system_activity'],
             ],
         ],
     ]);
@@ -774,6 +775,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     // Logging
+    $services->set(SystemActivitySubscriber::class)
+        ->args([service('logger'), service(Connection::class)])
+        ->tag('monolog.logger', ['channel' => 'system_activity'])
+        ->tag('kernel.event_subscriber');
+
     $services->set(LoggingService::class)
         ->args([
             param('kernel.environment'),

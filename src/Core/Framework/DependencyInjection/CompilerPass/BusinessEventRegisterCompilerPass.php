@@ -2,12 +2,14 @@
 
 namespace Shopwell\Core\Framework\DependencyInjection\CompilerPass;
 
+use Shopwell\Core\Framework\Deprecation\BCChange\BecomesInternal;
 use Shopwell\Core\Framework\Event\BusinessEventRegistry;
 use Shopwell\Core\Framework\Log\Package;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 #[Package('framework')]
+#[BecomesInternal(version: 'v6.8.0')]
 class BusinessEventRegisterCompilerPass implements CompilerPassInterface
 {
     /**

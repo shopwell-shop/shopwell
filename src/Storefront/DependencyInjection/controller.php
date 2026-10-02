@@ -27,7 +27,7 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\RemoveWishlistProductRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\ResetPasswordRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute;
-use Shopwell\Core\Checkout\Document\SalesChannel\DocumentRoute;
+use Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\CancelOrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;

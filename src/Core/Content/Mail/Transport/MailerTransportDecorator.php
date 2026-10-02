@@ -4,7 +4,7 @@ namespace Shopwell\Core\Content\Mail\Transport;
 
 use League\Flysystem\FilesystemOperator;
 use League\Flysystem\UnableToRetrieveMetadata;
-use Shopwell\Core\Checkout\Document\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
 use Shopwell\Core\Content\Mail\Service\Mail;
 use Shopwell\Core\Content\Mail\Service\MailAttachmentsBuilder;
 use Shopwell\Core\Content\MailTemplate\Subscriber\MailSendSubscriberConfig;

@@ -8,10 +8,10 @@ The legacy document generation implementation was removed together with the `DOC
 
 The complete list of removed classes, entities, and Administration components is in `UPGRADE-6.7.md` ("Document generation v1 marked for replacement", section 6.7.15.0). In addition:
 
-- The `document.renderer` and `document_type.renderer` service tags were removed. Register document types, data providers, and renderers via the `shopwell.document_v2.type`, `shopwell.document_v2.provider`, and `shopwell.document_v2.renderer` tags instead, or use the app manifest `<documents>` block. See the [extension points guide](https://developer.shopwell.com/docs/concepts/commerce/checkout-concept/document/extension-points.html).
+- The `document.renderer` and `document_type.renderer` service tags were removed. Register document types, data providers, and renderers via the `shopwell.document_v2.type`, `shopwell.document_v2.provider`, and `shopwell.document_v2.renderer` tags instead, or use the app manifest `<documents>` block. See the [extension points guide](https://developer.shopwell.cn/docs/concepts/commerce/checkout-concept/document/extension-points.html).
 - The `document_type` and `document_type_translation` entities were removed including their DAL definitions and associations. Document types are code-registered strings. Read the type from `document.typeName` instead of the `documentType` association. Persisted references were backfilled into the `type_name` columns, and the `document_type_id` columns became nullable.
 
-Shared classes that survived the removal were relocated into the `Shopwell\Core\Checkout\DocumentV2` namespace, keeping their class names (see the "Relocated classes" list in `UPGRADE-6.7.md`). Update your imports accordingly.
+The class aliases and deprecated service aliases of the shared document classes were removed. These classes moved into `Shopwell\Core\Checkout\DocumentV2` with 6.7.16.0 (see "Shared document classes moved to `DocumentV2`" in `UPGRADE-6.7.md`). References to a previous name, for example `Shopwell\Core\Checkout\Document\DocumentEntity`, no longer resolve. Use the canonical names in imports, type declarations, static references, and service IDs.
 
 Twig template overrides were not affected: v2 renders the same `@Framework/documents/*.html.twig` templates.
 
@@ -79,6 +79,10 @@ The public properties of the returned DTO are available in the document template
 ### I rendered a custom output format
 
 Implement `Shopwell\Core\Checkout\DocumentV2\Renderer\AbstractDocumentRenderer` and register it with the `shopwell.document_v2.renderer` tag. One renderer produces exactly one format and receives the shared, provider-prepared `RenderInput`.
+
+## Changed API alias of `RenderedDocument`
+
+`Shopwell\Core\Checkout\DocumentV2\Struct\RenderedDocument::getApiAlias()` returned `shopwell_core_checkout_document_v2_struct_rendered_document` instead of `shopwell_core_checkout_document_renderer_rendered_document`. Consumers that matched serialized data on the previous alias had to switch to the new one.
 
 # Administration
 

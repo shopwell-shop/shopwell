@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Document;
 
-use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigEntity;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\Deprecation\BCChange\ExperimentalReplacement;
 use Shopwell\Core\Framework\Log\Package;

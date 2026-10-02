@@ -15,6 +15,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Telemetry\DalSearchInstrumentor;
 use Shopwell\Core\Framework\DataAbstractionLayer\VersionManager;
 use Shopwell\Core\Framework\DependencyInjection\DependencyInjectionException;
+use Shopwell\Core\Framework\Deprecation\BCChange\BecomesInternal;
 use Shopwell\Core\Framework\Log\Package;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -23,6 +24,7 @@ use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\DependencyInjection\Reference;
 
 #[Package('framework')]
+#[BecomesInternal(version: 'v6.8.0')]
 class EntityCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void

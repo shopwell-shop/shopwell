@@ -2,13 +2,13 @@
 
 namespace Shopwell\Core\Checkout\DocumentV2\Generation;
 
-use Shopwell\Core\Checkout\Document\DocumentCollection;
-use Shopwell\Core\Checkout\Document\DocumentEntity;
-use Shopwell\Core\Checkout\Document\Renderer\RenderedDocument;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentFile\DocumentFileEntity;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Checkout\DocumentV2\DocumentV2Exception;
 use Shopwell\Core\Checkout\DocumentV2\Renderer\DocumentRendererRegistry;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentFileNameBuilder;
+use Shopwell\Core\Checkout\DocumentV2\Struct\RenderedDocument;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Media\MediaService;
 use Shopwell\Core\Framework\Context;

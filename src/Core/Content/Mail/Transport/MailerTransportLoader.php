@@ -4,7 +4,7 @@ namespace Shopwell\Core\Content\Mail\Transport;
 
 use Doctrine\DBAL\Exception\DriverException;
 use League\Flysystem\FilesystemOperator;
-use Shopwell\Core\Checkout\Document\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
 use Shopwell\Core\Content\Mail\MailException;
 use Shopwell\Core\Content\Mail\Service\MailAttachmentsBuilder;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;

@@ -50,7 +50,7 @@ parameters:
         - Shopwell\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute::sendRecoveryMail
         - Shopwell\Core\Checkout\Customer\SalesChannel\SwitchDefaultAddressRoute::swap
         - Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute::upsert
-        - Shopwell\Core\Checkout\Document\SalesChannel\DocumentRoute::download
+        - Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute::download
         - Shopwell\Core\Checkout\Gateway\SalesChannel\CheckoutGatewayRoute::load
         - Shopwell\Core\Checkout\Order\SalesChannel\CancelOrderRoute::cancel
         - Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute::load

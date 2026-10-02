@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Document\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
 use Shopwell\Core\Content\Mail\Service\Mail;
 use Shopwell\Core\Content\Mail\Service\MailAttachmentsBuilder;
 use Shopwell\Core\Content\Mail\Service\MailAttachmentsConfig;

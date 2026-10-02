@@ -4,7 +4,7 @@ namespace Shopwell\Elasticsearch\Admin\Indexer;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
-use Shopwell\Core\Checkout\Document\DocumentDefinition;
+use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTag\OrderTagDefinition;

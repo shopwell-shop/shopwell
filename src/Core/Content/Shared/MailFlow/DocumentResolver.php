@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Content\Shared\MailFlow;
 
-use Shopwell\Core\Checkout\Document\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;

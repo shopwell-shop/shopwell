@@ -1,0 +1,27 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfigSalesChannel;
+
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopwell\Core\Framework\Deprecation\BCChange\ClassMoved;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @extends EntityCollection<DocumentBaseConfigSalesChannelEntity>
+ *
+ * @codeCoverageIgnore
+ */
+#[Package('after-sales')]
+#[ClassMoved(version: 'v6.9.0', previousClassName: 'Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelCollection')]
+class DocumentBaseConfigSalesChannelCollection extends EntityCollection
+{
+    public function getApiAlias(): string
+    {
+        return 'document_base_config_sales_channel_collection';
+    }
+
+    protected function getExpectedClass(): string
+    {
+        return DocumentBaseConfigSalesChannelEntity::class;
+    }
+}

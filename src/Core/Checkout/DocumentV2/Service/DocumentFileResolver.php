@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Checkout\DocumentV2\Service;
 
-use Shopwell\Core\Checkout\Document\DocumentEntity;
+use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Checkout\DocumentV2\DocumentFormat;
 use Shopwell\Core\Checkout\DocumentV2\Struct\ResolvedDocumentFile;
 use Shopwell\Core\Content\Media\MediaEntity;

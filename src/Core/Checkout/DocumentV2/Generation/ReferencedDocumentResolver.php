@@ -3,8 +3,8 @@
 namespace Shopwell\Core\Checkout\DocumentV2\Generation;
 
 use Doctrine\DBAL\Connection;
-use Shopwell\Core\Checkout\Document\Service\ReferenceInvoiceLoader;
 use Shopwell\Core\Checkout\DocumentV2\DocumentV2Exception;
+use Shopwell\Core\Checkout\DocumentV2\Service\ReferenceInvoiceLoader;
 use Shopwell\Core\Checkout\DocumentV2\Struct\ReferencedDocument;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;

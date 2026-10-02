@@ -5,9 +5,9 @@ namespace Shopwell\Tests\Unit\Core\Content\ImportExport\DataAbstractionLayer\Ser
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Document\DocumentCollection;
-use Shopwell\Core\Checkout\Document\DocumentDefinition;
-use Shopwell\Core\Checkout\Document\DocumentEntity;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
+use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;

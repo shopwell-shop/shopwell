@@ -2,9 +2,9 @@
 
 namespace Shopwell\Core\Content\Media;
 
-use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection;
-use Shopwell\Core\Checkout\Document\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentFile\DocumentFileEntity;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;

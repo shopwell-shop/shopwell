@@ -2,8 +2,8 @@
 
 namespace Shopwell\Core\Checkout\DocumentV2\Config;
 
-use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection;
-use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigEntity;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigEntity;
 use Shopwell\Core\Checkout\DocumentV2\DocumentType;
 use Shopwell\Core\Checkout\DocumentV2\DocumentV2Exception;
 use Shopwell\Core\Checkout\DocumentV2\Type\DocumentTypeRegistry;

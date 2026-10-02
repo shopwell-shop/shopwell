@@ -6,7 +6,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Document\DocumentDefinition;
+use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;

@@ -11,6 +11,7 @@ use Shopwell\Core\Checkout\Document\Service\DocumentConfigLoader;
 use Shopwell\Core\Checkout\Document\Service\DocumentFileRendererRegistry;
 use Shopwell\Core\Checkout\Document\Struct\DocumentGenerateOperation;
 use Shopwell\Core\Checkout\DocumentV2\Provider\AbstractDocumentDataProvider;
+use Shopwell\Core\Checkout\DocumentV2\Struct\RenderedDocument;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Defaults;

@@ -13,6 +13,7 @@ use Shopwell\Core\Test\Generator;
 use Shopwell\Storefront\Controller\CountryStateController;
 use Shopwell\Storefront\Pagelet\Country\CountryStateDataPagelet;
 use Shopwell\Storefront\Pagelet\Country\CountryStateDataPageletLoader;
+use Shopwell\Tests\Unit\Storefront\Controller\Stub\CountryStateControllerStub;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -24,12 +25,12 @@ class CountryStateControllerTest extends TestCase
 {
     private CountryStateDataPageletLoader&MockObject $pageletLoader;
 
-    private CountryStateControllerTestClass $controller;
+    private CountryStateControllerStub $controller;
 
     protected function setUp(): void
     {
         $this->pageletLoader = static::createMock(CountryStateDataPageletLoader::class);
-        $this->controller = new CountryStateControllerTestClass($this->pageletLoader);
+        $this->controller = new CountryStateControllerStub($this->pageletLoader);
     }
 
     public function testGetCountryDataUsesCountryIdFromQuery(): void
@@ -86,12 +87,4 @@ class CountryStateControllerTest extends TestCase
 
         $this->controller->getCountryData(new Request(), Generator::generateSalesChannelContext());
     }
-}
-
-/**
- * @internal
- */
-class CountryStateControllerTestClass extends CountryStateController
-{
-    use StorefrontControllerMockTrait;
 }
