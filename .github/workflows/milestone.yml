@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Get versions
         id: versions
-        uses: shopwell-shop/github-actions/versions@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
+        uses: shopwell-shop/github-actions/versions@51511121da3f6239e5df7cd307428aac88d728d1
         with:
           github-token: ${{ github.token }}
       - name: Get next minor

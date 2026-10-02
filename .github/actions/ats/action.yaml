@@ -168,12 +168,12 @@ runs:
 
     - name: Install dependencies
       # Reuses the ~/.npm tarballs cached above (offline) and retries transient registry resets.
-      uses: shopwell-shop/github-actions/npm-ci-retry@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
+      uses: shopwell-shop/github-actions/npm-ci-retry@51511121da3f6239e5df7cd307428aac88d728d1
       with:
         working-directory: ${{ inputs.directory }}
 
     - name: Install Playwright Browsers
-      uses: shopwell-shop/github-actions/npm-ci-retry@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
+      uses: shopwell-shop/github-actions/npm-ci-retry@51511121da3f6239e5df7cd307428aac88d728d1
       with:
         working-directory: ${{ inputs.directory }}
         # A stalled apt mirror hangs without failing, so the retry loop never fires; time each attempt out so it can retry (normal runtime is ~2 minutes).

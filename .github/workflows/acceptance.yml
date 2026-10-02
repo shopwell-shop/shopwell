@@ -131,7 +131,7 @@ jobs:
         run: npm install -g npm@11.8.0
 
       - name: Install dependencies
-        uses: shopwell-shop/github-actions/npm-ci-retry@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
+        uses: shopwell-shop/github-actions/npm-ci-retry@51511121da3f6239e5df7cd307428aac88d728d1
         with:
           working-directory: tests/acceptance
 
@@ -190,7 +190,7 @@ jobs:
     steps:
       - name: Generate versions
         id: versions
-        uses: shopwell-shop/github-actions/versions@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
+        uses: shopwell-shop/github-actions/versions@51511121da3f6239e5df7cd307428aac88d728d1
         with:
           github-token: ${{ github.token }}
 
@@ -248,7 +248,7 @@ jobs:
             ${{ runner.os }}-storefront-
 
       - name: Install storefront dependencies
-        uses: shopwell-shop/github-actions/npm-ci-retry@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
+        uses: shopwell-shop/github-actions/npm-ci-retry@51511121da3f6239e5df7cd307428aac88d728d1
         with:
           working-directory: new-shopwell
           command: composer run npm:storefront ci
@@ -303,7 +303,7 @@ jobs:
         run: npm install --package-lock-only --ignore-scripts --prefer-offline
 
       - name: Install historical Administration dependencies
-        uses: shopwell-shop/github-actions/npm-ci-retry@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
+        uses: shopwell-shop/github-actions/npm-ci-retry@51511121da3f6239e5df7cd307428aac88d728d1
         with:
           working-directory: old-shopwell/vendor/shopwell/administration/Resources/app/administration
 
@@ -321,12 +321,12 @@ jobs:
 
       # ~/.npm is cached earlier in this job, so prefer-offline reuses tarballs.
       - name: Install dependencies
-        uses: shopwell-shop/github-actions/npm-ci-retry@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
+        uses: shopwell-shop/github-actions/npm-ci-retry@51511121da3f6239e5df7cd307428aac88d728d1
         with:
           working-directory: new-shopwell/tests/acceptance
 
       - name: Install Playwright Browsers
-        uses: shopwell-shop/github-actions/npm-ci-retry@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
+        uses: shopwell-shop/github-actions/npm-ci-retry@51511121da3f6239e5df7cd307428aac88d728d1
         with:
           working-directory: new-shopwell/tests/acceptance
           command: sudo apt-get update --allow-releaseinfo-change && npx playwright install --with-deps chromium

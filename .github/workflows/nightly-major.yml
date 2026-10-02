@@ -52,7 +52,7 @@ jobs:
           scope: shopwell
           identity: ShopwellDownstream
       - name: Commercial
-        uses: shopwell-shop/github-actions/downstream@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
+        uses: shopwell-shop/github-actions/downstream@51511121da3f6239e5df7cd307428aac88d728d1
         if: steps.sts.outputs.token
         env:
           NEW_LOGIC: 1
