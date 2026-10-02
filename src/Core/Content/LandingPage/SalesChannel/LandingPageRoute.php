@@ -5,6 +5,7 @@ namespace Shopwell\Core\Content\LandingPage\SalesChannel;
 use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
 use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoaderInterface;
 use Shopwell\Core\Content\Cms\Service\EntityCmsSlotConfigInheritanceBuilder;
+use Shopwell\Core\Content\LandingPage\Extension\LandingPageRouteExtension;
 use Shopwell\Core\Content\LandingPage\LandingPageCollection;
 use Shopwell\Core\Content\LandingPage\LandingPageDefinition;
 use Shopwell\Core\Content\LandingPage\LandingPageEntity;
@@ -14,6 +15,7 @@ use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -38,6 +40,7 @@ class LandingPageRoute extends AbstractLandingPageRoute
         private readonly EntityCmsSlotConfigInheritanceBuilder $cmsSlotConfigInheritanceBuilder,
         private readonly LandingPageDefinition $landingPageDefinition,
         private readonly CacheTagCollector $cacheTagCollector,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -58,6 +61,15 @@ class LandingPageRoute extends AbstractLandingPageRoute
         defaults: [PlatformRequest::ATTRIBUTE_HTTP_CACHE => true],
     )]
     public function load(string $landingPageId, Request $request, SalesChannelContext $context): LandingPageRouteResponse
+    {
+        return $this->extensions->publish(
+            name: LandingPageRouteExtension::NAME,
+            extension: new LandingPageRouteExtension($landingPageId, $request, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(string $landingPageId, Request $request, SalesChannelContext $context): LandingPageRouteResponse
     {
         $this->cacheTagCollector->addTag(self::buildName($landingPageId));
 

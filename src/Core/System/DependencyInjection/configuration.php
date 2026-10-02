@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\App\Source\SourceResolver;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SystemConfig\Api\SystemConfigController;
 use Shopwell\Core\System\SystemConfig\CachedSystemConfigLoader;
@@ -17,7 +18,6 @@ use Shopwell\Core\System\SystemConfig\MemoizedSystemConfigLoader;
 use Shopwell\Core\System\SystemConfig\SalesChannel\ShopSettingsRoute;
 use Shopwell\Core\System\SystemConfig\Service\AppConfigReader;
 use Shopwell\Core\System\SystemConfig\Service\ConfigurationService;
-use Shopwell\Core\System\SystemConfig\Service\SystemConfigDefinitionService;
 use Shopwell\Core\System\SystemConfig\Store\MemoizedSystemConfigStore;
 use Shopwell\Core\System\SystemConfig\SymfonySystemConfigService;
 use Shopwell\Core\System\SystemConfig\SystemConfigDefinition;
@@ -36,7 +36,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(SystemConfigValidator::class)
         ->args([
-            service(SystemConfigDefinitionService::class),
+            service(ConfigurationService::class),
             service(DataValidator::class),
         ])
         ->tag('shopwell.system_config.validation');
@@ -55,13 +55,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ConfigurationService::class)
         ->args([
-            service(SystemConfigService::class),
-            service(SystemConfigDefinitionService::class),
-        ])
-        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
-
-    $services->set(SystemConfigDefinitionService::class)
-        ->args([
             service('kernel.bundles'),
             service(ConfigReader::class),
             service(AppConfigReader::class),
@@ -75,9 +68,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(SystemConfigController::class)
         ->public()
         ->args([
-            // @deprecated tag:v6.8.0 - ConfigurationService will be removed
-            service(ConfigurationService::class)->nullOnInvalid(),
-            service(SystemConfigDefinitionService::class),
+            service(ConfigurationService::class),
             service(SystemConfigService::class),
             service(SystemConfigValidator::class),
         ])
@@ -103,6 +94,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service(SystemConfigService::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(MemoizedSystemConfigStore::class)

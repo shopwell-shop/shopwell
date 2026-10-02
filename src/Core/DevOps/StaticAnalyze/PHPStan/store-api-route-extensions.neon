@@ -1,7 +1,21 @@
-# Existing route methods only. Remove entries as routes adopt extension events.
-# Do not exempt entire classes: new endpoints must follow the ADR.
 parameters:
     shopwellLegacyStoreApiRouteMethods:
+        # Endpoints that publish no extension event on purpose: infrastructure and test routes.
+        # New store-api routes must follow the ADR, do not add them here.
+        - Shopwell\Core\Content\ProductExport\SalesChannel\ExportController::index
+        - Shopwell\Core\Content\Test\TestNavigationSeoUrlRoute::route
+        - Shopwell\Core\Content\Test\TestProductSeoUrlRoute::route
+        - Shopwell\Core\Framework\App\Api\AppJWTGenerateRoute::generate
+        - Shopwell\Core\Framework\Mcp\Controller\StoreApiMcpServerController::handle
+        - Shopwell\Core\Framework\Script\Api\ScriptStoreApiRoute::execute
+        - Shopwell\Core\System\SalesChannel\SalesChannel\StoreApiInfoController::getRoutes
+        - Shopwell\Core\System\SalesChannel\SalesChannel\StoreApiInfoController::info
+        - Shopwell\Core\System\SalesChannel\SalesChannel\StoreApiInfoController::openApiSchema
+        - Shopwell\Core\System\SalesChannel\SalesChannel\StoreApiInfoController::stoplightIoInfoHtml
+
+    # Route methods that keep their abstract route class for backwards compatibility.
+    # They publish extension events like every other route. Remove an entry together with its abstract route class.
+    shopwellStoreApiRouteMethodsWithAbstractContract:
         - Shopwell\Core\Checkout\Cart\SalesChannel\CartDeleteRoute::delete
         - Shopwell\Core\Checkout\Cart\SalesChannel\CartItemAddRoute::add
         - Shopwell\Core\Checkout\Cart\SalesChannel\CartItemRemoveRoute::remove
@@ -57,7 +71,6 @@ parameters:
         - Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterConfirmRoute::confirmWithResponse
         - Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute::subscribeWithResponse
         - Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterUnsubscribeRoute::unsubscribeWithResponse
-        - Shopwell\Core\Content\ProductExport\SalesChannel\ExportController::index
         - Shopwell\Core\Content\Product\SalesChannel\CrossSelling\ProductCrossSellingRoute::load
         - Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute::load
         - Shopwell\Core\Content\Product\SalesChannel\FindVariant\FindProductVariantRoute::load
@@ -72,22 +85,13 @@ parameters:
         - Shopwell\Core\Content\RevocationRequest\SalesChannel\RevocationRequestRoute::request
         - Shopwell\Core\Content\Seo\SalesChannel\SeoUrlRoute::load
         - Shopwell\Core\Content\Sitemap\SalesChannel\SitemapRoute::load
-        - Shopwell\Core\Content\Test\TestNavigationSeoUrlRoute::route
-        - Shopwell\Core\Content\Test\TestProductSeoUrlRoute::route
-        - Shopwell\Core\Framework\App\Api\AppJWTGenerateRoute::generate
         - Shopwell\Core\Framework\Gateway\Context\SalesChannel\ContextGatewayRoute::load
-        - Shopwell\Core\Framework\Mcp\Controller\StoreApiMcpServerController::handle
-        - Shopwell\Core\Framework\Script\Api\ScriptStoreApiRoute::execute
         - Shopwell\Core\System\Country\SalesChannel\CountryRoute::load
         - Shopwell\Core\System\Country\SalesChannel\CountryStateRoute::load
         - Shopwell\Core\System\Currency\SalesChannel\CurrencyRoute::load
         - Shopwell\Core\System\Language\SalesChannel\LanguageRoute::load
         - Shopwell\Core\System\SalesChannel\SalesChannel\ContextRoute::load
         - Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute::switchContext
-        - Shopwell\Core\System\SalesChannel\SalesChannel\StoreApiInfoController::getRoutes
-        - Shopwell\Core\System\SalesChannel\SalesChannel\StoreApiInfoController::info
-        - Shopwell\Core\System\SalesChannel\SalesChannel\StoreApiInfoController::openApiSchema
-        - Shopwell\Core\System\SalesChannel\SalesChannel\StoreApiInfoController::stoplightIoInfoHtml
         - Shopwell\Core\System\Salutation\SalesChannel\SalutationRoute::load
         - Shopwell\Core\System\Snippet\SalesChannel\SnippetRoute::load
         - Shopwell\Core\System\SystemConfig\SalesChannel\ShopSettingsRoute::load

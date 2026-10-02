@@ -4,6 +4,7 @@ namespace Shopwell\Core\Content\DependencyInjection;
 
 use Shopwell\Core\Content\Cookie\SalesChannel\CookieRoute;
 use Shopwell\Core\Content\Cookie\Service\CookieProvider;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
 use Shopwell\Storefront\Framework\Cookie\CookieProviderInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -28,5 +29,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service(CookieProvider::class),
+            service(ExtensionDispatcher::class),
         ]);
 };

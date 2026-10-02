@@ -11,10 +11,13 @@ use Shopwell\Core\Checkout\Cart\Delivery\Struct\Delivery;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryPositionCollection;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingCostCollection;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
+use Shopwell\Core\Checkout\Cart\Extension\ProductShippingCostRouteExtension;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Processor;
 use Shopwell\Core\Checkout\Cart\SalesChannel\ProductShippingCostRoute;
+use Shopwell\Core\Checkout\Cart\SalesChannel\ShippingCostRouteResponse;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\CheckoutPermissions;
@@ -27,11 +30,14 @@ use Shopwell\Core\Content\Product\ProductEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Country\CountryEntity;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Generator;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
  * @internal
@@ -46,6 +52,7 @@ class ProductShippingCostRouteTest extends TestCase
             static::createStub(ProductGatewayInterface::class),
             static::createStub(EntityRepository::class),
             static::createStub(Processor::class),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $this->expectException(DecorationPatternException::class);
@@ -64,6 +71,7 @@ class ProductShippingCostRouteTest extends TestCase
             $this->createProductGatewayMock($product, $context),
             $this->createShippingMethodRepositoryMock($shippingMethods, $context, [$shippingMethod->getId()]),
             $this->createProcessorMock(1),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $route->shippingCostsByProduct($product->getId(), new Criteria([$shippingMethod->getId()]), $context);
@@ -101,6 +109,7 @@ class ProductShippingCostRouteTest extends TestCase
             $this->createProductGatewayMock($product, $context),
             $this->createShippingMethodRepositoryMock(new ShippingMethodCollection([$shippingMethod]), $context, [$shippingMethod->getId()]),
             $processor,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $context->assign(['permissions' => [
@@ -127,6 +136,7 @@ class ProductShippingCostRouteTest extends TestCase
             $this->createProductGatewayMock($product, $context),
             $this->createShippingMethodRepositoryMock(new ShippingMethodCollection([$shippingMethod]), $context, [$shippingMethod->getId()]),
             $this->createProcessorMock(1, $processedCart),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $route->shippingCostsByProduct($product->getId(), new Criteria([$shippingMethod->getId()]), $context);
@@ -148,6 +158,7 @@ class ProductShippingCostRouteTest extends TestCase
             $this->createProductGatewayMock($product, $context),
             $this->createShippingMethodRepositoryMock($shippingMethods, $context),
             $this->createProcessorMock(2),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $route->shippingCostsByProduct($product->getId(), new Criteria(), $context);
@@ -167,6 +178,7 @@ class ProductShippingCostRouteTest extends TestCase
             $this->createProductGatewayMock($product, $context),
             $this->createShippingMethodRepositoryMock(new ShippingMethodCollection([$shippingMethod]), $context, [$shippingMethod->getId()]),
             $this->createProcessorMock(1, new Cart('test')),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $route->shippingCostsByProduct($product->getId(), new Criteria([$shippingMethod->getId()]), $context);
@@ -200,11 +212,37 @@ class ProductShippingCostRouteTest extends TestCase
             $productGateway,
             $shippingMethodRepository,
             $processor,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $this->expectException(CartException::class);
 
         $route->shippingCostsByProduct($productId, new Criteria(), $context);
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $productId = Uuid::randomHex();
+        $criteria = new Criteria();
+        $context = Generator::generateSalesChannelContext();
+        $response = new ShippingCostRouteResponse(new ShippingCostCollection());
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('product-shipping-cost-route.shipping-costs-by-product.pre', static function (ProductShippingCostRouteExtension $extension) use ($productId, $criteria, $context, $response): void {
+            static::assertSame(['productId' => $productId, 'criteria' => $criteria, 'salesChannelContext' => $context], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new ProductShippingCostRoute(
+            static::createStub(ProductGatewayInterface::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(Processor::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->shippingCostsByProduct($productId, $criteria, $context));
     }
 
     private function createShippingMethod(string $id): ShippingMethodEntity

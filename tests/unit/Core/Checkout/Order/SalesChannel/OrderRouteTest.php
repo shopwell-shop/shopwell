@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Order\SalesChannel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Cart\CartException;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\CustomerException;
@@ -15,11 +16,13 @@ use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
 use Shopwell\Core\Checkout\Order\Event\OrderCriteriaEvent;
 use Shopwell\Core\Checkout\Order\Exception\GuestNotAuthenticatedException;
 use Shopwell\Core\Checkout\Order\Exception\WrongGuestCredentialsException;
+use Shopwell\Core\Checkout\Order\Extension\OrderRouteExtension;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderDefinition;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\Order\OrderException;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
+use Shopwell\Core\Checkout\Order\SalesChannel\OrderRouteResponse;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -31,12 +34,15 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\PrefixFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\SuffixFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Annotation\DisabledFeatures;
+use Shopwell\Core\Test\Generator;
 use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -58,7 +64,8 @@ class OrderRouteTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(AccountService::class),
             new GuestAuthenticator(),
-            new NativeClock()
+            new NativeClock(),
+            new ExtensionDispatcher(new EventDispatcher())
         );
 
         $route->load(new Request(), static::createStub(SalesChannelContext::class), new Criteria());
@@ -109,7 +116,8 @@ class OrderRouteTest extends TestCase
             $eventDispatcher,
             static::createStub(AccountService::class),
             new GuestAuthenticator(),
-            new NativeClock()
+            new NativeClock(),
+            new ExtensionDispatcher(new EventDispatcher())
         );
 
         $responseOrder = $route->load(new Request(), $context, new Criteria())->getOrders()->getEntities()->first();
@@ -190,7 +198,8 @@ class OrderRouteTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(AccountService::class),
             new GuestAuthenticator(),
-            new NativeClock()
+            new NativeClock(),
+            new ExtensionDispatcher(new EventDispatcher())
         );
 
         $route->load(new Request(), static::createStub(SalesChannelContext::class), (new Criteria())->addFilter($filter));
@@ -258,6 +267,7 @@ class OrderRouteTest extends TestCase
             static::createStub(AccountService::class),
             new GuestAuthenticator(),
             new NativeClock(),
+            new ExtensionDispatcher(new EventDispatcher()),
             $expireDays,
         );
 
@@ -288,6 +298,35 @@ class OrderRouteTest extends TestCase
         yield 'order beyond limit' => [31, 30, true];
         yield 'order beyond default, within custom limit' => [40, 60, false];
         yield 'order beyond custom limit' => [61, 60, true];
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $request = new Request();
+        $context = Generator::generateSalesChannelContext();
+        $criteria = new Criteria();
+        $response = static::createStub(OrderRouteResponse::class);
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('order-route.load.pre', static function (OrderRouteExtension $extension) use ($request, $context, $criteria, $response): void {
+            static::assertSame(['request' => $request, 'context' => $context, 'criteria' => $criteria], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new OrderRoute(
+            static::createStub(EntityRepository::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(RateLimiter::class),
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(AccountService::class),
+            static::createStub(GuestAuthenticator::class),
+            static::createStub(ClockInterface::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->load($request, $context, $criteria));
     }
 
     /**
@@ -364,7 +403,8 @@ class OrderRouteTest extends TestCase
             $eventDispatcher,
             $accountService,
             new GuestAuthenticator(),
-            new NativeClock()
+            new NativeClock(),
+            new ExtensionDispatcher(new EventDispatcher())
         );
 
         $criteria = new Criteria();

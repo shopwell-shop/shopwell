@@ -3,12 +3,14 @@
 namespace Shopwell\Core\Content\Product\SalesChannel\Garan;
 
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopwell\Core\Content\Product\Extension\GaranLabelRouteExtension;
 use Shopwell\Core\Content\Product\Garan\GaranLabelResolver;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Product\ProductException;
 use Shopwell\Core\Content\Product\SalesChannel\ProductAvailableFilter;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -30,6 +32,7 @@ class GaranLabelRoute extends AbstractGaranLabelRoute
     public function __construct(
         private readonly SalesChannelRepository $productRepository,
         private readonly GaranLabelResolver $resolver,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -44,6 +47,15 @@ class GaranLabelRoute extends AbstractGaranLabelRoute
         methods: [Request::METHOD_GET]
     )]
     public function load(string $productId, SalesChannelContext $context): GaranLabelRouteResponse
+    {
+        return $this->extensions->publish(
+            name: GaranLabelRouteExtension::NAME,
+            extension: new GaranLabelRouteExtension($productId, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(string $productId, SalesChannelContext $context): GaranLabelRouteResponse
     {
         $product = $this->loadProduct($productId, $context);
 

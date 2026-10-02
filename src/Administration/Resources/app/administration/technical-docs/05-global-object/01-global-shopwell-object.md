@@ -126,6 +126,9 @@ if (Shopwell.Feature.isActive('MY_FEATURE')) {
 While the global object remains for compatibility, newer patterns include:
 - **`shopwell:*` modules**: `import { createId } from 'shopwell:utils'` reaches the same global object
   through ordinary named imports. See [`shopwell:*` Modules](04-virtual-modules.md).
+- **Composables instead of mixins** (experimental): `import { useListing } from 'shopwell:composables'`
+  or `Shopwell.Composables.useListing()`, called in `setup()` only. The list lives in
+  `src/app/composables/index.ts`.
 - **Composition API**: `useContext()`, service injection via composables
 - **Direct Imports**: Import specific services/factories directly
 - **Dependency Injection**: Use the underlying BottleJS container

@@ -25,7 +25,9 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Webhook\AclPrivilegeCollection;
+use Shopwell\Core\Framework\Webhook\Authorization\Policy\AppEventPolicy;
 use Shopwell\Core\Framework\Webhook\Authorization\Policy\PolicyRegistry;
+use Shopwell\Core\Framework\Webhook\Authorization\Policy\PrivilegePolicy;
 use Shopwell\Core\Framework\Webhook\Hookable\HookableEntityWrittenEvent;
 use Shopwell\Core\Framework\Webhook\Hookable\HookableEventFactory;
 use Shopwell\Core\Framework\Webhook\Message\WebhookEventMessage;
@@ -572,7 +574,7 @@ class WebhookManagerTest extends TestCase
             $isAdminWorkerEnabled,
             $deliveryService,
             $this->webhookOutboxStore,
-            new PolicyRegistry([]),
+            new PolicyRegistry([new AppEventPolicy(), new PrivilegePolicy($this->webhookLoader)]),
         );
     }
 

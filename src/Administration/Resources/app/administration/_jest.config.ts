@@ -180,7 +180,7 @@ const config: Config = {
     },
 
     transformIgnorePatterns: [
-        '/node_modules/(?!(@shopwell-ag/meteor-component-library|@shopwell-ag/meteor-icon-kit|uuidv7|other)/)',
+        '/node_modules/(?!(@shopwell-ag/meteor-component-library|@shopwell-ag/meteor-icon-kit|uuidv7|three|other)/)',
     ],
 
     moduleNameMapper: {

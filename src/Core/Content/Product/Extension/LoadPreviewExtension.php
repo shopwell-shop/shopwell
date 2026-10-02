@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Content\Product\Extension;
 
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\Filter;
 use Shopwell\Core\Framework\Extensions\Extension;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
@@ -39,7 +40,15 @@ final class LoadPreviewExtension extends Extension
          *
          * @description Allows you to access to the current customer/sales-channel context
          */
-        public readonly SalesChannelContext $context
+        public readonly SalesChannelContext $context,
+        /**
+         * @public
+         *
+         * @description The active post filters of the listing. A configured main variant is only used as preview if it matches them.
+         *
+         * @var list<Filter>
+         */
+        public readonly array $postFilters = []
     ) {
     }
 }

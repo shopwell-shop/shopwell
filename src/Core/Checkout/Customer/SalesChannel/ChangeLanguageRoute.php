@@ -4,11 +4,13 @@ namespace Shopwell\Core\Checkout\Customer\SalesChannel;
 
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Extension\ChangeLanguageRouteExtension;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -42,7 +44,8 @@ class ChangeLanguageRoute extends AbstractChangeLanguageRoute
     public function __construct(
         private readonly EntityRepository $customerRepository,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly DataValidator $validator
+        private readonly DataValidator $validator,
+        private readonly ExtensionDispatcher $extensions
     ) {
     }
 
@@ -58,6 +61,15 @@ class ChangeLanguageRoute extends AbstractChangeLanguageRoute
         methods: [Request::METHOD_POST]
     )]
     public function change(RequestDataBag $requestDataBag, SalesChannelContext $context, CustomerEntity $customer): SuccessResponse
+    {
+        return $this->extensions->publish(
+            name: ChangeLanguageRouteExtension::NAME,
+            extension: new ChangeLanguageRouteExtension($requestDataBag, $context, $customer),
+            function: $this->_change(...),
+        );
+    }
+
+    private function _change(RequestDataBag $requestDataBag, SalesChannelContext $context, CustomerEntity $customer): SuccessResponse
     {
         $this->validateLanguageId($requestDataBag, $context);
 

@@ -96,6 +96,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
@@ -647,6 +648,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('media.repository'),
             service(CacheTagCollector::class),
+            service(ExtensionDispatcher::class),
         ]);
     // endregion Routes
 

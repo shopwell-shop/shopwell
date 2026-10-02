@@ -41,6 +41,7 @@ use Shopwell\Core\Checkout\Order\Telemetry\OrderMetricsSubscriber;
 use Shopwell\Core\Checkout\Order\Validation\OrderValidationFactory;
 use Shopwell\Core\Checkout\Payment\Cart\PaymentRefundProcessor;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
@@ -182,6 +183,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AccountService::class),
             service(GuestAuthenticator::class),
             service(ClockInterface::class),
+            service(ExtensionDispatcher::class),
             param('shopwell.order.deep_link.expire_days'),
         ]);
 
@@ -191,6 +193,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(OrderService::class),
             service('order.repository'),
             service(SystemConfigService::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(SetPaymentOrderRoute::class)
@@ -204,6 +207,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(InitialStateIdLoader::class),
             service(CheckoutGatewayRoute::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     // events

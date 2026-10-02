@@ -12,7 +12,6 @@ use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Seo\SeoResolver;
 use Shopwell\Core\Content\Seo\SeoUrlRequestContext;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Test\Annotation\DisabledFeatures;
@@ -325,10 +324,6 @@ class SeoResolverTest extends TestCase
 
     public function testResolveThrowsWhenFeatureActive(): void
     {
-        if (!Feature::isActive('v6.8.0.0')) {
-            static::markTestSkipped('Feature v6.8.0.0 must be active to assert the throw behaviour.');
-        }
-
         $salesChannelId = Uuid::randomHex();
         $seoResolver = new SeoResolver($this->getMockConnection($salesChannelId, true, '/seo-url'));
 

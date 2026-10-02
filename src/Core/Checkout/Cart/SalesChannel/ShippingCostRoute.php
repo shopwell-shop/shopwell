@@ -8,6 +8,7 @@ use Shopwell\Core\Checkout\Cart\CartRuleLoader;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingCost;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingCostCollection;
+use Shopwell\Core\Checkout\Cart\Extension\ShippingCostRouteExtension;
 use Shopwell\Core\Checkout\CheckoutPermissions;
 use Shopwell\Core\Checkout\Gateway\SalesChannel\AbstractCheckoutGatewayRoute;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodCollection;
@@ -15,6 +16,7 @@ use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -37,7 +39,8 @@ class ShippingCostRoute extends AbstractShippingCostRoute
     public function __construct(
         private readonly EntityRepository $shippingMethodRepository,
         private readonly CartRuleLoader $cartRuleLoader,
-        private readonly AbstractCheckoutGatewayRoute $checkoutGatewayRoute
+        private readonly AbstractCheckoutGatewayRoute $checkoutGatewayRoute,
+        private readonly ExtensionDispatcher $extensions
     ) {
     }
 
@@ -60,6 +63,18 @@ class ShippingCostRoute extends AbstractShippingCostRoute
         methods: [Request::METHOD_GET, Request::METHOD_POST]
     )]
     public function shippingCostsCart(Cart $cart, SalesChannelContext $salesChannelContext, ?array $availableShippingMethodIds = null): ShippingCostRouteResponse
+    {
+        return $this->extensions->publish(
+            name: ShippingCostRouteExtension::NAME,
+            extension: new ShippingCostRouteExtension($cart, $salesChannelContext, $availableShippingMethodIds),
+            function: $this->_shippingCostsCart(...),
+        );
+    }
+
+    /**
+     * @param non-empty-list<string>|null $availableShippingMethodIds
+     */
+    private function _shippingCostsCart(Cart $cart, SalesChannelContext $salesChannelContext, ?array $availableShippingMethodIds): ShippingCostRouteResponse
     {
         return Profiler::trace('shipping-cost-calculator::cart', function () use ($cart, $salesChannelContext, $availableShippingMethodIds) {
             $shippingCosts = new ShippingCostCollection();

@@ -6,7 +6,9 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCol
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressDefinition;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Event\AddressListingCriteriaEvent;
+use Shopwell\Core\Checkout\Customer\Extension\ListAddressRouteExtension;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -28,7 +30,8 @@ class ListAddressRoute extends AbstractListAddressRoute
      */
     public function __construct(
         private readonly SalesChannelRepository $addressRepository,
-        private readonly EventDispatcherInterface $eventDispatcher
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly ExtensionDispatcher $extensions
     ) {
     }
 
@@ -48,6 +51,15 @@ class ListAddressRoute extends AbstractListAddressRoute
         methods: [Request::METHOD_GET, Request::METHOD_POST],
     )]
     public function load(Criteria $criteria, SalesChannelContext $context, CustomerEntity $customer): ListAddressRouteResponse
+    {
+        return $this->extensions->publish(
+            name: ListAddressRouteExtension::NAME,
+            extension: new ListAddressRouteExtension($criteria, $context, $customer),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Criteria $criteria, SalesChannelContext $context, CustomerEntity $customer): ListAddressRouteResponse
     {
         $criteria
             ->addAssociation('salutation')

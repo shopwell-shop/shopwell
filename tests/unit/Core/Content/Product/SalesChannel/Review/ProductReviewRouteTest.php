@@ -8,18 +8,24 @@ use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewCollection;
+use Shopwell\Core\Content\Product\Extension\ProductReviewRouteExtension;
 use Shopwell\Core\Content\Product\ProductException;
 use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewRoute;
+use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewRouteResponse;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -121,6 +127,32 @@ class ProductReviewRouteTest extends TestCase
         );
     }
 
+    public function testPublishesExtension(): void
+    {
+        $productId = Uuid::randomHex();
+        $request = new Request();
+        $context = Generator::generateSalesChannelContext();
+        $criteria = new Criteria();
+        $response = static::createStub(ProductReviewRouteResponse::class);
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('product-review-route.load.pre', static function (ProductReviewRouteExtension $extension) use ($productId, $request, $context, $criteria, $response): void {
+            static::assertSame(['productId' => $productId, 'request' => $request, 'context' => $context, 'criteria' => $criteria], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new ProductReviewRoute(
+            static::createStub(EntityRepository::class),
+            static::createStub(SystemConfigService::class),
+            static::createStub(CacheTagCollector::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->load($productId, $request, $context, $criteria));
+    }
+
     /**
      * @param (EntityRepository<ProductReviewCollection>&MockObject)|null $repository
      */
@@ -132,6 +164,7 @@ class ProductReviewRouteTest extends TestCase
             $repository ?? $this->repository,
             $this->config,
             $cacheTagCollector ?? $this->cacheTagCollector,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
     }
 }

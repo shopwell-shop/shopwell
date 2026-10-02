@@ -58,7 +58,7 @@ use Shopwell\Core\Framework\Store\Services\TrackingEventClient;
 use Shopwell\Core\Framework\Store\Subscriber\ExtensionChangedSubscriber;
 use Shopwell\Core\Framework\Store\Subscriber\LicenseHostChangedSubscriber;
 use Shopwell\Core\System\Locale\LanguageLocaleCodeProvider;
-use Shopwell\Core\System\SystemConfig\Service\SystemConfigDefinitionService;
+use Shopwell\Core\System\SystemConfig\Service\ConfigurationService;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Filesystem\Filesystem;
@@ -199,7 +199,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(AppLoader::class),
             service(SourceResolver::class),
-            service(SystemConfigDefinitionService::class),
+            service(ConfigurationService::class),
             service(LocaleProvider::class),
             service(LanguageLocaleCodeProvider::class),
             service(InAppPurchase::class),

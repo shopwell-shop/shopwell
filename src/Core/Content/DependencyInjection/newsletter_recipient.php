@@ -18,6 +18,7 @@ use Shopwell\Core\Content\Newsletter\ScheduledTask\NewsletterRecipientTask;
 use Shopwell\Core\Content\Newsletter\ScheduledTask\NewsletterRecipientTaskHandler;
 use Shopwell\Core\Content\Newsletter\Subscriber\NewsletterRecipientSalutationSubscriber;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SalesChannel\StoreApiCustomFieldMapper;
@@ -65,6 +66,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(RequestStack::class),
             service(StoreApiCustomFieldMapper::class),
             service('customer.repository'),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(NewsletterConfirmRoute::class)
@@ -74,6 +76,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DataValidator::class),
             service('event_dispatcher'),
             service(ClockInterface::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(NewsletterUnsubscribeRoute::class)
@@ -84,6 +87,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(RateLimiter::class),
             service(RequestStack::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(NewsletterRecipientIndexer::class)

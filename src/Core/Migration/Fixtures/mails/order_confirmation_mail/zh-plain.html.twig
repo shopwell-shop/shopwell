@@ -35,7 +35,7 @@
 {% endif %}
 {% endif %}
 {% if lineItem.productId is defined and lineItem.productId %}
-{% set garanLabel = lineItem.productId|sw_garan_label_mail(context) %}
+{% set garanLabel = garanLabels[lineItem.productId] ?? null %}
 {% if garanLabel %}
 商业耐久性保证（GARAN）{{ garanLabel.duration }} 年，
 {% endif %}

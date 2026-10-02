@@ -12,7 +12,6 @@ use Shopwell\Core\Content\Media\Core\Params\UrlParams;
 use Shopwell\Core\Content\Media\Core\Params\UrlParamsSource;
 use Shopwell\Core\Content\Media\Infrastructure\Path\MediaUrlGenerator;
 use Shopwell\Core\Content\Media\MediaException;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Test\Annotation\DisabledFeatures;
 
@@ -70,8 +69,6 @@ class MediaUrlGeneratorTest extends TestCase
 
     public function testWithActive68Major(): void
     {
-        Feature::skipTestIfInActive('v6.8.0.0', $this);
-
         $params = new UrlParams('id', UrlParamsSource::MEDIA, 'media/foo/3a/test file.jpg', null);
         $generator = new MediaUrlGenerator(
             new Filesystem(new InMemoryFilesystemAdapter(), ['public_url' => 'http://localhost:8000']),

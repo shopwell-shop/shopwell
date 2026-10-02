@@ -5,6 +5,8 @@ namespace Shopwell\Core\Checkout\Customer\SalesChannel;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Event\CustomerLogoutEvent;
+use Shopwell\Core\Checkout\Customer\Extension\LogoutRouteExtension;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -34,6 +36,7 @@ class LogoutRoute extends AbstractLogoutRoute
         private readonly SystemConfigService $systemConfig,
         private readonly CartService $cartService,
         private readonly SalesChannelContextServiceInterface $contextService,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -52,6 +55,15 @@ class LogoutRoute extends AbstractLogoutRoute
         methods: [Request::METHOD_POST]
     )]
     public function logout(SalesChannelContext $context, RequestDataBag $data): ContextTokenResponse
+    {
+        return $this->extensions->publish(
+            name: LogoutRouteExtension::NAME,
+            extension: new LogoutRouteExtension($context, $data),
+            function: $this->_logout(...),
+        );
+    }
+
+    private function _logout(SalesChannelContext $context, RequestDataBag $data): ContextTokenResponse
     {
         /** @var CustomerEntity $customer */
         $customer = $context->getCustomer();

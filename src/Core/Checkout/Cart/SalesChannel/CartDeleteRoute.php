@@ -5,6 +5,8 @@ namespace Shopwell\Core\Checkout\Cart\SalesChannel;
 use Shopwell\Core\Checkout\Cart\AbstractCartPersister;
 use Shopwell\Core\Checkout\Cart\CartLocker;
 use Shopwell\Core\Checkout\Cart\Event\CartDeletedEvent;
+use Shopwell\Core\Checkout\Cart\Extension\CartDeleteRouteExtension;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -24,7 +26,8 @@ class CartDeleteRoute extends AbstractCartDeleteRoute
     public function __construct(
         private readonly AbstractCartPersister $cartPersister,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly CartLocker $cartLocker
+        private readonly CartLocker $cartLocker,
+        private readonly ExtensionDispatcher $extensions
     ) {
     }
 
@@ -35,6 +38,15 @@ class CartDeleteRoute extends AbstractCartDeleteRoute
 
     #[Route(path: '/store-api/checkout/cart', name: 'store-api.checkout.cart.delete', methods: ['DELETE'])]
     public function delete(SalesChannelContext $context): NoContentResponse
+    {
+        return $this->extensions->publish(
+            name: CartDeleteRouteExtension::NAME,
+            extension: new CartDeleteRouteExtension($context),
+            function: $this->_delete(...),
+        );
+    }
+
+    private function _delete(SalesChannelContext $context): NoContentResponse
     {
         return $this->cartLocker->locked($context, function () use ($context) {
             $this->cartPersister->delete($context->getToken(), $context);

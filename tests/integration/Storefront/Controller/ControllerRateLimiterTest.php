@@ -29,6 +29,7 @@ use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
 use Shopwell\Core\Framework\Adapter\Translation\ConstraintViolationTranslator;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\RateLimiter\Exception\RateLimitExceededException;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
@@ -396,6 +397,7 @@ class ControllerRateLimiterTest extends TestCase
             static::getContainer()->get(AccountService::class),
             new GuestAuthenticator(),
             new NativeClock(),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $order = $this->createCustomerWithOrder();

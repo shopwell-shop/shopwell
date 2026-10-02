@@ -3,7 +3,9 @@
 namespace Shopwell\Core\Checkout\Customer\SalesChannel;
 
 use Shopwell\Core\Checkout\Customer\CustomerException;
+use Shopwell\Core\Checkout\Customer\Extension\LoginRouteExtension;
 use Shopwell\Core\Checkout\Customer\Service\EmailIdnConverter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\RateLimiter\Exception\RateLimitExceededException;
@@ -26,7 +28,8 @@ class LoginRoute extends AbstractLoginRoute
     public function __construct(
         private readonly AccountService $accountService,
         private readonly RequestStack $requestStack,
-        private readonly RateLimiter $rateLimiter
+        private readonly RateLimiter $rateLimiter,
+        private readonly ExtensionDispatcher $extensions
     ) {
     }
 
@@ -37,6 +40,15 @@ class LoginRoute extends AbstractLoginRoute
 
     #[Route(path: '/store-api/account/login', name: 'store-api.account.login', methods: ['POST'])]
     public function login(#[\SensitiveParameter] RequestDataBag $data, SalesChannelContext $context): ContextTokenResponse
+    {
+        return $this->extensions->publish(
+            name: LoginRouteExtension::NAME,
+            extension: new LoginRouteExtension($data, $context),
+            function: $this->_login(...),
+        );
+    }
+
+    private function _login(#[\SensitiveParameter] RequestDataBag $data, SalesChannelContext $context): ContextTokenResponse
     {
         EmailIdnConverter::encodeDataBag($data);
         $email = (string) $data->get('email', $data->get('username'));

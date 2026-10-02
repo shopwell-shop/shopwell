@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\Country\SalesChannel;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -12,6 +13,7 @@ use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\Country\CountryCollection;
 use Shopwell\Core\System\Country\CountryDefinition;
 use Shopwell\Core\System\Country\Event\CountryCriteriaEvent;
+use Shopwell\Core\System\Country\Extension\CountryRouteExtension;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,6 +35,7 @@ class CountryRoute extends AbstractCountryRoute
         private readonly SalesChannelRepository $countryRepository,
         private readonly EventDispatcherInterface $dispatcher,
         private readonly CacheTagCollector $cacheTagCollector,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -49,6 +52,20 @@ class CountryRoute extends AbstractCountryRoute
     )]
     public function load(Request $request, Criteria $criteria, SalesChannelContext $context): CountryRouteResponse
     {
+        return $this->extensions->publish(
+            name: CountryRouteExtension::NAME,
+            extension: new CountryRouteExtension($request, $criteria, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    protected function getDecorated(): AbstractCountryRoute
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    private function _load(Request $request, Criteria $criteria, SalesChannelContext $context): CountryRouteResponse
+    {
         $this->cacheTagCollector->addTag(self::buildName($context->getSalesChannelId()), self::ALL_TAG);
 
         $criteria->setTitle('country-route');
@@ -58,10 +75,5 @@ class CountryRoute extends AbstractCountryRoute
         $result = $this->countryRepository->search($criteria, $context);
 
         return new CountryRouteResponse($result);
-    }
-
-    protected function getDecorated(): AbstractCountryRoute
-    {
-        throw new DecorationPatternException(self::class);
     }
 }

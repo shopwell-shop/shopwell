@@ -2,12 +2,14 @@
 
 namespace Shopwell\Core\Checkout\Order\SalesChannel;
 
+use Shopwell\Core\Checkout\Order\Extension\CancelOrderRouteExtension;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderException;
 use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -31,6 +33,7 @@ class CancelOrderRoute extends AbstractCancelOrderRoute
         private readonly OrderService $orderService,
         private readonly EntityRepository $orderRepository,
         private readonly SystemConfigService $systemConfigService,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -49,6 +52,15 @@ class CancelOrderRoute extends AbstractCancelOrderRoute
         methods: [Request::METHOD_POST]
     )]
     public function cancel(Request $request, SalesChannelContext $context): CancelOrderRouteResponse
+    {
+        return $this->extensions->publish(
+            name: CancelOrderRouteExtension::NAME,
+            extension: new CancelOrderRouteExtension($request, $context),
+            function: $this->_cancel(...),
+        );
+    }
+
+    private function _cancel(Request $request, SalesChannelContext $context): CancelOrderRouteResponse
     {
         if (!$this->systemConfigService->getBool('core.cart.enableOrderRefunds', $context->getSalesChannelId())) {
             throw OrderException::orderNotCancellable();

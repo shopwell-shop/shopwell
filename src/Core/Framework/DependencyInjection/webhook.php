@@ -16,8 +16,10 @@ use Shopwell\Core\Framework\App\Payload\AppPayloadServiceHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
 use Shopwell\Core\Framework\Event\BusinessEventRegistry;
+use Shopwell\Core\Framework\Webhook\Authorization\Policy\AppEventPolicy;
 use Shopwell\Core\Framework\Webhook\Authorization\Policy\NotHookablePolicy;
 use Shopwell\Core\Framework\Webhook\Authorization\Policy\PolicyRegistry;
+use Shopwell\Core\Framework\Webhook\Authorization\Policy\PrivilegePolicy;
 use Shopwell\Core\Framework\Webhook\BusinessEventEncoder;
 use Shopwell\Core\Framework\Webhook\Command\WebhookDrainToAsyncCommand;
 use Shopwell\Core\Framework\Webhook\EventLog\WebhookEventLogDefinition;
@@ -210,6 +212,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(NotHookablePolicy::class)
         ->args([service(BusinessEventRegistry::class)])
         ->tag('shopwell.webhook.policy');
+
+    $services->set(AppEventPolicy::class)
+        ->tag('shopwell.webhook.policy');
+
+    $services->set(PrivilegePolicy::class)
+        ->args([service(WebhookLoader::class)])
+        ->tag('shopwell.webhook.policy')
+        ->tag('kernel.event_subscriber')
+        ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(HookableEventFactory::class)
         ->lazy()

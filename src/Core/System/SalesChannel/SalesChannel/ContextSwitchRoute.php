@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\SalesChannel\SalesChannel;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -19,6 +20,7 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextServiceParamete
 use Shopwell\Core\System\SalesChannel\ContextTokenResponse;
 use Shopwell\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
 use Shopwell\Core\System\SalesChannel\Event\SwitchContextEvent;
+use Shopwell\Core\System\SalesChannel\Extension\ContextSwitchRouteExtension;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\SalesChannelException;
 use Symfony\Component\Routing\Attribute\Route;
@@ -46,6 +48,7 @@ class ContextSwitchRoute extends AbstractContextSwitchRoute
         private readonly SalesChannelContextPersister $contextPersister,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly SalesChannelContextServiceInterface $contextService,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -56,6 +59,15 @@ class ContextSwitchRoute extends AbstractContextSwitchRoute
 
     #[Route(path: '/store-api/context', name: 'store-api.switch-context', methods: ['PATCH'])]
     public function switchContext(RequestDataBag $data, SalesChannelContext $context): ContextTokenResponse
+    {
+        return $this->extensions->publish(
+            name: ContextSwitchRouteExtension::NAME,
+            extension: new ContextSwitchRouteExtension($data, $context),
+            function: $this->_switchContext(...),
+        );
+    }
+
+    private function _switchContext(RequestDataBag $data, SalesChannelContext $context): ContextTokenResponse
     {
         $definition = new DataValidationDefinition('context_switch');
 

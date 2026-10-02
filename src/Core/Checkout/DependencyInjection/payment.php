@@ -38,6 +38,7 @@ use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\SalesChannelPaymentMethodDefinition;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Rule\RuleIdMatcher;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
 use Shopwell\Core\Framework\Validation\DataValidator;
@@ -224,6 +225,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CacheTagCollector::class),
             service(ScriptExecutor::class),
             service(RuleIdMatcher::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(HandlePaymentMethodRoute::class)
@@ -233,6 +235,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DataValidator::class),
             service(SalesChannelContextService::class),
             service('currency.repository'),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(PaymentMethodTechnicalNameFkResolver::class)

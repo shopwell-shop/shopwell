@@ -33,6 +33,7 @@ describe('scripts/generate-shopwell-modules', () => {
         it('gives the branch-backed families root exports and the registry-backed ones none', () => {
             expect(registry['shopwell:utils'].exports.length).toBeGreaterThan(0);
             expect(registry['shopwell:data'].exports.length).toBeGreaterThan(0);
+            expect(registry['shopwell:composables'].exports.length).toBeGreaterThan(0);
             expect(registry['shopwell:mixins'].exports).toEqual([]);
             expect(registry['shopwell:stores'].exports).toEqual([]);
         });
@@ -40,6 +41,7 @@ describe('scripts/generate-shopwell-modules', () => {
         it('makes every root export a subpath of its own', () => {
             expect(Object.keys(registry['shopwell:utils'].subpaths)).toEqual(registry['shopwell:utils'].exports);
             expect(Object.keys(registry['shopwell:data'].subpaths)).toEqual(registry['shopwell:data'].exports);
+            expect(Object.keys(registry['shopwell:composables'].subpaths)).toEqual(registry['shopwell:composables'].exports);
         });
 
         it('reads the utility namespaces that can be destructured', () => {
@@ -74,6 +76,27 @@ describe('scripts/generate-shopwell-modules', () => {
 
             expect(criteriaDeclaration).toContain('export default member;');
             expect(criteriaDeclaration).not.toContain('export const');
+        });
+
+        it('marks the composables with the stability of their own sources', () => {
+            expect(declarations).toContain(
+                [
+                    '/** @experimental stableVersion:v6.9.0 feature:ADMIN_MIXIN_COMPOSABLES */',
+                    "declare module 'shopwell:composables' {",
+                ].join('\n'),
+            );
+            expect(declarations).toContain(
+                [
+                    '/** @experimental stableVersion:v6.9.0 feature:ADMIN_MIXIN_COMPOSABLES */',
+                    "declare module 'shopwell:composables/useListing' {",
+                ].join('\n'),
+            );
+            expect(declarations).toContain(
+                [
+                    '/** @experimental stableVersion:v6.8.0 */',
+                    "declare module 'shopwell:data' {",
+                ].join('\n'),
+            );
         });
     });
 });

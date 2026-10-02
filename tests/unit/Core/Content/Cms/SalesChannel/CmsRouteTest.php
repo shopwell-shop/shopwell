@@ -7,15 +7,20 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Cms\CmsException;
 use Shopwell\Core\Content\Cms\CmsPageCollection;
 use Shopwell\Core\Content\Cms\CmsPageEntity;
+use Shopwell\Core\Content\Cms\Extension\CmsRouteExtension;
 use Shopwell\Core\Content\Cms\SalesChannel\CmsRoute;
+use Shopwell\Core\Content\Cms\SalesChannel\CmsRouteResponse;
 use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoaderInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -35,7 +40,7 @@ class CmsRouteTest extends TestCase
     public function testGetDecorated(): void
     {
         $pageLoader = static::createStub(SalesChannelCmsPageLoaderInterface::class);
-        $route = new CmsRoute($pageLoader);
+        $route = new CmsRoute($pageLoader, new ExtensionDispatcher(new EventDispatcher()));
 
         $this->expectException(DecorationPatternException::class);
         $route->getDecorated();
@@ -64,7 +69,7 @@ class CmsRouteTest extends TestCase
             ->method('load')
             ->willReturn($searchResult);
 
-        $actualCmsPage = (new CmsRoute($pageLoader))->load($this->ids->get('cms-page'), $request, $context)->getCmsPage();
+        $actualCmsPage = (new CmsRoute($pageLoader, new ExtensionDispatcher(new EventDispatcher())))->load($this->ids->get('cms-page'), $request, $context)->getCmsPage();
         static::assertSame($expectedCmsPage, $actualCmsPage);
     }
 
@@ -91,7 +96,7 @@ class CmsRouteTest extends TestCase
             ->method('load')
             ->willReturn($searchResult);
 
-        $actualCmsPage = (new CmsRoute($pageLoader))->load($this->ids->get('cms-page'), $request, $context)->getCmsPage();
+        $actualCmsPage = (new CmsRoute($pageLoader, new ExtensionDispatcher(new EventDispatcher())))->load($this->ids->get('cms-page'), $request, $context)->getCmsPage();
         static::assertSame($expectedCmsPage, $actualCmsPage);
     }
 
@@ -109,7 +114,7 @@ class CmsRouteTest extends TestCase
             ->method('load')
             ->willReturn($searchResult);
 
-        $actualCmsPage = (new CmsRoute($pageLoader))->load($this->ids->get('cms-page'), $request, $context)->getCmsPage();
+        $actualCmsPage = (new CmsRoute($pageLoader, new ExtensionDispatcher(new EventDispatcher())))->load($this->ids->get('cms-page'), $request, $context)->getCmsPage();
         static::assertSame($expectedCmsPage, $actualCmsPage);
     }
 
@@ -129,10 +134,33 @@ class CmsRouteTest extends TestCase
             ->method('load')
             ->willReturn($searchResult);
 
-        $route = new CmsRoute($pageLoader);
+        $route = new CmsRoute($pageLoader, new ExtensionDispatcher(new EventDispatcher()));
 
         $this->expectExceptionObject(CmsException::pageNotFound($cmsPageId));
         $route->load($cmsPageId, $request, $context);
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $id = Uuid::randomHex();
+        $request = new Request();
+        $context = Generator::generateSalesChannelContext();
+        $response = static::createStub(CmsRouteResponse::class);
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('cms-route.load.pre', static function (CmsRouteExtension $extension) use ($id, $request, $context, $response): void {
+            static::assertSame(['id' => $id, 'request' => $request, 'context' => $context], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new CmsRoute(
+            static::createStub(SalesChannelCmsPageLoaderInterface::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->load($id, $request, $context));
     }
 
     /**

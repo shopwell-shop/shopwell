@@ -206,12 +206,42 @@ describe('build/vite-plugins/virtual-shopwell-modules', () => {
             expect(source).toContain("import 'src/app/mixin';");
         });
 
+        it('exports the composables of the instance', () => {
+            const source = generateModuleSource('shopwell:composables', registry, 'host') as string;
+
+            expect(source).toContain('export const useListing = shopwell.Composables["useListing"];');
+            expect(source).toContain('export default shopwell.Composables;');
+        });
+
+        it('gives a composable subpath the composable as its only export', () => {
+            const source = generateModuleSource('shopwell:composables/useListing', registry, 'host') as string;
+
+            expect(source).toContain('export default shopwell.Composables["useListing"];');
+            expect(source).not.toContain('export const');
+        });
+
         it('reads the global for an extension, which has no Administration source to import', () => {
             const source = generateModuleSource('shopwell:data/Criteria', registry, 'extension') as string;
 
             expect(source).toContain('const shopwell = globalThis.Shopwell;');
             expect(source).not.toContain("from 'src/core/shopwell'");
             expect(source).toContain('should be unreachable');
+            expect(source).not.toContain('requires Shopwell');
+        });
+
+        it.each([
+            'shopwell:composables',
+            'shopwell:composables/useListing',
+        ])('checks for the branch before an extension reads %s, which older Administrations lack', (specifier) => {
+            const source = generateModuleSource(specifier, registry, 'extension') as string;
+
+            expect(source).toMatch(/if \(!shopwell\.Composables\) \{[\s\S]*requires Shopwell 6\.7\.16\.0[\s\S]*export/);
+        });
+
+        it('leaves the branch check out of the host, which imports its own instance', () => {
+            const source = generateModuleSource('shopwell:composables', registry, 'host') as string;
+
+            expect(source).not.toContain('requires Shopwell');
         });
 
         it('returns nothing for a specifier the registry does not list', () => {

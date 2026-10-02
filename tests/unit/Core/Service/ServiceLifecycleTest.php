@@ -187,8 +187,125 @@ class ServiceLifecycleTest extends TestCase
             ->with('Cannot install service "MyCoolService" because of error: "App MyCoolService is not compatible with this Shopwell version"');
 
         $this->eventDispatcher->expects($this->never())->method('dispatch');
+        $this->appManager->expects($this->never())->method('uninstall');
 
-        static::assertFalse($this->createLifecycle($this->buildAppRepository())->install($this->entry, Context::createDefaultContext()));
+        static::assertFalse($this->createLifecycle($this->buildAppRepository([], []))->install($this->entry, Context::createDefaultContext()));
+    }
+
+    public function testInstallRollsBackTheServiceWhenTheInstallFailedAfterActivation(): void
+    {
+        $context = Context::createDefaultContext();
+        $app = AppFixture::createAppEntity(name: 'MyCoolService', active: true);
+
+        $this->fetchReturnsAppInfo();
+        $this->requirementsMet(true);
+
+        $this->sourceResolver->expects($this->once())
+            ->method('filesystemForVersion')
+            ->willReturn(new StaticFilesystem());
+
+        $this->manifestFactory->expects($this->once())
+            ->method('createFromXmlFile')
+            ->willReturn($this->createManifest());
+
+        $this->appManager->expects($this->once())
+            ->method('install')
+            ->willThrowException(AppException::notCompatible('MyCoolService'));
+
+        $this->appManager->expects($this->once())
+            ->method('uninstall')
+            ->with($app, static::callback($this->isSystemScope()), true);
+
+        $this->logger->expects($this->once())->method('warning');
+        $this->eventDispatcher->expects($this->never())->method('dispatch');
+
+        static::assertFalse($this->createLifecycle($this->buildAppRepository([], [$app], [$app]))->install($this->entry, $context));
+    }
+
+    public function testInstallDoesNotRollBackAServiceAnotherRunInstalled(): void
+    {
+        $app = AppFixture::createAppEntity(name: 'MyCoolService', active: true);
+
+        $this->fetchReturnsAppInfo();
+        $this->requirementsMet(true);
+
+        $this->sourceResolver->expects($this->once())
+            ->method('filesystemForVersion')
+            ->willReturn(new StaticFilesystem());
+
+        $this->manifestFactory->expects($this->once())
+            ->method('createFromXmlFile')
+            ->willReturn($this->createManifest());
+
+        $this->appManager->expects($this->once())
+            ->method('install')
+            ->willThrowException(AppException::alreadyInstalled('MyCoolService'));
+
+        $this->appManager->expects($this->never())->method('uninstall');
+
+        $this->logger->expects($this->once())->method('warning');
+        $this->eventDispatcher->expects($this->never())->method('dispatch');
+
+        static::assertFalse($this->createLifecycle($this->buildAppRepository([], [$app], [$app]))->install($this->entry, Context::createDefaultContext()));
+    }
+
+    public function testInstallLeavesAnInactiveAppAloneWhenTheInstallFailed(): void
+    {
+        $app = AppFixture::createAppEntity(name: 'MyCoolService', active: false);
+
+        $this->fetchReturnsAppInfo();
+        $this->requirementsMet(true);
+
+        $this->sourceResolver->expects($this->once())
+            ->method('filesystemForVersion')
+            ->willReturn(new StaticFilesystem());
+
+        $this->manifestFactory->expects($this->once())
+            ->method('createFromXmlFile')
+            ->willReturn($this->createManifest());
+
+        $this->appManager->expects($this->once())
+            ->method('install')
+            ->willThrowException(AppException::notCompatible('MyCoolService'));
+
+        $this->appManager->expects($this->never())->method('uninstall');
+
+        $this->logger->expects($this->once())->method('warning');
+        $this->eventDispatcher->expects($this->never())->method('dispatch');
+
+        static::assertFalse($this->createLifecycle($this->buildAppRepository([], [$app]))->install($this->entry, Context::createDefaultContext()));
+    }
+
+    public function testInstallLogsWhenTheFailedInstallCannotBeRolledBack(): void
+    {
+        $app = AppFixture::createAppEntity(name: 'MyCoolService', active: true);
+
+        $this->fetchReturnsAppInfo();
+        $this->requirementsMet(true);
+
+        $this->sourceResolver->expects($this->once())
+            ->method('filesystemForVersion')
+            ->willReturn(new StaticFilesystem());
+
+        $this->manifestFactory->expects($this->once())
+            ->method('createFromXmlFile')
+            ->willReturn($this->createManifest());
+
+        $this->appManager->expects($this->once())
+            ->method('install')
+            ->willThrowException(AppException::notCompatible('MyCoolService'));
+
+        $this->appManager->expects($this->once())
+            ->method('uninstall')
+            ->willThrowException(AppException::cannotDeleteManaged('MyCoolService'));
+
+        $this->logger->expects($this->exactly(2))
+            ->method('warning')
+            ->with(static::callback(static fn (string $message): bool => str_contains($message, 'MyCoolService')));
+
+        $this->eventDispatcher->expects($this->never())->method('dispatch');
+
+        static::assertFalse($this->createLifecycle($this->buildAppRepository([], [$app], [$app]))->install($this->entry, Context::createDefaultContext()));
     }
 
     public function testInstallReturnsFalseWhenManifestCannotBeParsed(): void
@@ -780,13 +897,20 @@ class ServiceLifecycleTest extends TestCase
     }
 
     /**
-     * @param list<AppEntity> $apps
+     * @param list<AppEntity> ...$searches one result set per search the code under test performs
      *
      * @return StaticEntityRepository<AppCollection>
      */
-    private function buildAppRepository(array $apps = []): StaticEntityRepository
+    private function buildAppRepository(array ...$searches): StaticEntityRepository
     {
-        return new StaticEntityRepository([new AppCollection($apps)]);
+        if ($searches === []) {
+            $searches = [[]];
+        }
+
+        return new StaticEntityRepository(array_map(
+            static fn (array $apps) => new AppCollection($apps),
+            $searches
+        ));
     }
 
     /**
@@ -813,7 +937,7 @@ class ServiceLifecycleTest extends TestCase
     {
         return Manifest::createFromXml(<<<'XML'
 <?xml version="1.0" encoding="UTF-8"?>
-<manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
+<manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/Framework/App/Manifest/Schema/manifest-3.0.xsd">
     <meta>
         <name>MyCoolService</name>
         <label>My Cool Service</label>

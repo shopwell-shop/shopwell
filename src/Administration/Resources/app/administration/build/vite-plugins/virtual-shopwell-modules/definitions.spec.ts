@@ -6,9 +6,11 @@
  */
 
 import path from 'node:path';
+import vm from 'node:vm';
 import {
     MODULE_FAMILIES,
     allSpecifiers,
+    branchGuard,
     defaultExpression,
     exportNames,
     memberExpression,
@@ -54,6 +56,7 @@ function createProbeGlobal(): VirtualModuleGlobal {
     return {
         Utils: branchOf('shopwell:utils', 'Utils') as unknown as VirtualModuleGlobal['Utils'],
         Data: branchOf('shopwell:data', 'Data') as unknown as VirtualModuleGlobal['Data'],
+        Composables: branchOf('shopwell:composables', 'Composables') as unknown as VirtualModuleGlobal['Composables'],
         Mixin: { getByName: (key) => `Mixin:${key}` },
         Store: { get: (id) => `Store:${id}` },
     };
@@ -89,6 +92,7 @@ describe('build/vite-plugins/virtual-shopwell-modules/definitions', () => {
         it('splits a bare import of any known family', () => {
             expect(parseSpecifier('shopwell:utils')).toEqual({ family: 'shopwell:utils' });
             expect(parseSpecifier('shopwell:data')).toEqual({ family: 'shopwell:data' });
+            expect(parseSpecifier('shopwell:composables')).toEqual({ family: 'shopwell:composables' });
             expect(parseSpecifier('shopwell:mixins')).toEqual({ family: 'shopwell:mixins' });
             expect(parseSpecifier('shopwell:stores')).toEqual({ family: 'shopwell:stores' });
         });
@@ -107,6 +111,7 @@ describe('build/vite-plugins/virtual-shopwell-modules/definitions', () => {
         it.each([
             'shopwell:utils',
             'shopwell:data',
+            'shopwell:composables',
         ])('serves %s, because it publishes root exports', (family) => {
             expect(registry[family].exports.length).toBeGreaterThan(0);
             expect(exportNames(registry, parseSpecifier(family)!)).toEqual(registry[family].exports);
@@ -165,6 +170,10 @@ describe('build/vite-plugins/virtual-shopwell-modules/definitions', () => {
                 'shopwell:data',
                 () => Shopwell.Data,
             ],
+            [
+                'shopwell:composables',
+                () => Shopwell.Composables,
+            ],
         ])('%s publishes exactly the keys of its branch', (family, branch) => {
             expect(registry[family].exports.sort()).toEqual(Object.keys(branch()).sort());
             expect(Object.keys(registry[family].subpaths).sort()).toEqual(Object.keys(branch()).sort());
@@ -193,6 +202,34 @@ describe('build/vite-plugins/virtual-shopwell-modules/definitions', () => {
             ];
 
             expect(registryEntries.every((members) => members.length === 0)).toBe(true);
+        });
+    });
+
+    describe('branchGuard', () => {
+        const runGuard = (family: string, shopwell: Record<string, unknown>): void => {
+            vm.runInNewContext(branchGuard({ family }).join('\n'), { shopwell });
+        };
+
+        it('names the required and the installed version when an older Administration lacks the branch', () => {
+            const shopwell = { Utils: {}, Context: { app: { config: { version: '6.7.15.0' } } } };
+
+            expect(() => runGuard('shopwell:composables', shopwell)).toThrow(
+                '"shopwell:composables" requires Shopwell 6.7.16.0 or later, but the installed version is 6.7.15.0. ' +
+                    'Require shopwell/administration >=6.7.16.0 in the composer.json of the extension.',
+            );
+        });
+
+        it('passes when the Administration has the branch', () => {
+            expect(() => runGuard('shopwell:composables', { Composables: {} })).not.toThrow();
+        });
+
+        it.each([
+            'shopwell:utils',
+            'shopwell:data',
+            'shopwell:mixins',
+            'shopwell:stores',
+        ])('adds nothing for %s, which every Administration with shopwell:* modules has', (family) => {
+            expect(branchGuard({ family })).toEqual([]);
         });
     });
 

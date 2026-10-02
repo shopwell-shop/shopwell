@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Cart\CartBehavior;
 use Shopwell\Core\Checkout\Cart\CartException;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingCost;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingCostCollection;
+use Shopwell\Core\Checkout\Cart\Extension\ProductShippingCostRouteExtension;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\Processor;
 use Shopwell\Core\Checkout\CheckoutPermissions;
@@ -19,6 +20,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -42,6 +44,7 @@ class ProductShippingCostRoute extends AbstractProductShippingCostRoute
         private readonly ProductGatewayInterface $productGateway,
         private readonly EntityRepository $shippingMethodRepository,
         private readonly Processor $processor,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -64,6 +67,15 @@ class ProductShippingCostRoute extends AbstractProductShippingCostRoute
         methods: [Request::METHOD_GET]
     )]
     public function shippingCostsByProduct(string $productId, Criteria $criteria, SalesChannelContext $salesChannelContext): ShippingCostRouteResponse
+    {
+        return $this->extensions->publish(
+            name: ProductShippingCostRouteExtension::NAME,
+            extension: new ProductShippingCostRouteExtension($productId, $criteria, $salesChannelContext),
+            function: $this->_shippingCostsByProduct(...),
+        );
+    }
+
+    private function _shippingCostsByProduct(string $productId, Criteria $criteria, SalesChannelContext $salesChannelContext): ShippingCostRouteResponse
     {
         return Profiler::trace('shipping-cost-calculator::product', function () use ($productId, $criteria, $salesChannelContext) {
             $clonedContext = clone $salesChannelContext;

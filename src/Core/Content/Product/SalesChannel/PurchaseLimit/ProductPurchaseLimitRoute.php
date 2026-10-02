@@ -3,9 +3,11 @@
 namespace Shopwell\Core\Content\Product\SalesChannel\PurchaseLimit;
 
 use Shopwell\Core\Content\Product\AbstractProductMaxPurchaseCalculator;
+use Shopwell\Core\Content\Product\Extension\ProductPurchaseLimitRouteExtension;
 use Shopwell\Core\Content\Product\ProductException;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -27,6 +29,7 @@ class ProductPurchaseLimitRoute extends AbstractProductPurchaseLimitRoute
     public function __construct(
         private readonly SalesChannelRepository $productRepository,
         private readonly AbstractProductMaxPurchaseCalculator $maxPurchaseCalculator,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -42,6 +45,15 @@ class ProductPurchaseLimitRoute extends AbstractProductPurchaseLimitRoute
         priority: 1, // keeping priority higher than in \Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute
     )]
     public function readProductsPurchaseLimit(Request $request, SalesChannelContext $context): ProductPurchaseLimitRouteResponse
+    {
+        return $this->extensions->publish(
+            name: ProductPurchaseLimitRouteExtension::NAME,
+            extension: new ProductPurchaseLimitRouteExtension($request, $context),
+            function: $this->_readProductsPurchaseLimit(...),
+        );
+    }
+
+    private function _readProductsPurchaseLimit(Request $request, SalesChannelContext $context): ProductPurchaseLimitRouteResponse
     {
         /** @var array<string> $ids */
         $ids = $request->query->all('ids');

@@ -4,9 +4,11 @@ namespace Shopwell\Core\Checkout\Customer\SalesChannel;
 
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupCollection;
 use Shopwell\Core\Checkout\Customer\CustomerException;
+use Shopwell\Core\Checkout\Customer\Extension\CustomerGroupRegistrationSettingsRouteExtension;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -23,7 +25,7 @@ class CustomerGroupRegistrationSettingsRoute extends AbstractCustomerGroupRegist
      *
      * @param EntityRepository<CustomerGroupCollection> $customerGroupRepository
      */
-    public function __construct(private readonly EntityRepository $customerGroupRepository)
+    public function __construct(private readonly EntityRepository $customerGroupRepository, private readonly ExtensionDispatcher $extensions)
     {
     }
 
@@ -38,6 +40,15 @@ class CustomerGroupRegistrationSettingsRoute extends AbstractCustomerGroupRegist
      */
     #[Route(path: '/store-api/customer-group-registration/config/{customerGroupId}', name: 'store-api.customer-group-registration.config', methods: ['GET'])]
     public function load(string $customerGroupId, SalesChannelContext $context): CustomerGroupRegistrationSettingsRouteResponse
+    {
+        return $this->extensions->publish(
+            name: CustomerGroupRegistrationSettingsRouteExtension::NAME,
+            extension: new CustomerGroupRegistrationSettingsRouteExtension($customerGroupId, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(string $customerGroupId, SalesChannelContext $context): CustomerGroupRegistrationSettingsRouteResponse
     {
         $criteria = (new Criteria([$customerGroupId]))
             ->addFilter(new EqualsFilter('registrationActive', 1))

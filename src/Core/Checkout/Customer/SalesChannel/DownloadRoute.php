@@ -3,12 +3,14 @@
 namespace Shopwell\Core\Checkout\Customer\SalesChannel;
 
 use Shopwell\Core\Checkout\Customer\CustomerException;
+use Shopwell\Core\Checkout\Customer\Extension\DownloadRouteExtension;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadCollection;
 use Shopwell\Core\Content\Media\File\DownloadResponseGenerator;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -31,7 +33,8 @@ class DownloadRoute extends AbstractDownloadRoute
      */
     public function __construct(
         private readonly EntityRepository $downloadRepository,
-        private readonly DownloadResponseGenerator $downloadResponseGenerator
+        private readonly DownloadResponseGenerator $downloadResponseGenerator,
+        private readonly ExtensionDispatcher $extensions
     ) {
     }
 
@@ -50,6 +53,15 @@ class DownloadRoute extends AbstractDownloadRoute
         methods: [Request::METHOD_GET]
     )]
     public function load(Request $request, SalesChannelContext $context): Response
+    {
+        return $this->extensions->publish(
+            name: DownloadRouteExtension::NAME,
+            extension: new DownloadRouteExtension($request, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, SalesChannelContext $context): Response
     {
         $customer = $context->getCustomer();
         $downloadId = $request->attributes->get('downloadId');

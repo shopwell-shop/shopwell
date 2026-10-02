@@ -36,6 +36,7 @@ rules:
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoAssertsOnObjectsRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoDependsWithDataProviderRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoExpectExceptionMessageRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoFeatureSkipInUnitTestsRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoKernelInUnitTestsRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoKernelLifecycleManagerInUnitTestsRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoKernelBootInSetUpBeforeClassRule

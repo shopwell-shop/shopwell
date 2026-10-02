@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\System\Salutation\AbstractSalutationsSorter;
 use Shopwell\Core\System\Salutation\Aggregate\SalutationTranslation\SalutationTranslationDefinition;
 use Shopwell\Core\System\Salutation\Api\SalutationKeyFkResolver;
@@ -32,6 +33,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('sales_channel.salutation.repository'),
             service(CacheTagCollector::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(AbstractSalutationsSorter::class, SalutationSorter::class);

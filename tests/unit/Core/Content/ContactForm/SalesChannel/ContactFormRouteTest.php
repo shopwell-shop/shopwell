@@ -6,7 +6,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Cms\Service\CmsFormSlotConfigResolver;
+use Shopwell\Core\Content\ContactForm\Extension\ContactFormRouteExtension;
 use Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRoute;
+use Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRouteResponse;
 use Shopwell\Core\Content\ContactForm\Validation\ContactFormValidationFactory;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientEntity;
 use Shopwell\Core\Framework\Context;
@@ -14,6 +16,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -22,6 +25,7 @@ use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidationFactoryInterface;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
@@ -90,6 +94,7 @@ class ContactFormRouteTest extends TestCase
             static::createStub(RequestStack::class),
             static::createStub(RateLimiter::class),
             $slotConfigResolverMock,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $contactFormRoute->load($requestData, $this->salesChannelContext);
@@ -126,5 +131,32 @@ class ContactFormRouteTest extends TestCase
                 new Regex(pattern: ContactFormValidationFactory::DOMAIN_NAME_REGEX, match: false),
             ],
         ];
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $data = new RequestDataBag();
+        $response = static::createStub(ContactFormRouteResponse::class);
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('contact-form-route.load.pre', function (ContactFormRouteExtension $extension) use ($data, $response): void {
+            static::assertSame(['data' => $data, 'context' => $this->salesChannelContext], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new ContactFormRoute(
+            static::createStub(DataValidationFactoryInterface::class),
+            static::createStub(DataValidator::class),
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(RequestStack::class),
+            static::createStub(RateLimiter::class),
+            static::createStub(CmsFormSlotConfigResolver::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->load($data, $this->salesChannelContext));
     }
 }

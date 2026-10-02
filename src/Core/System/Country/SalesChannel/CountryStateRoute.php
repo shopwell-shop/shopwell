@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -14,6 +15,7 @@ use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateCollection;
 use Shopwell\Core\System\Country\CountryDefinition;
 use Shopwell\Core\System\Country\Event\CountryStateCriteriaEvent;
+use Shopwell\Core\System\Country\Extension\CountryStateRouteExtension;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
@@ -34,6 +36,7 @@ class CountryStateRoute extends AbstractCountryStateRoute
         private readonly EntityRepository $countryStateRepository,
         private readonly EventDispatcherInterface $dispatcher,
         private readonly CacheTagCollector $cacheTagCollector,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -50,6 +53,20 @@ class CountryStateRoute extends AbstractCountryStateRoute
     )]
     public function load(string $countryId, Request $request, Criteria $criteria, SalesChannelContext $context): CountryStateRouteResponse
     {
+        return $this->extensions->publish(
+            name: CountryStateRouteExtension::NAME,
+            extension: new CountryStateRouteExtension($countryId, $request, $criteria, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    protected function getDecorated(): AbstractCountryStateRoute
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    private function _load(string $countryId, Request $request, Criteria $criteria, SalesChannelContext $context): CountryStateRouteResponse
+    {
         $this->cacheTagCollector->addTag(self::buildName($countryId), self::ALL_TAG);
 
         $criteria->addFilter(
@@ -63,10 +80,5 @@ class CountryStateRoute extends AbstractCountryStateRoute
         $countryStates = $this->countryStateRepository->search($criteria, $context->getContext());
 
         return new CountryStateRouteResponse($countryStates);
-    }
-
-    protected function getDecorated(): AbstractCountryStateRoute
-    {
-        throw new DecorationPatternException(self::class);
     }
 }

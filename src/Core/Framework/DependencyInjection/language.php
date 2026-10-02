@@ -5,6 +5,7 @@ namespace Shopwell\Core\Framework\DependencyInjection;
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\System\Language\CachedLanguageLoader;
 use Shopwell\Core\System\Language\LanguageDefinition;
 use Shopwell\Core\System\Language\LanguageExceptionHandler;
@@ -66,6 +67,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('sales_channel.language.repository'),
             service(CacheTagCollector::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(LanguageRule::class)

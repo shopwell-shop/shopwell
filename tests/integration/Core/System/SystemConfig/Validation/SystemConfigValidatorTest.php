@@ -12,7 +12,7 @@ use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
 use Shopwell\Core\System\SystemConfig\DTO\SystemConfigCard;
 use Shopwell\Core\System\SystemConfig\DTO\SystemConfigElement;
 use Shopwell\Core\System\SystemConfig\DTO\SystemConfigTab;
-use Shopwell\Core\System\SystemConfig\Service\SystemConfigDefinitionService;
+use Shopwell\Core\System\SystemConfig\Service\ConfigurationService;
 use Shopwell\Core\System\SystemConfig\Validation\SystemConfigValidator;
 
 /**
@@ -30,15 +30,15 @@ class SystemConfigValidatorTest extends TestCase
     #[DataProvider('validateProvider')]
     public function testValidate(array $inputValues, array $formConfigs, bool $expectErrors): void
     {
-        $systemConfigDefinitionServiceMock = $this->createMock(SystemConfigDefinitionService::class);
+        $configurationServiceMock = $this->createMock(ConfigurationService::class);
         $validator = new SystemConfigValidator(
-            $systemConfigDefinitionServiceMock,
+            $configurationServiceMock,
             self::getContainer()->get(DataValidator::class)
         );
 
-        $systemConfigDefinitionServiceMock
+        $configurationServiceMock
             ->expects($this->once())
-            ->method('getConfiguration')
+            ->method('getSystemConfigDefinition')
             ->willReturn($formConfigs);
 
         $contextMock = Context::createDefaultContext();
@@ -73,7 +73,7 @@ class SystemConfigValidatorTest extends TestCase
                     ],
                     [
                         'en-GB' => 'Dummy field',
-                        'de-DE' => 'Dummy field',
+                        'zh-CN' => '虚拟字段',
                     ]
                 ),
             ]
@@ -146,7 +146,7 @@ class SystemConfigValidatorTest extends TestCase
                             ],
                             [
                                 'en-GB' => 'Basic configuration',
-                                'de-DE' => 'Grundeinstellungen',
+                                'zh-CN' => '基础设置',
                             ]
                         ),
                     ]
@@ -185,7 +185,7 @@ class SystemConfigValidatorTest extends TestCase
                             ],
                             [
                                 'en-GB' => 'Basic configuration',
-                                'de-DE' => 'Grundeinstellungen',
+                                'zh-CN' => '基础设置',
                             ]
                         ),
                     ]

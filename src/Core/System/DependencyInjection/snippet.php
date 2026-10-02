@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\Adapter\Filesystem\FilesystemFactory;
 use Shopwell\Core\Framework\Adapter\Translation\Translator;
 use Shopwell\Core\Framework\App\Source\SourceResolver;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\System\Locale\LanguageLocaleCodeProvider;
 use Shopwell\Core\System\Snippet\Aggregate\SnippetSet\SnippetSetDefinition;
 use Shopwell\Core\System\Snippet\Command\DownloadTranslationCommand;
@@ -236,6 +237,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(SalesChannelSnippetLoader::class),
             service(CacheTagCollector::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(SnippetFileHandler::class)

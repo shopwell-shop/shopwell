@@ -9,7 +9,9 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCol
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressDefinition;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Extension\UpsertAddressRouteExtension;
 use Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute;
+use Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRouteResponse;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -18,6 +20,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 use Shopwell\Core\Framework\Event\NestedEventCollection;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -80,6 +83,7 @@ class UpsertAddressRouteTest extends TestCase
             $systemConfigService,
             $customFieldMapper,
             static::createStub(EntityRepository::class),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $salesChannelContext = static::createStub(SalesChannelContext::class);
@@ -167,6 +171,7 @@ class UpsertAddressRouteTest extends TestCase
             static::createStub(SystemConfigService::class),
             $customFieldMapper,
             static::createStub(EntityRepository::class),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $customer = new CustomerEntity();
@@ -248,7 +253,8 @@ class UpsertAddressRouteTest extends TestCase
             static::createStub(DataValidationFactoryInterface::class),
             $systemConfigService,
             static::createStub(StoreApiCustomFieldMapper::class),
-            $salutationRepository
+            $salutationRepository,
+            new ExtensionDispatcher(new EventDispatcher())
         );
 
         $customer = new CustomerEntity();
@@ -260,5 +266,36 @@ class UpsertAddressRouteTest extends TestCase
         ]);
 
         $upsert->upsert(null, $data, static::createStub(SalesChannelContext::class), $customer);
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $addressId = Uuid::randomHex();
+        $data = new RequestDataBag();
+        $context = Generator::generateSalesChannelContext();
+        $customer = new CustomerEntity();
+        $response = new UpsertAddressRouteResponse(new CustomerAddressEntity());
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('upsert-address-route.upsert.pre', static function (UpsertAddressRouteExtension $extension) use ($addressId, $data, $context, $customer, $response): void {
+            static::assertSame(['addressId' => $addressId, 'data' => $data, 'context' => $context, 'customer' => $customer], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new UpsertAddressRoute(
+            static::createStub(EntityRepository::class),
+            static::createStub(SalesChannelRepository::class),
+            static::createStub(DataValidator::class),
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(DataValidationFactoryInterface::class),
+            static::createStub(SystemConfigService::class),
+            static::createStub(StoreApiCustomFieldMapper::class),
+            static::createStub(EntityRepository::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->upsert($addressId, $data, $context, $customer));
     }
 }

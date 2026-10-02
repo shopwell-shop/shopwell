@@ -8,6 +8,7 @@ use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\CustomerException;
 use Shopwell\Core\Checkout\Customer\Event\CustomerWishlistLoaderCriteriaEvent;
 use Shopwell\Core\Checkout\Customer\Event\CustomerWishlistProductListingResultEvent;
+use Shopwell\Core\Checkout\Customer\Extension\LoadWishlistRouteExtension;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\SalesChannel\AbstractProductCloseoutFilterFactory;
@@ -17,6 +18,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -43,7 +45,8 @@ class LoadWishlistRoute extends AbstractLoadWishlistRoute
         private readonly SalesChannelRepository $productRepository,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly SystemConfigService $systemConfigService,
-        private readonly AbstractProductCloseoutFilterFactory $productCloseoutFilterFactory
+        private readonly AbstractProductCloseoutFilterFactory $productCloseoutFilterFactory,
+        private readonly ExtensionDispatcher $extensions
     ) {
     }
 
@@ -62,6 +65,15 @@ class LoadWishlistRoute extends AbstractLoadWishlistRoute
         methods: [Request::METHOD_GET, Request::METHOD_POST],
     )]
     public function load(Request $request, SalesChannelContext $context, Criteria $criteria, CustomerEntity $customer): LoadWishlistRouteResponse
+    {
+        return $this->extensions->publish(
+            name: LoadWishlistRouteExtension::NAME,
+            extension: new LoadWishlistRouteExtension($request, $context, $criteria, $customer),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, SalesChannelContext $context, Criteria $criteria, CustomerEntity $customer): LoadWishlistRouteResponse
     {
         if (!$criteria->getTitle()) {
             $criteria->setTitle('wishlist::load-products');

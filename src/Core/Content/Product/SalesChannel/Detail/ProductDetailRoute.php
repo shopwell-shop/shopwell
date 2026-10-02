@@ -11,6 +11,7 @@ use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoaderInterface;
 use Shopwell\Core\Content\Cms\Service\EntityCmsSlotConfigInheritanceBuilder;
 use Shopwell\Core\Content\Product\Aggregate\ProductTranslation\ProductTranslationCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopwell\Core\Content\Product\Extension\ProductDetailRouteExtension;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\ProductException;
 use Shopwell\Core\Content\Product\SalesChannel\AbstractProductCloseoutFilterFactory;
@@ -28,6 +29,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -68,6 +70,7 @@ class ProductDetailRoute extends AbstractProductDetailRoute
         private readonly AbstractProductCloseoutFilterFactory $productCloseoutFilterFactory,
         private readonly EventDispatcherInterface $dispatcher,
         private readonly CacheTagCollector $cacheTagCollector,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -91,6 +94,15 @@ class ProductDetailRoute extends AbstractProductDetailRoute
         methods: [Request::METHOD_POST, Request::METHOD_GET]
     )]
     public function load(string $productId, Request $request, SalesChannelContext $context, Criteria $criteria): ProductDetailRouteResponse
+    {
+        return $this->extensions->publish(
+            name: ProductDetailRouteExtension::NAME,
+            extension: new ProductDetailRouteExtension($productId, $request, $context, $criteria),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(string $productId, Request $request, SalesChannelContext $context, Criteria $criteria): ProductDetailRouteResponse
     {
         return Profiler::trace('product-detail-route', function () use ($productId, $request, $context, $criteria) {
             $requestedProductId = $productId;

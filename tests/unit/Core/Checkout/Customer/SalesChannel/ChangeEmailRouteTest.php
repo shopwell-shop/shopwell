@@ -7,15 +7,20 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryCollection;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Extension\ChangeEmailRouteExtension;
 use Shopwell\Core\Checkout\Customer\SalesChannel\ChangeEmailRoute;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Validation\BuildValidationEvent;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
+use Shopwell\Core\System\SalesChannel\SuccessResponse;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
@@ -35,6 +40,7 @@ class ChangeEmailRouteTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(DataValidator::class),
             StaticEntityRepository::of(CustomerRecoveryCollection::class),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $this->expectExceptionObject(new DecorationPatternException(ChangeEmailRoute::class));
@@ -55,6 +61,7 @@ class ChangeEmailRouteTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(DataValidator::class),
             $recoveryRepository,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $result = $route->change(new RequestDataBag([
@@ -77,6 +84,7 @@ class ChangeEmailRouteTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(DataValidator::class),
             StaticEntityRepository::of(CustomerRecoveryCollection::class, [[]]),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
         $customer = new CustomerEntity();
         $customer->setId('customer-id');
@@ -120,6 +128,7 @@ class ChangeEmailRouteTest extends TestCase
             $eventDispatcher,
             static::createStub(DataValidator::class),
             StaticEntityRepository::of(CustomerRecoveryCollection::class, [[]]),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
         $customer = new CustomerEntity();
         $customer->setId('customer-id');
@@ -131,5 +140,31 @@ class ChangeEmailRouteTest extends TestCase
         ]), Generator::generateSalesChannelContext(), $customer);
 
         static::assertCount(1, $customerRepository->updates);
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $requestDataBag = new RequestDataBag();
+        $context = Generator::generateSalesChannelContext();
+        $customer = new CustomerEntity();
+        $response = new SuccessResponse();
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('change-email-route.change.pre', static function (ChangeEmailRouteExtension $extension) use ($requestDataBag, $context, $customer, $response): void {
+            static::assertSame(['requestDataBag' => $requestDataBag, 'context' => $context, 'customer' => $customer], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new ChangeEmailRoute(
+            static::createStub(EntityRepository::class),
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(DataValidator::class),
+            static::createStub(EntityRepository::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->change($requestDataBag, $context, $customer));
     }
 }

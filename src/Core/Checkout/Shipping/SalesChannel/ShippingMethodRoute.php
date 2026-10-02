@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Shipping\SalesChannel;
 
+use Shopwell\Core\Checkout\Shipping\Extension\ShippingMethodRouteExtension;
 use Shopwell\Core\Checkout\Shipping\Hook\ShippingMethodRouteHook;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodDefinition;
@@ -10,6 +11,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -37,6 +39,7 @@ class ShippingMethodRoute extends AbstractShippingMethodRoute
         private readonly CacheTagCollector $cacheTagCollector,
         private readonly ScriptExecutor $scriptExecutor,
         private readonly RuleIdMatcher $ruleIdMatcher,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -61,6 +64,15 @@ class ShippingMethodRoute extends AbstractShippingMethodRoute
         methods: [Request::METHOD_GET, Request::METHOD_POST]
     )]
     public function load(Request $request, SalesChannelContext $context, Criteria $criteria): ShippingMethodRouteResponse
+    {
+        return $this->extensions->publish(
+            name: ShippingMethodRouteExtension::NAME,
+            extension: new ShippingMethodRouteExtension($request, $context, $criteria),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, SalesChannelContext $context, Criteria $criteria): ShippingMethodRouteResponse
     {
         $this->cacheTagCollector->addTag(self::buildName($context->getSalesChannelId()));
 

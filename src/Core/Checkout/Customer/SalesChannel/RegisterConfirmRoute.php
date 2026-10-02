@@ -8,9 +8,11 @@ use Shopwell\Core\Checkout\Customer\CustomerException;
 use Shopwell\Core\Checkout\Customer\Event\CustomerLoginEvent;
 use Shopwell\Core\Checkout\Customer\Event\CustomerRegisterEvent;
 use Shopwell\Core\Checkout\Customer\Event\GuestCustomerRegisterEvent;
+use Shopwell\Core\Checkout\Customer\Extension\RegisterConfirmRouteExtension;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -44,6 +46,7 @@ class RegisterConfirmRoute extends AbstractRegisterConfirmRoute
         private readonly SalesChannelContextPersister $contextPersister,
         private readonly SalesChannelContextServiceInterface $contextService,
         private readonly ClockInterface $clock,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -54,6 +57,15 @@ class RegisterConfirmRoute extends AbstractRegisterConfirmRoute
 
     #[Route(path: '/store-api/account/register-confirm', name: 'store-api.account.register.confirm', methods: ['POST'])]
     public function confirm(RequestDataBag $dataBag, SalesChannelContext $context): CustomerResponse
+    {
+        return $this->extensions->publish(
+            name: RegisterConfirmRouteExtension::NAME,
+            extension: new RegisterConfirmRouteExtension($dataBag, $context),
+            function: $this->_confirm(...),
+        );
+    }
+
+    private function _confirm(RequestDataBag $dataBag, SalesChannelContext $context): CustomerResponse
     {
         if (!$dataBag->has('hash')) {
             throw CustomerException::noHashProvided();

@@ -6,12 +6,14 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistC
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\CustomerException;
 use Shopwell\Core\Checkout\Customer\Event\WishlistProductRemovedEvent;
+use Shopwell\Core\Checkout\Customer\Extension\RemoveWishlistProductRouteExtension;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -37,7 +39,8 @@ class RemoveWishlistProductRoute extends AbstractRemoveWishlistProductRoute
         private readonly EntityRepository $wishlistRepository,
         private readonly EntityRepository $productRepository,
         private readonly SystemConfigService $systemConfigService,
-        private readonly EventDispatcherInterface $eventDispatcher
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly ExtensionDispatcher $extensions
     ) {
     }
 
@@ -53,6 +56,15 @@ class RemoveWishlistProductRoute extends AbstractRemoveWishlistProductRoute
         methods: [Request::METHOD_DELETE]
     )]
     public function delete(string $productId, SalesChannelContext $context, CustomerEntity $customer): SuccessResponse
+    {
+        return $this->extensions->publish(
+            name: RemoveWishlistProductRouteExtension::NAME,
+            extension: new RemoveWishlistProductRouteExtension($productId, $context, $customer),
+            function: $this->_delete(...),
+        );
+    }
+
+    private function _delete(string $productId, SalesChannelContext $context, CustomerEntity $customer): SuccessResponse
     {
         if (!$this->systemConfigService->get('core.cart.wishlistEnabled', $context->getSalesChannelId())) {
             throw CustomerException::customerWishlistNotActivated();

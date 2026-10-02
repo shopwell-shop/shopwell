@@ -6,6 +6,7 @@ use Shopwell\Core\Content\Category\CategoryCollection;
 use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopwell\Core\Content\Product\Extension\ProductListingCriteriaExtension;
+use Shopwell\Core\Content\Product\Extension\ProductListingRouteExtension;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\ProductException;
 use Shopwell\Core\Content\Product\SalesChannel\ProductAvailableFilter;
@@ -61,6 +62,15 @@ class ProductListingRoute extends AbstractProductListingRoute
         defaults: [PlatformRequest::ATTRIBUTE_ENTITY => ProductDefinition::ENTITY_NAME, PlatformRequest::ATTRIBUTE_HTTP_CACHE => true]
     )]
     public function load(string $categoryId, Request $request, SalesChannelContext $context, Criteria $criteria): ProductListingRouteResponse
+    {
+        return $this->extensions->publish(
+            name: ProductListingRouteExtension::NAME,
+            extension: new ProductListingRouteExtension($categoryId, $request, $context, $criteria),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(string $categoryId, Request $request, SalesChannelContext $context, Criteria $criteria): ProductListingRouteResponse
     {
         $this->cacheTagCollector->addTag(self::buildName($categoryId));
 

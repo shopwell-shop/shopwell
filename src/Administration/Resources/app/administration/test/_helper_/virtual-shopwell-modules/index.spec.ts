@@ -14,6 +14,9 @@ import swFormFieldMixin from 'shopwell:mixins/sw-form-field';
 import ruleContainerMixin from 'shopwell:mixins/ruleContainer';
 import useNotificationStore from 'shopwell:stores/notification';
 import useSystemStore from 'shopwell:stores/system';
+import composables, { useListing } from 'shopwell:composables';
+import useListingDefault from 'shopwell:composables/useListing';
+import directUseListing from 'src/app/composables/use-listing';
 
 describe('shopwell:* virtual modules', () => {
     describe('root imports', () => {
@@ -22,6 +25,11 @@ describe('shopwell:* virtual modules', () => {
             expect(object).toBe(Shopwell.Utils.object);
             expect(Criteria).toBe(Shopwell.Data.Criteria);
             expect(EntityCollection).toBe(Shopwell.Data.EntityCollection);
+        });
+
+        it('export the composables the Administration itself imports', () => {
+            expect(useListing).toBe(directUseListing);
+            expect(composables.useListing).toBe(Shopwell.Composables.useListing);
         });
 
         it('export working members', () => {
@@ -39,6 +47,10 @@ describe('shopwell:* virtual modules', () => {
 
         it('export a DAL class as default', () => {
             expect(CriteriaClass).toBe(Shopwell.Data.Criteria);
+        });
+
+        it('export a composable as default', () => {
+            expect(useListingDefault).toBe(directUseListing);
         });
 
         it('export a registered mixin as default', () => {

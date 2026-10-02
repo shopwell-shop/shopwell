@@ -5,17 +5,22 @@ namespace Shopwell\Tests\Unit\Core\Content\Media\SalesChannel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Media\Extension\MediaRouteExtension;
 use Shopwell\Core\Content\Media\MediaCollection;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Media\MediaException;
 use Shopwell\Core\Content\Media\SalesChannel\MediaRoute;
+use Shopwell\Core\Content\Media\SalesChannel\MediaRouteResponse;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Generator;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -41,6 +46,7 @@ class MediaRouteTest extends TestCase
         $this->mediaRoute = new MediaRoute(
             $this->mediaRepository,
             $this->cacheTagCollector,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
     }
 
@@ -85,7 +91,7 @@ class MediaRouteTest extends TestCase
             ->method('addTag')
             ->with('media-testMediaId1', 'media-testMediaId2');
 
-        $mediaRoute = new MediaRoute($mediaRepository, $cacheTagCollector);
+        $mediaRoute = new MediaRoute($mediaRepository, $cacheTagCollector, new ExtensionDispatcher(new EventDispatcher()));
 
         $response = $mediaRoute->load($request, $salesChannelContext);
         $mediaCollection = $response->getMediaCollection();
@@ -110,5 +116,28 @@ class MediaRouteTest extends TestCase
         $request = new Request([], ['ids' => '']);
 
         $this->mediaRoute->load($request, $salesChannelContext);
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $request = new Request();
+        $context = Generator::generateSalesChannelContext();
+        $response = static::createStub(MediaRouteResponse::class);
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('media-route.load.pre', static function (MediaRouteExtension $extension) use ($request, $context, $response): void {
+            static::assertSame(['request' => $request, 'context' => $context], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new MediaRoute(
+            static::createStub(EntityRepository::class),
+            static::createStub(CacheTagCollector::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->load($request, $context));
     }
 }

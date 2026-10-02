@@ -1,6 +1,6 @@
 ## Introduction
 Feature flags enable the developer to create new code which is hidden behind the flag and merge it into the trunk branch, even when the code is not finalized.
-We use this functionality to merge breaks into the trunk early, without them already being switched active. To learn more about breaking changes and backward compability take a look to our [Backward Compatibility Guide](https://developer.shopwell.com/docs/resources/guidelines/code/backward-compatibility.html)
+We use this functionality to merge breaks into the trunk early, without them already being switched active. To learn more about breaking changes and backward compability take a look to our [Backward Compatibility Guide](https://developer.shopwell.cn/docs/resources/guidelines/code/backward-compatibility.html)
 
 Related ADR: [Feature flags for major versions](../../adr/2022-01-20-feature-flags-for-major-versions.md).
 
@@ -289,7 +289,7 @@ When you want to toggle different parts of the template you can use the flag in 
 
 ### Using flags in config.xml
 
-When you want to toggle config input fields in config.xml like [basicInformatation.xml](https://gitlab.shopwell.com/shopwell/6/product/platform/-/blob/trunk/src/Core/System/Resources/config/basicInformation.xml), you can add a `flag` element like this:
+When you want to toggle config input fields in config.xml like [basicInformatation.xml](https://gitlab.shopwell.cn/shopwell/6/product/platform/-/blob/trunk/src/Core/System/Resources/config/basicInformation.xml), you can add a `flag` element like this:
 
 ```xml
 <input-field type="bool" flag="v6.5.0.0">

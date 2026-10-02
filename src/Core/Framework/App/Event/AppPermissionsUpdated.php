@@ -11,7 +11,7 @@ use Shopwell\Core\Framework\Webhook\Hookable;
 use Symfony\Contracts\EventDispatcher\Event;
 
 #[Package('framework')]
-class AppPermissionsUpdated extends Event implements ShopwellEvent, Hookable
+class AppPermissionsUpdated extends Event implements ShopwellEvent, Hookable, AppLifecycleEvent
 {
     final public const NAME = 'app.permissions.updated';
 

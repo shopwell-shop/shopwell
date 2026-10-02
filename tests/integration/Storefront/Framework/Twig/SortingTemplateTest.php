@@ -8,7 +8,8 @@ use Shopwell\Core\Content\Product\SalesChannel\Sorting\ProductSortingEntity;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Twig\Environment;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\Test\TestDefaults;
 
 /**
  * @internal
@@ -43,13 +44,13 @@ class SortingTemplateTest extends TestCase
 
     private function renderSortings(ProductSortingCollection $sortings): string
     {
-        $twig = static::getContainer()->get('twig');
-        static::assertInstanceOf(Environment::class, $twig);
+        $context = static::getContainer()->get(SalesChannelContextFactory::class)
+            ->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
 
-        return $twig->render('@Storefront/storefront/component/sorting.html.twig', [
+        return StorefrontTwigRenderer::render(static::getContainer(), '@Storefront/storefront/component/sorting.html.twig', [
             'current' => '',
             'sortings' => $sortings,
-        ]);
+        ], $context);
     }
 
     private function createSorting(string $key, string $label): ProductSortingEntity

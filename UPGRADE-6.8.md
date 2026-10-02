@@ -240,6 +240,10 @@ Extensions that rely on these variables in document template overrides must remo
 
 The variable `displayCustomerVatIdForDelivery` in `src/Core/Framework/Resources/views/documents/includes/letter_header.html.twig` was deprecated and removed without replacement. Extensions that rely on this variable in document template overrides must remove its usage without replacement.
 
+## `sw_garan_label_mail` Twig filter removed
+
+The `sw_garan_label_mail` Twig filter and `Shopwell\Core\Content\Product\Garan\GaranLabelTwigFilter::resolveMailLabel()` were removed. Mail templates read the GARAN label from the `garanLabels` template variable instead: replace `productId|sw_garan_label_mail(context)` with `garanLabels[productId] ?? null`. Order confirmation mail templates that were never edited had already been migrated.
+
 ## Shipping price matrix ranges use currency conversion
 
 Price-based shipping method price matrix ranges are now compared in the default currency. When a cart is calculated in a currency with a factor, Shopwell converts the cart price back to the default currency before matching the configured `quantityStart` and `quantityEnd` range.
@@ -326,9 +330,10 @@ Previously, these routes could return unrelated records or fail because the unde
 
 <details>
 
-## Removal of deprecated `ConfigurationService` class
+## Removal of legacy `ConfigurationService` getters
 
-The deprecated class `Shopwell\Core\System\SystemConfig\Service\ConfigurationService` was removed. Please use the new class `Shopwell\Core\System\SystemConfig\Service\SystemConfigDefinitionService` with the respective methods instead.
+The `getConfiguration()` and `getResolvedConfiguration()` methods of `Shopwell\Core\System\SystemConfig\Service\ConfigurationService` have been removed.
+Replace calls with `getSystemConfigDefinition()` and `getResolvedSystemConfigDefinition()`, respectively.
 
 ## `Feature` is final
 
@@ -359,6 +364,10 @@ public function load(Request $request, SalesChannelContext $context, ?Cart $cart
 ```
 
 A decoration that drops the parameter still works but gives up the optimization behind it, because the route then reads and calculates a cart the request already holds. Pass a cart wherever you have one: in a controller, type a `Cart` argument and the `CartValueResolver` provides the cart of the current request, elsewhere read it from `CartService::getCart()`.
+
+## `DocumentRoute::resolveRequest()` is private
+
+`Shopwell\Core\Checkout\Document\SalesChannel\DocumentRoute::resolveRequest()` is private, it only served the file type negotiation of the route itself. Download documents through `DocumentRoute::download()` or `/store-api/document/download/{documentId}/{deepLinkCode}`, which negotiate the file type from the `fileType` parameter or the `Accept` header.
 
 ## XML configuration is no longer supported
 
@@ -772,7 +781,7 @@ Due to the rework of the contained rules in the cache hash (see above), this bec
 The complete caching behaviour is now controlled by the `sw-cache-hash` cookie.
 
 You should rework your extensions to also work with enabled cache for logged in customers and when the cart is filled.
-To modify the default behaviour there are several extension points you can hook into, for a detailed explanation please take a look at the [caching docs](https://developer.shopwell.com/docs/guides/plugins/plugins/framework/caching/#manipulating-the-cache-key).
+To modify the default behaviour there are several extension points you can hook into, for a detailed explanation please take a look at the [caching docs](https://developer.shopwell.cn/docs/guides/plugins/plugins/framework/caching/#manipulating-the-cache-key).
 
 The following classes and constants were removed as they are no longer used:
   * `\Shopwell\Core\Framework\Adapter\Cache\Http\CacheStateValidator`
@@ -2374,6 +2383,10 @@ const isInside = event.target instanceof Node && this.$el.contains(event.target)
 
 <details>
 
+## Removed `--no-cleanup` option of `theme:compile` and `theme:change`
+
+The `--no-cleanup` option was removed from both commands. The commands no longer delete unused theme directories themselves, the `theme.delete_files` scheduled task does. Passing the option now fails with an unknown-option error, so drop it from deploy scripts.
+
 ## Footer collapse headlines and columns now use semantic elements
 
 In `layout/footer/footer.html.twig`, the following nodes changed to semantic elements.
@@ -2564,7 +2577,7 @@ Remove all references to `widgets.account.order.detail` and ensure that affected
 
 Remove all references to `@Storefront/storefront/component/checkout/cart-alerts.html.twig` and use `@Storefront/storefront/utilities/alert.html.twig` instead.
 
-**NOTE:** All the breaking changes described here can be already opted in by activating the `v6.8.0.0` [feature flag](https://developer.shopwell.com/docs/resources/references/adr/2022-01-20-feature-flags-for-major-versions.html#activating-the-flag) on previous versions.
+**NOTE:** All the breaking changes described here can be already opted in by activating the `v6.8.0.0` [feature flag](https://developer.shopwell.cn/docs/resources/references/adr/2022-01-20-feature-flags-for-major-versions.html#activating-the-flag) on previous versions.
 
 ## Removal of deprecated controller variables
 
@@ -2784,7 +2797,7 @@ Move the definitions into a dedicated `Resources/config/custom-fields.xml` file 
 <!-- Resources/config/custom-fields.xml -->
 <?xml version="1.0" encoding="utf-8"?>
 <custom-fields xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/CustomField/Schema/custom-fields-1.0.xsd">
+               xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/CustomField/Schema/custom-fields-1.0.xsd">
     <custom-field-set>
         <name>swag_example_set</name>
         ...

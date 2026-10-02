@@ -13,7 +13,7 @@ use Shopwell\Core\Framework\Plugin;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Kernel;
 use Shopwell\Core\System\SystemConfig\Service\AppConfigReader;
-use Shopwell\Core\System\SystemConfig\Service\SystemConfigDefinitionService;
+use Shopwell\Core\System\SystemConfig\Service\ConfigurationService;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\System\SystemConfig\Util\ConfigReader;
 use Shopwell\Core\Test\TestDefaults;
@@ -124,7 +124,7 @@ SCSS;
 
     public function testHandlesDatabaseException(): void
     {
-        $systemConfigDefinitionService = $this->getSystemConfigDefinitionServiceDbException([
+        $configurationService = $this->getConfigurationServiceDbException([
             new SimplePlugin(true, __DIR__ . '/fixtures/SimplePlugin'),
         ]);
 
@@ -138,7 +138,7 @@ SCSS;
             Context::createDefaultContext()
         );
 
-        $subscriber = new ThemeCompilerEnrichScssVarSubscriber($systemConfigDefinitionService, $storefrontPluginRegistry);
+        $subscriber = new ThemeCompilerEnrichScssVarSubscriber($configurationService, $storefrontPluginRegistry);
 
         $subscriber->enrichExtensionVars($event);
 
@@ -152,9 +152,9 @@ SCSS;
     /**
      * @param array<int, Plugin> $plugins
      */
-    private function getSystemConfigDefinitionServiceDbException(array $plugins): SystemConfigDefinitionService
+    private function getConfigurationServiceDbException(array $plugins): ConfigurationService
     {
-        return new ThemeCompilerPluginSystemConfigDefinitionServiceException(
+        return new ThemeCompilerPluginConfigurationServiceException(
             $plugins,
             new ConfigReader(),
             static::getContainer()->get(AppConfigReader::class),
@@ -185,7 +185,7 @@ SCSS;
 /**
  * @internal
  */
-class ThemeCompilerPluginSystemConfigDefinitionServiceException extends SystemConfigDefinitionService
+class ThemeCompilerPluginConfigurationServiceException extends ConfigurationService
 {
     /**
      * @throws Exception
