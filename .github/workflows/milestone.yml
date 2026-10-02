@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Get versions
         id: versions
-        uses: shopwell-shop/github-actions/versions@eb1996603ef58244d59e0ce6aeb2cb5af2fc4d66
+        uses: shopwell-shop/github-actions/versions@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
         with:
           github-token: ${{ github.token }}
       - name: Get next minor
@@ -100,7 +100,7 @@ jobs:
       # minting fails the label still lands, the check just re-runs on the next push.
       - id: sts-label
         continue-on-error: true
-        uses: shopwell-shop/octo-sts-action@6744974c0294b8b84b77c71cff7d5f347ca77b33
+        uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         with:
           scope: shopwell
           identity: CreatePR

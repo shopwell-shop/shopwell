@@ -14,4 +14,4 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: shopwell-shop/github-actions/update-saas-refs@eb1996603ef58244d59e0ce6aeb2cb5af2fc4d66
+      - uses: shopwell-shop/github-actions/update-saas-refs@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5

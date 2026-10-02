@@ -87,7 +87,7 @@ runs:
 
   using: "composite"
   steps:
-    - uses: shopwell-shop/octo-sts-action@6744974c0294b8b84b77c71cff7d5f347ca77b33
+    - uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
       id: create-pr-token
       with:
         scope: shopwell
@@ -168,12 +168,12 @@ runs:
 
     - name: Install dependencies
       # Reuses the ~/.npm tarballs cached above (offline) and retries transient registry resets.
-      uses: shopwell-shop/github-actions/npm-ci-retry@eb1996603ef58244d59e0ce6aeb2cb5af2fc4d66
+      uses: shopwell-shop/github-actions/npm-ci-retry@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
       with:
         working-directory: ${{ inputs.directory }}
 
     - name: Install Playwright Browsers
-      uses: shopwell-shop/github-actions/npm-ci-retry@eb1996603ef58244d59e0ce6aeb2cb5af2fc4d66
+      uses: shopwell-shop/github-actions/npm-ci-retry@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
       with:
         working-directory: ${{ inputs.directory }}
         # A stalled apt mirror hangs without failing, so the retry loop never fires; time each attempt out so it can retry (normal runtime is ~2 minutes).

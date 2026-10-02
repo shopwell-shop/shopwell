@@ -47,12 +47,12 @@ jobs:
     steps:
       - id: sts
         continue-on-error: true
-        uses: shopwell-shop/octo-sts-action@6744974c0294b8b84b77c71cff7d5f347ca77b33
+        uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         with:
           scope: shopwell
           identity: ShopwellDownstream
       - name: Commercial
-        uses: shopwell-shop/github-actions/downstream@eb1996603ef58244d59e0ce6aeb2cb5af2fc4d66
+        uses: shopwell-shop/github-actions/downstream@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
         if: steps.sts.outputs.token
         env:
           NEW_LOGIC: 1

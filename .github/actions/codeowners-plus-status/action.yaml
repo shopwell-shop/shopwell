@@ -22,7 +22,7 @@ runs:
     # fails with "Could not resolve to a node with the global id of 'T_…'". No
     # fallback on purpose: falling back would silently reintroduce that failure.
     - id: sts
-      uses: shopwell-shop/octo-sts-action@6744974c0294b8b84b77c71cff7d5f347ca77b33
+      uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
       with:
         scope: shopwell
         identity: CodeownersPlus

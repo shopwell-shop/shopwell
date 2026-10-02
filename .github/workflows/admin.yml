@@ -169,7 +169,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: install packages
-        uses: shopwell-shop/github-actions/npm-ci-retry@eb1996603ef58244d59e0ce6aeb2cb5af2fc4d66
+        uses: shopwell-shop/github-actions/npm-ci-retry@8c8189363e2ddc0a47ba08be5a9c55bd42dce3b5
         with:
           working-directory: src/Storefront/Resources/app/storefront
       - name: Check license
