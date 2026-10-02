@@ -307,6 +307,10 @@ jobs:
         with:
           working-directory: old-shopwell/vendor/shopwell/administration/Resources/app/administration
 
+      - name: Generate historical Administration bundle configuration
+        working-directory: old-shopwell
+        run: bin/console bundle:dump
+
       - name: Build historical Administration
         working-directory: old-shopwell/vendor/shopwell/administration/Resources/app/administration
         run: npm run build

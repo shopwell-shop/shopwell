@@ -196,12 +196,24 @@ jobs:
           git fetch bc-checker-upstream
       - name: Unblock the BC baseline install
         run: composer config --global --json policy.advisories.ignore-id '["PKSA-p9gd-j6gr-6f9t"]'
+      - name: Prepare BC baseline
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git worktree add -b bc-checker-base "$RUNNER_TEMP/bc-checker-base" "$BASE_REF"
+          mkdir -p "$RUNNER_TEMP/bc-checker-base/custom/plugins" "$RUNNER_TEMP/bc-checker-base/custom/static-plugins"
+          touch "$RUNNER_TEMP/bc-checker-base/custom/plugins/.gitkeep" "$RUNNER_TEMP/bc-checker-base/custom/static-plugins/.gitkeep"
+          git -C "$RUNNER_TEMP/bc-checker-base" add -f custom/plugins/.gitkeep custom/static-plugins/.gitkeep
+          git -C "$RUNNER_TEMP/bc-checker-base" -c user.name=shopwell-ci -c user.email=ci@shopwell.cn commit --allow-empty -m "Prepare BC baseline"
+          echo "BC_BASE_REF=bc-checker-base" >> "$GITHUB_ENV"
       - name: BC Checker lastest tag
         if: github.event_name != 'pull_request'
         run: composer run bc-check
       - name: BC Checker PR
         if: github.event_name == 'pull_request' && !contains(github.base_ref, '/feature/')
-        run: composer run bc-check -- --from="origin/${{ github.base_ref }}"
+        run: composer run bc-check -- --from="$BC_BASE_REF"
 
   openapi-lint:
     needs:
