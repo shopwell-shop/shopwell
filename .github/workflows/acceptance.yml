@@ -307,9 +307,17 @@ jobs:
         with:
           working-directory: old-shopwell/vendor/shopwell/administration/Resources/app/administration
 
-      - name: Build historical Administration
+      - name: Generate historical Administration bundle configuration
         working-directory: old-shopwell
-        run: composer run build:js:admin
+        run: bin/console bundle:dump
+
+      - name: Build historical Administration
+        working-directory: old-shopwell/vendor/shopwell/administration/Resources/app/administration
+        run: npm run build
+
+      - name: Install historical Administration assets
+        working-directory: old-shopwell
+        run: bin/console assets:install
 
       - name: Download latest WebInstaller
         run: |
