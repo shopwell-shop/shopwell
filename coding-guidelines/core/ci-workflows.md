@@ -89,10 +89,10 @@ skipped job is visible in the UI, a suppressed failure is not.
   an unparsed file is an unaudited file. `zizmor-collection-guard.ts` reconciles
   those warnings against a known list so a new one fails the lint, and so a
   listed file that starts parsing again is reported as a stale entry.
-- Workflows are mirrored to `shopwell/shopwell-private` by `sync.yml` and run
+- Workflows are mirrored to `shopwell-shop/shopwell-private` by `sync.yml` and run
   there too. `link-private-pr.yml` fired on every issue closed in the mirror and
   failed at octo-sts, whose `ShopwellLinkClosingPR` identity only trusts
-  `repo:shopwell/shopwell:ref:refs/heads/trunk` — and with a token it would have
+  `repo:shopwell-shop/shopwell:ref:refs/heads/trunk` — and with a token it would have
   resolved the private issue number against the public repository. Fixed by a
   `github.repository` guard on the job; see
   [`.github/AGENTS.md`](../../.github/AGENTS.md).

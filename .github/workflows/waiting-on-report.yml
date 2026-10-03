@@ -29,7 +29,7 @@ concurrency:
 jobs:
   report:
     name: Report and label who is waiting for whom
-    if: github.repository == 'shopwell/shopwell'
+    if: github.repository == 'shopwell-shop/shopwell'
     runs-on: ubuntu-24.04
     permissions:
       contents: read

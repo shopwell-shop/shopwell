@@ -270,7 +270,7 @@ test('checkReleaseContent posts a success status and stays quiet on findings', a
     const toolkit = {
         github: { rest: { repos: { createCommitStatus: async (options) => void statuses.push(options) } } },
         core: { info: () => {}, summary: { addRaw: () => ({ write: async () => {} }) } },
-        context: { repo: { owner: 'shopwell', repo: 'shopwell' }, sha: 'headsha' },
+        context: { repo: { owner: 'shopwell-shop', repo: 'shopwell' }, sha: 'headsha' },
     } as Toolkit;
 
     await withEnv({ VERSION_PREFIX: VERSION }, () => checkReleaseContent(toolkit, git));
@@ -295,7 +295,7 @@ test('checkReleaseContent posts a failure status when an entry is missing', asyn
     const toolkit = {
         github: { rest: { repos: { createCommitStatus: async (options) => void statuses.push(options) } } },
         core: { info: () => {}, summary: { addRaw: () => ({ write: async () => {} }) } },
-        context: { repo: { owner: 'shopwell', repo: 'shopwell' }, sha: 'headsha' },
+        context: { repo: { owner: 'shopwell-shop', repo: 'shopwell' }, sha: 'headsha' },
     } as Toolkit;
 
     await withEnv({ VERSION_PREFIX: VERSION }, () => checkReleaseContent(toolkit, git));
@@ -310,7 +310,7 @@ test('checkReleaseContent throws when a required ref is not fetched', async () =
     const toolkit = {
         github: { rest: { repos: { createCommitStatus: async () => {} } } },
         core: { info: () => {}, summary: { addRaw: () => ({ write: async () => {} }) } },
-        context: { repo: { owner: 'shopwell', repo: 'shopwell' }, sha: 'headsha' },
+        context: { repo: { owner: 'shopwell-shop', repo: 'shopwell' }, sha: 'headsha' },
     } as Toolkit;
 
     await withEnv({ VERSION_PREFIX: VERSION }, async () => {
@@ -323,7 +323,7 @@ test('checkReleaseContent throws when the release branch cannot be resolved', as
     const toolkit = {
         github: { rest: { repos: { createCommitStatus: async () => {} } } },
         core: { info: () => {}, summary: { addRaw: () => ({ write: async () => {} }) } },
-        context: { repo: { owner: 'shopwell', repo: 'shopwell' }, sha: 'headsha' },
+        context: { repo: { owner: 'shopwell-shop', repo: 'shopwell' }, sha: 'headsha' },
     } as Toolkit;
 
     await withEnv({ VERSION_PREFIX: VERSION }, async () => {

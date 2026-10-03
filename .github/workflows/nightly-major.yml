@@ -23,7 +23,7 @@ jobs:
       id-token: write
     uses: ./.github/workflows/acceptance.yml
     secrets: inherit
-    if: github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch'
+    if: github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch'
     with:
       profile: nightly
       currents: false
@@ -31,39 +31,7 @@ jobs:
   integration-major:
     uses: ./.github/workflows/integration-major.yml
     secrets: inherit
-    if: github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch'
-
-  # Commercial arm: dispatch the plugin's integration-major workflow so the upcoming major's
-  # feature flags are also exercised with SwagCommercial installed (the regular downstream's
-  # major arm only runs whatever ref dispatched it; this one is pinned to the major schedule).
-  commercial-major:
-    name: Commercial (major)
-    permissions:
-      actions: write
-      contents: read
-      id-token: write
-    if: github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-24.04
-    steps:
-      - id: sts
-        continue-on-error: true
-        uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
-        with:
-          scope: shopwell
-          identity: ShopwellDownstream
-      - name: Commercial
-        uses: shopwell-shop/github-actions/downstream@51511121da3f6239e5df7cd307428aac88d728d1
-        if: steps.sts.outputs.token
-        env:
-          NEW_LOGIC: 1
-        with:
-          repo: shopwell/SwagCommercial
-          workflow: integration-major.yaml
-          ref: .auto
-          timeout: 60m
-          poll_interval: 1m
-          token: ${{ steps.sts.outputs.token }}
-          upstream-token: ${{ github.token }}
+    if: github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch'
 
   # turn a red major matrix into a domain-grouped tracking issue, aggregated from
   # the junit-phpunit-* artifacts integration-major.yml uploads on scheduled failures

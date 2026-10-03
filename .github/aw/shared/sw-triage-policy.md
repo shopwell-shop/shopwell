@@ -37,7 +37,7 @@ skip only if the issue is fundamentally unclear (then emit `disposition: needs-i
 
 0. **Fetch the issue.** Use the issue-fetching tool available in your mode:
    - Interactive: `gh issue view <N> --json number,title,body,labels,state`
-     (`GH_REPO` env is set to `shopwell/shopwell`; no `--repo` flag needed).
+     (`GH_REPO` env is set to `shopwell-shop/shopwell`; no `--repo` flag needed).
    - Unattended (gh aw): the `get_issue` and `get_issue_comments` MCP tools.
 
    Work from `title` + `body` (and comments, if present) directly. If you

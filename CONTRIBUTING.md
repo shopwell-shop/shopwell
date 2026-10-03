@@ -29,7 +29,7 @@ This is the **recommended** way to set up your development environment.
 Checkout the repository and start the containers:
 
 ```bash
-git clone git@github.com:shopwell/shopwell.git
+git clone git@github.com:shopwell-shop/shopwell.git
 cd shopwell
 docker compose up -d
 ```

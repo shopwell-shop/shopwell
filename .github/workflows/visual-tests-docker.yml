@@ -119,7 +119,7 @@ jobs:
 
       - name: Check if this run should attempt AWS operations
         id: check-aws-allowed
-        if: ${{ github.repository_owner == 'shopwell' }}
+        if: ${{ github.repository_owner == 'shopwell-shop' }}
         shell: bash
         run: |
           if [ -z "${{ secrets.PLAYWRIGHT_TRACES_UPLOAD_ROLE_ARN }}" ]; then
@@ -184,7 +184,7 @@ jobs:
         uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         id: create-pr-token
         with:
-          scope: shopwell
+          scope: shopwell-shop
           identity: CreatePR
         continue-on-error: true
 

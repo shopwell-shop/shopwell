@@ -453,7 +453,7 @@ test('withoutRemovedLabels keeps a label off once anyone has removed it', () => 
 test('missingLabels drops labels the pull request already carries', () => {
     const context = {
         eventName: 'pull_request_target',
-        repo: { owner: 'shopwell', repo: 'shopwell' },
+        repo: { owner: 'shopwell-shop', repo: 'shopwell' },
         payload: {
             action: 'synchronize',
             pull_request: { number: 1, base: { ref: 'trunk' }, labels: [{ name: 'major/6.8' }, { name: 'domain/checkout' }] },
@@ -577,7 +577,7 @@ const detect = (github: object, labels: Array<{ name: string }> = []) => {
             core: { info: () => {}, warning: (message) => warnings.push(message) },
             context: {
                 eventName: 'pull_request_target',
-                repo: { owner: 'shopwell', repo: 'shopwell' },
+                repo: { owner: 'shopwell-shop', repo: 'shopwell' },
                 payload: {
                     action: 'synchronize',
                     pull_request: { number: 1, base: { ref: 'trunk' }, labels },
@@ -599,7 +599,7 @@ test('a diff too large for the diff format is read through the files endpoint', 
                 return [];
             }
             assert.equal(route, listFiles);
-            assert.deepEqual(options, { owner: 'shopwell', repo: 'shopwell', pull_number: 1, per_page: 100 });
+            assert.deepEqual(options, { owner: 'shopwell-shop', repo: 'shopwell', pull_number: 1, per_page: 100 });
 
             return [
                 { filename: 'UPGRADE-6.8.md', patch: '@@ -1,1 +1,1 @@\n+## Something breaks' },
@@ -647,7 +647,7 @@ test('a label someone removed is not added back on the next push', async () => {
     const { run } = detect({
         paginate: async (route: unknown, options: object) => {
             assert.equal(route, listEvents);
-            assert.deepEqual(options, { owner: 'shopwell', repo: 'shopwell', issue_number: 1, per_page: 100 });
+            assert.deepEqual(options, { owner: 'shopwell-shop', repo: 'shopwell', issue_number: 1, per_page: 100 });
 
             return [
                 { event: 'labeled', label: { name: 'major/6.8' } },

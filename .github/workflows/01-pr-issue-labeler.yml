@@ -47,7 +47,7 @@ jobs:
         continue-on-error: true
         uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         with:
-          scope: shopwell
+          scope: shopwell-shop
           identity: CreatePR
       - if: steps.detect-major.outputs.labels != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
@@ -94,7 +94,7 @@ jobs:
         continue-on-error: true
         uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         with:
-          scope: shopwell
+          scope: shopwell-shop
           identity: ReadCollaborators
       - uses: tspascoal/get-user-teams-membership@b2546c5affc730fd8e3d8483ae9ad3621938c2f9 # v4.0.2
         id: actorTeams
@@ -149,7 +149,7 @@ jobs:
         continue-on-error: true
         uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         with:
-          scope: shopwell
+          scope: shopwell-shop
           identity: ManageProjects
       - shell: bash
         run: npm ci --prefix .github/bin/js/
@@ -216,7 +216,7 @@ jobs:
         continue-on-error: true
         uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         with:
-          scope: shopwell
+          scope: shopwell-shop
           identity: ManageProjects
       - shell: bash
         run: npm ci --prefix .github/bin/js/

@@ -90,7 +90,7 @@ runs:
     - uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
       id: create-pr-token
       with:
-        scope: shopwell
+        scope: shopwell-shop
         identity: CreatePR
       continue-on-error: true
 
@@ -205,7 +205,7 @@ runs:
 
     - name: Check if this run should attempt AWS operations
       id: check-aws-allowed
-      if: ${{ github.repository_owner == 'shopwell' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+      if: ${{ github.repository_owner == 'shopwell-shop' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
       shell: bash
       run: |
         if [ -z "${{ inputs.playwright-role-arn }}" ]; then

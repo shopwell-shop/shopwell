@@ -8,7 +8,7 @@ on:
 
 jobs:
   manage-docs:
-    if: github.repository == 'shopwell/shopwell' && github.ref == 'refs/heads/trunk'
+    if: github.repository == 'shopwell-shop/shopwell' && github.ref == 'refs/heads/trunk'
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
@@ -21,7 +21,7 @@ jobs:
         continue-on-error: true
         uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         with:
-          scope: shopwell
+          scope: shopwell-shop
           identity: ManageProjects
       - shell: bash
         run: npm ci --prefix .github/bin/js/
@@ -44,7 +44,7 @@ jobs:
             await createDocumentationTasksForProjects(
               {github, core, context, fetch},
               docTaskProjects,
-              'shopwell',
+              'shopwell-shop',
               docTaskProjectId,
               docTaskDescription,
               docTaskReferenceCommentPrefix

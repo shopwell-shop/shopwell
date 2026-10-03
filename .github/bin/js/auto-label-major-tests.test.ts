@@ -186,11 +186,11 @@ test('markdown inside Administration source does not enable the major-js arm', (
 
 const baseContext = (overrides: Partial<TestContext> = {}): TestContext => ({
     eventName: 'pull_request',
-    repo: { owner: 'shopwell', repo: 'shopwell' },
+    repo: { owner: 'shopwell-shop', repo: 'shopwell' },
     payload: {
         action: 'opened',
         pull_request: {
-            head: { repo: { full_name: 'shopwell/shopwell' } },
+            head: { repo: { full_name: 'shopwell-shop/shopwell' } },
             labels: [],
         },
     },

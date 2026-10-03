@@ -21,8 +21,8 @@ const jsonResponse = (body: unknown, ok = true, status = 200) => ({
 describe('codecovCommitUrl', () => {
     it('builds the v2 commit-detail path for the github service', () => {
         assert.equal(
-            codecovCommitUrl('shopwell', 'shopwell', 'abc123'),
-            'https://api.codecov.io/api/v2/github/shopwell/repos/shopwell/commits/abc123/',
+            codecovCommitUrl('shopwell-shop', 'shopwell', 'abc123'),
+            'https://api.codecov.io/api/v2/github/shopwell-shop/repos/shopwell/commits/abc123/',
         );
     });
 });
@@ -35,7 +35,7 @@ describe('fetchCodecovCommit', () => {
             return jsonResponse(commit);
         });
 
-        const result = await fetchCodecovCommit('shopwell', 'shopwell', 'abc123', 'secret', fetchImpl as unknown as typeof fetch);
+        const result = await fetchCodecovCommit('shopwell-shop', 'shopwell', 'abc123', 'secret', fetchImpl as unknown as typeof fetch);
 
         assert.deepEqual(result, commit);
     });
@@ -44,7 +44,7 @@ describe('fetchCodecovCommit', () => {
         const fetchImpl = mock.fn(async () => jsonResponse({}, false, 404));
 
         await assert.rejects(
-            fetchCodecovCommit('shopwell', 'shopwell', 'abc123', 'secret', fetchImpl as unknown as typeof fetch),
+            fetchCodecovCommit('shopwell-shop', 'shopwell', 'abc123', 'secret', fetchImpl as unknown as typeof fetch),
             /Codecov API returned 404/,
         );
     });

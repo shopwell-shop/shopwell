@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   redis:
-    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     name: Redis
     runs-on: ubuntu-24.04
     strategy:
@@ -51,7 +51,7 @@ jobs:
           overwrite: true
 
   admin:
-    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       contents: read
       pull-requests: read
@@ -60,7 +60,7 @@ jobs:
     with:
       extension-tooling-e2e: true
   integration:
-    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       contents: read
       security-events: write
@@ -69,7 +69,7 @@ jobs:
     with:
       profile: nightly
   acceptance:
-    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       actions: read
       contents: read
@@ -83,7 +83,7 @@ jobs:
       # major is prepared. Once they are green, drop this line to fold them back into nightly.
       major: exclude
   visual-tests:
-    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       contents: write
       id-token: write
@@ -93,7 +93,7 @@ jobs:
     with:
       currents: ${{ github.event_name == 'schedule' }}
   php:
-    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       contents: read
       id-token: write
@@ -101,29 +101,15 @@ jobs:
     uses: ./.github/workflows/php.yml
     secrets: inherit
   storefront:
-    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     uses: ./.github/workflows/storefront.yml
     secrets: inherit
   zugferd-compliance:
-    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     uses: ./.github/workflows/zugferd-compliance.yml
     secrets: inherit
-  downstream:
-    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
-    permissions:
-      actions: write
-      checks: read
-      contents: read
-      id-token: write
-      issues: write
-      pull-requests: write
-      statuses: read
-    uses: ./.github/workflows/downstream.yml
-    secrets: inherit
-    with:
-      nightly: "true"
   prepare-release: # This will only execute dry-runs and push current trunk to the many-repos
-    if: (github.repository == 'shopwell/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
+    if: (github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     permissions:
       contents: write
       id-token: write
@@ -170,7 +156,7 @@ jobs:
       - uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         id: sts
         with:
-          scope: shopwell
+          scope: shopwell-shop
           identity: ShopwellNightly
       - env:
           GH_TOKEN: ${{ steps.sts.outputs.token }}

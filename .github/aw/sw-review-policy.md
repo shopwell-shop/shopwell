@@ -13,7 +13,7 @@ runtime-imports outside `.github/` for security reasons.)
 
 ## Context (gh aw mode)
 
-You operate inside the `shopwell/shopwell` monorepo. The pull request head is
+You operate inside the `shopwell-shop/shopwell` monorepo. The pull request head is
 checked out, and you have read access to the codebase and to GitHub via MCP
 tools. You have **no write credentials**: your only way to publish is the
 pull-request-review safe outputs described below. You cannot merge, label,

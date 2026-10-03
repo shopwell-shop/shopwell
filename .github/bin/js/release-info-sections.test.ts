@@ -552,14 +552,14 @@ function fakeToolkit(pulls: Record<number, FakePull>, options: { mergeGroup?: { 
         context: options.mergeGroup
             ? {
                 eventName: 'merge_group',
-                repo: { owner: 'shopwell', repo: 'shopwell' },
+                repo: { owner: 'shopwell-shop', repo: 'shopwell' },
                 payload: {
                     merge_group: { head_ref: 'refs/heads/gh-readonly-queue/trunk/pr-1-0123456789abcdef0123456789abcdef01234567', base_sha: 'aaaa', head_sha: 'bbbb' },
                 },
             }
             : {
                 eventName: 'pull_request_target',
-                repo: { owner: 'shopwell', repo: 'shopwell' },
+                repo: { owner: 'shopwell-shop', repo: 'shopwell' },
                 payload: {
                     pull_request: { number: 1, head: { sha: headShaOf(1) }, labels: pulls[1].labels.map((name) => ({ name })) },
                 },

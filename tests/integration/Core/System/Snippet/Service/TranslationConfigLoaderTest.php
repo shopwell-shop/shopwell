@@ -43,7 +43,7 @@ class TranslationConfigLoaderTest extends TestCase
 
         static::assertInstanceOf(TranslationConfig::class, $config);
         static::assertSame(
-            'https://raw.githubusercontent.com/shopwell/translations/main/translations',
+            'https://raw.githubusercontent.com/shopwell-shop/translations/main/translations',
             $config->repositoryUrl->__toString()
         );
         static::assertSame(['zh-CN', 'en-GB'], $config->excludedLocales);
@@ -66,7 +66,7 @@ class TranslationConfigLoaderTest extends TestCase
 
         // options left unset fall back to the shipped translation.yaml
         static::assertSame(
-            'https://raw.githubusercontent.com/shopwell/translations/main/crowdin-metadata.json',
+            'https://raw.githubusercontent.com/shopwell-shop/translations/main/crowdin-metadata.json',
             $config->metadataUrl->__toString()
         );
         static::assertNotNull($config->languages->get('af-ZA'));

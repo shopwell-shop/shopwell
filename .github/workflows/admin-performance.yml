@@ -27,7 +27,7 @@ jobs:
     name: "Lighthouse CI"
     needs:
       - markdown-only-changes
-    if: ${{ github.repository == 'shopwell/shopwell' && needs.markdown-only-changes.outputs.docs_only != 'true' }}
+    if: ${{ github.repository == 'shopwell-shop/shopwell' && needs.markdown-only-changes.outputs.docs_only != 'true' }}
     runs-on: ubuntu-24.04
     env:
       APP_ENV: prod
@@ -118,5 +118,5 @@ jobs:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
         with:
-          allowed-skips: ${{ (github.repository != 'shopwell/shopwell' || needs.markdown-only-changes.outputs.docs_only == 'true') && 'lighthouse' || '' }}
+          allowed-skips: ${{ (github.repository != 'shopwell-shop/shopwell' || needs.markdown-only-changes.outputs.docs_only == 'true') && 'lighthouse' || '' }}
           jobs: ${{ toJSON(needs) }}

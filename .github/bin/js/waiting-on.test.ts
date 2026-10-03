@@ -391,7 +391,7 @@ test('applyLabelChanges carries on past a failing pull request and reports it', 
     const failed = await applyLabelChanges(
         github,
         core,
-        { owner: 'shopwell', repo: 'shopwell' },
+        { owner: 'shopwell-shop', repo: 'shopwell' },
         [
             { number: 1, add: WAITING_ON_LABEL.author, remove: [] },
             { number: 2, add: WAITING_ON_LABEL.author, remove: ['waiting-on/shopwell'] },
