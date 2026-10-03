@@ -2,11 +2,13 @@
 
 namespace Shopwell\Core\System\SystemConfig\SalesChannel;
 
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\Extension\ShopSettingsRouteExtension;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
@@ -18,7 +20,7 @@ class ShopSettingsRoute extends AbstractShopSettingsRoute
     /**
      * @internal
      */
-    public function __construct(private readonly SystemConfigService $systemConfigService)
+    public function __construct(private readonly SystemConfigService $systemConfigService, private readonly ExtensionDispatcher $extensions)
     {
     }
 
@@ -34,6 +36,15 @@ class ShopSettingsRoute extends AbstractShopSettingsRoute
         defaults: [PlatformRequest::ATTRIBUTE_HTTP_CACHE => true],
     )]
     public function load(SalesChannelContext $context): ShopSettingsRouteResponse
+    {
+        return $this->extensions->publish(
+            name: ShopSettingsRouteExtension::NAME,
+            extension: new ShopSettingsRouteExtension($context),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(SalesChannelContext $context): ShopSettingsRouteResponse
     {
         $salesChannelId = $context->getSalesChannelId();
 

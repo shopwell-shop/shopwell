@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Payment\SalesChannel;
 
+use Shopwell\Core\Checkout\Payment\Extension\PaymentMethodRouteExtension;
 use Shopwell\Core\Checkout\Payment\Hook\PaymentMethodRouteHook;
 use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
@@ -9,6 +10,7 @@ use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -36,6 +38,7 @@ class PaymentMethodRoute extends AbstractPaymentMethodRoute
         private readonly CacheTagCollector $cacheTagCollector,
         private readonly ScriptExecutor $scriptExecutor,
         private readonly RuleIdMatcher $ruleIdMatcher,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -60,6 +63,15 @@ class PaymentMethodRoute extends AbstractPaymentMethodRoute
         methods: [Request::METHOD_GET, Request::METHOD_POST]
     )]
     public function load(Request $request, SalesChannelContext $context, Criteria $criteria): PaymentMethodRouteResponse
+    {
+        return $this->extensions->publish(
+            name: PaymentMethodRouteExtension::NAME,
+            extension: new PaymentMethodRouteExtension($request, $context, $criteria),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, SalesChannelContext $context, Criteria $criteria): PaymentMethodRouteResponse
     {
         $this->cacheTagCollector->addTag(self::buildName($context->getSalesChannelId()));
 

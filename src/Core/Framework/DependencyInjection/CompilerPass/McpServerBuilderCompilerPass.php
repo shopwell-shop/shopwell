@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\DependencyInjection\CompilerPass;
 
+use Shopwell\Core\Framework\Deprecation\BCChange\BecomesInternal;
 use Shopwell\Core\Framework\Log\Package;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -29,6 +30,7 @@ use Symfony\Component\DependencyInjection\Definition;
  * Must run after McpToolDiscoveryCompilerPass and McpToolAnalysisCompilerPass.
  */
 #[Package('framework')]
+#[BecomesInternal(version: 'v6.8.0')]
 class McpServerBuilderCompilerPass implements CompilerPassInterface
 {
     /**

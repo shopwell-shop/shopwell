@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\System\Currency\Aggregate\CurrencyCountryRounding\CurrencyCountryRoundingDefinition;
 use Shopwell\Core\System\Currency\Aggregate\CurrencyTranslation\CurrencyTranslationDefinition;
 use Shopwell\Core\System\Currency\Api\CurrencyIsoCodeFkResolver;
@@ -59,6 +60,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('sales_channel.currency.repository'),
             service(CacheTagCollector::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(CurrencyIsoCodeFkResolver::class)

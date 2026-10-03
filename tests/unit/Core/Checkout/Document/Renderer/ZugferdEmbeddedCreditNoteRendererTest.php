@@ -6,11 +6,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Document\Renderer\AbstractDocumentRenderer;
 use Shopwell\Core\Checkout\Document\Renderer\DocumentRendererConfig;
-use Shopwell\Core\Checkout\Document\Renderer\RenderedDocument;
 use Shopwell\Core\Checkout\Document\Renderer\RendererResult;
 use Shopwell\Core\Checkout\Document\Renderer\ZugferdEmbeddedCreditNoteRenderer;
 use Shopwell\Core\Checkout\Document\Service\ZugferdEmbeddedService;
 use Shopwell\Core\Checkout\Document\Struct\DocumentGenerateOperation;
+use Shopwell\Core\Checkout\DocumentV2\Struct\RenderedDocument;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 

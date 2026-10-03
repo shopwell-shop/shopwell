@@ -2,10 +2,10 @@
 
 namespace Shopwell\Core\Checkout\Document\Subscriber;
 
-use Shopwell\Core\Checkout\Document\DocumentCollection;
-use Shopwell\Core\Checkout\Document\DocumentDefinition;
-use Shopwell\Core\Checkout\Document\DocumentEntity;
 use Shopwell\Core\Checkout\Document\DocumentException;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
+use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Checkout\DocumentV2\Event\DocumentDeletedEvent;
 use Shopwell\Core\Content\Media\MediaCollection;
 use Shopwell\Core\Defaults;

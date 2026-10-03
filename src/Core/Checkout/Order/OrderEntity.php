@@ -4,7 +4,7 @@ namespace Shopwell\Core\Checkout\Order;
 
 use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
-use Shopwell\Core\Checkout\Document\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
 use Shopwell\Core\Checkout\DocumentV2\DocumentSourceEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;

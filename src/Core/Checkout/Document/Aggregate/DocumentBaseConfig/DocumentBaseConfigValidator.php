@@ -4,6 +4,7 @@ namespace Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig;
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
 use Shopwell\Core\Checkout\DocumentV2\Config\DocumentConfigLoader;
 use Shopwell\Core\Checkout\DocumentV2\Renderer\DocumentRendererRegistry;
 use Shopwell\Core\Checkout\DocumentV2\Type\DocumentTypeRegistry;

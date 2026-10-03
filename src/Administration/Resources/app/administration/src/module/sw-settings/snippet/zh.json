@@ -25,7 +25,8 @@
       "labelSalesChannelSelect": "销售渠道",
       "inherited": "已继承",
       "compileNotice": "此配置包含可在主题中使用的字段。要使更改生效，请重新编译主题。",
-      "scssHelpText": "SCSS 变量名："
+      "scssHelpText": "SCSS 变量名：",
+      "tabGeneral": "通用"
     }
   },
   "sw-privileges": {

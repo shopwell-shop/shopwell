@@ -3,7 +3,7 @@
 namespace Shopwell\Tests\Integration\Core\Checkout\DocumentV2\Generation;
 
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Document\DocumentEntity;
+use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Checkout\DocumentV2\DocumentFormat;
 use Shopwell\Core\Checkout\DocumentV2\DocumentType;
 use Shopwell\Core\Checkout\DocumentV2\Generation\DocumentGenerationRequest;

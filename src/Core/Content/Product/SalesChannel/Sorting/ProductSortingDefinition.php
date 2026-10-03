@@ -5,7 +5,6 @@ namespace Shopwell\Core\Content\Product\SalesChannel\Sorting;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
-use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Inherited;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
@@ -61,7 +60,7 @@ class ProductSortingDefinition extends EntityDefinition
             (new BoolField('active', 'active'))->addFlags(new Required()),
             (new JsonField('fields', 'fields'))->addFlags(new Required()),
             (new TranslatedField('label'))->addFlags(new ApiAware()),
-            (new TranslationsAssociationField(ProductSortingTranslationDefinition::class, 'product_sorting_id'))->addFlags(new Inherited(), new Required()),
+            (new TranslationsAssociationField(ProductSortingTranslationDefinition::class, 'product_sorting_id'))->addFlags(new Required()),
         ]);
 
         return $collection;

@@ -218,7 +218,7 @@
       "summaryLabelAmountTotalRounded": "含税合计（已舍入）",
       "summaryLabelShippingCosts": "运费",
       "discountLabelShippingCosts": "运费折扣",
-      "summaryLabelTaxes": "另加 {taxRate}% 税。",
+      "summaryLabelTaxes": "{taxRate}% 税。",
       "labelOrderStatus": "订单状态",
       "labelPaymentStatus": "支付状态",
       "labelSalesChannel": "销售渠道",

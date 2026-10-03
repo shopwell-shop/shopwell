@@ -3,10 +3,12 @@
 namespace Shopwell\Core\Checkout\Customer\SalesChannel;
 
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Extension\AccountNewsletterRecipientRouteExtension;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientCollection;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -25,7 +27,7 @@ class AccountNewsletterRecipientRoute extends AbstractAccountNewsletterRecipient
      *
      * @param SalesChannelRepository<NewsletterRecipientCollection> $newsletterRecipientRepository
      */
-    public function __construct(private readonly SalesChannelRepository $newsletterRecipientRepository)
+    public function __construct(private readonly SalesChannelRepository $newsletterRecipientRepository, private readonly ExtensionDispatcher $extensions)
     {
     }
 
@@ -44,6 +46,15 @@ class AccountNewsletterRecipientRoute extends AbstractAccountNewsletterRecipient
         methods: [Request::METHOD_GET, Request::METHOD_POST]
     )]
     public function load(Request $request, SalesChannelContext $context, Criteria $criteria, CustomerEntity $customer): AccountNewsletterRecipientRouteResponse
+    {
+        return $this->extensions->publish(
+            name: AccountNewsletterRecipientRouteExtension::NAME,
+            extension: new AccountNewsletterRecipientRouteExtension($request, $context, $criteria, $customer),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, SalesChannelContext $context, Criteria $criteria, CustomerEntity $customer): AccountNewsletterRecipientRouteResponse
     {
         $criteria->addFilter(new EqualsFilter('email', $customer->getEmail()));
 

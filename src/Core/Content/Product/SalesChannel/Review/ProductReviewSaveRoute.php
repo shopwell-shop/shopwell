@@ -4,6 +4,7 @@ namespace Shopwell\Core\Content\Product\SalesChannel\Review;
 
 use Shopwell\Core\Checkout\Customer\Service\EmailIdnConverter;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewCollection;
+use Shopwell\Core\Content\Product\Extension\ProductReviewSaveRouteExtension;
 use Shopwell\Core\Content\Product\ProductException;
 use Shopwell\Core\Content\Product\SalesChannel\Review\Event\ReviewFormEvent;
 use Shopwell\Core\Content\Shared\MailFlow\DataProvider\ProductProvider;
@@ -14,6 +15,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
 use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityNotExists;
 use Shopwell\Core\Framework\Event\EventData\MailRecipientStruct;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -49,6 +51,7 @@ class ProductReviewSaveRoute extends AbstractProductReviewSaveRoute
         private readonly SystemConfigService $config,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ProductProvider $productProvider,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -64,6 +67,15 @@ class ProductReviewSaveRoute extends AbstractProductReviewSaveRoute
         methods: [Request::METHOD_POST]
     )]
     public function save(string $productId, RequestDataBag $data, SalesChannelContext $context): NoContentResponse
+    {
+        return $this->extensions->publish(
+            name: ProductReviewSaveRouteExtension::NAME,
+            extension: new ProductReviewSaveRouteExtension($productId, $data, $context),
+            function: $this->_save(...),
+        );
+    }
+
+    private function _save(string $productId, RequestDataBag $data, SalesChannelContext $context): NoContentResponse
     {
         $salesChannelId = $context->getSalesChannelId();
         if (!$this->config->getBool('core.listing.showReview', $salesChannelId)) {

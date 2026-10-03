@@ -2,9 +2,11 @@
 
 namespace Shopwell\Core\Content\Seo\SalesChannel;
 
+use Shopwell\Core\Content\Seo\Extension\SeoUrlRouteExtension;
 use Shopwell\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopwell\Core\Content\Seo\SeoUrl\SeoUrlDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -23,7 +25,7 @@ class SeoUrlRoute extends AbstractSeoUrlRoute
      *
      * @param SalesChannelRepository<SeoUrlCollection> $salesChannelRepository
      */
-    public function __construct(private readonly SalesChannelRepository $salesChannelRepository)
+    public function __construct(private readonly SalesChannelRepository $salesChannelRepository, private readonly ExtensionDispatcher $extensions)
     {
     }
 
@@ -39,6 +41,15 @@ class SeoUrlRoute extends AbstractSeoUrlRoute
         defaults: [PlatformRequest::ATTRIBUTE_ENTITY => SeoUrlDefinition::ENTITY_NAME, PlatformRequest::ATTRIBUTE_HTTP_CACHE => true],
     )]
     public function load(Request $request, SalesChannelContext $context, Criteria $criteria): SeoUrlRouteResponse
+    {
+        return $this->extensions->publish(
+            name: SeoUrlRouteExtension::NAME,
+            extension: new SeoUrlRouteExtension($request, $context, $criteria),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, SalesChannelContext $context, Criteria $criteria): SeoUrlRouteResponse
     {
         return new SeoUrlRouteResponse($this->salesChannelRepository->search($criteria, $context));
     }

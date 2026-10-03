@@ -4,22 +4,18 @@ namespace Shopwell\Tests\Unit\Core\Framework\Test\TestCaseHelper;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseHelper\ReflectionHelper;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 
 /**
  * @internal
  */
 #[Package('framework')]
 #[CoversClass(ReflectionHelper::class)]
+#[DisabledFeatures(['v6.8.0.0'])]
 class ReflectionHelperTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        Feature::skipTestIfActive('v6.8.0.0', $this);
-    }
-
     public function testGetMethodFromProtectedScope(): void
     {
         $class = new FakeClassForHelper();

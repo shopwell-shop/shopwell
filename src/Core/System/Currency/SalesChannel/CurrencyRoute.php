@@ -4,12 +4,14 @@ namespace Shopwell\Core\System\Currency\SalesChannel;
 
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\Currency\CurrencyCollection;
 use Shopwell\Core\System\Currency\CurrencyDefinition;
+use Shopwell\Core\System\Currency\Extension\CurrencyRouteExtension;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -29,6 +31,7 @@ class CurrencyRoute extends AbstractCurrencyRoute
     public function __construct(
         private readonly SalesChannelRepository $currencyRepository,
         private readonly CacheTagCollector $cacheTagCollector,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -49,6 +52,15 @@ class CurrencyRoute extends AbstractCurrencyRoute
         defaults: [PlatformRequest::ATTRIBUTE_ENTITY => CurrencyDefinition::ENTITY_NAME, PlatformRequest::ATTRIBUTE_HTTP_CACHE => true],
     )]
     public function load(Request $request, SalesChannelContext $context, Criteria $criteria): CurrencyRouteResponse
+    {
+        return $this->extensions->publish(
+            name: CurrencyRouteExtension::NAME,
+            extension: new CurrencyRouteExtension($request, $context, $criteria),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, SalesChannelContext $context, Criteria $criteria): CurrencyRouteResponse
     {
         $this->cacheTagCollector->addTag(self::buildName($context->getSalesChannelId()), self::ALL_TAG);
 

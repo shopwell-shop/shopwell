@@ -14,7 +14,6 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Event\BusinessEventRegistry;
 use Shopwell\Core\Framework\Event\EventData\EventDataCollection;
 use Shopwell\Core\Framework\Event\FlowEventAware;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Webhook\Authorization\Policy\NotHookablePolicy;
 use Shopwell\Core\Framework\Webhook\Authorization\Subscription\Subscriber;
@@ -73,8 +72,6 @@ class NotHookablePolicyTest extends TestCase
 
     public function testAppSubscriptionIsDeniedFromTheNextMajor(): void
     {
-        Feature::skipTestIfInActive('v6.8.0.0', $this);
-
         static::assertFalse($this->createPolicy()->permitsSubscription(UserRecoveryRequestEvent::EVENT_NAME, Subscriber::app(static::createStub(Manifest::class))));
     }
 

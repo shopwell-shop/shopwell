@@ -6,6 +6,7 @@ use Shopwell\Core\Content\Category\CategoryCollection;
 use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Category\CategoryEntity;
 use Shopwell\Core\Content\Category\CategoryException;
+use Shopwell\Core\Content\Category\Extension\CategoryRouteExtension;
 use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
 use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoaderInterface;
 use Shopwell\Core\Content\Cms\Service\EntityCmsSlotConfigInheritanceBuilder;
@@ -13,6 +14,7 @@ use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -39,6 +41,7 @@ class CategoryRoute extends AbstractCategoryRoute
         private readonly EntityCmsSlotConfigInheritanceBuilder $cmsSlotConfigInheritanceBuilder,
         private readonly CategoryDefinition $categoryDefinition,
         private readonly CacheTagCollector $cacheTagCollector,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -59,6 +62,15 @@ class CategoryRoute extends AbstractCategoryRoute
         defaults: [PlatformRequest::ATTRIBUTE_HTTP_CACHE => true],
     )]
     public function load(string $navigationId, Request $request, SalesChannelContext $context): CategoryRouteResponse
+    {
+        return $this->extensions->publish(
+            name: CategoryRouteExtension::NAME,
+            extension: new CategoryRouteExtension($navigationId, $request, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(string $navigationId, Request $request, SalesChannelContext $context): CategoryRouteResponse
     {
         if ($navigationId === self::HOME) {
             $navigationId = $context->getSalesChannel()->getNavigationCategoryId();

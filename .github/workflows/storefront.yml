@@ -228,7 +228,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-storefront-
       - name: install packages
-        uses: shopwell/github-actions/npm-ci-retry@main
+        uses: shopwell-shop/github-actions/npm-ci-retry@51511121da3f6239e5df7cd307428aac88d728d1
         with:
           working-directory: src/Storefront/Resources/app/storefront
       - name: Check license

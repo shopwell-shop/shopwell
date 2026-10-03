@@ -26,6 +26,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationStep;
 use Shopwell\Core\Framework\Plugin;
 use Shopwell\Storefront\Controller\StorefrontController;
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -101,6 +102,14 @@ class InternalClassRule implements Rule
         if ($this->isBundle($node)) {
             return [
                 RuleErrorBuilder::message('Bundles must be flagged @internal to not be captured by the BC checker.')
+                    ->identifier('shopwell.internalClass')
+                    ->build(),
+            ];
+        }
+
+        if ($node->getClassReflection()->implementsInterface(CompilerPassInterface::class)) {
+            return [
+                RuleErrorBuilder::message('Compiler passes must be flagged @internal to not be captured by the BC checker.')
                     ->identifier('shopwell.internalClass')
                     ->build(),
             ];

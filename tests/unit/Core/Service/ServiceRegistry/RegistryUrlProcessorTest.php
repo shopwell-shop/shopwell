@@ -52,7 +52,7 @@ class RegistryUrlProcessorTest extends TestCase
         yield 'staging registry' => ['https://registry.staging-services.shopwell.cn'];
         yield 'registry with a path' => ['https://registry.services.shopwell.cn/api'];
         yield 'trusted domain itself' => ['https://shopwell.cn'];
-        yield 'uppercase host' => ['https://REGISTRY.SERVICES.SHOPWELL.IO'];
+        yield 'uppercase host' => ['https://REGISTRY.SERVICES.SHOPWELL.CN'];
         yield 'host with a trailing dot' => ['https://registry.services.shopwell.cn.'];
     }
 

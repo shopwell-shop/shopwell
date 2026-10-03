@@ -5,9 +5,11 @@ namespace Shopwell\Core\Checkout\Customer\SalesChannel;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Event\CustomerPasswordChangedEvent;
+use Shopwell\Core\Checkout\Customer\Extension\ChangePasswordRouteExtension;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPasswordMatches;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -48,7 +50,8 @@ class ChangePasswordRoute extends AbstractChangePasswordRoute
         private readonly EntityRepository $customerRepository,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly SystemConfigService $systemConfigService,
-        private readonly DataValidator $validator
+        private readonly DataValidator $validator,
+        private readonly ExtensionDispatcher $extensions
     ) {
     }
 
@@ -64,6 +67,15 @@ class ChangePasswordRoute extends AbstractChangePasswordRoute
         methods: [Request::METHOD_POST]
     )]
     public function change(RequestDataBag $requestDataBag, SalesChannelContext $context, CustomerEntity $customer): ContextTokenResponse
+    {
+        return $this->extensions->publish(
+            name: ChangePasswordRouteExtension::NAME,
+            extension: new ChangePasswordRouteExtension($requestDataBag, $context, $customer),
+            function: $this->_change(...),
+        );
+    }
+
+    private function _change(RequestDataBag $requestDataBag, SalesChannelContext $context, CustomerEntity $customer): ContextTokenResponse
     {
         $this->validatePasswordFields($requestDataBag, $context);
 

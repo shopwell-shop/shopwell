@@ -8,12 +8,12 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionActions;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 
 /**
  * @internal
@@ -65,10 +65,9 @@ class OrderTransactionStateHandlerTest extends TestCase
         $this->stateHandler->paid($this->transactionId, Context::createDefaultContext());
     }
 
+    #[DisabledFeatures(['v6.8.0.0'])]
     public function testPayPartially(): void
     {
-        Feature::skipTestIfActive('v6.8.0.0', $this);
-
         $this->stateMachineRegistry(StateMachineTransitionActions::ACTION_PAID_PARTIALLY);
         $this->stateHandler->payPartially($this->transactionId, Context::createDefaultContext());
     }

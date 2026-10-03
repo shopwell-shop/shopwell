@@ -19,12 +19,14 @@ use Shopwell\Core\Content\Cms\Service\EntityCmsSlotConfigInheritanceBuilder;
 use Shopwell\Core\Content\Product\Aggregate\ProductTranslation\ProductTranslationCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopwell\Core\Content\Product\Exception\ProductNotFoundException;
+use Shopwell\Core\Content\Product\Extension\ProductDetailRouteExtension;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Product\ProductException;
 use Shopwell\Core\Content\Product\SalesChannel\AbstractProductCloseoutFilterFactory;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\Event\ResolveVariantIdEvent;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductConfiguratorLoader;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
+use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRouteResponse;
 use Shopwell\Core\Content\Product\SalesChannel\ProductAvailableFilter;
 use Shopwell\Core\Content\Product\SalesChannel\ProductCloseoutFilterFactory;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductCollection;
@@ -37,6 +39,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -47,6 +50,7 @@ use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -676,6 +680,40 @@ class ProductDetailRouteTest extends TestCase
         $this->route->getDecorated();
     }
 
+    public function testPublishesExtension(): void
+    {
+        $productId = Uuid::randomHex();
+        $request = new Request();
+        $criteria = new Criteria();
+        $response = new ProductDetailRouteResponse(new SalesChannelProductEntity(), null);
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('product-detail-route.load.pre', function (ProductDetailRouteExtension $extension) use ($productId, $request, $criteria, $response): void {
+            static::assertSame(['productId' => $productId, 'request' => $request, 'context' => $this->context, 'criteria' => $criteria], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new ProductDetailRoute(
+            static::createStub(SalesChannelRepository::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(SystemConfigService::class),
+            static::createStub(Connection::class),
+            static::createStub(ProductConfiguratorLoader::class),
+            static::createStub(CategoryBreadcrumbBuilder::class),
+            static::createStub(SalesChannelCmsPageLoader::class),
+            static::createStub(EntityCmsSlotConfigInheritanceBuilder::class),
+            static::createStub(SalesChannelProductDefinition::class),
+            static::createStub(AbstractProductCloseoutFilterFactory::class),
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(CacheTagCollector::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->load($productId, $request, $this->context, $criteria));
+    }
+
     #[DataProvider('breadcrumbCategoryDataProvider')]
     public function testLoadBreadcrumbCategory(
         SalesChannelProductEntity $product,
@@ -815,6 +853,7 @@ class ProductDetailRouteTest extends TestCase
             $this->productCloseoutFilterFactory,
             $this->eventDispatcher,
             static::createStub(CacheTagCollector::class),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
     }
 }

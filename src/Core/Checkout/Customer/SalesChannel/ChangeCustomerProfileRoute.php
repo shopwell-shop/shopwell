@@ -7,12 +7,14 @@ use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\CustomerEvents;
+use Shopwell\Core\Checkout\Customer\Extension\ChangeCustomerProfileRouteExtension;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerVatIdentification;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Event\DataMappingEvent;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -58,6 +60,7 @@ class ChangeCustomerProfileRoute extends AbstractChangeCustomerProfileRoute
         private readonly DataValidationFactoryInterface $customerProfileValidationFactory,
         private readonly StoreApiCustomFieldMapper $storeApiCustomFieldMapper,
         private readonly EntityRepository $salutationRepository,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -76,6 +79,15 @@ class ChangeCustomerProfileRoute extends AbstractChangeCustomerProfileRoute
         methods: [Request::METHOD_POST]
     )]
     public function change(RequestDataBag $data, SalesChannelContext $context, CustomerEntity $customer): SuccessResponse
+    {
+        return $this->extensions->publish(
+            name: ChangeCustomerProfileRouteExtension::NAME,
+            extension: new ChangeCustomerProfileRouteExtension($data, $context, $customer),
+            function: $this->_change(...),
+        );
+    }
+
+    private function _change(RequestDataBag $data, SalesChannelContext $context, CustomerEntity $customer): SuccessResponse
     {
         $validation = $this->customerProfileValidationFactory->update($context);
 

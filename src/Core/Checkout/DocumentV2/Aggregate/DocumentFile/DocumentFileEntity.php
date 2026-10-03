@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentFile;
 
-use Shopwell\Core\Checkout\Document\DocumentEntity;
+use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;

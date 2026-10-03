@@ -8,6 +8,7 @@ use Shopwell\Core\Checkout\Cart\Rule\PaymentMethodRule;
 use Shopwell\Core\Checkout\Customer\SalesChannel\AccountService;
 use Shopwell\Core\Checkout\Customer\Service\GuestAuthenticator;
 use Shopwell\Core\Checkout\Order\Event\OrderCriteriaEvent;
+use Shopwell\Core\Checkout\Order\Extension\OrderRouteExtension;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderDefinition;
 use Shopwell\Core\Checkout\Order\OrderEntity;
@@ -21,6 +22,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\Filter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -52,6 +54,7 @@ class OrderRoute extends AbstractOrderRoute
         private readonly AccountService $accountService,
         private readonly GuestAuthenticator $guestAuthenticator,
         private readonly ClockInterface $clock,
+        private readonly ExtensionDispatcher $extensions,
         private readonly int $deepLinkExpireDays = 30,
     ) {
     }
@@ -68,6 +71,15 @@ class OrderRoute extends AbstractOrderRoute
         methods: [Request::METHOD_GET, Request::METHOD_POST]
     )]
     public function load(Request $request, SalesChannelContext $context, Criteria $criteria): OrderRouteResponse
+    {
+        return $this->extensions->publish(
+            name: OrderRouteExtension::NAME,
+            extension: new OrderRouteExtension($request, $context, $criteria),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, SalesChannelContext $context, Criteria $criteria): OrderRouteResponse
     {
         ReplicaConnection::ensurePrimary();
 

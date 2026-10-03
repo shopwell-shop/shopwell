@@ -27,7 +27,7 @@ async function createWrapper() {
                 },
                 provide: {
                     systemConfigApiService: {
-                        getConfig: () => Promise.resolve(createConfig()),
+                        getSchema: () => Promise.resolve(createConfig()),
                         getValues: () => Promise.resolve(getValues()),
                     },
                     validationService: {},
@@ -96,42 +96,48 @@ function getValues() {
 function createConfig() {
     return [
         {
-            title: {
-                'en-GB': 'Newsletter configuration',
-                'zh-CN': '新闻订阅配置',
-            },
+            title: null,
             name: null,
-            elements: [
+            cards: [
                 {
-                    name: 'core.newsletter.subscribeUrl',
-                    type: 'text',
-                    defaultValue: '/newsletter-subscribe?em=%%HASHEDEMAIL%%&hash=%%SUBSCRIBEHASH%%',
-                    config: {
-                        label: {
-                            'en-GB': 'Subscription URL',
-                            'zh-CN': '订阅链接',
-                        },
-                        placeholder: {
-                            'en-GB': '/newsletter-subscribe?em=%%HASHEDEMAIL%%&hash=%%SUBSCRIBEHASH%%',
-                        },
-                        helpText: {
-                            'en-GB':
-                                'URL to confirm the subscription to the newsletter.<br/>Available placeholders: <br/>%%HASHEDEMAIL%%<br/>%%SUBSCRIBEHASH%%',
-                            'zh-CN':
-                                '确认新闻订阅的链接。<br/>可用占位符：<br/>%%HASHEDEMAIL%%<br/>%%SUBSCRIBEHASH%%',
-                        },
+                    title: {
+                        'en-GB': 'Newsletter configuration',
+                        'zh-CN': '新闻订阅配置',
                     },
-                },
-                {
-                    name: 'core.newsletter.doubleOptIn',
-                    type: 'bool',
-                    config: {
-                        label: { 'en-GB': 'Double opt-in' },
-                        helpText: {
-                            'en-GB': 'Use double opt-in for newsletter subscriptions.',
-                            'zh-CN': '新闻订阅使用双重确认（Double-Opt-In）流程。',
+                    name: null,
+                    elements: [
+                        {
+                            name: 'core.newsletter.subscribeUrl',
+                            type: 'text',
+                            defaultValue: '/newsletter-subscribe?em=%%HASHEDEMAIL%%&hash=%%SUBSCRIBEHASH%%',
+                            config: {
+                                label: {
+                                    'en-GB': 'Subscription URL',
+                                    'zh-CN': '订阅链接',
+                                },
+                                placeholder: {
+                                    'en-GB': '/newsletter-subscribe?em=%%HASHEDEMAIL%%&hash=%%SUBSCRIBEHASH%%',
+                                },
+                                helpText: {
+                                    'en-GB':
+                                        'URL to confirm the subscription to the newsletter.<br/>Available placeholders: <br/>%%HASHEDEMAIL%%<br/>%%SUBSCRIBEHASH%%',
+                                    'zh-CN':
+                                        '确认新闻订阅的链接。<br/>可用占位符：<br/>%%HASHEDEMAIL%%<br/>%%SUBSCRIBEHASH%%',
+                                },
+                            },
                         },
-                    },
+                        {
+                            name: 'core.newsletter.doubleOptIn',
+                            type: 'bool',
+                            config: {
+                                label: { 'en-GB': 'Double opt-in' },
+                                helpText: {
+                                    'en-GB': 'Use double opt-in for newsletter subscriptions.',
+                                    'zh-CN': '新闻订阅使用双重确认（Double-Opt-In）流程。',
+                                },
+                            },
+                        },
+                    ],
                 },
             ],
         },

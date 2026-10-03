@@ -13,6 +13,7 @@ use Shopwell\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodDefinition;
 use Shopwell\Core\Checkout\Shipping\Validator\ShippingMethodValidator;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Rule\RuleIdMatcher;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -47,6 +48,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CacheTagCollector::class),
             service(ScriptExecutor::class),
             service(RuleIdMatcher::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(ShippingMethodValidator::class)

@@ -34,6 +34,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -70,6 +71,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CacheTagCollector::class),
             service(CategoryTreePathResolver::class),
             service(DefaultCategoryLevelLoader::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(DefaultCategoryLevelLoader::class)
@@ -103,12 +105,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(EntityCmsSlotConfigInheritanceBuilder::class),
             service(SalesChannelCategoryDefinition::class),
             service(CacheTagCollector::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(CategoryListRoute::class)
         ->public()
         ->args([
             service('sales_channel.category.repository'),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(CategoryIndexer::class)

@@ -8,10 +8,16 @@ use Shopwell\Core\Checkout\Cart\AbstractCartPersister;
 use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Cart\CartCalculator;
 use Shopwell\Core\Checkout\Cart\CartLocker;
+use Shopwell\Core\Checkout\Cart\Extension\CartItemRemoveRouteExtension;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartItemRemoveRoute;
+use Shopwell\Core\Checkout\Cart\SalesChannel\CartResponse;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Generator;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -44,7 +50,8 @@ class CartItemRemoveRouteTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(CartCalculator::class),
             $persister,
-            $cartLocker
+            $cartLocker,
+            new ExtensionDispatcher(new EventDispatcher())
         );
 
         $route->remove(
@@ -52,5 +59,31 @@ class CartItemRemoveRouteTest extends TestCase
             $cart,
             static::createStub(SalesChannelContext::class)
         );
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $request = new Request();
+        $cart = new Cart(Uuid::randomHex());
+        $context = Generator::generateSalesChannelContext();
+        $response = new CartResponse(new Cart('token'));
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('cart-item-remove-route.remove.pre', static function (CartItemRemoveRouteExtension $extension) use ($request, $cart, $context, $response): void {
+            static::assertSame(['request' => $request, 'cart' => $cart, 'context' => $context], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new CartItemRemoveRoute(
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(CartCalculator::class),
+            static::createStub(AbstractCartPersister::class),
+            static::createStub(CartLocker::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->remove($request, $cart, $context));
     }
 }

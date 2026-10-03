@@ -6,10 +6,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Storefront\Theme\AbstractResolvedConfigLoader;
 use Shopwell\Storefront\Theme\ThemeConfigValueAccessor;
 use Shopwell\Storefront\Theme\ThemeRuntimeConfig;
@@ -22,10 +22,9 @@ use Shopwell\Storefront\Theme\ThemeRuntimeConfigService;
 #[CoversClass(ThemeConfigValueAccessor::class)]
 class ThemeConfigValueAccessorTest extends TestCase
 {
+    #[DisabledFeatures(['v6.8.0.0'])]
     public function testGetWithoutThemeIdOnV68(): void
     {
-        Feature::skipTestIfActive('v6.8.0.0', $this);
-
         $configLoader = static::createStub(AbstractResolvedConfigLoader::class);
         $cacheTagCollector = static::createStub(CacheTagCollector::class);
 
@@ -49,8 +48,6 @@ class ThemeConfigValueAccessorTest extends TestCase
 
     public function testGetWithoutThemeIdPostV68(): void
     {
-        Feature::skipTestIfInActive('v6.8.0.0', $this);
-
         $configLoader = static::createStub(AbstractResolvedConfigLoader::class);
         $cacheTagCollector = static::createStub(CacheTagCollector::class);
 

@@ -11,6 +11,7 @@ use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Price\Struct\ListPrice;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
@@ -23,12 +24,43 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 #[Package('fundamentals@after-sales')]
 final class CartRuleFixture
 {
+    /**
+     * @return \Generator<string, array{non-empty-string, bool}>
+     */
+    public static function lineItemTypeProvider(): \Generator
+    {
+        foreach (self::lineItemTypes() as $name => $type) {
+            yield $name . ' via line item scope' => [$type, true];
+            yield $name . ' via cart scope' => [$type, false];
+        }
+    }
+
+    /**
+     * @return \Generator<string, array{non-empty-string, bool, bool}>
+     */
+    public static function lineItemWithoutProductDataProvider(): \Generator
+    {
+        foreach (self::lineItemTypes() as $name => $type) {
+            if ($type === LineItem::PRODUCT_LINE_ITEM_TYPE) {
+                continue;
+            }
+
+            yield $name . ' via line item scope' => [$type, true, true];
+            yield $name . ' via cart scope' => [$type, false, false];
+        }
+    }
+
     public static function createLineItem(
         string $type = LineItem::PRODUCT_LINE_ITEM_TYPE,
         int $quantity = 1,
         ?string $referenceId = null
     ): LineItem {
         return new LineItem(Uuid::randomHex(), $type, $referenceId, $quantity);
+    }
+
+    public static function createDigitalProductLineItem(): LineItem
+    {
+        return self::createLineItem()->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_DIGITAL);
     }
 
     public static function createLineItemWithDeliveryInfo(
@@ -85,5 +117,21 @@ final class CartRuleFixture
         $cart->addLineItems($lineItemCollection);
 
         return $cart;
+    }
+
+    /**
+     * @return array<string, non-empty-string>
+     */
+    private static function lineItemTypes(): array
+    {
+        return [
+            'product' => LineItem::PRODUCT_LINE_ITEM_TYPE,
+            'custom' => LineItem::CUSTOM_LINE_ITEM_TYPE,
+            'credit' => LineItem::CREDIT_LINE_ITEM_TYPE,
+            'plugin item' => 'my-plugin-item',
+            'container' => LineItem::CONTAINER_LINE_ITEM,
+            'customized products option' => 'customized-products-option',
+            'customized products option value' => 'option-values',
+        ];
     }
 }

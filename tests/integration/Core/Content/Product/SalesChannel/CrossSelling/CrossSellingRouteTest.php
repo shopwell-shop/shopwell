@@ -24,6 +24,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
@@ -661,6 +662,7 @@ class CrossSellingRouteTest extends TestCase
             static::createStub(AbstractProductCloseoutFilterFactory::class),
             static::createStub(CacheTagCollector::class),
             static::getContainer()->get(Connection::class),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $productId = Uuid::randomHex();

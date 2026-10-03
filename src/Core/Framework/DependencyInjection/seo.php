@@ -51,6 +51,7 @@ use Shopwell\Core\Framework\Adapter\Twig\TwigVariableParserFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelDefinitionInstanceRegistry;
@@ -192,7 +193,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('twig.extension.routing'),
             service(CategoryUrlGenerator::class),
         ])
-        ->tag('twig.extension');
+        ->tag('twig.extension')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     $services->set(SeoUrlPlaceholderHandlerInterface::class, SeoUrlPlaceholderHandler::class)
         ->public()
@@ -232,6 +234,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service('sales_channel.seo_url.repository'),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(StoreApiSeoResolver::class)
@@ -285,7 +288,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('sales_channel.category.repository'),
             service('category.repository'),
         ])
-        ->tag('twig.extension');
+        ->tag('twig.extension')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     $services->set(SeoUrlTwigFactory::class);
 

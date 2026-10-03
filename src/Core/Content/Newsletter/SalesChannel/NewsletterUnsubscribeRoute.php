@@ -5,10 +5,12 @@ namespace Shopwell\Core\Content\Newsletter\SalesChannel;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientCollection;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientEntity;
 use Shopwell\Core\Content\Newsletter\Event\NewsletterUnsubscribeEvent;
+use Shopwell\Core\Content\Newsletter\Extension\NewsletterUnsubscribeRouteExtension;
 use Shopwell\Core\Content\Newsletter\NewsletterException;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -43,6 +45,7 @@ class NewsletterUnsubscribeRoute extends AbstractNewsletterUnsubscribeRoute
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly RateLimiter $rateLimiter,
         private readonly RequestStack $requestStack,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -76,6 +79,15 @@ class NewsletterUnsubscribeRoute extends AbstractNewsletterUnsubscribeRoute
 
     #[Route(path: '/store-api/newsletter/unsubscribe', name: 'store-api.newsletter.unsubscribe', methods: ['POST'])]
     public function unsubscribeWithResponse(RequestDataBag $dataBag, SalesChannelContext $context): SuccessResponse
+    {
+        return $this->extensions->publish(
+            name: NewsletterUnsubscribeRouteExtension::NAME,
+            extension: new NewsletterUnsubscribeRouteExtension($dataBag, $context),
+            function: $this->_unsubscribeWithResponse(...),
+        );
+    }
+
+    private function _unsubscribeWithResponse(RequestDataBag $dataBag, SalesChannelContext $context): SuccessResponse
     {
         if (($request = $this->requestStack->getMainRequest()) !== null && $request->getClientIp() !== null) {
             $this->rateLimiter->ensureAccepted(RateLimiter::NEWSLETTER_UNSUBSCRIBE_FORM, $request->getClientIp());

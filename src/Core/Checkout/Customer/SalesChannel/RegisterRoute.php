@@ -13,6 +13,7 @@ use Shopwell\Core\Checkout\Customer\CustomerException;
 use Shopwell\Core\Checkout\Customer\Event\CustomerLoginEvent;
 use Shopwell\Core\Checkout\Customer\Event\CustomerRegisterEvent;
 use Shopwell\Core\Checkout\Customer\Event\GuestCustomerRegisterEvent;
+use Shopwell\Core\Checkout\Customer\Extension\RegisterRouteExtension;
 use Shopwell\Core\Checkout\Customer\Service\DoubleOptInService;
 use Shopwell\Core\Checkout\Customer\Service\EmailIdnConverter;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerEmailUnique;
@@ -27,6 +28,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
 use Shopwell\Core\Framework\Event\DataMappingEvent;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -94,6 +96,7 @@ class RegisterRoute extends AbstractRegisterRoute
         private readonly DoubleOptInService $doubleOptInService,
         private readonly CustomerNewsletterSalesChannelsUpdater $customerNewsletterSalesChannelsUpdater,
         private readonly ClockInterface $clock,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -108,6 +111,19 @@ class RegisterRoute extends AbstractRegisterRoute
         SalesChannelContext $context,
         bool $validateStorefrontUrl = true,
         ?DataValidationDefinition $additionalValidationDefinitions = null
+    ): CustomerResponse {
+        return $this->extensions->publish(
+            name: RegisterRouteExtension::NAME,
+            extension: new RegisterRouteExtension($data, $context, $validateStorefrontUrl, $additionalValidationDefinitions),
+            function: $this->_register(...),
+        );
+    }
+
+    private function _register(
+        RequestDataBag $data,
+        SalesChannelContext $context,
+        bool $validateStorefrontUrl,
+        ?DataValidationDefinition $additionalValidationDefinitions
     ): CustomerResponse {
         EmailIdnConverter::encodeDataBag($data);
 

@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\App\Source\SourceResolver;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SystemConfig\Api\SystemConfigController;
 use Shopwell\Core\System\SystemConfig\CachedSystemConfigLoader;
@@ -93,6 +94,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service(SystemConfigService::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(MemoizedSystemConfigStore::class)

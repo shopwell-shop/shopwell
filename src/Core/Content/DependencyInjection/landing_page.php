@@ -14,6 +14,7 @@ use Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRoute;
 use Shopwell\Core\Content\LandingPage\SalesChannel\SalesChannelLandingPageDefinition;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -52,6 +53,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(EntityCmsSlotConfigInheritanceBuilder::class),
             service(SalesChannelLandingPageDefinition::class),
             service(CacheTagCollector::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(LandingPageValidator::class)

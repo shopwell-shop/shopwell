@@ -7,10 +7,14 @@ parameters:
 
 parametersSchema:
     shopwellLegacyStoreApiRouteMethods: listOf(string())
+    shopwellStoreApiRouteMethodsWithAbstractContract: listOf(string())
     shopwellTaggedServiceContractTagContracts: arrayOf(anyOf(string(), listOf(string())), string())
     shopwellTaggedServiceContractAdditionalTagContracts: arrayOf(anyOf(string(), listOf(string())), string())
 
 rules:
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedServiceDefinitionFeatureTagRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedServiceFeatureTagRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\FeatureFlagVersionRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\FuturePropertyCompatibilityRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\FuturePropertyVisibilityChangeRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\NoBCPlanningDeprecationRule
@@ -55,6 +59,7 @@ services:
         class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\StoreApiRouteExtensionRule
         arguments:
             legacyRouteMethods: %shopwellLegacyStoreApiRouteMethods%
+            abstractContractRouteMethods: %shopwellStoreApiRouteMethodsWithAbstractContract%
         tags:
             - phpstan.rules.rule
 

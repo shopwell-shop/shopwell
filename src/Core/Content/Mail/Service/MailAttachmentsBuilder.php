@@ -3,9 +3,9 @@
 namespace Shopwell\Core\Content\Mail\Service;
 
 use Psr\Log\LoggerInterface;
-use Shopwell\Core\Checkout\Document\DocumentCollection;
-use Shopwell\Core\Checkout\Document\DocumentEntity;
 use Shopwell\Core\Checkout\Document\Service\DocumentGenerator;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Checkout\DocumentV2\DocumentFormat;
 use Shopwell\Core\Content\MailTemplate\MailTemplateEntity;
 use Shopwell\Core\Content\MailTemplate\Subscriber\MailSendSubscriberConfig;

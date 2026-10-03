@@ -3,13 +3,13 @@
 namespace Shopwell\Tests\Integration\Core\Checkout\DocumentV2\Controller;
 
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Document\DocumentEntity;
 use Shopwell\Core\Checkout\Document\Renderer\InvoiceRenderer;
 use Shopwell\Core\Checkout\Document\Service\DocumentGenerator as LegacyDocumentGenerator;
 use Shopwell\Core\Checkout\Document\Service\PdfRenderer;
 use Shopwell\Core\Checkout\Document\Struct\DocumentGenerateOperation;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentFile\DocumentFileCollection;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentFile\DocumentFileEntity;
+use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Checkout\DocumentV2\DocumentFormat;
 use Shopwell\Core\Checkout\DocumentV2\DocumentType;
 use Shopwell\Core\Checkout\Order\OrderCollection;

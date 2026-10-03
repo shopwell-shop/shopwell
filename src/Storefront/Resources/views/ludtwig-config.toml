@@ -42,7 +42,7 @@ active-rules = [
     "twig-string-quotation",
     "html-string-quotation",
     "twig-hash-key-no-quotes",
-    "twig-prefer-shopwell-extends",
+    "twig-prefer-shopware-extends",
     "twig-block-duplicate",
     "twig-json-encode-escape-js",
     "html-duplicate-id",

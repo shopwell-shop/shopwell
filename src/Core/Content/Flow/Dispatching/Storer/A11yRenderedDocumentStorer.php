@@ -2,8 +2,8 @@
 
 namespace Shopwell\Core\Content\Flow\Dispatching\Storer;
 
-use Shopwell\Core\Checkout\Document\DocumentCollection;
-use Shopwell\Core\Checkout\Document\DocumentDefinition;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
 use Shopwell\Core\Checkout\DocumentV2\DocumentFormat;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentFileResolver;
 use Shopwell\Core\Content\Flow\Dispatching\StorableFlow;

@@ -31,6 +31,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityExtension;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\FieldSerializerInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer;
+use Shopwell\Core\Framework\Deprecation\BCChange\BecomesInternal;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\MessageQueue\ScheduledTask\ScheduledTask;
 use Shopwell\Core\Framework\Routing\AbstractRouteScope;
@@ -45,6 +46,7 @@ use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 #[Package('framework')]
+#[BecomesInternal(version: 'v6.8.0')]
 class AutoconfigureCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void

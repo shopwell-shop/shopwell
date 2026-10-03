@@ -69,28 +69,28 @@ class EntityCacheKeyGeneratorTest extends TestCase
 
         yield 'prefix-filter' => [
             (new Criteria())->addFilter(new PrefixFilter('foo', 'bar')),
-            'c92cf15754e96eb739e2d8e21925702b',
+            '3d784bd4ac566ad45d9b73f964606d1a',
         ];
 
         // this has a different hash because of a different filter type used
         yield 'suffix-filter' => [
             (new Criteria())->addFilter(new SuffixFilter('foo', 'bar')),
-            'cb65ddf8710573000d93528724ae175d',
+            'baa2b3e06780e1e23d4d379715ef03b0',
         ];
 
         yield 'filter+sort' => [
             (new Criteria())->addFilter(new PrefixFilter('foo', 'bar'))->addSorting(new FieldSorting('foo')),
-            'db15d2a554df1f67ea076b62e7f95717',
+            '6b0ee8a848b24905dfdd1f84103a883d',
         ];
 
         yield 'filter+sort+sort-desc' => [
             (new Criteria())->addFilter(new PrefixFilter('foo', 'bar'))->addSorting(new FieldSorting('foo', FieldSorting::DESCENDING)),
-            'a5e5fa202a90ddb4c187028e20e421eb',
+            '83096e069a6e98b2966c9144370f8ed7',
         ];
 
         yield 'filter+agg' => [
             (new Criteria())->addFilter(new PrefixFilter('foo', 'bar'))->addAggregation(new TermsAggregation('foo', 'foo')),
-            '11bbaf1e7a219491e111f26ce1b5b2c9',
+            'c112e895b0497e1a0136f53da1ac5a07',
         ];
     }
 

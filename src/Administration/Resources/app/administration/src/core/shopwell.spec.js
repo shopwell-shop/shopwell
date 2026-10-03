@@ -178,4 +178,21 @@ describe('core/shopwell', () => {
         expect(Vue).toHaveProperty('useSlots');
         expect(Vue).toHaveProperty('useModel');
     });
+
+    it('loads the published composables before the global object exists', () => {
+        const globalShopwell = global.Shopwell;
+        // The Jest setup replaces the barrel so specs can mock what the composables import.
+        jest.dontMock('src/app/composables/index');
+        delete global.Shopwell;
+
+        try {
+            jest.isolateModules(() => {
+                const { ShopwellInstance } = require('src/core/shopwell');
+
+                expect(ShopwellInstance.Composables.useListing).toEqual(expect.any(Function));
+            });
+        } finally {
+            global.Shopwell = globalShopwell;
+        }
+    });
 });

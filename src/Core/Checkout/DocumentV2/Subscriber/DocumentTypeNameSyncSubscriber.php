@@ -3,9 +3,9 @@
 namespace Shopwell\Core\Checkout\DocumentV2\Subscriber;
 
 use Doctrine\DBAL\Connection;
-use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
-use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition;
-use Shopwell\Core\Checkout\Document\DocumentDefinition;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition;
+use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWriteEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\DeleteCommand;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommand;

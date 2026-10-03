@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Unit\Core\Framework\MessageQueue\Api;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 use Shopwell\Core\Framework\Increment\AbstractIncrementer;
 use Shopwell\Core\Framework\Increment\IncrementGatewayRegistry;
 use Shopwell\Core\Framework\Log\Package;
@@ -185,7 +186,8 @@ class ConsumeMessagesControllerTest extends TestCase
 
         return new MessageQueueStatsSubscriber(
             new IncrementGatewayRegistry([$incrementer]),
-            new StatsService(static::createStub(AbstractStatsRepository::class), false, new NativeClock())
+            new StatsService(static::createStub(AbstractStatsRepository::class), false, new NativeClock()),
+            new NullLogger()
         );
     }
 }

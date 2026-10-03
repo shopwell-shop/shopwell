@@ -47,4 +47,10 @@ describe('extension-tooling type surface', () => {
 
         expect(adminTypes).toContain("'../build/vue-setup-transform/shopwell-setup-macros'");
     });
+
+    it('carries the shopwell:* module declarations so extensions can import them', () => {
+        const adminTypes = fs.readFileSync(adminTypesPath, 'utf8');
+
+        expect(adminTypes).toContain("'../src/shopwell-virtual-modules'");
+    });
 });

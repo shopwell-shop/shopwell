@@ -4,10 +4,12 @@ namespace Shopwell\Core\Content\Category\SalesChannel;
 
 use Shopwell\Core\Content\Category\CategoryCollection;
 use Shopwell\Core\Content\Category\CategoryDefinition;
+use Shopwell\Core\Content\Category\Extension\CategoryListRouteExtension;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -26,7 +28,7 @@ class CategoryListRoute extends AbstractCategoryListRoute
      *
      * @param SalesChannelRepository<CategoryCollection> $categoryRepository
      */
-    public function __construct(private readonly SalesChannelRepository $categoryRepository)
+    public function __construct(private readonly SalesChannelRepository $categoryRepository, private readonly ExtensionDispatcher $extensions)
     {
     }
 
@@ -42,6 +44,15 @@ class CategoryListRoute extends AbstractCategoryListRoute
         defaults: [PlatformRequest::ATTRIBUTE_ENTITY => CategoryDefinition::ENTITY_NAME, PlatformRequest::ATTRIBUTE_HTTP_CACHE => true],
     )]
     public function load(Criteria $criteria, SalesChannelContext $context): CategoryListRouteResponse
+    {
+        return $this->extensions->publish(
+            name: CategoryListRouteExtension::NAME,
+            extension: new CategoryListRouteExtension($criteria, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Criteria $criteria, SalesChannelContext $context): CategoryListRouteResponse
     {
         $rootIds = array_filter([
             $context->getSalesChannel()->getNavigationCategoryId(),

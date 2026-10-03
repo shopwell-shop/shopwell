@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Order;
 
-use Shopwell\Core\Checkout\Document\DocumentDefinition;
+use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryDefinition;

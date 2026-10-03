@@ -133,6 +133,9 @@ const config: Config = {
     ],
 
     setupFiles: [
+        // Ahead of every other setup file: `setup-shopwell.js` loads the mixin registry, which imports
+        // `shopwell:utils`, and a virtual module has to be registered before anything requires it.
+        resolve(join(__dirname, '/test/_helper_/virtual-shopwell-modules/register-mocks.js')),
         resolve(join(__dirname, '/test/_setup/jsdom-polyfills.js')),
     ],
 
@@ -177,7 +180,7 @@ const config: Config = {
     },
 
     transformIgnorePatterns: [
-        '/node_modules/(?!(@shopwell-ag/meteor-component-library|@shopwell-ag/meteor-icon-kit|uuidv7|other)/)',
+        '/node_modules/(?!(@shopwell-ag/meteor-component-library|@shopwell-ag/meteor-icon-kit|uuidv7|three|other)/)',
     ],
 
     moduleNameMapper: {

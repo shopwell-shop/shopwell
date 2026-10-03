@@ -8,7 +8,7 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupCollect
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistCollection;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
-use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
@@ -85,10 +85,6 @@ class SalesChannelEntityTest extends TestCase
 
     public function testDeprecatedGetterThrowsWhenMajorIsActive(): void
     {
-        if (!Feature::isActive('v6.8.0.0')) {
-            static::markTestSkipped('The deprecation only throws while the v6.8.0.0 feature flag is active.');
-        }
-
         $this->expectException(\Throwable::class);
 
         (new SalesChannelEntity())->getMaintenanceIpWhitelist();

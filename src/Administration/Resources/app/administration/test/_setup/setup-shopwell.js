@@ -14,6 +14,33 @@ if (!srcPath) {
 global.window._features_ = {};
 global.window.startApplication = global.window.startApplication || (() => {});
 
+/**
+ * `src/core/shopwell.ts` publishes the composables as `Shopwell.Composables`. Loading them here would bind them
+ * to their real imports before a spec's `jest.mock` calls apply, so each one is required when it is first read.
+ * The getters are configurable, so specs can spy on them.
+ */
+jest.doMock(resolve(join(srcPath, 'src/app/composables/index')), () => {
+    const names = require(join(srcPath, 'shopwell-modules.json'))['shopwell:composables'].exports;
+    const file = (name) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+
+    return {
+        __esModule: true,
+        default: Object.defineProperties(
+            {},
+            Object.fromEntries(
+                names.map((name) => [
+                    name,
+                    {
+                        enumerable: true,
+                        configurable: true,
+                        get: () => require(join(srcPath, 'src/app/composables', file(name))).default,
+                    },
+                ]),
+            ),
+        ),
+    };
+});
+
 const Shopwell = require(resolve(join(srcPath, 'src/core/shopwell.ts'))).ShopwellInstance;
 
 const envBefore = process.env.NODE_ENV;

@@ -5,10 +5,14 @@ namespace Shopwell\Tests\Unit\Core\Content\RevocationRequest\SalesChannel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Content\Cms\Service\CmsFormSlotConfigResolver;
+use Shopwell\Core\Content\RevocationRequest\Extension\RevocationRequestRouteExtension;
 use Shopwell\Core\Content\RevocationRequest\SalesChannel\RevocationRequestRoute;
+use Shopwell\Core\Content\RevocationRequest\SalesChannel\RevocationRequestRouteResponse;
 use Shopwell\Core\Framework\Api\Context\SalesChannelApiSource;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -20,6 +24,7 @@ use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
 use Shopwell\Core\Test\Generator;
 use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Validator\ConstraintViolationList;
@@ -86,6 +91,34 @@ class RevocationRequestRouteTest extends TestCase
         ]];
     }
 
+    public function testPublishesExtension(): void
+    {
+        $dataBag = new RequestDataBag();
+        $context = Generator::generateSalesChannelContext();
+        $response = static::createStub(RevocationRequestRouteResponse::class);
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('revocation-request-route.request.pre', static function (RevocationRequestRouteExtension $extension) use ($dataBag, $context, $response): void {
+            static::assertSame(['dataBag' => $dataBag, 'context' => $context], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new RevocationRequestRoute(
+            static::createStub(DataValidationFactoryInterface::class),
+            static::createStub(DataValidator::class),
+            static::createStub(RequestStack::class),
+            static::createStub(RateLimiter::class),
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(ClockInterface::class),
+            static::createStub(CmsFormSlotConfigResolver::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->request($dataBag, $context));
+    }
+
     private function createRequestStackMock(): RequestStack
     {
         $requestStackMock = static::createStub(RequestStack::class);
@@ -116,6 +149,7 @@ class RevocationRequestRouteTest extends TestCase
             $eventDispatcher ?? static::createStub(EventDispatcherInterface::class),
             new NativeClock(),
             $slotConfigResolver,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
     }
 

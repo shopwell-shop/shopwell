@@ -1,6 +1,85 @@
 # 6.7.16.0 (upcoming)
 
+## Critical Fixes
+
+### Line item conditions evaluate line items by the data they carry
+
+Since 6.7.14.0, most line item conditions of the Rule Builder evaluated only line items of the type `product`. Custom and credit line items and line items that extensions add to the cart no longer matched them, and a single custom line item could hide shipping methods or block promotions under a negated condition such as "Item with tag / All / Are none of".
+
+The conditions now evaluate a line item by the data it carries instead of by its type, so line items of any type work with the built-in conditions again, with no change needed in extensions.
+
+## Features
+
+### System configuration tabs
+
+With the newly added tabs feature, plugin developers can now add another layer of organization to the already existing cards in the system configuration. This allows to group related cards into individual tabs and provide a better overview for merchants when configuring a plugin. The feature is fully optional to use and works with partial usage as well - any cards not added to a tab are automatically gathered in a "General" tab.
+
+**Example usage:**
+```xml
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <tab>
+        <name>product</name>
+        <title>Product</title>
+        <title lang="zh-CN">商品</title>
+
+        <card>
+            <title>Listing settings</title>
+            <title lang="zh-CN">列表设置</title>
+
+            <input-field type="bool">
+                <name>allowBuyInListing</name>
+                <label>Display buy buttons in listings</label>
+                <label lang="zh-CN">在商品列表中显示购买按钮</label>
+            </input-field>
+        </card>
+    </tab>
+
+    <tab>
+        <name>cart</name>
+        <title>Cart</title>
+        <title lang="zh-CN">购物车</title>
+
+        <card>
+            <title>Cart settings</title>
+            <title lang="zh-CN">购物车设置</title>
+
+            <input-field type="bool">
+                <name>allowBuyInCart</name>
+                <label>Display buy buttons in cart</label>
+                <label lang="zh-CN">在购物车中显示购买按钮</label>
+            </input-field>
+        </card>
+    </tab>
+</config>
+```
+
 ## Core
+
+### System activity logging
+
+User and integration creation and successful app and plugin uploads, activation, deactivation, installation, uninstallation, and updates now produce Monolog records at the `info` level on the `system_activity` channel. Records include entity identifiers and the acting Administration user ID and username or integration access key (`integrationAccessKey`) where available. Upload records include the plugin name and version read from the ZIP (the version is omitted when absent from `composer.json`). App uploads produce `app:upload` records with `appName` and `appVersion` from `manifest.xml`. Plugin lifecycle records include `pluginName` and `pluginVersion`; update records also include `previousPluginVersion` to show the version transition. Actor types are `user` for Administration users, `integration` for integrations, and `system` for system contexts, including CLI plugin commands. CLI commands and background jobs share the same context source. Fields with `null` values are omitted. Passwords and secret access keys are excluded.
+
+These records are stored in the `log_entry` database table by the existing buffered business-event handler by default.
+
+Additionally, route these records to a separate file or another Monolog handler by configuring the channel in `config/packages/monolog.yaml`, for example:
+
+```yaml
+monolog:
+    handlers:
+        system_activity:
+            type: rotating_file
+            path: '%kernel.logs_dir%/system_activity.log'
+            level: info
+            max_files: 30
+            channels: ['system_activity']
+```
+
+To keep these records out of other handlers, add `!system_activity` to those handlers' channel filters, preserving any existing exclusions. To disable database storage for system activities, override `business_event_handler_buffer.channels` with `[business_events]`.
+
+### Feed sales channels are saved without a currency list again
+
+Sales channels of types other than storefront and headless, such as product comparison, Agentic Commerce and types added by extensions, are no longer rejected with `SYSTEM__NO_GIVEN_DEFAULT_CURRENCY_ID` when their default currency is missing from their currency list, as they were since 6.7.15.0. Storefront and headless sales channels still need their default currency in their currency list.
 
 ### Shipped default languages are `en-GB` and `zh-CN`
 
@@ -15,6 +94,33 @@ The translation assets that were previously shipped for German now exist for Chi
 New installations therefore create a `zh-CN` language, a `zh` snippet set with `messages.zh` as its base file, and the `CHN` country row. The installer lists `zh-CN` both as an installer UI language and as a selectable system default language, and preselects `CNY` as its currency. `bin/console theme:create --with-snippets` now scaffolds `storefront.zh-CN.json` next to `storefront.en-GB.json`, and the storefront date picker renders the Chinese date format for `zh`.
 
 Extensions that relied on a `de-DE` snippet set being present out of the box must ship their German snippets as a plugin- or theme-provided snippet file themselves.
+
+### Filtered listings show the main variant only if it matches the active filters
+
+Filtered product listings show a variant product's main variant only if it matches all active filters, such as property, price or manufacturer filters. Otherwise, a matching variant is shown. Products configured to display their parent always show the parent.
+
+`core.listing.findBestVariant` now only affects search results. With it enabled, filtered listings show a matching main variant or the parent instead of another matching variant.
+
+Extensions that replace the preview resolution via `LoadPreviewExtension` can read the active post filters from the new `postFilters` property to apply the same rule.
+
+### Feature flags can remove legacy service definitions
+
+Extensions can tag a PHP service definition with `shopwell.inactiveFeature` and a `flag` attribute, for example `v6.8.0.0`. The service remains registered while the flag is inactive and is absent from the container once the flag is active. Use this for services that are removed with a major version; `shopwell.feature` continues to register services only while their flag is active. Changing `FEATURE_ALL` or a version-shaped major flag in the environment selects a separate container on a fresh kernel boot or explicit reboot when the default build directory is used. If `APP_BUILD_DIR` is configured, provide a different directory for each major mode. Reboot the kernel or restart long-running processes to apply the new mode.
+
+Deprecated service aliases with an announced removal version are removed when that major flag becomes active. Their target services remain available.
+
+### System config schema endpoints now require system config read access
+
+The deprecated endpoint `GET /api/_action/system-config/schema` and its successor `GET /api/_action/system-config/get-schema` now require the existing `system_config:read` privilege. Integrations and API clients that call these endpoints must add this privilege to their ACL role.
+
+### Deprecation of legacy `ConfigurationService` getters
+
+The `getConfiguration()` and `getResolvedConfiguration()` methods of `Shopwell\Core\System\SystemConfig\Service\ConfigurationService` are deprecated and will be removed in Shopwell 6.8.
+Use `getSystemConfigDefinition()` and `getResolvedSystemConfigDefinition()`, respectively.
+
+### Array values in static system configuration
+
+`shopwell.system_config` entries in `config/packages` now accept arrays, including `[]`. An empty sales-channel value clears an array from the default scope; a more specific sales-channel key still overrides an empty default parent.
 
 ### `JsonField` supports typed properties with additional extension data
 
@@ -60,6 +166,30 @@ The aliases preserve runtime class identity during the transition; they do not c
 `NotificationController` remains internal, and `AssetService` becomes internal with 6.8.
 Neither should be introduced as a new extension dependency.
 
+### Shared document classes moved to `DocumentV2`
+
+The legacy document classes that document generation v2 keeps moved into `Shopwell\Core\Checkout\DocumentV2`. Their previous names remain available as runtime class aliases throughout 6.7 and 6.8 and are removed with 6.9. The previous service IDs remain as deprecated service aliases for the same period.
+
+| Previous name | Canonical name |
+|---|---|
+| `Shopwell\Core\Checkout\Document\DocumentEntity` | `Shopwell\Core\Checkout\DocumentV2\DocumentEntity` |
+| `Shopwell\Core\Checkout\Document\DocumentDefinition` | `Shopwell\Core\Checkout\DocumentV2\DocumentDefinition` |
+| `Shopwell\Core\Checkout\Document\DocumentCollection` | `Shopwell\Core\Checkout\DocumentV2\DocumentCollection` |
+| `Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigEntity` | `Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigEntity` |
+| `Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition` | `Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition` |
+| `Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection` | `Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection` |
+| `Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelEntity` | `Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelEntity` |
+| `Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition` | `Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition` |
+| `Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelCollection` | `Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelCollection` |
+| `Shopwell\Core\Checkout\Document\Renderer\RenderedDocument` | `Shopwell\Core\Checkout\DocumentV2\Struct\RenderedDocument` |
+| `Shopwell\Core\Checkout\Document\SalesChannel\AbstractDocumentRoute` | `Shopwell\Core\Checkout\DocumentV2\SalesChannel\AbstractDocumentRoute` |
+| `Shopwell\Core\Checkout\Document\SalesChannel\DocumentRoute` | `Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute` |
+| `Shopwell\Core\Checkout\Document\Service\ReferenceInvoiceLoader` | `Shopwell\Core\Checkout\DocumentV2\Service\ReferenceInvoiceLoader` |
+
+Update imports, type declarations, static references, and service IDs to the canonical names. Entity names, repositories, and the `/store-api/document/download` route are unchanged.
+
+A decorator of the route takes effect only when it decorates the canonical service ID. `RenderedDocument::getApiAlias()` keeps returning `shopwell_core_checkout_document_renderer_rendered_document` until 6.9.
+
 ### Merged document downloads have a speaking file name
 
 Downloading several order documents at once from the order bulk edit delivered one merged PDF named with a 32 character random string, so merchants could not tell their downloads apart in the download folder.
@@ -101,6 +231,32 @@ Recounting a promotion's redemptions on order placement is faster, through a new
 
 Creating a language could return an uncaught `500` when an Elasticsearch/OpenSearch-indexed entity's live index mapping had drifted from its current definition, for example a sales channel created after the last full reindex. `LanguageSubscriber` now catches the same known-unresolvable mapping conflicts `IndexMappingUpdater` already handles elsewhere, schedules the affected entity for a reindex instead of throwing, and only logs unexpected errors. The language is created successfully; the delayed reindex is picked up by the next indexing run or a manual `es:index`.
 
+### Every Store API route publishes an extension event
+
+All Store API routes in core now publish an extension event, so you can extend a route with a subscriber instead of decorating its abstract route class. Each route has a `<Route>Extension` in the `Extension` namespace of its domain that carries the route's input parameters, for example `Shopwell\Core\Content\Product\Extension\ProductListingRouteExtension`:
+
+```php
+public static function getSubscribedEvents(): array
+{
+    return [ProductListingRouteExtension::onPre() => 'addFilter'];
+}
+```
+
+Use `onPre()` to change input objects such as the `Criteria` in place or to replace the result, `onPost()` to change the result, and `onError()` to provide a fallback. Decorating the abstract route classes keeps working.
+
+### Digital products follow their max. order quantity again
+
+Digital products are no longer limited to one unit per order regardless of `maxPurchase`, as they were since 6.7.14.0. Digital products without a `maxPurchase`, for example created through the API, now fall back to `core.cart.maxQuantity`. Set `maxPurchase` to `1` to keep one unit per order.
+
+### GARAN labels in mails come from the `garanLabels` template variable
+
+The order confirmation mail reads the GARAN label from the new `garanLabels` template variable. The `sw_garan_label_mail` Twig filter is deprecated. A migration updates the template for shops that never edited it.
+
+If you customized the order confirmation mail, replace `nestedItem.productId|sw_garan_label_mail(context)` with `garanLabels[nestedItem.productId] ?? null`, and `lineItem.productId|sw_garan_label_mail(context)` with `garanLabels[lineItem.productId] ?? null` in the plain text version. `garanLabels` is passed to every mail template that references it and has an `order` in its data.
+### Customer login publishes an extension event
+
+`AccountService::loginByCredentials()`, which the login route uses, now publishes `LoginByCredentialsExtension`. Subscribe to `LoginByCredentialsExtension::onPre()` to check the credentials yourself, for example against an external identity provider: assign the context token to `$extension->result` and call `stopPropagation()`.
+
 ## API
 
 ### HTML in customer name and address fields is rejected with a dedicated violation
@@ -108,6 +264,10 @@ Creating a language could return an uncaught `500` when an Elasticsearch/OpenSea
 Registration and address routes now reject HTML in `firstName`, `lastName`, `title`, `company`, `department`, `street`, `additionalAddressLine1`, `additionalAddressLine2` and `city` with the violation code `VIOLATION::CONTAINS_HTML_ERROR` and a source pointer to the offending field. Previously such input was emptied while being sanitized and then surfaced as a generic error that the storefront could not attach to a field, so a first name like `<John` failed registration with "Something went wrong".
 
 Input that only looks like markup, for example `I <3 you` or `5 > 3`, still passes. The check is available as the reusable constraint `Shopwell\Core\Framework\Validation\Constraint\NoHtml` for your own validation definitions.
+
+### A required birthday is enforced by the Store API
+
+When `core.loginRegistration.birthdayFieldRequired` is active, `POST /store-api/account/register` and `POST /store-api/account/change-profile` now reject a request without `birthdayDay`, `birthdayMonth` or `birthdayYear` with a `VIOLATION::IS_BLANK_ERROR` on the missing field. Previously the customer was saved without a birthday. Headless frontends must send the birthday when the setting is active.
 
 ### Store API OpenAPI schema matches the actual responses
 
@@ -215,16 +375,88 @@ The category menu entry moved from position `20` to `25` so that it no longer ti
 The group order in the permissions grid of Settings > Users & permissions follows the main navigation (Products, Orders, Customers, Content, Marketing, Settings) instead of the alphabetical order of the translated labels, with groups of extensions sorted alphabetically after them and "Other" last.
 
 The order is the `parentOrder` computed of `sw-users-permissions-permissions-grid`, and label lookups go through its `parentLabel()` method; both can be overridden to place an extension's group.
+### Order line items are paginated
 
-### Entity schema types are published to npm
+The line item list on the order detail page shows 10 items per page once an order has more than 10 top-level line items. A pagination with an items-per-page selection appears below the list. Searching or adding a line item returns to the first page.
 
-The TypeScript definitions describing the entity schema are published to npm as `@shopwell-ag/entity-schema-types`, so an extension can type against the schema of the Shopwell version it is built for instead of restating it:
+In `sw-order-line-items-grid`, the `orderLineItems` computed property still returns all line items that match the search. The grid renders the new `paginatedLineItems` computed property, and the pagination lives in the new `sw_order_line_items_grid_pagination` block. Extensions that need the full list keep using `orderLineItems`.
 
-```bash
-npm install --save-dev @shopwell-ag/entity-schema-types
+### Order state selects show a status dot
+
+`sw-order-state-select-v2` renders an `mt-select` instead of `sw-single-select`. The field shows the current state as its value with a status dot, and each option shows the status dot of its target state. The dot color comes from the new optional `stateName` prop, which takes the technical name of the current state. Without `stateName`, the field shows no dots and renders the placeholder as the current state in the regular text color, so pass it to get the value and the colors. The `state-select` event and the `sw_order_state_select_v2_field` block are unchanged. Styles that targeted `sw-single-select` elements inside this component no longer apply.
+
+### Import the global Shopwell object with `shopwell:*` modules (experimental)
+
+Administration code and extensions can now import selected APIs from the global `Shopwell` object:
+
+```ts
+import { createId } from 'shopwell:utils';
+import { warn } from 'shopwell:utils/debug';
+import { Criteria } from 'shopwell:data';
+import swFormFieldMixin from 'shopwell:mixins/sw-form-field';
+import useSwOrderDetailStore from 'shopwell:stores/swOrderDetail';
 ```
 
+This surface is **experimental** and not covered by the backwards-compatibility promise: the available
+specifiers, what each one exports, and their types can change in any release without a deprecation cycle.
+It is annotated `@experimental stableVersion:v6.8.0`, and becomes stable public API with Shopwell 6.8.
+`Shopwell.*` access is stable, so code that keeps using the global needs no change.
+
+The `shopwell:utils` and `shopwell:data` roots provide named exports. Their subpaths provide default
+exports, and declared utility namespaces can also provide named exports. Mixins and stores only provide
+subpaths for Administration registrations. A store subpath returns a composable that resolves the store
+when called.
+
+Existing `Shopwell.*` access remains supported. Use `Shopwell.Store.get()` and
+`Shopwell.Mixin.getByName()` for registrations that an extension creates at runtime.
+
+### Use the mixin-replacing composables in extensions (experimental)
+
+The composables that replace Administration mixins, such as `useListing`, `useNotification` and
+`useValidation`, are now available to extensions through `Shopwell.Composables` and the
+`shopwell:composables` module:
+
+```ts
+import { useListing } from 'shopwell:composables';
+import useNotification from 'shopwell:composables/useNotification';
+
+const { page, limit, total } = useListing({ getList });
+```
+
+Call them in `setup()` only. They are annotated `@experimental stableVersion:v6.9.0`, so their names and
+signatures can change before Shopwell 6.9.
+
+An extension that imports `shopwell:composables` requires Shopwell 6.7.16.0 or later, so require
+`shopwell/administration` `>=6.7.16.0` in its `composer.json`. On an older Administration, the import throws
+an error that names the required and the installed version. An extension that still supports older versions
+keeps using the mixins.
+
+The SFC migration codemod now imports the composables from `shopwell:composables`, so a migrated
+extension component looks like a migrated Administration one. In an extension, a component that uses
+the `cms-element` mixin is skipped, because its `useCmsElementDeprecated` replacement is not published;
+migrate it to `useCmsElement` by hand.
+
 ## Storefront
+
+### New line item reference price block
+
+A new block `component_line_item_reference_price` has been added to the template `storefront/component/line-item/element/total-price.html.twig`. This allows easier customization of the already existing reference price display for line items without having to override the entire total price value block.
+
+### Display the complete legal guarantee notice at checkout
+
+Cart settings now offer `core.cart.showLegalGuaranteeNoticeInline` to display the complete localized legal guarantee notice below the checkout terms and conditions. The setting is disabled by default and requires `core.cart.showLegalGuaranteeNotice` to be enabled. Themes can customize its placement through the `page_checkout_confirm_legal_guarantee_notice_inline` and `page_checkout_confirm_legal_guarantee_notice_inline_bottom` blocks.
+
+### Unused theme directories are kept for 24 hours after the switch
+
+After a theme recompile, the previously active `public/theme/<hash>` directory was deleted as soon as its files were older than 24 hours. That age is measured from the compilation, not from the moment the sales channel switched to the new directory, so a theme compiled weeks ago was removed by the next cleanup right after the recompile. Pages still served from an HTTP cache or CDN then referenced CSS and JS files that returned 404.
+
+The `theme.delete_files` scheduled task now works in two steps. On the first run after a directory became unused, it marks the directory with a `.retired` file, provided all of its files are older than 24 hours. On a later run, it deletes the directory once that marker is at least 24 hours old. With the daily task interval, an unused directory is therefore removed 24 to 48 hours after the switch, never earlier. A directory that becomes active again, for example via `theme:change --no-compile`, loses the marker and stays. A directory that a queued compilation is still writing has fresh files and is left alone. Directories from before this change are handled the same way.
+
+`theme:compile` and `theme:change` no longer run that cleanup themselves; compiling and cleaning up are separate jobs again. Both commands still accept `--no-cleanup`, but the option is deprecated, has no effect and will be removed in 6.8.0.0. Drop it from deploy scripts.
+
+### Preserve theme assets on S3-compatible storage
+
+Theme compilation now preserves current images and fonts on storage providers that apply deletions asynchronously. Obsolete theme assets are removed only after the replacement files have been uploaded successfully.
 
 ### Checkout form data is kept in the session storage
 
@@ -245,6 +477,10 @@ The combined `checkout.confirmTermsTextModalWithGuarantee` snippet was replaced 
 ### App requests keep body and signature across redirects
 
 Shopwell now follows a `301` or `302` from an app endpoint without dropping the `POST` method, the request body or the `shopwell-shop-signature` header, so the redirect target receives the same signed request.
+
+### App events are only delivered to the app they are about
+
+The app events `app.installed`, `app.updated`, `app.activated`, `app.deactivated`, `app.deleted`, `app.permissions.updated` and `app.config.changed` are now only delivered to app webhooks. Webhooks created through the Admin API no longer receive them. Apps keep subscribing to them in their manifest, as before.
 
 # 6.7.15.0
 
@@ -271,7 +507,7 @@ Shopwell ships the `shopwell-cli` client. Operators can register their own publi
 
 Shopwell ships a new, opt-in implementation of order document generation. It replaces the legacy pipeline, which is marked with the `#[ExperimentalReplacement]` attribute, will be deprecated with Shopwell 6.8 and removed with Shopwell 6.9. Enable it with the `DOCUMENT_GENERATION_REWORK` feature flag. Without the flag, Shopwell runs purely on the legacy implementation.
 
-The architecture and all extension points are documented in the [Document (v2) concept guide](https://developer.shopwell.com/docs/concepts/commerce/checkout-concept/document/). The coexistence and migration strategy is defined in the [migration ADR](adr/2026-08-05-document-generation-v1-to-v2-migration-strategy.md).
+The architecture and all extension points are documented in the [Document (v2) concept guide](https://developer.shopwell.cn/docs/concepts/commerce/checkout-concept/document/). The coexistence and migration strategy is defined in the [migration ADR](adr/2026-08-05-document-generation-v1-to-v2-migration-strategy.md).
 
 Classes intended to become public API are annotated `@experimental stableVersion:v6.8.0 feature:DOCUMENT_GENERATION_REWORK` and may change in any release. With Shopwell 6.8, v2 becomes the default and the annotated surface becomes the stable public API.
 
@@ -317,7 +553,7 @@ Both events are selectable as triggers in Flow Builder. `document.generation.com
 
 Plugins register document types, data providers, and renderers as tagged services: `shopwell.document_v2.type`, `shopwell.document_v2.provider`, and `shopwell.document_v2.renderer`. Twig template overrides keep working. v2 renders the same `@Framework/documents/*.html.twig` templates.
 
-The legacy extension points (the `document.renderer` and `document_type.renderer` tags, the legacy document events, decorators of the legacy `DocumentGenerator`) are never invoked by the v2 pipeline. Both variants can be registered side by side during the transition. See the [extension points guide](https://developer.shopwell.com/docs/concepts/commerce/checkout-concept/document/extension-points.html).
+The legacy extension points (the `document.renderer` and `document_type.renderer` tags, the legacy document events, decorators of the legacy `DocumentGenerator`) are never invoked by the v2 pipeline. Both variants can be registered side by side during the transition. See the [extension points guide](https://developer.shopwell.cn/docs/concepts/commerce/checkout-concept/document/extension-points.html).
 
 #### Apps can register document types
 
@@ -870,10 +1106,6 @@ The `assetFilter` computed of both components is deprecated for removal in v6.9.
 
 ## Storefront
 
-### New line item reference price block
-
-A new block `component_line_item_reference_price` has been added to the template `storefront/component/line-item/element/total-price.html.twig`. This allows easier customization of the already existing reference price display for line items without having to override the entire total price value block.
-
 ### Static theme compilation without a database
 
 Theme compilation with `StaticFileConfigLoader` now refreshes runtime configuration values when a database is available, while continuing to work without a reachable database in build environments.
@@ -1264,13 +1496,13 @@ shopwell:
     translation:
         repository_url: 'https://example.com/translations'
         metadata_url: 'https://example.com/crowdin-metadata.json'
-        community_translations_url: 'https://translate.shopwell.com'
+        community_translations_url: 'https://translate.shopwell.cn'
         documentation_url_snippet_key: 'sw-settings-language.addModal.docsUrl'
         completeness_threshold: 90
         plugins:
             - 'MyPlugin'
         excluded_locales:
-            - 'zh-CN'
+            - 'de-DE'
             - 'en-GB'
         pseudo_locales:
             - 'ach-UG'
@@ -1278,8 +1510,8 @@ shopwell:
             - plugin: 'MyPlugin'
               name: 'MySnippetName'
         languages:
-            - name: '中文'
-              locale: 'zh-CN'
+            - name: 'Deutsch'
+              locale: 'de-DE'
 ```
 
 List options (`plugins`, `excluded_locales`, `pseudo_locales`, `plugin_mapping`, `languages`) replace the shipped default entirely rather than merging; provide the full list you want. Setting a list to `[]` clears the shipped default. Decorating `AbstractTranslationConfigLoader` continues to work; a decorator that fully replaces `load()` bypasses these config overrides.
@@ -1656,7 +1888,7 @@ Each theme compilation writes its CSS/JS into a new seeded directory under `publ
 The cleanup logic is now provided by the reusable `Shopwell\Storefront\Theme\UnusedThemeDirectoryDeleter` service, which the commands and the scheduled task all use. The scheduled task remains unchanged as a fallback.
 ### `theme:create` gains `--full` and granular scaffold flags
 
-`bin/console theme:create` accepts new options to scaffold more than the default skeleton: `--with-config` generates `src/Resources/config/config.xml`, `--with-snippets` generates storefront snippet files (`src/Resources/snippet/storefront.{zh-CN,en-GB}.json`), and `--with-scss` generates a starter SCSS 7-1 folder structure (`abstracts/`, `base/`, `components/`, `layout/`, `pages/`) referenced from `base.scss`. `--full` is shorthand for all three combined. Default `theme:create` output (without any of these flags) is unchanged. The generated `composer.json` also now sets a real package name (`custom/<theme-name>` instead of a hardcoded placeholder) and pins `shopwell/core`.
+`bin/console theme:create` accepts new options to scaffold more than the default skeleton: `--with-config` generates `src/Resources/config/config.xml`, `--with-snippets` generates storefront snippet files (`src/Resources/snippet/storefront.{de-DE,en-GB}.json`), and `--with-scss` generates a starter SCSS 7-1 folder structure (`abstracts/`, `base/`, `components/`, `layout/`, `pages/`) referenced from `base.scss`. `--full` is shorthand for all three combined. Default `theme:create` output (without any of these flags) is unchanged. The generated `composer.json` also now sets a real package name (`custom/<theme-name>` instead of a hardcoded placeholder) and pins `shopwell/core`.
 
 ### `PluginManager.override()` now works for async plugins
 
@@ -1701,7 +1933,7 @@ Extension builds now set `output.uniqueName` to their technical name, which give
 
 ### The "Top results" sorting label is translatable
 
-`score` is a locked product sorting, so its label could not be edited in Settings > Products > Sorting and only ever existed for `en-GB` and `zh-CN`. Every other language fell back to one of those two.
+`score` is a locked product sorting, so its label could not be edited in Settings > Products > Sorting and only ever existed for `en-GB` and `de-DE`. Every other language fell back to one of those two.
 
 `@Storefront/storefront/component/sorting.html.twig` now renders the `filter.sortByScore` snippet for the `score` sorting instead of its database label, so it can be translated for any language through snippet management or a theme snippet file. All other sortings keep rendering the label configured in the administration.
 
@@ -1722,7 +1954,7 @@ Define the fields in `Resources/config/custom-fields.xml` (the inline `<custom-f
 
 ```xml
 <custom-fields xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/CustomField/Schema/custom-fields-1.0.xsd">
+               xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/CustomField/Schema/custom-fields-1.0.xsd">
     <custom-field-set>
         <name>my_app_folder_settings</name>
         <label>My App</label>
@@ -1796,7 +2028,7 @@ Fallback sizes apply only in remote-thumbnail mode to media in known folders who
 
 ### `SERVICE_REGISTRY_URL` is limited to Shopwell domains in production
 
-The service registry decides which Shopwell Services a shop installs and where their code is downloaded from. With `APP_ENV=prod`, `SERVICE_REGISTRY_URL` is now only used when its host is `shopwell.io` or a subdomain of it. Any other value is ignored and `https://registry.services.shopwell.io` is used instead, so a mistyped registry URL no longer breaks service installation on a live shop.
+The service registry decides which Shopwell Services a shop installs and where their code is downloaded from. With `APP_ENV=prod`, `SERVICE_REGISTRY_URL` is now only used when its host is `shopwell.cn` or a subdomain of it. Any other value is ignored and `https://registry.services.shopwell.cn` is used instead, so a mistyped registry URL no longer breaks service installation on a live shop.
 
 Other environments are unrestricted, so local setups and tests can still point at their own registry.
 
@@ -2013,11 +2245,11 @@ The XML format is the same one already used by apps in the manifest:
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <custom-fields xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/CustomField/Schema/custom-fields-1.0.xsd">
+               xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/CustomField/Schema/custom-fields-1.0.xsd">
     <custom-field-set>
         <name>my_plugin_fields</name>
         <label>My Fields</label>
-        <label lang="zh-CN">我的字段</label>
+        <label lang="de-DE">Meine Felder</label>
         <related-entities>
             <product/>
         </related-entities>
@@ -3143,7 +3375,7 @@ Also the checkbox field is now positionally aligned with the other components.
 
 We introduced a new component system to the Storefront, which makes it easier to create reusable templates. It is one foundation of a new content system, which will be released at a later stage, but components can also be used anywhere in existing templates. The component system is based on [Twig UX components](https://symfony.com/bundles/ux-twig-component/current/index.html), plus some additional features like SCSS and JS handling for your components.
 
-To dive into the full possibilities, please refer to the [official documentation](https://developer.shopwell.com/docs/concepts/framework/storefront-components.html).
+To dive into the full possibilities, please refer to the [official documentation](https://developer.shopwell.cn/docs/concepts/framework/storefront-components.html).
 
 ### New Dev-Server for development based on Vite
 
@@ -3638,11 +3870,11 @@ The same `thumbnails` payload shape is accepted by `POST /api/_action/media/{id}
 ### Support of long-running MySQL connections
 
 It is now possible to use libraries like [`doctrine-mysql-come-back`](https://github.com/facile-it/doctrine-mysql-come-back), which wrap the default DBAL connection.
-More information on how to set up, can be found here: https://developer.shopwell.com/docs/guides/hosting/infrastructure/database.html#setup-for-long-running-environments
+More information on how to set up, can be found here: https://developer.shopwell.cn/docs/guides/hosting/infrastructure/database.html#setup-for-long-running-environments
 
 ### System config overrides in staging mode
 
-The `system:setup:staging` command now supports pre-configuring system config keys during staging setup. Both global and sales channel-specific values can be set, following the same YAML structure used for [static system configuration](https://developer.shopwell.com/docs/guides/hosting/configurations/shopwell/static-system-config.md).
+The `system:setup:staging` command now supports pre-configuring system config keys during staging setup. Both global and sales channel-specific values can be set, following the same YAML structure used for [static system configuration](https://developer.shopwell.cn/docs/guides/hosting/configurations/shopwell/static-system-config.md).
 
 Use `default` for global config values and sales channel IDs for channel-specific overrides:
 
@@ -4588,7 +4820,7 @@ You can opt in to the new behaviour by activating either the `v6.8.0.0` (all upc
 Due to the rework of the contained rules in the cache hash, this becomes efficiently possible. The complete caching behaviour is now controlled by the `sw-cache-hash` cookie.
 
 You should rework you extensions to also work with enabled cache for logged in customers and when the cart is filled.
-To modify the default behaviour there are several extension points you can hook into, for a detailed explanation please take a look at the [caching docs](https://developer.shopwell.com/docs/guides/plugins/plugins/framework/caching/#manipulating-the-cache-key).
+To modify the default behaviour there are several extension points you can hook into, for a detailed explanation please take a look at the [caching docs](https://developer.shopwell.cn/docs/guides/plugins/plugins/framework/caching/#manipulating-the-cache-key).
 
 The following classes and constants were deprecated as they will not be used anymore:
 * `\Shopwell\Core\Framework\Adapter\Cache\Http\CacheStateValidator`
@@ -4608,7 +4840,7 @@ Added support for caching policies to define HTTP cache behavior via configurati
 
 You can now configure named caching policies that define how the Cache-Control header is formed. These policies can be assigned per area (`storefront`, `store_api`) and per route. The header controls how caches (browser, reverse proxy, CDN, Symfony cache layer) should cache the response.
 
-The feature is enabled using the `CACHE_REWORK` feature flag. For more details see the [caching policies documentation](https://developer.shopwell.com/docs/guides/hosting/performance/caches.html#http-caching-policies).
+The feature is enabled using the `CACHE_REWORK` feature flag. For more details see the [caching policies documentation](https://developer.shopwell.cn/docs/guides/hosting/performance/caches.html#http-caching-policies).
 
 ### Add recursive assign method to AssignArrayTrait
 
@@ -4731,7 +4963,7 @@ Now, tax rules are applied **correctly** based on the customer type.
 ### Robots.txt configuration
 
 The rendering of the `robots.txt` file has been changed to support custom `User-agent` blocks and the full `robots.txt` standard.
-For a detailed guide on how to use the new features and extend the functionality, please refer to our documentation guide [Extend robots.txt configuration](https://developer.shopwell.com/docs/guides/plugins/plugins/content/seo/extend-robots-txt.html).
+For a detailed guide on how to use the new features and extend the functionality, please refer to our documentation guide [Extend robots.txt configuration](https://developer.shopwell.cn/docs/guides/plugins/plugins/content/seo/extend-robots-txt.html).
 
 ### Scheduled Task for cleaning up corrupted media entries
 

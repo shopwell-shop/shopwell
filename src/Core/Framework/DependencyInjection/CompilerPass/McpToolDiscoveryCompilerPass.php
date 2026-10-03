@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\DependencyInjection\CompilerPass;
 
 use Mcp\Capability\Attribute\McpTool;
 use Shopwell\Core\Framework\DependencyInjection\DependencyInjectionException;
+use Shopwell\Core\Framework\Deprecation\BCChange\BecomesInternal;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolGroup;
 use Shopwell\Core\Framework\Mcp\McpToolsetRegistry;
@@ -21,6 +22,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * bundle's own McpPass — hence the explicit priority where it is registered.
  */
 #[Package('framework')]
+#[BecomesInternal(version: 'v6.8.0')]
 class McpToolDiscoveryCompilerPass implements CompilerPassInterface
 {
     /**

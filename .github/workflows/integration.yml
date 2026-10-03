@@ -270,7 +270,8 @@ jobs:
     name: "PHP blue green 6.6 -> 6.7 -> 6.6"
     needs:
       - markdown-only-changes
-    if: ${{ needs.markdown-only-changes.outputs.docs_only != 'true' }}
+    # Enable only after Shopwell has a real 6.6.x product branch.
+    if: ${{ vars.SHOPWELL_HAS_66_BRANCH == 'true' }}
     runs-on: ubuntu-24.04
     env:
       APP_ENV: test
@@ -362,7 +363,8 @@ jobs:
   update-66-67:
     name: "PHP update 6.6 -> 6.7"
     runs-on: ubuntu-24.04
-    if: inputs.profile == 'nightly' || inputs.profile == 'release'
+    # Enable only after Shopwell has a real 6.6.x product branch.
+    if: ${{ vars.SHOPWELL_HAS_66_BRANCH == 'true' }}
     env:
       APP_ENV: test
       APP_URL: http://localhost:8000
@@ -458,5 +460,5 @@ jobs:
         with:
           # allowed-failures: docs, linters
           # allow markdown-only PRs to skip the expensive jobs, and allow jobs which do not run on a PR or outside the public repository to skip
-          allowed-skips: ${{ needs.markdown-only-changes.outputs.docs_only == 'true' && 'phpunit, win-checkout, code-ql, php-security, blue-green-66-67, blue-green-67-68' || github.repository != 'shopwell/shopwell' && github.event_name == 'pull_request' && 'win-checkout, code-ql' || github.repository != 'shopwell/shopwell' && 'code-ql' || github.event_name == 'pull_request' && 'win-checkout' || '' }}
+          allowed-skips: ${{ needs.markdown-only-changes.outputs.docs_only == 'true' && 'phpunit, win-checkout, code-ql, php-security, blue-green-66-67, blue-green-67-68' || github.repository != 'shopwell/shopwell' && github.event_name == 'pull_request' && 'blue-green-66-67, win-checkout, code-ql' || github.repository != 'shopwell/shopwell' && 'blue-green-66-67, code-ql' || github.event_name == 'pull_request' && 'blue-green-66-67, win-checkout' || 'blue-green-66-67' }}
           jobs: ${{ toJSON(needs) }}

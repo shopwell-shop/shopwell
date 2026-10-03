@@ -7,7 +7,9 @@ use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Event\CustomerSetDefaultBillingAddressEvent;
 use Shopwell\Core\Checkout\Customer\Event\CustomerSetDefaultShippingAddressEvent;
+use Shopwell\Core\Checkout\Customer\Extension\SwitchDefaultAddressRouteExtension;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -33,7 +35,8 @@ class SwitchDefaultAddressRoute extends AbstractSwitchDefaultAddressRoute
     public function __construct(
         private readonly EntityRepository $addressRepository,
         private readonly EntityRepository $customerRepository,
-        private readonly EventDispatcherInterface $eventDispatcher
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly ExtensionDispatcher $extensions
     ) {
     }
 
@@ -63,6 +66,15 @@ class SwitchDefaultAddressRoute extends AbstractSwitchDefaultAddressRoute
         methods: [Request::METHOD_PATCH]
     )]
     public function swap(string $addressId, string $type, SalesChannelContext $context, CustomerEntity $customer): NoContentResponse
+    {
+        return $this->extensions->publish(
+            name: SwitchDefaultAddressRouteExtension::NAME,
+            extension: new SwitchDefaultAddressRouteExtension($addressId, $type, $context, $customer),
+            function: $this->_swap(...),
+        );
+    }
+
+    private function _swap(string $addressId, string $type, SalesChannelContext $context, CustomerEntity $customer): NoContentResponse
     {
         $this->validateAddress($addressId, $context, $customer);
 

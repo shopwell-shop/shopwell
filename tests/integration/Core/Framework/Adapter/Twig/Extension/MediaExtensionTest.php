@@ -3,10 +3,12 @@
 namespace Shopwell\Tests\Integration\Core\Framework\Adapter\Twig\Extension;
 
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Adapter\Twig\Extension\MediaExtension;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Twig\Environment;
 use Twig\Loader\ArrayLoader;
 
 /**
@@ -72,15 +74,13 @@ class MediaExtensionTest extends TestCase
      */
     private function render(string $template, array $data): string
     {
-        $twig = static::getContainer()->get('twig');
-
-        $originalLoader = $twig->getLoader();
-        $twig->setLoader(new ArrayLoader([
-            'test.html.twig' => file_get_contents(__DIR__ . '/fixture/' . $template),
+        // an own environment with the container-built extension: rendering through the shared `twig` would cache its
+        // request-dependent Storefront globals empty for every later test
+        $twig = new Environment(new ArrayLoader([
+            'test.html.twig' => (string) file_get_contents(__DIR__ . '/fixture/' . $template),
         ]));
-        $output = $twig->render('test.html.twig', $data);
-        $twig->setLoader($originalLoader);
+        $twig->addExtension(static::getContainer()->get(MediaExtension::class));
 
-        return $output;
+        return $twig->render('test.html.twig', $data);
     }
 }

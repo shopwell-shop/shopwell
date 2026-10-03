@@ -4,9 +4,11 @@ namespace Shopwell\Core\Content\Cms\SalesChannel;
 
 use Shopwell\Core\Content\Cms\CmsException;
 use Shopwell\Core\Content\Cms\Exception\PageNotFoundException;
+use Shopwell\Core\Content\Cms\Extension\CmsRouteExtension;
 use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -23,7 +25,7 @@ class CmsRoute extends AbstractCmsRoute
     /**
      * @internal
      */
-    public function __construct(private readonly SalesChannelCmsPageLoaderInterface $cmsPageLoader)
+    public function __construct(private readonly SalesChannelCmsPageLoaderInterface $cmsPageLoader, private readonly ExtensionDispatcher $extensions)
     {
     }
 
@@ -39,6 +41,15 @@ class CmsRoute extends AbstractCmsRoute
         defaults: [PlatformRequest::ATTRIBUTE_HTTP_CACHE => true],
     )]
     public function load(string $id, Request $request, SalesChannelContext $context): CmsRouteResponse
+    {
+        return $this->extensions->publish(
+            name: CmsRouteExtension::NAME,
+            extension: new CmsRouteExtension($id, $request, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(string $id, Request $request, SalesChannelContext $context): CmsRouteResponse
     {
         $criteria = new Criteria([$id]);
 

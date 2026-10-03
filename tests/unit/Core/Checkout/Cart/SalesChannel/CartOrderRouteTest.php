@@ -14,12 +14,14 @@ use Shopwell\Core\Checkout\Cart\CartException;
 use Shopwell\Core\Checkout\Cart\CartLocker;
 use Shopwell\Core\Checkout\Cart\Event\CheckoutOrderPlacedCriteriaEvent;
 use Shopwell\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
+use Shopwell\Core\Checkout\Cart\Extension\CartOrderRouteExtension;
 use Shopwell\Core\Checkout\Cart\Extension\CheckoutPlaceOrderExtension;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\Order\OrderPersister;
 use Shopwell\Core\Checkout\Cart\Order\OrderPlaceResult;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
+use Shopwell\Core\Checkout\Cart\SalesChannel\CartOrderRouteResponse;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Cart\TaxProvider\TaxProviderProcessor;
@@ -391,7 +393,7 @@ class CartOrderRouteTest extends TestCase
         $cart->add(new LineItem('id', 'type'));
 
         $cartPersister = $this->createMock(AbstractCartPersister::class);
-        $cartPersister->method('exists')
+        $cartPersister->expects($this->once())->method('exists')
             ->with('token', $this->context)
             ->willReturn(false);
         $cartPersister->expects($this->never())->method('delete');
@@ -434,6 +436,25 @@ class CartOrderRouteTest extends TestCase
         $this->expectExceptionObject(CartException::invalidPaymentOrderNotStored(Uuid::randomHex()));
 
         $route->order($cart, $context, new RequestDataBag());
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $cart = new Cart(Uuid::randomHex());
+        $data = new RequestDataBag();
+        $response = new CartOrderRouteResponse(new OrderEntity());
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('cart-order-route.order.pre', function (CartOrderRouteExtension $extension) use ($cart, $data, $response): void {
+            static::assertSame(['cart' => $cart, 'context' => $this->context, 'data' => $data], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = $this->buildRoute(extensions: new ExtensionDispatcher($dispatcher));
+
+        static::assertSame($response, $route->order($cart, $this->context, $data));
     }
 
     /**

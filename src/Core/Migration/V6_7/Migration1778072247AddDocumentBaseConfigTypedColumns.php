@@ -3,7 +3,7 @@
 namespace Shopwell\Core\Migration\V6_7;
 
 use Doctrine\DBAL\Connection;
-use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\AddColumnTrait;
 use Shopwell\Core\Framework\Migration\MigrationStep;

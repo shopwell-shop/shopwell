@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\Plugin\Command\Scaffolding\Generator;
 
 use Shopwell\Core\Framework\Log\Package;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * @internal
@@ -10,18 +11,8 @@ use Shopwell\Core\Framework\Log\Package;
 #[Package('framework')]
 trait HasCommandOption
 {
-    public function hasCommandOption(): bool
+    public function getCommandOption(): InputOption
     {
-        return true;
-    }
-
-    public function getCommandOptionName(): string
-    {
-        return self::OPTION_NAME;
-    }
-
-    public function getCommandOptionDescription(): string
-    {
-        return self::OPTION_DESCRIPTION;
+        return new InputOption(self::OPTION_NAME, null, InputOption::VALUE_NONE, self::OPTION_DESCRIPTION);
     }
 }

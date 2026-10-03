@@ -59,6 +59,7 @@ use Shopwell\Core\Framework\Telemetry\Metrics\Metric\PeriodicMetricCollectorInte
 use Shopwell\Core\Framework\Telemetry\Metrics\MetricTransportInterface;
 use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator;
 use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage;
+use Shopwell\Core\System\SalesChannel\Capability\AbstractSalesChannelTypeCapabilities;
 use Shopwell\Core\System\Snippet\Filter\SnippetFilterInterface;
 use Shopwell\Core\System\Tax\TaxRuleType\TaxRuleTypeFilterInterface;
 use Shopwell\Elasticsearch\Admin\Indexer\AbstractAdminIndexer;
@@ -125,6 +126,7 @@ return [
             'shopwell.route_scope' => AbstractRouteScope::class,
             'shopwell.route_scope_whitelist' => RouteScopeWhitelistInterface::class,
             'shopwell.rule.definition' => Rule::class,
+            'shopwell.sales_channel.type_capabilities' => AbstractSalesChannelTypeCapabilities::class,
             'shopwell.scheduled.task' => ScheduledTask::class,
             'shopwell.seo_url.route' => SeoUrlRouteInterface::class,
             'shopwell.sitemap.config_handler' => ConfigHandlerInterface::class,

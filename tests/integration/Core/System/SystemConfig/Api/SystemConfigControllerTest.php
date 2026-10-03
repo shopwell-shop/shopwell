@@ -7,9 +7,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\System\SystemConfig\Api\SystemConfigController;
-use Shopwell\Core\System\SystemConfig\Service\ConfigurationService;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
-use Shopwell\Core\System\SystemConfig\Validation\SystemConfigValidator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -29,7 +27,7 @@ class SystemConfigControllerTest extends TestCase
         $systemConfigService->delete($key);
 
         try {
-            $response = $this->createController()->batchSaveConfiguration(
+            $response = static::getContainer()->get(SystemConfigController::class)->batchSaveConfiguration(
                 new Request([], [
                     'null' => [
                         $key => 'test-value',
@@ -43,14 +41,5 @@ class SystemConfigControllerTest extends TestCase
         } finally {
             $systemConfigService->delete($key);
         }
-    }
-
-    private function createController(): SystemConfigController
-    {
-        return new SystemConfigController(
-            static::getContainer()->get(ConfigurationService::class),
-            static::getContainer()->get(SystemConfigService::class),
-            static::getContainer()->get(SystemConfigValidator::class)
-        );
     }
 }

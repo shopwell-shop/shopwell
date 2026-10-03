@@ -15,6 +15,7 @@ use Shopwell\Core\Content\Test\Product\ProductBuilder;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Api\Controller\AuthController as AdminAuthController;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\RateLimiter\RateLimiterFactory;
@@ -37,6 +38,7 @@ use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\RateLimiter\Policy\NoLimiter;
@@ -211,7 +213,8 @@ class RateLimiterTest extends TestCase
             static::getContainer()->get('request_stack'),
             $this->mockResetLimiter([
                 RateLimiter::LOGIN_ROUTE => 1,
-            ])
+            ]),
+            new ExtensionDispatcher(new EventDispatcher())
         );
 
         $this->createCustomer('loginTest@example.com');

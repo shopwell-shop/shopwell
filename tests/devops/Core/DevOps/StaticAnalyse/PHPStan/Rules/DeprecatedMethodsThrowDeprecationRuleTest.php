@@ -5,7 +5,6 @@ namespace Shopwell\Tests\DevOps\Core\DevOps\StaticAnalyse\PHPStan\Rules;
 use PHPStan\Rules\Rule;
 use PHPStan\Symfony\XmlServiceMapFactory;
 use PHPStan\Testing\RuleTestCase;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedMethodsThrowDeprecationRule;
 use Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedServiceDecoratorPattern;
 use Shopwell\Core\Framework\Log\Package;
@@ -18,7 +17,6 @@ use Shopwell\Core\Framework\Log\Package;
 #[Package('framework')]
 class DeprecatedMethodsThrowDeprecationRuleTest extends RuleTestCase
 {
-    #[RunInSeparateProcess]
     public function testDeprecatedMethodsReportMissingDeprecationTrigger(): void
     {
         $this->analyse([__DIR__ . '/data/DeprecatedMethodsThrowDeprecationRule/DeprecatedMethods.php'], [
@@ -37,7 +35,6 @@ class DeprecatedMethodsThrowDeprecationRuleTest extends RuleTestCase
         ]);
     }
 
-    #[RunInSeparateProcess]
     public function testDeprecatedClassesReportMissingDeprecationTriggerInPublicMethods(): void
     {
         $this->analyse([__DIR__ . '/data/DeprecatedMethodsThrowDeprecationRule/DeprecatedClass.php'], [
@@ -48,7 +45,6 @@ class DeprecatedMethodsThrowDeprecationRuleTest extends RuleTestCase
         ]);
     }
 
-    #[RunInSeparateProcess]
     public function testDeprecatedServiceDecoratorsMustDelegateToTheInnerServiceWhenTheFeatureFlagIsActive(): void
     {
         $this->analyse([__DIR__ . '/data/DeprecatedMethodsThrowDeprecationRule/DeprecatedDecorator.php'], [
@@ -59,6 +55,20 @@ class DeprecatedMethodsThrowDeprecationRuleTest extends RuleTestCase
             [
                 'Method "explicitlyDeprecatedMethod" of class "Shopwell\\Core\\DevOps\\MyFakeNamespace\\DeprecatedDecorator" is marked as deprecated, but does not call "Feature::triggerDeprecationOrThrow". All deprecated methods need to trigger a deprecation warning.',
                 56,
+            ],
+        ]);
+    }
+
+    public function testInactiveFeatureServicesStillNeedClassDeprecationTriggers(): void
+    {
+        $this->analyse([__DIR__ . '/data/DeprecatedMethodsThrowDeprecationRule/TaggedDeprecatedClass.php'], [
+            [
+                'Class "Shopwell\\Core\\DevOps\\MyFakeNamespace\\TaggedDeprecatedClass" is marked as deprecated, but method "frameworkInvokedMethod" does not call "Feature::triggerDeprecationOrThrow". All public methods of deprecated classes need to trigger a deprecation warning.',
+                10,
+            ],
+            [
+                'Class "Shopwell\\Core\\DevOps\\MyFakeNamespace\\TaggedDeprecatedClass" is marked as deprecated, but method "explicitlyDeprecatedMethod" does not call "Feature::triggerDeprecationOrThrow". All public methods of deprecated classes need to trigger a deprecation warning.',
+                17,
             ],
         ]);
     }

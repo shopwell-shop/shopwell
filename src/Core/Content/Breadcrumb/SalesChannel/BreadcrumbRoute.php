@@ -2,12 +2,14 @@
 
 namespace Shopwell\Core\Content\Breadcrumb\SalesChannel;
 
+use Shopwell\Core\Content\Breadcrumb\Extension\BreadcrumbRouteExtension;
 use Shopwell\Core\Content\Breadcrumb\Struct\BreadcrumbCollection;
 use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
 use Shopwell\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -26,6 +28,7 @@ class BreadcrumbRoute extends AbstractBreadcrumbRoute
     public function __construct(
         private readonly CategoryBreadcrumbBuilder $breadcrumbBuilder,
         private readonly CacheTagCollector $cacheTagCollector,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -42,6 +45,15 @@ class BreadcrumbRoute extends AbstractBreadcrumbRoute
         defaults: [PlatformRequest::ATTRIBUTE_HTTP_CACHE => true]
     )]
     public function load(Request $request, SalesChannelContext $salesChannelContext): BreadcrumbRouteResponse
+    {
+        return $this->extensions->publish(
+            name: BreadcrumbRouteExtension::NAME,
+            extension: new BreadcrumbRouteExtension($request, $salesChannelContext),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, SalesChannelContext $salesChannelContext): BreadcrumbRouteResponse
     {
         $id = $request->attributes->get('id', '');
         $type = $request->query->get('type', 'product');

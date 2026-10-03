@@ -10,7 +10,9 @@ use Shopwell\Core\Checkout\Cart\CartLocker;
 use Shopwell\Core\Checkout\Cart\Event\AfterLineItemRemovedEvent;
 use Shopwell\Core\Checkout\Cart\Event\BeforeLineItemRemovedEvent;
 use Shopwell\Core\Checkout\Cart\Event\CartChangedEvent;
+use Shopwell\Core\Checkout\Cart\Extension\CartItemRemoveRouteExtension;
 use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -31,7 +33,8 @@ class CartItemRemoveRoute extends AbstractCartItemRemoveRoute
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly CartCalculator $cartCalculator,
         private readonly AbstractCartPersister $cartPersister,
-        private readonly CartLocker $cartLocker
+        private readonly CartLocker $cartLocker,
+        private readonly ExtensionDispatcher $extensions
     ) {
     }
 
@@ -43,6 +46,15 @@ class CartItemRemoveRoute extends AbstractCartItemRemoveRoute
     #[Route(path: '/store-api/checkout/cart/line-item', name: 'store-api.checkout.cart.remove-item', methods: ['DELETE'])]
     #[Route(path: '/store-api/checkout/cart/line-item/delete', name: 'store-api.checkout.cart.remove-item-v2', methods: ['POST'])]
     public function remove(Request $request, Cart $cart, SalesChannelContext $context): CartResponse
+    {
+        return $this->extensions->publish(
+            name: CartItemRemoveRouteExtension::NAME,
+            extension: new CartItemRemoveRouteExtension($request, $cart, $context),
+            function: $this->_remove(...),
+        );
+    }
+
+    private function _remove(Request $request, Cart $cart, SalesChannelContext $context): CartResponse
     {
         return $this->cartLocker->locked($context, function () use ($request, $cart, $context) {
             $ids = RequestParamHelper::get($request, 'ids');

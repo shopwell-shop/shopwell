@@ -20,7 +20,6 @@ use Shopwell\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConf
 use Shopwell\Storefront\Theme\StorefrontPluginRegistry;
 use Shopwell\Storefront\Theme\ThemeCollection;
 use Shopwell\Storefront\Theme\ThemeService;
-use Shopwell\Storefront\Theme\UnusedThemeDirectoryDeleter;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -59,8 +58,7 @@ class ThemeChangeCommandTest extends TestCase
             $this->themeService,
             $this->pluginRegistry,
             $this->salesChannelRepository,
-            $this->themeRepository,
-            static::createStub(UnusedThemeDirectoryDeleter::class)
+            $this->themeRepository
         );
 
         $this->commandTester = new CommandTester($themeChangeCommand);

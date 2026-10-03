@@ -6,12 +6,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Extension\ChangeCustomerProfileRouteExtension;
 use Shopwell\Core\Checkout\Customer\SalesChannel\ChangeCustomerProfileRoute;
 use Shopwell\Core\Checkout\Customer\Validation\CustomerValidationFactory;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -20,8 +22,11 @@ use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\Country\CountryEntity;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\StoreApiCustomFieldMapper;
+use Shopwell\Core\System\SalesChannel\SuccessResponse;
+use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\TestDefaults;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @internal
@@ -83,6 +88,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
             $validationFactory,
             static::createStub(StoreApiCustomFieldMapper::class),
             static::createStub(EntityRepository::class),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $data = new RequestDataBag([
@@ -120,6 +126,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(CustomerValidationFactory::class),
             $storeApiCustomFieldMapper,
             static::createStub(EntityRepository::class),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $customer = new CustomerEntity();
@@ -153,6 +160,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(CustomerValidationFactory::class),
             static::createStub(StoreApiCustomFieldMapper::class),
             static::createStub(EntityRepository::class),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $customer = new CustomerEntity();
@@ -197,7 +205,8 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(DataValidator::class),
             static::createStub(CustomerValidationFactory::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            $salutationRepository
+            $salutationRepository,
+            new ExtensionDispatcher(new EventDispatcher())
         );
 
         $customer = new CustomerEntity();
@@ -212,5 +221,33 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $salesChannelContext->method('getSalesChannelId')->willReturn(TestDefaults::SALES_CHANNEL);
 
         $change->change($data, $salesChannelContext, $customer);
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $data = new RequestDataBag();
+        $context = Generator::generateSalesChannelContext();
+        $customer = new CustomerEntity();
+        $response = new SuccessResponse();
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('change-customer-profile-route.change.pre', static function (ChangeCustomerProfileRouteExtension $extension) use ($data, $context, $customer, $response): void {
+            static::assertSame(['data' => $data, 'context' => $context, 'customer' => $customer], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new ChangeCustomerProfileRoute(
+            static::createStub(EntityRepository::class),
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(DataValidator::class),
+            static::createStub(CustomerValidationFactory::class),
+            static::createStub(StoreApiCustomFieldMapper::class),
+            static::createStub(EntityRepository::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->change($data, $context, $customer));
     }
 }

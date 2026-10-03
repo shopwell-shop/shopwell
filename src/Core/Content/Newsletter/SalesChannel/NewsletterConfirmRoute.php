@@ -6,11 +6,13 @@ use Psr\Clock\ClockInterface;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientCollection;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientEntity;
 use Shopwell\Core\Content\Newsletter\Event\NewsletterConfirmEvent;
+use Shopwell\Core\Content\Newsletter\Extension\NewsletterConfirmRouteExtension;
 use Shopwell\Core\Content\Newsletter\NewsletterException;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -43,6 +45,7 @@ class NewsletterConfirmRoute extends AbstractNewsletterConfirmRoute
         private readonly DataValidator $validator,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ClockInterface $clock,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -76,6 +79,15 @@ class NewsletterConfirmRoute extends AbstractNewsletterConfirmRoute
 
     #[Route(path: '/store-api/newsletter/confirm', name: 'store-api.newsletter.confirm', methods: ['POST'])]
     public function confirmWithResponse(RequestDataBag $dataBag, SalesChannelContext $context): SuccessResponse
+    {
+        return $this->extensions->publish(
+            name: NewsletterConfirmRouteExtension::NAME,
+            extension: new NewsletterConfirmRouteExtension($dataBag, $context),
+            function: $this->_confirmWithResponse(...),
+        );
+    }
+
+    private function _confirmWithResponse(RequestDataBag $dataBag, SalesChannelContext $context): SuccessResponse
     {
         $recipient = $this->getNewsletterRecipient('hash', $dataBag->get('hash', ''), $context->getContext());
 

@@ -2,9 +2,8 @@
 
 namespace Shopwell\Core\Checkout\DocumentV2\Generation;
 
-use Shopwell\Core\Checkout\Document\DocumentEntity;
-use Shopwell\Core\Checkout\Document\Renderer\RenderedDocument;
 use Shopwell\Core\Checkout\DocumentV2\Config\DocumentNumberGenerator;
+use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Checkout\DocumentV2\DocumentV2Exception;
 use Shopwell\Core\Checkout\DocumentV2\Event\Hooks\DocumentGenerationHook;
 use Shopwell\Core\Checkout\DocumentV2\Provider\AbstractDocumentDataProvider;
@@ -15,6 +14,7 @@ use Shopwell\Core\Checkout\DocumentV2\Renderer\DocumentRendererRegistry;
 use Shopwell\Core\Checkout\DocumentV2\Struct\AbstractRenderData;
 use Shopwell\Core\Checkout\DocumentV2\Struct\ProviderInput;
 use Shopwell\Core\Checkout\DocumentV2\Struct\ReferencedDocument;
+use Shopwell\Core\Checkout\DocumentV2\Struct\RenderedDocument;
 use Shopwell\Core\Checkout\DocumentV2\Struct\RenderInput;
 use Shopwell\Core\Checkout\DocumentV2\Struct\RenderState;
 use Shopwell\Core\Checkout\Order\OrderCollection;

@@ -7,6 +7,7 @@ use Shopwell\Core\Content\Product\ProductEntity;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
@@ -40,6 +41,7 @@ class GaranLabelTwigFilter extends AbstractExtension
             new TwigFilter('sw_garan_label_nested_uri', $this->renderNestedAsDataUri(...)),
             new TwigFilter('sw_garan_label_text_length', $this->fitTextLength(...)),
             new TwigFilter('sw_garan_label_duration_text_length', $this->fitDurationTextLength(...)),
+            // @deprecated tag:v6.8.0 - remove together with `resolveMailLabel()`
             new TwigFilter('sw_garan_label_mail', $this->resolveMailLabel(...)),
         ];
     }
@@ -112,13 +114,17 @@ class GaranLabelTwigFilter extends AbstractExtension
     }
 
     /**
-     * Returns the reference of the inline label image and the formatted duration for mail templates.
-     * `cid` is null for durations without an image, so the template can fall back to the duration text.
+     * @deprecated tag:v6.8.0 - Will be removed, mail templates read the label from the `garanLabels` template data instead
      *
      * @return array{cid: string|null, duration: string}|null
      */
     public function resolveMailLabel(?string $productId, Context $context): ?array
     {
+        Feature::triggerDeprecationOrThrow(
+            'v6.8.0.0',
+            Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0', 'the `garanLabels` mail template data'),
+        );
+
         $product = $this->loadProduct($productId, $context);
 
         if ($product === null) {

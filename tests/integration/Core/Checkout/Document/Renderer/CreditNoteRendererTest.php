@@ -21,12 +21,12 @@ use Shopwell\Core\Checkout\Document\FileGenerator\FileTypes;
 use Shopwell\Core\Checkout\Document\Renderer\CreditNoteRenderer;
 use Shopwell\Core\Checkout\Document\Renderer\DocumentRendererConfig;
 use Shopwell\Core\Checkout\Document\Renderer\InvoiceRenderer;
-use Shopwell\Core\Checkout\Document\Renderer\RenderedDocument;
 use Shopwell\Core\Checkout\Document\Renderer\RendererResult;
 use Shopwell\Core\Checkout\Document\Service\DocumentGenerator;
 use Shopwell\Core\Checkout\Document\Service\HtmlRenderer;
 use Shopwell\Core\Checkout\Document\Service\PdfRenderer;
 use Shopwell\Core\Checkout\Document\Struct\DocumentGenerateOperation;
+use Shopwell\Core\Checkout\DocumentV2\Struct\RenderedDocument;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
@@ -920,7 +920,7 @@ class CreditNoteRendererTest extends TestCase
                     'name' => 'Net price customer group',
                 ],
                 'zh-CN' => [
-                    'name' => 'Nettopreis-Kundengruppe',
+                    'name' => '净价客户组',
                 ],
             ],
         ];
@@ -941,7 +941,7 @@ class CreditNoteRendererTest extends TestCase
                     'name' => 'Standard customer group',
                 ],
                 'zh-CN' => [
-                    'name' => 'Standard-Kundengruppe',
+                    'name' => '标准客户组',
                 ],
             ],
         ];

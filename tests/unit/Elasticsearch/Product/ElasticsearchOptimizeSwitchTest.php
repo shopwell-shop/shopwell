@@ -4,8 +4,8 @@ namespace Shopwell\Tests\Unit\Elasticsearch\Product;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Core\Test\Stub\Framework\Adapter\Storage\ArrayKeyValueStorage;
 use Shopwell\Elasticsearch\Framework\Indexing\Event\ElasticsearchIndexingFinishedEvent;
 use Shopwell\Elasticsearch\Product\ElasticsearchOptimizeSwitch;
@@ -15,13 +15,9 @@ use Shopwell\Elasticsearch\Product\ElasticsearchOptimizeSwitch;
  */
 #[Package('inventory')]
 #[CoversClass(ElasticsearchOptimizeSwitch::class)]
+#[DisabledFeatures(['v6.8.0.0'])]
 class ElasticsearchOptimizeSwitchTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        Feature::skipTestIfActive('v6.8.0.0', $this);
-    }
-
     public function testGetSubscribers(): void
     {
         $subscribers = ElasticsearchOptimizeSwitch::getSubscribedEvents();

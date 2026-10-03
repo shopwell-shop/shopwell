@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Checkout\DocumentV2\Controller;
 
-use Shopwell\Core\Checkout\Document\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
 use Shopwell\Core\Checkout\DocumentV2\DocumentV2Exception;
 use Shopwell\Core\Checkout\DocumentV2\Generation\DocumentArchiveGenerator;
 use Shopwell\Core\Checkout\DocumentV2\Generation\DocumentGenerationRequest;

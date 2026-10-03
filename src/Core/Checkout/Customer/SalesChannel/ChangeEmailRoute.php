@@ -5,6 +5,7 @@ namespace Shopwell\Core\Checkout\Customer\SalesChannel;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryCollection;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Extension\ChangeEmailRouteExtension;
 use Shopwell\Core\Checkout\Customer\Service\EmailIdnConverter;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerEmailUnique;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPasswordMatches;
@@ -12,6 +13,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -51,7 +53,8 @@ class ChangeEmailRoute extends AbstractChangeEmailRoute
         private readonly EntityRepository $customerRepository,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly DataValidator $validator,
-        private readonly EntityRepository $customerRecoveryRepository
+        private readonly EntityRepository $customerRecoveryRepository,
+        private readonly ExtensionDispatcher $extensions
     ) {
     }
 
@@ -67,6 +70,15 @@ class ChangeEmailRoute extends AbstractChangeEmailRoute
         methods: [Request::METHOD_POST]
     )]
     public function change(RequestDataBag $requestDataBag, SalesChannelContext $context, CustomerEntity $customer): SuccessResponse
+    {
+        return $this->extensions->publish(
+            name: ChangeEmailRouteExtension::NAME,
+            extension: new ChangeEmailRouteExtension($requestDataBag, $context, $customer),
+            function: $this->_change(...),
+        );
+    }
+
+    private function _change(RequestDataBag $requestDataBag, SalesChannelContext $context, CustomerEntity $customer): SuccessResponse
     {
         EmailIdnConverter::encodeDataBag($requestDataBag);
         EmailIdnConverter::encodeDataBag($requestDataBag, 'emailConfirmation');

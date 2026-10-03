@@ -3,7 +3,6 @@
 namespace Shopwell\Tests\DevOps\Core\DevOps\StaticAnalyse\PHPStan\Type;
 
 use PHPStan\Testing\TypeInferenceTestCase;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
@@ -12,7 +11,6 @@ use Shopwell\Core\Framework\Log\Package;
 #[Package('framework')]
 class CollectionHasSpecifyingExtensionTest extends TypeInferenceTestCase
 {
-    #[RunInSeparateProcess]
     public function testCollectionHas(): void
     {
         foreach (static::gatherAssertTypes(__DIR__ . '/data/collection_has.php') as $args) {

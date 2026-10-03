@@ -4,10 +4,12 @@ namespace Shopwell\Core\System\Language\SalesChannel;
 
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
 use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\Language\Extension\LanguageRouteExtension;
 use Shopwell\Core\System\Language\LanguageCollection;
 use Shopwell\Core\System\Language\LanguageDefinition;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
@@ -29,6 +31,7 @@ class LanguageRoute extends AbstractLanguageRoute
     public function __construct(
         private readonly SalesChannelRepository $repository,
         private readonly CacheTagCollector $cacheTagCollector,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -49,6 +52,15 @@ class LanguageRoute extends AbstractLanguageRoute
         defaults: [PlatformRequest::ATTRIBUTE_ENTITY => LanguageDefinition::ENTITY_NAME, PlatformRequest::ATTRIBUTE_HTTP_CACHE => true],
     )]
     public function load(Request $request, SalesChannelContext $context, Criteria $criteria): LanguageRouteResponse
+    {
+        return $this->extensions->publish(
+            name: LanguageRouteExtension::NAME,
+            extension: new LanguageRouteExtension($request, $context, $criteria),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, SalesChannelContext $context, Criteria $criteria): LanguageRouteResponse
     {
         $this->cacheTagCollector->addTag(self::buildName($context->getSalesChannelId()), self::ALL_TAG);
 

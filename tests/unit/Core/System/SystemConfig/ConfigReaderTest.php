@@ -50,130 +50,136 @@ class ConfigReaderTest extends TestCase
     {
         return [
             [
-                'title' => [
-                    'en-GB' => 'Basic configuration',
-                    'zh-CN' => '基础设置',
-                ],
+                'title' => null,
                 'name' => null,
-                'elements' => [
+                'cards' => [
                     [
-                        'type' => 'text',
-                        'name' => 'email',
-                        'copyable' => true,
-                        'label' => [
-                            'en-GB' => 'eMail',
-                            'zh-CN' => '电子邮箱',
+                        'title' => [
+                            'en-GB' => 'Basic configuration',
+                            'zh-CN' => '基础设置',
                         ],
-                        'placeholder' => [
-                            'en-GB' => 'Enter your eMail address',
-                            'zh-CN' => '请输入你的邮箱地址',
-                        ],
-                        'defaultValue' => '42',
-                    ],
-                    [
-                        'type' => 'text',
-                        'name' => 'stringWithQuoteDefaultValueRemovesQuotes',
-                        'defaultValue' => '42',
-                    ],
-                    [
-                        'type' => 'text',
-                        'name' => 'nullDefault',
-                        'defaultValue' => null,
-                    ],
-                    [
-                        'type' => 'int',
-                        'name' => 'int',
-                        'defaultValue' => 42,
-                    ],
-                    [
-                        'type' => 'float',
-                        'name' => 'float',
-                        'defaultValue' => 42.0,
-                    ],
-                    [
-                        'type' => 'float',
-                        'name' => 'floatWithStringValueExpectsValueIsCastedToFloat',
-                        'defaultValue' => 42.5,
-                    ],
-                    [
-                        'type' => 'bool',
-                        'cacheRelevant' => true,
-                        'name' => 'bool',
-                        'defaultValue' => true,
-                    ],
-                    [
-                        'type' => 'single-select',
-                        'name' => 'mailMethod',
-                        'options' => [
+                        'name' => null,
+                        'elements' => [
                             [
-                                'id' => 'smtp',
-                                'name' => [
-                                    'en-GB' => 'SMTP',
+                                'type' => 'text',
+                                'name' => 'email',
+                                'copyable' => true,
+                                'label' => [
+                                    'en-GB' => 'eMail',
+                                    'zh-CN' => '电子邮箱',
                                 ],
+                                'placeholder' => [
+                                    'en-GB' => 'Enter your eMail address',
+                                    'zh-CN' => '请输入你的邮箱地址',
+                                ],
+                                'defaultValue' => '42',
                             ],
                             [
-                                'id' => 'pop3',
-                                'name' => [
-                                    'en-GB' => 'POP3',
+                                'type' => 'text',
+                                'name' => 'stringWithQuoteDefaultValueRemovesQuotes',
+                                'defaultValue' => '42',
+                            ],
+                            [
+                                'type' => 'text',
+                                'name' => 'nullDefault',
+                                'defaultValue' => null,
+                            ],
+                            [
+                                'type' => 'int',
+                                'name' => 'int',
+                                'defaultValue' => 42,
+                            ],
+                            [
+                                'type' => 'float',
+                                'name' => 'float',
+                                'defaultValue' => 42.0,
+                            ],
+                            [
+                                'type' => 'float',
+                                'name' => 'floatWithStringValueExpectsValueIsCastedToFloat',
+                                'defaultValue' => 42.5,
+                            ],
+                            [
+                                'type' => 'bool',
+                                'cacheRelevant' => true,
+                                'name' => 'bool',
+                                'defaultValue' => true,
+                            ],
+                            [
+                                'type' => 'single-select',
+                                'name' => 'mailMethod',
+                                'options' => [
+                                    [
+                                        'id' => 'smtp',
+                                        'name' => [
+                                            'en-GB' => 'SMTP',
+                                        ],
+                                    ],
+                                    [
+                                        'id' => 'pop3',
+                                        'name' => [
+                                            'en-GB' => 'POP3',
+                                        ],
+                                    ],
                                 ],
+                                'label' => [
+                                    'en-GB' => 'Mailing protocol',
+                                    'zh-CN' => '邮件发送协议',
+                                ],
+                                'placeholder' => [
+                                    'en-GB' => 'Choose your preferred transfer method',
+                                    'zh-CN' => '请选择你偏好的发送协议',
+                                ],
+                                'defaultValue' => 'smtp',
+                            ],
+                            [
+                                'type' => 'single-select',
+                                'name' => 'period',
+                                'options' => [
+                                    [
+                                        'id' => '30',
+                                        'name' => [
+                                            'en-GB' => '1 Month',
+                                        ],
+                                    ],
+                                    [
+                                        'id' => '60',
+                                        'name' => [
+                                            'en-GB' => '2 Months',
+                                        ],
+                                    ],
+                                ],
+                                'defaultValue' => '30',
+                            ],
+                            [
+                                'componentName' => 'sw-select',
+                                'cacheRelevant' => true,
+                                'name' => 'mailMethodComponent',
+                                'disabled' => true,
+                                'options' => [
+                                    [
+                                        'id' => 'smtp',
+                                        'name' => [
+                                            'en-GB' => 'English smtp',
+                                            'zh-CN' => '中文 smtp',
+                                        ],
+                                    ],
+                                    [
+                                        'id' => 'pop3',
+                                        'name' => [
+                                            'en-GB' => 'English pop3',
+                                            'zh-CN' => '中文 pop3',
+                                        ],
+                                    ],
+                                ],
+                                'defaultValue' => 'pop3',
                             ],
                         ],
-                        'label' => [
-                            'en-GB' => 'Mailing protocol',
-                            'zh-CN' => '邮件发送协议',
+                        'subtitle' => [
+                            'en-GB' => 'Basic configuration subtitle',
+                            'zh-CN' => '基础配置副标题',
                         ],
-                        'placeholder' => [
-                            'en-GB' => 'Choose your preferred transfer method',
-                            'zh-CN' => '请选择你偏好的发送协议',
-                        ],
-                        'defaultValue' => 'smtp',
                     ],
-                    [
-                        'type' => 'single-select',
-                        'name' => 'period',
-                        'options' => [
-                            [
-                                'id' => '30',
-                                'name' => [
-                                    'en-GB' => '1 Month',
-                                ],
-                            ],
-                            [
-                                'id' => '60',
-                                'name' => [
-                                    'en-GB' => '2 Months',
-                                ],
-                            ],
-                        ],
-                        'defaultValue' => '30',
-                    ],
-                    [
-                        'componentName' => 'sw-select',
-                        'cacheRelevant' => true,
-                        'name' => 'mailMethodComponent',
-                        'disabled' => true,
-                        'options' => [
-                            [
-                                'id' => 'smtp',
-                                'name' => [
-                                    'en-GB' => 'English smtp',
-                                    'zh-CN' => '中文 smtp',
-                                ],
-                            ],
-                            [
-                                'id' => 'pop3',
-                                'name' => [
-                                    'en-GB' => 'English pop3',
-                                    'zh-CN' => '中文 pop3',
-                                ],
-                            ],
-                        ],
-                        'defaultValue' => 'pop3',
-                    ],
-                ],
-                'subtitle' => [
-                    'en-GB' => 'Basic configuration subtitle',
-                    'zh-CN' => '基础配置副标题',
                 ],
             ],
         ];

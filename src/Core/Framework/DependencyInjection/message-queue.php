@@ -43,6 +43,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('shopwell.increment.gateway.registry'),
             service(StatsService::class),
+            service('logger'),
         ])
         ->tag('kernel.event_subscriber');
 

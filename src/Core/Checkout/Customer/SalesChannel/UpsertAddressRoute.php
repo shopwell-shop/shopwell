@@ -6,11 +6,13 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCol
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressDefinition;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\CustomerEvents;
+use Shopwell\Core\Checkout\Customer\Extension\UpsertAddressRouteExtension;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerZipCode;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Event\DataMappingEvent;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -56,6 +58,7 @@ class UpsertAddressRoute extends AbstractUpsertAddressRoute
         private readonly SystemConfigService $systemConfigService,
         private readonly StoreApiCustomFieldMapper $storeApiCustomFieldMapper,
         private readonly EntityRepository $salutationRepository,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -84,6 +87,19 @@ class UpsertAddressRoute extends AbstractUpsertAddressRoute
         methods: [Request::METHOD_PATCH]
     )]
     public function upsert(
+        ?string $addressId,
+        RequestDataBag $data,
+        SalesChannelContext $context,
+        CustomerEntity $customer
+    ): UpsertAddressRouteResponse {
+        return $this->extensions->publish(
+            name: UpsertAddressRouteExtension::NAME,
+            extension: new UpsertAddressRouteExtension($addressId, $data, $context, $customer),
+            function: $this->_upsert(...),
+        );
+    }
+
+    private function _upsert(
         ?string $addressId,
         RequestDataBag $data,
         SalesChannelContext $context,

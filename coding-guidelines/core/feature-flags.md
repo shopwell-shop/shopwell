@@ -1,6 +1,6 @@
 ## Introduction
 Feature flags enable the developer to create new code which is hidden behind the flag and merge it into the trunk branch, even when the code is not finalized.
-We use this functionality to merge breaks into the trunk early, without them already being switched active. To learn more about breaking changes and backward compability take a look to our [Backward Compatibility Guide](https://developer.shopwell.com/docs/resources/guidelines/code/backward-compatibility.html)
+We use this functionality to merge breaks into the trunk early, without them already being switched active. To learn more about breaking changes and backward compability take a look to our [Backward Compatibility Guide](https://developer.shopwell.cn/docs/resources/guidelines/code/backward-compatibility.html)
 
 Related ADR: [Feature flags for major versions](../../adr/2022-01-20-feature-flags-for-major-versions.md).
 
@@ -48,6 +48,21 @@ The unit suite is the exception: its bootstrap activates every registered flag r
 
 ## Using flags in PHP
 The feature flag can be used in PHP to make specific code parts only executable when the flag is active.
+
+Version-shaped feature flag IDs use four parts, such as `v6.8.0.0`. Pass that full ID to `Feature` methods. The three-part release label in `@deprecated tag:v6.8.0` is not a feature flag ID; PHPStan rejects it in feature checks.
+
+### Using flags for services
+
+Service configuration runs before the feature registry is initialized. Do not branch on `Feature::isActive()` in a PHP service configuration file. Tag a service that must disappear when a major flag is active instead:
+
+```php
+$services->set(LegacyService::class)
+    ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
+```
+
+The compiler pass removes the service definition when the flag is active. `shopwell.feature` has the inverse meaning: it removes the service while the flag is inactive. Changing `FEATURE_ALL` or an environment flag named like a major version (for example, `V6_8_0_0`) selects a separate container cache on a fresh kernel boot or explicit reboot when the default build directory is used. With `APP_BUILD_DIR`, the caller must select a different build directory for each major mode. Already booted kernels keep their compiled container until they are rebooted or replaced.
+
+Symfony service aliases cannot be tagged. For an alias scheduled for removal, add an adjacent `// @deprecated tag:vX.Y.Z` comment and list its ID under the matching `vX.Y.Z.0` key in `FeatureFlagCompilerPass::ALIASES_TO_REMOVE`. The compiler pass removes listed aliases when the flag is active, and PHPStan checks that annotated aliases are listed under the correct flag. Keep `->deprecate(...)` for Symfony's deprecation notice; its version argument is when the deprecation was introduced, not the removal version.
 
 ### Using flags in methods
 When there is no option via the container you can use additional helper functions:
@@ -274,7 +289,7 @@ When you want to toggle different parts of the template you can use the flag in 
 
 ### Using flags in config.xml
 
-When you want to toggle config input fields in config.xml like [basicInformatation.xml](https://gitlab.shopwell.com/shopwell/6/product/platform/-/blob/trunk/src/Core/System/Resources/config/basicInformation.xml), you can add a `flag` element like this:
+When you want to toggle config input fields in config.xml like [basicInformatation.xml](https://gitlab.shopwell.cn/shopwell/6/product/platform/-/blob/trunk/src/Core/System/Resources/config/basicInformation.xml), you can add a `flag` element like this:
 
 ```xml
 <input-field type="bool" flag="v6.5.0.0">

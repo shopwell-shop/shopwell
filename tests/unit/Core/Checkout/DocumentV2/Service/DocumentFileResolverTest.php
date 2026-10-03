@@ -4,9 +4,9 @@ namespace Shopwell\Tests\Unit\Core\Checkout\DocumentV2\Service;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Document\DocumentEntity;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentFile\DocumentFileCollection;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentFile\DocumentFileEntity;
+use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentFileResolver;
 use Shopwell\Core\Checkout\DocumentV2\Struct\ResolvedDocumentFile;
 use Shopwell\Core\Content\Media\MediaEntity;

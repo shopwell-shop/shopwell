@@ -4,9 +4,11 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Customer\SalesChannel;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryCollection;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryEntity;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Extension\ResetPasswordRouteExtension;
 use Shopwell\Core\Checkout\Customer\SalesChannel\ResetPasswordRoute;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -14,6 +16,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEve
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Event\NestedEventCollection;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -22,8 +25,11 @@ use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidationFactoryInterface;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SalesChannel\SuccessResponse;
+use Shopwell\Core\Test\Generator;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -100,7 +106,8 @@ class ResetPasswordRouteTest extends TestCase
             $requestStack,
             $rateLimiter,
             $passwordValidationFactory,
-            new NativeClock()
+            new NativeClock(),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $context = $this->createMock(SalesChannelContext::class);
@@ -160,6 +167,35 @@ class ResetPasswordRouteTest extends TestCase
         static::assertArrayNotHasKey('doubleOptInConfirmDate', $customerUpdate);
     }
 
+    public function testPublishesExtension(): void
+    {
+        $data = new RequestDataBag();
+        $context = Generator::generateSalesChannelContext();
+        $response = new SuccessResponse();
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('reset-password-route.reset-password.pre', static function (ResetPasswordRouteExtension $extension) use ($data, $context, $response): void {
+            static::assertSame(['data' => $data, 'context' => $context], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new ResetPasswordRoute(
+            static::createStub(EntityRepository::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(DataValidator::class),
+            static::createStub(RequestStack::class),
+            static::createStub(RateLimiter::class),
+            static::createStub(DataValidationFactoryInterface::class),
+            static::createStub(ClockInterface::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->resetPassword($data, $context));
+    }
+
     private function createCustomer(): CustomerEntity
     {
         $customer = new CustomerEntity();
@@ -215,7 +251,8 @@ class ResetPasswordRouteTest extends TestCase
             new RequestStack(),
             static::createStub(RateLimiter::class),
             $passwordValidationFactory,
-            $clock ?? new MockClock()
+            $clock ?? new MockClock(),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $context = static::createStub(SalesChannelContext::class);

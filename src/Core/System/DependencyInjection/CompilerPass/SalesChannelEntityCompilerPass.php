@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntityAggregatorInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Telemetry\DalSearchInstrumentor;
+use Shopwell\Core\Framework\Deprecation\BCChange\BecomesInternal;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\DependencyInjection\DependencyInjectionException;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelDefinitionInstanceRegistry;
@@ -26,6 +27,7 @@ use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\DependencyInjection\Reference;
 
 #[Package('framework')]
+#[BecomesInternal(version: 'v6.8.0')]
 class SalesChannelEntityCompilerPass implements CompilerPassInterface
 {
     private const PREFIX = 'sales_channel_definition.';

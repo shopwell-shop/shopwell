@@ -11,11 +11,14 @@ use Shopwell\Core\Checkout\Cart\Delivery\Struct\Delivery;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryPositionCollection;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingCostCollection;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
 use Shopwell\Core\Checkout\Cart\Error\ErrorCollection;
+use Shopwell\Core\Checkout\Cart\Extension\ShippingCostRouteExtension;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\RuleLoaderResult;
 use Shopwell\Core\Checkout\Cart\SalesChannel\ShippingCostRoute;
+use Shopwell\Core\Checkout\Cart\SalesChannel\ShippingCostRouteResponse;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\CheckoutPermissions;
@@ -29,11 +32,14 @@ use Shopwell\Core\Content\Rule\RuleCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Country\CountryEntity;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Generator;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -49,6 +55,7 @@ class ShippingCostRouteTest extends TestCase
             static::createStub(EntityRepository::class),
             static::createStub(CartRuleLoader::class),
             static::createStub(AbstractCheckoutGatewayRoute::class),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $this->expectException(DecorationPatternException::class);
@@ -100,6 +107,7 @@ class ShippingCostRouteTest extends TestCase
             $this->createShippingMethodRepositoryMock($shippingMethods, $context, [$shippingMethod1->getId(), $shippingMethod2->getId(), $shippingMethod3->getId()]),
             $cartRuleLoader,
             $checkoutGatewayRoute,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $route->shippingCostsCart($cart, $context);
@@ -143,6 +151,7 @@ class ShippingCostRouteTest extends TestCase
             $this->createShippingMethodRepositoryMock(new ShippingMethodCollection([$shippingMethod2]), $context, [$shippingMethod2->getId()]),
             $cartRuleLoader,
             $checkoutGatewayRoute,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $context->withPermissions(
@@ -188,6 +197,7 @@ class ShippingCostRouteTest extends TestCase
             $this->createShippingMethodRepositoryMock(new ShippingMethodCollection([$shippingMethod1, $shippingMethod2]), $context, [$shippingMethod1->getId(), $shippingMethod2->getId()]),
             $cartRuleLoader,
             $checkoutGatewayRoute,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $route->shippingCostsCart($cart, $context, [$shippingMethod1->getId(), $shippingMethod2->getId()]);
@@ -235,6 +245,7 @@ class ShippingCostRouteTest extends TestCase
             $shippingMethodRepository,
             $cartRuleLoader,
             $checkoutGatewayRoute,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $route->shippingCostsCart($cart, $context);
@@ -263,6 +274,7 @@ class ShippingCostRouteTest extends TestCase
             $this->createShippingMethodRepositoryMock(new ShippingMethodCollection([$shippingMethod]), $context, [$shippingMethod->getId()]),
             $cartRuleLoader,
             $checkoutGatewayRoute,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $route->shippingCostsCart($cart, $context, [$shippingMethod->getId()]);
@@ -301,11 +313,37 @@ class ShippingCostRouteTest extends TestCase
             $this->createShippingMethodRepositoryMock($shippingMethods, $context, [$shippingMethod1->getId(), $shippingMethod2->getId()]),
             $cartRuleLoader,
             $checkoutGatewayRoute,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $route->shippingCostsCart($cart, $context, [$shippingMethod1->getId(), $shippingMethod2->getId()]);
 
         static::assertCount(0, $response->getShippingCosts());
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $cart = new Cart(Uuid::randomHex());
+        $context = Generator::generateSalesChannelContext();
+        $availableShippingMethodIds = [Uuid::randomHex()];
+        $response = new ShippingCostRouteResponse(new ShippingCostCollection());
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('shipping-cost-route.shipping-costs-cart.pre', static function (ShippingCostRouteExtension $extension) use ($cart, $context, $availableShippingMethodIds, $response): void {
+            static::assertSame(['cart' => $cart, 'salesChannelContext' => $context, 'availableShippingMethodIds' => $availableShippingMethodIds], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new ShippingCostRoute(
+            static::createStub(EntityRepository::class),
+            static::createStub(CartRuleLoader::class),
+            static::createStub(AbstractCheckoutGatewayRoute::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->shippingCostsCart($cart, $context, $availableShippingMethodIds));
     }
 
     /**

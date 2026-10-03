@@ -7,19 +7,24 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Product\AbstractProductMaxPurchaseCalculator;
+use Shopwell\Core\Content\Product\Extension\ProductPurchaseLimitRouteExtension;
 use Shopwell\Core\Content\Product\ProductException;
+use Shopwell\Core\Content\Product\SalesChannel\PurchaseLimit\ProductPurchaseLimitCollection;
 use Shopwell\Core\Content\Product\SalesChannel\PurchaseLimit\ProductPurchaseLimitRoute;
+use Shopwell\Core\Content\Product\SalesChannel\PurchaseLimit\ProductPurchaseLimitRouteResponse;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldVisibility;
 use Shopwell\Core\Framework\DataAbstractionLayer\PartialEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopwell\Core\Test\Generator;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -157,6 +162,29 @@ class ProductPurchaseLimitRouteTest extends TestCase
         $this->route->getDecorated();
     }
 
+    public function testPublishesExtension(): void
+    {
+        $request = new Request();
+        $context = Generator::generateSalesChannelContext();
+        $response = new ProductPurchaseLimitRouteResponse(new ProductPurchaseLimitCollection());
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('product-purchase-limit-route.read-products-purchase-limit.pre', static function (ProductPurchaseLimitRouteExtension $extension) use ($request, $context, $response): void {
+            static::assertSame(['request' => $request, 'context' => $context], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new ProductPurchaseLimitRoute(
+            static::createStub(SalesChannelRepository::class),
+            static::createStub(AbstractProductMaxPurchaseCalculator::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->readProductsPurchaseLimit($request, $context));
+    }
+
     /**
      * @param (SalesChannelRepository<SalesChannelProductCollection>&MockObject)|null $productRepository
      */
@@ -165,6 +193,7 @@ class ProductPurchaseLimitRouteTest extends TestCase
         return new ProductPurchaseLimitRoute(
             $productRepository ?? $this->productRepository,
             $this->maxPurchaseCalculator,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
     }
 }

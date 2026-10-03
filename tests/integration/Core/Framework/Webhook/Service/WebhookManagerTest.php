@@ -26,6 +26,7 @@ use Shopwell\Core\Framework\App\Hmac\Guzzle\AuthMiddleware;
 use Shopwell\Core\Framework\App\Lifecycle\PermissionLifecycleService;
 use Shopwell\Core\Framework\App\Manifest\Xml\Permission\Permissions;
 use Shopwell\Core\Framework\App\Payload\AppPayloadServiceHelper;
+use Shopwell\Core\Framework\App\Privileges\Privileges;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -122,6 +123,8 @@ class WebhookManagerTest extends TestCase
         );
 
         $this->getManager()->dispatch($event);
+
+        static::assertSame(0, $this->getRequestCount());
     }
 
     public function testDoesNotDispatchBusinessEventIfAppHasNoPermission(): void
@@ -141,11 +144,38 @@ class WebhookManagerTest extends TestCase
             'testToken'
         );
 
-        $client = new Client([
-            'handler' => new MockHandler([]),
-        ]);
+        $this->getManager()->dispatch($event);
 
-        $this->getManager($client)->dispatch($event);
+        static::assertSame(0, $this->getRequestCount());
+    }
+
+    public function testRevokedAppPrivilegesApplyToLaterDeliveries(): void
+    {
+        $appId = Uuid::randomHex();
+        $this->createApp(appId: $appId, aclRoleId: Uuid::randomHex(), permissions: ['customer' => ['read']]);
+
+        $this->appendNewResponse(new Response(200));
+        $this->appendNewResponse(new Response(200));
+
+        $customerId = Uuid::randomHex();
+        $this->createCustomer($customerId);
+
+        $customer = static::getContainer()->get('customer.repository')->search(new Criteria([$customerId]), Context::createDefaultContext())->getEntities()->get($customerId);
+        static::assertInstanceOf(CustomerEntity::class, $customer);
+        $event = new CustomerLoginEvent(
+            static::getContainer()->get(SalesChannelContextFactory::class)->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL),
+            $customer,
+            'testToken'
+        );
+
+        $manager = $this->getManager();
+        $manager->dispatch($event);
+        static::assertSame(1, $this->getRequestCount());
+
+        static::getContainer()->get(Privileges::class)->setPrivileges($appId, [], Context::createDefaultContext());
+
+        $manager->dispatch($event);
+        static::assertSame(1, $this->getRequestCount());
     }
 
     public function testDispatchesBusinessEventIfAppHasPermission(): void
@@ -478,6 +508,27 @@ class WebhookManagerTest extends TestCase
         ]);
 
         $this->getManager($client)->dispatch($event);
+    }
+
+    public function testWebhookWithoutAnAppDoesNotReceiveAppEvents(): void
+    {
+        $appId = Uuid::randomHex();
+        $this->createApp(appId: $appId, webhooks: [
+            [
+                'name' => 'hook1',
+                'event_name' => AppDeletedEvent::NAME,
+                'url' => 'https://test.com',
+            ],
+        ]);
+        $this->createWebhook('hook2', AppDeletedEvent::NAME, 'https://test2.com');
+
+        $this->appendNewResponse(new Response(200));
+        $this->appendNewResponse(new Response(200));
+
+        $this->getManager()->dispatch(new AppDeletedEvent($appId, Context::createDefaultContext()));
+
+        static::assertSame(1, $this->getRequestCount());
+        static::assertSame('test.com', $this->getLastRequest()?->getUri()->getHost());
     }
 
     public function testDispatchesAllAppLifecycleSynchronously(): void

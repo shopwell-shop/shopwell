@@ -5,6 +5,7 @@ namespace Shopwell\Core\Content\DependencyInjection;
 use Shopwell\Core\Content\Cms\Service\CmsFormSlotConfigResolver;
 use Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRoute;
 use Shopwell\Core\Content\ContactForm\Validation\ContactFormValidationFactory;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -31,5 +32,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(RequestStack::class),
             service('shopwell.rate_limiter'),
             service(CmsFormSlotConfigResolver::class),
+            service(ExtensionDispatcher::class),
         ]);
 };

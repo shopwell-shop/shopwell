@@ -3,9 +3,11 @@
 namespace Shopwell\Tests\Integration\Core\Content\MeasurementSystem\TwigExtension;
 
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\MeasurementSystem\TwigExtension\MeasurementConvertUnitTwigFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Twig\Environment;
+use Twig\Loader\ArrayLoader;
 
 /**
  * @internal
@@ -19,7 +21,10 @@ class MeasurementConvertUnitTwigFilterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->twig = static::getContainer()->get('twig');
+        // an own environment with the container-built filter: rendering through the shared `twig` would cache its
+        // request-dependent Storefront globals empty for every later test
+        $this->twig = new Environment(new ArrayLoader());
+        $this->twig->addExtension(static::getContainer()->get(MeasurementConvertUnitTwigFilter::class));
     }
 
     public function testConvertUnitFilterCanBeUsedInTwigTemplate(): void

@@ -21,6 +21,7 @@ use Shopwell\Core\Checkout\Promotion\PromotionCollection;
 use Shopwell\Core\Checkout\Promotion\PromotionEntity;
 use Shopwell\Core\Content\Category\CategoryCollection;
 use Shopwell\Core\Content\Category\CategoryDefinition;
+use Shopwell\Core\Content\Flow\Dispatching\BufferedFlowExecutor;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopwell\Core\Content\ImportExport\Event\EnrichExportCriteriaEvent;
@@ -1334,8 +1335,7 @@ SWTEST;1;' . $productName . ';9.35;10;0c17372fe6aa46059a97fc28b40f46c4;7;7%%;%s'
             'customers.csv',
             $profile->getId(),
         );
-
-        $this->listener->removeListener(MailSentEvent::class, $listenerClosure);
+        static::getContainer()->get(BufferedFlowExecutor::class)->executeBufferedFlows();
 
         static::assertTrue($context->hasState(Context::SKIP_TRIGGER_FLOW));
         static::assertFalse($mailSent, 'The mail.sent Event did run');

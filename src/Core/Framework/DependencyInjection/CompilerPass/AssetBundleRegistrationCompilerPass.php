@@ -4,12 +4,14 @@ namespace Shopwell\Core\Framework\DependencyInjection\CompilerPass;
 
 use Shopwell\Core\Framework\Adapter\Asset\AssetPackageService;
 use Shopwell\Core\Framework\Bundle;
+use Shopwell\Core\Framework\Deprecation\BCChange\BecomesInternal;
 use Shopwell\Core\Framework\Log\Package;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
 #[Package('framework')]
+#[BecomesInternal(version: 'v6.8.0')]
 class AssetBundleRegistrationCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void

@@ -4,12 +4,16 @@ namespace Shopwell\Core\Checkout\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
-use Shopwell\Core\Checkout\Document\Service\ReferenceInvoiceLoader;
+use Shopwell\Core\Checkout\Customer\Service\GuestAuthenticator;
+use Shopwell\Core\Checkout\Document\Service\DocumentGenerator as LegacyDocumentGenerator;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentFile\DocumentFileDefinition;
 use Shopwell\Core\Checkout\DocumentV2\App\DocumentAppFeatureDefinition;
 use Shopwell\Core\Checkout\DocumentV2\Config\DocumentConfigLoader;
 use Shopwell\Core\Checkout\DocumentV2\Config\DocumentNumberGenerator;
 use Shopwell\Core\Checkout\DocumentV2\Controller\DocumentV2Controller;
+use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
 use Shopwell\Core\Checkout\DocumentV2\Generation\DocumentArchiveGenerator;
 use Shopwell\Core\Checkout\DocumentV2\Generation\DocumentDependencyResolver;
 use Shopwell\Core\Checkout\DocumentV2\Generation\DocumentGenerationRequestResolver;
@@ -27,10 +31,12 @@ use Shopwell\Core\Checkout\DocumentV2\Renderer\HtmlRenderer;
 use Shopwell\Core\Checkout\DocumentV2\Renderer\PdfRenderer;
 use Shopwell\Core\Checkout\DocumentV2\Renderer\ZugferdEmbeddedPdfRenderer;
 use Shopwell\Core\Checkout\DocumentV2\Renderer\ZugferdXmlRenderer;
+use Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute;
 use Shopwell\Core\Checkout\DocumentV2\Service\CreditItemResolver;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentFileNameBuilder;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentFileResolver;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentReader;
+use Shopwell\Core\Checkout\DocumentV2\Service\ReferenceInvoiceLoader;
 use Shopwell\Core\Checkout\DocumentV2\Subscriber\DocumentBaseConfigSyncSubscriber;
 use Shopwell\Core\Checkout\DocumentV2\Subscriber\DocumentTypeNameSyncSubscriber;
 use Shopwell\Core\Checkout\DocumentV2\Template\DocumentTemplateRenderer;
@@ -46,6 +52,7 @@ use Shopwell\Core\Content\Media\MediaService;
 use Shopwell\Core\Framework\Adapter\Translation\Translator;
 use Shopwell\Core\Framework\Adapter\Twig\TemplateFinder;
 use Shopwell\Core\Framework\App\Feature\AppFeatureStorage;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
@@ -60,6 +67,16 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
+
+    $services->set(DocumentDefinition::class)
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.entity.hookable');
+
+    $services->set(DocumentBaseConfigDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    $services->set(DocumentBaseConfigSalesChannelDefinition::class)
+        ->tag('shopwell.entity.definition');
 
     $services->set(DocumentFileDefinition::class)
         ->tag('shopwell.entity.definition');
@@ -86,13 +103,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(Connection::class),
         ])
-        ->tag('kernel.event_subscriber');
+        ->tag('kernel.event_subscriber')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.9.0.0']);
 
     $services->set(DocumentTypeNameSyncSubscriber::class)
         ->args([
             service(Connection::class),
         ])
-        ->tag('kernel.event_subscriber');
+        ->tag('kernel.event_subscriber')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.9.0.0']);
 
     $services->set(DocumentMetaProvider::class)
         ->args([
@@ -252,6 +271,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DocumentFileResolver::class),
         ]);
 
+    $services->set(ReferenceInvoiceLoader::class)
+        ->args([
+            service(Connection::class),
+        ]);
+
     $services->set(ReferencedDocumentResolver::class)
         ->args([
             service(ReferenceInvoiceLoader::class),
@@ -269,6 +293,18 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ReferencedDocumentResolver::class),
             service('order.repository'),
             service(ScriptExecutor::class),
+        ]);
+
+    $services->set(DocumentRoute::class)
+        ->public()
+        ->args([
+            service(LegacyDocumentGenerator::class),
+            service(DocumentReader::class),
+            service('document.repository'),
+            service('shopwell.rate_limiter'),
+            service(GuestAuthenticator::class),
+            tagged_iterator('document_type.renderer', 'key'),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(DocumentGenerationRequestResolver::class)

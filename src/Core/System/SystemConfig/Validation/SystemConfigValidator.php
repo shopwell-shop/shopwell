@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
+use Shopwell\Core\System\SystemConfig\DTO\SystemConfigTab;
 use Shopwell\Core\System\SystemConfig\Service\ConfigurationService;
 use Shopwell\Core\System\SystemConfig\SystemConfigException;
 use Symfony\Component\Validator\Constraint;
@@ -70,7 +71,7 @@ class SystemConfigValidator
     }
 
     /**
-     * @param array<string, mixed> $formConfig
+     * @param list<SystemConfigTab> $formConfig
      * @param array<string> $inputConfigKeys
      *
      * @return array<string, Constraint[]>
@@ -79,17 +80,15 @@ class SystemConfigValidator
     {
         $constraints = [];
 
-        foreach ($formConfig as $card) {
-            $elements = $card['elements'] ?? [];
+        foreach ($formConfig as $tab) {
+            foreach ($tab->cards as $card) {
+                foreach ($card->elements as $element) {
+                    if (!\in_array($element->name, $inputConfigKeys, true)) {
+                        continue;
+                    }
 
-            foreach ($elements as $element) {
-                if (!\in_array($element['name'], $inputConfigKeys, true)) {
-                    continue;
+                    $constraints[$element->name] = $this->buildConstraintsWithConfigs($element->config, $allowNulls);
                 }
-
-                $elementConfig = $element['config'];
-
-                $constraints[$element['name']] = $this->buildConstraintsWithConfigs($elementConfig, $allowNulls);
             }
         }
 
@@ -129,12 +128,12 @@ class SystemConfigValidator
     }
 
     /**
-     * @return array<string, mixed>
+     * @return list<SystemConfigTab>
      */
     private function getSystemConfigByDomain(string $domain, Context $context): array
     {
         try {
-            return $this->configurationService->getConfiguration($domain, $context);
+            return $this->configurationService->getSystemConfigDefinition($domain, $context);
         } catch (SystemConfigException) {
             return [];
         }

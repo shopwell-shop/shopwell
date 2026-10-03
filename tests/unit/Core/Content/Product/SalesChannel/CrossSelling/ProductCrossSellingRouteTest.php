@@ -12,11 +12,14 @@ use Shopwell\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSell
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingAssignedProducts\ProductCrossSellingAssignedProductsCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingAssignedProducts\ProductCrossSellingAssignedProductsEntity;
 use Shopwell\Core\Content\Product\Events\ProductCrossSellingStreamCriteriaEvent;
+use Shopwell\Core\Content\Product\Extension\ProductCrossSellingRouteExtension;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\ProductEntity;
 use Shopwell\Core\Content\Product\SalesChannel\AbstractProductCloseoutFilterFactory;
+use Shopwell\Core\Content\Product\SalesChannel\CrossSelling\CrossSellingElementCollection;
 use Shopwell\Core\Content\Product\SalesChannel\CrossSelling\ProductCrossSellingRoute;
+use Shopwell\Core\Content\Product\SalesChannel\CrossSelling\ProductCrossSellingRouteResponse;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingLoader;
 use Shopwell\Core\Content\ProductStream\Service\ProductStreamBuilder;
 use Shopwell\Core\Content\ProductStream\Service\ProductStreamBuilderInterface;
@@ -32,6 +35,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
@@ -281,7 +285,8 @@ class ProductCrossSellingRouteTest extends TestCase
             $listingLoader,
             static::createStub(AbstractProductCloseoutFilterFactory::class),
             $this->cacheTagCollector,
-            $this->connection
+            $this->connection,
+            new ExtensionDispatcher(new EventDispatcher())
         );
 
         $element = $route
@@ -485,10 +490,43 @@ class ProductCrossSellingRouteTest extends TestCase
             $listingLoader,
             static::createStub(AbstractProductCloseoutFilterFactory::class),
             $this->cacheTagCollector,
-            $this->connection
+            $this->connection,
+            new ExtensionDispatcher(new EventDispatcher())
         );
 
         $route->load($productId, new Request(), Generator::generateSalesChannelContext(), new Criteria());
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $productId = Uuid::randomHex();
+        $request = new Request();
+        $context = Generator::generateSalesChannelContext();
+        $criteria = new Criteria();
+        $response = new ProductCrossSellingRouteResponse(new CrossSellingElementCollection());
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('product-cross-selling-route.load.pre', static function (ProductCrossSellingRouteExtension $extension) use ($productId, $request, $context, $criteria, $response): void {
+            static::assertSame(['productId' => $productId, 'request' => $request, 'context' => $context, 'criteria' => $criteria], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new ProductCrossSellingRoute(
+            static::createStub(EntityRepository::class),
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(ProductStreamBuilder::class),
+            static::createStub(SalesChannelRepository::class),
+            static::createStub(SystemConfigService::class),
+            static::createStub(ProductListingLoader::class),
+            static::createStub(AbstractProductCloseoutFilterFactory::class),
+            static::createStub(CacheTagCollector::class),
+            static::createStub(Connection::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->load($productId, $request, $context, $criteria));
     }
 
     /**
@@ -598,7 +636,8 @@ class ProductCrossSellingRouteTest extends TestCase
             $listingLoader ?? $this->listingLoader,
             static::createStub(AbstractProductCloseoutFilterFactory::class),
             $cacheTagCollector ?? $this->cacheTagCollector,
-            $connection ?? $this->connection
+            $connection ?? $this->connection,
+            new ExtensionDispatcher(new EventDispatcher())
         );
     }
 }

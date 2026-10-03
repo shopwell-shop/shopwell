@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Product</title>
         <title lang="zh-CN">商品</title>
@@ -59,10 +59,10 @@
 
         <input-field type="bool">
             <name>findBestVariant</name>
-            <label>Preview best matching variant in search results and filtered listings</label>
-            <label lang="zh-CN">在搜索结果与筛选列表中预览最匹配的变体</label>
-            <helpText>Activate to ignore the product's "Storefront presentation &gt; Product Listing" configuration in search results and filtered listings. The best matching product variant is shown instead. Deactivate to respect the configured main variant or parent product.</helpText>
-            <helpText lang="zh-CN">启用后，搜索结果与筛选列表会忽略商品的「前台展示 &gt; 商品列表」设置，改为显示最匹配的商品变体。关闭后则遵循已配置的主变体或父商品。</helpText>
+            <label>Preview best matching variant in search results</label>
+            <label lang="zh-CN">在搜索结果中预览最匹配的变体</label>
+            <helpText>Activate to ignore the product's "Storefront presentation &gt; Product Listing" configuration in search results. The best matching product variant is shown instead. Filtered listings always show the configured main variant if it matches the active filters, otherwise a matching variant.</helpText>
+            <helpText lang="zh-CN">启用后，搜索结果会忽略商品的「前台展示 &gt; 商品列表」设置，改为显示最匹配的商品变体。筛选列表始终显示符合当前筛选条件的已配置主变体，否则显示匹配的变体。</helpText>
         </input-field>
 
         <input-field type="bool">

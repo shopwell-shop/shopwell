@@ -7,6 +7,7 @@ test(
     'Merchant is able to be guided through the First Run Wizard.',
     { tag: '@FirstRunWizard' },
     async ({
+        page,
         FRWSalesChannelSelectionPossibility,
         SelectExtensionCategory,
         ShopAdmin,
@@ -18,6 +19,46 @@ test(
             InstanceMeta.isSaaS || InstanceMeta.isPaaS,
             'Skipping test for the first run wizard, because it is disabled on SaaS and PaaS instances.',
         );
+
+        await page.route('**/api/_action/store/recommendation-regions', async (route) => {
+            await route.fulfill({
+                json: {
+                    items: [
+                        {
+                            name: 'dach',
+                            label: 'Germany / Austria / Switzerland',
+                            categories: [
+                                {
+                                    name: 'tools',
+                                    label: 'Tools',
+                                },
+                            ],
+                        },
+                    ],
+                    total: 1,
+                },
+            });
+        });
+        await page.route('**/api/_action/store/recommendations**', async (route) => {
+            await route.fulfill({
+                json: {
+                    items: [
+                        {
+                            name: 'ShopwellMigrationAssistant',
+                            label: 'Migration Assistant',
+                            shortDescription: 'Migrate shop data to Shopwell.',
+                            iconPath: null,
+                            installed: false,
+                            active: false,
+                            manufacturer: 'Shopwell',
+                            isCategoryLead: true,
+                            type: 'plugin',
+                        },
+                    ],
+                    total: 1,
+                },
+            });
+        });
 
         await ShopAdmin.goesTo(AdminFirstRunWizard.url());
 

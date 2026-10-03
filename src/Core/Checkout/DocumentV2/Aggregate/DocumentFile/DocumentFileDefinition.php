@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentFile;
 
-use Shopwell\Core\Checkout\Document\DocumentDefinition;
+use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
 use Shopwell\Core\Content\Media\MediaDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;

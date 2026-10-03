@@ -4,12 +4,14 @@ namespace Shopwell\Core\System\Snippet\SalesChannel;
 
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\Adapter\Translation\Translator;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
 use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\Snippet\Extension\SnippetRouteExtension;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -26,6 +28,7 @@ class SnippetRoute extends AbstractSnippetRoute
     public function __construct(
         private readonly SalesChannelSnippetLoader $snippetLoader,
         private readonly CacheTagCollector $cacheTagCollector,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -36,6 +39,20 @@ class SnippetRoute extends AbstractSnippetRoute
         defaults: [PlatformRequest::ATTRIBUTE_HTTP_CACHE => true],
     )]
     public function load(Request $request, SalesChannelContext $context): SnippetRouteResponse
+    {
+        return $this->extensions->publish(
+            name: SnippetRouteExtension::NAME,
+            extension: new SnippetRouteExtension($request, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    public function getDecorated(): AbstractSnippetRoute
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    private function _load(Request $request, SalesChannelContext $context): SnippetRouteResponse
     {
         $results = $this->snippetLoader->load(
             $this->parseList($request->query->getString('languageIds')),
@@ -57,11 +74,6 @@ class SnippetRoute extends AbstractSnippetRoute
         $response->isNotModified($request);
 
         return $response;
-    }
-
-    public function getDecorated(): AbstractSnippetRoute
-    {
-        throw new DecorationPatternException(self::class);
     }
 
     /**

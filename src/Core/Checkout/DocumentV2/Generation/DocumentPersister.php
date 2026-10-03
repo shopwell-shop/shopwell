@@ -3,9 +3,9 @@
 namespace Shopwell\Core\Checkout\DocumentV2\Generation;
 
 use Shopwell\Core\Checkout\Document\Aggregate\DocumentType\DocumentTypeCollection;
-use Shopwell\Core\Checkout\Document\DocumentCollection;
-use Shopwell\Core\Checkout\Document\DocumentEntity;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentFile\DocumentFileCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
+use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Checkout\DocumentV2\DocumentFormat;
 use Shopwell\Core\Checkout\DocumentV2\DocumentType;
 use Shopwell\Core\Checkout\DocumentV2\DocumentV2Exception;

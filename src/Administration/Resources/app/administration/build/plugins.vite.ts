@@ -27,6 +27,7 @@ import ExternalsPlugin from './vite-plugins/externals-plugin';
 import AssetCssPostprocessPlugin from './vite-plugins/asset-css-postprocess-plugin';
 import OverrideComponentRegisterPlugin from './vite-plugins/override-component-register';
 import ShopwellSetupPlugin from './vite-plugins/shopwell-setup';
+import VirtualShopwellModulesPlugin from './vite-plugins/virtual-shopwell-modules';
 import { loadExtensions, getViteServerPorts, isInsideDockerContainer } from './vite-plugins/utils';
 import type { ExtensionDefinition } from './vite-plugins/utils';
 import injectHtml from './vite-plugins/inject-html';
@@ -80,6 +81,10 @@ const getBaseConfig = (extension: ExtensionDefinition, isProd = false) => {
             }),
             ShopwellSetupPlugin({
                 administrationRoot: path.dirname(__dirname),
+            }),
+            VirtualShopwellModulesPlugin({
+                administrationRoot: path.dirname(__dirname),
+                consumer: 'extension',
             }),
             vue({
                 template: {

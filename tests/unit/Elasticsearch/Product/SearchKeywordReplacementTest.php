@@ -6,8 +6,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\SearchKeywordUpdater;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Elasticsearch\Framework\ElasticsearchHelper;
 use Shopwell\Elasticsearch\Product\SearchKeywordReplacement;
 
@@ -16,13 +16,9 @@ use Shopwell\Elasticsearch\Product\SearchKeywordReplacement;
  */
 #[Package('framework')]
 #[CoversClass(SearchKeywordReplacement::class)]
+#[DisabledFeatures(['v6.8.0.0'])]
 class SearchKeywordReplacementTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        Feature::skipTestIfActive('v6.8.0.0', $this);
-    }
-
     public function testSearchKeywordReplacement(): void
     {
         $decorated = $this->createMock(SearchKeywordUpdater::class);

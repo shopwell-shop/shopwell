@@ -4,13 +4,18 @@ namespace Shopwell\Tests\Unit\Core\Content\LegalGuaranteeNotice\SalesChannel;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\LegalGuaranteeNotice\Extension\LegalGuaranteeNoticeRouteExtension;
 use Shopwell\Core\Content\LegalGuaranteeNotice\LegalGuaranteeNoticeRenderer;
 use Shopwell\Core\Content\LegalGuaranteeNotice\SalesChannel\LegalGuaranteeNoticeRoute;
+use Shopwell\Core\Content\LegalGuaranteeNotice\SalesChannel\LegalGuaranteeNoticeRouteResponse;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 use Shopwell\Core\Test\TestDefaults;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
  * @internal
@@ -24,6 +29,7 @@ class LegalGuaranteeNoticeRouteTest extends TestCase
         $route = new LegalGuaranteeNoticeRoute(
             new StaticSystemConfigService(),
             static::createStub(LegalGuaranteeNoticeRenderer::class),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $this->expectExceptionObject(new DecorationPatternException(LegalGuaranteeNoticeRoute::class));
@@ -40,6 +46,7 @@ class LegalGuaranteeNoticeRouteTest extends TestCase
         $route = new LegalGuaranteeNoticeRoute(
             new StaticSystemConfigService(['core.cart.showLegalGuaranteeNotice' => false]),
             $renderer,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $route->load(Generator::generateSalesChannelContext());
@@ -65,6 +72,7 @@ class LegalGuaranteeNoticeRouteTest extends TestCase
         $route = new LegalGuaranteeNoticeRoute(
             new StaticSystemConfigService(['core.cart.showLegalGuaranteeNotice' => true]),
             $renderer,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $route->load($context);
@@ -86,10 +94,33 @@ class LegalGuaranteeNoticeRouteTest extends TestCase
                 TestDefaults::SALES_CHANNEL => ['core.cart.showLegalGuaranteeNotice' => false],
             ]),
             $renderer,
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $response = $route->load($context);
 
         static::assertNull($response->getObject()->get('svg'));
+    }
+
+    public function testPublishesExtension(): void
+    {
+        $context = Generator::generateSalesChannelContext();
+        $response = static::createStub(LegalGuaranteeNoticeRouteResponse::class);
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('legal-guarantee-notice-route.load.pre', static function (LegalGuaranteeNoticeRouteExtension $extension) use ($context, $response): void {
+            static::assertSame(['context' => $context], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new LegalGuaranteeNoticeRoute(
+            static::createStub(SystemConfigService::class),
+            static::createStub(LegalGuaranteeNoticeRenderer::class),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->load($context));
     }
 }

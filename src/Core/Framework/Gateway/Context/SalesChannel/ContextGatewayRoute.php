@@ -4,7 +4,9 @@ namespace Shopwell\Core\Framework\Gateway\Context\SalesChannel;
 
 use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Framework\App\Context\Gateway\AppContextGateway;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Gateway\Context\Command\Struct\ContextGatewayPayloadStruct;
+use Shopwell\Core\Framework\Gateway\Context\Extension\ContextGatewayRouteExtension;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -24,6 +26,7 @@ class ContextGatewayRoute extends AbstractContextGatewayRoute
      */
     public function __construct(
         private readonly AppContextGateway $contextGateway,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -34,6 +37,15 @@ class ContextGatewayRoute extends AbstractContextGatewayRoute
 
     #[Route(path: '/store-api/context/gateway', name: 'store-api.context.gateway', methods: ['GET', 'POST'])]
     public function load(Request $request, Cart $cart, SalesChannelContext $context): ContextTokenResponse
+    {
+        return $this->extensions->publish(
+            name: ContextGatewayRouteExtension::NAME,
+            extension: new ContextGatewayRouteExtension($request, $cart, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, Cart $cart, SalesChannelContext $context): ContextTokenResponse
     {
         return $this->contextGateway->process(new ContextGatewayPayloadStruct($cart, $context, new RequestDataBag($request->request->all())));
     }

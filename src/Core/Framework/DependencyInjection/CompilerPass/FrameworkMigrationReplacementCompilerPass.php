@@ -2,9 +2,11 @@
 
 namespace Shopwell\Core\Framework\DependencyInjection\CompilerPass;
 
+use Shopwell\Core\Framework\Deprecation\BCChange\BecomesInternal;
 use Shopwell\Core\Framework\Log\Package;
 
 #[Package('framework')]
+#[BecomesInternal(version: 'v6.8.0')]
 class FrameworkMigrationReplacementCompilerPass extends AbstractMigrationReplacementCompilerPass
 {
     protected function getMigrationPath(): string

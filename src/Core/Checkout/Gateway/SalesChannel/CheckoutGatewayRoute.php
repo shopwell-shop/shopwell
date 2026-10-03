@@ -6,11 +6,13 @@ use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Gateway\CheckoutGatewayInterface;
 use Shopwell\Core\Checkout\Gateway\CheckoutGatewayResponse;
 use Shopwell\Core\Checkout\Gateway\Command\Struct\CheckoutGatewayPayloadStruct;
+use Shopwell\Core\Checkout\Gateway\Extension\CheckoutGatewayRouteExtension;
 use Shopwell\Core\Checkout\Payment\Cart\Error\PaymentMethodBlockedError;
 use Shopwell\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
 use Shopwell\Core\Checkout\Shipping\Cart\Error\ShippingMethodBlockedError;
 use Shopwell\Core\Checkout\Shipping\SalesChannel\AbstractShippingMethodRoute;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -30,6 +32,7 @@ class CheckoutGatewayRoute extends AbstractCheckoutGatewayRoute
         private readonly AbstractPaymentMethodRoute $paymentMethodRoute,
         private readonly AbstractShippingMethodRoute $shippingMethodRoute,
         private readonly CheckoutGatewayInterface $checkoutGateway,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -40,6 +43,15 @@ class CheckoutGatewayRoute extends AbstractCheckoutGatewayRoute
 
     #[Route(path: '/store-api/checkout/gateway', name: 'store-api.checkout.gateway', methods: ['GET', 'POST'])]
     public function load(Request $request, Cart $cart, SalesChannelContext $context): CheckoutGatewayRouteResponse
+    {
+        return $this->extensions->publish(
+            name: CheckoutGatewayRouteExtension::NAME,
+            extension: new CheckoutGatewayRouteExtension($request, $cart, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, Cart $cart, SalesChannelContext $context): CheckoutGatewayRouteResponse
     {
         $paymentCriteria = new Criteria();
         $shippingCriteria = new Criteria();

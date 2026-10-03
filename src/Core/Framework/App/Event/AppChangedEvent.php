@@ -16,7 +16,7 @@ use Symfony\Contracts\EventDispatcher\Event;
  * @codeCoverageIgnore
  */
 #[Package('framework')]
-abstract class AppChangedEvent extends Event implements ShopwellEvent, Hookable
+abstract class AppChangedEvent extends Event implements ShopwellEvent, Hookable, AppLifecycleEvent
 {
     public function __construct(
         private readonly AppEntity $app,

@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Document\Renderer;
 
+use Shopwell\Core\Checkout\DocumentV2\Struct\RenderedDocument;
 use Shopwell\Core\Checkout\DocumentV2\Struct\RenderResult;
 use Shopwell\Core\Framework\Deprecation\BCChange\ExperimentalReplacement;
 use Shopwell\Core\Framework\Log\Package;

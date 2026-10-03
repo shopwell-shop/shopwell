@@ -5,7 +5,9 @@ namespace Shopwell\Core\Checkout\Customer\SalesChannel;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCollection;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\CustomerException;
+use Shopwell\Core\Checkout\Customer\Extension\DeleteAddressRouteExtension;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -26,7 +28,7 @@ class DeleteAddressRoute extends AbstractDeleteAddressRoute
      *
      * @internal
      */
-    public function __construct(private readonly EntityRepository $addressRepository)
+    public function __construct(private readonly EntityRepository $addressRepository, private readonly ExtensionDispatcher $extensions)
     {
     }
 
@@ -45,6 +47,15 @@ class DeleteAddressRoute extends AbstractDeleteAddressRoute
         methods: [Request::METHOD_DELETE]
     )]
     public function delete(string $addressId, SalesChannelContext $context, CustomerEntity $customer): NoContentResponse
+    {
+        return $this->extensions->publish(
+            name: DeleteAddressRouteExtension::NAME,
+            extension: new DeleteAddressRouteExtension($addressId, $context, $customer),
+            function: $this->_delete(...),
+        );
+    }
+
+    private function _delete(string $addressId, SalesChannelContext $context, CustomerEntity $customer): NoContentResponse
     {
         $this->validateAddress($addressId, $context, $customer);
 

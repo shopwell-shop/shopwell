@@ -6,7 +6,6 @@ use Shopwell\Core\Content\Media\MediaDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityTranslationDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\CustomFields;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
-use Shopwell\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
@@ -48,7 +47,7 @@ class MediaTranslationDefinition extends EntityTranslationDefinition
     {
         return new FieldCollection([
             (new StringField('title', 'title'))->addFlags(new ApiAware()),
-            (new LongTextField('alt', 'alt'))->addFlags(new ApiAware()),
+            (new StringField('alt', 'alt'))->addFlags(new ApiAware()),
             (new CustomFields())->addFlags(new ApiAware()),
         ]);
     }

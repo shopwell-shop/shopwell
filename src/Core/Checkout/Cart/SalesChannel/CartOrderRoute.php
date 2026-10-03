@@ -10,6 +10,7 @@ use Shopwell\Core\Checkout\Cart\CartException;
 use Shopwell\Core\Checkout\Cart\CartLocker;
 use Shopwell\Core\Checkout\Cart\Event\CheckoutOrderPlacedCriteriaEvent;
 use Shopwell\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
+use Shopwell\Core\Checkout\Cart\Extension\CartOrderRouteExtension;
 use Shopwell\Core\Checkout\Cart\Extension\CheckoutPlaceOrderExtension;
 use Shopwell\Core\Checkout\Cart\Order\OrderPersisterInterface;
 use Shopwell\Core\Checkout\Cart\Order\OrderPlaceResult;
@@ -75,6 +76,15 @@ class CartOrderRoute extends AbstractCartOrderRoute
         methods: [Request::METHOD_POST]
     )]
     public function order(Cart $cart, SalesChannelContext $context, RequestDataBag $data): CartOrderRouteResponse
+    {
+        return $this->extensions->publish(
+            name: CartOrderRouteExtension::NAME,
+            extension: new CartOrderRouteExtension($cart, $context, $data),
+            function: $this->_order(...),
+        );
+    }
+
+    private function _order(Cart $cart, SalesChannelContext $context, RequestDataBag $data): CartOrderRouteResponse
     {
         $hash = $data->getAlnum('hash');
 

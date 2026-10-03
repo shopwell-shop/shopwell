@@ -6,15 +6,11 @@ use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use setasign\Fpdi\Tfpdf\Fpdi;
 use Shopwell\Core\Checkout\Cart\Price\AmountCalculator;
-use Shopwell\Core\Checkout\Customer\Service\GuestAuthenticator;
-use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
 use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigValidator;
-use Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition;
 use Shopwell\Core\Checkout\Document\Aggregate\DocumentType\DocumentTypeDefinition;
 use Shopwell\Core\Checkout\Document\Aggregate\DocumentTypeTranslation\DocumentTypeTranslationDefinition;
 use Shopwell\Core\Checkout\Document\Api\DocumentTypeTechnicalNameFkResolver;
 use Shopwell\Core\Checkout\Document\Controller\DocumentController;
-use Shopwell\Core\Checkout\Document\DocumentDefinition;
 use Shopwell\Core\Checkout\Document\DocumentGeneratorController;
 use Shopwell\Core\Checkout\Document\Renderer\CreditNoteRenderer;
 use Shopwell\Core\Checkout\Document\Renderer\DeliveryNoteRenderer;
@@ -27,22 +23,24 @@ use Shopwell\Core\Checkout\Document\Renderer\ZugferdEmbeddedCancellationInvoiceR
 use Shopwell\Core\Checkout\Document\Renderer\ZugferdEmbeddedCreditNoteRenderer;
 use Shopwell\Core\Checkout\Document\Renderer\ZugferdEmbeddedRenderer;
 use Shopwell\Core\Checkout\Document\Renderer\ZugferdRenderer;
-use Shopwell\Core\Checkout\Document\SalesChannel\DocumentRoute;
 use Shopwell\Core\Checkout\Document\Service\DocumentConfigLoader;
 use Shopwell\Core\Checkout\Document\Service\DocumentFileRendererRegistry;
 use Shopwell\Core\Checkout\Document\Service\DocumentGenerator;
 use Shopwell\Core\Checkout\Document\Service\DocumentMerger;
 use Shopwell\Core\Checkout\Document\Service\HtmlRenderer;
 use Shopwell\Core\Checkout\Document\Service\PdfRenderer;
-use Shopwell\Core\Checkout\Document\Service\ReferenceInvoiceLoader;
 use Shopwell\Core\Checkout\Document\Service\ZugferdEmbeddedService;
 use Shopwell\Core\Checkout\Document\Subscriber\DocumentDeleteSubscriber;
 use Shopwell\Core\Checkout\Document\Twig\DocumentTemplateRenderer;
 use Shopwell\Core\Checkout\Document\Zugferd\ZugferdBuilder;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
+use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition;
+use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
 use Shopwell\Core\Checkout\DocumentV2\Renderer\DocumentRendererRegistry as DocumentV2RendererRegistry;
+use Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentFileNameBuilder;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentFileResolver;
-use Shopwell\Core\Checkout\DocumentV2\Service\DocumentReader;
+use Shopwell\Core\Checkout\DocumentV2\Service\ReferenceInvoiceLoader;
 use Shopwell\Core\Checkout\DocumentV2\Type\DocumentTypeRegistry;
 use Shopwell\Core\Content\Media\MediaService;
 use Shopwell\Core\Framework\Adapter\Translation\Translator;
@@ -62,21 +60,46 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
-    $services->set(DocumentDefinition::class)
-        ->tag('shopwell.entity.definition')
-        ->tag('shopwell.entity.hookable');
-
     $services->set(DocumentTypeDefinition::class)
-        ->tag('shopwell.entity.definition');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.9.0.0']);
 
     $services->set(DocumentTypeTranslationDefinition::class)
-        ->tag('shopwell.entity.definition');
+        ->tag('shopwell.entity.definition')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.9.0.0']);
 
-    $services->set(DocumentBaseConfigDefinition::class)
-        ->tag('shopwell.entity.definition');
+    $services->alias(
+        'Shopwell\Core\Checkout\Document\DocumentDefinition',
+        DocumentDefinition::class,
+    )
+        ->public()
+        ->deprecate('shopwell/core', '6.7.16.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.9.0. Use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition instead.');
 
-    $services->set(DocumentBaseConfigSalesChannelDefinition::class)
-        ->tag('shopwell.entity.definition');
+    $services->alias(
+        'Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition',
+        DocumentBaseConfigDefinition::class,
+    )
+        ->public()
+        ->deprecate('shopwell/core', '6.7.16.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.9.0. Use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition instead.');
+
+    $services->alias(
+        'Shopwell\Core\Checkout\Document\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition',
+        DocumentBaseConfigSalesChannelDefinition::class,
+    )
+        ->public()
+        ->deprecate('shopwell/core', '6.7.16.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.9.0. Use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition instead.');
+
+    $services->alias(
+        'Shopwell\Core\Checkout\Document\SalesChannel\DocumentRoute',
+        DocumentRoute::class,
+    )
+        ->public()
+        ->deprecate('shopwell/core', '6.7.16.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.9.0. Use Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute instead.');
+
+    $services->alias(
+        'Shopwell\Core\Checkout\Document\Service\ReferenceInvoiceLoader',
+        ReferenceInvoiceLoader::class,
+    )->deprecate('shopwell/core', '6.7.16.0', 'The "%alias_id%" service alias is deprecated and will be removed in v6.9.0. Use Shopwell\Core\Checkout\DocumentV2\Service\ReferenceInvoiceLoader instead.');
 
     $services->set(DocumentTemplateRenderer::class)
         ->args([
@@ -106,11 +129,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('country.repository'),
         ])
         ->tag('kernel.event_subscriber');
-
-    $services->set(ReferenceInvoiceLoader::class)
-        ->args([
-            service(Connection::class),
-        ]);
 
     $services->set(ZugferdEmbeddedService::class);
 
@@ -211,17 +229,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->call('setContainer', [
             service('service_container'),
-        ]);
-
-    $services->set(DocumentRoute::class)
-        ->public()
-        ->args([
-            service(DocumentGenerator::class),
-            service(DocumentReader::class),
-            service('document.repository'),
-            service('shopwell.rate_limiter'),
-            service(GuestAuthenticator::class),
-            tagged_iterator('document_type.renderer', 'key'),
         ]);
 
     $services->set(HtmlRenderer::class)

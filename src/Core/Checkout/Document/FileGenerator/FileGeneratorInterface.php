@@ -2,8 +2,8 @@
 
 namespace Shopwell\Core\Checkout\Document\FileGenerator;
 
-use Shopwell\Core\Checkout\Document\Renderer\RenderedDocument;
 use Shopwell\Core\Checkout\DocumentV2\Renderer\AbstractDocumentRenderer;
+use Shopwell\Core\Checkout\DocumentV2\Struct\RenderedDocument;
 use Shopwell\Core\Framework\Deprecation\BCChange\ExperimentalReplacement;
 use Shopwell\Core\Framework\Log\Package;
 

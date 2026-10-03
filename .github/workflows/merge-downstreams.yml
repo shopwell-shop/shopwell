@@ -20,7 +20,7 @@ jobs:
     steps:
       - id: sts
         continue-on-error: true
-        uses: shopwell/octo-sts-action@main
+        uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         with:
           scope: shopwell
           identity: ShopwellDownstream
