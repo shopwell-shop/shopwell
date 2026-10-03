@@ -7,6 +7,10 @@ test(
     async ({ page, AdminApiContext, InstanceMeta }) => {
         test.slow();
 
+        await page.route('**/api/_action/update/extension-compatibility**', async (route) => {
+            await route.fulfill({ json: [] });
+        });
+
         await page.goto(process.env.ADMIN_URL);
 
         await expect(page.locator('css=.sw-admin-menu__header-logo').first()).toBeVisible({
