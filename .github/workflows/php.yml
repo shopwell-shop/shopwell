@@ -268,13 +268,6 @@ jobs:
           path: ./api-types/storeApiSchema.json
           retention-days: 1
 
-      - name: Run OpenAPI Snapshot Action
-        if: github.repository == 'shopwell-shop/shopwell'
-        uses: patzick/explore-openapi-snapshot@4cfd85875214ee1653e0680756b2dddaafde42f2 # v2.1.0
-        with:
-          schema-file: "./api-types/storeApiSchema.json"
-          project: "shopwell/store-api"
-
       - name: Check Store API schema migration report
         run: bin/console framework:store-api:schema-migration-report --scope=core --fail-on-mismatch --pretty -
 
@@ -304,13 +297,6 @@ jobs:
           name: adminApiSchema.json
           path: ./api-types/adminApiSchema.json
           retention-days: 1
-
-      - name: Run OpenAPI Snapshot Action for AdminAPI
-        if: github.repository == 'shopwell-shop/shopwell'
-        uses: patzick/explore-openapi-snapshot@4cfd85875214ee1653e0680756b2dddaafde42f2 # v2.1.0
-        with:
-          schema-file: "./api-types/adminApiSchema.json"
-          project: "shopwell/admin-api"
 
       - name: Lint OpenApi AdminAPI schema
         run: |
