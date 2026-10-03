@@ -31,7 +31,7 @@ With the upcoming major release we are going to release a new XML-schema for Sho
     Make sure to remove the attribute `openNewTab` from your `action-button` elements in your `manifest.xml` and use ActionButtonResponses as described in our [documentation](https://developer.shopwell.com/docs/guides/plugins/apps/administration/add-custom-action-button) instead.
 3. Deprecation of `manifest-1.0.xsd`
 
-    Update the `xsi:noNamespaceSchemaLocation` attribute of your `manifest` root element. to `https://raw.githubusercontent.com/shopwell/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd`
+    Update the `xsi:noNamespaceSchemaLocation` attribute of your `manifest` root element. to `https://raw.githubusercontent.com/shopwell-shop/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd`
 ### MessageQueue Deprecations
 
 For v6.5.0.0 we will remove our wrapper around the symfony messenger component and remove the enqueue integration as well. Therefore, we deprecated several classes for the retry and encryption handling, without replacement, as we  will use the symfony standards for that.
@@ -373,7 +373,7 @@ In addition to requiring CRUD-permission on entity basis, apps can now also requ
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd">
+          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd">
     <meta>
     ...
     </meta>
@@ -732,7 +732,7 @@ In addition to requiring CRUD-permission on entity basis, apps can now also requ
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd">
+          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/platform/trunk/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd">
     <meta>
     ...
     </meta>

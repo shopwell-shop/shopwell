@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { checkMilestoneLabel, evaluateMilestoneLabel, expectedMilestone, MILESTONE_LABEL_PREFIX, SKIP_CHECK_LABEL, STATUS_CONTEXT } from './milestone-label.ts';
 
-// The state of shopwell/shopwell after the 6.7.13.x branch-off: 6.7.13.* is closed,
+// The state of shopwell-shop/shopwell after the 6.7.13.x branch-off: 6.7.13.* is closed,
 // 6.7.14.0 is what trunk collects.
 const VERSION_BRANCHES = ['6.5.x', '6.6.x', '6.7.11.x', '6.7.12.x', '6.7.13.x'];
 
@@ -202,7 +202,7 @@ function mergeGroupToolkit(
             },
             context: {
                 eventName: 'merge_group',
-                repo: { owner: 'shopwell', repo: 'shopwell' },
+                repo: { owner: 'shopwell-shop', repo: 'shopwell' },
                 payload: {
                     repository: { default_branch: 'trunk' },
                     merge_group: { head_ref: headRef, base_sha: 'aaaa', head_sha: 'bbbb' },
@@ -262,7 +262,7 @@ function pullRequestToolkit(
             },
             context: {
                 eventName,
-                repo: { owner: 'shopwell', repo: 'shopwell' },
+                repo: { owner: 'shopwell-shop', repo: 'shopwell' },
                 payload: {
                     repository: { default_branch: 'trunk' },
                     pull_request: {

@@ -24,7 +24,7 @@ runs:
     - id: sts
       uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
       with:
-        scope: shopwell
+        scope: shopwell-shop
         identity: CodeownersPlus
 
     - id: codeowners

@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    if: github.repository == 'shopwell/shopwell'
+    if: github.repository == 'shopwell-shop/shopwell'
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -46,47 +46,9 @@ jobs:
 
       - uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         if: github.event.action == 'published'
-        id: sts-store-api-reference
-        with:
-          scope: shopwell/store-api-reference
-          identity: release
-
-      - name: Trigger Store API schema build
-        if: github.event.action == 'published'
-        continue-on-error: true
-        run: |
-          curl \
-          -X POST \
-          -H "Accept: application/vnd.github.everest-preview+json" \
-          -H "Authorization: Bearer ${{ steps.sts-store-api-reference.outputs.token }}" \
-          -H "Content-Type: application/json" \
-          https://api.github.com/repos/shopwell/store-api-reference/actions/workflows/manual_versioning.yml/dispatches \
-          -d '{"ref": "latest", "inputs": {"shopwell_version": "${{ github.event.release.tag_name }}"}}'
-
-      - uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
-        if: github.event.action == 'published'
-        id: sts-admin-api-reference
-        with:
-          scope: shopwell/admin-api-reference
-          identity: release
-
-      - name: Trigger Admin API schema build
-        if: github.event.action == 'published'
-        continue-on-error: true
-        run: |
-          curl \
-          -X POST \
-          -H "Accept: application/vnd.github.everest-preview+json" \
-          -H "Authorization: Bearer ${{ steps.sts-admin-api-reference.outputs.token }}" \
-          -H "Content-Type: application/json" \
-          https://api.github.com/repos/shopwell/admin-api-reference/actions/workflows/manual_versioning.yml/dispatches \
-          -d '{"ref": "latest", "inputs": {"shopwell_version": "${{ github.event.release.tag_name }}"}}'
-
-      - uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
-        if: github.event.action == 'published'
         id: sts-production
         with:
-          scope: shopwell/template
+          scope: shopwell-shop/template
           identity: release
 
       - name: Trigger shopwell/template build
@@ -98,11 +60,11 @@ jobs:
           -H "Accept: application/vnd.github.everest-preview+json" \
           -H "Authorization: Bearer ${{ steps.sts-production.outputs.token }}" \
           -H "Content-Type: application/json" \
-          https://api.github.com/repos/shopwell/template/actions/workflows/update.yml/dispatches \
+          https://api.github.com/repos/shopwell-shop/template/actions/workflows/update.yml/dispatches \
           -d '{"ref": "trunk"}'
 
   publish-sbp-release:
-    if: github.repository == 'shopwell/shopwell'
+    if: github.repository == 'shopwell-shop/shopwell'
     strategy:
       matrix:
         sbp-environment: [staging, production]
@@ -122,7 +84,7 @@ jobs:
           bash .github/bin/sbp_release.bash publish "${{ github.ref_name }}"
 
   post-slack-release-message:
-    if: github.ref_type == 'tag' && github.repository == 'shopwell/shopwell' && github.event.action == 'published'
+    if: github.ref_type == 'tag' && github.repository == 'shopwell-shop/shopwell' && github.event.action == 'published'
     needs: publish-sbp-release
     runs-on: ubuntu-24.04
     steps:

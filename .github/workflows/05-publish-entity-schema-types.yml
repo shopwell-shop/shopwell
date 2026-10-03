@@ -37,8 +37,7 @@ jobs:
   publish:
     name: Publish to npm
     runs-on: ubuntu-24.04
-    # sync.yml mirrors every workflow into shopwell-private, which has no trusted publisher; the
-    # package belongs to the public repository only.
+    # The package belongs to this repository's trusted publisher configuration.
     if: github.repository == 'shopwell-shop/shopwell'
     env:
       # The generator is upstream code and reads the GitLab variable name, so the release tag is

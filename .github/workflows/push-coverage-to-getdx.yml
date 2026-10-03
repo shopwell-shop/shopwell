@@ -15,7 +15,7 @@ permissions:
 jobs:
   push-coverage-to-getdx:
     name: Push coverage to getDX
-    if: github.repository == 'shopwell/shopwell'
+    if: github.repository == 'shopwell-shop/shopwell'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout

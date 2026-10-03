@@ -60,7 +60,7 @@ async function fetchVulnerabilitiesByDescription(list: Array<Vulnerability>, bod
     const unique = matches.filter((value, index, array) => array.indexOf(value) === index);
 
     for (let match of unique) {
-        const json = await (await fetchGithub(`https://api.github.com/repos/shopwell/shopwell/security-advisories/${match}`)).json();
+        const json = await (await fetchGithub(`https://api.github.com/repos/shopwell-shop/shopwell/security-advisories/${match}`)).json();
 
         if (json.severity === undefined) {
             continue;
@@ -122,7 +122,7 @@ function parseMitreCve(cve: any) {
 }
 
 async function generateVersionInfo() {
-    const json = await (await fetchGithub("https://api.github.com/repos/shopwell/shopwell/releases")).json();
+    const json = await (await fetchGithub("https://api.github.com/repos/shopwell-shop/shopwell/releases")).json();
     const vulnerabilities = await fetchVulnerabilities();
 
     for (const release of json) {
@@ -151,11 +151,11 @@ async function generateVersionInfo() {
 
 async function generateVersionListing() {
     let currentPage = 1
-    const latestRelease = await (await fetchGithub("https://api.github.com/repos/shopwell/shopwell/releases/latest")).json();
+    const latestRelease = await (await fetchGithub("https://api.github.com/repos/shopwell-shop/shopwell/releases/latest")).json();
     const versions = [];
 
     while (true) {
-        const releases = await (await fetchGithub("https://api.github.com/repos/shopwell/shopwell/releases?per_page=100&page=" + currentPage)).json();
+        const releases = await (await fetchGithub("https://api.github.com/repos/shopwell-shop/shopwell/releases?per_page=100&page=" + currentPage)).json();
 
         for (const release of releases) {
             if (release.draft) {
@@ -183,7 +183,7 @@ async function generateVersionListing() {
 }
 
 async function fetchVulnerabilities() {
-    const json = await (await fetchGithub("https://api.github.com/repos/shopwell/shopwell/security-advisories?per_page=100&state=published")).json();
+    const json = await (await fetchGithub("https://api.github.com/repos/shopwell-shop/shopwell/security-advisories?per_page=100&state=published")).json();
 
     const formatted = {};
 

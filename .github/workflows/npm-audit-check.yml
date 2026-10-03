@@ -172,7 +172,7 @@ jobs:
         continue-on-error: true
         uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         with:
-          scope: shopwell
+          scope: shopwell-shop
           identity: ManageProjects
 
       - name: Create or update audit issue

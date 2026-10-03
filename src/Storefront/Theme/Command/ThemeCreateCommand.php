@@ -236,7 +236,7 @@ EOL;
         return <<<EOL
 <?xml version="1.0" encoding="UTF-8"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
 
     <card>
         <title>Theme configuration</title>

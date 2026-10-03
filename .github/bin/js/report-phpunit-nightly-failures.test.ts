@@ -18,18 +18,18 @@ import {
 const JUNIT_FIXTURE = `<?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
   <testsuite name="integration" tests="4" failures="1" errors="1">
-    <testcase name="testPasses" class="Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest" file="/home/runner/work/shopwell/shopwell/tests/integration/Core/Checkout/CartTest.php"/>
-    <testcase name="testFails" class="Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest" file="/home/runner/work/shopwell/shopwell/tests/integration/Core/Checkout/CartTest.php">
+    <testcase name="testPasses" class="Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest" file="/home/runner/work/shopwell-shop/shopwell/tests/integration/Core/Checkout/CartTest.php"/>
+    <testcase name="testFails" class="Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest" file="/home/runner/work/shopwell-shop/shopwell/tests/integration/Core/Checkout/CartTest.php">
       <failure type="PHPUnit\\Framework\\ExpectationFailedException">Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest::testFails
 Failed asserting that &quot;a&quot; is identical to &quot;b&quot;.
 
-/home/runner/work/shopwell/shopwell/tests/integration/Core/Checkout/CartTest.php:42</failure>
+/home/runner/work/shopwell-shop/shopwell/tests/integration/Core/Checkout/CartTest.php:42</failure>
     </testcase>
-    <testcase name="testErrors with data set &quot;first&quot;" class="Shopwell\\Tests\\Integration\\Storefront\\ThemeTest" file="/home/runner/work/shopwell/shopwell/tests/integration/Storefront/ThemeTest.php">
+    <testcase name="testErrors with data set &quot;first&quot;" class="Shopwell\\Tests\\Integration\\Storefront\\ThemeTest" file="/home/runner/work/shopwell-shop/shopwell/tests/integration/Storefront/ThemeTest.php">
       <error type="RuntimeException">Shopwell\\Tests\\Integration\\Storefront\\ThemeTest::testErrors with data set "first"
 Table 'root_test.theme' doesn't exist</error>
     </testcase>
-    <testcase name="testSkipped" class="Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest" file="/home/runner/work/shopwell/shopwell/tests/integration/Core/Checkout/CartTest.php">
+    <testcase name="testSkipped" class="Shopwell\\Tests\\Integration\\Core\\Checkout\\CartTest" file="/home/runner/work/shopwell-shop/shopwell/tests/integration/Core/Checkout/CartTest.php">
       <skipped/>
     </testcase>
   </testsuite>
@@ -208,7 +208,7 @@ const JEST_JUNIT_FIXTURE = `<?xml version="1.0" encoding="UTF-8"?>
     </testcase>
     <testcase classname="src/app/component/form/sw-field emits the change event" name="src/app/component/form/sw-field emits the change event" time="0.2">
       <failure>TypeError: wrapper.vm.emit is not a function
-    at Object.&lt;anonymous&gt; (/home/runner/work/shopwell/shopwell/src/Administration/Resources/app/administration/src/app/component/form/sw-field.spec.js:42:5)</failure>
+    at Object.&lt;anonymous&gt; (/home/runner/work/shopwell-shop/shopwell/src/Administration/Resources/app/administration/src/app/component/form/sw-field.spec.js:42:5)</failure>
     </testcase>
     <testcase classname="src/app/component/form/sw-field is accessible" name="src/app/component/form/sw-field is accessible" time="0.1">
     </testcase>

@@ -29,7 +29,7 @@ nightlies and the release gate. Change one and you change all three contexts.
 Composition, rather than duplication, is how the arms are built:
 
 - `nightly.yml` calls `admin`, `integration`, `acceptance`, `visual-tests`,
-  `php`, `storefront`, `zugferd-compliance`, `downstream` and `05-prepare-release`
+  `php`, `storefront`, `zugferd-compliance` and `05-prepare-release`
   with `profile: nightly`.
 - `nightly-major.yml` calls `acceptance` and `integration-major`; its cron is
   deliberately offset from `nightly.yml` so the two do not overlap.
@@ -75,24 +75,11 @@ live in [`.github/aw/README.md`](aw/README.md).
 Locally: `composer lint:actions` runs the workflow linters,
 `cd .github/bin/js && node --test` runs the automation-script tests.
 
-## Every workflow also runs in shopwell-private
+## Repository identity
 
-`sync.yml` force-pushes trunk and every maintenance branch to
-`shopwell/shopwell-private`, so every workflow file lands there and fires on that
-repository's own pushes, pull requests, issues and schedules. Decide which side a
-new or changed workflow belongs on, and make the decision explicit:
-
-- **Both repositories** — the octo-sts identity has to allow the mirror. The
-  policies live in
-  [`shopwell/.github`](https://github.com/shopwell-shop/.github/tree/main/.github/chainguard);
-  `subject_pattern: repo:shopwell/shopwell(-private)?:.*` is the convention
-  (`ShopwellBackport`, `ShopwellDownstream`, `ShopwellNightly`).
-- **Public repository only** — guard the job with
-  `if: github.repository == 'shopwell/shopwell'`. Without it the mirrored run
-  fails at octo-sts with `Failed to get a token`, and any script that resolves an
-  issue or PR number against `shopwell/shopwell` acts on an unrelated item.
-
-No linter can decide this: the subject pattern lives in another repository.
+Repository-specific jobs use `if: github.repository == 'shopwell-shop/shopwell'`.
+GitHub owner references use the `shopwell-shop` organization, while Composer package
+names use the separate `shopwell/*` namespace. Do not interchange the two.
 
 ## Fix it at the lowest layer that covers everyone
 

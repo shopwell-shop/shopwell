@@ -19,7 +19,7 @@ TRACE="${TRACE:-}"
 TASK="${1}"
 PLATFORM_TAG="${2}"
 GITHUB_SYNC_TOKEN="${GITHUB_SYNC_TOKEN:-"${GITHUB_TOKEN}"}"
-REPOSITORY_API_URL='https://api.github.com/repos/shopwell/shopwell'
+REPOSITORY_API_URL='https://api.github.com/repos/shopwell-shop/shopwell'
 
 print_usage() {
     echo 'Usage:'

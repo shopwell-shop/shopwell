@@ -1,5 +1,5 @@
-repository-url: https://raw.githubusercontent.com/shopwell/translations/main/translations
-metadata-url: https://raw.githubusercontent.com/shopwell/translations/main/crowdin-metadata.json
+repository-url: https://raw.githubusercontent.com/shopwell-shop/translations/main/translations
+metadata-url: https://raw.githubusercontent.com/shopwell-shop/translations/main/crowdin-metadata.json
 
 excluded-locales: ['it-IT']
 

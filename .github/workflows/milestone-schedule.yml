@@ -11,7 +11,7 @@ permissions:
 jobs:
   schedule:
     name: Schedule milestone
-    if: github.repository == 'shopwell/shopwell'
+    if: github.repository == 'shopwell-shop/shopwell'
     runs-on: ubuntu-24.04
     permissions:
       contents: read

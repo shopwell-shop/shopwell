@@ -7,7 +7,7 @@ on:
 
 jobs:
   manage-stale-prs:
-    if: github.repository == 'shopwell/shopwell'
+    if: github.repository == 'shopwell-shop/shopwell'
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
@@ -19,7 +19,7 @@ jobs:
         continue-on-error: true
         uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
         with:
-          scope: shopwell
+          scope: shopwell-shop
           identity: Reminder
       - shell: bash
         run: npm ci --prefix .github/bin/js/
@@ -34,4 +34,4 @@ jobs:
           github-token: ${{ github.event.act && secrets.GITHUB_TOKEN || steps.sts.outputs.token }}
           script: |
             const { manageOldPullRequests } = await import('${{ github.workspace }}/.github/bin/js/node_modules/@shopwell-ag/gh-project-automation/dist/index.mjs')
-            await manageOldPullRequests({github, core, context, fetch}, "shopwell", parseInt(process.env.STALE_PR_THRESHOLD_DAYS), process.env.STALE_PR_CLOSE === "true", JSON.parse(process.env.EXCLUDED_REPOSITORIES))
+            await manageOldPullRequests({github, core, context, fetch}, "shopwell-shop", parseInt(process.env.STALE_PR_THRESHOLD_DAYS), process.env.STALE_PR_CLOSE === "true", JSON.parse(process.env.EXCLUDED_REPOSITORIES))

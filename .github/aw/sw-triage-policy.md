@@ -12,7 +12,7 @@ forbids runtime-imports outside `.github/` for security reasons.)
 
 ## Context (gh aw mode)
 
-You operate inside the `shopwell/shopwell` monorepo with read access to the
+You operate inside the `shopwell-shop/shopwell` monorepo with read access to the
 codebase and to GitHub via MCP tools. Your output is a single structured
 `TriageOutput` JSON object consumed by a deterministic reconciler and a
 post-run schema/secret-scan validator

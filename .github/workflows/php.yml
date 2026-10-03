@@ -269,7 +269,7 @@ jobs:
           retention-days: 1
 
       - name: Run OpenAPI Snapshot Action
-        if: github.repository == 'shopwell/shopwell'
+        if: github.repository == 'shopwell-shop/shopwell'
         uses: patzick/explore-openapi-snapshot@4cfd85875214ee1653e0680756b2dddaafde42f2 # v2.1.0
         with:
           schema-file: "./api-types/storeApiSchema.json"
@@ -306,7 +306,7 @@ jobs:
           retention-days: 1
 
       - name: Run OpenAPI Snapshot Action for AdminAPI
-        if: github.repository == 'shopwell/shopwell'
+        if: github.repository == 'shopwell-shop/shopwell'
         uses: patzick/explore-openapi-snapshot@4cfd85875214ee1653e0680756b2dddaafde42f2 # v2.1.0
         with:
           schema-file: "./api-types/adminApiSchema.json"

@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   phpstan:
-    if: github.repository == 'shopwell/shopwell'
+    if: github.repository == 'shopwell-shop/shopwell'
     runs-on: ubuntu-24.04
     name: "PHPStan cache warm"
     steps:
@@ -55,7 +55,7 @@ jobs:
           key: "phpstan-result-cache-${{ github.run_id }}"
 
   rector:
-    if: github.repository == 'shopwell/shopwell'
+    if: github.repository == 'shopwell-shop/shopwell'
     runs-on: ubuntu-24.04
     name: "Rector cache warm"
     steps:
