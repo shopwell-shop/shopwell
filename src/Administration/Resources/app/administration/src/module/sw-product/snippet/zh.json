@@ -20,7 +20,7 @@
     "general": {
       "mainMenuItemGeneral": "商品",
       "mainMenuItemList": "商品",
-      "mainMenuItemOverview": "概览",
+      "mainMenuItemOverview": "商品",
       "mainMenuItemAdd": "新建商品",
       "descriptionTextModule": "商品管理",
       "placeholderSearchBar": "搜索商品…",

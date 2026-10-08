@@ -1,7 +1,7 @@
 {
   "sw-dashboard": {
     "general": {
-      "mainMenuItemGeneral": "概览",
+      "mainMenuItemGeneral": "主页",
       "descriptionTextModule": "首页、统计和系统信息"
     },
     "introduction": {
