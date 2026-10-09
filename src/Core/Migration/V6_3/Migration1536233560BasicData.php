@@ -732,12 +732,17 @@ class Migration1536233560BasicData extends MigrationStep
 
     private function createCurrency(Connection $connection): void
     {
-        $EUR = Uuid::fromHexToBytes(Defaults::CURRENCY);
+        $CNY = Uuid::fromHexToBytes(Defaults::CURRENCY);
+        $EUR = Uuid::randomBytes();
         $USD = Uuid::randomBytes();
         $GBP = Uuid::randomBytes();
 
         $languageEN = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
         $languageZh = Uuid::fromHexToBytes($this->getZhCnLanguageId());
+
+        $connection->insert('currency', ['id' => $CNY, 'iso_code' => 'CNY', 'factor' => 1, 'symbol' => '¥', 'position' => 1, 'decimal_precision' => 2, 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
+        $connection->insert('currency_translation', ['currency_id' => $CNY, 'language_id' => $languageEN, 'short_name' => 'CNY', 'name' => 'Chinese Yuan', 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
+        $connection->insert('currency_translation', ['currency_id' => $CNY, 'language_id' => $languageZh, 'short_name' => 'CNY', 'name' => '人民币', 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
 
         $connection->insert('currency', ['id' => $EUR, 'iso_code' => 'EUR', 'factor' => 1, 'symbol' => '€', 'position' => 1, 'decimal_precision' => 2, 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
         $connection->insert('currency_translation', ['currency_id' => $EUR, 'language_id' => $languageEN, 'short_name' => 'EUR', 'name' => 'Euro', 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
@@ -814,9 +819,11 @@ class Migration1536233560BasicData extends MigrationStep
     {
         $tax19 = Uuid::randomBytes();
         $tax7 = Uuid::randomBytes();
+        $tax0 = Uuid::randomBytes();
 
         $connection->insert('tax', ['id' => $tax19, 'tax_rate' => 19, 'name' => '19%', 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
         $connection->insert('tax', ['id' => $tax7, 'tax_rate' => 7, 'name' => '7%', 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
+        $connection->insert('tax', ['id' => $tax0, 'tax_rate' => 0, 'name' => 'Reduced rate 2', 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
     }
 
     private function createSalesChannelTypes(Connection $connection): void

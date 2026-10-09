@@ -66,7 +66,7 @@ class ShopConfigurationService
             throw InstallerException::shopConfigurationRequiredValueMissing('host');
         }
 
-        $shopConfigurator = new ShopConfigurator($connection, $this->eventDispatcher);
+        $shopConfigurator = new ShopConfigurator($connection, $this->eventDispatcher, $this->clock);
         $shopConfigurator->updateBasicInformation($shop['name'], $shop['email']);
         $shopConfigurator->setDefaultLanguage($locale);
         $shopConfigurator->setDefaultCurrency($shop['currency']);

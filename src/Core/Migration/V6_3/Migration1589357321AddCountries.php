@@ -52,7 +52,7 @@ class Migration1589357321AddCountries extends MigrationStep
 
         foreach ($this->createNewCountries() as $country) {
             $id = Uuid::randomBytes();
-            $exists = $connection->fetchOne('SELECT 1 FROM country WHERE iso = :iso3', ['iso3' => $country['iso3']]);
+            $exists = $connection->fetchOne('SELECT 1 FROM country WHERE iso3 = :iso3', ['iso3' => $country['iso3']]);
             if ($exists !== false) {
                 continue;
             }

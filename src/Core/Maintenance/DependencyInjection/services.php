@@ -139,6 +139,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(Connection::class),
             service(EventDispatcherInterface::class),
+            service(ClockInterface::class),
         ]);
 
     $services->set(SalesChannelCreateCommand::class)

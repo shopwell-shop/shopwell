@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Maintenance\System\Service;
 
 use Doctrine\DBAL\Connection;
+use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
@@ -23,7 +24,8 @@ class ShopConfigurator
      */
     public function __construct(
         private readonly Connection $connection,
-        private readonly EventDispatcherInterface $eventDispatcher
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly ClockInterface $clock
     ) {
     }
 
@@ -61,7 +63,19 @@ class ShopConfigurator
             $newDefaultLanguageId = $this->createNewLanguageEntry($locale);
         }
 
-        $this->changeDefaultLanguageData($newDefaultLanguageId, $currentLocale, $locale);
+        if ($locale === 'zh-CN' && $currentLocale['code'] === 'en-GB') {
+            $defaultCountryStateTranslations = $this->connection->fetchAllKeyValue('
+                SELECT short_code, name FROM country_state_translation
+                INNER JOIN country_state ON country_state.id = country_state_translation.country_state_id
+                WHERE country_state_translation.language_id = :languageId', [
+                'languageId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+            ]);
+
+            $this->swapDefaultLanguageId($newDefaultLanguageId);
+            $this->addMissingCountryStates($defaultCountryStateTranslations);
+        } else {
+            $this->changeDefaultLanguageData($newDefaultLanguageId, $currentLocale, $locale);
+        }
 
         $this->eventDispatcher->dispatch(new SystemLanguageChangeEvent(
             Uuid::fromBytesToHex($newDefaultLanguageId),
@@ -112,6 +126,39 @@ class ShopConfigurator
                 ['newDefault' => $currencyCode]
             );
         });
+    }
+
+    /**
+     * @param array<int|string, mixed> $defaultTranslations
+     */
+    private function addMissingCountryStates(array $defaultTranslations): void
+    {
+        $missingTranslations = $this->connection->fetchAllKeyValue('
+            SELECT id, short_code FROM `country_state`
+            WHERE id NOT IN (
+                SELECT country_state_id FROM country_state_translation WHERE language_id = :languageId GROUP BY country_state_id
+            )', [
+            'languageId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+        ]);
+
+        if ($missingTranslations === []) {
+            return;
+        }
+
+        $storageDate = $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+
+        foreach ($missingTranslations as $stateId => $shortCode) {
+            if (!\array_key_exists($shortCode, $defaultTranslations)) {
+                continue;
+            }
+
+            $this->connection->insert('country_state_translation', [
+                'language_id' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+                'country_state_id' => $stateId,
+                'name' => $defaultTranslations[$shortCode],
+                'created_at' => $storageDate,
+            ]);
+        }
     }
 
     private function setSystemConfig(string $key, string $value): void
@@ -300,6 +347,27 @@ class ShopConfigurator
             'SELECT id FROM currency WHERE LOWER(iso_code) = LOWER(:currency)',
             ['currency' => $currencyName]
         ) ?: null;
+    }
+
+    private function swapDefaultLanguageId(string $newLanguageId): void
+    {
+        RetryableTransaction::retryable($this->connection, static function (Connection $connection) use ($newLanguageId): void {
+            $stmt = $connection->prepare(
+                'UPDATE language
+                 SET id = :newId
+                 WHERE id = :oldId'
+            );
+
+            StatementHelper::executeStatement($stmt, [
+                'newId' => Uuid::randomBytes(),
+                'oldId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+            ]);
+
+            StatementHelper::executeStatement($stmt, [
+                'newId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+                'oldId' => $newLanguageId,
+            ]);
+        });
     }
 
     private function createNewCurrency(string $currencyCode): string

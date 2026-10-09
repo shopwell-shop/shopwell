@@ -32,7 +32,6 @@ class Migration1589359936AddTaxCountryRules extends MigrationStep
         }
 
         $this->updateTaxNames($connection);
-        $this->createNewTax($connection);
         $this->addCountryTaxRules($connection);
     }
 
@@ -52,11 +51,6 @@ class Migration1589359936AddTaxCountryRules extends MigrationStep
     {
         $connection->update('tax', ['name' => 'Standard rate'], ['tax_rate' => 19]);
         $connection->update('tax', ['name' => 'Reduced rate'], ['tax_rate' => 7]);
-    }
-
-    private function createNewTax(Connection $connection): void
-    {
-        $connection->insert('tax', ['id' => Uuid::randomBytes(), 'tax_rate' => 0, 'name' => 'Reduced rate 2', 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
     }
 
     private function addCountryTaxRules(Connection $connection): void

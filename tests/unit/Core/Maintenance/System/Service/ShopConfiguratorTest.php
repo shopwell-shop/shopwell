@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -30,7 +31,9 @@ class ShopConfiguratorTest extends TestCase
     {
         $this->connection = $this->createMock(Connection::class);
         $this->eventDispatcher = new CollectingEventDispatcher();
-        $this->shopConfigurator = new ShopConfigurator($this->connection, $this->eventDispatcher);
+        $clock = static::createStub(ClockInterface::class);
+        $clock->method('now')->willReturn(new \DateTimeImmutable());
+        $this->shopConfigurator = new ShopConfigurator($this->connection, $this->eventDispatcher, $clock);
     }
 
     public function testUpdateBasicInformation(): void
