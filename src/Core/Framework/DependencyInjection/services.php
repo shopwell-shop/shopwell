@@ -101,6 +101,8 @@ use Shopwell\Core\Framework\Routing\RouteScope;
 use Shopwell\Core\Framework\Routing\RouteScopeListener;
 use Shopwell\Core\Framework\Routing\RouteScopeRegistry;
 use Shopwell\Core\Framework\Routing\SalesChannelRequestContextResolver;
+use Shopwell\Core\Framework\Routing\SessionContextTokenAccessor;
+use Shopwell\Core\Framework\Routing\SessionContextTokenSubscriber;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
 use Shopwell\Core\Framework\Routing\SymfonyRouteScopeWhitelist;
 use Shopwell\Core\Framework\Routing\Telemetry\AreaResolver;
@@ -487,6 +489,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service('shopwell.filesystem.translation'),
             service('filesystem'),
+            service('shopwell.filesystem.private'),
         ]);
 
     $services->set(SnippetController::class)
@@ -521,6 +524,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(TranslationLoader::class),
             service('shopwell.filesystem.translation'),
             service(StorefrontSnippetStorage::class),
+            service('shopwell.filesystem.private'),
         ]);
 
     $services->set(AppSnippetFileLoader::class)
@@ -725,6 +729,20 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(RouteScopeRegistry::class),
         ]);
+
+    $services->set(SessionContextTokenAccessor::class)
+        ->args([
+            param('session.storage.options'),
+            service(SystemConfigService::class),
+        ]);
+
+    $services->set(SessionContextTokenSubscriber::class)
+        ->args([
+            service(SessionContextTokenAccessor::class),
+            service('request_stack'),
+            service(RouteScopeRegistry::class),
+        ])
+        ->tag('kernel.event_subscriber');
 
     $services->set(SalesChannelRequestContextResolver::class)
         ->decorate(ApiRequestContextResolver::class)

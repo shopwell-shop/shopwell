@@ -194,6 +194,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('kernel'),
             service(Connection::class),
             service('shopwell.filesystem.translation'),
+            service('shopwell.filesystem.private'),
             service(TranslationConfig::class),
             service(TranslationLoader::class),
             service(HtmlSanitizer::class),

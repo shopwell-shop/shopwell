@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Api\Context\SystemSource;
 use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopwell\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
@@ -71,6 +72,11 @@ class ApiRequestContextResolver implements RequestContextResolverInterface
             if ($skipTriggerFlow) {
                 $context->addState(Context::SKIP_TRIGGER_FLOW);
             }
+        }
+
+        $indexingBehavior = $request->headers->get(PlatformRequest::HEADER_INDEXING_BEHAVIOR);
+        if (\in_array($indexingBehavior, [EntityIndexerRegistry::DISABLE_INDEXING, EntityIndexerRegistry::USE_INDEXING_QUEUE], true)) {
+            $context->addState($indexingBehavior);
         }
 
         $request->attributes->set(PlatformRequest::ATTRIBUTE_CONTEXT_OBJECT, $context);

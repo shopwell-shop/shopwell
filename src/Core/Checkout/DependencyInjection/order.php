@@ -9,6 +9,7 @@ use Shopwell\Core\Checkout\Cart\CartSerializationCleaner;
 use Shopwell\Core\Checkout\Cart\Order\LineItemDownloadLoader;
 use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
 use Shopwell\Core\Checkout\Cart\Order\OrderPersister;
+use Shopwell\Core\Checkout\Cart\Order\OrderRestorer;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Customer\SalesChannel\AccountService;
 use Shopwell\Core\Checkout\Customer\Service\GuestAuthenticator;
@@ -28,6 +29,7 @@ use Shopwell\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTr
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefundPosition\OrderTransactionCaptureRefundPositionDefinition;
 use Shopwell\Core\Checkout\Order\Api\OrderActionController;
+use Shopwell\Core\Checkout\Order\Listener\OrderRestorationListener;
 use Shopwell\Core\Checkout\Order\Listener\OrderStateChangeEventListener;
 use Shopwell\Core\Checkout\Order\OrderAddressService;
 use Shopwell\Core\Checkout\Order\OrderDefinition;
@@ -138,6 +140,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('rule.repository'),
         ]);
 
+    $services->set(OrderRestorer::class)
+        ->args([
+            service(OrderConverter::class),
+            service(CartService::class),
+        ]);
+
     $services->set(OrderTransactionStateHandler::class)
         ->args([
             service(StateMachineRegistry::class),
@@ -203,7 +211,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('order.repository'),
             service(OrderConverter::class),
             service(CartRuleLoader::class),
-            service(CartService::class),
+            service(OrderRestorer::class),
             service('event_dispatcher'),
             service(InitialStateIdLoader::class),
             service(CheckoutGatewayRoute::class),
@@ -219,6 +227,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(BusinessEventCollector::class),
             service('state_machine_state.repository'),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(OrderRestorationListener::class)
+        ->args([
+            service(OrderRoute::class),
+            service(OrderRestorer::class),
         ])
         ->tag('kernel.event_subscriber');
 

@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Unit\Storefront\Page\Product;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\Category\CategoryEntity;
 use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
 use Shopwell\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopwell\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
@@ -37,6 +38,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Storefront\Page\GenericPageLoader;
 use Shopwell\Storefront\Page\Product\ProductPageLoader;
@@ -65,6 +67,33 @@ class ProductPageLoaderTest extends TestCase
         static::assertIsString($slot);
 
         static::assertSame($reviews, json_decode($slot, true, 512, \JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Remove with the BREADCRUMB_REWORK flag
+     */
+    #[DisabledFeatures(['BREADCRUMB_REWORK'])]
+    public function testExplicitBreadcrumbOptOutWinsWithMajorActive(): void
+    {
+        $productId = Uuid::randomHex();
+        $request = new Request([], [], ['productId' => $productId]);
+        $context = $this->getSalesChannelContext();
+        $category = new CategoryEntity();
+        $category->setId(Uuid::randomHex());
+
+        $breadcrumbBuilder = $this->createMock(CategoryBreadcrumbBuilder::class);
+        $breadcrumbBuilder->expects($this->never())->method('getCategoryBreadcrumbUrls');
+
+        $page = $this->getProductPageLoaderWithProduct(
+            $productId,
+            $this->getCmsSlotConfig(),
+            $request,
+            $context,
+            seoCategory: $category,
+            breadcrumbBuilder: $breadcrumbBuilder,
+        )->load($request, $context);
+
+        static::assertNull($page->getBreadcrumb());
     }
 
     public function testItLoadsStructuredDataReviewsForJsonLd(): void
@@ -203,8 +232,14 @@ class ProductPageLoaderTest extends TestCase
         SalesChannelContext $salesChannelContext,
         ?EntityRepository $reviewRepository = null,
         ?SystemConfigService $systemConfigService = null,
+        ?CategoryEntity $seoCategory = null,
+        ?CategoryBreadcrumbBuilder $breadcrumbBuilder = null,
     ): ProductPageLoader {
         $product = $this->getProductWithReviews($productId, $reviews);
+
+        if ($seoCategory !== null) {
+            $product->setSeoCategory($seoCategory);
+        }
 
         // set cms page which later will be set by the subscriber
         $product->setCmsPage($this->getCmsPage($product));
@@ -255,7 +290,7 @@ class ProductPageLoaderTest extends TestCase
             $productDetailRouteMock,
             $reviewRepository,
             $systemConfigService,
-            static::createStub(CategoryBreadcrumbBuilder::class)
+            $breadcrumbBuilder ?? static::createStub(CategoryBreadcrumbBuilder::class)
         );
     }
 

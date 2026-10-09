@@ -6,7 +6,7 @@ use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Cart\CartCalculator;
 use Shopwell\Core\Checkout\Cart\CartPersister;
-use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
+use Shopwell\Core\Checkout\Cart\Order\OrderRestorer;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Customer\SalesChannel\AccountNewsletterRecipientRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\CustomerGroupRegistrationSettingsRoute;
@@ -413,10 +413,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(StorefrontSubscriber::class)
         ->args([
-            service('request_stack'),
             service('router'),
             service(MaintenanceModeResolver::class),
-            service(SystemConfigService::class),
             service('event_dispatcher'),
         ])
         ->tag('kernel.event_subscriber');
@@ -639,10 +637,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(OrderRoute::class),
             service(CheckoutGatewayRoute::class),
-            service(OrderConverter::class),
+            service(OrderRestorer::class),
             service(OrderService::class),
             service(Translator::class),
-            service(CartService::class),
         ]);
 
     $services->set(AccountLoginPageLoader::class)

@@ -5,6 +5,7 @@ namespace Shopwell\Storefront\Theme\Aggregate;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityTranslationDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\CustomFields;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Deprecated;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
@@ -48,8 +49,8 @@ class ThemeTranslationDefinition extends EntityTranslationDefinition
     {
         return new FieldCollection([
             (new StringField('description', 'description'))->addFlags(new ApiAware()),
-            (new JsonField('labels', 'labels'))->addFlags(new ApiAware()),
-            (new JsonField('help_texts', 'helpTexts'))->addFlags(new ApiAware()),
+            (new JsonField('labels', 'labels'))->addFlags(new ApiAware(), new Deprecated('v6.7.16.0', 'v6.8.0.0')),
+            (new JsonField('help_texts', 'helpTexts'))->addFlags(new ApiAware(), new Deprecated('v6.7.16.0', 'v6.8.0.0')),
             (new CustomFields())->addFlags(new ApiAware()),
         ]);
     }

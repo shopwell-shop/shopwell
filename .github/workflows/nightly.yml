@@ -37,6 +37,7 @@ jobs:
         with:
           shopwell-version: ${{ github.ref }}
           shopwell-repository: ${{ github.repository }}
+          php-ini-values: "session.gc_probability=0,session.save_path=/tmp/php-sessions,zend.assertions=1"
       - name: Run PHPUnit
         run: |
           ./vendor/bin/phpunit --log-junit junit.xml --testsuite redis

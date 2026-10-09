@@ -19,6 +19,7 @@ use Shopwell\Core\System\Snippet\Aggregate\SnippetSet\SnippetSetCollection;
 use Shopwell\Core\System\Snippet\Event\SnippetsThemeResolveEvent;
 use Shopwell\Core\System\Snippet\Extension\StorefrontSnippetsExtension;
 use Shopwell\Core\System\Snippet\Files\AbstractSnippetFile;
+use Shopwell\Core\System\Snippet\Files\FilesystemSnippetFile;
 use Shopwell\Core\System\Snippet\Files\RemoteSnippetFile;
 use Shopwell\Core\System\Snippet\Files\SnippetFileCollection;
 use Shopwell\Core\System\Snippet\Filter\SnippetFilterFactory;
@@ -50,6 +51,7 @@ class SnippetService
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly FilesystemOperator $translationFilesystem,
         private readonly Filesystem $localFileSystem,
+        private readonly FilesystemOperator $privateFilesystem,
     ) {
     }
 
@@ -311,7 +313,7 @@ class SnippetService
      *
      * For each locale (e.g., "de-AT"), files are loaded in ascending priority order:
      * 1. Country agnostic language files (e.g. "de") as the lowest-priority base
-     * 2. Canonical-locale files (e.g. "zh-CN") to pick up plugin files registered for the canonical variant
+     * 2. Canonical-locale files (e.g. "de-DE") to pick up plugin files registered for the canonical variant
      * 3. Exact-locale files (e.g. "de-AT") as the highest-priority override
      *
      * For locales without a region (e.g. "de"), only the exact files are returned.
@@ -602,6 +604,8 @@ class SnippetService
     {
         if ($snippetFile instanceof RemoteSnippetFile) {
             $content = $this->translationFilesystem->read($snippetFile->getPath());
+        } elseif ($snippetFile instanceof FilesystemSnippetFile) {
+            $content = $this->privateFilesystem->read($snippetFile->getPath());
         } else {
             $content = $this->localFileSystem->readFile($snippetFile->getPath());
         }

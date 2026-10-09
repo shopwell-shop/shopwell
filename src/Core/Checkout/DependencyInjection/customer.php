@@ -92,6 +92,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ManyToManyIdFieldUpdater;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
+use Shopwell\Core\Framework\Routing\SessionContextTokenAccessor;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
 use Shopwell\Core\System\SalesChannel\Context\CartRestorer;
@@ -259,6 +260,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(SalesChannelContextPersister::class),
             service('request_stack'),
+            service(SessionContextTokenAccessor::class),
         ])
         ->tag('kernel.event_subscriber');
 

@@ -81,6 +81,10 @@ parameters:
         # runs against a database on purpose
         kernelInUnitTestsEnabledNamespaces:
             - 'Shopwell\Tests\Unit\'
+        # narrows NoReflectionInUnitTestsRule to the unit suites; consumers append their unit namespace once
+        # their tests no longer use reflection
+        reflectionInUnitTestsEnabledNamespaces:
+            - 'Shopwell\Tests\Unit\'
 
 services:
     -   factory: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Configuration(%shopwell%)
@@ -95,4 +99,5 @@ parametersSchema:
         createMockWithoutExpectationsEnabledNamespaces: list(string),
         featureSkipInUnitTestsEnabledNamespaces: list(string),
         kernelInUnitTestsEnabledNamespaces: list(string),
+        reflectionInUnitTestsEnabledNamespaces: list(string),
 ])

@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Cart\Event;
 
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -16,7 +17,7 @@ use Symfony\Contracts\EventDispatcher\Event;
 class BeforeSalesChannelContextAssembledEvent extends Event
 {
     /**
-     * @param array<string, array<string, bool>|string|null> $options
+     * @param array<string, array<string, bool>|string|CustomerAddressEntity|null> $options
      *
      * @internal
      */
@@ -38,7 +39,7 @@ class BeforeSalesChannelContextAssembledEvent extends Event
     }
 
     /**
-     * @return array<string, array<string, bool>|string|null>
+     * @return array<string, array<string, bool>|string|CustomerAddressEntity|null>
      */
     public function getOptions(): array
     {
@@ -46,7 +47,7 @@ class BeforeSalesChannelContextAssembledEvent extends Event
     }
 
     /**
-     * @param array<string, array<string, bool>|string|null> $options
+     * @param array<string, array<string, bool>|string|CustomerAddressEntity|null> $options
      */
     public function setOptions(array $options): void
     {

@@ -4,7 +4,7 @@ namespace Shopwell\Core\Content\Property;
 
 use Shopwell\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
-use Shopwell\Core\Framework\Deprecation\BCChange\NewRequiredParameter;
+use Shopwell\Core\Framework\Deprecation\BCChange\NewOptionalParameter;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -47,7 +47,7 @@ class PropertyGroupCollection extends EntityCollection
         });
     }
 
-    #[NewRequiredParameter(version: 'v6.8.0', parameterName: 'localeCode', parameterType: 'string')]
+    #[NewOptionalParameter(version: 'v6.8.0', parameterName: 'localeCode', parameterType: 'string', defaultValue: 'en_GB')]
     public function sortByConfig(/* string $localeCode = 'en_GB' */): void
     {
         $localeCode = \func_num_args() === 1 ? func_get_arg(0) : 'en_GB';

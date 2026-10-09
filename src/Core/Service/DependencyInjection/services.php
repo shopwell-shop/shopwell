@@ -15,6 +15,7 @@ use Shopwell\Core\Framework\App\Privileges\Privileges;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
 use Shopwell\Core\Framework\Notification\NotificationService;
 use Shopwell\Core\Framework\Store\Services\AbstractExtensionDataProvider;
+use Shopwell\Core\Framework\Store\Services\FirstRunWizardService;
 use Shopwell\Core\Service\AllServiceInstaller;
 use Shopwell\Core\Service\Api\PermissionController;
 use Shopwell\Core\Service\Api\ServiceController;
@@ -160,6 +161,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('scheduled_task.repository'),
             service('logger'),
             service(LifecycleManager::class),
+            service(FirstRunWizardService::class),
         ])
         ->tag('messenger.message_handler');
 

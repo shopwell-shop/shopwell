@@ -21,6 +21,7 @@ use Shopwell\Core\Content\Property\PropertyGroupCollection;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\FieldVisibility;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -130,6 +131,7 @@ class BuyBoxTypeDataResolverTest extends TestCase
     {
         $product = new SalesChannelProductEntity();
         $product->setId('product123');
+        $product->internalSetEntityData('product', new FieldVisibility([]));
 
         $resolverContext = new ResolverContext(static::createStub(SalesChannelContext::class), new Request());
         $result = new ElementDataCollection();
@@ -192,6 +194,7 @@ class BuyBoxTypeDataResolverTest extends TestCase
 
         $product = new SalesChannelProductEntity();
         $product->setId($productId);
+        $product->internalSetEntityData('product', new FieldVisibility([]));
 
         $resolverContext = new ResolverContext($saleChannelContext, new Request());
 

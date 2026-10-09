@@ -4,12 +4,10 @@ namespace Shopwell\Core\Framework\DataAbstractionLayer\Search\Parser;
 
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException;
-use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\InvalidFilterQueryException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\InvalidRangeFilterParamException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\SearchRequestException;
-use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
@@ -381,35 +379,9 @@ class QueryStringParser
     private static function buildFieldName(EntityDefinition $definition, string $fieldName): string
     {
         $prefix = $definition->getEntityName() . '.';
-        $normalized = self::normalizeAssociationId($definition, $fieldName);
+        $normalized = AssociationIdPathNormalizer::normalize($definition, $fieldName);
 
         return str_starts_with($normalized, $prefix) ? $normalized : $prefix . $normalized;
-    }
-
-    /**
-     * Turns `manufacturer.id` or `product.properties.group.id` into the FK variant
-     * (`manufacturerId`, `product.properties.groupId`) whenever that FK really exists.
-     */
-    private static function normalizeAssociationId(EntityDefinition $definition, string $fieldName): string
-    {
-        $parts = explode('.', $fieldName);
-
-        if (\count($parts) < 2 || array_pop($parts) !== 'id') {
-            return $fieldName;
-        }
-
-        $association = array_pop($parts);
-        if ($association === null) {
-            return $fieldName;
-        }
-
-        $candidate = $parts === []
-            ? $association . 'Id'
-            : implode('.', $parts) . '.' . $association . 'Id';
-
-        $field = EntityDefinitionQueryHelper::getField($candidate, $definition, $definition->getEntityName());
-
-        return $field instanceof FkField ? $candidate : $fieldName;
     }
 
     /**
