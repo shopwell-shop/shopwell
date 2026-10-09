@@ -1,9 +1,9 @@
 {
   "sw-settings-measurement": {
     "general": {
-      "mainMenuItemGeneral": "计量单位系统",
+      "mainMenuItemGeneral": "计量单位",
       "description": "用于修改默认计量单位的模块。",
-      "textHeadline": "计量单位系统"
+      "textHeadline": "计量单位"
     },
     "defaultUnits": {
       "title": "默认单位",
@@ -23,7 +23,7 @@
   "sw-privileges": {
     "permissions": {
       "measurement": {
-        "label": "计量单位系统"
+        "label": "计量单位"
       }
     }
   }
