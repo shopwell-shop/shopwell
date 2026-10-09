@@ -140,8 +140,8 @@ describe('src/app/init/context.init.ts', () => {
     });
 
     it('should identify a Shopwell Service through the private SDK API', async () => {
-        Shopwell.Context.app.config.version = '6.7.14.0';
-
+        // The SDK only answers `isService()` from Shopwell 6.7.14.0 on
+        Shopwell.Store.get('context').app.config.version = '6.7.14.0';
         Shopwell.Store.get('extensions').addExtension({
             name: 'jestservice',
             baseUrl: window.location.origin,

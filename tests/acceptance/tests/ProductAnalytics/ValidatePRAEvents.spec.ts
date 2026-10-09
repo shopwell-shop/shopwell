@@ -1,5 +1,4 @@
 import {
-    isSaaSInstance,
     test,
     expect,
     Page,
@@ -83,10 +82,7 @@ test.describe('Product Analytics - Validate events.', { tag: '@ProductAnalytics'
                 await ShopAdmin.goesTo(AdminDashboard.url());
 
                 await ShopAdmin.expects(AdminDashboard.adminMenuOrder).toBeVisible();
-                // eslint-disable-next-line playwright/no-conditional-in-test
-                if (!(await isSaaSInstance(TestDataService.AdminApiClient))) {
-                    await ShopAdmin.expects(AdminDashboard.welcomeHeadline).toBeVisible();
-                }
+                await ShopAdmin.expects(page.locator('.sw-dashboard-metrics')).toBeVisible();
             });
 
             await test.step('Validate captured requests for product analytics', async () => {

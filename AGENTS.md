@@ -52,7 +52,7 @@ Before you commit or hand work back:
 - **Behaviour change ⇒ tests are required.** Admin JS/TS/Vue → follow `shopwell-admin-js`; PHP → `shopwell-phpunit-tests`. Twig-only template changes follow the rule below. Style-only, snippet/translation, and docs-only changes do not need tests; still add one when it is useful and follows an established pattern.
 - **Twig-only template changes ⇒ never add PHP integration tests just to render or assert Twig output.** A direct render without a Storefront request can cache empty request-dependent Twig globals in the shared test kernel and break unrelated later tests. Run the Storefront Twig lint; use browser/acceptance coverage when the rendered behaviour needs testing.
 - **Writing a PR title or description? → follow `shopwell-pr-hygiene`** — the Shopwell PR template is required, not a generic one.
-- **Behavioural change, feature, deprecation, or config change? → check `shopwell-release-docs`** for RELEASE_INFO / UPGRADE entries.
+- **Behavioural change, feature, deprecation, or config change? → check `shopwell-release-docs`** for RELEASE_INFO / UPGRADE entries. Put a blank line before and after every heading in those files; the Markdown renderer otherwise glues the heading to the previous paragraph.
 - **Touching `.github/workflows/`, `.github/actions/`, or `.github/bin/`? → follow [`.github/AGENTS.md`](.github/AGENTS.md)** — a CI job must never report success without proving the work ran.
 - **Commit with a conventional message incl. scope**, e.g. `feat(administration): …`.
 - **After review feedback or CI failures**, create a follow-up commit; do not amend or force-push unless explicitly asked.
@@ -89,6 +89,8 @@ To add a new skill (interactive or unattended), follow the checklist in [`coding
 ## Snippets & Translations
 
 Simplified Chinese (`zh`) is the second built-in language next to English. Write snippets the way Chinese e-commerce UIs phrase things: concise, product-oriented, no word-by-word translation of the English source. Keep terminology consistent per domain (Administration vs. Storefront) when adding or editing `zh` snippets.
+
+Snippet files are named by language, not locale: `en.json` / `zh.json` in the Administration, `storefront.en.json` / `storefront.zh.json` in the Storefront. Locale-specific names such as `en-GB.json` or `storefront.zh-CN.json` are the legacy scheme; do not create them, and do not use them in tests, fixtures, or examples unless the test deliberately covers the legacy loader.
 
 ## File Linting
 

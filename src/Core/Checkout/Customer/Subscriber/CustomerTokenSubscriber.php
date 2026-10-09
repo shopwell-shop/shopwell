@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityDeletedEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Routing\SessionContextTokenAccessor;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
@@ -24,7 +25,8 @@ class CustomerTokenSubscriber implements EventSubscriberInterface
      */
     public function __construct(
         private readonly SalesChannelContextPersister $contextPersister,
-        private readonly RequestStack $requestStack
+        private readonly RequestStack $requestStack,
+        private readonly SessionContextTokenAccessor $sessionContextToken
     ) {
     }
 
@@ -101,17 +103,10 @@ class CustomerTokenSubscriber implements EventSubscriberInterface
             'token' => $newToken,
         ]);
 
-        // Only migrate an initialized storefront session. Store API requests use their context token directly.
-        if (!$mainRequest->hasSession(true)) {
+        // a request without a session of its own gets every token revoked
+        if (!$this->sessionContextToken->rotate($mainRequest, $context->getSalesChannelId(), $newToken)) {
             return null;
         }
-
-        $session = $mainRequest->getSession();
-        $session->migrate();
-        $session->set('sessionId', $session->getId());
-
-        $session->set(PlatformRequest::HEADER_CONTEXT_TOKEN, $newToken);
-        $mainRequest->headers->set(PlatformRequest::HEADER_CONTEXT_TOKEN, $newToken);
 
         return $newToken;
     }

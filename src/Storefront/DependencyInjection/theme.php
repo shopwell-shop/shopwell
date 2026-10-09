@@ -27,6 +27,7 @@ use Shopwell\Storefront\Theme\Command\ThemeChangeCommand;
 use Shopwell\Storefront\Theme\Command\ThemeCompileCommand;
 use Shopwell\Storefront\Theme\Command\ThemeCreateCommand;
 use Shopwell\Storefront\Theme\Command\ThemeDumpCommand;
+use Shopwell\Storefront\Theme\Command\ThemeMigrateTranslationsCommand;
 use Shopwell\Storefront\Theme\Command\ThemePrepareIconsCommand;
 use Shopwell\Storefront\Theme\Command\ThemeRefreshCommand;
 use Shopwell\Storefront\Theme\ConfigLoader\AbstractAvailableThemeProvider;
@@ -52,6 +53,8 @@ use Shopwell\Storefront\Theme\ScheduledTask\DeleteThemeFilesTask;
 use Shopwell\Storefront\Theme\ScheduledTask\DeleteThemeFilesTaskHandler;
 use Shopwell\Storefront\Theme\ScssPhpCompiler;
 use Shopwell\Storefront\Theme\SeedingThemePathBuilder;
+use Shopwell\Storefront\Theme\Snippet\ThemeConfigSnippetGenerator;
+use Shopwell\Storefront\Theme\Snippet\ThemeSnippetFileWriter;
 use Shopwell\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfigurationFactory;
 use Shopwell\Storefront\Theme\StorefrontPluginRegistry;
 use Shopwell\Storefront\Theme\Subscriber\FirstRunWizardSubscriber;
@@ -149,6 +152,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(StorefrontPluginConfigurationFactory::class)->nullOnInvalid(),
             service(ThemeRuntimeConfigService::class),
+            service(ThemeSnippetFileWriter::class),
         ]);
 
     $services->set(ThemeFileResolver::class)
@@ -168,6 +172,19 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(StorefrontPluginRegistry::class),
             service('theme.repository'),
+        ]);
+
+    $services->set(ThemeConfigSnippetGenerator::class)
+        ->args([
+            service(StorefrontPluginRegistry::class),
+        ]);
+
+    $services->set(ThemeSnippetFileWriter::class)
+        ->args([
+            service(ThemeConfigSnippetGenerator::class),
+            service('shopwell.filesystem.private'),
+            service(CacheInvalidator::class),
+            service('logger'),
         ]);
 
     $services->set(ThemeService::class)
@@ -406,6 +423,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('theme.repository'),
             service(StaticFileConfigDumper::class),
             service(ThemeFilesystemResolver::class),
+        ])
+        ->tag('console.command');
+
+    $services->set(ThemeMigrateTranslationsCommand::class)
+        ->args([
+            service(StorefrontPluginRegistry::class),
+            service(ThemeFilesystemResolver::class),
+            service(ThemeConfigSnippetGenerator::class),
+            service(Filesystem::class),
         ])
         ->tag('console.command');
 

@@ -1,0 +1,36 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Tests\Unit\Core\Framework\App\Manifest\Xml\Administration;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\Manifest\Manifest;
+use Shopwell\Core\Framework\App\Manifest\Xml\Administration\Module;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+#[CoversClass(Module::class)]
+class ModuleTest extends TestCase
+{
+    public function testToArrayAddsLabelForTheDefaultLocale(): void
+    {
+        $manifest = Manifest::createFromXmlFile(__DIR__ . '/../../_fixtures/test/manifest.xml');
+        $admin = $manifest->getAdmin();
+        static::assertNotNull($admin);
+
+        $result = $admin->getModules()[0]->toArray('de-AT');
+
+        static::assertSame(
+            [
+                'en-GB' => 'My first own module',
+                'zh-CN' => '我的第一个模块',
+                'de-AT' => 'My first own module',
+            ],
+            $result['label']
+        );
+        static::assertSame('first-module', $result['name']);
+    }
+}

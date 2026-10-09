@@ -88,6 +88,19 @@ class DocumentAppFeatureDefinitionTest extends TestCase
         );
     }
 
+    public function testFromAppBackfillsDefaultLocaleFromTheSameLanguageInAnotherRegion(): void
+    {
+        $manifest = $this->manifest($this->documentTypes());
+
+        $configs = $this->definition->fromApp($manifest, new Filesystem(''), 'de-AT');
+        $warranty = $configs[0];
+
+        static::assertSame(
+            ['en-GB' => 'Warranty certificate', 'zh-CN' => '保修单', 'de-AT' => 'Warranty certificate'],
+            $warranty->getLabel()
+        );
+    }
+
     public function testFromAppReturnsEmptyListWhenManifestDeclaresNoDocuments(): void
     {
         $manifest = $this->manifest();

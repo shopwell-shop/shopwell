@@ -4,8 +4,7 @@ namespace Shopwell\Storefront\Page\Account\Order;
 
 use Shopwell\Core\Checkout\Cart\CartException;
 use Shopwell\Core\Checkout\Cart\Exception\CustomerNotLoggedInException;
-use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
-use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopwell\Core\Checkout\Cart\Order\OrderRestorer;
 use Shopwell\Core\Checkout\Gateway\SalesChannel\AbstractCheckoutGatewayRoute;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopwell\Core\Checkout\Order\OrderEntity;
@@ -20,7 +19,6 @@ use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
@@ -46,10 +44,9 @@ class AccountEditOrderPageLoader
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly AbstractOrderRoute $orderRoute,
         private readonly AbstractCheckoutGatewayRoute $checkoutGatewayRoute,
-        private readonly OrderConverter $orderConverter,
+        private readonly OrderRestorer $orderRestorer,
         private readonly OrderService $orderService,
-        private readonly AbstractTranslator $translator,
-        private readonly CartService $cartService
+        private readonly AbstractTranslator $translator
     ) {
     }
 
@@ -159,7 +156,7 @@ class AccountEditOrderPageLoader
                 ->addAssociation('transactions.stateMachineState');
         }
 
-        $criteria->getAssociation('transactions')->addSorting(new FieldSorting('createdAt'));
+        $this->orderRestorer->addRequiredAssociations($criteria);
 
         if ($context->getCustomer()) {
             $criteria->addFilter(new EqualsFilter('order.orderCustomer.customerId', $context->getCustomerId()));
@@ -180,13 +177,9 @@ class AccountEditOrderPageLoader
         $event = new PaymentMethodRouteRequestEvent($request, $routeRequest, $context);
         $this->eventDispatcher->dispatch($event);
 
-        $cart = $this->orderConverter->convertToCart($order, $context->getContext());
-        $orderContext = $this->orderConverter->assembleSalesChannelContext($order, $context->getContext());
+        $restored = $this->orderRestorer->restore($order, $context->getContext());
 
-        $cart->setToken($orderContext->getToken());
-        $this->cartService->setCart($cart);
-
-        $options = $this->checkoutGatewayRoute->load($event->getStoreApiRequest(), $cart, $orderContext);
+        $options = $this->checkoutGatewayRoute->load($event->getStoreApiRequest(), $restored->cart, $restored->context);
 
         $paymentMethods = $options->getPaymentMethods()->filterByProperty('afterOrderEnabled', true);
         $paymentMethods->sortPaymentMethodsByPreference($context);

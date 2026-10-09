@@ -3,5 +3,8 @@
         "psr-4": {
             "SwagStaticAnalysis\\Tests\\": "tests/"
         }
+    },
+    "extra": {
+        "shopwell-plugin-class": "SwagStaticAnalysis\\SwagStaticAnalysis"
     }
 }

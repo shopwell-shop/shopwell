@@ -46,6 +46,7 @@ use Shopwell\Core\Content\Media\File\FileSaver;
 use Shopwell\Core\Content\Media\File\FileService;
 use Shopwell\Core\Content\Media\File\FileUrlValidator;
 use Shopwell\Core\Content\Media\File\FileUrlValidatorInterface;
+use Shopwell\Core\Content\Media\File\GlbContentValidator;
 use Shopwell\Core\Content\Media\File\SvgContentValidator;
 use Shopwell\Core\Content\Media\File\TrustedUrlResolver;
 use Shopwell\Core\Content\Media\File\WindowsStyleFileNameProvider;
@@ -208,6 +209,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             param('shopwell.media.svg.allowed_attributes'),
             param('shopwell.media.svg.allowed_reference_attributes'),
         ])
+        ->tag('shopwell.media.file_content.validator');
+
+    $services->set(GlbContentValidator::class)
         ->tag('shopwell.media.file_content.validator');
 
     $services->set(FileSaver::class)

@@ -47,8 +47,10 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\Checkout\DocumentV2\Fixtures\DocumentConfigLoaderFactory;
 use Shopwell\Tests\Unit\Core\Checkout\DocumentV2\Fixtures\StaticDocumentDataProvider;
 use Shopwell\Tests\Unit\Core\Checkout\DocumentV2\Fixtures\StaticDocumentRenderer;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -175,14 +177,15 @@ class GenerateDocumentActionTest extends TestCase
             ->willReturn($createdOrderVersionId);
 
         $orderRepository
-            ->expects($this->exactly(2))
+            ->expects($this->exactly(3))
             ->method('search')
             ->willReturnCallback(function (
                 Criteria $criteria,
                 Context $searchContext,
-            ) use ($order, $orderId, $createdOrderVersionId): EntitySearchResult {
+            ) use ($order, $orderId, $createdOrderVersionId, $context): EntitySearchResult {
                 static::assertSame([$orderId], $criteria->getIds());
-                static::assertSame($createdOrderVersionId, $searchContext->getVersionId());
+                static $searchCount = 0;
+                static::assertSame(++$searchCount === 3 ? $createdOrderVersionId : $context->getVersionId(), $searchContext->getVersionId());
 
                 return new EntitySearchResult(
                     OrderDefinition::ENTITY_NAME,
@@ -304,6 +307,7 @@ class GenerateDocumentActionTest extends TestCase
             ),
             $orderRepository,
             static::createStub(ScriptExecutor::class),
+            DocumentConfigLoaderFactory::create($documentTypeRegistry, static::createStub(SystemConfigService::class)),
         );
 
         return [$generator, $documentRepository];

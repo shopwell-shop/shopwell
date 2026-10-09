@@ -279,6 +279,7 @@ class SnippetFinderTest extends TestCase
             $kernel,
             static::getContainer()->get(Connection::class),
             $this->translationFilesystem,
+            static::getContainer()->get('shopwell.filesystem.private'),
             $this->translationConfig,
             $this->translationLoader,
             static::getContainer()->get(HtmlSanitizer::class),

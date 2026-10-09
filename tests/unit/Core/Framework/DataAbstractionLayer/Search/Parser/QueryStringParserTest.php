@@ -10,6 +10,7 @@ use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductCategory\ProductCategoryDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductManufacturerTranslation\ProductManufacturerTranslationDefinition;
+use Shopwell\Core\Content\Product\Aggregate\ProductPrice\ProductPriceDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductTag\ProductTagDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductTranslation\ProductTranslationDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
@@ -83,6 +84,26 @@ class QueryStringParserTest extends TestCase
         );
 
         static::assertEquals($expected, $result);
+    }
+
+    public function testReverseInheritedAssociationIdIsNotNormalized(): void
+    {
+        $result = QueryStringParser::fromArray(
+            $this->getRegistry()->getByEntityName(ProductPriceDefinition::ENTITY_NAME),
+            ['type' => 'and', 'queries' => [
+                ['type' => 'equals', 'field' => 'product.id', 'value' => 'foo'],
+                ['type' => 'equals', 'field' => 'rule.id', 'value' => 'bar'],
+            ]],
+            new SearchRequestException()
+        );
+
+        static::assertEquals(
+            new AndFilter([
+                new EqualsFilter('product_price.product.id', 'foo'),
+                new EqualsFilter('product_price.ruleId', 'bar'),
+            ]),
+            $result
+        );
     }
 
     public static function parserProvider(): \Generator
@@ -629,6 +650,7 @@ class QueryStringParserTest extends TestCase
                 ProductCategoryDefinition::class,
                 CategoryDefinition::class,
                 CategoryTranslationDefinition::class,
+                ProductPriceDefinition::class,
             ],
             static::createStub(ValidatorInterface::class),
             static::createStub(EntityWriteGatewayInterface::class)

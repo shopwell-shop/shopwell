@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\RateLimiter\Policy\TimeBackoff;
 use Shopwell\Core\Framework\RateLimiter\RateLimiterException;
+use Shopwell\Core\Test\Assert\Serialization;
 
 /**
  * @internal
@@ -54,7 +55,7 @@ class TimeBackoffTest extends TestCase
 
     public function testThrowsExceptionOnInvalidLimits(): void
     {
-        $backoff = new TimeBackoff('test', [
+        $limits = [
             [
                 'limit' => 3,
                 'interval' => '10 seconds',
@@ -63,13 +64,20 @@ class TimeBackoffTest extends TestCase
                 'limit' => 5,
                 'interval' => '30 seconds',
             ],
-        ]);
+        ];
+        $serialized = serialize(new TimeBackoff('test', $limits));
 
-        $stringLimits = new \ReflectionProperty(TimeBackoff::class, 'stringLimits');
-        $stringLimits->setValue($backoff, 'invalid');
+        // Corrupt the JSON-encoded limits the way a damaged cache entry would carry them
+        $encodedLimits = json_encode($limits, \JSON_THROW_ON_ERROR);
+        $corrupted = str_replace(
+            \sprintf('s:%d:"%s";', \strlen($encodedLimits), $encodedLimits),
+            's:7:"invalid";',
+            $serialized,
+        );
+        static::assertNotSame($serialized, $corrupted);
 
         static::expectExceptionObject(RateLimiterException::backoffUnserializationFailed(TimeBackoff::class));
-        $backoff->__wakeup();
+        Serialization::assertUnserializedInstanceOf(TimeBackoff::class, $corrupted);
     }
 
     /**

@@ -111,7 +111,7 @@ class MailServiceTest extends TestCase
         $this->salesChannelRepository->expects($this->once())->method('search')->willReturn($salesChannelResult);
 
         $data = [
-            'recipients' => [],
+            'recipients' => ['me@shopwell.cn' => 'me'],
             'senderName' => 'me',
             'senderEmail' => 'me@shopwell.cn',
             'subject' => 'Test email',
@@ -164,7 +164,7 @@ class MailServiceTest extends TestCase
         $this->salesChannelRepository->expects($this->once())->method('search')->willReturn($salesChannelResult);
 
         $data = [
-            'recipients' => [],
+            'recipients' => ['me@shopwell.cn' => 'me'],
             'senderName' => 'me',
             'senderEmail' => 'me@shopwell.cn',
             'subject' => 'Your order {{ order.orderNumber }}',
@@ -227,7 +227,7 @@ class MailServiceTest extends TestCase
         $this->salesChannelRepository->expects($this->once())->method('search')->willReturn($salesChannelResult);
 
         $data = [
-            'recipients' => [],
+            'recipients' => ['me@shopwell.cn' => 'me'],
             'senderName' => 'me',
             'senderEmail' => 'me@shopwell.cn',
             'subject' => 'Test email',
@@ -312,7 +312,7 @@ class MailServiceTest extends TestCase
         $this->salesChannelRepository->expects($this->once())->method('search')->willReturn($salesChannelResult);
 
         $data = [
-            'recipients' => [],
+            'recipients' => ['me@shopwell.cn' => 'me'],
             'subject' => 'Test email',
             'senderName' => null,
             'contentPlain' => 'Content plain',
@@ -367,7 +367,7 @@ class MailServiceTest extends TestCase
         $this->salesChannelRepository->expects($this->once())->method('search')->willReturn($salesChannelResult);
 
         $data = [
-            'recipients' => [],
+            'recipients' => ['me@shopwell.cn' => 'me'],
             'senderName' => 'me',
             'senderEmail' => 'me@shopwell.cn',
             'subject' => 'Test email',
@@ -448,7 +448,7 @@ class MailServiceTest extends TestCase
 
         $data = [
             'testMode' => true,
-            'recipients' => [],
+            'recipients' => ['me@shopwell.cn' => 'me'],
             'senderName' => 'me',
             'senderEmail' => 'me@shopwell.cn',
             'subject' => 'Test email',

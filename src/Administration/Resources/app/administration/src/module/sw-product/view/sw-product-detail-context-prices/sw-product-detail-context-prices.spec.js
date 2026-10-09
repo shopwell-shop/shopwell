@@ -204,6 +204,30 @@ describe('src/module/sw-product/view/sw-product-detail-context-prices', () => {
         expect(emptyState.find('.mt-empty-state__link').exists()).toBe(false);
     });
 
+    it('should only allow toggling the inherit switch when the inheritance is removed', async () => {
+        global.activeAclRoles = ['product.editor'];
+
+        Shopwell.Store.get('swProductDetail').product = {
+            id: 'productId',
+            parentId: 'parentProductId',
+            prices: [],
+        };
+        Shopwell.Store.get('swProductDetail').parentProduct = {
+            id: 'parentProductId',
+        };
+
+        wrapper = await createWrapper();
+        await wrapper.vm.$nextTick();
+
+        const switchInput = () => wrapper.find('.sw-product-detail-context-prices__inherit-switch input');
+        expect(switchInput().attributes('disabled')).toBeDefined();
+
+        wrapper.vm.isInherited = false;
+        await wrapper.vm.$nextTick();
+
+        expect(switchInput().attributes('disabled')).toBeUndefined();
+    });
+
     it('first start quantity input should be disabled', async () => {
         Shopwell.Store.get('swProductDetail').product = {
             id: 'productId',

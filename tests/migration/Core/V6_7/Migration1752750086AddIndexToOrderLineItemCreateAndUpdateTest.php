@@ -4,18 +4,18 @@ namespace Shopwell\Tests\Migration\Core\V6_7;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Util\Database\TableHelper;
 use Shopwell\Core\Migration\V6_7\Migration1752750086AddIndexToOrderLineItemCreateAndUpdate;
+use Shopwell\Tests\Migration\NonStandardFkGuardMigrationTestCase;
 
 /**
  * @internal
  */
 #[Package('checkout')]
 #[CoversClass(Migration1752750086AddIndexToOrderLineItemCreateAndUpdate::class)]
-class Migration1752750086AddIndexToOrderLineItemCreateAndUpdateTest extends TestCase
+class Migration1752750086AddIndexToOrderLineItemCreateAndUpdateTest extends NonStandardFkGuardMigrationTestCase
 {
     private Connection $connection;
 
@@ -44,6 +44,11 @@ class Migration1752750086AddIndexToOrderLineItemCreateAndUpdateTest extends Test
         $migration->update($this->connection);
 
         static::assertTrue(TableHelper::indexExists($this->connection, 'order_line_item', 'idx.order_line_item_created_updated'));
+    }
+
+    public function testIndexCreationSurvivesNonStandardForeignKeyGuard(): void
+    {
+        $this->assertIndexCreationSurvivesNonStandardForeignKeyGuard(new Migration1752750086AddIndexToOrderLineItemCreateAndUpdate(), 'order_line_item');
     }
 
     private function rollback(): void

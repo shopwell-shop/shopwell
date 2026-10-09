@@ -21,7 +21,7 @@
         "promotion-not-eligible-already-added": "优惠券码“%name%”对应的优惠已加入购物车，每单仅可使用一次",
         "promotion-excluded": "因与其他优惠冲突，部分优惠已从购物车移除。条件恢复后会自动重新应用",
         "promotion-discount-zero-value": "优惠活动“%name%”已应用，但未减少购物车金额",
-        "promotions-on-cart-price-zero-error": "购物车金额为零，优惠活动“%promotions%”未应用",
+        "promotions-on-cart-price-zero-error": "购物车中没有可享受折扣的商品，优惠活动“%promotions%”未应用",
         "shipping-address-blocked": "无法配送至所选收货地址",
         "billing-address-blocked": "无法向所选账单地址开具发票",
         "shipping-address-invalid": "收货地址无效或不完整，请<a href=\"%url%\">点此</a>核对",
