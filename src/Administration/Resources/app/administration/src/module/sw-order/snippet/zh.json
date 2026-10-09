@@ -2,7 +2,7 @@
   "sw-order": {
     "general": {
       "mainMenuItemGeneral": "订单",
-      "mainMenuItemList": "概览",
+      "mainMenuItemList": "订单",
       "descriptionTextModule": "订单管理",
       "placeholderSearchBar": "搜索全部订单…"
     },
