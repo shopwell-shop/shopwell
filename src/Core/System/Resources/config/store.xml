@@ -2,8 +2,8 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
-        <title>Shopwell Account</title>
-        <title lang="zh-CN">Shopwell 账户</title>
+        <title>授权许可证</title>
+        <title lang="zh-CN">授权许可证</title>
 
         <input-field>
             <name>licenseHost</name>

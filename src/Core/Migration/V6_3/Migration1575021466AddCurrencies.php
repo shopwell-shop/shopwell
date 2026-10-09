@@ -41,7 +41,7 @@ class Migration1575021466AddCurrencies extends MigrationStep
 
     private function createCurrencies(Connection $connection): void
     {
-        $this->addCurrency($connection, Uuid::randomBytes(), 'PLN', 4.33, 'zł', 'PLN', 'PLN', 'Złoty', 'Złoty');
+        $this->addCurrency($connection, Uuid::randomBytes(), 'PLN', 4.33, 'zł', 'PLN', 'PLN', '波兰兹罗提', 'Polish zloty');
         $this->addCurrency($connection, Uuid::randomBytes(), 'CHF', 1.1, 'Fr', 'CHF', 'CHF', '瑞士法郎', 'Swiss francs');
         $this->addCurrency($connection, Uuid::randomBytes(), 'SEK', 10.51, 'kr', 'SEK', 'SEK', '瑞典克朗', 'Swedish krone');
         $this->addCurrency($connection, Uuid::randomBytes(), 'DKK', 7.47, 'kr', 'DKK', 'DKK', '丹麦克朗', 'Danish krone');

@@ -86,6 +86,14 @@ class Migration1570459127AddCmsSidebarLayout extends MigrationStep
 
         $connection->insert('cms_slot', $filterSlot);
         $connection->insert('cms_slot_translation', $slotTranslationData);
+
+        // The row above only covers the system language, so the second built-in language
+        // needs its own translation as well.
+        $languageZhCn = $this->getZhCnId($connection);
+        if ($languageZhCn !== null) {
+            $slotTranslationData['language_id'] = $languageZhCn;
+            $connection->insert('cms_slot_translation', $slotTranslationData);
+        }
     }
 
     private function findDefaultLayoutId(Connection $connection): ?string
@@ -106,7 +114,7 @@ class Migration1570459127AddCmsSidebarLayout extends MigrationStep
     private function addDefaultLayoutWithSidebar(Connection $connection): void
     {
         $languageEn = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
-        $languageDe = $this->getZhCnId($connection);
+        $languageZhCn = $this->getZhCnId($connection);
         $versionId = Uuid::fromHexToBytes(Defaults::LIVE_VERSION);
 
         // cms page
@@ -122,17 +130,17 @@ class Migration1570459127AddCmsSidebarLayout extends MigrationStep
             'name' => 'Default category layout with sidebar',
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ];
-        $pageDeu = [
+        $pageZhCn = [
             'cms_page_id' => $page['id'],
-            'language_id' => $languageDe,
-            'name' => 'Standard Kategorie-Layout mit Sidebar',
+            'language_id' => $languageZhCn,
+            'name' => '含侧栏的默认分类布局',
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ];
 
         $connection->insert('cms_page', $page);
         $connection->insert('cms_page_translation', $pageEng);
-        if ($languageDe) {
-            $connection->insert('cms_page_translation', $pageDeu);
+        if ($languageZhCn) {
+            $connection->insert('cms_page_translation', $pageZhCn);
         }
 
         $topSection = [
@@ -272,8 +280,8 @@ class Migration1570459127AddCmsSidebarLayout extends MigrationStep
             $slotTranslationDatum['language_id'] = $languageEn;
             $slotTranslations[] = $slotTranslationDatum;
 
-            if ($languageDe) {
-                $slotTranslationDatum['language_id'] = $languageDe;
+            if ($languageZhCn) {
+                $slotTranslationDatum['language_id'] = $languageZhCn;
                 $slotTranslations[] = $slotTranslationDatum;
             }
         }

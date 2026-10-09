@@ -124,6 +124,73 @@ class MigrationForeignDefaultLanguageTest extends TestCase
             ['currencyId' => Uuid::fromHexToBytes(Defaults::CURRENCY)]
         ));
 
+        // Every built-in currency must carry a Chinese name, otherwise the Administration
+        // falls back to the english/native name while the default language is zh-CN.
+        static::assertSame([
+            'CHF' => '瑞士法郎',
+            'CNY' => '人民币',
+            'CZK' => '捷克克朗',
+            'DKK' => '丹麦克朗',
+            'EUR' => '欧元',
+            'GBP' => '英镑',
+            'NOK' => '挪威克朗',
+            'PLN' => '波兰兹罗提',
+            'SEK' => '瑞典克朗',
+            'USD' => '美元',
+        ], $connection->fetchAllKeyValue(
+            'SELECT currency.iso_code, currency_translation.name
+             FROM currency
+             INNER JOIN currency_translation ON currency_translation.currency_id = currency.id
+             INNER JOIN language ON language.id = currency_translation.language_id
+             INNER JOIN locale ON locale.id = language.translation_code_id
+             WHERE locale.code = :localeCode
+             ORDER BY currency.iso_code',
+            ['localeCode' => 'zh-CN']
+        ));
+
+        $languageIds = $connection->fetchAllKeyValue(
+            'SELECT locale.code, language.id
+             FROM language
+             INNER JOIN locale ON locale.id = language.translation_code_id'
+        );
+        static::assertArrayHasKey('en-GB', $languageIds);
+        static::assertArrayHasKey('zh-CN', $languageIds);
+
+        // Built-in CMS layouts are shipped in both languages. A slot that was only written
+        // for the system language loses its config in the other language, which makes the
+        // element render unconfigured.
+        static::assertSame(0, (int) $connection->fetchOne(
+            'SELECT COUNT(*)
+             FROM cms_slot_translation english
+             LEFT JOIN cms_slot_translation chinese
+                ON chinese.cms_slot_id = english.cms_slot_id
+                AND chinese.cms_slot_version_id <=> english.cms_slot_version_id
+                AND chinese.language_id = :zhCnLanguageId
+             WHERE english.language_id = :enGbLanguageId
+               AND chinese.cms_slot_id IS NULL',
+            [
+                'zhCnLanguageId' => $languageIds['zh-CN'],
+                'enGbLanguageId' => $languageIds['en-GB'],
+            ]
+        ));
+
+        // The sidebar listing layout must not fall back to the second language's original name.
+        static::assertSame('含侧栏的默认分类布局', $connection->fetchOne(
+            'SELECT chinese.name
+             FROM cms_page_translation english
+             INNER JOIN cms_page_translation chinese
+                ON chinese.cms_page_id = english.cms_page_id
+                AND chinese.cms_page_version_id <=> english.cms_page_version_id
+                AND chinese.language_id = :zhCnLanguageId
+             WHERE english.language_id = :enGbLanguageId
+               AND english.name = :name',
+            [
+                'zhCnLanguageId' => $languageIds['zh-CN'],
+                'enGbLanguageId' => $languageIds['en-GB'],
+                'name' => 'Default listing layout with sidebar',
+            ]
+        ));
+
         static::assertSame(1, (int) $connection->fetchOne(
             'SELECT COUNT(*) FROM tax WHERE name = :name AND tax_rate = 0',
             ['name' => 'Reduced rate 2']

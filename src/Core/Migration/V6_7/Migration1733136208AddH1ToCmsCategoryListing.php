@@ -98,6 +98,32 @@ class Migration1733136208AddH1ToCmsCategoryListing extends MigrationStep
 
         $connection->insert('cms_slot', $categoryNameSlot);
         $connection->insert('cms_slot_translation', $slotTranslationData);
+
+        // The system language row above only covers one language, so the second built-in
+        // language needs its own translation. Without it the element loses its config and
+        // the category name is not rendered.
+        $languageZhCnId = $this->getZhCnLanguageId($connection);
+        if ($languageZhCnId !== null) {
+            $slotTranslationData['language_id'] = $languageZhCnId;
+            $connection->insert('cms_slot_translation', $slotTranslationData);
+        }
+    }
+
+    private function getZhCnLanguageId(Connection $connection): ?string
+    {
+        $languageId = $connection->fetchOne(
+            'SELECT language.id
+            FROM language
+            INNER JOIN locale ON locale.id = language.translation_code_id
+            WHERE locale.code = :code',
+            ['code' => 'zh-CN']
+        );
+
+        if (!$languageId || Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM) === $languageId) {
+            return null;
+        }
+
+        return $languageId;
     }
 
     private function findDefaultLayoutId(Connection $connection, string $name): ?string
