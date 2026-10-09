@@ -36,8 +36,8 @@ class CustomFieldTypeTest extends TestCase
                 [
                     'label' => [
                         'en-GB' => 'First',
-                        'de-DE' => 'Erster',
-                        'de-AT' => 'Erster',
+                        'zh-CN' => '第一项',
+                        'de-AT' => 'First',
                     ],
                     'value' => 'first',
                 ],
@@ -71,7 +71,7 @@ class CustomFieldTypeTest extends TestCase
                 [
                     'label' => [
                         'en-GB' => 'First',
-                        'de-DE' => 'Erster',
+                        'zh-CN' => '第一项',
                     ],
                     'value' => 'first',
                 ],

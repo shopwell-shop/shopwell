@@ -16,7 +16,7 @@ permissions: {}
 jobs:
   notify:
     name: Notify the team in Slack
-    if: github.repository == 'shopwell/shopwell' && (github.event.label.name == 'external-contribution' || startsWith(github.event.label.name, 'domain/'))
+    if: github.repository == 'shopwell-shop/shopwell' && (github.event.label.name == 'external-contribution' || startsWith(github.event.label.name, 'domain/'))
     runs-on: ubuntu-24.04
     permissions:
       contents: read

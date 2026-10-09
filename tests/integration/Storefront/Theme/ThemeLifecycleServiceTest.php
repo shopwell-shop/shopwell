@@ -484,7 +484,7 @@ class ThemeLifecycleServiceTest extends TestCase
             $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
             static::assertTrue($privateFilesystem->fileExists($directory . '/en-GB.json'));
-            static::assertTrue($privateFilesystem->fileExists($directory . '/de-DE.json'));
+            static::assertTrue($privateFilesystem->fileExists($directory . '/zh-CN.json'));
 
             $snippets = \json_decode($privateFilesystem->read($directory . '/en-GB.json'), true, 512, \JSON_THROW_ON_ERROR);
             static::assertSame(

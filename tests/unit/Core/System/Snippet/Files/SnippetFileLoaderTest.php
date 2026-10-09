@@ -660,8 +660,8 @@ class SnippetFileLoaderTest extends TestCase
 
     public function testLoadSnippetsPlacedInThePrivateFilesystem(): void
     {
-        $this->privateFilesystem->write('snippets/storefront/MyIntegration/storefront.de.json', '{}');
-        $this->privateFilesystem->write('snippets/storefront/MyIntegration/storefront.de.base.json', '{}');
+        $this->privateFilesystem->write('snippets/storefront/MyIntegration/storefront.zh.json', '{}');
+        $this->privateFilesystem->write('snippets/storefront/MyIntegration/storefront.zh.base.json', '{}');
         $this->privateFilesystem->write('snippets/storefront/MyIntegration/notes.json', '{}');
         $this->privateFilesystem->write('snippets/storefront/MyIntegration/readme.txt', 'ignored');
         $this->privateFilesystem->write('snippets/storefront/my-integration.en.json', '{}');
@@ -672,12 +672,12 @@ class SnippetFileLoaderTest extends TestCase
 
         static::assertCount(3, $collection);
 
-        $files = $collection->getSnippetFilesByIso('de');
+        $files = $collection->getSnippetFilesByIso('zh');
         static::assertCount(2, $files);
         foreach ($files as $file) {
             static::assertInstanceOf(FilesystemSnippetFile::class, $file);
-            static::assertSame('storefront.de', $file->getName());
-            static::assertSame('de', $file->getIso());
+            static::assertSame('storefront.zh', $file->getName());
+            static::assertSame('zh', $file->getIso());
             static::assertSame('MyIntegration', $file->getAuthor());
             static::assertSame('MyIntegration', $file->getTechnicalName());
         }
@@ -693,25 +693,25 @@ class SnippetFileLoaderTest extends TestCase
         sort($paths);
         static::assertSame(
             [
-                'snippets/storefront/MyIntegration/storefront.de.base.json',
-                'snippets/storefront/MyIntegration/storefront.de.json',
+                'snippets/storefront/MyIntegration/storefront.zh.base.json',
+                'snippets/storefront/MyIntegration/storefront.zh.json',
                 'snippets/storefront/my-integration.en.json',
             ],
             $paths,
         );
-        static::assertTrue($collection->getBaseFileByIso('de')->isBase());
+        static::assertTrue($collection->getBaseFileByIso('zh')->isBase());
     }
 
     public function testSnippetsFromThePrivateFilesystemLoseAgainstShippedSnippets(): void
     {
-        $this->privateFilesystem->write('snippets/storefront/MyIntegration/storefront.de.json', '{}');
+        $this->privateFilesystem->write('snippets/storefront/MyIntegration/storefront.zh.json', '{}');
 
         $collection = new SnippetFileCollection();
         $this->createSnippetFileLoader($this->getKernel([
             'ShopwellBundleWithSnippets' => new ShopwellBundleWithSnippets(),
         ]))->loadSnippetFilesIntoCollection($collection);
 
-        $files = $collection->getSnippetFilesByIso('de');
+        $files = $collection->getSnippetFilesByIso('zh');
 
         static::assertCount(2, $files);
         static::assertInstanceOf(FilesystemSnippetFile::class, $files[0]);

@@ -76,8 +76,8 @@ class CustomFieldSetTest extends TestCase
             [
                 'label' => [
                     'en-GB' => 'Custom field test',
-                    'de-DE' => 'Zusatzfeld Test',
-                    'de-AT' => 'Zusatzfeld Test',
+                    'zh-CN' => '自定义字段测试',
+                    'de-AT' => 'Custom field test',
                 ],
                 'translated' => true,
             ],

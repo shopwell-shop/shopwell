@@ -96,7 +96,7 @@ class DocumentAppFeatureDefinitionTest extends TestCase
         $warranty = $configs[0];
 
         static::assertSame(
-            ['en-GB' => 'Warranty certificate', 'de-DE' => 'Garantieschein', 'de-AT' => 'Garantieschein'],
+            ['en-GB' => 'Warranty certificate', 'zh-CN' => '保修单', 'de-AT' => 'Warranty certificate'],
             $warranty->getLabel()
         );
     }

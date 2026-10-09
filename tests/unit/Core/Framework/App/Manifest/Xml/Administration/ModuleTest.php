@@ -26,8 +26,8 @@ class ModuleTest extends TestCase
         static::assertSame(
             [
                 'en-GB' => 'My first own module',
-                'de-DE' => 'Mein erstes eigenes Modul',
-                'de-AT' => 'Mein erstes eigenes Modul',
+                'zh-CN' => '我的第一个模块',
+                'de-AT' => 'My first own module',
             ],
             $result['label']
         );

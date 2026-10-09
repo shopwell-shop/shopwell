@@ -256,7 +256,7 @@ class AppManagerTest extends TestCase
             static::assertNotNull($flowAction);
             static::assertSame('Telegram send message', $flowAction->getLabel());
             static::assertEquals(
-                [['en-GB' => 'Text', 'de-DE' => 'Text DE', 'en-US' => 'Text']],
+                [['en-GB' => 'Text', 'zh-CN' => '文本', 'en-US' => 'Text']],
                 array_column($flowAction->getConfig(), 'label')
             );
         } finally {

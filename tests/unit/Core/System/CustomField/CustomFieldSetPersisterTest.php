@@ -109,7 +109,7 @@ class CustomFieldSetPersisterTest extends TestCase
 
         $upserts = $this->setRepository->getPayloads(StaticEntityRepository::UPSERT);
         static::assertSame(
-            ['en-GB' => 'Test Set', 'de-DE' => 'Test-Set', 'de-AT' => 'Test-Set'],
+            ['en-GB' => 'Test Set', 'zh-CN' => '测试集', 'de-AT' => 'Test Set'],
             $upserts[0]['config']['label']
         );
         static::assertSame(
@@ -125,7 +125,7 @@ class CustomFieldSetPersisterTest extends TestCase
         $this->persister->sync($this->loadFixture(), null, 'TestPlugin', Context::createDefaultContext());
 
         $upserts = $this->setRepository->getPayloads(StaticEntityRepository::UPSERT);
-        static::assertSame(['en-GB' => 'Test Set', 'de-DE' => 'Test-Set'], $upserts[0]['config']['label']);
+        static::assertSame(['en-GB' => 'Test Set', 'zh-CN' => '测试集'], $upserts[0]['config']['label']);
         static::assertSame(['en-GB' => 'Int Field'], $upserts[0]['customFields'][0]['config']['label']);
     }
 
