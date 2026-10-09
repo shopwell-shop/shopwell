@@ -1,0 +1,85 @@
+{% block sw_dashboard_latest_orders %}
+<mt-card
+    v-if="canViewOrders"
+    class="sw-dashboard-latest-orders mt-card--future-ignore-max-width"
+    :is-loading="isLoading"
+    position-identifier="sw-dashboard-latest-orders"
+>
+    {% block sw_dashboard_latest_orders_title %}
+    <template #title>
+        {{ $t('sw-dashboard.latestOrders.headline') }}
+    </template>
+    {% endblock %}
+
+    {% block sw_dashboard_latest_orders_listing %}
+    <sw-entity-listing
+        v-if="orders && orders.length > 0"
+        class="sw-dashboard-latest-orders__listing"
+        :sort-by="sortBy"
+        :sort-direction="sortDirection"
+        :repository="orderRepository"
+        :data-source="orders"
+        :columns="orderGridColumns()"
+        :show-selection="false"
+        :allow-column-edit="false"
+        :allow-inline-edit="false"
+        :full-page="false"
+        :show-settings="false"
+    >
+        {% block sw_dashboard_latest_orders_column_order_time %}
+        <template #column-orderDateTime="{ item }">
+            <sw-time-ago
+                :date="item.orderDateTime"
+                :date-time-format="{ month: '2-digit', day: '2-digit' }"
+            />
+        </template>
+        {% endblock %}
+
+        {% block sw_dashboard_latest_orders_column_customer %}
+        <template #column-orderCustomer.firstName="{ item }">
+            <router-link
+                :to="{ name: 'sw.order.detail', params: { id: item.id } }"
+                class="sw-data-grid__cell-value"
+            >
+                {{ getCustomerName(item) }}
+            </router-link>
+        </template>
+        {% endblock %}
+
+        {% block sw_dashboard_latest_orders_column_state %}
+        <template #column-stateMachineState.name="{ item }">
+            <mt-badge :variant="getVariantFromOrderState(item)">
+                {{ getOrderStateLabel(item) }}
+            </mt-badge>
+        </template>
+        {% endblock %}
+
+        {% block sw_dashboard_latest_orders_column_amount %}
+        <template #column-amountTotal="{ item }">
+            {{ currencyFilter(item.amountTotal, item.currency?.isoCode) }}
+        </template>
+        {% endblock %}
+
+        {% block sw_dashboard_latest_orders_actions %}
+        <template #actions="{ item }">
+            <sw-context-menu-item
+                class="sw-order-list__order-view-action"
+                :router-link="{ name: 'sw.order.detail', params: { id: item.id } }"
+            >
+                {{ $t('global.default.view') }}
+            </sw-context-menu-item>
+        </template>
+        {% endblock %}
+    </sw-entity-listing>
+
+    {% block sw_dashboard_latest_orders_empty %}
+    <div
+        v-else-if="!isLoading"
+        class="sw-dashboard-latest-orders__empty"
+    >
+        {{ $t('sw-dashboard.latestOrders.empty') }}
+    </div>
+    {% endblock %}
+    {% endblock %}
+</mt-card>
+{% endblock %}

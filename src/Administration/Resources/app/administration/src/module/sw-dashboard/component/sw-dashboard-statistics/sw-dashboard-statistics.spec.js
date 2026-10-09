@@ -1,12 +1,16 @@
 import { mount } from '@vue/test-utils';
 import dictionary from 'src/module/sw-dashboard/snippet/en.json';
 
-const hasOrderTodayMock = [{}];
+let statisticResponse = {
+    paid: [],
+    all: [],
+};
 
-async function createWrapper(privileges = [], repository = {}) {
+let requestedUrls = [];
+
+async function createWrapper(privileges = ['order.viewer'], repository = {}) {
     const repositoryMock = {
-        search: () => Promise.resolve([]),
-        buildHeaders: () => {},
+        buildHeaders: () => ({ Authorization: 'Bearer test' }),
         ...repository,
     };
 
@@ -15,43 +19,43 @@ async function createWrapper(privileges = [], repository = {}) {
     return mount(await wrapTestComponent('sw-dashboard-statistics', { sync: true }), {
         global: {
             stubs: {
-                'sw-card-deprecated': await wrapTestComponent('sw-card-deprecated', { sync: true }),
-                'sw-chart-card': await wrapTestComponent('sw-chart-card'),
-                'sw-entity-listing': true,
-                'sw-chart': true,
-                'sw-select-field': await wrapTestComponent('sw-select-field', { sync: true }),
-                'sw-select-field-deprecated': await wrapTestComponent('sw-select-field-deprecated', { sync: true }),
-                'sw-block-field': await wrapTestComponent('sw-block-field'),
-                'sw-base-field': await wrapTestComponent('sw-base-field'),
-                'sw-skeleton': true,
-                'sw-help-text': true,
-                'sw-ignore-class': true,
+                'mt-card': {
+                    template:
+                        '<div class="mt-card"><slot name="title"></slot><slot name="headerRight"></slot><slot /></div>',
+                    props: [
+                        'title',
+                        'subtitle',
+                        'helpText',
+                        'isLoading',
+                        'positionIdentifier',
+                    ],
+                },
+                'mt-select': {
+                    name: 'mt-select',
+                    props: ['modelValue', 'options'],
+                    template: '<select class="mt-select"></select>',
+                },
+                'mt-icon': true,
+                'sw-chart': {
+                    props: [
+                        'type',
+                        'series',
+                        'options',
+                        'fillEmptyValues',
+                        'height',
+                        'sort',
+                    ],
+                    template: '<div class="sw-chart" :data-series="JSON.stringify(series)"></div>',
+                },
                 'sw-extension-component-section': true,
-                'sw-icon': true,
-                'sw-field-error': true,
-                'router-link': true,
-                'sw-label': true,
-                'sw-context-menu-item': true,
-                'sw-loader': true,
-                'sw-ai-copilot-badge': true,
-                'sw-context-button': true,
-                'sw-inheritance-switch': true,
-                'sw-time-ago': true,
             },
             mocks: {
-                $t: (...args) => JSON.stringify([...args]),
-                $i18n: {
-                    locale: 'en-GB',
-                    messages: {
-                        'en-GB': dictionary,
-                    },
-                },
+                $t: (key) => key,
             },
             provide: {
                 repositoryFactory: {
                     create: () => repositoryMock,
                 },
-                stateStyleDataProviderService: {},
                 acl: {
                     can: (identifier) => {
                         if (!identifier) {
@@ -70,166 +74,166 @@ async function createWrapper(privileges = [], repository = {}) {
  * @sw-package after-sales
  */
 describe('module/sw-dashboard/component/sw-dashboard-statistics', () => {
-    let wrapper;
-
     beforeAll(() => {
         Shopwell.Context.app.systemCurrencyISOCode = 'EUR';
 
         Shopwell.Application.addInitializer('httpClient', () => {
             return {
-                get: () =>
-                    Promise.resolve({
+                get: (url) => {
+                    requestedUrls.push(url);
+
+                    return Promise.resolve({
                         data: {
-                            statistic: [],
+                            statistic: url.includes('paid=true') ? statisticResponse.paid : statisticResponse.all,
                         },
-                    }),
+                    });
+                },
             };
         });
+
         jest.useFakeTimers('modern');
+    });
+
+    beforeEach(() => {
+        jest.setSystemTime(new Date('2026-06-15T10:00:00.000Z'));
+        statisticResponse = { paid: [], all: [] };
+        requestedUrls = [];
     });
 
     afterAll(() => {
         jest.useRealTimers();
     });
 
-    it('should not show the stats', async () => {
-        wrapper = await createWrapper();
-
-        const orderToday = wrapper.find('.sw-dashboard-statistics__intro-stats-today');
-        const statisticsCount = wrapper.find('.sw-dashboard-statistics__statistics-count');
-        const statisticsSum = wrapper.find('.sw-dashboard-statistics__statistics-sum');
-
-        expect(orderToday.exists()).toBeFalsy();
-        expect(statisticsCount.exists()).toBeFalsy();
-        expect(statisticsSum.exists()).toBeFalsy();
-    });
-
-    it('should show the stats', async () => {
-        wrapper = await createWrapper(['order.viewer']);
+    it('does not render the chart without order permission', async () => {
+        const wrapper = await createWrapper([]);
         await flushPromises();
 
-        const orderToday = wrapper.find('.sw-dashboard-statistics__intro-stats-today');
-        const statisticsCount = wrapper.find('.sw-dashboard-statistics__statistics-count');
-        const statisticsSum = wrapper.find('.sw-dashboard-statistics__statistics-sum');
-
-        expect(orderToday.exists()).toBeFalsy();
-        expect(statisticsCount.exists()).toBeTruthy();
-        expect(statisticsSum.exists()).toBeTruthy();
+        expect(wrapper.find('.sw-chart').exists()).toBe(false);
     });
 
-    it('should show chart cards while stats are loading', async () => {
-        wrapper = await createWrapper(['order.viewer']);
+    it('renders a single chart', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
 
-        const orderToday = wrapper.find('.sw-dashboard-statistics__intro-stats-today');
-        const statisticsCount = wrapper.find('.sw-dashboard-statistics__statistics-count');
-        const statisticsSum = wrapper.find('.sw-dashboard-statistics__statistics-sum');
-
-        expect(orderToday.exists()).toBe(false);
-        expect(statisticsCount.exists()).toBe(true);
-        expect(statisticsSum.exists()).toBe(true);
+        expect(wrapper.findAll('.sw-chart')).toHaveLength(1);
     });
 
-    it('should show the todays stats', async () => {
-        const orderSearchResult = {
-            search: () =>
-                Promise.resolve([
-                    {
-                        id: '1a2b3c',
-                        orderNumber: '12345',
-                        amountTotal: 123.45,
-                        stateMachineState: {
-                            name: 'open',
-                        },
-                    },
-                    {
-                        id: '1b2a3c',
-                        orderNumber: '23456',
-                        amountTotal: 19.45,
-                        stateMachineState: {
-                            name: 'closed',
-                        },
-                    },
-                ]),
+    it('offers the metric switcher with revenue and order count', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        expect(wrapper.vm.metricOptions).toEqual([
+            { label: 'sw-dashboard.statistics.metricTurnover', value: 'turnover' },
+            { label: 'sw-dashboard.statistics.metricOrderCount', value: 'orderCount' },
+        ]);
+    });
+
+    it('offers all supported ranges', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        expect(wrapper.vm.rangeOptions.map((option) => option.value)).toEqual([
+            '30Days',
+            '14Days',
+            '7Days',
+            '24Hours',
+            'yesterday',
+        ]);
+        expect(wrapper.vm.activeRange).toEqual({
+            label: '30Days',
+            range: 30,
+            interval: 'day',
+            aggregate: 'day',
+        });
+    });
+
+    it('requests both the paid and the overall revenue', async () => {
+        await createWrapper();
+        await flushPromises();
+
+        expect(requestedUrls).toHaveLength(2);
+        expect(requestedUrls[0]).toContain('paid=true');
+        expect(requestedUrls[1]).toContain('paid=false');
+    });
+
+    it('plots the paid amount when the revenue metric is selected', async () => {
+        statisticResponse = {
+            paid: [{ date: '2026-06-14', count: 2, amount: 150 }],
+            all: [{ date: '2026-06-14', count: 9, amount: 900 }],
         };
 
-        orderSearchResult.criteris = { page: 1 };
-        wrapper = await createWrapper(['order.viewer'], orderSearchResult);
+        const wrapper = await createWrapper();
         await flushPromises();
 
-        const orderToday = wrapper.find('.sw-dashboard-statistics__intro-stats-today');
+        const today = { x: wrapper.vm.getToday().getTime(), y: 0 };
 
-        expect(orderToday.exists()).toBeTruthy();
+        expect(wrapper.vm.series[0].data).toEqual([
+            { x: wrapper.vm.parseDate('2026-06-14'), y: 150 },
+            today,
+        ]);
+
+        wrapper.vm.selectedMetric = 'orderCount';
+        await flushPromises();
+
+        expect(wrapper.vm.series[0].data).toEqual([
+            { x: wrapper.vm.parseDate('2026-06-14'), y: 9 },
+            today,
+        ]);
     });
 
-    it('should call fetchTodayData and add stateMachineState association', async () => {
-        const orderSearchResult = {
-            search: jest.fn().mockResolvedValue([]),
+    it('appends a zero point for today when there is no data yet', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        expect(wrapper.vm.series[0].data).toEqual([{ x: wrapper.vm.getToday().getTime(), y: 0 }]);
+    });
+
+    it('does not plot buckets after today', async () => {
+        statisticResponse = {
+            paid: [
+                { date: '2026-06-14', count: 1, amount: 10 },
+                { date: '2026-06-16', count: 1, amount: 99 },
+            ],
+            all: [],
         };
 
-        wrapper = await createWrapper(['order.viewer'], orderSearchResult);
-        await wrapper.vm.fetchTodayData();
-
-        expect(orderSearchResult.search.mock.lastCall[0].associations[1].association).toBe('stateMachineState');
-    });
-
-    it('should not exceed decimal places of two', async () => {
-        wrapper = await createWrapper(['order.viewer']);
+        const wrapper = await createWrapper();
         await flushPromises();
 
-        await wrapper.setData({
-            todayOrderData: hasOrderTodayMock,
-            historyOrderDataCount: {
-                buckets: [
-                    {
-                        key: wrapper.vm.today.toISOString(),
-                        count: 1,
-                        totalAmount: {
-                            sum: 43383.13234554,
-                        },
-                    },
-                ],
-            },
-        });
-
-        const todaysTotalSum = wrapper
-            .find('.sw-dashboard-statistics__intro-stats-today-single-stat:nth-of-type(2) span:nth-of-type(2)')
-            .text();
-        expect(todaysTotalSum).toBe('€43,383.13');
+        expect(wrapper.vm.paidBuckets).toEqual([{ date: '2026-06-14', count: 1, amount: 10 }]);
     });
 
-    it('should allow the possibility to extend the date ranges', async () => {
-        Shopwell.Component.override('sw-dashboard-statistics', {
-            computed: {
-                rangesValueMap() {
-                    return [
-                        ...this.$super('rangesValueMap'),
-                        {
-                            label: '72Hours',
-                            range: 72,
-                            interval: 'hour',
-                        },
-                        {
-                            label: '90Days',
-                            range: 90,
-                            interval: 'day',
-                        },
-                    ];
-                },
-            },
-        });
-
-        wrapper = await createWrapper(['order.viewer']);
+    it('reloads the data when the range changes', async () => {
+        const wrapper = await createWrapper();
         await flushPromises();
 
-        const dateRanges = wrapper.getComponent({ name: 'mt-select' }).props('options');
+        expect(requestedUrls).toHaveLength(2);
 
-        expect(dateRanges.at(dateRanges.length - 2)).toEqual({
-            value: '72Hours',
-            label: '["sw-dashboard.monthStats.dateRanges.72Hours"]',
-        });
-        expect(dateRanges.at(dateRanges.length - 1)).toEqual({
-            value: '90Days',
-            label: '["sw-dashboard.monthStats.dateRanges.90Days"]',
+        wrapper.vm.selectedRange = '7Days';
+        await flushPromises();
+
+        expect(requestedUrls).toHaveLength(4);
+        expect(wrapper.vm.activeRange.range).toBe(7);
+    });
+
+    it('explains the paid only revenue for the revenue metric', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        expect(wrapper.vm.helpText).toBe('sw-dashboard.statistics.helpText');
+
+        wrapper.vm.selectedMetric = 'orderCount';
+        await flushPromises();
+
+        expect(wrapper.vm.helpText).toBe('');
+    });
+
+    it('ships the labels of every range', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        wrapper.vm.rangesValueMap.forEach((range) => {
+            expect(dictionary['sw-dashboard'].statistics.dateRanges[range.label]).toBeDefined();
         });
     });
 });

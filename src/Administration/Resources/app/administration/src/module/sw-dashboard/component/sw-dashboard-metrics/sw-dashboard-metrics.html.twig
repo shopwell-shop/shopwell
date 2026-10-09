@@ -1,0 +1,52 @@
+{% block sw_dashboard_metrics %}
+<mt-card
+    v-if="canViewOrders"
+    class="sw-dashboard-metrics mt-card--future-ignore-max-width"
+    :title="$t('sw-dashboard.metrics.headline')"
+    :help-text="helpText"
+    :is-loading="isLoading"
+    position-identifier="sw-dashboard-metrics"
+>
+    {% block sw_dashboard_metrics_grid %}
+    <div class="sw-dashboard-metrics__grid">
+        {% block sw_dashboard_metrics_grid_card %}
+        <component
+            :is="card.link ? 'router-link' : 'div'"
+            v-for="card in metricCards"
+            :key="card.key"
+            v-bind="card.link ? { to: card.link } : {}"
+            class="sw-dashboard-metrics__card"
+            :class="{ 'is-linked': !!card.link }"
+        >
+            <span class="sw-dashboard-metrics__label">{{ card.label }}</span>
+
+            <span class="sw-dashboard-metrics__value">
+                {{ card.value }}
+                <span
+                    v-if="card.unit"
+                    class="sw-dashboard-metrics__unit"
+                >{{ card.unit }}</span>
+            </span>
+
+            {% block sw_dashboard_metrics_grid_card_delta %}
+            <span
+                v-if="card.delta"
+                class="sw-dashboard-metrics__delta"
+                :class="`is-${card.delta.direction}`"
+            >
+                {{ card.delta.text }}
+            </span>
+
+            <span
+                v-else
+                class="sw-dashboard-metrics__delta is-none"
+            >
+                {{ $t('sw-dashboard.metrics.noComparison') }}
+            </span>
+            {% endblock %}
+        </component>
+        {% endblock %}
+    </div>
+    {% endblock %}
+</mt-card>
+{% endblock %}

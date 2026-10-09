@@ -1,87 +1,59 @@
 import template from './sw-dashboard-statistics.html.twig';
 import './sw-dashboard-statistics.scss';
+import { getUserTimeZoneDate } from '../../helper/order-list-filter';
 
-const { Criteria } = Shopwell.Data;
+type OrderAmountBucket = {
+    date: string;
+    count: number;
+    amount: number;
+};
 
-type OrderEntity = Entity<'order'>;
-
-type HistoryDateRange = {
+type DateRange = {
     label: string;
     range: number;
     interval: 'hour' | 'day';
     aggregate: 'hour' | 'day';
 };
 
-type BucketData = {
-    key: string;
-    count: number;
-    totalAmount: {
-        sum: number;
-    };
+type Metric = 'turnover' | 'orderCount';
+
+type SelectOption = {
+    label: string;
+    value: string;
 };
-
-type HistoryOrderDataCount = {
-    apiAlias: 'order_sum_bucket_aggregation';
-    buckets: Array<BucketData>;
-    name: 'order_sum_bucket';
-};
-
-type HistoryOrderDataSum = {
-    apiAlias: 'order_sum_bucket_aggregation';
-    buckets: Array<BucketData>;
-    name: 'order_sum_bucket';
-};
-
-type HistoryOrderData = HistoryOrderDataCount | HistoryOrderDataSum | null;
-
-interface ComponentData {
-    historyOrderDataCount: HistoryOrderDataCount | null;
-    historyOrderDataSum: HistoryOrderDataSum | null;
-    todayOrderData: EntityCollection<'order'> | null;
-    todayOrderDataLoaded: boolean;
-    todayOrderDataSortBy: 'orderDateTime';
-    todayOrderDataSortDirection: 'DESC' | 'ASC';
-    ordersDateRange: HistoryDateRange;
-    turnoverDateRange: HistoryDateRange;
-    isLoading: boolean;
-}
 
 /**
  * @sw-package after-sales
  *
- * @private might get removed with any update (even minor!) as it likely gets replaced by shopwell analytics
+ * @private
  */
 export default Shopwell.Component.wrapComponentConfig({
     template,
 
-    inject: ['repositoryFactory', 'stateStyleDataProviderService', 'acl'],
+    inject: ['repositoryFactory', 'acl'],
 
-    data(): ComponentData {
+    data(): {
+        paidBuckets: OrderAmountBucket[];
+        allBuckets: OrderAmountBucket[];
+        selectedRange: string;
+        selectedMetric: Metric;
+        isLoading: boolean;
+    } {
         return {
-            historyOrderDataCount: null,
-            historyOrderDataSum: null,
-            todayOrderData: null,
-            todayOrderDataLoaded: false,
-            todayOrderDataSortBy: 'orderDateTime',
-            todayOrderDataSortDirection: 'DESC',
-            ordersDateRange: {
-                label: '30Days',
-                range: 30,
-                interval: 'day',
-                aggregate: 'day',
-            },
-            turnoverDateRange: {
-                label: '30Days',
-                range: 30,
-                interval: 'day',
-                aggregate: 'day',
-            },
+            paidBuckets: [],
+            allBuckets: [],
+            selectedRange: '30Days',
+            selectedMetric: 'turnover',
             isLoading: true,
         };
     },
 
     computed: {
-        rangesValueMap(): Array<HistoryDateRange> {
+        orderRepository(): unknown {
+            return this.repositoryFactory.create('order');
+        },
+
+        rangesValueMap(): DateRange[] {
             return [
                 {
                     label: '30Days',
@@ -116,17 +88,80 @@ export default Shopwell.Component.wrapComponentConfig({
             ];
         },
 
-        availableRanges(): string[] {
-            return this.rangesValueMap.map((range) => range.label);
+        activeRange(): DateRange {
+            return this.rangesValueMap.find((range) => range.label === this.selectedRange) ?? this.rangesValueMap[0];
         },
 
-        chartOptionsOrderCount() {
+        rangeOptions(): SelectOption[] {
+            return this.rangesValueMap.map((range) => {
+                return {
+                    label: this.$t(`sw-dashboard.statistics.dateRanges.${range.label}`),
+                    value: range.label,
+                };
+            });
+        },
+
+        metricOptions(): SelectOption[] {
+            return [
+                {
+                    label: this.$t('sw-dashboard.statistics.metricTurnover'),
+                    value: 'turnover',
+                },
+                {
+                    label: this.$t('sw-dashboard.statistics.metricOrderCount'),
+                    value: 'orderCount',
+                },
+            ];
+        },
+
+        canViewOrders(): boolean {
+            return this.acl.can('order.viewer');
+        },
+
+        currencyFilter(): (value: number, isoCode: string, decimals: number) => string {
+            return Shopwell.Filter.getByName('currency');
+        },
+
+        systemCurrencyISOCode(): string {
+            return Shopwell.Context.app.systemCurrencyISOCode as string;
+        },
+
+        series(): Array<{ name: string; data: Array<{ x: number; y: number }> }> {
+            const buckets = this.selectedMetric === 'turnover' ? this.paidBuckets : this.allBuckets;
+            const today = this.getToday().getTime();
+
+            const data = buckets.map((bucket) => {
+                return {
+                    x: this.parseDate(bucket.date),
+                    y: this.selectedMetric === 'turnover' ? bucket.amount : bucket.count,
+                };
+            });
+
+            if (!data.some((point) => point.x === today)) {
+                data.push({ x: today, y: 0 });
+            }
+
+            return [
+                {
+                    name:
+                        this.selectedMetric === 'turnover'
+                            ? this.$t('sw-dashboard.statistics.metricTurnover')
+                            : this.$t('sw-dashboard.statistics.metricOrderCount'),
+                    data,
+                },
+            ];
+        },
+
+        options(): Record<string, unknown> {
             return {
                 xaxis: {
                     type: 'datetime',
-                    min: this.getDateAgo(this.ordersDateRange).getTime(),
+                    min: this.getDateAgo(this.activeRange).getTime(),
                     labels: {
                         datetimeUTC: false,
+                    },
+                    tooltip: {
+                        enabled: false,
                     },
                 },
                 yaxis: {
@@ -134,374 +169,91 @@ export default Shopwell.Component.wrapComponentConfig({
                     tickAmount: 3,
                     labels: {
                         formatter: (value: string) => {
-                            return parseInt(value, 10);
+                            if (this.selectedMetric === 'turnover') {
+                                return this.currencyFilter(Number.parseFloat(value), this.systemCurrencyISOCode, 0);
+                            }
+
+                            return parseInt(value, 10).toString();
                         },
                     },
                 },
-            };
-        },
-
-        chartOptionsOrderSum() {
-            return {
-                xaxis: {
-                    type: 'datetime',
-                    min: this.getDateAgo(this.turnoverDateRange).getTime(),
-                    labels: {
-                        datetimeUTC: false,
-                    },
-                },
-                yaxis: {
-                    min: 0,
-                    tickAmount: 5,
-                    labels: {
-                        // price aggregations do not support currencies yet, see NEXT-5069
-                        formatter: (value: string) =>
-                            Shopwell.Utils.format.currency(
-                                Number.parseFloat(value),
-                                Shopwell.Context.app.systemCurrencyISOCode as string,
-                                2,
-                            ),
+                tooltip: {
+                    x: {
+                        format: 'dd MMM',
                     },
                 },
             };
         },
 
-        orderRepository() {
-            return this.repositoryFactory.create('order');
-        },
-
-        orderCountSeries() {
-            if (!this.historyOrderDataCount) {
-                return [];
-            }
-
-            // format data for chart
-            const seriesData = this.historyOrderDataCount.buckets.map((data: BucketData) => {
-                return { x: this.parseDate(data.key), y: data.count };
-            });
-
-            // add empty value for today if there isn't any order, otherwise today would be missing
-            if (!this.todayBucketCount) {
-                seriesData.push({ x: this.today.getTime(), y: 0 });
-            }
-
-            return [
-                {
-                    name: this.$t('sw-dashboard.monthStats.numberOfOrders'),
-                    data: seriesData,
-                },
-            ];
-        },
-
-        orderCountToday() {
-            if (this.todayBucketCount) {
-                return this.todayBucketCount.count;
-            }
-            return 0;
-        },
-
-        orderSumMonthSeries() {
-            return this.orderSumSeries;
-        },
-
-        orderSumSeries() {
-            if (!this.historyOrderDataSum) {
-                return [];
-            }
-
-            // format data for chart
-            const seriesData = this.historyOrderDataSum.buckets.map((data: BucketData) => {
-                return {
-                    x: this.parseDate(data.key),
-                    y: data.totalAmount.sum,
-                };
-            });
-
-            // add empty value for today if there isn't any order, otherwise today would be missing
-            if (!this.todayBucketSum) {
-                seriesData.push({ x: this.today.getTime(), y: 0 });
-            }
-
-            return [
-                {
-                    name: this.$t('sw-dashboard.monthStats.totalTurnover'),
-                    data: seriesData,
-                },
-            ];
-        },
-
-        orderSumToday() {
-            if (this.todayBucketCount) {
-                return this.todayBucketCount.totalAmount.sum;
-            }
-            return 0;
-        },
-
-        hasOrderToday() {
-            return this.todayOrderData && this.todayOrderData.length > 0;
-        },
-
-        hasOrderInMonth() {
-            return !!this.historyOrderDataCount && !!this.historyOrderDataSum;
-        },
-
-        today() {
-            const today = Shopwell.Utils.format.dateWithUserTimezone();
-            today.setHours(0, 0, 0, 0);
-            return today;
-        },
-
-        todayBucketCount(): BucketData | null {
-            return this.calculateTodayBucket(this.historyOrderDataCount);
-        },
-
-        todayBucketSum(): BucketData | null {
-            return this.calculateTodayBucket(this.historyOrderDataSum);
-        },
-
-        systemCurrencyISOCode() {
-            return Shopwell.Context.app.systemCurrencyISOCode;
-        },
-
-        isSessionLoaded() {
-            return !Shopwell.Store.get('session')?.userPending;
-        },
-
-        currencyFilter() {
-            return Shopwell.Filter.getByName('currency');
-        },
-
-        /**
-         * @deprecated tag:v6.8.0 - Will be removed, because the filter is unused
-         */
-        dateFilter() {
-            return Shopwell.Filter.getByName('date');
+        helpText(): string {
+            return this.selectedMetric === 'turnover' ? this.$t('sw-dashboard.statistics.helpText') : '';
         },
     },
 
+    created() {
+        void this.loadData();
+    },
+
     watch: {
-        isSessionLoaded: {
-            immediate: true,
-            async handler() {
-                if (this.isSessionLoaded) {
-                    await this.initializeOrderData();
-                }
-            },
+        selectedRange() {
+            void this.loadData();
         },
     },
 
     methods: {
-        calculateTodayBucket(aggregation: HistoryOrderData): BucketData | null {
-            const buckets = aggregation?.buckets;
-
-            if (!buckets) {
-                return null;
-            }
-
-            const today = this.today;
-            // search for stats with same timestamp as today
-            const findDateStats = buckets.find((dateCount) => {
-                // when date exists
-                if (dateCount.key) {
-                    // if time is today
-                    const date = new Date(dateCount.key);
-
-                    return date.setHours(0, 0, 0, 0) === today.setHours(0, 0, 0, 0);
-                }
-
-                return false;
-            });
-
-            if (findDateStats) {
-                return findDateStats;
-            }
-            return null;
-        },
-
-        async initializeOrderData() {
-            if (!this.acl.can('order.viewer')) {
+        async loadData(): Promise<void> {
+            if (!this.canViewOrders) {
                 this.isLoading = false;
 
                 return;
             }
 
-            this.todayOrderDataLoaded = false;
+            this.isLoading = true;
 
-            await this.getHistoryOrderData();
-            this.todayOrderData = await this.fetchTodayData();
-            this.todayOrderDataLoaded = true;
-            this.isLoading = false;
+            const since = getUserTimeZoneDate(this.getDateAgo(this.activeRange));
+
+            try {
+                const [paidBuckets, allBuckets] = await Promise.all([
+                    this.fetchOrderAmount(since, true),
+                    this.fetchOrderAmount(since, false),
+                ]);
+
+                this.paidBuckets = this.filterUntilToday(paidBuckets);
+                this.allBuckets = this.filterUntilToday(allBuckets);
+            } finally {
+                this.isLoading = false;
+            }
         },
 
-        getHistoryOrderData() {
-            return Promise.all([
-                this.fetchHistoryOrderDataCount().then((response) => {
-                    this.historyOrderDataCount = response;
-                }),
-                this.fetchHistoryOrderDataSum().then((response) => {
-                    this.historyOrderDataSum = response;
-                }),
-            ]);
+        filterUntilToday(buckets: OrderAmountBucket[]): OrderAmountBucket[] {
+            const today = getUserTimeZoneDate(new Date());
+
+            return buckets.filter((bucket) => bucket.date <= today);
         },
 
-        fetchHistoryOrderDataCount() {
-            return this.fetchHistory(false, this.formatDateToISO(this.getDateAgo(this.ordersDateRange)));
-        },
+        fetchOrderAmount(since: string, paid: boolean): Promise<OrderAmountBucket[]> {
+            const httpClient = Shopwell.Application.getContainer('init').httpClient as {
+                get: (url: string, config: { headers: unknown }) => Promise<{ data: { statistic: OrderAmountBucket[] } }>;
+            };
 
-        fetchHistoryOrderDataSum() {
-            return this.fetchHistory(true, this.formatDateToISO(this.getDateAgo(this.turnoverDateRange)));
-        },
-
-        fetchHistory(paid: boolean, since: string) {
-            const headers = this.orderRepository.buildHeaders();
-
-            const initContainer = Shopwell.Application.getContainer('init');
-            const httpClient = initContainer.httpClient;
+            const headers = (this.orderRepository as { buildHeaders: () => unknown }).buildHeaders();
             const timezone = Shopwell.Store.get('session').currentUser?.timeZone ?? 'UTC';
+            const url = `/_admin/dashboard/order-amount/${since}?timezone=${timezone}&paid=${paid.toString()}`;
 
             return httpClient
-                .get<
-                    undefined,
-                    {
-                        data: {
-                            statistic: Array<{
-                                date: string;
-                                count: number;
-                                amount: number;
-                            }>;
-                        };
-                    }
-                >(`/_admin/dashboard/order-amount/${since}?timezone=${timezone}&paid=${paid.toString()}`, { headers })
-                .then((response) => {
-                    const buckets = response.data.statistic.map((bucket) => {
-                        return {
-                            key: bucket.date,
-                            count: bucket.count,
-                            apiAlias: 'aggregation_bucket',
-                            totalAmount: {
-                                sum: bucket.amount,
-                                name: 'totalAmount',
-                            },
-                        };
-                    });
-
-                    return {
-                        name: 'order_sum_bucket',
-                        buckets: buckets,
-                        apiAlias: 'order_sum_bucket_aggregation',
-                    } as const;
-                });
+                .get(url, { headers })
+                .then((response) => response.data.statistic)
+                .catch(() => [] as OrderAmountBucket[]);
         },
 
-        fetchTodayData() {
-            const criteria = new Criteria(1, 10);
+        getToday(): Date {
+            const today = Shopwell.Utils.format.dateWithUserTimezone();
+            today.setHours(0, 0, 0, 0);
 
-            criteria.addAssociation('currency');
-            criteria.addAssociation('stateMachineState');
-
-            criteria.addFilter(Criteria.equals('orderDate', this.formatDateToISO(new Date())));
-            criteria.addSorting(Criteria.sort(this.todayOrderDataSortBy, this.todayOrderDataSortDirection));
-
-            return this.orderRepository.search(criteria);
+            return today;
         },
 
-        formatDateToISO(date: Date) {
-            return Shopwell.Utils.format.toISODate(date, false);
-        },
-
-        formatChartHeadlineDate(date: Date) {
-            const lastKnownLang = Shopwell.Application.getContainer('factory').locale.getLastKnownLocale();
-
-            return date.toLocaleDateString(lastKnownLang, {
-                day: 'numeric',
-                month: 'short',
-            });
-        },
-
-        orderGridColumns() {
-            return [
-                {
-                    property: 'orderNumber',
-                    label: 'sw-order.list.columnOrderNumber',
-                    routerLink: 'sw.order.detail',
-                    allowResize: true,
-                    primary: true,
-                },
-                {
-                    property: 'orderDateTime',
-                    dataIndex: 'orderDateTime',
-                    label: 'sw-dashboard.todayStats.orderTime',
-                    allowResize: true,
-                    primary: false,
-                },
-                {
-                    property: 'orderCustomer.firstName',
-                    dataIndex: 'orderCustomer.firstName,orderCustomer.lastName',
-                    label: 'sw-order.list.columnCustomerName',
-                    allowResize: true,
-                },
-                {
-                    property: 'stateMachineState.name',
-                    label: 'sw-order.list.columnState',
-                    allowResize: true,
-                },
-                {
-                    property: 'amountTotal',
-                    label: 'sw-order.list.columnAmount',
-                    align: 'right',
-                    allowResize: true,
-                },
-            ];
-        },
-
-        getVariantFromOrderState(order: OrderEntity): string {
-            const state = order.stateMachineState?.technicalName;
-
-            if (!state) {
-                return 'neutral';
-            }
-
-            return this.stateStyleDataProviderService.getStyle('order.state', state).meteorVariant;
-        },
-
-        parseDate(date: string): number {
-            const parsedDate = new Date(
-                date
-                    .replace(/-/g, '/')
-                    .replace('T', ' ')
-                    .replace(/\..*|\+.*/, ''),
-            );
-            return parsedDate.valueOf();
-        },
-
-        async onOrdersRangeUpdate(range: string): Promise<void> {
-            const ordersDateRange = this.rangesValueMap.find((item: HistoryDateRange) => item.label === range);
-
-            if (!ordersDateRange) {
-                throw Error('Range not found');
-            }
-
-            this.ordersDateRange = ordersDateRange;
-
-            this.historyOrderDataCount = await this.fetchHistoryOrderDataCount();
-        },
-
-        async onTurnoverRangeUpdate(range: string): Promise<void> {
-            const turnoverDateRange = this.rangesValueMap.find((item: HistoryDateRange) => item.label === range);
-
-            if (!turnoverDateRange) {
-                throw Error('Range not found');
-            }
-
-            this.turnoverDateRange = turnoverDateRange;
-            this.historyOrderDataSum = await this.fetchHistoryOrderDataSum();
-        },
-
-        getCardSubtitle(range: HistoryDateRange): string {
-            return `${this.formatChartHeadlineDate(this.getDateAgo(range))} - ${this.formatChartHeadlineDate(this.today)}`;
-        },
-
-        getDateAgo(range: HistoryDateRange): Date {
+        getDateAgo(range: DateRange): Date {
             const date = Shopwell.Utils.format.dateWithUserTimezone();
 
             if (range.interval === 'hour') {
@@ -515,10 +267,16 @@ export default Shopwell.Component.wrapComponentConfig({
 
             return date;
         },
+
+        parseDate(date: string): number {
+            const parsedDate = new Date(
+                date
+                    .replace(/-/g, '/')
+                    .replace('T', ' ')
+                    .replace(/\..*|\+.*/, ''),
+            );
+
+            return parsedDate.valueOf();
+        },
     },
 });
-
-/**
- * @private might get removed with any update (even minor!) as it likely gets replaced by shopwell analytics
- */
-export type { HistoryDateRange };

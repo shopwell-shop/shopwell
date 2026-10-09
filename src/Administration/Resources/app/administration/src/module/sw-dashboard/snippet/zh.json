@@ -1,92 +1,38 @@
 {
-  "sw-dashboard": {
-    "general": {
-      "mainMenuItemGeneral": "主页",
-      "descriptionTextModule": "首页、统计和系统信息"
-    },
-    "introduction": {
-      "headlineUnkownUser": "欢迎来到 Shopwell。",
-      "daytimeHeadline": {
-        "5h": [
-          "早上好，{greetingName}。",
-          "早，{greetingName}！"
-        ],
-        "11h": [
-          "你好，{greetingName}。",
-          "上午好，{greetingName}。",
-          "嗨，{greetingName}！"
-        ],
-        "18h": [
-          "嗨，{greetingName}！",
-          "晚上好，{greetingName}。"
-        ],
-        "23h": [
-          "很高兴见到你，{greetingName}！",
-          "还没休息呢，{greetingName}？"
-        ]
-      },
-      "daytimeWelcomeText": {
-        "5h": [
-          "先来杯咖啡吧。还是你更喜欢喝茶？",
-          "祝你今天开门红！",
-          "今天任务很多？先做那 20% 能带来 80% 效果的事！",
-          "你今天状态看起来非常棒！"
-        ],
-        "11h": [
-          "新的一天，新的生意机会。",
-          "今天你有机会改变某个人的一天。",
-          "你今天看起来真不错！",
-          "今天做的事，正在塑造你想要的明天。"
-        ],
-        "18h": [
-          "今天快过去了，看看你商店里的最新动态吧。",
-          "回顾一下——看看今天你的商店发生了什么。",
-          "你今天做的每一件事，都在成就明天。"
-        ],
-        "23h": [
-          "发现身边的美，从中汲取灵感。",
-          "看，外面有人把夜间模式打开了。",
-          "很多问题拔掉电源几分钟就能解决，人也一样。休息一下吧！"
-        ]
-      }
-    },
-    "helpcard": {
-      "headline": "准备好开始卖货了吗。",
-      "helpcenter": "Shopwell 帮助中心",
-      "helpcenterLink": "https://docs.shopwell.cn/zh/shopwell-6-zh",
-      "takeOffTip": "首次成交的技巧",
-      "takeOffTipLink": "https://www.shopwell.cn/zh/news/take-off-in-ecommerce-10-tips-for-your-initial-sales/",
-      "getToKnowSales": "了解销售渠道",
-      "getToKnowSalesLink": "https://www.youtube.com/watch?v=vFORvXev624"
-    },
-    "feedbackCard": {
-      "headline": "第一印象很重要。",
-      "text": "分享一下你的使用体验，帮助我们做得更好。",
-      "feedback": "提供反馈",
-      "feedbackLink": "https://feedback.shopwell.cn"
-    },
-    "todayStats": {
-      "headline": "今日统计",
-      "orders": "订单",
-      "turnover": "营业额",
-      "orderTime": "下单时间"
-    },
-    "monthStats": {
-      "headline": "统计",
-      "dateRanges": {
-        "30Days": "最近 30 天",
-        "14Days": "最近 14 天",
-        "7Days": "最近 7 天",
-        "24Hours": "最近 24 小时",
-        "yesterday": "自昨天起"
-      },
-      "orderNumber": "订单",
-      "turnover": "营业额",
-      "numberOfOrders": "数量",
-      "totalTurnover": "合计",
-      "helperText": "营业额图表只显示支付状态为\"已支付\"的订单。",
-      "linkOrders": "查看订单",
-      "linkPaidOrders": "查看已支付订单"
+    "sw-dashboard": {
+        "general": {
+            "mainMenuItemGeneral": "主页",
+            "descriptionTextModule": "经营概览、销售趋势与最新订单"
+        },
+        "metrics": {
+            "headline": "今日经营",
+            "revenue": "今日营业额",
+            "orders": "今日订单",
+            "newCustomers": "今日新增客户",
+            "averageOrderValue": "客单价",
+            "ordersUnit": "笔",
+            "customersUnit": "位",
+            "comparedToYesterday": "较昨日",
+            "noComparison": "昨日无对比数据",
+            "paidOnlyHint": "营业额与客单价只统计已付款订单"
+        },
+        "statistics": {
+            "headline": "销售趋势",
+            "metricTurnover": "营业额",
+            "metricOrderCount": "订单数",
+            "helpText": "营业额只统计已付款订单。",
+            "dateRanges": {
+                "30Days": "最近 30 天",
+                "14Days": "最近 14 天",
+                "7Days": "最近 7 天",
+                "24Hours": "最近 24 小时",
+                "yesterday": "自昨天起"
+            }
+        },
+        "latestOrders": {
+            "headline": "最新订单",
+            "columnOrderTime": "下单时间",
+            "empty": "还没有订单。"
+        }
     }
-  }
 }

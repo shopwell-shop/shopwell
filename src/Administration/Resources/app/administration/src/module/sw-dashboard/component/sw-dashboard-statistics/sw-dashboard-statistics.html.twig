@@ -1,131 +1,61 @@
-{# @private might get removed with any update (even minor!) as it likely gets replaced by shopwell analytics #}
-<div
-    v-if="acl.can('order.viewer')"
-    class="sw-dashboard-statistics"
+{% block sw_dashboard_statistics %}
+<mt-card
+    v-if="canViewOrders"
+    class="sw-dashboard-statistics mt-card--future-ignore-max-width"
+    :is-loading="isLoading"
+    position-identifier="sw-dashboard-statistics"
 >
-    <template v-if="hasOrderToday">
-        <div class="sw-dashboard-statistics__card-headline">
-            <h1>{{ $t('sw-dashboard.todayStats.headline') }}</h1>
+    {% block sw_dashboard_statistics_title %}
+    <template #title>
+        <div class="sw-dashboard-statistics__title">
+            {{ $t('sw-dashboard.statistics.headline') }}
 
-            <span class="sw-dashboard-statistics__card-headline-timerange">
-                {{ formatChartHeadlineDate(today) }}
-            </span>
+            <mt-icon
+                v-if="helpText"
+                v-tooltip="helpText"
+                class="sw-dashboard-statistics__title-help-text"
+                name="solid-question-circle"
+                size="16px"
+            />
         </div>
-
-        <mt-card
-            :is-loading="!todayOrderDataLoaded"
-            class="sw-dashboard-statistics__intro-stats"
-            position-identifier=""
-        >
-            <div class="sw-dashboard-statistics__intro-stats-today">
-                <div
-                    v-if="hasOrderToday"
-                    class="sw-dashboard-statistics__intro-stats-today-stats"
-                >
-                    <div class="sw-dashboard-statistics__intro-stats-today-single-stat">
-                        <span class="sw-dashboard-statistics__intro-stats-today-single-stat-number-type">{{ $t('sw-dashboard.todayStats.orders') }}</span>
-                        <span class="sw-dashboard-statistics__intro-stats-today-single-stat-number-value">{{ orderCountToday }}</span>
-                    </div>
-
-                    <div class="sw-dashboard-statistics__intro-stats-today-single-stat">
-                        <span class="sw-dashboard-statistics__intro-stats-today-single-stat-number-type">{{ $t('sw-dashboard.todayStats.turnover') }}</span>
-                        <span class="sw-dashboard-statistics__intro-stats-today-single-stat-number-value">{{ currencyFilter(orderSumToday, systemCurrencyISOCode, 2) }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <template #grid>
-                <sw-entity-listing
-                    :sort-by="todayOrderDataSortBy"
-                    :sort-direction="todayOrderDataSortDirection"
-                    :repository="orderRepository"
-                    :data-source="todayOrderData"
-                    :columns="orderGridColumns()"
-                    :show-selection="false"
-                    :allow-column-edit="false"
-                    :full-page="false"
-                >
-                    <template #column-orderDateTime="{ item }">
-                        <sw-time-ago
-                            :date="item.orderDateTime"
-                            :date-time-format="{ month: '2-digit', day: '2-digit' }"
-                        />
-                    </template>
-
-                    <template #column-orderCustomer.firstName="{ item }">
-                        <router-link
-                            :to="{ name: 'sw.order.detail', params: { id: item.id } }"
-                            class="sw-data-grid__cell-value"
-                        >
-                            {{ item.orderCustomer.firstName }} {{ item.orderCustomer.lastName }}
-                        </router-link>
-                    </template>
-
-                    <template
-                        #column-amountTotal="{ item }"
-                    >
-                        {{ currencyFilter(item.amountTotal, item.currency.isoCode) }}
-                    </template>
-
-                    <template #column-stateMachineState.name="{ item }">
-                        <mt-badge :variant="getVariantFromOrderState(item)">
-                            {{ item?.stateMachineState?.translated?.name }}
-                        </mt-badge>
-                    </template>
-
-                    <template
-                        #actions="{ item }"
-                    >
-                        <sw-context-menu-item
-                            class="sw-order-list__order-view-action"
-                            :router-link="{ name: 'sw.order.detail', params: { id: item.id } }"
-                        >
-                            {{ $t('global.default.view') }}
-                        </sw-context-menu-item>
-                    </template>
-                </sw-entity-listing>
-            </template>
-        </mt-card>
     </template>
+    {% endblock %}
 
-    <template v-if="isLoading || hasOrderInMonth">
-        <sw-chart-card
-            class="sw-dashboard-statistics__statistics-count"
-            :available-ranges="availableRanges"
-            :card-subtitle="getCardSubtitle(ordersDateRange)"
-            :series="orderCountSeries"
-            :options="chartOptionsOrderCount"
-            :fill-empty-values="ordersDateRange.aggregate"
-            :card-title="$t('sw-dashboard.monthStats.orderNumber')"
-            :is-loading="isLoading"
-            type="line"
-            sort
-            position-identifier=""
-            @sw-chart-card-range-update="onOrdersRangeUpdate"
-        >
-            <template #range-option="{ range }">
-                {{ $t(`sw-dashboard.monthStats.dateRanges.${range}`) }}
-            </template>
-        </sw-chart-card>
+    {% block sw_dashboard_statistics_header %}
+    <template #headerRight>
+        <div class="sw-dashboard-statistics__header">
+            <mt-select
+                v-model="selectedMetric"
+                class="sw-dashboard-statistics__metric-select"
+                name="sw-field--selectedMetric"
+                small
+                :options="metricOptions"
+                hide-clearable-button
+            />
 
-        <sw-chart-card
-            class="sw-dashboard-statistics__statistics-sum"
-            :available-ranges="availableRanges"
-            :card-subtitle="getCardSubtitle(turnoverDateRange)"
-            :series="orderSumSeries"
-            :options="chartOptionsOrderSum"
-            :fill-empty-values="turnoverDateRange.aggregate"
-            :card-title="$t('sw-dashboard.monthStats.turnover')"
-            :help-text="$t('sw-dashboard.monthStats.helperText')"
-            :is-loading="isLoading"
-            type="line"
-            sort
-            position-identifier=""
-            @sw-chart-card-range-update="onTurnoverRangeUpdate"
-        >
-            <template #range-option="{ range }">
-                {{ $t(`sw-dashboard.monthStats.dateRanges.${range}`) }}
-            </template>
-        </sw-chart-card>
+            <mt-select
+                v-model="selectedRange"
+                class="sw-dashboard-statistics__range-select"
+                name="sw-field--selectedRange"
+                small
+                :options="rangeOptions"
+                hide-clearable-button
+            />
+        </div>
     </template>
-</div>
+    {% endblock %}
+
+    {% block sw_dashboard_statistics_chart %}
+    <div class="sw-dashboard-statistics__chart">
+        <sw-chart
+            type="line"
+            :series="series"
+            :options="options"
+            :fill-empty-values="activeRange.aggregate"
+            :height="255"
+            sort
+        />
+    </div>
+    {% endblock %}
+</mt-card>
+{% endblock %}

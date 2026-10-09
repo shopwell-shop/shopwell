@@ -1,6 +1,8 @@
 /* eslint-disable sw-deprecation-rules/private-feature-declarations */
 
+Shopwell.Component.register('sw-dashboard-metrics', () => import('./component/sw-dashboard-metrics'));
 Shopwell.Component.register('sw-dashboard-statistics', () => import('./component/sw-dashboard-statistics'));
+Shopwell.Component.register('sw-dashboard-latest-orders', () => import('./component/sw-dashboard-latest-orders'));
 Shopwell.Component.register('sw-dashboard-index', () => import('./page/sw-dashboard-index'));
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
 

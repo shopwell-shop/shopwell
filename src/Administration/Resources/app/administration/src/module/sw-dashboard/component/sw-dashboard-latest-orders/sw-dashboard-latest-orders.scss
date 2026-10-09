@@ -1,0 +1,8 @@
+.sw-dashboard-latest-orders {
+    &__empty {
+        padding: var(--scale-size-24) 0;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-s);
+        text-align: center;
+    }
+}

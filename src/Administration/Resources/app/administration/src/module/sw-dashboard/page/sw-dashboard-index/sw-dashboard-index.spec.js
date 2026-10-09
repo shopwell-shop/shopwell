@@ -1,17 +1,14 @@
 import { mount } from '@vue/test-utils';
-import dictionary from 'src/module/sw-dashboard/snippet/en.json';
 
-const snippetPathGreeting = 'sw-dashboard.introduction.daytimeHeadline';
-
-async function createWrapper(privileges = []) {
+async function createWrapper() {
     return mount(await wrapTestComponent('sw-dashboard-index', { sync: true }), {
         global: {
             stubs: {
                 'sw-page': await wrapTestComponent('sw-page'),
                 'sw-card-view': await wrapTestComponent('sw-card-view'),
-                'sw-external-link': true,
+                'sw-dashboard-metrics': true,
                 'sw-dashboard-statistics': true,
-                'sw-help-text': true,
+                'sw-dashboard-latest-orders': true,
                 'sw-extension-component-section': true,
                 'sw-search-bar': true,
                 'sw-app-topbar-button': true,
@@ -25,16 +22,7 @@ async function createWrapper(privileges = []) {
                 'sw-context-button': true,
             },
             mocks: {
-                $t: jest.fn().mockImplementation((snippetPath, placeholders) => {
-                    return `${snippetPathGreeting}, ${placeholders?.greetingName || ''}`;
-                }),
-                $i18n: {
-                    locale: 'en',
-                    fallbackLocale: { value: 'en' },
-                    messages: {
-                        value: { en: dictionary },
-                    },
-                },
+                $t: (key) => key,
                 $route: {
                     meta: {
                         $module: {},
@@ -43,13 +31,7 @@ async function createWrapper(privileges = []) {
             },
             provide: {
                 acl: {
-                    can: (identifier) => {
-                        if (!identifier) {
-                            return true;
-                        }
-
-                        return privileges.includes(identifier);
-                    },
+                    can: () => true,
                 },
             },
         },
@@ -60,150 +42,58 @@ async function createWrapper(privileges = []) {
  * @sw-package after-sales
  */
 describe('module/sw-dashboard/page/sw-dashboard-index', () => {
-    let wrapper;
-
-    beforeAll(async () => {
-        jest.useFakeTimers('modern');
-    });
-
-    afterAll(() => {
-        jest.useRealTimers();
-    });
-
-    it('shall not print a personal message if firstName is not set', async () => {
-        wrapper = await createWrapper();
+    it('renders the business overview sections', async () => {
+        const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.find('.sw-dashboard-index__welcome-title').text()).toStrictEqual(snippetPathGreeting);
+        expect(wrapper.find('sw-dashboard-metrics-stub').exists()).toBe(true);
+        expect(wrapper.find('sw-dashboard-statistics-stub').exists()).toBe(true);
+        expect(wrapper.find('sw-dashboard-latest-orders-stub').exists()).toBe(true);
     });
 
-    it('should display users firstName', async () => {
-        const firstName = 'John';
-        wrapper = await createWrapper();
+    it('does not render the best-selling products section', async () => {
+        const wrapper = await createWrapper();
         await flushPromises();
 
-        Shopwell.Store.get('session').setCurrentUser({
-            firstName: firstName,
+        expect(wrapper.find('sw-dashboard-top-products-stub').exists()).toBe(false);
+        expect(wrapper.find('.sw-dashboard-index__details').exists()).toBe(false);
+    });
+
+    it('keeps the extension points around the content', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        const sections = wrapper.findAll('sw-extension-component-section-stub');
+
+        expect(sections).toHaveLength(2);
+        expect(sections[0].attributes('position-identifier')).toBe('sw-dashboard__before-content');
+        expect(sections[1].attributes('position-identifier')).toBe('sw-dashboard__after-content');
+    });
+
+    it('does not render the removed greeting, help or feedback blocks', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        [
+            '.sw-dashboard-index__welcome-text',
+            '.sw-dashboard-index__welcome-title',
+            '.sw-dashboard-index__welcome-message',
+            '.sw-dashboard-index__card-grid',
+            '.sw-dashboard-index__card',
+        ].forEach((selector) => {
+            expect(wrapper.find(selector).exists()).toBe(false);
         });
-        await flushPromises();
 
-        expect(wrapper.find('.sw-dashboard-index__welcome-title').text()).toBe(`${snippetPathGreeting}, ${firstName}`);
+        expect(wrapper.find('mt-link-stub').exists()).toBe(false);
     });
 
-    it('shall not print a personal message if username but not firstName is set', async () => {
-        wrapper = await createWrapper();
+    it('builds the page title from the module title', async () => {
+        const wrapper = await createWrapper();
         await flushPromises();
 
-        Shopwell.Store.get('session').setCurrentUser({
-            username: 'username',
-        });
-        await flushPromises();
-
-        expect(wrapper.find('.sw-dashboard-index__welcome-title').text()).toStrictEqual(snippetPathGreeting);
-    });
-
-    [
-        {
-            dateTime: new Date(2021, 4, 19, 4, 30, 30),
-            expectedTimeSlot: '23h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 5, 30, 30),
-            expectedTimeSlot: '5h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 10, 30, 30),
-            expectedTimeSlot: '5h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 11, 30, 30),
-            expectedTimeSlot: '11h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 14, 30, 30),
-            expectedTimeSlot: '11h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 18, 30, 30),
-            expectedTimeSlot: '18h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 22, 30, 30),
-            expectedTimeSlot: '18h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 23, 30, 30),
-            expectedTimeSlot: '23h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 0, 0, 0),
-            expectedTimeSlot: '23h',
-        },
-    ].forEach(({ dateTime, expectedTimeSlot }) => {
-        it(`should return datetime aware headline for daytime: ${dateTime.getHours()}h, expected slot: ${expectedTimeSlot}`, async () => {
-            wrapper = await createWrapper();
-            await flushPromises();
-
-            const greetingType = 'daytimeHeadline';
-            /* as of today there are 4 timeslots: 23 - 4, 5 - 10, 11 - 17, 18 - 22 */
-            /* the first param of `getGreetingTimeKey` must be ' headline' or 'welcomeText' */
-            jest.setSystemTime(dateTime);
-            expect(wrapper.vm.getGreetingTimeKey(greetingType)).toContain(
-                `sw-dashboard.introduction.${greetingType}.${expectedTimeSlot}`,
-            );
-        });
-    });
-
-    [
-        {
-            dateTime: new Date(2021, 4, 19, 4, 30, 30),
-            expectedTimeSlot: '23h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 5, 30, 30),
-            expectedTimeSlot: '5h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 10, 30, 30),
-            expectedTimeSlot: '5h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 11, 30, 30),
-            expectedTimeSlot: '11h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 14, 30, 30),
-            expectedTimeSlot: '11h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 18, 30, 30),
-            expectedTimeSlot: '18h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 22, 30, 30),
-            expectedTimeSlot: '18h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 23, 30, 30),
-            expectedTimeSlot: '23h',
-        },
-        {
-            dateTime: new Date(2021, 4, 19, 0, 0, 0),
-            expectedTimeSlot: '23h',
-        },
-    ].forEach(({ dateTime, expectedTimeSlot }) => {
-        it(`should return datetime aware welcoming subline for daytime:\
-            ${dateTime.getHours()}h, expected slot: ${expectedTimeSlot}`, async () => {
-            wrapper = await createWrapper();
-            await flushPromises();
-
-            const greetingType = 'daytimeWelcomeText';
-            /* as of today there are 4 timeslots: 23 - 4, 5 - 10, 11 - 17, 18 - 22 */
-            /* the first param of `getGreetingTimeKey` must be ' headline' or 'welcomeText' */
-            jest.setSystemTime(dateTime);
-            expect(wrapper.vm.getGreetingTimeKey(greetingType)).toContain(
-                `sw-dashboard.introduction.${greetingType}.${expectedTimeSlot}`,
-            );
+        expect(typeof wrapper.vm.$options.metaInfo).toBe('function');
+        expect(wrapper.vm.$options.metaInfo.call({ $createTitle: () => 'Dashboard' })).toEqual({
+            title: 'Dashboard',
         });
     });
 });
