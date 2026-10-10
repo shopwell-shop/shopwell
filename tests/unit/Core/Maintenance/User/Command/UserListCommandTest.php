@@ -57,7 +57,7 @@ class UserListCommandTest extends TestCase
         $userId = Uuid::randomHex();
         $repo = new StaticEntityRepository([
             new UserCollection([
-                $this->createUser('guy@shopwell.cn', $userName, 'Guy', 'Marbello', id: $userId),
+                $this->createUser('guy@shopwell.cn', $userName, 'Guy Marbello', id: $userId),
             ]),
         ]);
 
@@ -113,8 +113,8 @@ class UserListCommandTest extends TestCase
     {
         $repo = new StaticEntityRepository([
             new UserCollection([
-                $this->createUser('guy@shopwell.cn', 'guy', 'Guy', 'Marbello', true),
-                $this->createUser('jen@shopwell.cn', 'jen', 'Jen', 'Dalimil', false, ['Moderator', 'CS']),
+                $this->createUser('guy@shopwell.cn', 'guy', 'Guy Marbello', true),
+                $this->createUser('jen@shopwell.cn', 'jen', 'Jen Dalimil', false, ['Moderator', 'CS']),
             ]),
         ]);
 
