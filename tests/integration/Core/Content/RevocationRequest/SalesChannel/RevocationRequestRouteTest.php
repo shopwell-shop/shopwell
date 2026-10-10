@@ -129,7 +129,7 @@ class RevocationRequestRouteTest extends TestCase
                 Request::METHOD_POST,
                 '/store-api/revocation-request-form',
                 [
-                    'name' => ' ',
+                    'name' => '',
                     'email' => '',
                     'contractNumber' => '',
                     'comment' => '',
@@ -140,7 +140,7 @@ class RevocationRequestRouteTest extends TestCase
 
         static::assertArrayHasKey('errors', $response);
 
-        static::assertCount(4, $response['errors']);
+        static::assertCount(3, $response['errors']);
         static::assertNull($mail);
     }
 }

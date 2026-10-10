@@ -157,7 +157,7 @@ class RevocationRequestFormValidationFactoryTest extends TestCase
     private function createSystemConfigServiceMock(?bool $returns = true): SystemConfigService&MockObject
     {
         $mock = $this->createMock(SystemConfigService::class);
-        $mock->expects($this->exactly(2))->method('get')
+        $mock->expects($this->once())->method('get')
             ->willReturn($returns);
 
         return $mock;

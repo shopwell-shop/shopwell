@@ -87,7 +87,7 @@ class ContactFormServiceTest extends TestCase
         $dataBag = new DataBag();
         $dataBag->add([
             'salutationId' => $this->getValidSalutationId(),
-            'name' => ' ',
+            'name' => '',
             'email' => 'test@shopwell.cn',
             'phone' => '12345/6789',
             'subject' => 'Subject',
@@ -136,7 +136,7 @@ class ContactFormServiceTest extends TestCase
         $dataBag = new DataBag();
         $dataBag->add([
             'salutationId' => $this->getValidSalutationId(),
-            'name' => ' ',
+            'name' => '',
             'email' => 'test@shopwell.cn',
             'phone' => '',
             'subject' => 'Subject',

@@ -93,9 +93,9 @@ class SalesChannelRequestContextResolverTest extends TestCase
     {
         $this->createTestSalesChannel();
 
-        $eurCurrencyId = $this->getCurrencyId('EUR');
+        $cnyCurrencyId = $this->getCurrencyId('CNY');
         $contextPersister = static::getContainer()->get(SalesChannelContextPersister::class);
-        $contextPersister->save($this->ids->get('token'), [SalesChannelContextService::CURRENCY_ID => $eurCurrencyId], $this->ids->get('sales-channel'));
+        $contextPersister->save($this->ids->get('token'), [SalesChannelContextService::CURRENCY_ID => $cnyCurrencyId], $this->ids->get('sales-channel'));
 
         $resolver = static::getContainer()->get(SalesChannelRequestContextResolver::class);
 
@@ -110,9 +110,9 @@ class SalesChannelRequestContextResolverTest extends TestCase
         $dispatcher = static::getContainer()->get('event_dispatcher');
 
         $eventDidRun = false;
-        $listenerContextEventClosure = static function (SalesChannelContextResolvedEvent $event) use (&$eventDidRun, $eurCurrencyId): void {
+        $listenerContextEventClosure = static function (SalesChannelContextResolvedEvent $event) use (&$eventDidRun, $cnyCurrencyId): void {
             $eventDidRun = true;
-            static::assertSame($eurCurrencyId, $event->getSalesChannelContext()->getContext()->getCurrencyId());
+            static::assertSame($cnyCurrencyId, $event->getSalesChannelContext()->getContext()->getCurrencyId());
             static::assertInstanceOf(SalesChannelApiSource::class, $event->getSalesChannelContext()->getContext()->getSource());
         };
 
@@ -129,9 +129,9 @@ class SalesChannelRequestContextResolverTest extends TestCase
     {
         $this->createTestSalesChannel();
 
-        $eurCurrencyId = $this->getCurrencyId('EUR');
+        $cnyCurrencyId = $this->getCurrencyId('CNY');
         $contextPersister = static::getContainer()->get(SalesChannelContextPersister::class);
-        $contextPersister->save($this->ids->get('token'), [SalesChannelContextService::CURRENCY_ID => $eurCurrencyId], $this->ids->get('sales-channel'));
+        $contextPersister->save($this->ids->get('token'), [SalesChannelContextService::CURRENCY_ID => $cnyCurrencyId], $this->ids->get('sales-channel'));
 
         $resolver = static::getContainer()->get(SalesChannelRequestContextResolver::class);
 
@@ -181,7 +181,7 @@ class SalesChannelRequestContextResolverTest extends TestCase
     {
         return [
             [
-                'EUR',
+                'CNY',
             ],
             [
                 'USD',

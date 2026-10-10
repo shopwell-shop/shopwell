@@ -109,7 +109,7 @@ class AgenticCommerceProductExportFlowTest extends TestCase
         static::assertFalse($exportedProduct['is_eligible_checkout']);
         static::assertSame('OpenAI Feed Product', $exportedProduct['title']);
         static::assertSame('Feed description', $exportedProduct['description']);
-        static::assertSame('10.99 EUR', $exportedProduct['price']);
+        static::assertSame('10.99 CNY', $exportedProduct['price']);
         static::assertSame('in_stock', $exportedProduct['availability']);
         static::assertSame('ACME', $exportedProduct['brand']);
         static::assertArrayNotHasKey('condition', $exportedProduct);
@@ -377,7 +377,7 @@ class AgenticCommerceProductExportFlowTest extends TestCase
         static::assertSame('Feed description', (string) $item->description);
         static::assertSame('in_stock', (string) $googleChildren->availability);
         static::assertSame('new', (string) $googleChildren->condition);
-        static::assertSame('10.99 EUR', (string) $googleChildren->price);
+        static::assertSame('10.99 CNY', (string) $googleChildren->price);
         static::assertSame('ACME', (string) $googleChildren->brand);
         static::assertSame('1234567890123', (string) $googleChildren->gtin);
         static::assertSame('MPN-123', (string) $googleChildren->mpn);
