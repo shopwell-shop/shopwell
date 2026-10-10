@@ -36,7 +36,6 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestDefaults;
 
@@ -857,8 +856,17 @@ class ProductCartProcessorTest extends TestCase
         $parameters = new SalesChannelContextServiceParameters(TestDefaults::SALES_CHANNEL, $this->ids->create('token'), customerId: $customerId);
         $context = static::getContainer()->get(SalesChannelContextService::class)->get($parameters);
 
+        // This fork deliberately installs the 0% "Reduced rate 2" as the default tax
+        // rate (see MigrationForeignDefaultLanguageTest), so the country recalculation
+        // is asserted against the explicit 19% standard rate instead.
+        $standardTaxId = static::getContainer()->get('tax.repository')->searchIds(
+            (new Criteria())->addFilter(new EqualsFilter('name', 'Standard rate')),
+            Context::createDefaultContext()
+        )->firstId();
+        static::assertIsString($standardTaxId);
+
         $this->createProduct([
-            'taxId' => static::getContainer()->get(SystemConfigService::class)->get('core.tax.defaultTaxRate'),
+            'taxId' => $standardTaxId,
         ]);
 
         $cart = $this->cartService->add(

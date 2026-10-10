@@ -271,7 +271,16 @@ class ScriptRuleTest extends TestCase
 
         $scriptRule = $payload->getRules()[0];
         static::assertInstanceOf(ScriptRule::class, $scriptRule);
-        static::assertSame($value, $scriptRule->getValues());
+
+        // The values round-trip through a JSON column, and MySQL reorders the keys of a
+        // JSON object (shorter keys first). Since the merged `name` is shorter than
+        // `operator`, the stored order differs between the data sets, so the values are
+        // compared order-independently to stay portable across database backends.
+        $expectedValues = $value;
+        $actualValues = $scriptRule->getValues();
+        ksort($expectedValues);
+        ksort($actualValues);
+        static::assertSame($expectedValues, $actualValues);
         static::assertSame([], $scriptRule->getConstraints());
 
         $this->ruleRepository->delete([['id' => $ruleId]], $this->context);
