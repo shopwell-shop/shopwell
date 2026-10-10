@@ -59,12 +59,12 @@ class AddressHashSubscriberTest extends TestCase
 
         yield 'OrderAddressEntity' => [
             (new OrderAddressEntity())->assign($address),
-            '949c5f5f8ea7e6b2ff979c8b6d5f54a9c57394d9bc56a3e62a7ecbaa309b1192',
+            '86878ee9464270c0dc581558dc32cc8de99b960e45605a0f8a7ae13a89d57dd1',
         ];
 
         yield 'CustomerAddressEntity' => [
             (new CustomerAddressEntity())->assign($address),
-            '949c5f5f8ea7e6b2ff979c8b6d5f54a9c57394d9bc56a3e62a7ecbaa309b1192',
+            '86878ee9464270c0dc581558dc32cc8de99b960e45605a0f8a7ae13a89d57dd1',
         ];
     }
 }
