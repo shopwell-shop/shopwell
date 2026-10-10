@@ -262,7 +262,7 @@ jobs:
           api-gen loadSchema --apiType=store
 
       - name: Upload OpenApi StoreAPI schema
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: storeApiSchema.json
           path: ./api-types/storeApiSchema.json
@@ -292,7 +292,7 @@ jobs:
           api-gen loadSchema --apiType=admin && api-gen generate --apiType=admin
 
       - name: Upload OpenApi AdminAPI schema
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: adminApiSchema.json
           path: ./api-types/adminApiSchema.json
@@ -371,7 +371,7 @@ jobs:
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload junit report for the failure tracking issue
         if: failure() && github.event_name != 'pull_request' && github.event_name != 'merge_group'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: junit-phpunit-${{ matrix.suite }}
           path: junit.xml
@@ -448,7 +448,7 @@ jobs:
           phpunit-options: "--display-phpunit-notices --display-phpunit-deprecations --fail-on-phpunit-notice --fail-on-phpunit-warning --fail-on-phpunit-deprecation"
       - name: Upload junit report for the failure tracking issue
         if: failure() && github.event_name == 'schedule'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: junit-phpunit-13-${{ matrix.suite }}
           path: junit.xml
