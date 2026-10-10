@@ -52,8 +52,7 @@ class CustomSnippetFormatControllerTest extends TestCase
             'address/country',
             'address/country_state',
             'address/department',
-            'address/first_name',
-            'address/last_name',
+            'address/name',
             'address/phone_number',
             'address/salutation',
             'address/street',
@@ -84,8 +83,7 @@ class CustomSnippetFormatControllerTest extends TestCase
             'address/country',
             'address/country_state',
             'address/department',
-            'address/first_name',
-            'address/last_name',
+            'address/name',
             'address/phone_number',
             'address/salutation',
             'address/street',
@@ -103,26 +101,22 @@ class CustomSnippetFormatControllerTest extends TestCase
         $request = new Request();
         $request->request->set('data', [
             'customer' => [
-                'first_name' => 'Vin',
-                'last_name' => 'Le',
+                'name' => 'Vin Le',
             ],
         ]);
         $request->request->set('format', [
             [
-                'address/first_name',
-                'address/last_name',
+                'address/name',
             ],
         ]);
         $twig = $this->createMock(Environment::class);
         $twig->expects($this->once())->method('render')->with('@Framework/snippets/render.html.twig', [
             'customer' => [
-                'first_name' => 'Vin',
-                'last_name' => 'Le',
+                'name' => 'Vin Le',
             ],
             'format' => [
                 [
-                    'address/first_name',
-                    'address/last_name',
+                    'address/name',
                 ],
             ],
         ])->willReturn('Rendered html');

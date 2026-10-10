@@ -686,7 +686,7 @@ describe('modules/sw-mail-template/page/sw-mail-template-detail', () => {
                 subject: 'Your order with {{ salesChannel.name }} is partially paid',
                 contentPlain: 'the status of your order at {{ salesChannel.translated.name }}',
                 contentHtml:
-                    '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br/><br/>',
+                    '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.name }},<br/><br/>',
                 senderName: '{{ salesChannel.name }}',
             },
             testerMail: 'foo@bar.com',
@@ -709,7 +709,7 @@ describe('modules/sw-mail-template/page/sw-mail-template-detail', () => {
                 subject: 'Your order with {{ salesChannel.name }} is partially paid',
                 senderName: '{{ salesChannel.name }}',
                 contentHtml:
-                    '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br/><br/>',
+                    '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.name }},<br/><br/>',
                 contentPlain: 'the status of your order at {{ salesChannel.translated.name }}',
                 headerHtml: '<div>Header</div>',
                 footerHtml: '<div>Footer</div>',
@@ -726,7 +726,7 @@ describe('modules/sw-mail-template/page/sw-mail-template-detail', () => {
                 subject: 'Your order with {{ salesChannel.name }} is partially paid',
                 senderName: '{{ salesChannel.name }}',
                 contentHtml:
-                    '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br/><br/>',
+                    '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.name }},<br/><br/>',
                 contentPlain: 'the status of your order at {{ salesChannel.translated.name }}',
             }),
             expect.anything(),
@@ -754,7 +754,7 @@ describe('modules/sw-mail-template/page/sw-mail-template-detail', () => {
                     subject: 'Your order with {{ salesChannel.name }} is partially paid',
                     contentPlain: 'the status of your order at {{ salesChannel.translated.name }}',
                     contentHtml:
-                        '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br/><br/>',
+                        '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.name }},<br/><br/>',
                     senderName: '{{ salesChannel.name }}',
                 },
             },
@@ -780,7 +780,7 @@ describe('modules/sw-mail-template/page/sw-mail-template-detail', () => {
                 subject: 'Your order with {{ salesChannel.name }} is partially paid',
                 senderName: '{{ salesChannel.name }}',
                 contentHtml:
-                    '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br/><br/>',
+                    '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.name }},<br/><br/>',
                 contentPlain: 'the status of your order at {{ salesChannel.translated.name }}',
             }),
             expect.anything(),
@@ -894,7 +894,7 @@ describe('modules/sw-mail-template/page/sw-mail-template-detail', () => {
                 subject: 'Your order with {{ salesChannel.name }} is partially paid',
                 contentPlain: 'the status of your order at {{ salesChannel.translated.name }}',
                 contentHtml:
-                    '{{ order.orderCustomer.salutation.translated.letterName {{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br/><br/>',
+                    '{{ order.orderCustomer.salutation.translated.letterName {{ order.orderCustomer.name }},<br/><br/>',
                 senderName: '{{ salesChannel.name }}',
                 mailTemplateTypeId: 'typeId',
             },
@@ -1011,7 +1011,7 @@ describe('modules/sw-mail-template/page/sw-mail-template-detail', () => {
                 subject: 'Your order with {{ salesChannel.name }} is partially paid',
                 contentPlain: 'the status of your order at {{ salesChannel.translated.name }}',
                 contentHtml:
-                    '{{ order.orderCustomer.salutation.translated.letterName {{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br/><br/>',
+                    '{{ order.orderCustomer.salutation.translated.letterName {{ order.orderCustomer.name }},<br/><br/>',
                 senderName: '{{ salesChannel.name }}',
                 mailTemplateTypeId: 'typeId',
             },
@@ -1038,7 +1038,7 @@ describe('modules/sw-mail-template/page/sw-mail-template-detail', () => {
                 subject: 'Your order with {{ salesChannel.name }} is partially paid',
                 contentPlain: 'the status of your order at {{ salesChannel.translated.name }}',
                 contentHtml:
-                    '{{ order.orderCustomer.salutation.translated.letterName {{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br/><br/>',
+                    '{{ order.orderCustomer.salutation.translated.letterName {{ order.orderCustomer.name }},<br/><br/>',
                 senderName: '{{ salesChannel.name }}',
             },
             testerMail: 'foo@bar.com',
@@ -1099,7 +1099,7 @@ describe('modules/sw-mail-template/page/sw-mail-template-detail', () => {
                     subject: 'Your order with {{ salesChannel.name }} is partially paid',
                     contentPlain: 'the status of your order at {{ salesChannel.translated.name }}',
                     contentHtml:
-                        '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br/><br/>',
+                        '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.name }},<br/><br/>',
                     senderName: '{{ salesChannel.name }}',
                 },
             },
@@ -1147,7 +1147,7 @@ describe('modules/sw-mail-template/page/sw-mail-template-detail', () => {
                 subject: 'Your order with {{ salesChannel.name }} is partially paid',
                 contentPlain: 'the status of your order at {{ salesChannel.translated.name }}',
                 contentHtml:
-                    '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br/><br/>',
+                    '{{ order.orderCustomer.salutation.translated.letterName }} {{ order.orderCustomer.name }},<br/><br/>',
                 senderName: '{{ salesChannel.name }}',
             },
             testerMail: 'foo@bar.com',

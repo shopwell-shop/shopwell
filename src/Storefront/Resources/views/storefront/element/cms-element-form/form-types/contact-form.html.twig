@@ -18,28 +18,15 @@
                 %}
             {% endblock %}
 
-            {% block cms_form_contact_input_first_name %}
-                {% set firstNameFieldRequired = config('core.basicInformation.firstNameFieldRequired') == true %}
+            {% block cms_form_contact_input_name %}
+                {% set nameFieldRequired = config('core.basicInformation.nameFieldRequired') == true %}
                 {% sw_include '@Storefront/storefront/element/cms-element-form/form-components/cms-element-form-input.html.twig'
                     with {
-                    fieldName: 'firstName',
-                    autocomplete: 'section-personal given-name',
-                    required: firstNameFieldRequired,
-                    additionalClass: 'col-md-4',
-                    label: 'account.personalFirstNameLabel',
-                }
-                %}
-            {% endblock %}
-
-            {% block cms_form_contact_input_last_name %}
-                {% set lastNameFieldRequired = config('core.basicInformation.lastNameFieldRequired') == true %}
-                {% sw_include '@Storefront/storefront/element/cms-element-form/form-components/cms-element-form-input.html.twig'
-                    with {
-                    fieldName: 'lastName',
-                    autocomplete: 'section-personal family-name',
-                    required: lastNameFieldRequired,
-                    additionalClass: 'col-md-4',
-                    label: 'account.personalLastNameLabel',
+                    fieldName: 'name',
+                    autocomplete: 'section-personal name',
+                    required: nameFieldRequired,
+                    additionalClass: 'col-md-8',
+                    label: 'account.personalNameLabel',
                 }
                 %}
             {% endblock %}

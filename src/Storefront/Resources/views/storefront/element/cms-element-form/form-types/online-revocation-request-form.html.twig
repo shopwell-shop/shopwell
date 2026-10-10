@@ -10,27 +10,15 @@
 
         <div class="form-content">
             <div class="row g-2">
-                {% block cms_form_revocation_input_first_name %}
-                    {% set firstNameFieldRequired = config('core.basicInformation.firstNameFieldRequired') == true %}
+                {% block cms_form_revocation_input_name %}
+                    {% set nameFieldRequired = config('core.basicInformation.nameFieldRequired') == true %}
                     {% sw_include '@Storefront/storefront/element/cms-element-form/form-components/cms-element-form-input.html.twig'
                         with {
-                        fieldName: 'firstName',
-                        autocomplete: 'section-personal given-name',
-                        required: firstNameFieldRequired,
-                        additionalClass: 'col-md-6',
-                        label: 'revocationRequest.firstNameLabel',
-                    } %}
-                {% endblock %}
-
-                {% block cms_form_revocation_input_last_name %}
-                    {% set lastNameFieldRequired = config('core.basicInformation.lastNameFieldRequired') == true %}
-                    {% sw_include '@Storefront/storefront/element/cms-element-form/form-components/cms-element-form-input.html.twig'
-                        with {
-                        fieldName: 'lastName',
-                        autocomplete: 'section-personal family-name',
-                        required: lastNameFieldRequired,
-                        additionalClass: 'col-md-6',
-                        label: 'revocationRequest.lastNameLabel',
+                        fieldName: 'name',
+                        autocomplete: 'section-personal name',
+                        required: nameFieldRequired,
+                        additionalClass: 'col-md-12',
+                        label: 'revocationRequest.nameLabel',
                     } %}
                 {% endblock %}
             </div>

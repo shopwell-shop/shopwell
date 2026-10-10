@@ -36,7 +36,7 @@
         {% endblock %}
 
         {% block sw_dashboard_latest_orders_column_customer %}
-        <template #column-orderCustomer.firstName="{ item }">
+        <template #column-orderCustomer.name="{ item }">
             <router-link
                 :to="{ name: 'sw.order.detail', params: { id: item.id } }"
                 class="sw-data-grid__cell-value"

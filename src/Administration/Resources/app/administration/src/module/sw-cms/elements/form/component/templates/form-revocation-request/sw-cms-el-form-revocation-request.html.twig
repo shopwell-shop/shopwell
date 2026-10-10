@@ -7,17 +7,10 @@
         {{ formSettings.title.value }}
     </h3>
 
-    <div class="sw-cms-el-form-revocation-request__form-group two-items">
-        <mt-text-field
-            :label="$t('sw-cms.elements.form.element.label.firstName')"
-            :model-value="$t('sw-cms.elements.form.element.placeholder.firstName')"
-        />
-
-        <mt-text-field
-            :label="$t('sw-cms.elements.form.element.label.lastName')"
-            :model-value="$t('sw-cms.elements.form.element.placeholder.lastName')"
-        />
-    </div>
+    <mt-text-field
+        :label="$t('sw-cms.elements.form.element.label.name')"
+        :model-value="$t('sw-cms.elements.form.element.placeholder.name')"
+    />
 
     <mt-text-field
         :label="$t('sw-cms.elements.form.element.label.email')"

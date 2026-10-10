@@ -15,7 +15,7 @@ use Shopwell\Core\Checkout\Customer\CustomerDefinition;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Event\CustomerDoubleOptInRegistrationEvent;
 use Shopwell\Core\Checkout\Customer\Rule\CustomerGroupRule;
-use Shopwell\Core\Checkout\Customer\Rule\LastNameRule;
+use Shopwell\Core\Checkout\Customer\Rule\NameRule;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -293,9 +293,9 @@ class FlowExecutorTest extends TestCase
                             'priority' => 1,
                             'conditions' => [
                                 [
-                                    'type' => (new LastNameRule())->getName(),
+                                    'type' => (new NameRule())->getName(),
                                     'value' => [
-                                        'lastName' => 'Mustermann',
+                                        'name' => 'Max Mustermann',
                                         'operator' => OrderTagRule::OPERATOR_EQ,
                                     ],
                                 ],

@@ -79,8 +79,7 @@ class MailStorerTest extends TestCase
         $flow = new StorableFlow('test', Context::createDefaultContext(), [OrderAware::ORDER_ID => Uuid::randomHex()]);
         $customer = new OrderCustomerEntity();
         $customer->setId(Uuid::randomHex());
-        $customer->setFirstName('bar');
-        $customer->setLastName('foo');
+        $customer->setName('bar foo');
         $customer->setEmail('foo@bar.com');
         $order = new OrderEntity();
         $order->setOrderCustomer($customer);
@@ -92,7 +91,7 @@ class MailStorerTest extends TestCase
         static::assertTrue($flow->hasData(MailAware::MAIL_STRUCT));
 
         static::assertInstanceOf(MailRecipientStruct::class, $flow->getData(MailAware::MAIL_STRUCT));
-        static::assertSame('barfoo', $flow->getData(MailAware::MAIL_STRUCT)->getRecipients()['foo@bar.com']);
+        static::assertSame('bar foo', $flow->getData(MailAware::MAIL_STRUCT)->getRecipients()['foo@bar.com']);
         static::assertNull($flow->getData(MailAware::MAIL_STRUCT)->getBcc());
         static::assertNull($flow->getData(MailAware::MAIL_STRUCT)->getCc());
     }
@@ -102,8 +101,7 @@ class MailStorerTest extends TestCase
         $flow = new StorableFlow('test', Context::createDefaultContext(), [OrderAware::ORDER_ID => Uuid::randomHex()]);
         $customer = new CustomerEntity();
         $customer->setId(Uuid::randomHex());
-        $customer->setFirstName('bar');
-        $customer->setLastName('foo');
+        $customer->setName('bar foo');
         $customer->setEmail('foo@bar.com');
         $customer->setSalesChannelId(TestDefaults::SALES_CHANNEL);
 
@@ -114,7 +112,7 @@ class MailStorerTest extends TestCase
         static::assertTrue($flow->hasData(MailAware::MAIL_STRUCT));
 
         static::assertInstanceOf(MailRecipientStruct::class, $flow->getData(MailAware::MAIL_STRUCT));
-        static::assertSame('barfoo', $flow->getData(MailAware::MAIL_STRUCT)->getRecipients()['foo@bar.com']);
+        static::assertSame('bar foo', $flow->getData(MailAware::MAIL_STRUCT)->getRecipients()['foo@bar.com']);
         static::assertNull($flow->getData(MailAware::MAIL_STRUCT)->getBcc());
         static::assertNull($flow->getData(MailAware::MAIL_STRUCT)->getCc());
     }

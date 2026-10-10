@@ -36,8 +36,7 @@ class SsoUserServiceTest extends TestCase
         $userEntity = new UserEntity();
         $userEntity->setUniqueIdentifier(Uuid::randomHex());
         $userEntity->setEmail('test@example.foo');
-        $userEntity->setFirstName('FirstName');
-        $userEntity->setLastName('LastName');
+        $userEntity->setName('FirstName LastName');
         $userEntity->setUsername('UserName');
 
         $searchResult = $this->createMock(EntitySearchResult::class);

@@ -9,7 +9,7 @@ const ORDERS = [
         orderDateTime: '2026-06-15T09:30:00.000Z',
         amountTotal: 123.45,
         currency: { isoCode: 'EUR' },
-        orderCustomer: { firstName: 'Ada', lastName: 'Lovelace' },
+        orderCustomer: { name: 'Ada Lovelace' },
         stateMachineState: { technicalName: 'open', name: 'Open' },
     },
     {
@@ -18,7 +18,7 @@ const ORDERS = [
         orderDateTime: '2026-06-14T08:00:00.000Z',
         amountTotal: 42,
         currency: { isoCode: 'EUR' },
-        orderCustomer: { firstName: 'Grace', lastName: 'Hopper' },
+        orderCustomer: { name: 'Grace Hopper' },
         stateMachineState: { technicalName: 'cancelled', name: 'Cancelled' },
     },
 ];

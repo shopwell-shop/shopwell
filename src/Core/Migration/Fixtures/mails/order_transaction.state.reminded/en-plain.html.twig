@@ -1,5 +1,5 @@
 {% set currencyIsoCode = order.currency.isoCode %}
-{% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},
+{% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.name }},
 
 We have received your order on {{ order.orderDateTime|format_datetime('medium', 'short', locale='en-GB') }}.
 
@@ -68,7 +68,7 @@ Selected shipping type: {{ delivery.shippingMethod.translated.name }}
 {% set billingAddress = order.addresses.get(order.billingAddressId) %}
 Billing address:
 {{ billingAddress.company }}
-{{ billingAddress.firstName }} {{ billingAddress.lastName }}
+{{ billingAddress.name }}
 {{ billingAddress.street }}
 {{ billingAddress.zipcode }} {{ billingAddress.city }}
 {{ billingAddress.country.translated.name }}
@@ -76,7 +76,7 @@ Billing address:
 {% if delivery %}
 Shipping address:
 {{ delivery.shippingOrderAddress.company }}
-{{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}
+{{ delivery.shippingOrderAddress.name }}
 {{ delivery.shippingOrderAddress.street }}
 {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}
 {{ delivery.shippingOrderAddress.country.translated.name }}

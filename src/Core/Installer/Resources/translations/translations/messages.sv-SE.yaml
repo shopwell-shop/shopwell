@@ -143,8 +143,7 @@ shopwell.installer:
     configuration_admin_currency_cny: 'Kinesisk yuan'
     configuration_admin_username: 'Admin-Login-Namn:'
     configuration_admin_mail: 'Admin-e-postadress:'
-    configuration_admin_firstName: 'Admin-förnamn:'
-    configuration_admin_lastName: 'Admin-efternamn:'
+    configuration_admin_name: 'Admin-förnamn:'
     configuration_defaults_warning: 'Systemets standardspråk och standardvaluta kan inte ändras senare.'
     configuration_email_help_text: 'Den här e-postadressen kommer att användas för utgående e-postmeddelanden.'
     configuration_admin_language_de: Tyska

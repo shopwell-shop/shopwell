@@ -38,25 +38,14 @@
         />
         {% endblock %}
 
-        {% block sw_customer_base_form_first_name_field %}
+        {% block sw_customer_base_form_name_field %}
         <mt-text-field
-            v-model="customer.firstName"
-            name="sw-field--customer-firstName"
+            v-model="customer.name"
+            name="sw-field--customer-name"
             required
-            :label="$t('sw-customer.baseForm.labelFirstName')"
-            :placeholder="$t('sw-customer.baseForm.placeholderFirstName')"
-            :error="customerFirstNameError"
-        />
-        {% endblock %}
-
-        {% block sw_customer_base_form_last_name_field %}
-        <mt-text-field
-            v-model="customer.lastName"
-            name="sw-field--customer-lastName"
-            required
-            :label="$t('sw-customer.baseForm.labelLastName')"
-            :placeholder="$t('sw-customer.baseForm.placeholderLastName')"
-            :error="customerLastNameError"
+            :label="$t('sw-customer.baseForm.labelName')"
+            :placeholder="$t('sw-customer.baseForm.placeholderName')"
+            :error="customerNameError"
         />
         {% endblock %}
 

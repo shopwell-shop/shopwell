@@ -25,8 +25,7 @@ class TradePartyViewTest extends TestCase
     public function testBuyerFromOrderComposesFromCustomerAndBillingAddress(): void
     {
         $order = $this->createOrderWithBillingAddress(
-            firstName: 'Max',
-            lastName: 'Mustermann',
+            name: 'Max Mustermann',
             customerNumber: '1337',
             email: 'max@example.com',
             street: 'Ebbinghoff 10',
@@ -49,8 +48,7 @@ class TradePartyViewTest extends TestCase
     public function testBuyerNameAppendsCompanyWhenPresent(): void
     {
         $order = $this->createOrderWithBillingAddress(
-            firstName: 'Jane',
-            lastName: 'Doe',
+            name: 'Jane Doe',
             company: 'Acme GmbH',
             street: '',
             zipcode: '',
@@ -82,7 +80,7 @@ class TradePartyViewTest extends TestCase
         $order = new OrderEntity();
         $order->setId(Uuid::randomHex());
         $order->setBillingAddress($address);
-        $order->setOrderCustomer($this->createCustomer('Max', 'Mustermann'));
+        $order->setOrderCustomer($this->createCustomer('Max Mustermann'));
 
         $view = TradePartyView::buyerFromOrder($order);
 
@@ -95,7 +93,7 @@ class TradePartyViewTest extends TestCase
     {
         $order = new OrderEntity();
         $order->setId(Uuid::randomHex());
-        $order->setOrderCustomer($this->createCustomer('', ''));
+        $order->setOrderCustomer($this->createCustomer(''));
 
         $this->expectExceptionObject(DocumentV2Exception::invalidOrderData(
             $order->getId(),
@@ -110,7 +108,7 @@ class TradePartyViewTest extends TestCase
     {
         $order = new OrderEntity();
         $order->setId(Uuid::randomHex());
-        $order->setOrderCustomer($this->createCustomer('Max', 'Mustermann'));
+        $order->setOrderCustomer($this->createCustomer('Max Mustermann'));
 
         $this->expectExceptionObject(DocumentV2Exception::invalidOrderData(
             $order->getId(),
@@ -132,7 +130,7 @@ class TradePartyViewTest extends TestCase
         $order = new OrderEntity();
         $order->setId(Uuid::randomHex());
         $order->setBillingAddress($address);
-        $order->setOrderCustomer($this->createCustomer('A', 'B'));
+        $order->setOrderCustomer($this->createCustomer('A B'));
 
         $this->expectExceptionObject(DocumentV2Exception::invalidOrderData(
             $order->getId(),
@@ -158,7 +156,7 @@ class TradePartyViewTest extends TestCase
         $order = new OrderEntity();
         $order->setId(Uuid::randomHex());
         $order->setBillingAddressId($billingId);
-        $order->setOrderCustomer($this->createCustomer('A', 'B'));
+        $order->setOrderCustomer($this->createCustomer('A B'));
         $order->setAddresses(new OrderAddressCollection([$address]));
 
         $view = TradePartyView::buyerFromOrder($order);
@@ -169,8 +167,7 @@ class TradePartyViewTest extends TestCase
     }
 
     private function createOrderWithBillingAddress(
-        string $firstName = '',
-        string $lastName = '',
+        string $name = '',
         ?string $company = null,
         string $customerNumber = '',
         string $email = '',
@@ -201,7 +198,7 @@ class TradePartyViewTest extends TestCase
         $order = new OrderEntity();
         $order->setId(Uuid::randomHex());
         $order->setBillingAddress($address);
-        $order->setOrderCustomer($this->createCustomer($firstName, $lastName, $company, $customerNumber, $email));
+        $order->setOrderCustomer($this->createCustomer($name, $company, $customerNumber, $email));
 
         return $order;
     }
@@ -216,16 +213,14 @@ class TradePartyViewTest extends TestCase
     }
 
     private function createCustomer(
-        string $firstName,
-        string $lastName,
+        string $name,
         ?string $company = null,
         string $customerNumber = '',
         string $email = '',
     ): OrderCustomerEntity {
         $customer = new OrderCustomerEntity();
         $customer->setUniqueIdentifier(Uuid::randomHex());
-        $customer->setFirstName($firstName);
-        $customer->setLastName($lastName);
+        $customer->setName($name);
         $customer->setCustomerNumber($customerNumber);
         $customer->setEmail($email);
 

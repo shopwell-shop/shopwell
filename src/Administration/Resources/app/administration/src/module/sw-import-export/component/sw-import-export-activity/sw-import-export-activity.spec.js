@@ -27,8 +27,7 @@ const logDataExport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,
@@ -83,8 +82,7 @@ const logDataExport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,
@@ -138,8 +136,7 @@ const logDataExport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,
@@ -197,8 +194,7 @@ const logDataExport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,
@@ -252,8 +248,7 @@ const logDataExport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,
@@ -307,8 +302,7 @@ const logDataExport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,
@@ -365,8 +359,7 @@ const logDataImport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,
@@ -421,8 +414,7 @@ const logDataImport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,
@@ -476,8 +468,7 @@ const logDataImport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,
@@ -535,8 +526,7 @@ const logDataImport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,
@@ -590,8 +580,7 @@ const logDataImport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,
@@ -645,8 +634,7 @@ const logDataImport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,
@@ -700,8 +688,7 @@ const logDataImport = {
             user: {
                 localeId: '69b9ec7987a043dfa15c2feaaa219bae',
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 admin: true,

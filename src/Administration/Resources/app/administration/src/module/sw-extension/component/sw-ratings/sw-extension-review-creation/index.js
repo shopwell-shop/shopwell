@@ -48,7 +48,7 @@ export default {
                 return '';
             }
 
-            return `${this.currentUser.firstName} ${this.currentUser.lastName}`.trim();
+            return this.currentUser.name;
         },
 
         installedVersion() {

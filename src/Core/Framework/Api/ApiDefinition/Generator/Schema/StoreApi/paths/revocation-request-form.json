@@ -23,16 +23,11 @@
                                 "required": [
                                     "email",
                                     "contractNumber",
-                                    "firstName",
-                                    "lastName"
+                                    "name"
                                 ],
                                 "properties": {
-                                    "firstName": {
-                                        "description": "First name. Required on a default installation, can be turned off with the `core.basicInformation.firstNameFieldRequired` setting.",
-                                        "type": "string"
-                                    },
-                                    "lastName": {
-                                        "description": "Last name. Required on a default installation, can be turned off with the `core.basicInformation.lastNameFieldRequired` setting.",
+                                    "name": {
+                                        "description": "Name. Required on a default installation, can be turned off with the `core.basicInformation.nameFieldRequired` setting.",
                                         "type": "string"
                                     },
                                     "email": {

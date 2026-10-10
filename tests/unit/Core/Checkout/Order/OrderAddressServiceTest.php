@@ -115,8 +115,7 @@ class OrderAddressServiceTest extends TestCase
     public function testUpdateOrderAddresses(): void
     {
         $customerAddress = new CustomerAddressEntity();
-        $customerAddress->setFirstName('Max');
-        $customerAddress->setLastName('Mustermann');
+        $customerAddress->setName('Max Mustermann');
         $customerAddress->setStreet('Musterstreet 1');
         $customerAddress->setCity('Musterstadt');
         $customerAddress->setCountryId(Uuid::randomHex());

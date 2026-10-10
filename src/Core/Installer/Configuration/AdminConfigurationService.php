@@ -21,8 +21,7 @@ class AdminConfigurationService
      * @param array{
      *     username: string,
      *     password: string,
-     *     firstName?: string,
-     *     lastName?: string,
+     *     name?: string,
      *     email?: string,
      *     localeId?: string,
      *     admin?: bool

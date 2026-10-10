@@ -73,8 +73,8 @@ class NewsletterRegisterEvent extends Event implements SalesChannelAware, MailAw
         if (!$this->mailRecipientStruct) {
             $recipientName = $this->newsletterRecipient->getEmail();
 
-            if ($this->newsletterRecipient->getFirstName() && $this->newsletterRecipient->getLastName()) {
-                $recipientName = $this->newsletterRecipient->getFirstName() . ' ' . $this->newsletterRecipient->getLastName();
+            if ($this->newsletterRecipient->getName()) {
+                $recipientName = $this->newsletterRecipient->getName();
             }
 
             $this->mailRecipientStruct = new MailRecipientStruct(

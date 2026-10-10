@@ -33,7 +33,7 @@ class SchemaCompletenessTest extends McpScenarioTestCase
 
         yield 'customer' => [
             'customer',
-            ['email', 'firstName', 'lastName', 'customerNumber'],
+            ['email', 'name', 'customerNumber'],
             ['orderCustomers', 'addresses', 'group'],
         ];
 

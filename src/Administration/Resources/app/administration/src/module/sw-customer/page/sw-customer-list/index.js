@@ -316,8 +316,8 @@ export default {
         getCustomerColumns() {
             const columns = [
                 {
-                    property: 'firstName',
-                    dataIndex: 'lastName,firstName',
+                    property: 'name',
+                    dataIndex: 'name',
                     inlineEdit: 'string',
                     label: 'sw-customer.list.columnName',
                     routerLink: 'sw.customer.detail',

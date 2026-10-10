@@ -13,8 +13,7 @@
 
     .sw-profile-index-general__information-grid {
         grid-template-areas:
-            "FirstName ProfilePicture"
-            "LastName ProfilePicture"
+            "Name ProfilePicture"
             "Username Email";
     }
 
@@ -28,12 +27,8 @@
         grid-template-areas: "NewPassword NewPasswordConfirm";
     }
 
-    .sw-profile-index-general__grid-firstName {
-        grid-area: FirstName;
-    }
-
-    .sw-profile-index-general__grid-lastName {
-        grid-area: LastName;
+    .sw-profile-index-general__grid-name {
+        grid-area: Name;
     }
 
     .sw-profile-index-general__grid-username {
@@ -84,8 +79,7 @@
     .sw-profile-index-general .sw-profile-index-general__information-grid {
         grid-template-areas:
             "ProfilePicture"
-            "FirstName"
-            "LastName"
+            "Name"
             "Username"
             "Email";
     }

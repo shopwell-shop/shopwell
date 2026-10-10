@@ -9,8 +9,7 @@
                 "required": [
                     "id",
                     "countryId",
-                    "firstName",
-                    "lastName",
+                    "name",
                     "street",
                     "city"
                 ],
@@ -33,12 +32,8 @@
                         "type": "string",
                         "pattern": "^[0-9a-f]{32}$"
                     },
-                    "firstName": {
-                        "description": "First name of the customer.",
-                        "type": "string"
-                    },
-                    "lastName": {
-                        "description": "Last name of the customer.",
+                    "name": {
+                        "description": "Full name of the customer.",
                         "type": "string"
                     },
                     "street": {

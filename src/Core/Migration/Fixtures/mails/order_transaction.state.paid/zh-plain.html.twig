@@ -1,5 +1,5 @@
 {% set currencyIsoCode = order.currency.isoCode %}
-您好 {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }}，
+您好 {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.name }}，
 
 我们已收到您的付款，现在将开始处理订单。
 
@@ -66,7 +66,7 @@
 {% set billingAddress = order.addresses.get(order.billingAddressId) %}
 账单地址：
 {{ billingAddress.company }}
-{{ billingAddress.firstName }} {{ billingAddress.lastName }}
+{{ billingAddress.name }}
 {{ billingAddress.street }}
 {{ billingAddress.zipcode }} {{ billingAddress.city }}
 {{ billingAddress.country.translated.name }}
@@ -74,7 +74,7 @@
 {% if delivery %}
 收货地址：
 {{ delivery.shippingOrderAddress.company }}
-{{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}
+{{ delivery.shippingOrderAddress.name }}
 {{ delivery.shippingOrderAddress.street }}
 {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}
 {{ delivery.shippingOrderAddress.country.translated.name }}

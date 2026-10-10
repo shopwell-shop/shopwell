@@ -12,8 +12,7 @@
 
         &.sw-detail-grid__information {
             grid-template-areas:
-                "FirstName ProfilePicture"
-                "LastName ProfilePicture"
+                "Name ProfilePicture"
                 "EMail EMail"
                 "Active Active";
         }
@@ -31,12 +30,8 @@
         }
     }
 
-    .sw-sso-detail-card__information-firstName {
-        grid-area: FirstName;
-    }
-
-    .sw-sso-detail-card__information-lastName {
-        grid-area: LastName;
+    .sw-sso-detail-card__information-name {
+        grid-area: Name;
     }
 
     .sw-sso-detail-card__information-eMail {

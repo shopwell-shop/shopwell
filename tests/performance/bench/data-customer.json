@@ -3,14 +3,12 @@
     {
       "id": "{customer-0}",
       "customerNumber": "customer-0",
-      "firstName": "Max",
-      "lastName": "Mustermann",
+      "name": "Max Mustermann",
       "email": "max@mustermann.com",
       "groupId": "{customer-group}",
       "defaultBillingAddressId": "{default-billing-address}",
       "defaultBillingAddress": {
-        "firstName": "Max",
-        "lastName": "Mustermann",
+        "name": "Max Mustermann",
         "city": "Bielefeld",
         "salutationId": "{salutation}",
         "street": "Buchenweg 5",
@@ -23,8 +21,7 @@
       "salesChannelId": "{sales-channel}",
       "addresses": {
         "default-address": {
-          "firstName": "Max",
-          "lastName": "Mustermann",
+          "name": "Max Mustermann",
           "city": "Bielefeld",
           "salutationId": "{salutation}",
           "street": "Buchenweg 5",

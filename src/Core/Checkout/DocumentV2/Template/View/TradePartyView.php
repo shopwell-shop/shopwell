@@ -37,7 +37,7 @@ final readonly class TradePartyView
         $billing = $order->getBillingAddress()
             ?? $order->getAddresses()?->get($order->getBillingAddressId());
 
-        $name = trim(($customer?->getFirstName() ?? '') . ' ' . ($customer?->getLastName() ?? ''));
+        $name = trim($customer?->getName() ?? '');
 
         if ($customer?->getCompany()) {
             $name = trim($name . ' - ' . $customer->getCompany());

@@ -38,25 +38,25 @@ class Migration1756068710FixCustomerAddressLastNameLengthTest extends TestCase
         // Set column to original size to test the migration properly, as test DB may already have VARCHAR(255)
         $this->connection->executeStatement('
             ALTER TABLE `customer_address`
-            MODIFY COLUMN `last_name` VARCHAR(60) COLLATE utf8mb4_unicode_ci NOT NULL
+            MODIFY COLUMN `name` VARCHAR(60) COLLATE utf8mb4_unicode_ci NOT NULL
         ');
 
-        $lastNameColumn = TableHelper::getColumnOfTable($this->connection, 'customer_address', 'last_name');
-        static::assertSame(Types::STRING, $lastNameColumn->type);
-        static::assertSame(60, $lastNameColumn->length);
+        $nameColumn = TableHelper::getColumnOfTable($this->connection, 'customer_address', 'name');
+        static::assertSame(Types::STRING, $nameColumn->type);
+        static::assertSame(60, $nameColumn->length);
 
         $migration->update($this->connection);
 
-        $lastNameColumn = TableHelper::getColumnOfTable($this->connection, 'customer_address', 'last_name');
-        static::assertSame(Types::STRING, $lastNameColumn->type);
-        static::assertSame(255, $lastNameColumn->length);
-        static::assertTrue($lastNameColumn->isNotNull);
+        $nameColumn = TableHelper::getColumnOfTable($this->connection, 'customer_address', 'name');
+        static::assertSame(Types::STRING, $nameColumn->type);
+        static::assertSame(255, $nameColumn->length);
+        static::assertTrue($nameColumn->isNotNull);
 
         $migration->update($this->connection);
 
-        $lastNameColumn = TableHelper::getColumnOfTable($this->connection, 'customer_address', 'last_name');
-        static::assertSame(Types::STRING, $lastNameColumn->type);
-        static::assertSame(255, $lastNameColumn->length);
-        static::assertTrue($lastNameColumn->isNotNull);
+        $nameColumn = TableHelper::getColumnOfTable($this->connection, 'customer_address', 'name');
+        static::assertSame(Types::STRING, $nameColumn->type);
+        static::assertSame(255, $nameColumn->length);
+        static::assertTrue($nameColumn->isNotNull);
     }
 }

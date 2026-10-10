@@ -43,7 +43,7 @@ class Migration1672164687FixTypoInUserRecoveryPasswordResetMail extends Migratio
         return <<<MAIL
 <div style="font-family:arial; font-size:12px;">
     <p>
-        Dear {{ userRecovery.user.firstName }} {{ userRecovery.user.lastName }},<br/>
+        Dear {{ userRecovery.user.name }},<br/>
         <br/>
         there has been a request to reset your password.
         Please confirm the link below to specify a new password.<br/>
@@ -60,7 +60,7 @@ MAIL;
     private function getContentPlainEn(): string
     {
         return <<<MAIL
-        Dear {{ userRecovery.user.firstName }} {{ userRecovery.user.lastName }},
+        Dear {{ userRecovery.user.name }},
 
         there has been a request to reset your password.
         Please confirm the link below to specify a new password.

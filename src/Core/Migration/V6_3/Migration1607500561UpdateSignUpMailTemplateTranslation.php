@@ -69,7 +69,7 @@ class Migration1607500561UpdateSignUpMailTemplateTranslation extends MigrationSt
         return '
             <div style="font-family:arial; font-size:12px;">
                 <p>
-                    Hello {{ customer.salutation.translated.displayName }} {{ customer.lastName }},<br/>
+                    Hello {{ customer.salutation.translated.displayName }} {{ customer.name }},<br/>
                     <br/>
                     thank you for your signing up with {{ salesChannel.translated.name }}.<br/>
                     Please confirm the sign-up via the following link:<br/>
@@ -85,7 +85,7 @@ class Migration1607500561UpdateSignUpMailTemplateTranslation extends MigrationSt
     private function getSignupConfirmationPlainTemplateEn(): string
     {
         return '
-            Hello {{ customer.salutation.translated.displayName }} {{ customer.lastName }},
+            Hello {{ customer.salutation.translated.displayName }} {{ customer.name }},
 
             thank you for your signing up with {{ salesChannel.translated.name }}.
             Please confirm the sign-up via the following link:
@@ -100,7 +100,7 @@ class Migration1607500561UpdateSignUpMailTemplateTranslation extends MigrationSt
     {
         return '<div style="font-family:arial; font-size:12px;">
             <p>
-                {{ customer.salutation.translated.letterName }} {{ customer.firstName }} {{ customer.lastName }},<br/>
+                {{ customer.salutation.translated.letterName }} {{ customer.name }},<br/>
                 <br/>
                 thank you for your signing up with our Shop.<br/>
                 You will gain access via the email address <strong>{{ customer.email }}</strong> and the password you have chosen.<br/>
@@ -111,7 +111,7 @@ class Migration1607500561UpdateSignUpMailTemplateTranslation extends MigrationSt
 
     private function getSignupPlainTemplateEn(): string
     {
-        return '{{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }},
+        return '{{ customer.salutation.translated.letterName }} {{ customer.name }},
 
                 thank you for your signing up with our Shop.
                 You will gain access via the email address {{ customer.email }} and the password you have chosen.
@@ -123,7 +123,7 @@ class Migration1607500561UpdateSignUpMailTemplateTranslation extends MigrationSt
     {
         return '<div style="font-family:arial; font-size:12px;">
             <p>
-                {{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }}，<br/>
+                {{ customer.salutation.translated.letterName }} {{ customer.name }}，<br/>
                 <br/>
                 感谢您注册我们的商城。<br/>
                 您可以使用邮箱 <strong>{{ customer.email }}</strong> 和您设置的密码登录。<br/>
@@ -134,7 +134,7 @@ class Migration1607500561UpdateSignUpMailTemplateTranslation extends MigrationSt
 
     private function getSignupPlainTemplateZhCn(): string
     {
-        return '{{ customer.salutation.translated.letterName }} {{customer.firstName}} {{ customer.lastName }}，
+        return '{{ customer.salutation.translated.letterName }} {{ customer.name }}，
 
                 感谢您注册我们的商城。
                 您可以使用邮箱 {{ customer.email }} 和您设置的密码登录。

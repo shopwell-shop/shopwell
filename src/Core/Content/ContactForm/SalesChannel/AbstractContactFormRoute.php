@@ -8,7 +8,7 @@ use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 
 /**
  * This route can be used to send a contact form mail for the authenticated sales channel.
- * Required fields are: "salutationId", "firstName", "lastName", "email", "phone", "subject" and "comment"
+ * Required fields are: "salutationId", "name", "email", "phone", "subject" and "comment"
  */
 #[Package('discovery')]
 abstract class AbstractContactFormRoute

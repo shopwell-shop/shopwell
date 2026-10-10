@@ -75,8 +75,7 @@
                       "description": "Form field settings (core.basicInformation), used by the contact form and the online revocation request form",
                       "required": [
                         "apiAlias",
-                        "firstNameFieldRequired",
-                        "lastNameFieldRequired",
+                        "nameFieldRequired",
                         "phoneNumberFieldRequired"
                       ],
                       "properties": {
@@ -84,13 +83,9 @@
                           "type": "string",
                           "const": "shop_settings_contact_form"
                         },
-                        "firstNameFieldRequired": {
+                        "nameFieldRequired": {
                           "type": "boolean",
-                          "description": "Whether the first name field has to be filled in to submit the form"
-                        },
-                        "lastNameFieldRequired": {
-                          "type": "boolean",
-                          "description": "Whether the last name field has to be filled in to submit the form"
+                          "description": "Whether the name field has to be filled in to submit the form"
                         },
                         "phoneNumberFieldRequired": {
                           "type": "boolean",

@@ -79,7 +79,7 @@
       }
     },
     "create": {
-      "notification":{
+      "notification": {
         "assignToEntityError": "Assigning layouts failed"
       }
     },
@@ -509,7 +509,7 @@
             "end": "End video at",
             "needsConfirmation": "Load only after confirmation",
             "previewImage": "Preview image",
-            "videoTitle" : "Video title"
+            "videoTitle": "Video title"
           },
           "placeholder": {
             "videoId": "Enter a video link...",
@@ -544,8 +544,7 @@
           "label": {
             "action": "Action*",
             "email": "Email address*",
-            "firstName": "First name*",
-            "lastName": "Last name*",
+            "name": "Name*",
             "message": "Your message*",
             "newsletterSubmit": "Continue",
             "phone": "Phone number*",
@@ -558,8 +557,7 @@
             "comment": "Comment"
           },
           "placeholder": {
-            "firstName": "John",
-            "lastName": "Doe",
+            "name": "John Doe",
             "email": "john{'@'}doe.com",
             "phone": "+4920 3920173",
             "subject": "Lorem ipsum dolor sit amet.",
@@ -572,8 +570,7 @@
           },
           "newsletter": {
             "label": {
-              "firstName": "First name",
-              "lastName": "Last name",
+              "name": "Name",
               "salutation": "Salutation"
             }
           }
@@ -588,7 +585,7 @@
       "buyBox": {
         "label": "Buy box",
         "infoText": {
-          "tooltipSettingDisabled" : "This element's product data is automatically loaded by the product associated with this layout. The content just shows a sample preview."
+          "tooltipSettingDisabled": "This element's product data is automatically loaded by the product associated with this layout. The content just shows a sample preview."
         },
         "config": {
           "label": {

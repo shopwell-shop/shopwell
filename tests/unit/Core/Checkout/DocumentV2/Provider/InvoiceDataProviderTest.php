@@ -493,8 +493,7 @@ class InvoiceDataProviderTest extends TestCase
 
         $orderCustomer = new OrderCustomerEntity();
         $orderCustomer->setUniqueIdentifier(Uuid::randomHex());
-        $orderCustomer->setFirstName('Max');
-        $orderCustomer->setLastName('Mustermann');
+        $orderCustomer->setName('Max Mustermann');
         $orderCustomer->setEmail('');
         $orderCustomer->setCustomerNumber('');
 

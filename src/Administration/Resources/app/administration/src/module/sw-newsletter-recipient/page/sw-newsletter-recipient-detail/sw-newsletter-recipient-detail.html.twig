@@ -74,23 +74,14 @@
                 </sw-container>
 
                 <sw-container
-                    columns="1fr 1fr"
+                    columns="1fr"
                     gap="10px"
                 >
-                    {% block sw_newsletter_recipient_detail_form_first_name %}
+                    {% block sw_newsletter_recipient_detail_form_name %}
 
                     <mt-text-field
-                        v-model="newsletterRecipient.firstName"
-                        :label="$t('sw-newsletter-recipient.list.firstName')"
-                        :disabled="!acl.can('newsletter_recipient.editor')"
-                    />
-                    {% endblock %}
-
-                    {% block sw_newsletter_recipient_detail_form_last_name %}
-
-                    <mt-text-field
-                        v-model="newsletterRecipient.lastName"
-                        :label="$t('sw-newsletter-recipient.list.lastName')"
+                        v-model="newsletterRecipient.name"
+                        :label="$t('sw-newsletter-recipient.list.name')"
                         :disabled="!acl.can('newsletter_recipient.editor')"
                     />
                     {% endblock %}

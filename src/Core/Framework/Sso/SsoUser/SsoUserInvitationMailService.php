@@ -131,12 +131,11 @@ class SsoUserInvitationMailService
 
     private function createInviterName(?UserEntity $user): string
     {
-        $firstName = $user?->getFirstName();
-        $lastName = $user?->getLastName();
+        $name = $user?->getName();
         $userName = $user?->getUsername();
 
-        if ($firstName !== null && $firstName !== '' && $lastName !== null && $lastName !== '') {
-            return $firstName . ' ' . $lastName;
+        if ($name !== null && $name !== '') {
+            return $name;
         }
 
         if ($userName !== null && $userName !== '') {

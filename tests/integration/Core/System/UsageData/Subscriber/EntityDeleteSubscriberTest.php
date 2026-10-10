@@ -156,8 +156,7 @@ class EntityDeleteSubscriberTest extends TestCase
         $userData = [
             'id' => $userId,
             'email' => 'foo@bar.com',
-            'firstName' => 'Firstname',
-            'lastName' => 'Lastname',
+            'name' => 'Firstname Lastname',
             'password' => TestDefaults::HASHED_PASSWORD,
             'username' => 'foobar',
             'localeId' => static::getContainer()->get(Connection::class)->fetchOne('SELECT LOWER(HEX(id)) FROM locale LIMIT 1'),

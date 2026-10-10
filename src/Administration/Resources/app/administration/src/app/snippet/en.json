@@ -777,7 +777,7 @@
           "label": "Customer email address",
           "placeholder": "Enter a distinct email address or use \"*\" as a wildcard character..."
         },
-        "lastNameRule": "Customer surname",
+        "nameRule": "Customer name",
         "isCompanyRule": "Commercial customer",
         "cartTaxDisplay": {
           "label": "Tax display",

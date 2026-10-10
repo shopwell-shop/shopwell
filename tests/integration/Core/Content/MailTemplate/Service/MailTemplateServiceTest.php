@@ -100,7 +100,7 @@ class MailTemplateServiceTest extends TestCase
     {
         $formDataVariable = FlowMailVariables::REVOCATION_REQUEST_FORM_DATA;
         $contentHtml = \sprintf(
-            '<p>{{ %1$s.firstName }} {{ %1$s.lastName }} {{ %1$s.email }} {{ %1$s.contractNumber }} {{ %1$s.submitTime|format_datetime("medium", "short", locale="en-GB") }}</p>',
+            '<p>{{ %1$s.name }} {{ %1$s.email }} {{ %1$s.contractNumber }} {{ %1$s.submitTime|format_datetime("medium", "short", locale="en-GB") }}</p>',
             $formDataVariable
         );
 

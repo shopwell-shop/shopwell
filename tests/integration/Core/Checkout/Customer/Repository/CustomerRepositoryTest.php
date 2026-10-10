@@ -75,8 +75,7 @@ class CustomerRepositoryTest extends TestCase
 
         $salutation = $this->getValidSalutationId();
         $address = [
-            'firstName' => 'not',
-            'lastName' => 'not',
+            'name' => 'not not',
             'city' => 'not',
             'street' => 'not',
             'zipcode' => 'not',
@@ -86,16 +85,20 @@ class CustomerRepositoryTest extends TestCase
 
         $matchTerm = Random::getAlphanumericString(20);
 
+        // The address name is only reachable through an association and is therefore ranked lower
+        // than the customer's own name field.
+        $addressWithMatch = $address;
+        $addressWithMatch['name'] = $matchTerm;
+
         $records = [
             [
                 'id' => $recordA,
                 'salesChannelId' => TestDefaults::SALES_CHANNEL,
-                'defaultShippingAddress' => $address,
+                'defaultShippingAddress' => $addressWithMatch,
                 'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
                 'email' => Uuid::randomHex() . '@example.com',
                 'password' => TestDefaults::HASHED_PASSWORD,
-                'lastName' => 'not',
-                'firstName' => $matchTerm,
+                'name' => 'not',
                 'salutationId' => $salutation,
                 'customerNumber' => 'not',
             ],
@@ -106,8 +109,7 @@ class CustomerRepositoryTest extends TestCase
                 'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
                 'email' => Uuid::randomHex() . '@example.com',
                 'password' => TestDefaults::HASHED_PASSWORD,
-                'lastName' => $matchTerm,
-                'firstName' => 'not',
+                'name' => $matchTerm,
                 'salutationId' => $salutation,
                 'customerNumber' => 'not',
             ],
@@ -118,8 +120,7 @@ class CustomerRepositoryTest extends TestCase
                 'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
                 'email' => Uuid::randomHex() . '@example.com',
                 'password' => TestDefaults::HASHED_PASSWORD,
-                'lastName' => 'not',
-                'firstName' => 'not',
+                'name' => 'not',
                 'salutationId' => $salutation,
                 'customerNumber' => $matchTerm,
             ],
@@ -130,8 +131,7 @@ class CustomerRepositoryTest extends TestCase
                 'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
                 'email' => $matchTerm . '@example.com',
                 'password' => TestDefaults::HASHED_PASSWORD,
-                'lastName' => 'not',
-                'firstName' => 'not',
+                'name' => 'not',
                 'salutationId' => $salutation,
                 'customerNumber' => 'not',
             ],
@@ -152,16 +152,19 @@ class CustomerRepositoryTest extends TestCase
 
         static::assertCount(4, $result->getIds());
 
+        // the customer name is ranked higher than the address name
         static::assertGreaterThan(
             $result->getDataFieldOfId($recordA, '_score'),
             $result->getDataFieldOfId($recordB, '_score')
         );
 
+        // the customer number is ranked higher than the email address
         static::assertGreaterThan(
             $result->getDataFieldOfId($recordD, '_score'),
             $result->getDataFieldOfId($recordC, '_score')
         );
 
+        // the customer number is ranked higher than the address name
         static::assertGreaterThan(
             $result->getDataFieldOfId($recordA, '_score'),
             $result->getDataFieldOfId($recordC, '_score')
@@ -176,8 +179,7 @@ class CustomerRepositoryTest extends TestCase
             'id' => $customerId,
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
-                'firstName' => 'not',
-                'lastName' => 'not',
+                'name' => 'not not',
                 'city' => 'not',
                 'street' => 'not',
                 'zipcode' => 'not',
@@ -187,8 +189,7 @@ class CustomerRepositoryTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => 'test@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
-            'lastName' => 'not',
-            'firstName' => 'test',
+            'name' => 'test',
             'salutationId' => $salutation,
             'customerNumber' => 'not',
             'tags' => [['name' => 'testTag']],
@@ -216,8 +217,7 @@ class CustomerRepositoryTest extends TestCase
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
                 'id' => $addressId,
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
@@ -228,8 +228,7 @@ class CustomerRepositoryTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => 'foo@bar.de',
             'password' => TestDefaults::HASHED_PASSWORD,
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'salutationId' => $this->getValidSalutationId(),
             'customerNumber' => '12345',
         ];

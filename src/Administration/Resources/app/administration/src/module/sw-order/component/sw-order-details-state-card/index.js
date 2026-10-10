@@ -144,7 +144,7 @@ export default {
 
         lastChangeAuthorLabel() {
             if (this.lastStateChange?.user) {
-                return `${this.lastStateChange.user.firstName} ${this.lastStateChange.user.lastName}`;
+                return this.lastStateChange.user.name;
             }
             if (this.lastStateChange?.integration) {
                 const integrationLabel = this.lastStateChange.integration.label;

@@ -72,8 +72,7 @@ class InvoiceRendererTest extends TestCase
             'id' => $shippingAddressId,
             'countryId' => $this->getValidCountryId(),
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Maximilian',
-            'lastName' => 'Musterfrau',
+            'name' => 'Maximilian Musterfrau',
             'street' => 'Ebbinghoff 10a',
             'zipcode' => '48624',
             'city' => 'Schöppingen',
@@ -415,8 +414,7 @@ class InvoiceRendererTest extends TestCase
                 static::assertStringContainsString('Shipping address', $rendered);
                 static::assertStringContainsString($shippingAddress->getStreet(), $rendered);
                 static::assertStringContainsString($shippingAddress->getCity(), $rendered);
-                static::assertStringContainsString($shippingAddress->getFirstName(), $rendered);
-                static::assertStringContainsString($shippingAddress->getLastName(), $rendered);
+                static::assertStringContainsString($shippingAddress->getName(), $rendered);
                 static::assertStringContainsString($shippingAddress->getZipcode(), $rendered);
                 static::assertStringContainsString('123123123', $rendered);
             },
@@ -458,8 +456,7 @@ class InvoiceRendererTest extends TestCase
                 static::assertNotNull($country->getName());
                 static::assertNotNull($shippingAddress->getZipcode());
 
-                static::assertStringNotContainsString($shippingAddress->getFirstName(), $rendered);
-                static::assertStringNotContainsString($shippingAddress->getLastName(), $rendered);
+                static::assertStringNotContainsString($shippingAddress->getName(), $rendered);
             },
         ];
 

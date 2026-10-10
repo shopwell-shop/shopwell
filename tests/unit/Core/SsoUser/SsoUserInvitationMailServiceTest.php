@@ -65,8 +65,7 @@ class SsoUserInvitationMailServiceTest extends TestCase
 
         $userEntity = new UserEntity();
         $userEntity->setUniqueIdentifier(Uuid::randomHex());
-        $userEntity->setFirstName('FirstName');
-        $userEntity->setLastName('LastName');
+        $userEntity->setName('FirstName LastName');
         $userEntity->setUsername('UserName');
         $userRepository = new StaticEntityRepository([
             new UserCollection([$userEntity]),

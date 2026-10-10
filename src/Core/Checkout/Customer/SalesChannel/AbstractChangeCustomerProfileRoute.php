@@ -10,7 +10,7 @@ use Shopwell\Core\System\SalesChannel\SuccessResponse;
 
 /**
  * This route can be used to change profile information about the logged-in user
- * The required fields are "salutationId", "firstName" and "lastName"
+ * The required fields are "salutationId" and "name"
  */
 #[Package('checkout')]
 abstract class AbstractChangeCustomerProfileRoute

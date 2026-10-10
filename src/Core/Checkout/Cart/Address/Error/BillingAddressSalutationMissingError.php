@@ -16,9 +16,8 @@ class BillingAddressSalutationMissingError extends SalutationMissingError
         private readonly CustomerAddressEntity $address
     ) {
         $this->message = \sprintf(
-            'A salutation needs to be defined for the billing address "%s %s, %s %s".',
-            $address->getFirstName(),
-            $address->getLastName(),
+            'A salutation needs to be defined for the billing address "%s, %s %s".',
+            $address->getName(),
             (string) $address->getZipcode(),
             $address->getCity()
         );

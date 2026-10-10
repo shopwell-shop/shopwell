@@ -16,8 +16,7 @@ Filter.register(
         entity: {
             salutation: SalutationType;
             title: string;
-            firstName: string;
-            lastName: string;
+            name: string;
             [key: string]: unknown;
         },
         fallbackSnippet = '',
@@ -35,8 +34,7 @@ Filter.register(
         const params = {
             salutation: !hideSalutation ? entity.salutation.displayName : '',
             title: entity.title || '',
-            firstName: entity.firstName || '',
-            lastName: entity.lastName || '',
+            name: entity.name || '',
         };
 
         const fullName = Object.values(params).join(' ').replace(/\s+/g, ' ').trim();

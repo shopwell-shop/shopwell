@@ -194,7 +194,7 @@ class Migration1573569685DoubleOptInGuestMailTemplate extends MigrationStep
         return '
             <div style="font-family:arial; font-size:12px;">
                 <p>
-                    您好 {{ customer.salutation.displayName }} {{ customer.lastName }}，<br/>
+                    您好 {{ customer.salutation.displayName }} {{ customer.name }}，<br/>
                     <br/>
                     请点击下方链接确认您的邮箱地址：<br/>
                     <br/>
@@ -210,7 +210,7 @@ class Migration1573569685DoubleOptInGuestMailTemplate extends MigrationStep
     private function getPlainTemplateZhCn(): string
     {
         return '
-            您好 {{ customer.salutation.displayName }} {{ customer.lastName }}，
+            您好 {{ customer.salutation.displayName }} {{ customer.name }}，
 
             请点击下方链接确认您的邮箱地址：
 
@@ -226,7 +226,7 @@ class Migration1573569685DoubleOptInGuestMailTemplate extends MigrationStep
         return '
             <div style="font-family:arial; font-size:12px;">
                 <p>
-                    Hello {{ customer.salutation.displayName }} {{ customer.lastName }},<br/>
+                    Hello {{ customer.salutation.displayName }} {{ customer.name }},<br/>
                     <br/>
                     Please confirm your email address via the following link:<br/>
                     <br/>
@@ -242,7 +242,7 @@ class Migration1573569685DoubleOptInGuestMailTemplate extends MigrationStep
     private function getPlainTemplateEn(): string
     {
         return '
-            Hello {{ customer.salutation.displayName }} {{ customer.lastName }},
+            Hello {{ customer.salutation.displayName }} {{ customer.name }},
 
             Please confirm your email address via the following link:
 

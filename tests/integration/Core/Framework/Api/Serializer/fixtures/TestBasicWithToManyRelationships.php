@@ -22,8 +22,7 @@ class TestBasicWithToManyRelationships extends SerializationFixture
     {
         $user = new UserEntity();
         $user->setId(self::USER_ID);
-        $user->setFirstName('Manufacturer');
-        $user->setLastName('');
+        $user->setName('Manufacturer');
         $user->setPassword('password');
         $user->setUsername('user1');
         $user->setActive(true);
@@ -64,8 +63,7 @@ class TestBasicWithToManyRelationships extends SerializationFixture
                     'localeId' => self::LOCALE_ID,
                     'avatarId' => null,
                     'username' => 'user1',
-                    'firstName' => 'Manufacturer',
-                    'lastName' => '',
+                    'name' => 'Manufacturer',
                     'email' => 'user1@shop.de',
                     'active' => true,
                     'customFields' => null,
@@ -302,8 +300,7 @@ class TestBasicWithToManyRelationships extends SerializationFixture
             'localeId' => self::LOCALE_ID,
             'avatarId' => null,
             'username' => 'user1',
-            'firstName' => 'Manufacturer',
-            'lastName' => '',
+            'name' => 'Manufacturer',
             'email' => 'user1@shop.de',
             'active' => true,
             'customFields' => null,
@@ -335,8 +332,7 @@ class TestBasicWithToManyRelationships extends SerializationFixture
                         'localeId' => self::LOCALE_ID,
                         'avatarId' => null,
                         'username' => 'user1',
-                        'firstName' => 'Manufacturer',
-                        'lastName' => '',
+                        'name' => 'Manufacturer',
                         'email' => 'user1@shop.de',
                         'active' => true,
                         'locale' => null,

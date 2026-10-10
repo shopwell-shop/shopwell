@@ -196,8 +196,7 @@ class SetPaymentOrderRouteTest extends TestCase
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
                 'id' => $id1,
-                'firstName' => 'not',
-                'lastName' => 'not',
+                'name' => 'not not',
                 'city' => 'not',
                 'street' => 'not',
                 'zipcode' => 'not',
@@ -208,8 +207,7 @@ class SetPaymentOrderRouteTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => Uuid::randomHex() . '@example.com',
             'password' => 'not12345',
-            'lastName' => 'not',
-            'firstName' => 'First name',
+            'name' => 'First name',
             'salutationId' => $salutationId,
             'customerNumber' => 'not',
         ]], Context::createDefaultContext());

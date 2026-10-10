@@ -116,8 +116,7 @@ class SalesChannelContextRestorerTest extends TestCase
         $ids = new IdsCollection();
         $shippingAddress = [
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'street' => 'Ebbinghoff 10',
             'zipcode' => '48624',
             'city' => 'Schöppingen',
@@ -191,8 +190,7 @@ class SalesChannelContextRestorerTest extends TestCase
             'id' => $ids->get('customer'),
             'salutationId' => $this->getValidSalutationId(),
             'email' => 'test',
-            'firstName' => 'test',
-            'lastName' => 'test',
+            'name' => 'test test',
         ];
 
         if ($customerId !== null) {
@@ -224,8 +222,7 @@ class SalesChannelContextRestorerTest extends TestCase
                     'id' => $ids->create('billing-address'),
                     'countryId' => $this->getValidCountryId(),
                     'salutationId' => $this->getValidSalutationId(),
-                    'firstName' => 'asd',
-                    'lastName' => 'asd',
+                    'name' => 'asd asd',
                     'street' => 'asd',
                     'zipcode' => 'asd',
                     'city' => 'asd',
@@ -234,8 +231,7 @@ class SalesChannelContextRestorerTest extends TestCase
                     'id' => $ids->create('shipping-address'),
                     'countryId' => $this->getValidCountryId(),
                     'salutationId' => $this->getValidSalutationId(),
-                    'firstName' => 'asd',
-                    'lastName' => 'asd',
+                    'name' => 'asd asd',
                     'street' => 'asd',
                     'zipcode' => 'asd',
                     'city' => 'asd',
@@ -334,8 +330,7 @@ class SalesChannelContextRestorerTest extends TestCase
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
                 'id' => $addressId,
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
@@ -346,8 +341,7 @@ class SalesChannelContextRestorerTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => 'foo@bar.de',
             'password' => TestDefaults::HASHED_PASSWORD,
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'salutationId' => $this->getValidSalutationId(),
             'customerNumber' => '12345',
         ];

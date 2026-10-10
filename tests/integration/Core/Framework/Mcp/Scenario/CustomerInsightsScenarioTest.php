@@ -146,8 +146,7 @@ class CustomerInsightsScenarioTest extends McpScenarioTestCase
                 ->add('orderCustomer', [
                     'id' => $orderIds->get('orderCustomer'),
                     'customerId' => $ids->get('cust-us27-' . $i),
-                    'firstName' => 'Avg',
-                    'lastName' => 'Test',
+                    'name' => 'Avg Test',
                     'email' => $email,
                 ])
                 ->addAddress('billing-address')

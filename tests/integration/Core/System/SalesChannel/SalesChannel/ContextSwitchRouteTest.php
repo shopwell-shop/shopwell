@@ -345,8 +345,7 @@ class ContextSwitchRouteTest extends TestCase
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
                 'id' => $addressId,
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'street' => 'Musterstraße 1',
                 'city' => 'Schoöppingen',
                 'zipcode' => '12345',
@@ -357,8 +356,7 @@ class ContextSwitchRouteTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => $email,
             'password' => $password,
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'salutationId' => $this->getValidSalutationId(),
             'customerNumber' => '12345',
         ];
@@ -374,8 +372,7 @@ class ContextSwitchRouteTest extends TestCase
         $data = [
             'id' => $addressId,
             'customerId' => $customerId,
-            'firstName' => 'Test',
-            'lastName' => 'User',
+            'name' => 'Test User',
             'street' => 'Musterstraße 2',
             'city' => 'Cologne',
             'zipcode' => '89563',

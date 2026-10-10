@@ -26,8 +26,7 @@ class CustomerTransformerTest extends TestCase
         static::assertSame([
             'customerId' => $customerId,
             'email' => 'test@example.org',
-            'firstName' => 'Max',
-            'lastName' => 'Smith',
+            'name' => 'Max Smith',
             'salutationId' => null,
             'title' => 'Dr.',
             'vatIds' => null,
@@ -43,8 +42,7 @@ class CustomerTransformerTest extends TestCase
         $customerEntity = new CustomerEntity();
         $customerEntity->setId($id);
         $customerEntity->setEmail('test@example.org');
-        $customerEntity->setFirstName('Max');
-        $customerEntity->setLastName('Smith');
+        $customerEntity->setName('Max Smith');
         $customerEntity->setTitle('Dr.');
         $customerEntity->setCompany('Acme Inc.');
         $customerEntity->setCustomerNumber('ABC123XY');

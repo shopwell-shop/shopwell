@@ -1,4 +1,4 @@
-{% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},
+{% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.name }},
 
 您在 {{ salesChannel.translated.name }}（订单号：{{ order.orderNumber }}）的订单支付失败。
 

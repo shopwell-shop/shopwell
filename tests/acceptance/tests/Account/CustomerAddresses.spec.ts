@@ -87,8 +87,7 @@ test(
         await ShopCustomer.expects(StorefrontAccountAddressDetails.cityInput).toHaveValue(address.city);
 
         const newAddress: Partial<Address> = {
-            firstName: 'Egon',
-            lastName: 'Spengler',
+            name: 'Egon Spengler',
             street: 'Ghostbusters Ave 10',
             zipcode: '54321',
             city: 'Manhattan',
@@ -131,8 +130,7 @@ test(
         const addressId = TestDataService.IdProvider.getIdPair();
         const newAddress: Partial<Address> = {
             id: addressId.uuid,
-            firstName: 'Egon',
-            lastName: 'Spengler',
+            name: 'Egon Spengler',
             street: 'Ghostbusters Ave 10',
             zipcode: '54321',
             city: 'Manhattan',

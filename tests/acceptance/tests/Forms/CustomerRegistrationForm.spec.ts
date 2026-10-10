@@ -127,8 +127,7 @@ test.describe('Customer Registration Form', () => {
 
             const customer = {
                 salutation: 'Mr.',
-                firstName: 'Jeff',
-                lastName: 'Goldblum',
+                name: 'Jeff Goldblum',
                 email: `${IdProvider.getIdPair().uuid}@test.com`,
                 password: 'shopwell',
                 street: addressData.street,

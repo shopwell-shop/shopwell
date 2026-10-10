@@ -78,7 +78,7 @@ class CheckoutControllerTest extends TestCase
 
     private const UUID_LENGTH = 32;
     private const PRODUCT_PRICE = 15.99;
-    private const CUSTOMER_NAME = 'Tester';
+    private const CUSTOMER_NAME = 'Test Tester';
     private const TEST_AFFILIATE_CODE = 'testAffiliateCode';
     private const TEST_CAMPAIGN_CODE = 'testCampaignCode';
     private const SHIPPING_METHOD_BLOCKED_ERROR_CONTENT = 'The shipping method "%s" is blocked for your current shopping cart.';
@@ -126,7 +126,7 @@ class CheckoutControllerTest extends TestCase
         static::assertSame(self::PRODUCT_PRICE, $order->getPrice()->getTotalPrice());
         $orderCustomerEntity = $order->getOrderCustomer();
         static::assertNotNull($orderCustomerEntity);
-        static::assertSame(self::CUSTOMER_NAME, $orderCustomerEntity->getLastName());
+        static::assertSame(self::CUSTOMER_NAME, $orderCustomerEntity->getName());
     }
 
     public function testOrderWithInactivePaymentMethod(): void
@@ -885,8 +885,7 @@ class CheckoutControllerTest extends TestCase
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
                 'id' => $this->customerId,
-                'firstName' => 'Test',
-                'lastName' => self::CUSTOMER_NAME,
+                'name' => self::CUSTOMER_NAME,
                 'city' => 'Schöppingen',
                 'street' => 'Ebbinghoff 10',
                 'zipcode' => '48624',
@@ -897,8 +896,7 @@ class CheckoutControllerTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => Uuid::randomHex() . '@example.com',
             'password' => 'not12345',
-            'firstName' => 'Test',
-            'lastName' => self::CUSTOMER_NAME,
+            'name' => self::CUSTOMER_NAME,
             'salutationId' => $salutationId,
             'customerNumber' => '12345',
         ];

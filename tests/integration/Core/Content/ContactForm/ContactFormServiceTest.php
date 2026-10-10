@@ -50,16 +50,14 @@ class ContactFormServiceTest extends TestCase
         $this->addEventListener(static::getContainer()->get('event_dispatcher'), $validationEventName, $validationListenerClosure);
 
         $systemConfig = static::getContainer()->get(SystemConfigService::class);
-        $systemConfig->set('core.basicInformation.firstNameFieldRequired', true);
-        $systemConfig->set('core.basicInformation.lastNameFieldRequired', true);
+        $systemConfig->set('core.basicInformation.nameFieldRequired', true);
         $systemConfig->set('core.basicInformation.phoneNumberFieldRequired', true);
         $systemConfig->set('core.basicInformation.email', 'doNotReply@example.com');
 
         $dataBag = new DataBag();
         $dataBag->add([
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Firstname',
-            'lastName' => 'Lastname',
+            'name' => 'Firstname Lastname',
             'email' => 'test@shopwell.cn',
             'phone' => '12345/6789',
             'subject' => 'Subject',
@@ -77,46 +75,19 @@ class ContactFormServiceTest extends TestCase
         static::assertStringContainsString('Lorem ipsum dolor sit amet', $html);
     }
 
-    public function testContactFormFirstNameRequiredException(): void
+    public function testContactFormNameRequiredException(): void
     {
         $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
         $context = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
 
         $systemConfig = static::getContainer()->get(SystemConfigService::class);
-        $systemConfig->set('core.basicInformation.firstNameFieldRequired', true);
-        $systemConfig->set('core.basicInformation.lastNameFieldRequired', false);
+        $systemConfig->set('core.basicInformation.nameFieldRequired', true);
         $systemConfig->set('core.basicInformation.phoneNumberFieldRequired', false);
 
         $dataBag = new DataBag();
         $dataBag->add([
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => '',
-            'lastName' => 'Lastname',
-            'email' => 'test@shopwell.cn',
-            'phone' => '12345/6789',
-            'subject' => 'Subject',
-            'comment' => 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.',
-        ]);
-
-        $this->expectException(ConstraintViolationException::class);
-        $this->contactFormRoute->load($dataBag->toRequestDataBag(), $context);
-    }
-
-    public function testContactFormLastNameRequiredException(): void
-    {
-        $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
-        $context = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
-
-        $systemConfig = static::getContainer()->get(SystemConfigService::class);
-        $systemConfig->set('core.basicInformation.firstNameFieldRequired', false);
-        $systemConfig->set('core.basicInformation.lastNameFieldRequired', true);
-        $systemConfig->set('core.basicInformation.phoneNumberFieldRequired', false);
-
-        $dataBag = new DataBag();
-        $dataBag->add([
-            'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Firstname',
-            'lastName' => '',
+            'name' => '',
             'email' => 'test@shopwell.cn',
             'phone' => '12345/6789',
             'subject' => 'Subject',
@@ -133,15 +104,13 @@ class ContactFormServiceTest extends TestCase
         $context = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
 
         $systemConfig = static::getContainer()->get(SystemConfigService::class);
-        $systemConfig->set('core.basicInformation.firstNameFieldRequired', false);
-        $systemConfig->set('core.basicInformation.lastNameFieldRequired', false);
+        $systemConfig->set('core.basicInformation.nameFieldRequired', false);
         $systemConfig->set('core.basicInformation.phoneNumberFieldRequired', true);
 
         $dataBag = new DataBag();
         $dataBag->add([
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Firstname',
-            'lastName' => 'Lastname',
+            'name' => 'Firstname Lastname',
             'email' => 'test@shopwell.cn',
             'phone' => '',
             'subject' => 'Subject',
@@ -161,15 +130,13 @@ class ContactFormServiceTest extends TestCase
         $this->catchEvent(MailSentEvent::class, $mail);
 
         $systemConfig = static::getContainer()->get(SystemConfigService::class);
-        $systemConfig->set('core.basicInformation.firstNameFieldRequired', false);
-        $systemConfig->set('core.basicInformation.lastNameFieldRequired', false);
+        $systemConfig->set('core.basicInformation.nameFieldRequired', false);
         $systemConfig->set('core.basicInformation.phoneNumberFieldRequired', false);
 
         $dataBag = new DataBag();
         $dataBag->add([
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => '',
-            'lastName' => '',
+            'name' => '',
             'email' => 'test@shopwell.cn',
             'phone' => '',
             'subject' => 'Subject',

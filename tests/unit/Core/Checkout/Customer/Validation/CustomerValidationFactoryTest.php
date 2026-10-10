@@ -62,14 +62,14 @@ class CustomerValidationFactoryTest extends TestCase
             $profileDefinition = new DataValidationDefinition();
 
             $notBlankName = $faker->name();
-            $profileDefinition->add($notBlankName, new NotBlank(null, 'VIOLATION::FIRST_NAME_IS_BLANK_ERROR'));
+            $profileDefinition->add($notBlankName, new NotBlank(null, 'VIOLATION::NAME_IS_BLANK_ERROR'));
 
             $emailName = $faker->name();
             $profileDefinition->add($emailName, new Email(null, 'VIOLATION::INVALID_EMAIL_FORMAT_ERROR'));
 
             $expected = new DataValidationDefinition('customer.create');
 
-            $expected->add($notBlankName, new NotBlank(null, 'VIOLATION::FIRST_NAME_IS_BLANK_ERROR'));
+            $expected->add($notBlankName, new NotBlank(null, 'VIOLATION::NAME_IS_BLANK_ERROR'));
             $expected->add($emailName, new Email(null, 'VIOLATION::INVALID_EMAIL_FORMAT_ERROR'));
 
             self::addConstraints($expected);

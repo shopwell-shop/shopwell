@@ -37,15 +37,14 @@ class SsoUserService
     }
 
     /**
-     * @return array{username: string, email: string, firstName: string, lastName: string, password: string, localeId: string}
+     * @return array{username: string, email: string, name: string, password: string, localeId: string}
      */
     private function createInitialUserData(string $email, string $localeId): array
     {
         return [
             'username' => $email,
             'email' => $email,
-            'firstName' => $email,
-            'lastName' => $email,
+            'name' => $email,
             'password' => Random::getAlphanumericString(32),
             'localeId' => $localeId,
         ];

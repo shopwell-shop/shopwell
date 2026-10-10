@@ -44,7 +44,7 @@ class CountryDefinition extends EntityDefinition
 
     final public const DEFAULT_ADDRESS_FORMAT = [
         ['address/company', 'symbol/dash', 'address/department'],
-        ['address/first_name', 'address/last_name'],
+        ['address/name'],
         ['address/street'],
         ['address/zipcode', 'address/city'],
         ['address/country'],

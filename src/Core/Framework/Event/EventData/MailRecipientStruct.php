@@ -15,7 +15,7 @@ class MailRecipientStruct
     private ?string $cc = null;
 
     /**
-     * @param array<string, mixed> $recipients ['email' => 'firstName lastName']
+     * @param array<string, mixed> $recipients ['email' => 'name']
      */
     public function __construct(private array $recipients)
     {

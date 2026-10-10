@@ -57,7 +57,7 @@ class UserListCommandTest extends TestCase
         $userId = Uuid::randomHex();
         $repo = new StaticEntityRepository([
             new UserCollection([
-                $this->createUser('guy@shopwell.cn', $userName, 'Guy', 'Marbello', id: $userId),
+                $this->createUser('guy@shopwell.cn', $userName, 'Guy Marbello', id: $userId),
             ]),
         ]);
 
@@ -113,8 +113,8 @@ class UserListCommandTest extends TestCase
     {
         $repo = new StaticEntityRepository([
             new UserCollection([
-                $this->createUser('guy@shopwell.cn', 'guy', 'Guy', 'Marbello', true),
-                $this->createUser('jen@shopwell.cn', 'jen', 'Jen', 'Dalimil', false, ['Moderator', 'CS']),
+                $this->createUser('guy@shopwell.cn', 'guy', 'Guy Marbello', true),
+                $this->createUser('jen@shopwell.cn', 'jen', 'Jen Dalimil', false, ['Moderator', 'CS']),
             ]),
         ]);
 
@@ -129,8 +129,7 @@ class UserListCommandTest extends TestCase
     private function createUser(
         string $email,
         string $username,
-        string $firstName,
-        string $secondName,
+        string $name,
         bool $isAdmin = false,
         ?array $roles = null,
         ?string $id = null,
@@ -140,8 +139,7 @@ class UserListCommandTest extends TestCase
         $user->setEmail($email);
         $user->setActive(true);
         $user->setUsername($username);
-        $user->setFirstName($firstName);
-        $user->setLastName($secondName);
+        $user->setName($name);
         $user->setAdmin($isAdmin);
         $user->setCreatedAt(new \DateTime());
 

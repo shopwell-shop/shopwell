@@ -14,16 +14,14 @@ const deviceMock = {
 const mockNewsletterRecipient = [
     {
         email: 'test@example.com',
-        firstName: 'Max',
-        lastName: 'Mustermann',
+        name: 'Max Mustermann',
         status: 'direct',
         createdAt: '2020-09-23T11:42:12.104+00:00',
         id: '1',
     },
     {
         email: 'second@recipient.com',
-        firstName: 'Second',
-        lastName: 'Recipient',
+        name: 'Second Recipient',
         status: 'direct',
         id: '2',
         createdAt: '2020-09-23T11:00:12.104+00:00',
@@ -354,15 +352,15 @@ describe('src/module/sw-newsletter-recipient/page/sw-newsletter-recipient-list',
         }
     });
 
-    it('should sort by firstName when clicking the name column', async () => {
+    it('should sort by name when clicking the name column', async () => {
         const wrapper = await createWrapper({ useSearchSpy: true });
         await wrapper.setData({
             disableRouteParams: true,
         });
         await flushPromises();
 
-        expect(wrapper.find('.sw-data-grid__row--0 .sw-data-grid__cell--firstName div').text()).toBe(
-            `${mockNewsletterRecipient[0].firstName} ${mockNewsletterRecipient[0].lastName}`,
+        expect(wrapper.find('.sw-data-grid__row--0 .sw-data-grid__cell--name div').text()).toBe(
+            `${mockNewsletterRecipient[0].name}`,
         );
 
         searchSpy.mockClear();
@@ -375,8 +373,8 @@ describe('src/module/sw-newsletter-recipient/page/sw-newsletter-recipient-list',
         await flushPromises();
 
         expect(searchSpy).toHaveBeenCalledTimes(1);
-        expect(wrapper.find('.sw-data-grid__row--0 .sw-data-grid__cell--firstName div').text()).toBe(
-            `${mockNewsletterRecipient[1].firstName} ${mockNewsletterRecipient[1].lastName}`,
+        expect(wrapper.find('.sw-data-grid__row--0 .sw-data-grid__cell--name div').text()).toBe(
+            `${mockNewsletterRecipient[1].name}`,
         );
     });
 });

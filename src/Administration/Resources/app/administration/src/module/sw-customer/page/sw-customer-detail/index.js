@@ -109,10 +109,7 @@ export default {
                 .addAssociation('requestedGroup')
                 .addAssociation('boundSalesChannel');
 
-            criteria
-                .getAssociation('addresses')
-                .addSorting(Criteria.sort('firstName'), 'ASC', false)
-                .setLimit(criteria.limit);
+            criteria.getAssociation('addresses').addSorting(Criteria.sort('name'), 'ASC', false).setLimit(criteria.limit);
 
             return criteria;
         },
@@ -356,7 +353,7 @@ export default {
                         message: this.$t(
                             'sw-customer.detail.messageSaveSuccess',
                             {
-                                name: `${this.customer.firstName} ${this.customer.lastName}`,
+                                name: this.customer.name,
                             },
                             0,
                         ),

@@ -128,8 +128,7 @@ class CustomerRouteTest extends TestCase
     {
         return [
             'guest' => true,
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'email' => 'teg-reg@example.com',
             'storefrontUrl' => $storefrontUrl,
             'billingAddress' => [
@@ -140,8 +139,7 @@ class CustomerRouteTest extends TestCase
             ],
             'shippingAddress' => [
                 'countryId' => $this->getValidCountryId(),
-                'firstName' => 'Test 2',
-                'lastName' => 'Example 2',
+                'name' => 'Test 2 Example 2',
                 'street' => 'Examplestreet 111',
                 'zipcode' => '12341',
                 'city' => 'Berlin',

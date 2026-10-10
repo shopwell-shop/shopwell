@@ -42,22 +42,20 @@
       "tooltipImitateCustomerNoDomain": "客户的销售渠道没有域名。",
       "tooltipImitateCustomerNoStorefront": "客户的销售渠道不是店面类型。",
       "placeholderTitle": "头衔",
-      "placeholderFirstName": "名字",
-      "placeholderLastName": "姓氏",
       "placeholderCompany": "公司",
       "placeholderEmail": "邮箱地址",
       "placeholderNewPassword": "输入新密码 ...",
       "placeholderNewPasswordConfirm": "再次输入新密码 ...",
       "labelSalutation": "称谓",
       "labelTitle": "头衔",
-      "labelFirstName": "名字",
-      "labelLastName": "姓氏",
       "labelCompany": "公司",
       "labelEmail": "邮箱地址",
       "labelTags": "标签",
       "labelGuest": "访客下单",
       "labelVatId": "增值税号",
-      "placeholderVatId": "输入增值税号 ..."
+      "placeholderVatId": "输入增值税号 ...",
+      "labelName": "姓名",
+      "placeholderName": "输入姓名 ..."
     },
     "list": {
       "textCustomers": "客户",
@@ -65,13 +63,11 @@
       "buttonAddCustomer": "新建客户",
       "columnCompany": "公司",
       "columnCustomerNumber": "客户编号",
-      "columnName": "名称",
+      "columnName": "姓名",
       "columnGroup": "客户组",
       "columnGroupRequested": "已申请：",
       "columnNameGuestLabel": "访客下单",
       "labelCreatedByAdmin": "由管理员创建",
-      "columnFirstName": "名字",
-      "columnLastName": "姓氏",
       "columnStreet": "街道",
       "columnZip": "邮编",
       "columnCity": "城市",
@@ -95,8 +91,6 @@
     "baseForm": {
       "labelSalutation": "称谓",
       "labelTitle": "头衔",
-      "labelFirstName": "名字",
-      "labelLastName": "姓氏",
       "labelEmail": "邮箱地址",
       "labelPhoneNumber": "电话号码",
       "labelCompany": "公司",
@@ -110,8 +104,6 @@
       "helpTextPassword": "保存客户后，密码只能由客户本人修改。",
       "placeholderSalutation": "选择称谓…",
       "placeholderTitle": "输入头衔 ...",
-      "placeholderFirstName": "输入名字 ...",
-      "placeholderLastName": "输入姓氏 ...",
       "placeholderEmail": "输入邮箱地址 ...",
       "placeholderCustomerNumber": "输入客户编号 ...",
       "placeholderCustomerGroup": "选择客户组...",
@@ -120,7 +112,9 @@
       "labelLanguage": "语言",
       "placeholderLanguage": "选择语言...",
       "labelTags": "标签",
-      "placeholderTags": "选择标签..."
+      "placeholderTags": "选择标签...",
+      "labelName": "姓名",
+      "placeholderName": "请输入姓名 ..."
     },
     "baseInfo": {
       "contactEmail": "邮箱地址",
@@ -173,14 +167,13 @@
       "columnDefaultShippingAddress": "默认收货地址",
       "columnDefaultBillingAddress": "默认账单地址",
       "columnCompany": "公司",
-      "columnFirstName": "名字",
-      "columnLastName": "姓氏",
       "columnStreet": "街道",
       "columnZipCode": "邮编",
       "columnCity": "城市",
       "columnActions": "操作",
       "contextMenuDefaultShippingAddress": "设为默认收货地址",
-      "contextMenuDefaultBillingAddress": "设为默认账单地址"
+      "contextMenuDefaultBillingAddress": "设为默认账单地址",
+      "columnName": "姓名"
     },
     "detailOrder": {
       "searchbarPlaceholder": "搜索订单",
@@ -196,8 +189,8 @@
       "ordersTitle": "订单"
     },
     "imitateCustomerModal": {
-      "modalTitle": "以 {firstname} {lastname} 身份登录",
-      "modalDescription": "选择你想以 {firstname} {lastname} 身份登录的销售渠道。",
+      "modalTitle": "以 {name} 身份登录",
+      "modalDescription": "选择你想以 {name} 身份登录的销售渠道。",
       "modalInfo": "完成工作后请记得{logout}。",
       "modalInfoLogout": "退出登录",
       "modalInfoNoDomains": "未找到活动域名。请检查销售渠道设置。"
@@ -221,8 +214,6 @@
       "labelDepartment": "部门",
       "labelSalutation": "称谓",
       "labelTitle": "头衔",
-      "labelFirstName": "名字",
-      "labelLastName": "姓氏",
       "labelZipcode": "邮编",
       "labelStreet": "街道",
       "labelCity": "城市",
@@ -237,8 +228,6 @@
       "placeholderDepartment": "输入部门 ...",
       "placeholderSalutation": "选择称呼 ...",
       "placeholderTitle": "输入头衔…",
-      "placeholderFirstName": "输入名字…",
-      "placeholderLastName": "输入姓氏…",
       "placeholderZipcode": "输入邮政编码…",
       "placeholderStreet": "输入街道…",
       "placeholderCity": "输入城市…",
@@ -247,7 +236,9 @@
       "placeholderAdditionalAddressLine1": "输入地址第一行…",
       "placeholderAdditionalAddressLine2": "输入地址第二行…",
       "placeholderPhoneNumber": "输入电话号码…",
-      "placeholderVatId": "输入增值税号 ..."
+      "placeholderVatId": "输入增值税号 ...",
+      "labelName": "姓名",
+      "placeholderName": "输入姓名 ..."
     },
     "detail": {
       "tabGeneral": "通用",

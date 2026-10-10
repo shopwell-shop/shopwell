@@ -315,11 +315,11 @@ class ProductFeatureBuilderTest extends TestCase
             ['zh-CN' => '材质'],
             content: self::FIRST_ENTITY_ID,
             type: CustomFieldTypes::SELECT,
-            config: ['entity' => 'customer', 'labelProperty' => ['firstName', 'lastName']],
-            referencedEntities: [self::FIRST_ENTITY_ID => ['firstName' => 'Max', 'lastName' => 'Mustermann']]
+            config: ['entity' => 'customer', 'labelProperty' => ['name', 'customerNumber']],
+            referencedEntities: [self::FIRST_ENTITY_ID => ['name' => 'Max Mustermann', 'customerNumber' => '1337']]
         );
 
-        static::assertSame(['Max Mustermann'], $features[0]['value']['display']);
+        static::assertSame(['Max Mustermann 1337'], $features[0]['value']['display']);
     }
 
     public function testEntityCustomFieldIsSkippedWhenTheEntityIsUnknown(): void

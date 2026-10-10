@@ -25,8 +25,7 @@
                                     "email",
                                     "subject",
                                     "comment",
-                                    "firstName",
-                                    "lastName",
+                                    "name",
                                     "phone"
                                 ],
                                 "properties": {
@@ -35,12 +34,8 @@
                                         "type": "string",
                                         "pattern": "^[0-9a-f]{32}$"
                                     },
-                                    "firstName": {
-                                        "description": "First name. Required on a default installation, can be turned off with the `core.basicInformation.firstNameFieldRequired` setting.",
-                                        "type": "string"
-                                    },
-                                    "lastName": {
-                                        "description": "Last name. Required on a default installation, can be turned off with the `core.basicInformation.lastNameFieldRequired` setting.",
+                                    "name": {
+                                        "description": "Name. Required on a default installation, can be turned off with the `core.basicInformation.nameFieldRequired` setting.",
                                         "type": "string"
                                     },
                                     "email": {

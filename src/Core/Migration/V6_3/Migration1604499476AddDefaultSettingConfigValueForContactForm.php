@@ -15,8 +15,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 class Migration1604499476AddDefaultSettingConfigValueForContactForm extends MigrationStep
 {
     private const CONFIG_KEYS = [
-        'core.basicInformation.firstNameFieldRequired',
-        'core.basicInformation.lastNameFieldRequired',
+        'core.basicInformation.nameFieldRequired',
         'core.basicInformation.phoneNumberFieldRequired',
     ];
 

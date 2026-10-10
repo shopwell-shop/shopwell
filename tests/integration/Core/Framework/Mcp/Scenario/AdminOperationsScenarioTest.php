@@ -37,8 +37,7 @@ class AdminOperationsScenarioTest extends McpScenarioTestCase
             ->add('orderCustomer', [
                 'id' => $ids->get('orderCustomer'),
                 'customerId' => $ids->get('US5-cust'),
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'email' => 'mcp-us5@example.com',
             ])
             ->addAddress('billing-address')
@@ -54,8 +53,7 @@ class AdminOperationsScenarioTest extends McpScenarioTestCase
                 'shippingDateEarliest' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 'shippingDateLatest' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 'shippingOrderAddress' => [
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                     'city' => 'Berlin',
                     'street' => 'Teststr. 1',
                     'zipcode' => '10115',
@@ -112,8 +110,7 @@ class AdminOperationsScenarioTest extends McpScenarioTestCase
             ->add('orderCustomer', [
                 'id' => $ids->get('orderCustomer'),
                 'customerId' => $ids->get('US6-cust'),
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'email' => 'mcp-us6@example.com',
             ])
             ->addAddress('billing-address')
@@ -129,8 +126,7 @@ class AdminOperationsScenarioTest extends McpScenarioTestCase
                 'shippingDateEarliest' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 'shippingDateLatest' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                 'shippingOrderAddress' => [
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                     'city' => 'Berlin',
                     'street' => 'Teststr. 1',
                     'zipcode' => '10115',

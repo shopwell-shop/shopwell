@@ -33,7 +33,7 @@ Following personal information will be processed on Shopwell's servers:
             <identifier>myCustomCondition</identifier>
             <name>My custom rule condition</name>
             <group>customer</group>
-            <script>customer-first-name-rule-script.twig</script>
+            <script>customer-name-rule-script.twig</script>
             <constraints>
                 <single-select name="operator">
                     <placeholder>Choose an operator...</placeholder>
@@ -50,9 +50,9 @@ Following personal information will be processed on Shopwell's servers:
                     </options>
                     <required>true</required>
                 </single-select>
-                <text name="firstName">
-                    <placeholder>Enter first name</placeholder>
-                    <placeholder lang="zh-CN">请输入名字</placeholder>
+                <text name="name">
+                    <placeholder>Enter name</placeholder>
+                    <placeholder lang="zh-CN">请输入姓名</placeholder>
                     <required>true</required>
                 </text>
             </constraints>

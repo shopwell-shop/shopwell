@@ -28,8 +28,7 @@ class AdminConfigurationServiceTest extends TestCase
                 'user',
                 static::callback(static function (array $data) use ($localeId): bool {
                     static::assertSame('admin', $data['username']);
-                    static::assertSame('first', $data['first_name']);
-                    static::assertSame('last', $data['last_name']);
+                    static::assertSame('first last', $data['name']);
                     static::assertSame('test@test.com', $data['email']);
                     static::assertSame($localeId, $data['locale_id']);
                     static::assertTrue($data['admin']);
@@ -49,8 +48,7 @@ class AdminConfigurationServiceTest extends TestCase
         $user = [
             'username' => 'admin',
             'password' => 'shopwell',
-            'firstName' => 'first',
-            'lastName' => 'last',
+            'name' => 'first last',
             'email' => 'test@test.com',
         ];
 

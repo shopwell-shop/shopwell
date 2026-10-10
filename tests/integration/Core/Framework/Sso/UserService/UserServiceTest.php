@@ -92,8 +92,7 @@ class UserServiceTest extends TestCase
         $user = $this->getContainer()->get('user.repository')->search(new Criteria([$externalAuthUser->userId]), Context::createDefaultContext())->getEntities()->first();
         static::assertInstanceOf(UserEntity::class, $user);
         static::assertTrue($user->getActive());
-        static::assertSame('given_name', $user->getFirstName());
-        static::assertSame('family_name', $user->getLastName());
+        static::assertSame('given_name family_name', $user->getName());
         static::assertSame('preferred_username', $user->getUsername());
     }
 

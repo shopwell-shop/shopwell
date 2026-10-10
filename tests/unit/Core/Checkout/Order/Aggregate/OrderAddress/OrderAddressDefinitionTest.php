@@ -90,9 +90,9 @@ class OrderAddressDefinitionTest extends TestCase
         static::assertTrue($field->is(Required::class));
     }
 
-    public function testFirstNameField(): void
+    public function testNameField(): void
     {
-        $field = $this->definition->getFields()->get('firstName');
+        $field = $this->definition->getFields()->get('name');
         static::assertInstanceOf(StringField::class, $field);
         static::assertTrue($field->is(Required::class));
     }

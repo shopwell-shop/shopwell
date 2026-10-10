@@ -182,20 +182,11 @@
 
             <div class="form-group form-group--50">
                 <p>
-                    <label for="config_admin_firstName">{{ "shopwell.installer.configuration_admin_firstName"|trans }}</label>
+                    <label for="config_admin_name">{{ "shopwell.installer.configuration_admin_name"|trans }}</label>
                     <input type="text"
-                           value="{{ parameters.config_admin_firstName ?? '' }}"
-                           name="config_admin_firstName"
-                           id="config_admin_firstName"
-                           required="required"/>
-                </p>
-
-                <p>
-                    <label for="config_admin_lastName">{{ "shopwell.installer.configuration_admin_lastName"|trans }}</label>
-                    <input type="text"
-                           value="{{ parameters.config_admin_lastName ?? '' }}"
-                           name="config_admin_lastName"
-                           id="config_admin_lastName"
+                           value="{{ parameters.config_admin_name ?? '' }}"
+                           name="config_admin_name"
+                           id="config_admin_name"
                            required="required"/>
                 </p>
             </div>

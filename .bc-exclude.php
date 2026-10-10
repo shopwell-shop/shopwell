@@ -136,5 +136,16 @@ return [
         // Not released yet, so safe to be removed again
         preg_quote('REMOVED: Class Shopwell\Core\System\SystemConfig\Service\SystemConfigDefinitionService has been deleted', '/'),
         preg_quote('REMOVED: Class Shopwell\Core\Checkout\Document\Extension\DocumentRouteExtension has been deleted', '/'),
+
+        // The first and last name of customers, customer addresses, order customers, order
+        // addresses, users and newsletter recipients are merged into a single `name` attribute.
+        // The removed properties, accessors, constants, the LastNameRule and the split contact
+        // form settings are intentional. Migration for extensions is documented in
+        // UPGRADE-6.7.md and RELEASE_INFO-6.7.md.
+        preg_quote('REMOVED: Class Shopwell\Core\Checkout\Customer\Rule\LastNameRule has been deleted', '/'),
+        'REMOVED: Constant Shopwell\\\\Core\\\\.*::(MAX_LENGTH_FIRST_NAME|MAX_LENGTH_LAST_NAME|FIRST_NAME_FIELD|LAST_NAME_FIELD) was removed',
+        'REMOVED: Property Shopwell\\\\Core\\\\.*(CustomerEntity|CustomerAddressEntity|OrderCustomerEntity|OrderAddressEntity|UserEntity|NewsletterRecipientEntity|ShopContactFormSettings)#\$(firstName|lastName|firstNameFieldRequired|lastNameFieldRequired) was removed',
+        'REMOVED: Method Shopwell\\\\Core\\\\.*(CustomerEntity|CustomerAddressEntity|OrderCustomerEntity|OrderAddressEntity|UserEntity|NewsletterRecipientEntity)#(get|set)(FirstName|LastName)\(\) was removed',
+        'CHANGED: Value of constant Shopwell\\\\Core\\\\System\\\\Country\\\\CountryDefinition::DEFAULT_ADDRESS_FORMAT changed',
     ],
 ];

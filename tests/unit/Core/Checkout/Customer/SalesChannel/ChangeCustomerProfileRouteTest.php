@@ -94,8 +94,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $data = new RequestDataBag([
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'company' => 'Test Company',
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'salutationId' => Uuid::randomHex(),
             'vatIds' => ['de 123456789'],
         ]);

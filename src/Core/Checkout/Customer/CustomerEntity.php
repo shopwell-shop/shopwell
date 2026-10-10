@@ -47,9 +47,7 @@ class CustomerEntity extends Entity implements \Stringable
 
     protected ?string $salutationId = null;
 
-    protected string $firstName;
-
-    protected string $lastName;
+    protected string $name;
 
     protected ?string $company = null;
 
@@ -175,7 +173,7 @@ class CustomerEntity extends Entity implements \Stringable
 
     public function __toString(): string
     {
-        return $this->getFirstName() . ' ' . $this->getLastName();
+        return $this->getName();
     }
 
     public function getGroupId(): string
@@ -258,24 +256,14 @@ class CustomerEntity extends Entity implements \Stringable
         $this->salutationId = $salutationId;
     }
 
-    public function getFirstName(): string
+    public function getName(): string
     {
-        return $this->firstName;
+        return $this->name;
     }
 
-    public function setFirstName(string $firstName): void
+    public function setName(string $name): void
     {
-        $this->firstName = $firstName;
-    }
-
-    public function getLastName(): string
-    {
-        return $this->lastName;
-    }
-
-    public function setLastName(string $lastName): void
-    {
-        $this->lastName = $lastName;
+        $this->name = $name;
     }
 
     public function getCompany(): ?string
