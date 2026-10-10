@@ -100,7 +100,7 @@ class CustomerNumberRangeSubscriberTest extends TestCase
         );
         $subscriber->onAfterImport($this->createBatchEvent($context, new EntityWriteResult(
             'customer-id',
-            ['firstName' => 'Updated'],
+            ['name' => 'Updated'],
             CustomerDefinition::ENTITY_NAME,
             EntityWriteResult::OPERATION_UPDATE,
         )));

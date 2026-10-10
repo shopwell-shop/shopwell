@@ -39,8 +39,8 @@ describe('src/core/data/error-resolver.data', () => {
 
         it('should handles write errors and adds system errors', () => {
             const errors = [
-                { source: { pointer: '/0/firstName' }, code: 'CODE1' },
-                { source: { pointer: '/0/lastName' }, code: 'CODE2' },
+                { source: { pointer: '/0/name' }, code: 'CODE1' },
+                { source: { pointer: '/0/email' }, code: 'CODE2' },
                 {
                     source: { pointer: '/0/translations/123123' },
                     code: 'CODE2',
@@ -57,8 +57,8 @@ describe('src/core/data/error-resolver.data', () => {
                     entity: entityFactory.create('customer'),
                     changes: [
                         {
-                            firstName: 'a',
-                            lastName: 'b',
+                            name: 'a b',
+                            email: 'a b',
                         },
                     ],
                 },
@@ -66,8 +66,8 @@ describe('src/core/data/error-resolver.data', () => {
                     entity: entityFactory.create('customer'),
                     changes: [
                         {
-                            firstName: 'c',
-                            lastName: 'd',
+                            name: 'c d',
+                            email: 'c d',
                         },
                     ],
                 },
@@ -91,14 +91,14 @@ describe('src/core/data/error-resolver.data', () => {
         });
 
         it('should convert to ShopwellError', () => {
-            const errors = [{ source: { pointer: '/0/firstName' }, code: 'CODE1' }];
+            const errors = [{ source: { pointer: '/0/name' }, code: 'CODE1' }];
 
             const changeset = [
                 {
                     entity: entityFactory.create('customer'),
                     changes: [
                         {
-                            firstName: 'a',
+                            name: 'a',
                         },
                     ],
                 },
@@ -107,7 +107,7 @@ describe('src/core/data/error-resolver.data', () => {
             errorResolver.reduceErrorsByWriteIndex = jest.fn().mockReturnValue({
                 system: [],
                 0: {
-                    firstName: {
+                    name: {
                         code: 'CODE1',
                     },
                 },

@@ -572,8 +572,7 @@ class OrderConverterTest extends TestCase
         $address->setUniqueIdentifier('order-address-id');
         $address->setHash('order-address-hash');
         $address->setCountryId('country-id');
-        $address->setFirstName('first-name');
-        $address->setLastName('last-name');
+        $address->setName('first-name last-name');
         $address->setStreet('street');
         $address->setCity('city');
 
@@ -1022,8 +1021,7 @@ class OrderConverterTest extends TestCase
         $customer->setId('customer-id');
         $customer->setEmail('customer-email');
         $customer->setSalutationId('customer-salutation-id');
-        $customer->setFirstName('customer-first-name');
-        $customer->setLastName('customer-last-name');
+        $customer->setName('customer-first-name customer-last-name');
         $customer->setCustomerNumber('customer-number');
         $customer->setGroupId('customer-group-id');
         $customer->setAddresses(new CustomerAddressCollection([$this->getCustomerAddress()]));
@@ -1040,8 +1038,7 @@ class OrderConverterTest extends TestCase
         $address = new CustomerAddressEntity();
         $address->setId('billing-address-id');
         $address->setSalutationId('billing-address-salutation-id');
-        $address->setFirstName('billing-address-first-name');
-        $address->setLastName('billing-address-last-name');
+        $address->setName('billing-address-first-name billing-address-last-name');
         $address->setStreet('billing-address-street');
         $address->setZipcode('billing-address-zipcode');
         $address->setCity('billing-address-city');
@@ -1058,8 +1055,7 @@ class OrderConverterTest extends TestCase
         $customer->setCustomerId('customer-id');
         $customer->setEmail('order-customer-email');
         $customer->setSalutationId('order-customer-salutation-id');
-        $customer->setFirstName('order-customer-first-name');
-        $customer->setLastName('order-customer-last-name');
+        $customer->setName('order-customer-first-name order-customer-last-name');
         $customer->setCustomerNumber('order-customer-number');
 
         return $customer;
@@ -1089,8 +1085,7 @@ class OrderConverterTest extends TestCase
         $address->setId('order-address-id');
         $address->setVersionId('order-address-version-id');
         $address->setSalutationId('order-address-salutation-id');
-        $address->setFirstName('order-address-first-name');
-        $address->setLastName('order-address-last-name');
+        $address->setName('order-address-first-name order-address-last-name');
         $address->setStreet('order-address-street');
         $address->setZipcode('order-address-zipcode');
         $address->setCity('order-address-city');

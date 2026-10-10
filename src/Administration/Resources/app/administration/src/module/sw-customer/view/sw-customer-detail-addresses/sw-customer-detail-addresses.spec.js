@@ -13,8 +13,7 @@ async function createWrapper() {
         id: 'address-on-later-page',
         customerId: '1',
         countryId: 'country-id',
-        lastName: 'Mustermann',
-        firstName: 'Max',
+        name: 'Max Mustermann',
         city: 'Schoeppingen',
         street: 'Ebbinghoff 10',
         zipcode: '48624',
@@ -66,7 +65,7 @@ async function createWrapper() {
                     <table>
                         <tbody>
                             <td v-for="item in collection">
-                                <slot name="column-lastName" v-bind="{ item }"></slot>
+                                <slot name="column-name" v-bind="{ item }"></slot>
                                 <slot name="actions" v-bind="{ item }"></slot>
                             </td>
                         </tbody>
@@ -108,8 +107,7 @@ async function createWrapper() {
                                     if (id === 'clone-address-id') {
                                         return Promise.resolve({
                                             id: 'clone-address-id',
-                                            lastName: 'Thu',
-                                            firstName: 'Vo',
+                                            name: 'Vo Thu',
                                             city: 'Berlin',
                                             street: 'Legiendamm',
                                             zipcode: '550000',
@@ -131,8 +129,7 @@ async function createWrapper() {
                     addresses: [
                         {
                             id: '1',
-                            lastName: 'Nguyen',
-                            firstName: 'Quynh',
+                            name: 'Quynh Nguyen',
                             city: 'Berlin',
                             street: 'Legiendamm',
                             zipcode: '550000',
@@ -151,22 +148,22 @@ describe('module/sw-customer/view/sw-customer-detail-addresses.spec.js', () => {
         wrapper = await createWrapper();
     });
 
-    it('should show text on last name column  when edit mode is off', async () => {
-        const lastNameCell = wrapper.find('td');
+    it('should show text on name column when edit mode is off', async () => {
+        const nameCell = wrapper.find('td');
 
-        expect(lastNameCell.find('a').exists()).toBeFalsy();
-        expect(lastNameCell.text()).toContain('Nguyen');
+        expect(nameCell.find('a').exists()).toBeFalsy();
+        expect(nameCell.text()).toContain('Quynh Nguyen');
     });
 
-    it('should show link on last name column when edit mode is on', async () => {
+    it('should show link on name column when edit mode is on', async () => {
         await wrapper.setProps({
             customerEditMode: true,
         });
 
-        const lastNameCell = wrapper.find('td');
+        const nameCell = wrapper.find('td');
 
-        expect(lastNameCell.find('a').exists()).toBeTruthy();
-        expect(lastNameCell.find('a').text()).toContain('Nguyen');
+        expect(nameCell.find('a').exists()).toBeTruthy();
+        expect(nameCell.find('a').text()).toContain('Quynh Nguyen');
     });
 
     it('should set not_specified salutation key when creating a new address', async () => {
@@ -193,8 +190,7 @@ describe('module/sw-customer/view/sw-customer-detail-addresses.spec.js', () => {
         await wrapper.setData({
             currentAddress: {
                 id: '1',
-                lastName: 'Wiegand',
-                firstName: 'Daisha',
+                name: 'Daisha Wiegand',
                 city: 'Lake Waldo',
                 customerId: '1',
             },
@@ -216,8 +212,7 @@ describe('module/sw-customer/view/sw-customer-detail-addresses.spec.js', () => {
         await wrapper.setData({
             currentAddress: {
                 id: '1',
-                lastName: 'Wiegand',
-                firstName: 'Daisha',
+                name: 'Daisha Wiegand',
                 city: 'Lake Waldo',
                 customerId: '1',
             },
@@ -240,8 +235,7 @@ describe('module/sw-customer/view/sw-customer-detail-addresses.spec.js', () => {
         await wrapper.setData({
             currentAddress: {
                 id: '1',
-                lastName: 'Wiegand',
-                firstName: 'Daisha',
+                name: 'Daisha Wiegand',
                 city: 'Lake Waldo',
                 customerId: '1',
             },
@@ -288,8 +282,7 @@ describe('module/sw-customer/view/sw-customer-detail-addresses.spec.js', () => {
         await wrapper.setData({
             currentAddress: {
                 id: '3',
-                lastName: 'Wiegand',
-                firstName: 'Daisha',
+                name: 'Daisha Wiegand',
                 city: 'Lake Waldo',
                 customerId: '1',
             },
@@ -343,8 +336,7 @@ describe('module/sw-customer/view/sw-customer-detail-addresses.spec.js', () => {
         expect(wrapper.vm.currentAddress).toEqual(
             expect.objectContaining({
                 id: 'address-on-later-page',
-                firstName: 'Max',
-                lastName: 'Mustermann',
+                name: 'Max Mustermann',
                 street: 'Ebbinghoff 10',
             }),
         );

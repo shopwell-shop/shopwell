@@ -31,8 +31,7 @@ class CustomerNewsletterSalesChannelsUpdaterTest extends TestCase
         $this->connection->method('fetchAllAssociative')->willReturn([
             [
                 'email' => 'y.tran@shopwell.cn',
-                'last_name' => 'Tran',
-                'first_name' => 'Y',
+                'name' => 'Y Tran',
                 'newsletter_sales_channel_ids' => null,
             ],
         ]);
@@ -50,8 +49,7 @@ class CustomerNewsletterSalesChannelsUpdaterTest extends TestCase
         $this->connection->method('fetchAllAssociative')->willReturn([
             [
                 'email' => 'y.tran@shopwell.cn',
-                'last_name' => 'Tran',
-                'first_name' => 'Y',
+                'name' => 'Y Tran',
                 'newsletter_sales_channel_ids' => $newsletterIds,
             ],
         ]);
@@ -75,13 +73,12 @@ class CustomerNewsletterSalesChannelsUpdaterTest extends TestCase
                 return 1;
             }
 
-            static::assertSame('UPDATE newsletter_recipient SET email = (:email), first_name = (:firstName), last_name = (:lastName) WHERE id IN (:ids)', $sql);
+            static::assertSame('UPDATE newsletter_recipient SET email = (:email), name = (:name) WHERE id IN (:ids)', $sql);
 
             static::assertSame([
                 'ids' => Uuid::fromHexToBytesList($ids),
                 'email' => 'y.tran@shopwell.cn',
-                'firstName' => 'Y',
-                'lastName' => 'Tran',
+                'name' => 'Y Tran',
             ], $params);
 
             return 1;
@@ -98,8 +95,7 @@ class CustomerNewsletterSalesChannelsUpdaterTest extends TestCase
         $this->connection->method('fetchAllAssociative')->willReturn([
             [
                 'email' => 'y.tran@shopwell.cn',
-                'last_name' => 'Tran',
-                'first_name' => 'Y',
+                'name' => 'Y Tran',
                 'newsletter_sales_channel_ids' => $newsletterIds,
             ],
         ]);
@@ -122,13 +118,12 @@ class CustomerNewsletterSalesChannelsUpdaterTest extends TestCase
                 return 1;
             }
 
-            static::assertSame('UPDATE newsletter_recipient SET email = (:email), first_name = (:firstName), last_name = (:lastName) WHERE id IN (:ids)', $sql);
+            static::assertSame('UPDATE newsletter_recipient SET email = (:email), name = (:name) WHERE id IN (:ids)', $sql);
 
             static::assertSame([
                 'ids' => Uuid::fromHexToBytesList($ids),
                 'email' => 'y.tran@shopwell.cn',
-                'firstName' => 'Y',
-                'lastName' => 'Tran',
+                'name' => 'Y Tran',
             ], $params);
 
             return 1;

@@ -209,13 +209,13 @@ class SendMailActionTest extends TestCase
             case 'admin':
                 // SendMailAction sends to ALL admin users, not just one
                 $admins = static::getContainer()->get(Connection::class)->fetchAllAssociative(
-                    'SELECT `first_name`, `last_name`, `email` FROM `user` WHERE `admin` = 1'
+                    'SELECT `name`, `email` FROM `user` WHERE `admin` = 1'
                 );
                 static::assertNotEmpty($admins, 'Expected at least one admin user to exist');
 
                 $expectedRecipients = [];
                 foreach ($admins as $admin) {
-                    $expectedRecipients[$admin['email']] = $admin['first_name'] . ' ' . $admin['last_name'];
+                    $expectedRecipients[$admin['email']] = $admin['name'];
                 }
 
                 static::assertSame($expectedRecipients, $mailService->data['recipients']);
@@ -231,7 +231,7 @@ class SendMailActionTest extends TestCase
                 static::assertNotNull($email);
                 static::assertSame(
                     $mailService->data['recipients'],
-                    [$email => $order->getOrderCustomer()?->getFirstName() . ' ' . $order->getOrderCustomer()?->getLastName()]
+                    [$email => $order->getOrderCustomer()?->getName()]
                 );
         }
 
@@ -339,7 +339,7 @@ class SendMailActionTest extends TestCase
     }
 
     #[DataProvider('sendMailContactFormProvider')]
-    public function testSendContactFormMail(bool $hasEmail, bool $hasFname, bool $hasLname): void
+    public function testSendContactFormMail(bool $hasEmail, bool $hasName): void
     {
         $criteria = new Criteria();
         $criteria->setLimit(1);
@@ -369,11 +369,8 @@ class SendMailActionTest extends TestCase
         if ($hasEmail) {
             $data->set('email', 'test@example.com');
         }
-        if ($hasFname) {
-            $data->set('firstName', 'Shopwell');
-        }
-        if ($hasLname) {
-            $data->set('lastName', 'AG');
+        if ($hasName) {
+            $data->set('name', 'Shopwell AG');
         }
         $event = new ContactFormEvent($context, TestDefaults::SALES_CHANNEL, new MailRecipientStruct(['test2@example.com' => 'Shopwell ag 2']), $data);
 
@@ -406,7 +403,7 @@ class SendMailActionTest extends TestCase
             static::assertArrayHasKey('recipients', $mailService->data);
             static::assertIsObject($mailFilterEvent);
             static::assertSame(1, $mailService->calls);
-            static::assertSame([$data->get('email') => trim($data->get('firstName') . ' ' . $data->get('lastName'))], $mailService->data['recipients']);
+            static::assertSame([$data->get('email') => trim($data->get('name') ?? '')], $mailService->data['recipients']);
         } else {
             static::assertIsNotObject($mailFilterEvent);
             static::assertSame(0, $mailService->calls);
@@ -491,8 +488,7 @@ class SendMailActionTest extends TestCase
         $mailRecipientStruct = new MailRecipientStruct(['' => '']);
         $context = Generator::generateSalesChannelContext();
         $dataBag = new DataBag([
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'email' => $email,
         ]);
         $event = new RevocationRequestEvent(
@@ -533,10 +529,9 @@ class SendMailActionTest extends TestCase
      */
     public static function sendMailContactFormProvider(): iterable
     {
-        yield 'Test send mail has data valid' => [true, true, true];
-        yield 'Test send mail contact form without email' => [false, true, true];
-        yield 'Test send mail contact form without firstName' => [true, false, true];
-        yield 'Test send mail contact form without lastName' => [true, false, true];
+        yield 'Test send mail has data valid' => [true, true];
+        yield 'Test send mail contact form without email' => [false, true];
+        yield 'Test send mail contact form without name' => [true, false];
     }
 
     public function testSendMailWithConfigIsNull(): void
@@ -956,8 +951,7 @@ class SendMailActionTest extends TestCase
             'id' => $customerId,
             'number' => '1337',
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'customerNumber' => '1337',
             'email' => Uuid::randomHex() . '@example.com',
             'password' => 'shopwell',
@@ -971,8 +965,7 @@ class SendMailActionTest extends TestCase
                     'customerId' => $customerId,
                     'countryId' => $this->getValidCountryId(),
                     'salutationId' => $this->getValidSalutationId(),
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
                     'city' => 'Schöppingen',
@@ -1005,8 +998,7 @@ class SendMailActionTest extends TestCase
                 'customerId' => $customerId,
                 'email' => 'test@example.com',
                 'salutationId' => $this->getValidSalutationId(),
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
             ],
             'stateId' => $stateId,
             'paymentMethodId' => $this->getValidPaymentMethodId(),
@@ -1018,8 +1010,7 @@ class SendMailActionTest extends TestCase
                 [
                     'id' => $billingAddressId,
                     'salutationId' => $this->getValidSalutationId(),
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
                     'city' => 'Schöppingen',

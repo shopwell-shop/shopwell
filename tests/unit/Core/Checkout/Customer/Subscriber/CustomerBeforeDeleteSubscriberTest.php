@@ -49,8 +49,7 @@ class CustomerBeforeDeleteSubscriberTest extends TestCase
                 'languageId' => Uuid::randomHex(),
                 'customerNumber' => 'SW1000',
                 'email' => 'foo@bar.com',
-                'firstName' => 'foo',
-                'lastName' => 'bar',
+                'name' => 'foo bar',
             ]);
 
         $definitionInstanceRegistry = static::createStub(DefinitionInstanceRegistry::class);
@@ -196,8 +195,7 @@ class CustomerBeforeDeleteSubscriberTest extends TestCase
                 'languageId' => $languageId,
                 'customerNumber' => 'SW1001',
                 'email' => 'bar@baz.com',
-                'firstName' => 'bar',
-                'lastName' => 'baz',
+                'name' => 'bar baz',
             ]);
 
         $definitionInstanceRegistry = static::createStub(DefinitionInstanceRegistry::class);
@@ -283,8 +281,7 @@ class CustomerBeforeDeleteSubscriberTest extends TestCase
                 'languageId' => $customerLanguageId,
                 'customerNumber' => 'SW1002',
                 'email' => 'nolang@test.com',
-                'firstName' => 'No',
-                'lastName' => 'Lang',
+                'name' => 'No Lang',
             ]);
 
         $definitionInstanceRegistry = static::createStub(DefinitionInstanceRegistry::class);

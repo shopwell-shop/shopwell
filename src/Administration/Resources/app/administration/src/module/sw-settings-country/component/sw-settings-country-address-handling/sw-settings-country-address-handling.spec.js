@@ -8,7 +8,7 @@ import { mount } from '@vue/test-utils';
 
 const addressFormat = [
     ['address/company', 'symbol/dash', 'address/department'],
-    ['address/first_name', 'address/last_name'],
+    ['address/name'],
     ['address/street'],
     ['address/zipcode', 'address/city'],
     ['address/country'],
@@ -134,8 +134,7 @@ async function createWrapper(privileges = [], customPropsData = {}) {
                                     {
                                         id: 'id',
                                         defaultBillingAddress: {
-                                            firstName: 'Y',
-                                            lastName: 'Tran',
+                                            name: 'Y Tran',
                                             company: '',
                                             department: '',
                                             street: 'Ebbinghoff 10',
@@ -476,7 +475,7 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
 
         expect(swMultiSnippet).toHaveLength(5);
         expect(swMultiSnippet[0].findAll('.sw-select-selection-list > li')).toHaveLength(4);
-        expect(swMultiSnippet[1].findAll('.sw-select-selection-list > li')).toHaveLength(3);
+        expect(swMultiSnippet[1].findAll('.sw-select-selection-list > li')).toHaveLength(2);
 
         // Open the context menu
         const contextButton = swMultiSnippet[0].find('.sw-context-button__button');
@@ -507,7 +506,7 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
 
         expect(wrapper.vm.country.addressFormat).toEqual([
             ['address/company', 'symbol/dash', 'address/department'],
-            ['address/first_name', 'address/last_name'],
+            ['address/name'],
             ['address/street'],
             ['address/zipcode', 'address/city'],
             ['address/country'],
@@ -532,7 +531,7 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
         expect(addressHandlingWrapper.vm.addressFormat).toEqual([
             ['address/country'],
             ['address/company', 'symbol/dash', 'address/department'],
-            ['address/first_name', 'address/last_name'],
+            ['address/name'],
             ['address/street'],
             ['address/zipcode', 'address/city'],
         ]);
@@ -555,13 +554,13 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
 
         expect(wrapper.vm.country.addressFormat).toEqual([
             ['address/company', 'symbol/dash', 'address/department'],
-            ['address/first_name', 'address/last_name'],
+            ['address/name'],
             ['address/street'],
             ['address/zipcode', 'address/city'],
             ['address/country'],
         ]);
 
-        expect(swMultiSnippet[1].findAll('.sw-select-selection-list > li')).toHaveLength(3);
+        expect(swMultiSnippet[1].findAll('.sw-select-selection-list > li')).toHaveLength(2);
         expect(swMultiSnippet[4].findAll('.sw-select-selection-list > li')).toHaveLength(2);
 
         // Open the context menu
@@ -581,11 +580,11 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
             ['address/street'],
             ['address/zipcode', 'address/city'],
             ['address/country'],
-            ['address/first_name', 'address/last_name'],
+            ['address/name'],
         ]);
         expect(swMultiSnippet[1].findAll('.sw-select-selection-list > li')).toHaveLength(2);
         expect(swMultiSnippet[3].findAll('.sw-select-selection-list > li')).toHaveLength(2);
-        expect(swMultiSnippet[4].findAll('.sw-select-selection-list > li')).toHaveLength(3);
+        expect(swMultiSnippet[4].findAll('.sw-select-selection-list > li')).toHaveLength(2);
     });
 
     it('should be able to delete the current row', async () => {
@@ -720,7 +719,7 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
         await flushPromises();
 
         expect(wrapper.vm.country.addressFormat[0]).toEqual(['address/company', 'symbol/dash', 'address/department']);
-        expect(wrapper.vm.country.addressFormat[1]).toEqual(['address/first_name', 'address/last_name']);
+        expect(wrapper.vm.country.addressFormat[1]).toEqual(['address/name']);
 
         const addressHandlingWrapper = wrapper.findComponent(stubs['sw-settings-country-address-handling']);
 
@@ -782,7 +781,7 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
         await addressHandlingWrapper.vm.onDrop();
         await flushPromises();
 
-        expect(wrapper.vm.country.addressFormat[0]).toEqual(['address/first_name', 'address/last_name']);
+        expect(wrapper.vm.country.addressFormat[0]).toEqual(['address/name']);
         expect(wrapper.vm.country.addressFormat[1]).toEqual(['address/street']);
         expect(wrapper.vm.country.addressFormat[2]).toEqual(['address/zipcode', 'address/city']);
         expect(wrapper.vm.country.addressFormat[3]).toEqual(['address/company', 'symbol/dash', 'address/department']);
@@ -851,7 +850,7 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
         await flushPromises();
 
         expect(wrapper.vm.country.addressFormat[0]).toEqual(['address/company', 'symbol/dash', 'address/department']);
-        expect(wrapper.vm.country.addressFormat[1]).toEqual(['address/first_name', 'address/last_name']);
+        expect(wrapper.vm.country.addressFormat[1]).toEqual(['address/name']);
 
         const addressHandlingWrapper = wrapper.findComponent(stubs['sw-settings-country-address-handling']);
         await addressHandlingWrapper.vm.onDropEnd(0, {
@@ -862,7 +861,7 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
             },
             dropData: {
                 index: 1,
-                snippet: ['address/first_name', 'address/last_name'],
+                snippet: ['address/name'],
             },
         });
         await flushPromises();
@@ -870,8 +869,7 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
         expect(wrapper.vm.country.addressFormat[0]).toEqual(['address/company', 'symbol/dash']);
 
         expect(wrapper.vm.country.addressFormat[1]).toEqual([
-            'address/first_name',
-            'address/last_name',
+            'address/name',
             'address/department',
         ]);
     });
@@ -880,7 +878,7 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
         wrapper = await createWrapper(['country.editor'], {
             addressFormat: [
                 ['address/company', 'symbol/dash', 'address/department'],
-                ['address/first_name', 'address/last_name'],
+                ['address/name'],
             ],
         });
         await flushPromises();
@@ -894,7 +892,7 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
             },
             dropData: {
                 index: 1,
-                snippet: ['address/first_name', 'address/last_name'],
+                snippet: ['address/name'],
             },
         });
 
@@ -909,7 +907,7 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
             dropData: {
                 index: 1,
                 linePosition: 1,
-                snippet: 'address/last_name',
+                snippet: 'address/name',
                 targetIndex: 1,
             },
         });
@@ -930,16 +928,15 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
             dropData: {
                 index: 1,
                 linePosition: 1,
-                snippet: 'address/last_name',
+                snippet: 'address/name',
                 targetIndex: 1,
             },
         });
 
         expect(wrapper.vm.country.addressFormat[0]).toEqual(['address/company', 'symbol/dash']);
         expect(wrapper.vm.country.addressFormat[1]).toEqual([
-            'address/first_name',
+            'address/name',
             'address/department',
-            'address/last_name',
         ]);
     });
 
@@ -950,7 +947,7 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
             country: {
                 addressFormat: [
                     ['address/company', 'symbol/dash', 'address/department'],
-                    ['address/first_name', 'address/last_name'],
+                    ['address/name'],
                 ],
             },
         });
@@ -959,9 +956,9 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
         const addressHandlingWrapper = wrapper.findComponent(stubs['sw-settings-country-address-handling']);
         await addressHandlingWrapper.vm.onDropEnd(1, {
             dragData: {
-                index: 1,
+                index: 0,
                 linePosition: 1,
-                snippet: 'address/last_name',
+                snippet: 'address/name',
             },
             dropData: {
                 index: 2,
@@ -973,10 +970,10 @@ describe('module/sw-settings-country/component/sw-settings-country-address-handl
         expect(wrapper.vm.country.addressFormat[0]).toEqual([
             'address/company',
             'symbol/dash',
-            'address/last_name',
+            'address/name',
             'address/department',
         ]);
-        expect(wrapper.vm.country.addressFormat[1]).toEqual(['address/first_name']);
+        expect(wrapper.vm.country.addressFormat[1]).toEqual([]);
     });
 
     it('should be able to preview formatting with the customer', async () => {

@@ -35,9 +35,7 @@ class UserEntity extends Entity
      */
     protected string $password;
 
-    protected string $firstName;
-
-    protected string $lastName;
+    protected string $name;
 
     protected ?string $title = null;
 
@@ -155,24 +153,14 @@ class UserEntity extends Entity
         $this->password = $password;
     }
 
-    public function getFirstName(): string
+    public function getName(): string
     {
-        return $this->firstName;
+        return $this->name;
     }
 
-    public function setFirstName(string $firstName): void
+    public function setName(string $name): void
     {
-        $this->firstName = $firstName;
-    }
-
-    public function getLastName(): string
-    {
-        return $this->lastName;
-    }
-
-    public function setLastName(string $lastName): void
-    {
-        $this->lastName = $lastName;
+        $this->name = $name;
     }
 
     public function getEmail(): string

@@ -13,12 +13,12 @@
                     class="sw-order-general-info__summary-main-header-link"
                     :to="{ name: 'sw.customer.detail', params: { id: order.orderCustomer.customerId } }"
                 >
-                    <span>{{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }}</span>
+                    <span>{{ order.orderCustomer.name }}</span>
                     <span v-if="order.orderCustomer.company"> - {{ order.orderCustomer.company }}</span>
                 </mt-link>
 
                 <template v-else>
-                    <span>{{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }}</span>
+                    <span>{{ order.orderCustomer.name }}</span>
                     <span v-if="order.orderCustomer.company"> - {{ order.orderCustomer.company }}</span>
                 </template>
 
@@ -77,7 +77,7 @@
                     class="sw-order-general-info__summary-sub-last-changed-user"
                 >
                     <span>{{ $t('sw-order.generalTab.info.summary.by') }}</span>
-                    <span>{{ lastChangedUser.firstName }} {{ lastChangedUser.lastName }}</span>
+                    <span>{{ lastChangedUser.name }}</span>
                 </div>
                 {% endblock %}
             </div>

@@ -54,28 +54,15 @@
                         v-if="user"
                         class="sw-settings-user-detail__grid sw-settings-user-detail__information-grid"
                     >
-                        {% block sw_settings_user_detail_content_first_name %}
+                        {% block sw_settings_user_detail_content_name %}
                         <mt-text-field
-                            v-model="user.firstName"
-                            name="sw-field--user-firstName"
-                            class="sw-settings-user-detail__grid-firstName"
+                            v-model="user.name"
+                            name="sw-field--user-name"
+                            class="sw-settings-user-detail__grid-name"
                             :disabled="!acl.can('users_and_permissions.editor') || undefined"
-                            :error="userFirstNameError"
+                            :error="userNameError"
                             required
-                            :label="$t('sw-users-permissions.users.user-detail.labelFirstName')"
-                        />
-                        {% endblock %}
-
-                        {% block sw_settings_user_detail_content_last_name %}
-
-                        <mt-text-field
-                            v-model="user.lastName"
-                            name="sw-field--user-lastName"
-                            class="sw-settings-user-detail__grid-lastName"
-                            :disabled="!acl.can('users_and_permissions.editor') || undefined"
-                            :error="userLastNameError"
-                            required
-                            :label="$t('sw-users-permissions.users.user-detail.labelLastName')"
+                            :label="$t('sw-users-permissions.users.user-detail.labelName')"
                         />
                         {% endblock %}
 

@@ -24,8 +24,7 @@ test(
         const shippableCountry = await TestDataService.getCountry(getCountryCodeFromLocale());
         const registrationData = {
             salutation: 'Mr.',
-            firstName: 'Jeff',
-            lastName: 'Goldblum',
+            name: 'Jeff Goldblum',
             email: `${IdProvider.getIdPair().uuid}@test.com`,
             password: 'shopwell',
             street: 'Ebbinghof 10',
@@ -100,8 +99,7 @@ test(
         await TestDataService.assignSalesChannelCountry(DefaultSalesChannel.salesChannel.id, nonShippableCountry.id);
 
         const address = {
-            firstName: 'New First Name',
-            lastName: 'New Last Name',
+            name: 'New First Name New Last Name',
             company: 'shopwell',
             department: 'Operations',
             street: 'Ebbinghof 10',

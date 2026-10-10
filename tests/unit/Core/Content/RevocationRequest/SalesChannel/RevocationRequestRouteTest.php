@@ -72,16 +72,14 @@ class RevocationRequestRouteTest extends TestCase
     public static function validationDataProvider(): \Generator
     {
         yield 'valid form data' => [[
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'email' => 'max@muster.com',
             'contractNumber' => 'SW123456789',
             'comment' => 'This is a simple comment',
         ]];
 
         yield 'form data with optional context fields' => [[
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'email' => 'max@muster.com',
             'contractNumber' => 'SW123456789',
             'comment' => 'This is a simple comment',

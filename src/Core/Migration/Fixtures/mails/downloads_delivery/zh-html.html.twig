@@ -1,6 +1,6 @@
 <div style="font-family:arial; font-size:12px;">
 
-    {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br>
+    {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.name }},<br>
     <br>
     本邮件为您提供订单 {{ order.orderNumber }} 的相关文件。
     <br>

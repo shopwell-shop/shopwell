@@ -1459,8 +1459,7 @@ class AppManagerTest extends TestCase
     {
         static::getContainer()->get(Connection::class)->insert('user', [
             'id' => Uuid::fromHexToBytes($userId),
-            'first_name' => 'test',
-            'last_name' => '',
+            'name' => 'test',
             'email' => 'test@example.com',
             'username' => 'userTest',
             'password' => password_hash('123456', \PASSWORD_BCRYPT),

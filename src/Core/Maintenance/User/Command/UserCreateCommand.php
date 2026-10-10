@@ -33,8 +33,7 @@ class UserCreateCommand extends Command
             ->addArgument('username', InputArgument::REQUIRED, 'Username for the user')
             ->addOption('admin', 'a', InputOption::VALUE_NONE, 'Mark the user as admin')
             ->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Password for the user')
-            ->addOption('firstName', null, InputOption::VALUE_REQUIRED, 'The user\'s firstname')
-            ->addOption('lastName', null, InputOption::VALUE_REQUIRED, 'The user\'s lastname')
+            ->addOption('name', null, InputOption::VALUE_REQUIRED, 'The user\'s name')
             ->addOption('email', null, InputOption::VALUE_REQUIRED, 'Email for the user')
         ;
     }
@@ -47,14 +46,9 @@ class UserCreateCommand extends Command
         $password = $input->getOption('password');
 
         $additionalData = [];
-        $lastName = $input->getOption('lastName');
-        if ($lastName) {
-            $additionalData['lastName'] = $lastName;
-        }
-
-        $firstName = $input->getOption('firstName');
-        if ($firstName) {
-            $additionalData['firstName'] = $firstName;
+        $name = $input->getOption('name');
+        if ($name) {
+            $additionalData['name'] = $name;
         }
 
         $email = $input->getOption('email');

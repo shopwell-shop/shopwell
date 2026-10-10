@@ -12,8 +12,7 @@ trait CustomerAddressDataNormalizerTrait
      */
     private const ADDRESS_FIELDS_TO_TRIM = [
         'title',
-        'firstName',
-        'lastName',
+        'name',
         'street',
         'zipcode',
         'city',

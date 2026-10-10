@@ -290,7 +290,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
 
             {% set currencyIsoCode = order.currency.isoCode %}
-            您好 {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br>
+            您好 {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br>
             <br>
             感谢您在 {{ salesChannel.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。<br>
             <br>
@@ -343,7 +343,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
                 {% set billingAddress = order.addresses.get(order.billingAddressId) %}
                 <strong>账单地址：</strong><br>
                 {{ billingAddress.company }}<br>
-                {{ billingAddress.firstName }} {{ billingAddress.lastName }}<br>
+                {{ billingAddress.name }}<br>
                 {{ billingAddress.street }} <br>
                 {{ billingAddress.zipcode }} {{ billingAddress.city }}<br>
                 {{ billingAddress.country.name }}<br>
@@ -351,7 +351,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
 
                 <strong>收货地址：</strong><br>
                 {{ delivery.shippingOrderAddress.company }}<br>
-                {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}<br>
+                {{ delivery.shippingOrderAddress.name }}<br>
                 {{ delivery.shippingOrderAddress.street }} <br>
                 {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}<br>
                 {{ delivery.shippingOrderAddress.country.name }}<br>
@@ -376,7 +376,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     {
         return '
         {% set currencyIsoCode = order.currency.isoCode %}
-        您好 {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        您好 {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         感谢您在 {{ salesChannel.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。
 
@@ -406,14 +406,14 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
         {% set billingAddress = order.addresses.get(order.billingAddressId) %}
         账单地址：
         {{ billingAddress.company }}
-        {{ billingAddress.firstName }} {{ billingAddress.lastName }}
+        {{ billingAddress.name }}
         {{ billingAddress.street }}
         {{ billingAddress.zipcode }} {{ billingAddress.city }}
         {{ billingAddress.country.name }}
 
         收货地址：
         {{ delivery.shippingOrderAddress.company }}
-        {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}
+        {{ delivery.shippingOrderAddress.name }}
         {{ delivery.shippingOrderAddress.street }}
         {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}
         {{ delivery.shippingOrderAddress.country.name }}
@@ -434,7 +434,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
         <div style="font-family:arial; font-size:12px;">
            <br/>
            <p>
-               {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+               {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                <br/>
                您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
                <strong>支付状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -449,7 +449,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getDeliveryCancellationPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
         支付状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
@@ -464,7 +464,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
                     <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -479,7 +479,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getDeliveryReturnedPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
         订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
@@ -494,7 +494,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
                     <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -509,7 +509,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getDeliveryShippedPartiallyPlainTemplateZhCn(): string
     {
         return '
-            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
         订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
@@ -524,7 +524,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
                     <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -540,7 +540,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getDeliveryShippedPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
         订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
@@ -555,7 +555,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
                     <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -571,7 +571,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getDeliveryReturnedPartiallyPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
         订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
@@ -586,7 +586,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
                     <strong>订单状态最新状态：{{order.stateMachineState.name}}.</strong><br/>
@@ -602,7 +602,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getOrderStateCancelledPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新!
         订单状态最新状态：{{order.stateMachineState.name}}.
@@ -617,7 +617,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新.<br/>
                     <strong>订单状态最新状态：{{order.stateMachineState.name}}.</strong><br/>
@@ -633,7 +633,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getOrderStateOpenPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新!
         订单状态最新状态：{{order.stateMachineState.name}}.
@@ -648,7 +648,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新.<br/>
                     <strong>订单状态最新状态：{{order.stateMachineState.name}}.</strong><br/>
@@ -664,7 +664,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getOrderStateProgressPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新!
         订单状态最新状态：{{order.stateMachineState.name}}.
@@ -679,7 +679,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新.<br/>
                     <strong>订单状态最新状态：{{order.stateMachineState.name}}.</strong><br/>
@@ -695,7 +695,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getOrderStateCompletedPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新!
         订单状态最新状态：{{order.stateMachineState.name}}.
@@ -710,7 +710,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新.<br/>
                     <strong>支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -726,7 +726,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getPaymentRefundPartiallyPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新!
         支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
@@ -741,7 +741,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新.<br/>
                     <strong>支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -757,7 +757,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getPaymentRemindedPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新!
         支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
@@ -772,7 +772,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新.<br/>
                     <strong>支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -788,7 +788,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getPaymentOpenPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新!
         支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
@@ -803,7 +803,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新.<br/>
                     <strong>支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -819,7 +819,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getPaymentPaidPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新!
         支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
@@ -834,7 +834,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                   {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                   {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                    <br/>
                    您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
                    <strong>支付状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -850,7 +850,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getPaymentCancelledPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
         支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
@@ -865,7 +865,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新.<br/>
                     <strong>支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -881,7 +881,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getPaymentRefundedPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新!
         支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.
@@ -896,7 +896,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新.<br/>
                     <strong>支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -912,7 +912,7 @@ class Migration1588153272UpdateGermanMailTemplates extends MigrationStep
     private function getPaymentPaidPartiallyPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新!
         支付状态最新状态：{{order.transactions.first.stateMachineState.name}}.

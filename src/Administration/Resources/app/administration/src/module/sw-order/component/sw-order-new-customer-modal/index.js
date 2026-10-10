@@ -41,8 +41,7 @@ export default {
         ...mapPageErrors({
             'sw.order.new.customer.detail': {
                 customer: [
-                    'firstName',
-                    'lastName',
+                    'name',
                     'email',
                     'salesChannelId',
                     'customerNumber',
@@ -52,8 +51,7 @@ export default {
 
             'sw.order.new.customer.address': {
                 customer_address: [
-                    'firstName',
-                    'lastName',
+                    'name',
                     'street',
                     'city',
                     'countryId',

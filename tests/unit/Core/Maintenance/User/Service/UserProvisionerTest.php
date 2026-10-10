@@ -30,8 +30,7 @@ class UserProvisionerTest extends TestCase
                 'user',
                 static::callback(static function (array $data) use ($localeId): bool {
                     static::assertSame('admin', $data['username']);
-                    static::assertSame('first', $data['first_name']);
-                    static::assertSame('last', $data['last_name']);
+                    static::assertSame('first last', $data['name']);
                     static::assertSame('test@test.com', $data['email']);
                     static::assertSame($localeId, $data['locale_id']);
                     static::assertFalse($data['admin']);
@@ -47,8 +46,7 @@ class UserProvisionerTest extends TestCase
         );
 
         $user = [
-            'firstName' => 'first',
-            'lastName' => 'last',
+            'name' => 'first last',
             'email' => 'test@test.com',
             'admin' => false,
         ];
@@ -68,8 +66,7 @@ class UserProvisionerTest extends TestCase
         );
 
         $user = [
-            'firstName' => 'first',
-            'lastName' => 'last',
+            'name' => 'first last',
             'email' => 'test@test.com',
             'admin' => false,
         ];
@@ -92,8 +89,7 @@ class UserProvisionerTest extends TestCase
         $connection->expects($this->once())->method('fetchOne')->willReturn(json_encode(['_value' => 8], \JSON_THROW_ON_ERROR));
 
         $user = [
-            'firstName' => 'first',
-            'lastName' => 'last',
+            'name' => 'first last',
             'email' => 'test@test.com',
             'admin' => false,
         ];

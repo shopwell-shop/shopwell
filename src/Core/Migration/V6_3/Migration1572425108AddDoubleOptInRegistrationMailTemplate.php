@@ -194,7 +194,7 @@ class Migration1572425108AddDoubleOptInRegistrationMailTemplate extends Migratio
         return '
             <div style="font-family:arial; font-size:12px;">
                 <p>
-                    您好 {{ customer.salutation.translated.displayName }} {{ customer.lastName }}，<br/>
+                    您好 {{ customer.salutation.translated.displayName }} {{ customer.name }}，<br/>
                     <br/>
                     感谢您注册 {{ salesChannel.translated.name }}。<br/>
                     请点击下方链接完成注册确认：<br/>
@@ -210,7 +210,7 @@ class Migration1572425108AddDoubleOptInRegistrationMailTemplate extends Migratio
     private function getPlainTemplateZhCn(): string
     {
         return '
-            您好 {{ customer.salutation.translated.displayName }} {{ customer.lastName }}，
+            您好 {{ customer.salutation.translated.displayName }} {{ customer.name }}，
 
             感谢您注册 {{ salesChannel.translated.name }}。
             请点击下方链接完成注册确认：
@@ -226,7 +226,7 @@ class Migration1572425108AddDoubleOptInRegistrationMailTemplate extends Migratio
         return '
             <div style="font-family:arial; font-size:12px;">
                 <p>
-                    Hello {{ customer.salutation.translated.displayName }} {{ customer.lastName }},<br/>
+                    Hello {{ customer.salutation.translated.displayName }} {{ customer.name }},<br/>
                     <br/>
                     thank you for your signing up with {{ salesChannel.translated.name }}.<br/>
                     Please confirm the sign-up via the following link:<br/>
@@ -242,7 +242,7 @@ class Migration1572425108AddDoubleOptInRegistrationMailTemplate extends Migratio
     private function getPlainTemplateEn(): string
     {
         return '
-            Hello {{ customer.salutation.translated.displayName }} {{ customer.lastName }},
+            Hello {{ customer.salutation.translated.displayName }} {{ customer.name }},
 
             thank you for your signing up with {{ salesChannel.translated.name }}.
             Please confirm the sign-up via the following link:

@@ -220,8 +220,7 @@ final readonly class UserService
     private function isInvitedUser(UserEntity $user): bool
     {
         return $user->getUsername() === $user->getEmail()
-            && $user->getFirstName() === $user->getEmail()
-            && $user->getLastName() === $user->getEmail()
+            && $user->getName() === $user->getEmail()
             && $user->getActive() === false;
     }
 
@@ -231,8 +230,7 @@ final readonly class UserService
             $this->userRepository->update([[
                 'id' => $userEntity->getId(),
                 'active' => true,
-                'firstName' => $parsedIdToken->givenName,
-                'lastName' => $parsedIdToken->familyName,
+                'name' => \trim($parsedIdToken->givenName . ' ' . $parsedIdToken->familyName),
                 'username' => $parsedIdToken->username,
             ]], $context);
         });

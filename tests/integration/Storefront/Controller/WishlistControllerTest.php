@@ -325,8 +325,7 @@ class WishlistControllerTest extends TestCase
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
                 'id' => $addressId,
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
@@ -337,8 +336,7 @@ class WishlistControllerTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => $this->customerId . '@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'salutationId' => $this->getValidSalutationId(),
             'customerNumber' => $this->customerId,
         ];
@@ -384,8 +382,7 @@ class WishlistControllerTest extends TestCase
                 'email' => 'max.mustermann@example.com',
                 'emailConfirmation' => 'max.mustermann@example.com',
                 'salutationId' => $this->getValidSalutationId(),
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'storefrontUrl' => 'http://localhost',
                 'guest' => true,
                 'billingAddress' => [

@@ -20,8 +20,7 @@ final class ShopContactFormSettings extends Struct
      * @internal
      */
     public function __construct(
-        public readonly bool $firstNameFieldRequired,
-        public readonly bool $lastNameFieldRequired,
+        public readonly bool $nameFieldRequired,
         public readonly bool $phoneNumberFieldRequired,
     ) {
     }
@@ -34,8 +33,7 @@ final class ShopContactFormSettings extends Struct
     public static function fromConfig(array $config): self
     {
         return new self(
-            firstNameFieldRequired: self::boolValue($config, 'firstNameFieldRequired'),
-            lastNameFieldRequired: self::boolValue($config, 'lastNameFieldRequired'),
+            nameFieldRequired: self::boolValue($config, 'nameFieldRequired'),
             phoneNumberFieldRequired: self::boolValue($config, 'phoneNumberFieldRequired'),
         );
     }

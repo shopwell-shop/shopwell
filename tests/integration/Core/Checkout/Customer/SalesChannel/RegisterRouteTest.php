@@ -1190,8 +1190,7 @@ class RegisterRouteTest extends TestCase
         $additionalData = [
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'billingAddress' => [
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'company' => 'Test Company',
                 'department' => 'Test Department',
             ],
@@ -1426,8 +1425,7 @@ class RegisterRouteTest extends TestCase
         $additionalData = [
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'billingAddress' => [
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'company' => 'Test Company 1',
                 'department' => 'Test Department 1',
             ],
@@ -1730,10 +1728,10 @@ class RegisterRouteTest extends TestCase
         static::assertSame(':PASSWORD_IS_TOO_LONG', $error['detail']);
     }
 
-    public function testRegisterWithHtmlInFirstName(): void
+    public function testRegisterWithHtmlInName(): void
     {
         $registrationData = $this->getRegistrationData();
-        $registrationData['firstName'] = '<John';
+        $registrationData['name'] = '<John';
 
         $this->browser
             ->request(
@@ -1753,7 +1751,7 @@ class RegisterRouteTest extends TestCase
         $error = $response['errors'][0];
 
         static::assertSame('VIOLATION::CONTAINS_HTML_ERROR', $error['code']);
-        static::assertSame('/firstName', $error['source']['pointer']);
+        static::assertSame('/name', $error['source']['pointer']);
     }
 
     public function testRegisterWithHtmlInBillingAddressStreet(): void
@@ -1785,7 +1783,7 @@ class RegisterRouteTest extends TestCase
     public function testRegisterWithLessThanSignThatDoesNotOpenATag(): void
     {
         $registrationData = $this->getRegistrationData();
-        $registrationData['firstName'] = 'Jo <3';
+        $registrationData['name'] = 'Jo <3';
 
         $this->browser
             ->request(
@@ -1801,7 +1799,7 @@ class RegisterRouteTest extends TestCase
 
         static::assertSame(200, $this->browser->getResponse()->getStatusCode(), (string) $this->browser->getResponse()->getContent());
         static::assertSame('customer', $response['apiAlias']);
-        static::assertSame('Jo <3', $response['firstName']);
+        static::assertSame('Jo <3', $response['name']);
     }
 
     private function createSalesChannelBrowserWithoutDomains(): KernelBrowser
@@ -1835,8 +1833,7 @@ class RegisterRouteTest extends TestCase
     {
         return [
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'password' => '12345678',
             'email' => 'teg-reg@example.com',
             'title' => 'Phd',
@@ -1846,8 +1843,7 @@ class RegisterRouteTest extends TestCase
             'birthdayDay' => 22,
             'storefrontUrl' => $storefrontUrl,
             'billingAddress' => [
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'countryId' => $this->getValidCountryId($this->ids->get('sales-channel')),
                 'street' => 'Examplestreet 11',
                 'zipcode' => '48441',
@@ -1859,8 +1855,7 @@ class RegisterRouteTest extends TestCase
             'shippingAddress' => [
                 'salutationId' => $this->getValidSalutationId(),
                 'countryId' => $this->getValidCountryId($this->ids->get('sales-channel')),
-                'firstName' => 'Test 2',
-                'lastName' => 'Example 2',
+                'name' => 'Test 2 Example 2',
                 'title' => 'Prof.',
                 'street' => 'Examplestreet 111',
                 'zipcode' => '12341',
@@ -1881,8 +1876,7 @@ class RegisterRouteTest extends TestCase
             'id' => $customerId,
             'number' => '1337',
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'customerNumber' => '1337',
             'email' => $email,
             'password' => 'shopwell',
@@ -1897,8 +1891,7 @@ class RegisterRouteTest extends TestCase
                     'customerId' => $customerId,
                     'countryId' => $this->getValidCountryId(),
                     'salutationId' => $this->getValidSalutationId(),
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
                     'city' => 'Schöppingen',

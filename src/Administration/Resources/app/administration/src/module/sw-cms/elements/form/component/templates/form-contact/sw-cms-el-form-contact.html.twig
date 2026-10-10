@@ -7,7 +7,7 @@
         {{ formSettings.title.value }}
     </h3>
 
-    <div class="sw-cms-el-form-contact-form-group three-items">
+    <div class="sw-cms-el-form-contact-form-group two-items">
         <mt-select
             :model-value="'default'"
             :label="$t('sw-cms.elements.form.element.label.salutation')"
@@ -15,13 +15,8 @@
         />
 
         <mt-text-field
-            :label="$t('sw-cms.elements.form.element.label.firstName')"
-            :model-value="$t('sw-cms.elements.form.element.placeholder.firstName')"
-        />
-
-        <mt-text-field
-            :label="$t('sw-cms.elements.form.element.label.lastName')"
-            :model-value="$t('sw-cms.elements.form.element.placeholder.lastName')"
+            :label="$t('sw-cms.elements.form.element.label.name')"
+            :model-value="$t('sw-cms.elements.form.element.placeholder.name')"
         />
     </div>
 

@@ -301,8 +301,7 @@ describe('src/module/sw-order/component/sw-order-address-selection', () => {
         wrapper.vm.createNewCustomerAddress();
         Object.assign(wrapper.vm.currentAddress, {
             id: 'newCustomerAddressId',
-            firstName: 'Ada',
-            lastName: 'Lovelace',
+            name: 'Ada Lovelace',
             street: 'Example Street 1',
             zipcode: '12345',
             city: 'Example City',
@@ -360,8 +359,7 @@ describe('src/module/sw-order/component/sw-order-address-selection', () => {
         wrapper.vm.createNewCustomerAddress();
         Object.assign(wrapper.vm.currentAddress, {
             id: 'newCustomerAddressId',
-            firstName: 'Ada',
-            lastName: 'Lovelace',
+            name: 'Ada Lovelace',
             street: 'Example Street 1',
             zipcode: '12345',
             city: 'Example City',
@@ -476,26 +474,23 @@ describe('src/module/sw-order/component/sw-order-address-selection', () => {
 
         const errorStore = Shopwell.Store.get('error');
         jest.spyOn(Shopwell.EntityDefinition, 'getRequiredFields').mockReturnValue({
-            firstName: {},
-            lastName: {},
+            name: {},
         });
 
         const address = {
             id: 'new-address-id',
-            firstName: '',
-            lastName: 'Lovelace',
+            name: '',
             getEntityName: () => 'customer_address',
         };
 
         errorStore.addApiError({
-            expression: 'customer_address.new-address-id.lastName',
+            expression: 'customer_address.new-address-id.name',
             error: new ShopwellError({ code: EntityValidationService.ERROR_CODE_REQUIRED }),
         });
 
         expect(wrapper.vm.isValidAddress(address)).toBe(false);
 
-        expect(errorStore.getApiError(address, 'firstName')).toBeInstanceOf(ShopwellError);
-        expect(errorStore.getApiError(address, 'lastName')).toBeNull();
+        expect(errorStore.getApiError(address, 'name')).toBeInstanceOf(ShopwellError);
     });
 
     it('should keep a server reported error when validating an address', async () => {
@@ -503,25 +498,23 @@ describe('src/module/sw-order/component/sw-order-address-selection', () => {
 
         const errorStore = Shopwell.Store.get('error');
         jest.spyOn(Shopwell.EntityDefinition, 'getRequiredFields').mockReturnValue({
-            firstName: {},
-            lastName: {},
+            name: {},
         });
 
         const address = {
             id: 'new-address-id',
-            firstName: '',
-            lastName: 'Lovelace',
+            name: '',
             getEntityName: () => 'customer_address',
         };
 
         errorStore.addApiError({
-            expression: 'customer_address.new-address-id.lastName',
-            error: new ShopwellError({ code: 'LAST_NAME_IS_TOO_LONG' }),
+            expression: 'customer_address.new-address-id.name',
+            error: new ShopwellError({ code: 'NAME_IS_TOO_LONG' }),
         });
 
         expect(wrapper.vm.isValidAddress(address)).toBe(false);
 
-        expect(errorStore.getApiError(address, 'lastName')).toBeInstanceOf(ShopwellError);
+        expect(errorStore.getApiError(address, 'name')).toBeInstanceOf(ShopwellError);
     });
 
     it('should not leave any warnings on the order page when the address modal is closed', async () => {
@@ -571,7 +564,7 @@ describe('src/module/sw-order/component/sw-order-address-selection', () => {
         const address = { id: 'torn-down-address-id', getEntityName: () => 'customer_address' };
 
         errorStore.addApiError({
-            expression: 'customer_address.torn-down-address-id.firstName',
+            expression: 'customer_address.torn-down-address-id.name',
             error: new ShopwellError({ code: EntityValidationService.ERROR_CODE_REQUIRED }),
         });
 
@@ -580,7 +573,7 @@ describe('src/module/sw-order/component/sw-order-address-selection', () => {
 
         wrapper.unmount();
 
-        expect(errorStore.getApiError(address, 'firstName')).toBeNull();
+        expect(errorStore.getApiError(address, 'name')).toBeNull();
     });
 
     it('should show a notification when trying to save an invalid address', async () => {
@@ -590,7 +583,7 @@ describe('src/module/sw-order/component/sw-order-address-selection', () => {
 
         wrapper.vm.currentAddress = {
             id: 'new-address-id',
-            firstName: '',
+            name: '',
             getEntityName: () => 'customer_address',
         };
 

@@ -20,15 +20,14 @@ class NewsletterRegisterEventTest extends TestCase
     {
         $recipient = new NewsletterRecipientEntity();
         $recipient->setEmail('jane@example.com');
-        $recipient->setFirstName('Jane');
-        $recipient->setLastName('Doe');
+        $recipient->setName('Jane Doe');
 
         $event = new NewsletterRegisterEvent(Context::createDefaultContext(), $recipient, 'https://shop.example/confirm', 'sales-channel-id');
 
         static::assertSame(['jane@example.com' => 'Jane Doe'], $event->getMailStruct()->getRecipients());
 
         // the struct is a snapshot taken on first access: later recipient changes must not leak into it
-        $recipient->setFirstName('Changed');
+        $recipient->setName('Changed');
 
         static::assertSame(['jane@example.com' => 'Jane Doe'], $event->getMailStruct()->getRecipients());
     }

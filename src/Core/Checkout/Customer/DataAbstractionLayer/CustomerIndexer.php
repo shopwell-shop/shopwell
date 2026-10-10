@@ -22,7 +22,7 @@ class CustomerIndexer extends EntityIndexer
     final public const MANY_TO_MANY_ID_FIELD_UPDATER = 'customer.many-to-many-id-field';
     final public const NEWSLETTER_SALES_CHANNELS_UPDATER = 'customer.newsletter-sales-channels';
 
-    private const PRIMARY_KEYS_WITH_PROPERTY_CHANGE = ['email', 'firstName', 'lastName'];
+    private const PRIMARY_KEYS_WITH_PROPERTY_CHANGE = ['email', 'name'];
 
     /**
      * @internal

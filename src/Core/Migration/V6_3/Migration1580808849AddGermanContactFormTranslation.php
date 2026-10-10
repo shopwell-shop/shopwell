@@ -97,7 +97,7 @@ SQL;
     {
         return '<div style="font-family:arial; font-size:12px;">
     <p>
-        {{ contactFormData.firstName }} {{ contactFormData.lastName }} 通过联系表单给您发送了以下消息。<br/>
+        {{ contactFormData.name }} 通过联系表单给您发送了以下消息。<br/>
         <br/>
         联系邮箱：{{ contactFormData.email }}<br/>
         <br>
@@ -112,7 +112,7 @@ SQL;
 
     private function getContactFormPlainTemplateZhCn(): string
     {
-        return '{{ contactFormData.firstName }} {{ contactFormData.lastName }} 通过联系表单给您发送了以下消息。
+        return '{{ contactFormData.name }} 通过联系表单给您发送了以下消息。
 
 联系邮箱：{{ contactFormData.email }}
 

@@ -235,8 +235,7 @@ class DeleteUnusedGuestCustomersCommandTest extends TestCase
             'deepLinkCode' => 'BwvdEInxOHBbwfRw6oHF1Q_orfYeo9RY',
             'orderCustomer' => [
                 'email' => $customer['email'],
-                'firstName' => $customer['firstName'],
-                'lastName' => $customer['lastName'],
+                'name' => $customer['name'],
                 'customerNumber' => $customer['customerNumber'],
                 'salutationId' => $customer['salutationId'] ?? $this->getValidSalutationId(),
                 'customerId' => $customer['id'],

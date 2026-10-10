@@ -22,8 +22,7 @@ const context = {
         },
     },
     customer: {
-        firstName: 'John',
-        lastName: 'Doe',
+        name: 'John Doe',
         email: 'john@doe.dev',
     },
     currency: {

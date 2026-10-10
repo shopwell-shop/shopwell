@@ -79,8 +79,7 @@ class MailStorerTest extends TestCase
         $flow = new StorableFlow('test', Context::createDefaultContext(), [OrderAware::ORDER_ID => Uuid::randomHex()]);
         $customer = new OrderCustomerEntity();
         $customer->setId(Uuid::randomHex());
-        $customer->setFirstName('bar');
-        $customer->setLastName('foo');
+        $customer->setName('bar foo');
         $customer->setEmail('foo@bar.com');
         $order = new OrderEntity();
         $order->setOrderCustomer($customer);
@@ -102,8 +101,7 @@ class MailStorerTest extends TestCase
         $flow = new StorableFlow('test', Context::createDefaultContext(), [OrderAware::ORDER_ID => Uuid::randomHex()]);
         $customer = new CustomerEntity();
         $customer->setId(Uuid::randomHex());
-        $customer->setFirstName('bar');
-        $customer->setLastName('foo');
+        $customer->setName('bar foo');
         $customer->setEmail('foo@bar.com');
         $customer->setSalesChannelId(TestDefaults::SALES_CHANNEL);
 

@@ -69,8 +69,7 @@ export default {
             'department',
             'salutationId',
             'title',
-            'firstName',
-            'lastName',
+            'name',
             'street',
             'additionalAddressLine1',
             'additionalAddressLine2',
@@ -79,12 +78,6 @@ export default {
             'countryId',
             'phoneNumber',
             'countryStateId',
-            'salutationId',
-            'city',
-            'street',
-            'zipcode',
-            'lastName',
-            'firstName',
         ]),
 
         countryId: {

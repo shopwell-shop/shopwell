@@ -129,8 +129,7 @@ class UserListCommandTest extends TestCase
     private function createUser(
         string $email,
         string $username,
-        string $firstName,
-        string $secondName,
+        string $name,
         bool $isAdmin = false,
         ?array $roles = null,
         ?string $id = null,
@@ -140,8 +139,7 @@ class UserListCommandTest extends TestCase
         $user->setEmail($email);
         $user->setActive(true);
         $user->setUsername($username);
-        $user->setFirstName($firstName);
-        $user->setLastName($secondName);
+        $user->setName($name);
         $user->setAdmin($isAdmin);
         $user->setCreatedAt(new \DateTime());
 

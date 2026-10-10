@@ -220,11 +220,11 @@ class ScriptRuleTest extends TestCase
             ],
         ];
 
-        yield 'App with firstName as rule property' => [
-            '/test/manifest_arbitraryRule_firstName.xml',
+        yield 'App with name as rule property' => [
+            '/test/manifest_arbitraryRule_name.xml',
             [
                 'operator' => '=',
-                'firstName' => 'hello',
+                'name' => 'hello',
             ],
         ];
 

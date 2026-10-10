@@ -141,12 +141,8 @@ class RegisterRoute extends AbstractRegisterRoute
         $shipping = $data->get('shippingAddress');
 
         if ($billing instanceof DataBag) {
-            if ($billing->has('firstName') && !$data->has('firstName')) {
-                $data->set('firstName', $billing->get('firstName'));
-            }
-
-            if ($billing->has('lastName') && !$data->has('lastName')) {
-                $data->set('lastName', $billing->get('lastName'));
+            if ($billing->has('name') && !$data->has('name')) {
+                $data->set('name', $billing->get('name'));
             }
 
             if ($data->has('title')) {
@@ -295,8 +291,7 @@ class RegisterRoute extends AbstractRegisterRoute
         $billingAddress = $data->get('billingAddress');
         $shippingAddress = $data->get('shippingAddress');
         if ($billingAddress instanceof DataBag) {
-            $billingAddress->set('firstName', $data->get('firstName'));
-            $billingAddress->set('lastName', $data->get('lastName'));
+            $billingAddress->set('name', $data->get('name'));
             $billingAddress->set('salutationId', $data->get('salutationId'));
         }
 
@@ -430,8 +425,7 @@ class RegisterRoute extends AbstractRegisterRoute
             'groupId' => $context->getCustomerGroupId(),
             'requestedGroupId' => $data->get('requestedGroupId', null),
             'salutationId' => $data->get('salutationId'),
-            'firstName' => $data->get('firstName'),
-            'lastName' => $data->get('lastName'),
+            'name' => $data->get('name'),
             'email' => $data->get('email'),
             'title' => $data->get('title'),
             'affiliateCode' => $data->get(OrderService::AFFILIATE_CODE_KEY),
@@ -511,8 +505,7 @@ class RegisterRoute extends AbstractRegisterRoute
     {
         $mappedData = $addressData->only(
             'title',
-            'firstName',
-            'lastName',
+            'name',
             'salutationId',
             'street',
             'zipcode',

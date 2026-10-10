@@ -44,8 +44,7 @@ class AddressHashSubscriberTest extends TestCase
     public static function generateProvider(): \Generator
     {
         $address = [
-            'firstName' => 'address-first-name',
-            'lastName' => 'address-last-name',
+            'name' => 'address-first-name address-last-name',
             'zipcode' => 'address-zipcode',
             'city' => 'address-city',
             'company' => 'address-company',

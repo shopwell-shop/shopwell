@@ -29,9 +29,8 @@ const colors = [
  * <div style="display: flex; align-items: center;">
  * <sw-avatar color="#dd4800"
  *            size="48px"
- *            firstName="John"
- *            style="margin: 0 10px;"
- *            lastName="Doe"></sw-avatar>
+ *            name="John Doe"
+ *            style="margin: 0 10px;"></sw-avatar>
  *
  * <sw-avatar size="48px"
  *            imageUrl="https://randomuser.me/api/portraits/women/68.jpg"></sw-avatar>
@@ -56,12 +55,7 @@ export default {
             required: false,
             default: null,
         },
-        firstName: {
-            type: String,
-            required: false,
-            default: '',
-        },
-        lastName: {
+        name: {
             type: String,
             required: false,
             default: '',
@@ -109,10 +103,17 @@ export default {
         },
 
         avatarInitials() {
-            const firstNameLetter = this.firstName ? this.firstName[0] : '';
-            const lastNameLetter = this.lastName ? this.lastName[0] : '';
+            const parts = this.name.trim().split(/\s+/).filter(Boolean);
 
-            return firstNameLetter + lastNameLetter;
+            if (parts.length === 0) {
+                return '';
+            }
+
+            if (parts.length === 1) {
+                return parts[0].slice(0, 1);
+            }
+
+            return parts[0][0] + parts[parts.length - 1][0];
         },
 
         avatarInitialsSize() {
@@ -145,10 +146,7 @@ export default {
                 };
             }
 
-            const firstNameLength = this.firstName ? this.firstName.length : 0;
-            const lastNameLength = this.lastName ? this.lastName.length : 0;
-
-            const nameLength = firstNameLength + lastNameLength;
+            const nameLength = this.name.trim().length;
             const color = colors[nameLength % colors.length];
 
             return {

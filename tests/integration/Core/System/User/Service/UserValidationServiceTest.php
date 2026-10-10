@@ -53,8 +53,7 @@ class UserValidationServiceTest extends TestCase
             [
                 'id' => $userId,
                 'username' => 'some User',
-                'firstName' => 'first',
-                'lastName' => 'last',
+                'name' => 'first last',
                 'localeId' => $firstLocale,
                 'email' => 'user@shopwell.cn',
                 'password' => TestDefaults::HASHED_PASSWORD,
@@ -79,8 +78,7 @@ class UserValidationServiceTest extends TestCase
             [
                 'id' => $userId,
                 'username' => 'some User',
-                'firstName' => 'first',
-                'lastName' => 'last',
+                'name' => 'first last',
                 'localeId' => $firstLocale,
                 'email' => 'user@shopwell.cn',
                 'password' => TestDefaults::HASHED_PASSWORD,
@@ -103,8 +101,7 @@ class UserValidationServiceTest extends TestCase
             [
                 'id' => $userId,
                 'username' => 'some User',
-                'firstName' => 'first',
-                'lastName' => 'last',
+                'name' => 'first last',
                 'localeId' => $firstLocale,
                 'email' => 'user@shopwell.cn',
                 'password' => TestDefaults::HASHED_PASSWORD,
@@ -128,8 +125,7 @@ class UserValidationServiceTest extends TestCase
             [
                 'id' => $userId,
                 'username' => 'some User',
-                'firstName' => 'first',
-                'lastName' => 'last',
+                'name' => 'first last',
                 'localeId' => $firstLocale,
                 'email' => 'user@shopwell.cn',
                 'password' => TestDefaults::HASHED_PASSWORD,

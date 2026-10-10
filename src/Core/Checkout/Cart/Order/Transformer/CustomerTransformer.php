@@ -10,8 +10,7 @@ use Shopwell\Core\Framework\Log\Package;
  * @phpstan-type TransformedCustomerArray array{
  *     customerId: string,
  *     email: string,
- *     firstName: string,
- *     lastName: string,
+ *     name: string,
  *     salutationId: string|null,
  *     title: string|null,
  *     vatIds: array<string>|null,
@@ -49,8 +48,7 @@ class CustomerTransformer
         return [
             'customerId' => $customer->getId(),
             'email' => $customer->getEmail(),
-            'firstName' => $customer->getFirstName(),
-            'lastName' => $customer->getLastName(),
+            'name' => $customer->getName(),
             'salutationId' => $customer->getSalutationId(),
             'title' => $customer->getTitle(),
             'vatIds' => $customer->getVatIds(),

@@ -57,25 +57,14 @@
                     v-if="user"
                     class="sw-settings-sso-user-detail__grid sw-detail-grid__information"
                 >
-                    {% block sw_settings_sso_user_detail_content_details_first_name %}
+                    {% block sw_settings_sso_user_detail_content_details_name %}
                     <mt-text-field
-                        v-model="user.firstName"
-                        name="sw-field--user-firstName"
-                        class="sw-sso-detail-card__information-firstName"
+                        v-model="user.name"
+                        name="sw-field--user-name"
+                        class="sw-sso-detail-card__information-name"
                         :disabled="true"
                         required
-                        :label="$t('sw-users-permissions.users.user-detail.labelFirstName')"
-                    />
-                    {% endblock %}
-
-                    {% block sw_settings_sso_user_detail_content_details_last_name %}
-                    <mt-text-field
-                        v-model="user.lastName"
-                        name="sw-field--user-lastName"
-                        class="sw-sso-detail-card__information-lastName"
-                        :disabled="true"
-                        required
-                        :label="$t('sw-users-permissions.users.user-detail.labelLastName')"
+                        :label="$t('sw-users-permissions.users.user-detail.labelName')"
                     />
                     {% endblock %}
 

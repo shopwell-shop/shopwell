@@ -57,7 +57,7 @@ class NewsletterConfirmEvent extends Event implements SalesChannelAware, MailAwa
     {
         if (!$this->mailRecipientStruct instanceof MailRecipientStruct) {
             $this->mailRecipientStruct = new MailRecipientStruct([
-                $this->newsletterRecipient->getEmail() => $this->newsletterRecipient->getFirstName() . ' ' . $this->newsletterRecipient->getLastName(),
+                $this->newsletterRecipient->getEmail() => $this->newsletterRecipient->getName() ?? '',
             ]);
         }
 

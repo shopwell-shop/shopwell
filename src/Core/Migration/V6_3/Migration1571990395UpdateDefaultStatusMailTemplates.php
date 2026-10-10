@@ -439,7 +439,7 @@ class Migration1571990395UpdateDefaultStatusMailTemplates extends MigrationStep
 <div style="font-family:arial; font-size:12px;">
  <br/>
     <p>
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
         <br/>
         the status of your order at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
         <strong>The new status is as follows: {{order.stateMachineState.name}}.</strong><br/>
@@ -454,7 +454,7 @@ EOT;
     {
         return <<<EOT
 
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         the status of your order at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
         The new status is as follows: {{order.stateMachineState.name}}.
@@ -470,7 +470,7 @@ EOT;
         <div style="font-family:arial; font-size:12px;">
          <br/>
             <p>
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                 <br/>
                 您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新。<br/>
                 <strong>订单最新状态：{{order.stateMachineState.name}}。</strong><br/>
@@ -485,7 +485,7 @@ EOT;
     {
         return <<<EOT
 
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新。
         订单最新状态：{{order.stateMachineState.name}}。
@@ -501,7 +501,7 @@ EOT;
 <div style="font-family:arial; font-size:12px;">
  <br/>
     <p>
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
         <br/>
         the status of your order at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
         <strong>The new status is as follows: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -516,7 +516,7 @@ EOT;
     {
         return <<<EOT
 
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         the status of your order at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
         The new status is as follows: {{order.transactions.first.stateMachineState.name}}.
@@ -532,7 +532,7 @@ EOT;
         <div style="font-family:arial; font-size:12px;">
          <br/>
             <p>
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                 <br/>
                 您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新。<br/>
                 <strong>支付最新状态：{{order.transactions.first.stateMachineState.name}}。</strong><br/>
@@ -547,7 +547,7 @@ EOT;
     {
         return <<<EOT
 
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新。
         支付最新状态：{{order.transactions.first.stateMachineState.name}}。

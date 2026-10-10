@@ -233,9 +233,9 @@ export const CONDITIONS: ConditionDefinition[] = [
         group: GROUPS.CUSTOMER,
     },
     {
-        type: 'customerLastName',
+        type: 'customerName',
         component: COMPONENTS.GENERIC,
-        label: 'global.sw-condition.condition.lastNameRule',
+        label: 'global.sw-condition.condition.nameRule',
         scopes: [SCOPES.CHECKOUT],
         group: GROUPS.CUSTOMER,
     },

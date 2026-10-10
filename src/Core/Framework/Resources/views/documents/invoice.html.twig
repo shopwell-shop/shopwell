@@ -41,7 +41,7 @@ The blocks from the templates in the /includes folder can be overwritten directl
             <br><p class="bold">{{ 'document.shippingAddress'|trans|sw_sanitize(null, true) }}</p>
             {{ shippingAddress.company|sw_sanitize(null, true) }}
             {{ shippingAddress.department|sw_sanitize(null, true) }} <br>
-            {{ shippingAddress.firstName|sw_sanitize(null, true) }} {{ shippingAddress.lastName|sw_sanitize(null, true) }} <br>
+            {{ shippingAddress.name|sw_sanitize(null, true) }} <br>
             {{ shippingAddress.street|sw_sanitize(null, true) }}<br>
             {{ shippingAddress.zipcode|sw_sanitize(null, true) }} {{ shippingAddress.city|sw_sanitize(null, true) }}<br>
             {{ shippingAddress.country.translated.name }}<br>

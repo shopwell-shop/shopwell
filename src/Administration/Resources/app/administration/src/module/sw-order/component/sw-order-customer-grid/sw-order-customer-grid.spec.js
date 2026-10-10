@@ -44,8 +44,7 @@ function generateCustomers() {
     for (let i = 1; i <= 10; i += 1) {
         items.push({
             id: i,
-            firstName: `Quynh ${i}`,
-            lastName: 'Nguyen',
+            name: `Quynh ${i} Nguyen`,
             email: `quynh${i}@example.com`,
             salesChannelId: '1234',
             customerNumber: `sw${i}`,

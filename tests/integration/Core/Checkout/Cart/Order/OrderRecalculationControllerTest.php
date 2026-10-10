@@ -168,8 +168,7 @@ class OrderRecalculationControllerTest extends TestCase
             'shippingDateLatest' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_FORMAT),
             'shippingOrderAddress' => [
                 'salutationId' => $this->getValidSalutationId(),
-                'firstName' => 'Floy',
-                'lastName' => 'Glover',
+                'name' => 'Floy Glover',
                 'zipcode' => '59438-0403',
                 'city' => 'Stellaberg',
                 'street' => 'street',

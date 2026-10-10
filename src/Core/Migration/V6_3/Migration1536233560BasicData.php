@@ -1502,7 +1502,7 @@ class Migration1536233560BasicData extends MigrationStep
 
     private function getRegisterTemplate_HTML_EN(): string
     {
-        return '<h3>Hello {{ firstName }} {{ lastName }}</h3>
+        return '<h3>Hello {{ name }}</h3>
                 <p>thank you very much for your registration.</p>
                 <p>You have successfully subscribed to our newsletter.</p>
         ';
@@ -1510,7 +1510,7 @@ class Migration1536233560BasicData extends MigrationStep
 
     private function getRegisterTemplate_PLAIN_EN(): string
     {
-        return 'Hello {{ firstName }} {{ lastName }}
+        return 'Hello {{ name }}
 
                 thank you very much for your registration.
 
@@ -1520,7 +1520,7 @@ class Migration1536233560BasicData extends MigrationStep
 
     private function getRegisterTemplate_HTML_ZH(): string
     {
-        return '<h3>您好 {{ firstName }} {{ lastName }}</h3>
+        return '<h3>您好 {{ name }}</h3>
                 <p>感谢您的注册。</p>
                 <p>您已成功订阅我们的邮件通讯。</p>
         ';
@@ -1528,7 +1528,7 @@ class Migration1536233560BasicData extends MigrationStep
 
     private function getRegisterTemplate_PLAIN_ZH(): string
     {
-        return '您好 {{ firstName }} {{ lastName }}
+        return '您好 {{ name }}
 
                 感谢您的注册。
 
@@ -1538,7 +1538,7 @@ class Migration1536233560BasicData extends MigrationStep
 
     private function getOptInTemplate_HTML_EN(): string
     {
-        return '<h3>Hello {{ firstName }} {{ lastName }}</h3>
+        return '<h3>Hello {{ name }}</h3>
                 <p>Thank you for your interest in our newsletter!</p>
                 <p>In order to prevent misuse of your email address, we have sent you this confirmation email. Confirm that you wish to receive the newsletter regularly by clicking <a href="{{ url }}">here</a>.</p>
                 <p>If you have not subscribed to the newsletter, please ignore this email.</p>
@@ -1547,7 +1547,7 @@ class Migration1536233560BasicData extends MigrationStep
 
     private function getOptInTemplate_PLAIN_EN(): string
     {
-        return 'Hello {{ firstName }} {{ lastName }}
+        return 'Hello {{ name }}
 
                 Thank you for your interest in our newsletter!
 
@@ -1559,7 +1559,7 @@ class Migration1536233560BasicData extends MigrationStep
 
     private function getOptInTemplate_HTML_ZH(): string
     {
-        return '<h3>您好 {{ firstName }} {{ lastName }}</h3>
+        return '<h3>您好 {{ name }}</h3>
                 <p>感谢您关注我们的邮件通讯！</p>
                 <p>为防止您的邮箱地址被他人冒用，我们向您发送了这封确认邮件。请点击<a href="{{ url }}">此处</a>，确认您希望定期收到邮件通讯。</p>
                 <p>如果您并未订阅邮件通讯，请忽略此邮件。</p>
@@ -1568,7 +1568,7 @@ class Migration1536233560BasicData extends MigrationStep
 
     private function getOptInTemplate_PLAIN_ZH(): string
     {
-        return '您好 {{ firstName }} {{ lastName }}
+        return '您好 {{ name }}
 
                 感谢您关注我们的邮件通讯！
 
@@ -2317,7 +2317,7 @@ class Migration1536233560BasicData extends MigrationStep
         return '<div style="font-family:arial; font-size:12px;">
 
 {% set currencyIsoCode = order.currency.isoCode %}
-Dear {{order.orderCustomer.salutation.displayName }} {{order.orderCustomer.lastName}},<br>
+Dear {{order.orderCustomer.salutation.displayName }} {{order.orderCustomer.name}},<br>
 <br>
 Thank you for your order at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}.<br>
 <br>
@@ -2372,7 +2372,7 @@ Thank you for your order at {{ salesChannel.name }} (Number: {{order.orderNumber
     {% set billingAddress = order.addresses.get(order.billingAddressId) %}
     <strong>Billing address:</strong><br>
     {{ billingAddress.company }}<br>
-    {{ billingAddress.firstName }} {{ billingAddress.lastName }}<br>
+    {{ billingAddress.name }}<br>
     {{ billingAddress.street }} <br>
     {{ billingAddress.zipcode }} {{ billingAddress.city }}<br>
     {{ billingAddress.country.name }}<br>
@@ -2380,7 +2380,7 @@ Thank you for your order at {{ salesChannel.name }} (Number: {{order.orderNumber
 
     <strong>Shipping address:</strong><br>
     {{ delivery.shippingOrderAddress.company }}<br>
-    {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}<br>
+    {{ delivery.shippingOrderAddress.name }}<br>
     {{ delivery.shippingOrderAddress.street }} <br>
     {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}<br>
     {{ delivery.shippingOrderAddress.country.name }}<br>
@@ -2400,7 +2400,7 @@ Thank you for your order at {{ salesChannel.name }} (Number: {{order.orderNumber
     private function getPlainTemplateEn(): string
     {
         return '{% set currencyIsoCode = order.currency.isoCode %}
-Dear {{order.orderCustomer.salutation.displayName }} {{order.orderCustomer.lastName}},
+Dear {{order.orderCustomer.salutation.displayName }} {{order.orderCustomer.name}},
 
 Thank you for your order at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}.
 
@@ -2432,14 +2432,14 @@ Selected shipping type: {{ delivery.shippingMethod.name }}
 {% set billingAddress = order.addresses.get(order.billingAddressId) %}
 Billing address:
 {{ billingAddress.company }}
-{{ billingAddress.firstName }} {{ billingAddress.lastName }}
+{{ billingAddress.name }}
 {{ billingAddress.street }}
 {{ billingAddress.zipcode }} {{ billingAddress.city }}
 {{ billingAddress.country.name }}
 
 Shipping address:
 {{ delivery.shippingOrderAddress.company }}
-{{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}
+{{ delivery.shippingOrderAddress.name }}
 {{ delivery.shippingOrderAddress.street }}
 {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}
 {{ delivery.shippingOrderAddress.country.name }}
@@ -2459,7 +2459,7 @@ If you have any questions, do not hesitate to contact us.
         return '<div style="font-family:arial; font-size:12px;">
 
 {% set currencyIsoCode = order.currency.isoCode %}
-您好 {{order.orderCustomer.salutation.displayName }} {{order.orderCustomer.lastName}}，<br>
+您好 {{order.orderCustomer.salutation.displayName }} {{order.orderCustomer.name}}，<br>
 <br>
 感谢您在 {{ salesChannel.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。<br>
 <br>
@@ -2514,7 +2514,7 @@ If you have any questions, do not hesitate to contact us.
     {% set billingAddress = order.addresses.get(order.billingAddressId) %}
     <strong>账单地址：</strong><br>
     {{ billingAddress.company }}<br>
-    {{ billingAddress.firstName }} {{ billingAddress.lastName }}<br>
+    {{ billingAddress.name }}<br>
     {{ billingAddress.street }} <br>
     {{ billingAddress.zipcode }} {{ billingAddress.city }}<br>
     {{ billingAddress.country.name }}<br>
@@ -2522,7 +2522,7 @@ If you have any questions, do not hesitate to contact us.
 
     <strong>收货地址：</strong><br>
     {{ delivery.shippingOrderAddress.company }}<br>
-    {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}<br>
+    {{ delivery.shippingOrderAddress.name }}<br>
     {{ delivery.shippingOrderAddress.street }} <br>
     {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}<br>
     {{ delivery.shippingOrderAddress.country.name }}<br>
@@ -2542,7 +2542,7 @@ If you have any questions, do not hesitate to contact us.
     private function getPlainTemplateZhCn(): string
     {
         return '{% set currencyIsoCode = order.currency.isoCode %}
-您好 {{order.orderCustomer.salutation.displayName }} {{order.orderCustomer.lastName}}，
+您好 {{order.orderCustomer.salutation.displayName }} {{order.orderCustomer.name}}，
 
 感谢您在 {{ salesChannel.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。
 
@@ -2573,14 +2573,14 @@ If you have any questions, do not hesitate to contact us.
 {% set billingAddress = order.addresses.get(order.billingAddressId) %}
 账单地址：
 {{ billingAddress.company }}
-{{ billingAddress.firstName }} {{ billingAddress.lastName }}
+{{ billingAddress.name }}
 {{ billingAddress.street }}
 {{ billingAddress.zipcode }} {{ billingAddress.city }}
 {{ billingAddress.country.name }}
 
 收货地址：
 {{ delivery.shippingOrderAddress.company }}
-{{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}
+{{ delivery.shippingOrderAddress.name }}
 {{ delivery.shippingOrderAddress.street }}
 {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}
 {{ delivery.shippingOrderAddress.country.name }}
@@ -2599,7 +2599,7 @@ If you have any questions, do not hesitate to contact us.
     {
         return '<div style="font-family:arial; font-size:12px;">
             <p>
-                Dear {{ customer.salutation.displayName }} {{ customer.lastName }},<br/>
+                Dear {{ customer.salutation.displayName }} {{ customer.name }},<br/>
                 <br/>
                 thank you for your registration with our Shop.<br/>
                 You will gain access via the email address <strong>{{ customer.email }}</strong> and the password you have chosen.<br/>
@@ -2610,7 +2610,7 @@ If you have any questions, do not hesitate to contact us.
 
     private function getRegistrationPlainTemplateEn(): string
     {
-        return 'Dear {{ customer.salutation.displayName }} {{ customer.lastName }},
+        return 'Dear {{ customer.salutation.displayName }} {{ customer.name }},
 
                 thank you for your registration with our Shop.
                 You will gain access via the email address {{ customer.email }} and the password you have chosen.
@@ -2622,7 +2622,7 @@ If you have any questions, do not hesitate to contact us.
     {
         return '<div style="font-family:arial; font-size:12px;">
             <p>
-                您好 {{ customer.salutation.displayName }} {{ customer.lastName }}，<br/>
+                您好 {{ customer.salutation.displayName }} {{ customer.name }}，<br/>
                 <br/>
                 感谢您在我们商城注册。<br/>
                 您可以使用邮箱 <strong>{{ customer.email }}</strong> 和您设置的密码登录。<br/>
@@ -2633,7 +2633,7 @@ If you have any questions, do not hesitate to contact us.
 
     private function getRegistrationPlainTemplateZhCn(): string
     {
-        return '您好 {{ customer.salutation.displayName }} {{ customer.lastName }}，
+        return '您好 {{ customer.salutation.displayName }} {{ customer.name }}，
 
                 感谢您在我们商城注册。
                 您可以使用邮箱 {{ customer.email }} 和您设置的密码登录。
@@ -2645,7 +2645,7 @@ If you have any questions, do not hesitate to contact us.
     {
         return '<div style="font-family:arial; font-size:12px;">
     <p>
-        Dear {{ customer.salutation.displayName }} {{ customer.lastName }},<br/>
+        Dear {{ customer.salutation.displayName }} {{ customer.name }},<br/>
         <br/>
         there has been a request to reset you Password in the Shop {{ salesChannel.name }}
         Please confirm the link below to specify a new password.<br/>
@@ -2661,7 +2661,7 @@ If you have any questions, do not hesitate to contact us.
     private function getPasswordChangePlainTemplateEn(): string
     {
         return '
-        Dear {{ customer.salutation.displayName }} {{ customer.lastName }},
+        Dear {{ customer.salutation.displayName }} {{ customer.name }},
 
         there has been a request to reset you Password in the Shop {{ salesChannel.name }}
         Please confirm the link below to specify a new password.
@@ -2677,7 +2677,7 @@ If you have any questions, do not hesitate to contact us.
     {
         return '<div style="font-family:arial; font-size:12px;">
     <p>
-        您好 {{ customer.salutation.displayName }} {{ customer.lastName }}，<br/>
+        您好 {{ customer.salutation.displayName }} {{ customer.name }}，<br/>
         <br/>
         有人请求在 {{ salesChannel.name }} 商城重置您的密码。
         请点击下方链接设置新密码。<br/>
@@ -2693,7 +2693,7 @@ If you have any questions, do not hesitate to contact us.
     private function getPasswordChangePlainTemplateZhCn(): string
     {
         return '
-        您好 {{ customer.salutation.displayName }} {{ customer.lastName }}，
+        您好 {{ customer.salutation.displayName }} {{ customer.name }}，
 
         有人请求在 {{ salesChannel.name }} 商城重置您的密码。
         请点击下方链接设置新密码。

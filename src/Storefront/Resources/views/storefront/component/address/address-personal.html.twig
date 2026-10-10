@@ -2,8 +2,7 @@
     type,
     salutation,
     title,
-    firstname,
-    lastname, and birthday fields for address forms (e.g. registering a user, creating or updating an address)
+    name, and birthday fields for address forms (e.g. registering a user, creating or updating an address)
 #}
 {% block component_address_personal_fields %}
     {% block component_address_personal_account_type %}
@@ -150,55 +149,28 @@
 
     {% block component_address_personal_fields_name %}
         <div class="row g-2">
-            {% block component_address_personal_fields_first_name %}
+            {% block component_address_personal_fields_name_input %}
                 {% if prefix !== '' and prefix != 'address' %}
                     {% set prefix = prefix != 'shippingAddress' ? 'billingAddress' : 'shippingAddress' %}
                 {% endif %}
 
                 {# New implementation, setting of "violationPath" #}
-                {% if formViolations.getViolations("/#{prefix}/firstName") is not empty %}
-                    {% set violationPath = "/#{prefix}/firstName" %}
-                {% elseif formViolations.getViolations("/firstName") is not empty and prefix === 'address' %}
-                    {% set violationPath = "/firstName" %}
+                {% if formViolations.getViolations("/#{prefix}/name") is not empty %}
+                    {% set violationPath = "/#{prefix}/name" %}
+                {% elseif formViolations.getViolations("/name") is not empty and prefix === 'address' %}
+                    {% set violationPath = "/name" %}
                 {% endif %}
 
-                {% block component_address_personal_fields_first_name_input %}
-                    {% sw_include '@Storefront/storefront/component/form/form-input.html.twig' with {
-                        label: 'account.personalFirstNameLabel'|trans|sw_sanitize,
-                        id: idPrefix ~ prefix ~ '-personalFirstName',
-                        name: prefix ? prefix ~ '[firstName]' : 'firstName',
-                        value: (prefix and data.has(prefix)) ? data.get(prefix).get('firstName') : data.get('firstName'),
-                        autocomplete: 'section-personal given-name',
-                        violationPath: violationPath,
-                        validationRules: 'required',
-                        additionalClass: 'col-sm-6',
-                    } %}
-                {% endblock %}
-            {% endblock %}
-
-            {% block component_address_personal_fields_last_name %}
-                {% if prefix !== '' and prefix != 'address' %}
-                    {% set prefix = prefix != 'shippingAddress' ? 'billingAddress' : 'shippingAddress' %}
-                {% endif %}
-
-                {% if formViolations.getViolations("/#{prefix}/lastName") is not empty %}
-                    {% set violationPath = "/#{prefix}/lastName" %}
-                {% elseif formViolations.getViolations("/lastName") is not empty and prefix === 'address' %}
-                    {% set violationPath = "/lastName" %}
-                {% endif %}
-
-                {% block component_address_personal_fields_last_name_input %}
-                    {% sw_include '@Storefront/storefront/component/form/form-input.html.twig' with {
-                        label: 'account.personalLastNameLabel'|trans|sw_sanitize,
-                        id: idPrefix ~ prefix ~ '-personalLastName',
-                        name: prefix ? prefix ~ '[lastName]' : 'lastName',
-                        value: (prefix and data.has(prefix)) ? data.get(prefix).get('lastName') : data.get('lastName'),
-                        autocomplete: 'section-personal family-name',
-                        violationPath: violationPath,
-                        validationRules: 'required',
-                        additionalClass: 'col-sm-6',
-                    } %}
-                {% endblock %}
+                {% sw_include '@Storefront/storefront/component/form/form-input.html.twig' with {
+                    label: 'account.personalNameLabel'|trans|sw_sanitize,
+                    id: idPrefix ~ prefix ~ '-personalName',
+                    name: prefix ? prefix ~ '[name]' : 'name',
+                    value: (prefix and data.has(prefix)) ? data.get(prefix).get('name') : data.get('name'),
+                    autocomplete: 'section-personal name',
+                    violationPath: violationPath,
+                    validationRules: 'required',
+                    additionalClass: 'col-sm-6',
+                } %}
             {% endblock %}
         </div>
     {% endblock %}

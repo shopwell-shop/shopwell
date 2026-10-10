@@ -247,8 +247,7 @@ final class OrderAdminSearchIndexer extends AbstractAdminIndexer
                    address_agg.additional_address_line1 as additional_address_line1,
                    address_agg.additional_address_line2 as additional_address_line2,
                    document_agg.documentNumber as documentNumber,
-                   order_customer.first_name,
-                   order_customer.last_name,
+                   order_customer.name,
                    order_customer.email,
                    order_customer.company,
                    order_customer.customer_number,
@@ -372,8 +371,7 @@ SQL;
             $text = \implode(' ', array_filter([
                 $row['order_number'] ?? '',
                 $row['email'] ?? '',
-                $row['first_name'] ?? '',
-                $row['last_name'] ?? '',
+                $row['name'] ?? '',
                 $row['company'] ?? '',
                 $row['customer_number'] ?? '',
                 $row['tags'] ?? '',
@@ -393,8 +391,7 @@ SQL;
             $completion = $this->buildCompletion([
                 \is_string($row['order_number'] ?? null) ? $row['order_number'] : null,
                 \is_string($row['email'] ?? null) ? $row['email'] : null,
-                \is_string($row['first_name'] ?? null) ? $row['first_name'] : null,
-                \is_string($row['last_name'] ?? null) ? $row['last_name'] : null,
+                \is_string($row['name'] ?? null) ? $row['name'] : null,
                 \is_string($row['company'] ?? null) ? $row['company'] : null,
             ]);
 

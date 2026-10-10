@@ -303,8 +303,7 @@ class DefaultMappingsTest extends TestCase
             'salutation' => [
                 'salutationKey' => 'test',
             ],
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'zipCode' => '48624',
             'city' => 'Schöppingen',
             'street' => 'Ebbinghoff 10',
@@ -323,8 +322,7 @@ class DefaultMappingsTest extends TestCase
         static::assertSame($newsletterRecipient['email'], $mappedNewsletterRecipient['email']);
         static::assertSame($newsletterRecipient['title'], $mappedNewsletterRecipient['title']);
         static::assertSame($newsletterRecipient['salutation']['salutationKey'], $mappedNewsletterRecipient['salutation']);
-        static::assertSame($newsletterRecipient['firstName'], $mappedNewsletterRecipient['first_name']);
-        static::assertSame($newsletterRecipient['lastName'], $mappedNewsletterRecipient['last_name']);
+        static::assertSame($newsletterRecipient['name'], $mappedNewsletterRecipient['name']);
         static::assertSame($newsletterRecipient['zipCode'], $mappedNewsletterRecipient['zip_code']);
         static::assertSame($newsletterRecipient['city'], $mappedNewsletterRecipient['city']);
         static::assertSame($newsletterRecipient['street'], $mappedNewsletterRecipient['street']);
@@ -340,8 +338,7 @@ class DefaultMappingsTest extends TestCase
         static::assertSame($newsletterRecipient['email'], $unmappedNewsletterRecipient['email']);
         static::assertSame($newsletterRecipient['title'], $unmappedNewsletterRecipient['title']);
         static::assertSame($newsletterRecipient['salutation']['salutationKey'], $unmappedNewsletterRecipient['salutation']['salutationKey']);
-        static::assertSame($newsletterRecipient['firstName'], $unmappedNewsletterRecipient['firstName']);
-        static::assertSame($newsletterRecipient['lastName'], $unmappedNewsletterRecipient['lastName']);
+        static::assertSame($newsletterRecipient['name'], $unmappedNewsletterRecipient['name']);
         static::assertSame($newsletterRecipient['zipCode'], $unmappedNewsletterRecipient['zipCode']);
         static::assertSame($newsletterRecipient['city'], $unmappedNewsletterRecipient['city']);
         static::assertSame($newsletterRecipient['street'], $unmappedNewsletterRecipient['street']);

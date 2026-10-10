@@ -81,8 +81,7 @@
                             <mt-avatar
                                 v-if="!editMode"
                                 size="l"
-                                :first-name="customer.firstName"
-                                :last-name="customer.lastName"
+                                :name="customer.name"
                             />
                             {% endblock %}
 
@@ -162,30 +161,18 @@
                             </sw-container>
 
                             <sw-container
-                                columns="1fr 1fr"
+                                columns="1fr"
                                 gap="10px"
                             >
-                                {% block sw_customer_card_metadata_customer_name_editor_first_name %}
+                                {% block sw_customer_card_metadata_customer_name_editor_name %}
                                 <mt-text-field
-                                    v-model="customer.firstName"
-                                    name="sw-field--customer-firstName"
-                                    :label="$t('sw-customer.card.labelFirstName')"
+                                    v-model="customer.name"
+                                    name="sw-field--customer-name"
+                                    :label="$t('sw-customer.card.labelName')"
                                     validation="required"
                                     required
-                                    :error="customerFirstNameError"
-                                    :placeholder="$t('sw-customer.card.placeholderFirstName')"
-                                />
-                                {% endblock %}
-
-                                {% block sw_customer_card_metadata_customer_name_editor_last_name %}
-                                <mt-text-field
-                                    v-model="customer.lastName"
-                                    name="sw-field--customer-lastName"
-                                    :label="$t('sw-customer.card.labelLastName')"
-                                    validation="required"
-                                    required
-                                    :error="customerLastNameError"
-                                    :placeholder="$t('sw-customer.card.placeholderLastName')"
+                                    :error="customerNameError"
+                                    :placeholder="$t('sw-customer.card.placeholderName')"
                                 />
                                 {% endblock %}
                             </sw-container>

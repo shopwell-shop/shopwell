@@ -183,8 +183,7 @@ class NewsletterControllerTest extends TestCase
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
                 'id' => $addressId,
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
@@ -196,8 +195,7 @@ class NewsletterControllerTest extends TestCase
             'email' => 'nltest@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
             'title' => 'Dr.',
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'salutationId' => $this->getValidSalutationId(),
             'customerNumber' => '12345',
         ];
@@ -219,8 +217,7 @@ class NewsletterControllerTest extends TestCase
         static::assertSame($this->customerData['email'], $recipientEntry->getEmail());
         static::assertSame($this->customerData['salutationId'], $recipientEntry->getSalutationId());
         static::assertSame($this->customerData['title'], $recipientEntry->getTitle());
-        static::assertSame($this->customerData['firstName'], $recipientEntry->getFirstName());
-        static::assertSame($this->customerData['lastName'], $recipientEntry->getLastName());
+        static::assertSame($this->customerData['name'], $recipientEntry->getName());
         static::assertSame($this->customerData['defaultShippingAddress']['zipcode'], $recipientEntry->getZipCode());
         static::assertSame($this->customerData['defaultShippingAddress']['city'], $recipientEntry->getCity());
         static::assertSame($this->customerData['defaultShippingAddress']['street'], $recipientEntry->getStreet());

@@ -61,8 +61,7 @@ class DeleteAddressRouteTest extends TestCase
         // Create
         $data = [
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Test',
-            'lastName' => 'Test',
+            'name' => 'Test Test',
             'street' => 'Test',
             'city' => 'Test',
             'zipcode' => 'Test',
@@ -150,8 +149,7 @@ class DeleteAddressRouteTest extends TestCase
     {
         $data = [
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Test',
-            'lastName' => 'Test',
+            'name' => 'Test Test',
             'street' => 'Test',
             'city' => 'Test',
             'zipcode' => 'Test',
@@ -204,8 +202,7 @@ class DeleteAddressRouteTest extends TestCase
         // Create
         $data = [
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Test',
-            'lastName' => 'Test',
+            'name' => 'Test Test',
             'street' => 'Test',
             'city' => 'Test',
             'zipcode' => 'Test',

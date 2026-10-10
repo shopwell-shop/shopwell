@@ -51,7 +51,7 @@ class RevocationRequestFormValidationFactoryTest extends TestCase
         yield 'all is invalid' => [
             'formData' => [],
             'requireNames' => true,
-            'expectedViolationCount' => 4,
+            'expectedViolationCount' => 3,
         ];
 
         yield 'all is invalid but names are not required' => [
@@ -61,67 +61,35 @@ class RevocationRequestFormValidationFactoryTest extends TestCase
         ];
 
         $formData = self::createValidData();
-        unset($formData['firstName']);
-        yield 'firstName is missing' => [
+        unset($formData['name']);
+        yield 'name is missing' => [
             'formData' => $formData,
             'requireNames' => true,
             'expectedViolationCount' => 1,
         ];
 
         $formData = self::createValidData();
-        unset($formData['firstName']);
-        yield 'firstName is missing but not required' => [
+        unset($formData['name']);
+        yield 'name is missing but not required' => [
             'formData' => $formData,
             'requireNames' => false,
             'expectedViolationCount' => 0,
         ];
 
         $formData = self::createValidData();
-        $formData['firstName'] = self::getToLongFirstName();
-        yield 'firstName is longer than maximum length' => [
+        $formData['name'] = self::getToLongName();
+        yield 'name is longer than maximum length' => [
             'formData' => $formData,
             'requireNames' => true,
             'expectedViolationCount' => 1,
         ];
 
         $formData = self::createValidData();
-        $formData['firstName'] = self::getToLongFirstName();
-        yield 'firstName is longer than maximum length but not required' => [
+        $formData['name'] = self::getToLongName();
+        yield 'name is longer than maximum length but not required' => [
             'formData' => $formData,
             'requireNames' => false,
             'expectedViolationCount' => 1,
-        ];
-
-        $formData = self::createValidData();
-        $formData['lastName'] = self::getToLongLastName();
-        yield 'lastName is longer than maximum length but not required' => [
-            'formData' => $formData,
-            'requireNames' => false,
-            'expectedViolationCount' => 1,
-        ];
-
-        $formData = self::createValidData();
-        $formData['lastName'] = self::getToLongLastName();
-        yield 'lastName is longer than maximum length' => [
-            'formData' => $formData,
-            'requireNames' => true,
-            'expectedViolationCount' => 1,
-        ];
-
-        $formData = self::createValidData();
-        unset($formData['firstName'], $formData['lastName']);
-        yield 'firstName and lastName is missing' => [
-            'formData' => $formData,
-            'requireNames' => true,
-            'expectedViolationCount' => 2,
-        ];
-
-        $formData = self::createValidData();
-        unset($formData['firstName'], $formData['lastName']);
-        yield 'firstName and lastName is missing but not required' => [
-            'formData' => $formData,
-            'requireNames' => false,
-            'expectedViolationCount' => 0,
         ];
 
         $formData = self::createValidData();
@@ -209,8 +177,7 @@ class RevocationRequestFormValidationFactoryTest extends TestCase
     private static function createValidData(): array
     {
         return [
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'email' => 'max@muster.com',
             'contractNumber' => 'SW123456789',
             'comment' => 'This is a simple comment',
@@ -240,22 +207,13 @@ EOT;
         return $comment;
     }
 
-    private static function getToLongFirstName(): string
+    private static function getToLongName(): string
     {
-        $firstName = self::get300SingsString();
+        $name = self::get300SingsString();
 
-        static::assertGreaterThan(CustomerDefinition::MAX_LENGTH_FIRST_NAME, \strlen($firstName));
+        static::assertGreaterThan(CustomerDefinition::MAX_LENGTH_NAME, \strlen($name));
 
-        return $firstName;
-    }
-
-    private static function getToLongLastName(): string
-    {
-        $firstName = self::get300SingsString();
-
-        static::assertGreaterThan(CustomerDefinition::MAX_LENGTH_FIRST_NAME, \strlen($firstName));
-
-        return $firstName;
+        return $name;
     }
 
     private static function get300SingsString(): string

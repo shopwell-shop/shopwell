@@ -7,8 +7,7 @@ const recipientMock = [
     {
         email: 'test@example.com',
         title: null,
-        firstName: 'Max',
-        lastName: 'Mustermann',
+        name: 'Max Mustermann',
         zipCode: '48624',
         city: 'Schöppingen',
         street: null,

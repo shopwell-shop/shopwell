@@ -207,8 +207,7 @@ class AddressControllerTest extends TestCase
         $dataBag = new RequestDataBag([
             'address' => [
                 'customerId' => $customer->getId(),
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
@@ -561,7 +560,7 @@ class AddressControllerTest extends TestCase
 
         $dataBag = new RequestDataBag([
             'address' => [
-                'firstName' => 'not',
+                'name' => 'not',
                 'company' => 'not',
                 'department' => 'not',
                 'street' => 'not',
@@ -676,9 +675,9 @@ class AddressControllerTest extends TestCase
             $content = (string) $response->getContent();
 
             static::assertMatchesRegularExpression(
-                '/<input(?=[^>]*name="address\[firstName\]")(?=[^>]*type="text")[^>]*>/',
+                '/<input(?=[^>]*name="address\[name\]")(?=[^>]*type="text")[^>]*>/',
                 $content,
-                'First name input must use type="text" for address type: ' . $addressType
+                'Name input must use type="text" for address type: ' . $addressType
             );
             static::assertMatchesRegularExpression(
                 '/<input(?=[^>]*name="address\[street\]")(?=[^>]*type="text")[^>]*>/',
@@ -721,8 +720,7 @@ class AddressControllerTest extends TestCase
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
                 'id' => $this->addressId,
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
@@ -733,8 +731,7 @@ class AddressControllerTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => 'test@example.com',
             'password' => 'test12345',
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'salutationId' => $this->getValidSalutationId(),
             'customerNumber' => '12345',
         ];
@@ -771,8 +768,7 @@ class AddressControllerTest extends TestCase
                 'salesChannelId' => TestDefaults::SALES_CHANNEL,
                 'defaultShippingAddress' => [
                     'id' => $id1,
-                    'firstName' => 'not',
-                    'lastName' => 'not',
+                    'name' => 'not not',
                     'city' => 'not',
                     'street' => 'not',
                     'zipcode' => 'not',
@@ -783,8 +779,7 @@ class AddressControllerTest extends TestCase
                 'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
                 'email' => Uuid::randomHex() . '@example.com',
                 'password' => 'not12345',
-                'lastName' => 'not',
-                'firstName' => 'First name',
+                'name' => 'First name',
                 'salutationId' => $salutationId,
                 'customerNumber' => 'not',
             ],
@@ -793,8 +788,7 @@ class AddressControllerTest extends TestCase
                 'salesChannelId' => TestDefaults::SALES_CHANNEL,
                 'defaultShippingAddress' => [
                     'id' => $id2,
-                    'firstName' => 'not',
-                    'lastName' => 'not',
+                    'name' => 'not not',
                     'city' => 'not',
                     'street' => 'not',
                     'zipcode' => 'not',
@@ -805,8 +799,7 @@ class AddressControllerTest extends TestCase
                 'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
                 'email' => Uuid::randomHex() . '@example.com',
                 'password' => 'not12345',
-                'lastName' => 'not',
-                'firstName' => 'First name',
+                'name' => 'First name',
                 'salutationId' => $salutationId,
                 'customerNumber' => 'not',
             ],
@@ -825,8 +818,7 @@ class AddressControllerTest extends TestCase
             [
                 'id' => $newBillingAddressId,
                 'customerId' => $customerId,
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
