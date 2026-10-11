@@ -116,7 +116,9 @@ test(
 
             // eslint-disable-next-line playwright/no-conditional-in-test
             if (InstanceMeta.features.ACCESSIBILITY_TWEAKS) {
-                await ShopCustomer.expects(StorefrontContactForm.formFieldFeedback).toHaveCount(7);
+                // The form renders one feedback element per field, and merging the name
+                // fields brought the contact form down to six of them.
+                await ShopCustomer.expects(StorefrontContactForm.formFieldFeedback).toHaveCount(6);
             }
 
             await ShopCustomer.expects(StorefrontContactForm.contactSuccessMessage).not.toBeVisible();
