@@ -1,7 +1,7 @@
 <div style="font-family:arial; font-size:12px;">
 
     {% set currencyIsoCode = order.currency.isoCode %}
-    {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }},<br>
+    {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.name }},<br>
     <br>
     We have received your order from {{ order.orderDateTime|format_datetime('medium', 'short', locale='en-GB') }}.<br>
     <br>
@@ -143,7 +143,7 @@
         {% set billingAddress = order.addresses.get(order.billingAddressId) %}
         <strong>Billing address:</strong><br>
         {{ billingAddress.company }}<br>
-        {{ billingAddress.firstName }} {{ billingAddress.lastName }}<br>
+        {{ billingAddress.name }}<br>
         {{ billingAddress.street }} <br>
         {{ billingAddress.zipcode }} {{ billingAddress.city }}<br>
         {{ billingAddress.country.translated.name }}<br>
@@ -152,7 +152,7 @@
         {% if delivery %}
             <strong>Shipping address:</strong><br>
             {{ delivery.shippingOrderAddress.company }}<br>
-            {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}<br>
+            {{ delivery.shippingOrderAddress.name }}<br>
             {{ delivery.shippingOrderAddress.street }} <br>
             {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}<br>
             {{ delivery.shippingOrderAddress.country.translated.name }}<br>

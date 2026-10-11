@@ -71,8 +71,7 @@ class ListAddressRouteTest extends TestCase
 
         static::assertSame(1, $response['total']);
         static::assertNotCount(0, $response['elements']);
-        static::assertSame('Max', $response['elements'][0]['firstName']);
-        static::assertSame('Mustermann', $response['elements'][0]['lastName']);
+        static::assertSame('Max Mustermann', $response['elements'][0]['name']);
         static::assertSame('Musterstraße 1', $response['elements'][0]['street']);
         static::assertSame('Schöppingen', $response['elements'][0]['city']);
         static::assertSame('12345', $response['elements'][0]['zipcode']);
@@ -91,7 +90,7 @@ class ListAddressRouteTest extends TestCase
                 [
                     'includes' => [
                         'customer_address' => [
-                            'firstName',
+                            'name',
                         ],
                     ],
                 ]
@@ -102,7 +101,7 @@ class ListAddressRouteTest extends TestCase
         static::assertSame(1, $response['total']);
         static::assertNotCount(0, $response['elements']);
         static::assertSame([
-            'firstName' => 'Max',
+            'name' => 'Max Mustermann',
             'apiAlias' => 'customer_address',
         ], $response['elements'][0]);
     }
@@ -125,8 +124,7 @@ class ListAddressRouteTest extends TestCase
 
         static::assertSame(1, $response['total']);
         static::assertNotCount(0, $response['elements']);
-        static::assertSame('Max', $response['elements'][0]['firstName']);
-        static::assertSame('Mustermann', $response['elements'][0]['lastName']);
+        static::assertSame('Max Mustermann', $response['elements'][0]['name']);
         static::assertSame('Musterstraße 1', $response['elements'][0]['street']);
         static::assertSame('Schöppingen', $response['elements'][0]['city']);
         static::assertSame('12345', $response['elements'][0]['zipcode']);

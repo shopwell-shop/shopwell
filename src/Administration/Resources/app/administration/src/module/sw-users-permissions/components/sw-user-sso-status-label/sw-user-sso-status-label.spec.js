@@ -35,8 +35,7 @@ describe('module/sw-users-permissions/components/sw-user-sso-status-label', () =
         const wrapper = await createWrapper({
             active: false,
             email: 'foo@bar.baz',
-            firstName: 'foo@bar.baz',
-            lastName: 'foo@bar.baz',
+            name: 'foo@bar.baz',
         });
 
         const colorBadge = await wrapper.find('.sw-user-sso-status-label');
@@ -49,8 +48,7 @@ describe('module/sw-users-permissions/components/sw-user-sso-status-label', () =
         const wrapper = await createWrapper({
             active: false,
             email: 'foo@bar.baz',
-            firstName: 'foo',
-            lastName: 'bar',
+            name: 'foo bar',
         });
 
         const colorBadge = await wrapper.find('.sw-user-sso-status-label');

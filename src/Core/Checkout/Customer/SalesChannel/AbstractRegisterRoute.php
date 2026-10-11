@@ -9,9 +9,9 @@ use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 
 /**
  * This route is used for customer registration
- * The required parameters are: "salutationId", "firstName", "lastName", "email", "password" and "billingAddress"
+ * The required parameters are: "salutationId", "name", "email", "password" and "billingAddress"
  * "storefrontUrl" is additionally required when double opt-in registration is enabled
- * The "billingAddress" should has required parameters: "salutationId", "firstName", "lastName", "street", "zipcode", "city", "countyId".
+ * The "billingAddress" should has required parameters: "salutationId", "name", "street", "zipcode", "city", "countyId".
  */
 #[Package('checkout')]
 abstract class AbstractRegisterRoute

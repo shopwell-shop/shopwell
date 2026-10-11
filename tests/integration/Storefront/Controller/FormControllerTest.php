@@ -31,8 +31,7 @@ class FormControllerTest extends TestCase
         $data = [
             'option' => 'subscribe',
             'email' => 'test@example.com',
-            'firstName' => 'John',
-            'lastName' => 'Doe',
+            'name' => 'John Doe',
         ];
 
         $response = $this->request(
@@ -103,8 +102,7 @@ class FormControllerTest extends TestCase
         $data = [
             'salutationId' => $salutation->getId(),
             'email' => 'test@example.com',
-            'firstName' => 'John',
-            'lastName' => 'Doe',
+            'name' => 'John Doe',
             'subject' => 'Lorem ipsum',
             'comment' => 'Lorem ipsum dolor',
             'phone' => '+4920 3920173',
@@ -138,8 +136,7 @@ class FormControllerTest extends TestCase
         // without salutationId and with incorrect email
         $data = [
             'email' => 'test@example',
-            'firstName' => 'John',
-            'lastName' => 'Doe',
+            'name' => 'John Doe',
             'subject' => 'Lorem ipsum',
             'comment' => 'Lorem ipsum dolor',
             'phone' => '+4920 3920173',
@@ -168,8 +165,7 @@ class FormControllerTest extends TestCase
     public function testSendRevocationRequest(): void
     {
         $formData = [
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'email' => 'max@muster.com',
             'contractNumber' => 'SW123456789',
             'comment' => 'This is a simple comment',
@@ -198,8 +194,7 @@ class FormControllerTest extends TestCase
     {
         // invalid formData
         $formData = [
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'email' => 'invalid email', // invalid email address
             'contractNumber' => '', // Empty contract number
             'comment' => 'This is a simple comment',

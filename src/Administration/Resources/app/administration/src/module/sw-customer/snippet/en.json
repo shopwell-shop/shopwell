@@ -42,22 +42,20 @@
       "tooltipImitateCustomerNoDomain": "The Sales Channel of the customer has no domain configured.",
       "tooltipImitateCustomerNoStorefront": "The Sales Channel of the customer is not of type Storefront.",
       "placeholderTitle": "Title",
-      "placeholderFirstName": "First name",
-      "placeholderLastName": "Last name",
       "placeholderCompany": "Company",
       "placeholderEmail": "Email address",
       "placeholderNewPassword": "Enter new password...",
       "placeholderNewPasswordConfirm": "Re-enter new password...",
       "labelSalutation": "Salutation",
       "labelTitle": "Title",
-      "labelFirstName": "First name",
-      "labelLastName": "Last name",
       "labelCompany": "Company",
       "labelEmail": "Email",
       "labelTags": "Tags",
       "labelGuest": "Guest account",
       "labelVatId": "VAT Reg.No.",
-      "placeholderVatId": "Enter VAT Reg.No..."
+      "placeholderVatId": "Enter VAT Reg.No...",
+      "labelName": "Name",
+      "placeholderName": "Enter name..."
     },
     "list": {
       "textCustomers": "Customers",
@@ -70,8 +68,6 @@
       "columnGroupRequested": "Request",
       "columnNameGuestLabel": "Guest account",
       "labelCreatedByAdmin": "Created by admin",
-      "columnFirstName": "First name",
-      "columnLastName": "Last name",
       "columnStreet": "Street",
       "columnZip": "Postal code",
       "columnCity": "City",
@@ -95,8 +91,6 @@
     "baseForm": {
       "labelSalutation": "Salutation",
       "labelTitle": "Title",
-      "labelFirstName": "First name",
-      "labelLastName": "Last name",
       "labelEmail": "Email address",
       "labelPhoneNumber": "Phone number",
       "labelCompany": "Company",
@@ -110,8 +104,6 @@
       "helpTextPassword": "After saving the customer the password can only be changed directly by the customer.",
       "placeholderSalutation": "Select salutation...",
       "placeholderTitle": "Enter title...",
-      "placeholderFirstName": "Enter first name...",
-      "placeholderLastName": "Enter last name...",
       "placeholderEmail": "Enter email address...",
       "placeholderCustomerNumber": "Enter customer number...",
       "placeholderCustomerGroup": "Select customer group...",
@@ -120,7 +112,9 @@
       "labelLanguage": "Language",
       "placeholderLanguage": "Select language...",
       "labelTags": "Tags",
-      "placeholderTags": "Select tags..."
+      "placeholderTags": "Select tags...",
+      "labelName": "Name",
+      "placeholderName": "Enter name..."
     },
     "baseInfo": {
       "contactEmail": "Email address",
@@ -173,14 +167,13 @@
       "columnDefaultShippingAddress": "Default shipping address",
       "columnDefaultBillingAddress": "Default billing address",
       "columnCompany": "Company",
-      "columnFirstName": "First name",
-      "columnLastName": "Last name",
       "columnStreet": "Street",
       "columnZipCode": "Postal code",
       "columnCity": "City",
       "columnActions": "Actions",
       "contextMenuDefaultShippingAddress": "Set as default delivery address",
-      "contextMenuDefaultBillingAddress": "Set as default billing address"
+      "contextMenuDefaultBillingAddress": "Set as default billing address",
+      "columnName": "Name"
     },
     "detailOrder": {
       "searchbarPlaceholder": "Search orders",
@@ -196,8 +189,8 @@
       "ordersTitle": "Orders"
     },
     "imitateCustomerModal": {
-      "modalTitle": "Log in as {firstname} {lastname}",
-      "modalDescription": "Choose the Sales Channel in which you would like to log in as {firstname} {lastname}.",
+      "modalTitle": "Log in as {name}",
+      "modalDescription": "Choose the Sales Channel in which you would like to log in as {name}.",
       "modalInfo": "Please remember to {logout} after you have finished your work.",
       "modalInfoLogout": "log out",
       "modalInfoNoDomains": "No active domain found. Please check your Sales Channel settings."
@@ -221,8 +214,6 @@
       "labelDepartment": "Department",
       "labelSalutation": "Salutation",
       "labelTitle": "Title",
-      "labelFirstName": "First name",
-      "labelLastName": "Last name",
       "labelZipcode": "Postal code",
       "labelStreet": "Street",
       "labelCity": "City",
@@ -237,8 +228,6 @@
       "placeholderDepartment": "Enter department...",
       "placeholderSalutation": "Select salutation...",
       "placeholderTitle": "Enter title...",
-      "placeholderFirstName": "Enter first name...",
-      "placeholderLastName": "Enter last name...",
       "placeholderZipcode": "Enter postal code...",
       "placeholderStreet": "Enter street...",
       "placeholderCity": "Enter city...",
@@ -247,7 +236,9 @@
       "placeholderAdditionalAddressLine1": "Enter a first address line...",
       "placeholderAdditionalAddressLine2": "Enter a second address line...",
       "placeholderPhoneNumber": "Enter phone number...",
-      "placeholderVatId": "Enter VAT Reg.No..."
+      "placeholderVatId": "Enter VAT Reg.No...",
+      "labelName": "Name",
+      "placeholderName": "Enter name..."
     },
     "detail": {
       "tabGeneral": "General",

@@ -40,7 +40,7 @@ export default function addCustomerGroupRegistrationListener(loginService) {
             message: getApplicationRootReference().$t(
                 'sw-customer.customerGroupRegistration.notification.message',
                 {
-                    name: `${customer.firstName} ${customer.lastName}`,
+                    name: customer.name,
                     groupName: customer.requestedGroup.name,
                 },
                 0,

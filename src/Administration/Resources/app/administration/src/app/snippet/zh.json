@@ -777,7 +777,7 @@
           "label": "客户邮箱地址",
           "placeholder": "输入唯一邮箱地址，或使用 \"*\" 作为通配符 ..."
         },
-        "lastNameRule": "客户姓氏",
+        "nameRule": "客户姓名",
         "isCompanyRule": "企业客户",
         "cartTaxDisplay": {
           "label": "税费显示",

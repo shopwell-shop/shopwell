@@ -60,8 +60,7 @@ test(
         await test.step('Fill out all necessary contact information.', async () => {
             await ShopCustomer.presses(StorefrontContactForm.salutationSelect);
             await StorefrontContactForm.salutationSelect.selectOption('Mr.');
-            await ShopCustomer.fillsIn(StorefrontContactForm.firstNameInput, 'John');
-            await ShopCustomer.fillsIn(StorefrontContactForm.lastNameInput, 'Doe');
+            await ShopCustomer.fillsIn(StorefrontContactForm.nameInput, 'John Doe');
             await ShopCustomer.fillsIn(StorefrontContactForm.emailInput, 'mail@test.com');
             await ShopCustomer.fillsIn(StorefrontContactForm.phoneInput, '0123456789');
             await ShopCustomer.fillsIn(StorefrontContactForm.subjectInput, 'Test: Product question');
@@ -109,8 +108,7 @@ test(
             await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText('Contact');
 
             await ShopCustomer.expects(StorefrontContactForm.salutationSelect).toHaveCSS('border-color', 'rgb(194, 0, 23)');
-            await ShopCustomer.expects(StorefrontContactForm.firstNameInput).toHaveCSS('border-color', 'rgb(194, 0, 23)');
-            await ShopCustomer.expects(StorefrontContactForm.lastNameInput).toHaveCSS('border-color', 'rgb(194, 0, 23)');
+            await ShopCustomer.expects(StorefrontContactForm.nameInput).toHaveCSS('border-color', 'rgb(194, 0, 23)');
             await ShopCustomer.expects(StorefrontContactForm.emailInput).toHaveCSS('border-color', 'rgb(194, 0, 23)');
             await ShopCustomer.expects(StorefrontContactForm.phoneInput).toHaveCSS('border-color', 'rgb(194, 0, 23)');
             await ShopCustomer.expects(StorefrontContactForm.subjectInput).toHaveCSS('border-color', 'rgb(194, 0, 23)');
@@ -118,7 +116,9 @@ test(
 
             // eslint-disable-next-line playwright/no-conditional-in-test
             if (InstanceMeta.features.ACCESSIBILITY_TWEAKS) {
-                await ShopCustomer.expects(StorefrontContactForm.formFieldFeedback).toHaveCount(7);
+                // The form renders one feedback element per field, and merging the name
+                // fields brought the contact form down to six of them.
+                await ShopCustomer.expects(StorefrontContactForm.formFieldFeedback).toHaveCount(6);
             }
 
             await ShopCustomer.expects(StorefrontContactForm.contactSuccessMessage).not.toBeVisible();

@@ -59,7 +59,7 @@ class AddressListingPageLoader
 
         $page->setCountries($this->getCountries($salesChannelContext));
 
-        $criteria = (new Criteria())->addSorting(new FieldSorting('firstName', FieldSorting::ASCENDING));
+        $criteria = (new Criteria())->addSorting(new FieldSorting('name', FieldSorting::ASCENDING));
 
         $page->setAddresses($this->listAddressRoute->load($criteria, $salesChannelContext, $customer)->getAddressCollection());
 

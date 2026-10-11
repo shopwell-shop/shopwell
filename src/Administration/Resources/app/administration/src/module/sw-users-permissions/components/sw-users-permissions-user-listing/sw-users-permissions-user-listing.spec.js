@@ -39,8 +39,7 @@ async function createWrapper(privileges = [], isSso = { isSso: false }, deleteFu
                                             {
                                                 id: '019bff8c86e773e79ec5538c7b1edabc',
                                                 username: 'maxmuster',
-                                                firstName: 'Max',
-                                                lastName: 'Mustermann',
+                                                name: 'Max Mustermann',
                                                 email: 'max@mustermann.com',
                                                 active: false,
                                                 aclRoles: [{ name: 'testRole' }],
@@ -48,8 +47,7 @@ async function createWrapper(privileges = [], isSso = { isSso: false }, deleteFu
                                             {
                                                 id: '019bff8c86e773e79ec5538c7b1ed571',
                                                 username: 'admin',
-                                                firstName: '',
-                                                lastName: 'admin',
+                                                name: 'admin',
                                                 email: 'info@shopwell.cn',
                                                 active: true,
                                                 aclRoles: [{ name: 'adminRole' }, { name: 'superUser' }],
@@ -124,12 +122,8 @@ describe('module/sw-users-permissions/components/sw-users-permissions-user-listi
                 label: 'sw-users-permissions.users.user-grid.labelUsername',
             },
             {
-                property: 'firstName',
-                label: 'sw-users-permissions.users.user-grid.labelFirstName',
-            },
-            {
-                property: 'lastName',
-                label: 'sw-users-permissions.users.user-grid.labelLastName',
+                property: 'name',
+                label: 'sw-users-permissions.users.user-grid.labelName',
             },
             {
                 property: 'aclRoles',
@@ -188,16 +182,14 @@ describe('module/sw-users-permissions/components/sw-users-permissions-user-listi
         const expectedUser = [
             {
                 username: 'maxmuster',
-                firstName: 'Max',
-                lastName: 'Mustermann',
+                name: 'Max Mustermann',
                 email: 'max@mustermann.com',
                 active: false,
                 aclRoles: ['testRole'],
             },
             {
                 username: 'admin',
-                firstName: '',
-                lastName: 'admin',
+                name: 'admin',
                 email: 'info@shopwell.cn',
                 active: true,
                 aclRoles: ['adminRole', 'superUser'],
@@ -215,11 +207,8 @@ describe('module/sw-users-permissions/components/sw-users-permissions-user-listi
             const userName = wrapper.findByText('a.sw-settings-user-list__columns', user.username);
             expect(userName.exists()).toBe(true);
 
-            const firstName = wrapper.findByText('div.sw-data-grid__cell-content', user.firstName);
-            expect(firstName.exists()).toBe(true);
-
-            const lastName = wrapper.findByText('div.sw-data-grid__cell-content', user.lastName);
-            expect(lastName.exists()).toBe(true);
+            const name = wrapper.findByText('div.sw-data-grid__cell-content', user.name);
+            expect(name.exists()).toBe(true);
 
             const email = wrapper.findByText('div.sw-data-grid__cell-content', user.email);
             expect(email.exists()).toBe(true);
@@ -347,7 +336,7 @@ describe('module/sw-users-permissions/components/sw-users-permissions-user-listi
     it('should open the verification modal before deleting a user', async () => {
         const deleteFunction = jest.fn().mockResolvedValue(undefined);
         wrapper = await createWrapper(['users_and_permissions.deleter'], { isSso: false }, deleteFunction);
-        const user = { id: 'different-user', firstName: 'Max', lastName: 'Mustermann' };
+        const user = { id: 'different-user', name: 'Max Mustermann' };
         Shopwell.Store.get('session').setCurrentUser({ id: 'current-user' });
 
         wrapper.vm.onDelete(user);
@@ -361,7 +350,7 @@ describe('module/sw-users-permissions/components/sw-users-permissions-user-listi
     it('should delete an SSO user without password verification', async () => {
         const deleteFunction = jest.fn().mockResolvedValue(undefined);
         wrapper = await createWrapper(['users_and_permissions.deleter'], { isSso: true }, deleteFunction);
-        const user = { id: 'different-user', firstName: 'Max', lastName: 'Mustermann' };
+        const user = { id: 'different-user', name: 'Max Mustermann' };
         Shopwell.Store.get('session').setCurrentUser({ id: 'current-user' });
 
         wrapper.vm.onDelete(user);

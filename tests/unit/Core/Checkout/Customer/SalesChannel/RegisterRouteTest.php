@@ -663,8 +663,7 @@ class RegisterRouteTest extends TestCase
             'email' => 'test@test.de',
             'billingAddress' => [
                 'countryId' => $countryId,
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'salutationId' => $salutationId,
             ],
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
@@ -675,8 +674,7 @@ class RegisterRouteTest extends TestCase
                 'salutationId' => $salutationId,
             ],
             'salutationId' => $salutationId,
-            'lastName' => 'Mustermann',
-            'firstName' => 'Max',
+            'name' => 'Max Mustermann',
             'vatIds' => ['123'],
             'storefrontUrl' => 'foo',
         ];
@@ -784,8 +782,7 @@ class RegisterRouteTest extends TestCase
         $data = [
             'email' => 'test@test.de',
             'billingAddress' => [
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'salutationId' => $salutationId,
             ],
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
@@ -795,8 +792,7 @@ class RegisterRouteTest extends TestCase
                 'salutationId' => $salutationId,
             ],
             'salutationId' => $salutationId,
-            'lastName' => 'Mustermann',
-            'firstName' => 'Max',
+            'name' => 'Max Mustermann',
             'storefrontUrl' => 'foo',
         ];
 
@@ -890,8 +886,7 @@ class RegisterRouteTest extends TestCase
             'billingAddress' => 'Max Mustermanns Address',
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'salutationId' => $salutationId,
-            'lastName' => 'Mustermann',
-            'firstName' => 'Max',
+            'name' => 'Max Mustermann',
             'vatIds' => ['123'],
             'storefrontUrl' => 'foo',
         ];
@@ -1032,15 +1027,12 @@ class RegisterRouteTest extends TestCase
 
         $registerRoute = $this->createRegisterRoute(dataValidator: $dataValidator);
 
-        $maxLengthFirstName = str_repeat('M', CustomerDefinition::MAX_LENGTH_FIRST_NAME);
-        $maxLengthLastName = str_repeat('L', CustomerDefinition::MAX_LENGTH_LAST_NAME);
+        $maxLengthName = str_repeat('M', CustomerDefinition::MAX_LENGTH_NAME);
 
         $data = $this->createRegistrationData([
-            'firstName' => $maxLengthFirstName,
-            'lastName' => $maxLengthLastName,
+            'name' => $maxLengthName,
             'billingAddress' => [
-                'firstName' => $maxLengthFirstName,
-                'lastName' => $maxLengthLastName,
+                'name' => $maxLengthName,
                 'countryId' => Uuid::randomHex(),
             ],
         ]);
@@ -1061,7 +1053,7 @@ class RegisterRouteTest extends TestCase
             null,
             [],
             'root',
-            'firstName',
+            'name',
             str_repeat('T', 256)
         ));
 
@@ -1073,15 +1065,12 @@ class RegisterRouteTest extends TestCase
 
         $registerRoute = $this->createRegisterRoute(dataValidator: $dataValidator);
 
-        $tooLongFirstName = str_repeat('T', CustomerDefinition::MAX_LENGTH_FIRST_NAME + 1);
-        $tooLongLastName = str_repeat('L', CustomerDefinition::MAX_LENGTH_LAST_NAME + 1);
+        $tooLongName = str_repeat('T', CustomerDefinition::MAX_LENGTH_NAME + 1);
 
         $data = $this->createRegistrationData([
-            'firstName' => $tooLongFirstName,
-            'lastName' => $tooLongLastName,
+            'name' => $tooLongName,
             'billingAddress' => [
-                'firstName' => $tooLongFirstName,
-                'lastName' => $tooLongLastName,
+                'name' => $tooLongName,
                 'countryId' => Uuid::randomHex(),
             ],
         ]);
@@ -1115,11 +1104,11 @@ class RegisterRouteTest extends TestCase
                 static::assertCount(2, $create[0]['addresses']);
                 $billingAddress = array_values(array_filter(
                     $create[0]['addresses'],
-                    static fn (array $address): bool => $address['firstName'] === 'John'
+                    static fn (array $address): bool => $address['name'] === 'John Doe'
                 ))[0];
                 $shippingAddress = array_values(array_filter(
                     $create[0]['addresses'],
-                    static fn (array $address): bool => $address['firstName'] === 'Jane'
+                    static fn (array $address): bool => $address['name'] === 'Jane Doe'
                 ))[0];
 
                 static::assertSame('billing-salutation', $billingAddress['salutationId']);
@@ -1143,8 +1132,7 @@ class RegisterRouteTest extends TestCase
             new RequestDataBag($this->createRegistrationData([
                 'salutationId' => 'billing-salutation',
                 'shippingAddress' => [
-                    'firstName' => 'Jane',
-                    'lastName' => 'Doe',
+                    'name' => 'Jane Doe',
                     'countryId' => Uuid::randomHex(),
                     'salutationId' => 'shipping-salutation',
                 ],
@@ -1190,8 +1178,7 @@ class RegisterRouteTest extends TestCase
                 ))[0];
 
                 static::assertSame('Dr.', $billingAddress['title']);
-                static::assertSame('Max', $billingAddress['firstName']);
-                static::assertSame('Mustermann', $billingAddress['lastName']);
+                static::assertSame('Max Mustermann', $billingAddress['name']);
                 static::assertSame('Main Street 1', $billingAddress['street']);
                 static::assertSame('12345', $billingAddress['zipcode']);
                 static::assertSame('Shopwell', $billingAddress['company']);
@@ -1202,8 +1189,7 @@ class RegisterRouteTest extends TestCase
                 static::assertSame(['note' => '  keep custom field whitespace  '], $billingAddress['customFields']);
 
                 static::assertSame('Ms.', $shippingAddress['title']);
-                static::assertSame('Jane', $shippingAddress['firstName']);
-                static::assertSame('Doe', $shippingAddress['lastName']);
+                static::assertSame('Jane Doe', $shippingAddress['name']);
                 static::assertSame('Side Street 2', $shippingAddress['street']);
                 static::assertSame('54321', $shippingAddress['zipcode']);
                 static::assertSame('Shopwell Storefront', $shippingAddress['company']);
@@ -1242,8 +1228,7 @@ class RegisterRouteTest extends TestCase
             new RequestDataBag($this->createRegistrationData([
                 'guest' => true,
                 'title' => '  Dr.  ',
-                'firstName' => "\nMax\t",
-                'lastName' => "\rMustermann ",
+                'name' => "\nMax Mustermann\t",
                 'billingAddress' => [
                     'countryId' => Uuid::randomHex(),
                     'street' => "\t Main Street 1 \n",
@@ -1260,8 +1245,7 @@ class RegisterRouteTest extends TestCase
                 ],
                 'shippingAddress' => [
                     'title' => "\nMs.\t",
-                    'firstName' => "\tJane ",
-                    'lastName' => "          Doe\n",
+                    'name' => "\tJane Doe\n",
                     'countryId' => Uuid::randomHex(),
                     'street' => "\nSide Street 2           ",
                     'zipcode' => "\t54321\n",
@@ -1593,12 +1577,10 @@ class RegisterRouteTest extends TestCase
     {
         return array_merge([
             'email' => 'test@example.com',
-            'firstName' => 'John',
-            'lastName' => 'Doe',
+            'name' => 'John Doe',
             'salutationId' => Uuid::randomHex(),
             'billingAddress' => [
-                'firstName' => 'John',
-                'lastName' => 'Doe',
+                'name' => 'John Doe',
                 'countryId' => Uuid::randomHex(),
             ],
         ], $overrides);

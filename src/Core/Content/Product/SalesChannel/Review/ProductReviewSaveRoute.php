@@ -89,11 +89,7 @@ class ProductReviewSaveRoute extends AbstractProductReviewSaveRoute
 
         EmailIdnConverter::encodeDataBag($data);
         if (!$data->has('name')) {
-            $data->set('name', $customer->getFirstName());
-        }
-
-        if (!$data->has('lastName')) {
-            $data->set('lastName', $customer->getLastName());
+            $data->set('name', $customer->getName());
         }
 
         if (!$data->has('email')) {
@@ -133,7 +129,7 @@ class ProductReviewSaveRoute extends AbstractProductReviewSaveRoute
         $event = new ReviewFormEvent(
             $context->getContext(),
             $salesChannelId,
-            new MailRecipientStruct([$mail => $review['externalUser'] . ' ' . $data->get('lastName')]),
+            new MailRecipientStruct([$mail => (string) $review['externalUser']]),
             $data,
             $productId,
             $customerId,

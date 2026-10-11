@@ -25,8 +25,7 @@ describe('src/app/filter/salutation.filter.ts', () => {
                     displayName: 'Mr.',
                 },
                 title: 'Dr.',
-                firstName: 'Max',
-                lastName: 'Mustermann',
+                name: 'Max Mustermann',
             }),
         ).toBe('Mr. Dr. Max Mustermann');
     });
@@ -40,8 +39,7 @@ describe('src/app/filter/salutation.filter.ts', () => {
                     displayName: 'Mr.',
                 },
                 title: 'Dr.',
-                firstName: 'Max',
-                lastName: 'Mustermann',
+                name: 'Max Mustermann',
             }),
         ).toBe('Dr. Max Mustermann');
     });
@@ -55,8 +53,7 @@ describe('src/app/filter/salutation.filter.ts', () => {
                     displayName: '',
                 },
                 title: '',
-                firstName: '',
-                lastName: '',
+                name: '',
             }),
         ).toBe('');
     });

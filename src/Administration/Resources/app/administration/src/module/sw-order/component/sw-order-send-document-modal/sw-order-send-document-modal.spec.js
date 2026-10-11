@@ -16,8 +16,7 @@ const mockOrder = {
     languageId: uuid.get('languageId0'),
     orderCustomer: {
         email: 'test@shopwell.cn',
-        firstName: 'Test',
-        lastName: 'Tester',
+        name: 'Test Tester',
     },
     salesChannelId: uuid.get('salesChannelId0'),
 };
@@ -158,7 +157,7 @@ const mockMailTemplates = [
             name: 'Invoice note',
             technicalName: 'invoice_mail',
         },
-        contentHtml: '<div>{{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}}</div>\n',
+        contentHtml: '<div>{{order.orderCustomer.name}}</div>\n',
         subject: 'Personal data from order',
     },
 ];
@@ -479,8 +478,7 @@ describe('src/module/sw-order/component/sw-order-send-document-modal', () => {
         expect(wrapper.vm.mailService.getDataAndSendMailTemplate).toHaveBeenLastCalledWith(
             {
                 recipients: {
-                    [mockOrder.orderCustomer.email]:
-                        `${mockOrder.orderCustomer.firstName} ${mockOrder.orderCustomer.lastName}`,
+                    [mockOrder.orderCustomer.email]: mockOrder.orderCustomer.name,
                 },
                 salesChannelId: mockOrder.salesChannelId,
                 mediaIds: [mockMailTemplates[0].media.first().media.id],

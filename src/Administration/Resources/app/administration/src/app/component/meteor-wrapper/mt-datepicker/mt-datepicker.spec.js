@@ -12,8 +12,7 @@ describe('src/app/component/meteor-wrapper/mt-datepicker', () => {
 
     beforeEach(() => {
         Shopwell.Store.get('session').setCurrentUser({
-            firstName: 'John',
-            lastName: 'Doe',
+            name: 'John Doe',
             timeZone: 'Europe/Berlin',
         });
 

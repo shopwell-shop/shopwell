@@ -385,8 +385,8 @@
                                         "example": {
                                             "subject": "Order {{ order.orderNumber }} confirmation",
                                             "senderName": "{{ salesChannel.name }}",
-                                            "contentHtml": "<div>Hello {{ order.orderCustomer.firstName }}</div>",
-                                            "contentPlain": "Hello {{ order.orderCustomer.firstName }}"
+                                            "contentHtml": "<div>Hello {{ order.orderCustomer.name }}</div>",
+                                            "contentPlain": "Hello {{ order.orderCustomer.name }}"
                                         }
                                     },
                                     "eventName": {

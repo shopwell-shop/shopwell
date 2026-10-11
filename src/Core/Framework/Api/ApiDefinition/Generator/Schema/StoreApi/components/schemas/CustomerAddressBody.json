@@ -8,8 +8,7 @@
                 "description": "Added since version: 6.0.0.0",
                 "required": [
                     "countryId",
-                    "firstName",
-                    "lastName",
+                    "name",
                     "zipcode",
                     "city",
                     "street"
@@ -27,8 +26,7 @@
                         "type": "string",
                         "pattern": "^[0-9a-f]{32}$"
                     },
-                    "firstName": { "type": "string" },
-                    "lastName": { "type": "string" },
+                    "name": { "type": "string" },
                     "zipcode": {
                         "description": "Postal code. Every country on a default installation has `postalCodeRequired` enabled. For a country without it, an empty value is accepted.",
                         "type": "string",

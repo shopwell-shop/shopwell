@@ -18,8 +18,7 @@ class ShippingAddressSalutationMissingErrorTest extends TestCase
     public function testAPI(): void
     {
         $address = new CustomerAddressEntity();
-        $address->setFirstName('Max');
-        $address->setLastName('Mustermann');
+        $address->setName('Max Mustermann');
         $address->setStreet('Musterstraße 1');
         $address->setZipcode('12345');
         $address->setCity('Musterstadt');

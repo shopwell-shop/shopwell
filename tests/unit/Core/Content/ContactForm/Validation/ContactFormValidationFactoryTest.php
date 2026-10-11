@@ -54,11 +54,7 @@ class ContactFormValidationFactoryTest extends TestCase
                     'email' => [new NotBlank(), new Email()],
                     'subject' => [new NotBlank()],
                     'comment' => [new NotBlank()],
-                    'firstName' => [
-                        new NotBlank(),
-                        new Regex(pattern: ContactFormValidationFactory::DOMAIN_NAME_REGEX, match: false),
-                    ],
-                    'lastName' => [
+                    'name' => [
                         new NotBlank(),
                         new Regex(pattern: ContactFormValidationFactory::DOMAIN_NAME_REGEX, match: false),
                     ],
@@ -78,10 +74,7 @@ class ContactFormValidationFactoryTest extends TestCase
                     'email' => [new NotBlank(), new Email()],
                     'subject' => [new NotBlank()],
                     'comment' => [new NotBlank()],
-                    'firstName' => [
-                        new Regex(pattern: ContactFormValidationFactory::DOMAIN_NAME_REGEX, match: false),
-                    ],
-                    'lastName' => [
+                    'name' => [
                         new Regex(pattern: ContactFormValidationFactory::DOMAIN_NAME_REGEX, match: false),
                     ],
                 ]);

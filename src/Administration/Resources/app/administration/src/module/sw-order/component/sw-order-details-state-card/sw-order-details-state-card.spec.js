@@ -55,8 +55,7 @@ orderMock.deliveries.first = () => ({
 
 const lastStateChangeByAdminUser = {
     user: {
-        firstName: 'John',
-        lastName: 'Doe',
+        name: 'John Doe',
     },
     createdAt: new Date(),
 };

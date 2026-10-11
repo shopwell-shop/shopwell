@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Cart\Rule\CartRuleScope;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
-use Shopwell\Core\Checkout\Customer\Rule\LastNameRule;
+use Shopwell\Core\Checkout\Customer\Rule\NameRule;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 
@@ -15,17 +15,17 @@ use Shopwell\Core\System\SalesChannel\SalesChannelContext;
  * @internal
  */
 #[Package('fundamentals@after-sales')]
-#[CoversClass(LastNameRule::class)]
-class LastNameRuleTest extends TestCase
+#[CoversClass(NameRule::class)]
+class NameRuleTest extends TestCase
 {
     public function testExactMatch(): void
     {
-        $rule = (new LastNameRule())->assign(['lastName' => 'shopwell']);
+        $rule = (new NameRule())->assign(['name' => 'shopwell']);
 
         $cart = new Cart('test');
 
         $customer = new CustomerEntity();
-        $customer->setLastName('shopwell');
+        $customer->setName('shopwell');
 
         $context = static::createStub(SalesChannelContext::class);
 
@@ -40,12 +40,12 @@ class LastNameRuleTest extends TestCase
 
     public function testCaseInsensitive(): void
     {
-        $rule = (new LastNameRule())->assign(['lastName' => 'shopwell']);
+        $rule = (new NameRule())->assign(['name' => 'shopwell']);
 
         $cart = new Cart('test');
 
         $customer = new CustomerEntity();
-        $customer->setLastName('Shopwell');
+        $customer->setName('Shopwell');
 
         $context = static::createStub(SalesChannelContext::class);
 
@@ -60,7 +60,7 @@ class LastNameRuleTest extends TestCase
 
     public function testWithoutCustomer(): void
     {
-        $rule = new LastNameRule();
+        $rule = new NameRule();
 
         $cart = new Cart('test');
 

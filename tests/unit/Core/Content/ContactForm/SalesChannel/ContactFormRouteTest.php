@@ -106,11 +106,10 @@ class ContactFormRouteTest extends TestCase
             [
                 'email' => 'test@example.com',
                 'option' => 'direct',
-                'firstName' => 'Y http://localhost',
-                'lastName' => 'Tran http://localhost',
+                'name' => 'Y http://localhost Tran http://localhost',
                 'salutationId' => Uuid::randomHex(),
             ],
-            ['firstName' => 'Y http://localhost', 'lastName' => 'Tran http://localhost'],
+            ['name' => 'Y http://localhost Tran http://localhost'],
             [
                 new NotBlank(),
                 new Regex(pattern: ContactFormValidationFactory::DOMAIN_NAME_REGEX, match: false),
@@ -121,11 +120,10 @@ class ContactFormRouteTest extends TestCase
             [
                 'email' => 'test@example.com',
                 'option' => 'direct',
-                'firstName' => 'Y',
-                'lastName' => 'Tran',
+                'name' => 'Y Tran',
                 'salutationId' => Uuid::randomHex(),
             ],
-            ['firstName' => 'Y', 'lastName' => 'Tran'],
+            ['name' => 'Y Tran'],
             [
                 new NotBlank(),
                 new Regex(pattern: ContactFormValidationFactory::DOMAIN_NAME_REGEX, match: false),

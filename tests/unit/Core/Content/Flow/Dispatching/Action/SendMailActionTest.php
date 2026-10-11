@@ -251,8 +251,7 @@ class SendMailActionTest extends TestCase
         $flow->setData(OrderAware::ORDER_ID, $orderId);
         $flow->setData(FlowMailVariables::CONTACT_FORM_DATA, [
             'email' => 'customer@example.com',
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
         ]);
 
         $flow->setConfig($config);
@@ -280,8 +279,7 @@ class SendMailActionTest extends TestCase
                     'orderId' => $orderId,
                     'contactFormData' => [
                         'email' => 'customer@example.com',
-                        'firstName' => 'Max',
-                        'lastName' => 'Mustermann',
+                        'name' => 'Max Mustermann',
                     ],
                 ],
             );
@@ -319,7 +317,7 @@ class SendMailActionTest extends TestCase
         yield 'custom reply to' => ['foo@example.com', ['senderMail' => 'foo@example.com']];
         yield 'contact form reply to' => ['contactFormMail', [
             'senderMail' => 'customer@example.com',
-            'senderName' => '{% if contactFormData.firstName is defined %}{{ contactFormData.firstName }}{% endif %} {% if contactFormData.lastName is defined %}{{ contactFormData.lastName }}{% endif %}',
+            'senderName' => '{% if contactFormData.name is defined %}{{ contactFormData.name }}{% endif %}',
         ]];
     }
 
@@ -411,8 +409,7 @@ class SendMailActionTest extends TestCase
         $flow->setData(MailAware::TIMEZONE, 'UTC');
         $flow->setData(FlowMailVariables::CONTACT_FORM_DATA, [
             'email' => 'customer@example.com',
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
         ]);
 
         $flow->setConfig($config);
@@ -440,8 +437,7 @@ class SendMailActionTest extends TestCase
                     'orderId' => $orderId,
                     'contactFormData' => [
                         'email' => 'customer@example.com',
-                        'firstName' => 'Max',
-                        'lastName' => 'Mustermann',
+                        'name' => 'Max Mustermann',
                     ],
                     'languageId' => $languageId,
                     'timezone' => 'UTC',

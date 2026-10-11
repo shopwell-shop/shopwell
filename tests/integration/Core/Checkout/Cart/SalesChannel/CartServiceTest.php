@@ -500,8 +500,7 @@ class CartServiceTest extends TestCase
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
                 'id' => $addressId,
-                'firstName' => 'not',
-                'lastName' => 'not',
+                'name' => 'not not',
                 'street' => 'test',
                 'city' => 'not',
                 'zipcode' => 'not',
@@ -512,8 +511,7 @@ class CartServiceTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => $mail,
             'password' => $password,
-            'lastName' => 'not',
-            'firstName' => 'match',
+            'name' => 'match',
             'salutationId' => $this->getValidSalutationId(),
             'customerNumber' => 'not',
         ];

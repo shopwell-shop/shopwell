@@ -316,10 +316,21 @@ SQL;
      */
     private function removeUnwantedCurrencies(array $shop, Connection $connection): void
     {
+        $defaultCurrencyId = $this->getCurrencyId($shop['currency'], $connection);
+
         // change default currency for dummy sales channel domain to the default currency to avoid foreign key constraints
         $connection->executeStatement(
             'UPDATE sales_channel_domain SET currency_id = :currencyId',
-            ['currencyId' => $this->getCurrencyId($shop['currency'], $connection)]
+            ['currencyId' => $defaultCurrencyId]
+        );
+
+        // setDefaultCurrency() swaps the ids by reassigning the default id to the new currency, so the
+        // channels that used the previous default currency still reference it under its new id. Point
+        // every channel at the default currency as well, otherwise the currencies removed below are
+        // still referenced by a channel and the delete is rejected by the foreign key.
+        $connection->executeStatement(
+            'UPDATE sales_channel SET currency_id = :currencyId',
+            ['currencyId' => $defaultCurrencyId]
         );
 
         // remove all currencies except the default currency when no additional currency is selected

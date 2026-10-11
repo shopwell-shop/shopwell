@@ -97,8 +97,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
             'id' => $id,
             'customerNumber' => '1337',
             'salutationId' => $salutationId,
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'email' => 'test@example.com',
             'password' => 'shopwell',
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
@@ -112,8 +111,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
                     'customerId' => $id,
                     'countryId' => Uuid::fromBytesToHex($countries[array_rand($countries)]),
                     'salutationId' => $salutationId,
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
                     'city' => 'Schöppingen',
@@ -123,8 +121,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
                     'customerId' => $id,
                     'countryId' => Uuid::fromBytesToHex($countries[array_rand($countries)]),
                     'salutationId' => $salutationId,
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                     'street' => 'Bahnhofstraße 27',
                     'zipcode' => '10332',
                     'city' => 'Berlin',
@@ -157,8 +154,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
         for ($i = 0; $i < $numberOfItems; ++$i) {
             $randomDate = $context->getFaker()->dateTimeBetween('-2 years');
             $id = Uuid::randomHex();
-            $firstName = $context->getFaker()->firstName();
-            $lastName = $context->getFaker()->format('lastName');
+            $name = $context->getFaker()->format('name');
             $salutationId = Uuid::fromBytesToHex($this->getRandomSalutationId());
             $title = $this->getRandomTitle();
 
@@ -171,8 +167,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
                     'countryId' => Uuid::fromBytesToHex($context->getFaker()->randomElement($countries)),
                     'salutationId' => $salutationId,
                     'title' => $title,
-                    'firstName' => $firstName,
-                    'lastName' => $lastName,
+                    'name' => $name,
                     'street' => $context->getFaker()->format('streetName'),
                     'zipcode' => $context->getFaker()->format('postcode'),
                     'city' => $context->getFaker()->format('city'),
@@ -185,8 +180,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
                 'customerNumber' => $this->numberRangeValueGenerator->getValue('customer', $context->getContext(), null),
                 'salutationId' => $salutationId,
                 'title' => $title,
-                'firstName' => $firstName,
-                'lastName' => $lastName,
+                'name' => $name,
                 'email' => $id . $context->getFaker()->format('safeEmail'),
                 // use dummy hashed password, so not need to compute the hash for every customer
                 // password is `shopwell`

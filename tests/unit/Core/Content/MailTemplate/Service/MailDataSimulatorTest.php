@@ -298,7 +298,7 @@ class MailDataSimulatorTest extends TestCase
         $dispatcher->method('dispatch')->willReturnCallback(function (object $event) use (&$capturedData): object {
             if ($event instanceof MailDataSimulatorFormDataEvent && $event->variableName === FlowMailVariables::CONTACT_FORM_DATA) {
                 $capturedData = $event->getData();
-                $event->setData(['firstName' => 'Overridden']);
+                $event->setData(['name' => 'Overridden']);
             }
 
             return $event;
@@ -315,8 +315,8 @@ class MailDataSimulatorTest extends TestCase
         $result = $simulator->getTemplateData('test.flow', Context::createDefaultContext());
 
         static::assertIsArray($capturedData);
-        static::assertSame('Max', $capturedData['firstName']);
-        static::assertSame(['firstName' => 'Overridden'], $result[FlowMailVariables::CONTACT_FORM_DATA]);
+        static::assertSame('Max Mustermann', $capturedData['name']);
+        static::assertSame(['name' => 'Overridden'], $result[FlowMailVariables::CONTACT_FORM_DATA]);
     }
 
     public function testGetTemplateDataUsesProviderCriteriaForEntityEventData(): void
@@ -499,8 +499,7 @@ class MailDataSimulatorTest extends TestCase
         yield 'contact form data' => [
             FlowMailVariables::CONTACT_FORM_DATA,
             [
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'email' => 'max.mustermann@example.com',
                 'phone' => '+49123456789',
                 'subject' => 'Lorem ipsum dolor',
@@ -523,8 +522,7 @@ class MailDataSimulatorTest extends TestCase
         yield 'revocation request form data' => [
             FlowMailVariables::REVOCATION_REQUEST_FORM_DATA,
             [
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'email' => 'max.mustermann@example.com',
                 'contractNumber' => '10000',
                 'comment' => 'Lorem ipsum dolor sit amet.',

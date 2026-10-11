@@ -117,8 +117,7 @@ class UpsertAddressRouteTest extends TestCase
             ->willReturnCallback(static function (array $data) use ($countryId, $salutationId, $customerId) {
                 static::assertCount(1, $data);
                 static::assertSame($salutationId, $data[0]['salutationId']);
-                static::assertSame('Max', $data[0]['firstName']);
-                static::assertSame('Mustermann', $data[0]['lastName']);
+                static::assertSame('Max Mustermann', $data[0]['name']);
                 static::assertSame('Main Street 1', $data[0]['street']);
                 static::assertSame('12345', $data[0]['zipcode']);
                 static::assertSame('Berlin', $data[0]['city']);
@@ -180,8 +179,7 @@ class UpsertAddressRouteTest extends TestCase
         $data = new RequestDataBag([
             'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,
             'salutationId' => $salutationId,
-            'firstName' => "\nMax\t",
-            'lastName' => "\rMustermann ",
+            'name' => "\nMax Mustermann\t",
             'street' => "\t Main Street 1 \n",
             'zipcode' => "    12345\t",
             'city' => "\rBerlin\n",

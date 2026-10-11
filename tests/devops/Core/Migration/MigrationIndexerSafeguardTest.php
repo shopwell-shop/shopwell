@@ -125,7 +125,7 @@ class MigrationIndexerSafeguardTest extends TestCase
             'tables' => ['customer'],
             // CustomerIndexer::PRIMARY_KEYS_WITH_PROPERTY_CHANGE +
             // CustomerNewsletterSalesChannelsUpdater inputs.
-            'indexedColumnsByTable' => ['customer' => ['email', 'first_name', 'last_name']],
+            'indexedColumnsByTable' => ['customer' => ['email', 'name']],
         ];
         yield 'flow.indexer' => [
             'indexer' => 'flow.indexer',

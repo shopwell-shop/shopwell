@@ -106,8 +106,7 @@ class NewsletterRecipientGeneratorTest extends TestCase
         static::assertCount($numberOfItems, $upserts);
         foreach ($upserts as $upsert) {
             static::assertStringEndsWith('test@example.com', $upsert['email']);
-            static::assertSame('Jane', $upsert['firstName']);
-            static::assertSame('Doe', $upsert['lastName']);
+            static::assertSame('Jane Doe', $upsert['name']);
             static::assertSame($salesChannelId, $upsert['salesChannelId']);
             static::assertTrue($upsert['customFields']['shopwellDemoData']);
         }

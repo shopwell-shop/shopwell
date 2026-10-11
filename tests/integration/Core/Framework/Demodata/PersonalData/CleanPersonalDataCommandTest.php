@@ -230,8 +230,7 @@ class CleanPersonalDataCommandTest extends TestCase
                 'customerId' => $customerId,
                 'email' => 'test@example.com',
                 'salutationId' => $this->fetchFirstIdFromTable('salutation'),
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
             ],
             'stateId' => $this->fetchFirstIdFromTable('state_machine_state'),
             'paymentMethodId' => $this->fetchFirstIdFromTable('payment_method'),
@@ -243,8 +242,7 @@ class CleanPersonalDataCommandTest extends TestCase
                 [
                     'id' => $addressId,
                     'salutationId' => $this->fetchFirstIdFromTable('salutation'),
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
                     'city' => 'Schöppingen',
@@ -271,8 +269,7 @@ class CleanPersonalDataCommandTest extends TestCase
         $salutation = $this->fetchFirstIdFromTable('salutation');
 
         $address = [
-            'firstName' => 'not',
-            'lastName' => 'not',
+            'name' => 'not not',
             'city' => 'not',
             'street' => 'not',
             'zipcode' => 'not',
@@ -286,8 +283,7 @@ class CleanPersonalDataCommandTest extends TestCase
             'defaultShippingAddress' => $address,
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => Uuid::randomHex() . '@example.com',
-            'lastName' => 'not',
-            'firstName' => Random::getAlphanumericString(20),
+            'name' => Random::getAlphanumericString(20),
             'salutationId' => $salutation,
             'customerNumber' => 'not',
             'guest' => $isGuest,

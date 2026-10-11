@@ -139,8 +139,7 @@ class OrderPersisterTest extends TestCase
         $billingAddress = new CustomerAddressEntity();
         $billingAddress->setId('SWAG-ADDRESS-ID-1');
         $billingAddress->setSalutationId($this->getValidSalutationId());
-        $billingAddress->setFirstName($faker->firstName());
-        $billingAddress->setLastName($faker->lastName());
+        $billingAddress->setName($faker->name());
         $billingAddress->setStreet($faker->streetAddress());
         $billingAddress->setZipcode($faker->postcode());
         $billingAddress->setCity($faker->city());
@@ -151,8 +150,7 @@ class OrderPersisterTest extends TestCase
         $customer->setDefaultBillingAddress($billingAddress);
         $customer->setEmail('test@example.com');
         $customer->setSalutationId($this->getValidSalutationId());
-        $customer->setFirstName($faker->firstName());
-        $customer->setLastName($faker->lastName());
+        $customer->setName($faker->name());
         $customer->setCustomerNumber('Test');
 
         return $customer;

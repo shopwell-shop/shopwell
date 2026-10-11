@@ -544,8 +544,7 @@
           "label": {
             "action": "操作*",
             "email": "邮箱地址*",
-            "firstName": "名字*",
-            "lastName": "姓氏*",
+            "name": "姓名*",
             "message": "您的留言*",
             "newsletterSubmit": "继续",
             "phone": "电话号码*",
@@ -558,8 +557,7 @@
             "comment": "备注"
           },
           "placeholder": {
-            "firstName": "张三",
-            "lastName": "李四",
+            "name": "张三",
             "email": "john{'@'}doe.com",
             "phone": "+4920 3920173",
             "subject": "示例主题",
@@ -572,8 +570,7 @@
           },
           "newsletter": {
             "label": {
-              "firstName": "名字",
-              "lastName": "姓氏",
+              "name": "姓名",
               "salutation": "称谓"
             }
           }

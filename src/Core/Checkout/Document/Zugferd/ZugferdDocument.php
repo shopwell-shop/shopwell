@@ -136,7 +136,7 @@ class ZugferdDocument
 
     public function withBuyerInformation(OrderCustomerEntity $customer, OrderAddressEntity $billingAddress): self
     {
-        $customerName = $customer->getFirstName() . ' ' . $customer->getLastName();
+        $customerName = $customer->getName();
         if ($customer->getCompany()) {
             $customerName .= ' - ' . $customer->getCompany();
         }

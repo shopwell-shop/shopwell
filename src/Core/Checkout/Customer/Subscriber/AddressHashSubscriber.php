@@ -32,8 +32,7 @@ class AddressHashSubscriber implements EventSubscriberInterface
     {
         foreach ($event->getEntities() as $address) {
             $address->setHash(Hasher::hash([
-                'firstName' => $address->getFirstName(),
-                'lastName' => $address->getLastName(),
+                'name' => $address->getName(),
                 'zipcode' => $address->getZipcode(),
                 'city' => $address->getCity(),
                 'company' => $address->getCompany(),

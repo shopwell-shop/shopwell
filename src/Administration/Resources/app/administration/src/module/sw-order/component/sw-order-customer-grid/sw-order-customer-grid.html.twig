@@ -63,12 +63,12 @@
                 {% endblock %}
 
                 {% block sw_order_customer_grid_content_grid_column_name %}
-                <template #column-firstName="{ item }">
+                <template #column-name="{ item }">
                     <router-link
                         v-if="!customerUnavailable(item)"
                         :to="{ name: 'sw.customer.detail', params: { id: item.id } }"
                     >
-                        {{ item.firstName }} {{ item.lastName }}
+                        {{ item.name }}
                     </router-link>
 
                     <div
@@ -78,7 +78,7 @@
                             disabled: !customerUnavailable(item),
                         }"
                     >
-                        {{ item.firstName }} {{ item.lastName }}
+                        {{ item.name }}
                     </div>
                 </template>
                 {% endblock %}

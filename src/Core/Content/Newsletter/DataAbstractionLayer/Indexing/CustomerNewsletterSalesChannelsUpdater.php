@@ -139,7 +139,7 @@ SQL;
         $ids = array_unique($ids);
 
         $customers = $this->connection->fetchAllAssociative(
-            'SELECT newsletter_sales_channel_ids, email, first_name, last_name FROM customer WHERE id IN (:ids)',
+            'SELECT newsletter_sales_channel_ids, email, name FROM customer WHERE id IN (:ids)',
             ['ids' => Uuid::fromHexToBytesList($ids)],
             ['ids' => ArrayParameterType::BINARY]
         );
@@ -157,8 +157,7 @@ SQL;
             $parameters[] = [
                 'newsletter_ids' => $newsletterIds,
                 'email' => $customer['email'],
-                'first_name' => $customer['first_name'],
-                'last_name' => $customer['last_name'],
+                'name' => $customer['name'],
             ];
         }
 
@@ -181,12 +180,11 @@ SQL;
                 );
 
                 $this->connection->executeStatement(
-                    'UPDATE newsletter_recipient SET email = (:email), first_name = (:firstName), last_name = (:lastName) WHERE id IN (:ids)',
+                    'UPDATE newsletter_recipient SET email = (:email), name = (:name) WHERE id IN (:ids)',
                     [
                         'ids' => Uuid::fromHexToBytesList($parameter['newsletter_ids']),
                         'email' => $parameter['email'],
-                        'firstName' => $parameter['first_name'],
-                        'lastName' => $parameter['last_name'],
+                        'name' => $parameter['name'],
                     ],
                     ['ids' => ArrayParameterType::BINARY],
                 );

@@ -13,7 +13,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Maintenance\MaintenanceException;
 
 /**
- * @phpstan-type AdditionalUserData array{firstName?: string, lastName?: string, email?: string, localeId?: string, admin?: bool}
+ * @phpstan-type AdditionalUserData array{name?: string, email?: string, localeId?: string, admin?: bool}
  *
  * @internal
  */
@@ -50,8 +50,7 @@ class UserProvisioner
 
         $userPayload = [
             'id' => Uuid::randomBytes(),
-            'first_name' => $additionalData['firstName'] ?? '',
-            'last_name' => $additionalData['lastName'] ?? $username,
+            'name' => $additionalData['name'] ?? $username,
             'email' => $additionalData['email'] ?? self::USER_EMAIL_FALLBACK,
             'username' => $username,
             'password' => password_hash($password, \PASSWORD_BCRYPT),

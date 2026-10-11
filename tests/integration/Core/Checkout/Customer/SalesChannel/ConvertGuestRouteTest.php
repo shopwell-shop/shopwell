@@ -134,13 +134,11 @@ class ConvertGuestRouteTest extends TestCase
         $data = [
             'guest' => $guest,
             'email' => $email,
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'salutationId' => $this->getValidSalutationId(),
             'storefrontUrl' => 'http://localhost',
             'billingAddress' => [
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'street' => 'Musterstraße 1',
                 'zipcode' => '12345',
                 'city' => 'Schöppingen',

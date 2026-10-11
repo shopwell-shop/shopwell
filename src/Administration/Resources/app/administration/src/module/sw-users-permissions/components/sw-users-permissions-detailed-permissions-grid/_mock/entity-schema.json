@@ -1654,14 +1654,7 @@
           "required": true
         }
       },
-      "firstName": {
-        "type": "string",
-        "flags": {
-          "required": true,
-          "search_ranking": 80
-        }
-      },
-      "lastName": {
+      "name": {
         "type": "string",
         "flags": {
           "required": true,
@@ -1830,14 +1823,7 @@
           "required": true
         }
       },
-      "firstName": {
-        "type": "string",
-        "flags": {
-          "required": true,
-          "search_ranking": 80
-        }
-      },
-      "lastName": {
+      "name": {
         "type": "string",
         "flags": {
           "required": true,

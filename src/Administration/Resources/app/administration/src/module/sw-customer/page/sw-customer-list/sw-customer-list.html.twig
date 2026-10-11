@@ -114,34 +114,24 @@
             >
                 {% block sw_customer_list_grid_columns %}
                 {% block sw_product_list_grid_columns_name_preview %}
-                <template #preview-firstName="{ item, compact }">
+                <template #preview-name="{ item, compact }">
                     <mt-avatar
                         class="sw-customer-list__avatar"
                         :size="compact ? 's' : 'm'"
-                        :first-name="item.firstName"
-                        :last-name="item.lastName"
+                        :name="item.name"
                     />
                 </template>
                 {% endblock %}
 
                 {% block sw_customer_list_grid_columns_name %}
-                <template #column-firstName="{ item, compact, isInlineEdit }">
+                <template #column-name="{ item, compact, isInlineEdit }">
                     {% block sw_customer_list_grid_inline_edit_name %}
                     <template v-if="isInlineEdit">
-                        {% block sw_customer_list_grid_inline_edit_first_name %}
+                        {% block sw_customer_list_grid_inline_edit_name_field %}
                         <mt-text-field
-                            v-model="item.firstName"
-                            name="sw-field--item-firstName"
-                            class="sw-customer-list__inline-edit-first-name"
-                            :size="compact ? 'small' : 'default'"
-                        />
-                        {% endblock %}
-
-                        {% block sw_customer_list_grid_inline_edit_last_name %}
-                        <mt-text-field
-                            v-model="item.lastName"
-                            name="sw-field--item-lastName"
-                            class="sw-customer-list__inline-edit-last-name"
+                            v-model="item.name"
+                            name="sw-field--item-name"
+                            class="sw-customer-list__inline-edit-name"
                             :size="compact ? 'small' : 'default'"
                         />
                         {% endblock %}
@@ -153,7 +143,7 @@
                         v-else
                         :to="{ name: 'sw.customer.detail', params: { id: item.id }, query: { edit: false } }"
                     >
-                        {{ item.lastName }}, {{ item.firstName }}
+                        {{ item.name }}
                     </mt-link>
                     {% endblock %}
 
@@ -286,7 +276,7 @@
                     >
                         {% block sw_customer_list_delete_modal_confirm_delete_text %}
                         <p class="sw-customer-list__confirm-delete-text">
-                            {{ $t('sw-customer.list.textDeleteConfirm', { name: `${item.firstName} ${item.lastName}` }, 0) }}
+                            {{ $t('sw-customer.list.textDeleteConfirm', { name: item.name }, 0) }}
                         </p>
                         {% endblock %}
 
@@ -344,13 +334,13 @@
                         @modal-close="onBulkEditModalClose"
                     >
                         {% block sw_customer_list_bulk_edit_grid_columns_name %}
-                        <template #column-firstName="{ item }">
+                        <template #column-name="{ item }">
                             <router-link
                                 :to="{ name: 'sw.customer.detail', params: { id: item.id } }"
                                 target="_blank"
                                 rel="noreferrer noopener"
                             >
-                                {{ item.lastName }}, {{ item.firstName }}
+                                {{ item.name }}
                             </router-link>
                         </template>
                         {% endblock %}

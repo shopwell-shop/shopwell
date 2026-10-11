@@ -23,8 +23,7 @@ test(
         const salutationId = await getSalutationId('mr', AdminApiContext);
         const customerOverrides = {
             defaultBillingAddress: {
-                firstName: 'Santa',
-                lastName: 'Claus',
+                name: 'Santa Claus',
                 city: 'Flying Fish Cove, Silver City',
                 street: 'Seaview Drive 1',
                 zipcode: '6798',

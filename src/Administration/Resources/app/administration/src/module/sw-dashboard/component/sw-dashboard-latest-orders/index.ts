@@ -14,7 +14,7 @@ type OrderEntity = {
     orderNumber: string;
     orderDateTime: string;
     amountTotal: number;
-    orderCustomer?: { firstName: string; lastName: string } | null;
+    orderCustomer?: { name: string } | null;
     currency?: { isoCode: string } | null;
     stateMachineState?: StateMachineState | null;
 };
@@ -117,8 +117,8 @@ export default Shopwell.Component.wrapComponentConfig({
                     primary: false,
                 },
                 {
-                    property: 'orderCustomer.firstName',
-                    dataIndex: 'orderCustomer.firstName,orderCustomer.lastName',
+                    property: 'orderCustomer.name',
+                    dataIndex: 'orderCustomer.name',
                     label: 'sw-order.list.columnCustomerName',
                     allowResize: true,
                 },
@@ -157,7 +157,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 return '';
             }
 
-            return `${customer.firstName} ${customer.lastName}`.trim();
+            return customer.name;
         },
     },
 });

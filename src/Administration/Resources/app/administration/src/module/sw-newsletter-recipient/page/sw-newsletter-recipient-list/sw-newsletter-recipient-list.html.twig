@@ -86,22 +86,14 @@
 
                 {% block sw_newsletter_recipientlist_list_grid_name %}
                 <template
-                    #column-firstName="{ item, compact, isInlineEdit }"
+                    #column-name="{ item, compact, isInlineEdit }"
                 >
                     {% block sw_newsletter_recipientlist_list_grid_inline_edit_name %}
                     <template v-if="isInlineEdit">
-                        {% block sw_newsletter_recipientlist_list_grid_inline_edit_first_name %}
+                        {% block sw_newsletter_recipientlist_list_grid_inline_edit_name_field %}
                         <mt-text-field
-                            v-model="item.firstName"
-                            class="sw-newsletter-recipient-list__inline-edit-first-name"
-                            :size="compact ? 'small' : 'default'"
-                        />
-                        {% endblock %}
-
-                        {% block sw_newsletter_recipientlist_list_grid_inline_edit_last_name %}
-                        <mt-text-field
-                            v-model="item.lastName"
-                            class="sw-newsletter-recipient-list__inline-edit-last-name"
+                            v-model="item.name"
+                            class="sw-newsletter-recipient-list__inline-edit-name"
                             :size="compact ? 'small' : 'default'"
                         />
                         {% endblock %}
@@ -110,7 +102,7 @@
 
                     {% block sw_newsletter_recipientlist_list_grid_name_link %}
                     <template v-else>
-                        {{ item.firstName }} {{ item.lastName }}
+                        {{ item.name }}
                     </template>
                     {% endblock %}
                 </template>

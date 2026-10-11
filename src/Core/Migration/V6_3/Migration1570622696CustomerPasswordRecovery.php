@@ -203,7 +203,7 @@ SQL;
         return <<<MAIL
 <div style="font-family:arial; font-size:12px;">
     <p>
-        Hello {{ customerRecovery.customer.firstName }} {{ customerRecovery.customer.lastName }},<br/>
+        Hello {{ customerRecovery.customer.name }},<br/>
         <br/>
         You have requested a new password for your {{ shopName }} account.
         Click on the following link to reset your password:<br/>
@@ -223,7 +223,7 @@ MAIL;
     private function getContentPlainEn(): string
     {
         return <<<MAIL
-        Hello {{ customerRecovery.customer.firstName }} {{ customerRecovery.customer.lastName }},
+        Hello {{ customerRecovery.customer.name }},
 
         You have requested a new password for your {{ shopName }} account.
         Click on the following link to reset your password:
@@ -243,7 +243,7 @@ MAIL;
         return <<<MAIL
 <div style="font-family:arial; font-size:12px;">
     <p>
-        您好 {{ customerRecovery.customer.firstName }} {{ customerRecovery.customer.lastName }},<br/>
+        您好 {{ customerRecovery.customer.name }},<br/>
         <br/>
         您申请为 {{ shopName }} 账户重置密码。
         请点击下方链接重置密码：<br/>
@@ -263,7 +263,7 @@ MAIL;
     private function getContentPlainZhCn(): string
     {
         return <<<MAIL
-        您好 {{ customerRecovery.customer.firstName }} {{ customerRecovery.customer.lastName }},
+        您好 {{ customerRecovery.customer.name }},
 
         您申请为 {{ shopName }} 账户重置密码。
         请点击下方链接重置密码：

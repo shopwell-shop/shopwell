@@ -139,8 +139,7 @@ class NewsletterRecipientAdminSearchIndexerTest extends TestCase
         static::assertSame($id, $document['id']);
         static::assertSame('newsletter@example.com john doe da nang 50000 main street tag 809c1844f4734243b6aa04aba860cd45', $document['text']);
         static::assertSame('newsletter@example.com', $document['email']);
-        static::assertSame('John', $document['firstName']);
-        static::assertSame('Doe', $document['lastName']);
+        static::assertSame('John Doe', $document['name']);
         static::assertSame('optIn', $document['status']);
         static::assertSame('Da Nang', $document['city']);
         static::assertSame('Main Street', $document['street']);
@@ -156,8 +155,7 @@ class NewsletterRecipientAdminSearchIndexerTest extends TestCase
                 [
                     'id' => '809c1844f4734243b6aa04aba860cd45',
                     'email' => 'newsletter@example.com',
-                    'first_name' => 'John',
-                    'last_name' => 'Doe',
+                    'name' => 'John Doe',
                     'status' => 'optIn',
                     'city' => 'Da Nang',
                     'zipCode' => '50000',

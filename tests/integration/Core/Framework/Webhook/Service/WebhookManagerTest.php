@@ -207,8 +207,7 @@ class WebhookManagerTest extends TestCase
         static::assertJson($body);
 
         $data = json_decode($body, true, 512, \JSON_THROW_ON_ERROR);
-        static::assertSame('Max', $data['data']['payload']['customer']['firstName']);
-        static::assertSame('Mustermann', $data['data']['payload']['customer']['lastName']);
+        static::assertSame('Max Mustermann', $data['data']['payload']['customer']['name']);
         static::assertArrayNotHasKey('hash', $data['data']['payload']['customer']);
         static::assertArrayHasKey('timestamp', $data);
         static::assertArrayHasKey('eventId', $data['source']);
@@ -1660,8 +1659,7 @@ class WebhookManagerTest extends TestCase
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
                 'id' => $addressId,
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
@@ -1672,8 +1670,7 @@ class WebhookManagerTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => 'test@gmail.com',
             'password' => 'shopwell',
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'salutationId' => $this->getValidSalutationId(),
             'customerNumber' => '12345',
             'vatIds' => ['DE123456789'],

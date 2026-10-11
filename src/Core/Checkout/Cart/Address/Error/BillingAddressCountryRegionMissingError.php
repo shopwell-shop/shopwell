@@ -16,9 +16,8 @@ class BillingAddressCountryRegionMissingError extends CountryRegionMissingError
         private readonly CustomerAddressEntity $address
     ) {
         $this->message = \sprintf(
-            'A country region needs to be defined for the billing address "%s %s, %s %s".',
-            $address->getFirstName(),
-            $address->getLastName(),
+            'A country region needs to be defined for the billing address "%s, %s %s".',
+            $address->getName(),
             (string) $address->getZipcode(),
             $address->getCity()
         );

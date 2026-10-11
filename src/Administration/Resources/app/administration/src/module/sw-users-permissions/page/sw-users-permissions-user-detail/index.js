@@ -92,8 +92,7 @@ export default {
         },
 
         ...mapPropertyErrors('user', [
-            'firstName',
-            'lastName',
+            'name',
             'email',
             'username',
             'localeId',

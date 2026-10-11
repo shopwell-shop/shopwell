@@ -1,5 +1,5 @@
 <div style="font-family:arial; font-size:12px;">
-    <p>您好 {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.firstName }} {{ order.orderCustomer.lastName }}，</p>
+    <p>您好 {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.name }}，</p>
     <p>我们确认您的订单支付方式已成功更改。</p>
     <p>
 <strong>订单号：</strong> {{ order.orderNumber }}<br>

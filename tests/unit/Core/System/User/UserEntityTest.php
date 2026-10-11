@@ -58,8 +58,7 @@ class UserEntityTest extends TestCase
         $user->setLocaleId('locale-id');
         $user->setAvatarId('avatar-id');
         $user->setUsername('admin');
-        $user->setFirstName('Ada');
-        $user->setLastName('Lovelace');
+        $user->setName('Ada Lovelace');
         $user->setEmail('ada@example.com');
         $user->setActive(true);
         $user->setLocale($locale);
@@ -83,8 +82,7 @@ class UserEntityTest extends TestCase
         static::assertSame('locale-id', $user->getLocaleId());
         static::assertSame('avatar-id', $user->getAvatarId());
         static::assertSame('admin', $user->getUsername());
-        static::assertSame('Ada', $user->getFirstName());
-        static::assertSame('Lovelace', $user->getLastName());
+        static::assertSame('Ada Lovelace', $user->getName());
         static::assertSame('ada@example.com', $user->getEmail());
         static::assertTrue($user->getActive());
         static::assertSame($locale, $user->getLocale());

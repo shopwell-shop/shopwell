@@ -169,15 +169,15 @@
                 {% endblock %}
 
                 {% block sw_order_list_grid_columns_customer_name %}
-                <template #column-orderCustomer.firstName="{ item }">
+                <template #column-orderCustomer.name="{ item }">
                     <router-link
                         v-if="item.orderCustomer && item.orderCustomer.customerId"
                         :to="{ name: 'sw.customer.detail', params: { id: item.orderCustomer.customerId } }"
                     >
-                        {{ item.orderCustomer.lastName }}, {{ item.orderCustomer.firstName }}
+                        {{ item.orderCustomer.name }}
                     </router-link>
                     <template v-else-if="item.orderCustomer">
-                        {{ item.orderCustomer.lastName }}, {{ item.orderCustomer.firstName }}
+                        {{ item.orderCustomer.name }}
                     </template>
                 </template>
                 {% endblock %}
@@ -399,14 +399,14 @@
                         {% endblock %}
 
                         {% block sw_order_list_bulk_edit_grid_columns_customer_name %}
-                        <template #column-orderCustomer.firstName="{ item }">
+                        <template #column-orderCustomer.name="{ item }">
                             <router-link
                                 v-if="item.orderCustomer"
                                 :to="{ name: 'sw.customer.detail', params: { id: item.orderCustomer.customerId } }"
                                 target="_blank"
                                 rel="noreferrer noopener"
                             >
-                                {{ item.orderCustomer.lastName }}, {{ item.orderCustomer.firstName }}
+                                {{ item.orderCustomer.name }}
                             </router-link>
                         </template>
                         {% endblock %}

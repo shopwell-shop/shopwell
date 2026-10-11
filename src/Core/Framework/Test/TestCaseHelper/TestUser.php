@@ -46,8 +46,7 @@ class TestUser
 
         $connection->insert('user', [
             'id' => $userId,
-            'first_name' => $username,
-            'last_name' => '',
+            'name' => $username,
             'email' => "{$email}@example.com",
             'username' => $username,
             'password' => TestDefaults::HASHED_PASSWORD,

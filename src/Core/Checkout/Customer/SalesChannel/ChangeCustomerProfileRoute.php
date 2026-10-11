@@ -120,7 +120,7 @@ class ChangeCustomerProfileRoute extends AbstractChangeCustomerProfileRoute
 
         $this->validator->validate($data->all(), $validation);
 
-        $customerData = $data->only('firstName', 'lastName', 'salutationId', 'title', 'company', 'accountType');
+        $customerData = $data->only('name', 'salutationId', 'title', 'company', 'accountType');
 
         $vatIds = $data->get('vatIds');
 

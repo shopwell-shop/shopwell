@@ -24,9 +24,7 @@ class RevocationRequestFormValidationFactory implements DataValidationFactoryInt
 
     public const UPDATE_VALIDATION_NAME = 'revocation_request_form.update';
 
-    public const FIRST_NAME_FIELD = 'core.basicInformation.firstNameFieldRequired';
-
-    public const LAST_NAME_FIELD = 'core.basicInformation.lastNameFieldRequired';
+    public const NAME_FIELD = 'core.basicInformation.nameFieldRequired';
 
     public const COMMENT_MAX_LENGTH = 4096;
 
@@ -63,14 +61,9 @@ class RevocationRequestFormValidationFactory implements DataValidationFactoryInt
         $validationDefinition = new DataValidationDefinition($name);
         $validationDefinition
             ->add(
-                'firstName',
+                'name',
                 new Regex(pattern: ContactFormValidationFactory::DOMAIN_NAME_REGEX, match: false),
-                new Length(min: 0, max: CustomerDefinition::MAX_LENGTH_FIRST_NAME)
-            )
-            ->add(
-                'lastName',
-                new Regex(pattern: ContactFormValidationFactory::DOMAIN_NAME_REGEX, match: false),
-                new Length(min: 0, max: CustomerDefinition::MAX_LENGTH_LAST_NAME)
+                new Length(min: 0, max: CustomerDefinition::MAX_LENGTH_NAME)
             )
             ->add(
                 'email',
@@ -90,21 +83,12 @@ class RevocationRequestFormValidationFactory implements DataValidationFactoryInt
                 new Length(min: 0, max: self::COMMENT_MAX_LENGTH)
             );
 
-        if ($this->systemConfigService->get(self::FIRST_NAME_FIELD, $context->getSalesChannelId())) {
+        if ($this->systemConfigService->get(self::NAME_FIELD, $context->getSalesChannelId())) {
             $validationDefinition->set(
-                'firstName',
+                'name',
                 new NotBlank(),
                 new Regex(pattern: ContactFormValidationFactory::DOMAIN_NAME_REGEX, match: false),
-                new Length(min: 0, max: CustomerDefinition::MAX_LENGTH_FIRST_NAME)
-            );
-        }
-
-        if ($this->systemConfigService->get(self::LAST_NAME_FIELD, $context->getSalesChannelId())) {
-            $validationDefinition->set(
-                'lastName',
-                new NotBlank(),
-                new Regex(pattern: ContactFormValidationFactory::DOMAIN_NAME_REGEX, match: false),
-                new Length(min: 0, max: CustomerDefinition::MAX_LENGTH_LAST_NAME)
+                new Length(min: 0, max: CustomerDefinition::MAX_LENGTH_NAME)
             );
         }
 

@@ -72,8 +72,7 @@ class OrderSerializerTest extends TestCase
         static::assertSame($serialized['shippingCosts'], $order->getShippingCosts()->getTotalPrice());
 
         static::assertInstanceOf(OrderCustomerEntity::class, $orderCustomer = $serialized['orderCustomer']);
-        static::assertSame($orderCustomer->getFirstName(), $order->getOrderCustomer()->getFirstName());
-        static::assertSame($orderCustomer->getLastName(), $order->getOrderCustomer()->getLastName());
+        static::assertSame($orderCustomer->getName(), $order->getOrderCustomer()->getName());
         static::assertSame($orderCustomer->getEmail(), $order->getOrderCustomer()->getEmail());
 
         static::assertInstanceOf(OrderAddressEntity::class, $billingAddress = $serialized['billingAddress']);

@@ -42,8 +42,7 @@ async function createWrapper(privileges = []) {
                                         return Promise.resolve({
                                             localeId: '7dc07b43229843d387bb5f59233c2d66',
                                             username: 'admin',
-                                            firstName: '',
-                                            lastName: 'admin',
+                                            name: 'admin',
                                             email: 'info@shopwell.cn',
                                         });
                                     },
@@ -51,8 +50,7 @@ async function createWrapper(privileges = []) {
                                         return {
                                             localeId: '',
                                             username: '',
-                                            firstName: '',
-                                            lastName: '',
+                                            name: '',
                                             email: '',
                                             password: '',
                                         };
@@ -131,8 +129,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-create', (
             active: true,
             localeId: '',
             username: '',
-            firstName: '',
-            lastName: '',
+            name: '',
             email: '',
             password: '',
         });

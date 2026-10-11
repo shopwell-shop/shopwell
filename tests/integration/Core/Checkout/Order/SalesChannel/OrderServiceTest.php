@@ -74,7 +74,7 @@ class OrderServiceTest extends TestCase
         $this->salesChannelContext = $contextFactory->create(
             '',
             TestDefaults::SALES_CHANNEL,
-            [SalesChannelContextService::CUSTOMER_ID => $this->createCustomer('Jon', 'Doe')]
+            [SalesChannelContextService::CUSTOMER_ID => $this->createCustomer('Jon Doe')]
         );
     }
 
@@ -244,7 +244,7 @@ class OrderServiceTest extends TestCase
             '',
             TestDefaults::SALES_CHANNEL,
             [
-                SalesChannelContextService::CUSTOMER_ID => $this->createCustomer('Jon', 'De'),
+                SalesChannelContextService::CUSTOMER_ID => $this->createCustomer('Jon De'),
                 SalesChannelContextService::LANGUAGE_ID => $this->getZhCnLanguageId(),
             ]
         );
@@ -474,7 +474,7 @@ class OrderServiceTest extends TestCase
         $this->salesChannelContext = $contextFactory->create(
             '',
             TestDefaults::SALES_CHANNEL,
-            [SalesChannelContextService::CUSTOMER_ID => $this->createCustomer('Jon', 'Doe', $additionalData)]
+            [SalesChannelContextService::CUSTOMER_ID => $this->createCustomer('Jon Doe', $additionalData)]
         );
 
         $data = new RequestDataBag(['tos' => true]);
@@ -678,7 +678,7 @@ class OrderServiceTest extends TestCase
     /**
      * @param array<string, mixed> $options
      */
-    private function createCustomer(string $firstName, string $lastName, array $options = []): string
+    private function createCustomer(string $name, array $options = []): string
     {
         $customerId = Uuid::randomHex();
         $salutationId = $this->getValidSalutationId();
@@ -688,8 +688,7 @@ class OrderServiceTest extends TestCase
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
                 'id' => $customerId,
-                'firstName' => $firstName,
-                'lastName' => $lastName,
+                'name' => $name,
                 'city' => 'Schöppingen',
                 'street' => 'Ebbinghoff 10',
                 'zipcode' => '48624',
@@ -700,8 +699,7 @@ class OrderServiceTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => Uuid::randomHex() . '@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
-            'firstName' => $firstName,
-            'lastName' => $lastName,
+            'name' => $name,
             'salutationId' => $salutationId,
             'customerNumber' => '12345',
         ];

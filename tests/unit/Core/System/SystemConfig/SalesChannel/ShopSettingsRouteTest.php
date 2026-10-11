@@ -31,8 +31,7 @@ class ShopSettingsRouteTest extends TestCase
                 'core.basicInformation.metaAuthor' => 'Shopwell',
                 'core.basicInformation.metaRobots' => 'index,follow',
                 'core.basicInformation.familyFriendly' => true,
-                'core.basicInformation.firstNameFieldRequired' => true,
-                'core.basicInformation.lastNameFieldRequired' => true,
+                'core.basicInformation.nameFieldRequired' => true,
                 'core.basicInformation.phoneNumberFieldRequired' => true,
                 'core.basicInformation.showRevocationButton' => true,
 
@@ -101,8 +100,7 @@ class ShopSettingsRouteTest extends TestCase
         static::assertTrue($general->showRevocationButton);
 
         $contactForm = $settings->contactForm;
-        static::assertTrue($contactForm->firstNameFieldRequired);
-        static::assertTrue($contactForm->lastNameFieldRequired);
+        static::assertTrue($contactForm->nameFieldRequired);
         static::assertTrue($contactForm->phoneNumberFieldRequired);
 
         $loginRegistration = $settings->loginRegistration;
@@ -169,8 +167,7 @@ class ShopSettingsRouteTest extends TestCase
         static::assertSame('', $settings->general->metaRobots);
         static::assertFalse($settings->general->familyFriendly);
 
-        static::assertFalse($settings->contactForm->firstNameFieldRequired);
-        static::assertFalse($settings->contactForm->lastNameFieldRequired);
+        static::assertFalse($settings->contactForm->nameFieldRequired);
         static::assertFalse($settings->contactForm->phoneNumberFieldRequired);
 
         static::assertSame(0, $settings->loginRegistration->passwordMinLength);

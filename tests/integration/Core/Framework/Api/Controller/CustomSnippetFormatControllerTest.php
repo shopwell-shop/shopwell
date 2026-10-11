@@ -36,8 +36,7 @@ class CustomSnippetFormatControllerTest extends TestCase
             'address/country',
             'address/country_state',
             'address/department',
-            'address/first_name',
-            'address/last_name',
+            'address/name',
             'address/phone_number',
             'address/salutation',
             'address/street',
@@ -72,8 +71,7 @@ class CustomSnippetFormatControllerTest extends TestCase
             'address/country',
             'address/country_state',
             'address/department',
-            'address/first_name',
-            'address/last_name',
+            'address/name',
             'address/phone_number',
             'address/salutation',
             'address/street',
@@ -128,8 +126,7 @@ class CustomSnippetFormatControllerTest extends TestCase
                 'format' => [],
                 'data' => [
                     'address' => [
-                        'firstName' => 'Vin',
-                        'lastName' => 'Le',
+                        'name' => 'Vin Le',
                     ],
                 ],
             ],
@@ -140,8 +137,7 @@ class CustomSnippetFormatControllerTest extends TestCase
             'payload' => [
                 'format' => [
                     [
-                        'address/last_name',
-                        'address/first_name',
+                        'address/name',
                     ],
                 ],
                 'data' => [],
@@ -153,26 +149,23 @@ class CustomSnippetFormatControllerTest extends TestCase
             'payload' => [
                 'format' => [
                     [
-                        'address/last_name',
-                        'address/first_name',
+                        'address/name',
                     ],
                 ],
                 'data' => [
                     'address' => [
-                        'firstName' => 'Vin',
-                        'lastName' => 'Le',
+                        'name' => 'Vin Le',
                     ],
                 ],
             ],
-            'expectedHtml' => 'Le Vin',
+            'expectedHtml' => 'Vin Le',
         ];
 
         yield 'render multiple lines' => [
             'payload' => [
                 'format' => [
                     [
-                        'address/last_name',
-                        'address/first_name',
+                        'address/name',
                     ],
                     [
                         'address/street',
@@ -181,8 +174,7 @@ class CustomSnippetFormatControllerTest extends TestCase
                 ],
                 'data' => [
                     'address' => [
-                        'firstName' => 'Vin',
-                        'lastName' => 'Le',
+                        'name' => 'Vin Le',
                         'street' => '123 Strt',
                         'country' => [
                             'translated' => [
@@ -192,15 +184,14 @@ class CustomSnippetFormatControllerTest extends TestCase
                     ],
                 ],
             ],
-            'expectedHtml' => 'Le Vin<br/>123 Strt VN',
+            'expectedHtml' => 'Vin Le<br/>123 Strt VN',
         ];
 
         yield 'render multiple lines with symbol' => [
             'payload' => [
                 'format' => [
                     [
-                        'address/last_name',
-                        'address/first_name',
+                        'address/name',
                         'symbol/comma',
                     ],
                     [
@@ -210,8 +201,7 @@ class CustomSnippetFormatControllerTest extends TestCase
                 ],
                 'data' => [
                     'address' => [
-                        'firstName' => 'Vin',
-                        'lastName' => 'Le',
+                        'name' => 'Vin Le',
                         'street' => '123 Strt',
                         'country' => [
                             'translated' => [
@@ -221,7 +211,7 @@ class CustomSnippetFormatControllerTest extends TestCase
                     ],
                 ],
             ],
-            'expectedHtml' => 'Le Vin,<br/>123 Strt VN',
+            'expectedHtml' => 'Vin Le,<br/>123 Strt VN',
         ];
 
         yield 'render ignore empty snippet' => [
@@ -235,14 +225,12 @@ class CustomSnippetFormatControllerTest extends TestCase
                     ],
                     [
                         'symbol/dash',
-                        'address/first_name',
-                        'address/last_name',
+                        'address/name',
                     ],
                 ],
                 'data' => [
                     'address' => [
-                        'firstName' => 'Vin',
-                        'lastName' => 'Le',
+                        'name' => 'Vin Le',
                         'company' => 'Shopwell',
                         'department' => '',
                     ],
@@ -255,34 +243,30 @@ class CustomSnippetFormatControllerTest extends TestCase
             'payload' => [
                 'format' => [
                     [
-                        'address/last_name',
-                        'address/first_name',
+                        'address/name',
                     ],
                     [
                         'address/street',
                         'address/country',
                     ],
                     [
-                        'address/first_name',
-                        'address/last_name',
+                        'address/name',
                     ],
                 ],
                 'data' => [
                     'address' => [
-                        'firstName' => 'Vin',
-                        'lastName' => 'Le',
+                        'name' => 'Vin Le',
                     ],
                 ],
             ],
-            'expectedHtml' => 'Le Vin<br/>Vin Le',
+            'expectedHtml' => 'Vin Le<br/>Vin Le',
         ];
 
         yield 'render line with only concat symbol' => [
             'payload' => [
                 'format' => [
                     [
-                        'address/last_name',
-                        'address/first_name',
+                        'address/name',
                         'symbol/dash',
                     ],
                 ],
@@ -316,15 +300,13 @@ class CustomSnippetFormatControllerTest extends TestCase
             'payload' => [
                 'format' => [
                     [
-                        'address/first_name',
-                        'address/last_name',
+                        'address/name',
                         'address/country_state',
                     ],
                 ],
                 'data' => [
                     'address' => [
-                        'firstName' => 'Vin',
-                        'lastName' => 'Le',
+                        'name' => 'Vin Le',
                         'countryState' => null,
                     ],
                 ],

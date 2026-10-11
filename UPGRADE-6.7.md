@@ -45,6 +45,18 @@ The legacy document classes that document generation v2 keeps moved from `Shopwe
 | `SalesChannel\DocumentRoute` | `SalesChannel\DocumentRoute` |
 | `Service\ReferenceInvoiceLoader` | `Service\ReferenceInvoiceLoader` |
 
+## Customer, user and address names are merged into `name`
+
+The `Customer`, `CustomerAddress`, `OrderCustomer`, `OrderAddress`, `User` and `NewsletterRecipient` entities lost their `firstName` and `lastName` fields. They carry the full name in `name` instead, and the `first_name` and `last_name` columns were replaced by a single `name` column.
+
+Adapt existing code and integrations:
+
+- DAL code, criteria, associations and elasticsearch mappings read and write `name` instead of the two fields.
+- The Admin API and Store API schemas no longer contain `firstName` and `lastName`. The customer facing request bodies — registration, profile update, contact form, newsletter subscription and the revocation request form — and their responses use `name`, and so does `CustomerAddressBody`. The shop settings `firstNameFieldRequired` and `lastNameFieldRequired` are merged into `nameFieldRequired`.
+- `Shopwell\Core\Checkout\Customer\Rule\LastNameRule` is replaced by `Shopwell\Core\Checkout\Customer\Rule\NameRule`, which matches the full name.
+- The storefront snippets `snippets/address/first_name.html.twig` and `snippets/address/last_name.html.twig` are replaced by `snippets/address/name.html.twig`.
+- The frontend packages `@shopwell/api-client`, `@shopwell/composables` and `@shopwell/cms-base-layer` carry the same change.
+
 # 6.7.15.0
 
 ## Document generation v1 marked for replacement

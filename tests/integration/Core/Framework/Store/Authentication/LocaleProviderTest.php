@@ -42,8 +42,7 @@ class LocaleProviderTest extends TestCase
         $this->userRepository->create([[
             'id' => $userId,
             'username' => 'testUser',
-            'firstName' => 'first',
-            'lastName' => 'last',
+            'name' => 'first last',
             'email' => 'first@last.de',
             'password' => TestDefaults::HASHED_PASSWORD,
             'locale' => [

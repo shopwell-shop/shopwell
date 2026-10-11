@@ -138,7 +138,7 @@ export default {
                 },
                 {
                     property: 'user',
-                    dataIndex: 'customer.lastName,customer.firstName',
+                    dataIndex: 'customer.name',
                     label: 'sw-review.list.columnUser',
                 },
                 {

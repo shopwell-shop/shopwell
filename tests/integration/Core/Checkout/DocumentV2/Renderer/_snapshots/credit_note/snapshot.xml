@@ -121,7 +121,7 @@
       </ram:ActualDeliverySupplyChainEvent>
     </ram:ApplicableHeaderTradeDelivery>
     <ram:ApplicableHeaderTradeSettlement>
-      <ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>
+      <ram:InvoiceCurrencyCode>CNY</ram:InvoiceCurrencyCode>
       <ram:SpecifiedTradeSettlementPaymentMeans>
         <ram:TypeCode>10</ram:TypeCode>
         <ram:Information>Cash on delivery</ram:Information>
@@ -148,7 +148,7 @@
         <ram:ChargeTotalAmount>0.00</ram:ChargeTotalAmount>
         <ram:AllowanceTotalAmount>0.00</ram:AllowanceTotalAmount>
         <ram:TaxBasisTotalAmount>34.80</ram:TaxBasisTotalAmount>
-        <ram:TaxTotalAmount currencyID="EUR">5.20</ram:TaxTotalAmount>
+        <ram:TaxTotalAmount currencyID="CNY">5.20</ram:TaxTotalAmount>
         <ram:RoundingAmount>0.00</ram:RoundingAmount>
         <ram:GrandTotalAmount>40.00</ram:GrandTotalAmount>
         <ram:TotalPrepaidAmount>0.00</ram:TotalPrepaidAmount>

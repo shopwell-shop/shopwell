@@ -59,8 +59,7 @@ class ShopConfigurationController extends InstallerController
             $adminUser = [
                 'email' => (string) $request->request->get('config_admin_email'),
                 'username' => (string) $request->request->get('config_admin_username'),
-                'firstName' => (string) $request->request->get('config_admin_firstName'),
-                'lastName' => (string) $request->request->get('config_admin_lastName'),
+                'name' => (string) $request->request->get('config_admin_name'),
                 'password' => (string) $request->request->get('config_admin_password'),
                 'localeId' => $this->resolveLocaleId($connection, $userLocale),
             ];

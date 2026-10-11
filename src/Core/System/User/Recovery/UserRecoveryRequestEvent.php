@@ -74,7 +74,7 @@ class UserRecoveryRequestEvent extends Event implements UserAware, MailAware, Sc
             $user = $this->userRecovery->getUser();
 
             $this->mailRecipientStruct = new MailRecipientStruct([
-                $user->getEmail() => $user->getFirstName() . ' ' . $user->getLastName(),
+                $user->getEmail() => $user->getName(),
             ]);
         }
 

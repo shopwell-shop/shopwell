@@ -14,8 +14,7 @@ use Shopwell\Core\Test\TestDefaults;
  * @final
  * How to use:
  * $x = (new CustomerBuilder(new IdsCollection(), 'p1'))
- *          ->firstName('Max')
- *          ->lastName('Muster')
+ *          ->name('Max Mustermann')
  *          ->group('standard')
  *          ->build();
  */
@@ -27,9 +26,7 @@ class CustomerBuilder
 
     public string $id;
 
-    protected string $firstName = 'Max';
-
-    protected string $lastName = 'Mustermann';
+    protected string $name = 'Max Mustermann';
 
     protected string $email = 'max@mustermann.com';
 
@@ -84,16 +81,9 @@ class CustomerBuilder
         return $this;
     }
 
-    public function firstName(string $firstName): self
+    public function name(string $name): self
     {
-        $this->firstName = $firstName;
-
-        return $this;
-    }
-
-    public function lastName(string $lastName): self
-    {
-        $this->lastName = $lastName;
+        $this->name = $name;
 
         return $this;
     }
@@ -141,8 +131,7 @@ class CustomerBuilder
     public function addAddress(string $key, array $customParams = []): self
     {
         $address = \array_replace([
-            'firstName' => $this->firstName,
-            'lastName' => $this->lastName,
+            'name' => $this->name,
             'city' => 'Bielefeld',
             'salutation' => self::salutation($this->ids),
             'street' => 'Buchenweg 5',

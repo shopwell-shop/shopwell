@@ -175,7 +175,7 @@ class SalesChannelTrackingListenerTest extends TestCase
         $this->pushRequestWithReferralCode($agenticChannelId);
 
         $this->customerRepository->update([
-            ['id' => $ids->get('customer-1'), 'firstName' => 'Updated'],
+            ['id' => $ids->get('customer-1'), 'name' => 'Updated'],
         ], $this->context);
 
         $criteria = new Criteria();

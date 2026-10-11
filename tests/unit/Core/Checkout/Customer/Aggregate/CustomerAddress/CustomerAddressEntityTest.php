@@ -40,13 +40,11 @@ class CustomerAddressEntityTest extends TestCase
     public function testNameGettersAndSetters(): void
     {
         $address = new CustomerAddressEntity();
-        $address->setFirstName('Jane');
-        $address->setLastName('Doe');
+        $address->setName('Jane Doe');
         $address->setCity('Berlin');
         $address->setStreet('Main Street 1');
 
-        static::assertSame('Jane', $address->getFirstName());
-        static::assertSame('Doe', $address->getLastName());
+        static::assertSame('Jane Doe', $address->getName());
         static::assertSame('Berlin', $address->getCity());
         static::assertSame('Main Street 1', $address->getStreet());
     }

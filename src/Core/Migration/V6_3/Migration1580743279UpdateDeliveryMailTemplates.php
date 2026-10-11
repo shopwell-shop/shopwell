@@ -198,7 +198,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
         return '<div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         the status of your delivery at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                         <strong>The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -211,7 +211,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
     private function getDeliveryCancellationPlainTemplateEn(): string
     {
         return '
-            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
             the status of your delivery at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
             The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.
@@ -226,7 +226,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
         <div style="font-family:arial; font-size:12px;">
            <br/>
            <p>
-               {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+               {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                <br/>
                您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
                <strong>支付状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -239,7 +239,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
     private function getDeliveryCancellationPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
         支付状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
@@ -254,7 +254,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                   <p>
-                      {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                      {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                       <br/>
                       the status of your delivery at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                       <strong>The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -268,7 +268,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
     private function getDeliveryReturnedPlainTemplateEn(): string
     {
         return '
-            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
             the status of your delivery at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
             The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.
@@ -283,7 +283,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
                     <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -296,7 +296,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
     private function getDeliveryReturnedPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
         订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
@@ -311,7 +311,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                <br/>
                <p>
-                   {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                   {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                    <br/>
                    the status of your delivery at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                    <strong>The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -325,7 +325,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
     private function getDeliveryShippedPartiallyPlainTemplateEn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         the status of your delivery at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
         The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.
@@ -340,7 +340,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
                     <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -353,7 +353,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
     private function getDeliveryShippedPartiallyPlainTemplateZhCn(): string
     {
         return '
-            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
         订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
@@ -368,7 +368,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     the status of your delivery at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                     <strong>The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -382,7 +382,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
     private function getDeliveryShippedPlainTemplateEn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         the status of your delivery at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
         The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.
@@ -397,7 +397,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
                     <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -411,7 +411,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
     private function getDeliveryShippedPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
         订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.
@@ -426,7 +426,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     the status of your delivery at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                     <strong>The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -440,7 +440,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
     private function getDeliveryReturnedPartiallyPlainTemplateEn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         the status of your delivery at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
         The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.
@@ -455,7 +455,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
             <div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                     <br/>
                     您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新.<br/>
                     <strong>订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -469,7 +469,7 @@ class Migration1580743279UpdateDeliveryMailTemplates extends MigrationStep
     private function getDeliveryReturnedPartiallyPlainTemplateZhCn(): string
     {
         return '
-        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
         您在 {{ salesChannel.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新!
         订单状态最新状态：{{order.deliveries.first.stateMachineState.name}}.

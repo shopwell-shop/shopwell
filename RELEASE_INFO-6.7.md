@@ -370,6 +370,14 @@ Both are experimental and become stable with 6.8.0.
 
 GLB files are now validated on upload. A file is rejected with `CONTENT__MEDIA_INVALID_FILE` if it is not a valid binary glTF 2.0 container or if the `uri` of a buffer or image points to something other than an embedded `data:` URI. Self-contained models, which keep their buffers and textures in the binary chunk, are not affected and URLs in other fields such as `extras` or `asset.copyright` are still allowed.
 
+### Customer, user and address names are merged into `name`
+
+`Customer`, `CustomerAddress`, `OrderCustomer`, `OrderAddress`, `User` and `NewsletterRecipient` carry the full name in a single `name` field. `firstName` and `lastName` are gone from the entities, from the Admin API and Store API schemas and from the search indexes.
+
+The customer facing request bodies keep their shape apart from the name: registration, profile update, the contact form, newsletter subscription and the revocation request form send `name` and return it. The shop settings `firstNameFieldRequired` and `lastNameFieldRequired` are merged into `nameFieldRequired`.
+
+The newsletter and contact form elements render a single name input, and `useOrderDetails()` returns the customer's `name` in the personal details.
+
 ## API
 
 ### Generated document number in the V2 creation response

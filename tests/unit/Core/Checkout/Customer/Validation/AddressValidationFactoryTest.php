@@ -55,14 +55,14 @@ class AddressValidationFactoryTest extends TestCase
 
         $this->assertAddressDefinition($definition);
 
-        static::assertCount(13, $definition);
+        static::assertCount(12, $definition);
     }
 
     public function testDefinitionRulesUpdate(): void
     {
         $definition = $this->addressValidationFactory->update($this->salesChannelContext)->getProperties();
 
-        static::assertCount(14, $definition);
+        static::assertCount(13, $definition);
         static::assertArrayHasKey('id', $definition);
 
         static::assertCount(2, $definition['id']);
@@ -83,20 +83,15 @@ class AddressValidationFactoryTest extends TestCase
         static::assertInstanceOf(NoHtml::class, $definition['title'][1]);
         static::assertArrayHasKey('zipcode', $definition);
         static::assertInstanceOf(Length::class, $definition['zipcode'][0]);
-        static::assertCount(3, $definition['firstName']);
-        static::assertInstanceOf(NotBlank::class, $definition['firstName'][0]);
-        static::assertInstanceOf(Length::class, $definition['firstName'][1]);
-        static::assertInstanceOf(NoHtml::class, $definition['firstName'][2]);
-        static::assertCount(3, $definition['lastName']);
-        static::assertInstanceOf(NotBlank::class, $definition['lastName'][0]);
-        static::assertInstanceOf(Length::class, $definition['lastName'][1]);
-        static::assertInstanceOf(NoHtml::class, $definition['lastName'][2]);
+        static::assertCount(3, $definition['name']);
+        static::assertInstanceOf(NotBlank::class, $definition['name'][0]);
+        static::assertInstanceOf(Length::class, $definition['name'][1]);
+        static::assertInstanceOf(NoHtml::class, $definition['name'][2]);
 
         static::assertArrayHasKey('salutationId', $definition);
         static::assertArrayHasKey('countryId', $definition);
         static::assertArrayHasKey('countryStateId', $definition);
-        static::assertArrayHasKey('firstName', $definition);
-        static::assertArrayHasKey('lastName', $definition);
+        static::assertArrayHasKey('name', $definition);
         static::assertArrayHasKey('street', $definition);
         static::assertArrayHasKey('city', $definition);
 

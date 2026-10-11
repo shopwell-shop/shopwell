@@ -231,8 +231,7 @@ class CartOrderEventSubscriberTest extends TestCase
         $address = [
             'id' => $additionalAddressId,
             'customerId' => $customerId,
-            'firstName' => 'Test',
-            'lastName' => 'Customer',
+            'name' => 'Test Customer',
             'street' => 'Additional Street 2',
             'city' => 'Additional City',
             'zipcode' => '54321',

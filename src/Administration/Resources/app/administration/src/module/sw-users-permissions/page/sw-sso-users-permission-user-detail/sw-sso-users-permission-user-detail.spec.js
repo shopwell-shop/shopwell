@@ -10,8 +10,7 @@ const createDefaultUser = function () {
         attributes: {
             id: '1',
             title: '',
-            firstName: 'foo',
-            lastName: 'bar',
+            name: 'foo bar',
             email: 'foo@bar.baz',
             localeId: 'one',
             timeZone: '111',
@@ -264,8 +263,7 @@ describe('module/sw-users-permissions/page/sw-sso-users-permission-user-detail',
 
     it('should show invitation banner', async () => {
         const user = createDefaultUser();
-        user.attributes.firstName = user.attributes.email;
-        user.attributes.lastName = user.attributes.email;
+        user.attributes.name = user.attributes.email;
 
         const wrapper = await createWrapper(user);
 
@@ -276,52 +274,41 @@ describe('module/sw-users-permissions/page/sw-sso-users-permission-user-detail',
         );
     });
 
-    it('should not be possible to edit fistName, lastName, email', async () => {
+    it('should not be possible to edit name and email', async () => {
         const wrapper = await createWrapper();
 
-        const firstNameField = wrapper.find('#sw-field--user-firstName');
-        expect(firstNameField.exists()).toBeTruthy();
-        const lastNameField = wrapper.find('#sw-field--user-lastName');
-        expect(lastNameField.exists()).toBeTruthy();
+        const nameField = wrapper.find('#sw-field--user-name');
+        expect(nameField.exists()).toBeTruthy();
         const emailField = wrapper.find('#sw-field--user-email');
         expect(emailField.exists()).toBeTruthy();
 
         const activeField = wrapper.find('.sw-sso-detail-card__information-active');
         expect(activeField.exists()).toBeTruthy();
 
-        expect(firstNameField.attributes('disabled')).toBeDefined();
-        expect(firstNameField.attributes('disabled')).toBe('');
-
-        expect(lastNameField.attributes('disabled')).toBeDefined();
-        expect(lastNameField.attributes('disabled')).toBe('');
+        expect(nameField.attributes('disabled')).toBeDefined();
+        expect(nameField.attributes('disabled')).toBe('');
 
         expect(emailField.attributes('disabled')).toBeDefined();
         expect(emailField.attributes('disabled')).toBe('');
         expect(activeField.attributes('disabled')).toBeUndefined();
     });
 
-    it('should not be possible to edit fistName, lastName, email with given user', async () => {
+    it('should not be possible to edit name and email with given user', async () => {
         const user = createDefaultUser();
-        user.attributes.firstName = user.attributes.email;
-        user.attributes.lastName = user.attributes.email;
+        user.attributes.name = user.attributes.email;
 
         const wrapper = await createWrapper(user);
 
-        const firstNameField = wrapper.find('#sw-field--user-firstName');
-        expect(firstNameField.exists()).toBeTruthy();
-        const lastNameField = wrapper.find('#sw-field--user-lastName');
-        expect(lastNameField.exists()).toBeTruthy();
+        const nameField = wrapper.find('#sw-field--user-name');
+        expect(nameField.exists()).toBeTruthy();
         const emailField = wrapper.find('#sw-field--user-email');
         expect(emailField.exists()).toBeTruthy();
 
         const activeField = wrapper.find('.sw-sso-detail-card__information-active');
         expect(activeField.exists()).toBeTruthy();
 
-        expect(firstNameField.attributes('disabled')).toBeDefined();
-        expect(firstNameField.attributes('disabled')).toBe('');
-
-        expect(lastNameField.attributes('disabled')).toBeDefined();
-        expect(lastNameField.attributes('disabled')).toBe('');
+        expect(nameField.attributes('disabled')).toBeDefined();
+        expect(nameField.attributes('disabled')).toBe('');
 
         expect(emailField.attributes('disabled')).toBeDefined();
         expect(emailField.attributes('disabled')).toBe('');

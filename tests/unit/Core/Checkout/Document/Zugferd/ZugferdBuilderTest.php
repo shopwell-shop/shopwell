@@ -372,8 +372,7 @@ class ZugferdBuilderTest extends TestCase
     {
         $customer = new OrderCustomerEntity();
         $customer->setEmail('order-customer-email');
-        $customer->setFirstName('order-customer-first-name');
-        $customer->setLastName('order-customer-last-name');
+        $customer->setName('order-customer-first-name order-customer-last-name');
         $customer->setCustomerNumber('order-customer-number');
         $customer->setCompany('order-customer-company');
 
@@ -396,8 +395,7 @@ class ZugferdBuilderTest extends TestCase
         $address->setId('order-address-id');
         $address->setVersionId('order-address-version-id');
         $address->setSalutationId('order-address-salutation-id');
-        $address->setFirstName('order-address-first-name');
-        $address->setLastName('order-address-last-name');
+        $address->setName('order-address-first-name order-address-last-name');
         $address->setStreet('order-address-street');
         $address->setZipcode('order-address-zipcode');
         $address->setCity('order-address-city');

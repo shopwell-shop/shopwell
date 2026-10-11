@@ -57,7 +57,7 @@ class NewsletterUnsubscribeEvent extends Event implements SalesChannelAware, Mai
     {
         if (!$this->mailRecipientStruct instanceof MailRecipientStruct) {
             $this->mailRecipientStruct = new MailRecipientStruct([
-                $this->newsletterRecipient->getEmail() => $this->newsletterRecipient->getFirstName() . ' ' . $this->newsletterRecipient->getLastName(),
+                $this->newsletterRecipient->getEmail() => $this->newsletterRecipient->getName() ?? '',
             ]);
         }
 

@@ -7,22 +7,12 @@
         :is-loading="isUserLoading || !languageId"
     >
         <div class="sw-profile-index-general__grid sw-profile-index-general__information-grid">
-            {% block sw_profile_index_general_information_firstname %}
+            {% block sw_profile_index_general_information_name %}
             <mt-text-field
-                v-model="user.firstName"
-                name="sw-field--user-firstName"
-                class="sw-profile-index-general__grid-firstName"
-                :label="$t('sw-profile.index.labelFirstNameField')"
-                :disabled="isDisabled || !acl.can('user.update_profile')"
-            />
-            {% endblock %}
-
-            {% block sw_profile_index_general_information_lastname %}
-            <mt-text-field
-                v-model="user.lastName"
-                name="sw-field--user-lastName"
-                class="sw-profile-index-general__grid-lastName"
-                :label="$t('sw-profile.index.labelLastNameField')"
+                v-model="user.name"
+                name="sw-field--user-name"
+                class="sw-profile-index-general__grid-name"
+                :label="$t('sw-profile.index.labelNameField')"
                 :disabled="isDisabled || !acl.can('user.update_profile')"
             />
             {% endblock %}

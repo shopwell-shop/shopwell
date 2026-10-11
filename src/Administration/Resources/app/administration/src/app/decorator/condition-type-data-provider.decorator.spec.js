@@ -28,7 +28,7 @@ const EXPECTED_CONDITION_TYPES = [
     'customerCustomerNumber',
     'customerDifferentAddresses',
     'customerEmail',
-    'customerLastName',
+    'customerName',
     'customerIsCompany',
     'customerIsGuest',
     'customerIsNewsletterRecipient',

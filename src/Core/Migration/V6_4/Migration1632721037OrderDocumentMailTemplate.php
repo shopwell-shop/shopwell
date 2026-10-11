@@ -68,7 +68,7 @@ class Migration1632721037OrderDocumentMailTemplate extends MigrationStep
                         'id' => $values['typeId'],
                         'technical_name' => $technicalName,
                         'available_entities' => json_encode(['order' => 'order', 'salesChannel' => 'sales_channel']),
-                        'template_data' => '{"order":{"orderNumber":"10060","orderCustomer":{"firstName":"Max","lastName":"Mustermann"}},"salesChannel":{"name":"Storefront"}}',
+                        'template_data' => '{"order":{"orderNumber":"10060","orderCustomer":{"name":"Max","name":"Mustermann"}},"salesChannel":{"name":"Storefront"}}',
                         'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
                     ]
                 );

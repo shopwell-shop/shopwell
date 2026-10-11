@@ -10,7 +10,7 @@ use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Cart\Rule\CartRuleScope;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\CustomerException;
-use Shopwell\Core\Checkout\Customer\Rule\LastNameRule;
+use Shopwell\Core\Checkout\Customer\Rule\NameRule;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\Exception\UnsupportedValueException;
@@ -24,45 +24,45 @@ use Shopwell\Core\System\SalesChannel\SalesChannelContext;
  * @internal
  */
 #[Package('fundamentals@after-sales')]
-#[CoversClass(LastNameRule::class)]
+#[CoversClass(NameRule::class)]
 #[Group('rules')]
-class LastNameRuleTest extends TestCase
+class NameRuleTest extends TestCase
 {
-    private LastNameRule $rule;
+    private NameRule $rule;
 
     protected function setUp(): void
     {
-        $this->rule = new LastNameRule();
+        $this->rule = new NameRule();
     }
 
     public function testName(): void
     {
-        static::assertSame('customerLastName', $this->rule->getName());
+        static::assertSame('customerName', $this->rule->getName());
     }
 
     public function testConstraints(): void
     {
         $constraints = $this->rule->getConstraints();
 
-        static::assertArrayHasKey('lastName', $constraints, 'LastName constraint not found');
+        static::assertArrayHasKey('name', $constraints, 'Name constraint not found');
         static::assertArrayHasKey('operator', $constraints, 'operator constraints not found');
 
         static::assertEquals(RuleConstraints::stringOperators(), $constraints['operator']);
-        static::assertEquals(RuleConstraints::string(), $constraints['lastName']);
+        static::assertEquals(RuleConstraints::string(), $constraints['name']);
     }
 
-    #[DataProvider('getMatchCustomerLastNameValues')]
-    public function testLastNameRuleMatching(bool $expected, ?string $customerName, ?string $ruleNameValue, string $operator): void
+    #[DataProvider('getMatchCustomerNameValues')]
+    public function testNameRuleMatching(bool $expected, ?string $customerName, ?string $ruleNameValue, string $operator): void
     {
         $customer = new CustomerEntity();
-        $customer->setLastName($customerName ?? '');
+        $customer->setName($customerName ?? '');
 
         $context = static::createStub(SalesChannelContext::class);
         $context->method('getCustomer')->willReturn($customer);
         $cart = new Cart('test');
         $scope = new CartRuleScope($cart, $context);
 
-        $this->rule->assign(['lastName' => $ruleNameValue, 'operator' => $operator]);
+        $this->rule->assign(['name' => $ruleNameValue, 'operator' => $operator]);
 
         $isMatching = $this->rule->match($scope);
 
@@ -71,7 +71,7 @@ class LastNameRuleTest extends TestCase
 
     public function testConfig(): void
     {
-        $config = (new LastNameRule())->getConfig();
+        $config = (new NameRule())->getConfig();
         $configData = $config->getData();
 
         static::assertArrayHasKey('operatorSet', $configData);
@@ -91,7 +91,7 @@ class LastNameRuleTest extends TestCase
             static::createStub(SalesChannelContext::class)
         );
 
-        $this->rule->assign(['lastName' => 'shopwell', 'operator' => Rule::OPERATOR_EQ]);
+        $this->rule->assign(['name' => 'shopwell', 'operator' => Rule::OPERATOR_EQ]);
         static::assertFalse($this->rule->match($scope));
     }
 
@@ -102,21 +102,21 @@ class LastNameRuleTest extends TestCase
             static::createStub(SalesChannelContext::class)
         );
 
-        $this->rule->assign(['lastName' => 'shopwell', 'operator' => Rule::OPERATOR_EMPTY]);
+        $this->rule->assign(['name' => 'shopwell', 'operator' => Rule::OPERATOR_EMPTY]);
         static::assertTrue($this->rule->match($scope));
     }
 
-    public function testInvalidLastName(): void
+    public function testInvalidName(): void
     {
         $customer = new CustomerEntity();
-        $customer->setLastName('shopwell');
+        $customer->setName('shopwell');
 
         $context = static::createStub(SalesChannelContext::class);
         $context->method('getCustomer')->willReturn($customer);
         $cart = new Cart('test');
         $scope = new CartRuleScope($cart, $context);
 
-        $this->rule->assign(['lastName' => true, 'operator' => Rule::OPERATOR_EQ]);
+        $this->rule->assign(['name' => true, 'operator' => Rule::OPERATOR_EQ]);
 
         if (!Feature::isActive('v6.8.0.0')) {
             $this->expectException(UnsupportedValueException::class);
@@ -129,14 +129,14 @@ class LastNameRuleTest extends TestCase
     public function testInvalidScopeIsFalse(): void
     {
         $invalidScope = static::createStub(RuleScope::class);
-        $this->rule->assign(['lastName' => 'shopwell', 'operator' => Rule::OPERATOR_EQ]);
+        $this->rule->assign(['name' => 'shopwell', 'operator' => Rule::OPERATOR_EQ]);
         static::assertFalse($this->rule->match($invalidScope));
     }
 
     /**
      * @return array<string, array{bool, string|null, string|null, string}>
      */
-    public static function getMatchCustomerLastNameValues(): array
+    public static function getMatchCustomerNameValues(): array
     {
         return [
             'EQ - true' => [true, 'shopwell', 'shopwell', Rule::OPERATOR_EQ],

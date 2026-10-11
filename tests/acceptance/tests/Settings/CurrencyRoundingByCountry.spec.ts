@@ -35,8 +35,7 @@ test(
         const salutation = await TestDataService.getSalutation();
         const customer = await TestDataService.createCustomer({
             defaultShippingAddress: {
-                firstName: 'John',
-                lastName: 'Doe',
+                name: 'John Doe',
                 city: 'Schöppingen',
                 street: 'Ebbinghoff 10',
                 zipcode: '48624',
@@ -44,8 +43,7 @@ test(
                 salutationId: salutation.id,
             },
             defaultBillingAddress: {
-                firstName: 'John',
-                lastName: 'Doe',
+                name: 'John Doe',
                 city: 'Schöppingen',
                 street: 'Ebbinghoff 10',
                 zipcode: '48624',

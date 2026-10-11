@@ -111,12 +111,8 @@ export default {
                     label: this.$t('sw-users-permissions.users.user-grid.labelUsername'),
                 },
                 {
-                    property: 'firstName',
-                    label: this.$t('sw-users-permissions.users.user-grid.labelFirstName'),
-                },
-                {
-                    property: 'lastName',
-                    label: this.$t('sw-users-permissions.users.user-grid.labelLastName'),
+                    property: 'name',
+                    label: this.$t('sw-users-permissions.users.user-grid.labelName'),
                 },
                 {
                     property: 'aclRoles',
@@ -216,7 +212,7 @@ export default {
 
         deleteUser(context) {
             const user = this.itemToDelete;
-            const username = `${user.firstName} ${user.lastName} `;
+            const username = user.name;
             const titleDeleteSuccess = this.$t('global.default.success');
             const messageDeleteSuccess = this.$t(
                 'sw-users-permissions.users.user-grid.notification.deleteSuccess.message',

@@ -1389,16 +1389,14 @@ class RecalculationServiceTest extends TestCase
         $orderAddressId = $order->getAddresses()->first()?->getId();
         static::assertIsString($orderAddressId);
 
-        $firstName = 'Replace first name';
-        $lastName = 'Replace last name';
+        $name = 'Replace name';
         $street = 'Replace street';
         $city = 'Replace city';
         $zipcode = '98765';
 
         $customerAddressId = $this->addAddressToCustomer(
             $this->customerId,
-            $firstName,
-            $lastName,
+            $name,
             $street,
             $city,
             $zipcode
@@ -1431,8 +1429,7 @@ class RecalculationServiceTest extends TestCase
         static::assertNotNull($orderAddress);
 
         static::assertSame($orderAddressId, $orderAddress->getId());
-        static::assertSame($firstName, $orderAddress->getFirstName());
-        static::assertSame($lastName, $orderAddress->getLastName());
+        static::assertSame($name, $orderAddress->getName());
         static::assertSame($street, $orderAddress->getStreet());
         static::assertSame($city, $orderAddress->getCity());
         static::assertSame($zipcode, $orderAddress->getZipcode());
@@ -1583,8 +1580,7 @@ class RecalculationServiceTest extends TestCase
 
     private function addAddressToCustomer(
         string $customerId,
-        string $firstName,
-        string $lastName,
+        string $name,
         string $street,
         string $city,
         string $zipcode
@@ -1599,8 +1595,7 @@ class RecalculationServiceTest extends TestCase
                     'customerId' => $customerId,
                     'countryId' => $this->getValidCountryId(),
                     'salutationId' => $this->getValidSalutationId(),
-                    'firstName' => $firstName,
-                    'lastName' => $lastName,
+                    'name' => $name,
                     'street' => $street,
                     'zipcode' => $zipcode,
                     'city' => $city,
@@ -1713,8 +1708,7 @@ class RecalculationServiceTest extends TestCase
             'id' => $customerId,
             'number' => '1337',
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'customerNumber' => '1337',
             'email' => Uuid::randomHex() . '@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
@@ -1728,8 +1722,7 @@ class RecalculationServiceTest extends TestCase
                     'customerId' => $customerId,
                     'countryId' => $this->getValidCountryIdWithTaxes(),
                     'salutationId' => $this->getValidSalutationId(),
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
                     'city' => 'Schöppingen',
@@ -1747,8 +1740,7 @@ class RecalculationServiceTest extends TestCase
         $address = new CustomerAddressEntity();
         $address->setId($id);
         $address->setCountryId($this->getValidCountryId());
-        $address->setFirstName('Max');
-        $address->setLastName('Mustermann');
+        $address->setName('Max Mustermann');
         $address->setStreet('Musterstraße 1');
         $address->setZipcode('12345');
         $address->setCity('Musterstadt');

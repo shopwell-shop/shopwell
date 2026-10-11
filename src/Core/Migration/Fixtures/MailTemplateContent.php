@@ -7,7 +7,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
 
                 {% set currencyIsoCode = order.currency.isoCode %}
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br>
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br>
                 <br>
                 Thank you for your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}.<br>
                 <br>
@@ -71,7 +71,7 @@ return [
                     {% set billingAddress = order.addresses.get(order.billingAddressId) %}
                     <strong>Billing address:</strong><br>
                     {{ billingAddress.company }}<br>
-                    {{ billingAddress.firstName }} {{ billingAddress.lastName }}<br>
+                    {{ billingAddress.name }}<br>
                     {{ billingAddress.street }} <br>
                     {{ billingAddress.zipcode }} {{ billingAddress.city }}<br>
                     {{ billingAddress.country.name }}<br>
@@ -79,7 +79,7 @@ return [
 
                     <strong>Shipping address:</strong><br>
                     {{ delivery.shippingOrderAddress.company }}<br>
-                    {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}<br>
+                    {{ delivery.shippingOrderAddress.name }}<br>
                     {{ delivery.shippingOrderAddress.street }} <br>
                     {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}<br>
                     {{ delivery.shippingOrderAddress.country.name }}<br>
@@ -99,7 +99,7 @@ return [
             ',
             'plain' => '
                 {% set currencyIsoCode = order.currency.isoCode %}
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 Thank you for your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}.
 
@@ -129,14 +129,14 @@ return [
                 {% set billingAddress = order.addresses.get(order.billingAddressId) %}
                 Billing address:
                 {{ billingAddress.company }}
-                {{ billingAddress.firstName }} {{ billingAddress.lastName }}
+                {{ billingAddress.name }}
                 {{ billingAddress.street }}
                 {{ billingAddress.zipcode }} {{ billingAddress.city }}
                 {{ billingAddress.country.name }}
 
                 Shipping address:
                 {{ delivery.shippingOrderAddress.company }}
-                {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}
+                {{ delivery.shippingOrderAddress.name }}
                 {{ delivery.shippingOrderAddress.street }}
                 {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}
                 {{ delivery.shippingOrderAddress.country.name }}
@@ -156,7 +156,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
 
                 {% set currencyIsoCode = order.currency.isoCode %}
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br>
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br>
                 <br>
                 感谢您在 {{ salesChannel.translated.name }} (订单号： {{order.orderNumber}}) 于 {{ order.orderDateTime|date }}.<br>
                 <br>
@@ -218,7 +218,7 @@ return [
                     {% set billingAddress = order.addresses.get(order.billingAddressId) %}
                     <strong>账单地址：</strong><br>
                     {{ billingAddress.company }}<br>
-                    {{ billingAddress.firstName }} {{ billingAddress.lastName }}<br>
+                    {{ billingAddress.name }}<br>
                     {{ billingAddress.street }} <br>
                     {{ billingAddress.zipcode }} {{ billingAddress.city }}<br>
                     {{ billingAddress.country.name }}<br>
@@ -226,7 +226,7 @@ return [
 
                     <strong>收货地址：</strong><br>
                     {{ delivery.shippingOrderAddress.company }}<br>
-                    {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}<br>
+                    {{ delivery.shippingOrderAddress.name }}<br>
                     {{ delivery.shippingOrderAddress.street }} <br>
                     {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}<br>
                     {{ delivery.shippingOrderAddress.country.name }}<br>
@@ -247,7 +247,7 @@ return [
             ',
             'plain' => '
                 {% set currencyIsoCode = order.currency.isoCode %}
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 感谢您在 {{ salesChannel.translated.name }} (订单号： {{order.orderNumber}}) 于 {{ order.orderDateTime|date }}.
 
@@ -277,14 +277,14 @@ return [
                 {% set billingAddress = order.addresses.get(order.billingAddressId) %}
                 账单地址：
                 {{ billingAddress.company }}
-                {{ billingAddress.firstName }} {{ billingAddress.lastName }}
+                {{ billingAddress.name }}
                 {{ billingAddress.street }}
                 {{ billingAddress.zipcode }} {{ billingAddress.city }}
                 {{ billingAddress.country.name }}
 
                 收货地址：
                 {{ delivery.shippingOrderAddress.company }}
-                {{ delivery.shippingOrderAddress.firstName }} {{ delivery.shippingOrderAddress.lastName }}
+                {{ delivery.shippingOrderAddress.name }}
                 {{ delivery.shippingOrderAddress.street }}
                 {{ delivery.shippingOrderAddress.zipcode}} {{ delivery.shippingOrderAddress.city }}
                 {{ delivery.shippingOrderAddress.country.name }}
@@ -305,7 +305,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                  <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                         <strong>The new status is as follows: {{order.stateMachineState.name}}.</strong><br/>
@@ -317,7 +317,7 @@ return [
             ',
             'plain' => '
 
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.stateMachineState.name}}.
@@ -330,7 +330,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新。<br/>
                         <strong>订单最新状态：{{order.stateMachineState.name}}。</strong><br/>
@@ -342,7 +342,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新！
                 订单最新状态：{{order.stateMachineState.name}}。
@@ -357,7 +357,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                         <p>
-                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                             <br/>
                             the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                             <strong>The new status is as follows: {{order.stateMachineState.name}}.</strong><br/>
@@ -369,7 +369,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.stateMachineState.name}}.
@@ -382,7 +382,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新。<br/>
                         <strong>订单最新状态：{{order.stateMachineState.name}}。</strong><br/>
@@ -394,7 +394,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新！
                 订单最新状态：{{order.stateMachineState.name}}。
@@ -408,7 +408,7 @@ return [
             'html' => '
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
-                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                             <br/>
                             the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                             <strong>The new status is as follows: {{order.stateMachineState.name}}.</strong><br/>
@@ -420,7 +420,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.stateMachineState.name}}.
@@ -433,7 +433,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新。<br/>
                         <strong>订单最新状态：{{order.stateMachineState.name}}。</strong><br/>
@@ -445,7 +445,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新！
                 订单最新状态：{{order.stateMachineState.name}}。
@@ -460,7 +460,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                         <p>
-                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                             <br/>
                             the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                             <strong>The new status is as follows: {{order.stateMachineState.name}}.</strong><br/>
@@ -472,7 +472,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.stateMachineState.name}}.
@@ -485,7 +485,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新。<br/>
                         <strong>订单最新状态：{{order.stateMachineState.name}}。</strong><br/>
@@ -497,7 +497,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的订单状态已更新！
                 订单最新状态：{{order.stateMachineState.name}}。
@@ -511,7 +511,7 @@ return [
             'html' => '<div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         the status of your delivery at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                         <strong>The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -522,7 +522,7 @@ return [
                     </p>
                 </div>',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your delivery at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.
@@ -535,7 +535,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                    <br/>
                    <p>
-                       {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                       {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                        <br/>
                        您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新。<br/>
                        <strong>配送最新状态：{{order.deliveries.first.stateMachineState.name}}。</strong><br/>
@@ -546,7 +546,7 @@ return [
                    </p>
                 </div>',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新！
                 配送最新状态：{{order.deliveries.first.stateMachineState.name}}。
@@ -561,7 +561,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                    <br/>
                    <p>
-                       {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                       {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                        <br/>
                        the status of your delivery at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                        <strong>The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -573,7 +573,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your delivery at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.
@@ -586,7 +586,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新。<br/>
                         <strong>配送最新状态：{{order.deliveries.first.stateMachineState.name}}。</strong><br/>
@@ -597,7 +597,7 @@ return [
                     </p>
                 </div>',
             'plain' => '
-                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                    {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新！
                 配送最新状态：{{order.deliveries.first.stateMachineState.name}}。
@@ -612,7 +612,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         the status of your delivery at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                         <strong>The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -624,7 +624,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your delivery at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.
@@ -637,7 +637,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新。<br/>
                         <strong>配送最新状态：{{order.deliveries.first.stateMachineState.name}}。</strong><br/>
@@ -649,7 +649,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新！
                 配送最新状态：{{order.deliveries.first.stateMachineState.name}}。
@@ -664,7 +664,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         the status of your delivery at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                         <strong>The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -676,7 +676,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your delivery at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.
@@ -689,7 +689,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新。<br/>
                         <strong>配送最新状态：{{order.deliveries.first.stateMachineState.name}}。</strong><br/>
@@ -701,7 +701,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新！
                 配送最新状态：{{order.deliveries.first.stateMachineState.name}}。
@@ -716,7 +716,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                       <p>
-                          {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                          {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                           <br/>
                           the status of your delivery at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                           <strong>The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.</strong><br/>
@@ -728,7 +728,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your delivery at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.deliveries.first.stateMachineState.name}}.
@@ -741,7 +741,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新。<br/>
                         <strong>配送最新状态：{{order.deliveries.first.stateMachineState.name}}。</strong><br/>
@@ -752,7 +752,7 @@ return [
                     </p>
                 </div>',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的配送状态已更新！
                 配送最新状态：{{order.deliveries.first.stateMachineState.name}}。
@@ -767,7 +767,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                         <p>
-                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                             <br/>
                             the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                             <strong>The new status is as follows: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -780,7 +780,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.transactions.first.stateMachineState.name}}.
@@ -793,7 +793,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新。<br/>
                         <strong>支付最新状态：{{order.transactions.first.stateMachineState.name}}。</strong><br/>
@@ -805,7 +805,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新！
                 支付最新状态：{{order.transactions.first.stateMachineState.name}}。
@@ -820,7 +820,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                         <p>
-                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                             <br/>
                             the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                             <strong>The new status is as follows: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -832,7 +832,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.transactions.first.stateMachineState.name}}.
@@ -845,7 +845,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新。<br/>
                         <strong>支付最新状态：{{order.transactions.first.stateMachineState.name}}。</strong><br/>
@@ -857,7 +857,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新！
                 支付最新状态：{{order.transactions.first.stateMachineState.name}}。
@@ -872,7 +872,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                         <p>
-                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                             <br/>
                             the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                             <strong>The new status is as follows: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -884,7 +884,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.transactions.first.stateMachineState.name}}.
@@ -897,7 +897,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新。<br/>
                         <strong>支付最新状态：{{order.transactions.first.stateMachineState.name}}。</strong><br/>
@@ -909,7 +909,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新！
                 支付最新状态：{{order.transactions.first.stateMachineState.name}}。
@@ -924,7 +924,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                         <p>
-                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                             <br/>
                             the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                             <strong>The new status is as follows: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -936,7 +936,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.transactions.first.stateMachineState.name}}.
@@ -949,7 +949,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新。<br/>
                         <strong>支付最新状态：{{order.transactions.first.stateMachineState.name}}。</strong><br/>
@@ -961,7 +961,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新！
                 支付最新状态：{{order.transactions.first.stateMachineState.name}}。
@@ -976,7 +976,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                         <p>
-                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                             <br/>
                             the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                             <strong>The new status is as follows: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -988,7 +988,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.transactions.first.stateMachineState.name}}.
@@ -1001,7 +1001,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                       {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                       {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                        <br/>
                        您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新。<br/>
                        <strong>支付最新状态：{{order.transactions.first.stateMachineState.name}}。</strong><br/>
@@ -1013,7 +1013,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新！
                 支付最新状态：{{order.transactions.first.stateMachineState.name}}。
@@ -1028,7 +1028,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                         <p>
-                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                             <br/>
                             the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                             <strong>The new status is as follows: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -1040,7 +1040,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.transactions.first.stateMachineState.name}}.
@@ -1053,7 +1053,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新。<br/>
                         <strong>支付最新状态：{{order.transactions.first.stateMachineState.name}}。</strong><br/>
@@ -1065,7 +1065,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新！
                 支付最新状态：{{order.transactions.first.stateMachineState.name}}。
@@ -1080,7 +1080,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                         <p>
-                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                            {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                             <br/>
                             the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }} has changed.<br/>
                             <strong>The new status is as follows: {{order.transactions.first.stateMachineState.name}}.</strong><br/>
@@ -1092,7 +1092,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 the status of your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}  has changed.
                 The new status is as follows: {{order.transactions.first.stateMachineState.name}}.
@@ -1105,7 +1105,7 @@ return [
                 <div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},<br/>
+                        {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br/>
                         <br/>
                         您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新。<br/>
                         <strong>支付最新状态：{{order.transactions.first.stateMachineState.name}}。</strong><br/>
@@ -1117,7 +1117,7 @@ return [
                 </div>
             ',
             'plain' => '
-                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.firstName}} {{order.orderCustomer.lastName}},
+                {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
 
                 您在 {{ salesChannel.translated.name }}（订单号：{{order.orderNumber}}）于 {{ order.orderDateTime|date }} 的支付状态已更新！
                 支付最新状态：{{order.transactions.first.stateMachineState.name}}。
@@ -1131,7 +1131,7 @@ return [
             'html' => '<div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{ customer.salutation.letterName }} {{ customer.lastName }},<br/>
+                        {{ customer.salutation.letterName }} {{ customer.name }},<br/>
                         <br/>
                         Your account has been activated for the customer group {{ customerGroup.translated.name }}.<br/>
                         From now on you can shop at the new conditions of this customer group.<br/><br/>
@@ -1139,7 +1139,7 @@ return [
                         Please do not hesitate to contact us at any time if you have any questions.
                     </p>
                 </div>',
-            'plain' => 'Hello {{ customer.salutation.letterName }} {{ customer.lastName }},<br/>
+            'plain' => 'Hello {{ customer.salutation.letterName }} {{ customer.name }},<br/>
 Your account has been activated for the customer group {{ customerGroup.translated.name }}.<br/>
 From now on you can shop at the new conditions of this customer group.<br/><br/>
 
@@ -1149,7 +1149,7 @@ Please do not hesitate to contact us at any time if you have any questions.',
             'html' => '<div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{ customer.salutation.letterName }} {{ customer.lastName }},<br/>
+                    {{ customer.salutation.letterName }} {{ customer.name }},<br/>
                     <br/>
                     您的账户已开通客户群 {{ customerGroup.translated.name }} 的权限。<br/>
                     即日起，您可以按该客户群的新价格条件下单。<br/>
@@ -1157,7 +1157,7 @@ Please do not hesitate to contact us at any time if you have any questions.',
                     如有疑问，随时联系我们。
                 </p>
             </div>',
-            'plain' => '{{ customer.salutation.letterName }} {{ customer.lastName }},<br/>
+            'plain' => '{{ customer.salutation.letterName }} {{ customer.name }},<br/>
 您的账户已开通客户群 {{ customerGroup.translated.name }} 的权限。
 即日起，您可以按该客户群的新价格条件下单。<br/><br/>
 
@@ -1169,7 +1169,7 @@ Please do not hesitate to contact us at any time if you have any questions.',
             'html' => '<div style="font-family:arial; font-size:12px;">
                     <br/>
                     <p>
-                        {{ customer.salutation.letterName }} {{ customer.lastName }},<br/>
+                        {{ customer.salutation.letterName }} {{ customer.name }},<br/>
                         <br/>
                         Thank you for your interest in the conditions for customer group {{ customerGroup.translated.name }}.<br/>
                         Unfortunately we cannot activate your account for this customer group.<br/><br/>
@@ -1177,7 +1177,7 @@ Please do not hesitate to contact us at any time if you have any questions.',
                         If you have any questions, please feel free to contact us by phone or mail.
                     </p>
                 </div>',
-            'plain' => '{{ customer.salutation.letterName }} {{ customer.lastName }},<br/>
+            'plain' => '{{ customer.salutation.letterName }} {{ customer.name }},<br/>
 Thank you for your interest in the conditions for customer group {{ customerGroup.translated.name }}.<br/>
 Unfortunately we cannot activate your account for this customer group.
 
@@ -1187,7 +1187,7 @@ If you have any questions, please feel free to contact us by phone or mail.',
             'html' => '<div style="font-family:arial; font-size:12px;">
                 <br/>
                 <p>
-                    {{ customer.salutation.letterName }} {{ customer.lastName }},<br/>
+                    {{ customer.salutation.letterName }} {{ customer.name }},<br/>
                     <br/>
                     感谢您对客户群 {{ customerGroup.translated.name }} 价格条件的关注。<br/>
                     很遗憾，我们无法为该客户群开通您的账户。<br/>
@@ -1195,7 +1195,7 @@ If you have any questions, please feel free to contact us by phone or mail.',
                     如有任何疑问，欢迎随时通过电话或邮件联系我们。
                 </p>
             </div>',
-            'plain' => '{{ customer.salutation.letterName }} {{ customer.lastName }},<br/>
+            'plain' => '{{ customer.salutation.letterName }} {{ customer.name }},<br/>
 感谢您对客户群 {{ customerGroup.translated.name }} 价格条件的关注。
 很遗憾，我们无法为该客户群开通您的账户。<br/>
 

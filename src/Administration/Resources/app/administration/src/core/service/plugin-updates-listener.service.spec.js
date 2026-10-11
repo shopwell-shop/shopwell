@@ -43,7 +43,7 @@ describe('src/core/service/plugin-update-listener.service.ts', () => {
 
         addPluginUpdatesListener(null, createServiceContainer(['plugin:update', 'app.all']));
         Shopwell.Store.get('session').setCurrentUser({
-            firstName: 'userFirstName',
+            name: 'userFirstName',
         });
 
         await flushPromises();
@@ -60,7 +60,7 @@ describe('src/core/service/plugin-update-listener.service.ts', () => {
         addPluginUpdatesListener(null, createServiceContainer(['plugin:update', 'app.all']));
 
         Shopwell.Store.get('session').setCurrentUser({
-            firstName: 'userFirstName',
+            name: 'userFirstName',
         });
 
         await flushPromises();
@@ -85,7 +85,7 @@ describe('src/core/service/plugin-update-listener.service.ts', () => {
 
         addPluginUpdatesListener(null, null);
         Shopwell.Store.get('session').setCurrentUser({
-            firstName: 'userFirstName',
+            name: 'userFirstName',
         });
 
         await flushPromises();

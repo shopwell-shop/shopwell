@@ -117,8 +117,8 @@
                 </template>
                 {% endblock %}
 
-                {% block sw_customer_detail_addresses_grid_columns_last_name %}
-                <template #column-lastName="{ item }">
+                {% block sw_customer_detail_addresses_grid_columns_name %}
+                <template #column-name="{ item }">
                     <mt-link
                         v-if="customerEditMode"
                         as="a"
@@ -127,11 +127,11 @@
                         @click="onEditAddress(item.id)"
                         @keydown.enter="onEditAddress(item.id)"
                     >
-                        {{ item.lastName }}
+                        {{ item.name }}
                     </mt-link>
 
                     <template v-else>
-                        {{ item.lastName }}
+                        {{ item.name }}
                     </template>
                 </template>
                 {% endblock %}

@@ -233,7 +233,7 @@ export default {
                     inlineEdit: 'string',
                 },
                 {
-                    property: 'firstName',
+                    property: 'name',
                     inlineEdit: 'string',
                     label: 'sw-newsletter-recipient.list.name',
                     allowResize: true,

@@ -42,11 +42,9 @@ describe('addressFormattingApiService', () => {
                 'Christa Stracke<br/> \\n \\n Philip Inlet<br/> \\n \\n \\n \\n 22005-3637 New Marilyneside<br/> \\n \\n Moldova (Republic of)<br/><br/>',
         });
 
-        const { rendered } = await customSnippetApiService.render({ firstName: 'Y', lastName: 'Tran' }, [
+        const { rendered } = await customSnippetApiService.render({ name: 'Y Tran' }, [
             [
-                { value: 'address/first_name', type: 'snippet' },
-                { value: '-', type: 'plain' },
-                { value: 'address/last_name', type: 'snippet' },
+                { value: 'address/name', type: 'snippet' },
             ],
         ]);
 

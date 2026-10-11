@@ -18,4 +18,28 @@ describe('components/base/sw-avatar', () => {
 
         expect(wrapper.get('span').classes()).toContain('sw-avatar__square');
     });
+
+    it('should show the initials of the first and last word of the name', async () => {
+        await wrapper.setProps({
+            name: 'Max Mustermann',
+        });
+
+        expect(wrapper.get('.sw-avatar__initials').text()).toBe('MM');
+    });
+
+    it('should show a single initial when the name only contains one word', async () => {
+        await wrapper.setProps({
+            name: 'Max',
+        });
+
+        expect(wrapper.get('.sw-avatar__initials').text()).toBe('M');
+    });
+
+    it('should not show initials when no name is given', async () => {
+        await wrapper.setProps({
+            name: '',
+        });
+
+        expect(wrapper.vm.avatarInitials).toBe('');
+    });
 });

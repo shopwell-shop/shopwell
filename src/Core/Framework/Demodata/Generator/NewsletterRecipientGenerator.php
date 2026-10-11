@@ -53,8 +53,7 @@ class NewsletterRecipientGenerator implements DemodataGeneratorInterface
             $newsletterRecipient = [
                 'id' => $id,
                 'email' => $id . $faker->format('safeEmail'),
-                'firstName' => $faker->format('firstName'),
-                'lastName' => $faker->format('lastName'),
+                'name' => $faker->format('firstName') . ' ' . $faker->format('lastName'),
                 'status' => NewsletterSubscribeRoute::STATUS_DIRECT,
                 'hash' => Uuid::randomHex(),
                 'salesChannelId' => $salesChannelIds[array_rand($salesChannelIds)],

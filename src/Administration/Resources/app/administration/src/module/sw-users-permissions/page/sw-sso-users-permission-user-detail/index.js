@@ -96,7 +96,7 @@ export default {
         },
 
         isInvited() {
-            return this.user.email === this.user.firstName && this.user.email === this.user.lastName && !this.user.active;
+            return this.user.email === this.user.name && !this.user.active;
         },
 
         isCurrentUser() {

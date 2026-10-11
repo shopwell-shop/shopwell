@@ -138,8 +138,7 @@ class LoginWithInvalidDefaultAddressTest extends TestCase
         static::assertNotCount(0, $this->addProductToCart());
 
         $this->browser->request('POST', '/store-api/account/address', [
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'street' => 'Musterstraße 2',
             'city' => 'Schöppingen',
             'zipcode' => '12345',
@@ -237,8 +236,7 @@ class LoginWithInvalidDefaultAddressTest extends TestCase
         static::assertInstanceOf(EntityRepository::class, $repository);
 
         $address = [
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'street' => 'Musterstraße 1',
             'city' => 'Schöppingen',
             'zipcode' => '12345',
@@ -254,8 +252,7 @@ class LoginWithInvalidDefaultAddressTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => $this->email,
             'password' => 'shopwell',
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'salutationId' => $this->getValidSalutationId(),
             'customerNumber' => '12345',
         ]], Context::createDefaultContext());

@@ -93,7 +93,7 @@ class CustomerChangePasswordSubscriberTest extends TestCase
         $this->getBrowser()->jsonRequest(
             'PATCH',
             '/api/customer/' . $customerId,
-            ['firstName' => 'Test']
+            ['name' => 'Test']
         );
 
         $response = $this->getBrowser()->getResponse();
@@ -142,8 +142,7 @@ class CustomerChangePasswordSubscriberTest extends TestCase
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'defaultShippingAddress' => [
                 'id' => $addressId,
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'street' => 'Musterstraße 1',
                 'city' => 'Schoöppingen',
                 'zipcode' => '12345',
@@ -156,8 +155,7 @@ class CustomerChangePasswordSubscriberTest extends TestCase
             'password' => null,
             'legacyPassword' => Hasher::hash($password, 'md5'),
             'legacyEncoder' => 'Md5',
-            'firstName' => 'encryption',
-            'lastName' => 'Mustermann',
+            'name' => 'encryption Mustermann',
             'salutationId' => $this->getValidSalutationId(),
             'customerNumber' => '12345',
         ];

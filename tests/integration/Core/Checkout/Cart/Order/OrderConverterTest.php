@@ -117,8 +117,7 @@ class OrderConverterTest extends TestCase
     {
         $customerAddress = new CustomerAddressEntity();
         $customerAddress->setId(Uuid::randomHex());
-        $customerAddress->setFirstName('Test');
-        $customerAddress->setLastName('Test');
+        $customerAddress->setName('Test');
         $customerAddress->setStreet('Test Street');
         $customerAddress->setCity('Test City');
         $customerAddress->setCountryId($this->getValidCountryId());
@@ -126,8 +125,7 @@ class OrderConverterTest extends TestCase
         $customer = new CustomerEntity();
         $customer->setId(Uuid::randomHex());
         $customer->setEmail('test@test.com');
-        $customer->setFirstName('Test');
-        $customer->setLastName('Test');
+        $customer->setName('Test');
         $customer->setCustomerNumber(Uuid::randomHex());
         $customer->setActiveBillingAddress($customerAddress);
 
@@ -167,8 +165,7 @@ class OrderConverterTest extends TestCase
     {
         $billingAddress = new CustomerAddressEntity();
         $billingAddress->setId(Uuid::randomHex());
-        $billingAddress->setFirstName('foo');
-        $billingAddress->setLastName('bar');
+        $billingAddress->setName('foo bar');
         $billingAddress->setStreet('street');
         $billingAddress->setCity('city');
         $billingAddress->setCountryId(Uuid::randomHex());

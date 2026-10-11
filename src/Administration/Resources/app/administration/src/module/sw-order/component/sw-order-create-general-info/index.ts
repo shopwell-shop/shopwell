@@ -39,7 +39,7 @@ export default Component.wrapComponentConfig({
                 return '';
             }
 
-            return `${this.context.customer.firstName} ${this.context.customer.lastName} (${this.context.customer.email})`;
+            return `${this.context.customer.name} (${this.context.customer.email})`;
         },
 
         paymentMethodName(): string {

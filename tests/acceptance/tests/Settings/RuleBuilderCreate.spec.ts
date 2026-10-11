@@ -21,7 +21,7 @@ test(
             ruleTag,
             taxId,
             taxName,
-            customerSurname: 'Schmitz-Rimpler',
+            customerName: 'Schmitz-Rimpler',
             fromDate: '2025-01-14T08:30:00',
             toDate: '2025-01-15T16:45:00',
             quantity: 5,
@@ -87,9 +87,9 @@ test(
                                     type: 'orContainer',
                                     children: [
                                         {
-                                            type: 'customerLastName',
+                                            type: 'customerName',
                                             value: {
-                                                lastName: testConfig.customerSurname,
+                                                name: testConfig.customerName,
                                                 operator: '=',
                                             },
                                         },
@@ -186,9 +186,9 @@ test(
                 testConfig.toDate.split('T')[0].split('-').reverse().join('/'),
             );
 
-            await ShopAdmin.expects(AdminRuleDetail.conditionSelectField.getByText('Customer surname')).toBeVisible();
-            await ShopAdmin.expects(AdminRuleDetail.conditionCustomerSurnameOperator).toHaveText('Is equal to');
-            await ShopAdmin.expects(AdminRuleDetail.conditionCustomerSurnameValue).toHaveValue(testConfig.customerSurname);
+            await ShopAdmin.expects(AdminRuleDetail.conditionSelectField.getByText('Customer name')).toBeVisible();
+            await ShopAdmin.expects(AdminRuleDetail.conditionCustomerNameOperator).toHaveText('Is equal to');
+            await ShopAdmin.expects(AdminRuleDetail.conditionCustomerNameValue).toHaveValue(testConfig.customerName);
 
             await ShopAdmin.expects(AdminRuleDetail.conditionSelectField.getByText('Item with tax rate')).toBeVisible();
             await ShopAdmin.expects(AdminRuleDetail.conditionCartLineItemTaxationMatchOperator).toHaveText('At least one');

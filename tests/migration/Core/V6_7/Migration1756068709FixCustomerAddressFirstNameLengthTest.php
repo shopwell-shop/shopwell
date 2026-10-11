@@ -38,25 +38,25 @@ class Migration1756068709FixCustomerAddressFirstNameLengthTest extends TestCase
         // Set column to original size to test the migration properly, as test DB may already have VARCHAR(255)
         $this->connection->executeStatement('
             ALTER TABLE `customer_address`
-            MODIFY COLUMN `first_name` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL
+            MODIFY COLUMN `name` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL
         ');
 
-        $firstNameColumn = TableHelper::getColumnOfTable($this->connection, 'customer_address', 'first_name');
-        static::assertSame(Types::STRING, $firstNameColumn->type);
-        static::assertSame(50, $firstNameColumn->length);
+        $nameColumn = TableHelper::getColumnOfTable($this->connection, 'customer_address', 'name');
+        static::assertSame(Types::STRING, $nameColumn->type);
+        static::assertSame(50, $nameColumn->length);
 
         $migration->update($this->connection);
 
-        $firstNameColumn = TableHelper::getColumnOfTable($this->connection, 'customer_address', 'first_name');
-        static::assertSame(Types::STRING, $firstNameColumn->type);
-        static::assertSame(255, $firstNameColumn->length);
-        static::assertTrue($firstNameColumn->isNotNull);
+        $nameColumn = TableHelper::getColumnOfTable($this->connection, 'customer_address', 'name');
+        static::assertSame(Types::STRING, $nameColumn->type);
+        static::assertSame(255, $nameColumn->length);
+        static::assertTrue($nameColumn->isNotNull);
 
         $migration->update($this->connection);
 
-        $firstNameColumn = TableHelper::getColumnOfTable($this->connection, 'customer_address', 'first_name');
-        static::assertSame(Types::STRING, $firstNameColumn->type);
-        static::assertSame(255, $firstNameColumn->length);
-        static::assertTrue($firstNameColumn->isNotNull);
+        $nameColumn = TableHelper::getColumnOfTable($this->connection, 'customer_address', 'name');
+        static::assertSame(Types::STRING, $nameColumn->type);
+        static::assertSame(255, $nameColumn->length);
+        static::assertTrue($nameColumn->isNotNull);
     }
 }

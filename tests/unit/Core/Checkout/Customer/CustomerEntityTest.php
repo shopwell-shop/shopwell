@@ -76,8 +76,7 @@ class CustomerEntityTest extends TestCase
         $customer->setDefaultShippingAddressId('shipping-address-id');
         $customer->setCustomerNumber('10001');
         $customer->setSalutationId('salutation-id');
-        $customer->setFirstName('Ada');
-        $customer->setLastName('Lovelace');
+        $customer->setName('Ada Lovelace');
         $customer->setCompany('Analytical Engines');
         $customer->setEmail('ada@example.com');
         $customer->setTitle('Dr.');
@@ -134,8 +133,7 @@ class CustomerEntityTest extends TestCase
         static::assertSame('shipping-address-id', $customer->getDefaultShippingAddressId());
         static::assertSame('10001', $customer->getCustomerNumber());
         static::assertSame('salutation-id', $customer->getSalutationId());
-        static::assertSame('Ada', $customer->getFirstName());
-        static::assertSame('Lovelace', $customer->getLastName());
+        static::assertSame('Ada Lovelace', $customer->getName());
         static::assertSame('Ada Lovelace', (string) $customer);
         static::assertSame('Analytical Engines', $customer->getCompany());
         static::assertSame('ada@example.com', $customer->getEmail());

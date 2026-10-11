@@ -148,7 +148,7 @@ describe('sw-export-channel-tracking extension: sw-customer-list', () => {
 
             const columns = wrapper.vm.getCustomerColumns();
 
-            expect(columns.find((c) => c.property === 'firstName')).toBeDefined();
+            expect(columns.find((c) => c.property === 'name')).toBeDefined();
         });
     });
 

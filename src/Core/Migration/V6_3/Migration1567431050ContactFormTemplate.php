@@ -123,7 +123,7 @@ SQL;
     {
         return '<div style="font-family:arial; font-size:12px;">
             <p>
-                Following Message was sent to you by {{ contactFormData.firstName }} {{ contactFormData.lastName }} via the contact form.<br/>
+                Following Message was sent to you by {{ contactFormData.name }} via the contact form.<br/>
                 <br/>
                 Contact email address: {{ contactFormData.email }}<br/>
                 Phone: {{ contactFormData.phone }}<br/><br/>
@@ -136,7 +136,7 @@ SQL;
 
     private function getRegistrationPlainTemplateEn(): string
     {
-        return 'Following Message was sent to you by {{ contactFormData.firstName }} {{ contactFormData.lastName }} via the contact form.
+        return 'Following Message was sent to you by {{ contactFormData.name }} via the contact form.
 
                 Contact email address: {{ contactFormData.email }}
                 Phone: {{ contactFormData.phone }}

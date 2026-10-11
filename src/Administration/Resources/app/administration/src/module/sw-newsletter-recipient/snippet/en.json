@@ -21,8 +21,6 @@
       "email": "Email address",
       "name": "Name",
       "title": "Title",
-      "firstName": "First name",
-      "lastName": "Last name",
       "salesChannel": "Sales Channel",
       "zipCode": "Postal code",
       "city": "City",

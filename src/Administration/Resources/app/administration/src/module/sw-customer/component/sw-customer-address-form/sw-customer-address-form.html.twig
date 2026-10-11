@@ -56,28 +56,15 @@
         {% endblock %}
         {% endblock %}
 
-        {% block sw_customer_address_form_first_name_field %}
+        {% block sw_customer_address_form_name_field %}
         <mt-text-field
-            v-model="address.firstName"
-            name="sw-field--address-firstName"
-            :label="$t('sw-customer.addressForm.labelFirstName')"
-            :placeholder="$t('sw-customer.addressForm.placeholderFirstName')"
+            v-model="address.name"
+            name="sw-field--address-name"
+            :label="$t('sw-customer.addressForm.labelName')"
+            :placeholder="$t('sw-customer.addressForm.placeholderName')"
             validation="required"
             required
-            :error="disabled ? null : addressFirstNameError"
-            :disabled="disabled"
-        />
-        {% endblock %}
-
-        {% block sw_customer_address_form_last_name_field %}
-        <mt-text-field
-            v-model="address.lastName"
-            name="sw-field--address-lastName"
-            :label="$t('sw-customer.addressForm.labelLastName')"
-            :placeholder="$t('sw-customer.addressForm.placeholderLastName')"
-            validation="required"
-            required
-            :error="disabled ? null : addressLastNameError"
+            :error="disabled ? null : addressNameError"
             :disabled="disabled"
         />
         {% endblock %}

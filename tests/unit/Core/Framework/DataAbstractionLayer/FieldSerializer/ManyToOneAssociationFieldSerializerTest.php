@@ -206,8 +206,7 @@ class CustomerDefinition extends EntityDefinition
     {
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new Required(), new PrimaryKey()),
-            (new StringField('first_name', 'first_name'))->addFlags(new Required()),
-            (new StringField('last_name', 'last_name'))->addFlags(new Required()),
+            (new StringField('name', 'name'))->addFlags(new Required()),
 
             new OneToManyAssociationField(
                 'orders',

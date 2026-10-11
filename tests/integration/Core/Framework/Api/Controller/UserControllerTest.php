@@ -49,8 +49,7 @@ class UserControllerTest extends TestCase
         $client = $this->getBrowser();
         $data = [
             'email' => 'foo@bar.com',
-            'firstName' => 'Firstname',
-            'lastName' => 'Lastname',
+            'name' => 'Firstname Lastname',
             'password' => TestDefaults::HASHED_PASSWORD,
             'username' => 'foobar',
             'localeId' => static::getContainer()->get(Connection::class)->fetchOne('SELECT LOWER(HEX(id)) FROM locale LIMIT 1'),
@@ -92,8 +91,7 @@ class UserControllerTest extends TestCase
         $user = [
             'id' => $ids->get('user'),
             'email' => 'foo@bar.com',
-            'firstName' => 'Firstname',
-            'lastName' => 'Lastname',
+            'name' => 'Firstname Lastname',
             'password' => TestDefaults::HASHED_PASSWORD,
             'username' => 'foobar',
             'localeId' => static::getContainer()->get(Connection::class)->fetchOne('SELECT LOWER(HEX(id)) FROM locale LIMIT 1'),
@@ -130,8 +128,7 @@ class UserControllerTest extends TestCase
         $user = [
             'id' => $ids->get('user'),
             'email' => 'foo@bar.com',
-            'firstName' => 'Firstname',
-            'lastName' => 'Lastname',
+            'name' => 'Firstname Lastname',
             'password' => TestDefaults::HASHED_PASSWORD,
             'username' => 'foobar',
             'localeId' => static::getContainer()->get(Connection::class)->fetchOne('SELECT LOWER(HEX(id)) FROM locale LIMIT 1'),
@@ -176,8 +173,7 @@ class UserControllerTest extends TestCase
         $data = [
             'id' => $id,
             'email' => 'foo@bar.com',
-            'firstName' => 'Firstname',
-            'lastName' => 'Lastname',
+            'name' => 'Firstname Lastname',
             'password' => TestDefaults::HASHED_PASSWORD,
             'username' => 'foobar',
             'localeId' => static::getContainer()->get(Connection::class)->fetchOne('SELECT LOWER(HEX(id)) FROM locale LIMIT 1'),
@@ -210,7 +206,7 @@ class UserControllerTest extends TestCase
     public function testSetOwnProfileWithPermission(): void
     {
         $this->authorizeBrowser($this->getBrowser(), [UserVerifiedScope::IDENTIFIER], ['user_change_me']);
-        $this->getBrowser()->request('PATCH', '/api/_info/me', ['firstName' => 'newName']);
+        $this->getBrowser()->request('PATCH', '/api/_info/me', ['name' => 'newName']);
         $responsePatch = $this->getBrowser()->getResponse();
 
         static::assertSame(Response::HTTP_NO_CONTENT, $responsePatch->getStatusCode(), (string) $responsePatch->getContent());
@@ -219,7 +215,7 @@ class UserControllerTest extends TestCase
         $response = $this->getBrowser()->getResponse();
 
         static::assertSame(Response::HTTP_OK, $response->getStatusCode(), (string) $response->getContent());
-        static::assertSame('newName', json_decode((string) $response->getContent(), true)['data']['attributes']['firstName']);
+        static::assertSame('newName', json_decode((string) $response->getContent(), true)['data']['attributes']['name']);
     }
 
     public function testSetOwnProfileNoPermission(): void
@@ -358,8 +354,7 @@ class UserControllerTest extends TestCase
         $user = [
             'id' => $ids->get('user'),
             'email' => 'foo@bar.com',
-            'firstName' => 'Firstname',
-            'lastName' => 'Lastname',
+            'name' => 'Firstname Lastname',
             'password' => TestDefaults::HASHED_PASSWORD,
             'username' => 'foobar',
             'localeId' => static::getContainer()->get(Connection::class)->fetchOne('SELECT LOWER(HEX(id)) FROM locale LIMIT 1'),
@@ -371,7 +366,7 @@ class UserControllerTest extends TestCase
 
         $this->authorizeBrowser($this->getBrowser(), [UserVerifiedScope::IDENTIFIER], ['user_change_me']);
 
-        $this->getBrowser()->request('PATCH', '/api/_info/me', ['firstName' => 'newName', 'id' => $ids->get('user')]);
+        $this->getBrowser()->request('PATCH', '/api/_info/me', ['name' => 'newName', 'id' => $ids->get('user')]);
         $response = $this->getBrowser()->getResponse();
 
         static::assertSame(Response::HTTP_FORBIDDEN, $response->getStatusCode());
@@ -384,8 +379,7 @@ class UserControllerTest extends TestCase
 
         $data = [
             'email' => 'escalated@example.com',
-            'firstName' => 'Firstname',
-            'lastName' => 'Lastname',
+            'name' => 'Firstname Lastname',
             'password' => TestDefaults::HASHED_PASSWORD,
             'username' => 'escalated',
             'localeId' => static::getContainer()->get(Connection::class)->fetchOne('SELECT LOWER(HEX(id)) FROM locale LIMIT 1'),
@@ -405,8 +399,7 @@ class UserControllerTest extends TestCase
         $user = [
             'id' => $ids->get('user'),
             'email' => 'target@example.com',
-            'firstName' => 'Firstname',
-            'lastName' => 'Lastname',
+            'name' => 'Firstname Lastname',
             'password' => TestDefaults::HASHED_PASSWORD,
             'username' => 'target-user',
             'localeId' => static::getContainer()->get(Connection::class)->fetchOne('SELECT LOWER(HEX(id)) FROM locale LIMIT 1'),
@@ -436,8 +429,7 @@ class UserControllerTest extends TestCase
         static::getContainer()->get('user.repository')->create([[
             'id' => $ids->get('user'),
             'email' => 'target@example.com',
-            'firstName' => 'Original',
-            'lastName' => 'Lastname',
+            'name' => 'Original Lastname',
             'password' => TestDefaults::HASHED_PASSWORD,
             'username' => 'target-user',
             'localeId' => static::getContainer()->get(Connection::class)->fetchOne('SELECT LOWER(HEX(id)) FROM locale LIMIT 1'),
@@ -449,14 +441,14 @@ class UserControllerTest extends TestCase
         $client->jsonRequest('POST', '/api/acl-role', [
             'name' => 'role',
             'privileges' => [],
-            'users' => [['id' => $ids->get('user'), 'firstName' => 'Changed']],
+            'users' => [['id' => $ids->get('user'), 'name' => 'Changed']],
         ]);
 
         static::assertSame(Response::HTTP_FORBIDDEN, $client->getResponse()->getStatusCode());
         static::assertSame(
-            'Original',
+            'Original Lastname',
             static::getContainer()->get(Connection::class)->fetchOne(
-                'SELECT first_name FROM user WHERE id = :id',
+                'SELECT name FROM user WHERE id = :id',
                 ['id' => Uuid::fromHexToBytes($ids->get('user'))]
             )
         );
@@ -469,8 +461,7 @@ class UserControllerTest extends TestCase
         $user = [
             'id' => $ids->get('user'),
             'email' => 'target@example.com',
-            'firstName' => 'Firstname',
-            'lastName' => 'Lastname',
+            'name' => 'Firstname Lastname',
             'password' => TestDefaults::HASHED_PASSWORD,
             'username' => 'target-user',
             'localeId' => static::getContainer()->get(Connection::class)->fetchOne('SELECT LOWER(HEX(id)) FROM locale LIMIT 1'),
@@ -501,8 +492,7 @@ class UserControllerTest extends TestCase
 
         $data = [
             'email' => 'new-admin@example.com',
-            'firstName' => 'Firstname',
-            'lastName' => 'Lastname',
+            'name' => 'Firstname Lastname',
             'password' => TestDefaults::HASHED_PASSWORD,
             'username' => 'new-admin',
             'localeId' => static::getContainer()->get(Connection::class)->fetchOne('SELECT LOWER(HEX(id)) FROM locale LIMIT 1'),

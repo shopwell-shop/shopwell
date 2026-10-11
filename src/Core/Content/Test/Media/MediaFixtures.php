@@ -194,15 +194,13 @@ trait MediaFixtures
                             ],
                             'orderCustomer' => [
                                 'email' => 'test@example.com',
-                                'firstName' => 'Max',
-                                'lastName' => 'Mustermann',
+                                'name' => 'Max Mustermann',
                                 'salutationId' => $this->getValidSalutationId(),
                                 'customerNumber' => '1337',
                             ],
                             'billingAddress' => [
                                 'salutationId' => $this->getValidSalutationId(),
-                                'firstName' => 'Max',
-                                'lastName' => 'Mustermann',
+                                'name' => 'Max Mustermann',
                                 'street' => 'Ebbinghoff 10',
                                 'zipcode' => '48624',
                                 'city' => 'Schöppingen',

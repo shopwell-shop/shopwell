@@ -155,7 +155,7 @@ class Migration1703850843FixSearchConfigTest extends TestCase
                 self::record($ids->create('user'), [
                     self::module('product', ['name', 'lineItems']),
                     self::module('customer', ['name', 'lineItems']),
-                    self::module('order', ['name', 'orderCustomer' => ['customer' => ['firstName', 'lastName']]]),
+                    self::module('order', ['name', 'orderCustomer' => ['customer' => ['name']]]),
                 ]),
             ],
             [
@@ -172,7 +172,7 @@ class Migration1703850843FixSearchConfigTest extends TestCase
                 self::record($ids->create('user-1'), [
                     self::module('product', ['name', 'lineItems']),
                     self::module('customer', ['name', 'lineItems']),
-                    self::module('order', ['name', 'orderCustomer' => ['customer' => ['firstName', 'lastName']]]),
+                    self::module('order', ['name', 'orderCustomer' => ['customer' => ['name']]]),
                 ]),
                 self::record($ids->create('user-2'), [
                     self::module('product', ['name', 'lineItems']),

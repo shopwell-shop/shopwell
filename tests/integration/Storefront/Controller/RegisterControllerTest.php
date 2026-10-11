@@ -298,7 +298,7 @@ class RegisterControllerTest extends TestCase
         $registerController = static::getContainer()->get(RegisterController::class);
 
         $incompleteData = $this->getRegistrationData();
-        $incompleteData->set('firstName', '');
+        $incompleteData->set('name', '');
 
         $email = (string) $incompleteData->get('email');
         $token = $this->salesChannelContext->getToken();
@@ -574,7 +574,7 @@ class RegisterControllerTest extends TestCase
     private function getMailRecipientStruct(array $customerData): MailRecipientStruct
     {
         return new MailRecipientStruct([
-            (string) $customerData['email'] => $customerData['firstName'] . ' ' . $customerData['lastName'],
+            (string) $customerData['email'] => $customerData['name'],
         ]);
     }
 
@@ -614,12 +614,10 @@ class RegisterControllerTest extends TestCase
             'email' => $email,
             'emailConfirmation' => $email,
             'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'storefrontUrl' => 'http://localhost',
             'billingAddress' => [
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'countryId' => $this->getValidCountryId(),
                 'street' => 'Musterstrasse 13',
                 'zipcode' => '48599',

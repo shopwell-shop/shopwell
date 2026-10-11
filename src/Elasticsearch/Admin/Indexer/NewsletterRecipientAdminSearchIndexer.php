@@ -60,8 +60,7 @@ final class NewsletterRecipientAdminSearchIndexer extends AbstractAdminIndexer
     {
         $newsletterRecipientIds = $event->getPrimaryKeysWithPropertyChange($this->getEntity(), [
             'email',
-            'firstName',
-            'lastName',
+            'name',
             'status',
             'city',
             'zipCode',
@@ -91,8 +90,7 @@ final class NewsletterRecipientAdminSearchIndexer extends AbstractAdminIndexer
 
         $override = [
             'email' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
-            'firstName' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
-            'lastName' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+            'name' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
             'status' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
             'city' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
             'zipCode' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
@@ -126,8 +124,7 @@ final class NewsletterRecipientAdminSearchIndexer extends AbstractAdminIndexer
      *     text: string,
      *     completion: list<string>,
      *     email?: mixed,
-     *     firstName?: mixed,
-     *     lastName?: mixed,
+     *     name?: mixed,
      *     status?: mixed,
      *     city?: mixed,
      *     zipCode?: mixed,
@@ -147,8 +144,7 @@ final class NewsletterRecipientAdminSearchIndexer extends AbstractAdminIndexer
                    GROUP_CONCAT(DISTINCT tag.name SEPARATOR " ") as tags,
                    GROUP_CONCAT(LOWER(HEX(tag.id)) SEPARATOR " ") as tagIds,
                    newsletter_recipient.email,
-                   newsletter_recipient.first_name,
-                   newsletter_recipient.last_name,
+                   newsletter_recipient.name,
                    newsletter_recipient.status,
                    newsletter_recipient.city,
                    newsletter_recipient.zip_code AS zipCode,
@@ -178,8 +174,7 @@ SQL,
             $id = (string) $row['id'];
             $text = \implode(' ', array_filter([
                 $row['email'] ?? '',
-                $row['first_name'] ?? '',
-                $row['last_name'] ?? '',
+                $row['name'] ?? '',
                 $row['city'] ?? '',
                 $row['zipCode'] ?? '',
                 $row['street'] ?? '',
@@ -189,8 +184,7 @@ SQL,
 
             $completion = $this->buildCompletion([
                 \is_string($row['email'] ?? null) ? $row['email'] : null,
-                \is_string($row['first_name'] ?? null) ? $row['first_name'] : null,
-                \is_string($row['last_name'] ?? null) ? $row['last_name'] : null,
+                \is_string($row['name'] ?? null) ? $row['name'] : null,
             ]);
 
             if (!Feature::isActive('ENABLE_OPENSEARCH_FOR_ADMIN_API')) {
@@ -208,8 +202,7 @@ SQL,
                 'text' => \strtolower($text),
                 'completion' => $completion,
                 'email' => $row['email'] ?? null,
-                'firstName' => $row['first_name'] ?? null,
-                'lastName' => $row['last_name'] ?? null,
+                'name' => $row['name'] ?? null,
                 'status' => $row['status'] ?? null,
                 'city' => $row['city'] ?? null,
                 'zipCode' => $row['zipCode'] ?? null,

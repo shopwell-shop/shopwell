@@ -6,8 +6,7 @@ import useSalutation from './use-salutation';
 const entity = {
     salutation: { id: '1' as EntityKey<'salutation'>, salutationKey: 'mr', displayName: 'Mr' },
     title: '',
-    firstName: 'John',
-    lastName: 'Doe',
+    name: 'John Doe',
 };
 
 describe('src/app/composables/use-salutation', () => {

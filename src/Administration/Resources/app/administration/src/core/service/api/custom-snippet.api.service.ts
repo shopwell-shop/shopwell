@@ -27,8 +27,7 @@ interface Salutation {
 interface Address {
     salutation?: Salutation;
     title?: string;
-    firstName: string;
-    lastName: string;
+    name: string;
     street: string;
     zipcode?: string;
     city: string;

@@ -855,8 +855,7 @@ describe('src/app/component/structure/sw-admin-menu', () => {
 
     it('should provide an accessible name for the user actions toggle', async () => {
         Shopwell.Store.get('session').setCurrentUser({
-            firstName: 'Max',
-            lastName: 'Mustermann',
+            name: 'Max Mustermann',
             admin: true,
         });
         await flushPromises();

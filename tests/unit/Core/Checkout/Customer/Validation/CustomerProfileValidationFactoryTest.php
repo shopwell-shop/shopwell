@@ -211,7 +211,7 @@ class CustomerProfileValidationFactoryTest extends TestCase
 
         $properties = $customerProfileValidationFactory->create($this->getSalesChannelContext())->getProperties();
 
-        foreach (['title', 'firstName', 'lastName'] as $field) {
+        foreach (['title', 'name'] as $field) {
             static::assertArrayHasKey($field, $properties);
 
             $noHtml = array_values(array_filter($properties[$field], static fn ($constraint) => $constraint instanceof NoHtml));
@@ -236,15 +236,12 @@ class CustomerProfileValidationFactoryTest extends TestCase
     {
         $definition
             ->add('salutationId', new EntityExists(entity: SalutationDefinition::ENTITY_NAME, context: $context->getContext()))
-            ->add('firstName', new NotBlank())
-            ->add('lastName', new NotBlank())
-            ->add('accountType', new Choice(choices: $this->accountTypes))
             ->add('title', new Length(max: CustomerDefinition::MAX_LENGTH_TITLE))
-            ->add('firstName', new Length(max: CustomerDefinition::MAX_LENGTH_FIRST_NAME))
-            ->add('lastName', new Length(max: CustomerDefinition::MAX_LENGTH_LAST_NAME))
+            ->add('name', new NotBlank())
+            ->add('name', new Length(max: CustomerDefinition::MAX_LENGTH_NAME))
+            ->add('accountType', new Choice(choices: $this->accountTypes))
             ->add('title', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
-            ->add('firstName', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
-            ->add('lastName', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'));
+            ->add('name', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'));
     }
 
     private function addConstraintsBirthday(DataValidationDefinition $definition): void

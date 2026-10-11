@@ -42,8 +42,8 @@ async function createWrapper(customPropsData = {}) {
                         parentId: null,
                     },
                     {
-                        id: 'address/first_name',
-                        name: 'First name',
+                        id: 'address/name',
+                        name: 'Name',
                         parentId: null,
                     },
                 ],
@@ -167,7 +167,7 @@ describe('src/module/sw-settings-country/component/sw-settings-country-new-snipp
 
         expect(treesItem.findAll('.sw-tree-item')).toHaveLength(2);
 
-        await searchInputField.setValue('First');
+        await searchInputField.setValue('Name');
         await searchInputField.trigger('input');
 
         const debouncedSearch = swSettingsCountryNewSnippetModalComponent.methods.debouncedSearch;
@@ -176,7 +176,7 @@ describe('src/module/sw-settings-country/component/sw-settings-country-new-snipp
         treesItem = wrapper.find('.tree-items .sw-tree-item__children');
 
         let results = treesItem.findAll('.sw-tree-item');
-        expect(results.at(0).find('.sw-tree-item__label').text()).toBe('First name');
+        expect(results.at(0).find('.sw-tree-item__label').text()).toBe('Name');
         expect(results).toHaveLength(1);
 
         // no snippet match
@@ -187,7 +187,7 @@ describe('src/module/sw-settings-country/component/sw-settings-country-new-snipp
         treesItem = wrapper.find('.tree-items .sw-tree-item__children');
         results = treesItem.findAll('.sw-tree-item');
 
-        expect(results.at(0).find('.sw-tree-item__label').text()).toBe('First name');
+        expect(results.at(0).find('.sw-tree-item__label').text()).toBe('Name');
         expect(results).toHaveLength(1);
 
         // no snippet

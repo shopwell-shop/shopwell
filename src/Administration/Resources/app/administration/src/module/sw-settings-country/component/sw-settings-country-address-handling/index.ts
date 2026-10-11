@@ -44,7 +44,7 @@ interface AddressFormatRow {
 
 const DefaultAddressFormat = [
     ['address/company', 'symbol/dash', 'address/department'],
-    ['address/first_name', 'address/last_name'],
+    ['address/name'],
     ['address/street'],
     ['address/zipcode', 'address/city'],
     ['address/country'],
@@ -483,7 +483,7 @@ export default Component.wrapComponentConfig({
                 return '';
             }
 
-            return `${item.firstName}, ${item.lastName}`;
+            return item.name;
         },
 
         onChangeCustomer(customerId: EntityKey<'customer'>, customer: Entity<'customer'>): void {

@@ -143,8 +143,7 @@ shopwell.installer:
     configuration_admin_currency_cny: 'Čínský jüan'
     configuration_admin_username: 'Přihlašovací jméno správce:'
     configuration_admin_mail: 'E-mailová adresa správce:'
-    configuration_admin_firstName: 'Jméno správce:'
-    configuration_admin_lastName: 'Příjmení správce:'
+    configuration_admin_name: 'Jméno správce:'
     configuration_defaults_warning: 'Standardní jazyk systému a standardní měnu nelze později měnit.'
     configuration_email_help_text: 'Tato e-mailová adresa se použije pro odchozí e-maily obchodu.'
     configuration_admin_language_de: Německy

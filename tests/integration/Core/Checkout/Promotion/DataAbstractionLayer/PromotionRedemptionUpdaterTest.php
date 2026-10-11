@@ -154,7 +154,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
         );
 
         $customer = $connection->fetchAllAssociative(
-            'SELECT `id`, `first_name`, `last_name` FROM customer WHERE `id` = :id',
+            'SELECT `id`, `name` FROM customer WHERE `id` = :id',
             ['id' => Uuid::fromHexToBytes($this->ids->get('customer'))]
         );
 
@@ -203,8 +203,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
                     'customerId' => $secondCustomer,
                     'email' => 'test@example.com',
                     'salutationId' => $this->fetchFirstIdFromTable('salutation'),
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                 ],
                 'stateId' => $this->fetchFirstIdFromTable('state_machine_state'),
                 'paymentMethodId' => $this->fetchFirstIdFromTable('payment_method'),
@@ -216,8 +215,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
                     [
                         'id' => Uuid::randomHex(),
                         'salutationId' => $this->fetchFirstIdFromTable('salutation'),
-                        'firstName' => 'Max',
-                        'lastName' => 'Mustermann',
+                        'name' => 'Max Mustermann',
                         'street' => 'Ebbinghoff 10',
                         'zipcode' => '48624',
                         'city' => 'Schöppingen',
@@ -423,7 +421,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
         return [
             'orderId' => $orderId,
             'customerId' => Uuid::fromBytesToHex($customer['id']),
-            'customerName' => $customer['first_name'] . ' ' . $customer['last_name'],
+            'customerName' => $customer['name'],
         ];
     }
 
@@ -453,8 +451,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
                     'customerId' => $customerId,
                     'email' => 'test@example.com',
                     'salutationId' => $this->fetchFirstIdFromTable('salutation'),
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                 ],
                 'stateId' => $this->fetchFirstIdFromTable('state_machine_state'),
                 'paymentMethodId' => $this->fetchFirstIdFromTable('payment_method'),
@@ -466,8 +463,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
                     [
                         'id' => Uuid::randomHex(),
                         'salutationId' => $this->fetchFirstIdFromTable('salutation'),
-                        'firstName' => 'Max',
-                        'lastName' => 'Mustermann',
+                        'name' => 'Max Mustermann',
                         'street' => 'Ebbinghoff 10',
                         'zipcode' => '48624',
                         'city' => 'Schöppingen',

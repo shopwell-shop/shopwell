@@ -11,8 +11,7 @@ test(
                 waitForSelector: AdminYourProfile.emailField,
             });
             await replaceElements(AdminYourProfile.page, [
-                AdminYourProfile.firstNameField,
-                AdminYourProfile.lastNameField,
+                AdminYourProfile.nameField,
                 AdminYourProfile.userNameField,
                 AdminYourProfile.emailField,
             ]);

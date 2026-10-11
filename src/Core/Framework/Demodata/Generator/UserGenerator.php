@@ -48,15 +48,13 @@ class UserGenerator implements DemodataGeneratorInterface
         $payload = [];
         for ($i = 0; $i < $numberOfItems; ++$i) {
             $id = Uuid::randomHex();
-            $firstName = $context->getFaker()->firstName();
-            $lastName = $context->getFaker()->format('lastName');
+            $name = $context->getFaker()->format('name');
             $title = $this->getRandomTitle();
 
             $user = [
                 'id' => $id,
                 'title' => $title,
-                'firstName' => $firstName,
-                'lastName' => $lastName,
+                'name' => $name,
                 'username' => $context->getFaker()->format('userName'),
                 'email' => $id . $context->getFaker()->format('safeEmail'),
                 'password' => 'shopwell',

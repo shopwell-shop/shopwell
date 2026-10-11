@@ -139,11 +139,9 @@ trait StorefrontSalesChannelTestHelper
 
         $customer = [
             'id' => $customerId,
-            'name' => 'test',
             'email' => $email,
             'password' => $password,
-            'firstName' => 'foo',
-            'lastName' => 'bar',
+            'name' => 'foo bar',
             'groupId' => $salesChannel->getCustomerGroupId(),
             'salutationId' => $this->getValidSalutationId(),
             'salesChannelId' => $salesChannel->getId(),
@@ -151,8 +149,7 @@ trait StorefrontSalesChannelTestHelper
                 'id' => $defaultBillingAddress,
                 'countryId' => $salesChannel->getCountryId(),
                 'salutationId' => $this->getValidSalutationId(),
-                'firstName' => 'foo',
-                'lastName' => 'bar',
+                'name' => 'foo bar',
                 'zipcode' => '48599',
                 'city' => 'gronau',
                 'street' => 'Schillerstr.',

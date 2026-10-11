@@ -7,7 +7,7 @@ namespace Shopwell\Tests\Integration\Storefront\Page;
  */
 final class StorefrontPageTestConstants
 {
-    public const CUSTOMER_FIRSTNAME = 'Max';
+    public const CUSTOMER_NAME = 'Max';
 
     public const PAYMENT_METHOD_COUNT = 1;
 

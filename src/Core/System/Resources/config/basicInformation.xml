@@ -339,19 +339,11 @@
         </input-field>
 
         <input-field type="bool">
-            <name>firstNameFieldRequired</name>
-            <label>First name in contact forms required</label>
-            <label lang="zh-CN">联系表单中名字为必填项</label>
-            <helpText>If active, the field "first name" has to be filled in, in order to submit a contact form.</helpText>
-            <helpText lang="zh-CN">开启后，必须填写「名字」字段才能提交联系表单。</helpText>
-        </input-field>
-
-        <input-field type="bool">
-            <name>lastNameFieldRequired</name>
-            <label>Last name in contact forms required</label>
-            <label lang="zh-CN">联系表单中姓氏为必填项</label>
-            <helpText>If active, the field "last name" has to be filled in, in order to submit a contact form.</helpText>
-            <helpText lang="zh-CN">开启后，必须填写「姓氏」字段才能提交联系表单。</helpText>
+            <name>nameFieldRequired</name>
+            <label>Name in contact forms required</label>
+            <label lang="zh-CN">联系表单中姓名为必填项</label>
+            <helpText>If active, the field "name" has to be filled in, in order to submit a contact form.</helpText>
+            <helpText lang="zh-CN">开启后，必须填写「姓名」字段才能提交联系表单。</helpText>
         </input-field>
 
         <input-field type="bool">

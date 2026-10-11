@@ -64,8 +64,7 @@ class UpsertAddressTest extends TestCase
     public function testUpsertAddressWithExistingNotSpecifiedSalutation(): void
     {
         $data = [
-            'firstName' => 'Test',
-            'lastName' => 'Test',
+            'name' => 'Test Test',
             'street' => 'Test',
             'city' => 'Test',
             'zipcode' => 'Test',
@@ -90,8 +89,7 @@ class UpsertAddressTest extends TestCase
     public function testUpsertAddressToNotSpecifiedWithoutExistingSalutation(): void
     {
         $data = [
-            'firstName' => 'Test',
-            'lastName' => 'Test',
+            'name' => 'Test Test',
             'street' => 'Test',
             'city' => 'Test',
             'zipcode' => 'Test',

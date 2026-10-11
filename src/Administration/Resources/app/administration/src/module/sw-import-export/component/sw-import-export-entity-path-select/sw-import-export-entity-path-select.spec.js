@@ -1168,8 +1168,7 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
             .findAll('.sw-select-result')
             .map((element) => element.text());
 
-        expect(possibleSelectionResult).toContain('firstName');
-        expect(possibleSelectionResult).toContain('lastName');
+        expect(possibleSelectionResult).toContain('name');
         expect(possibleSelectionResult).toContain('email');
 
         expect(possibleSelectionResult).not.toContain('password');

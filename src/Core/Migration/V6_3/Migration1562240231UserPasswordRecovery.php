@@ -167,7 +167,7 @@ SQL;
         return <<<MAIL
 <div style="font-family:arial; font-size:12px;">
     <p>
-        Dear {{ userRecovery.user.firstName }} {{ userRecovery.user.lastName }},<br/>
+        Dear {{ userRecovery.user.name }},<br/>
         <br/>
         there has been a request to reset your password.
         Please confirm the link below to specify a new password.<br/>
@@ -184,7 +184,7 @@ MAIL;
     private function getContentPlainEn(): string
     {
         return <<<MAIL
-        Dear {{ userRecovery.user.firstName }} {{ userRecovery.user.lastName }},
+        Dear {{ userRecovery.user.name }},
 
         there has been a request to reset your password.
         Please confirm the link below to specify a new password.
@@ -201,7 +201,7 @@ MAIL;
         return <<<MAIL
 <div style="font-family:arial; font-size:12px;">
     <p>
-        您好 {{ userRecovery.user.firstName }} {{ userRecovery.user.lastName }},<br/>
+        您好 {{ userRecovery.user.name }},<br/>
         <br/>
         我们收到了重置您密码的请求。
         请通过下方链接设置新密码。<br/>
@@ -218,7 +218,7 @@ MAIL;
     private function getContentPlainZhCn(): string
     {
         return <<<MAIL
-        您好 {{ userRecovery.user.firstName }} {{ userRecovery.user.lastName }},
+        您好 {{ userRecovery.user.name }},
 
         我们收到了重置您密码的请求。
         请通过下方链接设置新密码。

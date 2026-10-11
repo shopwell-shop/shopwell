@@ -21,7 +21,7 @@ class Migration1756068710FixCustomerAddressLastNameLength extends MigrationStep
     {
         $connection->executeStatement('
             ALTER TABLE `customer_address`
-            MODIFY COLUMN `last_name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL
+            MODIFY COLUMN `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL
         ');
     }
 }

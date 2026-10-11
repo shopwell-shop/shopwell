@@ -60,7 +60,7 @@ class OrderBuilder
     protected string $stateId;
 
     /**
-     * @var array{id: string, orderId: string, customerId: string, versionId: string, orderVersionId: string, firstName: string, lastName: string, email: string}|null
+     * @var array{id: string, orderId: string, customerId: string, versionId: string, orderVersionId: string, name: string, email: string}|null
      */
     protected ?array $orderCustomer = null;
 
@@ -161,8 +161,7 @@ class OrderBuilder
     public function addAddress(string $key, array $customParams = []): self
     {
         $address = \array_replace([
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'city' => 'Bielefeld',
             'street' => 'Buchenweg 5',
             'zipcode' => '33062',
@@ -177,7 +176,7 @@ class OrderBuilder
         return $this;
     }
 
-    public function orderCustomer(string $firstName, string $customerNumber): self
+    public function orderCustomer(string $name, string $customerNumber): self
     {
         $this->orderCustomer = [
             'id' => $this->ids->get('orderCustomer'),
@@ -185,8 +184,7 @@ class OrderBuilder
             'customerId' => $this->ids->get($customerNumber),
             'versionId' => Defaults::LIVE_VERSION,
             'orderVersionId' => Defaults::LIVE_VERSION,
-            'firstName' => $firstName,
-            'lastName' => 'Mustermann',
+            'name' => $name,
             'email' => 'some@mail.de',
         ];
 

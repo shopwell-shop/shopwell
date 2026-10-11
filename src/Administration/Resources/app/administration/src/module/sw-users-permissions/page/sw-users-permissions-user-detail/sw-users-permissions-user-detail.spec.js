@@ -79,8 +79,7 @@ async function createWrapper(
                                             active: true,
                                             localeId: '7dc07b43229843d387bb5f59233c2d66',
                                             username: 'admin',
-                                            firstName: '',
-                                            lastName: 'admin',
+                                            name: 'admin',
                                             email: 'info@shopwell.cn',
                                             accessKeys: {
                                                 entity: 'product',
@@ -236,8 +235,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
         await wrapper.setData({ isLoading: false });
         await flushPromises();
 
-        const fieldFirstName = wrapper.findComponent('.sw-settings-user-detail__grid-firstName');
-        const fieldLastName = wrapper.findComponent('.sw-settings-user-detail__grid-lastName');
+        const fieldName = wrapper.findComponent('.sw-settings-user-detail__grid-name');
         const fieldEmail = wrapper.findComponent('.sw-settings-user-detail__grid-eMail');
         const fieldUsername = wrapper.findComponent('.sw-settings-user-detail__grid-username');
         const fieldProfilePicture = wrapper.findComponent('.sw-settings-user-detail__grid-profile-picture');
@@ -245,8 +243,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
         const fieldLanguage = wrapper.findComponent('.sw-settings-user-detail__grid-language');
         const fieldActive = wrapper.findComponent('.sw-settings-user-detail__grid-active');
 
-        expect(fieldFirstName.exists()).toBeTruthy();
-        expect(fieldLastName.exists()).toBeTruthy();
+        expect(fieldName.exists()).toBeTruthy();
         expect(fieldEmail.exists()).toBeTruthy();
         expect(fieldUsername.exists()).toBeTruthy();
         expect(fieldProfilePicture.exists()).toBeTruthy();
@@ -254,8 +251,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
         expect(fieldLanguage.exists()).toBeTruthy();
         expect(fieldActive.exists()).toBeTruthy();
 
-        expect(fieldFirstName.props('modelValue')).toBe('');
-        expect(fieldLastName.props('modelValue')).toBe('admin');
+        expect(fieldName.props('modelValue')).toBe('admin');
         expect(fieldEmail.props('modelValue')).toBe('info@shopwell.cn');
         expect(fieldUsername.props('modelValue')).toBe('admin');
         expect(fieldProfilePicture.attributes('value')).toBeUndefined();
@@ -269,8 +265,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
             user: {
                 localeId: '12345',
                 username: 'maxmuster',
-                firstName: 'Max',
-                lastName: 'Mustermann',
+                name: 'Max Mustermann',
                 email: 'max@mustermann.com',
                 active: false,
             },
@@ -278,8 +273,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
         });
         await flushPromises();
 
-        const fieldFirstName = wrapper.findComponent('.sw-settings-user-detail__grid-firstName');
-        const fieldLastName = wrapper.findComponent('.sw-settings-user-detail__grid-lastName');
+        const fieldName = wrapper.findComponent('.sw-settings-user-detail__grid-name');
         const fieldEmail = wrapper.findComponent('.sw-settings-user-detail__grid-eMail');
         const fieldUsername = wrapper.findComponent('.sw-settings-user-detail__grid-username');
         const fieldProfilePicture = wrapper.findComponent('.sw-settings-user-detail__grid-profile-picture');
@@ -287,8 +281,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
         const fieldLanguage = wrapper.findComponent('.sw-settings-user-detail__grid-language');
         const fieldActive = wrapper.findComponent('.sw-settings-user-detail__grid-active');
 
-        expect(fieldFirstName.exists()).toBeTruthy();
-        expect(fieldLastName.exists()).toBeTruthy();
+        expect(fieldName.exists()).toBeTruthy();
         expect(fieldEmail.exists()).toBeTruthy();
         expect(fieldUsername.exists()).toBeTruthy();
         expect(fieldProfilePicture.exists()).toBeTruthy();
@@ -296,8 +289,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
         expect(fieldLanguage.exists()).toBeTruthy();
         expect(fieldActive.exists()).toBeTruthy();
 
-        expect(fieldFirstName.props('modelValue')).toBe('Max');
-        expect(fieldLastName.props('modelValue')).toBe('Mustermann');
+        expect(fieldName.props('modelValue')).toBe('Max Mustermann');
         expect(fieldEmail.props('modelValue')).toBe('max@mustermann.com');
         expect(fieldUsername.props('modelValue')).toBe('maxmuster');
         expect(fieldProfilePicture.attributes('value')).toBeUndefined();
@@ -313,8 +305,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
                 admin: true,
                 localeId: '12345',
                 username: 'maxmuster',
-                firstName: 'Max',
-                lastName: 'Mustermann',
+                name: 'Max Mustermann',
                 email: 'max@mustermann.com',
             },
             isLoading: false,
@@ -336,8 +327,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
                 admin: false,
                 localeId: '12345',
                 username: 'maxmuster',
-                firstName: 'Max',
-                lastName: 'Mustermann',
+                name: 'Max Mustermann',
                 email: 'max@mustermann.com',
             },
             isLoading: false,
@@ -355,8 +345,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
                 admin: false,
                 localeId: '12345',
                 username: 'maxmuster',
-                firstName: 'Max',
-                lastName: 'Mustermann',
+                name: 'Max Mustermann',
                 email: 'max@mustermann.com',
                 active: true,
             },
@@ -364,8 +353,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
         });
         await flushPromises();
 
-        const fieldFirstName = wrapper.findComponent('.sw-settings-user-detail__grid-firstName');
-        const fieldLastName = wrapper.findComponent('.sw-settings-user-detail__grid-lastName');
+        const fieldName = wrapper.findComponent('.sw-settings-user-detail__grid-name');
         const fieldEmail = wrapper.findComponent('.sw-settings-user-detail__grid-eMail');
         const fieldUsername = wrapper.findComponent('.sw-settings-user-detail__grid-username');
         const fieldProfilePicture = wrapper.findComponent('.sw-settings-user-detail__grid-profile-picture');
@@ -375,8 +363,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
         const contextMenuItemEdit = wrapper.findComponent('.sw-settings-user-detail__grid-context-menu-edit');
         const contextMenuItemDelete = wrapper.findComponent('.sw-settings-user-detail__grid-context-menu-delete');
 
-        expect(fieldFirstName.props('disabled')).toBe(true);
-        expect(fieldLastName.props('disabled')).toBe(true);
+        expect(fieldName.props('disabled')).toBe(true);
         expect(fieldEmail.props('disabled')).toBe(true);
         expect(fieldUsername.props('disabled')).toBe(true);
         expect(fieldProfilePicture.attributes().disabled).toBe('true');
@@ -396,16 +383,14 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
                 admin: false,
                 localeId: '12345',
                 username: 'maxmuster',
-                firstName: 'Max',
-                lastName: 'Mustermann',
+                name: 'Max Mustermann',
                 email: 'max@mustermann.com',
                 active: true,
             },
             integrations: [{}],
         });
 
-        const fieldFirstName = wrapper.find('.sw-settings-user-detail__grid-firstName');
-        const fieldLastName = wrapper.find('.sw-settings-user-detail__grid-lastName');
+        const fieldName = wrapper.find('.sw-settings-user-detail__grid-name');
         const fieldEmail = wrapper.find('.sw-settings-user-detail__grid-eMail');
         const fieldUsername = wrapper.find('.sw-settings-user-detail__grid-username');
         const fieldProfilePicture = wrapper.find('.sw-settings-user-detail__grid-profile-picture');
@@ -415,8 +400,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
         const contextMenuItemEdit = wrapper.find('.sw-settings-user-detail__grid-context-menu-edit');
         const contextMenuItemDelete = wrapper.find('.sw-settings-user-detail__grid-context-menu-delete');
 
-        expect(fieldFirstName.attributes().disabled).toBeUndefined();
-        expect(fieldLastName.attributes().disabled).toBeUndefined();
+        expect(fieldName.attributes().disabled).toBeUndefined();
         expect(fieldEmail.attributes().disabled).toBeUndefined();
         expect(fieldUsername.attributes().disabled).toBeUndefined();
         expect(fieldProfilePicture.attributes().disabled).toBeUndefined();
@@ -441,8 +425,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
                 admin: false,
                 localeId: '12345',
                 username: 'maxmuster',
-                firstName: 'Max',
-                lastName: 'Mustermann',
+                name: 'Max Mustermann',
                 email: 'max@mustermann.com',
                 active: true,
             },

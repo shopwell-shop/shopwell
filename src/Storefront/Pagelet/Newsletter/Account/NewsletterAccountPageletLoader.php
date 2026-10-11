@@ -214,8 +214,7 @@ class NewsletterAccountPageletLoader
         $dataBag->set('email', $customer->getEmail());
         $dataBag->set('salutationId', $customer->getSalutationId());
         $dataBag->set('title', $customer->getTitle());
-        $dataBag->set('firstName', $customer->getFirstName());
-        $dataBag->set('lastName', $customer->getLastName());
+        $dataBag->set('name', $customer->getName());
         $dataBag->set(
             'zipCode',
             $customer->getDefaultShippingAddress() ? $customer->getDefaultShippingAddress()->getZipcode() : ''

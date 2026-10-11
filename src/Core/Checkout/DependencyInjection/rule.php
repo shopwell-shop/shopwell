@@ -79,7 +79,7 @@ use Shopwell\Core\Checkout\Customer\Rule\IsActiveRule;
 use Shopwell\Core\Checkout\Customer\Rule\IsCompanyRule;
 use Shopwell\Core\Checkout\Customer\Rule\IsGuestCustomerRule;
 use Shopwell\Core\Checkout\Customer\Rule\IsNewsletterRecipientRule;
-use Shopwell\Core\Checkout\Customer\Rule\LastNameRule;
+use Shopwell\Core\Checkout\Customer\Rule\NameRule;
 use Shopwell\Core\Checkout\Customer\Rule\NumberOfReviewsRule;
 use Shopwell\Core\Checkout\Customer\Rule\OrderCountRule;
 use Shopwell\Core\Checkout\Customer\Rule\OrderTotalAmountRule;
@@ -129,7 +129,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(DifferentAddressesRule::class)->tag('shopwell.rule.definition');
     $services->set(EmailRule::class)->tag('shopwell.rule.definition');
     $services->set(IsActiveRule::class)->tag('shopwell.rule.definition');
-    $services->set(LastNameRule::class)->tag('shopwell.rule.definition');
+    $services->set(NameRule::class)->tag('shopwell.rule.definition');
     $services->set(IsCompanyRule::class)->tag('shopwell.rule.definition');
     $services->set(CartTaxDisplayRule::class)->tag('shopwell.rule.definition');
     $services->set(CartTotalPurchasePriceRule::class)->tag('shopwell.rule.definition');

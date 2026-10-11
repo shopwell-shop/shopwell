@@ -174,12 +174,8 @@ export default {
                     iconSize: '20px',
                 },
                 {
-                    property: 'lastName',
-                    label: this.$t('sw-customer.detailAddresses.columnLastName'),
-                },
-                {
-                    property: 'firstName',
-                    label: this.$t('sw-customer.detailAddresses.columnFirstName'),
+                    property: 'name',
+                    label: this.$t('sw-customer.detailAddresses.columnName'),
                 },
                 {
                     property: 'company',

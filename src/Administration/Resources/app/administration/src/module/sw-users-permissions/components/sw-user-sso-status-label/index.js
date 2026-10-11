@@ -21,7 +21,7 @@ export default {
                 return 'active';
             }
 
-            if (!this.user.active && this.user.email === this.user.firstName && this.user.email === this.user.lastName) {
+            if (!this.user.active && this.user.email === this.user.name) {
                 return 'invited';
             }
 

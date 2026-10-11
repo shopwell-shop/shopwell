@@ -78,8 +78,7 @@ class UserRecoveryRequestEventTest extends TestCase
     {
         $user = new UserEntity();
         $user->setEmail('admin@example.com');
-        $user->setFirstName('Max');
-        $user->setLastName('Mustermann');
+        $user->setName('Max Mustermann');
 
         $userRecovery = new UserRecoveryEntity();
         $userRecovery->setUser($user);
@@ -96,8 +95,7 @@ class UserRecoveryRequestEventTest extends TestCase
     {
         $user = new UserEntity();
         $user->setEmail('admin@example.com');
-        $user->setFirstName('Max');
-        $user->setLastName('Mustermann');
+        $user->setName('Max Mustermann');
 
         $userRecovery = new UserRecoveryEntity();
         $userRecovery->setUser($user);

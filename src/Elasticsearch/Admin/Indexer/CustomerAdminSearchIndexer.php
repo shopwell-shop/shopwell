@@ -60,8 +60,7 @@ final class CustomerAdminSearchIndexer extends AbstractAdminIndexer
     public function getUpdatedIds(EntityWrittenContainerEvent $event): array
     {
         $customerIds = $event->getPrimaryKeysWithPropertyChange($this->getEntity(), [
-            'firstName',
-            'lastName',
+            'name',
             'email',
             'company',
             'customerNumber',
@@ -72,8 +71,7 @@ final class CustomerAdminSearchIndexer extends AbstractAdminIndexer
         ]);
 
         $addresses = $event->getPrimaryKeysWithPropertyChange(CustomerAddressDefinition::ENTITY_NAME, [
-            'firstName',
-            'lastName',
+            'name',
             'company',
             'city',
             'street',
@@ -110,8 +108,7 @@ final class CustomerAdminSearchIndexer extends AbstractAdminIndexer
         $override = [
             'active' => AbstractElasticsearchDefinition::BOOLEAN_FIELD,
             'email' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
-            'firstName' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
-            'lastName' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
+            'name' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
             'customerNumber' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
             'company' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
             'affiliateCode' => AbstractElasticsearchDefinition::KEYWORD_FIELD,
@@ -153,8 +150,7 @@ final class CustomerAdminSearchIndexer extends AbstractAdminIndexer
      *     completion: list<string>,
      *     active?: bool,
      *     email?: mixed,
-     *     firstName?: mixed,
-     *     lastName?: mixed,
+     *     name?: mixed,
      *     customerNumber?: mixed,
      *     company?: mixed,
      *     affiliateCode?: mixed,
@@ -188,8 +184,7 @@ final class CustomerAdminSearchIndexer extends AbstractAdminIndexer
                    tag_agg.tags as tags,
                    tag_agg.tagIds as tagIds,
                    address_agg.country as country,
-                   address_agg.address_first_name as address_first_name,
-                   address_agg.address_last_name as address_last_name,
+                   address_agg.address_name as address_name,
                    address_agg.address_company as address_company,
                    address_agg.city as city,
                    address_agg.street as street,
@@ -197,8 +192,7 @@ final class CustomerAdminSearchIndexer extends AbstractAdminIndexer
                    address_agg.phone_number as phone_number,
                    address_agg.additional_address_line1 as additional_address_line1,
                    address_agg.additional_address_line2 as additional_address_line2,
-                   customer.first_name,
-                   customer.last_name,
+                   customer.name,
                    customer.email,
                    customer.company,
                    customer.customer_number,
@@ -218,8 +212,7 @@ final class CustomerAdminSearchIndexer extends AbstractAdminIndexer
                 LEFT JOIN (
                     SELECT customer_address.customer_id,
                            GROUP_CONCAT(DISTINCT country_translation.name ORDER BY NULL SEPARATOR ' ') as country,
-                           GROUP_CONCAT(DISTINCT customer_address.first_name ORDER BY NULL SEPARATOR ' ') as address_first_name,
-                           GROUP_CONCAT(DISTINCT customer_address.last_name ORDER BY NULL SEPARATOR ' ') as address_last_name,
+                           GROUP_CONCAT(DISTINCT customer_address.name ORDER BY NULL SEPARATOR ' ') as address_name,
                            GROUP_CONCAT(DISTINCT customer_address.company ORDER BY NULL SEPARATOR ' ') as address_company,
                            GROUP_CONCAT(DISTINCT customer_address.city ORDER BY NULL SEPARATOR ' ') as city,
                            GROUP_CONCAT(DISTINCT customer_address.street ORDER BY NULL SEPARATOR ' ') as street,
@@ -265,15 +258,13 @@ SQL,
         foreach ($data as $row) {
             $id = (string) $row['id'];
             $text = \implode(' ', array_filter([
-                $row['first_name'] ?? '',
-                $row['last_name'] ?? '',
+                $row['name'] ?? '',
                 $row['email'] ?? '',
                 $row['customer_number'] ?? '',
                 $row['company'] ?? '',
                 $row['tags'] ?? '',
                 $row['country'] ?? '',
-                $row['address_first_name'] ?? '',
-                $row['address_last_name'] ?? '',
+                $row['address_name'] ?? '',
                 $row['address_company'] ?? '',
                 $row['city'] ?? '',
                 $row['street'] ?? '',
@@ -285,8 +276,7 @@ SQL,
             ]));
 
             $completion = $this->buildCompletion([
-                \is_string($row['first_name'] ?? null) ? $row['first_name'] : null,
-                \is_string($row['last_name'] ?? null) ? $row['last_name'] : null,
+                \is_string($row['name'] ?? null) ? $row['name'] : null,
                 \is_string($row['email'] ?? null) ? $row['email'] : null,
                 \is_string($row['company'] ?? null) ? $row['company'] : null,
             ]);
@@ -307,8 +297,7 @@ SQL,
                 'completion' => $completion,
                 'active' => (bool) $row['active'],
                 'email' => $row['email'] ?? null,
-                'firstName' => $row['first_name'] ?? null,
-                'lastName' => $row['last_name'] ?? null,
+                'name' => $row['name'] ?? null,
                 'customerNumber' => $row['customer_number'] ?? null,
                 'company' => $row['company'] ?? null,
                 'affiliateCode' => $row['affiliateCode'] ?? null,

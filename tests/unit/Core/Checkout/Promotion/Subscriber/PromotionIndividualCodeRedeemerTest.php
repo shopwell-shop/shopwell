@@ -60,8 +60,7 @@ class PromotionIndividualCodeRedeemerTest extends TestCase
 
         $customer = new OrderCustomerEntity();
         $customer->setId(Uuid::randomHex());
-        $customer->setFirstName('foo');
-        $customer->setLastName('bar');
+        $customer->setName('foo bar');
         $customer->setCustomerId(Uuid::randomHex());
 
         $lineItem = new OrderLineItemEntity();
@@ -112,8 +111,7 @@ class PromotionIndividualCodeRedeemerTest extends TestCase
 
         $customer = new OrderCustomerEntity();
         $customer->setId(Uuid::randomHex());
-        $customer->setFirstName('foo');
-        $customer->setLastName('bar');
+        $customer->setName('foo bar');
         $customer->setCustomerId(Uuid::randomHex());
 
         $lineItem1 = new OrderLineItemEntity();
@@ -168,8 +166,7 @@ class PromotionIndividualCodeRedeemerTest extends TestCase
 
         $customer = new OrderCustomerEntity();
         $customer->setId(Uuid::randomHex());
-        $customer->setFirstName('foo');
-        $customer->setLastName('bar');
+        $customer->setName('foo bar');
         $customer->setCustomerId(Uuid::randomHex());
 
         $lineItem = new OrderLineItemEntity();

@@ -86,8 +86,7 @@ class AdminDataExplorationScenarioTest extends McpScenarioTestCase
 
         $fieldNames = array_column($data['data']['fields'], 'name');
         static::assertContains('email', $fieldNames);
-        static::assertContains('firstName', $fieldNames);
-        static::assertContains('lastName', $fieldNames);
+        static::assertContains('name', $fieldNames);
         static::assertContains('customerNumber', $fieldNames);
 
         $assocNames = array_column($data['data']['associations'], 'name');
