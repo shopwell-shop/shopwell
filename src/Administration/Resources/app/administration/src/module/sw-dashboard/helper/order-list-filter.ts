@@ -40,7 +40,7 @@ export const ORDER_PAYMENT_PROPERTY = 'primaryOrderTransaction.stateMachineState
 export const ORDER_DELIVERY_PROPERTY = 'primaryOrderDelivery.stateMachineState';
 
 export function getUserTimeZone(): string {
-    return (Shopwell.Store.get('session')?.currentUser?.timeZone as string) ?? 'UTC';
+    return (Shopwell.Store.get('session')?.currentUser?.timeZone as string) ?? 'Asia/Shanghai';
 }
 
 /**

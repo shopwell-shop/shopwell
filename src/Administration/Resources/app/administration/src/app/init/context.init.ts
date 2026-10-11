@@ -45,7 +45,7 @@ export default function initializeContext(): void {
     });
 
     Shopwell.ExtensionAPI.handle('contextUserTimezone', () => {
-        return Shopwell.Store.get('session').currentUser?.timeZone ?? 'UTC';
+        return Shopwell.Store.get('session').currentUser?.timeZone ?? 'Asia/Shanghai';
     });
 
     Shopwell.ExtensionAPI.handle('contextModuleInformation', (_, additionalInformation) => {

@@ -50,6 +50,11 @@ class UserDefinition extends EntityDefinition
 {
     final public const ENTITY_NAME = 'user';
 
+    /**
+     * Timezone a user starts with and falls back to when none is configured.
+     */
+    final public const DEFAULT_TIME_ZONE = 'Asia/Shanghai';
+
     public function getEntityName(): string
     {
         return self::ENTITY_NAME;
@@ -74,7 +79,7 @@ class UserDefinition extends EntityDefinition
     {
         return [
             'admin' => false,
-            'timeZone' => 'UTC',
+            'timeZone' => self::DEFAULT_TIME_ZONE,
         ];
     }
 

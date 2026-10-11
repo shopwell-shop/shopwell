@@ -227,7 +227,7 @@ export default Shopwell.Component.wrapComponentConfig({
             };
 
             const headers = (this.orderRepository as { buildHeaders: () => unknown }).buildHeaders();
-            const timezone = Shopwell.Store.get('session').currentUser?.timeZone ?? 'UTC';
+            const timezone = Shopwell.Store.get('session').currentUser?.timeZone ?? 'Asia/Shanghai';
             const url = `/_admin/dashboard/order-amount/${since}?timezone=${timezone}&paid=${paid.toString()}`;
 
             return httpClient

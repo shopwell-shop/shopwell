@@ -188,7 +188,7 @@ export default {
         },
 
         userTimeZone() {
-            return Shopwell?.Store?.get('session')?.currentUser?.timeZone ?? 'UTC';
+            return Shopwell?.Store?.get('session')?.currentUser?.timeZone ?? 'Asia/Shanghai';
         },
 
         timezoneFormattedValue: {
