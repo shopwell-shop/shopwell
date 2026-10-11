@@ -43,11 +43,31 @@ jobs:
       # The generator is upstream code and reads the GitLab variable name, so the release tag is
       # passed through under that name rather than forking the script for GitHub.
       CI_COMMIT_TAG: ${{ inputs.release_version || github.ref_name }}
+      # Dumping the schema boots the framework, which needs an installed shop.
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/root
+      APP_URL: http://localhost:8000
+      COMPOSER_ROOT_VERSION: 6.7.9999999-dev
+    services:
+      database:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: root
+        options: '--mount="type=tmpfs,destination=/var/lib/mysql" --health-cmd="mysqladmin ping -h 127.0.0.1" --health-interval=5s --health-timeout=2s --health-retries=3'
+        ports:
+          - "3306:3306"
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.release_version || github.ref_name }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2.37.2
+        with:
+          php-version: 8.2
+          coverage: none
+          extensions: gd, xml, dom, curl, pdo, mysqli, mbstring, pdo_mysql, bcmath
 
       - name: Setup Node
         # Not lts/*, which still resolves to node 22: trusted publishing needs the npm CLI 11.5.1
@@ -75,6 +95,19 @@ jobs:
       - name: Derive the npm version
         id: package
         run: node .github/bin/js/entity-schema-package.ts derive
+
+      # The generator reads test/_mocks_/entity-schema.json, a gitignored build artefact that
+      # `composer setup` normally writes through build:js:admin → framework:schema:dump. Publishing
+      # straight from a tag skips that build, so the schema is dumped here instead.
+      - name: Dump the entity schema
+        if: steps.package.outputs.already_published != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p custom/plugins custom/static-plugins
+          composer install --no-interaction --no-progress
+          bin/console system:install --drop-database --basic-setup --force --no-assign-theme
+          composer framework:schema:dump
+          test -s src/Administration/Resources/app/administration/test/_mocks_/entity-schema.json
 
       - name: Install Administration dependencies
         if: steps.package.outputs.already_published != 'true'
