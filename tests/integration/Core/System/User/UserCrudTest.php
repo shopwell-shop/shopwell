@@ -7,6 +7,8 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\System\User\UserDefinition;
+use Shopwell\Core\System\User\UserEntity;
 
 /**
  * @internal
@@ -15,6 +17,30 @@ use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 class UserCrudTest extends TestCase
 {
     use IntegrationTestBehaviour;
+
+    public function testUsersAreCreatedWithTheShippedDefaultTimeZone(): void
+    {
+        $userId = '0a8f5a4e0e5b4a4b8e0d0f0a1b2c3d4e';
+        $context = Context::createDefaultContext();
+        $localeId = static::getContainer()->get('locale.repository')->searchIds(new Criteria(), $context)->firstId();
+
+        $userRepository = static::getContainer()->get('user.repository');
+        $userRepository->create([[
+            'id' => $userId,
+            'username' => 'default-time-zone',
+            'password' => 'i am safe',
+            'email' => 'default-time-zone@shopwell.cn',
+            'name' => 'first last',
+            'active' => true,
+            'admin' => false,
+            'localeId' => $localeId,
+        ]], $context);
+
+        $user = $userRepository->search(new Criteria([$userId]), $context)->getEntities()->first();
+
+        static::assertInstanceOf(UserEntity::class, $user);
+        static::assertSame(UserDefinition::DEFAULT_TIME_ZONE, $user->getTimeZone());
+    }
 
     /**
      * Tests a circular reference between user and media entity where a media is

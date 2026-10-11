@@ -82,7 +82,7 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         userTimeZone(): string {
-            return getSessionStore().currentUser?.timeZone ?? 'UTC';
+            return getSessionStore().currentUser?.timeZone ?? 'Asia/Shanghai';
         },
 
         is24HourFormat(): boolean {

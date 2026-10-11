@@ -108,12 +108,12 @@ describe('src/core/service/utils/format.utils.js', () => {
             );
         });
 
-        it('should convert the date correctly with timezone UTC as fallback', async () => {
+        it('should convert the date correctly with timezone Asia/Shanghai as fallback', async () => {
             setTimeZone(null);
             const date = new Date(2000, 1, 1, 0, 13, 37);
 
             expect(dateWithUserTimezone(date).toString()).toBe(
-                'Tue Feb 01 2000 00:13:37 GMT+0000 (Coordinated Universal Time)',
+                'Tue Feb 01 2000 08:13:37 GMT+0000 (Coordinated Universal Time)',
             );
         });
     });

@@ -423,7 +423,7 @@ export default {
             }
 
             const lastKnownLocale = Shopwell.Application.getContainer('factory').locale.getLastKnownLocale();
-            const userTimeZone = Shopwell.Store.get('session').currentUser?.timeZone ?? 'UTC';
+            const userTimeZone = Shopwell.Store.get('session').currentUser?.timeZone ?? 'Asia/Shanghai';
 
             return new Intl.DateTimeFormat(lastKnownLocale, {
                 timeZone: userTimeZone,

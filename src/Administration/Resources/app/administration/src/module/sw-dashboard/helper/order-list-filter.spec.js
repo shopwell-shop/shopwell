@@ -47,10 +47,10 @@ describe('module/sw-dashboard/helper/order-list-filter', () => {
             expect(getUserTimeZoneDate(new Date('2026-10-02T02:00:00.000Z'))).toBe('2026-10-01');
         });
 
-        it('falls back to utc when no time zone is configured', () => {
+        it('falls back to Asia/Shanghai when no time zone is configured', () => {
             Shopwell.Store.get('session').setCurrentUser({});
 
-            expect(getUserTimeZoneDate(reference)).toBe('2026-10-02');
+            expect(getUserTimeZoneDate(reference)).toBe('2026-10-03');
         });
     });
 

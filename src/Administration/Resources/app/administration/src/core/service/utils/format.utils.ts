@@ -113,7 +113,7 @@ export function date(val: string, options: DateFilterOptions = {}): string {
     }
 
     const lastKnownLang = Shopwell.Application.getContainer('factory').locale.getLastKnownLocale();
-    const userTimeZone = Shopwell?.Store?.get('session')?.currentUser?.timeZone ?? 'UTC';
+    const userTimeZone = Shopwell?.Store?.get('session')?.currentUser?.timeZone ?? 'Asia/Shanghai';
 
     const dateTimeFormatter = new Intl.DateTimeFormat(lastKnownLang, {
         timeZone: options.skipTimezoneConversion ? undefined : userTimeZone,
@@ -136,7 +136,7 @@ export function date(val: string, options: DateFilterOptions = {}): string {
  */
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export function dateWithUserTimezone(dateObj: Date = new Date()): Date {
-    const userTimeZone = Shopwell.Store.get('session').currentUser?.timeZone ?? 'UTC';
+    const userTimeZone = Shopwell.Store.get('session').currentUser?.timeZone ?? 'Asia/Shanghai';
 
     // Language and options are set in order to re-create the date object
     const localizedDate = dateObj.toLocaleDateString('en-GB', {

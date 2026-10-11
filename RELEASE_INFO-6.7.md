@@ -163,6 +163,12 @@ New installations therefore create a `zh-CN` language, a `zh` snippet set with `
 
 Extensions that relied on a `de-DE` snippet set being present out of the box must ship their German snippets as a plugin- or theme-provided snippet file themselves.
 
+### New users default to the `Asia/Shanghai` timezone
+
+Administration users now start with `Asia/Shanghai` as their timezone instead of `UTC`, and the default of the `user.time_zone` column changed with it. The administration falls back to `Asia/Shanghai` as well when no user timezone is available.
+
+The timezone of an existing user is not changed by an update. Set it per user in the profile settings.
+
 ### Filtered listings show the main variant only if it matches the active filters
 
 Filtered product listings show a variant product's main variant only if it matches all active filters, such as property, price or manufacturer filters. Otherwise, a matching variant is shown. Products configured to display their parent always show the parent.
