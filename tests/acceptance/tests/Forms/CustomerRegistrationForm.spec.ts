@@ -139,8 +139,7 @@ test.describe('Customer Registration Form', () => {
             await ShopCustomer.goesTo(StorefrontAccountLogin.url());
 
             await StorefrontAccountLogin.salutationSelect.selectOption(customer.salutation);
-            await StorefrontAccountLogin.firstNameInput.fill(customer.firstName);
-            await StorefrontAccountLogin.lastNameInput.fill(customer.lastName);
+            await StorefrontAccountLogin.nameInput.fill(customer.name);
             await StorefrontAccountLogin.registerEmailInput.fill(customer.email);
             await StorefrontAccountLogin.registerPasswordInput.fill(customer.password);
 
@@ -172,8 +171,7 @@ test.describe('Customer Registration Form', () => {
 
             const customer = {
                 salutation: 'Mr.',
-                firstName: 'Jeff',
-                // lastName is missing intentionally
+                // name is missing intentionally
                 email: `${IdProvider.getIdPair().uuid}@test.com`,
                 password: 'shopwell',
                 street: addressData.street,
@@ -185,7 +183,6 @@ test.describe('Customer Registration Form', () => {
             await ShopCustomer.goesTo(StorefrontAccountLogin.url());
 
             await StorefrontAccountLogin.salutationSelect.selectOption(customer.salutation);
-            await StorefrontAccountLogin.firstNameInput.fill(customer.firstName);
             await StorefrontAccountLogin.registerEmailInput.fill(customer.email);
             await StorefrontAccountLogin.registerPasswordInput.fill(customer.password);
 
@@ -196,9 +193,9 @@ test.describe('Customer Registration Form', () => {
 
             await StorefrontAccountLogin.registerButton.click();
 
-            await ShopCustomer.expects(StorefrontAccountLogin.lastNameInput).toHaveClass(/(^|\s)is-invalid(\s|$)/);
+            await ShopCustomer.expects(StorefrontAccountLogin.nameInput).toHaveClass(/(^|\s)is-invalid(\s|$)/);
 
-            await StorefrontAccountLogin.lastNameInput.fill('Goldblum');
+            await StorefrontAccountLogin.nameInput.fill('Jeff Goldblum');
             await StorefrontAccountLogin.registerButton.click();
 
             await StorefrontAccountLogin.page.waitForURL('**/account', { waitUntil: 'commit' });

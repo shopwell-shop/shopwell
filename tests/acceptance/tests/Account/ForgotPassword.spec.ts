@@ -105,9 +105,9 @@ test(
             const emailHeaders = await MailpitApiContext.getEmailHeaders(customer.email);
             const emailBody = await MailpitApiContext.getEmailBody(customer.email);
             ShopCustomer.expects(emailHeaders.subject).toContain('Password recovery');
-            ShopCustomer.expects(emailHeaders.toName).toContain(`${customer.firstName} ${customer.lastName}`);
+            ShopCustomer.expects(emailHeaders.toName).toContain(customer.name);
             ShopCustomer.expects(emailHeaders.toAddress).toContain(customer.email);
-            ShopCustomer.expects(emailBody).toContain(`Hello ${customer.firstName} ${customer.lastName},`);
+            ShopCustomer.expects(emailBody).toContain(`Hello ${customer.name},`);
             ShopCustomer.expects(emailBody).toContain(
                 `You have requested a new password for your ${DefaultSalesChannel.salesChannel.name} account.`,
             );

@@ -15,9 +15,9 @@ test(
         DefaultSalesChannel,
     }) => {
         let i = 1;
-        const customer1 = await TestDataService.createCustomer({ firstName: `Bulk edit ${i++}` });
-        const customer2 = await TestDataService.createCustomer({ firstName: `Bulk edit ${i++}` });
-        const customer3 = await TestDataService.createCustomer({ firstName: `Bulk edit ${i++}` });
+        const customer1 = await TestDataService.createCustomer({ name: `Bulk edit ${i++}` });
+        const customer2 = await TestDataService.createCustomer({ name: `Bulk edit ${i++}` });
+        const customer3 = await TestDataService.createCustomer({ name: `Bulk edit ${i++}` });
         const currentCustomerGroup = await TestDataService.getCustomerGroupById(customer3.groupId);
         const customerGroupToUpdate = await TestDataService.createCustomerGroup();
         const currentLanguage = await TestDataService.getLanguageById(customer3.languageId);

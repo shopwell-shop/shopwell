@@ -80,8 +80,7 @@ test(
         await ShopCustomer.presses(addressContainer.addressActions);
         await ShopCustomer.presses(addressContainer.editAddressButton);
 
-        await ShopCustomer.expects(StorefrontAccountAddressDetails.firstNameInput).toHaveValue(address.firstName);
-        await ShopCustomer.expects(StorefrontAccountAddressDetails.lastNameInput).toHaveValue(address.lastName);
+        await ShopCustomer.expects(StorefrontAccountAddressDetails.nameInput).toHaveValue(address.name);
         await ShopCustomer.expects(StorefrontAccountAddressDetails.streetInput).toHaveValue(address.street);
         await ShopCustomer.expects(StorefrontAccountAddressDetails.zipcodeInput).toHaveValue(address.zipcode);
         await ShopCustomer.expects(StorefrontAccountAddressDetails.cityInput).toHaveValue(address.city);
@@ -92,8 +91,7 @@ test(
             zipcode: '54321',
             city: 'Manhattan',
         };
-        await ShopCustomer.fillsIn(StorefrontAccountAddressDetails.firstNameInput, newAddress.firstName);
-        await ShopCustomer.fillsIn(StorefrontAccountAddressDetails.lastNameInput, newAddress.lastName);
+        await ShopCustomer.fillsIn(StorefrontAccountAddressDetails.nameInput, newAddress.name);
         await ShopCustomer.fillsIn(StorefrontAccountAddressDetails.streetInput, newAddress.street);
         await ShopCustomer.fillsIn(StorefrontAccountAddressDetails.zipcodeInput, newAddress.zipcode);
         await ShopCustomer.fillsIn(StorefrontAccountAddressDetails.cityInput, newAddress.city);
@@ -136,8 +134,7 @@ test(
             city: 'Manhattan',
         };
         TestDataService.addCreatedRecord('customer_address', newAddress.id);
-        await ShopCustomer.fillsIn(StorefrontAccountAddressDetails.firstNameInput, newAddress.firstName);
-        await ShopCustomer.fillsIn(StorefrontAccountAddressDetails.lastNameInput, newAddress.lastName);
+        await ShopCustomer.fillsIn(StorefrontAccountAddressDetails.nameInput, newAddress.name);
         await ShopCustomer.fillsIn(StorefrontAccountAddressDetails.streetInput, newAddress.street);
         await ShopCustomer.fillsIn(StorefrontAccountAddressDetails.zipcodeInput, newAddress.zipcode);
         await ShopCustomer.fillsIn(StorefrontAccountAddressDetails.cityInput, newAddress.city);

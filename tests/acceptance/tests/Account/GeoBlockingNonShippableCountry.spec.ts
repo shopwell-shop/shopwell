@@ -45,8 +45,7 @@ test(
         await test.step('Customer submits the registration form successfully with a shippable country', async () => {
             await ShopCustomer.presses(StorefrontAccountLogin.salutationSelect);
             await StorefrontAccountLogin.salutationSelect.selectOption(registrationData.salutation);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.firstNameInput, registrationData.firstName);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.lastNameInput, registrationData.lastName);
+            await ShopCustomer.fillsIn(StorefrontAccountLogin.nameInput, registrationData.name);
             await ShopCustomer.fillsIn(StorefrontAccountLogin.registerEmailInput, customer.email);
             await ShopCustomer.fillsIn(StorefrontAccountLogin.registerPasswordInput, registrationData.password);
             await ShopCustomer.fillsIn(StorefrontAccountLogin.streetAddressInput, registrationData.street);
@@ -57,8 +56,7 @@ test(
             await ShopCustomer.presses(StorefrontAccountLogin.differentShippingAddressCheckbox);
             await ShopCustomer.presses(StorefrontAccountLogin.shippingAddressSalutationSelect);
             await StorefrontAccountLogin.shippingAddressSalutationSelect.selectOption(registrationData.salutation);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressFirstNameInput, registrationData.firstName);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressLastNameInput, registrationData.lastName);
+            await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressNameInput, registrationData.name);
             await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressStreetAddressInput, registrationData.street);
             await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressPostalCodeInput, registrationData.postalCode);
             await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressCityInput, registrationData.city);
@@ -134,9 +132,7 @@ test(
         await test.step('Customer add new address with non-shippable country and cannot set it as new shipping address', async () => {
             await ShopCustomer.goesTo(StorefrontAccountAddresses.url());
             await ShopCustomer.attemptsTo(AddNewAddress(address));
-            await ShopCustomer.expects(StorefrontAccountAddresses.availableAddresses).toContainText(
-                address.firstName + ' ' + address.lastName,
-            );
+            await ShopCustomer.expects(StorefrontAccountAddresses.availableAddresses).toContainText(address.name);
             await ShopCustomer.expects(StorefrontAccountAddresses.availableAddresses).toContainText(address.street);
             await ShopCustomer.expects(StorefrontAccountAddresses.availableAddresses).toContainText(address.city);
             await ShopCustomer.expects(StorefrontAccountAddresses.availableAddresses).toContainText(address.zipcode);
