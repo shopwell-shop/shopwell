@@ -104,6 +104,7 @@
         "nikic/php-parser": "^5.8.0",
         "nyholm/psr7": "^1.5",
         "opensearch-project/opensearch-php": "^2.6.0",
+        "payum/payum-bundle": "^2.7",
         "pentatrion/vite-bundle": "^8.1",
         "php-http/discovery": "^1.20",
         "phpseclib/phpseclib": "^3.0",
