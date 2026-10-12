@@ -147,6 +147,7 @@
       "name": "Name",
       "street": "Street",
       "city": "City",
+      "district": "District",
       "company": "Company",
       "phoneNumber": "Phone number",
       "department": "Department",

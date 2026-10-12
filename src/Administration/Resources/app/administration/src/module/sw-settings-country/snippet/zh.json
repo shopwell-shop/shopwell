@@ -147,6 +147,7 @@
       "name": "姓名",
       "street": "街道",
       "city": "城市",
+      "district": "区/县",
       "company": "公司",
       "phoneNumber": "电话号码",
       "department": "部门",

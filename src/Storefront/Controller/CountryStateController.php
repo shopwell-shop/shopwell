@@ -67,6 +67,7 @@ class CountryStateController extends StorefrontController
 
         return new JsonResponse([
             'states' => $countryStateDataPagelet->getStates(),
+            'hasCities' => $countryStateDataPagelet->hasCities(),
         ]);
     }
 

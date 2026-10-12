@@ -11,6 +11,8 @@ class CountryStateDataPagelet extends Pagelet
 {
     protected CountryStateCollection $states;
 
+    protected bool $hasCities = false;
+
     public function __construct()
     {
         $this->states = new CountryStateCollection();
@@ -24,5 +26,15 @@ class CountryStateDataPagelet extends Pagelet
     public function setStates(CountryStateCollection $states): void
     {
         $this->states = $states;
+    }
+
+    public function hasCities(): bool
+    {
+        return $this->hasCities;
+    }
+
+    public function setHasCities(bool $hasCities): void
+    {
+        $this->hasCities = $hasCities;
     }
 }

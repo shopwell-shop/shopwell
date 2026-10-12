@@ -35,3 +35,17 @@
         top: 0.25em;
     }
 }
+
+// Countries like China administrate their addresses in the three levels province, city and
+// district. Their forms switch to the cascade layout: the region selects render above the
+// detailed address instead of below it.
+.js-address-fields-wrapper {
+    &.china-region-layout {
+        display: flex;
+        flex-direction: column;
+
+        .country-and-state-form-elements {
+            order: -1;
+        }
+    }
+}

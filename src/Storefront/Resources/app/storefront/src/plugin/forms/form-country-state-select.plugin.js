@@ -129,7 +129,25 @@ export default class CountryStateSelectPlugin extends Plugin {
             },
         })
             .then(response => response.json())
-            .then(content => this._updateStateSelect(content.states, stateRequired, countryStateId, stateDisplayed));
+            .then(content => {
+                this._updateStateSelect(content.states, stateRequired, countryStateId, stateDisplayed);
+                this._updateAddressLayout(content.hasCities ?? false);
+            });
+    }
+
+    /**
+     * Countries like China administrate their addresses in the three levels below the country.
+     * Their address forms switch to the cascade layout, where the province, city and district
+     * selects render above the detailed address instead of below it.
+     */
+    _updateAddressLayout(hasCities) {
+        const layoutWrapper = this.el.closest('.js-address-fields-wrapper');
+
+        if (!layoutWrapper) {
+            return;
+        }
+
+        layoutWrapper.classList.toggle('china-region-layout', !!hasCities);
     }
 
     /**
