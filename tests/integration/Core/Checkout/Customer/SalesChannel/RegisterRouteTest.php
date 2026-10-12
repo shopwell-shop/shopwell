@@ -1856,9 +1856,6 @@ class RegisterRouteTest extends TestCase
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    /**
      * @param array<string, mixed> $registrationData
      *
      * @return array<string, mixed>
@@ -1883,6 +1880,9 @@ class RegisterRouteTest extends TestCase
         return $content;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function getRegistrationData(string $storefrontUrl = 'http://localhost'): array
     {
         return [
