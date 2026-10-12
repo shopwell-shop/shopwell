@@ -19,7 +19,6 @@ use Shopwell\Core\System\Country\SalesChannel\CountryCityRouteResponse;
 use Shopwell\Core\System\Country\SalesChannel\CountryDistrictRoute;
 use Shopwell\Core\System\Country\SalesChannel\CountryDistrictRouteResponse;
 use Shopwell\Core\Test\Generator;
-use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPagelet;
 use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPageletCriteriaEvent;
 use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPageletLoadedEvent;
 use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPageletLoader;
@@ -161,7 +160,7 @@ class CountryRegionDataPageletLoaderTest extends TestCase
 
         $pagelet = $loader->loadCities(Uuid::randomHex(), new Request(), $salesChannelContext);
 
-        static::assertInstanceOf(CountryRegionDataPagelet::class, $pagelet);
         static::assertCount(0, $pagelet->getCities());
+        static::assertCount(0, $pagelet->getDistricts());
     }
 }

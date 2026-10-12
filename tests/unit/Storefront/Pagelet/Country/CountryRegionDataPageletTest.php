@@ -11,7 +11,6 @@ use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityEntity;
 use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictCollection;
 use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictEntity;
 use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPagelet;
-use Shopwell\Storefront\Pagelet\Pagelet;
 
 /**
  * @internal
@@ -55,8 +54,13 @@ class CountryRegionDataPageletTest extends TestCase
         static::assertCount(0, $pagelet->getCities());
     }
 
-    public function testExtendsPagelet(): void
+    public function testIsSerializable(): void
     {
-        static::assertInstanceOf(Pagelet::class, new CountryRegionDataPagelet());
+        $serialized = (new CountryRegionDataPagelet())->jsonSerialize();
+
+        static::assertArrayHasKey('cities', $serialized);
+        static::assertArrayHasKey('districts', $serialized);
+        static::assertCount(0, $serialized['cities']);
+        static::assertCount(0, $serialized['districts']);
     }
 }

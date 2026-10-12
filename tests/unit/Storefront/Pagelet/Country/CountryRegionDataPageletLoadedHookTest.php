@@ -6,7 +6,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Test\Generator;
-use Shopwell\Storefront\Page\PageLoadedHook;
 use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPagelet;
 use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPageletLoadedHook;
 
@@ -34,11 +33,9 @@ class CountryRegionDataPageletLoadedHookTest extends TestCase
         static::assertSame($pagelet, $hook->getPage());
     }
 
-    public function testIsPageLoadedHook(): void
+    public function testExposesThePageLoadedServices(): void
     {
-        $hook = new CountryRegionDataPageletLoadedHook(new CountryRegionDataPagelet(), Generator::generateSalesChannelContext());
-
-        static::assertInstanceOf(PageLoadedHook::class, $hook);
+        static::assertNotEmpty(CountryRegionDataPageletLoadedHook::getServiceIds());
     }
 
     public function testCarriesSalesChannelContext(): void

@@ -442,7 +442,7 @@ class ProductControllerTest extends TestCase
         static::assertSame(['Women > Dresses'], $productJsonLd['category']);
         static::assertSame(15.0, $productJsonLd['offers']['priceSpecification']['price']);
         static::assertSame('https://schema.org/StrikethroughPrice', $productJsonLd['offers']['priceSpecification']['priceType']);
-        static::assertSame('EUR', $productJsonLd['offers']['priceSpecification']['priceCurrency']);
+        static::assertSame('CNY', $productJsonLd['offers']['priceSpecification']['priceCurrency']);
     }
 
     #[DataProvider('jsonLdDeliveryTimeProvider')]

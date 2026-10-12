@@ -47,6 +47,8 @@ class CountryStateControllerTest extends TestCase
             ->method('load')
             ->with('query-country-id', $request, $context)
             ->willReturn(new CountryStateDataPagelet());
+        $this->regionPageletLoader->expects($this->never())
+            ->method('loadCities');
 
         $this->controller->getCountryData($request, $context);
     }
@@ -61,6 +63,8 @@ class CountryStateControllerTest extends TestCase
             ->method('load')
             ->with('post-country-id', $request, $context)
             ->willReturn(new CountryStateDataPagelet());
+        $this->regionPageletLoader->expects($this->never())
+            ->method('loadCities');
 
         $this->controller->getCountryData($request, $context);
     }
@@ -72,6 +76,8 @@ class CountryStateControllerTest extends TestCase
     {
         $this->pageletLoader->expects($this->never())
             ->method('load');
+        $this->regionPageletLoader->expects($this->never())
+            ->method('loadCities');
 
         $this->expectExceptionObject(FeatureException::error(
             'Tried to access deprecated functionality: The POST request to /country/country-state-data is deprecated and will be removed in v6.8.0.0. Use a GET request instead.'
@@ -87,6 +93,8 @@ class CountryStateControllerTest extends TestCase
     {
         $this->pageletLoader->expects($this->never())
             ->method('load');
+        $this->regionPageletLoader->expects($this->never())
+            ->method('loadCities');
 
         $this->expectExceptionObject(RoutingException::missingRequestParameter('countryId'));
 
@@ -98,6 +106,8 @@ class CountryStateControllerTest extends TestCase
         $request = new Request(['countryStateId' => 'query-state-id']);
         $context = Generator::generateSalesChannelContext();
 
+        $this->pageletLoader->expects($this->never())
+            ->method('load');
         $this->regionPageletLoader->expects($this->once())
             ->method('loadCities')
             ->with('query-state-id', $request, $context)
@@ -113,6 +123,8 @@ class CountryStateControllerTest extends TestCase
 
     public function testGetCityDataThrowsExceptionWithoutCountryStateId(): void
     {
+        $this->pageletLoader->expects($this->never())
+            ->method('load');
         $this->regionPageletLoader->expects($this->never())
             ->method('loadCities');
 
@@ -126,6 +138,8 @@ class CountryStateControllerTest extends TestCase
         $request = new Request(['countryCityId' => 'query-city-id']);
         $context = Generator::generateSalesChannelContext();
 
+        $this->pageletLoader->expects($this->never())
+            ->method('load');
         $this->regionPageletLoader->expects($this->once())
             ->method('loadDistricts')
             ->with('query-city-id', $request, $context)
@@ -141,6 +155,8 @@ class CountryStateControllerTest extends TestCase
 
     public function testGetDistrictDataThrowsExceptionWithoutCountryCityId(): void
     {
+        $this->pageletLoader->expects($this->never())
+            ->method('load');
         $this->regionPageletLoader->expects($this->never())
             ->method('loadDistricts');
 

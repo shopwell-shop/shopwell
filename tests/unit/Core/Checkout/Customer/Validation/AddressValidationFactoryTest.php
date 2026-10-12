@@ -55,14 +55,14 @@ class AddressValidationFactoryTest extends TestCase
 
         $this->assertAddressDefinition($definition);
 
-        static::assertCount(12, $definition);
+        static::assertCount(14, $definition);
     }
 
     public function testDefinitionRulesUpdate(): void
     {
         $definition = $this->addressValidationFactory->update($this->salesChannelContext)->getProperties();
 
-        static::assertCount(13, $definition);
+        static::assertCount(15, $definition);
         static::assertArrayHasKey('id', $definition);
 
         static::assertCount(2, $definition['id']);
@@ -91,6 +91,8 @@ class AddressValidationFactoryTest extends TestCase
         static::assertArrayHasKey('salutationId', $definition);
         static::assertArrayHasKey('countryId', $definition);
         static::assertArrayHasKey('countryStateId', $definition);
+        static::assertArrayHasKey('countryCityId', $definition);
+        static::assertArrayHasKey('countryDistrictId', $definition);
         static::assertArrayHasKey('name', $definition);
         static::assertArrayHasKey('street', $definition);
         static::assertArrayHasKey('city', $definition);
@@ -105,6 +107,12 @@ class AddressValidationFactoryTest extends TestCase
 
         static::assertCount(1, $definition['countryStateId']);
         static::assertInstanceOf(EntityExists::class, $definition['countryStateId'][0]);
+
+        static::assertCount(1, $definition['countryCityId']);
+        static::assertInstanceOf(EntityExists::class, $definition['countryCityId'][0]);
+
+        static::assertCount(1, $definition['countryDistrictId']);
+        static::assertInstanceOf(EntityExists::class, $definition['countryDistrictId'][0]);
 
         static::assertCount(2, $definition['city']);
         static::assertInstanceOf(NotBlank::class, $definition['city'][0]);
