@@ -1110,4 +1110,44 @@ describe('Form country state select plugin', () => {
         expect(invalidFields).toContain(zipcodeField);
         expect(invalidFields).toContain(document.querySelector('#addressCity'));
     });
+
+    it('should toggle the china region layout on the address fields wrapper depending on the country region data', async () => {
+        template = `
+            <div class="js-address-fields-wrapper">
+                <form id="registerForm" action="/register" method="post">
+                    <select class="country-select" data-initial-country-id="31e1ac8809c744c38c4d99bfe9a50aa8">
+                        <option selected="selected" value="31e1ac8809c744c38c4d99bfe9a50aa8" data-state-required="0">Germany</option>
+                    </select>
+                    <select class="country-state-select" data-initial-country-state-id="">
+                        <option data-placeholder-option="true">Select state..</option>
+                    </select>
+                </form>
+            </div>
+        `;
+
+        document.body.innerHTML = template;
+
+        createPlugin();
+        await new Promise(process.nextTick);
+
+        const wrapper = document.querySelector('.js-address-fields-wrapper');
+
+        // The mocked country response does not carry region cities
+        expect(wrapper.classList.contains('china-region-layout')).toBe(false);
+
+        global.fetch = jest.fn(() =>
+            Promise.resolve({
+                json: () => Promise.resolve({
+                    countryId: '31e1ac8809c744c38c4d99bfe9a50aa8',
+                    states: [],
+                    hasCities: true,
+                }),
+            }),
+        );
+
+        document.querySelector('.country-select').dispatchEvent(new Event('change'));
+        await new Promise(process.nextTick);
+
+        expect(wrapper.classList.contains('china-region-layout')).toBe(true);
+    });
 });
