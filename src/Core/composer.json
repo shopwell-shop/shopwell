@@ -56,6 +56,7 @@
         "ext-zip": "*",
         "ext-zlib": "*",
         "composer-runtime-api": "^2.1",
+        "alipaysdk/openapi": "^3.0",
         "aliyuncs/oss-sdk-php": "^2.7",
         "cocur/slugify": "^4.7.0",
         "composer/class-map-generator": "^1.7",
@@ -160,6 +161,7 @@
         "twig/intl-extra": "^3.26.0",
         "twig/string-extra": "^3.24.0",
         "twig/twig": "^3.29.0",
+        "wechatpay/wechatpay": "^1.5",
         "zircote/swagger-php": "^6.4"
     },
     "suggest": {
