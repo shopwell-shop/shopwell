@@ -174,7 +174,7 @@ describe('module/sw-product/component/sw-product-download-form', () => {
         expect(wrapper.find('.sw-product-download-form-row__name').text()).toBe('FileName.txt');
         expect(wrapper.find('.sw-product-download-form-row__mime').text()).toBe('plain/text');
         expect(wrapper.find('.sw-product-download-form-row__size').text()).toBe('1.00KB');
-        expect(wrapper.find('.sw-product-download-form-row__changed-date').text()).toBe('08/02/2022, 13:00');
+        expect(wrapper.find('.sw-product-download-form-row__changed-date').text()).toBe('08/02/2022, 21:00');
     });
 
     it('should accept only file extensions of the config service', async () => {
