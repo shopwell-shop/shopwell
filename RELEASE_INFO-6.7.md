@@ -10,7 +10,7 @@ The `customer` and `user` entities have a new optional `phoneNumber` attribute, 
 
 The customer list provides a `phoneNumber` column, which is hidden by default. In the same list the billing address columns (`street`, `zipcode` and `city`) are hidden by default as well, as is the delivery address column in the order list. All of these columns remain available and can be enabled in the grid column settings.
 
-# 6.7.16.0 (upcoming)
+# 6.7.16.0
 
 ## Critical Fixes
 
