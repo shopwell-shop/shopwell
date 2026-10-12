@@ -277,6 +277,26 @@ class OrderAddressEntity extends Entity
         $this->countryState = $countryState;
     }
 
+    public function getCountryCity(): ?CountryCityEntity
+    {
+        return $this->countryCity;
+    }
+
+    public function setCountryCity(CountryCityEntity $countryCity): void
+    {
+        $this->countryCity = $countryCity;
+    }
+
+    public function getCountryDistrict(): ?CountryDistrictEntity
+    {
+        return $this->countryDistrict;
+    }
+
+    public function setCountryDistrict(CountryDistrictEntity $countryDistrict): void
+    {
+        $this->countryDistrict = $countryDistrict;
+    }
+
     public function getOrder(): ?OrderEntity
     {
         return $this->order;

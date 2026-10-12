@@ -12,6 +12,8 @@ use Shopwell\Storefront\Page\PageLoadedHook;
  *
  * @hook-use-case data_loading
  *
+ * @since 6.7.17.0
+ *
  * @final
  */
 #[Package('discovery')]

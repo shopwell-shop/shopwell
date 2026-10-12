@@ -53,7 +53,7 @@ class CountryDistrictDefinition extends EntityDefinition
 
     public function since(): ?string
     {
-        return '6.7.16.0';
+        return '6.7.17.0';
     }
 
     protected function getParentDefinitionClass(): ?string
