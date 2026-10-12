@@ -188,6 +188,7 @@
     "personalMailLabel": "Email address",
     "personalMailConfirmationLabel": "Email address confirmation",
     "personalMailConfirmationInvalidMessage": "Email addresses do not match.",
+    "personalPhoneNumberLabel": "Phone number",
     "personalPasswordLabel": "Password",
     "personalPasswordConfirmationLabel": "Password confirmation",
     "personalPasswordConfirmationInvalidMessage": "The passwords you have entered do not match.",

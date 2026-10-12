@@ -315,4 +315,23 @@ describe('module/sw-customer/page/sw-customer-list', () => {
 
         expect(customerGroupColumn.dataIndex).toBe('group.name');
     });
+
+    it('should hide the address and phone number columns by default', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        const hiddenProperties = [
+            'defaultBillingAddress.street',
+            'defaultBillingAddress.zipcode',
+            'defaultBillingAddress.city',
+            'phoneNumber',
+        ];
+
+        hiddenProperties.forEach((property) => {
+            const column = wrapper.vm.customerColumns.find((customerColumn) => customerColumn.property === property);
+
+            expect(column).toBeDefined();
+            expect(column.visible).toBe(false);
+        });
+    });
 });

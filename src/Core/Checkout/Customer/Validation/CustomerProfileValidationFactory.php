@@ -56,8 +56,10 @@ class CustomerProfileValidationFactory implements DataValidationFactoryInterface
             ->add('title', new Length(max: CustomerDefinition::MAX_LENGTH_TITLE))
             ->add('name', new NotBlank(), new Length(max: CustomerDefinition::MAX_LENGTH_NAME))
             ->add('accountType', new Choice(choices: $this->accountTypes))
+            ->add('phoneNumber', new Length(max: CustomerDefinition::MAX_LENGTH_PHONE_NUMBER, exactMessage: 'VIOLATION::PHONE_NUMBER_IS_TOO_LONG'))
             ->add('title', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
-            ->add('name', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'));
+            ->add('name', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
+            ->add('phoneNumber', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'));
 
         $salesChannelId = $context->getSalesChannelId();
 

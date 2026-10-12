@@ -159,6 +159,23 @@
                                         {% endif %}
                                     </div>
                                 {% endblock %}
+
+                                {% block component_account_register_personal_phone %}
+                                    <div class="row g-2">
+                                        {% block component_account_register_personal_phone_field %}
+                                            {% sw_include '@Storefront/storefront/component/form/form-input.html.twig' with {
+                                                type: 'tel',
+                                                label: 'account.personalPhoneNumberLabel'|trans|sw_sanitize,
+                                                id: 'personalPhoneNumber',
+                                                name: 'phoneNumber',
+                                                value: data.get('phoneNumber'),
+                                                autocomplete: 'section-personal tel',
+                                                violationPath: '/phoneNumber',
+                                                additionalClass: 'col-md-6',
+                                            } %}
+                                        {% endblock %}
+                                    </div>
+                                {% endblock %}
                             {% endblock %}
                         </fieldset>
                     {% endblock %}

@@ -129,6 +129,35 @@ class RegisterRouteTest extends TestCase
         static::assertNotSame('', $contextToken);
     }
 
+    public function testRegistrationStoresTheCustomerPhoneNumber(): void
+    {
+        $registrationData = $this->getRegistrationData();
+        $registrationData['phoneNumber'] = '+86 138 0000 0000';
+
+        $response = $this->registerCustomer($registrationData);
+
+        $customer = $this->customerRepository->search(
+            new Criteria([$response['id']]),
+            Context::createDefaultContext()
+        )->getEntities()->first();
+
+        static::assertInstanceOf(CustomerEntity::class, $customer);
+        static::assertSame('+86 138 0000 0000', $customer->getPhoneNumber());
+    }
+
+    public function testRegistrationWithoutPhoneNumberKeepsItEmpty(): void
+    {
+        $response = $this->registerCustomer($this->getRegistrationData());
+
+        $customer = $this->customerRepository->search(
+            new Criteria([$response['id']]),
+            Context::createDefaultContext()
+        )->getEntities()->first();
+
+        static::assertInstanceOf(CustomerEntity::class, $customer);
+        static::assertNull($customer->getPhoneNumber());
+    }
+
     public function testRegisterEventWithCustomerRules(): void
     {
         $ids = new IdsCollection();
@@ -1829,6 +1858,31 @@ class RegisterRouteTest extends TestCase
     /**
      * @return array<string, mixed>
      */
+    /**
+     * @param array<string, mixed> $registrationData
+     *
+     * @return array<string, mixed>
+     */
+    private function registerCustomer(array $registrationData): array
+    {
+        $this->browser->request(
+            'POST',
+            '/store-api/account/register',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode($registrationData, \JSON_THROW_ON_ERROR)
+        );
+
+        $response = $this->browser->getResponse();
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode(), (string) $response->getContent());
+
+        $content = json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertIsArray($content);
+
+        return $content;
+    }
+
     private function getRegistrationData(string $storefrontUrl = 'http://localhost'): array
     {
         return [

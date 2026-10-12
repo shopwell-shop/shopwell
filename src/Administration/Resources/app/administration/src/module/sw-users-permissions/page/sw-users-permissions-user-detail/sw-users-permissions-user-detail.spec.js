@@ -237,6 +237,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
 
         const fieldName = wrapper.findComponent('.sw-settings-user-detail__grid-name');
         const fieldEmail = wrapper.findComponent('.sw-settings-user-detail__grid-eMail');
+        const fieldPhoneNumber = wrapper.findComponent('.sw-settings-user-detail__grid-phoneNumber');
         const fieldUsername = wrapper.findComponent('.sw-settings-user-detail__grid-username');
         const fieldProfilePicture = wrapper.findComponent('.sw-settings-user-detail__grid-profile-picture');
         const fieldPassword = wrapper.findComponent('.sw-settings-user-detail__grid-password');
@@ -245,6 +246,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
 
         expect(fieldName.exists()).toBeTruthy();
         expect(fieldEmail.exists()).toBeTruthy();
+        expect(fieldPhoneNumber.exists()).toBeTruthy();
         expect(fieldUsername.exists()).toBeTruthy();
         expect(fieldProfilePicture.exists()).toBeTruthy();
         expect(fieldPassword.exists()).toBeTruthy();
@@ -267,6 +269,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
                 username: 'maxmuster',
                 name: 'Max Mustermann',
                 email: 'max@mustermann.com',
+                phoneNumber: '0170123456',
                 active: false,
             },
             isLoading: false,
@@ -275,6 +278,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
 
         const fieldName = wrapper.findComponent('.sw-settings-user-detail__grid-name');
         const fieldEmail = wrapper.findComponent('.sw-settings-user-detail__grid-eMail');
+        const fieldPhoneNumber = wrapper.findComponent('.sw-settings-user-detail__grid-phoneNumber');
         const fieldUsername = wrapper.findComponent('.sw-settings-user-detail__grid-username');
         const fieldProfilePicture = wrapper.findComponent('.sw-settings-user-detail__grid-profile-picture');
         const fieldPassword = wrapper.findComponent('.sw-settings-user-detail__grid-password');
@@ -283,6 +287,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
 
         expect(fieldName.exists()).toBeTruthy();
         expect(fieldEmail.exists()).toBeTruthy();
+        expect(fieldPhoneNumber.exists()).toBeTruthy();
         expect(fieldUsername.exists()).toBeTruthy();
         expect(fieldProfilePicture.exists()).toBeTruthy();
         expect(fieldPassword.exists()).toBeTruthy();
@@ -291,6 +296,7 @@ describe('modules/sw-users-permissions/page/sw-users-permissions-user-detail', (
 
         expect(fieldName.props('modelValue')).toBe('Max Mustermann');
         expect(fieldEmail.props('modelValue')).toBe('max@mustermann.com');
+        expect(fieldPhoneNumber.props('modelValue')).toBe('0170123456');
         expect(fieldUsername.props('modelValue')).toBe('maxmuster');
         expect(fieldProfilePicture.attributes('value')).toBeUndefined();
         expect(fieldPassword.attributes('value')).toBeUndefined();

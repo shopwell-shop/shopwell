@@ -145,6 +145,7 @@
                 "labelRolesPermissionsCard": "Roles & permissions",
                 "labelName": "Name",
                 "labelEmail": "Email address",
+                "labelPhoneNumber": "Phone number",
                 "errorEmailUsed": "This email address is already in use.",
                 "errorUsernameUsed": "This username is already in use.",
                 "labelUsername": "User name",

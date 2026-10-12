@@ -64,6 +64,7 @@ async function createWrapper() {
             customer: {
                 birthday: '1992-12-22T00:00:00.000+00:00',
                 lastLogin: '2021-10-14T11:23:44.195+00:00',
+                phoneNumber: '0170123456',
                 doubleOptInRegistration: false,
                 doubleOptInConfirmDate: null,
                 group: {
@@ -89,6 +90,22 @@ describe('module/sw-customer/page/sw-customer-base-info', () => {
 
     it('should display the birthday', async () => {
         expect(wrapper.find('.sw-customer-base__label-birthday').text()).toBe('22/12/1992');
+    });
+
+    it('should display the phone number of the customer', async () => {
+        expect(wrapper.find('.sw-customer-base__label-phone-number').text()).toBe('0170123456');
+    });
+
+    it('should display the empty phone number placeholder', async () => {
+        await wrapper.setProps({
+            customer: {
+                ...wrapper.props().customer,
+                phoneNumber: null,
+            },
+        });
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.find('.sw-customer-base__label-phone-number').text()).toBe('-');
     });
 
     it('should display the empty birthday snippet placeholder', async () => {

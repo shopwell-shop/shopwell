@@ -15,6 +15,7 @@
         grid-template-areas:
             "Name ProfilePicture"
             "EMail EMail"
+            "PhoneNumber PhoneNumber"
             "Username Password"
             "Active Active";
     }
@@ -37,6 +38,10 @@
 
     .sw-settings-user-detail__grid-eMail {
         grid-area: EMail;
+    }
+
+    .sw-settings-user-detail__grid-phoneNumber {
+        grid-area: PhoneNumber;
     }
 
     .sw-settings-user-detail__grid-username {
@@ -102,6 +107,7 @@
             "ProfilePicture"
             "Name"
             "EMail"
+            "PhoneNumber"
             "Username"
             "Password"
             "Active";
