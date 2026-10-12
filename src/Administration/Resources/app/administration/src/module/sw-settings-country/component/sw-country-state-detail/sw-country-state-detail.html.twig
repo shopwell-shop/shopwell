@@ -21,13 +21,14 @@
         />
         {% endblock %}
 
-        {% block sw_country_state_detail_modal_shortcode %}
+        {% block sw_country_state_detail_modal_code %}
 
         <mt-text-field
-            v-model="countryState.shortCode"
-            name="sw-field--countryState-shortCode"
+            v-model="countryState[codeProperty]"
+            name="sw-field--countryState-code"
             :disabled="!acl.can('country.editor') || undefined"
-            :label="$t('sw-country-state-detail.labelShortCode')"
+            :label="codeLabel"
+            :tooltip-text="$t('sw-country-state-detail.tooltipCode')"
         />
         {% endblock %}
 
@@ -39,6 +40,18 @@
             :tooltip-text="$t('sw-country-state-detail.tooltipPosition')"
             number-type="int"
             :label="$t('sw-country-state-detail.labelPosition')"
+        />
+        {% endblock %}
+
+        {% block sw_country_state_detail_modal_active %}
+
+        <mt-switch
+            v-model="countryState.active"
+            name="sw-field--countryState-active"
+            class="sw-country-state-detail__active"
+            bordered
+            :disabled="!acl.can('country.editor') || undefined"
+            :label="$t('sw-country-state-detail.labelActive')"
         />
         {% endblock %}
     </sw-container>

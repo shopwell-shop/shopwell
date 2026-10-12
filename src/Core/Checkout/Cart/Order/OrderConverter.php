@@ -344,6 +344,8 @@ class OrderConverter
         $orderAddressCriteria = (new Criteria(\array_filter([$orderBillingAddressId, $orderShippingAddressId])))
             ->addAssociation('country')
             ->addAssociation('countryState')
+            ->addAssociation('countryCity')
+            ->addAssociation('countryDistrict')
             ->addAssociation('salutation');
 
         $orderAddresses = $this->orderAddressRepository->search($orderAddressCriteria, $context)->getEntities();
@@ -452,6 +454,8 @@ class OrderConverter
             'id' => $orderAddress->getId(),
             'countryId' => $orderAddress->getCountryId(),
             'countryStateId' => $orderAddress->getCountryStateId(),
+            'countryCityId' => $orderAddress->getCountryCityId(),
+            'countryDistrictId' => $orderAddress->getCountryDistrictId(),
             'salutationId' => $orderAddress->getSalutationId(),
             'name' => $orderAddress->getName(),
             'zipcode' => $orderAddress->getZipcode(),
@@ -465,6 +469,8 @@ class OrderConverter
             'additionalAddressLine2' => $orderAddress->getAdditionalAddressLine2(),
             'country' => $orderAddress->getCountry(),
             'countryState' => $orderAddress->getCountryState(),
+            'countryCity' => $orderAddress->getCountryCity(),
+            'countryDistrict' => $orderAddress->getCountryDistrict(),
             'salutation' => $orderAddress->getSalutation(),
             'customFields' => $orderAddress->getCustomFields(),
             'hash' => $orderAddress->getHash(),

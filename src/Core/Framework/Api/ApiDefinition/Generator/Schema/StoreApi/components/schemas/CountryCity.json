@@ -1,0 +1,68 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": [],
+    "components": {
+        "schemas": {
+            "CountryCity": {
+                "description": "Added since version: 6.7.16.0",
+                "required": [
+                    "id",
+                    "countryId",
+                    "countryStateId",
+                    "code",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                    },
+                    "countryId": {
+                        "description": "Unique identity of the country.",
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                    },
+                    "countryStateId": {
+                        "description": "Unique identity of the country's state the city belongs to.",
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                    },
+                    "code": {
+                        "description": "Official administrative division code of the city.",
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "position": {
+                        "description": "Numerical value that indicates the order in which the defined cities must be displayed in the frontend.",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "active": {
+                        "description": "When boolean value is `true`, the city is available for selection in the storefront.",
+                        "type": "boolean"
+                    },
+                    "customFields": {
+                        "type": "object"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "translated": {
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            }
+        }
+    }
+}

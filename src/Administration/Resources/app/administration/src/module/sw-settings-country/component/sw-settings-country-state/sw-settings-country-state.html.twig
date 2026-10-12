@@ -2,129 +2,228 @@
 <mt-card
     v-if="!isLoading"
     class="sw-settings-country-state"
+    large
     position-identifier="sw-settings-country-state"
 >
+    {% block sw_settings_country_state_list_toolbar %}
     <template #toolbar>
-        {% block sw_attribute_list_toolbar_searchfield %}
-        <sw-simple-search-field
-            v-model:value="term"
-            size="small"
-            variant="form"
-            @search-term-change="onSearchCountryState"
-        />
-        {% endblock %}
+        <div class="sw-settings-country-state__toolbar">
+            {% block sw_settings_country_state_list_toolbar_summary %}
+            <span class="sw-settings-country-state__summary">
+                {{ $t('sw-settings-country.detail.region.textSummary', totals) }}
+            </span>
+            {% endblock %}
 
-        {% block sw_settings_country_state_list_toolbar_delete %}
-        <mt-button
-            v-tooltip.bottom="{
-                message: $t('sw-privileges.tooltip.warning'),
-                disabled: acl.can('country.editor'),
-                showOnDisabledElements: true
-            }"
-            square
-            size="small"
-            class="sw-settings-country-state-list__delete-button"
-            :disabled="deleteButtonDisabled || !acl.can('country.editor')"
-            variant="secondary"
-            @click="onDeleteCountryStates"
-        >
-            <mt-icon
-                name="regular-trash"
-                size="16px"
-            />
-        </mt-button>
-        {% endblock %}
+            {% block sw_settings_country_state_list_toolbar_path %}
+            <span
+                v-if="selectedPath"
+                class="sw-settings-country-state__path"
+            >
+                {{ $t('sw-settings-country.detail.region.textSelectedPath', { path: selectedPath }) }}
+            </span>
+            {% endblock %}
+        </div>
+    </template>
+    {% endblock %}
 
-        {% block sw_settings_country_state_list_toolbar_add %}
-        <mt-button
-            v-tooltip.bottom="{
-                message: $t('sw-privileges.tooltip.warning'),
-                disabled: acl.can('country.editor'),
-                showOnDisabledElements: true
-            }"
-            class="sw-settings-country-state__add-country-state-button"
-            size="small"
-            variant="primary"
-            :disabled="!acl.can('country.editor') || undefined"
-            @click="onAddCountryState"
-        >
-            {{ $t('sw-settings-country.detail.buttonAddCountryState') }}
-        </mt-button>
+    {% block sw_settings_country_state_list_unsaved_country %}
+    <mt-empty-state
+        v-if="isNewCountry"
+        centered
+        :icon="$route.meta.$module.icon"
+        :headline="$t('sw-settings-country.detail.region.hintNewCountryTitle')"
+        :description="$t('sw-settings-country.detail.region.hintNewCountry')"
+    />
+    {% endblock %}
+
+    <template v-else>
+        {% block sw_settings_country_state_list_columns %}
+        <div class="sw-settings-country-state__columns">
+
+            {% block sw_settings_country_state_list_column %}
+            <div
+                v-for="level in levels"
+                :key="level"
+                class="sw-settings-country-state__column"
+            >
+                {% block sw_settings_country_state_list_column_header %}
+                <div class="sw-settings-country-state__column-header">
+                    <span class="sw-settings-country-state__column-title">
+                        {{ regionTexts[level].label }}
+                    </span>
+                    <span class="sw-settings-country-state__column-count">
+                        {{ $t('sw-settings-country.detail.region.countItems', { count: getItems(level).length }) }}
+                    </span>
+                </div>
+                {% endblock %}
+
+                {% block sw_settings_country_state_list_column_toolbar %}
+                <div class="sw-settings-country-state__column-toolbar">
+                    {% block sw_settings_country_state_list_column_search %}
+                    <div class="sw-settings-country-state__search">
+                        <sw-simple-search-field
+                            v-model:value="terms[level]"
+                            size="small"
+                            variant="form"
+                            :placeholder="regionTexts[level].placeholder"
+                        />
+                    </div>
+                    {% endblock %}
+
+                    <mt-button
+                        v-tooltip.bottom="getAddButtonTooltip(level)"
+                        class="sw-settings-country-state__add-button"
+                        size="small"
+                        variant="secondary"
+                        :disabled="isLevelDisabled(level) || undefined"
+                        @click="onAddRegion(level)"
+                    >
+                        {{ regionTexts[level].addLabel }}
+                    </mt-button>
+                </div>
+                {% endblock %}
+
+                {% block sw_settings_country_state_list_column_content %}
+                <div class="sw-settings-country-state__list">
+                    {% block sw_settings_country_state_list_column_loader %}
+                    <div
+                        v-if="isLoadingLevel(level)"
+                        class="sw-settings-country-state__list-loader"
+                    >
+                        <mt-loader />
+                    </div>
+                    {% endblock %}
+
+                    {% block sw_settings_country_state_list_column_item %}
+                    <div
+                        v-for="item in getItems(level)"
+                        :key="item.id"
+                        class="sw-settings-country-state__item"
+                        :class="{ 'is--selected': isSelected(level, item) }"
+                        role="button"
+                        tabindex="0"
+                        @click="onClickRegion(level, item)"
+                        @keydown.enter="onClickRegion(level, item)"
+                    >
+                        <span class="sw-settings-country-state__item-name">
+                            {{ getRegionName(item) }}
+                        </span>
+
+                        <span class="sw-settings-country-state__item-code">
+                            {{ getRegionCode(level, item) }}
+                        </span>
+
+                        {% block sw_settings_country_state_list_column_item_actions %}
+                        <span
+                            class="sw-settings-country-state__item-actions"
+                            @click.stop
+                        >
+                            <sw-context-button>
+                                {% block sw_settings_country_state_list_column_item_action_edit %}
+                                <sw-context-menu-item
+                                    v-tooltip.top="{
+                                        message: $t('sw-privileges.tooltip.warning'),
+                                        disabled: canEdit,
+                                        showOnDisabledElements: true
+                                    }"
+                                    class="sw-settings-country-state__edit-action"
+                                    :disabled="!canEdit || undefined"
+                                    @click="onEditRegion(level, item)"
+                                >
+                                    {{ $t('sw-settings-country.detail.editAction') }}
+                                </sw-context-menu-item>
+                                {% endblock %}
+
+                                {% block sw_settings_country_state_list_column_item_action_delete %}
+                                <sw-context-menu-item
+                                    v-tooltip.top="{
+                                        message: $t('sw-privileges.tooltip.warning'),
+                                        disabled: canEdit,
+                                        showOnDisabledElements: true
+                                    }"
+                                    class="sw-settings-country-state__delete-action"
+                                    variant="danger"
+                                    :disabled="!canEdit || undefined"
+                                    @click="openDeleteModal(level, item)"
+                                >
+                                    {{ $t('global.default.delete') }}
+                                </sw-context-menu-item>
+                                {% endblock %}
+                            </sw-context-button>
+                        </span>
+                        {% endblock %}
+                    </div>
+                    {% endblock %}
+
+                    {% block sw_settings_country_state_list_column_hint %}
+                    <p
+                        v-if="!isLoadingLevel(level) && getItems(level).length === 0"
+                        class="sw-settings-country-state__hint"
+                    >
+                        {{ getEmptyHint(level) }}
+                    </p>
+                    {% endblock %}
+                </div>
+                {% endblock %}
+            </div>
+            {% endblock %}
+        </div>
         {% endblock %}
     </template>
 
-    <template #grid>
-
-        {% block sw_settings_country_state_list_listing %}
-        <sw-one-to-many-grid
-            ref="countryStateGrid"
-            class="sw-settings-country-state-list__content"
-            :is-loading="countryStateLoading"
-            :collection="country.states"
-            :full-page="undefined"
-            :local-mode="country.isNew()"
-            :columns="stateColumns"
-            :allow-delete="acl.can('country.editor')"
-            :tooltip-delete="{
-                message: $t('sw-privileges.tooltip.warning'),
-                disabled: acl.can('country.editor'),
-                showOnDisabledElements: true
-            }"
-            @selection-change="countryStateSelectionChanged"
-            @load-finish="checkEmptyState"
-        >
-
-            <template #column-name="{ item }">
-
-                {% block sw_settings_country_state_list_listing_column_name %}
-                <a
-                    class="sw-settings-country-state__link"
-                    role="button"
-                    tabindex="0"
-                    @click="onClickCountryState(item)"
-                    @keydown.enter="onClickCountryState(item)"
-                >
-                    {{ getCountryStateName(item) }}
-                </a>
-                {% endblock %}
-
-            </template>
-
-            <template #more-actions="{ item }">
-                {% block sw_settings_country_state_list_listing_action_edit %}
-                <sw-context-menu-item
-                    v-tooltip.top="{
-                        message: $t('sw-privileges.tooltip.warning'),
-                        disabled: acl.can('country.editor'),
-                        showOnDisabledElements: true
-                    }"
-                    class="sw-settings-country-state__edit-country-state-action"
-                    :disabled="!acl.can('country.editor') || undefined"
-                    @click="onClickCountryState(item)"
-                >
-                    {{ $t('sw-settings-country.detail.editAction') }}
-                </sw-context-menu-item>
-                {% endblock %}
-            </template>
-        </sw-one-to-many-grid>
-        {% endblock %}
-        {% block sw_settings_country_state_list_empty %}
-        <mt-empty-state
-            v-if="showEmptyState"
-            centered
-            :icon="$route.meta.$module.icon"
-            :headline="$t('sw-country-state-detail.emptyTitle')"
-            :description="$t('sw-country-state-detail.emptySubline')"
-        />
-        {% endblock %}
-    </template>
     {% block sw_settings_country_state_detail %}
     <sw-country-state-detail
-        v-if="currentCountryState"
-        :country-state="currentCountryState"
-        @attribute-edit-save="onSaveCountryState"
-        @attribute-edit-cancel="onCancelCountryState"
+        v-if="currentRegion"
+        :country-state="currentRegion"
+        :level="currentRegionLevel"
+        @attribute-edit-save="onSaveRegion"
+        @attribute-edit-cancel="onCancelRegion"
     />
+    {% endblock %}
+
+    {% block sw_settings_country_state_delete_modal %}
+    <sw-modal
+        v-if="deleteTarget"
+        :title="$t('sw-settings-country.detail.region.titleDelete')"
+        variant="small"
+        @modal-close="onCloseDeleteModal"
+    >
+        {% block sw_settings_country_state_delete_modal_content %}
+        <div class="sw-settings-country-state__delete-content">
+            <mt-loader v-if="isLoadingChildCounts" />
+            <p v-else>
+                {{ getDeleteConfirmMessage() }}
+            </p>
+        </div>
+        {% endblock %}
+
+        {% block sw_settings_country_state_delete_modal_footer %}
+        <template #modal-footer>
+            {% block sw_settings_country_state_delete_modal_footer_cancel %}
+            <mt-button
+                size="small"
+                variant="secondary"
+                @click="onCloseDeleteModal"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+            {% endblock %}
+
+            {% block sw_settings_country_state_delete_modal_footer_confirm %}
+            <mt-button
+                class="sw-settings-country-state__confirm-delete-button"
+                size="small"
+                variant="critical"
+                :is-loading="isDeletingRegion"
+                :disabled="isLoadingChildCounts || undefined"
+                @click="onConfirmDelete"
+            >
+                {{ $t('global.default.delete') }}
+            </mt-button>
+            {% endblock %}
+        </template>
+        {% endblock %}
+    </sw-modal>
     {% endblock %}
 </mt-card>
 {% endblock %}

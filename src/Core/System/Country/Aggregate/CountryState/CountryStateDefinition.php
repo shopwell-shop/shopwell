@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
@@ -21,6 +22,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityDefinition;
+use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryStateTranslation\CountryStateTranslationDefinition;
 use Shopwell\Core\System\Country\CountryDefinition;
 
@@ -69,6 +72,8 @@ class CountryStateDefinition extends EntityDefinition
             (new TranslatedField('customFields'))->addFlags(new ApiAware()),
             new ManyToOneAssociationField('country', 'country_id', CountryDefinition::class, 'id', false),
             (new TranslationsAssociationField(CountryStateTranslationDefinition::class, 'country_state_id'))->addFlags(new Required()),
+            (new OneToManyAssociationField('cities', CountryCityDefinition::class, 'country_state_id', 'id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('districts', CountryDistrictDefinition::class, 'country_state_id', 'id'))->addFlags(new CascadeDelete()),
             // Reverse Associations, not available in sales-channel-api
             (new OneToManyAssociationField('customerAddresses', CustomerAddressDefinition::class, 'country_state_id', 'id'))->addFlags(new SetNullOnDelete()),
             (new OneToManyAssociationField('orderAddresses', OrderAddressDefinition::class, 'country_state_id', 'id'))->addFlags(new SetNullOnDelete()),

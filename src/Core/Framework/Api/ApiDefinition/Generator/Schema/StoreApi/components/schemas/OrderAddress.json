@@ -32,6 +32,16 @@
                         "type": "string",
                         "pattern": "^[0-9a-f]{32}$"
                     },
+                    "countryCityId": {
+                        "description": "Unique identity of the city.",
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                    },
+                    "countryDistrictId": {
+                        "description": "Unique identity of the district.",
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                    },
                     "name": {
                         "description": "Full name of the customer.",
                         "type": "string"
@@ -99,6 +109,12 @@
                     },
                     "countryState": {
                         "$ref": "#/components/schemas/CountryState"
+                    },
+                    "countryCity": {
+                        "$ref": "#/components/schemas/CountryCity"
+                    },
+                    "countryDistrict": {
+                        "$ref": "#/components/schemas/CountryDistrict"
                     },
                     "salutation": {
                         "$ref": "#/components/schemas/Salutation"

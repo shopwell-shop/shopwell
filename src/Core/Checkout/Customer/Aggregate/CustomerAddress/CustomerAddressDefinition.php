@@ -18,6 +18,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityDefinition;
+use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateDefinition;
 use Shopwell\Core\System\Country\CountryDefinition;
 use Shopwell\Core\System\Salutation\SalutationDefinition;
@@ -66,6 +68,8 @@ class CustomerAddressDefinition extends EntityDefinition
 
             (new FkField('country_id', 'countryId', CountryDefinition::class))->addFlags(new ApiAware(), new Required())->setDescription('Unique identity of country.'),
             (new FkField('country_state_id', 'countryStateId', CountryStateDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of country\'s state.'),
+            (new FkField('country_city_id', 'countryCityId', CountryCityDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of country\'s city.'),
+            (new FkField('country_district_id', 'countryDistrictId', CountryDistrictDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of country\'s district.'),
 
             (new FkField('salutation_id', 'salutationId', SalutationDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of salutation.'),
             (new StringField('name', 'name', self::MAX_LENGTH_NAME))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Full name of the customer.'),
@@ -83,6 +87,8 @@ class CustomerAddressDefinition extends EntityDefinition
             new ManyToOneAssociationField('customer', 'customer_id', CustomerDefinition::class, 'id', false),
             (new ManyToOneAssociationField('country', 'country_id', CountryDefinition::class, 'id', false))->addFlags(new ApiAware()),
             (new ManyToOneAssociationField('countryState', 'country_state_id', CountryStateDefinition::class, 'id', false))->addFlags(new ApiAware()),
+            (new ManyToOneAssociationField('countryCity', 'country_city_id', CountryCityDefinition::class, 'id', false))->addFlags(new ApiAware()),
+            (new ManyToOneAssociationField('countryDistrict', 'country_district_id', CountryDistrictDefinition::class, 'id', false))->addFlags(new ApiAware()),
             (new ManyToOneAssociationField('salutation', 'salutation_id', SalutationDefinition::class, 'id', false))->addFlags(new ApiAware()),
         ]);
 

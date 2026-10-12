@@ -23,6 +23,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityDefinition;
+use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryTranslation\CountryTranslationDefinition;
 use Shopwell\Core\System\Currency\Aggregate\CurrencyCountryRounding\CurrencyCountryRoundingDefinition;
@@ -118,6 +120,12 @@ class CountryDefinition extends EntityDefinition
 
             (new OneToManyAssociationField('states', CountryStateDefinition::class, 'country_id', 'id'))
                 ->addFlags(new ApiAware(), new CascadeDelete())->setDescription('States/provinces/regions within the country'),
+
+            (new OneToManyAssociationField('cities', CountryCityDefinition::class, 'country_id', 'id'))
+                ->addFlags(new ApiAware(), new CascadeDelete())->setDescription('Cities within the country'),
+
+            (new OneToManyAssociationField('districts', CountryDistrictDefinition::class, 'country_id', 'id'))
+                ->addFlags(new ApiAware(), new CascadeDelete())->setDescription('Districts within the country'),
 
             (new TranslationsAssociationField(CountryTranslationDefinition::class, 'country_id'))
                 ->addFlags(new ApiAware(), new Required()),

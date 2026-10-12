@@ -25,6 +25,7 @@ use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\MultiInsertQueryQueue;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Migration\MigrationException;
 use Shopwell\Core\Framework\Migration\MigrationStep;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\DeliveryTime\DeliveryTimeEntity;
@@ -395,10 +396,19 @@ class Migration1536233560BasicData extends MigrationStep
         $connection->insert('country', ['id' => $cnId, 'iso' => 'CN', 'position' => 10, 'active' => 1, 'iso3' => 'CHN', 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
         $connection->insert('country_translation', $languageEN($cnId, 'China'));
         $connection->insert('country_translation', $languageZh($cnId, '中国'));
+
+        $this->createCountryStates($connection, $cnId, 'CN');
     }
 
     private function createCountryStates(Connection $connection, string $countryId, string $countryCode): void
     {
+        // China ships a full province / city / district hierarchy instead of a plain state list.
+        if ($countryCode === 'CN') {
+            $this->createChinaRegions($connection, $countryId);
+
+            return;
+        }
+
         $data = [
             'US' => [
                 'US-AL' => 'Alabama',
@@ -701,6 +711,8 @@ class Migration1536233560BasicData extends MigrationStep
             ],
         ];
 
+        $zhNames = $this->getCountryStateNamesZh();
+
         foreach ($data[$countryCode] as $isoCode => $name) {
             $storageDate = (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
             $id = Uuid::randomBytes();
@@ -718,16 +730,485 @@ class Migration1536233560BasicData extends MigrationStep
                 'created_at' => $storageDate,
             ]);
 
-            // Germany is the only country that ships pre-defined states, so only those get a zh-CN translation.
-            if ($countryCode === 'DE') {
-                $connection->insert('country_state_translation', [
-                    'language_id' => Uuid::fromHexToBytes($this->getZhCnLanguageId()),
-                    'country_state_id' => $id,
-                    'name' => $name,
+            // The Administration and the storefront run with zh-CN as default language, so every
+            // built-in state needs a Chinese name as well. This must be a real translation: using
+            // the english name here shows latin text in an otherwise chinese interface.
+            $connection->insert('country_state_translation', [
+                'language_id' => Uuid::fromHexToBytes($this->getZhCnLanguageId()),
+                'country_state_id' => $id,
+                'name' => $zhNames[$isoCode] ?? $name,
+                'created_at' => $storageDate,
+            ]);
+        }
+    }
+
+    /**
+     * Chinese names of the states defined in createCountryStates().
+     *
+     * @return array<string, string>
+     */
+    private function getCountryStateNamesZh(): array
+    {
+        return [
+            // United States
+            'US-AL' => '亚拉巴马州',
+            'US-AK' => '阿拉斯加州',
+            'US-AZ' => '亚利桑那州',
+            'US-AR' => '阿肯色州',
+            'US-CA' => '加利福尼亚州',
+            'US-CO' => '科罗拉多州',
+            'US-CT' => '康涅狄格州',
+            'US-DE' => '特拉华州',
+            'US-FL' => '佛罗里达州',
+            'US-GA' => '佐治亚州',
+            'US-HI' => '夏威夷州',
+            'US-ID' => '爱达荷州',
+            'US-IL' => '伊利诺伊州',
+            'US-IN' => '印第安纳州',
+            'US-IA' => '艾奥瓦州',
+            'US-KS' => '堪萨斯州',
+            'US-KY' => '肯塔基州',
+            'US-LA' => '路易斯安那州',
+            'US-ME' => '缅因州',
+            'US-MD' => '马里兰州',
+            'US-MA' => '马萨诸塞州',
+            'US-MI' => '密歇根州',
+            'US-MN' => '明尼苏达州',
+            'US-MS' => '密西西比州',
+            'US-MO' => '密苏里州',
+            'US-MT' => '蒙大拿州',
+            'US-NE' => '内布拉斯加州',
+            'US-NV' => '内华达州',
+            'US-NH' => '新罕布什尔州',
+            'US-NJ' => '新泽西州',
+            'US-NM' => '新墨西哥州',
+            'US-NY' => '纽约州',
+            'US-NC' => '北卡罗来纳州',
+            'US-ND' => '北达科他州',
+            'US-OH' => '俄亥俄州',
+            'US-OK' => '俄克拉何马州',
+            'US-OR' => '俄勒冈州',
+            'US-PA' => '宾夕法尼亚州',
+            'US-RI' => '罗得岛州',
+            'US-SC' => '南卡罗来纳州',
+            'US-SD' => '南达科他州',
+            'US-TN' => '田纳西州',
+            'US-TX' => '得克萨斯州',
+            'US-UT' => '犹他州',
+            'US-VT' => '佛蒙特州',
+            'US-VA' => '弗吉尼亚州',
+            'US-WA' => '华盛顿州',
+            'US-WV' => '西弗吉尼亚州',
+            'US-WI' => '威斯康星州',
+            'US-WY' => '怀俄明州',
+            'US-DC' => '哥伦比亚特区',
+            // Germany
+            'DE-BW' => '巴登-符腾堡州',
+            'DE-BY' => '巴伐利亚州',
+            'DE-BE' => '柏林州',
+            'DE-BB' => '勃兰登堡州',
+            'DE-HB' => '不来梅州',
+            'DE-HH' => '汉堡州',
+            'DE-HE' => '黑森州',
+            'DE-NI' => '下萨克森州',
+            'DE-MV' => '梅克伦堡-前波美拉尼亚州',
+            'DE-NW' => '北莱茵-威斯特法伦州',
+            'DE-RP' => '莱茵兰-普法尔茨州',
+            'DE-SL' => '萨尔州',
+            'DE-SN' => '萨克森州',
+            'DE-ST' => '萨克森-安哈尔特州',
+            'DE-SH' => '石勒苏益格-荷尔斯泰因州',
+            'DE-TH' => '图林根州',
+            // Great Britain
+            'GB-ENG' => '英格兰',
+            'GB-NIR' => '北爱尔兰',
+            'GB-SCT' => '苏格兰',
+            'GB-WLS' => '威尔士',
+            'GB-EAW' => '英格兰和威尔士',
+            'GB-GBN' => '大不列颠',
+            'GB-UKM' => '英国',
+            'GB-BKM' => '白金汉郡',
+            'GB-CAM' => '剑桥郡',
+            'GB-CMA' => '坎布里亚郡',
+            'GB-DBY' => '德比郡',
+            'GB-DEV' => '德文郡',
+            'GB-DOR' => '多塞特郡',
+            'GB-ESX' => '东萨塞克斯郡',
+            'GB-ESS' => '埃塞克斯郡',
+            'GB-GLS' => '格洛斯特郡',
+            'GB-HAM' => '汉普郡',
+            'GB-HRT' => '赫特福德郡',
+            'GB-KEN' => '肯特郡',
+            'GB-LAN' => '兰开夏郡',
+            'GB-LEC' => '莱斯特郡',
+            'GB-LIN' => '林肯郡',
+            'GB-NFK' => '诺福克郡',
+            'GB-NYK' => '北约克郡',
+            'GB-NTH' => '北安普敦郡',
+            'GB-NTT' => '诺丁汉郡',
+            'GB-OXF' => '牛津郡',
+            'GB-SOM' => '萨默塞特郡',
+            'GB-STS' => '斯塔福德郡',
+            'GB-SFK' => '萨福克郡',
+            'GB-SRY' => '萨里郡',
+            'GB-WAR' => '沃里克郡',
+            'GB-WSX' => '西萨塞克斯郡',
+            'GB-WOR' => '伍斯特郡',
+            'GB-LND' => '伦敦城',
+            'GB-BDG' => '巴金-达格纳姆',
+            'GB-BNE' => '巴尼特',
+            'GB-BEX' => '贝克斯利',
+            'GB-BEN' => '布伦特',
+            'GB-BRY' => '布罗姆利',
+            'GB-CMD' => '卡姆登',
+            'GB-CRY' => '克罗伊登',
+            'GB-EAL' => '伊灵',
+            'GB-ENF' => '恩菲尔德',
+            'GB-GRE' => '格林尼治',
+            'GB-HCK' => '哈克尼',
+            'GB-HMF' => '哈默史密斯-富勒姆',
+            'GB-HRY' => '哈林盖',
+            'GB-HRW' => '哈罗',
+            'GB-HAV' => '黑弗灵',
+            'GB-HIL' => '希灵登',
+            'GB-HNS' => '豪恩斯洛',
+            'GB-ISL' => '伊斯灵顿',
+            'GB-KEC' => '肯辛顿-切尔西',
+            'GB-KTT' => '泰晤士河畔金斯顿',
+            'GB-LBH' => '兰贝斯',
+            'GB-LEW' => '刘易舍姆',
+            'GB-MRT' => '默顿',
+            'GB-NWM' => '纽汉',
+            'GB-RDB' => '红桥',
+            'GB-RIC' => '泰晤士河畔里士满',
+            'GB-SWK' => '萨瑟克',
+            'GB-STN' => '萨顿',
+            'GB-TWH' => '塔村',
+            'GB-WFT' => '沃尔瑟姆福雷斯特',
+            'GB-WND' => '旺兹沃思',
+            'GB-WSM' => '威斯敏斯特',
+            'GB-BNS' => '巴恩斯利',
+            'GB-BIR' => '伯明翰',
+            'GB-BOL' => '博尔顿',
+            'GB-BRD' => '布拉德福德',
+            'GB-BUR' => '伯里',
+            'GB-CLD' => '卡尔德代尔',
+            'GB-COV' => '考文垂',
+            'GB-DNC' => '唐卡斯特',
+            'GB-DUD' => '达德利',
+            'GB-GAT' => '盖茨黑德',
+            'GB-KIR' => '柯克利斯',
+            'GB-KWL' => '诺斯利',
+            'GB-LDS' => '利兹',
+            'GB-LIV' => '利物浦',
+            'GB-MAN' => '曼彻斯特',
+            'GB-NET' => '泰恩河畔纽卡斯尔',
+            'GB-NTY' => '北泰恩赛德',
+            'GB-OLD' => '奥尔德姆',
+            'GB-RCH' => '罗奇代尔',
+            'GB-ROT' => '罗瑟勒姆',
+            'GB-SHN' => '圣海伦斯',
+            'GB-SLF' => '索尔福德',
+            'GB-SAW' => '桑德韦尔',
+            'GB-SFT' => '塞夫顿',
+            'GB-SHF' => '谢菲尔德',
+            'GB-SOL' => '索利哈尔',
+            'GB-STY' => '南泰恩赛德',
+            'GB-SKP' => '斯托克波特',
+            'GB-SND' => '桑德兰',
+            'GB-TAM' => '泰姆赛德',
+            'GB-TRF' => '特拉福德',
+            'GB-WKF' => '韦克菲尔德',
+            'GB-WLL' => '沃尔索尔',
+            'GB-WGN' => '威根',
+            'GB-WRL' => '威勒尔',
+            'GB-WLV' => '伍尔弗汉普顿',
+            'GB-BAS' => '巴斯和东北萨默塞特',
+            'GB-BDF' => '贝德福德',
+            'GB-BBD' => '布莱克本-达温',
+            'GB-BPL' => '布莱克浦',
+            'GB-BMH' => '伯恩茅斯',
+            'GB-BRC' => '布拉克内尔森林',
+            'GB-BNH' => '布赖顿-霍夫',
+            'GB-BST' => '布里斯托尔',
+            'GB-CBF' => '中贝德福德郡',
+            'GB-CHE' => '东柴郡',
+            'GB-CHW' => '西柴郡和切斯特',
+            'GB-CON' => '康沃尔郡',
+            'GB-DAL' => '达灵顿',
+            'GB-DER' => '德比',
+            'GB-DUR' => '达勒姆郡',
+            'GB-ERY' => '约克郡东区',
+            'GB-HAL' => '哈尔顿',
+            'GB-HPL' => '哈特尔浦',
+            'GB-HEF' => '赫里福德郡',
+            'GB-IOW' => '怀特岛',
+            'GB-IOS' => '锡利群岛',
+            'GB-KHL' => '赫尔河畔金斯顿',
+            'GB-LCE' => '莱斯特',
+            'GB-LUT' => '卢顿',
+            'GB-MDW' => '梅德韦',
+            'GB-MDB' => '米德尔斯伯勒',
+            'GB-MIK' => '米尔顿凯恩斯',
+            'GB-NEL' => '东北林肯郡',
+            'GB-NLN' => '北林肯郡',
+            'GB-NSM' => '北萨默塞特',
+            'GB-NBL' => '诺森伯兰郡',
+            'GB-NGM' => '诺丁汉',
+            'GB-PTE' => '彼得伯勒',
+            'GB-PLY' => '普利茅斯',
+            'GB-POL' => '普尔',
+            'GB-POR' => '朴次茅斯',
+            'GB-RDG' => '雷丁',
+            'GB-RCC' => '雷德卡-克利夫兰',
+            'GB-RUT' => '拉特兰',
+            'GB-SHR' => '什罗普郡',
+            'GB-SLG' => '斯劳',
+            'GB-SGC' => '南格洛斯特郡',
+            'GB-STH' => '南安普敦',
+            'GB-SOS' => '滨海绍森德',
+            'GB-STT' => '蒂斯河畔斯托克顿',
+            'GB-STE' => '特伦特河畔斯托克',
+            'GB-SWD' => '斯温登',
+            'GB-TFW' => '特尔福德-雷金',
+            'GB-THR' => '瑟罗克',
+            'GB-TOB' => '托贝',
+            'GB-WRT' => '沃灵顿',
+            'GB-WBK' => '西伯克郡',
+            'GB-WIL' => '威尔特郡',
+            'GB-WNM' => '温莎-梅登黑德',
+            'GB-WOK' => '沃金厄姆',
+            'GB-YOR' => '约克',
+            'GB-ANN' => '安特里姆-纽敦阿比',
+            'GB-AND' => '阿兹-北唐',
+            'GB-ABC' => '阿马-班布里奇-克雷加文',
+            'GB-BFS' => '贝尔法斯特',
+            'GB-CCG' => '堤道海岸-格伦斯',
+            'GB-DRS' => '德里-斯特拉班',
+            'GB-FMO' => '弗马纳-奥马',
+            'GB-LBC' => '利斯本-卡斯尔雷',
+            'GB-MEA' => '中东安特里姆',
+            'GB-MUL' => '中阿尔斯特',
+            'GB-NMD' => '纽里-莫恩-唐',
+            'GB-ABE' => '阿伯丁',
+            'GB-ABD' => '阿伯丁郡',
+            'GB-ANS' => '安格斯',
+            'GB-AGB' => '阿盖尔-比特',
+            'GB-CLK' => '克拉克曼南郡',
+            'GB-DGY' => '邓弗里斯-加洛韦',
+            'GB-DND' => '邓迪',
+            'GB-EAY' => '东艾尔郡',
+            'GB-EDU' => '东邓巴顿郡',
+            'GB-ELN' => '东洛锡安',
+            'GB-ERW' => '东伦弗鲁郡',
+            'GB-EDH' => '爱丁堡',
+            'GB-ELS' => '埃利安锡尔',
+            'GB-FAL' => '福尔柯克',
+            'GB-FIF' => '法夫',
+            'GB-GLG' => '格拉斯哥',
+            'GB-HLD' => '高地',
+            'GB-IVC' => '因弗克莱德',
+            'GB-MLN' => '中洛锡安',
+            'GB-MRY' => '马里',
+            'GB-NAY' => '北艾尔郡',
+            'GB-NLK' => '北拉纳克郡',
+            'GB-ORK' => '奥克尼群岛',
+            'GB-PKN' => '珀斯-金罗斯',
+            'GB-RFW' => '伦弗鲁郡',
+            'GB-SCB' => '苏格兰边区',
+            'GB-ZET' => '设得兰群岛',
+            'GB-SAY' => '南艾尔郡',
+            'GB-SLK' => '南拉纳克郡',
+            'GB-STG' => '斯特灵',
+            'GB-WDU' => '西邓巴顿郡',
+            'GB-WLN' => '西洛锡安',
+            'GB-BGW' => '布莱奈格温特',
+            'GB-BGE' => '布里真德',
+            'GB-CAY' => '卡菲利',
+            'GB-CRF' => '加的夫',
+            'GB-CMN' => '卡马森郡',
+            'GB-CGN' => '锡尔迪金',
+            'GB-CWY' => '康维',
+            'GB-DEN' => '登比郡',
+            'GB-FLN' => '弗林特郡',
+            'GB-GWN' => '格温内斯',
+            'GB-AGY' => '安格尔西岛',
+            'GB-MTY' => '梅瑟蒂德菲尔',
+            'GB-MON' => '蒙茅斯郡',
+            'GB-NTL' => '尼思-塔尔伯特港',
+            'GB-NWP' => '纽波特',
+            'GB-PEM' => '彭布罗克郡',
+            'GB-POW' => '波伊斯',
+            'GB-RCT' => '朗达-锡农-塔夫',
+            'GB-SWA' => '斯旺西',
+            'GB-TOF' => '托法恩',
+            'GB-VGL' => '格拉摩根谷',
+            'GB-WRX' => '雷克瑟姆',
+        ];
+    }
+
+    /**
+     * Initializes the chinese administrative divisions from Migration/Fixtures/china-regions.json.
+     *
+     * Provinces are stored as country states, the two lower levels in their own tables. Every
+     * level carries the names of both shop languages, so the province / city / district selects
+     * are fully translated and follow the order of the fixture.
+     */
+    private function createChinaRegions(Connection $connection, string $countryId): void
+    {
+        $regions = $this->readChinaRegionFixture();
+
+        $storageDate = (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+        $languageIds = [
+            'en-GB' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+            'zh-CN' => Uuid::fromHexToBytes($this->getZhCnLanguageId()),
+        ];
+
+        $queue = new MultiInsertQueryQueue($connection);
+
+        $provincePosition = 0;
+        foreach ($regions as $province) {
+            $provinceCode = $province['code'] ?? null;
+            $provinceNames = $this->getRegionNames($province);
+            if (!\is_string($provinceCode) || $provinceNames === null) {
+                continue;
+            }
+
+            $provinceId = Uuid::randomBytes();
+            $queue->addInsert('country_state', [
+                'id' => $provinceId,
+                'country_id' => $countryId,
+                // ISO 3166-2:CN identifies a province by its numeric code, e.g. CN-11 for Beijing
+                'short_code' => 'CN-' . $provinceCode,
+                'position' => ++$provincePosition,
+                'active' => 1,
+                'created_at' => $storageDate,
+            ]);
+            $this->addRegionTranslations($queue, 'country_state_translation', 'country_state_id', $provinceId, $provinceNames, $languageIds, $storageDate);
+
+            $cityPosition = 0;
+            foreach ($province['children'] ?? [] as $city) {
+                $cityCode = $city['code'] ?? null;
+                $cityNames = $this->getRegionNames($city);
+                if (!\is_string($cityCode) || $cityNames === null) {
+                    continue;
+                }
+
+                $cityId = Uuid::randomBytes();
+                $queue->addInsert('country_city', [
+                    'id' => $cityId,
+                    'country_id' => $countryId,
+                    'country_state_id' => $provinceId,
+                    'code' => $cityCode,
+                    'position' => ++$cityPosition,
+                    'active' => 1,
                     'created_at' => $storageDate,
                 ]);
+                $this->addRegionTranslations($queue, 'country_city_translation', 'country_city_id', $cityId, $cityNames, $languageIds, $storageDate);
+
+                $districtPosition = 0;
+                foreach ($city['children'] ?? [] as $district) {
+                    $districtCode = $district['code'] ?? null;
+                    $districtNames = $this->getRegionNames($district);
+                    if (!\is_string($districtCode) || $districtNames === null) {
+                        continue;
+                    }
+
+                    $districtId = Uuid::randomBytes();
+                    $queue->addInsert('country_district', [
+                        'id' => $districtId,
+                        'country_id' => $countryId,
+                        'country_state_id' => $provinceId,
+                        'country_city_id' => $cityId,
+                        'code' => $districtCode,
+                        'position' => ++$districtPosition,
+                        'active' => 1,
+                        'created_at' => $storageDate,
+                    ]);
+                    $this->addRegionTranslations($queue, 'country_district_translation', 'country_district_id', $districtId, $districtNames, $languageIds, $storageDate);
+                }
             }
         }
+
+        $queue->execute();
+    }
+
+    /**
+     * @param array<string, string> $names locale code => name
+     * @param array<string, string> $languageIds locale code => language id
+     */
+    private function addRegionTranslations(
+        MultiInsertQueryQueue $queue,
+        string $table,
+        string $foreignKey,
+        string $regionId,
+        array $names,
+        array $languageIds,
+        string $storageDate,
+    ): void {
+        foreach ($languageIds as $locale => $languageId) {
+            $queue->addInsert($table, [
+                'language_id' => $languageId,
+                $foreignKey => $regionId,
+                'name' => $names[$locale],
+                'created_at' => $storageDate,
+            ]);
+        }
+    }
+
+    /**
+     * Reads the localized names of a region node, both shop languages have to be present.
+     *
+     * @param array<mixed> $node
+     *
+     * @return array<string, string>|null
+     */
+    private function getRegionNames(array $node): ?array
+    {
+        $translations = $node['translations'] ?? null;
+        if (!\is_array($translations)) {
+            return null;
+        }
+
+        $names = [];
+        foreach (['en-GB', 'zh-CN'] as $locale) {
+            $name = $translations[$locale] ?? $node['name'] ?? null;
+            if (!\is_string($name) || $name === '') {
+                return null;
+            }
+
+            $names[$locale] = $name;
+        }
+
+        return $names;
+    }
+
+    /**
+     * @return list<array<mixed>>
+     */
+    private function readChinaRegionFixture(): array
+    {
+        $file = \dirname(__DIR__) . '/Fixtures/china-regions.json';
+        if (!is_file($file)) {
+            throw MigrationException::migrationFileDoesNotExist($file);
+        }
+
+        $content = file_get_contents($file);
+        if ($content === false) {
+            throw MigrationException::migrationError(\sprintf('The chinese region fixture "%s" could not be read.', $file));
+        }
+
+        try {
+            $data = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw MigrationException::migrationError(\sprintf('The chinese region fixture "%s" is not valid json.', $file), $exception);
+        }
+
+        if (!\is_array($data) || !\is_array($data['regions'] ?? null)) {
+            throw MigrationException::migrationError(\sprintf('The chinese region fixture "%s" does not contain a "regions" array.', $file));
+        }
+
+        return array_values($data['regions']);
     }
 
     private function createCurrency(Connection $connection): void

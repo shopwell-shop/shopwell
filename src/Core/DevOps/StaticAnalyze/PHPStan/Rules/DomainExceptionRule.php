@@ -25,6 +25,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationException;
 use Shopwell\Core\Kernel;
 use Shopwell\Core\Migration\Traits\StateMachineMigrationImporter;
+use Shopwell\Core\Migration\V6_3\Migration1536233560BasicData;
 use Shopwell\Core\Migration\V6_4\Migration1632721037OrderDocumentMailTemplate;
 use Shopwell\Core\Migration\V6_5\Migration1672931011ReviewFormMailTemplate;
 use Symfony\Component\Console\Command\Command;
@@ -66,6 +67,9 @@ class DomainExceptionRule implements Rule
         Migration1672931011ReviewFormMailTemplate::class => MigrationException::class,
         Migration1632721037OrderDocumentMailTemplate::class => MigrationException::class,
         StateMachineMigrationImporter::class => MigrationException::class,
+        // Basic data reads the bundled chinese region fixture, a broken fixture has to abort the
+        // migration instead of silently installing a shop without provinces, cities and districts.
+        Migration1536233560BasicData::class => MigrationException::class,
         /** @deprecated tag:v6.9.0 - DocumentRoute keeps the v1 exception because its error codes are the Store api contract. Remove with document generation v1. */
         DocumentRoute::class => DocumentException::class,
     ];

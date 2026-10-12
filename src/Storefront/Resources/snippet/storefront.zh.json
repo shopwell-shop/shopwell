@@ -405,6 +405,8 @@
     "countryNoShippingAlert": "该国家不支持配送。",
     "countryStateLabel": "省份",
     "countryStatePlaceholder": "请选择省份...",
+    "countryDistrictLabel": "区/县",
+    "countryDistrictPlaceholder": "请选择区/县...",
     "phoneNumberLabel": "电话",
     "phoneNumberPlaceholder": "请输入电话...",
     "companyNameLabel": "公司",

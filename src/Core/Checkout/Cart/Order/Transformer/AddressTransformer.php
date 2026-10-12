@@ -23,6 +23,8 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  *     additionalAddressLine2?: non-empty-string,
  *     countryId?: non-empty-string,
  *     countryStateId?: non-empty-string,
+ *     countryCityId?: non-empty-string,
+ *     countryDistrictId?: non-empty-string,
  *     customFields?: array<string, mixed>
  * }
  */
@@ -68,6 +70,8 @@ class AddressTransformer
             'additionalAddressLine2' => $address->getAdditionalAddressLine2(),
             'countryId' => $address->getCountryId(),
             'countryStateId' => $address->getCountryStateId(),
+            'countryCityId' => $address->getCountryCityId(),
+            'countryDistrictId' => $address->getCountryDistrictId(),
         ], static function (?string $value): bool {
             return $value !== null && $value !== '';
         });

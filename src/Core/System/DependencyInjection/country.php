@@ -4,11 +4,17 @@ namespace Shopwell\Core\System\DependencyInjection;
 
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
+use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityDefinition;
+use Shopwell\Core\System\Country\Aggregate\CountryCityTranslation\CountryCityTranslationDefinition;
+use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictDefinition;
+use Shopwell\Core\System\Country\Aggregate\CountryDistrictTranslation\CountryDistrictTranslationDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryState\SalesChannel\SalesChannelCountryStateDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryStateTranslation\CountryStateTranslationDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryTranslation\CountryTranslationDefinition;
 use Shopwell\Core\System\Country\CountryDefinition;
+use Shopwell\Core\System\Country\SalesChannel\CountryCityRoute;
+use Shopwell\Core\System\Country\SalesChannel\CountryDistrictRoute;
 use Shopwell\Core\System\Country\SalesChannel\CountryRoute;
 use Shopwell\Core\System\Country\SalesChannel\CountryStateRoute;
 use Shopwell\Core\System\Country\SalesChannel\SalesChannelCountryDefinition;
@@ -50,6 +56,36 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service('country_state.repository'),
+            service('event_dispatcher'),
+            service(CacheTagCollector::class),
+            service(ExtensionDispatcher::class),
+        ]);
+
+    $services->set(CountryCityDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    $services->set(CountryDistrictDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    $services->set(CountryCityTranslationDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    $services->set(CountryDistrictTranslationDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    $services->set(CountryCityRoute::class)
+        ->public()
+        ->args([
+            service('country_city.repository'),
+            service('event_dispatcher'),
+            service(CacheTagCollector::class),
+            service(ExtensionDispatcher::class),
+        ]);
+
+    $services->set(CountryDistrictRoute::class)
+        ->public()
+        ->args([
+            service('country_district.repository'),
             service('event_dispatcher'),
             service(CacheTagCollector::class),
             service(ExtensionDispatcher::class),

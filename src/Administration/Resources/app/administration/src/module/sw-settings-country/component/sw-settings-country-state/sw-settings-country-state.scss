@@ -1,13 +1,195 @@
 @import "~scss/variables";
 
 .sw-settings-country-state {
-    .mt-card__toolbar {
+    &__toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        width: 100%;
+    }
+
+    &__summary {
+        font-weight: 500;
+    }
+
+    &__path {
+        color: $color-darkgray-200;
+    }
+
+    &__columns {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    &__column {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        border: 1px solid $color-gray-300;
+        border-radius: $border-radius-md;
+        overflow: hidden;
+    }
+
+    &__column-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 10px 12px;
+        background: $color-gray-50;
+        border-bottom: 1px solid $color-gray-300;
+    }
+
+    &__column-title {
+        font-weight: 500;
+    }
+
+    &__column-count {
+        color: $color-darkgray-200;
+        font-size: 12px;
+    }
+
+    &__column-toolbar {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px 12px;
+        border-bottom: 1px solid $color-gray-300;
+    }
+
+    &__search {
+        /**
+         * Grows with the column but wraps the add button onto its own line as soon as the column
+         * gets too narrow for both of them, so the search field never shrinks to a width in which
+         * the placeholder collides with the search icon.
+         */
+        flex: 1 1 160px;
+        min-width: 0;
+
+        /**
+         * `sw-simple-search-field` sets `inheritAttrs: false` and forwards a class to its inner
+         * field instead of its root, so the wrapper is the flex item and the field itself has to be
+         * stretched to it. Without this the field keeps its intrinsic ~200px width, and the
+         * component's own `height: 100%` blows it up to the height of the whole toolbar row.
+         */
         .sw-simple-search-field {
-            flex: 1;
+            width: 100%;
+            height: auto;
         }
     }
 
-    &__add-country-state-button {
-        color: red;
+    &__add-button {
+        flex-shrink: 0;
+    }
+
+    &__list {
+        min-height: 180px;
+        max-height: 460px;
+        overflow-y: auto;
+    }
+
+    &__list-loader {
+        display: flex;
+        justify-content: center;
+        padding: 32px 0;
+    }
+
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-bottom: 1px solid $color-gray-200;
+        cursor: pointer;
+
+        &:last-child {
+            border-bottom: 0;
+        }
+
+        &:hover {
+            background: $color-gray-100;
+        }
+
+        &.is--selected {
+            background: $color-emerald-50;
+            font-weight: 500;
+        }
+    }
+
+    &__item-name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    &__item-code {
+        flex-shrink: 0;
+        color: $color-darkgray-200;
+        font-size: 12px;
+        letter-spacing: 0.2px;
+    }
+
+    &__item-actions {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    &__hint {
+        padding: 24px 12px;
+        color: $color-darkgray-200;
+        text-align: center;
+    }
+
+    &__delete-content {
+        min-height: 48px;
+    }
+
+    /**
+     * The administration switches to its narrow shell at 1280px (see sw-desktop and sw-admin-menu).
+     * Below that the three levels are stacked on top of each other instead of sitting side by side,
+     * so a list never gets squeezed into an unreadable width on a tablet or a phone.
+     */
+    @media screen and (max-width: 1280px) {
+        &__columns {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        &__list {
+            max-height: 320px;
+        }
+    }
+
+    @media screen and (max-width: 640px) {
+        &__toolbar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        &__column-header,
+        &__column-toolbar {
+            padding: 8px 10px;
+        }
+
+        // A phone is too narrow for a search field and a button next to each other.
+        &__search,
+        &__add-button {
+            flex: 1 1 100%;
+        }
+
+        &__list {
+            max-height: 264px;
+        }
+
+        &__item {
+            min-height: 44px;
+            padding: 8px 10px;
+        }
     }
 }

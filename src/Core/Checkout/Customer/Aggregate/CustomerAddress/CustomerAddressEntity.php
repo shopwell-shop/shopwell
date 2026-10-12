@@ -7,6 +7,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityEntity;
+use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictEntity;
 use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
 use Shopwell\Core\System\Country\CountryEntity;
 use Shopwell\Core\System\Salutation\SalutationEntity;
@@ -22,6 +24,10 @@ class CustomerAddressEntity extends Entity
     protected string $countryId;
 
     protected ?string $countryStateId = null;
+
+    protected ?string $countryCityId = null;
+
+    protected ?string $countryDistrictId = null;
 
     protected ?string $salutationId = null;
 
@@ -48,6 +54,10 @@ class CustomerAddressEntity extends Entity
     protected ?CountryEntity $country = null;
 
     protected ?CountryStateEntity $countryState = null;
+
+    protected ?CountryCityEntity $countryCity = null;
+
+    protected ?CountryDistrictEntity $countryDistrict = null;
 
     protected ?SalutationEntity $salutation = null;
 
@@ -87,6 +97,26 @@ class CustomerAddressEntity extends Entity
     public function setCountryStateId(string $countryStateId): void
     {
         $this->countryStateId = $countryStateId;
+    }
+
+    public function getCountryCityId(): ?string
+    {
+        return $this->countryCityId;
+    }
+
+    public function setCountryCityId(string $countryCityId): void
+    {
+        $this->countryCityId = $countryCityId;
+    }
+
+    public function getCountryDistrictId(): ?string
+    {
+        return $this->countryDistrictId;
+    }
+
+    public function setCountryDistrictId(string $countryDistrictId): void
+    {
+        $this->countryDistrictId = $countryDistrictId;
     }
 
     public function getSalutationId(): ?string
@@ -217,6 +247,26 @@ class CustomerAddressEntity extends Entity
     public function setCountryState(CountryStateEntity $countryState): void
     {
         $this->countryState = $countryState;
+    }
+
+    public function getCountryCity(): ?CountryCityEntity
+    {
+        return $this->countryCity;
+    }
+
+    public function setCountryCity(CountryCityEntity $countryCity): void
+    {
+        $this->countryCity = $countryCity;
+    }
+
+    public function getCountryDistrict(): ?CountryDistrictEntity
+    {
+        return $this->countryDistrict;
+    }
+
+    public function setCountryDistrict(CountryDistrictEntity $countryDistrict): void
+    {
+        $this->countryDistrict = $countryDistrict;
     }
 
     public function getSalutation(): ?SalutationEntity
