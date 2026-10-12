@@ -16,7 +16,6 @@ class LocaleHelper
     public static function isLocale(string $locale): bool
     {
         try {
-            /** @phpstan-ignore new.resultUnused */
             new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
         } catch (\ValueError) {
             return false;

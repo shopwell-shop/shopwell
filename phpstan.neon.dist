@@ -229,3 +229,16 @@ parameters:
         -
             message: '#Method .* should return Shopwell\\Core\\Framework\\DataAbstractionLayer\\Search\\EntitySearchResult<.*> but returns Shopwell\\Core\\Framework\\DataAbstractionLayer\\Search\\EntitySearchResult<.*>#'
             identifier: return.type
+
+        # The NumberFormatter polyfill of symfony/polyfill-intl-icu (pulled in via payum/payum-bundle -> symfony/form)
+        # shadows the ext-intl class for PHPStan: with the polyfill installed the constructor is not known to throw
+        # ValueError (dead catch), without it the discarded `new` is reported as unused instead. Which one happens
+        # depends on the resolved dependency tree, so both are ignored only when they actually occur.
+        - # Dead catch, because the polyfill's NumberFormatter::__construct does not declare ValueError
+            identifier: catch.neverThrown
+            path: src/Core/System/Locale/Util/LocaleHelper.php
+            reportUnmatched: false
+        - # Unused result, because the real ext-intl NumberFormatter constructor is treated as pure
+            identifier: new.resultUnused
+            path: src/Core/System/Locale/Util/LocaleHelper.php
+            reportUnmatched: false
