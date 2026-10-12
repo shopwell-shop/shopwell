@@ -69,7 +69,7 @@
       "columnGroup": "客户组",
       "columnGroupRequested": "已申请：",
       "columnNameGuestLabel": "访客下单",
-      "labelCreatedByAdmin": "由管理员创建",
+      "labelCreatedByAdmin": "管理员创建",
       "columnStreet": "街道",
       "columnZip": "邮编",
       "columnCity": "城市",
@@ -253,7 +253,7 @@
       "messageSaveSuccess": "客户 \"{name}\" 已成功保存。",
       "notificationPasswordErrorMessage": "输入的密码不一致。",
       "notificationImitateCustomerErrorMessage": "以客户身份登录时发生错误。请确保允许弹出窗口。",
-      "labelCreatedByAdmin": "由管理员创建"
+      "labelCreatedByAdmin": "管理员创建"
     },
     "filter": {
       "customerNumber": {
