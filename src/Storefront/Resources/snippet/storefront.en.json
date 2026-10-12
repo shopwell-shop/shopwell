@@ -405,6 +405,8 @@
     "countryNoShippingAlert": "A delivery to this country is not possible.",
     "countryStateLabel": "State",
     "countryStatePlaceholder": "Select state...",
+    "countryCityLabel": "City",
+    "countryCityPlaceholder": "Select city...",
     "countryDistrictLabel": "District",
     "countryDistrictPlaceholder": "Select district...",
     "phoneNumberLabel": "Phone number",

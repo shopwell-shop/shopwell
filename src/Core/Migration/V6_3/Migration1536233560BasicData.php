@@ -1078,7 +1078,11 @@ class Migration1536233560BasicData extends MigrationStep
             $queue->addInsert('country_state', [
                 'id' => $provinceId,
                 'country_id' => $countryId,
-                // ISO 3166-2:CN identifies a province by its numeric code, e.g. CN-11 for Beijing
+                // The short code is the GB/T 2260 code of the province with a country prefix, e.g.
+                // CN-11 for Beijing, so it stays the prefix of the codes of its cities and
+                // districts. Hong Kong and Macao keep their GB/T codes CN-81 / CN-82 here, ISO
+                // 3166-2:CN numbers them CN-91 / CN-92 instead and its current revision uses
+                // letter codes (CN-HK / CN-MO) for every province anyway.
                 'short_code' => 'CN-' . $provinceCode,
                 'position' => ++$provincePosition,
                 'active' => 1,

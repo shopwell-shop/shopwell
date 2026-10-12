@@ -11,6 +11,8 @@ use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Storefront\Controller\CountryStateController;
+use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPagelet;
+use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPageletLoader;
 use Shopwell\Storefront\Pagelet\Country\CountryStateDataPagelet;
 use Shopwell\Storefront\Pagelet\Country\CountryStateDataPageletLoader;
 use Shopwell\Tests\Unit\Storefront\Controller\Stub\CountryStateControllerStub;
@@ -25,12 +27,15 @@ class CountryStateControllerTest extends TestCase
 {
     private CountryStateDataPageletLoader&MockObject $pageletLoader;
 
+    private CountryRegionDataPageletLoader&MockObject $regionPageletLoader;
+
     private CountryStateControllerStub $controller;
 
     protected function setUp(): void
     {
         $this->pageletLoader = static::createMock(CountryStateDataPageletLoader::class);
-        $this->controller = new CountryStateControllerStub($this->pageletLoader);
+        $this->regionPageletLoader = static::createMock(CountryRegionDataPageletLoader::class);
+        $this->controller = new CountryStateControllerStub($this->pageletLoader, $this->regionPageletLoader);
     }
 
     public function testGetCountryDataUsesCountryIdFromQuery(): void
@@ -86,5 +91,61 @@ class CountryStateControllerTest extends TestCase
         $this->expectExceptionObject(RoutingException::missingRequestParameter('countryId'));
 
         $this->controller->getCountryData(new Request(), Generator::generateSalesChannelContext());
+    }
+
+    public function testGetCityDataUsesCountryStateIdFromQuery(): void
+    {
+        $request = new Request(['countryStateId' => 'query-state-id']);
+        $context = Generator::generateSalesChannelContext();
+
+        $this->regionPageletLoader->expects($this->once())
+            ->method('loadCities')
+            ->with('query-state-id', $request, $context)
+            ->willReturn(new CountryRegionDataPagelet());
+
+        $response = $this->controller->getCityData($request, $context);
+
+        static::assertSame(
+            ['cities' => []],
+            \json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR)
+        );
+    }
+
+    public function testGetCityDataThrowsExceptionWithoutCountryStateId(): void
+    {
+        $this->regionPageletLoader->expects($this->never())
+            ->method('loadCities');
+
+        $this->expectExceptionObject(RoutingException::missingRequestParameter('countryStateId'));
+
+        $this->controller->getCityData(new Request(), Generator::generateSalesChannelContext());
+    }
+
+    public function testGetDistrictDataUsesCountryCityIdFromQuery(): void
+    {
+        $request = new Request(['countryCityId' => 'query-city-id']);
+        $context = Generator::generateSalesChannelContext();
+
+        $this->regionPageletLoader->expects($this->once())
+            ->method('loadDistricts')
+            ->with('query-city-id', $request, $context)
+            ->willReturn(new CountryRegionDataPagelet());
+
+        $response = $this->controller->getDistrictData($request, $context);
+
+        static::assertSame(
+            ['districts' => []],
+            \json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR)
+        );
+    }
+
+    public function testGetDistrictDataThrowsExceptionWithoutCountryCityId(): void
+    {
+        $this->regionPageletLoader->expects($this->never())
+            ->method('loadDistricts');
+
+        $this->expectExceptionObject(RoutingException::missingRequestParameter('countryCityId'));
+
+        $this->controller->getDistrictData(new Request(), Generator::generateSalesChannelContext());
     }
 }

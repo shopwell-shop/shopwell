@@ -184,7 +184,6 @@ shopwell.installer:
     select_country_hmd: '赫德岛和麦克唐纳群岛'
     select_country_vat: '梵蒂冈'
     select_country_hnd: 洪都拉斯
-    select_country_hkg: '中国香港'
     select_country_ind: 印度
     select_country_idn: 印度尼西亚
     select_country_civ: 科特迪瓦
@@ -203,7 +202,6 @@ shopwell.installer:
     select_country_lso: 莱索托
     select_country_lbr: 利比里亚
     select_country_lby: 利比亚
-    select_country_mac: 中国澳门
     select_country_mkd: 北马其顿
     select_country_mdg: 马达加斯加
     select_country_mwi: 马拉维
@@ -280,7 +278,6 @@ shopwell.installer:
     select_country_sjm: '斯瓦尔巴和扬马延'
     select_country_swz: 斯威士兰
     select_country_syr: 叙利亚
-    select_country_twn: 中国台湾
     select_country_tjk: 塔吉克斯坦
     select_country_tza: 坦桑尼亚
     select_country_tha: 泰国

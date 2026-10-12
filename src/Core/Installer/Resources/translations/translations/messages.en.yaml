@@ -184,7 +184,6 @@ shopwell.installer:
     select_country_hmd: 'Territory of Heard Island and McDonald Islands'
     select_country_vat: 'Vatican City'
     select_country_hnd: Honduras
-    select_country_hkg: 'Hong Kong'
     select_country_ind: India
     select_country_idn: Indonesia
     select_country_civ: 'Ivory Coast'
@@ -203,7 +202,6 @@ shopwell.installer:
     select_country_lso: Lesotho
     select_country_lbr: Liberia
     select_country_lby: Libya
-    select_country_mac: Macao
     select_country_mkd: 'Republic of North Macedonia'
     select_country_mdg: Madagascar
     select_country_mwi: Malawi
@@ -280,7 +278,6 @@ shopwell.installer:
     select_country_sjm: 'Svalbard and Jan Mayen'
     select_country_swz: Eswatini
     select_country_syr: 'Syrian Arab Republic'
-    select_country_twn: 'Taiwan (Province of China)'
     select_country_tjk: Tajikistan
     select_country_tza: 'Tanzania, United Republic of'
     select_country_tha: Thailand

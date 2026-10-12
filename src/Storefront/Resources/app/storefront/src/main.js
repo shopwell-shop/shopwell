@@ -102,6 +102,7 @@ PluginManager.register('CrossSelling', () => import('src/plugin/cross-selling/cr
 PluginManager.register('DatePicker', () => import('src/plugin/date-picker/date-picker.plugin'), '[data-date-picker]'); // Not used in core, but implemented for plugins
 PluginManager.register('FormCmsHandler', () => import('src/plugin/forms/form-cms-handler.plugin'), '.cms-element-form form');
 PluginManager.register('CountryStateSelect', () => import('src/plugin/forms/form-country-state-select.plugin'), '[data-country-state-select]');
+PluginManager.register('CountryCitySelect', () => import('src/plugin/forms/form-country-city-select.plugin'), '[data-country-city-select]');
 PluginManager.register('ClearInput', () => import('src/plugin/clear-input-button/clear-input.plugin'), '[data-clear-input]'); // Not used in core, but implemented for plugins
 PluginManager.register('CmsVideo', () => import('src/plugin/cms-video/cms-video.plugin'), '[data-cms-video-element]');
 PluginManager.register('BuyBox', () => import('src/plugin/buy-box/buy-box.plugin'), '[data-buy-box]');
