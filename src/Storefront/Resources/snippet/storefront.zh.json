@@ -394,7 +394,7 @@
     "convertSucceeded": "账户创建成功，您现在可以登录。"
   },
   "address": {
-    "streetLabel": "街道门牌号",
+    "streetLabel": "详细地址",
     "additionalField1Label": "地址补充 1",
     "additionalField2Label": "地址补充 2",
     "zipcodeLabel": "邮编",

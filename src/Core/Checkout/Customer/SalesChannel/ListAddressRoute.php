@@ -64,7 +64,9 @@ class ListAddressRoute extends AbstractListAddressRoute
         $criteria
             ->addAssociation('salutation')
             ->addAssociation('country')
-            ->addAssociation('countryState');
+            ->addAssociation('countryState')
+            ->addAssociation('countryCity')
+            ->addAssociation('countryDistrict');
 
         $this->eventDispatcher->dispatch(new AddressListingCriteriaEvent($criteria, $context));
 

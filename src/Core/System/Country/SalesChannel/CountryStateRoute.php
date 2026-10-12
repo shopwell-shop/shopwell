@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
 use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityCollection;
 use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateCollection;
 use Shopwell\Core\System\Country\CountryDefinition;
 use Shopwell\Core\System\Country\Event\CountryStateCriteriaEvent;
@@ -31,9 +32,11 @@ class CountryStateRoute extends AbstractCountryStateRoute
      * @internal
      *
      * @param EntityRepository<CountryStateCollection> $countryStateRepository
+     * @param EntityRepository<CountryCityCollection> $countryCityRepository
      */
     public function __construct(
         private readonly EntityRepository $countryStateRepository,
+        private readonly EntityRepository $countryCityRepository,
         private readonly EventDispatcherInterface $dispatcher,
         private readonly CacheTagCollector $cacheTagCollector,
         private readonly ExtensionDispatcher $extensions,
@@ -79,6 +82,25 @@ class CountryStateRoute extends AbstractCountryStateRoute
         $this->dispatcher->dispatch(new CountryStateCriteriaEvent($countryId, $request, $criteria, $context));
         $countryStates = $this->countryStateRepository->search($criteria, $context->getContext());
 
-        return new CountryStateRouteResponse($countryStates);
+        $response = new CountryStateRouteResponse($countryStates);
+        $response->setHasCities($this->hasActiveCities($countryId, $context));
+
+        return $response;
+    }
+
+    /**
+     * Countries like China administrate their addresses in the three levels below the country,
+     * the flag lets the storefront address forms switch to the cascade layout.
+     */
+    private function hasActiveCities(string $countryId, SalesChannelContext $context): bool
+    {
+        $criteria = (new Criteria())
+            ->addFilter(
+                new EqualsFilter('countryId', $countryId),
+                new EqualsFilter('active', true)
+            )
+            ->setLimit(1);
+
+        return $this->countryCityRepository->search($criteria, $context->getContext())->getTotal() > 0;
     }
 }

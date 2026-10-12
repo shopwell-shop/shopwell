@@ -89,10 +89,24 @@ class OrderRoute extends AbstractOrderRoute
             ->addFilter(new EqualsFilter('config.displayInCustomerAccount', 'true'))
             ->addFilter(new EqualsFilter('sent', true));
 
-        $criteria->addAssociations(['billingAddress', 'orderCustomer.customer', 'primaryOrderDelivery']);
+        $criteria->addAssociations([
+            'billingAddress',
+            'billingAddress.country',
+            'billingAddress.countryState',
+            'billingAddress.countryCity',
+            'billingAddress.countryDistrict',
+            'orderCustomer.customer',
+            'primaryOrderDelivery',
+        ]);
 
         if (!Feature::isActive('v6.8.0.0')) {
-            $criteria->addAssociation('deliveries');
+            $criteria->addAssociation('deliveries.shippingOrderAddress');
+            $criteria->addAssociations([
+                'deliveries.shippingOrderAddress.country',
+                'deliveries.shippingOrderAddress.countryState',
+                'deliveries.shippingOrderAddress.countryCity',
+                'deliveries.shippingOrderAddress.countryDistrict',
+            ]);
         }
 
         $deepLinkFilter = \current(array_filter(

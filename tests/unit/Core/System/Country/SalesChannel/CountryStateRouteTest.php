@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityCollection;
 use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateCollection;
 use Shopwell\Core\System\Country\Event\CountryStateCriteriaEvent;
 use Shopwell\Core\System\Country\Extension\CountryStateRouteExtension;
@@ -65,10 +66,61 @@ class CountryStateRouteTest extends TestCase
                 $this->salesChannelContext->getContext(),
             ));
 
+        $countryCityRepository = $this->createMock(EntityRepository::class);
+        $countryCityRepository->expects($this->once())
+            ->method('search')
+            ->willReturn(new EntitySearchResult(
+                'country_city',
+                0,
+                new CountryCityCollection(),
+                null,
+                new Criteria(),
+                $this->salesChannelContext->getContext(),
+            ));
+
         $cacheTagCollector = static::createStub(CacheTagCollector::class);
 
-        $route = new CountryStateRoute($countryStateRepository, $dispatcher, $cacheTagCollector, new ExtensionDispatcher(new EventDispatcher()));
-        $route->load(Uuid::randomHex(), new Request(), new Criteria(), $this->salesChannelContext);
+        $route = new CountryStateRoute($countryStateRepository, $countryCityRepository, $dispatcher, $cacheTagCollector, new ExtensionDispatcher(new EventDispatcher()));
+        $response = $route->load(Uuid::randomHex(), new Request(), new Criteria(), $this->salesChannelContext);
+
+        static::assertFalse($response->hasCities());
+    }
+
+    public function testLoadDetectsCities(): void
+    {
+        $countryStateRepository = static::createStub(EntityRepository::class);
+        $countryStateRepository->method('search')
+            ->willReturn(new EntitySearchResult(
+                'country_state',
+                0,
+                new CountryStateCollection(),
+                null,
+                new Criteria(),
+                $this->salesChannelContext->getContext(),
+            ));
+
+        $countryCityRepository = $this->createMock(EntityRepository::class);
+        $countryCityRepository->expects($this->once())
+            ->method('search')
+            ->willReturn(new EntitySearchResult(
+                'country_city',
+                1,
+                new CountryCityCollection(),
+                null,
+                new Criteria(),
+                $this->salesChannelContext->getContext(),
+            ));
+
+        $route = new CountryStateRoute(
+            $countryStateRepository,
+            $countryCityRepository,
+            static::createStub(EventDispatcherInterface::class),
+            static::createStub(CacheTagCollector::class),
+            new ExtensionDispatcher(new EventDispatcher()),
+        );
+        $response = $route->load(Uuid::randomHex(), new Request(), new Criteria(), $this->salesChannelContext);
+
+        static::assertTrue($response->hasCities());
     }
 
     public function testPublishesExtension(): void
@@ -87,6 +139,7 @@ class CountryStateRouteTest extends TestCase
         });
 
         $route = new CountryStateRoute(
+            static::createStub(EntityRepository::class),
             static::createStub(EntityRepository::class),
             static::createStub(EventDispatcherInterface::class),
             static::createStub(CacheTagCollector::class),

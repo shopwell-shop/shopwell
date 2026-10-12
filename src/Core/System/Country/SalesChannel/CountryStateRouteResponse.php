@@ -13,8 +13,24 @@ use Shopwell\Core\System\SalesChannel\StoreApiResponse;
 #[Package('fundamentals@discovery')]
 class CountryStateRouteResponse extends StoreApiResponse
 {
+    protected bool $hasCities = false;
+
     public function getStates(): CountryStateCollection
     {
         return $this->object->getEntities();
+    }
+
+    /**
+     * Whether the country provides cities below its states, so address forms can switch
+     * to the province-city-district cascade layout.
+     */
+    public function hasCities(): bool
+    {
+        return $this->hasCities;
+    }
+
+    public function setHasCities(bool $hasCities): void
+    {
+        $this->hasCities = $hasCities;
     }
 }

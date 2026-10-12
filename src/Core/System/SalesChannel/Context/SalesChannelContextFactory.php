@@ -263,6 +263,8 @@ class SalesChannelContextFactory extends AbstractSalesChannelContextFactory
         $criteria->addAssociation('salutation');
         $criteria->addAssociation('country');
         $criteria->addAssociation('countryState');
+        $criteria->addAssociation('countryCity');
+        $criteria->addAssociation('countryDistrict');
 
         $addresses = $this->addressRepository->search($criteria, $context)->getEntities();
 

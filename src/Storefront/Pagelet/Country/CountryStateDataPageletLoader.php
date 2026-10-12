@@ -35,6 +35,7 @@ class CountryStateDataPageletLoader
         $countryRouteResponse = $this->countryStateRoute->load($countryId, $request, $criteria, $context);
 
         $page->setStates($countryRouteResponse->getStates());
+        $page->setHasCities($countryRouteResponse->hasCities());
 
         $this->eventDispatcher->dispatch(new CountryStateDataPageletLoadedEvent($page, $context, $request));
 

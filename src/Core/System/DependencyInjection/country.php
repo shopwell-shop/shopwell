@@ -56,6 +56,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service('country_state.repository'),
+            service('country_city.repository'),
             service('event_dispatcher'),
             service(CacheTagCollector::class),
             service(ExtensionDispatcher::class),
