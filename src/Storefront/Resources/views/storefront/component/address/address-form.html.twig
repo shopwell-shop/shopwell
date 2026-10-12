@@ -177,6 +177,29 @@
                     {% endif %}
                 {% endblock %}
             {% endblock %}
+
+            {# Countries like China administrate their addresses in three levels below the country, the row stays hidden until the selected state actually has cities. #}
+            {% block component_address_form_country_city_district %}
+                <div
+                    class="col-12 d-none"
+                    data-country-city-select="true"
+                    data-country-city-select-options="{{ options|json_encode }}"
+                >
+                    <div class="row g-2">
+                        {% block component_address_form_country_city_field %}
+                            {% sw_include '@Storefront/storefront/component/address/field/address-country-city-field.html.twig' with {
+                                additionalClass: 'col-md-6',
+                            } %}
+                        {% endblock %}
+
+                        {% block component_address_form_country_district_field %}
+                            {% sw_include '@Storefront/storefront/component/address/field/address-country-district-field.html.twig' with {
+                                additionalClass: 'col-md-6',
+                            } %}
+                        {% endblock %}
+                    </div>
+                </div>
+            {% endblock %}
         </div>
         {% endif %}
 

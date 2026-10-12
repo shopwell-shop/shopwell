@@ -1,0 +1,37 @@
+{% block component_address_field_country_district %}
+    {% if formViolations.getViolations('/countryDistrictId') is not empty %}
+        {% set violationPath = '/countryDistrictId' %}
+    {% elseif formViolations.getViolations("/#{prefix}/countryDistrictId") is not empty %}
+        {% set violationPath = "/#{prefix}/countryDistrictId" %}
+    {% endif %}
+
+    {% set countryDistrictAutocomplete = 'address-level3' %}
+
+    {% if prefix == 'shippingAddress' %}
+        {% set countryDistrictAutocomplete = 'shipping address-level3' %}
+    {% elseif prefix == 'billingAddress' %}
+        {% set countryDistrictAutocomplete = 'billing address-level3' %}
+    {% endif %}
+
+    {% set countryDistrictOptions %}
+        <option value=""
+                selected="selected"
+                data-placeholder-option="true">
+            {{ 'address.countryDistrictPlaceholder'|trans|sw_sanitize }}
+        </option>
+    {% endset %}
+
+    {% sw_include '@Storefront/storefront/component/form/form-select.html.twig' with {
+        label: 'address.countryDistrictLabel'|trans|sw_sanitize,
+        id: idPrefix ~ prefix ~ 'AddressCountryDistrict',
+        name: prefix ~ '[countryDistrictId]',
+        autocomplete: countryDistrictAutocomplete,
+        options: countryDistrictOptions,
+        violationPath: violationPath,
+        additionalClass: additionalClass ?? 'col-md-6',
+        additionalSelectClass: 'country-district-select',
+        attributes: {
+            'data-initial-country-district-id': data.get('countryDistrictId'),
+        }
+    } %}
+{% endblock %}

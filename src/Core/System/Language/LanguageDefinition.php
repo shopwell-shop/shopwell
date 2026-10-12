@@ -63,6 +63,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Aggregate\PluginTranslation\PluginTranslationDefinition;
+use Shopwell\Core\System\Country\Aggregate\CountryCityTranslation\CountryCityTranslationDefinition;
+use Shopwell\Core\System\Country\Aggregate\CountryDistrictTranslation\CountryDistrictTranslationDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryStateTranslation\CountryStateTranslationDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryTranslation\CountryTranslationDefinition;
 use Shopwell\Core\System\Currency\Aggregate\CurrencyTranslation\CurrencyTranslationDefinition;
@@ -143,6 +145,8 @@ class LanguageDefinition extends EntityDefinition
 
             // Translation Associations, not available over sales-channel-api and cascade delete
             (new OneToManyAssociationField('categoryTranslations', CategoryTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('countryCityTranslations', CountryCityTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('countryDistrictTranslations', CountryDistrictTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('countryStateTranslations', CountryStateTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('countryTranslations', CountryTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('currencyTranslations', CurrencyTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),

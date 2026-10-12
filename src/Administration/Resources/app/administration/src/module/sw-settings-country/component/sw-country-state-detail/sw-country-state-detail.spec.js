@@ -3,16 +3,15 @@
  */
 import { mount } from '@vue/test-utils';
 
-async function createWrapper(privileges = []) {
+async function createWrapper(privileges = [], level = 'state', countryState = { isNew: () => false }) {
     return mount(
         await wrapTestComponent('sw-country-state-detail', {
             sync: true,
         }),
         {
             props: {
-                countryState: {
-                    isNew: () => false,
-                },
+                countryState,
+                level,
             },
 
             global: {
@@ -89,5 +88,45 @@ describe('module/sw-settings-country/component/sw-country-state-detail', () => {
         expect(countryStateNameField.attributes('disabled')).toBeDefined();
         expect(countryStateShortCodeField.attributes('disabled')).toBeDefined();
         expect(countryStatePositionField.attributes('disabled')).toBeDefined();
+    });
+
+    it('edits the administrative division code on the city and district level', async () => {
+        const city = await createWrapper(['country.editor'], 'city');
+
+        expect(city.vm.codeProperty).toBe('code');
+        expect(city.vm.codeLabel).toBe('sw-country-state-detail.labelCode');
+
+        const district = await createWrapper(['country.editor'], 'district');
+
+        expect(district.vm.codeProperty).toBe('code');
+        expect(district.vm.codeLabel).toBe('sw-country-state-detail.labelCode');
+    });
+
+    it('edits the ISO short code on the state level', async () => {
+        const wrapper = await createWrapper(['country.editor'], 'state');
+
+        expect(wrapper.vm.codeProperty).toBe('shortCode');
+        expect(wrapper.vm.codeLabel).toBe('sw-country-state-detail.labelShortCode');
+    });
+
+    it('names the dialog after the level that is edited', async () => {
+        const newCity = await createWrapper(['country.editor'], 'city', { isNew: () => true });
+
+        expect(newCity.vm.modalTitle).toBe('sw-country-state-detail.titleNewCity');
+
+        const existingDistrict = await createWrapper(['country.editor'], 'district', { isNew: () => false });
+
+        expect(existingDistrict.vm.modalTitle).toBe('sw-country-state-detail.titleEditDistrict');
+    });
+
+    it('emits the region on save and cancel', async () => {
+        const countryState = { id: 'region-id', isNew: () => false };
+        const wrapper = await createWrapper(['country.editor'], 'state', countryState);
+
+        wrapper.vm.onSave();
+        wrapper.vm.onCancel();
+
+        expect(wrapper.emitted('attribute-edit-save')).toEqual([[countryState]]);
+        expect(wrapper.emitted('attribute-edit-cancel')).toEqual([[countryState]]);
     });
 });

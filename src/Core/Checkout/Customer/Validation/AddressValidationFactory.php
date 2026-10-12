@@ -51,6 +51,8 @@ class AddressValidationFactory implements DataValidationFactoryInterface
             ->add('salutationId', new EntityExists(entity: 'salutation', context: $frameworkContext))
             ->add('countryId', new EntityExists(entity: 'country', context: $frameworkContext))
             ->add('countryStateId', new EntityExists(entity: 'country_state', context: $frameworkContext))
+            ->add('countryCityId', new EntityExists(entity: 'country_city', context: $frameworkContext))
+            ->add('countryDistrictId', new EntityExists(entity: 'country_district', context: $frameworkContext))
             ->add('name', new NotBlank(message: 'VIOLATION::NAME_IS_BLANK_ERROR', normalizer: $this->trimStringValue(...)))
             ->add('street', new NotBlank(message: 'VIOLATION::STREET_IS_BLANK_ERROR', normalizer: $this->trimStringValue(...)))
             ->add('city', new NotBlank(message: 'VIOLATION::CITY_IS_BLANK_ERROR', normalizer: $this->trimStringValue(...)))

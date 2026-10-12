@@ -513,6 +513,8 @@ class RegisterRoute extends AbstractRegisterRoute
             'company',
             'department',
             'countryStateId',
+            'countryCityId',
+            'countryDistrictId',
             'countryId',
             'additionalAddressLine1',
             'additionalAddressLine2',
@@ -521,6 +523,14 @@ class RegisterRoute extends AbstractRegisterRoute
 
         if (isset($mappedData['countryStateId']) && $mappedData['countryStateId'] === '') {
             $mappedData['countryStateId'] = null;
+        }
+
+        if (isset($mappedData['countryCityId']) && $mappedData['countryCityId'] === '') {
+            $mappedData['countryCityId'] = null;
+        }
+
+        if (isset($mappedData['countryDistrictId']) && $mappedData['countryDistrictId'] === '') {
+            $mappedData['countryDistrictId'] = null;
         }
 
         $mappedData = $this->trimAddressFields($mappedData);

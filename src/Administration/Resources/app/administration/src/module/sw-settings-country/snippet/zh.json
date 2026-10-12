@@ -2,7 +2,7 @@
   "sw-settings-country": {
     "page": {
       "generalTab": "设置",
-      "stateTab": "省/地区",
+      "stateTab": "省 / 市 / 区",
       "addressHandlingTab": "地址处理"
     },
     "general": {
@@ -78,16 +78,55 @@
       "buttonResetMarkup": "重置地址格式",
       "newSnippetModalTitle": "插入值",
       "buttonInsertSnippet": "插入值",
-      "placeholderSearchSnippet": "搜索文本模块 ..."
+      "placeholderSearchSnippet": "搜索文本模块 ...",
+      "region": {
+        "columnState": "省 / 直辖市",
+        "columnCity": "市 / 地区",
+        "columnDistrict": "区 / 县",
+        "countItems": "{count} 项",
+        "textSummary": "{state} 个省 / 直辖市 · {city} 个市 / 地区 · {district} 个区 / 县",
+        "textSelectedPath": "当前选择：{path}",
+        "placeholderSearchState": "搜索省 / 直辖市",
+        "placeholderSearchCity": "搜索市 / 地区",
+        "placeholderSearchDistrict": "搜索区 / 县",
+        "buttonAddState": "新增省 / 直辖市",
+        "buttonAddCity": "新增市 / 地区",
+        "buttonAddDistrict": "新增区 / 县",
+        "hintNoSearchResult": "没有匹配「{term}」的结果",
+        "hintSelectState": "请先在左侧选择一个省 / 直辖市",
+        "hintSelectCity": "请先在左侧选择一个市 / 地区",
+        "hintEmptyState": "该国家下暂无省 / 直辖市",
+        "hintEmptyCity": "「{name}」下暂无市 / 地区",
+        "hintEmptyDistrict": "「{name}」下暂无区 / 县",
+        "hintNewCountry": "请先保存国家，再维护它的省 / 市 / 区。",
+        "hintNewCountryTitle": "国家尚未保存",
+        "titleDelete": "删除确认",
+        "textDeleteStateConfirm": "「{name}」下有 {city} 个市 / 地区、{district} 个区 / 县，删除省 / 直辖市会一并删除它们，且无法恢复。",
+        "textDeleteCityConfirm": "「{name}」下有 {district} 个区 / 县，删除市 / 地区会一并删除它们，且无法恢复。",
+        "textDeleteDistrictConfirm": "确定要删除区 / 县「{name}」吗？",
+        "messageSaveSuccess": "「{name}」已保存。",
+        "messageSaveError": "「{name}」无法保存。",
+        "messageDeleteSuccess": "「{name}」已删除。",
+        "messageDeleteError": "「{name}」无法删除。",
+        "messageLoadError": "省 / 市 / 区数据加载失败。"
+      }
     }
   },
   "sw-country-state-detail": {
-    "titleNew": "新建省/地区",
-    "titleEdit": "编辑省/地区",
+    "titleNewState": "新建省 / 直辖市",
+    "titleNewCity": "新建市 / 地区",
+    "titleNewDistrict": "新建区 / 县",
+    "titleEditState": "编辑省 / 直辖市",
+    "titleEditCity": "编辑市 / 地区",
+    "titleEditDistrict": "编辑区 / 县",
     "labelName": "名称",
     "labelPosition": "排序",
     "labelShortCode": "ISO",
-    "tooltipPosition": "确定在列表输出中省/地区的排序位置。",
+    "labelCode": "行政区划编码",
+    "labelActive": "启用",
+    "tooltipPosition": "决定该地区在列表和前台下拉框中的排序位置。",
+    "tooltipActive": "关闭后，该地区在前台不可选择，已存在的地址不受影响。",
+    "tooltipCode": "行政区划编码，同一个国家内不可重复。",
     "createNewStateError": "无法用当前所选语言新建地区。请先用系统默认语言创建地区。",
     "emptyTitle": "暂无地区",
     "emptySubline": "添加地区"

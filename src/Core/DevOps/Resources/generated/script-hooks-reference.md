@@ -456,6 +456,18 @@ All available Hooks that can be used to load additional data.
 | **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
 | **Stoppable**          | `false`                  |
 
+### country-region-data-pagelet-loaded
+
+| <!-- -->               | <!-- -->                                |
+|:-----------------------|:----------------------------------------|
+| **Name**               | country-region-data-pagelet-loaded                         |
+| **Since**              | 6.7.17.0                        |
+| **Class**              | `Shopwell\Storefront\Pagelet\Country\CountryRegionDataPageletLoadedHook`                      |
+| **Description**        | Triggered when the CountryRegionDataPagelet is loaded<br>                  |
+| **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>pagelet: [`Shopwell\Storefront\Pagelet\Country\CountryRegionDataPagelet`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Storefront/Pagelet/Country/CountryRegionDataPagelet.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
+| **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
+| **Stoppable**          | `false`                  |
+
 ### country-state-data-pagelet-loaded
 
 | <!-- -->               | <!-- -->                                |

@@ -95,6 +95,10 @@ SQL;
     }
 
     /**
+     * Hong Kong (HK), Macao (MO) and Taiwan (TW) are deliberately missing from this list.
+     * They are not countries: they are province level regions of China and are seeded as
+     * `country_state` rows of the chinese country instead, see Migration1536233560BasicData.
+     *
      * @return list<array{iso: string, iso3: string, zh: string, en: string}>
      */
     private function createNewCountries(): array
@@ -571,11 +575,6 @@ SQL;
                 'zh' => '洪都拉斯',
                 'en' => 'Honduras',
             ], [
-                'iso' => 'HK',
-                'iso3' => 'HKG',
-                'zh' => '中国香港',
-                'en' => 'Hong Kong',
-            ], [
                 'iso' => 'IN',
                 'iso3' => 'IND',
                 'zh' => '印度',
@@ -670,11 +669,6 @@ SQL;
                 'iso3' => 'LBY',
                 'zh' => '利比亚',
                 'en' => 'Libya',
-            ], [
-                'iso' => 'MO',
-                'iso3' => 'MAC',
-                'zh' => '中国澳门',
-                'en' => 'Macao',
             ], [
                 'iso' => 'MK',
                 'iso3' => 'MKD',
@@ -1060,11 +1054,6 @@ SQL;
                 'iso3' => 'SYR',
                 'zh' => '叙利亚',
                 'en' => 'Syrian Arab Republic',
-            ], [
-                'iso' => 'TW',
-                'iso3' => 'TWN',
-                'zh' => '中国台湾',
-                'en' => 'Taiwan',
             ], [
                 'iso' => 'TJ',
                 'iso3' => 'TJK',

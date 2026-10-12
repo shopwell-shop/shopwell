@@ -25,6 +25,8 @@ class Migration1536232970CustomerAddress extends MigrationStep
               `customer_id` BINARY(16) NOT NULL,
               `country_id` BINARY(16) NOT NULL,
               `country_state_id` BINARY(16) NULL,
+              `country_city_id` BINARY(16) NULL,
+              `country_district_id` BINARY(16) NULL,
               `company` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `department` VARCHAR(35) COLLATE utf8mb4_unicode_ci NULL,
               `salutation_id` BINARY(16) NOT NULL,
@@ -46,6 +48,10 @@ class Migration1536232970CustomerAddress extends MigrationStep
                  REFERENCES `country` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                CONSTRAINT `fk.customer_address.country_state_id` FOREIGN KEY (`country_state_id`)
                  REFERENCES `country_state` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+               CONSTRAINT `fk.customer_address.country_city_id` FOREIGN KEY (`country_city_id`)
+                 REFERENCES `country_city` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+               CONSTRAINT `fk.customer_address.country_district_id` FOREIGN KEY (`country_district_id`)
+                 REFERENCES `country_district` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
                CONSTRAINT `fk.customer_address.customer_id` FOREIGN KEY (`customer_id`)
                  REFERENCES `customer` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
                CONSTRAINT `fk.customer_address.salutation_id` FOREIGN KEY (`salutation_id`)

@@ -8,6 +8,8 @@ use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Storefront\Framework\Routing\StorefrontRouteScope;
+use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPageletLoadedHook;
+use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPageletLoader;
 use Shopwell\Storefront\Pagelet\Country\CountryStateDataPageletLoadedHook;
 use Shopwell\Storefront\Pagelet\Country\CountryStateDataPageletLoader;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -26,8 +28,10 @@ class CountryStateController extends StorefrontController
     /**
      * @internal
      */
-    public function __construct(private readonly CountryStateDataPageletLoader $countryStateDataPageletLoader)
-    {
+    public function __construct(
+        private readonly CountryStateDataPageletLoader $countryStateDataPageletLoader,
+        private readonly CountryRegionDataPageletLoader $countryRegionDataPageletLoader
+    ) {
     }
 
     /**
@@ -63,6 +67,64 @@ class CountryStateController extends StorefrontController
 
         return new JsonResponse([
             'states' => $countryStateDataPagelet->getStates(),
+        ]);
+    }
+
+    /**
+     * Returns the cities of a province, used by the city select of the address forms.
+     */
+    #[Route(
+        path: '/country/country-city-data',
+        name: 'frontend.country.city.data',
+        defaults: [
+            'XmlHttpRequest' => true,
+            PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
+        ],
+        methods: [Request::METHOD_GET]
+    )]
+    public function getCityData(Request $request, SalesChannelContext $context): Response
+    {
+        $countryStateId = $request->query->getString('countryStateId');
+
+        if (!$countryStateId) {
+            throw RoutingException::missingRequestParameter('countryStateId');
+        }
+
+        $countryRegionDataPagelet = $this->countryRegionDataPageletLoader->loadCities($countryStateId, $request, $context);
+
+        $this->hook(new CountryRegionDataPageletLoadedHook($countryRegionDataPagelet, $context));
+
+        return new JsonResponse([
+            'cities' => $countryRegionDataPagelet->getCities(),
+        ]);
+    }
+
+    /**
+     * Returns the districts of a city, used by the district select of the address forms.
+     */
+    #[Route(
+        path: '/country/country-district-data',
+        name: 'frontend.country.district.data',
+        defaults: [
+            'XmlHttpRequest' => true,
+            PlatformRequest::ATTRIBUTE_HTTP_CACHE => true,
+        ],
+        methods: [Request::METHOD_GET]
+    )]
+    public function getDistrictData(Request $request, SalesChannelContext $context): Response
+    {
+        $countryCityId = $request->query->getString('countryCityId');
+
+        if (!$countryCityId) {
+            throw RoutingException::missingRequestParameter('countryCityId');
+        }
+
+        $countryRegionDataPagelet = $this->countryRegionDataPageletLoader->loadDistricts($countryCityId, $request, $context);
+
+        $this->hook(new CountryRegionDataPageletLoadedHook($countryRegionDataPagelet, $context));
+
+        return new JsonResponse([
+            'districts' => $countryRegionDataPagelet->getDistricts(),
         ]);
     }
 }

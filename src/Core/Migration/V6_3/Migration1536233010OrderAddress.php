@@ -25,6 +25,8 @@ class Migration1536233010OrderAddress extends MigrationStep
               `version_id` BINARY(16) NOT NULL,
               `country_id` BINARY(16) NOT NULL,
               `country_state_id` BINARY(16) NULL,
+              `country_city_id` BINARY(16) NULL,
+              `country_district_id` BINARY(16) NULL,
               `order_id` BINARY(16) NOT NULL,
               `order_version_id` BINARY(16) NOT NULL,
               `company` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
@@ -48,6 +50,10 @@ class Migration1536233010OrderAddress extends MigrationStep
                 REFERENCES `country` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
               CONSTRAINT `fk.order_address.country_state_id` FOREIGN KEY (`country_state_id`)
                 REFERENCES `country_state` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+              CONSTRAINT `fk.order_address.country_city_id` FOREIGN KEY (`country_city_id`)
+                REFERENCES `country_city` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+              CONSTRAINT `fk.order_address.country_district_id` FOREIGN KEY (`country_district_id`)
+                REFERENCES `country_district` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
               CONSTRAINT `fk.order_address.order_id` FOREIGN KEY (`order_id`, `order_version_id`)
                 REFERENCES `order` (`id`, `version_id`) ON DELETE CASCADE ON UPDATE CASCADE,
               CONSTRAINT `fk.order_address.salutation_id` FOREIGN KEY (`salutation_id`)

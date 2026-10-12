@@ -127,6 +127,7 @@ app/config/parameters.yml
 .env.local
 .env.local.php
 .env.test
+.env.test.local
 .env.e2e
 .env.dev
 

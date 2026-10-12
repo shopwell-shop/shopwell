@@ -8,6 +8,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityCollection;
+use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictCollection;
 use Shopwell\Core\System\Country\Aggregate\CountryStateTranslation\CountryStateTranslationCollection;
 use Shopwell\Core\System\Country\CountryEntity;
 
@@ -33,6 +35,10 @@ class CountryStateEntity extends Entity
     protected ?CountryEntity $country = null;
 
     protected ?CountryStateTranslationCollection $translations = null;
+
+    protected ?CountryCityCollection $cities = null;
+
+    protected ?CountryDistrictCollection $districts = null;
 
     protected ?CustomerAddressCollection $customerAddresses = null;
 
@@ -96,6 +102,26 @@ class CountryStateEntity extends Entity
     public function setCountry(CountryEntity $country): void
     {
         $this->country = $country;
+    }
+
+    public function getCities(): ?CountryCityCollection
+    {
+        return $this->cities;
+    }
+
+    public function setCities(CountryCityCollection $cities): void
+    {
+        $this->cities = $cities;
+    }
+
+    public function getDistricts(): ?CountryDistrictCollection
+    {
+        return $this->districts;
+    }
+
+    public function setDistricts(CountryDistrictCollection $districts): void
+    {
+        $this->districts = $districts;
     }
 
     public function getTranslations(): ?CountryStateTranslationCollection

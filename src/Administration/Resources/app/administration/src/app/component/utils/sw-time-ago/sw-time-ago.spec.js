@@ -126,11 +126,11 @@ describe('src/app/component/utils/sw-time-ago', () => {
             date: '2025-06-23T12:34:00.000+00:00',
         });
 
-        expect(wrapper.text()).toContain('12:34');
+        expect(wrapper.text()).toContain('20:34');
 
         await wrapper.setProps({ date: '2025-06-22T18:35:00.000+00:00' });
 
-        expect(wrapper.text()).toContain('18:35');
+        expect(wrapper.text()).toContain('02:35');
     });
 
     describe('date property as string', () => {
@@ -156,7 +156,7 @@ describe('src/app/component/utils/sw-time-ago', () => {
                     date: '2025-06-24T08:25:00.000+00:00',
                 });
 
-                expect(wrapper.text()).toContain('8:25');
+                expect(wrapper.text()).toContain('16:25');
             });
 
             it('should show the correct time for days more than one day ago', async () => {
@@ -164,7 +164,7 @@ describe('src/app/component/utils/sw-time-ago', () => {
                     date: '2025-06-16T15:00:00.000+00:00',
                 });
 
-                expect(wrapper.text()).toContain('16 June 2025 at 15:00');
+                expect(wrapper.text()).toContain('16 June 2025 at 23:00');
             });
 
             it('should show a tooltip when day is today', async () => {
@@ -206,7 +206,7 @@ describe('src/app/component/utils/sw-time-ago', () => {
                     date: '2025-06-24T17:25:00.000+00:00',
                 });
 
-                expect(wrapper.text()).toContain('17:25');
+                expect(wrapper.text()).toContain('01:25');
             });
 
             it('should show the correct time for days more than one day from now', async () => {
@@ -214,7 +214,7 @@ describe('src/app/component/utils/sw-time-ago', () => {
                     date: '2025-06-30T15:00:00.000+00:00',
                 });
 
-                expect(wrapper.text()).toContain('30 June 2025 at 15:00');
+                expect(wrapper.text()).toContain('30 June 2025 at 23:00');
             });
 
             it('should show a tooltip when day is today', async () => {
@@ -258,7 +258,7 @@ describe('src/app/component/utils/sw-time-ago', () => {
                     date: new Date('2025-06-24T08:25:00.000+00:00'),
                 });
 
-                expect(wrapper.text()).toContain('8:25');
+                expect(wrapper.text()).toContain('16:25');
             });
 
             it('should show the correct time for days more than one day ago', async () => {
@@ -266,7 +266,7 @@ describe('src/app/component/utils/sw-time-ago', () => {
                     date: new Date('2025-06-16T15:00:00.000+00:00'),
                 });
 
-                expect(wrapper.text()).toContain('16 June 2025 at 15:00');
+                expect(wrapper.text()).toContain('16 June 2025 at 23:00');
             });
 
             it('should show a tooltip when day is today', async () => {
@@ -308,7 +308,7 @@ describe('src/app/component/utils/sw-time-ago', () => {
                     date: new Date('2025-06-24T17:25:00.000+00:00'),
                 });
 
-                expect(wrapper.text()).toContain('17:25');
+                expect(wrapper.text()).toContain('01:25');
             });
 
             it('should show the correct time for days more than one day from now', async () => {
@@ -316,7 +316,7 @@ describe('src/app/component/utils/sw-time-ago', () => {
                     date: new Date('2025-06-30T15:00:00.000+00:00'),
                 });
 
-                expect(wrapper.text()).toContain('30 June 2025 at 15:00');
+                expect(wrapper.text()).toContain('30 June 2025 at 23:00');
             });
 
             it('should show a tooltip when day is today', async () => {

@@ -1,0 +1,5 @@
+{# @internal #}{% block sw_snippet_element_district %}
+    {% if address.countryDistrict %}
+        {{ address.countryDistrict.translated.name }}
+    {% endif %}
+{% endblock %}

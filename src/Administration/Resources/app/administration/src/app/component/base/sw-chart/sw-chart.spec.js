@@ -147,8 +147,8 @@ describe('asyncComponent/base/sw-chart', () => {
             fillEmptyValues: 'hour',
         });
 
-        // Expect that the number of values are greater or equal the double amount of number of dates
-        expect(wrapper.vm.optimizedSeries[0].data).toHaveLength(numberOfHours + 1);
+        // The default user timezone is Asia/Shanghai (UTC+8), so the filled range spans 8 more hours
+        expect(wrapper.vm.optimizedSeries[0].data).toHaveLength(numberOfHours + 1 + 8);
     });
 
     it('should fill empty minute values', async () => {
@@ -175,8 +175,8 @@ describe('asyncComponent/base/sw-chart', () => {
             fillEmptyValues: 'minute',
         });
 
-        // Expect that the number of values are greater or equal the double amount of number of dates
-        expect(wrapper.vm.optimizedSeries[0].data).toHaveLength(numberOfMinutes + 1);
+        // The default user timezone is Asia/Shanghai (UTC+8), so the filled range spans 480 more minutes
+        expect(wrapper.vm.optimizedSeries[0].data).toHaveLength(numberOfMinutes + 1 + 480);
     });
 
     it('should not fill empty values', async () => {

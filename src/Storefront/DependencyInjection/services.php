@@ -55,6 +55,8 @@ use Shopwell\Core\Framework\Routing\MaintenanceModeResolver as CoreMaintenanceMo
 use Shopwell\Core\Framework\Routing\RequestTransformerInterface;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\Maintenance\SalesChannel\Service\SalesChannelCreator;
+use Shopwell\Core\System\Country\SalesChannel\CountryCityRoute;
+use Shopwell\Core\System\Country\SalesChannel\CountryDistrictRoute;
 use Shopwell\Core\System\Country\SalesChannel\CountryRoute;
 use Shopwell\Core\System\Country\SalesChannel\CountryStateRoute;
 use Shopwell\Core\System\Currency\SalesChannel\CurrencyRoute;
@@ -155,6 +157,7 @@ use Shopwell\Storefront\Page\Suggest\SuggestPageLoader;
 use Shopwell\Storefront\Page\Wishlist\GuestWishlistPageLoader;
 use Shopwell\Storefront\Page\Wishlist\WishlistPageLoader;
 use Shopwell\Storefront\Pagelet\Captcha\BasicCaptchaPageletLoader;
+use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPageletLoader;
 use Shopwell\Storefront\Pagelet\Country\CountryStateDataPageletLoader;
 use Shopwell\Storefront\Pagelet\Footer\FooterPageletLoader;
 use Shopwell\Storefront\Pagelet\Header\HeaderPageletLoader;
@@ -497,6 +500,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CountryStateDataPageletLoader::class)
         ->args([
             service(CountryStateRoute::class),
+            service('event_dispatcher'),
+        ]);
+
+    $services->set(CountryRegionDataPageletLoader::class)
+        ->args([
+            service(CountryCityRoute::class),
+            service(CountryDistrictRoute::class),
             service('event_dispatcher'),
         ]);
 

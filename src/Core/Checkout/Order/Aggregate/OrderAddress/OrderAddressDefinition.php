@@ -25,6 +25,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\VersionField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityDefinition;
+use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateDefinition;
 use Shopwell\Core\System\Country\CountryDefinition;
 use Shopwell\Core\System\Salutation\SalutationDefinition;
@@ -69,6 +71,8 @@ class OrderAddressDefinition extends EntityDefinition
 
             (new FkField('country_id', 'countryId', CountryDefinition::class))->addFlags(new ApiAware(), new Required())->setDescription('Unique identity of country.'),
             (new FkField('country_state_id', 'countryStateId', CountryStateDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of state.'),
+            (new FkField('country_city_id', 'countryCityId', CountryCityDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of the city.'),
+            (new FkField('country_district_id', 'countryDistrictId', CountryDistrictDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of the district.'),
 
             (new FkField('order_id', 'orderId', OrderDefinition::class))->addFlags(new Required())->setDescription('Unique identity of order.'),
             (new ReferenceVersionField(OrderDefinition::class, 'order_version_id'))->addFlags(new Required()),
@@ -88,6 +92,8 @@ class OrderAddressDefinition extends EntityDefinition
             (new CustomFields())->addFlags(new ApiAware())->setDescription('Additional fields that offer a possibility to add own fields for the different program-areas.'),
             (new ManyToOneAssociationField('country', 'country_id', CountryDefinition::class, 'id', false))->addFlags(new ApiAware()),
             (new ManyToOneAssociationField('countryState', 'country_state_id', CountryStateDefinition::class, 'id', false))->addFlags(new ApiAware()),
+            (new ManyToOneAssociationField('countryCity', 'country_city_id', CountryCityDefinition::class, 'id', false))->addFlags(new ApiAware()),
+            (new ManyToOneAssociationField('countryDistrict', 'country_district_id', CountryDistrictDefinition::class, 'id', false))->addFlags(new ApiAware()),
             (new ManyToOneAssociationField('order', 'order_id', OrderDefinition::class, 'id', false))->addFlags(new RestrictDelete()),
             // We need to cascade delete the order deliveries, because when deleting an order, the cascade delete will be triggered first
             (new OneToManyAssociationField('orderDeliveries', OrderDeliveryDefinition::class, 'shipping_order_address_id', 'id'))->addFlags(new CascadeDelete()),

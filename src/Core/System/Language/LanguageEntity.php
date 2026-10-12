@@ -48,6 +48,8 @@ use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Aggregate\PluginTranslation\PluginTranslationCollection;
 use Shopwell\Core\Framework\Struct\Collection;
+use Shopwell\Core\System\Country\Aggregate\CountryCityTranslation\CountryCityTranslationCollection;
+use Shopwell\Core\System\Country\Aggregate\CountryDistrictTranslation\CountryDistrictTranslationCollection;
 use Shopwell\Core\System\Country\Aggregate\CountryStateTranslation\CountryStateTranslationCollection;
 use Shopwell\Core\System\Country\Aggregate\CountryTranslation\CountryTranslationCollection;
 use Shopwell\Core\System\Currency\Aggregate\CurrencyTranslation\CurrencyTranslationCollection;
@@ -103,6 +105,10 @@ class LanguageEntity extends Entity
     protected ?SalesChannelCollection $salesChannelDefaultAssignments = null;
 
     protected ?CategoryTranslationCollection $categoryTranslations = null;
+
+    protected ?CountryCityTranslationCollection $countryCityTranslations = null;
+
+    protected ?CountryDistrictTranslationCollection $countryDistrictTranslations = null;
 
     protected ?CountryStateTranslationCollection $countryStateTranslations = null;
 
@@ -337,6 +343,26 @@ class LanguageEntity extends Entity
     public function setCategoryTranslations(CategoryTranslationCollection $categoryTranslations): void
     {
         $this->categoryTranslations = $categoryTranslations;
+    }
+
+    public function getCountryCityTranslations(): ?CountryCityTranslationCollection
+    {
+        return $this->countryCityTranslations;
+    }
+
+    public function setCountryCityTranslations(CountryCityTranslationCollection $countryCityTranslations): void
+    {
+        $this->countryCityTranslations = $countryCityTranslations;
+    }
+
+    public function getCountryDistrictTranslations(): ?CountryDistrictTranslationCollection
+    {
+        return $this->countryDistrictTranslations;
+    }
+
+    public function setCountryDistrictTranslations(CountryDistrictTranslationCollection $countryDistrictTranslations): void
+    {
+        $this->countryDistrictTranslations = $countryDistrictTranslations;
     }
 
     public function getCountryStateTranslations(): ?CountryStateTranslationCollection

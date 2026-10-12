@@ -129,6 +129,7 @@ use Shopwell\Storefront\Page\Suggest\SuggestPageLoader;
 use Shopwell\Storefront\Page\Wishlist\GuestWishlistPageLoader;
 use Shopwell\Storefront\Page\Wishlist\WishlistPageLoader;
 use Shopwell\Storefront\Pagelet\Captcha\BasicCaptchaPageletLoader;
+use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPageletLoader;
 use Shopwell\Storefront\Pagelet\Country\CountryStateDataPageletLoader;
 use Shopwell\Storefront\Pagelet\Footer\FooterPageletLoader;
 use Shopwell\Storefront\Pagelet\Header\HeaderPageletLoader;
@@ -390,6 +391,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service(CountryStateDataPageletLoader::class),
+            service(CountryRegionDataPageletLoader::class),
         ])
         ->call('setContainer', [service('service_container')]);
 

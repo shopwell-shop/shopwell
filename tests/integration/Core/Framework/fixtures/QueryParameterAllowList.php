@@ -69,6 +69,8 @@ class QueryParameterAllowList
                 '/store-api/category' => ['@criteria'],
                 '/store-api/category/{navigationId}' => ['@product-listing', 'slots'],
                 '/store-api/country-state/{countryId}' => ['@criteria'],
+                '/store-api/country-city/{countryStateId}' => ['@criteria'],
+                '/store-api/country-district/{countryCityId}' => ['@criteria'],
                 '/store-api/country' => ['@criteria'],
                 '/store-api/currency' => ['@criteria'],
                 '/store-api/language' => ['@criteria'],

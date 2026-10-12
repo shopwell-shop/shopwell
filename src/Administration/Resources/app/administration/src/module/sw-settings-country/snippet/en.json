@@ -2,7 +2,7 @@
   "sw-settings-country": {
     "page": {
       "generalTab": "Settings",
-      "stateTab": "States/regions",
+      "stateTab": "States / cities / districts",
       "addressHandlingTab": "Address handling"
     },
     "general": {
@@ -78,16 +78,55 @@
       "buttonResetMarkup": "Reset address markup",
       "newSnippetModalTitle": "Insert snippet",
       "buttonInsertSnippet": "Insert snippet",
-      "placeholderSearchSnippet": "Search snippets..."
+      "placeholderSearchSnippet": "Search snippets...",
+      "region": {
+        "columnState": "States / provinces",
+        "columnCity": "Cities / prefectures",
+        "columnDistrict": "Districts / counties",
+        "countItems": "{count} entries",
+        "textSummary": "{state} states / provinces · {city} cities / prefectures · {district} districts / counties",
+        "textSelectedPath": "Selected: {path}",
+        "placeholderSearchState": "Search states / provinces",
+        "placeholderSearchCity": "Search cities / prefectures",
+        "placeholderSearchDistrict": "Search districts / counties",
+        "buttonAddState": "Add state / province",
+        "buttonAddCity": "Add city / prefecture",
+        "buttonAddDistrict": "Add district / county",
+        "hintNoSearchResult": "No result matches \"{term}\"",
+        "hintSelectState": "Select a state / province first",
+        "hintSelectCity": "Select a city / prefecture first",
+        "hintEmptyState": "This country has no states or provinces yet",
+        "hintEmptyCity": "\"{name}\" has no cities or prefectures yet",
+        "hintEmptyDistrict": "\"{name}\" has no districts or counties yet",
+        "hintNewCountry": "Save the country first, then maintain its states, cities and districts.",
+        "hintNewCountryTitle": "Country not saved yet",
+        "titleDelete": "Confirm deletion",
+        "textDeleteStateConfirm": "\"{name}\" contains {city} cities / prefectures and {district} districts / counties. Deleting the state / province removes all of them. This cannot be undone.",
+        "textDeleteCityConfirm": "\"{name}\" contains {district} districts / counties. Deleting the city / prefecture removes all of them. This cannot be undone.",
+        "textDeleteDistrictConfirm": "Are you sure you want to delete the district / county \"{name}\"?",
+        "messageSaveSuccess": "\"{name}\" has been saved.",
+        "messageSaveError": "\"{name}\" could not be saved.",
+        "messageDeleteSuccess": "\"{name}\" has been deleted.",
+        "messageDeleteError": "\"{name}\" could not be deleted.",
+        "messageLoadError": "The states, cities and districts could not be loaded."
+      }
     }
   },
   "sw-country-state-detail": {
-    "titleNew": "New state/region",
-    "titleEdit": "Edit state/region",
+    "titleNewState": "New state / province",
+    "titleNewCity": "New city / prefecture",
+    "titleNewDistrict": "New district / county",
+    "titleEditState": "Edit state / province",
+    "titleEditCity": "Edit city / prefecture",
+    "titleEditDistrict": "Edit district / county",
     "labelName": "Name",
     "labelPosition": "Position",
     "labelShortCode": "ISO",
-    "tooltipPosition": "Changes the positioning of states/regions in listings.",
+    "labelCode": "Administrative division code",
+    "labelActive": "Active",
+    "tooltipPosition": "Changes the positioning of this region in listings and storefront dropdowns.",
+    "tooltipActive": "When disabled, the region cannot be selected in the storefront anymore. Existing addresses stay untouched.",
+    "tooltipCode": "The administrative division code, unique within this country.",
     "createNewStateError": "Cannot create a region with the currently selected language. Please create a region using the default system language first.",
     "emptyTitle": "No region available",
     "emptySubline": "Add a region"

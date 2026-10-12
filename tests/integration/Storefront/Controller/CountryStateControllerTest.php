@@ -14,6 +14,9 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\TestDefaults;
 use Shopwell\Storefront\Controller\CountryStateController;
+use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPagelet;
+use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPageletCriteriaEvent;
+use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPageletLoadedEvent;
 use Shopwell\Storefront\Pagelet\Country\CountryStateDataPagelet;
 use Shopwell\Storefront\Pagelet\Country\CountryStateDataPageletCriteriaEvent;
 use Shopwell\Storefront\Pagelet\Country\CountryStateDataPageletLoadedEvent;
@@ -86,6 +89,50 @@ class CountryStateControllerTest extends TestCase
         $this->countryStateController->getCountryData(new Request(), $this->salesChannelContext);
     }
 
+    public function testGetCityData(): void
+    {
+        $response = $this->countryStateController->getCityData(
+            new Request(['countryStateId' => $this->getCountryStateIdByShortCode('CN-11')]),
+            $this->salesChannelContext
+        );
+
+        $cities = \json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR)['cities'];
+
+        static::assertNotEmpty($cities);
+        static::assertArrayHasKey('id', $cities[0]);
+        static::assertArrayHasKey('translated', $cities[0]);
+        static::assertNotEmpty($cities[0]['translated']['name']);
+    }
+
+    public function testGetCityDataWithoutCountryStateId(): void
+    {
+        $this->expectExceptionObject(RoutingException::missingRequestParameter('countryStateId'));
+        $this->countryStateController->getCityData(new Request(), $this->salesChannelContext);
+    }
+
+    public function testGetDistrictData(): void
+    {
+        $cityId = $this->getCountryCityIdOfState($this->getCountryStateIdByShortCode('CN-11'));
+
+        $response = $this->countryStateController->getDistrictData(
+            new Request(['countryCityId' => $cityId]),
+            $this->salesChannelContext
+        );
+
+        $districts = \json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR)['districts'];
+
+        static::assertNotEmpty($districts);
+        static::assertArrayHasKey('id', $districts[0]);
+        static::assertArrayHasKey('translated', $districts[0]);
+        static::assertNotEmpty($districts[0]['translated']['name']);
+    }
+
+    public function testGetDistrictDataWithoutCountryCityId(): void
+    {
+        $this->expectExceptionObject(RoutingException::missingRequestParameter('countryCityId'));
+        $this->countryStateController->getDistrictData(new Request(), $this->salesChannelContext);
+    }
+
     public function testCountryStateControllerEvents(): void
     {
         $dispatcher = static::getContainer()->get('event_dispatcher');
@@ -156,12 +203,52 @@ class CountryStateControllerTest extends TestCase
         static::assertSame([16], $traces['country-state-data-pagelet-loaded'][0]['output']);
     }
 
+    public function testCountryRegionDataControllerEvents(): void
+    {
+        $dispatcher = static::getContainer()->get('event_dispatcher');
+
+        $testSubscriber = new CountryStateControllerTestSubscriber();
+        $dispatcher->addSubscriber($testSubscriber);
+
+        $this->countryStateController->getCityData(
+            new Request(['countryStateId' => $this->getCountryStateIdByShortCode('CN-11')]),
+            $this->salesChannelContext
+        );
+
+        $dispatcher->removeSubscriber($testSubscriber);
+
+        static::assertInstanceOf(CountryRegionDataPagelet::class, $testSubscriber->testRegionPagelet);
+        static::assertInstanceOf(CountryRegionDataPageletCriteriaEvent::class, $testSubscriber->regionCriteriaEvent);
+    }
+
     private function getCountryIdByIso(string $iso = 'DE'): string
     {
         $countryId = $this->connection->fetchOne('SELECT LOWER(HEX(id)) FROM country WHERE iso = :iso', ['iso' => $iso]);
         static::assertIsString($countryId);
 
         return $countryId;
+    }
+
+    private function getCountryStateIdByShortCode(string $shortCode): string
+    {
+        $countryStateId = $this->connection->fetchOne(
+            'SELECT LOWER(HEX(id)) FROM country_state WHERE short_code = :shortCode',
+            ['shortCode' => $shortCode]
+        );
+        static::assertIsString($countryStateId);
+
+        return $countryStateId;
+    }
+
+    private function getCountryCityIdOfState(string $countryStateId): string
+    {
+        $countryCityId = $this->connection->fetchOne(
+            'SELECT LOWER(HEX(id)) FROM country_city WHERE country_state_id = UNHEX(:countryStateId) ORDER BY position LIMIT 1',
+            ['countryStateId' => $countryStateId]
+        );
+        static::assertIsString($countryCityId);
+
+        return $countryCityId;
     }
 }
 
@@ -174,11 +261,17 @@ class CountryStateControllerTestSubscriber implements EventSubscriberInterface
 
     public ?CountryStateDataPageletCriteriaEvent $criteriaEvent = null;
 
+    public ?CountryRegionDataPagelet $testRegionPagelet = null;
+
+    public ?CountryRegionDataPageletCriteriaEvent $regionCriteriaEvent = null;
+
     public static function getSubscribedEvents(): array
     {
         return [
             CountryStateDataPageletLoadedEvent::class => 'onPageletLoaded',
             CountryStateDataPageletCriteriaEvent::class => 'onCriteria',
+            CountryRegionDataPageletLoadedEvent::class => 'onRegionPageletLoaded',
+            CountryRegionDataPageletCriteriaEvent::class => 'onRegionCriteria',
         ];
     }
 
@@ -190,5 +283,15 @@ class CountryStateControllerTestSubscriber implements EventSubscriberInterface
     public function onCriteria(CountryStateDataPageletCriteriaEvent $event): void
     {
         $this->criteriaEvent = $event;
+    }
+
+    public function onRegionPageletLoaded(CountryRegionDataPageletLoadedEvent $event): void
+    {
+        $this->testRegionPagelet = $event->getPagelet();
+    }
+
+    public function onRegionCriteria(CountryRegionDataPageletCriteriaEvent $event): void
+    {
+        $this->regionCriteriaEvent = $event;
     }
 }
