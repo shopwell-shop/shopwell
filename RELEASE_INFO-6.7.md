@@ -1,3 +1,15 @@
+# 6.7.17.0 (upcoming)
+
+## Features
+
+### Customer and user phone numbers
+
+The `customer` and `user` entities have a new optional `phoneNumber` attribute, exposed through the Admin API and, for customers, through the Store API. Customer registration accepts `phoneNumber` and the storefront registration form collects it, and the Administration shows the field on the customer and user detail pages. Extensions can read the new attribute from both entities.
+
+### Customer and order list default columns
+
+The customer list provides a `phoneNumber` column, which is hidden by default. In the same list the billing address columns (`street`, `zipcode` and `city`) are hidden by default as well, as is the delivery address column in the order list. All of these columns remain available and can be enabled in the grid column settings.
+
 # 6.7.16.0 (upcoming)
 
 ## Critical Fixes
@@ -57,14 +69,6 @@ With the newly added tabs feature, plugin developers can now add another layer o
     </tab>
 </config>
 ```
-
-### Customer and user phone numbers
-
-The `customer` and `user` entities have a new optional `phoneNumber` attribute, exposed through the Admin API and, for customers, through the Store API. Customer registration accepts `phoneNumber` and the storefront registration form collects it, and the Administration shows the field on the customer and user detail pages. Extensions can read the new attribute from both entities.
-
-### Customer and order list default columns
-
-The customer list provides a `phoneNumber` column, which is hidden by default. In the same list the billing address columns (`street`, `zipcode` and `city`) are hidden by default as well, as is the delivery address column in the order list. All of these columns remain available and can be enabled in the grid column settings.
 
 ## Core
 
